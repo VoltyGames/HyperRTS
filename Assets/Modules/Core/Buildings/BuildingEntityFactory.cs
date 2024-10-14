@@ -1,4 +1,4 @@
-﻿using HyperRTS.Core.SharedComponents;
+﻿using HyperRTS.Core.Health;
 using Unity.Entities;
 
 namespace HyperRTS.Core.Buildings
@@ -9,7 +9,7 @@ namespace HyperRTS.Core.Buildings
         {
             var building = entityManager.CreateEntity();
             entityManager.AddComponentData(building, new BuildingTag());
-            entityManager.AddComponentData(building, new Health { CurrentHealth = 500, MaxHealth = 500 });
+            entityManager.AddComponentData(building, new HealthComponent { CurrentHealth = 500, MaxHealth = 500 });
             entityManager.AddComponentData(building, new ConstructionProgress { Value = 0 });
             return building;
         }

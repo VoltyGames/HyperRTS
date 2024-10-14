@@ -1,4 +1,4 @@
-﻿using HyperRTS.Core.SharedComponents;
+﻿using HyperRTS.Core.Health;
 using Unity.Entities;
 
 namespace HyperRTS.Core.Units
@@ -9,7 +9,7 @@ namespace HyperRTS.Core.Units
         {
             var unit = entityManager.CreateEntity();
             entityManager.AddComponentData(unit, new UnitTag());
-            entityManager.AddComponentData(unit, new Health { CurrentHealth = 100, MaxHealth = 100 });
+            entityManager.AddComponentData(unit, new HealthComponent { CurrentHealth = 100, MaxHealth = 100 });
             entityManager.AddComponentData(unit, new MovementSpeed { Value = 5f });
             return unit;
         }

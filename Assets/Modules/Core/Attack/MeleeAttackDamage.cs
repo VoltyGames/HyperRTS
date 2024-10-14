@@ -1,5 +1,4 @@
 ﻿using Unity.Entities;
-using UnityEngine;
 
 namespace HyperRTS.Core.Attack
 {
@@ -9,19 +8,5 @@ namespace HyperRTS.Core.Attack
     public struct MeleeAttackDamage : IComponentData
     {
         public int Value;
-    }
-
-    public class MeleeAttackDamageAuthoring : MonoBehaviour
-    {
-        public int MeleeAttackDamage;
-
-        public class Baker : Baker<MeleeAttackDamageAuthoring>
-        {
-            public override void Bake(MeleeAttackDamageAuthoring authoring)
-            {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new MeleeAttackDamage { Value = authoring.MeleeAttackDamage });
-            }
-        }
     }
 }
