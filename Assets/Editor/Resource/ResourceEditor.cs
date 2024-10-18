@@ -10,7 +10,10 @@ namespace HyperRTS.Editor.Resource
     public class ResourcesEditor : EditorWindow
     {
         private const string ResourceAssetsPath = "Assets/ScritableObjects/Resources";
+        
         private ScrollView resourcesList;
+        private TextField resourceNameField;
+        private ObjectField resourceIconField;
         
         [SerializeField]
         private VisualTreeAsset uxmlTree;
@@ -28,16 +31,10 @@ namespace HyperRTS.Editor.Resource
             root.Add(uxmlTree.Instantiate());
 
             // Get references to UI elements
-            var resourceNameField = root.Q<TextField>("resourceNameField");
-            var addResourceButton = root.Q<Button>("addResourceButton");
-            var resourceIconField = root.Q<ObjectField>("resourceIconField");
+            resourceNameField = root.Q<TextField>("resourceNameField");
+            resourceIconField = root.Q<ObjectField>("resourceIconField");
             resourcesList = root.Q<ScrollView>("resourcesList");
-
-            if (resourcesList is null)
-            {
-                Debug.LogError("Failed to find resourcesList ScrollView in UXML.");
-                return;
-            }
+            var addResourceButton = root.Q<Button>("addResourceButton");
 
             // Load existing resources into the ScrollView
             EnsureResourceDirectoryExists();
@@ -70,8 +67,8 @@ namespace HyperRTS.Editor.Resource
 
             // Create a ResourceData ScriptableObject to hold data
             var resourceData = CreateInstance<ResourceData>();
-            resourceData.name = resourceName;
-            resourceData.resourceType = newResource;
+            resourceData.resourceId = newResource.Id;
+            resourceData.resourceName = newResource.Name.Value;
             resourceData.resourceIcon = resourceIcon;
             
             var path = $"{ResourceAssetsPath}/{resourceName}.asset";
@@ -132,10 +129,10 @@ namespace HyperRTS.Editor.Resource
         {
             // Create a label for the resource with its name and icon
             var resourceEntry = new VisualElement();
-            var resourceLabel = new Label($"- {resourceData.name} (ID: {resourceData.resourceType.Id})");
+            var resourceLabel = new Label($"- {resourceData.name} (ID: {resourceData.resourceId})");
             resourceEntry.Add(resourceLabel);
 
-            if (resourceData.resourceIcon != null)
+            if (resourceData.resourceIcon is not null)
             {
                 var resourceIcon = new Image
                 {
@@ -148,8 +145,17 @@ namespace HyperRTS.Editor.Resource
                 };
                 resourceEntry.Add(resourceIcon);
             }
-
+            
+            // Add click event to select the resource
+            resourceEntry.AddManipulator(new Clickable(() => UpdateFields(resourceData)));
             resourcesList.Add(resourceEntry);
+        }
+        
+        private void UpdateFields(ResourceData resourceData)
+        {
+            // Update the UI fields with the selected resource's data
+            resourceNameField.value = resourceData.resourceName;
+            resourceIconField.value = resourceData.resourceIcon;
         }
 
         private void EnsureResourceDirectoryExists()
