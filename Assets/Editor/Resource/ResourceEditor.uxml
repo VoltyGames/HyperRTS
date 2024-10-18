@@ -1,14 +1,18 @@
-<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:uie="UnityEditor.UIElements"
+         noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" 
+         editor-extension-mode="False">
     <Style src="project://database/Assets/Editor/Resource/ResourceEditor.uss?fileID=7433441132597879392&amp;guid=9d896348b1a4c7a43a301d69d4c30725&amp;type=3#ResourceEditor" />
     <ui:VisualElement>
         <ui:VisualElement>
-            <ui:Label text="Register New Resource:" />
+            <ui:Label class="header" text="Register New Resource:" />
             <ui:TextField name="resourceNameField" label="Resource Name" />
+            <uie:ObjectField name="resourceIconField" label="Resource Icon" object-type="UnityEngine.Sprite" />
             <ui:Button name="addResourceButton" text="Add Resource" />
         </ui:VisualElement>
         <ui:VisualElement>
             <ui:Label text="Registered Resources:" />
-            <ui:ScrollView name="resourceList" />
+            <ui:ScrollView name="resourcesList" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
