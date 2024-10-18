@@ -9,7 +9,8 @@ namespace HyperRTS.Editor.Resource
 {
     public class ResourcesEditor : EditorWindow
     {
-        private const string ResourcePrefabPath = "Assets/Prefabs/Resources";
+        private const string ResourceAssetsPath = "Assets/ScritableObjects/Resources";
+        private ScrollView resourcesList;
         
         [SerializeField]
         private VisualTreeAsset uxmlTree;
@@ -30,10 +31,17 @@ namespace HyperRTS.Editor.Resource
             var resourceNameField = root.Q<TextField>("resourceNameField");
             var addResourceButton = root.Q<Button>("addResourceButton");
             var resourceIconField = root.Q<ObjectField>("resourceIconField");
-            var resourcesList = root.Q<ScrollView>("resourcesList");
+            resourcesList = root.Q<ScrollView>("resourcesList");
+
+            if (resourcesList is null)
+            {
+                Debug.LogError("Failed to find resourcesList ScrollView in UXML.");
+                return;
+            }
 
             // Load existing resources into the ScrollView
-            LoadRegisteredResources(resourcesList);
+            EnsureResourceDirectoryExists();
+            LoadRegisteredResources();
 
             // Button click handler for adding a new resource
             addResourceButton.clicked += () =>
@@ -43,14 +51,19 @@ namespace HyperRTS.Editor.Resource
 
                 if (!string.IsNullOrEmpty(resourceName))
                 {
-                    AddResource(resourceName, resourceIcon, resourcesList);
+                    AddResource(resourceName, resourceIcon);
                     resourceNameField.value = ""; // Clear the input field
                     resourceIconField.value = null; // Clear the icon field
                 }
             };
         }
 
-        private void AddResource(string resourceName, Sprite resourceIcon, ScrollView resourceList)
+        /// <summary>
+        /// Add a new resource to the registry and UI.
+        /// </summary>
+        /// <param name="resourceName"></param>
+        /// <param name="resourceIcon"></param>
+        private void AddResource(string resourceName, Sprite resourceIcon)
         {
             // Register the new resource type
             var newResource = ResourceRegistry.RegisterResourceType(resourceName);
@@ -60,32 +73,43 @@ namespace HyperRTS.Editor.Resource
             resourceData.name = resourceName;
             resourceData.resourceType = newResource;
             resourceData.resourceIcon = resourceIcon;
+            
+            var path = $"{ResourceAssetsPath}/{resourceName}.asset";
+            SaveResourceAsAsset(resourceData, path);
 
             // Add the new resource to the UI
             var resourceLabel = new Label($"- {newResource.Name} (ID: {newResource.Id})");
-            resourceList.Add(resourceLabel);
+            resourcesList.Add(resourceLabel);
         }
         
-        // Save ResourceData as a prefab in the Assets/Resources/Prefabs folder
-        private void SaveResourceAsPrefab(ResourceData resourceData, string path)
+        /// <summary>
+        /// Save a ResourceData instance as an asset at the specified path.
+        /// </summary>
+        /// <param name="resourceData"></param>
+        /// <param name="path"></param>
+        private void SaveResourceAsAsset(ResourceData resourceData, string path)
         {
-            // Ensure the directory exists
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            var directoryPath = Path.GetDirectoryName(path);
 
-            // Create an empty GameObject to hold the ResourceData
-            var resourceObject = new GameObject(resourceData.name);
-            resourceObject.AddComponent<ResourceData>().CopyFrom(resourceData); // Copy data into the new GameObject
+            if (directoryPath is not null)
+            {
+                // Ensure the directory exists
+                Directory.CreateDirectory(directoryPath);
+            }
 
-            // Save the GameObject as a prefab
-            PrefabUtility.SaveAsPrefabAsset(resourceObject, path);
-            DestroyImmediate(resourceObject); // Clean up
+            // Save the ScriptableObject as an asset
+            AssetDatabase.CreateAsset(resourceData, path);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
         }
 
-        // Load registered resources and populate the UI
-        private void LoadRegisteredResources(ScrollView resourceList)
+        /// <summary>
+        /// Load all registered resources from the Resources folder and add them to the UI.
+        /// </summary>
+        private void LoadRegisteredResources()
         {
-            resourceList.Clear();
-            var resourcePaths = Directory.GetFiles(ResourcePrefabPath, "*.prefab");
+            resourcesList.Clear();
+            var resourcePaths = Directory.GetFiles(ResourceAssetsPath, "*.asset");
 
             foreach (var path in resourcePaths)
             {
@@ -93,13 +117,18 @@ namespace HyperRTS.Editor.Resource
                 
                 if (resourceData is not null)
                 {
-                    AddResourceToUI(resourceData, resourceList);
+                    AddResourceToUI(resourceData);
                 }
             }
         }
 
-        // Add a resource entry to the UI list
-        private void AddResourceToUI(ResourceData resourceData, ScrollView resourceList)
+        /// <summary>
+        /// Add a ResourceData instance to the UI.
+        /// </summary>
+        /// <param name="resourceData">
+        /// The ResourceData instance to add to the UI.
+        /// </param>
+        private void AddResourceToUI(ResourceData resourceData)
         {
             // Create a label for the resource with its name and icon
             var resourceEntry = new VisualElement();
@@ -120,7 +149,15 @@ namespace HyperRTS.Editor.Resource
                 resourceEntry.Add(resourceIcon);
             }
 
-            resourceList.Add(resourceEntry);
+            resourcesList.Add(resourceEntry);
+        }
+
+        private void EnsureResourceDirectoryExists()
+        {
+            if (!Directory.Exists(ResourceAssetsPath))
+            {
+                Directory.CreateDirectory(ResourceAssetsPath);
+            }
         }
     }
 }
