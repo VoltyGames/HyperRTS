@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 public class ResourcesEditor : EditorWindow
 {
     [SerializeField] 
-    private VisualTreeAsset UXMLTree;
+    private VisualTreeAsset uxmlTree;
     
     [MenuItem("RTS Engine/Resource Manager")]
     public static void ShowWindow()
@@ -18,7 +18,7 @@ public class ResourcesEditor : EditorWindow
     public void CreateGUI()
     {
         var root = rootVisualElement;
-        root.Add(UXMLTree.Instantiate());
+        root.Add(uxmlTree.Instantiate());
         
         // Get references to UI elements
         var resourceNameField = root.Q<TextField>("resourceNameField");

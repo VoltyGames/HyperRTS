@@ -5,8 +5,8 @@ namespace HyperRTS.Core.Health
 {
     public class HealthComponentAuthoring : MonoBehaviour
     {
-        public int CurrentHealth;
-        public int MaxHealth;
+        public int currentHealth;
+        public int maxHealth;
 
         public class Baker : Baker<HealthComponentAuthoring>
         {
@@ -14,8 +14,17 @@ namespace HyperRTS.Core.Health
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent(entity,
-                    new HealthComponent { CurrentHealth = authoring.CurrentHealth, MaxHealth = authoring.MaxHealth });
+                    new HealthComponent { CurrentHealth = authoring.currentHealth, MaxHealth = authoring.maxHealth });
             }
         }
+    }
+    
+    /// <summary>
+    /// Health component for entities that have health.
+    /// </summary>
+    public struct HealthComponent : IComponentData
+    {
+        public int CurrentHealth;
+        public int MaxHealth;
     }
 }

@@ -5,7 +5,7 @@ namespace HyperRTS.Core.Attack
 {
     public class AttackTargetAuthoring : MonoBehaviour
     {
-        public GameObject Target;
+        public GameObject target;
 
         public class Baker : Baker<AttackTargetAuthoring>
         {
@@ -13,8 +13,13 @@ namespace HyperRTS.Core.Attack
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent(entity,
-                    new AttackTarget { Value = GetEntity(authoring.Target, TransformUsageFlags.Dynamic) });
+                    new AttackTarget { Value = GetEntity(authoring.target, TransformUsageFlags.Dynamic) });
             }
         }
+    }
+    
+    public struct AttackTarget : IComponentData
+    {
+        public Entity Value;
     }
 }

@@ -5,7 +5,7 @@ namespace HyperRTS.Core.Resources
 {
     public static class ResourceRegistry
     {
-        private static int _nextId = 0;
+        private static int _nextId;
         private static readonly Dictionary<FixedString64Bytes, ResourceType> ResourceTypes = new();
         
         public static ResourceType RegisterResourceType(FixedString64Bytes name)
