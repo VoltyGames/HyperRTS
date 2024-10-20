@@ -9,15 +9,14 @@ namespace HyperRTS.Core.Cameras
         public float rotationSpeed = 100f;
         public float minZoom = 10f;
         public float maxZoom = 50f;
-
         public Vector3 defaultPosition = new(0, 35, -50);
         public Quaternion defaultRotation = Quaternion.Euler(30, 0, 0);
 
         private void Start()
         {
-            // Save default position and rotation
-            defaultPosition = transform.position;
-            defaultRotation = transform.rotation;
+            // Reset camera to default specified position
+            transform.position = defaultPosition;
+            transform.rotation = defaultRotation;
         }
 
         private void Update()
@@ -25,13 +24,7 @@ namespace HyperRTS.Core.Cameras
             HandleMovement();
             HandleRotation();
             HandleZoom();
-
-            // Reset camera position and rotation
-            if (Input.GetKey(KeyCode.Home))
-            {
-                transform.position = defaultPosition;
-                transform.rotation = defaultRotation;
-            }
+            HandleReset();
         }
 
         private void HandleMovement()
@@ -57,7 +50,7 @@ namespace HyperRTS.Core.Cameras
                 movement += new Vector3(transform.right.x, 0, transform.right.z);
             }
 
-            transform.position += movement * moveSpeed * Time.deltaTime;
+            transform.position += movement * (moveSpeed * Time.deltaTime);
             
             // Maintain the original Y position (prevent falling to the ground)
             transform.position = new Vector3(transform.position.x, position.y, transform.position.z);
@@ -82,6 +75,16 @@ namespace HyperRTS.Core.Cameras
             {
                 var rotationX = Input.GetAxis("Mouse X") * rotationSpeed * Time.deltaTime;
                 transform.Rotate(0, rotationX, 0, Space.World);
+            }
+        }
+
+        private void HandleReset()
+        {
+            // Reset camera position and rotation
+            if (Input.GetKey(KeyCode.Home))
+            {
+                transform.position = defaultPosition;
+                transform.rotation = defaultRotation;
             }
         }
     }
