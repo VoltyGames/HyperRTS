@@ -26,7 +26,7 @@ namespace HyperRTS.Core.Editor.Resource
         [SerializeField]
         private VisualTreeAsset uxmlTree;
 
-        [MenuItem("RTS Engine/Resource Manager")]
+        [MenuItem("RTS/Resource Editor")]
         public static void ShowWindow()
         {
             var wnd = GetWindow<ResourcesEditor>();
