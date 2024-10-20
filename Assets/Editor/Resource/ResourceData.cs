@@ -3,11 +3,19 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Resource
 {
-    [CreateAssetMenu(fileName = "NewResource", menuName = "RTS Engine/Resource Data", order = 0)]
     public class ResourceData : ScriptableObject
     {
-        public int resourceId;
+        public string resourceId;
         public string resourceName;
         public Sprite resourceIcon;
+
+        public static ResourceData Create(ResourceType resourceType, Sprite icon)
+        {
+            var resourceData = CreateInstance<ResourceData>();
+            resourceData.resourceId = resourceType.Id.ToString();
+            resourceData.resourceName = resourceType.DisplayName.ToString();
+            resourceData.resourceIcon = icon;
+            return resourceData;
+        }
     }
 }

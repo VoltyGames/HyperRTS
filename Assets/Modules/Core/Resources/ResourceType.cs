@@ -7,7 +7,7 @@ namespace HyperRTS.Core.Resources
     /// </summary>
     public struct ResourceType
     {
-        public int Id;
-        public FixedString64Bytes Name;
+        public FixedString64Bytes Id;
+        public FixedString64Bytes DisplayName;
     }
 }

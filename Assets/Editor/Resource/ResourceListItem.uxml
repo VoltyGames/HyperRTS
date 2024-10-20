@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <ui:VisualElement style="display: flex; flex-direction: row; padding: 5px;">
+        <ui:Image name="resourceIcon" style="height: 64px; width: 64px; margin-right: 10px;">
+            <ui:DataBinding property="sprite" data-source-path="resourceIcon" />
+        </ui:Image>
+        <ui:Label name="resourceName" style="-unity-text-align: middle-center; font-size: 18px;">
+            <ui:DataBinding property="value" data-source-path="resourceName" />
+        </ui:Label>
+    </ui:VisualElement>
+</ui:UXML>
