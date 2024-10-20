@@ -1,7 +1,7 @@
 ﻿using HyperRTS.Core.Resources;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Resource
+namespace HyperRTS.Core.Editor.Resource
 {
     public class ResourceData : ScriptableObject
     {

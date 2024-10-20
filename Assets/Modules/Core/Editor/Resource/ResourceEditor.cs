@@ -7,7 +7,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Resource
+namespace HyperRTS.Core.Editor.Resource
 {
     public class ResourcesEditor : EditorWindow
     {
