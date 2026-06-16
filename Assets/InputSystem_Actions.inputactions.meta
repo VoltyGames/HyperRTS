@@ -12,3 +12,10 @@ ScriptedImporter:
   wrapperCodePath: 
   wrapperClassName: 
   wrapperCodeNamespace: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 79732
+  packageName: RTS Engine
+  packageVersion: 2024.0.1
+  assetPath: Assets/InputSystem_Actions.inputactions
+  uploadId: 775558
