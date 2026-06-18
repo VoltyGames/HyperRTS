@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HyperRTS.Core.Resources;
@@ -64,7 +64,7 @@ namespace HyperRTS.Core.Editor.Resource
         private void AddResource()
         {
             EnsureResourceDirectoryExists();
-            
+
             var resourceId = resourceIdField.value;
             var resourceName = resourceNameField.value;
             var resourceIcon = resourceIconField.value as Sprite;
@@ -81,12 +81,12 @@ namespace HyperRTS.Core.Editor.Resource
                 EditorUtility.DisplayDialog("Error", $"Resource with the ID '{resourceId}' already exists.", "OK");
                 return;
             }
-            
+
             // Register the new resource type
             var newResource = ResourceManager.CreateResource(resourceId, resourceName);
             var resourceData = ResourceData.Create(newResource, resourceIcon);
             resourcesDataList.Add(resourceData);
-            
+
             // Save the asset file
             AssetDatabase.CreateAsset(resourceData, path);
             AssetDatabase.SaveAssets();
@@ -96,7 +96,7 @@ namespace HyperRTS.Core.Editor.Resource
 
         private void SaveResource()
         {
-            if (selectedResourceData is null)
+            if (selectedResourceData == null)
             {
                 return;
             }
@@ -116,7 +116,7 @@ namespace HyperRTS.Core.Editor.Resource
         // Method to remove the selected resource from the list and delete the asset file
         private void RemoveResource()
         {
-            if (selectedResourceData is null)
+            if (selectedResourceData == null)
             {
                 return;
             }
@@ -140,7 +140,7 @@ namespace HyperRTS.Core.Editor.Resource
             {
                 return;
             }
-            
+
             resourcesDataList.Clear();
             var resourcePaths = Directory.GetFiles(ResourceAssetsPath, "*.asset");
 
@@ -148,7 +148,7 @@ namespace HyperRTS.Core.Editor.Resource
             {
                 var resourceData = AssetDatabase.LoadAssetAtPath<ResourceData>(path);
 
-                if (resourceData is not null)
+                if (resourceData != null)
                 {
                     Debug.Log($"Loaded resource: {resourceData.resourceId} - {resourceData.resourceName}");
                     ResourceManager.CreateResource(resourceData.resourceId, resourceData.resourceName);
@@ -162,7 +162,7 @@ namespace HyperRTS.Core.Editor.Resource
             // Get the selected resource data
             selectedResourceData = selectedItems.FirstOrDefault() as ResourceData;
 
-            if (selectedResourceData is null)
+            if (selectedResourceData == null)
             {
                 return;
             }
@@ -171,7 +171,7 @@ namespace HyperRTS.Core.Editor.Resource
             resourceIdField.value = selectedResourceData.resourceId;
             resourceNameField.value = selectedResourceData.resourceName;
             resourceIconField.value = selectedResourceData.resourceIcon;
-            
+
             // Update the UI buttons
             saveResourceButton.visible = true;
             removeResourceButton.visible = true;
