@@ -73,3 +73,6 @@ bridge is connected, `mcp__unity-mcp__Unity_GetConsoleLogs` surfaces compile err
 
 Selection (Physics raycast) → commands/orders → pathfinding → economy → production →
 rendering for factory entities → fog of war → factions → multiplayer (Netcode for Entities).
+
+Full phased plan (milestones, deliverables, acceptance criteria) in
+[`.claude/ROADMAP.md`](.claude/ROADMAP.md) — check phase status there before new work.
