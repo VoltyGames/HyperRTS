@@ -10,7 +10,7 @@ namespace HyperRTS.Core.Buildings
     /// progress the component is removed, marking the building complete.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(SimulationSystemGroup))]
+    [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct ConstructionSystem : ISystem
     {
         // Fraction of construction completed per second (~10 seconds to finish).

@@ -12,7 +12,7 @@ namespace HyperRTS.Core.Attack
     /// is reduced in place via a component lookup.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(SimulationSystemGroup))]
+    [UpdateInGroup(typeof(CombatSystemGroup))]
     public partial struct AttackSystem : ISystem
     {
         private ComponentLookup<HealthComponent> _healthLookup;

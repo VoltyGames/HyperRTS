@@ -30,6 +30,8 @@ Assets/Modules/
 │   ├── Health/           # HealthComponent, DeathSystem
 │   ├── Resources/        # ResourceType, Resource, ResourceManager (static registry)
 │   ├── Units/            # UnitTag, MovementSpeed, MoveDestination, MovementSystem, factory
+│   ├── Tests/            # edit-mode tests — asmdef: HyperRTS.Core.Tests
+│   ├── SystemGroups.cs   # ordered phase groups under SimulationSystemGroup
 │   └── Editor/           # editor-only tooling — asmdef: HyperRTS.Core.Editor
 └── Demo/                 # sample scene + EntitiesSubScene
 ```
@@ -41,7 +43,8 @@ Assets/Modules/
   file (see `HealthComponentAuthoring.cs`). Bakers use `GetEntity(TransformUsageFlags.Dynamic)`.
 - Component fields PascalCase; authoring MonoBehaviour fields camelCase.
 - Systems: `[BurstCompile] partial struct …System : ISystem`, auto-discovered (don't register
-  manually), `[UpdateInGroup(typeof(SimulationSystemGroup))]` + order attributes.
+  manually). Put each in a phase group from `SystemGroups.cs` via
+  `[UpdateInGroup(typeof(<Phase>SystemGroup))]` — not `SimulationSystemGroup` directly.
 - Keep components blittable (Burst-safe): unmanaged only, strings as `FixedStringNNBytes`.
 - Structural changes go through an `EntityCommandBuffer`; cross-entity access via
   `ComponentLookup<T>`; timing via `SystemAPI.Time` (never `UnityEngine.Time`).
@@ -51,15 +54,18 @@ Assets/Modules/
 - `MovementSystem` — moves entities with `MoveDestination` at `MovementSpeed`, clears order on arrival.
 - `AttackSystem` — on `AttackCooldown`, subtracts `Melee`/`RangeAttackDamage` from `AttackTarget`'s health.
 - `ConstructionSystem` — advances `ConstructionProgress` (0..1), removes it when complete.
-- `DeathSystem` (OrderLast) — destroys entities at `CurrentHealth <= 0`.
+- `DeathSystem` (`LifecycleSystemGroup`, runs last) — destroys entities at `CurrentHealth <= 0`.
 
+Update order is explicit: `SimulationSystemGroup` → Order → Movement → Combat → Production →
+Lifecycle (see `SystemGroups.cs` and [`docs/world-setup.md`](docs/world-setup.md)).
 These are minimal scaffolds; expect to extend them.
 
 ## Run / test
 
 Open in Unity 6000.5.0f1; play `Assets/Modules/Demo/Scenes/SampleScene.unity` (entities bake from
-its EntitiesSubScene). Inspect via Window ▸ Entities. No test assemblies yet. If the Unity MCP
-bridge is connected, `mcp__unity-mcp__Unity_GetConsoleLogs` surfaces compile errors.
+its EntitiesSubScene). Inspect via Window ▸ Entities. Edit-mode tests live in `HyperRTS.Core.Tests`
+— run via Window ▸ General ▸ Test Runner. If the Unity MCP bridge is connected,
+`mcp__unity-mcp__Unity_GetConsoleLogs` surfaces compile errors.
 
 ## Gotchas
 
@@ -68,6 +74,12 @@ bridge is connected, `mcp__unity-mcp__Unity_GetConsoleLogs` surfaces compile err
   SubScene to get rendered entities.
 - `ResourceManager` is a static managed registry for editor/setup — not Burst/job-safe; runtime
   resource data lives in the `Resource` component.
+
+## Docs
+
+Engine docs live in [`docs/`](docs/) (outside `Assets/`, so Unity doesn't import them). Start with
+[`docs/world-setup.md`](docs/world-setup.md) — how entities enter play and the ordered system
+pipeline. Add a doc per topic/phase as features land.
 
 ## Roadmap
 

@@ -19,7 +19,7 @@ every phase favors generic, data-driven, Burst-safe pieces over game-specific co
 
 | Phase | Theme                          | Status | Exit criteria (one line)                                             |
 | ----: | ------------------------------ | :----: | -------------------------------------------------------------------- |
-|     0 | Foundation / scaffolds         |   🟡   | Core modules + Demo scene bake and run; systems are minimal but live |
+|     0 | Foundation / scaffolds         |   ✅   | Core modules + Demo scene bake and run; systems are minimal but live |
 |     1 | Selection & input              |   ⬜   | Player can box/click-select rendered entities via Physics raycast    |
 |     2 | Commands & orders              |   ⬜   | Selected units accept move/attack/stop orders; order queue exists    |
 |     3 | Pathfinding & steering         |   ⬜   | Units route around obstacles and avoid stacking                      |
@@ -38,7 +38,7 @@ per phase.
 
 ---
 
-## Phase 0 — Foundation & scaffolds 🟡
+## Phase 0 — Foundation & scaffolds ✅
 
 **Goal:** a compiling Core asmdef with the minimal ECS building blocks and a Demo
 scene that bakes entities, so later phases have something to stand on.
@@ -56,9 +56,13 @@ scene that bakes entities, so later phases have something to stand on.
 
 **Remaining to close Phase 0**
 
-- ⬜ Establish an explicit system update order (define ordered groups instead of relying on default ordering)
-- ⬜ First test assembly (`HyperRTS.Core.Tests`) with at least one Burst-compiled system smoke test
-- ⬜ A `bootstrap`/world-setup entry point documented in the Demo so contributors know how entities enter play
+- ✅ Establish an explicit system update order — ordered phase groups in `SystemGroups.cs`
+  (`OrderSystemGroup` → `MovementSystemGroup` → `CombatSystemGroup` → `ProductionSystemGroup` →
+  `LifecycleSystemGroup`); the four systems target these instead of `SimulationSystemGroup`
+- ✅ First test assembly (`HyperRTS.Core.Tests`) with Burst-compiled system smoke tests
+  (`SimulationSystemTests`: movement + death/lifecycle ordering)
+- ✅ World-setup entry point documented in [`docs/world-setup.md`](../docs/world-setup.md) (how
+  entities enter play: default world → SubScene baking → ordered groups → factory/test path)
 - ✅ This roadmap referenced from `CLAUDE.md`
 
 **Acceptance:** project opens in 6000.5.0f1, Demo scene plays, entities visible in

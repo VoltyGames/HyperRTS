@@ -13,7 +13,7 @@ namespace HyperRTS.Core.Units
     /// stops and the move order is cleared.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(SimulationSystemGroup))]
+    [UpdateInGroup(typeof(MovementSystemGroup))]
     public partial struct MovementSystem : ISystem
     {
         private const float ArriveThreshold = 0.05f;

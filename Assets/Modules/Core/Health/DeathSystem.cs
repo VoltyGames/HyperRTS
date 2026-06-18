@@ -10,7 +10,7 @@ namespace HyperRTS.Core.Health
     /// applied earlier in the frame is accounted for before entities are removed.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(SimulationSystemGroup), OrderLast = true)]
+    [UpdateInGroup(typeof(LifecycleSystemGroup))]
     public partial struct DeathSystem : ISystem
     {
         [BurstCompile]
