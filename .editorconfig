@@ -1,0 +1,66 @@
+# EditorConfig — https://editorconfig.org
+# Top-most config; stop walking up the tree here.
+root = true
+
+##########################################
+# All files
+##########################################
+[*]
+indent_style = space
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+##########################################
+# C# — matches Unity-generated files (UTF-8 BOM + CRLF), 4-space, Allman braces
+##########################################
+[*.cs]
+indent_size = 4
+charset = utf-8-bom
+end_of_line = crlf
+
+# using directives
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# 'this.' qualification is omitted in this codebase
+dotnet_style_qualification_for_field = false
+dotnet_style_qualification_for_property = false
+dotnet_style_qualification_for_method = false
+dotnet_style_qualification_for_event = false
+
+# prefer 'var' (the codebase uses it everywhere)
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+
+# Allman braces, always braced blocks
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_prefer_braces = true:suggestion
+
+# block-scoped namespaces (e.g. `namespace HyperRTS.Core.Units { ... }`)
+csharp_style_namespace_declarations = block_scoped:suggestion
+
+# explicit accessibility modifiers on members
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
+
+##########################################
+# JSON & Unity assembly definitions — two-space
+##########################################
+[*.{json,jsonc,json5,asmdef,asmref}]
+indent_size = 2
+charset = utf-8
+
+##########################################
+# Unity YAML assets — two-space (do not reformat structurally)
+##########################################
+[*.{yml,yaml,asset,meta,prefab,unity}]
+indent_size = 2
+
+##########################################
+# Markdown — keep trailing spaces (used for hard line breaks)
+##########################################
+[*.md]
+trim_trailing_whitespace = false

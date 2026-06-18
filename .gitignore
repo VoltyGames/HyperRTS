@@ -5,6 +5,9 @@
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
+# Nested Mono/MSBuild caches that ship inside imported packages (e.g. ThirdParty
+# RTS Engine's obj/xdoc folders). The rule above only anchors obj/ at the repo root.
+**/[Oo]bj/
 /[Bb]uild/
 /[Bb]uilds/
 /[Ll]ogs/

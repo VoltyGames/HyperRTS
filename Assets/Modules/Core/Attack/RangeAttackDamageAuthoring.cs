@@ -18,7 +18,7 @@ namespace HyperRTS.Core.Attack
     }
     
     /// <summary>
-    /// Component for melee attack damage.
+    /// Component for ranged attack damage.
     /// </summary>
     public struct RangeAttackDamage : IComponentData
     {

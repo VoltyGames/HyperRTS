@@ -30,25 +30,17 @@ namespace HyperRTS.Core.Resources
         }
 
         /// <summary>
-        /// Update or create a resource type.
+        /// Update or create a resource type. If the id already exists its display
+        /// name is overwritten; otherwise a new entry is registered.
         /// </summary>
         /// <param name="id">Resource unique ID to find from the dictionary</param>
         /// <param name="displayName">Resource display name to update</param>
         /// <returns>The updated or created resource type</returns>
         public static ResourceType UpdateOrCreateResource(FixedString64Bytes id, FixedString64Bytes displayName)
         {
-            var existingResource = GetResourceType(id);
-            
-            if (existingResource.Id == default)
-            {
-                existingResource.DisplayName = displayName;
-            }
-            else
-            {
-                existingResource = CreateResource(id, displayName);
-            }
-            
-            return existingResource;
+            var resourceType = new ResourceType { Id = id, DisplayName = displayName };
+            ResourceTypes[id] = resourceType;
+            return resourceType;
         }
         
         public static void RemoveResource(FixedString64Bytes id)
