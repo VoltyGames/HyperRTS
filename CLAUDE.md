@@ -87,4 +87,4 @@ Selection (Physics raycast) → commands/orders → pathfinding → economy → 
 rendering for factory entities → fog of war → factions → multiplayer (Netcode for Entities).
 
 Full phased plan (milestones, deliverables, acceptance criteria) in
-[`.claude/ROADMAP.md`](.claude/ROADMAP.md) — check phase status there before new work.
+[`docs/roadmap.md`](docs/roadmap.md) — check phase status there before new work.
