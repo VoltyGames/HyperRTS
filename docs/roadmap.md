@@ -20,7 +20,7 @@ every phase favors generic, data-driven, Burst-safe pieces over game-specific co
 | Phase | Theme                          | Status | Exit criteria (one line)                                             |
 | ----: | ------------------------------ | :----: | -------------------------------------------------------------------- |
 |     0 | Foundation / scaffolds         |   ✅   | Core modules + Demo scene bake and run; systems are minimal but live |
-|     1 | Selection & input              |   ⬜   | Player can box/click-select rendered entities via Physics raycast    |
+|     1 | Selection & input              |   🟡   | Player can box/click-select rendered entities via Physics raycast    |
 |     2 | Commands & orders              |   ⬜   | Selected units accept move/attack/stop orders; order queue exists    |
 |     3 | Pathfinding & steering         |   ⬜   | Units route around obstacles and avoid stacking                      |
 |     4 | Economy & resources            |   ⬜   | Harvest → deposit → stockpile loop runs end-to-end                   |
@@ -70,24 +70,24 @@ scene that bakes entities, so later phases have something to stand on.
 
 ---
 
-## Phase 1 — Selection & input ⬜
+## Phase 1 — Selection & input 🟡
 
 **Goal:** turn rendered entities into selectable game objects.
 
 **Deliverables**
 
-- `Selection` module: `Selectable` tag, `Selected` state component, `SelectionRingColor`/visual hook
-- Screen-to-world **Physics raycast** for single click-select
-- Drag-box (marquee) multi-select projecting the screen rect into world space
-- Modifier rules: additive (Shift), subtract (Ctrl), double-click "select all of type on screen"
-- Input bound via the new Input System (an `InputActions` asset, no legacy `UnityEngine.Input`)
-- Selection feedback (highlight/ring) — minimal placeholder until Phase 6 rendering
+- ✅ `Selection` module: `Selectable`/`Selected` (enableable)/`SelectableType`/`SelectionHighlightColors`
+- ✅ Unity Physics raycast for click-select; drag-box for multi-select
+- ✅ Modifiers: Shift add, Ctrl subtract, double-click select-all-of-type
+- ✅ Input via a dedicated `InputActions` asset (`RTSInputActions`) — no legacy `UnityEngine.Input`
+- ✅ Placeholder highlight (`URPMaterialPropertyBaseColor` tint) + UI Toolkit marquee
+- ⬜ Scene wiring: attach `SelectableAuthoring` to the Demo Unit; add `SelectionDragBoxUI` to the scene
+- ⬜ Verify: no console errors, tests green, Play-mode picking works
 
-**Dependencies:** Unity Physics colliders on entities; benefits from Phase 6 but can
-ship with primitive-rendered SubScene prefabs first.
+**Dependencies:** Unity Physics colliders on entities (the Demo Unit's `CapsuleCollider` bakes into one).
 
-**Acceptance:** click and box-select highlight the right entities; selection set is an
-ECS-queryable component other systems can read.
+**Acceptance:** click and box-select highlight the right entities; the selection set is ECS-queryable.
+See [`docs/selection.md`](selection.md).
 
 ---
 
@@ -310,4 +310,5 @@ Capture the choice and its rationale here when made, so future work doesn't reli
 - [ ] **Networking model** (Phase 10): deterministic lockstep vs. Netcode replication
 - [ ] **Rendering archetype source** (Phase 6): entity-prefab registry vs. baked-blob lookup
 - [ ] **FactionId rollout timing** (Phase 9): introduce early vs. retrofit
-- [ ] **Selection visuals** (Phase 1): decal/ring vs. material swap vs. overlay pass
+- [x] **Selection visuals** (Phase 1): per-entity `URPMaterialPropertyBaseColor` swap; ring/decal deferred to Phase 6.
+- [x] **Selection input** (Phase 1): dedicated `InputActions` asset (`RTSInputActions`) over direct device polling.

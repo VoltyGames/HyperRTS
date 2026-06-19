@@ -1,4 +1,5 @@
 using HyperRTS.Core.Health;
+using HyperRTS.Core.Selection;
 using Unity.Entities;
 using Unity.Transforms;
 
@@ -13,6 +14,7 @@ namespace HyperRTS.Core.Buildings
             entityManager.AddComponentData(building, LocalTransform.Identity);
             entityManager.AddComponentData(building, new HealthComponent { CurrentHealth = 500, MaxHealth = 500 });
             entityManager.AddComponentData(building, new ConstructionProgress { Value = 0 });
+            SelectionComponents.AddTo(entityManager, building, SelectableKind.Building);
             return building;
         }
     }
