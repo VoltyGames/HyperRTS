@@ -8,8 +8,7 @@
       "Bash(git restore:*)",
       "Bash(git stash:*)",
       "Bash(find:*)",
-      "mcp__unity-mcp__Unity_GetConsoleLogs",
-      "mcp__unity-mcp__Unity_Grep"
+      "mcp__UnityMCP__*"
     ],
     "deny": [
       "Read(./**/*.env)",
