@@ -4,8 +4,13 @@ using UnityEngine;
 
 namespace HyperRTS.Core.Units
 {
+    [AddComponentMenu(HyperRTSMenu.Units + "Move Destination")]
+    [Icon(HyperRTSIcons.Units)]
+    [HelpURL(HyperRTSDocs.WorldSetup)]
+    [DisallowMultipleComponent]
     public class MoveDestinationAuthoring : MonoBehaviour
     {
+        [Tooltip("World-space position to move toward.")]
         public Vector3 destination;
 
         public class Baker : Baker<MoveDestinationAuthoring>

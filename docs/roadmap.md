@@ -20,7 +20,7 @@ every phase favors generic, data-driven, Burst-safe pieces over game-specific co
 | Phase | Theme                          | Status | Exit criteria (one line)                                             |
 | ----: | ------------------------------ | :----: | -------------------------------------------------------------------- |
 |     0 | Foundation / scaffolds         |   ✅   | Core modules + Demo scene bake and run; systems are minimal but live |
-|     1 | Selection & input              |   🟡   | Player can box/click-select rendered entities via Physics raycast    |
+|     1 | Selection & input              |   ✅   | Player can box/click-select rendered entities via Physics raycast    |
 |     2 | Commands & orders              |   ⬜   | Selected units accept move/attack/stop orders; order queue exists    |
 |     3 | Pathfinding & steering         |   ⬜   | Units route around obstacles and avoid stacking                      |
 |     4 | Economy & resources            |   ⬜   | Harvest → deposit → stockpile loop runs end-to-end                   |
@@ -81,8 +81,8 @@ scene that bakes entities, so later phases have something to stand on.
 - ✅ Modifiers: Shift add, Ctrl subtract, double-click select-all-of-type
 - ✅ Input via a dedicated `InputActions` asset (`RTSInputActions`) — no legacy `UnityEngine.Input`
 - ✅ Placeholder highlight (`URPMaterialPropertyBaseColor` tint) + UI Toolkit marquee
-- ⬜ Scene wiring: attach `SelectableAuthoring` to the Demo Unit; add `SelectionDragBoxUI` to the scene
-- ⬜ Verify: no console errors, tests green, Play-mode picking works
+- ✅ Scene wiring: attach `SelectableAuthoring` to the Demo Unit; add `SelectionDragBoxUI` to the scene
+- ✅ Verify: no console errors, tests green, Play-mode picking works
 
 **Dependencies:** Unity Physics colliders on entities (the Demo Unit's `CapsuleCollider` bakes into one).
 

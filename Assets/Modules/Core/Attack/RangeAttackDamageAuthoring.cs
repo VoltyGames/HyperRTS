@@ -3,9 +3,14 @@ using UnityEngine;
 
 namespace HyperRTS.Core.Attack
 {
+    [AddComponentMenu(HyperRTSMenu.Attack + "Ranged Attack Damage")]
+    [Icon(HyperRTSIcons.Attack)]
+    [HelpURL(HyperRTSDocs.WorldSetup)]
+    [DisallowMultipleComponent]
     public class RangeAttackDamageAuthoring : MonoBehaviour
     {
-        public int damage;
+        [Tooltip("Damage dealt per ranged attack.")]
+        public int damage = 10;
 
         public class Baker : Baker<RangeAttackDamageAuthoring>
         {

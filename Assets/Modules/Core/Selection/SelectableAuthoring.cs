@@ -5,10 +5,20 @@ using UnityEngine;
 namespace HyperRTS.Core.Selection
 {
     /// <summary>Bakes a selectable entity: <see cref="Selectable"/>, disabled <see cref="Selected"/>, type, highlight colours and a base-colour override.</summary>
+    [AddComponentMenu(HyperRTSMenu.Selection + "Selectable")]
+    [Icon(HyperRTSIcons.Selection)]
+    [HelpURL(HyperRTSDocs.WorldSetup)]
+    [DisallowMultipleComponent]
     public class SelectableAuthoring : MonoBehaviour
     {
+        [Tooltip("Whether this entity is a unit or a building.")]
         public SelectableKind kind = SelectableKind.Unit;
+
+        [Header("Highlight")]
+        [Tooltip("Tint applied while selected.")]
         public Color selectedColor = SelectionComponents.DefaultSelectedColor;
+
+        [Tooltip("Base tint while not selected.")]
         public Color baseColor = SelectionComponents.DefaultDeselectedColor;
 
         public class Baker : Baker<SelectableAuthoring>

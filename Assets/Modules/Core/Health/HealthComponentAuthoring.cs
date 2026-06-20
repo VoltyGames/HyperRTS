@@ -3,10 +3,17 @@ using UnityEngine;
 
 namespace HyperRTS.Core.Health
 {
+    [AddComponentMenu(HyperRTSMenu.Health + "Health")]
+    [Icon(HyperRTSIcons.Health)]
+    [HelpURL(HyperRTSDocs.WorldSetup)]
+    [DisallowMultipleComponent]
     public class HealthComponentAuthoring : MonoBehaviour
     {
-        public int currentHealth;
-        public int maxHealth;
+        [Tooltip("Starting health.")]
+        public int currentHealth = 100;
+
+        [Tooltip("Maximum health capacity.")]
+        public int maxHealth = 100;
 
         public class Baker : Baker<HealthComponentAuthoring>
         {

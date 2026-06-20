@@ -21,7 +21,7 @@ data-driven pieces over game-specific code.
 First-party code lives in `Assets/Modules/`. New modules go in sibling folders under
 `Modules/` with their own asmdef referencing `HyperRTS.Core`.
 
-```
+```text
 Assets/Modules/
 ├── Core/                 # the engine — asmdef: HyperRTS.Core
 │   ├── Attack/           # AttackTarget, Melee/RangeAttackDamage, AttackCooldown, AttackSystem
@@ -42,6 +42,10 @@ Assets/Modules/
 - Authoring class + nested `Baker` + the `IComponentData` struct share one `*Authoring.cs`
   file (see `HealthComponentAuthoring.cs`). Bakers use `GetEntity(TransformUsageFlags.Dynamic)`.
 - Component fields PascalCase; authoring MonoBehaviour fields camelCase.
+- Authoring MonoBehaviours carry editor metadata: `[AddComponentMenu(HyperRTSMenu.<Module> + "Name")]`,
+  `[Icon(HyperRTSIcons.<Module>)]`, `[HelpURL(...)]`, `[DisallowMultipleComponent]`, and `[Tooltip]` on each
+  serialized field (group many fields with `[Header]`). Menu/icon/doc paths come from `HyperRTSMenu.cs` —
+  the single source of truth. See [`docs/editor-ux.md`](docs/editor-ux.md).
 - Systems: `[BurstCompile] partial struct …System : ISystem`, auto-discovered (don't register
   manually). Put each in a phase group from `SystemGroups.cs` via
   `[UpdateInGroup(typeof(<Phase>SystemGroup))]` — not `SimulationSystemGroup` directly.
@@ -64,8 +68,7 @@ These are minimal scaffolds; expect to extend them.
 
 Open in Unity 6000.5.0f1; play `Assets/Modules/Demo/Scenes/SampleScene.unity` (entities bake from
 its EntitiesSubScene). Inspect via Window ▸ Entities. Edit-mode tests live in `HyperRTS.Core.Tests`
-— run via Window ▸ General ▸ Test Runner. If the Unity MCP bridge is connected,
-`mcp__unity-mcp__Unity_GetConsoleLogs` surfaces compile errors.
+— run via Window ▸ General ▸ Test Runner. If the Unity MCP bridge is connected, see console errors via MCP.
 
 ## Gotchas
 
@@ -77,9 +80,9 @@ its EntitiesSubScene). Inspect via Window ▸ Entities. Edit-mode tests live in 
 
 ## Docs
 
-Engine docs live in [`docs/`](docs/) (outside `Assets/`, so Unity doesn't import them). Start with
-[`docs/world-setup.md`](docs/world-setup.md) — how entities enter play and the ordered system
-pipeline. Add a doc per topic/phase as features land.
+- [`docs/world-setup.md`](docs/world-setup.md) — how entities enter play and the ordered system
+pipeline. Editor/authoring conventions and helper tools are in
+- [`docs/editor-ux.md`](docs/editor-ux.md). Add a doc per topic/phase as features land.
 
 ## Roadmap
 

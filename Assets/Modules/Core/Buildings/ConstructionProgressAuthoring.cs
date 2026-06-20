@@ -3,8 +3,14 @@ using UnityEngine;
 
 namespace HyperRTS.Core.Buildings
 {
+    [AddComponentMenu(HyperRTSMenu.Buildings + "Construction Progress")]
+    [Icon(HyperRTSIcons.Buildings)]
+    [HelpURL(HyperRTSDocs.WorldSetup)]
+    [DisallowMultipleComponent]
     public class ConstructionProgressAuthoring : MonoBehaviour
     {
+        [Tooltip("Initial construction progress: 0 = just started, 1 = complete.")]
+        [Range(0f, 1f)]
         public float progress;
 
         public class Baker : Baker<ConstructionProgressAuthoring>

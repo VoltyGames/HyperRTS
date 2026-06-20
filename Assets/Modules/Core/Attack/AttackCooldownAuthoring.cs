@@ -3,6 +3,10 @@ using UnityEngine;
 
 namespace HyperRTS.Core.Attack
 {
+    [AddComponentMenu(HyperRTSMenu.Attack + "Attack Cooldown")]
+    [Icon(HyperRTSIcons.Attack)]
+    [HelpURL(HyperRTSDocs.WorldSetup)]
+    [DisallowMultipleComponent]
     public class AttackCooldownAuthoring : MonoBehaviour
     {
         [Tooltip("Seconds between attacks.")]

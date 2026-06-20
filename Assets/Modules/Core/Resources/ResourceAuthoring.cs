@@ -4,9 +4,16 @@ using UnityEngine.Serialization;
 
 namespace HyperRTS.Core.Resources
 {
+    [AddComponentMenu(HyperRTSMenu.Resources + "Resource")]
+    [Icon(HyperRTSIcons.Resources)]
+    [HelpURL(HyperRTSDocs.WorldSetup)]
+    [DisallowMultipleComponent]
     public class ResourceAuthoring : MonoBehaviour
     {
+        [Tooltip("Type of resource this node yields.")]
         public ResourceType resourceType;
+
+        [Tooltip("Amount of resource available.")]
         public int amount;
 
         public class Baker : Baker<ResourceAuthoring>

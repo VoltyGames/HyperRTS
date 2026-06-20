@@ -3,9 +3,14 @@ using UnityEngine;
 
 namespace HyperRTS.Core.Units
 {
+    [AddComponentMenu(HyperRTSMenu.Units + "Movement Speed")]
+    [Icon(HyperRTSIcons.Units)]
+    [HelpURL(HyperRTSDocs.WorldSetup)]
+    [DisallowMultipleComponent]
     public class MovementSpeedAuthoring : MonoBehaviour
     {
-        public float movementSpeed;
+        [Tooltip("Movement speed in units per second.")]
+        public float movementSpeed = 5f;
 
         public class Baker : Baker<MovementSpeedAuthoring>
         {

@@ -3,9 +3,14 @@ using UnityEngine;
 
 namespace HyperRTS.Core.Attack
 {
+    [AddComponentMenu(HyperRTSMenu.Attack + "Melee Attack Damage")]
+    [Icon(HyperRTSIcons.Attack)]
+    [HelpURL(HyperRTSDocs.WorldSetup)]
+    [DisallowMultipleComponent]
     public class MeleeAttackDamageAuthoring : MonoBehaviour
     {
-        public int damage;
+        [Tooltip("Damage dealt per melee attack.")]
+        public int damage = 10;
 
         public class Baker : Baker<MeleeAttackDamageAuthoring>
         {

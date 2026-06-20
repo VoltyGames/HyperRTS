@@ -3,14 +3,35 @@ using UnityEngine.InputSystem;
 
 namespace HyperRTS.Core.Cameras
 {
+    [AddComponentMenu(HyperRTSMenu.Cameras + "Camera Controller")]
+    [Icon(HyperRTSIcons.Cameras)]
+    [HelpURL(HyperRTSDocs.Roadmap)]
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(Camera))]
     public class CameraController : MonoBehaviour
     {
+        [Header("Movement")]
+        [Tooltip("Pan speed (WASD) in units per second.")]
         public float moveSpeed = 10f;
-        public float zoomSpeed = 500f;
+
+        [Tooltip("Rotation speed (Alt + mouse) in degrees per second.")]
         public float rotationSpeed = 100f;
+
+        [Header("Zoom")]
+        [Tooltip("Zoom speed (mouse scroll).")]
+        public float zoomSpeed = 500f;
+
+        [Tooltip("Closest zoom (minimum camera height).")]
         public float minZoom = 10f;
+
+        [Tooltip("Farthest zoom (maximum camera height).")]
         public float maxZoom = 50f;
+
+        [Header("Default View")]
+        [Tooltip("Position the camera resets to (Home key).")]
         public Vector3 defaultPosition = new(0, 35, -50);
+
+        [Tooltip("Rotation the camera resets to (Home key).")]
         public Quaternion defaultRotation = Quaternion.Euler(30, 0, 0);
 
         // Map Input System device values back to the legacy axis ranges to keep the original feel.
@@ -19,9 +40,20 @@ namespace HyperRTS.Core.Cameras
 
         private void Start()
         {
-            // Reset camera to default specified position
-            transform.position = defaultPosition;
-            transform.rotation = defaultRotation;
+            ResetViewToDefault();
+        }
+
+        [ContextMenu("Capture Current Transform As Default")]
+        private void CaptureCurrentTransformAsDefault()
+        {
+            defaultPosition = transform.position;
+            defaultRotation = transform.rotation;
+        }
+
+        [ContextMenu("Reset View To Default")]
+        private void ResetViewToDefault()
+        {
+            transform.SetPositionAndRotation(defaultPosition, defaultRotation);
         }
 
         private void Update()
@@ -62,7 +94,7 @@ namespace HyperRTS.Core.Cameras
             }
 
             transform.position += movement * (moveSpeed * Time.deltaTime);
-            
+
             // Maintain the original Y position (prevent falling to the ground)
             transform.position = new Vector3(transform.position.x, position.y, transform.position.z);
         }
@@ -114,8 +146,7 @@ namespace HyperRTS.Core.Cameras
             // Reset camera position and rotation
             if (keyboard.homeKey.isPressed)
             {
-                transform.position = defaultPosition;
-                transform.rotation = defaultRotation;
+                ResetViewToDefault();
             }
         }
     }
