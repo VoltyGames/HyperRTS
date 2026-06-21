@@ -6,29 +6,27 @@ per-module icons, `[HelpURL]`, one-click Selection UI setup, and the UIDocument 
 PanelRenderer migration). Those are done; the items below are the natural next steps and
 are intentionally separate follow-ups. Pick any of these up in a new session.
 
+## Done
+
+- **Prefab library.** Committed `Unit`/`Building`/`RTSWorld` (camera + selection-UI rig) and `SelectionUI`
+  prefabs in `Assets/Modules/Prefabs/`; drag a unit/building into a SubScene to bake a rendered, selectable entity.
+- **One-step scene setup.** `GameObject ▸ HyperRTS ▸ RTS World` drops the camera + selection-UI rig prefab into
+  the scene (and `▸ Selection UI` for just the UI). Editor menus renamed `RTS ▸ … → HyperRTS ▸ …`.
+- **Resource Editor polish.** Added missing-icon validation and fixed the `ScritableObjects → ScriptableObjects`
+  folder/path typo (duplicate-ID validation already existed).
+- **Custom inspector.** `SelectableAuthoringEditor` previews the selected/base highlight colours live.
+- **Asset restructure.** `Demo/` moved out of the engine to `Assets/Demo/`; `Assets/Modules/` is now engine-only.
+
 ## Candidate follow-ups
-
-- **Prefab / preset library.** Ship ready-made Unit/Building prefabs (or Unity
-  `Preset` assets) so a game-builder drags one in instead of hand-assembling authoring
-  components. Pairs well with the rendering item below.
-
-- **One-call runtime setup.** A `RTSWorld.Bootstrap()` (or similar) helper that wires the
-  selection input + UI in code, mirroring the `SelectionComponents.AddTo()` pattern the
-  factories already share (`Units/UnitEntityFactory.cs`, `Buildings/BuildingEntityFactory.cs`).
-  Goal: minimal boilerplate to stand up a playable scene.
 
 - **Rendering for factory entities (roadmap Phase 6).** Factory-spawned entities are
   currently data-only (no mesh) until a SubScene prefab is baked — the biggest
   "it doesn't work out of the box" surprise for new users. Give factories a way to attach
-  a render mesh so spawned entities are visible without manual baking.
+  a render mesh so spawned entities are visible without manual baking. (The prefab library above
+  solves this for the *authored* path, not the runtime-factory path.)
 
-- **Resource Editor polish.** Add duplicate-ID / missing-icon validation to the Resource
-  Editor window (`Assets/Modules/Core/Editor/Resource/ResourceEditor.cs`) and fix the
-  `Assets/ScritableObjects/Resources` path typo (`ScritableObjects` → `ScriptableObjects`).
-
-- **Custom inspectors / property drawers.** Now that the attribute foundation exists, add
-  targeted drawers — e.g. a `SelectableKind` drawer, or a `SelectableAuthoring` inspector
-  that previews the selected/base highlight colors live.
+- **Property drawers.** A `SelectableKind` drawer, or other targeted `[CustomPropertyDrawer]`s now that
+  the attribute foundation and the first custom inspector exist.
 
 ## Pointer
 

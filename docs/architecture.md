@@ -12,7 +12,7 @@ phase 10) and the edit-mode tests both need to run gameplay with **no rendering,
 | `HyperRTS.Simulation` | `Simulation/` | Components, systems, factories, authoring + bakers, `ResourceManager`. The headless gameplay layer. | Core + Entities(.Hybrid), Transforms, Mathematics, Collections, Burst, **Physics** |
 | `HyperRTS.Presentation` | `Presentation/` | Rendering (URP base-colour) and UI Toolkit. | Core, Simulation, Entities, **Entities.Graphics** |
 | `HyperRTS.Input` | `Input/` | Camera, the input→ECS bridge, generated input actions. | Core, Simulation, Entities, Mathematics, Collections, **InputSystem** |
-| `HyperRTS.Editor` | `Editor/` | Editor-only tooling (icon generator, resource editor, UI setup). | Core, Simulation, Presentation, Collections — `Editor` platform |
+| `HyperRTS.Editor` | `Editor/` | Editor-only tooling (icon generator, resource editor, custom inspectors, the `GameObject ▸ HyperRTS` rig-prefab menus). | Core, Simulation, Presentation, Collections — `Editor` platform |
 | `HyperRTS.Simulation.Tests` | `Simulation/Tests/` | Edit-mode tests. | Core, Simulation — `Editor` platform |
 
 ```

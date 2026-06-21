@@ -40,18 +40,32 @@ public class HealthComponentAuthoring : MonoBehaviour
   (`HyperRTSMenu`, `HyperRTSIcons`, `HyperRTSDocs`). Const-string concatenation keeps categories spelled
   identically everywhere (compile-time consts are required for the attributes, so they can't be reflection-
   derived). A new module adds one line to each of `HyperRTSMenu` / `HyperRTSIcons`, plus an accent colour in
-  the icon generator. Never hardcode a menu/icon path on a component — reference these constants.
+  the icon generator. Never hardcode a menu/icon path on a component - reference these constants.
 
 ## Tools
 
-- **`RTS ▸ Tools ▸ Generate Component Icons`** — regenerates the per-module icons under
+- **`HyperRTS ▸ Tools ▸ Generate Component Icons`** - regenerates the per-module icons under
   `Assets/Modules/Editor/Icons/` (one accent-coloured rounded square per module). Run it once after
   cloning, or whenever you add a module / change an accent colour
   ([`ComponentIconGenerator.cs`](../Assets/Modules/Editor/Icons/ComponentIconGenerator.cs)).
-- **`GameObject ▸ RTS ▸ Selection UI`** — creates a pre-wired `Selection UI` GameObject with a
-  `PanelRenderer` (a `PanelSettings` is auto-assigned if one exists in the project) and `SelectionDragBoxUI`,
-  so the drag-select marquee works without manual setup
-  ([`SelectionUiSetup.cs`](../Assets/Modules/Editor/Selection/SelectionUiSetup.cs)).
+- **`GameObject ▸ HyperRTS ▸ RTS World`** / **`Selection UI`** - drop the camera + UI rig, or just the
+  selection UI, into the scene ([`HyperRtsObjectMenu.cs`](../Assets/Modules/Editor/HyperRtsObjectMenu.cs)).
+
+## Prefab library
+
+Engine-shipped prefabs in [`Assets/Modules/Prefabs/`](../Assets/Modules/Prefabs/) - drag one in instead of
+hand-assembling authoring. Prefabs **bake**, so a dragged-in unit/building renders and is selectable with no
+manual mesh wiring.
+
+- **`Unit.prefab`** / **`Building.prefab`** - mesh + collider + authoring mirroring the factories.
+- **`RTSWorld.prefab`** - the playable rig: a `MainCamera` (+ `CameraController`) and a nested `SelectionUI`.
+  Drop into an empty scene via `GameObject ▸ HyperRTS ▸ RTS World` (it ships its own Main Camera).
+- **`UI/SelectionUI.prefab`** (+ engine `PanelSettings`) - the selection-UI rig.
+
+## Custom inspectors
+
+[`SelectableAuthoringEditor`](../Assets/Modules/Editor/Selection/SelectableAuthoringEditor.cs) adds a live
+Selected/Base colour-swatch preview to `SelectableAuthoring`.
 
 ## UI Toolkit: PanelRenderer
 
