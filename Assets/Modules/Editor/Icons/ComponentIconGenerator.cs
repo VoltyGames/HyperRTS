@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Icons
             (HyperRTSIcons.Units, new Color(0.25f, 0.50f, 0.90f)),
         };
 
-        [MenuItem("RTS/Tools/Generate Component Icons")]
+        [MenuItem("HyperRTS/Tools/Generate Component Icons")]
         public static void Generate()
         {
             foreach (var (iconPath, color) in Modules)
