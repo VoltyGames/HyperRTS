@@ -90,5 +90,15 @@
   "[yaml]": {
     "editor.formatOnSave": false,
     "files.trimTrailingWhitespace": false
-  }
+  },
+  "VSCodeCounter.useGitignore": true,
+  "VSCodeCounter.exclude": [
+    "**/ProjectSettings/**",
+    "**/Assets/ThirdParty/**",
+    "**/*.meta",
+    "**/*.asset",
+    "**/*.prefab",
+    "**/*.unity",
+    "**/*.mat"
+  ]
 }
