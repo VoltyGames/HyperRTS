@@ -1,0 +1,23 @@
+{
+  "name": "HyperRTS.Simulation",
+  "rootNamespace": "HyperRTS.Simulation",
+  "references": [
+    "HyperRTS.Core",
+    "Unity.Entities",
+    "Unity.Entities.Hybrid",
+    "Unity.Transforms",
+    "Unity.Mathematics",
+    "Unity.Collections",
+    "Unity.Burst",
+    "Unity.Physics"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

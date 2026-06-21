@@ -5,6 +5,12 @@ How the ECS world is created, how entities get into it, and the order systems ru
 There is **no custom bootstrapper** — HyperRTS uses Unity's standard DOTS pipeline plus the
 ordered system groups below.
 
+Systems live in **layered assemblies** (`Simulation` for headless gameplay; `Presentation`/`Input`
+for client-only rendering, UI, and input) — see [`architecture.md`](architecture.md). System
+discovery is global across all of them, so the phase groups below nest systems regardless of which
+assembly defines them. A headless server simply omits the `Presentation`/`Input` assemblies, so
+those systems never load.
+
 ## The default world
 
 On entering Play mode, Unity calls `DefaultWorldInitialization.Initialize`, which creates the
@@ -19,7 +25,7 @@ groups come alive this way — no manual registration.
 
 [`SampleScene`](../Assets/Modules/Demo/Scenes/SampleScene.unity) holds an auto-loaded `SubScene`.
 On load, Unity **bakes** its GameObjects into entities via each authoring MonoBehaviour's nested
-`Baker` (see [`HealthComponentAuthoring.cs`](../Assets/Modules/Core/Health/HealthComponentAuthoring.cs)).
+`Baker` (see [`HealthComponentAuthoring.cs`](../Assets/Modules/Simulation/Health/HealthComponentAuthoring.cs)).
 This is the way to get **rendered** entities into play, since a baked prefab carries a mesh.
 
 The SubScene's `Unit` GameObject currently has no ECS authoring components, so it bakes to an
@@ -55,11 +61,11 @@ var unit = new UnitEntityFactory().CreateEntity(entityManager);
 entityManager.AddComponentData(unit, new MoveDestination { Value = new float3(100, 0, 0) });
 ```
 
-[`UnitEntityFactory`](../Assets/Modules/Core/Units/UnitEntityFactory.cs) and
-[`BuildingEntityFactory`](../Assets/Modules/Core/Buildings/BuildingEntityFactory.cs) build the
+[`UnitEntityFactory`](../Assets/Modules/Simulation/Units/UnitEntityFactory.cs) and
+[`BuildingEntityFactory`](../Assets/Modules/Simulation/Buildings/BuildingEntityFactory.cs) build the
 core entities. Factory entities have data but **no mesh** — they show in **Window ▸ Entities** but
 not the Game view until rendering lands (roadmap phase 6).
-[`SimulationSystemTests`](../Assets/Modules/Core/Tests/SimulationSystemTests.cs) uses them.
+[`SimulationSystemTests`](../Assets/Modules/Simulation/Tests/SimulationSystemTests.cs) uses them.
 
 ## Don't auto-spawn on startup
 

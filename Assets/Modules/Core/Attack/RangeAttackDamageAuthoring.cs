@@ -1,7 +1,8 @@
-﻿using Unity.Entities;
+﻿using HyperRTS.Core;
+using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Core.Attack
+namespace HyperRTS.Simulation.Attack
 {
     [AddComponentMenu(HyperRTSMenu.Attack + "Ranged Attack Damage")]
     [Icon(HyperRTSIcons.Attack)]
@@ -21,7 +22,7 @@ namespace HyperRTS.Core.Attack
             }
         }
     }
-    
+
     /// <summary>
     /// Component for ranged attack damage.
     /// </summary>

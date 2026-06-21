@@ -18,29 +18,32 @@ data-driven pieces over game-specific code.
 
 ## Layout
 
-First-party code lives in `Assets/Modules/`. New modules go in sibling folders under
-`Modules/` with their own asmdef referencing `HyperRTS.Core`.
+First-party code lives in `Assets/Modules/`, split into **layered assemblies** (not per-module) so
+the simulation can run headless. Dependency direction: `Core ← Simulation ← {Presentation, Input}`,
+with Editor/Tests on top. Details in [`docs/architecture.md`](docs/architecture.md).
 
 ```text
 Assets/Modules/
-├── Core/                 # the engine — asmdef: HyperRTS.Core
-│   ├── Attack/           # AttackTarget, Melee/RangeAttackDamage, AttackCooldown, AttackSystem
-│   ├── Buildings/        # BuildingTag, ConstructionProgress, ConstructionSystem, factory
-│   ├── Cameras/          # CameraController (MonoBehaviour: pan/zoom/rotate)
-│   ├── Health/           # HealthComponent, DeathSystem
-│   ├── Resources/        # ResourceType, Resource, ResourceManager (static registry)
-│   ├── Units/            # UnitTag, MovementSpeed, MoveDestination, MovementSystem, factory
-│   ├── Tests/            # edit-mode tests — asmdef: HyperRTS.Core.Tests
-│   ├── SystemGroups.cs   # ordered phase groups under SimulationSystemGroup
-│   └── Editor/           # editor-only tooling — asmdef: HyperRTS.Core.Editor
-└── Demo/                 # sample scene + EntitiesSubScene
+├── Core/          # HyperRTS.Core — contracts: SystemGroups, IEntityFactory, HyperRTSMenu
+├── Simulation/    # HyperRTS.Simulation — components, systems, factories, authoring; modules:
+│                  #   Attack/ Buildings/ Health/ Resources/ Units/ Selection/ Tests/
+├── Presentation/  # HyperRTS.Presentation — rendering (URP) + UI
+├── Input/         # HyperRTS.Input — CameraController, input→ECS bridge, RTSInputActions
+├── Editor/        # HyperRTS.Editor — editor-only tooling
+└── Demo/          # sample scene + EntitiesSubScene (no asmdef)
 ```
+
+**Invariant:** `HyperRTS.Simulation` must never reference Graphics, InputSystem, or UIElements.
+Cross-boundary data (e.g. `SelectionHighlightColors`, `SelectionDragState`) lives in Simulation;
+only the render override / UI / input bridge sit above it.
 
 ## Conventions
 
-- Namespaces mirror folders: `HyperRTS.Core.<Module>`.
+- Namespaces follow the layer: `HyperRTS.<Layer>.<Module>` (contracts stay flat in `HyperRTS.Core`).
+  A feature like Selection spans layers (`Simulation`/`Presentation`/`Input`).
 - Authoring class + nested `Baker` + the `IComponentData` struct share one `*Authoring.cs`
-  file (see `HealthComponentAuthoring.cs`). Bakers use `GetEntity(TransformUsageFlags.Dynamic)`.
+  file (see `HealthComponentAuthoring.cs`), in `Simulation/` beside its systems. Bakers use
+  `GetEntity(TransformUsageFlags.Dynamic)`.
 - Component fields PascalCase; authoring MonoBehaviour fields camelCase.
 - Authoring MonoBehaviours carry editor metadata: `[AddComponentMenu(HyperRTSMenu.<Module> + "Name")]`,
   `[Icon(HyperRTSIcons.<Module>)]`, `[HelpURL(...)]`, `[DisallowMultipleComponent]`, and `[Tooltip]` on each
@@ -67,7 +70,7 @@ These are minimal scaffolds; expect to extend them.
 ## Run / test
 
 Open in Unity 6000.5.0f1; play `Assets/Modules/Demo/Scenes/SampleScene.unity` (entities bake from
-its EntitiesSubScene). Inspect via Window ▸ Entities. Edit-mode tests live in `HyperRTS.Core.Tests`
+its EntitiesSubScene). Inspect via Window ▸ Entities. Edit-mode tests live in `HyperRTS.Simulation.Tests`
 — run via Window ▸ General ▸ Test Runner. If the Unity MCP bridge is connected, see console errors via MCP.
 
 ## Gotchas

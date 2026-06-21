@@ -1,7 +1,8 @@
-﻿using UnityEngine;
+using HyperRTS.Core;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace HyperRTS.Core.Cameras
+namespace HyperRTS.Input.Cameras
 {
     [AddComponentMenu(HyperRTSMenu.Cameras + "Camera Controller")]
     [Icon(HyperRTSIcons.Cameras)]

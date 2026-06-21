@@ -3,14 +3,10 @@
   "rootNamespace": "HyperRTS.Core",
   "references": [
     "Unity.Entities",
-    "Unity.Entities.Hybrid",
-    "Unity.Entities.Graphics",
     "Unity.Transforms",
     "Unity.Mathematics",
     "Unity.Collections",
-    "Unity.Burst",
-    "Unity.InputSystem",
-    "Unity.Physics"
+    "Unity.Burst"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

@@ -16,7 +16,7 @@ Add Component ▸ HyperRTS ▸ Attack ▸ Attack Target
                          …
 ```
 
-This replaces Unity's default namespace grouping (`HyperRTS.Core.Attack`, …).
+This replaces Unity's default namespace grouping (`HyperRTS.Simulation.Attack`, …).
 
 ## The convention (apply to every authoring MonoBehaviour)
 
@@ -45,13 +45,13 @@ public class HealthComponentAuthoring : MonoBehaviour
 ## Tools
 
 - **`RTS ▸ Tools ▸ Generate Component Icons`** — regenerates the per-module icons under
-  `Assets/Modules/Core/Editor/Icons/` (one accent-coloured rounded square per module). Run it once after
+  `Assets/Modules/Editor/Icons/` (one accent-coloured rounded square per module). Run it once after
   cloning, or whenever you add a module / change an accent colour
-  ([`ComponentIconGenerator.cs`](../Assets/Modules/Core/Editor/Icons/ComponentIconGenerator.cs)).
+  ([`ComponentIconGenerator.cs`](../Assets/Modules/Editor/Icons/ComponentIconGenerator.cs)).
 - **`GameObject ▸ RTS ▸ Selection UI`** — creates a pre-wired `Selection UI` GameObject with a
   `PanelRenderer` (a `PanelSettings` is auto-assigned if one exists in the project) and `SelectionDragBoxUI`,
   so the drag-select marquee works without manual setup
-  ([`SelectionUiSetup.cs`](../Assets/Modules/Core/Editor/Selection/SelectionUiSetup.cs)).
+  ([`SelectionUiSetup.cs`](../Assets/Modules/Editor/Selection/SelectionUiSetup.cs)).
 
 ## UI Toolkit: PanelRenderer
 
@@ -59,4 +59,4 @@ Selection UI uses **`PanelRenderer`** (Unity 6.5+), the successor to the legacy 
 `PanelRenderer` does not expose `rootVisualElement`; obtain the root via
 `RegisterUIReloadCallback((panelRenderer, root) => …)` and rebuild content idempotently inside the callback
 (it can fire more than once, and content persists across disable/enable). See
-[`SelectionDragBoxUI.cs`](../Assets/Modules/Core/Selection/SelectionDragBoxUI.cs).
+[`SelectionDragBoxUI.cs`](../Assets/Modules/Presentation/Selection/SelectionDragBoxUI.cs).

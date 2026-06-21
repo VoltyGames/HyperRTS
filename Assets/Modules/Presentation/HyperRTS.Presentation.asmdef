@@ -1,0 +1,22 @@
+{
+  "name": "HyperRTS.Presentation",
+  "rootNamespace": "HyperRTS.Presentation",
+  "references": [
+    "HyperRTS.Core",
+    "HyperRTS.Simulation",
+    "Unity.Entities",
+    "Unity.Entities.Graphics",
+    "Unity.Mathematics",
+    "Unity.Collections",
+    "Unity.Burst"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

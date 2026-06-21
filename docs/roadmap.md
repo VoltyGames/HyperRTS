@@ -45,7 +45,9 @@ scene that bakes entities, so later phases have something to stand on.
 
 **Done so far**
 
-- ✅ Project/solution layout: `HyperRTS.Core` + `HyperRTS.Core.Editor` asmdefs under `Assets/Modules/`
+- ✅ Project/solution layout: layered asmdefs under `Assets/Modules/` — `HyperRTS.Core` (contracts),
+  `HyperRTS.Simulation` (headless gameplay), `HyperRTS.Presentation`, `HyperRTS.Input`, `HyperRTS.Editor`
+  (see [`architecture.md`](architecture.md))
 - ✅ `Units` — `UnitTag`, `MovementSpeed`, `MoveDestination`, `MovementSystem`, `UnitEntityFactory`
 - ✅ `Buildings` — `BuildingTag`, `ConstructionProgress`, `ConstructionSystem`, `BuildingEntityFactory`
 - ✅ `Health` — `HealthComponent`, `DeathSystem` (OrderLast)
@@ -59,7 +61,7 @@ scene that bakes entities, so later phases have something to stand on.
 - ✅ Establish an explicit system update order — ordered phase groups in `SystemGroups.cs`
   (`OrderSystemGroup` → `MovementSystemGroup` → `CombatSystemGroup` → `ProductionSystemGroup` →
   `LifecycleSystemGroup`); the four systems target these instead of `SimulationSystemGroup`
-- ✅ First test assembly (`HyperRTS.Core.Tests`) with Burst-compiled system smoke tests
+- ✅ First test assembly (`HyperRTS.Simulation.Tests`) with Burst-compiled system smoke tests
   (`SimulationSystemTests`: movement + death/lifecycle ordering)
 - ✅ World-setup entry point documented in [`docs/world-setup.md`](../docs/world-setup.md) (how
   entities enter play: default world → SubScene baking → ordered groups → factory/test path)
@@ -278,7 +280,7 @@ retro-influence earlier systems (avoid non-deterministic float/order dependencie
 
 - Test coverage: per-module test assemblies; system unit tests; play-mode integration tests
 - Performance budgets per system with profiler markers; stress scene (target unit count)
-- Authoring/designer tooling (editor windows, gizmos, data validation) extending `HyperRTS.Core.Editor`
+- Authoring/designer tooling (editor windows, gizmos, data validation) extending `HyperRTS.Editor`
 - API docs / module READMEs; "how to build a game on HyperRTS" guide
 - A minimal **sample game** in a separate asmdef proving the engine end-to-end
 
@@ -298,7 +300,7 @@ These run alongside every phase rather than as discrete milestones:
 - **Data-driven design** — prefer ScriptableObject/baked config + components over
   hard-coded values, so games tune the engine without forking it.
 - **Performance** — profile against a target unit count each phase; protect frame budget.
-- **Testing & docs** — grow `HyperRTS.Core.Tests` and module docs as features land.
+- **Testing & docs** — grow `HyperRTS.Simulation.Tests` and module docs as features land.
 
 ---
 

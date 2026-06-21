@@ -1,7 +1,11 @@
 # Selection & input (Phase 1)
 
-Mouse selection for rendered entities. Lives in
-[`Assets/Modules/Core/Selection/`](../Assets/Modules/Core/Selection/) (`HyperRTS.Core.Selection`).
+Mouse selection for rendered entities. It spans the layered assemblies (see
+[`architecture.md`](architecture.md)): the sim core (system, math, components) in
+[`Simulation/Selection/`](../Assets/Modules/Simulation/Selection/) (`HyperRTS.Simulation.Selection`),
+the input bridge in [`Input/Selection/`](../Assets/Modules/Input/Selection/) (`HyperRTS.Input.Selection`),
+and rendering/UI in [`Presentation/Selection/`](../Assets/Modules/Presentation/Selection/)
+(`HyperRTS.Presentation.Selection`).
 
 ## Architecture
 
@@ -44,7 +48,7 @@ quick clicks = double-click. Shift adds, Ctrl removes, no modifier replaces.
 
 ## Verify
 
-- Tests: Test Runner → `HyperRTS.Core.Tests`.
+- Tests: Test Runner → `HyperRTS.Simulation.Tests`.
 - Play `SampleScene`: click tints, ground-click clears, box selects, Shift/Ctrl modify, double-click
   selects all Units on screen.
 
