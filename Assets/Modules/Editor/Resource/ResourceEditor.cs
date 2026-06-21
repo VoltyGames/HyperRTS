@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using HyperRTS.Simulation.Resources;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -9,190 +8,157 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Resource
 {
+    /// <summary>Editor window to create, edit and delete resource definition assets.</summary>
     public class ResourcesEditor : EditorWindow
     {
-        private const string ResourceAssetsPath = "Assets/ScritableObjects/Resources";
+        private const string ResourceAssetsPath = "Assets/ScriptableObjects/Resources";
+        private const string UxmlPath = "Assets/Modules/Editor/Resource/ResourceEditor.uxml";
 
-        private readonly List<ResourceData> resourcesDataList = new();
-        private ResourceData selectedResourceData;
+        private readonly List<ResourceData> resources = new();
+        private ResourceData selected;
 
-        private TextField resourceIdField;
-        private TextField resourceNameField;
-        private ObjectField resourceIconField;
-        private Button addResourceButton;
-        private Button removeResourceButton;
-        private Button saveResourceButton;
+        private TextField idField;
+        private TextField nameField;
+        private ObjectField iconField;
+        private ListView listView;
+        private Button saveButton;
+        private Button removeButton;
 
-        [SerializeField]
-        private VisualTreeAsset uxmlTree;
-
-        [MenuItem("RTS/Resource Editor")]
+        [MenuItem("HyperRTS/Resource Editor")]
         public static void ShowWindow()
         {
-            var wnd = GetWindow<ResourcesEditor>();
-            wnd.titleContent = new GUIContent("Resource Editor");
+            GetWindow<ResourcesEditor>().titleContent = new GUIContent("Resource Editor");
         }
 
         public void CreateGUI()
         {
-            // Load the UXML file
-            rootVisualElement.Add(uxmlTree.Instantiate());
+            var tree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UxmlPath);
+            if (tree == null)
+            {
+                rootVisualElement.Add(new Label($"Resource Editor layout not found at '{UxmlPath}'."));
+                return;
+            }
 
-            // Get references to UI elements
-            resourceIdField = rootVisualElement.Q<TextField>("resourceIdField");
-            resourceNameField = rootVisualElement.Q<TextField>("resourceNameField");
-            resourceIconField = rootVisualElement.Q<ObjectField>("resourceIconField");
-            addResourceButton = rootVisualElement.Q<Button>("addResourceButton");
-            removeResourceButton = rootVisualElement.Q<Button>("removeResourceButton");
-            saveResourceButton = rootVisualElement.Q<Button>("saveResourceButton");
-            var resourcesListView = rootVisualElement.Q<ListView>("resourcesList");
+            rootVisualElement.Add(tree.Instantiate());
 
-            resourceIconField.objectType = typeof(Sprite);
-            resourcesListView.itemsSource = resourcesDataList;
-            resourcesListView.selectionChanged += OnResourceSelected;
-            addResourceButton.clicked += AddResource;
-            removeResourceButton.clicked += RemoveResource;
-            saveResourceButton.clicked += SaveResource;
+            idField = rootVisualElement.Q<TextField>("resourceIdField");
+            nameField = rootVisualElement.Q<TextField>("resourceNameField");
+            iconField = rootVisualElement.Q<ObjectField>("resourceIconField");
+            iconField.objectType = typeof(Sprite);
 
-            // Load existing resources into the ScrollView
-            LoadRegisteredResources();
+            saveButton = rootVisualElement.Q<Button>("saveResourceButton");
+            removeButton = rootVisualElement.Q<Button>("removeResourceButton");
+            rootVisualElement.Q<Button>("addResourceButton").clicked += AddResource;
+            saveButton.clicked += SaveResource;
+            removeButton.clicked += RemoveResource;
+
+            listView = rootVisualElement.Q<ListView>("resourcesList");
+            listView.itemsSource = resources;
+            listView.selectionChanged += _ => Select(listView.selectedItem as ResourceData);
+
+            Reload();
+            Select(null);
         }
 
-        /// <summary>
-        /// Add a new resource to the registry and UI.
-        /// </summary>
         private void AddResource()
         {
-            EnsureResourceDirectoryExists();
-
-            var resourceId = resourceIdField.value;
-            var resourceName = resourceNameField.value;
-            var resourceIcon = resourceIconField.value as Sprite;
-            var path = $"{ResourceAssetsPath}/{resourceId}.asset";
-
-            if (string.IsNullOrEmpty(resourceId))
+            var id = idField.value;
+            if (string.IsNullOrEmpty(id))
             {
                 EditorUtility.DisplayDialog("Error", "Resource ID cannot be empty.", "OK");
                 return;
             }
 
+            var path = $"{ResourceAssetsPath}/{id}.asset";
             if (File.Exists(path))
             {
-                EditorUtility.DisplayDialog("Error", $"Resource with the ID '{resourceId}' already exists.", "OK");
+                EditorUtility.DisplayDialog("Error", $"Resource with the ID '{id}' already exists.", "OK");
                 return;
             }
 
-            // Register the new resource type
-            var newResource = ResourceManager.CreateResource(resourceId, resourceName);
-            var resourceData = ResourceData.Create(newResource, resourceIcon);
-            resourcesDataList.Add(resourceData);
+            // An icon is optional, but missing it is usually a mistake - confirm before continuing.
+            var icon = iconField.value as Sprite;
+            if (icon == null &&
+                !EditorUtility.DisplayDialog("Missing icon",
+                    $"Resource '{id}' has no icon assigned. Add it anyway?", "Add", "Cancel"))
+            {
+                return;
+            }
 
-            // Save the asset file
-            AssetDatabase.CreateAsset(resourceData, path);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            ResetForm();
+            Directory.CreateDirectory(ResourceAssetsPath);
+            var data = ResourceData.Create(ResourceManager.CreateResource(id, nameField.value), icon);
+            AssetDatabase.CreateAsset(data, path);
+            Persist();
+            Select(null);
         }
 
         private void SaveResource()
         {
-            if (selectedResourceData == null)
+            if (selected == null)
             {
                 return;
             }
 
-            selectedResourceData.resourceId = resourceIdField.value;
-            selectedResourceData.resourceName = resourceNameField.value;
-            selectedResourceData.resourceIcon = resourceIconField.value as Sprite;
+            selected.resourceId = idField.value;
+            selected.resourceName = nameField.value;
+            selected.resourceIcon = iconField.value as Sprite;
+            ResourceManager.UpdateOrCreateResource(selected.resourceId, selected.resourceName);
 
-            ResourceManager.UpdateOrCreateResource(selectedResourceData.resourceId, selectedResourceData.resourceName);
-
-            // Save the changes back to the asset file
-            EditorUtility.SetDirty(selectedResourceData);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            EditorUtility.SetDirty(selected);
+            Persist();
         }
 
-        // Method to remove the selected resource from the list and delete the asset file
         private void RemoveResource()
         {
-            if (selectedResourceData == null)
+            if (selected == null)
             {
                 return;
             }
 
-            // Remove from the list
-            resourcesDataList.Remove(selectedResourceData);
-            ResourceManager.RemoveResource(selectedResourceData.resourceId);
-
-            // Delete the asset file
-            var path = AssetDatabase.GetAssetPath(selectedResourceData);
-            AssetDatabase.DeleteAsset(path);
-            ResetForm();
+            ResourceManager.RemoveResource(selected.resourceId);
+            AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(selected));
+            Persist();
+            Select(null);
         }
 
-        /// <summary>
-        /// Load all registered resources from the Resources folder and add them to the UI.
-        /// </summary>
-        private void LoadRegisteredResources()
+        // Persist asset changes, then re-sync the list (no Refresh - the AssetDatabase calls update it in-process).
+        private void Persist()
         {
-            if (!Directory.Exists(ResourceAssetsPath))
+            AssetDatabase.SaveAssets();
+            Reload();
+        }
+
+        // Load resource assets from disk into the list, registering each with the runtime manager.
+        private void Reload()
+        {
+            resources.Clear();
+
+            if (Directory.Exists(ResourceAssetsPath))
             {
-                return;
-            }
-
-            resourcesDataList.Clear();
-            var resourcePaths = Directory.GetFiles(ResourceAssetsPath, "*.asset");
-
-            foreach (var path in resourcePaths)
-            {
-                var resourceData = AssetDatabase.LoadAssetAtPath<ResourceData>(path);
-
-                if (resourceData != null)
+                foreach (var guid in AssetDatabase.FindAssets("t:ResourceData", new[] { ResourceAssetsPath }))
                 {
-                    Debug.Log($"Loaded resource: {resourceData.resourceId} - {resourceData.resourceName}");
-                    ResourceManager.CreateResource(resourceData.resourceId, resourceData.resourceName);
-                    resourcesDataList.Add(resourceData);
+                    var data = AssetDatabase.LoadAssetAtPath<ResourceData>(AssetDatabase.GUIDToAssetPath(guid));
+                    if (data == null)
+                    {
+                        continue;
+                    }
+
+                    ResourceManager.CreateResource(data.resourceId, data.resourceName);
+                    resources.Add(data);
                 }
             }
+
+            listView.RefreshItems();
         }
 
-        private void OnResourceSelected(IEnumerable<object> selectedItems)
+        // Bind a resource to the form; null clears it and hides the edit buttons.
+        private void Select(ResourceData data)
         {
-            // Get the selected resource data
-            selectedResourceData = selectedItems.FirstOrDefault() as ResourceData;
-
-            if (selectedResourceData == null)
-            {
-                return;
-            }
-
-            // Bind the selected resource data to the UI fields
-            resourceIdField.value = selectedResourceData.resourceId;
-            resourceNameField.value = selectedResourceData.resourceName;
-            resourceIconField.value = selectedResourceData.resourceIcon;
-
-            // Update the UI buttons
-            saveResourceButton.visible = true;
-            removeResourceButton.visible = true;
-        }
-
-        private void ResetForm()
-        {
-            resourceIconField.value = null;
-            selectedResourceData = null;
-            resourceNameField.value = "";
-            resourceIdField.value = "";
-            saveResourceButton.visible = false;
-            removeResourceButton.visible = false;
-        }
-
-        private static void EnsureResourceDirectoryExists()
-        {
-            if (!Directory.Exists(ResourceAssetsPath))
-            {
-                Directory.CreateDirectory(ResourceAssetsPath);
-            }
+            selected = data;
+            idField.value = data != null ? data.resourceId : string.Empty;
+            nameField.value = data != null ? data.resourceName : string.Empty;
+            iconField.value = data != null ? data.resourceIcon : null;
+            saveButton.visible = removeButton.visible = data != null;
         }
     }
 }
