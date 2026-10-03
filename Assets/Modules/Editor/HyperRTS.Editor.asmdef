@@ -5,7 +5,8 @@
     "HyperRTS.Core",
     "HyperRTS.Simulation",
     "HyperRTS.Presentation",
-    "Unity.Collections"
+    "Unity.Collections",
+    "Unity.Scenes"
   ],
   "includePlatforms": [
     "Editor"
