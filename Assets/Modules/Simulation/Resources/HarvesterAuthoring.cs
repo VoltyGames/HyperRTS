@@ -1,0 +1,40 @@
+using HyperRTS.Core;
+using Unity.Entities;
+using UnityEngine;
+
+namespace HyperRTS.Simulation.Resources
+{
+    /// <summary>Lets a unit gather from resource nodes and carry cargo to a drop-off.</summary>
+    [AddComponentMenu(HyperRTSMenu.Resources + "Harvester")]
+    [Icon(HyperRTSIcons.Resources)]
+    [HelpURL(HyperRTSDocs.Modules)]
+    [DisallowMultipleComponent]
+    public class HarvesterAuthoring : MonoBehaviour
+    {
+        [Tooltip("Cargo carried per trip.")]
+        [Min(1)]
+        public int capacity = 10;
+
+        [Tooltip("Amount gathered per second while at a node.")]
+        [Min(0.01f)]
+        public float gatherRate = 2f;
+
+        public class Baker : Baker<HarvesterAuthoring>
+        {
+            public override void Bake(HarvesterAuthoring authoring)
+            {
+                var entity = GetEntity(TransformUsageFlags.Dynamic);
+                AddComponent(entity, new Harvester { Capacity = authoring.capacity, GatherRate = authoring.gatherRate });
+            }
+        }
+    }
+
+    public struct Harvester : IComponentData
+    {
+        public int Capacity;
+        public float GatherRate;
+
+        public UnityObjectRef<ResourceType> CargoType;
+        public int CargoAmount;
+    }
+}

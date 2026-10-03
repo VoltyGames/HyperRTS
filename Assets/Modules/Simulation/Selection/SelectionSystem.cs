@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -12,12 +13,12 @@ namespace HyperRTS.Simulation.Selection
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct SelectionSystem : ISystem
     {
-        private ComponentLookup<SelectableType> _typeLookup;
+        private ComponentLookup<EntityInfo> _typeLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _typeLookup = state.GetComponentLookup<SelectableType>(true);
+            _typeLookup = state.GetComponentLookup<EntityInfo>(true);
             state.RequireForUpdate<SelectionInput>();
         }
 
@@ -50,12 +51,12 @@ namespace HyperRTS.Simulation.Selection
                 }
             }
 
-            // Double-click selects every on-screen entity of the clicked kind.
-            var doubleClickKind = SelectableKind.None;
+            // Double-click selects every on-screen entity of the clicked type.
+            var doubleClickType = 0;
             if (input.Command == SelectionCommand.DoubleClick && clicked != Entity.Null &&
                 _typeLookup.HasComponent(clicked))
             {
-                doubleClickKind = _typeLookup[clicked].Kind;
+                doubleClickType = _typeLookup[clicked].TypeId;
             }
 
             // WithPresent also visits unselected entities.
@@ -66,7 +67,7 @@ namespace HyperRTS.Simulation.Selection
                          .WithEntityAccess())
             {
                 var hit = IsHit(in input, in _typeLookup, entity, transform.ValueRO.Position, clicked,
-                    doubleClickKind);
+                    doubleClickType);
 
                 var current = selected.ValueRO;
                 var next = SelectionMath.ResolveSelected(current, hit, input.Additive, input.Subtract);
@@ -78,8 +79,8 @@ namespace HyperRTS.Simulation.Selection
             }
         }
 
-        private static bool IsHit(in SelectionInput input, in ComponentLookup<SelectableType> typeLookup,
-            Entity entity, float3 position, Entity clicked, SelectableKind doubleClickKind)
+        private static bool IsHit(in SelectionInput input, in ComponentLookup<EntityInfo> typeLookup,
+            Entity entity, float3 position, Entity clicked, int doubleClickType)
         {
             switch (input.Command)
             {
@@ -92,9 +93,9 @@ namespace HyperRTS.Simulation.Selection
                            SelectionMath.RectContains(input.DragMin, input.DragMax, dragScreen);
 
                 case SelectionCommand.DoubleClick:
-                    if (doubleClickKind == SelectableKind.None ||
+                    if (doubleClickType == 0 ||
                         !typeLookup.HasComponent(entity) ||
-                        typeLookup[entity].Kind != doubleClickKind)
+                        typeLookup[entity].TypeId != doubleClickType)
                     {
                         return false;
                     }

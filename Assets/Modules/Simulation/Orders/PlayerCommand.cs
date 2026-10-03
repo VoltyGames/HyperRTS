@@ -1,0 +1,54 @@
+using Unity.Entities;
+using Unity.Mathematics;
+
+namespace HyperRTS.Simulation.Orders
+{
+    public enum CommandType : byte
+    {
+        None = 0,
+
+        /// <summary>Right-click: resolved per unit to move, attack, gather or build from the target.</summary>
+        Smart = 1,
+        Move = 2,
+        AttackMove = 3,
+        Attack = 4,
+        Gather = 5,
+        Build = 6,
+        Stop = 7,
+
+        /// <summary><see cref="PlayerCommand.Argument"/> is a <c>Stance</c>.</summary>
+        SetStance = 8,
+
+        /// <summary>Place <see cref="PlayerCommand.Prefab"/> at Position and send builders to it.</summary>
+        PlaceBuilding = 9,
+
+        /// <summary>Queue <see cref="PlayerCommand.Prefab"/> at a producer.</summary>
+        Produce = 10,
+
+        /// <summary>Cancel queue slot <see cref="PlayerCommand.Argument"/> (-1 = last) at a producer.</summary>
+        CancelProduction = 11,
+        SetRallyPoint = 12,
+        Custom = 128,
+    }
+
+    /// <summary>
+    /// A player intent, recorded on the player entity by input or AI and consumed the same frame.
+    /// This is the only path from input to simulation, so it is also the future network message.
+    /// </summary>
+    public struct PlayerCommand : IBufferElementData
+    {
+        public CommandType Type;
+
+        /// <summary>Unit or producer to command; <c>Entity.Null</c> means the player's selected entities.</summary>
+        public Entity Unit;
+
+        public Entity Target;
+        public float3 Position;
+        public Entity Prefab;
+
+        /// <summary>Shift: append to the order queue instead of replacing it.</summary>
+        public bool Queue;
+
+        public int Argument;
+    }
+}

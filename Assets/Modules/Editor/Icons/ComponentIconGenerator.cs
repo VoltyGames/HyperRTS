@@ -12,13 +12,16 @@ namespace HyperRTS.Editor.Icons
 
         private static readonly (string IconPath, Color Color)[] Modules =
         {
-            (HyperRTSIcons.Attack, new Color(0.85f, 0.25f, 0.22f)),
             (HyperRTSIcons.Buildings, new Color(0.45f, 0.50f, 0.58f)),
             (HyperRTSIcons.Cameras, new Color(0.55f, 0.40f, 0.85f)),
-            (HyperRTSIcons.Health, new Color(0.30f, 0.75f, 0.35f)),
+            (HyperRTSIcons.Combat, new Color(0.85f, 0.25f, 0.22f)),
+            (HyperRTSIcons.Match, new Color(0.30f, 0.75f, 0.35f)),
+            (HyperRTSIcons.Navigation, new Color(0.20f, 0.75f, 0.70f)),
             (HyperRTSIcons.Resources, new Color(0.95f, 0.70f, 0.20f)),
             (HyperRTSIcons.Selection, new Color(0.30f, 0.70f, 1.00f)),
+            (HyperRTSIcons.UI, new Color(0.85f, 0.45f, 0.75f)),
             (HyperRTSIcons.Units, new Color(0.25f, 0.50f, 0.90f)),
+            (HyperRTSIcons.Vision, new Color(0.60f, 0.60f, 0.25f)),
         };
 
         [MenuItem("HyperRTS/Tools/Generate Component Icons")]

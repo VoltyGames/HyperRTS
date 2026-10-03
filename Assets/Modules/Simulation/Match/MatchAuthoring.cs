@@ -1,0 +1,128 @@
+using System.Collections.Generic;
+using HyperRTS.Core;
+using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Resources;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace HyperRTS.Simulation.Match
+{
+    /// <summary>Match rules for a map: playable area, grids and players. Place exactly one in the SubScene.</summary>
+    [AddComponentMenu(HyperRTSMenu.Match + "Match")]
+    [Icon(HyperRTSIcons.Match)]
+    [HelpURL(HyperRTSDocs.GettingStarted)]
+    [DisallowMultipleComponent]
+    public class MatchAuthoring : MonoBehaviour
+    {
+        [Header("Map")]
+        [Tooltip("Playable area (X by Z) centred on this transform.")]
+        public Vector2 mapSize = new(200f, 200f);
+
+        [Tooltip("Pathfinding grid cell size. Smaller is more precise but slower.")]
+        [Min(0.25f)]
+        public float navCellSize = 1f;
+
+        [Tooltip("Fog-of-war grid cell size.")]
+        [Min(0.5f)]
+        public float fogCellSize = 2f;
+
+        [Tooltip("Hide what the local player's team can't see.")]
+        public bool fogOfWar = true;
+
+        [Header("Players")]
+        [Tooltip("Player slots. Slot 1 is faction 1, the 'Owner' number on units and buildings.")]
+        public List<PlayerSetup> players = new()
+        {
+            new PlayerSetup { name = "Player", team = 1, color = new Color(0.2f, 0.45f, 1f) },
+            new PlayerSetup { name = "Enemy", team = 2, color = new Color(0.9f, 0.2f, 0.15f), control = PlayerControl.AI },
+        };
+
+        [Header("AI")]
+        [Tooltip("Seconds between AI decisions.")]
+        [Min(0.1f)]
+        public float aiThinkInterval = 2f;
+
+        [Tooltip("Idle combat units the AI gathers before attacking.")]
+        [Min(1)]
+        public int aiAttackWaveSize = 6;
+
+        private void OnDrawGizmos()
+        {
+            Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.8f);
+            Gizmos.DrawWireCube(transform.position, new Vector3(mapSize.x, 0f, mapSize.y));
+        }
+
+        public class Baker : Baker<MatchAuthoring>
+        {
+            public override void Bake(MatchAuthoring authoring)
+            {
+                var entity = GetEntity(TransformUsageFlags.None);
+                var center = ((float3)authoring.transform.position).xz;
+                AddComponent(entity, new MapSettings
+                {
+                    Min = center - (float2)authoring.mapSize * 0.5f,
+                    Size = authoring.mapSize,
+                    NavCellSize = authoring.navCellSize,
+                    FogCellSize = authoring.fogCellSize,
+                    FogOfWar = authoring.fogOfWar,
+                });
+                AddComponent(entity, new MatchState { Phase = MatchPhase.Playing });
+
+                var relations = new FactionRelations();
+                relations.Teams.Add(0);
+                for (var i = 0; i < authoring.players.Count; i++)
+                {
+                    relations.Teams.Add((byte)authoring.players[i].team);
+                    BakePlayer(authoring, authoring.players[i], (byte)(i + 1));
+                }
+
+                AddComponent(entity, relations);
+            }
+
+            private void BakePlayer(MatchAuthoring authoring, PlayerSetup setup, byte faction)
+            {
+                var player = CreateAdditionalEntity(TransformUsageFlags.None, entityName: setup.name);
+                var playerName = new FixedString32Bytes();
+                playerName.CopyFromTruncated(setup.name);
+                var color = setup.color.linear;
+
+                AddComponent(player, new Player
+                {
+                    Faction = faction,
+                    Team = (byte)setup.team,
+                    Name = playerName,
+                    Color = new float4(color.r, color.g, color.b, color.a),
+                });
+                AddComponent(player, new Population());
+                AddComponent<Defeated>(player);
+                SetComponentEnabled<Defeated>(player, false);
+                AddBuffer<PlayerCommand>(player);
+
+                var stock = AddBuffer<ResourceStock>(player);
+                foreach (var quantity in setup.startingResources)
+                {
+                    if (quantity.type != null)
+                    {
+                        ResourceMath.Add(stock, quantity.type, quantity.amount);
+                    }
+                }
+
+                if (setup.control == PlayerControl.LocalHuman)
+                {
+                    AddComponent<LocalPlayer>(player);
+                }
+                else if (setup.control == PlayerControl.AI)
+                {
+                    AddComponent(player, new AIPlayer
+                    {
+                        ThinkInterval = authoring.aiThinkInterval,
+                        TimeUntilThink = authoring.aiThinkInterval,
+                        AttackWaveSize = authoring.aiAttackWaveSize,
+                    });
+                }
+            }
+        }
+    }
+}

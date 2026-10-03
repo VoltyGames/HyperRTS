@@ -1,59 +1,35 @@
-using HyperRTS.Core;
 using HyperRTS.Simulation.Selection;
 using NUnit.Framework;
 using Unity.Collections;
-using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Box-select runs SelectionSystem in an isolated world; click raycasts are covered in Play mode.</summary>
+    /// <summary>Box-select through SelectionSystem; click raycasts need physics and are covered in Play mode.</summary>
     public class SelectionSystemTests
     {
-        private World _world;
+        private TestWorld _world;
         private EntityManager _entityManager;
 
         [SetUp]
         public void SetUp()
         {
-            _world = new World("HyperRTS Selection Test World");
+            _world = new TestWorld();
             _entityManager = _world.EntityManager;
-
-            DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(_world,
-                typeof(SimulationSystemGroup),
-                typeof(TransformSystemGroup), // MovementSystemGroup orders against it
-                typeof(OrderSystemGroup),
-                typeof(MovementSystemGroup),
-                typeof(CombatSystemGroup),
-                typeof(ProductionSystemGroup),
-                typeof(LifecycleSystemGroup),
-                typeof(SelectionSystem));
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            if (_world != null && _world.IsCreated)
-            {
-                _world.Dispose();
-            }
+        public void TearDown() => _world.Dispose();
 
-            _world = null;
-        }
-
-        private void Tick(float deltaTime)
-        {
-            _world.SetTime(new TimeData(elapsedTime: deltaTime, deltaTime: deltaTime));
-            _world.GetExistingSystemManaged<SimulationSystemGroup>().Update();
-        }
-
-        private Entity CreateSelectable(float3 position, SelectableKind kind = SelectableKind.Unit)
+        private Entity CreateSelectable(float3 position)
         {
             var entity = _entityManager.CreateEntity();
             _entityManager.AddComponentData(entity, LocalTransform.FromPosition(position));
-            SelectionComponents.AddTo(_entityManager, entity, kind);
+            _entityManager.AddComponent<Selectable>(entity);
+            _entityManager.AddComponent<Selected>(entity);
+            _entityManager.SetComponentEnabled<Selected>(entity, false);
             return entity;
         }
 
@@ -77,7 +53,7 @@ namespace HyperRTS.Simulation.Tests
             }
 
             _entityManager.SetComponentData(e, input);
-            Tick(0.1f);
+            _world.Tick();
         }
 
 

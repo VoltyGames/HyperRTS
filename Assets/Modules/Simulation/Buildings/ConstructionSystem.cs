@@ -1,32 +1,32 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Buildings
 {
-    /// <summary>Advances <see cref="ConstructionProgress"/> and disables it when complete.</summary>
+    /// <summary>Advances <see cref="ConstructionProgress"/> over the building's build time and disables it when complete.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct ConstructionSystem : ISystem
     {
-        // ~10 s to build.
-        public const float BuildRatePerSecond = 0.1f;
-
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new BuildJob { Step = BuildRatePerSecond * SystemAPI.Time.DeltaTime }.ScheduleParallel();
+            new BuildJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
         }
 
         [BurstCompile]
         [WithAll(typeof(BuildingTag))]
         private partial struct BuildJob : IJobEntity
         {
-            public float Step;
+            public float DeltaTime;
 
-            private void Execute(ref ConstructionProgress progress, EnabledRefRW<ConstructionProgress> underConstruction)
+            private void Execute(ref ConstructionProgress progress, EnabledRefRW<ConstructionProgress> underConstruction,
+                in Producible producible)
             {
-                progress.Value += Step;
+                progress.Value += DeltaTime / math.max(producible.BuildTime, 0.01f);
 
                 if (progress.Value >= 1f)
                 {
