@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Fog;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
@@ -8,6 +7,7 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

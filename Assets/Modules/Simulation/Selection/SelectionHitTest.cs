@@ -22,17 +22,14 @@ namespace HyperRTS.Simulation.Selection
         /// <summary>Drag boxes keep only entities of this <see cref="SelectionMath.DragRank"/>; -1 keeps all.</summary>
         public int PreferredRank;
 
-        public LocalFogView FogView;
+        public ComponentLookup<FogHidden> Hidden;
         public ComponentLookup<EntityInfo> Info;
         public ComponentLookup<Faction> Factions;
         public ComponentLookup<UnitTag> Units;
         public ComponentLookup<BuildingTag> Buildings;
         public ComponentLookup<ControlGroup> Groups;
 
-        public bool IsHit(Entity entity, float3 position) => !IsHidden(entity, position) && MatchesGesture(entity, position);
-
-        private bool IsHidden(Entity entity, float3 position) =>
-            Factions.TryGetComponent(entity, out var faction) && FogView.IsHidden(faction.Value, position);
+        public bool IsHit(Entity entity, float3 position) => !Hidden.HasComponent(entity) && MatchesGesture(entity, position);
 
         private bool MatchesGesture(Entity entity, float3 position)
         {

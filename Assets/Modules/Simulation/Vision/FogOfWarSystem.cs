@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Burst;
 using Unity.Collections;
@@ -58,7 +59,7 @@ namespace HyperRTS.Simulation.Vision
             ref var fog = ref SystemAPI.GetSingletonRW<FogOfWar>().ValueRW;
             fog.Version++;
 
-            state.Dependency = new ClearJob { Cells = fog.Visible }.Schedule(state.Dependency);
+            state.Dependency = new ClearBytesJob { Cells = fog.Visible }.Schedule(state.Dependency);
             new StampJob { Fog = fog, Relations = SystemAPI.GetSingleton<FactionRelations>() }.Schedule();
             state.Dependency = new ExploreJob { Visible = fog.Visible, Explored = fog.Explored }
                 .Schedule(fog.Explored.Length, 1024, state.Dependency);
@@ -91,21 +92,6 @@ namespace HyperRTS.Simulation.Vision
             }
 
             return fog;
-        }
-
-        // Nested on purpose: Burst-scheduled jobs declared at top level got no job reflection data.
-        [BurstCompile]
-        private struct ClearJob : IJob
-        {
-            public NativeArray<byte> Cells;
-
-            public void Execute()
-            {
-                for (var i = 0; i < Cells.Length; i++)
-                {
-                    Cells[i] = 0;
-                }
-            }
         }
 
         [BurstCompile]

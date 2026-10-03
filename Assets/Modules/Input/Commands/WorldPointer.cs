@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
-using Unity.Transforms;
 using UnityEngine;
 
 namespace HyperRTS.Input.Commands
@@ -14,13 +13,11 @@ namespace HyperRTS.Input.Commands
     public sealed class WorldPointer
     {
         private readonly EntityQuery _physics;
-        private readonly EntityQuery _fogView;
         private Camera _camera;
 
         public WorldPointer(ref SystemState state)
         {
             _physics = state.GetEntityQuery(ComponentType.ReadOnly<PhysicsWorldSingleton>());
-            _fogView = state.GetEntityQuery(ComponentType.ReadOnly<LocalFogView>());
         }
 
         /// <summary>
@@ -83,13 +80,8 @@ namespace HyperRTS.Input.Commands
                 return true;
             }
 
-            return entityManager.HasComponent<Faction>(entity) && !IsHiddenByFog(entityManager, entity);
+            // Enemies hidden by fog must not be targetable, or a click would reveal and attack them.
+            return entityManager.HasComponent<Faction>(entity) && !entityManager.HasComponent<FogHidden>(entity);
         }
-
-        // Enemies hidden by fog must not be targetable, or a click would reveal and attack them.
-        private bool IsHiddenByFog(EntityManager entityManager, Entity entity) =>
-            _fogView.TryGetSingleton(out LocalFogView view) && view.IsHidden(
-                entityManager.GetComponentData<Faction>(entity).Value,
-                entityManager.GetComponentData<LocalTransform>(entity).Position);
     }
 }

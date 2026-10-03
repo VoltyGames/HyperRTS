@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Fog;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

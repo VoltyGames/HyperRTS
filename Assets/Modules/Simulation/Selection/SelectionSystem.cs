@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Selection
         private ComponentLookup<UnitTag> _unitLookup;
         private ComponentLookup<BuildingTag> _buildingLookup;
         private ComponentLookup<ControlGroup> _groupLookup;
-        private int _fogVersion;
+        private ComponentLookup<FogHidden> _hiddenLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -34,21 +34,21 @@ namespace HyperRTS.Simulation.Selection
             _unitLookup = state.GetComponentLookup<UnitTag>(true);
             _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
             _groupLookup = state.GetComponentLookup<ControlGroup>(true);
+            _hiddenLookup = state.GetComponentLookup<FogHidden>(true);
             state.RequireForUpdate<SelectionInput>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            SystemAPI.TryGetSingleton(out LocalFogView fogView);
-            DeselectHidden(ref state, in fogView);
+            DeselectHidden(ref state);
             var input = SystemAPI.GetSingleton<SelectionInput>();
             if (input.Command == SelectionCommand.None)
             {
                 return;
             }
 
-            var test = CreateHitTest(ref state, in input, in fogView);
+            var test = CreateHitTest(ref state, in input);
             if (input.Command == SelectionCommand.AssignGroup)
             {
                 AssignGroup(ref state, in test);
@@ -72,8 +72,9 @@ namespace HyperRTS.Simulation.Selection
             }
         }
 
-        private SelectionHitTest CreateHitTest(ref SystemState state, in SelectionInput input, in LocalFogView fogView)
+        private SelectionHitTest CreateHitTest(ref SystemState state, in SelectionInput input)
         {
+            _hiddenLookup.Update(ref state);
             _infoLookup.Update(ref state);
             _factionLookup.Update(ref state);
             _unitLookup.Update(ref state);
@@ -86,7 +87,7 @@ namespace HyperRTS.Simulation.Selection
                 Clicked = Raycast(ref state, in input),
                 LocalFaction = LocalFaction(ref state),
                 PreferredRank = -1,
-                FogView = fogView,
+                Hidden = _hiddenLookup,
                 Info = _infoLookup,
                 Factions = _factionLookup,
                 Units = _unitLookup,
@@ -131,22 +132,12 @@ namespace HyperRTS.Simulation.Selection
                 : Entity.Null;
         }
 
-        // An enemy that walks into fog must not stay selected out of sight; checked once per fog restamp.
-        private void DeselectHidden(ref SystemState state, in LocalFogView view)
+        // An enemy that walks into fog must not stay selected out of sight.
+        private void DeselectHidden(ref SystemState state)
         {
-            if (!view.Active || view.Fog.Version == _fogVersion)
+            foreach (var selected in SystemAPI.Query<EnabledRefRW<Selected>>().WithAll<FogHidden>())
             {
-                return;
-            }
-
-            _fogVersion = view.Fog.Version;
-            foreach (var (faction, transform, selected) in
-                     SystemAPI.Query<RefRO<Faction>, RefRO<LocalTransform>, EnabledRefRW<Selected>>())
-            {
-                if (view.IsHidden(faction.ValueRO.Value, transform.ValueRO.Position))
-                {
-                    selected.ValueRW = false;
-                }
+                selected.ValueRW = false;
             }
         }
 

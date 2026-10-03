@@ -114,7 +114,8 @@ Not built in: stealth/detection, splash damage, kill credit, rotating turrets.
 
 `VisionRange` on units and buildings; `FogOfWar` singleton with one bit per team for *visible now* and *explored*.
 `FogOfWarSystem` restamps it 10 times per second (or fills it once when the match disables fog).
-Presentation hides hostile entities the local team can't see and draws the fog overlay.
+`LocalFogViewSystem` publishes the local player's `LocalFogView` and tags hostile entities they can't see with
+`FogHidden` once per restamp; selection, picking, the HUD and rendering all skip tagged entities.
 
 ## Resources
 
@@ -169,4 +170,4 @@ raycast + ground plane), `CameraController` (pan, edge scroll, zoom, rotate, map
 minimap, game-over banner), `OverlayRenderer` (selection rings, health bars, placement ghost, rally markers via
 `Graphics.RenderMeshInstanced`), `FogOfWarRenderer` (overlay shader) and the drag-box marquee. `TeamColorSystem`
 tints owned meshes with the owner's colour through `URPMaterialPropertyBaseColor`, so use URP Lit materials.
-`FogVisibilitySystem` toggles `DisableRendering` on hidden enemies.
+`FogVisibilitySystem` mirrors `FogHidden` onto `DisableRendering` for the entity and its child meshes.

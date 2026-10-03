@@ -16,9 +16,9 @@ namespace HyperRTS.Presentation.Tests
         {
             const byte team = 2;
             var mask = (byte)(1 << team);
-            using var visible = new NativeArray<byte>(new byte[] { mask, 0, 0, 1 << 1 }, Allocator.Temp);
-            using var explored = new NativeArray<byte>(new byte[] { mask, mask, 0, 1 << 1 }, Allocator.Temp);
-            using var output = new NativeArray<byte>(4, Allocator.Temp);
+            using var visible = new NativeArray<byte>(new byte[] { mask, 0, 0, 1 << 1 }, Allocator.TempJob);
+            using var explored = new NativeArray<byte>(new byte[] { mask, mask, 0, 1 << 1 }, Allocator.TempJob);
+            using var output = new NativeArray<byte>(4, Allocator.TempJob);
 
             FogTexels.Fill(visible, explored, team, 128, 217, output);
 

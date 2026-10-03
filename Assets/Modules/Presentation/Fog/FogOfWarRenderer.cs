@@ -38,6 +38,8 @@ namespace HyperRTS.Presentation.Fog
         private readonly MatchView _view = new();
         private readonly LiveQuery _fogQuery = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<FogOfWar>()));
+        private readonly LiveQuery _localView = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalFogView>()));
         private MaterialPropertyBlock _properties;
         private Texture2D _texture;
         private Mesh _quad;
@@ -45,27 +47,28 @@ namespace HyperRTS.Presentation.Fog
 
         private void LateUpdate()
         {
-            if (material == null || !_view.Refresh() || !_view.HasMap || !_view.Map.FogOfWar)
+            if (material == null || !_view.Refresh() ||
+                !_localView.In(_view.EntityManager).TryGetSingleton(out LocalFogView view) || !view.Active)
             {
                 return;
             }
 
             var query = _fogQuery.In(_view.EntityManager);
-            if (!query.TryGetSingleton(out FogOfWar fog) || !fog.IsCreated)
+            if (!query.TryGetSingleton(out FogOfWar fog))
             {
                 return;
             }
 
-            if (fog.Version != _version || _texture == null)
+            if (view.Version != _version || _texture == null)
             {
                 query.CompleteDependency();
-                Upload(fog);
+                Upload(fog, view);
             }
 
             Draw(fog);
         }
 
-        private void Upload(in FogOfWar fog)
+        private void Upload(in FogOfWar fog, in LocalFogView view)
         {
             if (_texture == null || _texture.width != fog.Size.x || _texture.height != fog.Size.y)
             {
@@ -79,11 +82,10 @@ namespace HyperRTS.Presentation.Fog
                 };
             }
 
-            var team = _view.Relations.TeamOf(_view.Local.Faction);
-            FogTexels.Fill(fog.Visible, fog.Explored, team, ToByte(exploredOpacity), ToByte(unexploredOpacity),
+            FogTexels.Fill(fog.Visible, fog.Explored, view.Team, ToByte(exploredOpacity), ToByte(unexploredOpacity),
                 _texture.GetPixelData<byte>(0));
             _texture.Apply(false);
-            _version = fog.Version;
+            _version = view.Version;
         }
 
         private void Draw(in FogOfWar fog)

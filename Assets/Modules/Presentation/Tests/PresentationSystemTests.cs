@@ -19,10 +19,8 @@ namespace HyperRTS.Presentation.Tests
         private World _world;
         private EntityManager _em;
         private SystemHandle _teamColor;
-        private SystemHandle _fogView;
         private SystemHandle _fog;
         private EntityCommandBufferSystem _commands;
-        private FogOfWar _grid;
 
         [SetUp]
         public void SetUp()
@@ -31,16 +29,7 @@ namespace HyperRTS.Presentation.Tests
             _em = _world.EntityManager;
             _commands = _world.GetOrCreateSystemManaged<BeginPresentationEntityCommandBufferSystem>();
             _teamColor = _world.CreateSystem<TeamColorSystem>();
-            _fogView = _world.CreateSystem<LocalFogViewSystem>();
             _fog = _world.CreateSystem<FogVisibilitySystem>();
-
-            var relations = new FactionRelations();
-            relations.Teams.Add(0);
-            relations.Teams.Add(1);
-            relations.Teams.Add(2);
-            var match = _em.CreateEntity();
-            _em.AddComponentData(match, relations);
-            _em.AddComponentData(match, new MapSettings { Min = 0f, Size = 8f, FogCellSize = 1f, FogOfWar = true });
 
             var local = _em.CreateEntity(typeof(LocalPlayer));
             _em.AddComponentData(local, new Player { Faction = 1, Color = Blue });
@@ -48,16 +37,7 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            if (_grid.IsCreated)
-            {
-                _grid.Visible.Dispose();
-                _grid.Explored.Dispose();
-            }
-
-            _world.Dispose();
-        }
+        public void TearDown() => _world.Dispose();
 
         [Test]
         public void TeamColor_TintsOwnedMeshesAndChildren_LeavesNeutralAlone()
@@ -88,36 +68,24 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
-        public void Fog_HidesUnseenEnemies_UntilTheyAreVisible()
+        public void Fog_StopsRenderingHiddenRoots_UntilTheyAreRevealed()
         {
-            CreateGrid();
-            var enemy = Spawn(2, new float3(5.5f, 0f, 5.5f));
-            var own = Spawn(1, new float3(5.5f, 0f, 5.5f));
+            var enemy = Spawn(2, float3.zero);
+            var child = _em.CreateEntity(typeof(MaterialMeshInfo));
+            _em.AddBuffer<LinkedEntityGroup>(enemy).AddRange(new NativeArray<LinkedEntityGroup>(
+                new LinkedEntityGroup[] { enemy, child }, Allocator.Temp));
+            var own = Spawn(1, float3.zero);
+            _em.AddComponent<FogHidden>(enemy);
 
-            RunFog();
+            Run(_fog);
             Assert.IsTrue(_em.HasComponent<DisableRendering>(enemy));
-            Assert.IsTrue(_em.HasComponent<FogHidden>(enemy));
+            Assert.IsTrue(_em.HasComponent<DisableRendering>(child));
             Assert.IsFalse(_em.HasComponent<DisableRendering>(own));
 
-            _grid.Visible[_grid.Index(new int2(5, 5))] = 1 << 1;
-            Restamp();
-            RunFog();
+            _em.RemoveComponent<FogHidden>(enemy);
+            Run(_fog);
             Assert.IsFalse(_em.HasComponent<DisableRendering>(enemy));
-            Assert.IsFalse(_em.HasComponent<FogHidden>(enemy));
-        }
-
-        [Test]
-        public void Fog_RevealsEverythingWhenDisabled()
-        {
-            CreateGrid();
-            var enemy = Spawn(2, new float3(5.5f, 0f, 5.5f));
-            RunFog();
-
-            var map = _em.CreateEntityQuery(typeof(MapSettings)).GetSingletonEntity();
-            _em.SetComponentData(map, new MapSettings { Size = 8f, FogOfWar = false });
-            RunFog();
-
-            Assert.IsFalse(_em.HasComponent<DisableRendering>(enemy));
+            Assert.IsFalse(_em.HasComponent<DisableRendering>(child));
         }
 
         private Entity Spawn(byte faction, float3 position)
@@ -126,32 +94,6 @@ namespace HyperRTS.Presentation.Tests
             _em.AddComponentData(entity, new Faction { Value = faction });
             _em.AddComponentData(entity, new LocalToWorld { Value = float4x4.Translate(position) });
             return entity;
-        }
-
-        private void CreateGrid()
-        {
-            _grid = new FogOfWar
-            {
-                Visible = new NativeArray<byte>(64, Allocator.Persistent),
-                Explored = new NativeArray<byte>(64, Allocator.Persistent),
-                Size = new int2(8, 8),
-                CellSize = 1f,
-                Version = 1,
-            };
-            _em.AddComponentData(_em.CreateEntity(), _grid);
-        }
-
-        // Fog visibility only re-evaluates on a new grid version, as after FogOfWarSystem restamps.
-        private void Restamp()
-        {
-            _grid.Version++;
-            _em.CreateEntityQuery(typeof(FogOfWar)).SetSingleton(_grid);
-        }
-
-        private void RunFog()
-        {
-            Run(_fogView);
-            Run(_fog);
         }
 
         private void Run(SystemHandle system)
