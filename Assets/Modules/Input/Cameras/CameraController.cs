@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Entities;
 using UnityEngine;
@@ -47,9 +48,10 @@ namespace HyperRTS.Input.Cameras
         [Tooltip("Rotation the camera resets to (Home key).")]
         public Quaternion defaultRotation = Quaternion.Euler(30, 0, 0);
 
+        private readonly LiveQuery _map = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<MapSettings>()));
+
         private RTSInputActions _actions;
-        private World _world;
-        private EntityQuery _mapQuery;
 
         /// <summary>Centres the view on a world point, keeping height and rotation.</summary>
         public void FocusOn(Vector3 worldPoint) => PlaceAt(ClampToMap(worldPoint), transform.position.y);
@@ -170,13 +172,7 @@ namespace HyperRTS.Input.Cameras
                 return point;
             }
 
-            if (_world != world)
-            {
-                _world = world;
-                _mapQuery = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MapSettings>());
-            }
-
-            return _mapQuery.TryGetSingleton<MapSettings>(out var map) ? (Vector3)map.Clamp(point) : point;
+            return _map.In(world.EntityManager).TryGetSingleton(out MapSettings map) ? (Vector3)map.Clamp(point) : point;
         }
     }
 }

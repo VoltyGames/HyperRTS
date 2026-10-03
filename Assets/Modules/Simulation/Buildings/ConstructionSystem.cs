@@ -106,9 +106,8 @@ namespace HyperRTS.Simulation.Buildings
             }
 
             private bool IsAlliedSite(Entity site, byte faction) =>
-                SiteLookup.HasComponent(site) && SiteLookup.IsComponentEnabled(site) &&
-                TransformLookup.HasComponent(site) && FactionLookup.TryGetComponent(site, out var owner) &&
-                Relations.IsAllied(faction, owner.Value);
+                TransformLookup.HasComponent(site) &&
+                ConstructionRules.IsAlliedSite(SiteLookup, FactionLookup, Relations, site, faction);
 
             /// <summary>Adds this frame's work and returns true once the site is finished.</summary>
             private bool Advance(Entity site, float rate)

@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Units
 
         public void Visit(in SpatialEntry entry)
         {
-            if (entry.Entity == Self || (entry.Flags & SpatialFlags.Unit) == 0)
+            if (entry.Entity == Self || !entry.IsUnit)
             {
                 return;
             }

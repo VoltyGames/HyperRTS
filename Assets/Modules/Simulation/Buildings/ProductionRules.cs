@@ -15,6 +15,13 @@ namespace HyperRTS.Simulation.Buildings
                 .WithAll<BuildingTag, EntityInfo, Faction>()
                 .WithNone<ConstructionProgress, Dead>();
 
+        /// <summary>Prerequisite check that only reads <paramref name="completed"/> when something is required.</summary>
+        public static bool PrerequisitesMet(DynamicBuffer<Prerequisite> required, byte faction,
+            EntityQuery completed) =>
+            required.IsEmpty || PrerequisitesMet(required, faction,
+                completed.ToComponentDataArray<EntityInfo>(Allocator.Temp),
+                completed.ToComponentDataArray<Faction>(Allocator.Temp));
+
         /// <summary>
         /// True when <paramref name="faction"/> owns a completed building of every required type.
         /// <paramref name="infos"/> and <paramref name="owners"/> come from <see cref="CompletedBuildings"/>.
@@ -38,6 +45,20 @@ namespace HyperRTS.Simulation.Buildings
             for (var i = 0; i < infos.Length; i++)
             {
                 if (infos[i].TypeId == typeId && owners[i].Value == faction)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool Offers<T>(DynamicBuffer<T> options, Entity prefab)
+            where T : unmanaged, IBufferElementData, IPrefabOption
+        {
+            foreach (var option in options)
+            {
+                if (option.Prefab == prefab)
                 {
                     return true;
                 }

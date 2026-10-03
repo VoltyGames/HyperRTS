@@ -14,21 +14,29 @@ namespace HyperRTS.Presentation.TeamColors
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial struct TeamColorSystem : ISystem
     {
-        private EntityQuery _players;
+        private EntityQuery _uncolored;
+        private EntityQuery _recolored;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
-            state.RequireForUpdate(_players);
+            _uncolored = SystemAPI.QueryBuilder().WithAll<Faction>().WithNone<TeamColored>().Build();
+            _recolored = SystemAPI.QueryBuilder().WithAll<Faction, TeamColored>().Build();
+            _recolored.SetChangedVersionFilter(ComponentType.ReadOnly<Faction>());
+            state.RequireForUpdate<Player>();
             state.RequireForUpdate<BeginPresentationEntityCommandBufferSystem.Singleton>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (_uncolored.IsEmpty && _recolored.IsEmpty)
+            {
+                return;
+            }
+
             // Index = faction; w == 0 marks a faction without a player.
-            var colors = new NativeArray<float4>(byte.MaxValue + 1, Allocator.TempJob);
+            var colors = CollectionHelper.CreateNativeArray<float4>(byte.MaxValue + 1, state.WorldUpdateAllocator);
             foreach (var player in SystemAPI.Query<RefRO<Player>>())
             {
                 colors[player.ValueRO.Faction] = new float4(player.ValueRO.Color.xyz, 1f);
@@ -46,7 +54,6 @@ namespace HyperRTS.Presentation.TeamColors
 
             state.Dependency = new ColorNewJob { Painter = painter }.Schedule(state.Dependency);
             state.Dependency = new RecolorJob { Painter = painter }.Schedule(state.Dependency);
-            colors.Dispose(state.Dependency);
         }
 
         private struct TeamPainter
@@ -72,7 +79,6 @@ namespace HyperRTS.Presentation.TeamColors
                 {
                     if (Meshes.HasComponent(target))
                     {
-                        // Adding an existing component just overwrites its value.
                         Commands.AddComponent(target, new URPMaterialPropertyBaseColor { Value = color });
                     }
                 }

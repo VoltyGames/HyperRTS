@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Spatial;
 using Unity.Burst;
 using Unity.Collections;
@@ -30,7 +31,7 @@ namespace HyperRTS.Simulation.Units
         public void OnDestroy(ref SystemState state) => _noCells.Dispose();
 
         /// <summary>Distance from the final waypoint that counts as arrived.</summary>
-        public static float ArriveTolerance(float radius) => math.max(0.05f, radius * 0.25f);
+        private static float ArriveTolerance(float radius) => math.max(0.05f, radius * 0.25f);
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
@@ -127,8 +128,8 @@ namespace HyperRTS.Simulation.Units
                     return true;
                 }
 
-                return HasGrid && distance <= radius * 4f + 1f &&
-                       Grid.HasLineOfSight(position, waypoints[1].Position, math.min(radius, Grid.CellSize * 0.45f));
+                return HasGrid && distance <= MoveOrderSystem.StallRadius(radius) &&
+                       Grid.HasLineOfSight(position, waypoints[1].Position, Grid.Clearance(radius));
             }
 
             /// <summary>Rejects or slides a move that would enter a blocked cell; units already inside may leave.</summary>

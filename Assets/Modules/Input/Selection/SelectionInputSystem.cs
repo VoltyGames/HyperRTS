@@ -19,16 +19,12 @@ namespace HyperRTS.Input.Selection
         private const float DoubleClickSeconds = 0.3f;
         private const float DoubleClickPixels = 16f;
 
-        // Published each frame as SelectionDragState for the drag-box UI.
-        private bool _isDragging;
-        private float2 _dragStartScreen;
-        private float2 _dragCurrentScreen;
-
         private RTSInputActions _actions;
         private InputAction[] _groupKeys;
         private Camera _camera;
 
-        private float2 _pressPosition;
+        // Published each frame for the drag-box UI.
+        private SelectionDragState _drag;
         private bool _pressed;
 
         private float2 _lastClickPosition;
@@ -75,12 +71,7 @@ namespace HyperRTS.Input.Selection
             }
 
             SystemAPI.SetSingleton(input);
-            SystemAPI.SetSingleton(new SelectionDragState
-            {
-                IsDragging = _isDragging,
-                StartScreen = _dragStartScreen,
-                CurrentScreen = _dragCurrentScreen,
-            });
+            SystemAPI.SetSingleton(_drag);
         }
 
         /// <summary>Clicks over the HUD, in placement mode or confirming a targeted command are not selections.</summary>
@@ -97,16 +88,13 @@ namespace HyperRTS.Input.Selection
             if (select.WasPressedThisFrame() && !IsPointerClaimed())
             {
                 _pressed = true;
-                _pressPosition = pointer;
-                _isDragging = false;
-                _dragStartScreen = pointer;
-                _dragCurrentScreen = pointer;
+                _drag = new SelectionDragState { StartScreen = pointer, CurrentScreen = pointer };
             }
 
             if (_pressed && select.IsPressed())
             {
-                _dragCurrentScreen = pointer;
-                _isDragging |= math.distance(pointer, _pressPosition) > DragThresholdPixels;
+                _drag.CurrentScreen = pointer;
+                _drag.IsDragging |= math.distance(pointer, _drag.StartScreen) > DragThresholdPixels;
             }
 
             if (!(select.WasReleasedThisFrame() && _pressed))
@@ -116,7 +104,7 @@ namespace HyperRTS.Input.Selection
 
             _pressed = false;
             WriteRelease(camera, pointer, ref input);
-            _isDragging = false;
+            _drag.IsDragging = false;
         }
 
         private void WriteRelease(Camera camera, float2 pointer, ref SelectionInput input)
@@ -129,11 +117,11 @@ namespace HyperRTS.Input.Selection
             var vp = camera.projectionMatrix * camera.worldToCameraMatrix;
             input.ViewProjection = new float4x4(vp.GetColumn(0), vp.GetColumn(1), vp.GetColumn(2), vp.GetColumn(3));
 
-            if (_isDragging)
+            if (_drag.IsDragging)
             {
                 input.Command = SelectionCommand.DragRelease;
-                input.DragMin = math.min(_pressPosition, pointer);
-                input.DragMax = math.max(_pressPosition, pointer);
+                input.DragMin = math.min(_drag.StartScreen, pointer);
+                input.DragMax = math.max(_drag.StartScreen, pointer);
                 return;
             }
 

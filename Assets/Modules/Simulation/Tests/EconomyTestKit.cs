@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using Unity.Collections;
@@ -18,14 +17,8 @@ namespace HyperRTS.Simulation.Tests
         {
             var node = world.EntityManager.CreateEntity();
             world.EntityManager.AddComponentData(node, LocalTransform.FromPosition(position));
-            world.EntityManager.AddComponentData(node, new Faction { Value = Faction.Neutral });
-            world.EntityManager.AddComponentData(node, new ResourceNode
-            {
-                Type = type,
-                Amount = amount,
-                MaxAmount = amount,
-                RegrowthPerSecond = regrowth,
-            });
+            var sink = new EntityManagerSink(world.EntityManager, node);
+            ResourceNodeSetup.Add(ref sink, type, amount, regrowth);
             return node;
         }
 
@@ -38,8 +31,8 @@ namespace HyperRTS.Simulation.Tests
 
         public static Entity MakeBuilder(this TestWorld world, Entity unit, params Entity[] options)
         {
-            world.EntityManager.AddComponentData(unit, new Builder { Rate = 1f });
-            var buffer = world.EntityManager.AddBuffer<BuildOption>(unit);
+            var sink = new EntityManagerSink(world.EntityManager, unit);
+            var buffer = BuilderSetup.Add(ref sink, 1f);
             foreach (var option in options)
             {
                 buffer.Add(new BuildOption { Prefab = option });
@@ -61,12 +54,8 @@ namespace HyperRTS.Simulation.Tests
             return building;
         }
 
-        public static Entity SpawnProvider(this TestWorld world, byte faction, float3 position, int population)
-        {
-            var building = world.SpawnBuilding(faction, position, new float2(2f, 2f));
-            world.EntityManager.AddComponentData(building, new PopulationProvider { Value = population });
-            return building;
-        }
+        public static Entity SpawnProvider(this TestWorld world, byte faction, float3 position, int population) =>
+            world.SpawnBuilding(faction, position, new float2(2f, 2f), populationProvided: population);
 
         public static void SetCost(this TestWorld world, Entity prefab, ResourceType type, int amount) =>
             world.EntityManager.GetBuffer<ResourceCost>(prefab).Add(new ResourceCost { Type = type, Amount = amount });

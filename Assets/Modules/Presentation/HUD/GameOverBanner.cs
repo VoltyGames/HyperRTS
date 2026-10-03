@@ -41,7 +41,7 @@ namespace HyperRTS.Presentation.Hud
             if (view.TryGetMatch(out var match) && match.Phase == MatchPhase.Ended)
             {
                 return match.WinningTeam == 0 ? "DRAW"
-                    : match.WinningTeam == view.Local.Team ? "VICTORY"
+                    : match.WinningTeam == view.Relations.TeamOf(view.Local.Faction) ? "VICTORY"
                     : "DEFEAT";
             }
 

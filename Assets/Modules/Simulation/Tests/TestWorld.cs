@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Units;
 using Unity.Core;
 using Unity.Entities;
@@ -98,7 +97,7 @@ namespace HyperRTS.Simulation.Tests
             for (var i = 0; i < teams.Length; i++)
             {
                 relations.Teams.Add(teams[i]);
-                CreatePlayer((byte)(i + 1), teams[i], local: i == 0);
+                CreatePlayer((byte)(i + 1), local: i == 0);
             }
 
             EntityManager.AddComponentData(match, relations);
@@ -131,10 +130,10 @@ namespace HyperRTS.Simulation.Tests
         }
 
         public Entity SpawnBuilding(byte faction, float3 position, float2 footprint, bool complete = true,
-            float buildTime = 10f, string name = "Building")
+            float buildTime = 10f, string name = "Building", int populationProvided = 0)
         {
             var building = CreateGameEntity(faction, position, 500f, name, out var sink, buildTime);
-            BuildingSetup.Add(ref sink, footprint, 0, complete);
+            BuildingSetup.Add(ref sink, footprint, populationProvided, complete);
             return building;
         }
 
@@ -165,15 +164,11 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        private void CreatePlayer(byte faction, byte team, bool local)
+        private void CreatePlayer(byte faction, bool local)
         {
             var player = EntityManager.CreateEntity();
-            EntityManager.AddComponentData(player, new Player { Faction = faction, Team = team, Name = $"P{faction}" });
-            EntityManager.AddComponentData(player, new Population { Cap = 100 });
-            EntityManager.AddComponent<Defeated>(player);
-            EntityManager.SetComponentEnabled<Defeated>(player, false);
-            EntityManager.AddBuffer<PlayerCommand>(player);
-            EntityManager.AddBuffer<ResourceStock>(player);
+            var sink = new EntityManagerSink(EntityManager, player);
+            PlayerSetup.Add(ref sink, faction, $"P{faction}", float4.zero, populationCap: 100);
 
             if (local)
             {

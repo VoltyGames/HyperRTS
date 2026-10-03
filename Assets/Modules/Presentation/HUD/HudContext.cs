@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
@@ -18,8 +17,6 @@ namespace HyperRTS.Presentation.Hud
     /// <summary>What every HUD widget reads (match, selection) and the only way they write back to ECS.</summary>
     public sealed class HudContext
     {
-        private static readonly float2 DefaultFootprint = new(2f, 2f);
-
         private readonly LiveQuery _selected = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Selected>(),
             ComponentType.ReadOnly<EntityInfo>(),
@@ -69,13 +66,10 @@ namespace HyperRTS.Presentation.Hud
             !EntityManager.HasBuffer<ResourceCost>(prefab)
             || ResourceMath.CanAfford(Stock, EntityManager.GetBuffer<ResourceCost>(prefab, true));
 
-        /// <summary>Completed buildings, for <see cref="PrerequisitesMet"/>.</summary>
-        public EntityQuery CompletedBuildings => _completed.In(EntityManager);
-
-        public bool PrerequisitesMet(Entity prefab, NativeArray<EntityInfo> infos, NativeArray<Faction> owners) =>
+        public bool PrerequisitesMet(Entity prefab) =>
             !EntityManager.HasBuffer<Prerequisite>(prefab)
             || ProductionRules.PrerequisitesMet(EntityManager.GetBuffer<Prerequisite>(prefab, true), View.Local.Faction,
-                infos, owners);
+                _completed.In(EntityManager));
 
         public void Issue(PlayerCommand command)
         {
@@ -88,11 +82,8 @@ namespace HyperRTS.Presentation.Hud
         /// <summary>Hands the building to the input layer, which moves the ghost and confirms placement.</summary>
         public void StartPlacement(Entity prefab)
         {
-            var footprint = EntityManager.HasComponent<NavObstacle>(prefab)
-                ? EntityManager.GetComponentData<NavObstacle>(prefab).Size
-                : DefaultFootprint;
             var entity = SingletonUtility.Ensure<PlacementState>(EntityManager);
-            EntityManager.SetComponentData(entity, new PlacementState { Active = true, Prefab = prefab, Footprint = footprint });
+            EntityManager.SetComponentData(entity, new PlacementState { Active = true, Prefab = prefab });
         }
 
         public void SetPointerOverUI(bool over)

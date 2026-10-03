@@ -100,31 +100,23 @@ namespace HyperRTS.Simulation.Orders
             return false;
         }
 
+        /// <summary>Keeps the command's subjects that this faction owns and that take orders, in order.</summary>
         private bool GatherSubjects(byte faction, Entity unit, NativeList<Entity> subjects)
         {
-            subjects.Clear();
-            if (unit != Entity.Null)
+            CommandSubjects.Collect(unit, _selected, subjects);
+            var kept = 0;
+            for (var i = 0; i < subjects.Length; i++)
             {
-                if (_writer.CanReceiveOrders(unit) && _factions.TryGetComponent(unit, out var owner) &&
+                var entity = subjects[i];
+                if (_writer.CanReceiveOrders(entity) && _factions.TryGetComponent(entity, out var owner) &&
                     owner.Value == faction)
                 {
-                    subjects.Add(unit);
-                }
-
-                return subjects.Length > 0;
-            }
-
-            var selected = _selected.ToEntityArray(Allocator.Temp);
-            foreach (var entity in selected)
-            {
-                if (_factions[entity].Value == faction)
-                {
-                    subjects.Add(entity);
+                    subjects[kept++] = entity;
                 }
             }
 
-            selected.Dispose();
-            return subjects.Length > 0;
+            subjects.Length = kept;
+            return kept > 0;
         }
 
         private void Execute(in PlayerCommand command, NativeArray<Entity> subjects, in FactionRelations relations,

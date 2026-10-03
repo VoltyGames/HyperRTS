@@ -28,6 +28,9 @@ namespace HyperRTS.Simulation.Navigation
 
         public readonly int Index(int2 cell) => cell.y * Size.x + cell.x;
 
+        /// <summary>Line-of-sight clearance for an agent, capped so it fits through a single-cell gap.</summary>
+        public readonly float Clearance(float radius) => math.min(radius, CellSize * 0.45f);
+
         public readonly bool IsWalkable(int2 cell) => InBounds(cell) && Cells[Index(cell)] == 0;
 
         public readonly bool IsWalkable(float3 position) => IsWalkable(WorldToCell(position));

@@ -13,7 +13,9 @@ namespace HyperRTS.Simulation.Spatial
         public NativeParallelMultiHashMap<int, SpatialEntry> Cells;
         public float CellSize;
 
-        public readonly int2 CellOf(float3 position) => (int2)math.floor(position.xz / CellSize);
+        public readonly int2 CellOf(float3 position) => CellOf(position, CellSize);
+
+        public static int2 CellOf(float3 position, float cellSize) => (int2)math.floor(position.xz / cellSize);
 
         /// <summary>Unique for cells within ±32k of the origin, so queries never see foreign cells twice.</summary>
         public static int Key(int2 cell) => (cell.x & 0xFFFF) | (cell.y << 16);

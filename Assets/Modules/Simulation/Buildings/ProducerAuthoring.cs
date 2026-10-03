@@ -57,24 +57,4 @@ namespace HyperRTS.Simulation.Buildings
         /// <summary>Seconds spent on the head of the queue.</summary>
         public float Elapsed;
     }
-
-    /// <summary>A unit prefab a producer can train.</summary>
-    [InternalBufferCapacity(6)]
-    public struct ProductionOption : IBufferElementData
-    {
-        public Entity Prefab;
-    }
-
-    /// <summary>Paid-for units waiting to be trained; the first element is in progress.</summary>
-    [InternalBufferCapacity(5)]
-    public struct ProductionQueueItem : IBufferElementData
-    {
-        public Entity Prefab;
-    }
-
-    /// <summary>Where new units walk after spawning; disabled means stay at the spawn point.</summary>
-    public struct RallyPoint : IComponentData, IEnableableComponent
-    {
-        public float3 Position;
-    }
 }

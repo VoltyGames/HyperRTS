@@ -31,6 +31,19 @@ namespace HyperRTS.Simulation.AI
             public NativeArray<Faction> Owners;
         }
 
+        /// <summary>Query results shared by every AI that thinks this frame.</summary>
+        private struct Snapshot
+        {
+            public AIGroup Harvesters;
+            public AIGroup Nodes;
+            public NativeArray<ResourceNode> NodeData;
+            public AIGroup Army;
+            public AIGroup Targets;
+            public NativeArray<Entity> Producers;
+            public NativeArray<EntityInfo> CompletedInfos;
+            public NativeArray<Faction> CompletedOwners;
+        }
+
         private EntityQuery _idleHarvesters;
         private EntityQuery _idleArmy;
         private EntityQuery _nodes;
@@ -68,20 +81,38 @@ namespace HyperRTS.Simulation.AI
                 }
             }
 
+            if (due.Length == 0)
+            {
+                return;
+            }
+
+            var snapshot = TakeSnapshot();
             foreach (var player in due)
             {
                 var faction = SystemAPI.GetComponent<Player>(player).Faction;
                 var commands = SystemAPI.GetBuffer<PlayerCommand>(player);
-                SendHarvesters(ref state, faction, commands);
-                Train(ref state, player, faction, commands);
-                Attack(ref state, player, faction, commands);
+                SendHarvesters(faction, commands, snapshot);
+                Train(ref state, player, faction, commands, snapshot);
+                Attack(ref state, player, faction, commands, snapshot);
             }
         }
 
-        private void SendHarvesters(ref SystemState state, byte faction, DynamicBuffer<PlayerCommand> commands)
+        private Snapshot TakeSnapshot() => new()
         {
-            var harvesters = AIGroup.From(_idleHarvesters);
-            var nodes = AIGroup.From(_nodes);
+            Harvesters = AIGroup.From(_idleHarvesters),
+            Nodes = AIGroup.From(_nodes),
+            NodeData = _nodes.ToComponentDataArray<ResourceNode>(Allocator.Temp),
+            Army = AIGroup.From(_idleArmy),
+            Targets = AIGroup.From(_targets),
+            Producers = _producers.ToEntityArray(Allocator.Temp),
+            CompletedInfos = _completed.ToComponentDataArray<EntityInfo>(Allocator.Temp),
+            CompletedOwners = _completed.ToComponentDataArray<Faction>(Allocator.Temp),
+        };
+
+        private static void SendHarvesters(byte faction, DynamicBuffer<PlayerCommand> commands, in Snapshot snapshot)
+        {
+            var harvesters = snapshot.Harvesters;
+            var nodes = snapshot.Nodes;
             for (var i = 0; i < harvesters.Length; i++)
             {
                 if (!harvesters.IsOwnedBy(i, faction))
@@ -89,7 +120,7 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                var node = NearestNode(ref state, nodes, harvesters.Position(i));
+                var node = NearestNode(nodes, snapshot.NodeData, harvesters.Position(i));
                 if (node < 0)
                 {
                     return;
@@ -105,14 +136,14 @@ namespace HyperRTS.Simulation.AI
             }
         }
 
-        private int NearestNode(ref SystemState state, in AIGroup nodes, float3 from)
+        private static int NearestNode(in AIGroup nodes, NativeArray<ResourceNode> data, float3 from)
         {
             var best = -1;
             var bestDistance = float.MaxValue;
             for (var i = 0; i < nodes.Length; i++)
             {
                 var distance = math.distancesq(nodes.Position(i).xz, from.xz);
-                if (distance < bestDistance && SystemAPI.GetComponent<ResourceNode>(nodes.Entities[i]).Amount > 0)
+                if (distance < bestDistance && data[i].Amount > 0)
                 {
                     best = i;
                     bestDistance = distance;
@@ -122,7 +153,8 @@ namespace HyperRTS.Simulation.AI
             return best;
         }
 
-        private void Train(ref SystemState state, Entity player, byte faction, DynamicBuffer<PlayerCommand> commands)
+        private void Train(ref SystemState state, Entity player, byte faction, DynamicBuffer<PlayerCommand> commands,
+            in Snapshot snapshot)
         {
             ref var ai = ref SystemAPI.GetComponentRW<AIPlayer>(player).ValueRW;
             var budget = new Budget
@@ -130,11 +162,11 @@ namespace HyperRTS.Simulation.AI
                 Faction = faction,
                 Room = SystemAPI.GetComponent<Population>(player),
                 Stock = SystemAPI.GetBuffer<ResourceStock>(player),
-                Infos = _completed.ToComponentDataArray<EntityInfo>(Allocator.Temp),
-                Owners = _completed.ToComponentDataArray<Faction>(Allocator.Temp),
+                Infos = snapshot.CompletedInfos,
+                Owners = snapshot.CompletedOwners,
             };
 
-            foreach (var producer in _producers.ToEntityArray(Allocator.Temp))
+            foreach (var producer in snapshot.Producers)
             {
                 if (SystemAPI.GetComponent<Faction>(producer).Value != faction ||
                     !SystemAPI.GetBuffer<ProductionQueueItem>(producer).IsEmpty)
@@ -172,9 +204,10 @@ namespace HyperRTS.Simulation.AI
             return Entity.Null;
         }
 
-        private void Attack(ref SystemState state, Entity player, byte faction, DynamicBuffer<PlayerCommand> commands)
+        private void Attack(ref SystemState state, Entity player, byte faction, DynamicBuffer<PlayerCommand> commands,
+            in Snapshot snapshot)
         {
-            var army = AIGroup.From(_idleArmy);
+            var army = snapshot.Army;
             var wave = new NativeList<int>(Allocator.Temp);
             var center = float3.zero;
             for (var i = 0; i < army.Length; i++)
@@ -187,7 +220,7 @@ namespace HyperRTS.Simulation.AI
             }
 
             if (wave.Length == 0 || wave.Length < SystemAPI.GetComponent<AIPlayer>(player).AttackWaveSize ||
-                !TryFindTarget(ref state, faction, center / wave.Length, out var target))
+                !TryFindTarget(ref state, faction, center / wave.Length, snapshot.Targets, out var target))
             {
                 return;
             }
@@ -199,10 +232,10 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>Nearest hostile critical building, else the nearest hostile unit.</summary>
-        private bool TryFindTarget(ref SystemState state, byte faction, float3 from, out float3 target)
+        private bool TryFindTarget(ref SystemState state, byte faction, float3 from, in AIGroup targets,
+            out float3 target)
         {
             var relations = SystemAPI.GetSingleton<FactionRelations>();
-            var targets = AIGroup.From(_targets);
             var bestBase = float.MaxValue;
             var bestUnit = float.MaxValue;
             float3 basePosition = default, unitPosition = default;

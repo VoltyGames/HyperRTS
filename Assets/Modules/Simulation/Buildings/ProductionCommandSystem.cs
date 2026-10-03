@@ -33,6 +33,12 @@ namespace HyperRTS.Simulation.Buildings
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            // Most frames carry no producer commands; skip fetching writable stockpiles.
+            if (!HasProducerCommand(ref state))
+            {
+                return;
+            }
+
             foreach (var (player, commands, stock) in SystemAPI
                          .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<ResourceStock>>()
                          .WithNone<Defeated>())
@@ -57,6 +63,26 @@ namespace HyperRTS.Simulation.Buildings
             }
         }
 
+        private static bool IsProducerCommand(CommandType type) =>
+            type is CommandType.Produce or CommandType.CancelProduction or CommandType.SetRallyPoint
+                or CommandType.Smart;
+
+        private bool HasProducerCommand(ref SystemState state)
+        {
+            foreach (var commands in SystemAPI.Query<DynamicBuffer<PlayerCommand>>())
+            {
+                foreach (var command in commands)
+                {
+                    if (IsProducerCommand(command.Type))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         private void Produce(ref SystemState state, byte faction, in PlayerCommand command,
             DynamicBuffer<ResourceStock> stock)
         {
@@ -69,7 +95,7 @@ namespace HyperRTS.Simulation.Buildings
             var queue = SystemAPI.GetBuffer<ProductionQueueItem>(producer);
             var prefab = command.Prefab;
             if (queue.Length >= SystemAPI.GetComponent<Producer>(producer).QueueLimit ||
-                !PrerequisitesMet(ref state, prefab, faction) ||
+                !ProductionRules.PrerequisitesMet(SystemAPI.GetBuffer<Prerequisite>(prefab), faction, _completed) ||
                 !ResourceMath.TrySpend(stock, SystemAPI.GetBuffer<ResourceCost>(prefab)))
             {
                 return;
@@ -109,8 +135,7 @@ namespace HyperRTS.Simulation.Buildings
 
         private void SetRallyPoint(ref SystemState state, byte faction, in PlayerCommand command)
         {
-            var producers = Subjects(command);
-            foreach (var producer in producers)
+            foreach (var producer in CommandSubjects.Collect(command.Unit, _selectedProducers))
             {
                 if (IsOwnedProducer(ref state, producer, faction))
                 {
@@ -125,10 +150,11 @@ namespace HyperRTS.Simulation.Buildings
         {
             var best = Entity.Null;
             var shortest = int.MaxValue;
-            foreach (var producer in Subjects(command))
+            foreach (var producer in CommandSubjects.Collect(command.Unit, _selectedProducers))
             {
-                if (!IsOwnedProducer(ref state, producer, faction) || IsUnderConstruction(ref state, producer) ||
-                    !Offers(SystemAPI.GetBuffer<ProductionOption>(producer), command.Prefab))
+                if (!IsOwnedProducer(ref state, producer, faction) ||
+                    ConstructionRules.IsUnderConstruction(state.EntityManager, producer) ||
+                    !ProductionRules.Offers(SystemAPI.GetBuffer<ProductionOption>(producer), command.Prefab))
                 {
                     continue;
                 }
@@ -158,44 +184,7 @@ namespace HyperRTS.Simulation.Buildings
             return Entity.Null;
         }
 
-        private NativeArray<Entity> Subjects(in PlayerCommand command)
-        {
-            if (command.Unit == Entity.Null)
-            {
-                return _selectedProducers.ToEntityArray(Allocator.Temp);
-            }
-
-            var single = new NativeArray<Entity>(1, Allocator.Temp);
-            single[0] = command.Unit;
-            return single;
-        }
-
         private bool IsOwnedProducer(ref SystemState state, Entity entity, byte faction) =>
             SystemAPI.HasComponent<Producer>(entity) && SystemAPI.GetComponent<Faction>(entity).Value == faction;
-
-        private bool IsUnderConstruction(ref SystemState state, Entity entity) =>
-            SystemAPI.HasComponent<ConstructionProgress>(entity) &&
-            SystemAPI.IsComponentEnabled<ConstructionProgress>(entity);
-
-        private static bool Offers(DynamicBuffer<ProductionOption> options, Entity prefab)
-        {
-            foreach (var option in options)
-            {
-                if (option.Prefab == prefab)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool PrerequisitesMet(ref SystemState state, Entity prefab, byte faction)
-        {
-            var required = SystemAPI.GetBuffer<Prerequisite>(prefab);
-            return required.IsEmpty || ProductionRules.PrerequisitesMet(required, faction,
-                _completed.ToComponentDataArray<EntityInfo>(Allocator.Temp),
-                _completed.ToComponentDataArray<Faction>(Allocator.Temp));
-        }
     }
 }

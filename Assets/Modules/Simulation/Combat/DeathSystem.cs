@@ -35,6 +35,7 @@ namespace HyperRTS.Simulation.Combat
 
         [BurstCompile]
         [WithPresent(typeof(Dead))]
+        [WithChangeFilter(typeof(Health))]
         private partial struct DeathJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter Ecb;

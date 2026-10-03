@@ -20,6 +20,18 @@ namespace HyperRTS.Simulation.Navigation
             return obstacles.TryGetComponent(entity, out var obstacle) ? Radius(obstacle) : DefaultRadius;
         }
 
+        public static float Radius(EntityManager entityManager, Entity entity)
+        {
+            if (entityManager.HasComponent<NavAgent>(entity))
+            {
+                return entityManager.GetComponentData<NavAgent>(entity).Radius;
+            }
+
+            return entityManager.HasComponent<NavObstacle>(entity)
+                ? Radius(entityManager.GetComponentData<NavObstacle>(entity))
+                : DefaultRadius;
+        }
+
         /// <summary>Half the longest side, so the circle spans the box's width.</summary>
         public static float Radius(in NavObstacle obstacle) => math.cmax(obstacle.Size) * 0.5f;
     }

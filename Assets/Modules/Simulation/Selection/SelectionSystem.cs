@@ -51,7 +51,6 @@ namespace HyperRTS.Simulation.Selection
                 return;
             }
 
-            // WithPresent also visits unselected entities.
             foreach (var (transform, selected, entity) in
                      SystemAPI.Query<RefRO<LocalTransform>, EnabledRefRW<Selected>>()
                          .WithAll<Selectable>()

@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Match
         {
             _critical = SystemAPI.QueryBuilder().WithAll<VictoryCritical, Faction>().WithNone<Dead>().Build();
             state.RequireForUpdate<MatchState>();
+            state.RequireForUpdate<FactionRelations>();
         }
 
         [BurstCompile]
@@ -55,6 +56,7 @@ namespace HyperRTS.Simulation.Match
         /// <summary>Ends the match once someone has lost and no two survivors are hostile; no survivors is a draw.</summary>
         private void Resolve(ref SystemState state, ref MatchState match)
         {
+            var relations = SystemAPI.GetSingleton<FactionRelations>();
             var anyDefeated = false;
             byte winner = 0;
             foreach (var (player, entity) in SystemAPI.Query<RefRO<Player>>().WithPresent<Defeated>().WithEntityAccess())
@@ -65,9 +67,9 @@ namespace HyperRTS.Simulation.Match
                 }
                 else if (winner == 0)
                 {
-                    winner = player.ValueRO.Team;
+                    winner = relations.TeamOf(player.ValueRO.Faction);
                 }
-                else if (winner != player.ValueRO.Team)
+                else if (winner != relations.TeamOf(player.ValueRO.Faction))
                 {
                     return;
                 }

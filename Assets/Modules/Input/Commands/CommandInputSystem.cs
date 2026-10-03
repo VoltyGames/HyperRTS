@@ -7,7 +7,6 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Physics;
 using UnityEngine;
 
 namespace HyperRTS.Input.Commands
@@ -19,12 +18,13 @@ namespace HyperRTS.Input.Commands
     public partial class CommandInputSystem : SystemBase
     {
         private RTSInputActions _actions;
-        private Camera _camera;
+        private WorldPointer _pointer;
 
         protected override void OnCreate()
         {
             _actions = new RTSInputActions();
             _actions.Commands.Enable();
+            _pointer = new WorldPointer(ref CheckedStateRef);
 
             SingletonUtility.Ensure<PendingCommand>(EntityManager);
             SingletonUtility.Ensure<PlacementState>(EntityManager);
@@ -109,24 +109,8 @@ namespace HyperRTS.Input.Commands
             }
         }
 
-        private bool TryPick(out Entity target, out float3 ground)
-        {
-            target = Entity.Null;
-            ground = default;
-            if (_camera == null)
-            {
-                _camera = Camera.main;
-                if (_camera == null)
-                {
-                    return false;
-                }
-            }
-
-            var hasPhysics = SystemAPI.TryGetSingleton<PhysicsWorldSingleton>(out var physics);
-            CompleteDependency();
-            var screen = (float2)_actions.Commands.Point.ReadValue<Vector2>();
-            return WorldPointer.TryPick(_camera, screen, hasPhysics, in physics, EntityManager, out target, out ground);
-        }
+        private bool TryPick(out Entity target, out float3 ground) => _pointer.TryPick(ref CheckedStateRef,
+            _actions.Commands.Point.ReadValue<Vector2>(), out target, out ground);
 
         private bool IsHostile(Entity player, Entity target)
         {

@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Fog;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Selection;
 using Unity.Collections;

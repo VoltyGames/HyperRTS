@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             var end = to.Equals(goalCell) ? goal : grid.CellCenter(to);
-            var clearance = math.min(radius, grid.CellSize * 0.45f);
+            var clearance = grid.Clearance(radius);
             if (from.Equals(to) || grid.HasLineOfSight(origin, end, clearance))
             {
                 Add(waypoints, end, start.y);
@@ -54,16 +54,9 @@ namespace HyperRTS.Simulation.Navigation
             NativeList<int2> cells, DynamicBuffer<PathWaypoint> waypoints, float y)
         {
             var anchor = origin;
-            for (var i = 1; i < cells.Length; i++)
+            for (var i = 1; i < cells.Length - 1; i++)
             {
-                var last = i == cells.Length - 1;
-                var point = last ? end : grid.CellCenter(cells[i]);
-                if (last)
-                {
-                    Add(waypoints, point, y);
-                    return;
-                }
-
+                var point = grid.CellCenter(cells[i]);
                 var next = i + 1 == cells.Length - 1 ? end : grid.CellCenter(cells[i + 1]);
                 if (!grid.HasLineOfSight(anchor, next, clearance))
                 {

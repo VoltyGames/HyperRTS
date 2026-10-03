@@ -11,7 +11,6 @@ namespace HyperRTS.Simulation.Interaction
     {
         public bool Active;
         public Entity Prefab;
-        public float2 Footprint;
 
         /// <summary>Snapped ghost centre under the cursor.</summary>
         public float3 Position;

@@ -2,10 +2,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine.UIElements;
 
@@ -40,9 +37,10 @@ namespace HyperRTS.Presentation.Hud
 
             RefreshAvailability(context);
 
+            var common = CommonStance(context.EntityManager);
             foreach (var (button, stance) in _stances)
             {
-                button.EnableInClassList(ActiveClass, AllHaveStance(context.EntityManager, stance));
+                button.EnableInClassList(ActiveClass, common == stance);
             }
         }
 
@@ -53,12 +51,9 @@ namespace HyperRTS.Presentation.Hud
                 return;
             }
 
-            var completed = context.CompletedBuildings;
-            using var infos = completed.ToComponentDataArray<EntityInfo>(Allocator.Temp);
-            using var owners = completed.ToComponentDataArray<Faction>(Allocator.Temp);
             foreach (var (button, prefab) in _costed)
             {
-                button.SetEnabled(context.CanAfford(prefab) && context.PrerequisitesMet(prefab, infos, owners));
+                button.SetEnabled(context.CanAfford(prefab) && context.PrerequisitesMet(prefab));
             }
         }
 
@@ -141,17 +136,27 @@ namespace HyperRTS.Presentation.Hud
             }
         }
 
-        private bool AllHaveStance(EntityManager entityManager, Stance stance)
+        /// <summary>The stance every armed unit shares, or null when they differ.</summary>
+        private Stance? CommonStance(EntityManager entityManager)
         {
+            Stance? common = null;
             foreach (var entity in _armed)
             {
-                if (!entityManager.Exists(entity) || entityManager.GetComponentData<CombatStance>(entity).Value != stance)
+                if (!entityManager.Exists(entity))
                 {
-                    return false;
+                    return null;
                 }
+
+                var stance = entityManager.GetComponentData<CombatStance>(entity).Value;
+                if (common.HasValue && common != stance)
+                {
+                    return null;
+                }
+
+                common = stance;
             }
 
-            return true;
+            return common;
         }
 
         private static string Caption(Stance stance) => stance switch

@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Combat
 
             private bool MayAutoAcquire(Entity entity) =>
                 !Orders.HasComponent(entity) || !Orders.IsComponentEnabled(entity) ||
-                Orders[entity].Value.Type == OrderType.AttackMove;
+                Orders[entity].Value.Type.EngagesWhileMoving();
         }
 
         private struct NearestHostile : ISpatialVisitor

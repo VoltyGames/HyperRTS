@@ -121,9 +121,10 @@ namespace HyperRTS.Simulation.Buildings
             var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
             var center = PlacementMath.Snap(map, request.Command.Position, footprint);
             SystemAPI.TryGetSingleton<NavGrid>(out var grid);
+            var required = SystemAPI.GetBuffer<Prerequisite>(prefab);
 
             if (!PlacementMath.IsValid(map, grid, center, footprint) || IsOccupied(center, footprint, sites) ||
-                !PrerequisitesMet(ref state, prefab, request.Faction) ||
+                !ProductionRules.PrerequisitesMet(required, request.Faction, _completed) ||
                 !ResourceMath.TrySpend(SystemAPI.GetBuffer<ResourceStock>(request.Player),
                     SystemAPI.GetBuffer<ResourceCost>(prefab)))
             {
@@ -154,53 +155,17 @@ namespace HyperRTS.Simulation.Buildings
                 return result;
             }
 
-            var candidates = new NativeList<Entity>(Allocator.Temp);
-            if (request.Command.Unit != Entity.Null)
-            {
-                candidates.Add(request.Command.Unit);
-            }
-            else
-            {
-                candidates.AddRange(_selectedBuilders.ToEntityArray(Allocator.Temp));
-            }
-
-            foreach (var unit in candidates)
+            foreach (var unit in CommandSubjects.Collect(request.Command.Unit, _selectedBuilders))
             {
                 if (SystemAPI.HasBuffer<BuildOption>(unit) && SystemAPI.HasComponent<Faction>(unit) &&
                     SystemAPI.GetComponent<Faction>(unit).Value == request.Faction &&
-                    Offers(SystemAPI.GetBuffer<BuildOption>(unit), prefab))
+                    ProductionRules.Offers(SystemAPI.GetBuffer<BuildOption>(unit), prefab))
                 {
                     result.Add(unit);
                 }
             }
 
             return result;
-        }
-
-        private static bool Offers(DynamicBuffer<BuildOption> options, Entity prefab)
-        {
-            foreach (var option in options)
-            {
-                if (option.Prefab == prefab)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool PrerequisitesMet(ref SystemState state, Entity prefab, byte faction)
-        {
-            var required = SystemAPI.GetBuffer<Prerequisite>(prefab);
-            if (required.IsEmpty)
-            {
-                return true;
-            }
-
-            var infos = _completed.ToComponentDataArray<EntityInfo>(Allocator.Temp);
-            var owners = _completed.ToComponentDataArray<Faction>(Allocator.Temp);
-            return ProductionRules.PrerequisitesMet(required, faction, infos, owners);
         }
 
         /// <summary>Checks existing obstacles too: the nav grid may lag a frame behind newly placed sites.</summary>

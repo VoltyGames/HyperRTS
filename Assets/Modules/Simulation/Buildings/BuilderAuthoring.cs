@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using UnityEngine;
 
@@ -23,10 +24,8 @@ namespace HyperRTS.Simulation.Buildings
         {
             public override void Bake(BuilderAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new Builder { Rate = authoring.buildRate });
-
-                var options = AddBuffer<BuildOption>(entity);
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
+                var options = BuilderSetup.Add(ref sink, authoring.buildRate);
                 foreach (var option in authoring.buildOptions)
                 {
                     if (option != null)
@@ -42,12 +41,5 @@ namespace HyperRTS.Simulation.Buildings
     public struct Builder : IComponentData
     {
         public float Rate;
-    }
-
-    /// <summary>A building prefab a builder can place.</summary>
-    [InternalBufferCapacity(4)]
-    public struct BuildOption : IBufferElementData
-    {
-        public Entity Prefab;
     }
 }

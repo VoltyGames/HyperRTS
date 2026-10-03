@@ -43,6 +43,7 @@ namespace HyperRTS.Simulation.Resources
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _factionLookup = state.GetComponentLookup<Faction>(true);
+            state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<Harvester, ActiveOrder>().Build());
         }
 
         [BurstCompile]
@@ -105,7 +106,7 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
-                if (!IsHarvestable(order.Value.Target) && !TryReplaceNode(ref order, harvest))
+                if (!IsHarvestable(order.Value.Target) && !TryReplaceNode(ref order, harvester, harvest))
                 {
                     GiveUp(ref harvest, harvester, busy, moving);
                     return;
@@ -146,7 +147,6 @@ namespace HyperRTS.Simulation.Resources
                 }
 
                 harvest.NodePosition = position;
-                harvest.NodeType = node.Type;
                 harvest.Progress += harvester.GatherRate * DeltaTime;
 
                 var whole = (int)harvest.Progress;
@@ -194,7 +194,7 @@ namespace HyperRTS.Simulation.Resources
             private bool IsHarvestable(Entity node) =>
                 NodeLookup.TryGetComponent(node, out var data) && data.Amount > 0 && TransformLookup.HasComponent(node);
 
-            private bool TryReplaceNode(ref ActiveOrder order, in HarvestState harvest)
+            private bool TryReplaceNode(ref ActiveOrder order, in Harvester harvester, in HarvestState harvest)
             {
                 var best = Entity.Null;
                 var bestDistance = ReplacementRange * ReplacementRange;
@@ -202,7 +202,7 @@ namespace HyperRTS.Simulation.Resources
                 {
                     var node = NodeLookup[candidate];
                     var distance = math.distancesq(TransformLookup[candidate].Position.xz, harvest.NodePosition.xz);
-                    if (node.Amount > 0 && node.Type.Equals(harvest.NodeType) && distance <= bestDistance)
+                    if (node.Amount > 0 && node.Type.Equals(harvester.CargoType) && distance <= bestDistance)
                     {
                         best = candidate;
                         bestDistance = distance;

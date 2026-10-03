@@ -11,6 +11,7 @@ namespace HyperRTS.Presentation.Common
     {
         private readonly Color[] _factionColors = new Color[byte.MaxValue + 1];
         private World _world;
+        private (int Order, uint Change) _colorsVersion = (-1, 0u);
         private EntityQuery _localPlayer;
         private EntityQuery _players;
         private EntityQuery _relations;
@@ -69,6 +70,7 @@ namespace HyperRTS.Presentation.Common
         private void Bind(World world)
         {
             _world = world;
+            _colorsVersion = (-1, 0u);
             EntityManager = world.EntityManager;
             _localPlayer = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalPlayer>(), ComponentType.ReadOnly<Player>());
             _players = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<Player>());
@@ -79,6 +81,13 @@ namespace HyperRTS.Presentation.Common
 
         private void RefreshColors()
         {
+            var version = PlayersVersion();
+            if (version == _colorsVersion)
+            {
+                return;
+            }
+
+            _colorsVersion = version;
             Array.Fill(_factionColors, Color.gray);
             using var players = _players.ToComponentDataArray<Player>(Allocator.Temp);
             foreach (var player in players)
@@ -86,6 +95,20 @@ namespace HyperRTS.Presentation.Common
                 var linear = new Color(player.Color.x, player.Color.y, player.Color.z, 1f);
                 _factionColors[player.Faction] = linear.gamma;
             }
+        }
+
+        // Colours change only when players are added, removed or rewritten.
+        private (int Order, uint Change) PlayersVersion()
+        {
+            var handle = EntityManager.GetComponentTypeHandle<Player>(true);
+            var change = 0u;
+            using var chunks = _players.ToArchetypeChunkArray(Allocator.Temp);
+            foreach (var chunk in chunks)
+            {
+                change = Math.Max(change, chunk.GetChangeVersion(ref handle));
+            }
+
+            return (EntityManager.GetComponentOrderVersion<Player>(), change);
         }
     }
 }

@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using UnityEngine;
 
@@ -27,15 +27,8 @@ namespace HyperRTS.Simulation.Resources
         {
             public override void Bake(ResourceNodeAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new ResourceNode
-                {
-                    Type = authoring.type,
-                    Amount = authoring.amount,
-                    MaxAmount = authoring.amount,
-                    RegrowthPerSecond = authoring.regrowthPerSecond,
-                });
-                AddComponent(entity, new Faction { Value = Faction.Neutral });
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
+                ResourceNodeSetup.Add(ref sink, authoring.type, authoring.amount, authoring.regrowthPerSecond);
             }
         }
     }

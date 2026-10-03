@@ -79,8 +79,7 @@ namespace HyperRTS.Simulation.Orders
             _harvesters.HasComponent(unit) && _nodes.HasComponent(target);
 
         private bool CanBuild(Entity unit, Entity target, in FactionRelations relations) =>
-            _builders.HasComponent(unit) && _construction.HasComponent(target) &&
-            _construction.IsComponentEnabled(target) && _factions.HasComponent(target) &&
-            relations.IsAllied(_factions[unit].Value, _factions[target].Value);
+            _builders.HasComponent(unit) &&
+            ConstructionRules.IsAlliedSite(_construction, _factions, relations, target, _factions[unit].Value);
     }
 }

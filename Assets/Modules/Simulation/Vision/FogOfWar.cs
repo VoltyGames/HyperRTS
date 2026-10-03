@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Match;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -30,6 +31,11 @@ namespace HyperRTS.Simulation.Vision
         public readonly bool IsVisible(float3 position, byte team) => Test(Visible, position, team);
 
         public readonly bool IsExplored(float3 position, byte team) => Test(Explored, position, team);
+
+        /// <summary>Hostile entities outside the viewer team's sight are hidden; own, allied and neutral never are.</summary>
+        public readonly bool IsHiddenFrom(in FactionRelations relations, byte viewerFaction, byte faction,
+            float3 position) =>
+            relations.IsHostile(viewerFaction, faction) && !IsVisible(position, relations.TeamOf(viewerFaction));
 
         private readonly bool Test(NativeArray<byte> cells, float3 position, byte team)
         {

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
 using Unity.Collections;
 using Unity.Entities;
@@ -86,20 +86,11 @@ namespace HyperRTS.Simulation.Match
                 var player = CreateAdditionalEntity(TransformUsageFlags.None, entityName: setup.name);
                 var playerName = new FixedString32Bytes();
                 playerName.CopyFromTruncated(setup.name);
-                var color = setup.color.linear;
+                float4 color = (Vector4)setup.color.linear;
 
-                AddComponent(player, new Player
-                {
-                    Faction = faction,
-                    Team = (byte)setup.team,
-                    Name = playerName,
-                    Color = new float4(color.r, color.g, color.b, color.a),
-                });
-                AddComponent(player, new Population());
-                AddComponent<Defeated>(player);
-                SetComponentEnabled<Defeated>(player, false);
-                AddBuffer<PlayerCommand>(player);
-                AddStartingResources(player, setup);
+                var sink = new BakerSink(this, player);
+                var stock = PlayerSetup.Add(ref sink, faction, playerName, color, populationCap: 0);
+                AddStartingResources(stock, setup);
 
                 if (setup.control == PlayerControl.LocalHuman)
                 {
@@ -116,9 +107,8 @@ namespace HyperRTS.Simulation.Match
                 }
             }
 
-            private void AddStartingResources(Entity player, PlayerSetup setup)
+            private static void AddStartingResources(DynamicBuffer<ResourceStock> stock, PlayerSetup setup)
             {
-                var stock = AddBuffer<ResourceStock>(player);
                 foreach (var quantity in setup.startingResources)
                 {
                     if (quantity.type != null)

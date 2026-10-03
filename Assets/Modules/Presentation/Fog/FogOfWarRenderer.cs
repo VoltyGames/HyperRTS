@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using UnityEngine;
@@ -78,7 +79,8 @@ namespace HyperRTS.Presentation.Fog
                 };
             }
 
-            FogTexels.Fill(fog.Visible, fog.Explored, _view.Local.Team, ToByte(exploredOpacity), ToByte(unexploredOpacity),
+            var team = _view.Relations.TeamOf(_view.Local.Faction);
+            FogTexels.Fill(fog.Visible, fog.Explored, team, ToByte(exploredOpacity), ToByte(unexploredOpacity),
                 _texture.GetPixelData<byte>(0));
             _texture.Apply(false);
             _version = fog.Version;

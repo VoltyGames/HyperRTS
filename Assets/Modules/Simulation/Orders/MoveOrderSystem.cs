@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Orders
         }
 
         /// <summary>How close a stalled unit must be for its move to count as done.</summary>
-        public static float StallRadius(float radius) => radius * 4f + 1f;
+        internal static float StallRadius(float radius) => radius * 4f + 1f;
 
         [BurstCompile]
         [WithPresent(typeof(MoveOrderState), typeof(MoveDestination))]

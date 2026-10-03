@@ -23,6 +23,8 @@ namespace HyperRTS.Presentation.Hud
         private readonly ProductionQueueView _queue = new();
         private readonly VisualElement _groups;
         private int _hash = -1;
+        private float _shownCurrent = float.NaN;
+        private float _shownMax = float.NaN;
 
         public SelectionPanel()
         {
@@ -96,11 +98,15 @@ namespace HyperRTS.Presentation.Hud
             {
                 var health = entityManager.GetComponentData<Health>(entity);
                 HudElements.SetFraction(_healthFill, health.Fraction);
-                _healthText.text = $"{health.Current:0} / {health.Max:0}";
+                if (health.Current != _shownCurrent || health.Max != _shownMax)
+                {
+                    _shownCurrent = health.Current;
+                    _shownMax = health.Max;
+                    _healthText.text = $"{health.Current:0} / {health.Max:0}";
+                }
             }
 
-            var building = entityManager.HasComponent<ConstructionProgress>(entity)
-                && entityManager.IsComponentEnabled<ConstructionProgress>(entity);
+            var building = ConstructionRules.IsUnderConstruction(entityManager, entity);
             HudElements.SetVisible(_construction, building);
             if (building)
             {

@@ -18,8 +18,6 @@ namespace HyperRTS.Simulation.Resources
         /// <summary>Last node gathered from, so a replacement of the same type can be found near it.</summary>
         public float3 NodePosition;
 
-        public UnityObjectRef<ResourceType> NodeType;
-
         /// <summary>Fractional gathering carried between frames.</summary>
         public float Progress;
     }

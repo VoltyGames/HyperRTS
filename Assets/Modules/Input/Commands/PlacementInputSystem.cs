@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Physics;
 using UnityEngine;
 
 namespace HyperRTS.Input.Commands
@@ -18,12 +17,13 @@ namespace HyperRTS.Input.Commands
     public partial class PlacementInputSystem : SystemBase
     {
         private RTSInputActions _actions;
-        private Camera _camera;
+        private WorldPointer _pointer;
 
         protected override void OnCreate()
         {
             _actions = new RTSInputActions();
             _actions.Commands.Enable();
+            _pointer = new WorldPointer(ref CheckedStateRef);
 
             SingletonUtility.Ensure<PlacementState>(EntityManager);
             SingletonUtility.Ensure<PointerState>(EntityManager);
@@ -68,12 +68,6 @@ namespace HyperRTS.Input.Commands
 
         private void MoveGhost(ref PlacementState placement, float3 ground)
         {
-            // The HUD may leave the footprint unset; the prefab's obstacle is the authoritative size.
-            if (math.all(placement.Footprint <= 0f) && SystemAPI.HasComponent<NavObstacle>(placement.Prefab))
-            {
-                placement.Footprint = SystemAPI.GetComponent<NavObstacle>(placement.Prefab).Size;
-            }
-
             if (!SystemAPI.TryGetSingleton<MapSettings>(out var map))
             {
                 placement.Position = ground;
@@ -81,10 +75,11 @@ namespace HyperRTS.Input.Commands
                 return;
             }
 
+            var footprint = SystemAPI.GetComponent<NavObstacle>(placement.Prefab).Size;
             SystemAPI.TryGetSingleton<NavGrid>(out var grid);
             CompleteDependency();
-            placement.Position = PlacementMath.Snap(in map, ground, placement.Footprint);
-            placement.Valid = PlacementMath.IsValid(in map, in grid, placement.Position, placement.Footprint);
+            placement.Position = PlacementMath.Snap(in map, ground, footprint);
+            placement.Valid = PlacementMath.IsValid(in map, in grid, placement.Position, footprint);
         }
 
         private void Place(ref PlacementState placement, bool queue)
@@ -105,22 +100,7 @@ namespace HyperRTS.Input.Commands
             }
         }
 
-        private bool TryGetGround(out float3 ground)
-        {
-            ground = default;
-            if (_camera == null)
-            {
-                _camera = Camera.main;
-                if (_camera == null)
-                {
-                    return false;
-                }
-            }
-
-            var hasPhysics = SystemAPI.TryGetSingleton<PhysicsWorldSingleton>(out var physics);
-            CompleteDependency();
-            var screen = (float2)_actions.Commands.Point.ReadValue<Vector2>();
-            return WorldPointer.TryPick(_camera, screen, hasPhysics, in physics, EntityManager, out _, out ground);
-        }
+        private bool TryGetGround(out float3 ground) => _pointer.TryPick(ref CheckedStateRef,
+            _actions.Commands.Point.ReadValue<Vector2>(), out _, out ground);
     }
 }

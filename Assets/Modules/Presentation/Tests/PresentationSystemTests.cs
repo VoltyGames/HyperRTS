@@ -41,8 +41,8 @@ namespace HyperRTS.Presentation.Tests
             _em.AddComponentData(match, new MapSettings { Min = 0f, Size = 8f, FogCellSize = 1f, FogOfWar = true });
 
             var local = _em.CreateEntity(typeof(LocalPlayer));
-            _em.AddComponentData(local, new Player { Faction = 1, Team = 1, Color = Blue });
-            _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 2, Team = 2, Color = new float4(1f, 0f, 0f, 1f) });
+            _em.AddComponentData(local, new Player { Faction = 1, Color = Blue });
+            _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 2, Color = new float4(1f, 0f, 0f, 1f) });
         }
 
         [TearDown]

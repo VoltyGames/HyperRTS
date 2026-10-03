@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Navigation;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Spatial
@@ -82,14 +81,13 @@ namespace HyperRTS.Simulation.Spatial
 
             private void Execute(Entity entity, in LocalTransform transform, in Faction faction)
             {
-                var cell = (int2)math.floor(transform.Position.xz / CellSize);
-                Writer.Add(SpatialIndex.Key(cell), new SpatialEntry
+                Writer.Add(SpatialIndex.Key(SpatialIndex.CellOf(transform.Position, CellSize)), new SpatialEntry
                 {
                     Entity = entity,
                     Position = transform.Position,
                     Radius = Footprint.Radius(entity, AgentLookup, ObstacleLookup),
                     Faction = faction.Value,
-                    Flags = BuildingLookup.HasComponent(entity) ? SpatialFlags.Building : SpatialFlags.Unit,
+                    IsUnit = !BuildingLookup.HasComponent(entity),
                 });
             }
         }

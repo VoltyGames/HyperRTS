@@ -9,17 +9,8 @@ namespace HyperRTS.Presentation.Overlays
     public static class EntityExtent
     {
         /// <summary>Same footprint radius the simulation uses (<see cref="Footprint"/>).</summary>
-        public static float Radius(EntityManager entityManager, Entity entity)
-        {
-            if (entityManager.HasComponent<NavAgent>(entity))
-            {
-                return entityManager.GetComponentData<NavAgent>(entity).Radius;
-            }
-
-            return entityManager.HasComponent<NavObstacle>(entity)
-                ? Footprint.Radius(entityManager.GetComponentData<NavObstacle>(entity))
-                : Footprint.DefaultRadius;
-        }
+        public static float Radius(EntityManager entityManager, Entity entity) =>
+            Footprint.Radius(entityManager, entity);
 
         /// <summary>Top of the rendered mesh, or a guess from the radius when the root has no mesh bounds.</summary>
         public static float Top(EntityManager entityManager, Entity entity, float3 position, float radius)
