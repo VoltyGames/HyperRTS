@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;

@@ -3,6 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Resources
 {
+    /// <summary>Leg of the gather loop a harvester is on.</summary>
     public enum HarvestPhase : byte
     {
         Gathering = 0,

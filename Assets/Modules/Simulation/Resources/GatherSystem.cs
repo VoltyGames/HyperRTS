@@ -107,14 +107,7 @@ namespace HyperRTS.Simulation.Resources
 
                 if (!IsHarvestable(order.Value.Target) && !TryReplaceNode(ref order, harvest))
                 {
-                    // Nothing left nearby: deliver what is carried, then the order is done.
-                    harvest.Phase = HarvestPhase.Returning;
-                    if (harvester.CargoAmount <= 0)
-                    {
-                        busy.ValueRW = false;
-                        moving.ValueRW = false;
-                    }
-
+                    GiveUp(ref harvest, harvester, busy, moving);
                     return;
                 }
 
@@ -129,6 +122,18 @@ namespace HyperRTS.Simulation.Resources
 
                 moving.ValueRW = false;
                 Gather(ref harvester, ref harvest, node, nodePosition);
+            }
+
+            // Nothing left nearby: deliver what is carried, then the order is done.
+            private static void GiveUp(ref HarvestState harvest, in Harvester harvester, EnabledRefRW<ActiveOrder> busy,
+                EnabledRefRW<MoveDestination> moving)
+            {
+                harvest.Phase = HarvestPhase.Returning;
+                if (harvester.CargoAmount <= 0)
+                {
+                    busy.ValueRW = false;
+                    moving.ValueRW = false;
+                }
             }
 
             private void Gather(ref Harvester harvester, ref HarvestState harvest, Entity entity, float3 position)

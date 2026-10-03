@@ -3,6 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Orders
 {
+    /// <summary>Kinds of <see cref="PlayerCommand"/>. Games add their own from <see cref="Custom"/> upward.</summary>
     public enum CommandType : byte
     {
         None = 0,

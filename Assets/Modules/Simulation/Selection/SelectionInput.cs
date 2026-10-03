@@ -3,6 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Selection
 {
+    /// <summary>Selection gesture kinds.</summary>
     public enum SelectionCommand : byte
     {
         None = 0,

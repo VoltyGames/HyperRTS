@@ -2,6 +2,7 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Match
 {
+    /// <summary>Whether the match is still being played.</summary>
     public enum MatchPhase : byte
     {
         Playing = 0,

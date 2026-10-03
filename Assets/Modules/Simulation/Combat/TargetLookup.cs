@@ -43,15 +43,6 @@ namespace HyperRTS.Simulation.Combat
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
 
-        /// <summary>Footprint radius, matching the one the spatial index uses.</summary>
-        public float Radius(Entity entity)
-        {
-            if (_agents.TryGetComponent(entity, out var agent))
-            {
-                return agent.Radius;
-            }
-
-            return _obstacles.TryGetComponent(entity, out var obstacle) ? math.cmax(obstacle.Size) * 0.5f : 0.5f;
-        }
+        public float Radius(Entity entity) => Footprint.Radius(entity, _agents, _obstacles);
     }
 }

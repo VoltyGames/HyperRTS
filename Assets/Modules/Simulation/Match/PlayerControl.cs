@@ -1,5 +1,6 @@
 namespace HyperRTS.Simulation.Match
 {
+    /// <summary>Who drives a player slot.</summary>
     public enum PlayerControl : byte
     {
         LocalHuman = 0,

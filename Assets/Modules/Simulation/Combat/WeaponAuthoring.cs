@@ -71,6 +71,7 @@ namespace HyperRTS.Simulation.Combat
         }
     }
 
+    /// <summary>Attack stats; range is measured edge to edge between footprints.</summary>
     public struct Weapon : IComponentData
     {
         public float Range;

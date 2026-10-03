@@ -82,22 +82,12 @@ namespace HyperRTS.Simulation.Spatial
 
             private void Execute(Entity entity, in LocalTransform transform, in Faction faction)
             {
-                var radius = 0.5f;
-                if (AgentLookup.TryGetComponent(entity, out var agent))
-                {
-                    radius = agent.Radius;
-                }
-                else if (ObstacleLookup.TryGetComponent(entity, out var obstacle))
-                {
-                    radius = math.cmax(obstacle.Size) * 0.5f;
-                }
-
                 var cell = (int2)math.floor(transform.Position.xz / CellSize);
                 Writer.Add(SpatialIndex.Key(cell), new SpatialEntry
                 {
                     Entity = entity,
                     Position = transform.Position,
-                    Radius = radius,
+                    Radius = Footprint.Radius(entity, AgentLookup, ObstacleLookup),
                     Faction = faction.Value,
                     Flags = BuildingLookup.HasComponent(entity) ? SpatialFlags.Building : SpatialFlags.Unit,
                 });

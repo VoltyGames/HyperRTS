@@ -8,8 +8,7 @@ namespace HyperRTS.Presentation.Overlays
     /// <summary>Approximate on-screen size of a unit or building, for sizing overlays.</summary>
     public static class EntityExtent
     {
-        private const float DefaultRadius = 0.5f;
-
+        /// <summary>Same footprint radius the simulation uses (<see cref="Footprint"/>).</summary>
         public static float Radius(EntityManager entityManager, Entity entity)
         {
             if (entityManager.HasComponent<NavAgent>(entity))
@@ -17,12 +16,9 @@ namespace HyperRTS.Presentation.Overlays
                 return entityManager.GetComponentData<NavAgent>(entity).Radius;
             }
 
-            if (entityManager.HasComponent<NavObstacle>(entity))
-            {
-                return math.cmax(entityManager.GetComponentData<NavObstacle>(entity).Size) * 0.5f;
-            }
-
-            return DefaultRadius;
+            return entityManager.HasComponent<NavObstacle>(entity)
+                ? Footprint.Radius(entityManager.GetComponentData<NavObstacle>(entity))
+                : Footprint.DefaultRadius;
         }
 
         /// <summary>Top of the rendered mesh, or a guess from the radius when the root has no mesh bounds.</summary>

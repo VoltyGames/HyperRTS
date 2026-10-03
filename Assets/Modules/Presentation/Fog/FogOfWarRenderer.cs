@@ -35,7 +35,8 @@ namespace HyperRTS.Presentation.Fog
         private float unexploredOpacity = 0.85f;
 
         private readonly MatchView _view = new();
-        private readonly LiveQuery _fogQuery = new(ComponentType.ReadOnly<FogOfWar>());
+        private readonly LiveQuery _fogQuery = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<FogOfWar>()));
         private MaterialPropertyBlock _properties;
         private Texture2D _texture;
         private Mesh _quad;

@@ -45,6 +45,12 @@ namespace HyperRTS.Simulation.Orders
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            // Most frames carry no commands; skip the sync with every job touching unit components.
+            if (!HasUnitCommand(ref state))
+            {
+                return;
+            }
+
             state.CompleteDependency();
             _writer.Update(ref state);
             _resolver.Update(ref state);
@@ -77,6 +83,22 @@ namespace HyperRTS.Simulation.Orders
         }
 
         private static bool IsUnitCommand(CommandType type) => type is >= CommandType.Smart and <= CommandType.SetStance;
+
+        private bool HasUnitCommand(ref SystemState state)
+        {
+            foreach (var commands in SystemAPI.Query<DynamicBuffer<PlayerCommand>>())
+            {
+                foreach (var command in commands)
+                {
+                    if (IsUnitCommand(command.Type))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
 
         private bool GatherSubjects(byte faction, Entity unit, NativeList<Entity> subjects)
         {
@@ -158,7 +180,8 @@ namespace HyperRTS.Simulation.Orders
             for (var i = 0; i < movers.Length; i++)
             {
                 positions[i] = _transforms[movers[i]].Position;
-                radius = math.max(radius, _agents.TryGetComponent(movers[i], out var agent) ? agent.Radius : 0.5f);
+                var own = _agents.TryGetComponent(movers[i], out var agent) ? agent.Radius : Footprint.DefaultRadius;
+                radius = math.max(radius, own);
             }
 
             Formation.Assign(positions, command.Position, radius * 2.5f, slots);

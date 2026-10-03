@@ -48,6 +48,7 @@ namespace HyperRTS.Simulation.Buildings
         }
     }
 
+    /// <summary>Trains the units in its <see cref="ProductionQueueItem"/> queue, one at a time.</summary>
     public struct Producer : IComponentData
     {
         public float3 SpawnOffset;

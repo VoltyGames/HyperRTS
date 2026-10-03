@@ -20,13 +20,16 @@ namespace HyperRTS.Presentation.Hud
         private const float GroundHeight = 0f;
         private const float MaxViewDistance = 1000f;
 
-        private readonly LiveQuery _entities = new(
+        private readonly LiveQuery _entities = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<EntityInfo>(),
             ComponentType.ReadOnly<Faction>(),
             ComponentType.ReadOnly<LocalToWorld>(),
-            ComponentType.Exclude<FogHidden>());
+            ComponentType.Exclude<FogHidden>()));
 
-        private readonly LiveQuery _nodes = new(ComponentType.ReadOnly<ResourceNode>(), ComponentType.ReadOnly<LocalToWorld>());
+        private readonly LiveQuery _nodes = new(entityManager => entityManager.CreateEntityQuery(
+            ComponentType.ReadOnly<ResourceNode>(),
+            ComponentType.ReadOnly<LocalToWorld>()));
+
         private readonly List<(Vector2 Point, Color Color, float Radius)> _blips = new();
         private readonly Vector2[] _view = new Vector2[4];
         private readonly VisualElement _canvas;

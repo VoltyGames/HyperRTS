@@ -51,7 +51,7 @@ namespace HyperRTS.Input.Cameras
         private World _world;
         private EntityQuery _mapQuery;
 
-        /// <summary>Centres the view on a world point, keeping height and rotation (minimap clicks).</summary>
+        /// <summary>Centres the view on a world point, keeping height and rotation.</summary>
         public void FocusOn(Vector3 worldPoint) => PlaceAt(ClampToMap(worldPoint), transform.position.y);
 
         private void Awake()

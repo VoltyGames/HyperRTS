@@ -99,15 +99,7 @@ namespace HyperRTS.Simulation.Match
                 AddComponent<Defeated>(player);
                 SetComponentEnabled<Defeated>(player, false);
                 AddBuffer<PlayerCommand>(player);
-
-                var stock = AddBuffer<ResourceStock>(player);
-                foreach (var quantity in setup.startingResources)
-                {
-                    if (quantity.type != null)
-                    {
-                        ResourceMath.Add(stock, quantity.type, quantity.amount);
-                    }
-                }
+                AddStartingResources(player, setup);
 
                 if (setup.control == PlayerControl.LocalHuman)
                 {
@@ -121,6 +113,18 @@ namespace HyperRTS.Simulation.Match
                         TimeUntilThink = authoring.aiThinkInterval,
                         AttackWaveSize = authoring.aiAttackWaveSize,
                     });
+                }
+            }
+
+            private void AddStartingResources(Entity player, PlayerSetup setup)
+            {
+                var stock = AddBuffer<ResourceStock>(player);
+                foreach (var quantity in setup.startingResources)
+                {
+                    if (quantity.type != null)
+                    {
+                        ResourceMath.Add(stock, quantity.type, quantity.amount);
+                    }
                 }
             }
         }

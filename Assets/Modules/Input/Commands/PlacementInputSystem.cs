@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;

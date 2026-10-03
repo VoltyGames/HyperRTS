@@ -1,5 +1,6 @@
-using HyperRTS.Simulation.Selection;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
+using HyperRTS.Simulation.Selection;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -28,11 +29,11 @@ namespace HyperRTS.Presentation.Selection
         [Tooltip("Border thickness in pixels.")]
         private float borderThickness = 1f;
 
+        private readonly LiveQuery _dragQuery = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<SelectionDragState>()));
+
         private VisualElement _marquee;
         private int _uiVersion = -1;
-
-        private EntityQuery _dragQuery;
-        private World _queryWorld;
 
         // PanelRenderer delivers its root through this callback. Register once (not in OnEnable) to avoid duplicate elements.
         private void Awake()
@@ -105,20 +106,8 @@ namespace HyperRTS.Presentation.Selection
         private bool TryGetDragState(out SelectionDragState state)
         {
             state = default;
-
             var world = World.DefaultGameObjectInjectionWorld;
-            if (world == null || !world.IsCreated)
-            {
-                return false;
-            }
-
-            if (world != _queryWorld)
-            {
-                _dragQuery = world.EntityManager.CreateEntityQuery(typeof(SelectionDragState));
-                _queryWorld = world;
-            }
-
-            return _dragQuery.TryGetSingleton(out state);
+            return world != null && world.IsCreated && _dragQuery.In(world.EntityManager).TryGetSingleton(out state);
         }
 
         // Input reports bottom-left screen pixels; panels are top-left and may be scaled.

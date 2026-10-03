@@ -30,6 +30,7 @@ namespace HyperRTS.Simulation.Resources
         }
     }
 
+    /// <summary>Gathering stats and the cargo currently carried.</summary>
     public struct Harvester : IComponentData
     {
         public int Capacity;

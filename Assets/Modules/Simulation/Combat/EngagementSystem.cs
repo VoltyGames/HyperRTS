@@ -72,7 +72,8 @@ namespace HyperRTS.Simulation.Combat
                 var order = CurrentOrder(entity);
                 if (!attacking.ValueRO)
                 {
-                    if (order.Type == OrderType.None && !IsMoving(entity))
+                    // Attack-movers carry their post along, so a defensive leash is measured from where they engage.
+                    if ((order.Type == OrderType.None && !IsMoving(entity)) || order.Type == OrderType.AttackMove)
                     {
                         stance.Anchor = transform.Position;
                     }
@@ -133,8 +134,13 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                // Attack-move resumes its own goal once AttackTarget is off; only idle defenders head home.
-                if (order.Type == OrderType.None && stance.Value == Stance.Defensive)
+                // Attack-move heads straight back to its goal: a disabled destination would read as arrival to
+                // MoveOrderSystem if it never saw the engagement. Only idle defenders head home.
+                if (order.Type == OrderType.AttackMove)
+                {
+                    MoveTo(entity, order.Position);
+                }
+                else if (order.Type == OrderType.None && stance.Value == Stance.Defensive)
                 {
                     MoveTo(entity, stance.Anchor);
                 }

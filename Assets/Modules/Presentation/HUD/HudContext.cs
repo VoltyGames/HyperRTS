@@ -20,16 +20,13 @@ namespace HyperRTS.Presentation.Hud
     {
         private static readonly float2 DefaultFootprint = new(2f, 2f);
 
-        private readonly LiveQuery _selected = new(
+        private readonly LiveQuery _selected = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Selected>(),
             ComponentType.ReadOnly<EntityInfo>(),
-            ComponentType.Exclude<FogHidden>());
+            ComponentType.Exclude<FogHidden>()));
 
         private readonly LiveQuery _completed = new(entityManager =>
             ProductionRules.CompletedBuildings(Allocator.Temp).Build(entityManager));
-
-        private readonly LiveQuery _pointer = new(ComponentType.ReadWrite<PointerState>());
-        private readonly LiveQuery _placement = new(ComponentType.ReadWrite<PlacementState>());
 
         public MatchView View { get; } = new();
 
@@ -94,25 +91,17 @@ namespace HyperRTS.Presentation.Hud
             var footprint = EntityManager.HasComponent<NavObstacle>(prefab)
                 ? EntityManager.GetComponentData<NavObstacle>(prefab).Size
                 : DefaultFootprint;
-            var entity = GetOrCreateSingleton<PlacementState>(_placement);
+            var entity = SingletonUtility.Ensure<PlacementState>(EntityManager);
             EntityManager.SetComponentData(entity, new PlacementState { Active = true, Prefab = prefab, Footprint = footprint });
         }
 
         public void SetPointerOverUI(bool over)
         {
-            var entity = GetOrCreateSingleton<PointerState>(_pointer);
+            var entity = SingletonUtility.Ensure<PointerState>(EntityManager);
             if (EntityManager.GetComponentData<PointerState>(entity).OverUI != over)
             {
                 EntityManager.SetComponentData(entity, new PointerState { OverUI = over });
             }
-        }
-
-        // Input may not have created the client singletons yet; whoever comes first creates them.
-        private Entity GetOrCreateSingleton<T>(LiveQuery query) where T : unmanaged, IComponentData
-        {
-            return query.In(EntityManager).TryGetSingletonEntity<T>(out var entity)
-                ? entity
-                : EntityManager.CreateEntity(ComponentType.ReadWrite<T>());
         }
     }
 }

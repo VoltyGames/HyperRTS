@@ -3,6 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
 {
+    /// <summary>Planning state of a unit's path.</summary>
     public enum PathStatus : byte
     {
         /// <summary>No path; the next enabled destination requests one.</summary>

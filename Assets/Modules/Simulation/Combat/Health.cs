@@ -3,6 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat
 {
+    /// <summary>Hit points; the entity dies when they reach zero.</summary>
     public struct Health : IComponentData
     {
         public float Current;

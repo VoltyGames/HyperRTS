@@ -104,6 +104,22 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsFalse(_world.IsEnabled<MoveDestination>(soldier));
         }
 
+        [TestCase(Stance.Aggressive)]
+        [TestCase(Stance.Defensive)]
+        public void AttackMove_FightsOnTheWay_ThenReachesGoal(Stance stance)
+        {
+            var soldier = Arm(_world.SpawnUnit(1, float3.zero), stance);
+            var enemy = _world.SpawnUnit(2, new float3(50f, 0f, 0f));
+            var goal = new float3(80f, 0f, 0f);
+            _world.Command(1, new PlayerCommand { Type = CommandType.AttackMove, Unit = soldier, Position = goal });
+
+            _world.Run(30f);
+
+            Assert.IsFalse(_world.EntityManager.Exists(enemy));
+            Assert.Less(math.distance(_world.Get<LocalTransform>(soldier).Position, goal), 1f, "resumes after the fight");
+            Assert.IsFalse(_world.IsEnabled<ActiveOrder>(soldier));
+        }
+
         [Test]
         public void HoldPosition_FiresInRangeButNeverMoves()
         {

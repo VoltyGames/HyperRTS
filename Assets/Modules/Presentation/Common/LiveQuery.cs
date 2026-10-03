@@ -3,17 +3,15 @@ using Unity.Entities;
 
 namespace HyperRTS.Presentation.Common
 {
-    /// <summary>Entity query for MonoBehaviours that is recreated when the world it belongs to is replaced.</summary>
+    /// <summary>
+    /// Entity query for MonoBehaviours that is recreated when the world it belongs to is replaced. Built lazily:
+    /// component types can't be resolved while MonoBehaviours deserialize, before the TypeManager initializes.
+    /// </summary>
     public sealed class LiveQuery
     {
         private readonly Func<EntityManager, EntityQuery> _create;
         private World _world;
         private EntityQuery _query;
-
-        public LiveQuery(params ComponentType[] types)
-        {
-            _create = entityManager => entityManager.CreateEntityQuery(types);
-        }
 
         public LiveQuery(Func<EntityManager, EntityQuery> create)
         {

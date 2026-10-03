@@ -15,11 +15,11 @@ namespace HyperRTS.Presentation.Overlays
     {
         private const float RingLift = 0.05f;
 
-        private readonly LiveQuery _living = new(
+        private readonly LiveQuery _living = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Health>(),
             ComponentType.ReadOnly<Faction>(),
             ComponentType.ReadOnly<LocalToWorld>(),
-            ComponentType.Exclude<FogHidden>());
+            ComponentType.Exclude<FogHidden>()));
 
         private readonly InstanceBatch _ownRings;
         private readonly InstanceBatch _enemyRings;

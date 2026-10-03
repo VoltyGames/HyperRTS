@@ -18,13 +18,14 @@ namespace HyperRTS.Presentation.Overlays
         private const float RallyLineWidth = 0.12f;
         private const float Lift = 0.06f;
 
-        private readonly LiveQuery _placement = new(ComponentType.ReadOnly<PlacementState>());
+        private readonly LiveQuery _placement = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<PlacementState>()));
 
-        private readonly LiveQuery _rallies = new(
+        private readonly LiveQuery _rallies = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Selected>(),
             ComponentType.ReadOnly<RallyPoint>(),
             ComponentType.ReadOnly<Faction>(),
-            ComponentType.ReadOnly<LocalToWorld>());
+            ComponentType.ReadOnly<LocalToWorld>()));
 
         private readonly InstanceBatch _validGhosts;
         private readonly InstanceBatch _invalidGhosts;

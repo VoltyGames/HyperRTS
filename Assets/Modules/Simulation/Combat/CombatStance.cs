@@ -3,6 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat
 {
+    /// <summary>How an armed unit reacts to enemies it wasn't ordered to attack.</summary>
     public enum Stance : byte
     {
         /// <summary>Auto-acquire and chase targets.</summary>
