@@ -1,5 +1,4 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Burst;
 using Unity.Collections;
@@ -57,7 +56,7 @@ namespace HyperRTS.Simulation.Navigation
             ref var grid = ref SystemAPI.GetSingletonRW<NavGrid>().ValueRW;
             grid.Version++;
 
-            var clear = new ClearBytesJob { Cells = grid.Cells }.Schedule(state.Dependency);
+            var clear = new ClearJob { Cells = grid.Cells }.Schedule(state.Dependency);
             state.Dependency = new StampJob { Grid = grid }.Schedule(_obstacles, clear);
         }
 
@@ -72,6 +71,21 @@ namespace HyperRTS.Simulation.Navigation
                 Min = map.Min,
                 CellSize = cellSize,
             }, "NavGrid");
+        }
+
+        // Nested on purpose: Burst-scheduled jobs declared at top level got no job reflection data.
+        [BurstCompile]
+        private struct ClearJob : IJob
+        {
+            public NativeArray<byte> Cells;
+
+            public void Execute()
+            {
+                for (var i = 0; i < Cells.Length; i++)
+                {
+                    Cells[i] = 0;
+                }
+            }
         }
 
         // Single-threaded: overlapping footprints write the same cells.

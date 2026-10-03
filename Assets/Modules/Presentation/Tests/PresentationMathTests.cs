@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Fog;
-using HyperRTS.Presentation.Hud;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Match;
 using NUnit.Framework;
 using Unity.Collections;

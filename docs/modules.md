@@ -165,7 +165,7 @@ raycast + ground plane), `CameraController` (pan, edge scroll, zoom, rotate, map
 
 ## Presentation (client)
 
-`HUD.prefab` bundles the UI Toolkit `HudController` (resource bar, selection panel with queue, command card,
+`HUD.prefab` bundles the UI Toolkit `HUDController` (resource bar, selection panel with queue, command card,
 minimap, game-over banner), `OverlayRenderer` (selection rings, health bars, placement ghost, rally markers via
 `Graphics.RenderMeshInstanced`), `FogOfWarRenderer` (overlay shader) and the drag-box marquee. `TeamColorSystem`
 tints owned meshes with the owner's colour through `URPMaterialPropertyBaseColor`, so use URP Lit materials.

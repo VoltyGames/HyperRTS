@@ -12,10 +12,10 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Presentation.Hud
+namespace HyperRTS.Presentation.HUD
 {
     /// <summary>What every HUD widget reads (match, selection) and the only way they write back to ECS.</summary>
-    public sealed class HudContext
+    public sealed class HUDContext
     {
         private readonly LiveQuery _selected = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Selected>(),
@@ -24,6 +24,9 @@ namespace HyperRTS.Presentation.Hud
 
         private readonly LiveQuery _completed = new(entityManager =>
             ProductionRules.CompletedBuildings(Allocator.Temp).Build(entityManager));
+
+        private readonly LiveQuery _pointer = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<PointerState>()));
 
         public MatchView View { get; } = new();
 
@@ -88,7 +91,7 @@ namespace HyperRTS.Presentation.Hud
 
         public void SetPointerOverUI(bool over)
         {
-            var entity = SingletonUtility.Ensure<PointerState>(EntityManager);
+            var entity = SingletonUtility.Ensure<PointerState>(EntityManager, _pointer.In(EntityManager));
             if (EntityManager.GetComponentData<PointerState>(entity).OverUI != over)
             {
                 EntityManager.SetComponentData(entity, new PointerState { OverUI = over });

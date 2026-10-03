@@ -8,7 +8,7 @@ using UnityEngine;
 namespace HyperRTS.Editor
 {
     /// <summary>HyperRTS menu: one-click playable scene (rig + ground + SubScene with a Match) and docs links.</summary>
-    internal static class RtsSceneWizard
+    internal static class RTSSceneWizard
     {
         private const string RigPath = "Assets/Modules/Prefabs/RTSWorld.prefab";
 

@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -23,6 +24,7 @@ namespace HyperRTS.Simulation.Selection
         private ComponentLookup<UnitTag> _unitLookup;
         private ComponentLookup<BuildingTag> _buildingLookup;
         private ComponentLookup<ControlGroup> _groupLookup;
+        private int _fogVersion;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -38,13 +40,15 @@ namespace HyperRTS.Simulation.Selection
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            SystemAPI.TryGetSingleton(out LocalFogView fogView);
+            DeselectHidden(ref state, in fogView);
             var input = SystemAPI.GetSingleton<SelectionInput>();
             if (input.Command == SelectionCommand.None)
             {
                 return;
             }
 
-            var test = CreateHitTest(ref state, in input);
+            var test = CreateHitTest(ref state, in input, in fogView);
             if (input.Command == SelectionCommand.AssignGroup)
             {
                 AssignGroup(ref state, in test);
@@ -68,7 +72,7 @@ namespace HyperRTS.Simulation.Selection
             }
         }
 
-        private SelectionHitTest CreateHitTest(ref SystemState state, in SelectionInput input)
+        private SelectionHitTest CreateHitTest(ref SystemState state, in SelectionInput input, in LocalFogView fogView)
         {
             _infoLookup.Update(ref state);
             _factionLookup.Update(ref state);
@@ -82,6 +86,7 @@ namespace HyperRTS.Simulation.Selection
                 Clicked = Raycast(ref state, in input),
                 LocalFaction = LocalFaction(ref state),
                 PreferredRank = -1,
+                FogView = fogView,
                 Info = _infoLookup,
                 Factions = _factionLookup,
                 Units = _unitLookup,
@@ -89,10 +94,11 @@ namespace HyperRTS.Simulation.Selection
                 Groups = _groupLookup,
             };
 
-            // Double-click selects every on-screen entity of the clicked type.
+            // Double-click selects every on-screen entity of the clicked type and owner.
             if (input.Command == SelectionCommand.DoubleClick && _infoLookup.HasComponent(test.Clicked))
             {
                 test.DoubleClickType = _infoLookup[test.Clicked].TypeId;
+                test.DoubleClickFaction = test.FactionOf(test.Clicked);
             }
 
             // Ctrl-drag removes everything in the box, so only plain and Shift drags filter by rank.
@@ -123,6 +129,25 @@ namespace HyperRTS.Simulation.Selection
             return physicsWorld.CastRay(rayInput, out var hit) && SystemAPI.HasComponent<Selectable>(hit.Entity)
                 ? hit.Entity
                 : Entity.Null;
+        }
+
+        // An enemy that walks into fog must not stay selected out of sight; checked once per fog restamp.
+        private void DeselectHidden(ref SystemState state, in LocalFogView view)
+        {
+            if (!view.Active || view.Fog.Version == _fogVersion)
+            {
+                return;
+            }
+
+            _fogVersion = view.Fog.Version;
+            foreach (var (faction, transform, selected) in
+                     SystemAPI.Query<RefRO<Faction>, RefRO<LocalTransform>, EnabledRefRW<Selected>>())
+            {
+                if (view.IsHidden(faction.ValueRO.Value, transform.ValueRO.Position))
+                {
+                    selected.ValueRW = false;
+                }
+            }
         }
 
         private int LocalFaction(ref SystemState state)

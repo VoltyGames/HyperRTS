@@ -119,6 +119,37 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void AttackMove_OnHostile_IssuesAttack_ElseAttackMovesToThePoint()
+        {
+            var goal = new float3(8f, 0f, 0f);
+            var enemy = _world.SpawnUnit(2, goal);
+            var friend = _world.SpawnUnit(1, goal);
+            var onEnemy = _world.SpawnUnit(1, float3.zero);
+            var onFriend = _world.SpawnUnit(1, new float3(0f, 0f, 2f));
+            var onGround = _world.SpawnUnit(1, new float3(0f, 0f, -2f));
+            foreach (var (unit, target) in new[] { (onEnemy, enemy), (onFriend, friend), (onGround, Entity.Null) })
+            {
+                _world.EntityManager.AddComponent<Weapon>(unit);
+                _world.Command(1, new PlayerCommand
+                {
+                    Type = CommandType.AttackMove, Unit = unit, Target = target, Position = goal,
+                });
+            }
+
+            RunCommands();
+
+            var attack = _world.Get<ActiveOrder>(onEnemy).Value;
+            Assert.AreEqual(OrderType.Attack, attack.Type);
+            Assert.AreEqual(enemy, attack.Target);
+            foreach (var unit in new[] { onFriend, onGround })
+            {
+                var order = _world.Get<ActiveOrder>(unit).Value;
+                Assert.AreEqual(OrderType.AttackMove, order.Type, "not hostile: attack-move");
+                Assert.Less(math.distance(order.Position, goal), 1e-3f);
+            }
+        }
+
+        [Test]
         public void Smart_OnResourceNodeWithHarvester_IssuesGather()
         {
             var harvester = SpawnSelected(float3.zero);

@@ -24,22 +24,24 @@ namespace HyperRTS.Presentation.Fog
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<BeginPresentationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate<LocalFogView>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var hasViewer = TryGetViewer(ref state, out var viewer, out var fog, out var relations);
+            var view = SystemAPI.GetSingleton<LocalFogView>();
             var factionOrder = state.EntityManager.GetComponentOrderVersion<Faction>();
-            if (hasViewer && fog.Version == _fogVersion && factionOrder == _factionOrder && viewer == _viewer)
+            if (view.Active && view.Fog.Version == _fogVersion && factionOrder == _factionOrder &&
+                view.Viewer == _viewer)
             {
                 return;
             }
 
             // A zero fog version never matches a built grid, so re-enabling fog re-evaluates everything.
-            _fogVersion = hasViewer ? fog.Version : 0;
+            _fogVersion = view.Active ? view.Fog.Version : 0;
             _factionOrder = factionOrder;
-            _viewer = viewer;
+            _viewer = view.Viewer;
             var toggler = new RenderToggler
             {
                 Linked = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true),
@@ -48,39 +50,14 @@ namespace HyperRTS.Presentation.Fog
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
             };
 
-            state.Dependency = hasViewer
+            state.Dependency = view.Active
                 ? new HideJob
                 {
                     Toggler = toggler,
-                    Fog = fog,
-                    Relations = relations,
-                    Viewer = viewer,
+                    View = view,
                     Hidden = SystemAPI.GetComponentLookup<FogHidden>(true),
                 }.ScheduleParallel(state.Dependency)
                 : new RevealAllJob { Toggler = toggler }.ScheduleParallel(state.Dependency);
-        }
-
-        // Fog applies only with an enabled, built grid and a local player on a team.
-        private bool TryGetViewer(ref SystemState state, out byte viewer, out FogOfWar fog,
-            out FactionRelations relations)
-        {
-            viewer = Faction.Neutral;
-            fog = default;
-            relations = default;
-            var enabled = SystemAPI.TryGetSingleton(out MapSettings map) && map.FogOfWar
-                && SystemAPI.TryGetSingleton(out fog) && fog.IsCreated
-                && SystemAPI.TryGetSingleton(out relations);
-            if (!enabled)
-            {
-                return false;
-            }
-
-            foreach (var player in SystemAPI.Query<RefRO<Player>>().WithAll<LocalPlayer>())
-            {
-                viewer = player.ValueRO.Faction;
-            }
-
-            return relations.TeamOf(viewer) != 0;
         }
 
         private struct RenderToggler
@@ -122,14 +99,12 @@ namespace HyperRTS.Presentation.Fog
         {
             public RenderToggler Toggler;
 
-            [ReadOnly] public FogOfWar Fog;
-            public FactionRelations Relations;
-            public byte Viewer;
+            [ReadOnly] public LocalFogView View;
             [ReadOnly] public ComponentLookup<FogHidden> Hidden;
 
             private void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in Faction faction, in LocalToWorld transform)
             {
-                var hide = Fog.IsHiddenFrom(in Relations, Viewer, faction.Value, transform.Position);
+                var hide = View.IsHidden(faction.Value, transform.Position);
                 if (hide != Hidden.HasComponent(entity))
                 {
                     Toggler.Set(sortKey, entity, hide);

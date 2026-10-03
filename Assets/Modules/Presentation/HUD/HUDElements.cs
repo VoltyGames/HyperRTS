@@ -4,10 +4,10 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Presentation.Hud
+namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>Small builders for the HUD's recurring elements; styling lives in Hud.uss.</summary>
-    public static class HudElements
+    /// <summary>Small builders for the HUD's recurring elements; styling lives in HUD.uss.</summary>
+    public static class HUDElements
     {
         public static VisualElement Box(string className, VisualElement parent = null)
         {

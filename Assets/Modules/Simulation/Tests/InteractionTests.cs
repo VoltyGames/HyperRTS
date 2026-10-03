@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
-using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -94,14 +93,6 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.IsFalse(CommandMath.TryGroundPoint(new float3(0f, 10f, 0f), new float3(1f, 0f, 0f), 0f, out _));
             Assert.IsFalse(CommandMath.TryGroundPoint(new float3(0f, 10f, 0f), new float3(0f, 1f, 0f), 0f, out _));
-        }
-
-        [Test]
-        public void ResolveTargeted_AttackMoveOnHostileBecomesAttack()
-        {
-            Assert.AreEqual(CommandType.Attack, CommandMath.ResolveTargeted(CommandType.AttackMove, true));
-            Assert.AreEqual(CommandType.AttackMove, CommandMath.ResolveTargeted(CommandType.AttackMove, false));
-            Assert.AreEqual(CommandType.Move, CommandMath.ResolveTargeted(CommandType.Move, true));
         }
     }
 }

@@ -48,6 +48,8 @@ Assets/Modules/
 - Authoring classes carry `[AddComponentMenu]`, `[Icon]`, `[HelpURL]`, `[DisallowMultipleComponent]` and a
   `[Tooltip]` per field. Paths come from `HyperRTSMenu.cs`. See [`docs/editor-ux.md`](docs/editor-ux.md).
 - Component fields PascalCase; authoring fields camelCase.
+- Acronyms are all-caps in identifiers, files and folders (`RTS`, `HUD`, `UI`, `AI`); USS class names stay
+  lowercase kebab-case (`hud-root`).
 - Systems are `[BurstCompile] partial struct : ISystem`, placed in a phase group from `SystemGroups.cs`
   (never `SimulationSystemGroup` directly). Per-entity work goes in Burst `IJobEntity` jobs: `ScheduleParallel`,
   or `Schedule` when writing other entities through a `ComponentLookup`.

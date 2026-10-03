@@ -8,7 +8,11 @@ namespace HyperRTS.Simulation.Common
         public static Entity Ensure<T>(EntityManager entityManager) where T : unmanaged, IComponentData
         {
             using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<T>());
-            return query.TryGetSingletonEntity<T>(out var entity) ? entity : entityManager.CreateEntity(typeof(T));
+            return Ensure<T>(entityManager, query);
         }
+
+        /// <summary>Same, through a cached query for callers that run every frame.</summary>
+        public static Entity Ensure<T>(EntityManager entityManager, EntityQuery query) where T : unmanaged, IComponentData =>
+            query.TryGetSingletonEntity<T>(out var entity) ? entity : entityManager.CreateEntity(typeof(T));
     }
 }

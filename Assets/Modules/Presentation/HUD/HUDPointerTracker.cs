@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Presentation.Hud
+namespace HyperRTS.Presentation.HUD
 {
     /// <summary>Knows whether the pointer is over a HUD panel, without reading device input directly.</summary>
-    public sealed class HudPointerTracker
+    public sealed class HUDPointerTracker
     {
         private readonly HashSet<VisualElement> _hovered = new();
 

@@ -14,17 +14,13 @@ namespace HyperRTS.Input.Commands
     public sealed class WorldPointer
     {
         private readonly EntityQuery _physics;
-        private readonly EntityQuery _fog;
-        private readonly EntityQuery _relations;
-        private readonly EntityQuery _localPlayer;
+        private readonly EntityQuery _fogView;
         private Camera _camera;
 
         public WorldPointer(ref SystemState state)
         {
             _physics = state.GetEntityQuery(ComponentType.ReadOnly<PhysicsWorldSingleton>());
-            _fog = state.GetEntityQuery(ComponentType.ReadOnly<FogOfWar>());
-            _relations = state.GetEntityQuery(ComponentType.ReadOnly<FactionRelations>());
-            _localPlayer = state.GetEntityQuery(ComponentType.ReadOnly<LocalPlayer>(), ComponentType.ReadOnly<Player>());
+            _fogView = state.GetEntityQuery(ComponentType.ReadOnly<LocalFogView>());
         }
 
         /// <summary>
@@ -91,18 +87,9 @@ namespace HyperRTS.Input.Commands
         }
 
         // Enemies hidden by fog must not be targetable, or a click would reveal and attack them.
-        private bool IsHiddenByFog(EntityManager entityManager, Entity entity)
-        {
-            if (!_fog.TryGetSingleton(out FogOfWar fog) || !fog.IsCreated ||
-                !_relations.TryGetSingleton(out FactionRelations relations) ||
-                !_localPlayer.TryGetSingleton(out Player local))
-            {
-                return false;
-            }
-
-            var faction = entityManager.GetComponentData<Faction>(entity).Value;
-            var position = entityManager.GetComponentData<LocalTransform>(entity).Position;
-            return fog.IsHiddenFrom(in relations, local.Faction, faction, position);
-        }
+        private bool IsHiddenByFog(EntityManager entityManager, Entity entity) =>
+            _fogView.TryGetSingleton(out LocalFogView view) && view.IsHidden(
+                entityManager.GetComponentData<Faction>(entity).Value,
+                entityManager.GetComponentData<LocalTransform>(entity).Position);
     }
 }

@@ -22,6 +22,11 @@ namespace HyperRTS.Presentation.Overlays
             ComponentType.ReadOnly<LocalToWorld>(),
             ComponentType.Exclude<FogHidden>()));
 
+        // Enabled-only, so the loop never asks EntityManager per entity whether it is selected.
+        private readonly LiveQuery _selected = new(entityManager => entityManager.CreateEntityQuery(
+            ComponentType.ReadOnly<Selected>(),
+            ComponentType.ReadOnly<Health>()));
+
         private readonly InstanceBatch _ownRings;
         private readonly InstanceBatch _enemyRings;
         private readonly InstanceBatch _neutralRings;
@@ -49,11 +54,12 @@ namespace HyperRTS.Presentation.Overlays
             using var factions = query.ToComponentDataArray<Faction>(Allocator.Temp);
             using var healths = query.ToComponentDataArray<Health>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
+            using var selection = SelectedSet(entityManager);
 
             for (var i = 0; i < entities.Length; i++)
             {
                 var entity = entities[i];
-                var selected = entityManager.HasComponent<Selected>(entity) && entityManager.IsComponentEnabled<Selected>(entity);
+                var selected = selection.Contains(entity);
                 var damaged = healths[i].Current < healths[i].Max;
                 if (!selected && !damaged)
                 {
@@ -85,6 +91,18 @@ namespace HyperRTS.Presentation.Overlays
             _barsHigh.Draw(front, style.healthHigh, layer);
             _barsMid.Draw(front, style.healthMid, layer);
             _barsLow.Draw(front, style.healthLow, layer);
+        }
+
+        private NativeHashSet<Entity> SelectedSet(EntityManager entityManager)
+        {
+            using var selected = _selected.In(entityManager).ToEntityArray(Allocator.Temp);
+            var set = new NativeHashSet<Entity>(selected.Length, Allocator.Temp);
+            foreach (var entity in selected)
+            {
+                set.Add(entity);
+            }
+
+            return set;
         }
 
         private InstanceBatch RingBatch(Relation relation) => relation switch

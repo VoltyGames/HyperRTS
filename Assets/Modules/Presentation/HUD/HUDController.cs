@@ -2,7 +2,7 @@ using HyperRTS.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Presentation.Hud
+namespace HyperRTS.Presentation.HUD
 {
     /// <summary>Builds the in-game HUD (resources, minimap, selection, command card, banner) and keeps it in sync with ECS.</summary>
     [AddComponentMenu(HyperRTSMenu.UI + "HUD")]
@@ -10,14 +10,14 @@ namespace HyperRTS.Presentation.Hud
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PanelRenderer))]
-    public class HudController : MonoBehaviour
+    public class HUDController : MonoBehaviour
     {
         [SerializeField]
-        [Tooltip("HUD style sheet (Hud.uss).")]
+        [Tooltip("HUD style sheet (HUD.uss).")]
         private StyleSheet styleSheet;
 
-        private readonly HudContext _context = new();
-        private readonly HudPointerTracker _pointer = new();
+        private readonly HUDContext _context = new();
+        private readonly HUDPointerTracker _pointer = new();
         private VisualElement _root;
         private ResourceBar _resources;
         private SelectionPanel _selection;
@@ -55,7 +55,7 @@ namespace HyperRTS.Presentation.Hud
 
         private VisualElement Build()
         {
-            var hud = HudElements.Box("hud-root");
+            var hud = HUDElements.Box("hud-root");
             hud.pickingMode = PickingMode.Ignore;
             if (styleSheet != null)
             {
@@ -68,7 +68,7 @@ namespace HyperRTS.Presentation.Hud
             _minimap = new Minimap();
             _banner = new GameOverBanner();
 
-            var bottom = HudElements.Box("hud-bottom", hud);
+            var bottom = HUDElements.Box("hud-bottom", hud);
             bottom.pickingMode = PickingMode.Ignore;
             bottom.Add(_minimap.Root);
             bottom.Add(_selection.Root);
@@ -92,7 +92,7 @@ namespace HyperRTS.Presentation.Hud
             }
 
             var ready = _context.Refresh();
-            HudElements.SetVisible(_root, ready);
+            HUDElements.SetVisible(_root, ready);
             if (!ready)
             {
                 return;

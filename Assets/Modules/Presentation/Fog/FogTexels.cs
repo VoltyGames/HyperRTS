@@ -1,4 +1,6 @@
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Jobs;
 
 namespace HyperRTS.Presentation.Fog
 {
@@ -8,12 +10,35 @@ namespace HyperRTS.Presentation.Fog
         public static void Fill(NativeArray<byte> visible, NativeArray<byte> explored, byte team,
             byte exploredAlpha, byte unexploredAlpha, NativeArray<byte> output)
         {
-            var mask = 1 << team;
-            for (var i = 0; i < output.Length; i++)
+            new FillJob
             {
-                output[i] = (visible[i] & mask) != 0 ? (byte)0
-                    : (explored[i] & mask) != 0 ? exploredAlpha
-                    : unexploredAlpha;
+                Visible = visible,
+                Explored = explored,
+                Mask = 1 << team,
+                ExploredAlpha = exploredAlpha,
+                UnexploredAlpha = unexploredAlpha,
+                Output = output,
+            }.Run();
+        }
+
+        [BurstCompile]
+        private struct FillJob : IJob
+        {
+            [ReadOnly] public NativeArray<byte> Visible;
+            [ReadOnly] public NativeArray<byte> Explored;
+            public int Mask;
+            public byte ExploredAlpha;
+            public byte UnexploredAlpha;
+            public NativeArray<byte> Output;
+
+            public void Execute()
+            {
+                for (var i = 0; i < Output.Length; i++)
+                {
+                    Output[i] = (Visible[i] & Mask) != 0 ? (byte)0
+                        : (Explored[i] & Mask) != 0 ? ExploredAlpha
+                        : UnexploredAlpha;
+                }
             }
         }
     }

@@ -25,9 +25,5 @@ namespace HyperRTS.Simulation.Interaction
             point.y = height;
             return true;
         }
-
-        /// <summary>Attack-move onto a hostile becomes a direct attack on it.</summary>
-        public static CommandType ResolveTargeted(CommandType pending, bool targetIsHostile) =>
-            pending == CommandType.AttackMove && targetIsHostile ? CommandType.Attack : pending;
     }
 }

@@ -19,6 +19,7 @@ namespace HyperRTS.Presentation.Tests
         private World _world;
         private EntityManager _em;
         private SystemHandle _teamColor;
+        private SystemHandle _fogView;
         private SystemHandle _fog;
         private EntityCommandBufferSystem _commands;
         private FogOfWar _grid;
@@ -30,6 +31,7 @@ namespace HyperRTS.Presentation.Tests
             _em = _world.EntityManager;
             _commands = _world.GetOrCreateSystemManaged<BeginPresentationEntityCommandBufferSystem>();
             _teamColor = _world.CreateSystem<TeamColorSystem>();
+            _fogView = _world.CreateSystem<LocalFogViewSystem>();
             _fog = _world.CreateSystem<FogVisibilitySystem>();
 
             var relations = new FactionRelations();
@@ -92,13 +94,14 @@ namespace HyperRTS.Presentation.Tests
             var enemy = Spawn(2, new float3(5.5f, 0f, 5.5f));
             var own = Spawn(1, new float3(5.5f, 0f, 5.5f));
 
-            Run(_fog);
+            RunFog();
             Assert.IsTrue(_em.HasComponent<DisableRendering>(enemy));
             Assert.IsTrue(_em.HasComponent<FogHidden>(enemy));
             Assert.IsFalse(_em.HasComponent<DisableRendering>(own));
 
             _grid.Visible[_grid.Index(new int2(5, 5))] = 1 << 1;
-            Run(_fog);
+            Restamp();
+            RunFog();
             Assert.IsFalse(_em.HasComponent<DisableRendering>(enemy));
             Assert.IsFalse(_em.HasComponent<FogHidden>(enemy));
         }
@@ -108,11 +111,11 @@ namespace HyperRTS.Presentation.Tests
         {
             CreateGrid();
             var enemy = Spawn(2, new float3(5.5f, 0f, 5.5f));
-            Run(_fog);
+            RunFog();
 
             var map = _em.CreateEntityQuery(typeof(MapSettings)).GetSingletonEntity();
             _em.SetComponentData(map, new MapSettings { Size = 8f, FogOfWar = false });
-            Run(_fog);
+            RunFog();
 
             Assert.IsFalse(_em.HasComponent<DisableRendering>(enemy));
         }
@@ -133,8 +136,22 @@ namespace HyperRTS.Presentation.Tests
                 Explored = new NativeArray<byte>(64, Allocator.Persistent),
                 Size = new int2(8, 8),
                 CellSize = 1f,
+                Version = 1,
             };
             _em.AddComponentData(_em.CreateEntity(), _grid);
+        }
+
+        // Fog visibility only re-evaluates on a new grid version, as after FogOfWarSystem restamps.
+        private void Restamp()
+        {
+            _grid.Version++;
+            _em.CreateEntityQuery(typeof(FogOfWar)).SetSingleton(_grid);
+        }
+
+        private void RunFog()
+        {
+            Run(_fogView);
+            Run(_fog);
         }
 
         private void Run(SystemHandle system)

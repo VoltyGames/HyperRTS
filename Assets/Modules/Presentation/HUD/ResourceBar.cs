@@ -5,7 +5,7 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Presentation.Hud
+namespace HyperRTS.Presentation.HUD
 {
     /// <summary>Top bar: the local player's stockpile per resource type and population used / cap.</summary>
     public sealed class ResourceBar
@@ -21,18 +21,18 @@ namespace HyperRTS.Presentation.Hud
 
         public ResourceBar()
         {
-            Root = HudElements.Box("hud-topbar");
+            Root = HUDElements.Box("hud-topbar");
             Root.AddToClassList("hud-panel");
-            _resources = HudElements.Box("hud-topbar__resources", Root);
+            _resources = HUDElements.Box("hud-topbar__resources", Root);
 
-            var population = HudElements.Box("hud-resource", Root);
-            HudElements.Text("POP", "hud-resource__name", population);
-            _population = HudElements.Text("", "hud-resource__amount", population);
+            var population = HUDElements.Box("hud-resource", Root);
+            HUDElements.Text("POP", "hud-resource__name", population);
+            _population = HUDElements.Text("", "hud-resource__amount", population);
         }
 
         public VisualElement Root { get; }
 
-        public void Refresh(HudContext context)
+        public void Refresh(HUDContext context)
         {
             var stock = context.Stock;
             var hash = stock.Length;
@@ -68,24 +68,24 @@ namespace HyperRTS.Presentation.Hud
             {
                 var type = item.Type.Value;
                 var name = type != null ? type.displayName : "?";
-                var entry = HudElements.Box("hud-resource", _resources);
+                var entry = HUDElements.Box("hud-resource", _resources);
                 if (type != null && type.icon != null)
                 {
-                    entry.Add(HudElements.Icon(type.icon, name, "hud-resource__icon"));
+                    entry.Add(HUDElements.Icon(type.icon, name, "hud-resource__icon"));
                 }
                 else
                 {
-                    HudElements.Text(name.ToUpperInvariant(), "hud-resource__name", entry);
+                    HUDElements.Text(name.ToUpperInvariant(), "hud-resource__name", entry);
                 }
 
-                var amount = HudElements.Text("", "hud-resource__amount", entry);
+                var amount = HUDElements.Text("", "hud-resource__amount", entry);
                 amount.style.color = type != null ? type.color : Color.white;
                 _amounts.Add(amount);
                 _shown.Add(int.MinValue);
             }
         }
 
-        private void RefreshPopulation(HudContext context)
+        private void RefreshPopulation(HUDContext context)
         {
             var player = context.View.LocalPlayer;
             if (!context.EntityManager.HasComponent<Population>(player))

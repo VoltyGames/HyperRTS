@@ -8,14 +8,12 @@ namespace HyperRTS.Simulation.Buildings
     /// <summary>Walk-up helpers for order behaviours that act on a target entity (gather, build, deposit).</summary>
     public static class ReachMath
     {
-        /// <summary>Footprint assumed for targets without a <see cref="NavObstacle"/>.</summary>
-        public const float DefaultFootprint = 1.5f;
-
         /// <summary>Pathing stops at the nearest walkable cell, which may sit up to a cell away from the footprint.</summary>
         public const float Slack = 1f;
 
+        /// <summary>Targets without a <see cref="NavObstacle"/> get the same default extent as <see cref="Footprint"/>.</summary>
         public static float2 HalfExtents(in ComponentLookup<NavObstacle> obstacles, Entity target) =>
-            (obstacles.TryGetComponent(target, out var obstacle) ? obstacle.Size : new float2(DefaultFootprint)) * 0.5f;
+            obstacles.TryGetComponent(target, out var obstacle) ? obstacle.Size * 0.5f : new float2(Footprint.DefaultRadius);
 
         /// <summary>True when the unit's edge is within <see cref="Slack"/> of the target's XZ footprint box.</summary>
         public static bool InReach(float3 unit, float unitRadius, float3 target, float2 halfExtents)

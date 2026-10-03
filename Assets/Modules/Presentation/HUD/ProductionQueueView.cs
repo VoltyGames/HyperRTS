@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Presentation.Hud
+namespace HyperRTS.Presentation.HUD
 {
     /// <summary>A producer's queue: click a slot to cancel it; the head shows its build progress.</summary>
     public sealed class ProductionQueueView
@@ -14,17 +14,17 @@ namespace HyperRTS.Presentation.Hud
 
         public ProductionQueueView()
         {
-            Root = HudElements.Box("hud-queue");
+            Root = HUDElements.Box("hud-queue");
         }
 
         public VisualElement Root { get; }
 
-        public void Refresh(HudContext context, Entity producer)
+        public void Refresh(HUDContext context, Entity producer)
         {
             var entityManager = context.EntityManager;
             var visible = context.IsOwned(producer) && entityManager.HasBuffer<ProductionQueueItem>(producer)
                 && entityManager.GetBuffer<ProductionQueueItem>(producer, true).Length > 0;
-            HudElements.SetVisible(Root, visible);
+            HUDElements.SetVisible(Root, visible);
             if (!visible)
             {
                 _signature = 0;
@@ -44,10 +44,10 @@ namespace HyperRTS.Presentation.Hud
                 Rebuild(context, producer, queue);
             }
 
-            HudElements.SetFraction(_headFill, HeadProgress(entityManager, producer, queue[0].Prefab));
+            HUDElements.SetFraction(_headFill, HeadProgress(entityManager, producer, queue[0].Prefab));
         }
 
-        private void Rebuild(HudContext context, Entity producer, DynamicBuffer<ProductionQueueItem> queue)
+        private void Rebuild(HUDContext context, Entity producer, DynamicBuffer<ProductionQueueItem> queue)
         {
             Root.Clear();
             for (var i = 0; i < queue.Length; i++)
@@ -60,12 +60,12 @@ namespace HyperRTS.Presentation.Hud
                     Argument = index,
                 }));
                 slot.AddToClassList("hud-slot");
-                slot.Add(HudElements.EntityIcon(context.EntityManager, queue[i].Prefab, "hud-slot__icon"));
+                slot.Add(HUDElements.EntityIcon(context.EntityManager, queue[i].Prefab, "hud-slot__icon"));
                 Root.Add(slot);
 
                 if (i == 0)
                 {
-                    HudElements.Bar("hud-slot__progress", slot, out _headFill);
+                    HUDElements.Bar("hud-slot__progress", slot, out _headFill);
                 }
             }
         }

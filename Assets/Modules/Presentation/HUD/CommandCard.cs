@@ -6,7 +6,7 @@ using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Presentation.Hud
+namespace HyperRTS.Presentation.HUD
 {
     /// <summary>Actions for the owned part of the selection: build, train and combat stance.</summary>
     public sealed class CommandCard
@@ -21,13 +21,13 @@ namespace HyperRTS.Presentation.Hud
 
         public CommandCard()
         {
-            Root = HudElements.Box("hud-commands");
+            Root = HUDElements.Box("hud-commands");
             Root.AddToClassList("hud-panel");
         }
 
         public VisualElement Root { get; }
 
-        public void Refresh(HudContext context)
+        public void Refresh(HUDContext context)
         {
             if (context.SelectionHash != _hash)
             {
@@ -44,7 +44,7 @@ namespace HyperRTS.Presentation.Hud
             }
         }
 
-        private void RefreshAvailability(HudContext context)
+        private void RefreshAvailability(HUDContext context)
         {
             if (_costed.Count == 0)
             {
@@ -57,7 +57,7 @@ namespace HyperRTS.Presentation.Hud
             }
         }
 
-        private void Rebuild(HudContext context)
+        private void Rebuild(HUDContext context)
         {
             Root.Clear();
             _costed.Clear();
@@ -70,10 +70,10 @@ namespace HyperRTS.Presentation.Hud
             AddPrefabButtons(context, builds, prefab => context.StartPlacement(prefab));
             AddPrefabButtons(context, products, prefab => context.Issue(new PlayerCommand { Type = CommandType.Produce, Prefab = prefab }));
             AddStanceButtons(context);
-            HudElements.SetShown(Root, Root.childCount > 0);
+            HUDElements.SetShown(Root, Root.childCount > 0);
         }
 
-        private void CollectOptions(HudContext context, List<Entity> builds, List<Entity> products)
+        private void CollectOptions(HUDContext context, List<Entity> builds, List<Entity> products)
         {
             var entityManager = context.EntityManager;
             foreach (var entity in context.Selected)
@@ -106,7 +106,7 @@ namespace HyperRTS.Presentation.Hud
             }
         }
 
-        private void AddPrefabButtons(HudContext context, List<Entity> prefabs, Action<Entity> onClick)
+        private void AddPrefabButtons(HUDContext context, List<Entity> prefabs, Action<Entity> onClick)
         {
             foreach (var prefab in prefabs)
             {
@@ -116,7 +116,7 @@ namespace HyperRTS.Presentation.Hud
             }
         }
 
-        private void AddStanceButtons(HudContext context)
+        private void AddStanceButtons(HUDContext context)
         {
             if (_armed.Count == 0)
             {

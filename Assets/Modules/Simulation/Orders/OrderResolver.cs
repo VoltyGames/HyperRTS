@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Orders
     public struct OrderResolver
     {
         private ComponentLookup<Faction> _factions;
-        private ComponentLookup<Dead> _dead;
+        private TargetLookup _targets;
         private ComponentLookup<Weapon> _weapons;
         private ComponentLookup<Harvester> _harvesters;
         private ComponentLookup<ResourceNode> _nodes;
@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Orders
         public OrderResolver(ref SystemState state)
         {
             _factions = state.GetComponentLookup<Faction>(true);
-            _dead = state.GetComponentLookup<Dead>(true);
+            _targets = new TargetLookup(ref state);
             _weapons = state.GetComponentLookup<Weapon>(true);
             _harvesters = state.GetComponentLookup<Harvester>(true);
             _nodes = state.GetComponentLookup<ResourceNode>(true);
@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Orders
         public void Update(ref SystemState state)
         {
             _factions.Update(ref state);
-            _dead.Update(ref state);
+            _targets.Update(ref state);
             _weapons.Update(ref state);
             _harvesters.Update(ref state);
             _nodes.Update(ref state);
@@ -48,7 +48,9 @@ namespace HyperRTS.Simulation.Orders
             {
                 CommandType.Smart => ResolveSmart(unit, target, relations),
                 CommandType.Attack => CanAttack(unit, target, relations) ? OrderType.Attack : OrderType.Move,
-                CommandType.AttackMove => _weapons.HasComponent(unit) ? OrderType.AttackMove : OrderType.Move,
+                // Attack-move clicked on an enemy attacks it directly.
+                CommandType.AttackMove => CanAttack(unit, target, relations) ? OrderType.Attack
+                    : _weapons.HasComponent(unit) ? OrderType.AttackMove : OrderType.Move,
                 CommandType.Gather => CanGather(unit, target) ? OrderType.Gather : OrderType.Move,
                 CommandType.Build => CanBuild(unit, target, relations) ? OrderType.Build : OrderType.Move,
                 _ => OrderType.Move,
@@ -71,9 +73,7 @@ namespace HyperRTS.Simulation.Orders
         }
 
         private bool CanAttack(Entity unit, Entity target, in FactionRelations relations) =>
-            _weapons.HasComponent(unit) && _factions.HasComponent(target) &&
-            !(_dead.HasComponent(target) && _dead.IsComponentEnabled(target)) &&
-            relations.IsHostile(_factions[unit].Value, _factions[target].Value);
+            _weapons.HasComponent(unit) && _targets.IsValidTarget(target, _factions[unit].Value, relations);
 
         private bool CanGather(Entity unit, Entity target) =>
             _harvesters.HasComponent(unit) && _nodes.HasComponent(target);

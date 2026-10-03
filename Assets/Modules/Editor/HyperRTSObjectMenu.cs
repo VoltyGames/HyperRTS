@@ -9,12 +9,12 @@ using UnityEngine;
 namespace HyperRTS.Editor
 {
     /// <summary>GameObject ▸ HyperRTS menu: ready-to-bake templates and the engine rig prefabs.</summary>
-    internal static class HyperRtsObjectMenu
+    internal static class HyperRTSObjectMenu
     {
         private const string Menu = "GameObject/HyperRTS/";
 
         [MenuItem(Menu + "RTS World (Camera + HUD)", false, 10)]
-        private static void CreateRtsWorld(MenuCommand cmd) =>
+        private static void CreateRTSWorld(MenuCommand cmd) =>
             Place("Assets/Modules/Prefabs/RTSWorld.prefab", "Create RTS World", cmd);
 
         [MenuItem(Menu + "Match", false, 30)]

@@ -6,7 +6,7 @@ using HyperRTS.Simulation.Match;
 using Unity.Entities;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Presentation.Hud
+namespace HyperRTS.Presentation.HUD
 {
     /// <summary>Details of one selected entity, or a tile per entity type with counts for a group.</summary>
     public sealed class SelectionPanel
@@ -28,25 +28,25 @@ namespace HyperRTS.Presentation.Hud
 
         public SelectionPanel()
         {
-            Root = HudElements.Box("hud-selection");
+            Root = HUDElements.Box("hud-selection");
             Root.AddToClassList("hud-panel");
 
-            _single = HudElements.Box("hud-single", Root);
-            var header = HudElements.Box("hud-single__header", _single);
-            _iconSlot = HudElements.Box("hud-single__icon-slot", header);
-            var details = HudElements.Box("hud-single__details", header);
-            _name = HudElements.Text("", "hud-single__name", details);
-            HudElements.Bar("hud-health", details, out _healthFill);
-            _healthText = HudElements.Text("", "hud-single__caption", details);
-            _construction = HudElements.Bar("hud-construction", details, out _constructionFill);
+            _single = HUDElements.Box("hud-single", Root);
+            var header = HUDElements.Box("hud-single__header", _single);
+            _iconSlot = HUDElements.Box("hud-single__icon-slot", header);
+            var details = HUDElements.Box("hud-single__details", header);
+            _name = HUDElements.Text("", "hud-single__name", details);
+            HUDElements.Bar("hud-health", details, out _healthFill);
+            _healthText = HUDElements.Text("", "hud-single__caption", details);
+            _construction = HUDElements.Bar("hud-construction", details, out _constructionFill);
             _single.Add(_queue.Root);
 
-            _groups = HudElements.Box("hud-groups", Root);
+            _groups = HUDElements.Box("hud-groups", Root);
         }
 
         public VisualElement Root { get; }
 
-        public void Refresh(HudContext context)
+        public void Refresh(HUDContext context)
         {
             var selected = context.Selected;
             if (context.SelectionHash != _hash)
@@ -55,24 +55,24 @@ namespace HyperRTS.Presentation.Hud
                 Rebuild(context);
             }
 
-            HudElements.SetShown(Root, selected.Count > 0);
+            HUDElements.SetShown(Root, selected.Count > 0);
             if (selected.Count == 1)
             {
                 RefreshSingle(context, selected[0]);
             }
         }
 
-        private void Rebuild(HudContext context)
+        private void Rebuild(HUDContext context)
         {
             var selected = context.Selected;
-            HudElements.SetVisible(_single, selected.Count == 1);
-            HudElements.SetVisible(_groups, selected.Count > 1);
+            HUDElements.SetVisible(_single, selected.Count == 1);
+            HUDElements.SetVisible(_groups, selected.Count > 1);
             if (selected.Count == 1)
             {
                 var entity = selected[0];
                 var entityManager = context.EntityManager;
                 _iconSlot.Clear();
-                var icon = HudElements.EntityIcon(entityManager, entity, "hud-single__icon");
+                var icon = HUDElements.EntityIcon(entityManager, entity, "hud-single__icon");
                 if (entityManager.HasComponent<Faction>(entity))
                 {
                     var color = context.View.ColorOf(entityManager.GetComponentData<Faction>(entity).Value);
@@ -88,16 +88,16 @@ namespace HyperRTS.Presentation.Hud
             }
         }
 
-        private void RefreshSingle(HudContext context, Entity entity)
+        private void RefreshSingle(HUDContext context, Entity entity)
         {
             var entityManager = context.EntityManager;
             var hasHealth = entityManager.HasComponent<Health>(entity);
-            HudElements.SetVisible(_healthFill.parent, hasHealth);
-            HudElements.SetVisible(_healthText, hasHealth);
+            HUDElements.SetVisible(_healthFill.parent, hasHealth);
+            HUDElements.SetVisible(_healthText, hasHealth);
             if (hasHealth)
             {
                 var health = entityManager.GetComponentData<Health>(entity);
-                HudElements.SetFraction(_healthFill, health.Fraction);
+                HUDElements.SetFraction(_healthFill, health.Fraction);
                 if (health.Current != _shownCurrent || health.Max != _shownMax)
                 {
                     _shownCurrent = health.Current;
@@ -107,16 +107,16 @@ namespace HyperRTS.Presentation.Hud
             }
 
             var building = ConstructionRules.IsUnderConstruction(entityManager, entity);
-            HudElements.SetVisible(_construction, building);
+            HUDElements.SetVisible(_construction, building);
             if (building)
             {
-                HudElements.SetFraction(_constructionFill, entityManager.GetComponentData<ConstructionProgress>(entity).Value);
+                HUDElements.SetFraction(_constructionFill, entityManager.GetComponentData<ConstructionProgress>(entity).Value);
             }
 
             _queue.Refresh(context, entity);
         }
 
-        private void RebuildGroups(HudContext context)
+        private void RebuildGroups(HUDContext context)
         {
             _groups.Clear();
             var entityManager = context.EntityManager;
@@ -137,10 +137,10 @@ namespace HyperRTS.Presentation.Hud
             for (var i = 0; i < representatives.Count && i < MaxGroups; i++)
             {
                 var entity = representatives[i];
-                var tile = HudElements.Box("hud-group", _groups);
-                tile.Add(HudElements.EntityIcon(entityManager, entity, "hud-group__icon"));
+                var tile = HUDElements.Box("hud-group", _groups);
+                tile.Add(HUDElements.EntityIcon(entityManager, entity, "hud-group__icon"));
                 var typeId = entityManager.GetComponentData<EntityInfo>(entity).TypeId;
-                HudElements.Text(counts[typeId].ToString(), "hud-group__count", tile);
+                HUDElements.Text(counts[typeId].ToString(), "hud-group__count", tile);
             }
         }
     }

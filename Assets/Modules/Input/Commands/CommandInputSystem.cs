@@ -97,9 +97,7 @@ namespace HyperRTS.Input.Commands
             }
 
             var queue = commands.Queue.IsPressed();
-            var type = rightClick
-                ? CommandType.Smart
-                : CommandMath.ResolveTargeted(pending.Type, IsHostile(player, target));
+            var type = rightClick ? CommandType.Smart : pending.Type;
             Issue(player, new PlayerCommand { Type = type, Target = target, Position = ground, Queue = queue });
 
             // Shift keeps the targeting mode for the next waypoint.
@@ -111,18 +109,6 @@ namespace HyperRTS.Input.Commands
 
         private bool TryPick(out Entity target, out float3 ground) => _pointer.TryPick(ref CheckedStateRef,
             _actions.Commands.Point.ReadValue<Vector2>(), out target, out ground);
-
-        private bool IsHostile(Entity player, Entity target)
-        {
-            if (target == Entity.Null || !SystemAPI.HasComponent<Faction>(target) ||
-                !SystemAPI.TryGetSingleton<FactionRelations>(out var relations))
-            {
-                return false;
-            }
-
-            var faction = SystemAPI.GetComponent<Player>(player).Faction;
-            return relations.IsHostile(faction, SystemAPI.GetComponent<Faction>(target).Value);
-        }
 
         private void Issue(Entity player, PlayerCommand command) =>
             EntityManager.GetBuffer<PlayerCommand>(player).Add(command);
