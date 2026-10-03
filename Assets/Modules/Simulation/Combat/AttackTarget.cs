@@ -6,5 +6,8 @@ namespace HyperRTS.Simulation.Combat
     public struct AttackTarget : IComponentData, IEnableableComponent
     {
         public Entity Value;
+
+        /// <summary>Refreshed each frame by <see cref="EngagementSystem"/>; the weapon fires only while set.</summary>
+        public bool InRange;
     }
 }

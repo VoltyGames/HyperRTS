@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using UnityEngine;
 
@@ -51,7 +52,7 @@ namespace HyperRTS.Simulation.Combat
             public override void Bake(WeaponAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new Weapon
+                var weapon = new Weapon
                 {
                     Range = authoring.range,
                     Damage = authoring.damage,
@@ -62,10 +63,10 @@ namespace HyperRTS.Simulation.Combat
                         : Entity.Null,
                     ProjectileSpeed = authoring.projectileSpeed,
                     AcquireRange = authoring.acquireRange,
-                });
-                AddComponent(entity, new CombatStance { Value = authoring.stance, Anchor = authoring.transform.position });
-                AddComponent<AttackTarget>(entity);
-                SetComponentEnabled<AttackTarget>(entity, false);
+                };
+
+                var sink = new BakerSink(this, entity);
+                WeaponSetup.Add(ref sink, weapon, authoring.stance, authoring.transform.position);
             }
         }
     }
