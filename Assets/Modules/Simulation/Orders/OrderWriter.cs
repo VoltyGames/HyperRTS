@@ -11,6 +11,7 @@ namespace HyperRTS.Simulation.Orders
         private BufferLookup<QueuedOrder> _queue;
         private ComponentLookup<MoveDestination> _move;
         private ComponentLookup<AttackTarget> _attack;
+        private ComponentLookup<MoveOrderState> _moveOrder;
 
         public OrderWriter(ref SystemState state)
         {
@@ -18,6 +19,7 @@ namespace HyperRTS.Simulation.Orders
             _queue = state.GetBufferLookup<QueuedOrder>();
             _move = state.GetComponentLookup<MoveDestination>();
             _attack = state.GetComponentLookup<AttackTarget>();
+            _moveOrder = state.GetComponentLookup<MoveOrderState>();
         }
 
         public void Update(ref SystemState state)
@@ -26,6 +28,7 @@ namespace HyperRTS.Simulation.Orders
             _queue.Update(ref state);
             _move.Update(ref state);
             _attack.Update(ref state);
+            _moveOrder.Update(ref state);
         }
 
         public bool CanReceiveOrders(Entity unit) => _active.HasComponent(unit);
@@ -72,6 +75,11 @@ namespace HyperRTS.Simulation.Orders
             if (_attack.HasComponent(unit))
             {
                 _attack.SetComponentEnabled(unit, false);
+            }
+
+            if (_moveOrder.HasComponent(unit))
+            {
+                _moveOrder.SetComponentEnabled(unit, false);
             }
         }
     }

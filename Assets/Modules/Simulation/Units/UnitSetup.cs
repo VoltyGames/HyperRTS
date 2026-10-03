@@ -15,9 +15,12 @@ namespace HyperRTS.Simulation.Units
             sink.SetEnabled<MoveDestination>(false);
             sink.Add(new NavAgent { Radius = radius });
             sink.AddBuffer<PathWaypoint>();
+            sink.Add<PathState>();
             sink.Add<ActiveOrder>();
             sink.SetEnabled<ActiveOrder>(false);
             sink.AddBuffer<QueuedOrder>();
+            sink.Add<MoveOrderState>();
+            sink.SetEnabled<MoveOrderState>(false);
         }
     }
 }
