@@ -10,5 +10,8 @@ namespace HyperRTS.Simulation.Match
 
         /// <summary>Idle combat units needed before the AI attacks.</summary>
         public int AttackWaveSize;
+
+        /// <summary>Round-robin cursor over production options.</summary>
+        public int NextOption;
     }
 }

@@ -13,5 +13,8 @@ namespace HyperRTS.Simulation.Match
     {
         public MatchPhase Phase;
         public byte WinningTeam;
+
+        /// <summary>Bit per faction that has owned a <see cref="VictoryCritical"/> entity; only those can lose.</summary>
+        public uint Contenders;
     }
 }

@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using UnityEngine;
 
@@ -23,8 +24,8 @@ namespace HyperRTS.Simulation.Resources
         {
             public override void Bake(HarvesterAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new Harvester { Capacity = authoring.capacity, GatherRate = authoring.gatherRate });
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
+                HarvesterSetup.Add(ref sink, authoring.capacity, authoring.gatherRate);
             }
         }
     }

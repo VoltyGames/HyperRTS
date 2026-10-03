@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Units;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -34,13 +35,8 @@ namespace HyperRTS.Simulation.Buildings
         {
             public override void Bake(ProducerAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new Producer { SpawnOffset = authoring.spawnOffset, QueueLimit = authoring.queueLimit });
-                AddBuffer<ProductionQueueItem>(entity);
-                AddComponent<RallyPoint>(entity);
-                SetComponentEnabled<RallyPoint>(entity, false);
-
-                var options = AddBuffer<ProductionOption>(entity);
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
+                var options = ProducerSetup.Add(ref sink, authoring.spawnOffset, authoring.queueLimit);
                 foreach (var option in authoring.productionOptions)
                 {
                     if (option != null)
