@@ -5,13 +5,7 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Attack
 {
-    /// <summary>
-    /// Applies damage from attackers to their <see cref="AttackTarget"/> on a cadence driven by
-    /// <see cref="AttackCooldown"/>. An attacker carries one damage component
-    /// (<see cref="MeleeAttackDamage"/> or <see cref="RangeAttackDamage"/>). Burst jobs write the
-    /// target's <see cref="HealthComponent"/> through a lookup, so they run single-threaded
-    /// (several attackers can hit the same target).
-    /// </summary>
+    /// <summary>Deals melee or ranged damage to <see cref="AttackTarget"/> on cooldown. Single-threaded: attackers can share a target.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
     public partial struct AttackSystem : ISystem
@@ -67,7 +61,7 @@ namespace HyperRTS.Simulation.Attack
 
             cooldown.TimeRemaining = cooldown.Interval;
 
-            // A destroyed target simply has no health left to hit.
+            // The target may already be destroyed.
             if (healthLookup.TryGetRefRW(target, out var health))
             {
                 health.ValueRW.CurrentHealth -= damage;

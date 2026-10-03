@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Selection
 {
-    /// <summary>Bakes a selectable entity: <see cref="Selectable"/>, disabled <see cref="Selected"/>, type and highlight colours. The render-side base-colour override is added at runtime by the presentation layer.</summary>
+    /// <summary>Bakes the selection components; the presentation layer adds the colour override at runtime.</summary>
     [AddComponentMenu(HyperRTSMenu.Selection + "Selectable")]
     [Icon(HyperRTSIcons.Selection)]
     [HelpURL(HyperRTSDocs.WorldSetup)]
@@ -38,6 +38,5 @@ namespace HyperRTS.Simulation.Selection
         }
     }
 
-    /// <summary>Tag marking an entity that can be selected.</summary>
     public struct Selectable : IComponentData { }
 }

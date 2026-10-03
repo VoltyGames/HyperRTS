@@ -24,10 +24,7 @@ namespace HyperRTS.Simulation.Units
         }
     }
 
-    /// <summary>
-    /// World-space move order. Enableable: set the value and enable it to issue an order;
-    /// <see cref="MovementSystem"/> disables it on arrival, so orders never change the archetype.
-    /// </summary>
+    /// <summary>Move order: set and enable it to issue, disabled on arrival.</summary>
     public struct MoveDestination : IComponentData, IEnableableComponent
     {
         public float3 Value;

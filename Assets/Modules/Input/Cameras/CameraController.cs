@@ -35,9 +35,9 @@ namespace HyperRTS.Input.Cameras
         [Tooltip("Rotation the camera resets to (Home key).")]
         public Quaternion defaultRotation = Quaternion.Euler(30, 0, 0);
 
-        // Map Input System device values back to the legacy axis ranges to keep the original feel.
-        private const float ScrollNormalization = 0.1f;   // scroll: ~+/-1 per notch -> legacy ~+/-0.1
-        private const float MouseDeltaSensitivity = 0.1f; // "Mouse X" default sensitivity
+        // Scale Input System values to the legacy axis ranges.
+        private const float ScrollNormalization = 0.1f;   // ~±1 per notch -> ~±0.1
+        private const float MouseDeltaSensitivity = 0.1f; // legacy "Mouse X" sensitivity
 
         private void Start()
         {
@@ -76,7 +76,6 @@ namespace HyperRTS.Input.Cameras
             var position = transform.position;
             var movement = Vector3.zero;
 
-            // Handle camera movement (restrict Y-axis movement)
             if (keyboard.wKey.isPressed)
             {
                 movement += new Vector3(transform.forward.x, 0, transform.forward.z);
@@ -96,7 +95,7 @@ namespace HyperRTS.Input.Cameras
 
             transform.position += movement * (moveSpeed * Time.deltaTime);
 
-            // Maintain the original Y position (prevent falling to the ground)
+            // Pan on XZ only; zoom owns the height.
             transform.position = new Vector3(transform.position.x, position.y, transform.position.z);
         }
 
@@ -144,7 +143,6 @@ namespace HyperRTS.Input.Cameras
                 return;
             }
 
-            // Reset camera position and rotation
             if (keyboard.homeKey.isPressed)
             {
                 ResetViewToDefault();

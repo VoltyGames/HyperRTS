@@ -6,10 +6,7 @@ using UnityEngine;
 
 namespace HyperRTS.Input.Selection
 {
-    /// <summary>
-    /// Reads the camera and Input System (the managed side), classifies the gesture into a
-    /// click/drag-box/double-click, and writes the <see cref="SelectionInput"/> singleton.
-    /// </summary>
+    /// <summary>Turns mouse input into a click, drag or double-click and writes the <see cref="SelectionInput"/> singleton.</summary>
     [UpdateInGroup(typeof(OrderSystemGroup))]
     [UpdateBefore(typeof(SelectionSystem))]
     public partial class SelectionInputSystem : SystemBase
@@ -18,8 +15,7 @@ namespace HyperRTS.Input.Selection
         private const float DoubleClickSeconds = 0.3f;
         private const float DoubleClickPixels = 16f;
 
-        // Live drag state (screen pixels, bottom-left), published each frame as the
-        // SelectionDragState singleton and read by SelectionDragBoxUI.
+        // Published each frame as SelectionDragState for the drag-box UI.
         private bool _isDragging;
         private float2 _dragStartScreen;
         private float2 _dragCurrentScreen;
@@ -111,8 +107,7 @@ namespace HyperRTS.Input.Selection
 
             _pressed = false;
 
-            // Only a release produces a command, so the modifiers and view-projection are computed
-            // here rather than every frame (SelectionSystem ignores them while Command == None).
+            // Only a release issues a command, so modifiers and view-projection are read here.
             input.Additive = _actions.Selection.Additive.IsPressed();
             input.Subtract = _actions.Selection.Subtract.IsPressed();
             input.ScreenSize = new float2(Screen.width, Screen.height);

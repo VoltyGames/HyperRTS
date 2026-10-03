@@ -2,7 +2,7 @@
 
 namespace HyperRTS.Simulation.Selection
 {
-    /// <summary>Kind of a selectable entity; lets double-click select all of one kind on screen.</summary>
+    /// <summary>Lets double-click select every on-screen entity of one kind.</summary>
     public enum SelectableKind : byte
     {
         None = 0,
@@ -10,9 +10,6 @@ namespace HyperRTS.Simulation.Selection
         Building = 2,
     }
 
-    /// <summary>
-    /// The type of a selectable entity.
-    /// </summary>
     public struct SelectableType : IComponentData
     {
         public SelectableKind Kind;

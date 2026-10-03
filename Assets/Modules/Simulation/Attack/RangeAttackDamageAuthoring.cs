@@ -23,9 +23,6 @@ namespace HyperRTS.Simulation.Attack
         }
     }
 
-    /// <summary>
-    /// Component for ranged attack damage.
-    /// </summary>
     public struct RangeAttackDamage : IComponentData
     {
         public int Value;

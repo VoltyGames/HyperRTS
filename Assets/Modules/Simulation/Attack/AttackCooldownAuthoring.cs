@@ -23,16 +23,12 @@ namespace HyperRTS.Simulation.Attack
         }
     }
 
-    /// <summary>
-    /// Gates how often an attacker deals damage. <see cref="AttackSystem"/> ticks
-    /// <see cref="TimeRemaining"/> down and applies damage when it reaches zero.
-    /// </summary>
+    /// <summary>Attack rate limiter, ticked by <see cref="AttackSystem"/>.</summary>
     public struct AttackCooldown : IComponentData
     {
         /// <summary>Seconds between attacks.</summary>
         public float Interval;
 
-        /// <summary>Seconds remaining until the next attack is ready.</summary>
         public float TimeRemaining;
     }
 }

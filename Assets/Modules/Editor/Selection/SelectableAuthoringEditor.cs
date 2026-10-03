@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Selection
 {
-    /// <summary>Draws the default <see cref="SelectableAuthoring"/> inspector plus a live Selected/Base highlight preview.</summary>
+    /// <summary>Default inspector plus a Selected/Base colour preview.</summary>
     [CustomEditor(typeof(SelectableAuthoring))]
     [CanEditMultipleObjects]
     public class SelectableAuthoringEditor : UnityEditor.Editor

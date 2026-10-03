@@ -6,11 +6,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Units
 {
-    /// <summary>
-    /// Moves every entity with an enabled <see cref="MoveDestination"/> toward it at its
-    /// <see cref="MovementSpeed"/>, in a parallel Burst job. On arrival (within
-    /// <see cref="MoveJob.ArriveThreshold"/>) the order is disabled - no structural change.
-    /// </summary>
+    /// <summary>Moves entities toward an enabled <see cref="MoveDestination"/> and disables it on arrival.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
     public partial struct MovementSystem : ISystem
@@ -28,7 +24,7 @@ namespace HyperRTS.Simulation.Units
 
             public float DeltaTime;
 
-            // `ref` (not `in`) destination: the value and its EnabledRefRW must share one writable type handle.
+            // `ref`, not `in`: it must share one writable handle with EnabledRefRW.
             private void Execute(ref LocalTransform transform, in MovementSpeed speed, ref MoveDestination destination,
                 EnabledRefRW<MoveDestination> hasOrder)
             {

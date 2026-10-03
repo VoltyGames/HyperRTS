@@ -5,11 +5,7 @@ using Unity.Rendering;
 
 namespace HyperRTS.Presentation.Selection
 {
-    /// <summary>
-    /// Placeholder highlight: a parallel job writes each selectable's base colour from its <see cref="Selected"/>
-    /// state. The change filter limits it to chunks whose selection changed, so idle frames write nothing and
-    /// Entities Graphics re-uploads no material data. (Highlight colours are baked; runtime edits need a re-select.)
-    /// </summary>
+    /// <summary>Writes each selectable's base colour from <see cref="Selected"/>, only in chunks whose selection changed.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial struct SelectionHighlightSystem : ISystem
@@ -22,7 +18,7 @@ namespace HyperRTS.Presentation.Selection
 
         [BurstCompile]
         [WithPresent(typeof(Selected))]
-        // Max two filter types: selection toggled, or the colour override was just added (own writes don't re-trigger).
+        // Two types max; the colour type catches newly added overrides.
         [WithChangeFilter(typeof(Selected), typeof(URPMaterialPropertyBaseColor))]
         private partial struct HighlightJob : IJobEntity
         {

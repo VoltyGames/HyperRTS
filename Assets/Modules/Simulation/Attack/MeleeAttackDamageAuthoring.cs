@@ -23,9 +23,6 @@ namespace HyperRTS.Simulation.Attack
         }
     }
 
-    /// <summary>
-    /// Component for melee attack damage.
-    /// </summary>
     public struct MeleeAttackDamage : IComponentData
     {
         public int Value;

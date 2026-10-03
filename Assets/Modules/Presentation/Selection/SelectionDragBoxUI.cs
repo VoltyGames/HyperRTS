@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.Selection
 {
-    /// <summary>Placeholder UI Toolkit marquee drawn from the <see cref="SelectionDragState"/> singleton.</summary>
+    /// <summary>Drag-box marquee drawn from <see cref="SelectionDragState"/>.</summary>
     [AddComponentMenu(HyperRTSMenu.Selection + "Selection Drag Box UI")]
     [Icon(HyperRTSIcons.Selection)]
     [HelpURL(HyperRTSDocs.Roadmap)]
@@ -34,8 +34,7 @@ namespace HyperRTS.Presentation.Selection
         private EntityQuery _dragQuery;
         private World _queryWorld;
 
-        // PanelRenderer doesn't expose rootVisualElement; the root arrives via the reload callback.
-        // Register once here, not in OnEnable, to avoid creating duplicate code-generated elements.
+        // PanelRenderer delivers its root through this callback. Register once (not in OnEnable) to avoid duplicate elements.
         private void Awake()
         {
             GetComponent<PanelRenderer>().RegisterUIReloadCallback(OnUIReload);
@@ -49,7 +48,7 @@ namespace HyperRTS.Presentation.Selection
             }
         }
 
-        // Fires on first load and on every asset change; the version skips redundant reloads.
+        // Fires on load and on asset changes; skip versions already built.
         private void OnUIReload(PanelRenderer panelRenderer, VisualElement root, int version)
         {
             if (root == null || version == _uiVersion)
@@ -102,8 +101,7 @@ namespace HyperRTS.Presentation.Selection
             _marquee.style.height = rect.height;
         }
 
-        // Reads the SelectionDragState singleton published by the input layer. False until a
-        // simulation world with the singleton exists (before play, or on a server with no input).
+        // False until a world with the singleton exists (edit mode, headless server).
         private bool TryGetDragState(out SelectionDragState state)
         {
             state = default;
@@ -123,7 +121,7 @@ namespace HyperRTS.Presentation.Selection
             return _dragQuery.TryGetSingleton(out state);
         }
 
-        // Bottom-left screen points -> top-left panel rect (assumes PanelSettings ConstantPixelSize, scale 1).
+        // Bottom-left screen coords -> top-left panel rect (assumes ConstantPixelSize, scale 1).
         private static Rect ScreenToPanelRect(float2 a, float2 b)
         {
             var xMin = Mathf.Min(a.x, b.x);

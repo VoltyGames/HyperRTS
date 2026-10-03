@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor
 {
-    /// <summary>GameObject ▸ HyperRTS menu items that drop the engine rig prefabs into the scene.</summary>
+    /// <summary>GameObject ▸ HyperRTS menu items that place the engine prefabs.</summary>
     internal static class HyperRtsObjectMenu
     {
         [MenuItem("GameObject/HyperRTS/RTS World", false, 10)]

@@ -2,13 +2,10 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Selection
 {
-    /// <summary>
-    /// Burst-friendly, side-effect-free selection helpers, testable without a camera or ECS world.
-    /// Screen space is pixels, bottom-left origin (matches Mouse.position / Camera.WorldToScreenPoint).
-    /// </summary>
+    /// <summary>Pure selection math. Screen space is pixels with a bottom-left origin.</summary>
     public static class SelectionMath
     {
-        /// <summary>Point in the rectangle spanned by <paramref name="a"/>/<paramref name="b"/> (any corner order, edges inclusive).</summary>
+        /// <summary>Rect from two corners in any order, edges inclusive.</summary>
         public static bool RectContains(float2 a, float2 b, float2 point)
         {
             var min = math.min(a, b);
@@ -17,7 +14,7 @@ namespace HyperRTS.Simulation.Selection
                    point.y >= min.y && point.y <= max.y;
         }
 
-        /// <summary>Projects a world point to screen pixels via <c>projection * worldToCamera</c>; false when behind the camera.</summary>
+        /// <summary>World point to screen pixels; false when behind the camera.</summary>
         public static bool WorldToScreenPoint(float4x4 viewProjection, float3 world, float2 screenSize,
             out float2 screen)
         {
@@ -34,7 +31,7 @@ namespace HyperRTS.Simulation.Selection
             return true;
         }
 
-        /// <summary>No modifier replaces (selected iff hit), Shift adds, Ctrl removes; subtract wins if both held.</summary>
+        /// <summary>No modifier replaces, Shift adds, Ctrl removes; Ctrl wins.</summary>
         public static bool ResolveSelected(bool current, bool hit, bool additive, bool subtract)
         {
             if (subtract)

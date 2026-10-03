@@ -4,16 +4,12 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Buildings
 {
-    /// <summary>
-    /// Advances <see cref="ConstructionProgress"/> (a 0..1 fraction) on every building under
-    /// construction, in a parallel Burst job. At full progress the component is disabled,
-    /// marking the building complete without a structural change.
-    /// </summary>
+    /// <summary>Advances <see cref="ConstructionProgress"/> and disables it when complete.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct ConstructionSystem : ISystem
     {
-        // Fraction of construction completed per second (~10 seconds to finish).
+        // ~10 s to build.
         public const float BuildRatePerSecond = 0.1f;
 
         [BurstCompile]

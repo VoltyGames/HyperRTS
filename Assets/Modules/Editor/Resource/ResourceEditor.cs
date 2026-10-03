@@ -76,7 +76,7 @@ namespace HyperRTS.Editor.Resource
                 return;
             }
 
-            // An icon is optional, but missing it is usually a mistake - confirm before continuing.
+            // The icon is optional, but a missing one is usually a mistake.
             var icon = iconField.value as Sprite;
             if (icon == null &&
                 !EditorUtility.DisplayDialog("Missing icon",
@@ -121,14 +121,14 @@ namespace HyperRTS.Editor.Resource
             Select(null);
         }
 
-        // Persist asset changes, then re-sync the list (no Refresh - the AssetDatabase calls update it in-process).
+        // No Refresh needed: AssetDatabase calls update in-process.
         private void Persist()
         {
             AssetDatabase.SaveAssets();
             Reload();
         }
 
-        // Load resource assets from disk into the list, registering each with the runtime manager.
+        // Loads the assets and re-registers them with ResourceManager.
         private void Reload()
         {
             resources.Clear();
@@ -151,7 +151,7 @@ namespace HyperRTS.Editor.Resource
             listView.RefreshItems();
         }
 
-        // Bind a resource to the form; null clears it and hides the edit buttons.
+        // null clears the form and hides the edit buttons.
         private void Select(ResourceData data)
         {
             selected = data;

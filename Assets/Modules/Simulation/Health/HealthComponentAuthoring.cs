@@ -27,9 +27,6 @@ namespace HyperRTS.Simulation.Health
         }
     }
 
-    /// <summary>
-    /// Health component for entities that have health.
-    /// </summary>
     public struct HealthComponent : IComponentData
     {
         public int CurrentHealth;

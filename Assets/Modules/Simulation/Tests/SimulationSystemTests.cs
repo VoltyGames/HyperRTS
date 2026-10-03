@@ -12,11 +12,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>
-    /// Smoke tests for the Burst systems. The world is built from an explicit system
-    /// list (not <see cref="DefaultWorldInitialization.Initialize"/>) so global discovery
-    /// can't pull unrelated systems into the test world.
-    /// </summary>
+    /// <summary>Built from an explicit system list so global discovery can't add unrelated systems.</summary>
     public class SimulationSystemTests
     {
         private World _world;
@@ -30,7 +26,7 @@ namespace HyperRTS.Simulation.Tests
 
             DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(_world,
                 typeof(SimulationSystemGroup),
-                typeof(TransformSystemGroup), // ordering target of MovementSystemGroup
+                typeof(TransformSystemGroup), // MovementSystemGroup orders against it
                 typeof(EndSimulationEntityCommandBufferSystem),
                 typeof(OrderSystemGroup),
                 typeof(MovementSystemGroup),
@@ -54,8 +50,7 @@ namespace HyperRTS.Simulation.Tests
             _world = null;
         }
 
-        // Ticks the simulation group with a fixed delta. Updating only this group keeps
-        // the pushed time (the whole-world update would let UpdateWorldTimeSystem overwrite it).
+        // Updates only this group so UpdateWorldTimeSystem doesn't overwrite the pushed time.
         private void Tick(float deltaTime)
         {
             _world.SetTime(new TimeData(elapsedTime: deltaTime, deltaTime: deltaTime));
@@ -71,7 +66,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void MovementSystem_MovesUnitTowardDestination()
         {
-            // Factory spawns the unit at the origin with MovementSpeed = 5 and an idle order slot.
+            // Spawns at the origin with speed 5.
             var unit = new UnitEntityFactory().CreateEntity(_entityManager);
             Order(unit, new float3(100f, 0f, 0f));
 

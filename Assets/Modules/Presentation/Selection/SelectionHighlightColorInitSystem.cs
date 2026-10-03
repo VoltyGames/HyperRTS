@@ -5,13 +5,7 @@ using Unity.Rendering;
 
 namespace HyperRTS.Presentation.Selection
 {
-    /// <summary>
-    /// Presentation-only: gives every selectable a per-entity base-colour override so the highlight can
-    /// drive it. Adds <see cref="URPMaterialPropertyBaseColor"/> to anything with
-    /// <see cref="SelectionHighlightColors"/> that lacks it - baked and factory-spawned alike - in one
-    /// chunk-level batch; <see cref="SelectionHighlightSystem"/> then seeds the colour (the new component
-    /// passes its change filter). A headless server has no presentation world, so it never adds the render component.
-    /// </summary>
+    /// <summary>Adds the base-colour override to selectables that lack it. Presentation-only, so headless servers skip it.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     [UpdateBefore(typeof(SelectionHighlightSystem))]

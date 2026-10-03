@@ -25,10 +25,7 @@ namespace HyperRTS.Simulation.Buildings
         }
     }
 
-    /// <summary>
-    /// Build progress, 0..1. Enableable: enabled while under construction, disabled by
-    /// <see cref="ConstructionSystem"/> once complete (query <c>WithDisabled</c> for finished buildings).
-    /// </summary>
+    /// <summary>Build progress, 0..1. Disabled once complete.</summary>
     public struct ConstructionProgress : IComponentData, IEnableableComponent
     {
         public float Value;

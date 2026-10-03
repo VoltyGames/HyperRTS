@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Units
 {
-    /// <summary>Bakes the <see cref="UnitTag"/> marker, matching <c>UnitEntityFactory</c> output.</summary>
     [AddComponentMenu(HyperRTSMenu.Units + "Unit Tag")]
     [Icon(HyperRTSIcons.Units)]
     [HelpURL(HyperRTSDocs.WorldSetup)]

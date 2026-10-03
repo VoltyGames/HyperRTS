@@ -5,12 +5,11 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Icons
 {
-    /// <summary>Generates the per-module component icons referenced by <see cref="HyperRTSIcons"/>. Regenerate on demand.</summary>
+    /// <summary>Generates the module icons listed in <see cref="HyperRTSIcons"/>.</summary>
     public static class ComponentIconGenerator
     {
         private const int Size = 64;
 
-        // Each module's icon path (single source of truth: HyperRTSIcons) paired with its accent colour.
         private static readonly (string IconPath, Color Color)[] Modules =
         {
             (HyperRTSIcons.Attack, new Color(0.85f, 0.25f, 0.22f)),
@@ -37,7 +36,7 @@ namespace HyperRTS.Editor.Icons
             Debug.Log($"Generated {Modules.Length} component icons.");
         }
 
-        // Rounded-square filled with the accent colour on a transparent background.
+        // Rounded square on a transparent background.
         private static Texture2D BuildIcon(Color accent)
         {
             var tex = new Texture2D(Size, Size, TextureFormat.RGBA32, false);

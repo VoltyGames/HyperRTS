@@ -4,11 +4,7 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Health
 {
-    /// <summary>
-    /// Destroys any entity whose <see cref="HealthComponent.CurrentHealth"/> has dropped to zero or
-    /// below. Runs last in the simulation; destruction is recorded from a parallel job and played back
-    /// by <see cref="EndSimulationEntityCommandBufferSystem"/>, so there's no mid-frame sync point.
-    /// </summary>
+    /// <summary>Destroys entities at zero health through the end-of-simulation command buffer.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     public partial struct DeathSystem : ISystem

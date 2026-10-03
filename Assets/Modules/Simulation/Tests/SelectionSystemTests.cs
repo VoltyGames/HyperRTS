@@ -9,10 +9,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>
-    /// Pure-math cases need no world; box-select cases run <see cref="SelectionSystem"/> in an isolated
-    /// world with an injected <see cref="SelectionInput"/> singleton (click raycast is checked in Play mode).
-    /// </summary>
+    /// <summary>Box-select runs SelectionSystem in an isolated world; click raycasts are covered in Play mode.</summary>
     public class SelectionSystemTests
     {
         private World _world;
@@ -26,7 +23,7 @@ namespace HyperRTS.Simulation.Tests
 
             DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(_world,
                 typeof(SimulationSystemGroup),
-                typeof(TransformSystemGroup), // ordering target of MovementSystemGroup
+                typeof(TransformSystemGroup), // MovementSystemGroup orders against it
                 typeof(OrderSystemGroup),
                 typeof(MovementSystemGroup),
                 typeof(CombatSystemGroup),
@@ -60,8 +57,7 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        // Drives one drag-box gesture through the singleton; identity view-projection so a world point
-        // (x, y, 0) maps to screen ((x, y) * 0.5 + 0.5) * screenSize.
+        // Identity view-projection: world (x, y, 0) maps to screen ((x, y) * 0.5 + 0.5) * screenSize.
         private void DragBox(float2 min, float2 max, float2 screenSize, bool additive = false, bool subtract = false)
         {
             var input = new SelectionInput
@@ -84,7 +80,6 @@ namespace HyperRTS.Simulation.Tests
             Tick(0.1f);
         }
 
-        // ---- Pure math -----------------------------------------------------------------------
 
         [Test]
         public void RectContains_HandlesInsideOutsideEdgesAndInvertedCorners()
@@ -135,7 +130,6 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsFalse(SelectionMath.ResolveSelected(true, true, true, true));
         }
 
-        // ---- Box-select through the system ---------------------------------------------------
 
         [Test]
         public void DragBox_SelectsEntitiesInsideRect_AndIsEcsQueryable()
@@ -149,7 +143,6 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(_entityManager.IsComponentEnabled<Selected>(inside));
             Assert.IsFalse(_entityManager.IsComponentEnabled<Selected>(outside));
 
-            // The selection set is an ECS query other systems can read (enabled bit honoured).
             using var selectedQuery = _entityManager.CreateEntityQuery(ComponentType.ReadOnly<Selected>());
             Assert.AreEqual(1, selectedQuery.CalculateEntityCount());
             using var selected = selectedQuery.ToEntityArray(Allocator.Temp);

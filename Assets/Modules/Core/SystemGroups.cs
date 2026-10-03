@@ -3,19 +3,16 @@ using Unity.Transforms;
 
 namespace HyperRTS.Core
 {
-    // Explicit simulation order. Systems pick a phase via
-    // [UpdateInGroup(typeof(<Phase>SystemGroup))] instead of ordering ad hoc.
     // Frame order: Order -> Movement -> Combat -> Production -> Lifecycle.
 
-    /// <summary>Input, selection and command resolution (roadmap phases 1–2).</summary>
+    /// <summary>Selection and commands.</summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateBefore(typeof(MovementSystemGroup))]
     public partial class OrderSystemGroup : ComponentSystemGroup
     {
     }
 
-    /// <summary>Movement, pathfinding and steering (phase 3). Runs before
-    /// <see cref="TransformSystemGroup"/> so moves render the same frame.</summary>
+    /// <summary>Movement and pathfinding; before <see cref="TransformSystemGroup"/> so moves render this frame.</summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(OrderSystemGroup))]
     [UpdateBefore(typeof(TransformSystemGroup))]
@@ -23,22 +20,21 @@ namespace HyperRTS.Core
     {
     }
 
-    /// <summary>Target acquisition, attacks and damage (phase 7).</summary>
+    /// <summary>Targeting and damage.</summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(MovementSystemGroup))]
     public partial class CombatSystemGroup : ComponentSystemGroup
     {
     }
 
-    /// <summary>Construction and unit production (phase 5).</summary>
+    /// <summary>Construction and production.</summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(CombatSystemGroup))]
     public partial class ProductionSystemGroup : ComponentSystemGroup
     {
     }
 
-    /// <summary>Death and cleanup. Runs last so removals happen after all
-    /// damage for the frame is applied.</summary>
+    /// <summary>Death and cleanup; runs last so all damage lands first.</summary>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(ProductionSystemGroup))]
     public partial class LifecycleSystemGroup : ComponentSystemGroup

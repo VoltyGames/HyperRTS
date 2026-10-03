@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Selection
 {
-    /// <summary>Linear-RGBA colours <see cref="SelectionHighlightSystem"/> writes to the base-colour override.</summary>
+    /// <summary>Linear RGBA highlight colours.</summary>
     public struct SelectionHighlightColors : IComponentData
     {
         public float4 Selected;

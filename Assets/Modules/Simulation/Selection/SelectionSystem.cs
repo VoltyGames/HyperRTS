@@ -7,10 +7,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Selection
 {
-    /// <summary>
-    /// Resolves the <see cref="SelectionInput"/> gesture into the live selection by toggling
-    /// <see cref="Selected"/>. Click uses a physics raycast; drag-box and double-click project to screen.
-    /// </summary>
+    /// <summary>Applies the <see cref="SelectionInput"/> gesture by toggling <see cref="Selected"/>.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct SelectionSystem : ISystem
@@ -35,7 +32,6 @@ namespace HyperRTS.Simulation.Selection
 
             _typeLookup.Update(ref state);
 
-            // Click / double-click need the entity under the cursor (physics raycast).
             var clicked = Entity.Null;
             var needsRaycast = input.Command == SelectionCommand.Click ||
                                input.Command == SelectionCommand.DoubleClick;
@@ -54,7 +50,7 @@ namespace HyperRTS.Simulation.Selection
                 }
             }
 
-            // Double-click selects every on-screen entity sharing the clicked entity's kind.
+            // Double-click selects every on-screen entity of the clicked kind.
             var doubleClickKind = SelectableKind.None;
             if (input.Command == SelectionCommand.DoubleClick && clicked != Entity.Null &&
                 _typeLookup.HasComponent(clicked))
@@ -62,7 +58,7 @@ namespace HyperRTS.Simulation.Selection
                 doubleClickKind = _typeLookup[clicked].Kind;
             }
 
-            // WithPresent: visit selected and unselected entities alike; EnabledRefRW toggles the bit in place.
+            // WithPresent also visits unselected entities.
             foreach (var (transform, selected, entity) in
                      SystemAPI.Query<RefRO<LocalTransform>, EnabledRefRW<Selected>>()
                          .WithAll<Selectable>()

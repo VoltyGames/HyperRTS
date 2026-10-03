@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Units
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent(entity, new MovementSpeed { Value = authoring.movementSpeed });
 
-                // Movers carry an idle (disabled) order slot unless authored with a starting destination.
+                // Idle order slot, unless a starting destination is authored.
                 if (GetComponent<MoveDestinationAuthoring>() == null)
                 {
                     AddComponent<MoveDestination>(entity);
@@ -30,9 +30,6 @@ namespace HyperRTS.Simulation.Units
         }
     }
 
-    /// <summary>
-    /// Movement speed component for entities that have movement speed.
-    /// </summary>
     public struct MovementSpeed : IComponentData
     {
         public float Value;

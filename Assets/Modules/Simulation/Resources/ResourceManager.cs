@@ -7,13 +7,7 @@ namespace HyperRTS.Simulation.Resources
     {
         private static readonly Dictionary<FixedString64Bytes, ResourceType> ResourceTypes = new();
         
-        /// <summary>
-        /// Register a new resource type.
-        /// If the resource type already exists, it will return the existing resource type.
-        /// </summary>
-        /// <param name="id">Resource unique ID</param>
-        /// <param name="displayName">Resource display name</param>
-        /// <returns>The registered resource type</returns>
+        /// <summary>Registers a resource type, or returns the existing one.</summary>
         public static ResourceType CreateResource(FixedString64Bytes id, FixedString64Bytes? displayName = null)
         {
             if (ResourceTypes.ContainsKey(id))
@@ -29,13 +23,7 @@ namespace HyperRTS.Simulation.Resources
             return resourceType;
         }
 
-        /// <summary>
-        /// Update or create a resource type. If the id already exists its display
-        /// name is overwritten; otherwise a new entry is registered.
-        /// </summary>
-        /// <param name="id">Resource unique ID to find from the dictionary</param>
-        /// <param name="displayName">Resource display name to update</param>
-        /// <returns>The updated or created resource type</returns>
+        /// <summary>Registers or overwrites a resource type.</summary>
         public static ResourceType UpdateOrCreateResource(FixedString64Bytes id, FixedString64Bytes displayName)
         {
             var resourceType = new ResourceType { Id = id, DisplayName = displayName };

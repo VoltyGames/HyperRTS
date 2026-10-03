@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Buildings
 {
-    /// <summary>Bakes the <see cref="BuildingTag"/> marker. Required: <c>ConstructionSystem</c> queries it.</summary>
+    /// <summary>Bakes <see cref="BuildingTag"/>; required by <c>ConstructionSystem</c>.</summary>
     [AddComponentMenu(HyperRTSMenu.Buildings + "Building Tag")]
     [Icon(HyperRTSIcons.Buildings)]
     [HelpURL(HyperRTSDocs.WorldSetup)]

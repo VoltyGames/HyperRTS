@@ -1,111 +1,82 @@
 # CLAUDE.md
 
-## Project
-
-**HyperRTS** - a reusable **RTS engine built on Unity DOTS** (Entities/ECS), to later
-build games on top of. It's an engine-in-progress, not a game: prefer generic,
-data-driven pieces over game-specific code.
-
-`Assets/ThirdParty/RTS Engine/` is a commercial MonoBehaviour-based asset kept as a
-**feature reference only** - don't edit it or copy its (non-DOTS) architecture.
+**HyperRTS** is a reusable RTS engine on Unity DOTS, not a game. Prefer generic, data-driven code over
+game-specific code. `Assets/ThirdParty/RTS Engine/` is a MonoBehaviour asset kept as a feature reference only:
+don't edit it or copy its architecture.
 
 ## Environment
 
-- **Unity 6000.6.4f1** (6.6), URP 17.6, new Input System only (Active Input Handling = Input System; no legacy `UnityEngine.Input`).
-- **DOTS:** Entities 6.6, Entities Graphics, Unity Physics, Netcode for Entities, Collections,
-  Burst, Mathematics. (these are **core packages** shipped with the editor - `6.x` tracks the editor version; successor to `1.x`,
-  same APIs.)
+- Unity 6000.6.4f1, URP 17.6, Input System only (no `UnityEngine.Input`).
+- DOTS core packages (Entities, Entities Graphics, Physics, Netcode, Collections, Burst, Mathematics) track the
+  editor version (6.6).
 
 ## Layout
 
-`Assets/Modules/` **is the engine** - code *and* its shipped assets - split into **layered assemblies**
-(not per-module) so the simulation can run headless. The sample game lives outside it in `Assets/Demo/`.
-Dependency direction: `Core ← Simulation ← {Presentation, Input}`, with Editor/Tests on top.
-Details in [`docs/architecture.md`](docs/architecture.md).
+`Assets/Modules/` is the engine (code + shipped assets), split into layered assemblies so the simulation can
+run headless: `Core ← Simulation ← {Presentation, Input}`, with Editor/Tests on top. The sample game is
+`Assets/Demo/`. See [`docs/architecture.md`](docs/architecture.md).
 
 ```text
-Assets/
-├── Modules/           # the engine (code + shipped assets)
-│   ├── Core/          # HyperRTS.Core - contracts: SystemGroups, IEntityFactory, HyperRTSMenu
-│   ├── Simulation/    # HyperRTS.Simulation - components, systems, factories, authoring; modules:
-│   │                  #   Attack/ Buildings/ Health/ Resources/ Units/ Selection/ Tests/
-│   ├── Presentation/  # HyperRTS.Presentation - rendering (URP) + UI
-│   ├── Input/         # HyperRTS.Input - CameraController, input→ECS bridge, RTSInputActions
-│   ├── Editor/        # HyperRTS.Editor - editor-only tooling + GameObject ▸ HyperRTS menus
-│   └── Prefabs/       # Unit/Building + RTSWorld (camera + UI rig) + UI/ (SelectionUI + PanelSettings)
-└── Demo/              # sample game built on the engine: scene + EntitiesSubScene (no asmdef)
+Assets/Modules/
+├── Core/          contracts: SystemGroups, IEntityFactory, HyperRTSMenu
+├── Simulation/    components, systems, authoring, factories, Tests/ (Attack, Buildings, Health, Resources, Selection, Units)
+├── Presentation/  rendering (URP) + UI
+├── Input/         camera, input → ECS bridge
+├── Editor/        editor tools and menus
+└── Prefabs/       Unit, Building, RTSWorld rig, SelectionUI
 ```
 
-**Invariant:** `HyperRTS.Simulation` must never reference Graphics, InputSystem, or UIElements.
-Cross-boundary data (e.g. `SelectionHighlightColors`, `SelectionDragState`) lives in Simulation;
-only the render override / UI / input bridge sit above it.
+`HyperRTS.Simulation` must never reference Graphics, InputSystem or UIElements. Data shared across layers
+(e.g. `SelectionDragState`) lives in Simulation.
 
 ## Conventions
 
-- Namespaces follow the layer: `HyperRTS.<Layer>.<Module>` (contracts stay flat in `HyperRTS.Core`).
-  A feature like Selection spans layers (`Simulation`/`Presentation`/`Input`).
-- Authoring class + nested `Baker` + the `IComponentData` struct share one `*Authoring.cs`
-  file (see `HealthComponentAuthoring.cs`), in `Simulation/` beside its systems. Bakers use
-  `GetEntity(TransformUsageFlags.Dynamic)`.
-- Component fields PascalCase; authoring MonoBehaviour fields camelCase.
-- Authoring MonoBehaviours carry editor metadata: `[AddComponentMenu(HyperRTSMenu.<Module> + "Name")]`,
-  `[Icon(HyperRTSIcons.<Module>)]`, `[HelpURL(...)]`, `[DisallowMultipleComponent]`, and `[Tooltip]` on each
-  serialized field (group many fields with `[Header]`). Menu/icon/doc paths come from `HyperRTSMenu.cs` -
-  the single source of truth. See [`docs/editor-ux.md`](docs/editor-ux.md).
-- Systems: `[BurstCompile] partial struct …System : ISystem`, auto-discovered (don't register
-  manually). Put each in a phase group from `SystemGroups.cs` via
-  `[UpdateInGroup(typeof(<Phase>SystemGroup))]` - not `SimulationSystemGroup` directly.
-- Keep components blittable (Burst-safe): unmanaged only, strings as `FixedStringNNBytes`, Unity objects as
-  `UnityObjectRef<T>`. Managed (class) components and `SystemAPI.ManagedAPI` are deprecated in Entities 6.6 - never add them.
-- State that toggles at runtime (orders, construction, selection) is an `IEnableableComponent` flipped via
-  `EnabledRefRW<T>` - no structural change. Iterate disabled ones too with `WithPresent<T>`.
-- Per-entity work goes in `[BurstCompile]` `IJobEntity` jobs (`ScheduleParallel`; `Schedule` when writing other
-  entities through a lookup). Pair `EnabledRefRW<T>` with `ref T`/`RefRW<T>`, never `in T` (handle aliasing).
-- Structural changes go through an `EntityCommandBuffer` (from jobs: `EndSimulationEntityCommandBufferSystem.Singleton`);
-  since 6.6, `ecb.CreateEntity`/`Instantiate` return the real entity at record time. Cross-entity access via
-  `ComponentLookup<T>`; timing via `SystemAPI.Time` (never `UnityEngine.Time`).
+- Namespaces: `HyperRTS.<Layer>.<Module>`; contracts stay in `HyperRTS.Core`.
+- An authoring MonoBehaviour, its nested `Baker` and its component struct share one `*Authoring.cs` file.
+  Bakers use `GetEntity(TransformUsageFlags.Dynamic)`.
+- Authoring classes carry `[AddComponentMenu]`, `[Icon]`, `[HelpURL]`, `[DisallowMultipleComponent]` and a
+  `[Tooltip]` per field. Paths come from `HyperRTSMenu.cs`. See [`docs/editor-ux.md`](docs/editor-ux.md).
+- Component fields PascalCase; authoring fields camelCase.
+- Systems are `[BurstCompile] partial struct : ISystem`, placed in a phase group from `SystemGroups.cs`
+  (never `SimulationSystemGroup` directly). Per-entity work goes in Burst `IJobEntity` jobs: `ScheduleParallel`,
+  or `Schedule` when writing other entities through a `ComponentLookup`.
+- Components are unmanaged: `FixedStringNNBytes` for strings, `UnityObjectRef<T>` for Unity objects. Managed
+  components are deprecated in Entities 6.6.
+- Runtime toggles (orders, construction, selection) are `IEnableableComponent`s flipped with `EnabledRefRW<T>`.
+  Pair it with `ref T`, never `in T`. Use `WithPresent<T>` to also visit disabled entities.
+- Structural changes go through an `EntityCommandBuffer` (`EndSimulationEntityCommandBufferSystem` from jobs).
+  `ecb.CreateEntity` returns the real entity at record time.
+- Time comes from `SystemAPI.Time`, never `UnityEngine.Time`.
 
-## Systems
+## Comments
 
-- `MovementSystem` - moves entities with an enabled `MoveDestination` at `MovementSpeed`, disables it on arrival.
-- `AttackSystem` - on `AttackCooldown`, subtracts `Melee`/`RangeAttackDamage` from `AttackTarget`'s health.
-- `ConstructionSystem` - advances `ConstructionProgress` (0..1), disables it when complete.
-- `DeathSystem` (`LifecycleSystemGroup`, runs last) - destroys entities at `CurrentHealth <= 0` via the end-of-simulation ECB.
+- One-line `<summary>` on public types and non-obvious members. Let names explain the rest.
+- Comment *why*, never *what*. No comments that restate the code, narrate changes, or explain C#/Unity basics.
+- No `<param>`/`<returns>` boilerplate, multi-paragraph remarks, or per-field docs on self-explanatory fields.
+- Keep each comment to one or two short lines. Delete stale comments when the code changes.
 
-Update order is explicit: `SimulationSystemGroup` → Order → Movement → Combat → Production →
-Lifecycle (see `SystemGroups.cs` and [`docs/world-setup.md`](docs/world-setup.md)).
-These are minimal scaffolds; expect to extend them.
+## LOC
+
+- Files ≤ 300 lines, methods ≤ 40 lines. Split by responsibility when a file grows past that.
+- One type per file, except the authoring + baker + component trio.
+- Prefer deleting code to adding it. No dead code, unused usings or commented-out code.
 
 ## Run / test
 
-Open in Unity 6000.6.4f1; play `Assets/Demo/Scenes/SampleScene.unity` (entities bake from
-its EntitiesSubScene). Inspect via Window ▸ Entities. Edit-mode tests live in `HyperRTS.Simulation.Tests`
-- run via Window ▸ General ▸ Test Runner. If the Unity MCP bridge is connected, see console errors via MCP.
+Play `Assets/Demo/Scenes/SampleScene.unity` (entities bake from its SubScene); inspect via Window ▸ Entities.
+EditMode tests are in `HyperRTS.Simulation.Tests` (Window ▸ General ▸ Test Runner).
 
 ## Gotchas
 
-- C# edits need a recompile (editor open) before Play mode reflects them.
-- **CoreCLR-ready:** Enter Play Mode skips domain reload, matching Unity's upcoming CoreCLR runtime, so
-  statics survive between play sessions - reset any runtime static state explicitly
-  (`[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]`) or keep it in ECS.
-  Treat the 6.6 `UAC*` analyzer diagnostics (serialization rules, `Assembly.Load(byte[])`, etc.) as errors.
-- Factory-created entities have data + `LocalTransform` but **no mesh** - bake a prefab via a
-  SubScene to get rendered entities. The `Unit`/`Building` prefabs in `Assets/Modules/Prefabs/` carry a
-  mesh, so they bake to rendered entities.
-- `ResourceManager` is a static managed registry for editor/setup - not Burst/job-safe; runtime
-  resource data lives in the `Resource` component. The Resource Editor's assets live in
-  `Assets/ScriptableObjects/Resources`.
+- Enter Play Mode skips domain reload (CoreCLR-ready), so statics survive between sessions. Reset runtime
+  statics with `[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]` or keep state in ECS. Treat `UAC*`
+  analyzer diagnostics as errors.
+- Factory entities have no mesh. Bake a prefab from a SubScene to render.
+- `ResourceManager` is a static editor-time registry, not Burst-safe. Runtime data lives in `Resource`.
 
 ## Docs
 
-- [`docs/world-setup.md`](docs/world-setup.md) - how entities enter play and the ordered system
-pipeline. Editor/authoring conventions and helper tools are in
-- [`docs/editor-ux.md`](docs/editor-ux.md). Add a doc per topic/phase as features land.
-
-## Roadmap
-
-Selection (Physics raycast) → commands/orders → pathfinding → economy → production →
-rendering for factory entities → fog of war → factions → multiplayer (Netcode for Entities).
-
-Full phased plan (milestones, deliverables, acceptance criteria) in
-[`docs/roadmap.md`](docs/roadmap.md) - check phase status there before new work.
+- [`world-setup`](docs/world-setup.md) - entity entry and system order
+- [`editor-ux`](docs/editor-ux.md) - authoring conventions and editor tools
+- [`selection`](docs/selection.md) - selection pipeline
+- [`roadmap`](docs/roadmap.md) - check phase status before new work

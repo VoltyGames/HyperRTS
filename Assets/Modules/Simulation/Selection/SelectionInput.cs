@@ -11,11 +11,7 @@ namespace HyperRTS.Simulation.Selection
         DoubleClick = 3,
     }
 
-    /// <summary>
-    /// Singleton bridge: <see cref="SelectionInputSystem"/> (managed) writes the gesture, ray and
-    /// view-projection; <see cref="SelectionSystem"/> (Burst) reads them. Keeps camera/mouse out of the
-    /// hot path and makes selection testable by injecting this directly.
-    /// </summary>
+    /// <summary>Selection gesture written by the input layer and read by <see cref="SelectionSystem"/>; tests inject it directly.</summary>
     public struct SelectionInput : IComponentData
     {
         public SelectionCommand Command;
@@ -27,7 +23,7 @@ namespace HyperRTS.Simulation.Selection
         public float3 RayDirection;
         public float RayDistance;
 
-        // Drag-box in screen pixels (bottom-left origin); valid when Command == DragRelease.
+        // Screen pixels, bottom-left; valid for DragRelease.
         public float2 DragMin;
         public float2 DragMax;
 
