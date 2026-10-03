@@ -20,11 +20,16 @@ namespace HyperRTS.Simulation.Buildings
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent(entity, new ConstructionProgress { Value = authoring.progress });
+                SetComponentEnabled<ConstructionProgress>(entity, authoring.progress < 1f);
             }
         }
     }
 
-    public struct ConstructionProgress : IComponentData
+    /// <summary>
+    /// Build progress, 0..1. Enableable: enabled while under construction, disabled by
+    /// <see cref="ConstructionSystem"/> once complete (query <c>WithDisabled</c> for finished buildings).
+    /// </summary>
+    public struct ConstructionProgress : IComponentData, IEnableableComponent
     {
         public float Value;
     }

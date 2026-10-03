@@ -25,10 +25,10 @@ namespace HyperRTS.Simulation.Units
     }
 
     /// <summary>
-    /// World-space position a unit is moving toward. Add this component to issue a
-    /// move order; <see cref="MovementSystem"/> removes it once the unit arrives.
+    /// World-space move order. Enableable: set the value and enable it to issue an order;
+    /// <see cref="MovementSystem"/> disables it on arrival, so orders never change the archetype.
     /// </summary>
-    public struct MoveDestination : IComponentData
+    public struct MoveDestination : IComponentData, IEnableableComponent
     {
         public float3 Value;
     }

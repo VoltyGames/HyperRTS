@@ -29,7 +29,10 @@ Because input is a plain data singleton, selection is testable by injecting `Sel
 | `SelectableType` | `SelectableKind` (Unit / Building) for double-click select-all-of-type |
 | `SelectionHighlightColors` | selected vs. deselected colours |
 
-Authored via `SelectableAuthoring`; factories add the set through `SelectionComponents.AddTo`.
+Authored via `SelectableAuthoring`; factories add the set through `SelectionComponents.AddTo` (command-buffer
+first, with an immediate `EntityManager` overload). `SelectionSystem` toggles `Selected` with `EnabledRefRW` over a
+`WithPresent<Selected>` query; `SelectionHighlightSystem` is a parallel job with a change filter on `Selected`, so it
+only rewrites (and Entities Graphics only re-uploads) chunks whose selection changed.
 Factory entities have no mesh/collider yet (Phase 6), so they are box-selectable and queryable but not
 click-hittable or highlighted.
 

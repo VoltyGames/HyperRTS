@@ -1,47 +1,43 @@
 using HyperRTS.Core;
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>
-    /// Advances <see cref="ConstructionProgress"/> (a 0..1 fraction) over time for
-    /// every building still under construction. When a building reaches full
-    /// progress the component is removed, marking the building complete.
+    /// Advances <see cref="ConstructionProgress"/> (a 0..1 fraction) on every building under
+    /// construction, in a parallel Burst job. At full progress the component is disabled,
+    /// marking the building complete without a structural change.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct ConstructionSystem : ISystem
     {
         // Fraction of construction completed per second (~10 seconds to finish).
-        private const float BuildRatePerSecond = 0.1f;
+        public const float BuildRatePerSecond = 0.1f;
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var deltaTime = SystemAPI.Time.DeltaTime;
-            var ecb = new EntityCommandBuffer(Allocator.Temp);
+            new BuildJob { Step = BuildRatePerSecond * SystemAPI.Time.DeltaTime }.ScheduleParallel();
+        }
 
-            foreach (var (progress, entity) in
-                     SystemAPI.Query<RefRW<ConstructionProgress>>()
-                         .WithAll<BuildingTag>()
-                         .WithEntityAccess())
+        [BurstCompile]
+        [WithAll(typeof(BuildingTag))]
+        private partial struct BuildJob : IJobEntity
+        {
+            public float Step;
+
+            private void Execute(ref ConstructionProgress progress, EnabledRefRW<ConstructionProgress> underConstruction)
             {
-                var value = progress.ValueRO.Value + BuildRatePerSecond * deltaTime;
+                progress.Value += Step;
 
-                if (value >= 1f)
+                if (progress.Value >= 1f)
                 {
-                    progress.ValueRW.Value = 1f;
-                    ecb.RemoveComponent<ConstructionProgress>(entity);
-                    continue;
+                    progress.Value = 1f;
+                    underConstruction.ValueRW = false;
                 }
-
-                progress.ValueRW.Value = value;
             }
-
-            ecb.Playback(state.EntityManager);
-            ecb.Dispose();
         }
     }
 }

@@ -46,19 +46,31 @@ SimulationSystemGroup
 ```
 
 Movement runs before `TransformSystemGroup` so a move shows the same frame. Lifecycle runs last so
-`DeathSystem` removes dead entities only after all damage is applied.
+`DeathSystem` removes dead entities only after all damage is applied; it records destruction from a
+parallel job and `EndSimulationEntityCommandBufferSystem` plays it back at the end of the group.
+
+Systems are `[BurstCompile]` `IJobEntity` jobs. Runtime state that toggles (`MoveDestination`,
+`ConstructionProgress`, `Selected`) is enableable, so orders and completion never change an entity's
+archetype. To trace when a component is added or removed while debugging, implement Entities 6.6's
+`IDebugOnAdded`/`IDebugOnRemoved` on it (Editor and development builds only).
 
 **New systems pick a phase group** with `[UpdateInGroup(typeof(<Phase>SystemGroup))]` — not
 `SimulationSystemGroup` directly.
 
 ## Creating entities from code
 
-To spawn entities in setup scripts or tests instead of baking, use an
-[`IEntityFactory`](../Assets/Modules/Core/IEntityFactory.cs):
+To spawn entities in setup scripts, systems or tests instead of baking, use an
+[`IEntityFactory`](../Assets/Modules/Core/IEntityFactory.cs). Factories record into an
+`EntityCommandBuffer`, so systems and jobs can spawn without a sync point; since Entities 6.6 the
+returned `Entity` is the real one (no placeholder), so you can store it or issue follow-up commands
+right away. The `EntityManager` overload records and plays back immediately:
 
 ```csharp
-var unit = new UnitEntityFactory().CreateEntity(entityManager);
-entityManager.AddComponentData(unit, new MoveDestination { Value = new float3(100, 0, 0) });
+var unit = new UnitEntityFactory().CreateEntity(entityManager); // or .CreateEntity(ecb)
+
+// Units carry a disabled MoveDestination: an order is "set value + enable", cleared by disabling.
+entityManager.SetComponentData(unit, new MoveDestination { Value = new float3(100, 0, 0) });
+entityManager.SetComponentEnabled<MoveDestination>(unit, true);
 ```
 
 [`UnitEntityFactory`](../Assets/Modules/Simulation/Units/UnitEntityFactory.cs) and

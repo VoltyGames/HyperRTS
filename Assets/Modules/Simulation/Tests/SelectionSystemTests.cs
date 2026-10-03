@@ -26,6 +26,7 @@ namespace HyperRTS.Simulation.Tests
 
             DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(_world,
                 typeof(SimulationSystemGroup),
+                typeof(TransformSystemGroup), // ordering target of MovementSystemGroup
                 typeof(OrderSystemGroup),
                 typeof(MovementSystemGroup),
                 typeof(CombatSystemGroup),

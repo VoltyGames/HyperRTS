@@ -8,14 +8,14 @@ namespace HyperRTS.Simulation.Buildings
 {
     public class BuildingEntityFactory : IEntityFactory
     {
-        public Entity CreateEntity(EntityManager entityManager)
+        public Entity CreateEntity(EntityCommandBuffer ecb)
         {
-            var building = entityManager.CreateEntity();
-            entityManager.AddComponentData(building, new BuildingTag());
-            entityManager.AddComponentData(building, LocalTransform.Identity);
-            entityManager.AddComponentData(building, new HealthComponent { CurrentHealth = 500, MaxHealth = 500 });
-            entityManager.AddComponentData(building, new ConstructionProgress { Value = 0 });
-            SelectionComponents.AddTo(entityManager, building, SelectableKind.Building);
+            var building = ecb.CreateEntity();
+            ecb.AddComponent<BuildingTag>(building);
+            ecb.AddComponent(building, LocalTransform.Identity);
+            ecb.AddComponent(building, new HealthComponent { CurrentHealth = 500, MaxHealth = 500 });
+            ecb.AddComponent(building, new ConstructionProgress { Value = 0 });
+            SelectionComponents.AddTo(ecb, building, SelectableKind.Building);
             return building;
         }
     }

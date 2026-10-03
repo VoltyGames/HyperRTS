@@ -55,16 +55,22 @@ only the render override / UI / input bridge sit above it.
 - Systems: `[BurstCompile] partial struct …System : ISystem`, auto-discovered (don't register
   manually). Put each in a phase group from `SystemGroups.cs` via
   `[UpdateInGroup(typeof(<Phase>SystemGroup))]` - not `SimulationSystemGroup` directly.
-- Keep components blittable (Burst-safe): unmanaged only, strings as `FixedStringNNBytes`.
-- Structural changes go through an `EntityCommandBuffer`; cross-entity access via
+- Keep components blittable (Burst-safe): unmanaged only, strings as `FixedStringNNBytes`, Unity objects as
+  `UnityObjectRef<T>`. Managed (class) components and `SystemAPI.ManagedAPI` are deprecated in Entities 6.6 - never add them.
+- State that toggles at runtime (orders, construction, selection) is an `IEnableableComponent` flipped via
+  `EnabledRefRW<T>` - no structural change. Iterate disabled ones too with `WithPresent<T>`.
+- Per-entity work goes in `[BurstCompile]` `IJobEntity` jobs (`ScheduleParallel`; `Schedule` when writing other
+  entities through a lookup). Pair `EnabledRefRW<T>` with `ref T`/`RefRW<T>`, never `in T` (handle aliasing).
+- Structural changes go through an `EntityCommandBuffer` (from jobs: `EndSimulationEntityCommandBufferSystem.Singleton`);
+  since 6.6, `ecb.CreateEntity`/`Instantiate` return the real entity at record time. Cross-entity access via
   `ComponentLookup<T>`; timing via `SystemAPI.Time` (never `UnityEngine.Time`).
 
 ## Systems
 
-- `MovementSystem` - moves entities with `MoveDestination` at `MovementSpeed`, clears order on arrival.
+- `MovementSystem` - moves entities with an enabled `MoveDestination` at `MovementSpeed`, disables it on arrival.
 - `AttackSystem` - on `AttackCooldown`, subtracts `Melee`/`RangeAttackDamage` from `AttackTarget`'s health.
-- `ConstructionSystem` - advances `ConstructionProgress` (0..1), removes it when complete.
-- `DeathSystem` (`LifecycleSystemGroup`, runs last) - destroys entities at `CurrentHealth <= 0`.
+- `ConstructionSystem` - advances `ConstructionProgress` (0..1), disables it when complete.
+- `DeathSystem` (`LifecycleSystemGroup`, runs last) - destroys entities at `CurrentHealth <= 0` via the end-of-simulation ECB.
 
 Update order is explicit: `SimulationSystemGroup` → Order → Movement → Combat → Production →
 Lifecycle (see `SystemGroups.cs` and [`docs/world-setup.md`](docs/world-setup.md)).

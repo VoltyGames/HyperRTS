@@ -62,18 +62,22 @@ namespace HyperRTS.Simulation.Selection
                 doubleClickKind = _typeLookup[clicked].Kind;
             }
 
-            foreach (var (transform, entity) in
-                     SystemAPI.Query<RefRO<LocalTransform>>().WithAll<Selectable>().WithEntityAccess())
+            // WithPresent: visit selected and unselected entities alike; EnabledRefRW toggles the bit in place.
+            foreach (var (transform, selected, entity) in
+                     SystemAPI.Query<RefRO<LocalTransform>, EnabledRefRW<Selected>>()
+                         .WithAll<Selectable>()
+                         .WithPresent<Selected>()
+                         .WithEntityAccess())
             {
                 var hit = IsHit(in input, in _typeLookup, entity, transform.ValueRO.Position, clicked,
                     doubleClickKind);
 
-                var current = SystemAPI.IsComponentEnabled<Selected>(entity);
+                var current = selected.ValueRO;
                 var next = SelectionMath.ResolveSelected(current, hit, input.Additive, input.Subtract);
 
                 if (next != current)
                 {
-                    SystemAPI.SetComponentEnabled<Selected>(entity, next);
+                    selected.ValueRW = next;
                 }
             }
         }
