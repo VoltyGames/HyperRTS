@@ -77,5 +77,10 @@ crashlytics-build.properties
 .idea/
 
 SceneDependencyCache/
+SceneDependencyCache.meta
 Screenshots/
+Screenshots.meta
 .VSCodeCounter/
+
+# UI Builder generated schema
+UIElementsSchema/

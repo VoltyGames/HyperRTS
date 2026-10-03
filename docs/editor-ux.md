@@ -69,8 +69,8 @@ Selected/Base colour-swatch preview to `SelectableAuthoring`.
 
 ## UI Toolkit: PanelRenderer
 
-Selection UI uses **`PanelRenderer`** (Unity 6.5+), the successor to the legacy `UIDocument` component.
+Selection UI uses **`PanelRenderer`** (Unity 6.5+; 6.6 adds a versioned reload callback), the successor to the legacy `UIDocument` component.
 `PanelRenderer` does not expose `rootVisualElement`; obtain the root via
-`RegisterUIReloadCallback((panelRenderer, root) => …)` and rebuild content idempotently inside the callback
+`RegisterUIReloadCallback((panelRenderer, root, version) => …)` (the 6.6 versioned overload - the two-argument one is obsolete) and rebuild content idempotently inside the callback, skipping a `version` already handled
 (it can fire more than once, and content persists across disable/enable). See
 [`SelectionDragBoxUI.cs`](../Assets/Modules/Presentation/Selection/SelectionDragBoxUI.cs).

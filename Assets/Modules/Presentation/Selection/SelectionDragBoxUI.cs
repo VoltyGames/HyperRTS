@@ -29,11 +29,12 @@ namespace HyperRTS.Presentation.Selection
         private float borderThickness = 1f;
 
         private VisualElement _marquee;
+        private int _uiVersion = -1;
 
         private EntityQuery _dragQuery;
         private World _queryWorld;
 
-        // PanelRenderer (Unity 6.5+) doesn't expose rootVisualElement; the root arrives via the reload callback.
+        // PanelRenderer doesn't expose rootVisualElement; the root arrives via the reload callback.
         // Register once here, not in OnEnable, to avoid creating duplicate code-generated elements.
         private void Awake()
         {
@@ -48,9 +49,15 @@ namespace HyperRTS.Presentation.Selection
             }
         }
 
-        // Fires when the UI is (re)loaded; may fire twice on first load, so rebuild idempotently.
-        private void OnUIReload(PanelRenderer panelRenderer, VisualElement root)
+        // Fires on first load and on every asset change; the version skips redundant reloads.
+        private void OnUIReload(PanelRenderer panelRenderer, VisualElement root, int version)
         {
+            if (root == null || version == _uiVersion)
+            {
+                return;
+            }
+
+            _uiVersion = version;
             _marquee?.RemoveFromHierarchy();
             _marquee = BuildMarquee();
             root.Add(_marquee);

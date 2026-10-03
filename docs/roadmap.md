@@ -8,8 +8,8 @@ every phase favors generic, data-driven, Burst-safe pieces over game-specific co
 > commit/PR. When scope shifts, edit the phase rather than letting reality drift
 > from the plan.
 
-- **Engine:** Unity 6000.5.0f1 (6.5), URP 17.5, new Input System
-- **DOTS stack:** Entities 6.5, Entities Graphics, Unity Physics, Netcode for Entities,
+- **Engine:** Unity 6000.6.4f1 (6.6), URP 17.6, new Input System
+- **DOTS stack:** Entities 6.6, Entities Graphics, Unity Physics, Netcode for Entities,
   Collections, Burst, Mathematics
 - **Status legend:** ✅ done · 🟡 in progress · ⬜ not started
 

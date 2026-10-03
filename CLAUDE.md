@@ -11,9 +11,9 @@ data-driven pieces over game-specific code.
 
 ## Environment
 
-- **Unity 6000.5.0f1** (6.5), URP 17.5, new Input System (no legacy `UnityEngine.Input`).
-- **DOTS:** Entities 6.5, Entities Graphics, Unity Physics, Netcode for Entities, Collections,
-  Burst, Mathematics. (Entities `6.x` tracks the editor version; it's the successor to `1.x`,
+- **Unity 6000.6.4f1** (6.6), URP 17.6, new Input System only (Active Input Handling = Input System; no legacy `UnityEngine.Input`).
+- **DOTS:** Entities 6.6, Entities Graphics, Unity Physics, Netcode for Entities, Collections,
+  Burst, Mathematics. (these are **core packages** shipped with the editor - `6.x` tracks the editor version; successor to `1.x`,
   same APIs.)
 
 ## Layout
@@ -72,13 +72,17 @@ These are minimal scaffolds; expect to extend them.
 
 ## Run / test
 
-Open in Unity 6000.5.0f1; play `Assets/Demo/Scenes/SampleScene.unity` (entities bake from
+Open in Unity 6000.6.4f1; play `Assets/Demo/Scenes/SampleScene.unity` (entities bake from
 its EntitiesSubScene). Inspect via Window ▸ Entities. Edit-mode tests live in `HyperRTS.Simulation.Tests`
 - run via Window ▸ General ▸ Test Runner. If the Unity MCP bridge is connected, see console errors via MCP.
 
 ## Gotchas
 
-- C# edits need a Unity domain reload (editor open) before Play mode reflects them.
+- C# edits need a recompile (editor open) before Play mode reflects them.
+- **CoreCLR-ready:** Enter Play Mode skips domain reload, matching Unity's upcoming CoreCLR runtime, so
+  statics survive between play sessions - reset any runtime static state explicitly
+  (`[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]`) or keep it in ECS.
+  Treat the 6.6 `UAC*` analyzer diagnostics (serialization rules, `Assembly.Load(byte[])`, etc.) as errors.
 - Factory-created entities have data + `LocalTransform` but **no mesh** - bake a prefab via a
   SubScene to get rendered entities. The `Unit`/`Building` prefabs in `Assets/Modules/Prefabs/` carry a
   mesh, so they bake to rendered entities.
