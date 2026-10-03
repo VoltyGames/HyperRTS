@@ -82,7 +82,7 @@ namespace HyperRTS.Presentation.Selection
 
         private void Update()
         {
-            if (_marquee == null)
+            if (_marquee?.panel == null)
             {
                 return;
             }
@@ -93,7 +93,7 @@ namespace HyperRTS.Presentation.Selection
                 return;
             }
 
-            var rect = ScreenToPanelRect(drag.StartScreen, drag.CurrentScreen);
+            var rect = ScreenToPanelRect(_marquee.panel, drag.StartScreen, drag.CurrentScreen);
             _marquee.style.display = DisplayStyle.Flex;
             _marquee.style.left = rect.x;
             _marquee.style.top = rect.y;
@@ -121,14 +121,15 @@ namespace HyperRTS.Presentation.Selection
             return _dragQuery.TryGetSingleton(out state);
         }
 
-        // Bottom-left screen coords -> top-left panel rect (assumes ConstantPixelSize, scale 1).
-        private static Rect ScreenToPanelRect(float2 a, float2 b)
+        // Input reports bottom-left screen pixels; panels are top-left and may be scaled.
+        private static Rect ScreenToPanelRect(IPanel panel, float2 a, float2 b)
         {
-            var xMin = Mathf.Min(a.x, b.x);
-            var xMax = Mathf.Max(a.x, b.x);
-            var yMinScreen = Mathf.Min(a.y, b.y);
-            var yMaxScreen = Mathf.Max(a.y, b.y);
-            return new Rect(xMin, Screen.height - yMaxScreen, xMax - xMin, yMaxScreen - yMinScreen);
+            var min = ToPanel(panel, new Vector2(Mathf.Min(a.x, b.x), Mathf.Max(a.y, b.y)));
+            var max = ToPanel(panel, new Vector2(Mathf.Max(a.x, b.x), Mathf.Min(a.y, b.y)));
+            return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
         }
+
+        private static Vector2 ToPanel(IPanel panel, Vector2 screen) =>
+            RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, Screen.height - screen.y));
     }
 }

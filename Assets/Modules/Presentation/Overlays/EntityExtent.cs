@@ -1,0 +1,36 @@
+using HyperRTS.Simulation.Navigation;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Rendering;
+
+namespace HyperRTS.Presentation.Overlays
+{
+    /// <summary>Approximate on-screen size of a unit or building, for sizing overlays.</summary>
+    public static class EntityExtent
+    {
+        private const float DefaultRadius = 0.5f;
+
+        public static float Radius(EntityManager entityManager, Entity entity)
+        {
+            if (entityManager.HasComponent<NavAgent>(entity))
+            {
+                return entityManager.GetComponentData<NavAgent>(entity).Radius;
+            }
+
+            if (entityManager.HasComponent<NavObstacle>(entity))
+            {
+                return math.cmax(entityManager.GetComponentData<NavObstacle>(entity).Size) * 0.5f;
+            }
+
+            return DefaultRadius;
+        }
+
+        /// <summary>Top of the rendered mesh, or a guess from the radius when the root has no mesh bounds.</summary>
+        public static float Top(EntityManager entityManager, Entity entity, float3 position, float radius)
+        {
+            return entityManager.HasComponent<WorldRenderBounds>(entity)
+                ? entityManager.GetComponentData<WorldRenderBounds>(entity).Value.Max.y
+                : position.y + radius * 2f;
+        }
+    }
+}

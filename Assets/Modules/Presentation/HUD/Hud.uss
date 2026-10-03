@@ -1,0 +1,331 @@
+/* HyperRTS in-game HUD. Dark translucent panels, 8px rhythm. */
+
+.hud-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    color: rgb(228, 232, 238);
+    font-size: 13px;
+}
+
+.hud-panel {
+    background-color: rgba(12, 16, 22, 0.82);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+.hud-icon {
+    background-color: rgba(255, 255, 255, 0.06);
+    -unity-background-scale-mode: scale-to-fit;
+    border-radius: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
+.hud-icon__initials {
+    -unity-font-style: bold;
+    font-size: 15px;
+    color: rgb(170, 180, 195);
+    padding: 0;
+    margin: 0;
+}
+
+.hud-bar {
+    height: 8px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.hud-bar__fill {
+    height: 100%;
+    width: 0;
+    background-color: rgb(82, 214, 96);
+}
+
+/* Top bar */
+
+.hud-topbar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 12px;
+}
+
+.hud-topbar__resources {
+    flex-direction: row;
+    align-items: center;
+}
+
+.hud-resource {
+    flex-direction: row;
+    align-items: center;
+    margin-left: 16px;
+}
+
+.hud-resource__icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.hud-resource__name {
+    font-size: 11px;
+    color: rgb(140, 150, 165);
+    margin-right: 6px;
+    padding: 0;
+}
+
+.hud-resource__amount {
+    font-size: 15px;
+    -unity-font-style: bold;
+    min-width: 48px;
+    padding: 0;
+}
+
+/* Bottom row */
+
+.hud-bottom {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    flex-direction: row;
+    align-items: flex-end;
+}
+
+.hud-minimap {
+    width: 208px;
+    height: 208px;
+    padding: 4px;
+}
+
+.hud-minimap__canvas {
+    flex-grow: 1;
+    background-color: rgba(30, 42, 34, 0.9);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.hud-selection {
+    flex-grow: 1;
+    max-width: 560px;
+    min-height: 120px;
+    margin: 0 8px;
+}
+
+.hud-single__header {
+    flex-direction: row;
+}
+
+.hud-single__icon {
+    width: 72px;
+    height: 72px;
+    border-bottom-width: 3px;
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.hud-single__details {
+    flex-grow: 1;
+    margin-left: 12px;
+    justify-content: center;
+}
+
+.hud-single__name {
+    font-size: 17px;
+    -unity-font-style: bold;
+    padding: 0;
+    margin-bottom: 6px;
+}
+
+.hud-single__caption {
+    font-size: 11px;
+    color: rgb(150, 160, 175);
+    padding: 0;
+    margin-top: 3px;
+}
+
+.hud-health {
+    height: 10px;
+}
+
+.hud-construction {
+    margin-top: 6px;
+}
+
+.hud-construction > .hud-bar__fill {
+    background-color: rgb(240, 190, 60);
+}
+
+/* Production queue */
+
+.hud-queue {
+    flex-direction: row;
+    margin-top: 10px;
+}
+
+.hud-slot {
+    width: 48px;
+    height: 48px;
+    margin: 0 6px 0 0;
+    padding: 0;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.hud-slot:hover {
+    border-color: rgb(255, 110, 90);
+}
+
+.hud-slot__icon {
+    flex-grow: 1;
+}
+
+.hud-slot__progress {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    bottom: 3px;
+    height: 5px;
+}
+
+.hud-slot__progress > .hud-bar__fill {
+    background-color: rgb(90, 180, 255);
+}
+
+/* Group tiles */
+
+.hud-groups {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.hud-group {
+    width: 52px;
+    height: 52px;
+    margin: 0 6px 6px 0;
+}
+
+.hud-group__icon {
+    flex-grow: 1;
+}
+
+.hud-group__count {
+    position: absolute;
+    right: 2px;
+    bottom: 0;
+    font-size: 12px;
+    -unity-font-style: bold;
+    padding: 0 2px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 3px;
+}
+
+/* Command card */
+
+.hud-commands {
+    width: 250px;
+    min-height: 120px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+}
+
+.hud-command {
+    width: 72px;
+    height: 72px;
+    margin: 3px;
+    padding: 3px;
+    align-items: center;
+    justify-content: flex-start;
+    color: rgb(228, 232, 238);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: normal;
+}
+
+.hud-command:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+    border-color: rgba(120, 200, 255, 0.7);
+}
+
+.hud-command:active {
+    background-color: rgba(120, 200, 255, 0.25);
+}
+
+.hud-command:disabled {
+    opacity: 0.4;
+}
+
+.hud-command--stance {
+    height: 32px;
+    justify-content: center;
+}
+
+.hud-command--active {
+    border-color: rgb(110, 220, 120);
+    background-color: rgba(110, 220, 120, 0.18);
+}
+
+.hud-command__icon {
+    width: 36px;
+    height: 36px;
+}
+
+.hud-command__name {
+    font-size: 10px;
+    padding: 0;
+    margin-top: 2px;
+    -unity-text-align: middle-center;
+    overflow: hidden;
+    max-width: 64px;
+}
+
+.hud-costs {
+    flex-direction: row;
+}
+
+.hud-costs__amount {
+    font-size: 10px;
+    -unity-font-style: bold;
+    padding: 0 2px;
+}
+
+/* Game over */
+
+.hud-banner {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 28%;
+    align-items: center;
+}
+
+.hud-banner__title {
+    font-size: 72px;
+    -unity-font-style: bold;
+    padding: 12px 64px;
+    background-color: rgba(8, 10, 14, 0.75);
+    border-radius: 8px;
+    letter-spacing: 8px;
+}
+
+.hud-banner__title--victory {
+    color: rgb(120, 230, 130);
+}
+
+.hud-banner__title--defeat {
+    color: rgb(255, 95, 80);
+}
