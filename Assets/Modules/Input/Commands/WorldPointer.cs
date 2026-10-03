@@ -1,9 +1,11 @@
 using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace HyperRTS.Input.Commands
@@ -50,7 +52,30 @@ namespace HyperRTS.Input.Commands
             return CommandMath.TryGroundPoint(origin, direction, 0f, out ground);
         }
 
-        private static bool IsTarget(EntityManager entityManager, Entity entity) =>
-            entityManager.HasComponent<Faction>(entity) || entityManager.HasComponent<ResourceNode>(entity);
+        private static bool IsTarget(EntityManager entityManager, Entity entity)
+        {
+            if (entityManager.HasComponent<ResourceNode>(entity))
+            {
+                return true;
+            }
+
+            return entityManager.HasComponent<Faction>(entity) && IsVisibleToLocalTeam(entityManager, entity);
+        }
+
+        // Enemies hidden by fog must not be targetable, or a click would reveal and attack them.
+        private static bool IsVisibleToLocalTeam(EntityManager entityManager, Entity entity)
+        {
+            using var fogQuery = entityManager.CreateEntityQuery(typeof(FogOfWar));
+            using var localQuery = entityManager.CreateEntityQuery(typeof(LocalPlayer), typeof(Player));
+            if (!fogQuery.TryGetSingleton<FogOfWar>(out var fog) || !fog.IsCreated ||
+                !localQuery.TryGetSingleton<Player>(out var local))
+            {
+                return true;
+            }
+
+            var faction = entityManager.GetComponentData<Faction>(entity).Value;
+            return faction == local.Faction || faction == Faction.Neutral ||
+                   fog.IsVisible(entityManager.GetComponentData<LocalTransform>(entity).Position, local.Team);
+        }
     }
 }
