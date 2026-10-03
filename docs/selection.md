@@ -38,9 +38,24 @@ click-hittable or highlighted.
 
 ## Input
 
-`Selection/Input/RTSInputActions.inputactions` (codegen on), one **Selection** map: `Point`, `Select`
-(left), `Additive` (Shift), `Subtract` (Ctrl). Short press = click; drag past a threshold = box; two
-quick clicks = double-click. Shift adds, Ctrl removes, no modifier replaces.
+`Input/RTSInputActions.inputactions` (codegen on, wrapper `HyperRTS.Input.RTSInputActions`) has three maps:
+
+| Map | Bindings |
+|---|---|
+| Selection | `Select` left click/drag, `Additive` Shift, `Subtract` Ctrl, `Group1-5` keys 1-5, `AssignGroup` Ctrl |
+| Commands | `Command` right click, `Confirm` left click, `AttackMove` A, `Stop` S, `HoldPosition` H, `Queue` Shift, `Cancel` Esc |
+| Camera | `Pan` arrow keys, `Zoom` scroll, `Rotate` middle-drag (`Look`), `Reset` Home |
+
+Short press = click; drag past a threshold = box; two quick clicks = double-click. Shift adds, Ctrl removes, no
+modifier replaces. A drag box prefers the local player's units, then its buildings, then everything in the box;
+a click selects anything (enemies for info).
+
+Control groups: Ctrl+N stores the local player's selected entities in group N (a `ControlGroup` bit mask
+component added on first assignment), N recalls the group, Shift+N adds it to the selection.
+
+Clicks over the HUD (`PointerState.OverUI`), in placement mode (`PlacementState.Active`) or with a targeted
+command armed (`PendingCommand`) never reach selection; `CommandInputSystem` and `PlacementInputSystem` turn them
+into `PlayerCommand`s instead.
 
 ## Scene wiring (manual)
 

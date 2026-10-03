@@ -9,6 +9,12 @@ namespace HyperRTS.Simulation.Selection
         Click = 1,
         DragRelease = 2,
         DoubleClick = 3,
+
+        /// <summary>Puts the selected (owned) entities into control group <see cref="SelectionInput.Group"/>.</summary>
+        AssignGroup = 4,
+
+        /// <summary>Selects control group <see cref="SelectionInput.Group"/>.</summary>
+        RecallGroup = 5,
     }
 
     /// <summary>Selection gesture written by the input layer and read by <see cref="SelectionSystem"/>; tests inject it directly.</summary>
@@ -29,5 +35,8 @@ namespace HyperRTS.Simulation.Selection
 
         public float4x4 ViewProjection; // projection * worldToCamera
         public float2 ScreenSize;
+
+        /// <summary>Control group index (0-7) for AssignGroup / RecallGroup.</summary>
+        public byte Group;
     }
 }

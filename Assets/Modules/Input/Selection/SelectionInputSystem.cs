@@ -1,13 +1,16 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Interaction;
+using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace HyperRTS.Input.Selection
 {
-    /// <summary>Turns mouse input into a click, drag or double-click and writes the <see cref="SelectionInput"/> singleton.</summary>
-    [UpdateInGroup(typeof(OrderSystemGroup))]
+    /// <summary>Turns mouse and control-group keys into the <see cref="SelectionInput"/> singleton.</summary>
+    [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     [UpdateBefore(typeof(SelectionSystem))]
     public partial class SelectionInputSystem : SystemBase
     {
@@ -21,6 +24,7 @@ namespace HyperRTS.Input.Selection
         private float2 _dragCurrentScreen;
 
         private RTSInputActions _actions;
+        private InputAction[] _groupKeys;
         private Camera _camera;
 
         private float2 _pressPosition;
@@ -34,28 +38,39 @@ namespace HyperRTS.Input.Selection
             _actions = new RTSInputActions();
             _actions.Selection.Enable();
 
-            var singleton = EntityManager.CreateEntity(typeof(SelectionInput), typeof(SelectionDragState));
-            EntityManager.SetComponentData(singleton, new SelectionInput { Command = SelectionCommand.None });
+            var selection = _actions.Selection;
+            _groupKeys = new[] { selection.Group1, selection.Group2, selection.Group3, selection.Group4, selection.Group5 };
+
+            SingletonUtility.Ensure<SelectionInput>(EntityManager);
+            SingletonUtility.Ensure<SelectionDragState>(EntityManager);
+            SingletonUtility.Ensure<PendingCommand>(EntityManager);
+            SingletonUtility.Ensure<PlacementState>(EntityManager);
+            SingletonUtility.Ensure<PointerState>(EntityManager);
         }
 
         protected override void OnDestroy()
         {
-            if (_actions != null)
-            {
-                _actions.Selection.Disable();
-                _actions.Dispose();
-                _actions = null;
-            }
+            _actions?.Dispose();
+            _actions = null;
         }
 
         protected override void OnUpdate()
         {
             var input = new SelectionInput { Command = SelectionCommand.None };
 
-            var camera = ResolveCamera();
-            if (camera != null)
+            if (_camera == null)
             {
-                UpdateGesture(camera, ref input);
+                _camera = Camera.main;
+            }
+
+            if (_camera != null)
+            {
+                UpdateGesture(_camera, ref input);
+            }
+
+            if (input.Command == SelectionCommand.None)
+            {
+                ReadControlGroups(ref input);
             }
 
             SystemAPI.SetSingleton(input);
@@ -67,22 +82,18 @@ namespace HyperRTS.Input.Selection
             });
         }
 
-        private Camera ResolveCamera()
-        {
-            if (_camera == null)
-            {
-                _camera = Camera.main;
-            }
-
-            return _camera;
-        }
+        /// <summary>Clicks over the HUD, in placement mode or confirming a targeted command are not selections.</summary>
+        private bool IsPointerClaimed() =>
+            SystemAPI.GetSingleton<PointerState>().OverUI ||
+            SystemAPI.GetSingleton<PlacementState>().Active ||
+            SystemAPI.GetSingleton<PendingCommand>().Type != CommandType.None;
 
         private void UpdateGesture(Camera camera, ref SelectionInput input)
         {
             var select = _actions.Selection.Select;
             var pointer = (float2)_actions.Selection.Point.ReadValue<Vector2>();
 
-            if (select.WasPressedThisFrame())
+            if (select.WasPressedThisFrame() && !IsPointerClaimed())
             {
                 _pressed = true;
                 _pressPosition = pointer;
@@ -94,10 +105,7 @@ namespace HyperRTS.Input.Selection
             if (_pressed && select.IsPressed())
             {
                 _dragCurrentScreen = pointer;
-                if (math.distance(pointer, _pressPosition) > DragThresholdPixels)
-                {
-                    _isDragging = true;
-                }
+                _isDragging |= math.distance(pointer, _pressPosition) > DragThresholdPixels;
             }
 
             if (!(select.WasReleasedThisFrame() && _pressed))
@@ -106,7 +114,12 @@ namespace HyperRTS.Input.Selection
             }
 
             _pressed = false;
+            WriteRelease(camera, pointer, ref input);
+            _isDragging = false;
+        }
 
+        private void WriteRelease(Camera camera, float2 pointer, ref SelectionInput input)
+        {
             // Only a release issues a command, so modifiers and view-projection are read here.
             input.Additive = _actions.Selection.Additive.IsPressed();
             input.Subtract = _actions.Selection.Subtract.IsPressed();
@@ -120,24 +133,39 @@ namespace HyperRTS.Input.Selection
                 input.Command = SelectionCommand.DragRelease;
                 input.DragMin = math.min(_pressPosition, pointer);
                 input.DragMax = math.max(_pressPosition, pointer);
+                return;
             }
-            else
+
+            var now = SystemAPI.Time.ElapsedTime;
+            var isDoubleClick = now - _lastClickTime <= DoubleClickSeconds &&
+                                math.distance(pointer, _lastClickPosition) <= DoubleClickPixels;
+            input.Command = isDoubleClick ? SelectionCommand.DoubleClick : SelectionCommand.Click;
+
+            var ray = camera.ScreenPointToRay(new Vector3(pointer.x, pointer.y, 0f));
+            input.RayOrigin = ray.origin;
+            input.RayDirection = math.normalizesafe((float3)ray.direction);
+            input.RayDistance = camera.farClipPlane;
+
+            _lastClickTime = now;
+            _lastClickPosition = pointer;
+        }
+
+        /// <summary>Ctrl+N assigns the selection to group N, N recalls it, Shift+N adds it.</summary>
+        private void ReadControlGroups(ref SelectionInput input)
+        {
+            for (var i = 0; i < _groupKeys.Length; i++)
             {
-                var now = SystemAPI.Time.ElapsedTime;
-                var isDoubleClick = now - _lastClickTime <= DoubleClickSeconds &&
-                                    math.distance(pointer, _lastClickPosition) <= DoubleClickPixels;
-                input.Command = isDoubleClick ? SelectionCommand.DoubleClick : SelectionCommand.Click;
+                if (!_groupKeys[i].WasPressedThisFrame())
+                {
+                    continue;
+                }
 
-                var ray = camera.ScreenPointToRay(new Vector3(pointer.x, pointer.y, 0f));
-                input.RayOrigin = ray.origin;
-                input.RayDirection = math.normalizesafe((float3)ray.direction);
-                input.RayDistance = camera.farClipPlane;
-
-                _lastClickTime = now;
-                _lastClickPosition = pointer;
+                var assign = _actions.Selection.AssignGroup.IsPressed();
+                input.Command = assign ? SelectionCommand.AssignGroup : SelectionCommand.RecallGroup;
+                input.Additive = !assign && _actions.Selection.Additive.IsPressed();
+                input.Group = (byte)i;
+                return;
             }
-
-            _isDragging = false;
         }
     }
 }

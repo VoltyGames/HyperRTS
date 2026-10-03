@@ -1,9 +1,11 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
+using HyperRTS.Simulation.Match;
+using Unity.Entities;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace HyperRTS.Input.Cameras
 {
+    /// <summary>RTS camera that orbits a ground focus point: pan, edge scroll, zoom by height, yaw and map clamping.</summary>
     [AddComponentMenu(HyperRTSMenu.Cameras + "Camera Controller")]
     [Icon(HyperRTSIcons.Cameras)]
     [HelpURL(HyperRTSDocs.Roadmap)]
@@ -11,16 +13,26 @@ namespace HyperRTS.Input.Cameras
     [RequireComponent(typeof(Camera))]
     public class CameraController : MonoBehaviour
     {
+        // Mouse delta is per frame, so yaw scales with pixels dragged rather than time.
+        private const float DegreesPerPixel = 1f / 500f;
+
         [Header("Movement")]
-        [Tooltip("Pan speed (WASD) in units per second.")]
+        [Tooltip("Pan speed (arrow keys, screen edges) in units per second at minimum zoom; scales with height.")]
         public float moveSpeed = 10f;
 
-        [Tooltip("Rotation speed (Alt + mouse) in degrees per second.")]
+        [Tooltip("Yaw in degrees per 500 pixels of middle-mouse drag.")]
         public float rotationSpeed = 100f;
 
+        [Header("Edge Scrolling")]
+        [Tooltip("Pan when the cursor touches a screen edge.")]
+        public bool edgeScrolling = true;
+
+        [Tooltip("Width in pixels of the screen border that triggers edge scrolling.")]
+        public float edgeSize = 8f;
+
         [Header("Zoom")]
-        [Tooltip("Zoom speed (mouse scroll).")]
-        public float zoomSpeed = 500f;
+        [Tooltip("Height change per mouse-scroll notch.")]
+        public float zoomStep = 4f;
 
         [Tooltip("Closest zoom (minimum camera height).")]
         public float minZoom = 10f;
@@ -35,9 +47,23 @@ namespace HyperRTS.Input.Cameras
         [Tooltip("Rotation the camera resets to (Home key).")]
         public Quaternion defaultRotation = Quaternion.Euler(30, 0, 0);
 
-        // Scale Input System values to the legacy axis ranges.
-        private const float ScrollNormalization = 0.1f;   // ~±1 per notch -> ~±0.1
-        private const float MouseDeltaSensitivity = 0.1f; // legacy "Mouse X" sensitivity
+        private RTSInputActions _actions;
+        private World _world;
+        private EntityQuery _mapQuery;
+
+        /// <summary>Centres the view on a world point, keeping height and rotation (minimap clicks).</summary>
+        public void FocusOn(Vector3 worldPoint) => PlaceAt(ClampToMap(worldPoint), transform.position.y);
+
+        private void Awake()
+        {
+            _actions = new RTSInputActions();
+        }
+
+        private void OnEnable() => _actions.Camera.Enable();
+
+        private void OnDisable() => _actions.Camera.Disable();
+
+        private void OnDestroy() => _actions.Dispose();
 
         private void Start()
         {
@@ -59,94 +85,98 @@ namespace HyperRTS.Input.Cameras
 
         private void Update()
         {
-            HandleMovement();
-            HandleRotation();
-            HandleZoom();
-            HandleReset();
-        }
-
-        private void HandleMovement()
-        {
-            var keyboard = Keyboard.current;
-            if (keyboard == null)
-            {
-                return;
-            }
-
-            var position = transform.position;
-            var movement = Vector3.zero;
-
-            if (keyboard.wKey.isPressed)
-            {
-                movement += new Vector3(transform.forward.x, 0, transform.forward.z);
-            }
-            if (keyboard.sKey.isPressed)
-            {
-                movement -= new Vector3(transform.forward.x, 0, transform.forward.z);
-            }
-            if (keyboard.aKey.isPressed)
-            {
-                movement -= new Vector3(transform.right.x, 0, transform.right.z);
-            }
-            if (keyboard.dKey.isPressed)
-            {
-                movement += new Vector3(transform.right.x, 0, transform.right.z);
-            }
-
-            transform.position += movement * (moveSpeed * Time.deltaTime);
-
-            // Pan on XZ only; zoom owns the height.
-            transform.position = new Vector3(transform.position.x, position.y, transform.position.z);
-        }
-
-        private void HandleZoom()
-        {
-            var mouse = Mouse.current;
-            if (mouse == null)
-            {
-                return;
-            }
-
-            var scroll = mouse.scroll.ReadValue().y * ScrollNormalization;
-
-            if (scroll != 0)
-            {
-                var zoom = transform.position;
-                zoom.y -= scroll * zoomSpeed * Time.deltaTime;
-                zoom.y = Mathf.Clamp(zoom.y, minZoom, maxZoom);
-                transform.position = zoom;
-            }
-        }
-
-        private void HandleRotation()
-        {
-            var keyboard = Keyboard.current;
-            var mouse = Mouse.current;
-            if (keyboard == null || mouse == null)
-            {
-                return;
-            }
-
-            if (keyboard.leftAltKey.isPressed)
-            {
-                var mouseX = mouse.delta.ReadValue().x * MouseDeltaSensitivity;
-                var rotationX = mouseX * rotationSpeed * Time.deltaTime;
-                transform.Rotate(0, rotationX, 0, Space.World);
-            }
-        }
-
-        private void HandleReset()
-        {
-            var keyboard = Keyboard.current;
-            if (keyboard == null)
-            {
-                return;
-            }
-
-            if (keyboard.homeKey.isPressed)
+            var camera = _actions.Camera;
+            if (camera.Reset.WasPressedThisFrame())
             {
                 ResetViewToDefault();
+                return;
             }
+
+            var focus = Focus();
+            var height = transform.position.y;
+            var speed = moveSpeed * Mathf.Max(1f, height / Mathf.Max(minZoom, 0.01f));
+            focus += PanDirection() * (speed * Time.unscaledDeltaTime);
+
+            var scroll = camera.Zoom.ReadValue<float>();
+            if (scroll != 0f)
+            {
+                height = Mathf.Clamp(height - Mathf.Sign(scroll) * zoomStep, minZoom, maxZoom);
+            }
+
+            if (camera.Rotate.IsPressed())
+            {
+                var yaw = camera.Look.ReadValue<Vector2>().x * rotationSpeed * DegreesPerPixel;
+                transform.Rotate(0f, yaw, 0f, Space.World);
+            }
+
+            PlaceAt(ClampToMap(focus), height);
+        }
+
+        /// <summary>World-space XZ pan from the arrow keys plus edge scrolling, relative to the camera's yaw.</summary>
+        private Vector3 PanDirection()
+        {
+            var input = _actions.Camera.Pan.ReadValue<Vector2>() + EdgeDirection();
+            var forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            var right = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
+            return Vector3.ClampMagnitude(right * input.x + forward * input.y, 1f);
+        }
+
+        private Vector2 EdgeDirection()
+        {
+            if (!edgeScrolling || !Application.isFocused)
+            {
+                return Vector2.zero;
+            }
+
+            var pointer = _actions.Camera.Point.ReadValue<Vector2>();
+            if (pointer.x < 0f || pointer.y < 0f || pointer.x > Screen.width || pointer.y > Screen.height)
+            {
+                return Vector2.zero;
+            }
+
+            var x = pointer.x <= edgeSize ? -1f : pointer.x >= Screen.width - edgeSize ? 1f : 0f;
+            var y = pointer.y <= edgeSize ? -1f : pointer.y >= Screen.height - edgeSize ? 1f : 0f;
+            return new Vector2(x, y);
+        }
+
+        /// <summary>The y = 0 ground point the camera looks at.</summary>
+        private Vector3 Focus()
+        {
+            var position = transform.position;
+            var forward = transform.forward;
+            if (forward.y > -0.01f)
+            {
+                return new Vector3(position.x, 0f, position.z);
+            }
+
+            return position + forward * (position.y / -forward.y);
+        }
+
+        /// <summary>Moves the camera so it looks at <paramref name="focus"/> from <paramref name="height"/>.</summary>
+        private void PlaceAt(Vector3 focus, float height)
+        {
+            focus.y = 0f;
+            var forward = transform.forward;
+            transform.position = forward.y > -0.01f
+                ? new Vector3(focus.x, height, focus.z)
+                : focus - forward * (height / -forward.y);
+        }
+
+        private Vector3 ClampToMap(Vector3 point)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return point;
+            }
+
+            if (_world != world)
+            {
+                _world = world;
+                _mapQuery = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MapSettings>());
+            }
+
+            return _mapQuery.TryGetSingleton<MapSettings>(out var map) ? (Vector3)map.Clamp(point) : point;
         }
     }
 }
