@@ -18,22 +18,33 @@ run headless: `Core ← Simulation ← {Presentation, Input}`, with Editor/Tests
 
 ```text
 Assets/Modules/
-├── Core/          contracts: SystemGroups, IEntityFactory, HyperRTSMenu
-├── Simulation/    components, systems, authoring, factories, Tests/ (Attack, Buildings, Health, Resources, Selection, Units)
-├── Presentation/  rendering (URP) + UI
-├── Input/         camera, input → ECS bridge
-├── Editor/        editor tools and menus
-└── Prefabs/       Unit, Building, RTSWorld rig, SelectionUI
+├── Core/          contracts: SystemGroups, HyperRTSMenu/Icons/Docs
+├── Simulation/    headless gameplay: AI, Buildings, Combat, Common, Interaction, Match, Navigation, Orders,
+│                  Resources, Selection, Spatial, Units, Vision, Tests/
+├── Presentation/  team colours, overlays, fog rendering, UI Toolkit HUD, Tests/
+├── Input/         camera, input actions, input → PlayerCommand bridge
+├── Editor/        scene wizard, GameObject templates, inspectors, icons
+└── Prefabs/       RTSWorld rig (camera + HUD), UI/HUD
 ```
 
 `HyperRTS.Simulation` must never reference Graphics, InputSystem or UIElements. Data shared across layers
-(e.g. `SelectionDragState`) lives in Simulation.
+(e.g. `PlacementState`, `PointerState`, `SelectionDragState`) lives in Simulation. Module map and contracts:
+[`docs/modules.md`](docs/modules.md).
+
+## Gameplay contract
+
+- All player intent (input or AI) is a `PlayerCommand` on the player entity, consumed in `OrderSystemGroup`.
+- Orders go through `OrderWriter`; the system owning an order type disables `ActiveOrder` when done.
+- Move a unit by setting and enabling `MoveDestination`. Combat owns movement while `AttackTarget` is enabled.
+- Ownable entities carry `Faction` (0 = neutral); hostility comes from `FactionRelations`.
+- Spawn by instantiating baked entity prefabs, then set `LocalTransform` and `Faction`.
 
 ## Conventions
 
 - Namespaces: `HyperRTS.<Layer>.<Module>`; contracts stay in `HyperRTS.Core`.
 - An authoring MonoBehaviour, its nested `Baker` and its component struct share one `*Authoring.cs` file.
-  Bakers use `GetEntity(TransformUsageFlags.Dynamic)`.
+  Bakers use `GetEntity(TransformUsageFlags.Dynamic)` and write component sets through the `*Setup` helpers
+  (`IComponentSink`), so tests build the same entities.
 - Authoring classes carry `[AddComponentMenu]`, `[Icon]`, `[HelpURL]`, `[DisallowMultipleComponent]` and a
   `[Tooltip]` per field. Paths come from `HyperRTSMenu.cs`. See [`docs/editor-ux.md`](docs/editor-ux.md).
 - Component fields PascalCase; authoring fields camelCase.
@@ -64,19 +75,26 @@ Assets/Modules/
 ## Run / test
 
 Play `Assets/Demo/Scenes/SampleScene.unity` (entities bake from its SubScene); inspect via Window ▸ Entities.
-EditMode tests are in `HyperRTS.Simulation.Tests` (Window ▸ General ▸ Test Runner).
+EditMode tests are in `HyperRTS.Simulation.Tests` and `HyperRTS.Presentation.Tests` (Window ▸ General ▸ Test
+Runner). Simulation tests use `TestWorld` and go end-to-end through systems.
 
 ## Gotchas
 
 - Enter Play Mode skips domain reload (CoreCLR-ready), so statics survive between sessions. Reset runtime
   statics with `[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]` or keep state in ECS. Treat `UAC*`
   analyzer diagnostics as errors.
-- Factory entities have no mesh. Bake a prefab from a SubScene to render.
-- `ResourceManager` is a static editor-time registry, not Burst-safe. Runtime data lives in `Resource`.
+- Entities built with the `*Setup` helpers have no mesh. Rendered spawns instantiate baked prefabs.
+- SubScene entities stream in over the first frames: guard on singletons (`RequireForUpdate`) and never treat
+  "nothing exists yet" as a game state (see `VictorySystem`).
+- Keep `OverrideAutomaticNetcodeBootstrap` (on `RTSWorld.prefab`) in single-player scenes, or Netcode replaces
+  the default world with client/server worlds.
+- Entity type identity (`EntityInfo.TypeId`) is a hash of the display name: two prefab types must not share one.
 
 ## Docs
 
-- [`world-setup`](docs/world-setup.md) - entity entry and system order
+- [`getting-started`](docs/getting-started.md) - building a game on the engine
+- [`modules`](docs/modules.md) - module reference and contracts
+- [`world-setup`](docs/world-setup.md) - entity entry, system order, tests
 - [`editor-ux`](docs/editor-ux.md) - authoring conventions and editor tools
 - [`selection`](docs/selection.md) - selection pipeline
 - [`roadmap`](docs/roadmap.md) - check phase status before new work

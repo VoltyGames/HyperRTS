@@ -1,316 +1,141 @@
-# HyperRTS — Development Roadmap
+# HyperRTS: development roadmap
 
-A phased plan for building **HyperRTS**, a reusable RTS engine on Unity DOTS
-(Entities/ECS). This is the engine track — games are built _on top_ of it later, so
-every phase favors generic, data-driven, Burst-safe pieces over game-specific code.
+The phased plan for **HyperRTS**, a reusable RTS engine on Unity DOTS. Games are built on top of it, so every
+phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 
-> Keep this current. When a deliverable lands, check it off and note the
-> commit/PR. When scope shifts, edit the phase rather than letting reality drift
-> from the plan.
+> Keep this current. When a deliverable lands, tick it and note the commit. When scope shifts, edit the phase
+> instead of letting it drift.
 
-- **Engine:** Unity 6000.6.4f1 (6.6), URP 17.6, new Input System
-- **DOTS stack:** Entities 6.6, Entities Graphics, Unity Physics, Netcode for Entities,
-  Collections, Burst, Mathematics
-- **Status legend:** ✅ done · 🟡 in progress · ⬜ not started
-
----
+- **Engine:** Unity 6000.6.4f1 (6.6), URP 17.6, Input System
+- **DOTS stack:** Entities 6.6, Entities Graphics, Unity Physics, Netcode for Entities, Collections, Burst,
+  Mathematics
+- **Status legend:** ✅ done · 🟡 partly done · ⬜ not started
 
 ## Milestone overview
 
-| Phase | Theme                          | Status | Exit criteria (one line)                                             |
-| ----: | ------------------------------ | :----: | -------------------------------------------------------------------- |
-|     0 | Foundation / scaffolds         |   ✅   | Core modules + Demo scene bake and run; systems are minimal but live |
-|     1 | Selection & input              |   ✅   | Player can box/click-select rendered entities via Physics raycast    |
-|     2 | Commands & orders              |   ⬜   | Selected units accept move/attack/stop orders; order queue exists    |
-|     3 | Pathfinding & steering         |   ⬜   | Units route around obstacles and avoid stacking                      |
-|     4 | Economy & resources            |   ⬜   | Harvest → deposit → stockpile loop runs end-to-end                   |
-|     5 | Production & buildings         |   ⬜   | Buildings place, construct, and produce units from queues            |
-|     6 | Rendering for factory entities |   ⬜   | Runtime-spawned entities render without a SubScene prefab            |
-|     7 | Combat depth & AI              |   ⬜   | Targeting, auto-acquire, projectiles, basic combat AI                |
-|     8 | Fog of war & vision            |   ⬜   | Per-faction vision reveals/hides entities and terrain                |
-|     9 | Factions & players             |   ⬜   | Multiple factions with ownership, teams, resources, win/lose         |
-|    10 | Multiplayer (Netcode)          |   ⬜   | Deterministic/replicated match across 2+ clients                     |
-|    11 | Hardening & tooling            |   ⬜   | Tests, profiling budgets, docs, sample game                          |
-
-Phases are roughly sequential but several overlap (e.g. rendering work in Phase 6
-unblocks visual verification for everything after it). Dependencies are called out
-per phase.
-
----
-
-## Phase 0 — Foundation & scaffolds ✅
-
-**Goal:** a compiling Core asmdef with the minimal ECS building blocks and a Demo
-scene that bakes entities, so later phases have something to stand on.
-
-**Done so far**
-
-- ✅ Project/solution layout: layered asmdefs under `Assets/Modules/` — `HyperRTS.Core` (contracts),
-  `HyperRTS.Simulation` (headless gameplay), `HyperRTS.Presentation`, `HyperRTS.Input`, `HyperRTS.Editor`
-  (see [`architecture.md`](architecture.md))
-- ✅ `Units` — `UnitTag`, `MovementSpeed`, `MoveDestination`, `MovementSystem`, `UnitEntityFactory`
-- ✅ `Buildings` — `BuildingTag`, `ConstructionProgress`, `ConstructionSystem`, `BuildingEntityFactory`
-- ✅ `Health` — `HealthComponent`, `DeathSystem` (OrderLast)
-- ✅ `Attack` — `AttackTarget`, `MeleeAttackDamage`, `RangeAttackDamage`, `AttackCooldown`, `AttackSystem`
-- ✅ `Resources` — `ResourceType`, `Resource`, `ResourceTag`, `ResourceManager` (static registry), editor tooling
-- ✅ `Cameras` — `CameraController` (MonoBehaviour: pan/zoom/rotate/reset)
-- ✅ Demo scene + EntitiesSubScene
-
-**Remaining to close Phase 0**
-
-- ✅ Establish an explicit system update order — ordered phase groups in `SystemGroups.cs`
-  (`OrderSystemGroup` → `MovementSystemGroup` → `CombatSystemGroup` → `ProductionSystemGroup` →
-  `LifecycleSystemGroup`); the four systems target these instead of `SimulationSystemGroup`
-- ✅ First test assembly (`HyperRTS.Simulation.Tests`) with Burst-compiled system smoke tests
-  (`SimulationSystemTests`: movement + death/lifecycle ordering)
-- ✅ World-setup entry point documented in [`docs/world-setup.md`](../docs/world-setup.md) (how
-  entities enter play: default world → SubScene baking → ordered groups → factory/test path)
-- ✅ This roadmap referenced from `CLAUDE.md`
-
-**Acceptance:** project opens in 6000.5.0f1, Demo scene plays, entities visible in
-**Window ▸ Entities**, no compile errors in the Unity console.
-
----
-
-## Phase 1 — Selection & input 🟡
-
-**Goal:** turn rendered entities into selectable game objects.
-
-**Deliverables**
-
-- ✅ `Selection` module: `Selectable`/`Selected` (enableable)/`SelectableType`/`SelectionHighlightColors`
-- ✅ Unity Physics raycast for click-select; drag-box for multi-select
-- ✅ Modifiers: Shift add, Ctrl subtract, double-click select-all-of-type
-- ✅ Input via a dedicated `InputActions` asset (`RTSInputActions`) — no legacy `UnityEngine.Input`
-- ✅ Placeholder highlight (`URPMaterialPropertyBaseColor` tint) + UI Toolkit marquee
-- ✅ Scene wiring: attach `SelectableAuthoring` to the Demo Unit; add `SelectionDragBoxUI` to the scene
-- ✅ Verify: no console errors, tests green, Play-mode picking works
-
-**Dependencies:** Unity Physics colliders on entities (the Demo Unit's `CapsuleCollider` bakes into one).
-
-**Acceptance:** click and box-select highlight the right entities; the selection set is ECS-queryable.
-See [`docs/selection.md`](selection.md).
-
----
-
-## Phase 2 — Commands & orders ⬜
-
-**Goal:** issue intent to the current selection.
-
-**Deliverables**
-
-- `Orders` module: order components (`MoveOrder`, `AttackOrder`, `StopOrder`, `HoldPosition`)
-- An **order queue** buffer (`DynamicBuffer<OrderElement>`) with shift-to-queue
-- Right-click context resolution (ground → move, enemy → attack, resource → gather, building → enter/garrison)
-- Order-issuing system translating raycast hits + selection into order components
-- `StopSystem`/order-clear semantics; `MovementSystem` consumes `MoveOrder` instead of raw `MoveDestination`
-
-**Dependencies:** Phase 1 (selection), Phase 4 partial overlap (gather order target).
-
-**Acceptance:** selected units execute right-click move/attack; queued orders run in order.
-
----
-
-## Phase 3 — Pathfinding & steering ⬜
-
-**Goal:** units reach destinations around obstacles without stacking.
-
-**Deliverables**
-
-- Navigation data: choose and document approach (flow-field for group RTS movement, or
-  grid A\* + funnel) — **decision required, record the trade-off here when made**
-- Grid/navmesh bake from terrain + static building footprints
-- Pathfinding system producing waypoint buffers; movement follows waypoints
-- Local avoidance / separation steering (boids-style) so units don't overlap
-- Dynamic obstacle updates when buildings are placed/destroyed
-- Formation movement (group keeps shape, arrives together)
-
-**Dependencies:** Phase 2 (move orders), building footprints from Phase 5.
-
-**Acceptance:** a group ordered across a map with obstacles routes around them, spreads
-on arrival, and re-paths when a building blocks the route. Pathfinding stays in Burst
-jobs and holds frame budget for N units (set target N here, e.g. 500).
-
----
-
-## Phase 4 — Economy & resources ⬜
-
-**Goal:** a working harvest loop and per-faction stockpiles.
-
-**Deliverables**
-
-- Promote `ResourceManager` (static, editor/setup-only) data into runtime per-faction stockpile components
-- Resource nodes with finite amounts + depletion/regrowth
-- Harvester behavior: travel → gather (capacity/time) → return → deposit → repeat
-- Drop-off buildings; nearest-depot selection
-- Resource UI hook (event/component the UI layer can read) — UI itself out of scope here
-
-**Dependencies:** Phase 2 (gather orders), Phase 3 (pathing to nodes/depots), Phase 9 (faction ownership).
-
-**Acceptance:** a harvester ordered onto a node runs the full loop unattended and a
-faction stockpile increases; node depletes.
-
----
-
-## Phase 5 — Production & buildings ⬜
-
-**Goal:** build placement, construction, and unit production.
-
-**Deliverables**
-
-- Placement mode: ghost preview, grid snap, valid/invalid footprint checks (terrain + overlap)
-- Construction tie-in: placed building uses existing `ConstructionProgress`/`ConstructionSystem`; builders contribute progress
-- Production queue (`DynamicBuffer`) on producer buildings; cost deduction from Phase 4 stockpile
-- Rally points and spawn-on-complete
-- Tech/prerequisite gating (data-driven prerequisites)
-
-**Dependencies:** Phase 4 (costs), Phase 3 (footprints as obstacles, rally pathing).
-
-**Acceptance:** place a building, watch it construct, queue a unit, see it spawn at the
-rally point with resources spent.
-
----
-
-## Phase 6 — Rendering for factory entities ⬜
-
-**Goal:** runtime-spawned entities render without authoring a SubScene prefab per type.
-
-> Per CLAUDE.md gotcha: factory-created entities currently have data + `LocalTransform`
-> but **no mesh**. This phase removes that limitation.
-
-**Deliverables**
-
-- Prefab/entity-prefab registry the factories pull renderable archetypes from (RenderMeshArray + MaterialMeshInfo)
-- Convert factories to instantiate baked entity prefabs rather than bare `CreateEntity`
-- LOD / culling sanity pass for large counts
-- Optional: GPU-friendly instancing path for unit-heavy scenes
-
-**Dependencies:** none hard; unblocks visual verification of Phases 1–5, so consider
-pulling it earlier if iteration is painful.
-
-**Acceptance:** units/buildings spawned by factories at runtime appear rendered in Game view.
-
----
-
-## Phase 7 — Combat depth & AI ⬜
-
-**Goal:** combat beyond the current cooldown-subtracts-health scaffold.
-
-**Deliverables**
-
-- Target acquisition: range checks, auto-acquire nearest enemy, threat/aggro rules
-- Projectiles for ranged attacks (travel time, hit resolution) vs. instant melee
-- Attack-move order; stances (aggressive/defensive/hold/passive)
-- Damage model: armor/damage types, multipliers, falloff
-- Death → corpse/cleanup, kill credit, on-death effects hook
-- Basic combat micro AI (kiting, focus fire) as reusable behavior components
-
-**Dependencies:** Phases 2, 3, and partial 1.
-
-**Acceptance:** two groups auto-engage on contact; ranged units fire projectiles;
-stances change behavior; `DeathSystem` integrates cleanly.
-
----
-
-## Phase 8 — Fog of war & vision ⬜
-
-**Goal:** per-faction vision and concealment.
-
-**Deliverables**
-
-- Vision components (sight radius) producing a per-faction visibility grid (Burst job)
-- Three-state fog: unseen / explored / visible
-- Reveal/hide of entities based on the observing faction's vision
-- Terrain fog rendering (shader/overlay)
-- Detection rules (stealth/cloak hooks, detectors)
-
-**Dependencies:** Phase 9 (factions define "who sees"), Phase 6 (hide/show rendered entities).
-
-**Acceptance:** units outside a faction's vision are hidden; explored-but-not-visible
-terrain dims; entering vision reveals enemies.
-
----
-
-## Phase 9 — Factions & players ⬜
-
-**Goal:** ownership, teams, and match state.
-
-**Deliverables**
-
-- `FactionId`/owner component on all ownable entities; team/alliance relations
-- Per-faction state: resources (ties into Phase 4), population/supply caps, tech
-- Diplomacy/relations matrix (ally/enemy/neutral) consumed by targeting + fog
-- Player controller abstraction (local human vs. AI) so input maps to a faction
-- Victory/defeat conditions (data-driven)
-
-**Dependencies:** threads through Phases 4, 7, 8. Introduce `FactionId` early if
-convenient — it touches many components.
-
-**Acceptance:** two factions coexist with separate resources/vision; attacking only
-affects enemies; a win condition can resolve a match.
-
----
-
-## Phase 10 — Multiplayer (Netcode for Entities) ⬜
-
-**Goal:** networked matches.
-
-**Deliverables**
-
-- Pick model and document trade-offs here: **deterministic lockstep** (command sync,
-  fits RTS unit counts) vs. **server-authoritative replication** (Netcode ghosts).
-  **Decision required.**
-- Ghost/relevancy config or lockstep command-frame scheduling
-- Client prediction/reconciliation or deterministic sim verification (checksum)
-- Lobby/connection flow; client→faction binding
-- Latency, desync detection, rejoin handling
-
-**Dependencies:** stable simulation from all prior phases; determinism constraints may
-retro-influence earlier systems (avoid non-deterministic float/order dependencies).
-
-**Acceptance:** 2+ clients play the same match in sync; no desync over a representative game.
-
----
-
-## Phase 11 — Hardening, tooling & sample game ⬜
-
-**Goal:** make the engine dependable and adoptable.
-
-**Deliverables**
-
-- Test coverage: per-module test assemblies; system unit tests; play-mode integration tests
-- Performance budgets per system with profiler markers; stress scene (target unit count)
-- Authoring/designer tooling (editor windows, gizmos, data validation) extending `HyperRTS.Editor`
-- API docs / module READMEs; "how to build a game on HyperRTS" guide
-- A minimal **sample game** in a separate asmdef proving the engine end-to-end
-
-**Acceptance:** CI-style green tests, documented perf budgets, a playable sample built
-only from engine APIs.
-
----
-
-## Cross-cutting tracks (continuous)
-
-These run alongside every phase rather than as discrete milestones:
-
-- **Determinism discipline** — keep simulation deterministic from the start; it is far
-  cheaper than retrofitting for Phase 10.
-- **Burst/job safety** — components stay blittable; structural changes via ECB;
-  cross-entity reads via `ComponentLookup<T>`; timing via `SystemAPI.Time`.
-- **Data-driven design** — prefer ScriptableObject/baked config + components over
-  hard-coded values, so games tune the engine without forking it.
-- **Performance** — profile against a target unit count each phase; protect frame budget.
-- **Testing & docs** — grow `HyperRTS.Simulation.Tests` and module docs as features land.
-
----
-
-## Open decisions to record
-
-Capture the choice and its rationale here when made, so future work doesn't relitigate:
-
-- [ ] **Pathfinding model** (Phase 3): flow-field vs. grid A\*+funnel
-- [ ] **Networking model** (Phase 10): deterministic lockstep vs. Netcode replication
-- [ ] **Rendering archetype source** (Phase 6): entity-prefab registry vs. baked-blob lookup
-- [ ] **FactionId rollout timing** (Phase 9): introduce early vs. retrofit
-- [x] **Selection visuals** (Phase 1): per-entity `URPMaterialPropertyBaseColor` swap; ring/decal deferred to Phase 6.
-- [x] **Selection input** (Phase 1): dedicated `InputActions` asset (`RTSInputActions`) over direct device polling.
+| Phase | Theme | Status | Exit criteria |
+| ----: | --- | :---: | --- |
+| 0 | Foundation | ✅ | Layered assemblies, phase groups, tests, demo scene |
+| 1 | Selection & input | ✅ | Click/box/double-click select, control groups |
+| 2 | Commands & orders | ✅ | Right-click Smart commands, order queue, stop/hold, attack-move |
+| 3 | Pathfinding & steering | ✅ | Grid A* around obstacles, separation, formations, re-path on new buildings |
+| 4 | Economy & resources | ✅ | Harvest → deposit → stockpile loop, finite and regrowing nodes |
+| 5 | Production & buildings | ✅ | Placement, builder construction, production queues, rally points, prerequisites |
+| 6 | Rendering spawned entities | ✅ | Runtime spawns are instantiated baked prefabs and render like placed ones |
+| 7 | Combat depth & AI | ✅ | Auto-acquire, stances, projectiles, armor, skirmish AI |
+| 8 | Fog of war & vision | ✅ | Per-team visible/explored grid, hidden enemies, fog overlay |
+| 9 | Factions & players | ✅ | Players, teams, relations, population, victory/defeat |
+| 10 | Multiplayer (Netcode) | ⬜ | 2+ clients play one match in sync |
+| 11 | Hardening & tooling | 🟡 | Tests, docs, sample game, scene wizard done; CI and perf budgets remain |
+
+## Phase 0: Foundation ✅
+
+- ✅ Layered assemblies `Core ← Simulation ← {Presentation, Input}` + Editor/Tests ([`architecture.md`](architecture.md))
+- ✅ Ordered phase groups Order → Movement → Combat → Production → Lifecycle ([`world-setup.md`](world-setup.md))
+- ✅ `TestWorld` fixture running every simulation system in an isolated world
+- ✅ Unified authoring: `UnitAuthoring` / `BuildingAuthoring` on a shared `GameEntityAuthoring` base; bakers and
+  tests share `*Setup` helpers through `IComponentSink` (replaced the granular authoring components and factories)
+
+## Phase 1: Selection & input ✅
+
+- ✅ `Selectable`/`Selected` (enableable), Unity Physics click-picking, drag-box, Shift/Ctrl modifiers
+- ✅ Double-click selects all on-screen entities of the same `EntityInfo.TypeId`
+- ✅ Drag-box prefers the local player's units, then its buildings
+- ✅ Control groups (Ctrl+N assign, N recall, Shift+N add)
+- ✅ Input via the `RTSInputActions` asset (Selection, Commands, Camera maps), see [`selection.md`](selection.md)
+
+## Phase 2: Commands & orders ✅
+
+- ✅ `PlayerCommand` buffer on each player: the single entry point for human and AI intent
+- ✅ `ActiveOrder` + `QueuedOrder` with shift-queue and `OrderWriter`
+- ✅ Smart right-click: hostile → attack, node → gather, unfinished building → build, ground → move; producers →
+  rally point
+- ✅ Stop, hold position (stance), attack-move (A + click)
+- ⬜ Garrison / enter-building order (game-side via `OrderType.Custom`)
+
+## Phase 3: Pathfinding & steering ✅
+
+- ✅ **Decision:** grid A* (8-way, no corner cutting) + line-of-sight smoothing + separation steering. Flow fields
+  deferred: formation slots give every unit its own goal, so a shared field saves little.
+- ✅ `NavGrid` from `MapSettings`, stamped from `NavObstacle` boxes (building footprints included), rebuilt when
+  obstacles change; units re-path when the grid version changes
+- ✅ Per-frame search cap (48, oldest first); direct line of sight skips A*
+- ✅ Box formations for group moves
+- ✅ Budget check: 500 units across a 200 × 200 map with obstacles, 0.26 ms average / 1.6 ms worst simulation tick
+- ⬜ Moving obstacles and terrain height (units move on the XZ plane)
+
+## Phase 4: Economy & resources ✅
+
+- ✅ `ResourceType` assets replace the static `ResourceManager`; per-player `ResourceStock`
+- ✅ Finite or regrowing `ResourceNode`s; depleted finite nodes are removed
+- ✅ Harvester loop: node → fill → nearest owned drop-off → deposit → repeat, switching to a nearby node when
+  one runs dry
+- ✅ HUD resource bar
+
+## Phase 5: Production & buildings ✅
+
+- ✅ Placement mode: snapped ghost, valid/invalid preview, shared `PlacementMath` rules, Shift to keep placing
+- ✅ Construction progresses only while builders work; several builders stack
+- ✅ Production queue with cost on enqueue, cancel with refund, population check, rally points
+- ✅ Data-driven prerequisites (`Prerequisite` + `ProductionRules`, also used by the HUD)
+- ⬜ Upgrades/research, building sell/repair, power (see the Generals mapping in
+  [`getting-started.md`](getting-started.md))
+
+## Phase 6: Rendering spawned entities ✅
+
+- ✅ **Decision:** entity prefabs baked from authoring references (producer options, build options, projectiles,
+  death spawns). Spawning instantiates the prefab, so mesh and materials come along. The mesh-less factories are
+  gone.
+- ✅ Team colours through `URPMaterialPropertyBaseColor`; selection rings and health bars drawn instanced
+- ✅ Culling and instancing come from Entities Graphics (BatchRendererGroup); `LODGroup`s bake as usual
+
+## Phase 7: Combat depth & AI ✅
+
+- ✅ Target acquisition via the `SpatialIndex` (nearest hostile, staggered scans)
+- ✅ Instant hits and homing projectiles; `DamageType` assets with `Armor` multipliers
+- ✅ Attack-move; stances Aggressive / Defensive / Hold / Passive; leashing
+- ✅ `Dead` marker frame + `SpawnOnDeath` hook before destruction
+- ✅ Skirmish AI: harvesting, production and attack waves, only through `PlayerCommand`s
+- ⬜ Splash damage, kill credit/veterancy, micro AI (kiting, focus fire), AI base building
+
+## Phase 8: Fog of war & vision ✅
+
+- ✅ Per-team visible/explored bit grid (`FogOfWar`), restamped 10 times per second
+- ✅ Hostile entities outside vision are hidden; fog overlay shader with soft edges; minimap respects fog
+- ✅ Fog can be disabled per match
+- ⬜ Stealth/detection, "last seen" building ghosts, line-of-sight occlusion
+
+## Phase 9: Factions & players ✅
+
+- ✅ **Decision:** `Faction` introduced early on every ownable entity (0 = neutral)
+- ✅ Player entities from `MatchAuthoring`: team, colour, local/AI/remote control, starting resources
+- ✅ `FactionRelations` (team-based hostility) used by targeting, commands and fog
+- ✅ Population used/cap; victory/defeat from `VictoryCritical` entities
+
+## Phase 10: Multiplayer (Netcode for Entities) ⬜
+
+- ✅ **Decision:** server-authoritative Netcode for Entities over deterministic lockstep. Burst doesn't promise
+  cross-platform float determinism, Netcode is already in the stack, and the simulation is already headless-ready.
+- ✅ Groundwork: input reaches the simulation only through `PlayerCommand`, which maps to an RPC
+- ⬜ Simulation systems filtered to server/local worlds; ghosts for units, buildings, projectiles and players
+- ⬜ Commands as RPCs carrying the selected unit list (selection is client-side), server-side validation
+- ⬜ Connection flow, client → player binding, per-client fog and HUD on the client world
+- ⬜ Latency handling, rejoin
+
+## Phase 11: Hardening, tooling & sample game 🟡
+
+- ✅ EditMode tests per module through `TestWorld` (simulation) plus presentation tests
+- ✅ Sample game in `Assets/Demo`: a two-base Generals-style skirmish against the AI, built only from engine
+  components
+- ✅ Editor tooling: **Create RTS Scene** wizard, GameObject templates, inspector warnings, gizmos
+- ✅ Docs: [`getting-started.md`](getting-started.md), [`modules.md`](modules.md)
+- ⬜ CI (`unity test` in a pipeline), PlayMode integration tests, profiler markers and per-system budgets, a
+  stress scene
+
+## Cross-cutting rules
+
+- **Determinism:** no `UnityEngine.Random` or managed state in simulation; ties broken by entity index.
+- **Burst/job safety:** unmanaged components, ECB for structural changes, lookups for cross-entity access,
+  `SystemAPI.Time`.
+- **Data-driven:** authoring components and ScriptableObject assets over hard-coded values.
+- **Performance:** check the 500-unit scenario when touching movement, combat or the spatial index.

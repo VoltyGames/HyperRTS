@@ -1,47 +1,43 @@
-# Selection & input (Phase 1)
+# Selection and input
 
-Mouse selection for rendered entities. It spans the layered assemblies (see
-[`architecture.md`](architecture.md)): the sim core (system, math, components) in
-[`Simulation/Selection/`](../Assets/Modules/Simulation/Selection/) (`HyperRTS.Simulation.Selection`),
-the input bridge in [`Input/Selection/`](../Assets/Modules/Input/Selection/) (`HyperRTS.Input.Selection`),
-and rendering/UI in [`Presentation/Selection/`](../Assets/Modules/Presentation/Selection/)
-(`HyperRTS.Presentation.Selection`).
+Mouse and keyboard selection of rendered entities. It spans the layered assemblies (see
+[`architecture.md`](architecture.md)): the simulation part (system, math, components) is in
+[`Simulation/Selection/`](../Assets/Modules/Simulation/Selection/), the input bridge in
+[`Input/Selection/`](../Assets/Modules/Input/Selection/), and the visuals (rings, marquee, HUD panel) in
+[`Presentation/`](../Assets/Modules/Presentation/).
 
-## Architecture
+## Pipeline
 
-`Camera`/Input are managed; the per-entity work is Burst. They meet through a singleton:
+`Camera` and input are managed; the per-entity work is Burst. They meet through a singleton:
 
+```text
+SelectionInputSystem (Input)  ──writes──▶  SelectionInput  ──read──▶  SelectionSystem (Simulation, Burst)
+   Camera + RTSInputActions                                           raycast / box test / groups → Selected
+OverlayRenderer, HUD (Presentation) ──read Selected──▶ rings, health bars, selection panel, command card
 ```
-SelectionInputSystem (managed)  ──writes──▶  SelectionInput  ──read──▶  SelectionSystem (Burst)
-   Camera + RTSInputActions                                            raycast / box-test → Selected
-SelectionHighlightSystem (Burst)  ─reads Selected─▶  URPMaterialPropertyBaseColor
-```
 
-Because input is a plain data singleton, selection is testable by injecting `SelectionInput` directly
-(no camera) — see `SelectionSystemTests`.
+Because input is plain data, selection is tested by injecting `SelectionInput` directly (no camera): see
+`SelectionSystemTests` and `SelectionRulesTests`.
 
 ## Components
 
 | Component | Purpose |
-|---|---|
-| `Selectable` | tag — entity can be selected |
-| `Selected` | enableable — membership is the enabled bit; query with `WithAll<Selected>()` |
-| `SelectableType` | `SelectableKind` (Unit / Building) for double-click select-all-of-type |
-| `SelectionHighlightColors` | selected vs. deselected colours |
+| --- | --- |
+| `Selectable` | Tag: the entity can be selected. Added to every unit and building by `GameEntitySetup` |
+| `Selected` | Enableable: membership is the enabled bit, so selecting causes no structural change |
+| `EntityInfo.TypeId` | Double-click selects every on-screen entity with the clicked entity's type |
+| `ControlGroup` | Bit mask of control groups, added on first assignment |
+| `SelectionDragState` | Marquee rectangle for the drag-box UI |
 
-Authored via `SelectableAuthoring`; factories add the set through `SelectionComponents.AddTo` (command-buffer
-first, with an immediate `EntityManager` overload). `SelectionSystem` toggles `Selected` with `EnabledRefRW` over a
-`WithPresent<Selected>` query; `SelectionHighlightSystem` is a parallel job with a change filter on `Selected`, so it
-only rewrites (and Entities Graphics only re-uploads) chunks whose selection changed.
-Factory entities have no mesh/collider yet (Phase 6), so they are box-selectable and queryable but not
-click-hittable or highlighted.
+`SelectionSystem` toggles `Selected` with `EnabledRefRW` over a `WithPresent<Selected>` query. Click-picking uses a
+Unity Physics raycast against the baked colliders, so selectable prefabs need a collider.
 
 ## Input
 
 `Input/RTSInputActions.inputactions` (codegen on, wrapper `HyperRTS.Input.RTSInputActions`) has three maps:
 
 | Map | Bindings |
-|---|---|
+| --- | --- |
 | Selection | `Select` left click/drag, `Additive` Shift, `Subtract` Ctrl, `Group1-5` keys 1-5, `AssignGroup` Ctrl |
 | Commands | `Command` right click, `Confirm` left click, `AttackMove` A, `Stop` S, `HoldPosition` H, `Queue` Shift, `Cancel` Esc |
 | Camera | `Pan` arrow keys, `Zoom` scroll, `Rotate` middle-drag (`Look`), `Reset` Home |
@@ -57,21 +53,8 @@ Clicks over the HUD (`PointerState.OverUI`), in placement mode (`PlacementState.
 command armed (`PendingCommand`) never reach selection; `CommandInputSystem` and `PlacementInputSystem` turn them
 into `PlayerCommand`s instead.
 
-## Scene wiring (manual)
-
-1. Attach `SelectableAuthoring` (kind = Unit) to the Demo Unit in `EntitiesSubScene.unity`.
-2. Add `SelectionDragBoxUI` to a scene GameObject; assign a `PanelSettings` asset to its `UIDocument`
-   (Create ▸ UI Toolkit ▸ Panel Settings Asset, default scale mode).
-3. Camera must be tagged `MainCamera`.
-
 ## Verify
 
-- Tests: Test Runner → `HyperRTS.Simulation.Tests`.
-- Play `SampleScene`: click tints, ground-click clears, box selects, Shift/Ctrl modify, double-click
-  selects all Units on screen.
-
-## Known limitation
-
-The Demo Unit's collider bakes as a **static** body. Fine for Phase 1 (units don't move); once Phase 2
-movement drives `LocalTransform`, moving selectables must be kinematic-dynamic or click-raycast hits
-their baked positions. Box-select is unaffected.
+- Tests: Test Runner ▸ EditMode ▸ `SelectionSystemTests`, `SelectionRulesTests`.
+- Play `SampleScene`: click shows a ring and the selection panel, ground-click clears, box selects your units,
+  Shift/Ctrl modify, double-click selects every unit of that type on screen, Ctrl+1 / 1 store and recall.

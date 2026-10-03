@@ -1,76 +1,75 @@
-# Editor UX & authoring conventions
+# Editor UX and authoring conventions
 
-How HyperRTS components present themselves in the Unity Editor, and the helper tools that
-remove manual wiring. The goal: anyone building a game on the engine gets a clean, discoverable
-Add Component menu and inspector, with new components inheriting the same polish for free.
+How HyperRTS presents itself in the Unity Editor, and the tools that remove manual wiring. Goal: anyone building a
+game on the engine gets a clean Add Component menu, helpful inspectors and one-click setup, and new components
+inherit the same polish.
+
+## Menus
+
+| Menu | What it does |
+| --- | --- |
+| **HyperRTS ▸ Create RTS Scene...** | New scene with light, ground, `RTSWorld` rig and a SubScene containing a `Match` ([`RtsSceneWizard.cs`](../Assets/Modules/Editor/RtsSceneWizard.cs)) |
+| **HyperRTS ▸ Documentation** | Opens the getting-started guide or the module reference |
+| **HyperRTS ▸ Tools ▸ Generate Component Icons** | Regenerates the per-module icons in `Assets/Modules/Editor/Icons/` |
+| **GameObject ▸ HyperRTS ▸ RTS World (Camera + HUD)** | Drops the rig prefab |
+| **GameObject ▸ HyperRTS ▸ Match / Unit / Building / Resource Node / Nav Obstacle** | Ready-to-bake templates: a root with collider and authoring, and a scaled primitive `Model` child to replace with your mesh ([`HyperRtsObjectMenu.cs`](../Assets/Modules/Editor/HyperRtsObjectMenu.cs)) |
+| **Assets ▸ Create ▸ HyperRTS ▸ Resources ▸ Resource Type**, **Combat ▸ Damage Type** | Data assets |
 
 ## Add Component menu
 
-First-party authoring components appear under a single **`HyperRTS`** root, grouped by module:
+First-party authoring components sit under one **`HyperRTS`** root, grouped by module:
 
 ```text
-Add Component ▸ HyperRTS ▸ Attack ▸ Attack Target
-                         ▸ Health ▸ Health
-                         ▸ Selection ▸ Selectable
-                         ▸ Units ▸ Movement Speed
-                         …
+Add Component ▸ HyperRTS ▸ Units ▸ Unit
+                         ▸ Buildings ▸ Building / Builder / Producer
+                         ▸ Combat ▸ Weapon / Armor
+                         ▸ Resources ▸ Resource Node / Resource Drop-Off / Harvester
+                         ▸ Navigation ▸ Nav Obstacle
+                         ▸ Match ▸ Match
 ```
-
-This replaces Unity's default namespace grouping (`HyperRTS.Simulation.Attack`, …).
 
 ## The convention (apply to every authoring MonoBehaviour)
 
 ```csharp
-[AddComponentMenu(HyperRTSMenu.Health + "Health")]   // category + friendly name
-[Icon(HyperRTSIcons.Health)]                          // per-module icon
-[HelpURL(HyperRTSDocs.WorldSetup)]                    // "?" opens the docs
-[DisallowMultipleComponent]                           // one per GameObject
-public class HealthComponentAuthoring : MonoBehaviour
+[AddComponentMenu(HyperRTSMenu.Combat + "Weapon")]   // category + friendly name
+[Icon(HyperRTSIcons.Combat)]                         // per-module icon
+[HelpURL(HyperRTSDocs.Modules)]                      // "?" opens the docs
+[DisallowMultipleComponent]
+public class WeaponAuthoring : MonoBehaviour
 {
-    [Tooltip("Starting health.")] public int currentHealth = 100;
-    [Tooltip("Maximum health capacity.")] public int maxHealth = 100;
+    [Tooltip("Firing range in world units, measured edge to edge.")]
+    [Min(0.1f)]
+    public float range = 6f;
 }
 ```
 
-- **`[Tooltip]`** on every serialized field; **`[Header]`** to group when a component has many
-  (e.g. `CameraController` → Movement / Zoom / Default View).
-- **`[RequireComponent]`** for hard dependencies (`CameraController` → `Camera`,
-  `SelectionDragBoxUI` → `PanelRenderer`).
-- **Paths are centralised** in [`Assets/Modules/Core/HyperRTSMenu.cs`](../Assets/Modules/Core/HyperRTSMenu.cs)
-  (`HyperRTSMenu`, `HyperRTSIcons`, `HyperRTSDocs`). Const-string concatenation keeps categories spelled
-  identically everywhere (compile-time consts are required for the attributes, so they can't be reflection-
-  derived). A new module adds one line to each of `HyperRTSMenu` / `HyperRTSIcons`, plus an accent colour in
-  the icon generator. Never hardcode a menu/icon path on a component - reference these constants.
+- **`[Tooltip]`** on every serialized field, **`[Header]`** to group long components, `[Min]`/`[Range]` to stop
+  invalid values.
+- **Gizmos** on selection show what a number means: vision and radius (`Unit`), footprint (`Building`,
+  `Nav Obstacle`), weapon range, spawn point (`Producer`), map bounds (`Match`).
+- **Paths are centralised** in [`HyperRTSMenu.cs`](../Assets/Modules/Core/HyperRTSMenu.cs) (`HyperRTSMenu`,
+  `HyperRTSIcons`, `HyperRTSDocs`). A new module adds one line to `HyperRTSMenu` and `HyperRTSIcons`, plus an accent
+  colour in the icon generator.
+- **Shared setup.** Bakers write components through the `*Setup` helpers and an `IComponentSink`, so tests and
+  tools build the same entities as baking.
 
-## Tools
+## Inspectors
 
-- **`HyperRTS ▸ Tools ▸ Generate Component Icons`** - regenerates the per-module icons under
-  `Assets/Modules/Editor/Icons/` (one accent-coloured rounded square per module). Run it once after
-  cloning, or whenever you add a module / change an accent colour
-  ([`ComponentIconGenerator.cs`](../Assets/Modules/Editor/Icons/ComponentIconGenerator.cs)).
-- **`GameObject ▸ HyperRTS ▸ RTS World`** / **`Selection UI`** - drop the camera + UI rig, or just the
-  selection UI, into the scene ([`HyperRtsObjectMenu.cs`](../Assets/Modules/Editor/HyperRtsObjectMenu.cs)).
+[`GameEntityAuthoringEditor`](../Assets/Modules/Editor/Authoring/GameEntityAuthoringEditor.cs) (units and
+buildings) warns when there is no collider (can't be clicked), no renderer (invisible), a cost entry without a
+resource type, or the object sits outside a SubScene (won't bake).
 
-## Prefab library
+## Prefabs
 
-Engine-shipped prefabs in [`Assets/Modules/Prefabs/`](../Assets/Modules/Prefabs/) - drag one in instead of
-hand-assembling authoring. Prefabs **bake**, so a dragged-in unit/building renders and is selectable with no
-manual mesh wiring.
-
-- **`Unit.prefab`** / **`Building.prefab`** - mesh + collider + authoring mirroring the factories.
-- **`RTSWorld.prefab`** - the playable rig: a `MainCamera` (+ `CameraController`) and a nested `SelectionUI`.
-  Drop into an empty scene via `GameObject ▸ HyperRTS ▸ RTS World` (it ships its own Main Camera).
-- **`UI/SelectionUI.prefab`** (+ engine `PanelSettings`) - the selection-UI rig.
-
-## Custom inspectors
-
-[`SelectableAuthoringEditor`](../Assets/Modules/Editor/Selection/SelectableAuthoringEditor.cs) adds a live
-Selected/Base colour-swatch preview to `SelectableAuthoring`.
+- **`Assets/Modules/Prefabs/RTSWorld.prefab`**: the playable rig. A Main Camera with `CameraController`, the nested
+  `HUD`, and `OverrideAutomaticNetcodeBootstrap` so single-player uses one local world.
+- **`Assets/Modules/Prefabs/UI/HUD.prefab`**: `PanelRenderer` + `HudController` (UI Toolkit HUD, styled by
+  `Hud.uss`), `OverlayRenderer`, `FogOfWarRenderer` and the drag-box marquee.
+- **`Assets/Demo/Prefabs/`**: complete unit, building and map prefabs from the sample game, to copy as templates.
 
 ## UI Toolkit: PanelRenderer
 
-Selection UI uses **`PanelRenderer`** (Unity 6.5+; 6.6 adds a versioned reload callback), the successor to the legacy `UIDocument` component.
-`PanelRenderer` does not expose `rootVisualElement`; obtain the root via
-`RegisterUIReloadCallback((panelRenderer, root, version) => …)` (the 6.6 versioned overload - the two-argument one is obsolete) and rebuild content idempotently inside the callback, skipping a `version` already handled
-(it can fire more than once, and content persists across disable/enable). See
-[`SelectionDragBoxUI.cs`](../Assets/Modules/Presentation/Selection/SelectionDragBoxUI.cs).
+The HUD uses **`PanelRenderer`** (Unity 6.5+), the successor to `UIDocument`. It doesn't expose
+`rootVisualElement`; get the root through `RegisterUIReloadCallback((panelRenderer, root, version) => …)` and
+rebuild content idempotently in the callback, skipping a `version` already handled (it can fire more than once).
+See [`HudController.cs`](../Assets/Modules/Presentation/HUD/HudController.cs).

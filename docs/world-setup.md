@@ -1,93 +1,100 @@
-# World setup — how entities enter play
+# World setup: how entities enter play and the frame pipeline
 
-How the ECS world is created, how entities get into it, and the order systems run in.
-
-There is **no custom bootstrapper** — HyperRTS uses Unity's standard DOTS pipeline plus the
-ordered system groups below.
-
-Systems live in **layered assemblies** (`Simulation` for headless gameplay; `Presentation`/`Input`
-for client-only rendering, UI, and input) — see [`architecture.md`](architecture.md). System
-discovery is global across all of them, so the phase groups below nest systems regardless of which
-assembly defines them. A headless server simply omits the `Presentation`/`Input` assemblies, so
-those systems never load.
+There is **no custom bootstrapper**. HyperRTS uses Unity's default DOTS world plus five ordered phase groups.
 
 ## The default world
 
-On entering Play mode, Unity calls `DefaultWorldInitialization.Initialize`, which creates the
-default `World`, discovers every system across all loaded assemblies, adds each to its
-`[UpdateInGroup]` target, and hooks the root groups into the player loop. Our systems and phase
-groups come alive this way — no manual registration.
+On Play, `DefaultWorldInitialization` creates the default `World`, discovers every system in every loaded
+assembly and adds each to its `[UpdateInGroup]` target. Discovery is global, so a headless build that leaves out
+`Presentation`/`Input` just has fewer systems.
 
-> Discovery is global, not per-assembly. Any auto-running system anywhere in the project also
-> loads into the default world (and into test worlds — see [below](#dont-auto-spawn-on-startup)).
+Netcode for Entities is installed but its automatic client/server bootstrap is turned off by the
+`OverrideAutomaticNetcodeBootstrap` component on `RTSWorld.prefab`. Keep that rig (or the component) in
+single-player scenes, or Netcode creates client and server worlds instead of the default one.
 
-## Entities from the Demo SubScene
+## Entities from the SubScene
 
-[`SampleScene`](../Assets/Modules/Demo/Scenes/SampleScene.unity) holds an auto-loaded `SubScene`.
-On load, Unity **bakes** its GameObjects into entities via each authoring MonoBehaviour's nested
-`Baker` (see [`HealthComponentAuthoring.cs`](../Assets/Modules/Simulation/Health/HealthComponentAuthoring.cs)).
-This is the way to get **rendered** entities into play, since a baked prefab carries a mesh.
+Everything gameplay-relevant (the `Match`, units, buildings, nodes, obstacles) sits in a **SubScene** and bakes
+into entities. Prefabs referenced from authoring (producer options, build options, projectiles, death spawns) bake
+as **entity prefabs** (`Prefab` tag) that systems instantiate at runtime, so spawned units render like placed ones.
 
-The SubScene's `Unit` GameObject currently has no ECS authoring components, so it bakes to an
-empty entity. Adding authoring components to it is the natural next step.
+SubScenes stream in over the first frames. Systems that need match data use `RequireForUpdate` on the singleton,
+and `VictorySystem` never defeats a player that hasn't owned anything yet.
 
-## Update order
+## Frame order
 
-Defined in [`SystemGroups.cs`](../Assets/Modules/Core/SystemGroups.cs) — five groups under Unity's
-`SimulationSystemGroup`, mapped to roadmap phases:
+Defined in [`SystemGroups.cs`](../Assets/Modules/Core/SystemGroups.cs). Every system lives in one of these groups,
+never in `SimulationSystemGroup` directly.
 
-```
+```text
 SimulationSystemGroup
- ├─ OrderSystemGroup        (roadmap 1–2: selection, commands)   — empty for now
- ├─ MovementSystemGroup     (roadmap 3)   → MovementSystem        — before TransformSystemGroup
- ├─ CombatSystemGroup       (roadmap 7)   → AttackSystem
- ├─ ProductionSystemGroup   (roadmap 5)   → ConstructionSystem
- └─ LifecycleSystemGroup    (last)        → DeathSystem
+ ├─ OrderSystemGroup
+ │   ├─ (first) SelectionInputSystem → SelectionSystem → CommandInputSystem → PlacementInputSystem,
+ │   │          SkirmishAISystem                       — gestures and AI become PlayerCommands
+ │   ├─ UnitCommandSystem, PlaceBuildingSystem,
+ │   │  ProductionCommandSystem                        — commands become orders, sites, queue items
+ │   ├─ OrderDispatchSystem → MoveOrderSystem          — next queued order; move goals
+ │   └─ (last) PlayerCommandClearSystem
+ ├─ MovementSystemGroup                                (before TransformSystemGroup)
+ │   ├─ (first) SpatialIndexSystem, NavGridSystem
+ │   └─ PathfindingSystem → MovementSystem
+ ├─ CombatSystemGroup
+ │   ├─ (first) FogOfWarSystem
+ │   └─ AttackOrderSystem → TargetAcquisitionSystem → EngagementSystem → WeaponFireSystem → ProjectileSystem
+ ├─ ProductionSystemGroup
+ │   ├─ (first) PopulationSystem
+ │   └─ ConstructionSystem, GatherSystem → ResourceNodeSystem, ProductionSystem
+ └─ LifecycleSystemGroup
+     └─ DeathSystem → VictorySystem
+PresentationSystemGroup
+ └─ TeamColorSystem, FogVisibilitySystem               (+ HUD/overlay MonoBehaviours reading ECS)
 ```
 
-Movement runs before `TransformSystemGroup` so a move shows the same frame. Lifecycle runs last so
-`DeathSystem` removes dead entities only after all damage is applied; it records destruction from a
-parallel job and `EndSimulationEntityCommandBufferSystem` plays it back at the end of the group.
+Movement runs before `TransformSystemGroup`, so a move shows the same frame. Lifecycle runs last, so all damage
+lands before `DeathSystem` marks entities `Dead` and queues their destruction on
+`EndSimulationEntityCommandBufferSystem`.
 
-Systems are `[BurstCompile]` `IJobEntity` jobs. Runtime state that toggles (`MoveDestination`,
-`ConstructionProgress`, `Selected`) is enableable, so orders and completion never change an entity's
-archetype. To trace when a component is added or removed while debugging, implement Entities 6.6's
-`IDebugOnAdded`/`IDebugOnRemoved` on it (Editor and development builds only).
-
-**New systems pick a phase group** with `[UpdateInGroup(typeof(<Phase>SystemGroup))]` — not
-`SimulationSystemGroup` directly.
+**New systems pick a phase group** with `[UpdateInGroup(typeof(<Phase>SystemGroup))]`. A system that consumes
+`PlayerCommand`s must be in `OrderSystemGroup` (commands are cleared at its end).
 
 ## Creating entities from code
 
-To spawn entities in setup scripts, systems or tests instead of baking, use an
-[`IEntityFactory`](../Assets/Modules/Core/IEntityFactory.cs). Factories record into an
-`EntityCommandBuffer`, so systems and jobs can spawn without a sync point; since Entities 6.6 the
-returned `Entity` is the real one (no placeholder), so you can store it or issue follow-up commands
-right away. The `EntityManager` overload records and plays back immediately:
+Instantiate baked prefabs through a command buffer and set the owner and position:
 
 ```csharp
-var unit = new UnitEntityFactory().CreateEntity(entityManager); // or .CreateEntity(ecb)
-
-// Units carry a disabled MoveDestination: an order is "set value + enable", cleared by disabling.
-entityManager.SetComponentData(unit, new MoveDestination { Value = new float3(100, 0, 0) });
-entityManager.SetComponentEnabled<MoveDestination>(unit, true);
+var unit = ecb.Instantiate(prefab);                 // real entity in Entities 6.6, usable right away
+ecb.SetComponent(unit, LocalTransform.FromPosition(position));
+ecb.SetComponent(unit, new Faction { Value = owner });
 ```
 
-[`UnitEntityFactory`](../Assets/Modules/Simulation/Units/UnitEntityFactory.cs) and
-[`BuildingEntityFactory`](../Assets/Modules/Simulation/Buildings/BuildingEntityFactory.cs) build the
-core entities. Factory entities have data but **no mesh** — they show in **Window ▸ Entities** but
-not the Game view until rendering lands (roadmap phase 6).
-[`SimulationSystemTests`](../Assets/Modules/Simulation/Tests/SimulationSystemTests.cs) uses them.
+To order it around, append a `PlayerCommand` (`Unit = unit`) to its owner's buffer, or use `OrderWriter` from a
+system.
+
+For tests and tools without baking, `GameEntitySetup`, `UnitSetup` and `BuildingSetup` write the exact baked
+component set through an `IComponentSink` (`EntityManagerSink`). Those entities have no mesh, so they only show up
+in **Window ▸ Entities**.
 
 ## Don't auto-spawn on startup
 
-Avoid an auto-running `DemoBootstrapSystem` that spawns entities: because discovery is global, it
-would also run in edit-mode test worlds and would duplicate baked SubScene entities. If you need a
-code spawn point, make it opt-in — a static helper called explicitly, or a `[DisableAutoCreation]`
-system you create yourself.
+Don't add an auto-running system that spawns gameplay entities: discovery is global, so it would also run in test
+worlds and duplicate SubScene content. Make code spawning opt-in (a command, a `[DisableAutoCreation]` system, or a
+static helper called explicitly).
+
+## Tests
+
+`TestWorld` (in `Simulation/Tests/`) builds an isolated world with every `HyperRTS.Simulation` system, and has
+helpers: `CreateMatch(teams...)`, `SpawnUnit`, `SpawnBuilding`, `MakePrefab`, `Command`, `Tick`, `Run(seconds)`.
+Write tests end-to-end through systems:
+
+```csharp
+using var world = new TestWorld();
+world.CreateMatch(1, 2);
+var unit = world.SpawnUnit(1, float3.zero);
+world.Command(1, new PlayerCommand { Type = CommandType.Move, Unit = unit, Position = new float3(10, 0, 0) });
+world.Run(3f);
+```
 
 ## Verify
 
-- **Window ▸ Entities ▸ Systems** — `SimulationSystemGroup` nests Order → Movement → Combat →
-  Production → Lifecycle, with `TransformSystemGroup` after Movement.
-- **Window ▸ General ▸ Test Runner ▸ EditMode** — run `SimulationSystemTests`.
+- **Window ▸ Entities ▸ Systems** shows the tree above.
+- **Window ▸ General ▸ Test Runner ▸ EditMode**: run all.
