@@ -22,7 +22,8 @@ for tests and a dedicated server.
 - **Skirmish AI:** gathers, trains and attacks through the same commands a player uses.
 - **HUD:** resource bar, selection panel, command card with costs and queue, minimap, game-over banner (UI
   Toolkit).
-- **Editor tools:** a one-click RTS scene wizard, GameObject templates, inspector warnings, gizmos.
+- **Editor tools:** an RTS scene wizard, role templates and prefabs, a project validator, draggable Scene handles,
+  a stats catalog with tech tree, and a Play-mode debug overlay and cheats window.
 
 ## Try it
 

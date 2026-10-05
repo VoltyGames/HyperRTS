@@ -128,6 +128,8 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ Sample game in `Assets/Demo`: a two-base Generals-style skirmish against the AI, built only from engine
   components
 - ✅ Editor tooling: **Create RTS Scene** wizard, GameObject templates, inspector warnings, gizmos
+- ✅ Editor DX: project validator (inspector, window, Play-mode check, test), draggable Scene handles, role prefab
+  templates, Match inspector, catalog and tech tree, Play-mode debug overlay and cheats ([`editor-ux.md`](editor-ux.md))
 - ✅ Docs: [`getting-started.md`](getting-started.md), [`modules.md`](modules.md)
 - ⬜ CI (`unity test` in a pipeline), PlayMode integration tests, profiler markers and per-system budgets, a
   stress scene

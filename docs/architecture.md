@@ -12,9 +12,10 @@ input or UI**.
 | `HyperRTS.Simulation` | `Simulation/` | Components, systems, authoring + bakers, setup helpers. The headless gameplay layer | Core, Entities(.Hybrid), Transforms, Mathematics, Collections, Burst, **Physics** |
 | `HyperRTS.Presentation` | `Presentation/` | Team colours, overlays, fog rendering, UI Toolkit HUD | Core, Simulation, Entities, **Entities.Graphics**, Transforms |
 | `HyperRTS.Input` | `Input/` | Camera, input → command bridge, input actions | Core, Simulation, Entities, Transforms, **Physics**, **InputSystem** |
-| `HyperRTS.Editor` | `Editor/` | Scene wizard, GameObject templates, inspectors, icon generator | Core, Simulation, Presentation, Scenes, `Editor` platform |
+| `HyperRTS.Editor` | `Editor/` | Validator, inspectors and handles, templates, catalog, Play-mode debug and cheats, scene wizard | Core, Simulation, Presentation, Entities, Scenes, NetCode, `Editor` platform |
 | `HyperRTS.Simulation.Tests` | `Simulation/Tests/` | EditMode tests through `TestWorld` | Core, Simulation |
 | `HyperRTS.Presentation.Tests` | `Presentation/Tests/` | EditMode tests for presentation helpers and systems | Core, Simulation, Presentation |
+| `HyperRTS.Editor.Tests` | `Editor/Tests/` | Validation rules, templates, and a project-wide "no validation errors" check | Core, Simulation, Editor |
 
 ```text
             Core            (contracts; no graphics/input/UI)

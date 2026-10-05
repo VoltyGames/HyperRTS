@@ -23,7 +23,7 @@ Assets/Modules/
 │                  Resources, Selection, Spatial, Units, Vision, Tests/
 ├── Presentation/  team colours, overlays, fog rendering, UI Toolkit HUD, Tests/
 ├── Input/         camera, input actions, input → PlayerCommand bridge
-├── Editor/        scene wizard, GameObject templates, inspectors, icons
+├── Editor/        validator, inspectors + handles, templates, catalog, debug/cheats, scene wizard, Tests/
 └── Prefabs/       RTSWorld rig (camera + HUD), UI/HUD
 ```
 
@@ -77,8 +77,10 @@ Assets/Modules/
 ## Run / test
 
 Play `Assets/Demo/Scenes/SampleScene.unity` (entities bake from its SubScene); inspect via Window ▸ Entities.
-EditMode tests are in `HyperRTS.Simulation.Tests` and `HyperRTS.Presentation.Tests` (Window ▸ General ▸ Test
-Runner). Simulation tests use `TestWorld` and go end-to-end through systems.
+EditMode tests are in `HyperRTS.Simulation.Tests`, `HyperRTS.Presentation.Tests` and `HyperRTS.Editor.Tests`
+(Window ▸ General ▸ Test Runner). Simulation tests use `TestWorld` and go end-to-end through systems.
+New authoring rules go in `AuthoringChecks` so the inspector, **HyperRTS ▸ Validate** and the tests all pick them up.
+In Play mode, the Scene view's **HyperRTS Debug** overlay and **HyperRTS ▸ Cheats** inspect and drive the live world.
 
 ## Gotchas
 
