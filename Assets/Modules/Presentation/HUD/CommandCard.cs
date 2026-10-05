@@ -51,9 +51,10 @@ namespace HyperRTS.Presentation.HUD
                 return;
             }
 
+            var completed = context.SnapshotCompleted();
             foreach (var (button, prefab) in _costed)
             {
-                button.SetEnabled(context.CanAfford(prefab) && context.PrerequisitesMet(prefab));
+                button.SetEnabled(context.CanAfford(prefab) && context.PrerequisitesMet(prefab, completed));
             }
         }
 

@@ -12,6 +12,7 @@ namespace HyperRTS.Editor.Debugging
         /// <summary>Called on Repaint in Play mode, with the world's jobs completed.</summary>
         public abstract void Draw(EntityManager entityManager);
 
+        // PlayWorld is internal, so layers in a game's assembly reach it through here.
         protected static bool TryGetSingleton<T>(EntityManager entityManager, out T value) where T : unmanaged, IComponentData =>
             PlayWorld.TryGetSingleton(entityManager, out value);
     }

@@ -69,10 +69,12 @@ namespace HyperRTS.Presentation.HUD
             !EntityManager.HasBuffer<ResourceCost>(prefab)
             || ResourceMath.CanAfford(Stock, EntityManager.GetBuffer<ResourceCost>(prefab, true));
 
-        public bool PrerequisitesMet(Entity prefab) =>
+        /// <summary>This frame's completed buildings, shared by every button checking prerequisites.</summary>
+        public CompletedBuildings SnapshotCompleted() => new(_completed.In(EntityManager), Allocator.Temp);
+
+        public bool PrerequisitesMet(Entity prefab, in CompletedBuildings completed) =>
             !EntityManager.HasBuffer<Prerequisite>(prefab)
-            || CompletedBuildings.MeetsPrerequisites(EntityManager.GetBuffer<Prerequisite>(prefab, true), View.Local.Faction,
-                _completed.In(EntityManager));
+            || completed.MeetsPrerequisites(EntityManager.GetBuffer<Prerequisite>(prefab, true), View.Local.Faction);
 
         public void Issue(PlayerCommand command)
         {
