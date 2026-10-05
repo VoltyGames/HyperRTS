@@ -28,6 +28,8 @@ namespace HyperRTS.Simulation.Vision
 
         public readonly int Index(int2 cell) => cell.y * Size.x + cell.x;
 
+        public readonly int2 Cell(int index) => new(index % Size.x, index / Size.x);
+
         public readonly bool IsVisible(float3 position, byte team) => Test(Visible, position, team);
 
         public readonly bool IsExplored(float3 position, byte team) => Test(Explored, position, team);

@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Units
         [Min(0f)]
         public float moveSpeed = 5f;
 
-        [Tooltip("Footprint radius used for avoidance, formations and spatial queries.")]
+        [Tooltip("Radius used for avoidance, formations and spatial queries.")]
         [Min(0.05f)]
         public float radius = 0.5f;
 
@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Units
         [Min(0)]
         public int population = 1;
 
-        public override float EntityRadius => radius;
+        public override float Radius => radius;
 
         protected override int Population => population;
 

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Editor.Validation.Rules
@@ -12,12 +13,14 @@ namespace HyperRTS.Editor.Validation.Rules
         public SceneSet(IReadOnlyList<Scene> scenes)
         {
             Scenes = scenes;
-            var roots = scenes.SelectMany(scene => scene.GetRootGameObjects()).ToList();
-            Matches = roots.SelectMany(root => root.GetComponentsInChildren<MatchAuthoring>(true)).ToList();
-            Entities = roots.SelectMany(root => root.GetComponentsInChildren<GameEntityAuthoring>(true)).ToList();
+            Roots = scenes.SelectMany(scene => scene.GetRootGameObjects()).ToList();
+            Matches = Roots.SelectMany(root => root.GetComponentsInChildren<MatchAuthoring>(true)).ToList();
+            Entities = Roots.SelectMany(root => root.GetComponentsInChildren<GameEntityAuthoring>(true)).ToList();
         }
 
         public IReadOnlyList<Scene> Scenes { get; }
+
+        public IReadOnlyList<GameObject> Roots { get; }
 
         public IReadOnlyList<MatchAuthoring> Matches { get; }
 

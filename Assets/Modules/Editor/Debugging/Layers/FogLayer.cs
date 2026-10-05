@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Debugging.Layers
             {
                 if (FogOfWar.HasTeam(fog.Visible[i], local.Team))
                 {
-                    Cell(fog.Min + new float2(i % fog.Size.x, i / fog.Size.x) * fog.CellSize, fog.CellSize);
+                    Cell(fog.Min + (float2)fog.Cell(i) * fog.CellSize, fog.CellSize);
                 }
             }
 

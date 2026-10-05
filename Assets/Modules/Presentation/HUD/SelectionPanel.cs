@@ -35,11 +35,9 @@ namespace HyperRTS.Presentation.HUD
             _iconSlot = HUDElements.Box("hud-single__icon-slot", header);
             var details = HUDElements.Box("hud-single__details", header);
             _name = HUDElements.Text("", "hud-single__name", details);
-            _health = new HUDBar("hud-health");
-            details.Add(_health);
+            _health = new HUDBar("hud-health", details);
             _healthText = HUDElements.Text("", "hud-single__caption", details);
-            _construction = new HUDBar("hud-construction");
-            details.Add(_construction);
+            _construction = new HUDBar("hud-construction", details);
             _single.Add(_queue.Root);
 
             _groups = HUDElements.Box("hud-groups", Root);

@@ -14,10 +14,13 @@ namespace HyperRTS.Editor
         public static GameObject RigPrefab => AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(RigGuid));
 
         /// <summary>Every unit and building prefab in the project.</summary>
-        public static List<GameEntityAuthoring> EntityPrefabs()
+        public static List<GameEntityAuthoring> EntityPrefabs() => EntityPrefabs(HyperRTSPrefabs());
+
+        /// <summary>The unit and building prefabs among <paramref name="prefabs"/>.</summary>
+        public static List<GameEntityAuthoring> EntityPrefabs(IEnumerable<GameObject> prefabs)
         {
             var result = new List<GameEntityAuthoring>();
-            foreach (var prefab in HyperRTSPrefabs())
+            foreach (var prefab in prefabs)
             {
                 if (prefab.TryGetComponent(out GameEntityAuthoring authoring))
                 {

@@ -16,7 +16,7 @@ namespace HyperRTS.Editor.Authoring
         {
             var weapon = (WeaponAuthoring)target;
             var center = weapon.transform.position;
-            var self = weapon.TryGetComponent(out GameEntityAuthoring owner) ? owner.EntityRadius : EntityRadius.Default;
+            var self = weapon.TryGetComponent(out GameEntityAuthoring entity) ? entity.Radius : EntityRadius.Default;
 
             if (weapon.acquireRange > 0f)
             {

@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Buildings
             return true;
         }
 
-        public bool Owns(byte faction, int typeId)
+        private bool Owns(byte faction, int typeId)
         {
             for (var i = 0; i < _infos.Length; i++)
             {

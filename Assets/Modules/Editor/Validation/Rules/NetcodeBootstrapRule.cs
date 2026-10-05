@@ -9,9 +9,8 @@ namespace HyperRTS.Editor.Validation.Rules
     {
         public void Check(SceneSet scenes, ValidationIssues issues)
         {
-            foreach (var scene in scenes.Scenes.Where(scene => !scene.isSubScene))
+            foreach (var roots in scenes.Roots.Where(root => !root.scene.isSubScene).GroupBy(root => root.scene))
             {
-                var roots = scene.GetRootGameObjects();
                 var subSceneRoot = roots.FirstOrDefault(root => root.GetComponentInChildren<SubScene>(true) != null);
                 if (subSceneRoot != null &&
                     !roots.Any(root => root.GetComponentInChildren<OverrideAutomaticNetcodeBootstrap>(true) != null))

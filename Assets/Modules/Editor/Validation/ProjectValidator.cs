@@ -33,12 +33,9 @@ namespace HyperRTS.Editor.Validation
         {
             var scenes = SceneSet.Loaded();
             var issues = new ValidationIssues();
-            foreach (var scene in scenes.Scenes)
+            foreach (var root in scenes.Roots)
             {
-                foreach (var root in scene.GetRootGameObjects())
-                {
-                    CheckComponents(root, issues);
-                }
+                CheckComponents(root, issues);
             }
 
             foreach (var rule in SceneRules)

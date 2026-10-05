@@ -9,8 +9,6 @@ namespace HyperRTS.Simulation.Common
     /// <summary>Base for <c>UnitAuthoring</c> and <c>BuildingAuthoring</c>: identity, owner, health, vision, cost.</summary>
     public abstract class GameEntityAuthoring : MonoBehaviour
     {
-        public const int MaxOwner = 15;
-
         [Header("Identity")]
         [Tooltip("Name shown in the HUD. Instances sharing a name are one type (double-click, prerequisites).")]
         public string displayName;
@@ -52,8 +50,8 @@ namespace HyperRTS.Simulation.Common
 
         public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
 
-        /// <summary>Edge-to-edge reach is measured from this, matching the baked <c>EntityRadius</c>.</summary>
-        public abstract float EntityRadius { get; }
+        /// <summary>Edge-to-edge reach is measured from this, matching <see cref="Navigation.EntityRadius"/> at runtime.</summary>
+        public abstract float Radius { get; }
 
         protected virtual int Population => 0;
 

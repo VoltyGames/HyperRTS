@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Authoring
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             var match = SceneMatch.Current;
-            var slots = match != null ? Mathf.Max(match.players.Count, property.intValue) : GameEntityAuthoring.MaxOwner;
+            var slots = match != null ? Mathf.Max(match.players.Count, property.intValue) : OwnerAttribute.Max;
             var labels = new GUIContent[slots + 1];
             var values = new int[slots + 1];
             for (var i = 0; i <= slots; i++)

@@ -65,8 +65,7 @@ namespace HyperRTS.Presentation.HUD
 
                 if (i == 0)
                 {
-                    _headProgress = new HUDBar("hud-slot__progress");
-                    slot.Add(_headProgress);
+                    _headProgress = new HUDBar("hud-slot__progress", slot);
                 }
             }
         }

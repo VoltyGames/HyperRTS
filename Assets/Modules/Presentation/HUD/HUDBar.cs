@@ -8,11 +8,12 @@ namespace HyperRTS.Presentation.HUD
     {
         private readonly VisualElement _fill;
 
-        public HUDBar(string className)
+        public HUDBar(string className, VisualElement parent = null)
         {
             AddToClassList(className);
             AddToClassList("hud-bar");
             _fill = HUDElements.Box("hud-bar__fill", this);
+            parent?.Add(this);
         }
 
         public float Fraction

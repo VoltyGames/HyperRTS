@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Buildings
         [Tooltip("Start as a construction site instead of finished (for scene-placed buildings).")]
         public bool startsUnderConstruction;
 
-        public override float EntityRadius => Navigation.EntityRadius.Of(new NavObstacle { Size = footprint });
+        public override float Radius => EntityRadius.Of(new NavObstacle { Size = footprint });
 
         public class Baker : Baker<BuildingAuthoring>
         {
