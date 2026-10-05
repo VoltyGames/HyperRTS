@@ -1,0 +1,146 @@
+using System.Collections.Generic;
+using System.Linq;
+using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Units;
+using UnityEditor;
+using UnityEngine;
+
+namespace HyperRTS.Editor.Catalog
+{
+    /// <summary>HyperRTS ▸ Catalog: every unit and building prefab in one editable stats table, plus the tech tree.</summary>
+    public class CatalogWindow : EditorWindow
+    {
+        private static readonly string[] Tabs = { "Stats", "Tech Tree" };
+        private const float Narrow = 64f;
+
+        private List<GameEntityAuthoring> _prefabs = new();
+        private int _tab;
+        private string _filter = "";
+        private Vector2 _scroll;
+
+        [MenuItem("HyperRTS/Catalog", false, 21)]
+        public static void Open() => GetWindow<CatalogWindow>("HyperRTS Catalog");
+
+        private void OnEnable() => Reload();
+
+        private void OnProjectChange() => Reload();
+
+        private void Reload()
+        {
+            _prefabs = EditorAssets.EntityPrefabs()
+                .OrderBy(prefab => prefab is BuildingAuthoring)
+                .ThenBy(prefab => prefab.DisplayName)
+                .ToList();
+        }
+
+        private void OnGUI()
+        {
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                _tab = GUILayout.Toolbar(_tab, Tabs, EditorStyles.toolbarButton, GUILayout.Width(160));
+                GUILayout.FlexibleSpace();
+                _filter = EditorGUILayout.TextField(_filter, EditorStyles.toolbarSearchField, GUILayout.Width(200));
+            }
+
+            var visible = _prefabs.Where(prefab => prefab != null &&
+                prefab.DisplayName.IndexOf(_filter, System.StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+            _scroll = EditorGUILayout.BeginScrollView(_scroll);
+            if (_tab == 0)
+            {
+                DrawStats(visible);
+            }
+            else
+            {
+                TechTreeView.Draw(visible, _prefabs);
+            }
+
+            EditorGUILayout.EndScrollView();
+        }
+
+        private static void DrawStats(List<GameEntityAuthoring> prefabs)
+        {
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                Header("Name", 140f);
+                foreach (var column in new[] { "HP", "Build s", "Vision", "Speed", "Damage", "Cooldown", "DPS", "Range" })
+                {
+                    Header(column, Narrow);
+                }
+
+                GUILayout.Label("Cost", EditorStyles.miniBoldLabel);
+            }
+
+            foreach (var prefab in prefabs)
+            {
+                DrawRow(prefab);
+            }
+        }
+
+        private static void DrawRow(GameEntityAuthoring prefab)
+        {
+            using var row = new EditorGUILayout.HorizontalScope();
+            if (GUILayout.Button(prefab.DisplayName, EditorStyles.linkLabel, GUILayout.Width(140f)))
+            {
+                UnityEditor.Selection.activeObject = prefab.gameObject;
+                EditorGUIUtility.PingObject(prefab.gameObject);
+            }
+
+            prefab.maxHealth = Field(prefab, prefab.maxHealth);
+            prefab.buildTime = Field(prefab, prefab.buildTime);
+            prefab.visionRange = Field(prefab, prefab.visionRange);
+
+            if (prefab is UnitAuthoring unit)
+            {
+                unit.moveSpeed = Field(unit, unit.moveSpeed);
+            }
+            else
+            {
+                GUILayout.Label("-", GUILayout.Width(Narrow));
+            }
+
+            DrawWeapon(prefab.GetComponent<WeaponAuthoring>());
+            GUILayout.Label(CostText(prefab), EditorStyles.miniLabel);
+        }
+
+        private static void DrawWeapon(WeaponAuthoring weapon)
+        {
+            if (weapon == null)
+            {
+                for (var i = 0; i < 4; i++)
+                {
+                    GUILayout.Label("-", GUILayout.Width(Narrow));
+                }
+
+                return;
+            }
+
+            weapon.damage = Field(weapon, weapon.damage);
+            weapon.cooldown = Mathf.Max(0.05f, Field(weapon, weapon.cooldown));
+            GUILayout.Label((weapon.damage / weapon.cooldown).ToString("0.#"), GUILayout.Width(Narrow));
+            weapon.range = Field(weapon, weapon.range);
+        }
+
+        private static float Field(Object target, float value)
+        {
+            EditorGUI.BeginChangeCheck();
+            var next = EditorGUILayout.DelayedFloatField(value, GUILayout.Width(Narrow));
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(target, "Edit Stats");
+                EditorUtility.SetDirty(target);
+            }
+
+            return next;
+        }
+
+        private static string CostText(GameEntityAuthoring prefab) =>
+            string.Join(", ", prefab.cost.Where(quantity => quantity.type != null)
+                .Select(quantity => $"{quantity.amount} {quantity.type.name}"));
+
+        private static void Header(string text, float width) =>
+            GUILayout.Label(text, EditorStyles.miniBoldLabel, GUILayout.Width(width));
+    }
+}
