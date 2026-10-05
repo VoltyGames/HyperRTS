@@ -23,7 +23,7 @@ and `VictorySystem` never defeats a player that hasn't owned anything yet.
 
 ## Frame order
 
-Defined in [`SystemGroups.cs`](../Assets/Modules/Core/SystemGroups.cs). Every system lives in one of these groups,
+Defined in [`SystemGroups.cs`](../Packages/com.hyperrts.engine/Core/SystemGroups.cs). Every system lives in one of these groups,
 never in `SimulationSystemGroup` directly.
 
 ```text

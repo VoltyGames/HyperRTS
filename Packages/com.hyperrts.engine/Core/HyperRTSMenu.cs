@@ -19,7 +19,7 @@ namespace HyperRTS.Core
     /// <summary>Editor icon paths per module (HyperRTS ▸ Generate Component Icons).</summary>
     public static class HyperRTSIcons
     {
-        private const string Dir = "Assets/Modules/Editor/Icons/";
+        private const string Dir = "Packages/com.hyperrts.engine/Editor/Icons/";
         public const string Buildings = Dir + "Buildings.png";
         public const string Cameras = Dir + "Cameras.png";
         public const string Combat = Dir + "Combat.png";

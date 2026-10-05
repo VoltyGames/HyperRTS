@@ -2,9 +2,9 @@
 
 Mouse and keyboard selection of rendered entities. It spans the layered assemblies (see
 [`architecture.md`](architecture.md)): the simulation part (system, math, components) is in
-[`Simulation/Selection/`](../Assets/Modules/Simulation/Selection/), the input bridge in
-[`Input/Selection/`](../Assets/Modules/Input/Selection/), and the visuals (rings, marquee, HUD panel) in
-[`Presentation/`](../Assets/Modules/Presentation/).
+[`Simulation/Selection/`](../Packages/com.hyperrts.engine/Simulation/Selection/), the input bridge in
+[`Input/Selection/`](../Packages/com.hyperrts.engine/Input/Selection/), and the visuals (rings, marquee, HUD panel) in
+[`Presentation/`](../Packages/com.hyperrts.engine/Presentation/).
 
 ## Pipeline
 

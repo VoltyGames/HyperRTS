@@ -9,13 +9,13 @@ are intentionally separate follow-ups. Pick any of these up in a new session.
 ## Done
 
 - **Prefab library.** Committed `Unit`/`Building`/`RTSWorld` (camera + selection-UI rig) and `SelectionUI`
-  prefabs in `Assets/Modules/Prefabs/`; drag a unit/building into a SubScene to bake a rendered, selectable entity.
+  prefabs in `Packages/com.hyperrts.engine/Prefabs/`; drag a unit/building into a SubScene to bake a rendered, selectable entity.
 - **One-step scene setup.** `GameObject ▸ HyperRTS ▸ RTS World` drops the camera + selection-UI rig prefab into
   the scene (and `▸ Selection UI` for just the UI). Editor menus renamed `RTS ▸ … → HyperRTS ▸ …`.
 - **Resource Editor polish.** Added missing-icon validation and fixed the `ScritableObjects → ScriptableObjects`
   folder/path typo (duplicate-ID validation already existed).
 - **Custom inspector.** `SelectableAuthoringEditor` previews the selected/base highlight colours live.
-- **Asset restructure.** `Demo/` moved out of the engine to `Assets/Demo/`; `Assets/Modules/` is now engine-only.
+- **Asset restructure.** `Demo/` moved out of the engine to `Assets/Demo/`; `Packages/com.hyperrts.engine/` is now engine-only.
 
 ## Candidate follow-ups
 
@@ -31,5 +31,5 @@ are intentionally separate follow-ups. Pick any of these up in a new session.
 ## Pointer
 
 These build on the Authoring DX Foundation milestone. The engine conventions for authoring
-components (menu paths, icons, tooltips, help links) live in `Assets/Modules/Core/HyperRTSMenu.cs`
+components (menu paths, icons, tooltips, help links) live in `Packages/com.hyperrts.engine/Core/HyperRTSMenu.cs`
 and are documented in `CLAUDE.md` and `docs/editor-ux.md`.

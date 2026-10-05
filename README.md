@@ -59,12 +59,27 @@ to a playable skirmish with your own units and buildings, and shows how to add m
 ## Layout
 
 ```text
-Assets/Modules/   the engine: Core, Simulation, Presentation, Input, Editor, Prefabs
-Assets/Demo/      the sample game (prefabs, data, scene)
-docs/             documentation
+Packages/com.hyperrts.engine/   the engine (UPM package): Core, Simulation, Presentation, Input, Editor, Prefabs
+Assets/Demo/                    the sample game (prefabs, data, scene)
+docs/                           documentation
 ```
 
 ## Requirements
 
 Unity 6000.6.4f1, URP 17.6, Entities 6.6, Entities Graphics, Unity Physics, Input System. New to DOTS? Start with
 the [Entities manual](https://docs.unity3d.com/Packages/com.unity.entities@latest).
+
+## Use it in your game
+
+The engine is the `com.hyperrts.engine` package. Add this repo as a git submodule and reference the package from
+your project's `Packages/manifest.json`, so you can edit engine code in place:
+
+```json
+"com.hyperrts.engine": "file:../External/HyperRTS/Packages/com.hyperrts.engine"
+```
+
+Or pin a release: `"com.hyperrts.engine": "https://github.com/SIGamesStudio/HyperRTS.git?path=/Packages/com.hyperrts.engine#v0.1.0"`.
+
+## License
+
+[MPL-2.0](LICENSE): changes to HyperRTS files stay open source; games built on it can be closed source.

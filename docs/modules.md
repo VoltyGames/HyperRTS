@@ -1,7 +1,7 @@
 # Module reference
 
 What each engine module owns, the components you author or read, and the systems that run it. Simulation modules
-live in `Assets/Modules/Simulation/<Module>/` (namespace `HyperRTS.Simulation.<Module>`); client-only code is in
+live in `Packages/com.hyperrts.engine/Simulation/<Module>/` (namespace `HyperRTS.Simulation.<Module>`); client-only code is in
 `Input/` and `Presentation/`. For the frame order, see [`world-setup.md`](world-setup.md).
 
 ## How the modules talk

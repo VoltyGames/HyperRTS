@@ -1,6 +1,6 @@
 # Architecture: layered assemblies
 
-HyperRTS code is split into **layered assemblies** under `Assets/Modules/`, for one reason: the **simulation must
+HyperRTS code is split into **layered assemblies** under `Packages/com.hyperrts.engine/`, for one reason: the **simulation must
 run headless**. A dedicated server (roadmap phase 10) and the EditMode tests run gameplay with **no rendering,
 input or UI**.
 
@@ -36,7 +36,7 @@ input bridge) simply don't exist when their assemblies are absent.
 
 ```sh
 # expect: no matches
-grep -rn "UnityEngine.InputSystem\|Unity.Rendering\|UnityEngine.UIElements" Assets/Modules/Simulation
+grep -rn "UnityEngine.InputSystem\|Unity.Rendering\|UnityEngine.UIElements" Packages/com.hyperrts.engine/Simulation
 ```
 
 ## Crossing the boundary: data down, rendering and input up

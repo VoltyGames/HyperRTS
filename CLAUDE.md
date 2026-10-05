@@ -12,12 +12,13 @@ don't edit it or copy its architecture.
 
 ## Layout
 
-`Assets/Modules/` is the engine (code + shipped assets), split into layered assemblies so the simulation can
-run headless: `Core ← Simulation ← {Presentation, Input}`, with Editor/Tests on top. The sample game is
-`Assets/Demo/`. See [`docs/architecture.md`](docs/architecture.md).
+`Packages/com.hyperrts.engine/` is the engine (code + shipped assets) as an embedded UPM package, split into layered
+assemblies so the simulation can run headless: `Core ← Simulation ← {Presentation, Input}`, with Editor/Tests on top.
+The sample game is `Assets/Demo/`. Games consume the package (e.g. as a submodule + `file:` reference), so engine
+code must never depend on anything under `Assets/`. See [`docs/architecture.md`](docs/architecture.md).
 
 ```text
-Assets/Modules/
+Packages/com.hyperrts.engine/
 ├── Core/          contracts: SystemGroups, HyperRTSMenu/Icons/Docs
 ├── Simulation/    headless gameplay: AI, Buildings, Combat, Common, Interaction, Match, Navigation, Orders,
 │                  Resources, Selection, Spatial, Units, Vision, Tests/

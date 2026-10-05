@@ -33,7 +33,7 @@ Use **HyperRTS ▸ Create RTS Scene...** and pick a path. You get:
 | `Directional Light` | |
 | `SubScene` | Holds `<Scene>_Entities.unity` with a `Match` object. Tick the SubScene's checkbox to edit its contents |
 
-Doing it by hand instead: drop `Assets/Modules/Prefabs/RTSWorld.prefab` (or **GameObject ▸ HyperRTS ▸ RTS World**)
+Doing it by hand instead: drop `Packages/com.hyperrts.engine/Prefabs/RTSWorld.prefab` (or **GameObject ▸ HyperRTS ▸ RTS World**)
 into a scene, add a SubScene (**GameObject ▸ New Sub Scene ▸ Empty Scene**) and put a **GameObject ▸ HyperRTS ▸
 Match** inside it.
 
