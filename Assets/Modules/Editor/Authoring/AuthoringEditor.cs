@@ -12,20 +12,7 @@ namespace HyperRTS.Editor.Authoring
 
         public override void OnInspectorGUI()
         {
-            serializedObject.Update();
-            var property = serializedObject.GetIterator();
-            for (var enterChildren = true; property.NextVisible(enterChildren); enterChildren = false)
-            {
-                using (new EditorGUI.DisabledScope(property.propertyPath == "m_Script"))
-                {
-                    if (!DrawProperty(property))
-                    {
-                        EditorGUILayout.PropertyField(property, true);
-                    }
-                }
-            }
-
-            serializedObject.ApplyModifiedProperties();
+            DrawDefaultInspector();
 
             // Checks walk the hierarchy, so run them once per Layout and reuse them for the other events.
             if (Event.current.type == EventType.Layout)
@@ -38,8 +25,5 @@ namespace HyperRTS.Editor.Authoring
                 IssueGUI.Draw(issue);
             }
         }
-
-        /// <summary>Override to draw one property your own way; return false to use the default field.</summary>
-        protected virtual bool DrawProperty(SerializedProperty property) => false;
     }
 }

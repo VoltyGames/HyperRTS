@@ -28,6 +28,8 @@ namespace HyperRTS.Simulation.Units
         [Min(0)]
         public int population = 1;
 
+        public override float FootprintRadius => radius;
+
         protected override int Population => population;
 
         public class Baker : Baker<UnitAuthoring>

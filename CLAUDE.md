@@ -79,7 +79,7 @@ Assets/Modules/
 Play `Assets/Demo/Scenes/SampleScene.unity` (entities bake from its SubScene); inspect via Window ▸ Entities.
 EditMode tests are in `HyperRTS.Simulation.Tests`, `HyperRTS.Presentation.Tests` and `HyperRTS.Editor.Tests`
 (Window ▸ General ▸ Test Runner). Simulation tests use `TestWorld` and go end-to-end through systems.
-New authoring rules go in `AuthoringChecks` so the inspector, **HyperRTS ▸ Validate** and the tests all pick them up.
+New authoring rules are `AuthoringRule<T>` classes in `Editor/Validation/Rules/` so the inspector, **HyperRTS ▸ Validate** and the tests all pick them up.
 In Play mode, the Scene view's **HyperRTS Debug** overlay and **HyperRTS ▸ Cheats** inspect and drive the live world.
 
 ## Gotchas

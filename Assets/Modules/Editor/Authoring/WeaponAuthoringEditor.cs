@@ -1,5 +1,7 @@
 using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,7 +16,7 @@ namespace HyperRTS.Editor.Authoring
         {
             var weapon = (WeaponAuthoring)target;
             var center = weapon.transform.position;
-            var self = RTSHandles.SelfRadius(weapon);
+            var self = weapon.TryGetComponent(out GameEntityAuthoring owner) ? owner.FootprintRadius : Footprint.DefaultRadius;
 
             if (weapon.acquireRange > 0f)
             {

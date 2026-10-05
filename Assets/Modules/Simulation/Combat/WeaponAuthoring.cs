@@ -10,6 +10,7 @@ namespace HyperRTS.Simulation.Combat
     [Icon(HyperRTSIcons.Combat)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
+    [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class WeaponAuthoring : MonoBehaviour
     {
         [Tooltip("Firing range in world units, measured edge to edge.")]

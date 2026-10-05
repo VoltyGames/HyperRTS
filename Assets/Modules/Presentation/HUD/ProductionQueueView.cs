@@ -10,7 +10,7 @@ namespace HyperRTS.Presentation.HUD
     public sealed class ProductionQueueView
     {
         private int _signature;
-        private VisualElement _headFill;
+        private HUDBar _headProgress;
 
         public ProductionQueueView()
         {
@@ -24,7 +24,7 @@ namespace HyperRTS.Presentation.HUD
             var entityManager = context.EntityManager;
             var visible = context.IsOwned(producer) && entityManager.HasBuffer<ProductionQueueItem>(producer)
                 && entityManager.GetBuffer<ProductionQueueItem>(producer, true).Length > 0;
-            HUDElements.SetVisible(Root, visible);
+            Root.SetVisible(visible);
             if (!visible)
             {
                 _signature = 0;
@@ -44,7 +44,7 @@ namespace HyperRTS.Presentation.HUD
                 Rebuild(context, producer, queue);
             }
 
-            HUDElements.SetFraction(_headFill, HeadProgress(entityManager, producer, queue[0].Prefab));
+            _headProgress.Fraction = HeadProgress(entityManager, producer, queue[0].Prefab);
         }
 
         private void Rebuild(HUDContext context, Entity producer, DynamicBuffer<ProductionQueueItem> queue)
@@ -60,12 +60,13 @@ namespace HyperRTS.Presentation.HUD
                     Argument = index,
                 }));
                 slot.AddToClassList("hud-slot");
-                slot.Add(HUDElements.EntityIcon(context.EntityManager, queue[i].Prefab, "hud-slot__icon"));
+                slot.Add(HUDIcon.Of(context.EntityManager, queue[i].Prefab, "hud-slot__icon"));
                 Root.Add(slot);
 
                 if (i == 0)
                 {
-                    HUDElements.Bar("hud-slot__progress", slot, out _headFill);
+                    _headProgress = new HUDBar("hud-slot__progress");
+                    slot.Add(_headProgress);
                 }
             }
         }

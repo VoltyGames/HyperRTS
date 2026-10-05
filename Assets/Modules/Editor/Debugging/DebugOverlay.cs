@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
@@ -15,10 +14,10 @@ namespace HyperRTS.Editor.Debugging
         public override VisualElement CreatePanelContent()
         {
             var root = new VisualElement { style = { minWidth = 180 } };
-            root.Add(Toggle("Nav grid (blocked)", DebugDraw.NavGrid, value => DebugDraw.NavGrid = value));
-            root.Add(Toggle("Fog (visible to local)", DebugDraw.Fog, value => DebugDraw.Fog = value));
-            root.Add(Toggle("Paths and targets", DebugDraw.Paths, value => DebugDraw.Paths = value));
-            root.Add(Toggle("Spatial cells", DebugDraw.Spatial, value => DebugDraw.Spatial = value));
+            foreach (var layer in DebugDraw.Layers)
+            {
+                root.Add(Toggle(layer));
+            }
 
             var ai = new Label { style = { marginTop = 4, whiteSpace = WhiteSpace.Normal } };
             root.Add(ai);
@@ -28,12 +27,12 @@ namespace HyperRTS.Editor.Debugging
             return root;
         }
 
-        private static Toggle Toggle(string label, bool value, Action<bool> set)
+        private static Toggle Toggle(DebugLayer layer)
         {
-            var toggle = new Toggle(label) { value = value };
+            var toggle = new Toggle(layer.Label) { value = layer.Enabled };
             toggle.RegisterValueChangedCallback(change =>
             {
-                set(change.newValue);
+                layer.Enabled = change.newValue;
                 SceneView.RepaintAll();
             });
             return toggle;

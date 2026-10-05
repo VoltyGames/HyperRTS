@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Rules;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
@@ -29,7 +30,8 @@ namespace HyperRTS.Editor.Tests
             var b = Track(EntityTemplates.Unit("Tank")).GetComponent<GameEntityAuthoring>();
             var c = Track(EntityTemplates.Unit("Ranger")).GetComponent<GameEntityAuthoring>();
 
-            var issues = ProjectValidator.DuplicateNames(new[] { a, b, c });
+            var issues = new ValidationIssues();
+            new DuplicateNameRule().Check(new PrefabSet(new[] { a.gameObject, b.gameObject, c.gameObject }), issues);
 
             Assert.AreEqual(1, issues.Count);
             StringAssert.Contains("'Tank'", issues[0].Message);
@@ -50,6 +52,14 @@ namespace HyperRTS.Editor.Tests
             var node = Track(EntityTemplates.ResourceNode()).GetComponent<ResourceNodeAuthoring>();
 
             Assert.IsTrue(AuthoringChecks.For(node).Any(issue => issue.Severity == MessageType.Error));
+        }
+
+        [Test]
+        public void MissingRequiredAuthoringIsReported()
+        {
+            var harvester = Track(EntityTemplates.Building()).AddComponent<HarvesterAuthoring>();
+
+            Assert.IsTrue(AuthoringChecks.For(harvester).Any(issue => issue.Message.Contains("needs a Unit")));
         }
 
         [TestCaseSource(nameof(Templates))]

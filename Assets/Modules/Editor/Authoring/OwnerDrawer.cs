@@ -5,10 +5,14 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Authoring
 {
-    /// <summary>Owner number as a dropdown of the scene Match's players, with the owner's colour beside it.</summary>
-    public static class OwnerField
+    /// <summary>Draws <see cref="OwnerAttribute"/> fields as a player dropdown with the owner's colour beside it.</summary>
+    [CustomPropertyDrawer(typeof(OwnerAttribute))]
+    public sealed class OwnerDrawer : PropertyDrawer
     {
-        public static void Draw(SerializedProperty property)
+        private const float Swatch = 16f;
+        private const float Gap = 2f;
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             var match = SceneMatch.Current;
             var slots = match != null ? Mathf.Max(match.players.Count, property.intValue) : GameEntityAuthoring.MaxOwner;
@@ -20,12 +24,10 @@ namespace HyperRTS.Editor.Authoring
                 labels[i] = new GUIContent(Label(match, i));
             }
 
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                EditorGUILayout.IntPopup(property, labels, values, new GUIContent(property.displayName, property.tooltip));
-                var swatch = GUILayoutUtility.GetRect(16f, EditorGUIUtility.singleLineHeight, GUILayout.Width(16f));
-                EditorGUI.DrawRect(swatch, SceneMatch.PlayerColor(property.intValue));
-            }
+            var field = new Rect(position.x, position.y, position.width - Swatch - Gap, position.height);
+            EditorGUI.IntPopup(field, property, labels, values, label);
+            EditorGUI.DrawRect(new Rect(field.xMax + Gap, position.y, Swatch, position.height),
+                SceneMatch.PlayerColor(property.intValue));
         }
 
         private static string Label(MatchAuthoring match, int owner)

@@ -60,19 +60,23 @@ public class WeaponAuthoring : MonoBehaviour
 
 ## Validation
 
-[`AuthoringChecks`](../Assets/Modules/Editor/Validation/AuthoringChecks.cs) holds the per-component rules (no
-collider, empty or scene-object production options, unit prerequisites, spawn point inside the footprint, node
-without a resource type, ...). [`ProjectValidator`](../Assets/Modules/Editor/Validation/ProjectValidator.cs) adds
-the cross-object rules: two prefabs sharing a display name (they would merge into one `TypeId`), zero or several
-Matches, owners without a player slot, entities outside the map, and a scene missing
-`OverrideAutomaticNetcodeBootstrap`. The same rules show up in four places:
+Per-component rules live in [`Validation/Rules/`](../Assets/Modules/Editor/Validation/Rules/), one
+`AuthoringRule<T>` per authoring type (no collider, empty or scene-object production options, unit prerequisites,
+spawn point inside the footprint, node without a resource type, ...). `[RequiresAuthoring]` on an authoring class
+declares a component it needs alongside it.
+[`AuthoringChecks`](../Assets/Modules/Editor/Validation/AuthoringChecks.cs) runs every rule that applies. Cross-object rules sit beside them: `ISceneRule`s check the open scenes (zero or several Matches, owners without a
+player slot, entities outside the map, a scene missing `OverrideAutomaticNetcodeBootstrap`) and `IPrefabRule`s
+check the project's prefabs (two sharing a display name would merge into one `TypeId`).
+[`ProjectValidator`](../Assets/Modules/Editor/Validation/ProjectValidator.cs) runs them all; Play mode runs only
+the scene rules. The same rules show up in four places:
 
 - under each HyperRTS component in the inspector ([`AuthoringEditor`](../Assets/Modules/Editor/Authoring/AuthoringEditor.cs));
 - in **HyperRTS ▸ Validate**;
 - in the console, linked to the object, when entering Play mode (open scenes only);
 - in `ValidationTests.ProjectHasNoValidationErrors`, so CI fails on errors.
 
-Add a rule to `AuthoringChecks.For` and every one of these picks it up. Closed SubScenes aren't checked.
+Rules are discovered, so a game adds its own (`AuthoringRule<T>`, `ISceneRule` or `IPrefabRule`) in any editor
+assembly, and every one of these picks it up. Closed SubScenes aren't checked.
 
 ## Inspectors
 
@@ -81,16 +85,18 @@ obvious fix carry a button (**Fit Collider**, **Use Prefab**, **Remove Empty**, 
 **HyperRTS ▸ Validate**; each fix is one undo step ([`QuickFixes`](../Assets/Modules/Editor/Validation/QuickFixes.cs)).
 
 Unit and building inspectors open with a one-line summary (for example "Unit · Weapon, Builder · 12 DPS · 150
-Supplies") and show **Owner** as a dropdown of the scene Match's players with their colour. The **Match** inspector
+Supplies") and draw radius or footprint handles (`UnitAuthoringEditor`, `BuildingAuthoringEditor`). Fields marked
+`[Owner]` show as a dropdown of the scene Match's players with their colour. The **Match** inspector
 counts entities per player in the open scenes, frames the map in the Scene view, and previews the nav and fog grids.
 
-To customise one field, override `AuthoringEditor.DrawProperty` and leave the rest to the default drawing.
+To customise one field, give it a `PropertyAttribute` and a `PropertyDrawer`, as `[Owner]` does.
 
 ## Play-mode debugging
 
 The **HyperRTS Debug** Scene view overlay (toggle it from the Scene view's Overlays menu) draws live simulation
 state: blocked nav cells, cells the local team can see, occupied spatial-index cells, unit paths and attack targets.
-It also shows each AI player's next think time. The tools read the running world directly and live in the Editor
+It also shows each AI player's next think time. Each toggle is a `DebugLayer`; subclass it (or `CellDebugLayer`
+for grid cells) to add one. The tools read the running world directly and live in the Editor
 assembly, so nothing ships with the game.
 
 ## Prefabs

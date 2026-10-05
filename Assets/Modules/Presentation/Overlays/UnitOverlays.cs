@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
@@ -67,7 +68,7 @@ namespace HyperRTS.Presentation.Overlays
                 }
 
                 var position = transforms[i].Position;
-                var radius = EntityExtent.Radius(entityManager, entity);
+                var radius = Footprint.Radius(entityManager, entity);
                 if (selected)
                 {
                     var size = radius * style.ringScale;

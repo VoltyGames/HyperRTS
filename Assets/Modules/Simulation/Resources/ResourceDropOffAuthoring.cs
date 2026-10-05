@@ -1,4 +1,6 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using UnityEngine;
 
@@ -9,6 +11,7 @@ namespace HyperRTS.Simulation.Resources
     [Icon(HyperRTSIcons.Resources)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
+    [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
     public class ResourceDropOffAuthoring : MonoBehaviour
     {
         public class Baker : Baker<ResourceDropOffAuthoring>

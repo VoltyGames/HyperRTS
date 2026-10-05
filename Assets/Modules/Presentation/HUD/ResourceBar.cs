@@ -71,7 +71,7 @@ namespace HyperRTS.Presentation.HUD
                 var entry = HUDElements.Box("hud-resource", _resources);
                 if (type != null && type.icon != null)
                 {
-                    entry.Add(HUDElements.Icon(type.icon, name, "hud-resource__icon"));
+                    entry.Add(new HUDIcon(type.icon, name, "hud-resource__icon"));
                 }
                 else
                 {

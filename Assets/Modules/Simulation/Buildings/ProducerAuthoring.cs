@@ -13,6 +13,7 @@ namespace HyperRTS.Simulation.Buildings
     [Icon(HyperRTSIcons.Buildings)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
+    [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
     public class ProducerAuthoring : MonoBehaviour
     {
         [Tooltip("Unit prefabs this building can train.")]

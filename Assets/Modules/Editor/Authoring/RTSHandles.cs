@@ -1,10 +1,6 @@
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Navigation;
-using HyperRTS.Simulation.Units;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
-using NavFootprint = HyperRTS.Simulation.Navigation.Footprint;
 
 namespace HyperRTS.Editor.Authoring
 {
@@ -37,19 +33,6 @@ namespace HyperRTS.Editor.Authoring
 
             var shift = Box.center - center;
             return new Vector2(Box.size.x + 2f * Mathf.Abs(shift.x), Box.size.z + 2f * Mathf.Abs(shift.z));
-        }
-
-        /// <summary>Edge-to-edge reach is measured from this radius, matching <see cref="NavFootprint"/> in combat.</summary>
-        public static float SelfRadius(Component component)
-        {
-            if (component.TryGetComponent(out UnitAuthoring unit))
-            {
-                return unit.radius;
-            }
-
-            return component.TryGetComponent(out BuildingAuthoring building)
-                ? NavFootprint.Radius(new NavObstacle { Size = building.footprint })
-                : NavFootprint.DefaultRadius;
         }
 
         public static Color Faded(Color color, float alpha = 0.35f) => new(color.r, color.g, color.b, alpha);

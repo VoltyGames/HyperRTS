@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Buildings
         {
             _selectedProducers = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, Faction, Selected>()
                 .WithNone<Dead>().Build();
-            _completed = ProductionRules.CompletedBuildings(Allocator.Temp).Build(ref state);
+            _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
         }
 
         [BurstCompile]
@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Buildings
             var queue = SystemAPI.GetBuffer<ProductionQueueItem>(producer);
             var prefab = command.Prefab;
             if (queue.Length >= SystemAPI.GetComponent<Producer>(producer).QueueLimit ||
-                !ProductionRules.PrerequisitesMet(SystemAPI.GetBuffer<Prerequisite>(prefab), faction, _completed) ||
+                !CompletedBuildings.MeetsPrerequisites(SystemAPI.GetBuffer<Prerequisite>(prefab), faction, _completed) ||
                 !ResourceMath.TrySpend(stock, SystemAPI.GetBuffer<ResourceCost>(prefab)))
             {
                 return;

@@ -138,7 +138,7 @@ same type when one runs dry. `ResourceNodeSystem` regrows or removes nodes.
 | `ConstructionProgress` | Enableable 0..1; unfinished buildings don't produce, provide population, accept cargo, fire or satisfy prerequisites |
 | `BuilderAuthoring` / `Builder`, `BuildOption` | Build rate and placeable building prefabs |
 | `ProducerAuthoring` / `Producer`, `ProductionOption`, `ProductionQueueItem`, `RallyPoint` | Unit training queue |
-| `ProductionRules` | Prerequisite checks shared by the simulation and the HUD |
+| `CompletedBuildings` | Prerequisite checks shared by the simulation, the AI and the HUD |
 
 Systems: `PlaceBuildingSystem` validates placement (`PlacementMath`: map bounds, free nav cells, no overlap), charges
 the cost, spawns a site and orders the builders to it. `ConstructionSystem` advances sites only while builders work

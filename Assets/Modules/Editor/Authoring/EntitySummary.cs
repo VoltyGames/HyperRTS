@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Units;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,7 +13,7 @@ namespace HyperRTS.Editor.Authoring
         /// <summary>For example "Unit · Weapon, Builder · 12 DPS · 150 Supplies".</summary>
         public static string Line(GameEntityAuthoring entity)
         {
-            var parts = new List<string> { entity is UnitAuthoring ? "Unit" : "Building" };
+            var parts = new List<string> { ComponentName(entity.GetType()) };
             var modules = Modules(entity);
             if (modules.Length > 0)
             {
@@ -42,6 +41,9 @@ namespace HyperRTS.Editor.Authoring
             string.Join(", ", entity.GetComponents<MonoBehaviour>()
                 .Where(component => component != entity && component != null &&
                                     component.GetType().Namespace?.StartsWith("HyperRTS") == true)
-                .Select(component => ObjectNames.NicifyVariableName(component.GetType().Name.Replace("Authoring", ""))));
+                .Select(component => ComponentName(component.GetType())));
+
+        private static string ComponentName(System.Type type) =>
+            ObjectNames.NicifyVariableName(type.Name.Replace("Authoring", ""));
     }
 }

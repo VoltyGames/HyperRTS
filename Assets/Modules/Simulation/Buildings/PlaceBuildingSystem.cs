@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Buildings
             _selectedBuilders = SystemAPI.QueryBuilder().WithAll<Builder, BuildOption, Faction, Selected>()
                 .WithNone<Dead>().Build();
             _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().WithNone<Dead>().Build();
-            _completed = ProductionRules.CompletedBuildings(Allocator.Temp).Build(ref state);
+            _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _orders = new OrderWriter(ref state);
             state.RequireForUpdate<MapSettings>();
         }
@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.Buildings
             var required = SystemAPI.GetBuffer<Prerequisite>(prefab);
 
             if (!PlacementMath.IsValid(map, grid, center, footprint) || IsOccupied(center, footprint, sites) ||
-                !ProductionRules.PrerequisitesMet(required, request.Faction, _completed) ||
+                !CompletedBuildings.MeetsPrerequisites(required, request.Faction, _completed) ||
                 !ResourceMath.TrySpend(SystemAPI.GetBuffer<ResourceStock>(request.Player),
                     SystemAPI.GetBuffer<ResourceCost>(prefab)))
             {

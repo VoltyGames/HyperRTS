@@ -27,8 +27,7 @@ namespace HyperRTS.Simulation.AI
             public byte Faction;
             public Population Room;
             public DynamicBuffer<ResourceStock> Stock;
-            public NativeArray<EntityInfo> Infos;
-            public NativeArray<Faction> Owners;
+            public CompletedBuildings Completed;
         }
 
         /// <summary>Query results shared by every AI that thinks this frame.</summary>
@@ -40,8 +39,7 @@ namespace HyperRTS.Simulation.AI
             public AIGroup Army;
             public AIGroup Targets;
             public NativeArray<Entity> Producers;
-            public NativeArray<EntityInfo> CompletedInfos;
-            public NativeArray<Faction> CompletedOwners;
+            public CompletedBuildings Completed;
         }
 
         private EntityQuery _idleHarvesters;
@@ -62,7 +60,7 @@ namespace HyperRTS.Simulation.AI
             _producers = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, ProductionQueueItem, Faction>()
                 .WithNone<ConstructionProgress, Dead>().Build();
             _targets = SystemAPI.QueryBuilder().WithAll<Health, Faction, LocalTransform>().WithNone<Dead>().Build();
-            _completed = ProductionRules.CompletedBuildings(Allocator.Temp).Build(ref state);
+            _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             state.RequireForUpdate<FactionRelations>();
         }
 
@@ -105,8 +103,7 @@ namespace HyperRTS.Simulation.AI
             Army = AIGroup.From(_idleArmy),
             Targets = AIGroup.From(_targets),
             Producers = _producers.ToEntityArray(Allocator.Temp),
-            CompletedInfos = _completed.ToComponentDataArray<EntityInfo>(Allocator.Temp),
-            CompletedOwners = _completed.ToComponentDataArray<Faction>(Allocator.Temp),
+            Completed = new CompletedBuildings(_completed, Allocator.Temp),
         };
 
         private static void SendHarvesters(byte faction, DynamicBuffer<PlayerCommand> commands, in Snapshot snapshot)
@@ -162,8 +159,7 @@ namespace HyperRTS.Simulation.AI
                 Faction = faction,
                 Room = SystemAPI.GetComponent<Population>(player),
                 Stock = SystemAPI.GetBuffer<ResourceStock>(player),
-                Infos = snapshot.CompletedInfos,
-                Owners = snapshot.CompletedOwners,
+                Completed = snapshot.Completed,
             };
 
             foreach (var producer in snapshot.Producers)
@@ -193,8 +189,7 @@ namespace HyperRTS.Simulation.AI
                 var prefab = options[index].Prefab;
                 if (budget.Room.HasRoomFor(SystemAPI.GetComponent<Producible>(prefab).Population) &&
                     ResourceMath.CanAfford(budget.Stock, SystemAPI.GetBuffer<ResourceCost>(prefab)) &&
-                    ProductionRules.PrerequisitesMet(SystemAPI.GetBuffer<Prerequisite>(prefab), budget.Faction,
-                        budget.Infos, budget.Owners))
+                    budget.Completed.MeetsPrerequisites(SystemAPI.GetBuffer<Prerequisite>(prefab), budget.Faction))
                 {
                     ai.NextOption = index + 1;
                     return prefab;

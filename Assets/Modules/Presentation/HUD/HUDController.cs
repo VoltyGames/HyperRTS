@@ -92,7 +92,7 @@ namespace HyperRTS.Presentation.HUD
             }
 
             var ready = _context.Refresh();
-            HUDElements.SetVisible(_root, ready);
+            _root.SetVisible(ready);
             if (!ready)
             {
                 return;

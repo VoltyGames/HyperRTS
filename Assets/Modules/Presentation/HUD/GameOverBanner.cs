@@ -15,7 +15,7 @@ namespace HyperRTS.Presentation.HUD
             Root.pickingMode = PickingMode.Ignore;
             _title = HUDElements.Text("", "hud-banner__title", Root);
             _title.pickingMode = PickingMode.Ignore;
-            HUDElements.SetVisible(Root, false);
+            Root.SetVisible(false);
         }
 
         public VisualElement Root { get; }
@@ -29,7 +29,7 @@ namespace HyperRTS.Presentation.HUD
             }
 
             _shown = outcome;
-            HUDElements.SetVisible(Root, outcome != null);
+            Root.SetVisible(outcome != null);
             _title.text = outcome ?? "";
             _title.EnableInClassList("hud-banner__title--victory", outcome == "VICTORY");
             _title.EnableInClassList("hud-banner__title--defeat", outcome == "DEFEAT");

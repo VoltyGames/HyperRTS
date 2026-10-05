@@ -23,7 +23,7 @@ namespace HyperRTS.Presentation.HUD
             ComponentType.Exclude<FogHidden>()));
 
         private readonly LiveQuery _completed = new(entityManager =>
-            ProductionRules.CompletedBuildings(Allocator.Temp).Build(entityManager));
+            CompletedBuildings.Query(Allocator.Temp).Build(entityManager));
 
         private readonly LiveQuery _pointer = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<PointerState>()));
@@ -71,7 +71,7 @@ namespace HyperRTS.Presentation.HUD
 
         public bool PrerequisitesMet(Entity prefab) =>
             !EntityManager.HasBuffer<Prerequisite>(prefab)
-            || ProductionRules.PrerequisitesMet(EntityManager.GetBuffer<Prerequisite>(prefab, true), View.Local.Faction,
+            || CompletedBuildings.MeetsPrerequisites(EntityManager.GetBuffer<Prerequisite>(prefab, true), View.Local.Faction,
                 _completed.In(EntityManager));
 
         public void Issue(PlayerCommand command)

@@ -70,7 +70,7 @@ namespace HyperRTS.Presentation.HUD
             AddPrefabButtons(context, builds, prefab => context.StartPlacement(prefab));
             AddPrefabButtons(context, products, prefab => context.Issue(new PlayerCommand { Type = CommandType.Produce, Prefab = prefab }));
             AddStanceButtons(context);
-            HUDElements.SetShown(Root, Root.childCount > 0);
+            Root.SetShown(Root.childCount > 0);
         }
 
         private void CollectOptions(HUDContext context, List<Entity> builds, List<Entity> products)
@@ -110,7 +110,7 @@ namespace HyperRTS.Presentation.HUD
         {
             foreach (var prefab in prefabs)
             {
-                var button = CommandButtons.ForPrefab(context.EntityManager, prefab, () => onClick(prefab));
+                var button = CommandButton.ForPrefab(context.EntityManager, prefab, () => onClick(prefab));
                 _costed.Add((button, prefab));
                 Root.Add(button);
             }
@@ -125,7 +125,7 @@ namespace HyperRTS.Presentation.HUD
 
             foreach (var stance in Stances)
             {
-                var button = CommandButtons.Plain(Caption(stance), () => context.Issue(new PlayerCommand
+                var button = new CommandButton(Caption(stance), () => context.Issue(new PlayerCommand
                 {
                     Type = CommandType.SetStance,
                     Argument = (int)stance,

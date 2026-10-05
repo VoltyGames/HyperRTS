@@ -77,7 +77,7 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ Placement mode: snapped ghost, valid/invalid preview, shared `PlacementMath` rules, Shift to keep placing
 - ✅ Construction progresses only while builders work; several builders stack
 - ✅ Production queue with cost on enqueue, cancel with refund, population check, rally points
-- ✅ Data-driven prerequisites (`Prerequisite` + `ProductionRules`, also used by the HUD)
+- ✅ Data-driven prerequisites (`Prerequisite` + `CompletedBuildings`, also used by the HUD)
 - ⬜ Upgrades/research, building sell/repair, power (see the Generals mapping in
   [`getting-started.md`](getting-started.md))
 

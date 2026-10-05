@@ -28,6 +28,8 @@ namespace HyperRTS.Simulation.Navigation
 
         public readonly int Index(int2 cell) => cell.y * Size.x + cell.x;
 
+        public readonly int2 Cell(int index) => new(index % Size.x, index / Size.x);
+
         /// <summary>Line-of-sight clearance for an agent, capped so it fits through a single-cell gap.</summary>
         public readonly float Clearance(float radius) => math.min(radius, CellSize * 0.45f);
 

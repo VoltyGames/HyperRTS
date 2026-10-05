@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using UnityEngine;
 
@@ -22,6 +23,8 @@ namespace HyperRTS.Simulation.Buildings
 
         [Tooltip("Start as a construction site instead of finished (for scene-placed buildings).")]
         public bool startsUnderConstruction;
+
+        public override float FootprintRadius => Footprint.Radius(new NavObstacle { Size = footprint });
 
         public class Baker : Baker<BuildingAuthoring>
         {

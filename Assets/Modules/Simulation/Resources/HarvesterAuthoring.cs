@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Units;
 using Unity.Entities;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ namespace HyperRTS.Simulation.Resources
     [Icon(HyperRTSIcons.Resources)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
+    [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
     public class HarvesterAuthoring : MonoBehaviour
     {
         [Tooltip("Cargo carried per trip.")]

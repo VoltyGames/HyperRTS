@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Common
         public Texture2D icon;
 
         [Tooltip("Owning player number from MatchAuthoring (1 = first player). 0 = neutral.")]
-        [Range(0, MaxOwner)]
+        [Owner]
         public int owner = 1;
 
         [Header("Durability")]
@@ -51,6 +51,9 @@ namespace HyperRTS.Simulation.Common
         public int TypeId => EntityInfo.TypeIdFromName(DisplayName);
 
         public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
+
+        /// <summary>Edge-to-edge reach is measured from this, matching the baked <c>Footprint.Radius</c>.</summary>
+        public abstract float FootprintRadius { get; }
 
         protected virtual int Population => 0;
 
