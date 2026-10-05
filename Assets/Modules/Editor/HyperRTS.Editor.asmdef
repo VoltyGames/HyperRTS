@@ -6,7 +6,11 @@
     "HyperRTS.Simulation",
     "HyperRTS.Presentation",
     "Unity.Collections",
-    "Unity.Scenes"
+    "Unity.Entities",
+    "Unity.Mathematics",
+    "Unity.NetCode",
+    "Unity.Scenes",
+    "Unity.Transforms"
   ],
   "includePlatforms": [
     "Editor"
