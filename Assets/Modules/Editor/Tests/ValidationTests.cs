@@ -10,21 +10,11 @@ using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Tests
 {
-    public class ValidationTests
+    public class ValidationTests : TemplateFixture
     {
-        private readonly List<GameObject> _created = new();
-
-        [TearDown]
-        public void TearDown()
-        {
-            _created.ForEach(Object.DestroyImmediate);
-            _created.Clear();
-        }
-
         [Test]
         public void ProjectHasNoValidationErrors()
         {
@@ -77,11 +67,5 @@ namespace HyperRTS.Editor.Tests
             EntityTemplates.CombatUnit, EntityTemplates.Worker, EntityTemplates.Harvester, EntityTemplates.Producer,
             EntityTemplates.DropOff, EntityTemplates.DefenseTower,
         };
-
-        private GameObject Track(GameObject go)
-        {
-            _created.Add(go);
-            return go;
-        }
     }
 }

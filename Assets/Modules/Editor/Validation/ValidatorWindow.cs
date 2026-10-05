@@ -63,8 +63,7 @@ namespace HyperRTS.Editor.Validation
                     var label = issue.Context != null ? issue.Context.name : "-";
                     if (GUILayout.Button(label, GUILayout.Width(140), GUILayout.Height(38)))
                     {
-                        UnityEditor.Selection.activeObject = issue.Context;
-                        EditorGUIUtility.PingObject(issue.Context);
+                        EditorAssets.Reveal(issue.Context);
                     }
                 }
 

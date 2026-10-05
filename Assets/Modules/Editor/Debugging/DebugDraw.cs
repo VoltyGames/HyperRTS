@@ -96,7 +96,7 @@ namespace HyperRTS.Editor.Debugging
             BeginQuads(new Color(0.3f, 1f, 0.4f, 0.2f));
             for (var i = 0; i < fog.Visible.Length; i++)
             {
-                if ((fog.Visible[i] & (1 << team)) != 0)
+                if (FogOfWar.HasTeam(fog.Visible[i], team))
                 {
                     Quad(fog.Min + new float2(i % fog.Size.x, i / fog.Size.x) * fog.CellSize, fog.CellSize);
                 }
@@ -111,8 +111,7 @@ namespace HyperRTS.Editor.Debugging
             BeginQuads(new Color(0.3f, 0.6f, 1f, 0.25f));
             for (var i = 0; i < count; i++)
             {
-                // Inverse of SpatialIndex.Key: low 16 bits are signed x, high bits y.
-                var cell = new int2((short)(keys[i] & 0xFFFF), keys[i] >> 16);
+                var cell = SpatialIndex.CellOfKey(keys[i]);
                 Quad((float2)cell * index.CellSize, index.CellSize);
             }
 

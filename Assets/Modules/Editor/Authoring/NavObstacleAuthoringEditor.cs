@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Navigation;
 using UnityEditor;
 using UnityEngine;
@@ -15,9 +16,9 @@ namespace HyperRTS.Editor.Authoring
 
             EditorGUI.BeginChangeCheck();
             var size = RTSHandles.Footprint(obstacle.transform.position, obstacle.size, Color.red);
-            if (Changed("Resize Nav Obstacle"))
+            if (EditorGUI.EndChangeCheck())
             {
-                obstacle.size = size;
+                QuickFixes.Edit(obstacle, "Resize Nav Obstacle", () => obstacle.size = size);
             }
         }
     }

@@ -51,6 +51,13 @@ namespace HyperRTS.Editor
         private static bool IsEngineType(System.Type type) =>
             type != null && (type.Namespace?.StartsWith("HyperRTS") == true || type.IsSubclassOf(typeof(GameEntityAuthoring)));
 
+        /// <summary>Selects an object and pings it in the Project or Hierarchy window.</summary>
+        public static void Reveal(Object target)
+        {
+            UnityEditor.Selection.activeObject = target;
+            EditorGUIUtility.PingObject(target);
+        }
+
         public static List<T> FindAssets<T>() where T : Object
         {
             var result = new List<T>();

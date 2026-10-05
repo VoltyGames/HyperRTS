@@ -48,6 +48,9 @@ namespace HyperRTS.Simulation.Match
         [Min(1)]
         public int aiAttackWaveSize = 6;
 
+        /// <summary>The map's ground rectangle (X by Z), centred on this transform.</summary>
+        public Rect MapRect => new(new Vector2(transform.position.x, transform.position.z) - mapSize * 0.5f, mapSize);
+
         private void OnDrawGizmos()
         {
             Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.8f);
@@ -59,10 +62,9 @@ namespace HyperRTS.Simulation.Match
             public override void Bake(MatchAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.None);
-                var center = ((float3)authoring.transform.position).xz;
                 AddComponent(entity, new MapSettings
                 {
-                    Min = center - (float2)authoring.mapSize * 0.5f,
+                    Min = authoring.MapRect.min,
                     Size = authoring.mapSize,
                     NavCellSize = authoring.navCellSize,
                     FogCellSize = authoring.fogCellSize,

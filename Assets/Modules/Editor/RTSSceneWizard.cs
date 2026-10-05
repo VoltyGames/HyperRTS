@@ -23,7 +23,7 @@ namespace HyperRTS.Editor
         public Vector2 mapSize = new(200f, 200f);
 
         [Tooltip("Player 1 is you, the rest are AI on their own teams.")]
-        [Range(1, 8)]
+        [Range(1, FactionRelations.MaxTeams - 1)]
         public int players = 2;
 
         [Tooltip("Optional building prefab placed for every player around the map (a command centre).")]

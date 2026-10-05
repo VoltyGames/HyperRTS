@@ -40,7 +40,10 @@ namespace HyperRTS.Simulation.Vision
         private readonly bool Test(NativeArray<byte> cells, float3 position, byte team)
         {
             var cell = WorldToCell(position);
-            return InBounds(cell) && (cells[Index(cell)] & (1 << team)) != 0;
+            return InBounds(cell) && HasTeam(cells[Index(cell)], team);
         }
+
+        /// <summary>Whether a <see cref="Visible"/> or <see cref="Explored"/> cell has the team's bit set.</summary>
+        public static bool HasTeam(byte cell, byte team) => (cell & (1 << team)) != 0;
     }
 }

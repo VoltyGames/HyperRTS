@@ -20,6 +20,8 @@ namespace HyperRTS.Simulation.Spatial
         /// <summary>Unique for cells within ±32k of the origin, so queries never see foreign cells twice.</summary>
         public static int Key(int2 cell) => (cell.x & 0xFFFF) | (cell.y << 16);
 
+        public static int2 CellOfKey(int key) => new((short)(key & 0xFFFF), key >> 16);
+
         /// <summary>Visits entries whose circle overlaps the query circle on the XZ plane.</summary>
         public readonly void Query<T>(float3 center, float radius, ref T visitor) where T : struct, ISpatialVisitor
         {

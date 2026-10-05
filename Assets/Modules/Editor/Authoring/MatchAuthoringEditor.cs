@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using UnityEditor;
@@ -14,6 +15,8 @@ namespace HyperRTS.Editor.Authoring
 
         private static bool _showNavGrid;
         private static bool _showFogGrid;
+
+        private int[] _counts = { };
 
         public override void OnInspectorGUI()
         {
@@ -41,9 +44,30 @@ namespace HyperRTS.Editor.Authoring
             }
         }
 
-        private static void DrawOwnerCounts(MatchAuthoring match)
+        private void DrawOwnerCounts(MatchAuthoring match)
         {
-            var counts = new int[match.players.Count + 1];
+            // A full scene scan, so only on Layout; Repaint and input events reuse it.
+            if (Event.current.type == EventType.Layout || _counts.Length != match.players.Count + 1)
+            {
+                _counts = CountOwners(match.players.Count);
+            }
+
+            EditorGUILayout.LabelField("Neutral", $"{_counts[0]} entities");
+            for (var i = 0; i < match.players.Count; i++)
+            {
+                var player = match.players[i];
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUI.DrawRect(GUILayoutUtility.GetRect(12f, 16f, GUILayout.Width(12f)), player.color);
+                    EditorGUILayout.LabelField($"{i + 1}. {player.name} (team {player.team}, {player.control})",
+                        $"{_counts[i + 1]} entities");
+                }
+            }
+        }
+
+        private static int[] CountOwners(int players)
+        {
+            var counts = new int[players + 1];
             foreach (var entity in FindObjectsByType<GameEntityAuthoring>(FindObjectsInactive.Include))
             {
                 if (entity.owner < counts.Length)
@@ -52,17 +76,7 @@ namespace HyperRTS.Editor.Authoring
                 }
             }
 
-            EditorGUILayout.LabelField("Neutral", $"{counts[0]} entities");
-            for (var i = 0; i < match.players.Count; i++)
-            {
-                var player = match.players[i];
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    EditorGUI.DrawRect(GUILayoutUtility.GetRect(12f, 16f, GUILayout.Width(12f)), player.color);
-                    EditorGUILayout.LabelField($"{i + 1}. {player.name} (team {player.team}, {player.control})",
-                        $"{counts[i + 1]} entities");
-                }
-            }
+            return counts;
         }
 
         private void OnSceneGUI()
@@ -82,9 +96,9 @@ namespace HyperRTS.Editor.Authoring
 
             EditorGUI.BeginChangeCheck();
             var size = RTSHandles.Footprint(center, match.mapSize, new Color(1f, 0.85f, 0.2f));
-            if (Changed("Resize Map"))
+            if (EditorGUI.EndChangeCheck())
             {
-                match.mapSize = size;
+                QuickFixes.Edit(match, "Resize Map", () => match.mapSize = size);
             }
         }
 

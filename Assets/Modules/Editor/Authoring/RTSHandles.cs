@@ -1,10 +1,10 @@
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Units;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
+using NavFootprint = HyperRTS.Simulation.Navigation.Footprint;
 
 namespace HyperRTS.Editor.Authoring
 {
@@ -39,7 +39,7 @@ namespace HyperRTS.Editor.Authoring
             return new Vector2(Box.size.x + 2f * Mathf.Abs(shift.x), Box.size.z + 2f * Mathf.Abs(shift.z));
         }
 
-        /// <summary>Edge-to-edge reach is measured from this radius, matching the combat code.</summary>
+        /// <summary>Edge-to-edge reach is measured from this radius, matching <see cref="NavFootprint"/> in combat.</summary>
         public static float SelfRadius(Component component)
         {
             if (component.TryGetComponent(out UnitAuthoring unit))
@@ -47,20 +47,9 @@ namespace HyperRTS.Editor.Authoring
                 return unit.radius;
             }
 
-            return component.TryGetComponent(out BuildingAuthoring building) ? Mathf.Max(building.footprint.x, building.footprint.y) * 0.5f : 0f;
-        }
-
-        /// <summary>The owner's player colour from the scene's Match, grey for neutral.</summary>
-        public static Color TeamColor(Component component)
-        {
-            var owner = component.TryGetComponent(out GameEntityAuthoring entity) ? entity.owner : 0;
-            if (owner == 0)
-            {
-                return Color.grey;
-            }
-
-            var match = Object.FindAnyObjectByType<MatchAuthoring>();
-            return match != null && owner <= match.players.Count ? match.players[owner - 1].color : Color.cyan;
+            return component.TryGetComponent(out BuildingAuthoring building)
+                ? NavFootprint.Radius(new NavObstacle { Size = building.footprint })
+                : NavFootprint.DefaultRadius;
         }
 
         public static Color Faded(Color color, float alpha = 0.35f) => new(color.r, color.g, color.b, alpha);

@@ -98,9 +98,15 @@ namespace HyperRTS.Editor.Validation
                     continue;
                 }
 
-                var hasSource = PrefabUtility.GetCorrespondingObjectFromSource(option) != null;
-                Warn(issues, owner, $"{label} '{option.name}' is a scene object; reference the prefab asset.",
-                    hasSource ? "Use Prefab" : null, hasSource ? () => QuickFixes.UsePrefab(owner, options, option) : null);
+                var message = $"{label} '{option.name}' is a scene object; reference the prefab asset.";
+                if (PrefabUtility.GetCorrespondingObjectFromSource(option) != null)
+                {
+                    Warn(issues, owner, message, "Use Prefab", () => QuickFixes.UsePrefab(owner, options, option));
+                }
+                else
+                {
+                    Warn(issues, owner, message);
+                }
             }
         }
 

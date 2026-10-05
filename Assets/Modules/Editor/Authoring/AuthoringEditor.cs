@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Editor.Validation;
 using UnityEditor;
 using UnityEngine;
@@ -7,6 +8,8 @@ namespace HyperRTS.Editor.Authoring
     /// <summary>Default inspector plus the component's validation warnings; base of the HyperRTS inspectors.</summary>
     public abstract class AuthoringEditor : UnityEditor.Editor
     {
+        private List<ValidationIssue> _issues = new();
+
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
@@ -23,7 +26,14 @@ namespace HyperRTS.Editor.Authoring
             }
 
             serializedObject.ApplyModifiedProperties();
-            foreach (var issue in AuthoringChecks.For((Component)target))
+
+            // Checks walk the hierarchy, so run them once per Layout and reuse them for the other events.
+            if (Event.current.type == EventType.Layout)
+            {
+                _issues = AuthoringChecks.For((Component)target);
+            }
+
+            foreach (var issue in _issues)
             {
                 IssueGUI.Draw(issue);
             }
@@ -31,17 +41,5 @@ namespace HyperRTS.Editor.Authoring
 
         /// <summary>Override to draw one property your own way; return false to use the default field.</summary>
         protected virtual bool DrawProperty(SerializedProperty property) => false;
-
-        /// <summary>Records an undo step when a handle in the surrounding change check moved.</summary>
-        protected bool Changed(string undoLabel)
-        {
-            if (!EditorGUI.EndChangeCheck())
-            {
-                return false;
-            }
-
-            Undo.RecordObject(target, undoLabel);
-            return true;
-        }
     }
 }

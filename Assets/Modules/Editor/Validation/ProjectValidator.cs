@@ -42,13 +42,15 @@ namespace HyperRTS.Editor.Validation
                 }
 
                 anySubScene |= scene.isSubScene;
-                foreach (var root in scene.GetRootGameObjects())
+                var roots = scene.GetRootGameObjects();
+                foreach (var root in roots)
                 {
                     CheckComponents(root, issues);
                     matches.AddRange(root.GetComponentsInChildren<MatchAuthoring>(true));
                     entities.AddRange(root.GetComponentsInChildren<GameEntityAuthoring>(true));
-                    CheckNetcodeBootstrap(scene, root, issues);
                 }
+
+                CheckNetcodeBootstrap(scene, roots, issues);
             }
 
             CheckMatchCount(matches, anySubScene, issues);
@@ -107,10 +109,7 @@ namespace HyperRTS.Editor.Validation
 
         private static void CheckPlacement(MatchAuthoring match, List<GameEntityAuthoring> entities, List<ValidationIssue> issues)
         {
-            var center = match.transform.position;
-            var bounds = new Rect(center.x - match.mapSize.x * 0.5f, center.z - match.mapSize.y * 0.5f,
-                match.mapSize.x, match.mapSize.y);
-
+            var bounds = match.MapRect;
             foreach (var entity in entities)
             {
                 if (entity.owner > match.players.Count)
@@ -127,20 +126,17 @@ namespace HyperRTS.Editor.Validation
             }
         }
 
-        private static void CheckNetcodeBootstrap(Scene scene, GameObject root, List<ValidationIssue> issues)
+        private static void CheckNetcodeBootstrap(Scene scene, GameObject[] roots, List<ValidationIssue> issues)
         {
-            if (scene.isSubScene || !root.GetComponentInChildren<SubScene>(true))
+            var subSceneRoot = roots.FirstOrDefault(root => root.GetComponentInChildren<SubScene>(true) != null);
+            if (scene.isSubScene || subSceneRoot == null ||
+                roots.Any(root => root.GetComponentInChildren<OverrideAutomaticNetcodeBootstrap>(true) != null))
             {
                 return;
             }
 
-            var hasOverride = scene.GetRootGameObjects()
-                .Any(go => go.GetComponentInChildren<OverrideAutomaticNetcodeBootstrap>(true) != null);
-            if (!hasOverride)
-            {
-                issues.Add(new ValidationIssue(MessageType.Warning,
-                    "No OverrideAutomaticNetcodeBootstrap: Netcode will replace the world. Add the RTS World rig.", root));
-            }
+            issues.Add(new ValidationIssue(MessageType.Warning,
+                "No OverrideAutomaticNetcodeBootstrap: Netcode will replace the world. Add the RTS World rig.", subSceneRoot));
         }
     }
 }

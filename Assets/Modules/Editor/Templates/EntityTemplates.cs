@@ -19,26 +19,9 @@ namespace HyperRTS.Editor.Templates
             return go;
         }
 
-        public static GameObject CombatUnit()
-        {
-            var go = Unit("Soldier");
-            go.AddComponent<WeaponAuthoring>();
-            return go;
-        }
-
-        public static GameObject Worker()
-        {
-            var go = Unit("Worker");
-            go.AddComponent<BuilderAuthoring>();
-            return go;
-        }
-
-        public static GameObject Harvester()
-        {
-            var go = Unit("Harvester");
-            go.AddComponent<HarvesterAuthoring>();
-            return go;
-        }
+        public static GameObject CombatUnit() => Unit("Soldier").AddComponent<WeaponAuthoring>().gameObject;
+        public static GameObject Worker() => Unit("Worker").AddComponent<BuilderAuthoring>().gameObject;
+        public static GameObject Harvester() => Unit("Harvester").AddComponent<HarvesterAuthoring>().gameObject;
 
         public static GameObject Building(string name = "Building", float width = 4f, float height = 2.5f)
         {
@@ -49,19 +32,8 @@ namespace HyperRTS.Editor.Templates
             return go;
         }
 
-        public static GameObject Producer()
-        {
-            var go = Building("Barracks");
-            go.AddComponent<ProducerAuthoring>();
-            return go;
-        }
-
-        public static GameObject DropOff()
-        {
-            var go = Building("Depot");
-            go.AddComponent<ResourceDropOffAuthoring>();
-            return go;
-        }
+        public static GameObject Producer() => Building("Barracks").AddComponent<ProducerAuthoring>().gameObject;
+        public static GameObject DropOff() => Building("Depot").AddComponent<ResourceDropOffAuthoring>().gameObject;
 
         public static GameObject DefenseTower()
         {

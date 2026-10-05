@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Templates;
@@ -12,18 +11,11 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Tests
 {
-    public class QuickFixTests
+    public class QuickFixTests : TemplateFixture
     {
         private const string Folder = "Assets/_QuickFixTests";
-        private readonly List<GameObject> _created = new();
-
         [TearDown]
-        public void TearDown()
-        {
-            _created.ForEach(Object.DestroyImmediate);
-            _created.Clear();
-            AssetDatabase.DeleteAsset(Folder);
-        }
+        public void DeleteFolder() => AssetDatabase.DeleteAsset(Folder);
 
         [Test]
         public void FitColliderWrapsTheModel()
@@ -75,11 +67,5 @@ namespace HyperRTS.Editor.Tests
 
         private static void Fix(Component component, string label) =>
             AuthoringChecks.For(component).First(issue => issue.FixLabel == label).Fix();
-
-        private GameObject Track(GameObject go)
-        {
-            _created.Add(go);
-            return go;
-        }
     }
 }

@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Authoring
 
         public static void Draw(SerializedProperty property)
         {
-            var match = Object.FindAnyObjectByType<MatchAuthoring>();
+            var match = SceneMatch.Current;
             var slots = match != null ? Mathf.Max(match.players.Count, property.intValue) : MaxPlayers;
             var labels = new GUIContent[slots + 1];
             var values = new int[slots + 1];
@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Authoring
             {
                 EditorGUILayout.IntPopup(property, labels, values, new GUIContent(property.displayName, property.tooltip));
                 var swatch = GUILayoutUtility.GetRect(16f, EditorGUIUtility.singleLineHeight, GUILayout.Width(16f));
-                EditorGUI.DrawRect(swatch, ColorOf(match, property.intValue));
+                EditorGUI.DrawRect(swatch, SceneMatch.PlayerColor(property.intValue));
             }
         }
 
@@ -43,8 +43,5 @@ namespace HyperRTS.Editor.Authoring
 
             return owner <= match.players.Count ? $"{owner}. {match.players[owner - 1].name}" : $"{owner}. (no player slot)";
         }
-
-        private static Color ColorOf(MatchAuthoring match, int owner) =>
-            owner > 0 && match != null && owner <= match.players.Count ? match.players[owner - 1].color : Color.grey;
     }
 }

@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
 using Unity.Collections;
@@ -37,11 +38,6 @@ namespace HyperRTS.Editor.Debugging
                 .WithOptions(EntityQueryOptions.IncludePrefab).Build(entityManager);
             return query.ToEntityArray(Allocator.Temp);
         }
-
-        public static string NameOf(EntityManager entityManager, Entity entity) =>
-            entityManager.HasComponent<Player>(entity)
-                ? entityManager.GetComponentData<Player>(entity).Name.ToString()
-                : entityManager.GetComponentData<EntityInfo>(entity).Name.ToString();
 
         /// <summary>Hands control of a player to you; its AI stops so the two don't fight over it.</summary>
         public static void MakeLocal(EntityManager entityManager, Entity player)
@@ -114,13 +110,12 @@ namespace HyperRTS.Editor.Debugging
         public static float3 ViewCenter(EntityManager entityManager)
         {
             var camera = Camera.main;
-            var ground = new Plane(Vector3.up, Vector3.zero);
             if (camera != null)
             {
                 var ray = camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-                if (ground.Raycast(ray, out var distance))
+                if (CommandMath.TryGroundPoint(ray.origin, ray.direction, 0f, out var point))
                 {
-                    return ray.GetPoint(distance);
+                    return point;
                 }
             }
 

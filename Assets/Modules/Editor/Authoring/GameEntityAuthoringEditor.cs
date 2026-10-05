@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Units;
@@ -11,11 +12,18 @@ namespace HyperRTS.Editor.Authoring
     [CanEditMultipleObjects]
     public class GameEntityAuthoringEditor : AuthoringEditor
     {
+        private string _summary;
+
         public override void OnInspectorGUI()
         {
             if (targets.Length == 1)
             {
-                EditorGUILayout.LabelField(EntitySummary.Line((GameEntityAuthoring)target), EditorStyles.helpBox);
+                if (Event.current.type == EventType.Layout || _summary == null)
+                {
+                    _summary = EntitySummary.Line((GameEntityAuthoring)target);
+                }
+
+                EditorGUILayout.LabelField(_summary, EditorStyles.helpBox);
             }
 
             base.OnInspectorGUI();
@@ -35,30 +43,33 @@ namespace HyperRTS.Editor.Authoring
         private void OnSceneGUI()
         {
             var entity = (GameEntityAuthoring)target;
+            var unit = entity as UnitAuthoring;
+            var building = entity as BuildingAuthoring;
             var center = entity.transform.position;
-            var color = RTSHandles.TeamColor(entity);
+            var color = SceneMatch.PlayerColor(entity.owner);
 
             EditorGUI.BeginChangeCheck();
             var vision = RTSHandles.Radius(center, entity.visionRange, RTSHandles.Faded(Color.white), "Vision");
-            var radius = entity is UnitAuthoring unit ? RTSHandles.Radius(center, unit.radius, color, "Radius") : 0f;
-            var footprint = entity is BuildingAuthoring building
-                ? RTSHandles.Footprint(center, building.footprint, color)
-                : Vector2.zero;
-
-            if (!Changed("Edit " + entity.DisplayName))
+            var radius = unit != null ? RTSHandles.Radius(center, unit.radius, color, "Radius") : 0f;
+            var footprint = building != null ? RTSHandles.Footprint(center, building.footprint, color) : Vector2.zero;
+            if (!EditorGUI.EndChangeCheck())
             {
                 return;
             }
 
-            entity.visionRange = vision;
-            if (entity is UnitAuthoring editedUnit)
+            QuickFixes.Edit(entity, "Edit " + entity.DisplayName, () =>
             {
-                editedUnit.radius = Mathf.Max(0.05f, radius);
-            }
-            else if (entity is BuildingAuthoring editedBuilding)
-            {
-                editedBuilding.footprint = footprint;
-            }
+                entity.visionRange = vision;
+                if (unit != null)
+                {
+                    unit.radius = Mathf.Max(0.05f, radius);
+                }
+
+                if (building != null)
+                {
+                    building.footprint = footprint;
+                }
+            });
         }
     }
 }

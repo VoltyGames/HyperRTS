@@ -1,4 +1,5 @@
 using System.Linq;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Entities;
 using UnityEditor;
@@ -16,7 +17,13 @@ namespace HyperRTS.Editor.Debugging
         [MenuItem("HyperRTS/Cheats", false, 22)]
         public static void Open() => GetWindow<CheatsWindow>("HyperRTS Cheats");
 
-        private void OnInspectorUpdate() => Repaint();
+        private void OnInspectorUpdate()
+        {
+            if (Application.isPlaying)
+            {
+                Repaint();
+            }
+        }
 
         private void OnGUI()
         {
@@ -33,7 +40,7 @@ namespace HyperRTS.Editor.Debugging
                 return;
             }
 
-            var names = players.ToArray().Select(entity => PlayerLabel(entityManager, entity)).ToArray();
+            var names = players.Select(entity => PlayerLabel(entityManager, entity)).ToArray();
             _player = EditorGUILayout.Popup("Player", Mathf.Min(_player, names.Length - 1), names);
             var player = players[_player];
             var faction = entityManager.GetComponentData<Player>(player).Faction;
@@ -87,7 +94,7 @@ namespace HyperRTS.Editor.Debugging
                 return;
             }
 
-            var names = prefabs.ToArray().Select(entity => Cheats.NameOf(entityManager, entity)).ToArray();
+            var names = prefabs.Select(entity => entityManager.GetComponentData<EntityInfo>(entity).Name.ToString()).ToArray();
             using (new EditorGUILayout.HorizontalScope())
             {
                 _prefab = EditorGUILayout.Popup("Spawn", Mathf.Min(_prefab, names.Length - 1), names);
@@ -100,7 +107,7 @@ namespace HyperRTS.Editor.Debugging
 
         private static string PlayerLabel(EntityManager entityManager, Entity player)
         {
-            var name = Cheats.NameOf(entityManager, player);
+            var name = entityManager.GetComponentData<Player>(player).Name.ToString();
             if (entityManager.HasComponent<LocalPlayer>(player))
             {
                 return name + " (you)";

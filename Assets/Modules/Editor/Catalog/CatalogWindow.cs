@@ -17,6 +17,8 @@ namespace HyperRTS.Editor.Catalog
         private const float Narrow = 64f;
 
         private List<GameEntityAuthoring> _prefabs = new();
+        private TechTreeView _techTree;
+        private bool _stale = true;
         private int _tab;
         private string _filter = "";
         private Vector2 _scroll;
@@ -24,9 +26,8 @@ namespace HyperRTS.Editor.Catalog
         [MenuItem("HyperRTS/Catalog", false, 21)]
         public static void Open() => GetWindow<CatalogWindow>("HyperRTS Catalog");
 
-        private void OnEnable() => Reload();
-
-        private void OnProjectChange() => Reload();
+        // The prefab scan is a full project walk, so reload on the next draw instead of on every asset change.
+        private void OnProjectChange() => _stale = true;
 
         private void Reload()
         {
@@ -34,10 +35,16 @@ namespace HyperRTS.Editor.Catalog
                 .OrderBy(prefab => prefab is BuildingAuthoring)
                 .ThenBy(prefab => prefab.DisplayName)
                 .ToList();
+            _stale = false;
         }
 
         private void OnGUI()
         {
+            if (_stale)
+            {
+                Reload();
+            }
+
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 _tab = GUILayout.Toolbar(_tab, Tabs, EditorStyles.toolbarButton, GUILayout.Width(160));
@@ -55,7 +62,13 @@ namespace HyperRTS.Editor.Catalog
             }
             else
             {
-                TechTreeView.Draw(visible, _prefabs);
+                // Rebuilt per layout (one pass over the prefabs) so inspector edits to options show up live.
+                if (_techTree == null || Event.current.type == EventType.Layout)
+                {
+                    _techTree = new TechTreeView(_prefabs);
+                }
+
+                _techTree.Draw(visible);
             }
 
             EditorGUILayout.EndScrollView();
@@ -85,8 +98,7 @@ namespace HyperRTS.Editor.Catalog
             using var row = new EditorGUILayout.HorizontalScope();
             if (GUILayout.Button(prefab.DisplayName, EditorStyles.linkLabel, GUILayout.Width(140f)))
             {
-                UnityEditor.Selection.activeObject = prefab.gameObject;
-                EditorGUIUtility.PingObject(prefab.gameObject);
+                EditorAssets.Reveal(prefab.gameObject);
             }
 
             prefab.maxHealth = Field(prefab, prefab.maxHealth);

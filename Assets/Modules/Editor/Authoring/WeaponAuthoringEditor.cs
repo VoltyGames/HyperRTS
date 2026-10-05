@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Combat;
 using UnityEditor;
 using UnityEngine;
@@ -23,9 +24,9 @@ namespace HyperRTS.Editor.Authoring
 
             EditorGUI.BeginChangeCheck();
             var reach = RTSHandles.Radius(center, weapon.range + self, Color.red, "Reach");
-            if (Changed("Edit Weapon Range"))
+            if (EditorGUI.EndChangeCheck())
             {
-                weapon.range = Mathf.Max(0.1f, reach - self);
+                QuickFixes.Edit(weapon, "Edit Weapon Range", () => weapon.range = Mathf.Max(0.1f, reach - self));
             }
         }
     }
