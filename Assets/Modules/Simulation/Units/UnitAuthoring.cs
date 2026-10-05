@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Units
         [Min(0)]
         public int population = 1;
 
-        public override float FootprintRadius => radius;
+        public override float EntityRadius => radius;
 
         protected override int Population => population;
 

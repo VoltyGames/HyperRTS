@@ -172,7 +172,7 @@ namespace HyperRTS.Simulation.Orders
             for (var i = 0; i < movers.Length; i++)
             {
                 positions[i] = _transforms[movers[i]].Position;
-                var own = _agents.TryGetComponent(movers[i], out var agent) ? agent.Radius : Footprint.DefaultRadius;
+                var own = _agents.TryGetComponent(movers[i], out var agent) ? agent.Radius : EntityRadius.Default;
                 radius = math.max(radius, own);
             }
 

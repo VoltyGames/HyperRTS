@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Authoring
         protected override Action ShapeHandle(Vector3 center, Color color)
         {
             var building = (BuildingAuthoring)target;
-            var footprint = RTSHandles.Footprint(center, building.footprint, color);
+            var footprint = GroundHandles.Box(center, building.footprint, color);
             return () => building.footprint = footprint;
         }
     }

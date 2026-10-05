@@ -68,7 +68,7 @@ namespace HyperRTS.Presentation.Overlays
                 }
 
                 var position = transforms[i].Position;
-                var radius = Footprint.Radius(entityManager, entity);
+                var radius = EntityRadius.Of(entityManager, entity);
                 if (selected)
                 {
                     var size = radius * style.ringScale;

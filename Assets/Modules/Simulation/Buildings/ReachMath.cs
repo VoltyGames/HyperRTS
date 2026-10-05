@@ -11,9 +11,9 @@ namespace HyperRTS.Simulation.Buildings
         /// <summary>Pathing stops at the nearest walkable cell, which may sit up to a cell away from the footprint.</summary>
         public const float Slack = 1f;
 
-        /// <summary>Targets without a <see cref="NavObstacle"/> get the same default extent as <see cref="Footprint"/>.</summary>
+        /// <summary>Targets without a <see cref="NavObstacle"/> get the same default extent as <see cref="EntityRadius"/>.</summary>
         public static float2 HalfExtents(in ComponentLookup<NavObstacle> obstacles, Entity target) =>
-            obstacles.TryGetComponent(target, out var obstacle) ? obstacle.Size * 0.5f : new float2(Footprint.DefaultRadius);
+            obstacles.TryGetComponent(target, out var obstacle) ? obstacle.Size * 0.5f : new float2(EntityRadius.Default);
 
         /// <summary>True when the unit's edge is within <see cref="Slack"/> of the target's XZ footprint box.</summary>
         public static bool InReach(float3 unit, float unitRadius, float3 target, float2 halfExtents)

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Authoring
 {
-    /// <summary>Adds a draggable footprint radius to the entity inspector.</summary>
+    /// <summary>Adds a draggable radius handle to the entity inspector.</summary>
     [CustomEditor(typeof(UnitAuthoring), true)]
     [CanEditMultipleObjects]
     public class UnitAuthoringEditor : GameEntityAuthoringEditor
@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Authoring
         protected override Action ShapeHandle(Vector3 center, Color color)
         {
             var unit = (UnitAuthoring)target;
-            var radius = RTSHandles.Radius(center, unit.radius, color, "Radius");
+            var radius = GroundHandles.Radius(center, unit.radius, color, "Radius");
             return () => unit.radius = Mathf.Max(0.05f, radius);
         }
     }

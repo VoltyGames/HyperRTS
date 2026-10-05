@@ -3,13 +3,13 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>Circle radius of an entity's footprint, shared by spatial queries, weapon ranges and overlays.</summary>
-    public static class Footprint
+    /// <summary>One radius per entity for edge-to-edge distances: spatial queries, weapon ranges, reach and overlays.</summary>
+    public static class EntityRadius
     {
         /// <summary>For entities with neither a <see cref="NavAgent"/> nor a <see cref="NavObstacle"/>.</summary>
-        public const float DefaultRadius = 0.5f;
+        public const float Default = 0.5f;
 
-        public static float Radius(Entity entity, in ComponentLookup<NavAgent> agents,
+        public static float Of(Entity entity, in ComponentLookup<NavAgent> agents,
             in ComponentLookup<NavObstacle> obstacles)
         {
             if (agents.TryGetComponent(entity, out var agent))
@@ -17,10 +17,10 @@ namespace HyperRTS.Simulation.Navigation
                 return agent.Radius;
             }
 
-            return obstacles.TryGetComponent(entity, out var obstacle) ? Radius(obstacle) : DefaultRadius;
+            return obstacles.TryGetComponent(entity, out var obstacle) ? Of(obstacle) : Default;
         }
 
-        public static float Radius(EntityManager entityManager, Entity entity)
+        public static float Of(EntityManager entityManager, Entity entity)
         {
             if (entityManager.HasComponent<NavAgent>(entity))
             {
@@ -28,11 +28,11 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             return entityManager.HasComponent<NavObstacle>(entity)
-                ? Radius(entityManager.GetComponentData<NavObstacle>(entity))
-                : DefaultRadius;
+                ? Of(entityManager.GetComponentData<NavObstacle>(entity))
+                : Default;
         }
 
         /// <summary>Half the longest side, so the circle spans the box's width.</summary>
-        public static float Radius(in NavObstacle obstacle) => math.cmax(obstacle.Size) * 0.5f;
+        public static float Of(in NavObstacle obstacle) => math.cmax(obstacle.Size) * 0.5f;
     }
 }

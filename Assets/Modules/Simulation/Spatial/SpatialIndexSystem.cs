@@ -85,7 +85,7 @@ namespace HyperRTS.Simulation.Spatial
                 {
                     Entity = entity,
                     Position = transform.Position,
-                    Radius = Footprint.Radius(entity, AgentLookup, ObstacleLookup),
+                    Radius = EntityRadius.Of(entity, AgentLookup, ObstacleLookup),
                     Faction = faction.Value,
                     IsUnit = !BuildingLookup.HasComponent(entity),
                 });

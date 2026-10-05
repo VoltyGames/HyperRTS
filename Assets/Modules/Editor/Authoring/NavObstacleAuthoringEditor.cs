@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Authoring
             var obstacle = (NavObstacleAuthoring)target;
 
             EditorGUI.BeginChangeCheck();
-            var size = RTSHandles.Footprint(obstacle.transform.position, obstacle.size, Color.red);
+            var size = GroundHandles.Box(obstacle.transform.position, obstacle.size, Color.red);
             if (EditorGUI.EndChangeCheck())
             {
                 QuickFixes.Edit(obstacle, "Resize Nav Obstacle", () => obstacle.size = size);

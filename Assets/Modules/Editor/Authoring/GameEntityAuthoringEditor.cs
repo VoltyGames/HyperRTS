@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Authoring
             var center = entity.transform.position;
 
             EditorGUI.BeginChangeCheck();
-            var vision = RTSHandles.Radius(center, entity.visionRange, RTSHandles.Faded(Color.white), "Vision");
+            var vision = GroundHandles.Radius(center, entity.visionRange, GroundHandles.Faded(Color.white), "Vision");
             var applyShape = ShapeHandle(center, SceneMatch.PlayerColor(entity.owner));
             if (!EditorGUI.EndChangeCheck())
             {

@@ -52,8 +52,8 @@ namespace HyperRTS.Simulation.Common
 
         public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
 
-        /// <summary>Edge-to-edge reach is measured from this, matching the baked <c>Footprint.Radius</c>.</summary>
-        public abstract float FootprintRadius { get; }
+        /// <summary>Edge-to-edge reach is measured from this, matching the baked <c>EntityRadius</c>.</summary>
+        public abstract float EntityRadius { get; }
 
         protected virtual int Population => 0;
 

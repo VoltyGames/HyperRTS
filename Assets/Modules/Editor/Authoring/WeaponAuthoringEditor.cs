@@ -16,16 +16,16 @@ namespace HyperRTS.Editor.Authoring
         {
             var weapon = (WeaponAuthoring)target;
             var center = weapon.transform.position;
-            var self = weapon.TryGetComponent(out GameEntityAuthoring owner) ? owner.FootprintRadius : Footprint.DefaultRadius;
+            var self = weapon.TryGetComponent(out GameEntityAuthoring owner) ? owner.EntityRadius : EntityRadius.Default;
 
             if (weapon.acquireRange > 0f)
             {
-                Handles.color = RTSHandles.Faded(Color.yellow);
+                Handles.color = GroundHandles.Faded(Color.yellow);
                 Handles.DrawWireDisc(center, Vector3.up, weapon.acquireRange);
             }
 
             EditorGUI.BeginChangeCheck();
-            var reach = RTSHandles.Radius(center, weapon.range + self, Color.red, "Reach");
+            var reach = GroundHandles.Radius(center, weapon.range + self, Color.red, "Reach");
             if (EditorGUI.EndChangeCheck())
             {
                 QuickFixes.Edit(weapon, "Edit Weapon Range", () => weapon.range = Mathf.Max(0.1f, reach - self));

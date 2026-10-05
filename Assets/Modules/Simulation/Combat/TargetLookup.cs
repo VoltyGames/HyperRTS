@@ -43,6 +43,6 @@ namespace HyperRTS.Simulation.Combat
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
 
-        public float Radius(Entity entity) => Footprint.Radius(entity, _agents, _obstacles);
+        public float Radius(Entity entity) => EntityRadius.Of(entity, _agents, _obstacles);
     }
 }

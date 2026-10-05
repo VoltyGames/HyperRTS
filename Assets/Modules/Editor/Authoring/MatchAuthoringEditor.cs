@@ -103,7 +103,7 @@ namespace HyperRTS.Editor.Authoring
             }
 
             EditorGUI.BeginChangeCheck();
-            var size = RTSHandles.Footprint(center, match.mapSize, new Color(1f, 0.85f, 0.2f));
+            var size = GroundHandles.Box(center, match.mapSize, new Color(1f, 0.85f, 0.2f));
             if (EditorGUI.EndChangeCheck())
             {
                 QuickFixes.Edit(match, "Resize Map", () => match.mapSize = size);
