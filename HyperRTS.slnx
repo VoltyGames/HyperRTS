@@ -1,9 +1,10 @@
 ﻿<Solution>
   <Project Path="HyperRTS.Simulation.csproj" />
   <Project Path="HyperRTS.Presentation.csproj" />
-  <Project Path="HyperRTS.Input.csproj" />
   <Project Path="HyperRTS.Editor.csproj" />
+  <Project Path="HyperRTS.Input.csproj" />
   <Project Path="HyperRTS.Presentation.Tests.csproj" />
   <Project Path="HyperRTS.Core.csproj" />
   <Project Path="HyperRTS.Simulation.Tests.csproj" />
+  <Project Path="HyperRTS.Editor.Tests.csproj" />
 </Solution>
