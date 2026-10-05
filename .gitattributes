@@ -1,0 +1,30 @@
+# LF in the repository and in every working tree, on every OS (Unity writes its YAML with LF).
+* text=auto eol=lf
+
+# Binary assets: never convert or diff.
+# FBX and OBJ stay on auto-detection, since ASCII exports are text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.bmp binary
+*.tga binary
+*.tif binary
+*.tiff binary
+*.psd binary
+*.exr binary
+*.hdr binary
+*.blend binary
+*.mp3 binary
+*.wav binary
+*.ogg binary
+*.aif binary
+*.aiff binary
+*.ttf binary
+*.otf binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.a binary
+*.zip binary
+*.pdf binary

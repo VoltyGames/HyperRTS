@@ -9,14 +9,15 @@ root = true
 indent_style = space
 trim_trailing_whitespace = true
 insert_final_newline = true
+# LF everywhere, as Unity writes its YAML; .gitattributes enforces it in git.
+end_of_line = lf
 
 ##########################################
-# C# — matches Unity-generated files (UTF-8 BOM + CRLF), 4-space, Allman braces
+# C# — UTF-8 BOM, 4-space, Allman braces
 ##########################################
 [*.cs]
 indent_size = 4
 charset = utf-8-bom
-end_of_line = crlf
 
 # using directives
 dotnet_sort_system_directives_first = true
