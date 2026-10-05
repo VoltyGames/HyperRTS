@@ -15,12 +15,6 @@ namespace HyperRTS.Simulation.Navigation
         [Tooltip("Blocked area (X by Z) centred on this transform.")]
         public Vector2 size = new(2f, 2f);
 
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireCube(transform.position, new Vector3(size.x, 0.1f, size.y));
-        }
-
         public class Baker : Baker<NavObstacleAuthoring>
         {
             public override void Bake(NavObstacleAuthoring authoring)

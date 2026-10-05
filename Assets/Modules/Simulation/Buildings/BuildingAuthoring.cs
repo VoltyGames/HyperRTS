@@ -23,12 +23,6 @@ namespace HyperRTS.Simulation.Buildings
         [Tooltip("Start as a construction site instead of finished (for scene-placed buildings).")]
         public bool startsUnderConstruction;
 
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireCube(transform.position, new Vector3(footprint.x, 0.1f, footprint.y));
-        }
-
         public class Baker : Baker<BuildingAuthoring>
         {
             public override void Bake(BuildingAuthoring authoring)

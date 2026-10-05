@@ -30,14 +30,6 @@ namespace HyperRTS.Simulation.Units
 
         protected override int Population => population;
 
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(transform.position, radius);
-            Gizmos.color = new Color(1f, 1f, 1f, 0.25f);
-            Gizmos.DrawWireSphere(transform.position, visionRange);
-        }
-
         public class Baker : Baker<UnitAuthoring>
         {
             public override void Bake(UnitAuthoring authoring)

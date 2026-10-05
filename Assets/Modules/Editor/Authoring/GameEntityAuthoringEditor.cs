@@ -1,42 +1,43 @@
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Units;
 using UnityEditor;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Authoring
 {
-    /// <summary>Default inspector plus setup warnings for units and buildings.</summary>
+    /// <summary>Unit and building inspector: setup warnings plus draggable radius, footprint and vision handles.</summary>
     [CustomEditor(typeof(GameEntityAuthoring), true)]
     [CanEditMultipleObjects]
-    public class GameEntityAuthoringEditor : UnityEditor.Editor
+    public class GameEntityAuthoringEditor : AuthoringEditor
     {
-        public override void OnInspectorGUI()
+        private void OnSceneGUI()
         {
-            DrawDefaultInspector();
+            var entity = (GameEntityAuthoring)target;
+            var center = entity.transform.position;
+            var color = RTSHandles.TeamColor(entity);
 
-            var authoring = (GameEntityAuthoring)target;
-            if (authoring.GetComponentInChildren<Collider>() == null)
-            {
-                EditorGUILayout.HelpBox("No collider: this can't be clicked, selected or right-click targeted.",
-                    MessageType.Warning);
-            }
+            EditorGUI.BeginChangeCheck();
+            var vision = RTSHandles.Radius(center, entity.visionRange, RTSHandles.Faded(Color.white), "Vision");
+            var radius = entity is UnitAuthoring unit ? RTSHandles.Radius(center, unit.radius, color, "Radius") : 0f;
+            var footprint = entity is BuildingAuthoring building
+                ? RTSHandles.Footprint(center, building.footprint, color)
+                : Vector2.zero;
 
-            if (authoring.GetComponentInChildren<Renderer>() == null)
-            {
-                EditorGUILayout.HelpBox("No renderer: this will be invisible in the Game view.", MessageType.Info);
-            }
-
-            if (authoring.cost.Exists(quantity => quantity.type == null))
-            {
-                EditorGUILayout.HelpBox("A cost entry has no resource type and will be ignored.", MessageType.Warning);
-            }
-
-            if (!authoring.gameObject.scene.IsValid() || authoring.gameObject.scene.isSubScene)
+            if (!Changed("Edit " + entity.DisplayName))
             {
                 return;
             }
 
-            EditorGUILayout.HelpBox("Entities only bake inside a SubScene. Move this into the scene's SubScene.",
-                MessageType.Warning);
+            entity.visionRange = vision;
+            if (entity is UnitAuthoring editedUnit)
+            {
+                editedUnit.radius = Mathf.Max(0.05f, radius);
+            }
+            else if (entity is BuildingAuthoring editedBuilding)
+            {
+                editedBuilding.footprint = footprint;
+            }
         }
     }
 }

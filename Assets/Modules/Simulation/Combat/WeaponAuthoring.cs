@@ -41,12 +41,6 @@ namespace HyperRTS.Simulation.Combat
         [Tooltip("How the unit reacts to enemies when not ordered.")]
         public Stance stance = Stance.Aggressive;
 
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, range);
-        }
-
         public class Baker : Baker<WeaponAuthoring>
         {
             public override void Bake(WeaponAuthoring authoring)

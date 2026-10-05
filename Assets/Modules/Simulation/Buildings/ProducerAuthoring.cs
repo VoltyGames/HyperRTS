@@ -25,12 +25,6 @@ namespace HyperRTS.Simulation.Buildings
         [Range(1, 10)]
         public int queueLimit = 5;
 
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(transform.TransformPoint(spawnOffset), 0.5f);
-        }
-
         public class Baker : Baker<ProducerAuthoring>
         {
             public override void Bake(ProducerAuthoring authoring)
