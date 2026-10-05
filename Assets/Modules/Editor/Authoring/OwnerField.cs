@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using UnityEditor;
 using UnityEngine;
@@ -7,12 +8,10 @@ namespace HyperRTS.Editor.Authoring
     /// <summary>Owner number as a dropdown of the scene Match's players, with the owner's colour beside it.</summary>
     public static class OwnerField
     {
-        private const int MaxPlayers = 15;
-
         public static void Draw(SerializedProperty property)
         {
             var match = SceneMatch.Current;
-            var slots = match != null ? Mathf.Max(match.players.Count, property.intValue) : MaxPlayers;
+            var slots = match != null ? Mathf.Max(match.players.Count, property.intValue) : GameEntityAuthoring.MaxOwner;
             var labels = new GUIContent[slots + 1];
             var values = new int[slots + 1];
             for (var i = 0; i <= slots; i++)

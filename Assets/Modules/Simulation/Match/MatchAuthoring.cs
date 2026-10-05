@@ -35,8 +35,8 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("Player slots. Slot 1 is faction 1, the 'Owner' number on units and buildings.")]
         public List<PlayerSetup> players = new()
         {
-            new PlayerSetup { name = "Player", team = 1, color = new Color(0.2f, 0.45f, 1f) },
-            new PlayerSetup { name = "Enemy", team = 2, color = new Color(0.9f, 0.2f, 0.15f), control = PlayerControl.AI },
+            new PlayerSetup { name = "Player", team = 1, color = PlayerSetup.Palette[0] },
+            new PlayerSetup { name = "Enemy", team = 2, color = PlayerSetup.Palette[1], control = PlayerControl.AI },
         };
 
         [Header("AI")]
@@ -50,12 +50,6 @@ namespace HyperRTS.Simulation.Match
 
         /// <summary>The map's ground rectangle (X by Z), centred on this transform.</summary>
         public Rect MapRect => new(new Vector2(transform.position.x, transform.position.z) - mapSize * 0.5f, mapSize);
-
-        private void OnDrawGizmos()
-        {
-            Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.8f);
-            Gizmos.DrawWireCube(transform.position, new Vector3(mapSize.x, 0f, mapSize.y));
-        }
 
         public class Baker : Baker<MatchAuthoring>
         {

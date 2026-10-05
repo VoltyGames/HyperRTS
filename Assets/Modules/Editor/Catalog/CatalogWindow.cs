@@ -16,7 +16,19 @@ namespace HyperRTS.Editor.Catalog
         private static readonly string[] Tabs = { "Stats", "Tech Tree" };
         private const float Narrow = 64f;
 
+        private static readonly (string Header, System.Type Component, string Field)[] Columns =
+        {
+            ("HP", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.maxHealth)),
+            ("Build s", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.buildTime)),
+            ("Vision", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.visionRange)),
+            ("Speed", typeof(UnitAuthoring), nameof(UnitAuthoring.moveSpeed)),
+            ("Damage", typeof(WeaponAuthoring), nameof(WeaponAuthoring.damage)),
+            ("Cooldown", typeof(WeaponAuthoring), nameof(WeaponAuthoring.cooldown)),
+            ("Range", typeof(WeaponAuthoring), nameof(WeaponAuthoring.range)),
+        };
+
         private List<GameEntityAuthoring> _prefabs = new();
+        private readonly Dictionary<Component, SerializedObject> _serialized = new();
         private TechTreeView _techTree;
         private bool _stale = true;
         private int _tab;
@@ -29,8 +41,11 @@ namespace HyperRTS.Editor.Catalog
         // The prefab scan is a full project walk, so reload on the next draw instead of on every asset change.
         private void OnProjectChange() => _stale = true;
 
+        private void OnDisable() => ClearSerialized();
+
         private void Reload()
         {
+            ClearSerialized();
             _prefabs = EditorAssets.EntityPrefabs()
                 .OrderBy(prefab => prefab is BuildingAuthoring)
                 .ThenBy(prefab => prefab.DisplayName)
@@ -74,16 +89,17 @@ namespace HyperRTS.Editor.Catalog
             EditorGUILayout.EndScrollView();
         }
 
-        private static void DrawStats(List<GameEntityAuthoring> prefabs)
+        private void DrawStats(List<GameEntityAuthoring> prefabs)
         {
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 Header("Name", 140f);
-                foreach (var column in new[] { "HP", "Build s", "Vision", "Speed", "Damage", "Cooldown", "DPS", "Range" })
+                foreach (var column in Columns)
                 {
-                    Header(column, Narrow);
+                    Header(column.Header, Narrow);
                 }
 
+                Header("DPS", Narrow);
                 GUILayout.Label("Cost", EditorStyles.miniBoldLabel);
             }
 
@@ -93,7 +109,7 @@ namespace HyperRTS.Editor.Catalog
             }
         }
 
-        private static void DrawRow(GameEntityAuthoring prefab)
+        private void DrawRow(GameEntityAuthoring prefab)
         {
             using var row = new EditorGUILayout.HorizontalScope();
             if (GUILayout.Button(prefab.DisplayName, EditorStyles.linkLabel, GUILayout.Width(140f)))
@@ -101,52 +117,45 @@ namespace HyperRTS.Editor.Catalog
                 EditorAssets.Reveal(prefab.gameObject);
             }
 
-            prefab.maxHealth = Field(prefab, prefab.maxHealth);
-            prefab.buildTime = Field(prefab, prefab.buildTime);
-            prefab.visionRange = Field(prefab, prefab.visionRange);
-
-            if (prefab is UnitAuthoring unit)
+            foreach (var column in Columns)
             {
-                unit.moveSpeed = Field(unit, unit.moveSpeed);
-            }
-            else
-            {
-                GUILayout.Label("-", GUILayout.Width(Narrow));
+                var component = prefab.GetComponent(column.Component);
+                if (component == null)
+                {
+                    GUILayout.Label("-", GUILayout.Width(Narrow));
+                    continue;
+                }
+
+                // PropertyField keeps the field's [Min] limits, undo and prefab overrides.
+                var serialized = Serialized(component);
+                serialized.Update();
+                EditorGUILayout.PropertyField(serialized.FindProperty(column.Field), GUIContent.none, GUILayout.Width(Narrow));
+                serialized.ApplyModifiedProperties();
             }
 
-            DrawWeapon(prefab.GetComponent<WeaponAuthoring>());
+            var weapon = prefab.GetComponent<WeaponAuthoring>();
+            GUILayout.Label(weapon != null ? EntitySummary.Dps(weapon).ToString("0.#") : "-", GUILayout.Width(Narrow));
             GUILayout.Label(EntitySummary.CostText(prefab), EditorStyles.miniLabel);
         }
 
-        private static void DrawWeapon(WeaponAuthoring weapon)
+        private SerializedObject Serialized(Component component)
         {
-            if (weapon == null)
+            if (!_serialized.TryGetValue(component, out var serialized))
             {
-                for (var i = 0; i < 4; i++)
-                {
-                    GUILayout.Label("-", GUILayout.Width(Narrow));
-                }
-
-                return;
+                _serialized[component] = serialized = new SerializedObject(component);
             }
 
-            weapon.damage = Field(weapon, weapon.damage);
-            weapon.cooldown = Mathf.Max(0.05f, Field(weapon, weapon.cooldown));
-            GUILayout.Label(EntitySummary.Dps(weapon).ToString("0.#"), GUILayout.Width(Narrow));
-            weapon.range = Field(weapon, weapon.range);
+            return serialized;
         }
 
-        private static float Field(Object target, float value)
+        private void ClearSerialized()
         {
-            EditorGUI.BeginChangeCheck();
-            var next = EditorGUILayout.DelayedFloatField(value, GUILayout.Width(Narrow));
-            if (EditorGUI.EndChangeCheck())
+            foreach (var serialized in _serialized.Values)
             {
-                Undo.RecordObject(target, "Edit Stats");
-                EditorUtility.SetDirty(target);
+                serialized.Dispose();
             }
 
-            return next;
+            _serialized.Clear();
         }
 
         private static void Header(string text, float width) =>

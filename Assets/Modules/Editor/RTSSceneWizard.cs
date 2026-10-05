@@ -13,12 +13,6 @@ namespace HyperRTS.Editor
     /// <summary>HyperRTS ▸ Create RTS Scene: a playable scene (rig, ground, SubScene with Match and bases) and docs links.</summary>
     public class RTSSceneWizard : ScriptableWizard
     {
-        private static readonly Color[] PlayerColors =
-        {
-            new(0.2f, 0.45f, 1f), new(0.9f, 0.2f, 0.15f), new(0.25f, 0.8f, 0.3f), new(0.95f, 0.8f, 0.2f),
-            new(0.6f, 0.3f, 0.9f), new(1f, 0.55f, 0.15f), new(0.2f, 0.8f, 0.8f), new(0.95f, 0.45f, 0.7f),
-        };
-
         [Tooltip("Playable area (X by Z); the ground is sized to match.")]
         public Vector2 mapSize = new(200f, 200f);
 
@@ -97,7 +91,7 @@ namespace HyperRTS.Editor
                 {
                     name = i == 0 ? "Player" : $"AI {i}",
                     team = i + 1,
-                    color = PlayerColors[i % PlayerColors.Length],
+                    color = PlayerSetup.Palette[i % PlayerSetup.Palette.Length],
                     control = i == 0 ? PlayerControl.LocalHuman : PlayerControl.AI,
                 });
             }

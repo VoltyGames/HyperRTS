@@ -9,6 +9,8 @@ namespace HyperRTS.Simulation.Common
     /// <summary>Base for <c>UnitAuthoring</c> and <c>BuildingAuthoring</c>: identity, owner, health, vision, cost.</summary>
     public abstract class GameEntityAuthoring : MonoBehaviour
     {
+        public const int MaxOwner = 15;
+
         [Header("Identity")]
         [Tooltip("Name shown in the HUD. Instances sharing a name are one type (double-click, prerequisites).")]
         public string displayName;
@@ -17,7 +19,7 @@ namespace HyperRTS.Simulation.Common
         public Texture2D icon;
 
         [Tooltip("Owning player number from MatchAuthoring (1 = first player). 0 = neutral.")]
-        [Range(0, 15)]
+        [Range(0, MaxOwner)]
         public int owner = 1;
 
         [Header("Durability")]

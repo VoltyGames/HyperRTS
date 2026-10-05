@@ -79,6 +79,14 @@ namespace HyperRTS.Editor.Authoring
             return counts;
         }
 
+        // Keeps the map visible when the Match isn't selected; the draggable box replaces it when it is.
+        [DrawGizmo(GizmoType.NonSelected)]
+        private static void DrawMapOutline(MatchAuthoring match, GizmoType type)
+        {
+            Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.8f);
+            Gizmos.DrawWireCube(match.transform.position, new Vector3(match.mapSize.x, 0f, match.mapSize.y));
+        }
+
         private void OnSceneGUI()
         {
             var match = (MatchAuthoring)target;
