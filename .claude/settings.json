@@ -15,5 +15,8 @@
       "Read(./**/secrets/**)",
       "Edit(Assets/ThirdParty/**)"
     ]
+  },
+  "enabledPlugins": {
+    "unity@unity-agent-plugin": true
   }
 }
