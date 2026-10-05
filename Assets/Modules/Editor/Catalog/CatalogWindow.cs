@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Authoring;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
@@ -102,7 +103,7 @@ namespace HyperRTS.Editor.Catalog
             }
 
             DrawWeapon(prefab.GetComponent<WeaponAuthoring>());
-            GUILayout.Label(CostText(prefab), EditorStyles.miniLabel);
+            GUILayout.Label(EntitySummary.CostText(prefab), EditorStyles.miniLabel);
         }
 
         private static void DrawWeapon(WeaponAuthoring weapon)
@@ -119,7 +120,7 @@ namespace HyperRTS.Editor.Catalog
 
             weapon.damage = Field(weapon, weapon.damage);
             weapon.cooldown = Mathf.Max(0.05f, Field(weapon, weapon.cooldown));
-            GUILayout.Label((weapon.damage / weapon.cooldown).ToString("0.#"), GUILayout.Width(Narrow));
+            GUILayout.Label(EntitySummary.Dps(weapon).ToString("0.#"), GUILayout.Width(Narrow));
             weapon.range = Field(weapon, weapon.range);
         }
 
@@ -135,10 +136,6 @@ namespace HyperRTS.Editor.Catalog
 
             return next;
         }
-
-        private static string CostText(GameEntityAuthoring prefab) =>
-            string.Join(", ", prefab.cost.Where(quantity => quantity.type != null)
-                .Select(quantity => $"{quantity.amount} {quantity.type.name}"));
 
         private static void Header(string text, float width) =>
             GUILayout.Label(text, EditorStyles.miniBoldLabel, GUILayout.Width(width));

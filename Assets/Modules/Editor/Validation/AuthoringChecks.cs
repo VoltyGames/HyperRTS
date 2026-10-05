@@ -41,7 +41,8 @@ namespace HyperRTS.Editor.Validation
         {
             if (entity.GetComponentInChildren<Collider>() == null)
             {
-                Warn(issues, entity, "No collider: this can't be clicked, selected or right-click targeted.");
+                Warn(issues, entity, "No collider: this can't be clicked, selected or right-click targeted.",
+                    "Fit Collider", () => QuickFixes.FitCollider(entity));
             }
 
             if (entity.GetComponentInChildren<Renderer>() == null)
@@ -51,7 +52,8 @@ namespace HyperRTS.Editor.Validation
 
             if (entity.cost.Exists(quantity => quantity.type == null))
             {
-                Warn(issues, entity, "A cost entry has no resource type and will be ignored.");
+                Warn(issues, entity, "A cost entry has no resource type and will be ignored.", "Remove Empty",
+                    () => QuickFixes.RemoveEmpty(entity, entity.cost, quantity => quantity.type == null));
             }
 
             if (entity.prerequisites.Exists(prerequisite => prerequisite != null && prerequisite is not BuildingAuthoring))
@@ -74,23 +76,31 @@ namespace HyperRTS.Editor.Validation
                 Mathf.Abs(producer.spawnOffset.x) < building.footprint.x * 0.5f &&
                 Mathf.Abs(producer.spawnOffset.z) < building.footprint.y * 0.5f)
             {
-                Warn(issues, producer, "Spawn offset is inside the footprint; units will spawn blocked.");
+                Warn(issues, producer, "Spawn offset is inside the footprint; units will spawn blocked.", "Move Outside",
+                    () => QuickFixes.Edit(producer, "Move Spawn Point",
+                        () => producer.spawnOffset = new Vector3(0f, 0f, -(building.footprint.y * 0.5f + 1.5f))));
             }
         }
 
         private static void CheckOptions<T>(Component owner, List<T> options, string label, List<ValidationIssue> issues)
             where T : Object
         {
+            if (options.Exists(option => option == null))
+            {
+                Warn(issues, owner, $"{label} list has empty entries that will be ignored.", "Remove Empty",
+                    () => QuickFixes.RemoveEmpty(owner, options, option => option == null));
+            }
+
             foreach (var option in options)
             {
-                if (option == null)
+                if (option == null || PrefabUtility.IsPartOfPrefabAsset(option))
                 {
-                    Warn(issues, owner, $"{label} is empty and will be ignored.");
+                    continue;
                 }
-                else if (!PrefabUtility.IsPartOfPrefabAsset(option))
-                {
-                    Warn(issues, owner, $"{label} '{option.name}' is a scene object; reference the prefab asset.");
-                }
+
+                var hasSource = PrefabUtility.GetCorrespondingObjectFromSource(option) != null;
+                Warn(issues, owner, $"{label} '{option.name}' is a scene object; reference the prefab asset.",
+                    hasSource ? "Use Prefab" : null, hasSource ? () => QuickFixes.UsePrefab(owner, options, option) : null);
             }
         }
 
@@ -103,7 +113,8 @@ namespace HyperRTS.Editor.Validation
 
             if (node.GetComponentInChildren<Collider>() == null)
             {
-                Warn(issues, node, "No collider: harvesters can't be right-click ordered to gather here.");
+                Warn(issues, node, "No collider: harvesters can't be right-click ordered to gather here.", "Fit Collider",
+                    () => QuickFixes.FitCollider(node));
             }
         }
 
@@ -141,7 +152,8 @@ namespace HyperRTS.Editor.Validation
             }
         }
 
-        private static void Warn(List<ValidationIssue> issues, Object context, string message) =>
-            issues.Add(new ValidationIssue(MessageType.Warning, message, context));
+        private static void Warn(List<ValidationIssue> issues, Object context, string message,
+            string fixLabel = null, System.Action fix = null) =>
+            issues.Add(new ValidationIssue(MessageType.Warning, message, context, fixLabel, fix));
     }
 }

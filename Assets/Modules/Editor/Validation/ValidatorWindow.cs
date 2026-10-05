@@ -13,7 +13,11 @@ namespace HyperRTS.Editor.Validation
         [MenuItem("HyperRTS/Validate", false, 20)]
         public static void Open() => GetWindow<ValidatorWindow>("HyperRTS Validator").Refresh();
 
-        private void Refresh() => _issues = ProjectValidator.Run();
+        private void Refresh()
+        {
+            _issues = ProjectValidator.Run();
+            Repaint();
+        }
 
         private void OnGUI()
         {
@@ -39,17 +43,21 @@ namespace HyperRTS.Editor.Validation
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
             foreach (var issue in _issues)
             {
-                DrawIssue(issue);
+                if (DrawIssue(issue))
+                {
+                    EditorApplication.delayCall += Refresh;
+                    break;
+                }
             }
 
             EditorGUILayout.EndScrollView();
         }
 
-        private static void DrawIssue(ValidationIssue issue)
+        /// <summary>Returns true when a quick fix ran and the list is stale.</summary>
+        private static bool DrawIssue(ValidationIssue issue)
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUILayout.HelpBox(issue.Message, issue.Severity);
                 using (new EditorGUI.DisabledScope(issue.Context == null))
                 {
                     var label = issue.Context != null ? issue.Context.name : "-";
@@ -58,6 +66,11 @@ namespace HyperRTS.Editor.Validation
                         UnityEditor.Selection.activeObject = issue.Context;
                         EditorGUIUtility.PingObject(issue.Context);
                     }
+                }
+
+                using (new EditorGUILayout.VerticalScope())
+                {
+                    return IssueGUI.Draw(issue);
                 }
             }
         }

@@ -76,9 +76,15 @@ Add a rule to `AuthoringChecks.For` and every one of these picks it up. Closed S
 
 ## Inspectors
 
-Every HyperRTS authoring component draws its default inspector plus its validation warnings. The **Match**
-inspector also counts entities per player in the open scenes, frames the map in the Scene view, and previews the nav
-and fog grids.
+Every HyperRTS authoring component draws its default inspector plus its validation warnings. Warnings with an
+obvious fix carry a button (**Fit Collider**, **Use Prefab**, **Remove Empty**, **Move Outside**), also shown in
+**HyperRTS ▸ Validate**; each fix is one undo step ([`QuickFixes`](../Assets/Modules/Editor/Validation/QuickFixes.cs)).
+
+Unit and building inspectors open with a one-line summary (for example "Unit · Weapon, Builder · 12 DPS · 150
+Supplies") and show **Owner** as a dropdown of the scene Match's players with their colour. The **Match** inspector
+counts entities per player in the open scenes, frames the map in the Scene view, and previews the nav and fog grids.
+
+To customise one field, override `AuthoringEditor.DrawProperty` and leave the rest to the default drawing.
 
 ## Play-mode debugging
 

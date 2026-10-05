@@ -11,6 +11,27 @@ namespace HyperRTS.Editor.Authoring
     [CanEditMultipleObjects]
     public class GameEntityAuthoringEditor : AuthoringEditor
     {
+        public override void OnInspectorGUI()
+        {
+            if (targets.Length == 1)
+            {
+                EditorGUILayout.LabelField(EntitySummary.Line((GameEntityAuthoring)target), EditorStyles.helpBox);
+            }
+
+            base.OnInspectorGUI();
+        }
+
+        protected override bool DrawProperty(SerializedProperty property)
+        {
+            if (property.name != nameof(GameEntityAuthoring.owner))
+            {
+                return false;
+            }
+
+            OwnerField.Draw(property);
+            return true;
+        }
+
         private void OnSceneGUI()
         {
             var entity = (GameEntityAuthoring)target;
