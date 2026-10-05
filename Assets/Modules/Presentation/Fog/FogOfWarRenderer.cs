@@ -90,7 +90,12 @@ namespace HyperRTS.Presentation.Fog
 
         private void Draw(in FogOfWar fog)
         {
-            _quad ??= OverlayMeshes.FlatQuad();
+            // Unity null check, not ??=: a recompile in Play mode leaves a fake-null mesh that ??= keeps.
+            if (_quad == null)
+            {
+                _quad = OverlayMeshes.FlatQuad();
+            }
+
             _properties ??= new MaterialPropertyBlock();
             _properties.SetTexture(FogTexId, _texture);
 

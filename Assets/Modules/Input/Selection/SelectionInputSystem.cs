@@ -33,7 +33,6 @@ namespace HyperRTS.Input.Selection
         protected override void OnCreate()
         {
             _actions = new RTSInputActions();
-            _actions.Selection.Enable();
 
             var selection = _actions.Selection;
             _groupKeys = new[] { selection.Group1, selection.Group2, selection.Group3, selection.Group4, selection.Group5 };
@@ -44,6 +43,11 @@ namespace HyperRTS.Input.Selection
             SingletonUtility.Ensure<PlacementState>(EntityManager);
             SingletonUtility.Ensure<PointerState>(EntityManager);
         }
+
+        // Not in OnCreate: without domain reload the Input System wipes action states after the world is created.
+        protected override void OnStartRunning() => _actions.Selection.Enable();
+
+        protected override void OnStopRunning() => _actions.Selection.Disable();
 
         protected override void OnDestroy()
         {

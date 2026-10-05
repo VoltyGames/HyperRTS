@@ -22,13 +22,17 @@ namespace HyperRTS.Input.Commands
         protected override void OnCreate()
         {
             _actions = new RTSInputActions();
-            _actions.Commands.Enable();
             _pointer = new WorldPointer(ref CheckedStateRef);
 
             SingletonUtility.Ensure<PlacementState>(EntityManager);
             SingletonUtility.Ensure<PointerState>(EntityManager);
             RequireForUpdate<LocalPlayer>();
         }
+
+        // Not in OnCreate: without domain reload the Input System wipes action states after the world is created.
+        protected override void OnStartRunning() => _actions.Commands.Enable();
+
+        protected override void OnStopRunning() => _actions.Commands.Disable();
 
         protected override void OnDestroy()
         {
