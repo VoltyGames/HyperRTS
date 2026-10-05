@@ -9,11 +9,11 @@ inherit the same polish.
 | Menu | What it does |
 | --- | --- |
 | **HyperRTS ▸ Create RTS Scene...** | Wizard: map size, player count (1 human, the rest AI) and an optional starting-base prefab placed for each player. Builds light, ground, `RTSWorld` rig and a SubScene with the `Match` ([`RTSSceneWizard.cs`](../Assets/Modules/Editor/RTSSceneWizard.cs)) |
+| **HyperRTS ▸ Generate Component Icons** | Regenerates the per-module icons in `Assets/Modules/Editor/Icons/` |
 | **HyperRTS ▸ Validate** | Lists setup problems in every HyperRTS prefab and the open scenes; click one to select the object ([`Validation/`](../Assets/Modules/Editor/Validation/)) |
 | **HyperRTS ▸ Catalog** | Every unit and building prefab in one table: edit HP, build time, vision, speed, damage, cooldown and range, see DPS and cost. The Tech Tree tab shows what each one requires, is made by, makes and unlocks ([`Catalog/`](../Assets/Modules/Editor/Catalog/)) |
 | **HyperRTS ▸ Cheats** | Play mode: add resources, instant build, toggle fog, spawn any entity prefab at the camera's view point, control another player, game speed ([`Debugging/`](../Assets/Modules/Editor/Debugging/)) |
 | **HyperRTS ▸ Documentation** | Opens the getting-started guide or the module reference |
-| **HyperRTS ▸ Tools ▸ Generate Component Icons** | Regenerates the per-module icons in `Assets/Modules/Editor/Icons/` |
 | **GameObject ▸ HyperRTS ▸ RTS World (Camera + HUD)**, **Match** | Drops the rig prefab or a Match |
 | **GameObject ▸ HyperRTS ▸ Units / Buildings / Map ▸ …** | Role templates in the scene: Unit, Combat Unit, Worker, Harvester, Building, Producer, Resource Drop-Off, Defense Tower, Resource Node, Nav Obstacle. A root with collider and authoring, and a scaled primitive `Model` child to replace with your mesh ([`Templates/`](../Assets/Modules/Editor/Templates/)) |
 | **Assets ▸ Create ▸ HyperRTS ▸ Prefabs ▸ …** | The same role templates saved as prefab assets in the selected folder, ready for producer and builder option lists |

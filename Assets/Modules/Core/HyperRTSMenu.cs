@@ -16,7 +16,7 @@ namespace HyperRTS.Core
         public const string Vision = Root + "Vision/";
     }
 
-    /// <summary>Editor icon paths per module (HyperRTS ▸ Tools ▸ Generate Component Icons).</summary>
+    /// <summary>Editor icon paths per module (HyperRTS ▸ Generate Component Icons).</summary>
     public static class HyperRTSIcons
     {
         private const string Dir = "Assets/Modules/Editor/Icons/";
