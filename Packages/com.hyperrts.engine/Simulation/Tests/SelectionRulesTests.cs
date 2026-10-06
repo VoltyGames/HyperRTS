@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.SetComponentEnabled<Selected>(entity, value);
 
         [Test]
-        public void DragRank_OrdersOwnedUnitsOverOwnedBuildingsOverOthers()
+        public void DragPriority_OrdersOwnedUnitsOverOwnedBuildingsOverOthers()
         {
             Assert.AreEqual(2, SelectionMath.DragPriority(true, true, false));
             Assert.AreEqual(1, SelectionMath.DragPriority(true, false, true));

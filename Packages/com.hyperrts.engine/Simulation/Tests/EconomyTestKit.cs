@@ -61,10 +61,10 @@ namespace HyperRTS.Simulation.Tests
         public static void SetCost(this TestWorld world, Entity prefab, ResourceType type, int amount) =>
             world.EntityManager.GetBuffer<ResourceCost>(prefab).Add(new ResourceCost { Type = type, Amount = amount });
 
-        public static void Give(this TestWorld world, byte faction, ResourceType type, int amount) =>
+        public static void AddResources(this TestWorld world, byte faction, ResourceType type, int amount) =>
             ResourceMath.Add(world.EntityManager.GetBuffer<ResourceStock>(world.Player(faction)), type, amount);
 
-        public static int Stock(this TestWorld world, byte faction, ResourceType type) =>
+        public static int ResourcesOf(this TestWorld world, byte faction, ResourceType type) =>
             ResourceMath.GetAmount(world.EntityManager.GetBuffer<ResourceStock>(world.Player(faction)), type);
 
         public static void Order(this TestWorld world, Entity unit, OrderType type, Entity target)

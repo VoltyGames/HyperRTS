@@ -60,12 +60,12 @@ namespace HyperRTS.Simulation.Tests
             var tank = _world.SpawnUnit(1, new float3(10f, 0f, 0f), name: "Tank");
             var jeep = _world.SpawnUnit(1, new float3(12f, 0f, 0f), name: "Jeep");
             var enemyTank = _world.SpawnUnit(2, new float3(-30f, 0f, 0f), name: "Tank");
-            _world.Give(1, _supplies, 100);
+            _world.AddResources(1, _supplies, 100);
 
             _world.Produce(1, lab, upgrade);
             _world.Run(3f);
 
-            Assert.AreEqual(50, _world.Stock(1, _supplies));
+            Assert.AreEqual(50, _world.ResourcesOf(1, _supplies));
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<ResearchedUpgrade>(_world.Player(1)).Length);
             Assert.AreEqual(150f, _world.Get<Health>(tank).Max);
             Assert.AreEqual(100f, _world.Get<Health>(jeep).Max, "other types are unaffected");
@@ -81,7 +81,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var upgrade = UpgradePrefab("Optics", 0);
             var lab = _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), float3.zero, upgrade);
-            _world.Give(1, _supplies, 500);
+            _world.AddResources(1, _supplies, 500);
 
             _world.Produce(1, lab, upgrade);
             _world.Produce(1, lab, upgrade);
@@ -93,7 +93,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick();
 
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<ProductionQueueItem>(lab).Length, "already researched");
-            Assert.AreEqual(450, _world.Stock(1, _supplies));
+            Assert.AreEqual(450, _world.ResourcesOf(1, _supplies));
         }
 
         [Test]
@@ -102,7 +102,7 @@ namespace HyperRTS.Simulation.Tests
             var upgrade = UpgradePrefab("Sensors", 0);
             var lab = _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), float3.zero, upgrade);
             var unit = _world.SpawnUnit(1, new float3(10f, 0f, 0f));
-            _world.Give(1, _supplies, 100);
+            _world.AddResources(1, _supplies, 100);
             _world.Produce(1, lab, upgrade);
             _world.Run(3f);
             Assert.AreEqual(150f, _world.Get<Health>(unit).Max);

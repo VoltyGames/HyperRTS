@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void StealthedEnemy_IsNeitherAcquiredNorVisible()
         {
-            var soldier = _world.Arm(_world.SpawnUnit(1, float3.zero));
+            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
             var enemy = Stealthy(_world.SpawnUnit(2, new float3(3f, 0f, 0f)));
 
             _world.Run(2f);
@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Detector_RevealsStealthedEnemy_OnlyInRange()
         {
-            var soldier = Detect(_world.Arm(_world.SpawnUnit(1, float3.zero)), radius: 5f);
+            var soldier = Detect(_world.AddWeapon(_world.SpawnUnit(1, float3.zero)), radius: 5f);
             var enemy = Stealthy(_world.SpawnUnit(2, new float3(8f, 0f, 0f)));
 
             _world.Run(1f);
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Firing_RevealsShooter_ThenItRestealths()
         {
-            var shooter = Stealthy(_world.Arm(_world.SpawnUnit(2, float3.zero), cooldown: 100f), reveal: 1f);
+            var shooter = Stealthy(_world.AddWeapon(_world.SpawnUnit(2, float3.zero), cooldown: 100f), reveal: 1f);
             var target = _world.SpawnUnit(1, new float3(3f, 0f, 0f), maxHealth: 1000f);
 
             _world.Run(0.4f);
@@ -100,7 +100,7 @@ namespace HyperRTS.Simulation.Tests
         public void FogOff_StillHidesStealthedEnemies_UntilDetected()
         {
             DisableFog();
-            var soldier = _world.Arm(_world.SpawnUnit(1, float3.zero));
+            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
             var enemy = Stealthy(_world.SpawnUnit(2, new float3(3f, 0f, 0f)));
             var far = _world.SpawnUnit(2, new float3(80f, 0f, 0f));
 
@@ -118,7 +118,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void StealthedTarget_CannotBeOrderedAttacked()
         {
-            var soldier = _world.Arm(_world.SpawnUnit(1, float3.zero));
+            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
             var enemy = Stealthy(_world.SpawnUnit(2, new float3(15f, 0f, 0f)));
             _world.Tick();
 

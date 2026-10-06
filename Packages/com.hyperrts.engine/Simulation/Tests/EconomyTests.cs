@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Order(harvester, OrderType.Gather, node);
             _world.Run(20f);
 
-            var stock = _world.Stock(1, _supplies);
+            var stock = _world.ResourcesOf(1, _supplies);
             var left = _world.Get<ResourceNode>(node).Amount;
             var cargo = _world.Get<Harvester>(harvester).CargoAmount;
             Assert.GreaterOrEqual(stock, 20, "several trips were delivered");
@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(10f);
 
             Assert.IsFalse(_world.EntityManager.Exists(node));
-            Assert.AreEqual(5, _world.Stock(1, _supplies));
+            Assert.AreEqual(5, _world.ResourcesOf(1, _supplies));
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(harvester), "no node left, so the order completes");
         }
 

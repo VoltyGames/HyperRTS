@@ -81,7 +81,7 @@ namespace HyperRTS.Simulation.Tests
                 soldier);
             _world.SpawnProvider(2, new float3(-20f, 0f, 0f), 10);
             _world.SpawnBuilding(1, new float3(60f, 0f, 0f), new float2(4f, 4f));
-            _world.Give(2, _supplies, 100);
+            _world.AddResources(2, _supplies, 100);
 
             _world.Run(3f);
 
@@ -97,7 +97,7 @@ namespace HyperRTS.Simulation.Tests
             }
 
             Assert.GreaterOrEqual(attacking, 2, "a wave of trained soldiers was sent at the enemy base");
-            Assert.Less(_world.Stock(2, _supplies), 100, "training was paid for");
+            Assert.Less(_world.ResourcesOf(2, _supplies), 100, "training was paid for");
         }
 
         [Test]
@@ -113,14 +113,14 @@ namespace HyperRTS.Simulation.Tests
             var second = _world.MakeProducer(_world.SpawnBuilding(2, new float3(10f, 0f, 0f), new float2(4f, 4f)),
                 new float3(0f, 0f, -4f), soldier, tank);
             _world.SpawnProvider(2, new float3(-20f, 0f, 0f), 10);
-            _world.Give(2, _supplies, 20);
+            _world.AddResources(2, _supplies, 20);
 
             _world.Tick(frames: 3);
 
             // With the soldier's cost set aside, the tank is out of reach and the second producer trains a soldier too.
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(first).Length);
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(second).Length);
-            Assert.AreEqual(0, _world.Stock(2, _supplies));
+            Assert.AreEqual(0, _world.ResourcesOf(2, _supplies));
         }
 
         [Test]

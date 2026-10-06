@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Tests
     /// <summary>Combat helpers on top of <see cref="TestWorld"/>.</summary>
     public static class CombatTestKit
     {
-        public static Entity Arm(this TestWorld world, Entity entity, Stance stance = Stance.Aggressive,
+        public static Entity AddWeapon(this TestWorld world, Entity entity, Stance stance = Stance.Aggressive,
             float range = 4f, float damage = 25f, float cooldown = 0.5f, Entity projectile = default,
             UnityObjectRef<DamageType> damageType = default, WeaponTargets targets = WeaponTargets.Surface)
         {

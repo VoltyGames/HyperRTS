@@ -80,7 +80,7 @@ namespace HyperRTS.Simulation.Tests
         {
             SpawnBuilder(new float3(0f, 0f, -6f));
             SetBuildOrder((_barracks, 1), (_soldier, 1));
-            _world.Give(2, _supplies, 100);
+            _world.AddResources(2, _supplies, 100);
 
             _world.Run(6f);
 
@@ -101,13 +101,13 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.GetBuffer<Prerequisite>(locked)
                 .Add(new Prerequisite { TypeId = EntityInfo.TypeIdFromName("Never Built") });
             SetBuildOrder((_barracks, 2), (_soldier, 3), (locked, 1));
-            _world.Give(2, _supplies, 1000);
+            _world.AddResources(2, _supplies, 1000);
 
             _world.Run(12f);
 
             Assert.AreEqual(2, Owned("Barracks").Count);
             Assert.AreEqual(3, Owned("Soldier").Count, "the unmet locked step keeps the AI from training freely");
-            Assert.AreEqual(1000 - 2 * 50 - 3 * 10, _world.Stock(2, _supplies));
+            Assert.AreEqual(1000 - 2 * 50 - 3 * 10, _world.ResourcesOf(2, _supplies));
         }
 
         [Test]
@@ -117,7 +117,7 @@ namespace HyperRTS.Simulation.Tests
             var existing = _world.SpawnBuilding(2, new float3(20f, 0f, 20f), new float2(4f, 4f), name: "Barracks");
             _world.MakeProducer(existing, new float3(0f, 0f, -3f), _soldier);
             SetBuildOrder((_barracks, 2), (_soldier, 1));
-            _world.Give(2, _supplies, 20);
+            _world.AddResources(2, _supplies, 20);
 
             _world.Run(2f);
 

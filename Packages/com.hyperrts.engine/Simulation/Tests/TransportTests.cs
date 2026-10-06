@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Tests
             TransportSetup.AddPassenger(ref writer, size);
             if (armed)
             {
-                _world.Arm(unit, range: 3f, damage: 10f);
+                _world.AddWeapon(unit, range: 3f, damage: 10f);
             }
 
             return unit;
@@ -121,7 +121,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(2f);
 
             var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 4.5f), speed: 0f);
-            _world.Arm(enemy, Stance.HoldPosition, range: 3f, damage: 10f);
+            _world.AddWeapon(enemy, Stance.HoldPosition, range: 3f, damage: 10f);
             _world.Run(2f);
 
             Assert.Less(_world.Get<Health>(enemy).Current, 100f, "fires from the bunker's edge");

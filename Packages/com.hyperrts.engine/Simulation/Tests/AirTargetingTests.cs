@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void SurfaceOnlyGun_IgnoresAircraft_AndCantBeOrderedAtThem()
         {
-            var gun = _world.Arm(_world.SpawnUnit(1, float3.zero), range: 6f);
+            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f);
             var aircraft = _world.SpawnAircraft(2, new float3(3f, 0f, 0f));
             _world.Run(2f);
 
@@ -43,7 +43,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void AntiAirWeapon_EngagesAircraft_AndIgnoresGround()
         {
-            var launcher = _world.Arm(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f,
+            var launcher = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f,
                 targets: WeaponTargets.Air);
             var tank = _world.SpawnUnit(2, new float3(-2f, 0f, 0f));
             var aircraft = _world.SpawnAircraft(2, new float3(3f, 0f, 0f));

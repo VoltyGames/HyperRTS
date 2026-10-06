@@ -30,7 +30,8 @@ namespace HyperRTS.Simulation.Tests
         public void AircraftOutOfAmmo_ReturnsToItsPad_ReloadsAndIsReadyAgain()
         {
             var airfield = _world.SpawnAirfield(1, float3.zero, Pad);
-            var aircraft = _world.UsePads(_world.Arm(_world.SpawnAircraft(1, Pad), range: 4f, damage: 10f), rounds: 2);
+            var aircraft = _world.AddWeapon(_world.SpawnAircraft(1, Pad), range: 4f, damage: 10f);
+            _world.AddPadUser(aircraft, rounds: 2);
             _world.EntityManager.SetComponentData(aircraft, new HomePad { Airfield = airfield, Pad = 0 });
             var tank = _world.SpawnUnit(2, new float3(30f, 0f, 0f));
 
@@ -55,7 +56,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Airfield_BuildsAircraftDockedOnFreePads_AndWaitsWhenFull()
         {
-            var prefab = _world.MakePrefab(_world.UsePads(_world.SpawnAircraft(1, float3.zero)));
+            var prefab = _world.MakePrefab(_world.AddPadUser(_world.SpawnAircraft(1, float3.zero)));
             _world.SetBuildTime(prefab, 0.5f);
             var airfield = _world.MakeProducer(_world.SpawnAirfield(1, float3.zero, Pad), float3.zero, prefab);
             _world.SpawnProvider(1, new float3(20f, 0f, 20f), 10);
@@ -76,7 +77,7 @@ namespace HyperRTS.Simulation.Tests
         public void LosingTheAirfield_FreesItsAircraft_AndAnotherAirfieldRehomesThem()
         {
             var first = _world.SpawnAirfield(1, float3.zero, Pad);
-            var aircraft = _world.UsePads(_world.SpawnAircraft(1, Pad));
+            var aircraft = _world.AddPadUser(_world.SpawnAircraft(1, Pad));
             _world.EntityManager.SetComponentData(aircraft, new HomePad { Airfield = first, Pad = 0 });
             _world.ReturnToBase(aircraft);
             _world.Run(1f);

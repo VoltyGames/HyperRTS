@@ -68,12 +68,12 @@ namespace HyperRTS.Simulation.Tests
         {
             var prefab = BuildingPrefab(50);
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero), prefab);
-            _world.Give(1, _supplies, 100);
+            _world.AddResources(1, _supplies, 100);
 
             Place(builder, prefab, new float3(6.3f, 0f, 0.2f));
             _world.Tick();
 
-            Assert.AreEqual(50, _world.Stock(1, _supplies));
+            Assert.AreEqual(50, _world.ResourcesOf(1, _supplies));
             var sites = _world.All<BuildingTag>();
             Assert.AreEqual(1, sites.Length);
             var site = sites[0];
@@ -106,12 +106,12 @@ namespace HyperRTS.Simulation.Tests
             var prefab = BuildingPrefab(50);
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero), prefab);
             _world.SpawnBuilding(1, new float3(6f, 0f, 0f), new float2(4f, 4f));
-            _world.Give(1, _supplies, 100);
+            _world.AddResources(1, _supplies, 100);
 
             Place(builder, prefab, new float3(7f, 0f, 1f));
             _world.Tick();
 
-            Assert.AreEqual(100, _world.Stock(1, _supplies));
+            Assert.AreEqual(100, _world.ResourcesOf(1, _supplies));
             Assert.AreEqual(1, _world.All<BuildingTag>().Length);
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(builder));
         }
@@ -121,12 +121,12 @@ namespace HyperRTS.Simulation.Tests
         {
             var prefab = BuildingPrefab(50);
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero), prefab);
-            _world.Give(1, _supplies, 40);
+            _world.AddResources(1, _supplies, 40);
 
             Place(builder, prefab, new float3(6f, 0f, 0f));
             _world.Tick();
 
-            Assert.AreEqual(40, _world.Stock(1, _supplies));
+            Assert.AreEqual(40, _world.ResourcesOf(1, _supplies));
             Assert.AreEqual(0, _world.All<BuildingTag>().Length);
         }
 
@@ -136,11 +136,11 @@ namespace HyperRTS.Simulation.Tests
             var prefab = UnitPrefab(30);
             var producer = Producer(prefab);
             _world.SpawnProvider(1, new float3(20f, 0f, 20f), 10);
-            _world.Give(1, _supplies, 100);
+            _world.AddResources(1, _supplies, 100);
 
             _world.Produce(1, producer, prefab);
             _world.Tick();
-            Assert.AreEqual(70, _world.Stock(1, _supplies));
+            Assert.AreEqual(70, _world.ResourcesOf(1, _supplies));
             Assert.AreEqual(1, QueueLength(producer));
 
             _world.Run(0.5f);
@@ -160,17 +160,17 @@ namespace HyperRTS.Simulation.Tests
             var prefab = UnitPrefab(30);
             var producer = Producer(prefab);
             _world.SpawnProvider(1, new float3(20f, 0f, 20f), 10);
-            _world.Give(1, _supplies, 100);
+            _world.AddResources(1, _supplies, 100);
 
             _world.Produce(1, producer, prefab);
             _world.Produce(1, producer, prefab);
             _world.Tick();
-            Assert.AreEqual(40, _world.Stock(1, _supplies));
+            Assert.AreEqual(40, _world.ResourcesOf(1, _supplies));
 
             _world.Command(1, new PlayerCommand { Type = CommandType.CancelProduction, Unit = producer, Argument = -1 });
             _world.Tick();
 
-            Assert.AreEqual(70, _world.Stock(1, _supplies));
+            Assert.AreEqual(70, _world.ResourcesOf(1, _supplies));
             Assert.AreEqual(1, QueueLength(producer));
         }
 
@@ -181,7 +181,7 @@ namespace HyperRTS.Simulation.Tests
             var producer = Producer(prefab);
             _world.SpawnProvider(1, new float3(20f, 0f, 20f), 1);
             _world.SpawnUnit(1, new float3(10f, 0f, 10f));
-            _world.Give(1, _supplies, 100);
+            _world.AddResources(1, _supplies, 100);
 
             _world.Produce(1, producer, prefab);
             _world.Run(3f);
@@ -224,7 +224,7 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.GetBuffer<Prerequisite>(prefab)
                 .Add(new Prerequisite { TypeId = EntityInfo.TypeIdFromName("Barracks") });
             var producer = Producer(prefab);
-            _world.Give(1, _supplies, 100);
+            _world.AddResources(1, _supplies, 100);
 
             _world.Produce(1, producer, prefab);
             _world.Tick();
@@ -240,7 +240,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Produce(1, producer, prefab);
             _world.Tick();
             Assert.AreEqual(1, QueueLength(producer));
-            Assert.AreEqual(90, _world.Stock(1, _supplies));
+            Assert.AreEqual(90, _world.ResourcesOf(1, _supplies));
         }
 
         [Test]
@@ -248,13 +248,13 @@ namespace HyperRTS.Simulation.Tests
         {
             var prefab = UnitPrefab(10);
             var producer = Producer(prefab, complete: false);
-            _world.Give(1, _supplies, 100);
+            _world.AddResources(1, _supplies, 100);
 
             _world.Produce(1, producer, prefab);
             _world.Tick();
 
             Assert.AreEqual(0, QueueLength(producer));
-            Assert.AreEqual(100, _world.Stock(1, _supplies));
+            Assert.AreEqual(100, _world.ResourcesOf(1, _supplies));
         }
     }
 }

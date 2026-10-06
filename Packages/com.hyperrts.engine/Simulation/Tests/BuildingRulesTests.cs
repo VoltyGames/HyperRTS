@@ -42,7 +42,7 @@ namespace HyperRTS.Simulation.Tests
             var plant = _world.SpawnBuilding(1, new float3(-20f, 0f, 0f), Footprint, power: 5f);
             var radar = _world.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, power: -10f);
             var tower = _world.SpawnBuilding(1, new float3(0f, 0f, 20f), Footprint, power: -1f);
-            _world.Arm(tower, range: 6f, damage: 10f);
+            _world.AddWeapon(tower, range: 6f, damage: 10f);
             var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 25f), speed: 0f);
 
             _world.Run(1f);
@@ -94,7 +94,8 @@ namespace HyperRTS.Simulation.Tests
             _world.Command(1, new PlayerCommand { Type = CommandType.Sell, Unit = enemy });
             _world.Tick();
 
-            Assert.AreEqual(50 + 40, _world.Stock(1, _supplies), "half of a finished building, all of a site, once");
+            Assert.AreEqual(50 + 40, _world.ResourcesOf(1, _supplies),
+                "half of a finished building, all of a site, once");
             Assert.IsFalse(_world.EntityManager.Exists(depot));
             Assert.IsFalse(_world.EntityManager.Exists(site));
             Assert.IsTrue(_world.EntityManager.Exists(enemy), "only owned buildings sell");
@@ -170,13 +171,13 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.SetComponentEnabled<Selected>(factory, true);
             _world.EntityManager.SetComponentEnabled<RallyPoint>(factory, true);
             var engineer = Capturer(float3.zero);
-            var before = _world.Stock(2, _supplies);
+            var before = _world.ResourcesOf(2, _supplies);
 
             _world.Command(1, new PlayerCommand { Type = CommandType.Capture, Unit = engineer, Target = factory });
             _world.Run(4f);
 
             Assert.AreEqual(1, _world.Get<Faction>(factory).Value);
-            Assert.AreEqual(before + 30, _world.Stock(2, _supplies), "the old owner gets its queue back");
+            Assert.AreEqual(before + 30, _world.ResourcesOf(2, _supplies), "the old owner gets its queue back");
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<ProductionQueueItem>(factory).Length);
             Assert.IsFalse(_world.IsEnabled<Selected>(factory));
             Assert.IsFalse(_world.IsEnabled<RallyPoint>(factory), "the old owner's rally point is dropped");

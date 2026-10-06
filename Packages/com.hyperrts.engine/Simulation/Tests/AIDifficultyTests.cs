@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Tests
             var squad = new Entity[5];
             for (var i = 0; i < squad.Length; i++)
             {
-                squad[i] = _world.Arm(_world.SpawnUnit(faction, at + new float3(i * 2f, 0f, 0f)));
+                squad[i] = _world.AddWeapon(_world.SpawnUnit(faction, at + new float3(i * 2f, 0f, 0f)));
             }
 
             return squad;

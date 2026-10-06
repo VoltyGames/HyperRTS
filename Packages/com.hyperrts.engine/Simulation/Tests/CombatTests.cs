@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void IdleArmedUnit_AcquiresAndKillsNearbyEnemy()
         {
-            var soldier = _world.Arm(_world.SpawnUnit(1, float3.zero));
+            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
             var enemy = _world.SpawnUnit(2, new float3(8f, 0f, 0f));
 
             _world.Run(5f);
@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void PassiveStance_NeverEngages()
         {
-            var soldier = _world.Arm(_world.SpawnUnit(1, float3.zero), Stance.Passive);
+            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), Stance.Passive);
             var enemy = _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
             _world.Run(3f);
@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Allies_AreNeverTargeted()
         {
-            _world.Arm(_world.SpawnUnit(1, float3.zero));
+            _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
             var friend = _world.SpawnUnit(1, new float3(2f, 0f, 0f));
             var ally = _world.SpawnUnit(3, new float3(-2f, 0f, 0f));
 
@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void AttackOrder_ChasesBeyondAcquireRange_ThenCompletes()
         {
-            var soldier = _world.Arm(_world.SpawnUnit(1, float3.zero));
+            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
             var enemy = _world.SpawnUnit(2, new float3(25f, 0f, 0f), speed: 2f);
             _world.EntityManager.SetComponentData(enemy, new MoveDestination { Value = new float3(80f, 0f, 0f) });
             _world.EntityManager.SetComponentEnabled<MoveDestination>(enemy, true);
@@ -88,7 +88,7 @@ namespace HyperRTS.Simulation.Tests
         [TestCase(Stance.Defensive)]
         public void AttackMove_FightsOnTheWay_ThenReachesGoal(Stance stance)
         {
-            var soldier = _world.Arm(_world.SpawnUnit(1, float3.zero), stance);
+            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), stance);
             var enemy = _world.SpawnUnit(2, new float3(50f, 0f, 0f));
             var goal = new float3(80f, 0f, 0f);
             _world.Command(1, new PlayerCommand { Type = CommandType.AttackMove, Unit = soldier, Position = goal });
@@ -103,7 +103,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void HoldPosition_FiresInRangeButNeverMoves()
         {
-            var soldier = _world.Arm(_world.SpawnUnit(1, float3.zero), Stance.HoldPosition);
+            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), Stance.HoldPosition);
             var near = _world.SpawnUnit(2, new float3(3f, 0f, 0f));
             var far = _world.SpawnUnit(2, new float3(0f, 0f, 8f));
 
@@ -122,8 +122,8 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.AddComponentData(prefab, LocalTransform.Identity);
             _world.MakePrefab(prefab);
 
-            _world.Arm(_world.SpawnUnit(1, float3.zero), range: 8f, damage: 40f, cooldown: 100f, projectile: prefab,
-                damageType: bullet);
+            _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 8f, damage: 40f, cooldown: 100f,
+                projectile: prefab, damageType: bullet);
             var tank = _world.SpawnUnit(2, new float3(6f, 0f, 0f));
             var writer = new EntityManagerWriter(_world.EntityManager, tank);
             ArmorSetup.Add(ref writer, new[] { new ArmorModifier { DamageType = bullet, Multiplier = 0.5f } });
@@ -147,7 +147,8 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void TowerUnderConstruction_HoldsFireUntilFinished()
         {
-            var tower = _world.Arm(_world.SpawnBuilding(1, float3.zero, new float2(2f, 2f), complete: false, buildTime: 100f));
+            var tower = _world.AddWeapon(
+                _world.SpawnBuilding(1, float3.zero, new float2(2f, 2f), complete: false, buildTime: 100f));
             var enemy = _world.SpawnUnit(2, new float3(4f, 0f, 0f));
 
             _world.Run(2f);
@@ -163,7 +164,7 @@ namespace HyperRTS.Simulation.Tests
         [TestCase(1f, 0f, 1f / 3f, TestName = "FireRate +1 shot per second turns 2/s into 3/s")]
         public void FireRateModifier_ScalesCooldown(float add, float percent, float expected)
         {
-            var soldier = _world.Arm(_world.SpawnUnit(1, float3.zero), Stance.Passive, cooldown: 0.5f);
+            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), Stance.Passive, cooldown: 0.5f);
             _world.EntityManager.GetBuffer<StatModifier>(soldier).Add(new StatModifier
             {
                 Stat = Stat.FireRate, Add = add, Percent = percent,

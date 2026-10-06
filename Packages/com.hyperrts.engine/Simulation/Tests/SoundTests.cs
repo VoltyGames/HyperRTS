@@ -74,7 +74,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void InstantWeapon_PlaysFireAtShooter_AndImpactAtTarget()
         {
-            var shooter = Voiced(_world.Arm(_world.SpawnUnit(1, float3.zero, name: "Rifle")), SoundSlot.Fire,
+            var shooter = Voiced(_world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Rifle")), SoundSlot.Fire,
                 SoundSlot.Impact);
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void SilentEntities_WriteNoEvents()
         {
-            _world.Arm(_world.SpawnUnit(1, float3.zero));
+            _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
             Assert.IsEmpty(Heard(3f));
@@ -101,7 +101,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var bullet = _world.MakePrefab(_world.EntityManager.CreateEntity(typeof(LocalTransform)));
             _world.EntityManager.SetComponentData(bullet, LocalTransform.Identity);
-            var shooter = Voiced(_world.Arm(_world.SpawnUnit(1, float3.zero, name: "Mortar"), range: 8f,
+            var shooter = Voiced(_world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Mortar"), range: 8f,
                 cooldown: 100f, projectile: bullet), SoundSlot.Impact);
             var typeId = TypeIdOf(shooter);
             _world.SpawnUnit(2, new float3(6f, 0f, 0f));
@@ -122,7 +122,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Death_PlaysTheVictimsDeathCue()
         {
-            _world.Arm(_world.SpawnUnit(1, float3.zero), damage: 100f);
+            _world.AddWeapon(_world.SpawnUnit(1, float3.zero), damage: 100f);
             var victim = Voiced(_world.SpawnUnit(2, new float3(3f, 0f, 0f), name: "Victim"), SoundSlot.Death);
             var typeId = TypeIdOf(victim);
 
@@ -165,7 +165,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Events_LastOneFrame()
         {
-            Voiced(_world.Arm(_world.SpawnUnit(1, float3.zero), cooldown: 100f), SoundSlot.Fire);
+            Voiced(_world.AddWeapon(_world.SpawnUnit(1, float3.zero), cooldown: 100f), SoundSlot.Fire);
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
             Assert.IsNotEmpty(Heard(0.5f).FindAll(sound => sound.Slot == SoundSlot.Fire));
