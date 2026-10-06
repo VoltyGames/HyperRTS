@@ -27,6 +27,13 @@ namespace HyperRTS.Simulation.Tests
 
         private static float Rolling(float2 p) => p.x * 0.2f + math.sin(p.y * 0.1f) * 2f;
 
+        /// <summary>Rolling hills dip below 0, so keep the sea under them.</summary>
+        private void CreateHills()
+        {
+            _world.CreateTerrain(Rolling);
+            _world.ConfigureMap(waterLevel: -100f);
+        }
+
         private static FogOfWar Fog(TestWorld world)
         {
             world.EntityManager.CompleteAllTrackedJobs();
@@ -37,7 +44,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Units_FollowTheTerrain_WhileMoving()
         {
-            _world.CreateTerrain(Rolling);
+            CreateHills();
             var unit = _world.SpawnUnit(1, new float3(-10f, 0f, -5f));
             var goal = new float3(10f, 0f, 5f);
             _world.MoveTo(unit, goal);
@@ -55,9 +62,10 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void PlacedBuildings_SitOnTheTerrain()
         {
-            _world.CreateTerrain(Rolling);
+            CreateHills();
             var prefab = _world.MakePrefab(_world.SpawnBuilding(0, new float3(-90f, 0f, 90f), new float2(4f, 4f)));
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero), prefab);
+            _world.Tick();
 
             _world.Command(1, new PlayerCommand
             {
