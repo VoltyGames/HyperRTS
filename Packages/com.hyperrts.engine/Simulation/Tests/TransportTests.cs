@@ -74,6 +74,26 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void Container_RidingInAnother_TakesNoPassengers()
+        {
+            var ship = Bunker(float3.zero, capacity: 4);
+            var truck = _world.SpawnUnit(1, new float3(5f, 0f, 0f), radius: 1f);
+            var sink = new EntityManagerSink(_world.EntityManager, truck);
+            TransportSetup.AddContainer(ref sink, new Container { Capacity = 4, MaxPassengerSize = 1 });
+            TransportSetup.AddPassenger(ref sink, 2);
+            Enter(truck, ship);
+            _world.Run(2f);
+            Assert.IsTrue(IsInside(truck));
+
+            var rider = Passenger(new float3(8f, 0f, 0f));
+            _world.Command(1, new PlayerCommand { Type = CommandType.Enter, Unit = rider, Target = truck });
+            _world.Run(2f);
+
+            Assert.IsFalse(IsInside(rider));
+            Assert.AreEqual(0, _world.EntityManager.GetBuffer<Cargo>(truck).Length);
+        }
+
+        [Test]
         public void Passengers_RideAlong_AndIgnoreOrders()
         {
             var truck = _world.SpawnUnit(1, float3.zero, speed: 5f, radius: 1f);

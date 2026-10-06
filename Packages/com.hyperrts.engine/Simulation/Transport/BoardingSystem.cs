@@ -74,7 +74,7 @@ namespace HyperRTS.Simulation.Transport
         [BurstCompile]
         [WithAll(typeof(Passenger))]
         [WithNone(typeof(Dead))]
-        [WithPresent(typeof(MoveDestination), typeof(Inside))]
+        [WithPresent(typeof(MoveDestination))]
         private partial struct BoardJob : IJobEntity
         {
             public FactionRelations Relations;
@@ -89,9 +89,9 @@ namespace HyperRTS.Simulation.Transport
 
             private void Execute(Entity entity, ref ActiveOrder order,
                 EnabledRefRW<ActiveOrder> busy, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
-                in NavAgent agent, ref Inside inside, EnabledRefRW<Inside> aboard)
+                in NavAgent agent)
             {
-                if (!busy.ValueRO || order.Value.Type != OrderType.Enter || aboard.ValueRO)
+                if (!busy.ValueRO || order.Value.Type != OrderType.Enter || Boarding.IsInside(entity))
                 {
                     return;
                 }
@@ -114,9 +114,7 @@ namespace HyperRTS.Simulation.Transport
 
                 busy.ValueRW = false;
                 moving.ValueRW = false;
-                aboard.ValueRW = true;
-                inside = new Inside { Container = container, Stance = Settle(entity, container) };
-                Boarding.Board(entity, container);
+                Boarding.Board(entity, container, Settle(entity, container));
                 QueueLookup[entity].Clear();
             }
 

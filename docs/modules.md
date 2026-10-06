@@ -161,7 +161,8 @@ owner draws more than it generates. Unpowered weapons hold fire, unpowered produ
 | `CaptureRules` | Capture-target check shared by orders and `CaptureSystem` |
 
 `CaptureSystem` advances progress while capturers are in reach (another player starting over resets it), then
-changes the owner at the end of the frame and clears the building's queue and target.
+changes the owner at the end of the frame, refunds the building's queue to the old owner and clears its target and
+selection. A garrisoned building can't be captured until its passengers are out.
 
 ## Transport (garrisons and transports)
 

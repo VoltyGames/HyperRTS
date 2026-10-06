@@ -4,6 +4,8 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Units;
 using Unity.Burst;
 using Unity.Collections;
@@ -15,7 +17,7 @@ namespace HyperRTS.Simulation.Capture
     /// <summary>
     /// Runs Capture orders: capturers walk to the building and add <c>Rate / CaptureTime</c> progress per second.
     /// A different player starting over resets it. On completion the building changes owner at the end of the frame,
-    /// drops its queue and target, and a single-use capturer is consumed.
+    /// refunds its queue to the old owner, drops its target and selection, and a single-use capturer is consumed.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
@@ -29,6 +31,10 @@ namespace HyperRTS.Simulation.Capture
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<AttackTarget> _attackLookup;
         private BufferLookup<ProductionQueueItem> _queueLookup;
+        private BufferLookup<ResourceStock> _stockLookup;
+        private BufferLookup<ResourceCost> _costLookup;
+        private ComponentLookup<Selected> _selectedLookup;
+        private EntityQuery _players;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -41,6 +47,10 @@ namespace HyperRTS.Simulation.Capture
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _attackLookup = state.GetComponentLookup<AttackTarget>(true);
             _queueLookup = state.GetBufferLookup<ProductionQueueItem>(true);
+            _stockLookup = state.GetBufferLookup<ResourceStock>();
+            _costLookup = state.GetBufferLookup<ResourceCost>(true);
+            _selectedLookup = state.GetComponentLookup<Selected>(true);
+            _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -56,6 +66,9 @@ namespace HyperRTS.Simulation.Capture
             _obstacleLookup.Update(ref state);
             _attackLookup.Update(ref state);
             _queueLookup.Update(ref state);
+            _stockLookup.Update(ref state);
+            _costLookup.Update(ref state);
+            _selectedLookup.Update(ref state);
 
             new CaptureJob
             {
@@ -71,6 +84,10 @@ namespace HyperRTS.Simulation.Capture
                 ObstacleLookup = _obstacleLookup,
                 AttackLookup = _attackLookup,
                 QueueLookup = _queueLookup,
+                StockLookup = _stockLookup,
+                CostLookup = _costLookup,
+                SelectedLookup = _selectedLookup,
+                PlayerByFaction = PlayerLookup.ByFaction(_players, state.WorldUpdateAllocator),
             }.Schedule();
         }
 
@@ -91,6 +108,10 @@ namespace HyperRTS.Simulation.Capture
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<AttackTarget> AttackLookup;
             [ReadOnly] public BufferLookup<ProductionQueueItem> QueueLookup;
+            public BufferLookup<ResourceStock> StockLookup;
+            [ReadOnly] public BufferLookup<ResourceCost> CostLookup;
+            [ReadOnly] public ComponentLookup<Selected> SelectedLookup;
+            [ReadOnly] public NativeArray<Entity> PlayerByFaction;
 
             private void Execute(Entity entity, in Capturer capturer, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in LocalTransform transform,
@@ -150,15 +171,39 @@ namespace HyperRTS.Simulation.Capture
 
             private void TakeOver(Entity building, byte faction)
             {
+                var previous = FactionLookup[building].Value;
                 Ecb.SetComponent(building, new Faction { Value = faction });
-                if (QueueLookup.HasBuffer(building))
+                if (QueueLookup.TryGetBuffer(building, out var queue))
                 {
+                    Refund(queue, previous);
                     Ecb.SetBuffer<ProductionQueueItem>(building);
                 }
 
                 if (AttackLookup.HasComponent(building))
                 {
                     Ecb.SetComponentEnabled<AttackTarget>(building, false);
+                }
+
+                if (SelectedLookup.HasComponent(building))
+                {
+                    Ecb.SetComponentEnabled<Selected>(building, false);
+                }
+            }
+
+            /// <summary>Lost production is refunded to whoever paid, as a cancel would.</summary>
+            private void Refund(DynamicBuffer<ProductionQueueItem> queue, byte owner)
+            {
+                if (!StockLookup.TryGetBuffer(PlayerByFaction[owner], out var stock))
+                {
+                    return;
+                }
+
+                foreach (var item in queue)
+                {
+                    if (CostLookup.TryGetBuffer(item.Prefab, out var cost))
+                    {
+                        ResourceMath.Refund(stock, cost);
+                    }
                 }
             }
         }

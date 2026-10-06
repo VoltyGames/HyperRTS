@@ -6,6 +6,8 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -154,6 +156,59 @@ namespace HyperRTS.Simulation.Tests
             var progress = _world.Get<CaptureProgress>(post);
             Assert.AreEqual(1, progress.Faction);
             Assert.Less(progress.Value, 0.1f);
+        }
+
+        [Test]
+        public void Capture_RefundsQueueToOldOwner_AndDropsSelection()
+        {
+            var prefab = _world.MakePrefab(_world.SpawnUnit(0, new float3(90f, 0f, 90f)));
+            _world.SetBuildTime(prefab, 100f);
+            _world.SetCost(prefab, _supplies, 30);
+            var factory = _world.MakeProducer(_world.SpawnBuilding(2, new float3(10f, 0f, 0f), Footprint),
+                new float3(0f, 0f, -4f), prefab);
+            var sink = new EntityManagerSink(_world.EntityManager, factory);
+            CaptureSetup.AddCapturable(ref sink, 1f);
+            _world.EntityManager.GetBuffer<ProductionQueueItem>(factory).Add(new ProductionQueueItem { Prefab = prefab });
+            _world.EntityManager.SetComponentEnabled<Selected>(factory, true);
+            var engineer = Capturer(float3.zero);
+            var before = _world.Stock(2, _supplies);
+
+            _world.Command(1, new PlayerCommand { Type = CommandType.Capture, Unit = engineer, Target = factory });
+            _world.Run(4f);
+
+            Assert.AreEqual(1, _world.Get<Faction>(factory).Value);
+            Assert.AreEqual(before + 30, _world.Stock(2, _supplies), "the old owner gets its queue back");
+            Assert.AreEqual(0, _world.EntityManager.GetBuffer<ProductionQueueItem>(factory).Length);
+            Assert.IsFalse(_world.IsEnabled<Selected>(factory));
+        }
+
+        [Test]
+        public void Capture_IsRefused_WhileGarrisoned()
+        {
+            var bunker = _world.SpawnBuilding(2, new float3(10f, 0f, 0f), Footprint);
+            var sink = new EntityManagerSink(_world.EntityManager, bunker);
+            CaptureSetup.AddCapturable(ref sink, 1f);
+            TransportSetup.AddContainer(ref sink, new Container { Capacity = 2, MaxPassengerSize = 1 });
+            var guard = _world.SpawnUnit(2, new float3(14f, 0f, 0f));
+            sink = new EntityManagerSink(_world.EntityManager, guard);
+            TransportSetup.AddPassenger(ref sink, 1);
+            _world.Command(2, new PlayerCommand { Type = CommandType.Enter, Unit = guard, Target = bunker });
+            _world.Run(1f);
+            Assert.IsTrue(_world.IsEnabled<Inside>(guard));
+
+            var engineer = Capturer(float3.zero);
+            _world.Command(1, new PlayerCommand { Type = CommandType.Capture, Unit = engineer, Target = bunker });
+            _world.Run(3f);
+
+            Assert.AreEqual(2, _world.Get<Faction>(bunker).Value, "the garrison has to be cleared first");
+        }
+
+        private Entity Capturer(float3 position)
+        {
+            var unit = _world.SpawnUnit(1, position);
+            var sink = new EntityManagerSink(_world.EntityManager, unit);
+            CaptureSetup.AddCapturer(ref sink, 1f, consumedOnCapture: false);
+            return unit;
         }
     }
 }

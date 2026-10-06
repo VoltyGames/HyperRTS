@@ -10,6 +10,7 @@ namespace HyperRTS.Simulation.Transport
     public struct Boarding
     {
         private BufferLookup<Cargo> _cargo;
+        private ComponentLookup<Inside> _inside;
         [ReadOnly] private ComponentLookup<Container> _containers;
         [ReadOnly] private ComponentLookup<Passenger> _passengers;
         [ReadOnly] private ComponentLookup<Health> _health;
@@ -20,6 +21,7 @@ namespace HyperRTS.Simulation.Transport
         public Boarding(ref SystemState state, bool isReadOnly)
         {
             _cargo = state.GetBufferLookup<Cargo>(isReadOnly);
+            _inside = state.GetComponentLookup<Inside>(isReadOnly);
             _containers = state.GetComponentLookup<Container>(true);
             _passengers = state.GetComponentLookup<Passenger>(true);
             _health = state.GetComponentLookup<Health>(true);
@@ -30,6 +32,7 @@ namespace HyperRTS.Simulation.Transport
         public void Update(ref SystemState state)
         {
             _cargo.Update(ref state);
+            _inside.Update(ref state);
             _containers.Update(ref state);
             _passengers.Update(ref state);
             _health.Update(ref state);
@@ -50,6 +53,12 @@ namespace HyperRTS.Simulation.Transport
                 return false;
             }
 
+            // A container riding in another takes no passengers, so two containers can't board each other.
+            if (IsInside(container))
+            {
+                return false;
+            }
+
             var alive = _health.TryGetComponent(container, out var health) && health.Current > 0f;
             if (!alive || ConstructionRules.IsUnderConstruction(_sites, container))
             {
@@ -59,7 +68,14 @@ namespace HyperRTS.Simulation.Transport
             return relations.IsAllied(_factions[unit].Value, _factions[container].Value);
         }
 
-        public void Board(Entity unit, Entity container) =>
+        public bool IsInside(Entity entity) => TransportRules.IsInside(_inside, entity);
+
+        /// <summary>Puts <paramref name="unit"/> aboard; <paramref name="stance"/> is restored when it gets out.</summary>
+        public void Board(Entity unit, Entity container, Stance stance)
+        {
             _cargo[container].Add(new Cargo { Unit = unit, Size = _passengers[unit].Size });
+            _inside[unit] = new Inside { Container = container, Stance = stance };
+            _inside.SetComponentEnabled(unit, true);
+        }
     }
 }
