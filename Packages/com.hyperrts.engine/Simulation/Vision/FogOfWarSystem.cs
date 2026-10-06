@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Navigation;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -11,8 +12,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Creates the <see cref="FogOfWar"/> grid from <see cref="MapSettings"/> and restamps every team's vision and
-    /// detection a few times per second. With fog disabled the grid stays fully visible, but detection still runs.
+    /// Creates the <see cref="FogOfWar"/> grid from <see cref="MapSettings"/> and restamps every team's vision
+    /// (occluded by hills when there is a <see cref="TerrainHeight"/>) and detection a few times per second. With fog
+    /// disabled the grid stays fully visible, but detection still runs.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]
@@ -77,7 +79,14 @@ namespace HyperRTS.Simulation.Vision
             }
 
             state.Dependency = new ClearBytesJob { Cells = fog.Visible }.Schedule(state.Dependency);
-            new StampJob { Fog = fog, Relations = relations }.Schedule();
+            SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
+            new StampJob
+            {
+                Fog = fog,
+                Relations = relations,
+                Terrain = terrain,
+                WaterLevel = settings.WaterLevel,
+            }.Schedule();
             state.Dependency = new ExploreJob { Visible = fog.Visible, Explored = fog.Explored }
                 .Schedule(fog.Explored.Length, 1024, state.Dependency);
         }
@@ -128,6 +137,8 @@ namespace HyperRTS.Simulation.Vision
         {
             public FogOfWar Fog;
             public FactionRelations Relations;
+            public TerrainHeight Terrain;
+            public float WaterLevel;
 
             private void Execute(in LocalTransform transform, in VisionRange vision, in Faction faction)
             {
@@ -138,6 +149,13 @@ namespace HyperRTS.Simulation.Vision
                 }
 
                 var bit = (byte)(1 << team);
+                if (Terrain.IsCreated)
+                {
+                    var sight = new SightLines { Fog = Fog, Terrain = Terrain, WaterLevel = WaterLevel };
+                    sight.Stamp(transform.Position, vision.Value, bit);
+                    return;
+                }
+
                 var center = transform.Position.xz;
                 var rangeSq = vision.Value * vision.Value;
                 var min = math.max(Fog.WorldToCell(transform.Position - vision.Value), 0);
