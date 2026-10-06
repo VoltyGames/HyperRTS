@@ -1,6 +1,5 @@
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;

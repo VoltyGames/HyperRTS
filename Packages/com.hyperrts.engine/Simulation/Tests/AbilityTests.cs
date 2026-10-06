@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Collections;

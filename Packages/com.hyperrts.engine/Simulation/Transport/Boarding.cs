@@ -10,6 +10,7 @@ namespace HyperRTS.Simulation.Transport
     {
         private BufferLookup<Cargo> _cargo;
         private ComponentLookup<Inside> _inside;
+        private ComponentLookup<PassengerStance> _stances;
         [ReadOnly] private ComponentLookup<Container> _containers;
         [ReadOnly] private ComponentLookup<Passenger> _passengers;
         [ReadOnly] private ComponentLookup<Health> _health;
@@ -21,6 +22,7 @@ namespace HyperRTS.Simulation.Transport
         {
             _cargo = state.GetBufferLookup<Cargo>(isReadOnly);
             _inside = state.GetComponentLookup<Inside>(isReadOnly);
+            _stances = state.GetComponentLookup<PassengerStance>(isReadOnly);
             _containers = state.GetComponentLookup<Container>(true);
             _passengers = state.GetComponentLookup<Passenger>(true);
             _health = state.GetComponentLookup<Health>(true);
@@ -32,6 +34,7 @@ namespace HyperRTS.Simulation.Transport
         {
             _cargo.Update(ref state);
             _inside.Update(ref state);
+            _stances.Update(ref state);
             _containers.Update(ref state);
             _passengers.Update(ref state);
             _health.Update(ref state);
@@ -72,7 +75,8 @@ namespace HyperRTS.Simulation.Transport
         public void Board(Entity unit, Entity container, Stance stance)
         {
             _cargo[container].Add(new Cargo { Unit = unit, Size = _passengers[unit].Size });
-            _inside[unit] = new Inside { Container = container, Stance = stance };
+            _inside[unit] = new Inside { Container = container };
+            _stances[unit] = new PassengerStance { Value = stance };
             _inside.SetComponentEnabled(unit, true);
         }
     }

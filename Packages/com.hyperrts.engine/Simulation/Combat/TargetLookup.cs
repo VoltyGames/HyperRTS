@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
-using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;

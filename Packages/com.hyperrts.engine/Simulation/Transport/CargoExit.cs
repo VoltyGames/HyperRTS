@@ -17,6 +17,7 @@ namespace HyperRTS.Simulation.Transport
         private const int WalkableSearchRings = 8;
 
         private ComponentLookup<Inside> _inside;
+        [ReadOnly] private ComponentLookup<PassengerStance> _saved;
         private ComponentLookup<CombatStance> _stances;
         private ComponentLookup<LocalTransform> _transforms;
         [ReadOnly] private ComponentLookup<NavAgent> _agents;
@@ -27,6 +28,7 @@ namespace HyperRTS.Simulation.Transport
         public CargoExit(ref SystemState state)
         {
             _inside = state.GetComponentLookup<Inside>();
+            _saved = state.GetComponentLookup<PassengerStance>(true);
             _stances = state.GetComponentLookup<CombatStance>();
             _transforms = state.GetComponentLookup<LocalTransform>();
             _agents = state.GetComponentLookup<NavAgent>(true);
@@ -38,6 +40,7 @@ namespace HyperRTS.Simulation.Transport
         public void Update(ref SystemState state)
         {
             _inside.Update(ref state);
+            _saved.Update(ref state);
             _stances.Update(ref state);
             _transforms.Update(ref state);
             _agents.Update(ref state);
@@ -83,11 +86,11 @@ namespace HyperRTS.Simulation.Transport
 
         private void Exit(Entity unit, float3 position)
         {
-            var inside = _inside[unit];
             _inside.SetComponentEnabled(unit, false);
             if (_stances.HasComponent(unit))
             {
-                _stances[unit] = new CombatStance { Value = inside.Stance, Anchor = position };
+                var restored = _saved.TryGetComponent(unit, out var saved) ? saved.Value : default;
+                _stances[unit] = new CombatStance { Value = restored, Anchor = position };
             }
 
             var transform = _transforms[unit];

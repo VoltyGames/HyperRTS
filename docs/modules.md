@@ -45,6 +45,7 @@ The base module: ownership, identity, health and the helpers every other module 
 | `LocalPlayer`, `Defeated` | The player this client controls; enabled once a player is defeated |
 | `MapSettings` | Singleton: playable bounds, grid resolutions, water level, flooding, max slope |
 | `UnitTag`, `BuildingTag` | Marks a movable, orderable unit; marks a static structure |
+| `Inside` | Enabled while a passenger is aboard its `Container` (Transport): hidden, untargetable, carried along |
 | `Health`, `Dead` | Hit points (`Health.IsAlive` treats a missing entity as dead); death marker enabled the frame before destruction |
 | `ConstructionProgress` | Enableable 0..1; unfinished buildings don't produce, provide population, accept cargo, fire or satisfy prerequisites |
 | `EntityInfo` | `TypeId` (hash of the display name: instances of one prefab share it), `Name`, `Icon` |
@@ -247,7 +248,7 @@ selection. A garrisoned building can't be captured until its passengers are out.
 | Type | Role |
 | --- | --- |
 | `ContainerAuthoring` / `Container`, `Cargo` | Capacity, largest passenger size, passengers fire out, passengers survive its death |
-| `PassengerAuthoring` / `Passenger`, `Inside` | Size; `Inside` is enabled while aboard and remembers the stance to restore |
+| `PassengerAuthoring` / `Passenger`, `PassengerStance` | Size; the stance to restore on exit (`Inside`, in Common, is enabled while aboard) |
 | `Boarding` | `CanBoard`, `Board` and `IsInside`, shared by orders and `BoardingSystem` |
 
 `BoardingSystem` runs Enter orders. Aboard, a passenger is dropped from the spatial index (untargetable, no splash),

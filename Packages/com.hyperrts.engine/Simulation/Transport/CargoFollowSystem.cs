@@ -1,6 +1,8 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
@@ -16,12 +18,14 @@ namespace HyperRTS.Simulation.Transport
     {
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<CombatStance> _stances;
+        private ComponentLookup<PassengerStance> _saved;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _transforms = state.GetComponentLookup<LocalTransform>();
             _stances = state.GetComponentLookup<CombatStance>();
+            _saved = state.GetComponentLookup<PassengerStance>(true);
         }
 
         [BurstCompile]
@@ -29,7 +33,8 @@ namespace HyperRTS.Simulation.Transport
         {
             _transforms.Update(ref state);
             _stances.Update(ref state);
-            new FollowJob { Transforms = _transforms, Stances = _stances }.Schedule();
+            _saved.Update(ref state);
+            new FollowJob { Transforms = _transforms, Stances = _stances, Saved = _saved }.Schedule();
         }
 
         // Single-threaded: reads the container's transform and writes the passenger's through one lookup.
@@ -38,6 +43,7 @@ namespace HyperRTS.Simulation.Transport
         {
             public ComponentLookup<LocalTransform> Transforms;
             public ComponentLookup<CombatStance> Stances;
+            [ReadOnly] public ComponentLookup<PassengerStance> Saved;
 
             private void Execute(Entity entity, ref Inside inside, EnabledRefRW<Inside> aboard)
             {
@@ -46,7 +52,8 @@ namespace HyperRTS.Simulation.Transport
                     aboard.ValueRW = false;
                     if (Stances.TryGetComponent(entity, out var stance))
                     {
-                        Stances[entity] = new CombatStance { Value = inside.Stance, Anchor = stance.Anchor };
+                        var restored = Saved.TryGetComponent(entity, out var saved) ? saved.Value : default;
+                        Stances[entity] = new CombatStance { Value = restored, Anchor = stance.Anchor };
                     }
 
                     return;

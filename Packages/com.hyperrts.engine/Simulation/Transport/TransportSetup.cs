@@ -15,6 +15,7 @@ namespace HyperRTS.Simulation.Transport
         {
             sink.Add(new Passenger { Size = size });
             sink.Add<Inside>();
+            sink.Add<PassengerStance>();
             sink.SetEnabled<Inside>(false);
         }
     }

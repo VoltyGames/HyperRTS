@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
-using HyperRTS.Simulation.Transport;
 using Unity.Collections;
 using Unity.Entities;
 
