@@ -8,14 +8,14 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Abilities
 {
     /// <summary>Fires an ability: starts its cooldown, publishes the event and runs the built-in effects. One thread only.</summary>
-    public struct AbilityActivator
+    public struct AbilityCaster
     {
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
         private BufferLookup<AbilityActivation> _events;
         private DamageWriter _damage;
         private Entity _eventQueue;
 
-        public AbilityActivator(ref SystemState state) : this()
+        public AbilityCaster(ref SystemState state) : this()
         {
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _events = state.GetBufferLookup<AbilityActivation>();
@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Abilities
             _eventQueue = eventQueue;
         }
 
-        public void Activate(ref Ability ability, Entity caster, byte faction, Entity target, float3 position,
+        public void Cast(ref Ability ability, Entity caster, byte faction, Entity target, float3 position,
             EntityCommandBuffer ecb)
         {
             ability.CooldownRemaining = ability.Cooldown;

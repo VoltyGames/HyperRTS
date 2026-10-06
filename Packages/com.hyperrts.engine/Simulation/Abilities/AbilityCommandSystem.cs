@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Abilities
         private OrderWriter _writer;
         private TargetLookup _targets;
         private ComponentLookup<Faction> _factions;
-        private AbilityActivator _activator;
+        private AbilityCaster _caster;
 
         public void OnCreate(ref SystemState state)
         {
@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Abilities
             _writer = new OrderWriter(ref state);
             _targets = new TargetLookup(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
-            _activator = new AbilityActivator(ref state);
+            _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Abilities
             _writer.Update(ref state);
             _targets.Update(ref state);
             _factions.Update(ref state);
-            _activator.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(), events);
+            _caster.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(), events);
 
             var context = new Context
             {
@@ -186,7 +186,7 @@ namespace HyperRTS.Simulation.Abilities
             var aim = AbilityRules.Aim(ability, from, command.Target, command.Position, _targets);
             if (AbilityRules.InRange(ability, caster, from, command.Target, aim, _targets))
             {
-                _activator.Activate(ref abilities.ElementAt(index), caster, faction, command.Target, aim, context.Ecb);
+                _caster.Cast(ref abilities.ElementAt(index), caster, faction, command.Target, aim, context.Ecb);
             }
         }
 
@@ -206,7 +206,7 @@ namespace HyperRTS.Simulation.Abilities
             }
 
             var aim = AbilityRules.Aim(abilities[index], command.Position, command.Target, command.Position, _targets);
-            _activator.Activate(ref abilities.ElementAt(index), player, faction, command.Target, aim, context.Ecb);
+            _caster.Cast(ref abilities.ElementAt(index), player, faction, command.Target, aim, context.Ecb);
         }
     }
 }

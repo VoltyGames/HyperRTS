@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Abilities
         private EntityQuery _completed;
         private TargetLookup _targets;
         private ComponentLookup<Faction> _factions;
-        private AbilityActivator _activator;
+        private AbilityCaster _caster;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Abilities
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _targets = new TargetLookup(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
-            _activator = new AbilityActivator(ref state);
+            _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<AbilityEvents>();
             state.RequireForUpdate<FactionRelations>();
@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Abilities
         {
             _targets.Update(ref state);
             _factions.Update(ref state);
-            _activator.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
+            _caster.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
                 SystemAPI.GetSingletonEntity<AbilityEvents>());
 
             new CooldownJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
@@ -61,7 +61,7 @@ namespace HyperRTS.Simulation.Abilities
                 Completed = completed,
                 Targets = _targets,
                 Factions = _factions,
-                Activator = _activator,
+                Caster = _caster,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
             }.Schedule();
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Abilities
             [ReadOnly] public CompletedBuildings Completed;
             public TargetLookup Targets;
             [ReadOnly] public ComponentLookup<Faction> Factions;
-            public AbilityActivator Activator;
+            public AbilityCaster Caster;
             public EntityCommandBuffer Ecb;
 
             private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
@@ -125,7 +125,7 @@ namespace HyperRTS.Simulation.Abilities
                 }
 
                 ActiveOrder.Finish(busy, moving);
-                Activator.Activate(ref abilities.ElementAt(index), entity, faction, target, aim, Ecb);
+                Caster.Cast(ref abilities.ElementAt(index), entity, faction, target, aim, Ecb);
             }
 
             private bool IsUsable(in Ability ability, Entity target, byte faction) =>
