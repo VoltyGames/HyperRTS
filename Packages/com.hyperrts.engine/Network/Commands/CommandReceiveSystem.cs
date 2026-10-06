@@ -21,12 +21,14 @@ namespace HyperRTS.Network.Commands
     {
         private EntityQuery _rpcs;
         private EntityQuery _prefabs;
+        private EntityQuery _players;
 
         public void OnCreate(ref SystemState state)
         {
             _rpcs = SystemAPI.QueryBuilder().WithAll<CommandRpc, ReceiveRpcCommandRequest>().Build();
             _prefabs = SystemAPI.QueryBuilder().WithAll<EntityInfo, Prefab>()
                 .WithOptions(EntityQueryOptions.IncludePrefab).Build();
+            _players = SystemAPI.QueryBuilder().WithAll<PlayerConnection>().Build();
             state.RequireForUpdate(_rpcs);
         }
 
@@ -39,34 +41,36 @@ namespace HyperRTS.Network.Commands
             }
 
             var prefabs = new NativeHashMap<int, Entity>(64, Allocator.Temp);
-            foreach (var prefab in _prefabs.ToEntityArray(Allocator.Temp))
-            {
-                prefabs[state.EntityManager.GetComponentData<EntityInfo>(prefab).TypeId] = prefab;
-            }
+            PrefabLookup.ByTypeId(_prefabs, prefabs);
+            var players = PlayerConnections.ByNetworkId(_players);
 
             var grouped = new NativeHashSet<Entity>(8, Allocator.Temp);
+            var handled = new NativeList<Entity>(Allocator.Temp);
             foreach (var request in _rpcs.ToEntityArray(Allocator.Temp))
             {
                 var rpc = state.EntityManager.GetComponentData<CommandRpc>(request);
                 var connection = state.EntityManager.GetComponentData<ReceiveRpcCommandRequest>(request).SourceConnection;
-                var player = PlayerOf(ref state, connection);
+                if (!TryGetPlayer(ref state, players, connection, out var player))
+                {
+                    handled.Add(request);
+                    continue;
+                }
+
                 var isGroup = rpc.Subjects.Length != 1;
-                if (player != Entity.Null && isGroup && !grouped.Add(player))
+                if (isGroup && !grouped.Add(player))
                 {
                     continue; // waits for next frame's selection
                 }
 
-                if (player != Entity.Null)
-                {
-                    Apply(ref state, player, rpc, ghosts, prefabs);
-                }
-
-                state.EntityManager.DestroyEntity(request);
+                Apply(ref state, player, rpc, isGroup, ghosts, prefabs);
+                handled.Add(request);
             }
+
+            state.EntityManager.DestroyEntity(handled.AsArray());
         }
 
-        private void Apply(ref SystemState state, Entity player, in CommandRpc rpc, NativeHashMap<int, Entity> ghosts,
-            NativeHashMap<int, Entity> prefabs)
+        private void Apply(ref SystemState state, Entity player, in CommandRpc rpc, bool isGroup,
+            NativeHashMap<int, Entity> ghosts, NativeHashMap<int, Entity> prefabs)
         {
             var faction = SystemAPI.GetComponent<Player>(player).Faction;
             var command = new PlayerCommand
@@ -79,24 +83,27 @@ namespace HyperRTS.Network.Commands
                 Prefab = prefabs.TryGetValue(rpc.PrefabTypeId, out var prefab) ? prefab : Entity.Null,
             };
 
-            var owned = new NativeHashSet<Entity>(rpc.Subjects.Length, Allocator.Temp);
-            foreach (var id in rpc.Subjects)
+            if (isGroup)
             {
-                if (ghosts.TryGetValue(id, out var unit) && IsOwned(ref state, unit, faction))
+                var owned = new NativeHashSet<Entity>(rpc.Subjects.Length, Allocator.Temp);
+                foreach (var id in rpc.Subjects)
                 {
-                    owned.Add(unit);
-                    command.Unit = unit;
+                    if (ghosts.TryGetValue(id, out var unit) && IsOwned(ref state, unit, faction))
+                    {
+                        owned.Add(unit);
+                    }
                 }
-            }
 
-            if (rpc.Subjects.Length != 1)
-            {
-                command.Unit = Entity.Null;
                 Select(ref state, faction, owned);
             }
-            else if (command.Unit == Entity.Null)
+            else
             {
-                return;
+                if (!ghosts.TryGetValue(rpc.Subjects[0], out var unit) || !IsOwned(ref state, unit, faction))
+                {
+                    return;
+                }
+
+                command.Unit = unit;
             }
 
             SystemAPI.GetBuffer<PlayerCommand>(player).Add(command);
@@ -114,26 +121,19 @@ namespace HyperRTS.Network.Commands
             }
         }
 
-        private bool IsOwned(ref SystemState state, Entity entity, byte faction) =>
-            SystemAPI.HasComponent<Faction>(entity) && SystemAPI.GetComponent<Faction>(entity).Value == faction;
-
-        private Entity PlayerOf(ref SystemState state, Entity connection)
+        private bool TryGetPlayer(ref SystemState state, NativeHashMap<int, Entity> players, Entity connection,
+            out Entity player)
         {
+            player = Entity.Null;
             if (!SystemAPI.HasComponent<NetworkId>(connection))
             {
-                return Entity.Null;
+                return false;
             }
 
-            var networkId = SystemAPI.GetComponent<NetworkId>(connection).Value;
-            foreach (var (link, entity) in SystemAPI.Query<RefRO<PlayerConnection>>().WithEntityAccess())
-            {
-                if (link.ValueRO.NetworkId == networkId)
-                {
-                    return entity;
-                }
-            }
-
-            return Entity.Null;
+            return players.TryGetValue(SystemAPI.GetComponent<NetworkId>(connection).Value, out player);
         }
+
+        private bool IsOwned(ref SystemState state, Entity entity, byte faction) =>
+            SystemAPI.HasComponent<Faction>(entity) && SystemAPI.GetComponent<Faction>(entity).Value == faction;
     }
 }

@@ -6,13 +6,12 @@ using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Upgrades;
 using Unity.Collections;
 using Unity.Entities;
-using UnityEngine;
 
 namespace HyperRTS.Network.References
 {
     /// <summary>
     /// Client: entity and asset references can't cross the network, so replicated buffers carry type ids and this
-    /// fills the references back in from the client's own prefabs and assets.
+    /// fills the references back in from the client's own prefabs and assets whenever a snapshot changes them.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
@@ -33,7 +32,8 @@ namespace HyperRTS.Network.References
 
         protected override void OnUpdate()
         {
-            foreach (var queue in SystemAPI.Query<DynamicBuffer<ProductionQueueItem>>())
+            foreach (var queue in SystemAPI.Query<DynamicBuffer<ProductionQueueItem>>()
+                         .WithChangeFilter<ProductionQueueItem>())
             {
                 for (var i = 0; i < queue.Length; i++)
                 {
@@ -41,7 +41,8 @@ namespace HyperRTS.Network.References
                 }
             }
 
-            foreach (var researched in SystemAPI.Query<DynamicBuffer<ResearchedUpgrade>>())
+            foreach (var researched in SystemAPI.Query<DynamicBuffer<ResearchedUpgrade>>()
+                         .WithChangeFilter<ResearchedUpgrade>())
             {
                 for (var i = 0; i < researched.Length; i++)
                 {
@@ -49,7 +50,7 @@ namespace HyperRTS.Network.References
                 }
             }
 
-            foreach (var stock in SystemAPI.Query<DynamicBuffer<ResourceStock>>())
+            foreach (var stock in SystemAPI.Query<DynamicBuffer<ResourceStock>>().WithChangeFilter<ResourceStock>())
             {
                 for (var i = 0; i < stock.Length; i++)
                 {
@@ -60,17 +61,18 @@ namespace HyperRTS.Network.References
 
         private Entity PrefabOf(int typeId)
         {
-            if (!_prefabs.TryGetValue(typeId, out var prefab) && _prefabs.Count != _prefabQuery.CalculateEntityCount())
+            if (_prefabs.TryGetValue(typeId, out var prefab))
             {
-                _prefabs.Clear();
-                foreach (var entity in _prefabQuery.ToEntityArray(Allocator.Temp))
-                {
-                    _prefabs[EntityManager.GetComponentData<EntityInfo>(entity).TypeId] = entity;
-                }
-
-                _prefabs.TryGetValue(typeId, out prefab);
+                return prefab;
             }
 
+            if (_prefabs.Count == _prefabQuery.CalculateEntityCount())
+            {
+                return Entity.Null; // no prefab has loaded since the last rebuild
+            }
+
+            PrefabLookup.ByTypeId(_prefabQuery, _prefabs);
+            _prefabs.TryGetValue(typeId, out prefab);
             return prefab;
         }
 

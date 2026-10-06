@@ -45,8 +45,18 @@ namespace HyperRTS.Network.Players
             foreach (var (player, connection, entity) in SystemAPI.Query<RefRO<Player>, RefRO<PlayerConnection>>()
                          .WithNone<AIPlayer>().WithEntityAccess())
             {
-                var free = connection.ValueRO.NetworkId == 0;
-                if (free && (slot == Entity.Null || player.ValueRO.Faction == wanted))
+                if (connection.ValueRO.NetworkId != 0)
+                {
+                    continue;
+                }
+
+                if (player.ValueRO.Faction == wanted)
+                {
+                    slot = entity;
+                    break;
+                }
+
+                if (slot == Entity.Null)
                 {
                     slot = entity;
                 }

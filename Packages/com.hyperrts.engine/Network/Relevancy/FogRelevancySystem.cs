@@ -10,8 +10,8 @@ using Unity.Transforms;
 namespace HyperRTS.Network.Relevancy
 {
     /// <summary>
-    /// Server-side fog of war: each client only receives the owned ghosts its team can see, so a hacked client has
-    /// nothing hidden to reveal. Ghosts without an owner (players, the match) always replicate; observers see all.
+    /// Server-side fog of war: owned ghosts hidden from a client's team are marked irrelevant to it, so a hacked client
+    /// has nothing hidden to reveal. Ghosts without an owner (players, the match) always replicate; observers see all.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
@@ -45,12 +45,8 @@ namespace HyperRTS.Network.Relevancy
                 return;
             }
 
-            relevancy.GhostRelevancyMode = GhostRelevancyMode.SetIsRelevant;
-            relevancy.DefaultRelevancyQuery = SystemAPI.QueryBuilder().WithAll<GhostInstance>().WithNone<Faction>()
-                .Build();
-
-            // The fog grid is written by jobs; this runs once per frame on a handful of connections.
-            state.EntityManager.CompleteAllTrackedJobs();
+            // Only hostile, hidden pairs are listed, so observers and allies cost nothing.
+            relevancy.GhostRelevancyMode = GhostRelevancyMode.SetIsIrrelevant;
             var relations = SystemAPI.GetSingleton<FactionRelations>();
             var viewers = Viewers(ref state);
             foreach (var (transform, owner, ghost) in
@@ -60,8 +56,7 @@ namespace HyperRTS.Network.Relevancy
                 var faction = owner.ValueRO.Value;
                 foreach (var viewer in viewers)
                 {
-                    var isObserver = viewer.Faction == 0;
-                    if (isObserver || !fog.IsHiddenFrom(relations, viewer.Faction, faction, position))
+                    if (fog.IsHiddenFrom(relations, viewer.Faction, faction, position))
                     {
                         relevancy.GhostRelevancySet.TryAdd(
                             new RelevantGhostForConnection(viewer.NetworkId, ghost.ValueRO.ghostId), 1);
@@ -70,22 +65,18 @@ namespace HyperRTS.Network.Relevancy
             }
         }
 
-        /// <summary>In-game connections with their slot's faction; 0 for observers.</summary>
+        /// <summary>In-game connections holding a slot, with its faction; observers see all, so are left out.</summary>
         private NativeList<Viewer> Viewers(ref SystemState state)
         {
+            var players = PlayerConnections.ByNetworkId(SystemAPI.QueryBuilder().WithAll<PlayerConnection>().Build());
             var viewers = new NativeList<Viewer>(8, Allocator.Temp);
             foreach (var id in SystemAPI.Query<RefRO<NetworkId>>().WithAll<NetworkStreamInGame>())
             {
-                var viewer = new Viewer { NetworkId = id.ValueRO.Value };
-                foreach (var (player, link) in SystemAPI.Query<RefRO<Player>, RefRO<PlayerConnection>>())
+                if (players.TryGetValue(id.ValueRO.Value, out var player))
                 {
-                    if (link.ValueRO.NetworkId == viewer.NetworkId)
-                    {
-                        viewer.Faction = player.ValueRO.Faction;
-                    }
+                    var faction = SystemAPI.GetComponent<Player>(player).Faction;
+                    viewers.Add(new Viewer { NetworkId = id.ValueRO.Value, Faction = faction });
                 }
-
-                viewers.Add(viewer);
             }
 
             return viewers;

@@ -68,18 +68,13 @@ namespace HyperRTS.Network.Players
                 return;
             }
 
-            var mine = Entity.Null;
             foreach (var (player, entity) in SystemAPI.Query<RefRO<Player>>().WithEntityAccess())
             {
                 if (player.ValueRO.Faction == local.Value)
                 {
-                    mine = entity;
+                    state.EntityManager.AddComponent<LocalPlayer>(entity);
+                    return;
                 }
-            }
-
-            if (mine != Entity.Null)
-            {
-                state.EntityManager.AddComponent<LocalPlayer>(mine);
             }
         }
     }

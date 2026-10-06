@@ -15,7 +15,7 @@ namespace HyperRTS.Network.References
     {
         public void OnUpdate(ref SystemState state)
         {
-            foreach (var stock in SystemAPI.Query<DynamicBuffer<ResourceStock>>())
+            foreach (var stock in SystemAPI.Query<DynamicBuffer<ResourceStock>>().WithChangeFilter<ResourceStock>())
             {
                 for (var i = 0; i < stock.Length; i++)
                 {

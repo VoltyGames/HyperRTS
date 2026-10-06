@@ -15,8 +15,14 @@ namespace HyperRTS.Network.Commands
     [UpdateInGroup(typeof(OrderSystemGroup), OrderLast = true)]
     public partial struct CommandSendSystem : ISystem
     {
+        private EntityQuery _selected;
+
         [BurstCompile]
-        public void OnCreate(ref SystemState state) => state.RequireForUpdate<LocalPlayer>();
+        public void OnCreate(ref SystemState state)
+        {
+            _selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction, GhostInstance>().Build();
+            state.RequireForUpdate<LocalPlayer>();
+        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
@@ -55,17 +61,18 @@ namespace HyperRTS.Network.Commands
                     : 0,
             };
 
-            if (command.Unit != Entity.Null)
+            // A commanded unit goes as is; a selection only sends this player's own units.
+            var isSingle = command.Unit != Entity.Null;
+            foreach (var subject in CommandSubjects.Collect(command.Unit, _selected))
             {
-                rpc.Subjects.Add(GhostId(ref state, command.Unit));
-                return rpc;
-            }
-
-            foreach (var (owner, ghost) in SystemAPI.Query<RefRO<Faction>, RefRO<GhostInstance>>().WithAll<Selected>())
-            {
-                if (owner.ValueRO.Value == faction && rpc.Subjects.Length < CommandRpc.MaxSubjects)
+                if (rpc.Subjects.Length == CommandRpc.MaxSubjects)
                 {
-                    rpc.Subjects.Add(ghost.ValueRO.ghostId);
+                    break;
+                }
+
+                if (isSingle || SystemAPI.GetComponent<Faction>(subject).Value == faction)
+                {
+                    rpc.Subjects.Add(GhostId(ref state, subject));
                 }
             }
 
