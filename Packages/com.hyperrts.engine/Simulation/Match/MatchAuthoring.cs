@@ -15,6 +15,7 @@ namespace HyperRTS.Simulation.Match
     [Icon(HyperRTSIcons.Match)]
     [HelpURL(HyperRTSDocs.GettingStarted)]
     [DisallowMultipleComponent]
+    [RequiresGhost]
     public class MatchAuthoring : AuthoringBehaviour
     {
         [Header("Map")]

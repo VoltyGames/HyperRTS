@@ -72,8 +72,8 @@ Per-component rules live in [`Validation/Rules/`](../Packages/com.hyperrts.engin
 `AuthoringRule<T>` per authoring type (no collider, empty or scene-object production options, unit prerequisites,
 spawn point inside the footprint, node without a resource type, ...). `[RequiresAuthoring]` on an authoring class
 declares a component it needs alongside it. `AuthoringRule<T>` has shared checks for prefab references and option
-lists (`CheckPrefabReference`, `CheckPrefabOptions`) and for entries the baker skips (`CheckEmptyEntries`). Ghost
-requirements are one-line `RequiresGhostRule<T>` subclasses.
+lists (`CheckPrefabReference`, `CheckPrefabOptions`) and for entries the baker skips (`CheckEmptyEntries`). `[RequiresGhost]`
+marks a component whose object must be a ghost.
 [`AuthoringChecks`](../Packages/com.hyperrts.engine/Editor/Validation/AuthoringChecks.cs) runs every rule that applies. Cross-object rules sit beside them: `ISceneRule`s check the open scenes (zero or several Matches, owners without a
 player slot, entities outside the map, a scene missing `OverrideAutomaticNetcodeBootstrap`) and `IPrefabRule`s
 check the project's prefabs (two sharing a display name would merge into one `TypeId`).

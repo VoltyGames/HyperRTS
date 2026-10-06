@@ -8,6 +8,7 @@ using UnityEngine;
 namespace HyperRTS.Simulation.GameEntities
 {
     /// <summary>Base for <c>UnitAuthoring</c> and <c>BuildingAuthoring</c>: identity, owner, health, vision, cost.</summary>
+    [RequiresGhost]
     public abstract class GameEntityAuthoring : AuthoringBehaviour
     {
         [Header("Identity")]

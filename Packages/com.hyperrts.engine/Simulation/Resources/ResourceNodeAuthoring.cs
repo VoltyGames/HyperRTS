@@ -11,6 +11,7 @@ namespace HyperRTS.Simulation.Resources
     [Icon(HyperRTSIcons.Resources)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
+    [RequiresGhost]
     public class ResourceNodeAuthoring : AuthoringBehaviour
     {
         [Tooltip("Resource this node yields.")]

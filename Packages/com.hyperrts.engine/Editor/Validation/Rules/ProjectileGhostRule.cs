@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Validation.Rules
                 return;
             }
 
-            WarnIfNotGhost(weapon, projectile,
+            RequiresGhostRule.WarnIfNotGhost(weapon, projectile,
                 $"Projectile '{projectile.name}' is not a ghost: clients won't see it fly.", issues);
         }
     }

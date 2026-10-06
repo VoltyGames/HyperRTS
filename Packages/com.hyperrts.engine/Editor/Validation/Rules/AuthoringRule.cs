@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.NetCode;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -59,15 +58,6 @@ namespace HyperRTS.Editor.Validation.Rules
             if (list.Exists(isEmpty))
             {
                 issues.Warn(owner, message, "Remove Empty", () => QuickFixes.RemoveEmpty(owner, list, isEmpty));
-            }
-        }
-
-        /// <summary>Server-spawned objects must be ghosts to reach clients; offers to make <paramref name="target"/> one.</summary>
-        protected static void WarnIfNotGhost(Component owner, GameObject target, string message, ValidationIssues issues)
-        {
-            if (!target.TryGetComponent<GhostAuthoringComponent>(out _))
-            {
-                issues.Warn(owner, message, "Make Ghost", () => Undo.AddComponent<GhostAuthoringComponent>(target));
             }
         }
 
