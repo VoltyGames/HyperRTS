@@ -77,7 +77,7 @@ Shared identity for units and buildings.
 | `MatchRules` | Match singleton: low-power production rate, sell refund, replay recording |
 | `VictoryCritical`, `PopulationProvider`, `Population` | Flags and the per-player used/cap count read by the systems below |
 
-Systems: `PopulationSystem` recounts used/cap each frame. `VictorySystem` defeats players who lost every
+Systems: `PopulationSystem` (in Production, first in its phase) recounts used/cap each frame. `VictorySystem` defeats players who lost every
 `VictoryCritical` entity they had and ends the match when one team is left. Players are never defeated before they
 first own something, so SubScene streaming at startup is safe.
 

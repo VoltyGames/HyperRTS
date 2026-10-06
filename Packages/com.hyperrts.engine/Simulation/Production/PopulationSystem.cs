@@ -1,11 +1,11 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Production;
+using HyperRTS.Simulation.Match;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Match
+namespace HyperRTS.Simulation.Production
 {
     /// <summary>Recounts each player's <see cref="Population"/> from living units and completed providers.</summary>
     [BurstCompile]
