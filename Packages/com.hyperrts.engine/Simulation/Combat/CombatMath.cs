@@ -7,10 +7,6 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>Range and damage rules shared by the combat systems.</summary>
     public static class CombatMath
     {
-        /// <summary>Gap between two footprints on the XZ plane; weapon ranges are measured edge to edge.</summary>
-        public static float EdgeDistance(float3 a, float radiusA, float3 b, float radiusB) =>
-            math.max(0f, math.distance(a.xz, b.xz) - radiusA - radiusB);
-
         /// <summary>Aircraft are air targets; everything else (units on any other layer, buildings) is surface.</summary>
         public static bool CanHit(WeaponTargets targets, NavLayer layer) => targets switch
         {

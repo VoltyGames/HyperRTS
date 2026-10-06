@@ -1,5 +1,4 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Burst;
@@ -89,7 +88,7 @@ namespace HyperRTS.Simulation.Orders
 
                 var wardPosition = Transforms[ward].Position;
                 var wardRadius = EntityRadius.Of(ward, Agents, Obstacles);
-                var gap = CombatMath.EdgeDistance(transform.Position, agent.Radius, wardPosition, wardRadius);
+                var gap = EntityRadius.EdgeDistance(transform.Position, agent.Radius, wardPosition, wardRadius);
                 if (gap > FollowDistance)
                 {
                     ReachMath.MoveTo(ref destination, moving, wardPosition);

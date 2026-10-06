@@ -142,7 +142,7 @@ namespace HyperRTS.Simulation.Combat
             }
 
             private float Distance(Entity entity, float3 position, Entity target) =>
-                CombatMath.EdgeDistance(position, Targets.Radius(entity), Targets.Position(target), Targets.Radius(target));
+                EntityRadius.EdgeDistance(position, Targets.Radius(entity), Targets.Position(target), Targets.Radius(target));
 
             private void Release(Entity entity, in Order order, in CombatStance stance, ref AttackTarget attack,
                 EnabledRefRW<AttackTarget> attacking)

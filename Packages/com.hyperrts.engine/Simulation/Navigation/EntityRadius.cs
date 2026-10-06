@@ -34,5 +34,9 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Half the longest side, so the circle spans the box's width.</summary>
         public static float Of(in NavObstacle obstacle) => math.cmax(obstacle.Size) * 0.5f;
+
+        /// <summary>Gap between two footprints on the XZ plane; weapon ranges are measured edge to edge.</summary>
+        public static float EdgeDistance(float3 a, float radiusA, float3 b, float radiusB) =>
+            math.max(0f, math.distance(a.xz, b.xz) - radiusA - radiusB);
     }
 }

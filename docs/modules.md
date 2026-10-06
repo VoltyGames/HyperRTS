@@ -158,7 +158,7 @@ same entity.
 | `ArmorFacing` | Front/side/rear multipliers from the Armor component's Directional fields |
 | `LastAttacker` | Who last damaged the entity, read on death for kill credit |
 | `CombatStance` / `Stance` | Aggressive, Defensive (returns to anchor), HoldPosition, Passive |
-| `AttackTarget` | Enableable current target |
+| `AttackTarget` | Enableable current target (in Common, so orders can halt attacks) |
 | `DamageType` (asset), `ArmorAuthoring` / `ArmorModifier` | Damage multipliers per type |
 | `Projectile` | Shot in flight carrying its `DamageEvent` |
 

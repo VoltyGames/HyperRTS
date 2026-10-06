@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Production;
 using Unity.Entities;
@@ -109,7 +110,7 @@ namespace HyperRTS.Simulation.Abilities
             }
 
             var targetRadius = ability.Target == AbilityTarget.Entity ? targets.Radius(target) : 0f;
-            return CombatMath.EdgeDistance(from, targets.Radius(caster), aim, targetRadius) <= ability.Range;
+            return EntityRadius.EdgeDistance(from, targets.Radius(caster), aim, targetRadius) <= ability.Range;
         }
     }
 }

@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Stats;
 using Unity.Burst;
@@ -104,7 +105,7 @@ namespace HyperRTS.Simulation.Combat
                         continue;
                     }
 
-                    var gap = CombatMath.EdgeDistance(victim.Position, victim.Radius, hit.Position, 0f);
+                    var gap = EntityRadius.EdgeDistance(victim.Position, victim.Radius, hit.Position, 0f);
                     Apply(victim.Entity, hit.Amount * CombatMath.SplashFactor(gap, hit.Radius, hit.EdgeFactor), hit);
                 }
             }
