@@ -145,7 +145,8 @@ Generic mechanisms a modern-warfare RTS needs, all data-driven and server-side s
 - ✅ Connection flow: host, dedicated server, client (menu and command line); slot binding, observers, rejoin
 - ✅ Per-client fog through ghost relevancy (no map hack)
 - ⬜ Measured in a real match: 500-unit bandwidth test, importance and send rate tuning
-- ⬜ Relay transport, "last seen" enemy buildings, command feedback before the server confirms
+- ✅ Relay transport for player-hosted matches (game supplies the allocation), lobby connection status
+- ⬜ "Last seen" enemy buildings, command feedback before the server confirms
 
 ## Phase 11: Hardening, tooling & sample game 🟡
 

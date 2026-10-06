@@ -25,10 +25,40 @@ active scene so its SubScene streams into them:
 - `StartHost(port)`: server and client in one process (custom lobbies, LAN).
 - `StartServer(port)`: dedicated server, no local player.
 - `StartClient(address, port)`: join a server.
+- `StartRelayHost(relayData)` / `StartRelayClient(relayData)`: the same over a relay (below).
 - `Stop()`: back to single player.
 
-In Play mode use **HyperRTS ▸ Network**. Builds accept `-server`, `-host`, `-connect <address>` and
-`-port <n>`; a dedicated server runs with `-batchmode -nographics -server`.
+The `Start*` calls return `false` when the session can't start (bad address, port in use) and stay in single
+player. In Play mode use **HyperRTS ▸ Network**. Builds accept `-server`, `-host`, `-connect <address>` and
+`-port <n>`; a dedicated server runs with `-batchmode -nographics -server`. Relay needs runtime data from the
+game, so it has no menu item or flag.
+
+## Relay (player-hosted matches)
+
+Player-hosted matches behind NAT connect through a relay. The engine takes a Unity Transport `RelayServerData`
+and doesn't depend on any service: the game gets the allocation from Unity Relay, Steam or its own backend,
+shares the join code through its lobby, then starts the session.
+
+```csharp
+// Host: create an allocation (UGS: RelayService.Instance.CreateAllocationAsync), publish its join code.
+NetworkSession.StartRelayHost(allocation.ToRelayServerData("dtls"));
+// Client: join with the code (UGS: RelayService.Instance.JoinAllocationAsync).
+NetworkSession.StartRelayClient(joinAllocation.ToRelayServerData("dtls"));
+```
+
+`RelayDriverConstructor` replaces Netcode's default drivers before the world listens or connects: the host's
+server listens on the relay and over IPC, and its own client joins over IPC, so the host never pays the relay
+round trip. A Steam or custom relay that isn't Unity Relay plugs in as its own `INetworkStreamDriverConstructor`
+(e.g. a Steam Networking Sockets `INetworkInterface`); keep it in the game, since the engine ships no
+third-party SDK.
+
+## Connection status
+
+`NetworkSession.Status` (`Idle`, `Connecting`, `Connected`, `Disconnected`) and the `StatusChanged` event drive
+lobby and connection UI. `NetworkStatusSystem` reads it from Netcode's connection events in the client world; a
+dedicated server is `Connected` once it listens. When a connection fails or closes, the status stays
+`Disconnected` with Netcode's `DisconnectReason` (timeout, closed by remote, max attempts...) until the game
+calls `Stop()` or starts a new session, so the UI can show why instead of an empty world.
 
 ## Join and reconnect
 
@@ -83,4 +113,4 @@ Clicks raycast against Unity Physics, which Netcode only steps inside the predic
 - No client-side prediction: commands take a round trip to show, like most server-based RTS.
 - Enemy buildings disappear when they leave vision (no "last seen" ghosts yet).
 - No host migration: if the host leaves, the match ends.
-- Relay (Steam Datagram Relay, Unity Relay) plugs in through a custom Netcode driver constructor; not built in.
+- No automatic reconnect: after `Disconnected` the game calls `Stop()` and starts the session again.
