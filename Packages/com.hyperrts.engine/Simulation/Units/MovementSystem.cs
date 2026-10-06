@@ -16,7 +16,8 @@ namespace HyperRTS.Simulation.Units
     /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> (disabled on arrival),
     /// pushes overlapping units of the same layer apart and never steps into a cell closed to the agent's layer.
     /// Steers on XZ; with a <see cref="NavGrid"/>, Y follows the layer's surface (ground, deck or water). Aircraft
-    /// ignore the grid, climb to their <see cref="Flight"/> altitude and, if they can't hover, circle when idle.
+    /// ignore the grid, climb to their <see cref="Flight"/> altitude (land while <see cref="Docked"/>) and, if they
+    /// can't hover, circle when idle.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
@@ -25,11 +26,13 @@ namespace HyperRTS.Simulation.Units
     {
         private NavGrid _noGrid;
         private ComponentLookup<Flight> _flights;
+        private ComponentLookup<Docked> _docked;
 
         public void OnCreate(ref SystemState state)
         {
             _noGrid = NavGrid.Placeholder();
             _flights = state.GetComponentLookup<Flight>(true);
+            _docked = state.GetComponentLookup<Docked>(true);
             state.RequireForUpdate<SpatialIndex>();
         }
 
@@ -43,12 +46,14 @@ namespace HyperRTS.Simulation.Units
         {
             var hasGrid = SystemAPI.TryGetSingleton<NavGrid>(out var grid) && grid.IsCreated;
             _flights.Update(ref state);
+            _docked.Update(ref state);
             new MoveJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Grid = hasGrid ? grid : _noGrid,
                 HasGrid = hasGrid,
                 Flights = _flights,
+                DockedLookup = _docked,
                 DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }
@@ -62,6 +67,7 @@ namespace HyperRTS.Simulation.Units
             [ReadOnly] public NavGrid Grid;
             public bool HasGrid;
             [ReadOnly] public ComponentLookup<Flight> Flights;
+            [ReadOnly] public ComponentLookup<Docked> DockedLookup;
             public float DeltaTime;
 
             // `ref`, not `in`: it must share one writable handle with EnabledRefRW.
@@ -142,7 +148,7 @@ namespace HyperRTS.Simulation.Units
                 return heading * maxStep;
             }
 
-            private readonly bool IsLanded(Entity entity) => false;
+            private readonly bool IsLanded(Entity entity) => Docked.Of(DockedLookup, entity);
 
             private readonly float2 Separation(Entity entity, float3 position, in NavAgent agent, float maxStep)
             {

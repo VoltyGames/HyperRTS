@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
@@ -16,7 +17,8 @@ namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>
     /// Trains the head of each completed producer's queue while the owner has population room, then spawns it at the
-    /// spawn offset and sends it to the rally point. A finished upgrade is recorded on the owner instead.
+    /// spawn offset and sends it to the rally point. Aircraft that use pads wait for a free pad at an airfield and
+    /// spawn docked on it. A finished upgrade is recorded on the owner instead.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
@@ -31,6 +33,8 @@ namespace HyperRTS.Simulation.Buildings
         private ComponentLookup<Upgrade> _upgradeLookup;
         private ComponentLookup<Unpowered> _unpoweredLookup;
         private BufferLookup<ResearchedUpgrade> _researchedLookup;
+        private BufferLookup<LandingPad> _padLookup;
+        private ComponentLookup<PadHome> _padUserLookup;
         private SoundWriter _sounds;
 
         [BurstCompile]
@@ -44,6 +48,8 @@ namespace HyperRTS.Simulation.Buildings
             _upgradeLookup = state.GetComponentLookup<Upgrade>(true);
             _unpoweredLookup = state.GetComponentLookup<Unpowered>(true);
             _researchedLookup = state.GetBufferLookup<ResearchedUpgrade>();
+            _padLookup = state.GetBufferLookup<LandingPad>(true);
+            _padUserLookup = state.GetComponentLookup<PadHome>(true);
             _sounds = new SoundWriter(ref state);
             state.RequireForUpdate<SoundQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -59,6 +65,8 @@ namespace HyperRTS.Simulation.Buildings
             _upgradeLookup.Update(ref state);
             _unpoweredLookup.Update(ref state);
             _researchedLookup.Update(ref state);
+            _padLookup.Update(ref state);
+            _padUserLookup.Update(ref state);
             _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
 
             var allocator = state.WorldUpdateAllocator;
@@ -78,6 +86,8 @@ namespace HyperRTS.Simulation.Buildings
                 UpgradeLookup = _upgradeLookup,
                 UnpoweredLookup = _unpoweredLookup,
                 ResearchedLookup = _researchedLookup,
+                PadLookup = _padLookup,
+                PadUserLookup = _padUserLookup,
                 Sounds = _sounds,
             }.Schedule();
         }
@@ -100,6 +110,8 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<Upgrade> UpgradeLookup;
             [ReadOnly] public ComponentLookup<Unpowered> UnpoweredLookup;
             public BufferLookup<ResearchedUpgrade> ResearchedLookup;
+            [ReadOnly] public BufferLookup<LandingPad> PadLookup;
+            [ReadOnly] public ComponentLookup<PadHome> PadUserLookup;
             public SoundWriter Sounds;
 
             private void Execute(Entity entity, ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
@@ -113,7 +125,7 @@ namespace HyperRTS.Simulation.Buildings
 
                 var prefab = queue[0].Prefab;
                 var producible = ProducibleLookup.TryGetComponent(prefab, out var data) ? data : default;
-                if (!HasRoomFor(faction.Value, producible.Population))
+                if (!HasRoomFor(faction.Value, producible.Population) || !TryReservePad(entity, prefab, out var pad))
                 {
                     return;
                 }
@@ -131,8 +143,9 @@ namespace HyperRTS.Simulation.Buildings
                 }
                 else
                 {
-                    Spawn(prefab, transform.TransformPoint(producer.SpawnOffset), transform, faction,
+                    var unit = Spawn(prefab, SpawnPoint(entity, producer, transform, pad), transform, faction,
                         hasRally.ValueRO, rally.Position);
+                    DockOnPad(unit, entity, pad);
                     SpawnedPopulation[faction.Value] += producible.Population;
                 }
 
@@ -159,7 +172,33 @@ namespace HyperRTS.Simulation.Buildings
                 return current.HasRoomFor(population);
             }
 
-            private void Spawn(Entity prefab, float3 position, in LocalTransform producer,
+            /// <summary>Aircraft that use pads need a free one here; -1 for every other unit.</summary>
+            private bool TryReservePad(Entity producer, Entity prefab, out int pad)
+            {
+                pad = -1;
+                if (!PadUserLookup.HasComponent(prefab) || !PadLookup.TryGetBuffer(producer, out var pads))
+                {
+                    return true;
+                }
+
+                pad = LandingPad.FindFree(pads);
+                return pad >= 0;
+            }
+
+            private float3 SpawnPoint(Entity entity, in Producer producer, in LocalTransform transform, int pad) =>
+                transform.TransformPoint(pad >= 0 ? PadLookup[entity][pad].Offset : producer.SpawnOffset);
+
+            /// <summary>PadSystem claims the pad next frame, once the unit exists.</summary>
+            private void DockOnPad(Entity unit, Entity airfield, int pad)
+            {
+                if (pad >= 0)
+                {
+                    Ecb.SetComponent(unit, new PadHome { Airfield = airfield, Pad = pad });
+                    Ecb.SetComponentEnabled<Docked>(unit, true);
+                }
+            }
+
+            private Entity Spawn(Entity prefab, float3 position, in LocalTransform producer,
                 in Faction faction, bool rally, float3 rallyPosition)
             {
                 var unit = Ecb.Instantiate(prefab);
@@ -178,6 +217,8 @@ namespace HyperRTS.Simulation.Buildings
                     Ecb.SetComponent(unit, new ActiveOrder { Value = order });
                     Ecb.SetComponentEnabled<ActiveOrder>(unit, true);
                 }
+
+                return unit;
             }
         }
     }

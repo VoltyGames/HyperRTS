@@ -94,6 +94,7 @@ namespace HyperRTS.Simulation.Audio
             switch (command.Type)
             {
                 case CommandType.Move:
+                case CommandType.ReturnToBase:
                     return SoundSlot.Move;
                 case CommandType.Attack:
                 case CommandType.AttackMove:

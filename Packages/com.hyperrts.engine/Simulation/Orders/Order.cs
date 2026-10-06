@@ -22,6 +22,9 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>Follow Target, a friendly unit, engaging hostiles on the way; ends when it dies.</summary>
         Escort = 11,
+
+        /// <summary>Fly to the home pad (or claim one at Target, an own airfield) and dock there.</summary>
+        ReturnToBase = 12,
         Custom = 128,
     }
 

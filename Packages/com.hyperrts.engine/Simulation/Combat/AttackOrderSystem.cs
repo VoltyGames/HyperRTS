@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Combat
@@ -9,18 +10,20 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>
     /// Runs <see cref="OrderType.Attack"/> orders: points <see cref="AttackTarget"/> at the order's target and
     /// completes the order once that target is dead, gone, no longer hostile, hidden by stealth or out of the
-    /// weapon's reach (an aircraft for a ground-only gun).
+    /// weapon's reach (an aircraft for a ground-only gun), or when the weapon runs out of ammo.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
     public partial struct AttackOrderSystem : ISystem
     {
         private TargetLookup _targets;
+        private ComponentLookup<Ammo> _ammo;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
+            _ammo = state.GetComponentLookup<Ammo>(true);
             state.RequireForUpdate<FactionRelations>();
         }
 
@@ -28,9 +31,11 @@ namespace HyperRTS.Simulation.Combat
         public void OnUpdate(ref SystemState state)
         {
             _targets.Update(ref state);
+            _ammo.Update(ref state);
             new AttackOrderJob
             {
                 Targets = _targets,
+                AmmoLookup = _ammo,
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
             }.ScheduleParallel();
         }
@@ -41,8 +46,9 @@ namespace HyperRTS.Simulation.Combat
         {
             public TargetLookup Targets;
             public FactionRelations Relations;
+            [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
 
-            private void Execute(ref ActiveOrder order, EnabledRefRW<ActiveOrder> hasOrder, ref AttackTarget attack,
+            private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> hasOrder, ref AttackTarget attack,
                 EnabledRefRW<AttackTarget> attacking, in Faction faction, in Weapon weapon)
             {
                 if (order.Value.Type != OrderType.Attack)
@@ -51,7 +57,8 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 var target = order.Value.Target;
-                if (!Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets))
+                if (!Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets) ||
+                    Ammo.IsEmpty(AmmoLookup, entity))
                 {
                     // EngagementSystem drops the stale AttackTarget and halts the chase.
                     hasOrder.ValueRW = false;

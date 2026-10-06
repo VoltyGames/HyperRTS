@@ -14,5 +14,12 @@ namespace HyperRTS.Simulation.Combat
             sink.Add<AttackTarget>();
             sink.SetEnabled<AttackTarget>(false);
         }
+
+        /// <summary>Limits the weapon to <paramref name="rounds"/> shots, starting full.</summary>
+        public static void AddAmmo<TSink>(ref TSink sink, int rounds, float reloadTime)
+            where TSink : struct, IComponentSink
+        {
+            sink.Add(new Ammo { Max = rounds, Current = rounds, ReloadTime = reloadTime });
+        }
     }
 }

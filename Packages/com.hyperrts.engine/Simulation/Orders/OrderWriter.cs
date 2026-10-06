@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Units;
+using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Orders
@@ -13,7 +14,7 @@ namespace HyperRTS.Simulation.Orders
         private ComponentLookup<MoveDestination> _move;
         private ComponentLookup<AttackTarget> _attack;
         private ComponentLookup<MoveOrderState> _moveOrder;
-        private ComponentLookup<Inside> _inside;
+        [ReadOnly] private ComponentLookup<Inside> _inside;
 
         public OrderWriter(ref SystemState state)
         {
@@ -38,6 +39,17 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Passengers inside a container take no orders until they get out.</summary>
         public bool CanReceiveOrders(Entity unit) =>
             _active.HasComponent(unit) && !TransportRules.IsInside(_inside, unit);
+
+        /// <summary>Whether the unit is carrying out an order of this type right now.</summary>
+        public bool IsExecuting(Entity unit, OrderType type)
+        {
+            if (!_active.HasComponent(unit) || !_active.IsComponentEnabled(unit))
+            {
+                return false;
+            }
+
+            return _active[unit].Value.Type == type;
+        }
 
         /// <summary>Replaces current orders, or appends when <paramref name="queue"/> and the unit is busy.</summary>
         public void Issue(Entity unit, in Order order, bool queue)

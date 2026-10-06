@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
 using HyperRTS.Simulation.Combat;
@@ -11,7 +12,8 @@ namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
     /// Picks the order a unit gets for a command from its capabilities and the target: Smart chooses
-    /// attack/gather/build/repair/enter/capture/move, explicit commands fall back to Move when the unit can't comply.
+    /// attack/gather/build/repair/enter/capture/land/move, explicit commands fall back to Move when the unit can't
+    /// comply (Return to Base is skipped by units without a pad).
     /// </summary>
     public struct OrderResolver
     {
@@ -25,6 +27,8 @@ namespace HyperRTS.Simulation.Orders
         private ComponentLookup<Health> _health;
         private ComponentLookup<Capturer> _capturers;
         private ComponentLookup<UnitTag> _units;
+        private ComponentLookup<PadHome> _padUsers;
+        private BufferLookup<LandingPad> _pads;
         private CaptureRules _capture;
         private Boarding _boarding;
 
@@ -40,6 +44,8 @@ namespace HyperRTS.Simulation.Orders
             _health = state.GetComponentLookup<Health>(true);
             _capturers = state.GetComponentLookup<Capturer>(true);
             _units = state.GetComponentLookup<UnitTag>(true);
+            _padUsers = state.GetComponentLookup<PadHome>(true);
+            _pads = state.GetBufferLookup<LandingPad>(true);
             _capture = new CaptureRules(ref state);
             _boarding = new Boarding(ref state, true);
         }
@@ -56,6 +62,8 @@ namespace HyperRTS.Simulation.Orders
             _health.Update(ref state);
             _capturers.Update(ref state);
             _units.Update(ref state);
+            _padUsers.Update(ref state);
+            _pads.Update(ref state);
             _capture.Update(ref state);
             _boarding.Update(ref state);
         }
@@ -71,6 +79,7 @@ namespace HyperRTS.Simulation.Orders
                     : _weapons.HasComponent(unit) ? OrderType.AttackMove : OrderType.Move,
                 CommandType.Patrol => OrderType.Patrol,
                 CommandType.Escort => CanEscort(unit, target, relations) ? OrderType.Escort : OrderType.Move,
+                CommandType.ReturnToBase => _padUsers.HasComponent(unit) ? OrderType.ReturnToBase : OrderType.None,
                 CommandType.Gather => CanGather(unit, target) ? OrderType.Gather : OrderType.Move,
                 CommandType.Build => CanBuild(unit, target, relations) ? OrderType.Build : OrderType.Move,
                 CommandType.Repair => CanRepair(unit, target, relations) ? OrderType.Repair : OrderType.Move,
@@ -107,6 +116,11 @@ namespace HyperRTS.Simulation.Orders
                 return OrderType.Enter;
             }
 
+            if (CanLandAt(unit, target))
+            {
+                return OrderType.ReturnToBase;
+            }
+
             return CanCapture(unit, target, relations) ? OrderType.Capture : OrderType.Move;
         }
 
@@ -137,6 +151,10 @@ namespace HyperRTS.Simulation.Orders
 
         private bool CanCapture(Entity unit, Entity target, in FactionRelations relations) =>
             _capturers.HasComponent(unit) && _capture.CanCapture(target, _factions[unit].Value, relations);
+
+        private bool CanLandAt(Entity unit, Entity target) =>
+            _padUsers.HasComponent(unit) &&
+            AirfieldRules.IsAirfieldOf(_pads, _factions, _construction, target, _factions[unit].Value);
 
         private bool CanEnter(Entity unit, Entity target, in FactionRelations relations) =>
             _boarding.CanBoard(unit, target, relations);

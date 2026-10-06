@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Points idle, attack-moving and hold-position weapons (and finished towers) at the nearest hostile in range that
-    /// the weapon can hit and stealth doesn't hide. Units on any other order never auto-acquire.
+    /// the weapon can hit and stealth doesn't hide. Units on any other order, or out of ammo, never auto-acquire.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -27,6 +27,7 @@ namespace HyperRTS.Simulation.Combat
 
         private TargetLookup _targets;
         private ComponentLookup<ActiveOrder> _orders;
+        private ComponentLookup<Ammo> _ammo;
         private uint _frame;
 
         [BurstCompile]
@@ -34,6 +35,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _targets = new TargetLookup(ref state);
             _orders = state.GetComponentLookup<ActiveOrder>(true);
+            _ammo = state.GetComponentLookup<Ammo>(true);
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
         }
@@ -43,6 +45,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _targets.Update(ref state);
             _orders.Update(ref state);
+            _ammo.Update(ref state);
             _frame++;
 
             new AcquireJob
@@ -51,6 +54,7 @@ namespace HyperRTS.Simulation.Combat
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Targets = _targets,
                 Orders = _orders,
+                AmmoLookup = _ammo,
                 Slot = (int)(_frame % ScanInterval),
             }.ScheduleParallel();
         }
@@ -64,6 +68,7 @@ namespace HyperRTS.Simulation.Combat
             public FactionRelations Relations;
             public TargetLookup Targets;
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
+            [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
             public int Slot;
 
             private void Execute(Entity entity, in LocalTransform transform, in Weapon weapon, in CombatStance stance,
@@ -96,9 +101,20 @@ namespace HyperRTS.Simulation.Combat
                 }
             }
 
-            private bool MayAutoAcquire(Entity entity) =>
-                !Orders.HasComponent(entity) || !Orders.IsComponentEnabled(entity) ||
-                Orders[entity].Value.Type.EngagesWhileMoving();
+            private bool MayAutoAcquire(Entity entity)
+            {
+                if (Ammo.IsEmpty(AmmoLookup, entity))
+                {
+                    return false;
+                }
+
+                if (!Orders.HasComponent(entity) || !Orders.IsComponentEnabled(entity))
+                {
+                    return true;
+                }
+
+                return Orders[entity].Value.Type.EngagesWhileMoving();
+            }
         }
 
         private struct NearestHostile : ISpatialVisitor

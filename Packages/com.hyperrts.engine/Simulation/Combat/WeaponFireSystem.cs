@@ -15,8 +15,8 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Ticks weapon cooldowns and fires at in-range targets: an instant <see cref="DamageEvent"/>, or a launched
-    /// <see cref="Projectile"/> when the weapon has a prefab. Unfinished and unpowered buildings stay silent; a shot
-    /// reveals a stealthed shooter for its <see cref="Stealth.RevealDuration"/>.
+    /// <see cref="Projectile"/> when the weapon has a prefab. Unfinished and unpowered buildings stay silent, as do
+    /// weapons out of <see cref="Ammo"/>; a shot reveals a stealthed shooter for its <see cref="Stealth.RevealDuration"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -27,6 +27,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<Health> _health;
         private ComponentLookup<UnitTag> _units;
         private ComponentLookup<Stealth> _stealth;
+        private ComponentLookup<Ammo> _ammo;
         private DamageWriter _damage;
         private SoundWriter _sounds;
 
@@ -37,6 +38,7 @@ namespace HyperRTS.Simulation.Combat
             _health = state.GetComponentLookup<Health>(true);
             _units = state.GetComponentLookup<UnitTag>(true);
             _stealth = state.GetComponentLookup<Stealth>();
+            _ammo = state.GetComponentLookup<Ammo>();
             _damage = new DamageWriter(ref state);
             _sounds = new SoundWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
@@ -51,6 +53,7 @@ namespace HyperRTS.Simulation.Combat
             _health.Update(ref state);
             _units.Update(ref state);
             _stealth.Update(ref state);
+            _ammo.Update(ref state);
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
             _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
 
@@ -64,6 +67,7 @@ namespace HyperRTS.Simulation.Combat
                 Health = _health,
                 Units = _units,
                 Stealth = _stealth,
+                Ammo = _ammo,
                 Damage = _damage,
                 Sounds = _sounds,
             }.Schedule();
@@ -80,6 +84,7 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<Health> Health;
             [ReadOnly] public ComponentLookup<UnitTag> Units;
             public ComponentLookup<Stealth> Stealth;
+            public ComponentLookup<Ammo> Ammo;
             public DamageWriter Damage;
             public SoundWriter Sounds;
 
@@ -101,7 +106,7 @@ namespace HyperRTS.Simulation.Combat
                     Face(entity, targetPosition);
                 }
 
-                if (weapon.CooldownRemaining > 0f)
+                if (weapon.CooldownRemaining > 0f || !TryUseRound(entity))
                 {
                     return;
                 }
@@ -119,6 +124,23 @@ namespace HyperRTS.Simulation.Combat
                 {
                     Launch(entity, weapon, target, targetPosition, faction);
                 }
+            }
+
+            private bool TryUseRound(Entity shooter)
+            {
+                var ammo = Ammo.GetRefRWOptional(shooter);
+                if (!ammo.IsValid)
+                {
+                    return true;
+                }
+
+                if (ammo.ValueRO.Current <= 0)
+                {
+                    return false;
+                }
+
+                ammo.ValueRW.Current--;
+                return true;
             }
 
             private void Reveal(Entity shooter)

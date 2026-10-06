@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Abilities;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Orders;
@@ -12,7 +13,7 @@ namespace HyperRTS.Presentation.HUD
 {
     /// <summary>
     /// Actions for the owned part of the selection: build, train and research, abilities and support powers, stance,
-    /// unload and sell.
+    /// return to base, unload and sell.
     /// </summary>
     public sealed class CommandCard
     {
@@ -26,6 +27,7 @@ namespace HyperRTS.Presentation.HUD
         private readonly AbilityButtons _abilities = new();
         private bool _canSell;
         private bool _canUnload;
+        private bool _canReturn;
         private int _hash = -1;
 
         public CommandCard()
@@ -79,6 +81,7 @@ namespace HyperRTS.Presentation.HUD
             _casters.Clear();
             _canSell = false;
             _canUnload = false;
+            _canReturn = false;
 
             var builds = new List<Entity>();
             var products = new List<Entity>();
@@ -87,6 +90,7 @@ namespace HyperRTS.Presentation.HUD
             AddPrefabButtons(context, products, prefab => context.Issue(new PlayerCommand { Type = CommandType.Produce, Prefab = prefab }));
             _abilities.Build(context, Root, _casters);
             AddStanceButtons(context);
+            AddActionButton(context, _canReturn, "Return", CommandType.ReturnToBase, 0);
             AddActionButton(context, _canUnload, "Unload", CommandType.Unload, -1);
             AddActionButton(context, _canSell, "Sell", CommandType.Sell, 0);
             Root.SetShown(Root.childCount > 0);
@@ -130,6 +134,7 @@ namespace HyperRTS.Presentation.HUD
 
                 _canSell |= entityManager.HasComponent<BuildingTag>(entity);
                 _canUnload |= entityManager.HasComponent<Container>(entity);
+                _canReturn |= entityManager.HasComponent<PadHome>(entity);
             }
         }
 

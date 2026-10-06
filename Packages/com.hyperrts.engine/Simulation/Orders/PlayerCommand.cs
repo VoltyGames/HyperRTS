@@ -56,6 +56,9 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>Follow the friendly unit <see cref="PlayerCommand.Target"/> and fight what comes near.</summary>
         Escort = 21,
+
+        /// <summary>Aircraft fly to their pad and dock; an own airfield as Target rehomes them there if a pad is free.</summary>
+        ReturnToBase = 22,
         Custom = 128,
     }
 

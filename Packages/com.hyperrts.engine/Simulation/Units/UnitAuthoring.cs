@@ -46,6 +46,9 @@ namespace HyperRTS.Simulation.Units
         [Min(0f)]
         public float loiterRadius;
 
+        [Tooltip("Takes a pad at the Airfield that builds it, flies back to it to rearm (Return order or out of ammo) and docks there.")]
+        public bool usesLandingPads;
+
         public override float Radius => radius;
 
         protected override int Population => population;
@@ -67,6 +70,11 @@ namespace HyperRTS.Simulation.Units
                         ClimbSpeed = authoring.climbSpeed,
                         LoiterRadius = authoring.loiterRadius,
                     });
+                }
+
+                if (authoring.navLayer == NavLayer.Air && authoring.usesLandingPads)
+                {
+                    AirSetup.AddPadUser(ref sink);
                 }
             }
         }

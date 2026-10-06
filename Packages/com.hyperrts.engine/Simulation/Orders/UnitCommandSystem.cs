@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Orders
         private static ulong UnitCommands =>
             PlayerCommands.Mask(CommandType.Smart, CommandType.SetStance) |
             PlayerCommands.Mask(CommandType.Repair, CommandType.Enter) |
-            PlayerCommands.Mask(CommandType.Patrol, CommandType.Escort);
+            PlayerCommands.Mask(CommandType.Patrol, CommandType.ReturnToBase);
 
         private static bool IsUnitCommand(CommandType type) => (UnitCommands & PlayerCommands.Mask(type)) != 0;
 
@@ -133,6 +133,11 @@ namespace HyperRTS.Simulation.Orders
             foreach (var unit in subjects)
             {
                 var type = _resolver.Resolve(command.Type, unit, command.Target, relations);
+                if (type == OrderType.None)
+                {
+                    continue;
+                }
+
                 if (type is OrderType.Move or OrderType.AttackMove or OrderType.Patrol)
                 {
                     movers.Add(unit);

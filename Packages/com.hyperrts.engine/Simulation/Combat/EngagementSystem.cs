@@ -29,6 +29,7 @@ namespace HyperRTS.Simulation.Combat
         private TargetLookup _targets;
         private ComponentLookup<ActiveOrder> _orders;
         private ComponentLookup<MoveDestination> _moves;
+        private ComponentLookup<Ammo> _ammo;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -36,6 +37,7 @@ namespace HyperRTS.Simulation.Combat
             _targets = new TargetLookup(ref state);
             _orders = state.GetComponentLookup<ActiveOrder>(true);
             _moves = state.GetComponentLookup<MoveDestination>();
+            _ammo = state.GetComponentLookup<Ammo>(true);
             state.RequireForUpdate<FactionRelations>();
         }
 
@@ -45,6 +47,7 @@ namespace HyperRTS.Simulation.Combat
             _targets.Update(ref state);
             _orders.Update(ref state);
             _moves.Update(ref state);
+            _ammo.Update(ref state);
 
             new EngageJob
             {
@@ -52,6 +55,7 @@ namespace HyperRTS.Simulation.Combat
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Orders = _orders,
                 Moves = _moves,
+                AmmoLookup = _ammo,
             }.ScheduleParallel();
         }
 
@@ -62,6 +66,7 @@ namespace HyperRTS.Simulation.Combat
             public TargetLookup Targets;
             public FactionRelations Relations;
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
+            [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
 
             // Each entity writes only its own MoveDestination.
             [NativeDisableParallelForRestriction] public ComponentLookup<MoveDestination> Moves;
@@ -84,8 +89,7 @@ namespace HyperRTS.Simulation.Combat
                 // An ordered attack chases indefinitely; the stance only governs targets the unit picked itself.
                 var target = attack.Value;
                 var ordered = order.Type == OrderType.Attack && order.Target == target;
-                if (!Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets) ||
-                    (!ordered && ShouldLeash(entity, transform.Position, weapon, vision, stance, target)))
+                if (ShouldRelease(entity, transform.Position, weapon, vision, faction, stance, target, ordered))
                 {
                     Release(entity, order, stance, ref attack, attacking);
                     return;
@@ -105,6 +109,23 @@ namespace HyperRTS.Simulation.Combat
                 {
                     Chase(entity, Targets.Position(target));
                 }
+            }
+
+            /// <summary>Gone, hidden, out of the weapon's reach, out of ammo, or (unless ordered) leashed.</summary>
+            private bool ShouldRelease(Entity entity, float3 position, in Weapon weapon, in VisionRange vision,
+                in Faction faction, in CombatStance stance, Entity target, bool ordered)
+            {
+                if (!Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets))
+                {
+                    return true;
+                }
+
+                if (Ammo.IsEmpty(AmmoLookup, entity))
+                {
+                    return true;
+                }
+
+                return !ordered && ShouldLeash(entity, position, weapon, vision, stance, target);
             }
 
             private bool ShouldLeash(Entity entity, float3 position, in Weapon weapon, in VisionRange vision,
