@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
 using Unity.Collections;
 using Unity.Entities;
@@ -109,19 +109,24 @@ namespace HyperRTS.Editor.Debugging
         /// <summary>Where the game camera looks on the ground, or the map centre without a camera.</summary>
         public static float3 ViewCenter(EntityManager entityManager)
         {
+            PlayWorld.TryGetSingleton(entityManager, out TerrainHeight terrain);
             var camera = Camera.main;
             if (camera != null)
             {
                 var ray = camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-                if (CommandMath.TryGroundPoint(ray.origin, ray.direction, 0f, out var point))
+                if (terrain.Raycast(ray.origin, ray.direction, camera.farClipPlane, out var point))
                 {
                     return point;
                 }
             }
 
-            return PlayWorld.TryGetSingleton(entityManager, out MapSettings map)
-                ? new float3(map.Min.x + map.Size.x * 0.5f, 0f, map.Min.y + map.Size.y * 0.5f)
-                : float3.zero;
+            if (!PlayWorld.TryGetSingleton(entityManager, out MapSettings map))
+            {
+                return new float3(0f, terrain.Height(float2.zero), 0f);
+            }
+
+            var center = map.Min + map.Size * 0.5f;
+            return new float3(center.x, terrain.Height(center), center.y);
         }
     }
 }

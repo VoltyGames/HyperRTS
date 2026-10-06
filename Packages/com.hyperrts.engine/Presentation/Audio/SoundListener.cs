@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Audio
@@ -34,41 +35,33 @@ namespace HyperRTS.Presentation.Audio
             var eye = camera.transform;
             var heading = Vector3.ProjectOnPlane(eye.forward, Vector3.up);
             var rotation = heading.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(heading) : eye.rotation;
-            var focus = TryTerrainFocus(eye, camera.farClipPlane, out var ground) ? ground : GroundFocus(eye);
-            transform.SetPositionAndRotation(focus, rotation);
+            transform.SetPositionAndRotation(Focus(eye, camera.farClipPlane), rotation);
         }
 
-        /// <summary>Where the view ray meets the baked terrain, when the match has one.</summary>
-        private bool TryTerrainFocus(Transform eye, float range, out Vector3 point)
+        /// <summary>Where the view ray meets the ground; the ground below the camera when it doesn't.</summary>
+        private float3 Focus(Transform eye, float range)
         {
-            point = default;
+            var terrain = MatchTerrain();
+            float3 position = eye.position;
+            if (terrain.Raycast(position, eye.forward, range, out var ground))
+            {
+                return ground;
+            }
+
+            return new float3(position.x, terrain.Height(position.xz), position.z);
+        }
+
+        /// <summary>The match's baked terrain; the default (flat y = 0) before a world or terrain exists.</summary>
+        private TerrainHeight MatchTerrain()
+        {
             var world = World.DefaultGameObjectInjectionWorld;
             if (world == null || !world.IsCreated)
             {
-                return false;
+                return default;
             }
 
-            if (!_terrain.In(world.EntityManager).TryGetSingleton(out TerrainHeight terrain))
-            {
-                return false;
-            }
-
-            var hit = terrain.Raycast(eye.position, eye.forward, range, out var ground);
-            point = ground;
-            return hit;
-        }
-
-        /// <summary>Where the view ray meets the y = 0 ground; below the camera when it doesn't look down.</summary>
-        private static Vector3 GroundFocus(Transform eye)
-        {
-            var position = eye.position;
-            var forward = eye.forward;
-            if (forward.y > -0.01f)
-            {
-                return new Vector3(position.x, 0f, position.z);
-            }
-
-            return position + forward * (position.y / -forward.y);
+            _terrain.In(world.EntityManager).TryGetSingleton(out TerrainHeight terrain);
+            return terrain;
         }
     }
 }

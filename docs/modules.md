@@ -84,7 +84,7 @@ dies. `PlayerCommandClearSystem` clears commands at the end of the order phase.
 | `NavAgent`, `PathWaypoint`, `PathState` | Radius and `NavLayer` (Ground, Naval, Amphibious, Air), remaining path corners, request bookkeeping |
 | `NavObstacleAuthoring` / `NavObstacle` | Blocked XZ box (buildings add their footprint automatically) |
 | `NavAreaAuthoring` / `NavArea` | XZ box overriding the cells under it: Water, Blocked, or a walkable Deck (bridge) at its height with water kept below for ships |
-| `TerrainHeightAuthoring` / `TerrainHeight` | Terrain heights baked into a blob singleton; `Height(xz)` is bilinear, flat 0 without one |
+| `TerrainHeightAuthoring` / `TerrainHeight` | Terrain heights baked into a blob singleton; `Height(xz)` is bilinear and `Raycast` hits the ground, both flat y = 0 without one (`RaycastPlane` for any horizontal plane) |
 | `NavGrid` | Singleton grid of `NavSurface` flags (Land, Water, Deck; 0 = blocked) with layer-aware `IsWalkable`, `IsAreaFree`, `HasLineOfSight`, `TryFindNearestWalkable`, plus `SurfaceHeight` / `HeightFor(layer)` |
 
 `MatchAuthoring` sets the water level (terrain below it is water; ships ride at it) and an optional max slope (steeper

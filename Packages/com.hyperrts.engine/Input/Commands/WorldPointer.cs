@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
@@ -65,13 +64,9 @@ namespace HyperRTS.Input.Commands
 
         private bool TryGround(float3 origin, float3 direction, out float3 ground)
         {
-            if (_terrain.TryGetSingleton(out TerrainHeight terrain) &&
-                terrain.Raycast(origin, direction, _camera.farClipPlane, out ground))
-            {
-                return true;
-            }
-
-            return CommandMath.TryGroundPoint(origin, direction, 0f, out ground);
+            // Without a baked terrain the default heightfield is the y = 0 plane.
+            _terrain.TryGetSingleton(out TerrainHeight terrain);
+            return terrain.Raycast(origin, direction, _camera.farClipPlane, out ground);
         }
 
         private bool TryCast(ref SystemState state, float3 origin, float3 delta, out Unity.Physics.RaycastHit hit)

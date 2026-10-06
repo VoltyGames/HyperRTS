@@ -31,13 +31,16 @@ namespace HyperRTS.Simulation.Navigation
             return math.lerp(bottom, top, t.y);
         }
 
-        /// <summary>First point where a ray dips below the ground, marched one sample apart then bisected.</summary>
+        /// <summary>
+        /// First point where a ray dips below the ground, marched one sample apart then bisected; without a
+        /// heightfield, where it meets the y = 0 plane.
+        /// </summary>
         public readonly bool Raycast(float3 origin, float3 direction, float maxDistance, out float3 point)
         {
             point = default;
             if (!Blob.IsCreated)
             {
-                return false;
+                return RaycastPlane(origin, direction, 0f, maxDistance, out point);
             }
 
             var step = Blob.Value.Spacing;
@@ -52,6 +55,10 @@ namespace HyperRTS.Simulation.Navigation
 
             return false;
         }
+
+        /// <summary>Where a ray meets the horizontal plane at <paramref name="height"/>; false when it never does.</summary>
+        public static bool RaycastPlane(float3 origin, float3 direction, float height, out float3 point) =>
+            RaycastPlane(origin, direction, height, float.PositiveInfinity, out point);
 
         public static TerrainHeight Create(NativeArray<float> heights, int2 size, float2 min, float spacing,
             Allocator allocator)
@@ -70,6 +77,26 @@ namespace HyperRTS.Simulation.Navigation
             var blob = builder.CreateBlobAssetReference<HeightfieldBlob>(allocator);
             builder.Dispose();
             return new TerrainHeight { Blob = blob };
+        }
+
+        private static bool RaycastPlane(float3 origin, float3 direction, float height, float maxDistance,
+            out float3 point)
+        {
+            point = default;
+            if (math.abs(direction.y) < 1e-5f)
+            {
+                return false;
+            }
+
+            var distance = (height - origin.y) / direction.y;
+            if (distance < 0f || distance > maxDistance)
+            {
+                return false;
+            }
+
+            point = origin + direction * distance;
+            point.y = height;
+            return true;
         }
 
         private readonly bool IsBelow(float3 point) => point.y <= Height(point.xz);

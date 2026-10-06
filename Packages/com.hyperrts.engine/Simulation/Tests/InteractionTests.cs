@@ -85,19 +85,32 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void TryGroundPoint_IntersectsPlaneAndRejectsParallelOrUpwardRays()
+        public void RaycastPlane_IntersectsPlaneAndRejectsParallelOrUpwardRays()
         {
             var down = math.normalize(new float3(0f, -1f, 1f));
-            Assert.IsTrue(CommandMath.TryGroundPoint(new float3(0f, 10f, 0f), down, 0f, out var point));
+            Assert.IsTrue(TerrainHeight.RaycastPlane(new float3(0f, 10f, 0f), down, 0f, out var point));
             Assert.AreEqual(0f, point.x, 1e-4f);
             Assert.AreEqual(0f, point.y, 1e-4f);
             Assert.AreEqual(10f, point.z, 1e-4f);
 
-            Assert.IsTrue(CommandMath.TryGroundPoint(new float3(0f, 10f, 0f), down, 2f, out var raised));
+            Assert.IsTrue(TerrainHeight.RaycastPlane(new float3(0f, 10f, 0f), down, 2f, out var raised));
             Assert.AreEqual(8f, raised.z, 1e-4f);
 
-            Assert.IsFalse(CommandMath.TryGroundPoint(new float3(0f, 10f, 0f), new float3(1f, 0f, 0f), 0f, out _));
-            Assert.IsFalse(CommandMath.TryGroundPoint(new float3(0f, 10f, 0f), new float3(0f, 1f, 0f), 0f, out _));
+            Assert.IsFalse(TerrainHeight.RaycastPlane(new float3(0f, 10f, 0f), new float3(1f, 0f, 0f), 0f, out _));
+            Assert.IsFalse(TerrainHeight.RaycastPlane(new float3(0f, 10f, 0f), new float3(0f, 1f, 0f), 0f, out _));
+        }
+
+        [Test]
+        public void Raycast_WithoutHeightfield_HitsFlatGroundWithinRange()
+        {
+            var terrain = default(TerrainHeight);
+            var down = math.normalize(new float3(0f, -1f, 1f));
+            Assert.IsTrue(terrain.Raycast(new float3(0f, 10f, 0f), down, 20f, out var point));
+            Assert.AreEqual(0f, point.y, 1e-4f);
+            Assert.AreEqual(10f, point.z, 1e-4f);
+
+            Assert.IsFalse(terrain.Raycast(new float3(0f, 10f, 0f), down, 10f, out _), "ground beyond max distance");
+            Assert.IsFalse(terrain.Raycast(new float3(0f, 10f, 0f), new float3(0f, 1f, 0f), 20f, out _), "upward ray");
         }
     }
 }
