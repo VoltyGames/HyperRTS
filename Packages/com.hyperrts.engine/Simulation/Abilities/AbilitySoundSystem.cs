@@ -1,9 +1,9 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Abilities;
+using HyperRTS.Simulation.Audio;
 using Unity.Burst;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Audio
+namespace HyperRTS.Simulation.Abilities
 {
     /// <summary>Plays the caster's ability cue, at the aim point, for every <see cref="AbilityActivation"/> this frame.</summary>
     [BurstCompile]

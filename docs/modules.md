@@ -309,7 +309,7 @@ stealthed (e.g. translucent) is left to games, which read `Stealthed`.
 `SoundClearSystem` empties the queue at the start of every frame in every world. Entities without a cue for a slot
 write nothing. `WeaponFireSystem` plays Fire at the shooter and, for instant hits, Impact at the target;
 projectiles carry the shooter's type and play Impact on arrival. `DeathSoundSystem` (after `DeathSystem`) plays
-Death, `AbilitySoundSystem` plays the caster's Ability cue for each `AbilityActivation`, and `ProductionSystem` and
+Death, `AbilitySoundSystem` (in Abilities) plays the caster's Ability cue for each `AbilityActivation`, and `ProductionSystem` and
 `ConstructionSystem` play Ready. Games append their own events with a `SoundWriter` (`Play(entity, slot, …)` or
 `Add(typeId, slot, …)`) before the end of the lifecycle phase. `AcknowledgementSystem` (client and single player)
 plays the Select, Move or Attack voice of one selected or commanded unit, at most once per second. With Netcode,
