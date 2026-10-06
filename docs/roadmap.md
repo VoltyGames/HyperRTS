@@ -64,7 +64,10 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ Per-frame search cap (48, oldest first); direct line of sight skips A*
 - ✅ Box formations for group moves
 - ✅ Budget check: 500 units across a 200 × 200 map with obstacles, 0.26 ms average / 1.6 ms worst simulation tick
-- ⬜ Moving obstacles and terrain height (units move on the XZ plane)
+- ✅ Terrain height from a baked heightfield (units follow the ground; optional slope limit)
+- ✅ Nav layers (Ground, Naval, Amphibious) over land/water cells; water from a water level or areas; shoreline placement
+- ✅ Dynamic nav areas: water, blocked and walkable decks (bridges) that restamp the grid when added or destroyed
+- ⬜ Moving obstacles, per-area water levels, ramps onto decks
 
 ## Phase 4: Economy & resources ✅
 
@@ -107,7 +110,8 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ Hostile entities outside vision are hidden; fog overlay shader with soft edges; minimap respects fog
 - ✅ Fog can be disabled per match
 - ✅ Stealth (revealed by firing, optionally only when still) and per-team detection, also with fog off
-- ⬜ "Last seen" building ghosts, line-of-sight occlusion
+- ✅ Line-of-sight occlusion by terrain height
+- ⬜ "Last seen" building ghosts
 
 ## Phase 9: Factions & players ✅
 

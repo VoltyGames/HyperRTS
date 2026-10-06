@@ -75,16 +75,24 @@ near its goal. `PlayerCommandClearSystem` clears commands at the end of the orde
 
 | Type | Role |
 | --- | --- |
-| `UnitAuthoring` | Move speed, radius, population (on top of the common fields) |
+| `UnitAuthoring` | Move speed, radius, nav layer, population (on top of the common fields) |
 | `MoveDestination` | Enableable XZ goal |
-| `NavAgent`, `PathWaypoint`, `PathState` | Radius, remaining path corners, request bookkeeping |
+| `NavAgent`, `PathWaypoint`, `PathState` | Radius and `NavLayer` (Ground, Naval, Amphibious), remaining path corners, request bookkeeping |
 | `NavObstacleAuthoring` / `NavObstacle` | Blocked XZ box (buildings add their footprint automatically) |
-| `NavGrid` | Singleton walkability grid with `IsAreaFree`, `HasLineOfSight`, `TryFindNearestWalkable` |
+| `NavAreaAuthoring` / `NavArea` | XZ box overriding the cells under it: Water, Blocked, or a walkable Deck (bridge) at its height with water kept below for ships |
+| `TerrainHeightAuthoring` / `TerrainHeight` | Terrain heights baked into a blob singleton; `Height(xz)` is bilinear, flat 0 without one |
+| `NavGrid` | Singleton grid of `NavSurface` flags (Land, Water, Deck; 0 = blocked) with layer-aware `IsWalkable`, `IsAreaFree`, `HasLineOfSight`, `TryFindNearestWalkable`, plus `SurfaceHeight` / `HeightFor(layer)` |
 
-Systems: `NavGridSystem` stamps obstacles into the grid when they change. `PathfindingSystem` runs Burst grid A*
-(8-way, no corner cutting) with line-of-sight smoothing, at most 48 searches per frame, and skips A* when the goal
-is directly visible. `MovementSystem` follows waypoints, separates overlapping units and never steps into blocked
-cells. Movement is on the XZ plane; units keep their Y.
+`MatchAuthoring` sets the water level (terrain below it is water; ships ride at it) and an optional max slope (steeper
+terrain is blocked). An agent may enter cells that share a flag with its layer, so ships pass under a deck that tanks
+drive over.
+
+Systems: `NavGridSystem` classifies each cell once from terrain, water level and slope, then stamps areas (decks
+last) and obstacles over that whenever any are added or removed, bumping the version so units re-path (a destroyed
+bridge). `PathfindingSystem` runs Burst grid A* (8-way, no corner cutting) over the agent's layer with line-of-sight
+smoothing, at most 48 searches per frame, and skips A* when the goal is directly visible. `MovementSystem` follows
+waypoints, separates overlapping units of layers that share a surface and never steps into cells closed to the
+agent's layer. Units steer on XZ; with a grid, Y follows the ground, deck or water level of the agent's layer.
 
 **Decision:** grid A* + smoothing + separation. Flow fields were deferred because every unit in a formation has its
 own goal. Measured: 500 units crossing a 200 × 200 map with obstacles averaged 0.26 ms per simulation tick.
@@ -207,8 +215,9 @@ walk-into-range orders.
 | `DetectorAuthoring` / `Detector` | Detection radius, separate from vision |
 | `FogHidden`, `LocalFogView` | Hostile roots the local player can't see; who the local player views as |
 
-`FogOfWarSystem` restamps vision and detection 10 times per second; with fog disabled every cell stays visible but
-detection still runs, so stealth works with fog off. `StealthSystem` (after `WeaponFireSystem`, which restarts the
+`FogOfWarSystem` restamps vision and detection 10 times per second; with a `TerrainHeight`, vision is occluded by
+hills (`SightLines`: rays from the viewer's eye, 2 m up, keep the steepest sight line so far, so cost stays
+proportional to the vision area). With fog disabled every cell stays visible but detection still runs, so stealth works with fog off. `StealthSystem` (after `WeaponFireSystem`, which restarts the
 reveal timer on each shot) sets `Stealthed`. `LocalFogViewSystem` publishes the local player's `LocalFogView` and
 tags hostile entities they can't see (fog or undetected stealth) with `FogHidden` once per restamp; selection,
 picking, the HUD and rendering all skip tagged entities. `TargetLookup.IsValidTarget` rejects undetected stealthed
@@ -263,8 +272,9 @@ same type when one runs dry. `ResourceNodeSystem` regrows or removes nodes.
 | `ProducerAuthoring` / `Producer`, `ProductionOption`, `ProductionQueueItem`, `RallyPoint` | Unit training queue |
 | `CompletedBuildings` | Prerequisite checks shared by the simulation, the AI and the HUD |
 
-Systems: `PlaceBuildingSystem` validates placement (`PlacementMath`: map bounds, free nav cells, no overlap), charges
-the cost, spawns a site and orders the builders to it. `ConstructionSystem` advances sites only while builders work
+Systems: `PlaceBuildingSystem` validates placement (`PlacementMath`: map bounds, no overlap, and plain land, water or
+shoreline cells per the prefab's `BuildingPlacement` surface; the same rules drive the ghost and the AI), sets the
+site on the surface height, charges the cost, spawns a site and orders the builders to it. `ConstructionSystem` advances sites only while builders work
 on them. `ProductionCommandSystem` handles Produce / Cancel (refund) / rally points. `ProductionSystem` trains the
 queue head when population allows and sends new units to the rally point.
 
@@ -315,7 +325,7 @@ are singletons that input and the HUD share. `PlacementMath` is the single sourc
 
 `RTSInputActions` (Selection, Commands and Camera maps), `SelectionInputSystem`, `CommandInputSystem` (right-click
 Smart, A/S/H, targeted commands), `PlacementInputSystem` (ghost + PlaceBuilding), `WorldPointer` (Unity Physics
-raycast + ground plane), `CameraController` (pan, edge scroll, zoom, rotate, map clamp, `FocusOn`).
+raycast, then the baked terrain, then the ground plane), `CameraController` (pan, edge scroll, zoom, rotate, map clamp, `FocusOn`).
 
 ## Presentation (client)
 
