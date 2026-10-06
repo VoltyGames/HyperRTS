@@ -301,6 +301,24 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Patrol",
+                    "type": "Button",
+                    "id": "4f35fe3d-8454-45ab-a006-0c58c9acb77a",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Escort",
+                    "type": "Button",
+                    "id": "a5bb8e66-812d-43de-bc04-1ec344911d69",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Queue",
                     "type": "Button",
                     "id": "4079f724-fb04-55f5-a9e1-f5eb1dfa2a64",
@@ -383,6 +401,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "HoldPosition",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5e239dcd-961a-47b7-9067-5f224add9dfb",
+                    "path": "<Keyboard>/p",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Patrol",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8bde86d5-2375-43cd-9963-dd1016bbb9cd",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Escort",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

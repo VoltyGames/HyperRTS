@@ -73,6 +73,16 @@ namespace HyperRTS.Input.Commands
                 pending = new PendingCommand { Type = CommandType.AttackMove };
             }
 
+            if (commands.Patrol.WasPressedThisFrame())
+            {
+                pending = new PendingCommand { Type = CommandType.Patrol };
+            }
+
+            if (commands.Escort.WasPressedThisFrame())
+            {
+                pending = new PendingCommand { Type = CommandType.Escort };
+            }
+
             if (commands.Stop.WasPressedThisFrame())
             {
                 pending.Type = CommandType.None;

@@ -16,6 +16,12 @@ namespace HyperRTS.Simulation.Orders
         Capture = 7,
         Enter = 8,
         UseAbility = 9,
+
+        /// <summary>Attack-move to Position; on arrival the leg rejoins the back of the queue, so legs loop.</summary>
+        Patrol = 10,
+
+        /// <summary>Follow Target, a friendly unit, engaging hostiles on the way; ends when it dies.</summary>
+        Escort = 11,
         Custom = 128,
     }
 

@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Transport;
+using HyperRTS.Simulation.Units;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Orders
@@ -23,6 +24,7 @@ namespace HyperRTS.Simulation.Orders
         private ComponentLookup<ConstructionProgress> _construction;
         private ComponentLookup<Health> _health;
         private ComponentLookup<Capturer> _capturers;
+        private ComponentLookup<UnitTag> _units;
         private CaptureRules _capture;
         private Boarding _boarding;
 
@@ -37,6 +39,7 @@ namespace HyperRTS.Simulation.Orders
             _construction = state.GetComponentLookup<ConstructionProgress>(true);
             _health = state.GetComponentLookup<Health>(true);
             _capturers = state.GetComponentLookup<Capturer>(true);
+            _units = state.GetComponentLookup<UnitTag>(true);
             _capture = new CaptureRules(ref state);
             _boarding = new Boarding(ref state, true);
         }
@@ -52,6 +55,7 @@ namespace HyperRTS.Simulation.Orders
             _construction.Update(ref state);
             _health.Update(ref state);
             _capturers.Update(ref state);
+            _units.Update(ref state);
             _capture.Update(ref state);
             _boarding.Update(ref state);
         }
@@ -65,6 +69,8 @@ namespace HyperRTS.Simulation.Orders
                 // Attack-move clicked on an enemy attacks it directly.
                 CommandType.AttackMove => CanAttack(unit, target, relations) ? OrderType.Attack
                     : _weapons.HasComponent(unit) ? OrderType.AttackMove : OrderType.Move,
+                CommandType.Patrol => OrderType.Patrol,
+                CommandType.Escort => CanEscort(unit, target, relations) ? OrderType.Escort : OrderType.Move,
                 CommandType.Gather => CanGather(unit, target) ? OrderType.Gather : OrderType.Move,
                 CommandType.Build => CanBuild(unit, target, relations) ? OrderType.Build : OrderType.Move,
                 CommandType.Repair => CanRepair(unit, target, relations) ? OrderType.Repair : OrderType.Move,
@@ -102,6 +108,16 @@ namespace HyperRTS.Simulation.Orders
             }
 
             return CanCapture(unit, target, relations) ? OrderType.Capture : OrderType.Move;
+        }
+
+        private bool CanEscort(Entity unit, Entity target, in FactionRelations relations)
+        {
+            if (target == unit || !_units.HasComponent(target) || !_targets.IsAlive(target))
+            {
+                return false;
+            }
+
+            return relations.IsAllied(_factions[unit].Value, _factions[target].Value);
         }
 
         private bool CanAttack(Entity unit, Entity target, in FactionRelations relations) =>

@@ -135,8 +135,9 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 // Attack-move heads straight back to its goal: a disabled destination would read as arrival to
-                // MoveOrderSystem if it never saw the engagement. Only idle defenders head home.
-                if (order.Type.EngagesWhileMoving())
+                // MoveOrderSystem if it never saw the engagement. Only idle defenders head home; escorts halt and
+                // EscortSystem picks up the ward again.
+                if (order.Type.IsAttackMove())
                 {
                     MoveTo(entity, order.Position);
                 }

@@ -11,8 +11,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
-    /// Runs Move and AttackMove orders: points locomotion at the order goal while combat isn't engaged, and
-    /// completes the order on arrival or when the unit has stalled close to its goal (crowded formations).
+    /// Runs Move, AttackMove and Patrol orders: points locomotion at the order goal while combat isn't engaged, and
+    /// completes the order on arrival or when the unit has stalled close to its goal (crowded formations). A finished
+    /// patrol leg goes to the back of the queue, so a unit with other legs queued loops through them.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -49,9 +50,10 @@ namespace HyperRTS.Simulation.Orders
 
             private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 ref MoveOrderState progress, EnabledRefRW<MoveOrderState> driving, ref MoveDestination destination,
-                EnabledRefRW<MoveDestination> moving, in LocalTransform transform, in NavAgent agent)
+                EnabledRefRW<MoveDestination> moving, in LocalTransform transform, in NavAgent agent,
+                DynamicBuffer<QueuedOrder> queue)
             {
-                if (order.Value.Type is not (OrderType.Move or OrderType.AttackMove))
+                if (order.Value.Type != OrderType.Move && !order.Value.Type.IsAttackMove())
                 {
                     return;
                 }
@@ -81,6 +83,10 @@ namespace HyperRTS.Simulation.Orders
                     moving.ValueRW = false;
                     driving.ValueRW = false;
                     busy.ValueRW = false;
+                    if (order.Value.Type == OrderType.Patrol && queue.Length > 0)
+                    {
+                        queue.Add(new QueuedOrder { Value = order.Value });
+                    }
                 }
             }
 

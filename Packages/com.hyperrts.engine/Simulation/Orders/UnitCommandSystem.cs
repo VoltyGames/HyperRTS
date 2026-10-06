@@ -13,7 +13,8 @@ namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
     /// Turns unit <see cref="PlayerCommand"/>s into orders for the commanded unit or the player's selected units.
-    /// Ground moves of several units are spread into a <see cref="Formation"/>. Producers are not handled here.
+    /// Ground moves of several units are spread into a <see cref="Formation"/>; a patrol also queues the leg back to
+    /// where each unit stands. Producers are not handled here.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -85,7 +86,8 @@ namespace HyperRTS.Simulation.Orders
 
         private static ulong UnitCommands =>
             PlayerCommands.Mask(CommandType.Smart, CommandType.SetStance) |
-            PlayerCommands.Mask(CommandType.Repair, CommandType.Enter);
+            PlayerCommands.Mask(CommandType.Repair, CommandType.Enter) |
+            PlayerCommands.Mask(CommandType.Patrol, CommandType.Escort);
 
         private static bool IsUnitCommand(CommandType type) => (UnitCommands & PlayerCommands.Mask(type)) != 0;
 
@@ -131,7 +133,7 @@ namespace HyperRTS.Simulation.Orders
             foreach (var unit in subjects)
             {
                 var type = _resolver.Resolve(command.Type, unit, command.Target, relations);
-                if (type is OrderType.Move or OrderType.AttackMove)
+                if (type is OrderType.Move or OrderType.AttackMove or OrderType.Patrol)
                 {
                     movers.Add(unit);
                     moveTypes.Add(type);
@@ -171,6 +173,10 @@ namespace HyperRTS.Simulation.Orders
             {
                 var slot = hasMap ? map.Clamp(slots[i]) : slots[i];
                 _writer.Issue(movers[i], new Order { Type = types[i], Position = slot }, command.Queue);
+                if (types[i] == OrderType.Patrol && !command.Queue)
+                {
+                    _writer.Issue(movers[i], new Order { Type = OrderType.Patrol, Position = positions[i] }, true);
+                }
             }
 
             positions.Dispose();

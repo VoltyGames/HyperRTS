@@ -97,6 +97,8 @@ namespace HyperRTS.Simulation.Audio
                     return SoundSlot.Move;
                 case CommandType.Attack:
                 case CommandType.AttackMove:
+                case CommandType.Patrol:
+                case CommandType.Escort:
                     return SoundSlot.Attack;
                 case CommandType.Smart:
                     return IsHostile(ref state, command.Target, faction) ? SoundSlot.Attack : SoundSlot.Move;

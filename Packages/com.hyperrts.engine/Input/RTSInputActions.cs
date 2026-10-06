@@ -406,6 +406,26 @@ namespace HyperRTS.Input
                     ""priority"": 0
                 },
                 {
+                    ""name"": ""Patrol"",
+                    ""type"": ""Button"",
+                    ""id"": ""4f35fe3d-8454-45ab-a006-0c58c9acb77a"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false,
+                    ""priority"": 0
+                },
+                {
+                    ""name"": ""Escort"",
+                    ""type"": ""Button"",
+                    ""id"": ""a5bb8e66-812d-43de-bc04-1ec344911d69"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false,
+                    ""priority"": 0
+                },
+                {
                     ""name"": ""Queue"",
                     ""type"": ""Button"",
                     ""id"": ""4079f724-fb04-55f5-a9e1-f5eb1dfa2a64"",
@@ -490,6 +510,28 @@ namespace HyperRTS.Input
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""HoldPosition"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5e239dcd-961a-47b7-9067-5f224add9dfb"",
+                    ""path"": ""<Keyboard>/p"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Patrol"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8bde86d5-2375-43cd-9963-dd1016bbb9cd"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Escort"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -729,6 +771,8 @@ namespace HyperRTS.Input
             m_Commands_AttackMove = m_Commands.FindAction("AttackMove", throwIfNotFound: true);
             m_Commands_Stop = m_Commands.FindAction("Stop", throwIfNotFound: true);
             m_Commands_HoldPosition = m_Commands.FindAction("HoldPosition", throwIfNotFound: true);
+            m_Commands_Patrol = m_Commands.FindAction("Patrol", throwIfNotFound: true);
+            m_Commands_Escort = m_Commands.FindAction("Escort", throwIfNotFound: true);
             m_Commands_Queue = m_Commands.FindAction("Queue", throwIfNotFound: true);
             m_Commands_Cancel = m_Commands.FindAction("Cancel", throwIfNotFound: true);
             // Camera
@@ -1022,6 +1066,8 @@ namespace HyperRTS.Input
         private readonly InputAction m_Commands_AttackMove;
         private readonly InputAction m_Commands_Stop;
         private readonly InputAction m_Commands_HoldPosition;
+        private readonly InputAction m_Commands_Patrol;
+        private readonly InputAction m_Commands_Escort;
         private readonly InputAction m_Commands_Queue;
         private readonly InputAction m_Commands_Cancel;
         /// <summary>
@@ -1059,6 +1105,14 @@ namespace HyperRTS.Input
             /// Provides access to the underlying input action "Commands/HoldPosition".
             /// </summary>
             public InputAction @HoldPosition => m_Wrapper.m_Commands_HoldPosition;
+            /// <summary>
+            /// Provides access to the underlying input action "Commands/Patrol".
+            /// </summary>
+            public InputAction @Patrol => m_Wrapper.m_Commands_Patrol;
+            /// <summary>
+            /// Provides access to the underlying input action "Commands/Escort".
+            /// </summary>
+            public InputAction @Escort => m_Wrapper.m_Commands_Escort;
             /// <summary>
             /// Provides access to the underlying input action "Commands/Queue".
             /// </summary>
@@ -1111,6 +1165,12 @@ namespace HyperRTS.Input
                 @HoldPosition.started += instance.OnHoldPosition;
                 @HoldPosition.performed += instance.OnHoldPosition;
                 @HoldPosition.canceled += instance.OnHoldPosition;
+                @Patrol.started += instance.OnPatrol;
+                @Patrol.performed += instance.OnPatrol;
+                @Patrol.canceled += instance.OnPatrol;
+                @Escort.started += instance.OnEscort;
+                @Escort.performed += instance.OnEscort;
+                @Escort.canceled += instance.OnEscort;
                 @Queue.started += instance.OnQueue;
                 @Queue.performed += instance.OnQueue;
                 @Queue.canceled += instance.OnQueue;
@@ -1146,6 +1206,12 @@ namespace HyperRTS.Input
                 @HoldPosition.started -= instance.OnHoldPosition;
                 @HoldPosition.performed -= instance.OnHoldPosition;
                 @HoldPosition.canceled -= instance.OnHoldPosition;
+                @Patrol.started -= instance.OnPatrol;
+                @Patrol.performed -= instance.OnPatrol;
+                @Patrol.canceled -= instance.OnPatrol;
+                @Escort.started -= instance.OnEscort;
+                @Escort.performed -= instance.OnEscort;
+                @Escort.canceled -= instance.OnEscort;
                 @Queue.started -= instance.OnQueue;
                 @Queue.performed -= instance.OnQueue;
                 @Queue.canceled -= instance.OnQueue;
@@ -1463,6 +1529,20 @@ namespace HyperRTS.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnHoldPosition(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Patrol" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnPatrol(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Escort" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnEscort(InputAction.CallbackContext context);
             /// <summary>
             /// Method invoked when associated input action "Queue" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
             /// </summary>

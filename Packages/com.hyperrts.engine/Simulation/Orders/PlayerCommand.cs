@@ -50,6 +50,12 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>Player-level ability (support power) <see cref="PlayerCommand.Argument"/> at Target or Position.</summary>
         UsePower = 19,
+
+        /// <summary>Attack-move back and forth between where each unit stands and Position.</summary>
+        Patrol = 20,
+
+        /// <summary>Follow the friendly unit <see cref="PlayerCommand.Target"/> and fight what comes near.</summary>
+        Escort = 21,
         Custom = 128,
     }
 
