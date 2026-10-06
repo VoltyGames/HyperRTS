@@ -216,6 +216,30 @@ targets, so auto-acquisition, attack orders, engagement and command resolution a
 them and `FogRelevancySystem` doesn't replicate them. Splash still hits them. Showing own stealthed units as
 stealthed (e.g. translucent) is left to games, which read `Stealthed`.
 
+## Audio
+
+| Type | Role |
+| --- | --- |
+| `SoundCue` (asset) | Clips (random pick), volume and pitch ranges, max instances, priority, mixer group, 2D/3D and distance range |
+| `EntitySoundsAuthoring` / `EntitySound` | Per-prefab cues by `SoundSlot`: Fire, Impact, Death, Ability, and the owner-only voices Ready, Select, Move, Attack; games add slots from `Custom` |
+| `SoundEvent`, `SoundWriter` | This frame's sounds on the `SoundQueue` singleton, named by `EntityInfo.TypeId` + slot + position + owner, so a client resolves them from its own prefab |
+| `SoundRules` | `IsAudible`: voices reach only their owner, other sounds whoever sees the source (the fog and stealth rule of `IsHiddenFrom`) |
+
+`SoundClearSystem` empties the queue at the start of every frame in every world. Entities without a cue for a slot
+write nothing. `WeaponFireSystem` plays Fire at the shooter and, for instant hits, Impact at the target;
+projectiles carry the shooter's type and play Impact on arrival. `DeathSoundSystem` (after `DeathSystem`) plays
+Death, `AbilitySoundSystem` plays the caster's Ability cue for each `AbilityActivation`, and `ProductionSystem` and
+`ConstructionSystem` play Ready. Games append their own events with a `SoundWriter` (`Play(entity, slot, …)` or
+`Add(typeId, slot, …)`) before the end of the lifecycle phase. `AcknowledgementSystem` (client and single player)
+plays the Select, Move or Attack voice of one selected or commanded unit, at most once per second. With Netcode,
+`SoundSendSystem` forwards each client the events it may hear as `SoundRpc`s (at most 16 per tick) and
+`SoundReceiveSystem` queues them on the client. The server never plays audio.
+
+Playback (client): `SoundPlaybackSystem` plays the queue through a pool of 32 audio sources (`SoundPool`: per-cue
+instance limit, an important cue takes the voice of the least important one), skipping what the local player can't
+hear and 3D sounds beyond the cue's range. `SoundListener` (on `RTSWorld.prefab`'s camera) keeps the only
+`AudioListener` on the camera's ground focus point.
+
 ## Resources
 
 | Type | Role |

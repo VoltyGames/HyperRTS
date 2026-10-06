@@ -102,6 +102,12 @@ cooldowns) is checked by the same systems as in single player.
 reveal. Undetected stealthed enemies count as unseen, with fog on or off. Ghosts without a `Faction` (players, the
 match) always replicate, and observers see everything.
 
+## Sound
+
+The server never plays audio. `SoundSendSystem` sends each client the frame's sound events as `SoundRpc`s (type id,
+slot, owner, position): only those its team can see (the fog and stealth rule above), plus its own voices, at most
+16 per tick. `SoundReceiveSystem` queues them on the client, which plays them like single player.
+
 ## Physics
 
 Clicks raycast against Unity Physics, which Netcode only steps inside the prediction loop. The Match object needs

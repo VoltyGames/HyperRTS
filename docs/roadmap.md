@@ -27,6 +27,7 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 | 9 | Factions & players | ✅ | Players, teams, relations, population, victory/defeat |
 | 9b | Generals-style mechanics | ✅ | Power, upgrades, veterancy, repair/sell, splash, facing armor, capture, area fields, abilities, transports |
 | 10 | Multiplayer (Netcode) | 🟡 | 2+ clients play one match in sync |
+| 10b | Audio | ✅ | Sound cues, simulation sound events over the network, pooled playback, voice acknowledgements |
 | 11 | Hardening & tooling | 🟡 | Tests, docs, sample game, scene wizard done; CI and perf budgets remain |
 
 ## Phase 0: Foundation ✅
@@ -153,6 +154,16 @@ Generic mechanisms a modern-warfare RTS needs, all data-driven and server-side s
   deterministic and entity indices differ between worlds, so re-simulating a command log would desync.
 - ✅ Replays: recording in the authoritative world, GZip files, local playback with speed control and keyframe seek
 - ⬜ Replays: projectiles, resource nodes, passengers aboard, player stats and HUD controls
+
+## Phase 10b: Audio ✅
+
+- ✅ **Decision:** sound events name a prefab type and slot, never an asset, so one queue serves single player and
+  clients (forwarded as RPCs filtered by fog, stealth and voice ownership)
+- ✅ `SoundCue` assets and per-prefab `EntitySounds` (fire, impact, death, ability, ready, select, move, attack)
+- ✅ Pooled playback with instance limits and priority; listener on the camera's ground focus
+- ✅ Voice acknowledgements for select, move and attack, rate-limited
+- ⬜ Looping sounds (engines, ambience), "under fire" voices and announcer alerts, terrain-height listener,
+  batched or unreliable sound messages, inspector validation for cues
 
 ## Phase 11: Hardening, tooling & sample game 🟡
 
