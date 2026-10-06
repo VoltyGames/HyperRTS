@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Networking.Transport;
+using Unity.Physics.Systems;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -52,6 +53,7 @@ namespace HyperRTS.Network.Session
             if (server)
             {
                 var world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
+                DisablePhysics(world);
                 using var driver = DriverQuery(world);
                 driver.GetSingletonRW<NetworkStreamDriver>().ValueRW.Listen(NetworkEndpoint.AnyIpv4.WithPort(port));
                 World.DefaultGameObjectInjectionWorld = world;
@@ -75,6 +77,16 @@ namespace HyperRTS.Network.Session
             var rate = NetworkTimeSystem.DefaultClientTickRate;
             rate.PredictionLoopUpdateMode = PredictionLoopUpdateMode.AlwaysRun;
             return rate;
+        }
+
+        // Physics only serves click raycasts, which run on clients; the server would rebuild it every tick for nothing.
+        private static void DisablePhysics(World world)
+        {
+            var physics = world.GetExistingSystemManaged<PhysicsSystemGroup>();
+            if (physics != null)
+            {
+                physics.Enabled = false;
+            }
         }
 
         private static EntityQuery DriverQuery(World world) =>
