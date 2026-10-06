@@ -26,9 +26,19 @@ namespace HyperRTS.Simulation.Combat
             {
                 weapon.Damage = StatMath.Apply(modifiers, bases, Stat.Damage, weapon.Damage);
                 weapon.Range = StatMath.Apply(modifiers, bases, Stat.Range, weapon.Range);
-                var fireRate = math.max(MinFireRate, StatMath.Evaluate(modifiers, Stat.FireRate, 1f));
-                weapon.Cooldown = StatMath.BaseOf(bases, Stat.FireRate, weapon.Cooldown) / fireRate;
+                weapon.Cooldown = Cooldown(modifiers, StatMath.BaseOf(bases, Stat.FireRate, weapon.Cooldown));
             }
+        }
+
+        /// <summary>
+        /// The cooldown for a fire rate of <c>(1 / baseCooldown + Add) × (1 + ΣPercent)</c> shots per second, worked in
+        /// cooldown space so an unmodified weapon keeps its exact authored cooldown.
+        /// </summary>
+        public static float Cooldown(DynamicBuffer<StatModifier> modifiers, float baseCooldown)
+        {
+            StatMath.Totals(modifiers, Stat.FireRate, out var add, out var percent);
+            var multiplier = math.max(MinFireRate, (1f + add * baseCooldown) * (1f + percent));
+            return baseCooldown / multiplier;
         }
     }
 }

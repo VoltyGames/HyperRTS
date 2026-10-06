@@ -10,7 +10,10 @@ namespace HyperRTS.Simulation.Stats
         Damage = 1,
         Range = 2,
 
-        /// <summary>Shots per second; +100% halves the weapon cooldown. Its captured base is the cooldown.</summary>
+        /// <summary>
+        /// Shots per second: Add is extra shots per second and +100% halves the cooldown. Its captured base is the
+        /// cooldown.
+        /// </summary>
         FireRate = 3,
         MoveSpeed = 4,
         VisionRange = 5,

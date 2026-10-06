@@ -8,8 +8,15 @@ namespace HyperRTS.Simulation.Stats
     {
         public static float Evaluate(DynamicBuffer<StatModifier> modifiers, Stat stat, float baseValue)
         {
-            var add = 0f;
-            var percent = 0f;
+            Totals(modifiers, stat, out var add, out var percent);
+            return math.max(0f, (baseValue + add) * (1f + percent));
+        }
+
+        /// <summary>The summed <see cref="StatModifier.Add"/> and <see cref="StatModifier.Percent"/> of a stat.</summary>
+        public static void Totals(DynamicBuffer<StatModifier> modifiers, Stat stat, out float add, out float percent)
+        {
+            add = 0f;
+            percent = 0f;
             foreach (var modifier in modifiers)
             {
                 if (modifier.Stat == stat)
@@ -18,8 +25,6 @@ namespace HyperRTS.Simulation.Stats
                     percent += modifier.Percent;
                 }
             }
-
-            return math.max(0f, (baseValue + add) * (1f + percent));
         }
 
         /// <summary>The modified value of a stat currently at <paramref name="live"/>; see <see cref="BaseOf"/>.</summary>

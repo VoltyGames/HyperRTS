@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Stats;
 using NUnit.Framework;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -155,6 +156,22 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.SetComponentEnabled<ConstructionProgress>(tower, false);
             _world.Run(2f);
             Assert.IsFalse(_world.EntityManager.Exists(enemy), "the finished tower opens fire");
+        }
+
+        [TestCase(0f, 1f, 0.25f, TestName = "FireRate +100% halves the cooldown")]
+        [TestCase(0f, -0.5f, 1f, TestName = "FireRate -50% doubles the cooldown")]
+        [TestCase(1f, 0f, 1f / 3f, TestName = "FireRate +1 shot per second turns 2/s into 3/s")]
+        public void FireRateModifier_ScalesCooldown(float add, float percent, float expected)
+        {
+            var soldier = _world.Arm(_world.SpawnUnit(1, float3.zero), Stance.Passive, cooldown: 0.5f);
+            _world.EntityManager.GetBuffer<StatModifier>(soldier).Add(new StatModifier
+            {
+                Stat = Stat.FireRate, Add = add, Percent = percent,
+            });
+
+            _world.Tick();
+
+            Assert.AreEqual(expected, _world.Get<Weapon>(soldier).Cooldown, 1e-5f);
         }
     }
 }

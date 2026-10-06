@@ -194,7 +194,7 @@ docked. Fuel, repair on the pad and pad rules beyond one aircraft each are game 
 
 | Type | Role |
 | --- | --- |
-| `StatModifier` / `Stat` | Buffer on every unit and building: `(base + Add) × (1 + ΣPercent)` for MaxHealth, Damage, Range, FireRate, MoveSpeed, VisionRange, DamageTaken, BuildRate, ProductionSpeed. Values from `Stat.Custom` (128) up belong to games |
+| `StatModifier` / `Stat` | Buffer on every unit and building: `(base + Add) × (1 + ΣPercent)` for MaxHealth, Damage, Range, FireRate, MoveSpeed, VisionRange, DamageTaken, BuildRate, ProductionSpeed (FireRate is shots per second over the weapon cooldown). Values from `Stat.Custom` (128) up belong to games |
 | `StatSource` | Who added a modifier: a `StatSourceKind` (Upgrade, Veterancy, Field; `Custom` 128+ for games) and an id unique within that kind |
 | `BaseStat`, `StatMath` | Buffer of unmodified values, captured from the live component the first time a stat is applied; `Evaluate`, `Apply` and `RemoveSource` |
 | `VeterancyAuthoring` / `Experience`, `VeterancyRank`, `VeterancyBonus` | Experience thresholds and per-rank bonuses |
