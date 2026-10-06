@@ -53,13 +53,21 @@ namespace HyperRTS.Simulation.AI
         {
             var best = -1;
             var bestDistance = float.MaxValue;
+            var bestEntity = Entity.Null;
             for (var i = 0; i < nodes.Length; i++)
             {
+                if (data[i].Amount <= 0)
+                {
+                    continue;
+                }
+
                 var distance = math.distancesq(nodes.Position(i).xz, from.xz);
-                if (distance < bestDistance && data[i].Amount > 0)
+                var entity = nodes.Entities[i];
+                if (IsCloser(distance, entity, bestDistance, bestEntity))
                 {
                     best = i;
                     bestDistance = distance;
+                    bestEntity = entity;
                 }
             }
 
