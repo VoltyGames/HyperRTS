@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Resources;
@@ -7,7 +8,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Match
+namespace HyperRTS.Simulation.GameEntities
 {
     /// <summary>Adds the components every player entity carries.</summary>
     public static class PlayerSetup

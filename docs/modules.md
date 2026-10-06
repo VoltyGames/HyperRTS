@@ -58,13 +58,14 @@ The base module: ownership, identity, health and the helpers every other module 
 
 ## GameEntities
 
-Shared identity for units and buildings.
+Shared identity for units and buildings, and the component set of a player entity.
 
 | Type | Role |
 | --- | --- |
 | `GameEntityAuthoring` | Base of `UnitAuthoring`/`BuildingAuthoring`: name, icon, owner, health, vision, cost, build time, prerequisites, death spawn, counts-for-victory |
 | `GameEntitySpec` + `GameEntitySetup` | The shared values and the component set every unit and building carries, written once and used by bakers, tests and tools |
 | `ProducibleBaking` | Bakes the cost and prerequisite lists, shared with upgrades |
+| `PlayerSetup` | Adds what every player entity carries: `Player`, `Population`, `PowerGrid`, `Defeated`, `PlayerCommand`, `PlayerCommandSubject`, `ResearchedUpgrade` and `ResourceStock` |
 
 ## Match (players, teams, victory)
 
@@ -72,7 +73,6 @@ Shared identity for units and buildings.
 | --- | --- |
 | `MatchAuthoring` | One per map: map size, nav/fog cell sizes, fog toggle, player slots, AI tuning per difficulty, replay recording |
 | `PlayerSlot`, `PlayerControl` | One slot on the Match: name, team, colour, control (LocalHuman, AI, Remote), starting resources, AI difficulty and build order. Its list position + 1 is the faction number |
-| `PlayerSetup` | Adds what every player entity carries: `Player`, `Population`, `PowerGrid`, `Defeated`, `PlayerCommand`, `PlayerCommandSubject`, `ResearchedUpgrade` and `ResourceStock` |
 | `MatchState` | Singleton: `Playing`/`Ended` and the winning team |
 | `MatchRules` | Match singleton: low-power production rate, sell refund, replay recording |
 | `VictoryCritical`, `PopulationProvider`, `Population` | Flags and the per-player used/cap count read by the systems below |

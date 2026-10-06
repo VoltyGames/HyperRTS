@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Resources;
 using Unity.Collections;
 using Unity.Entities;
