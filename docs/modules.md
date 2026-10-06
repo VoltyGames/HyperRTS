@@ -59,17 +59,21 @@ first own something, so SubScene streaming at startup is safe.
 
 | Type | Role |
 | --- | --- |
-| `PlayerCommand` / `CommandType` | Smart, Move, AttackMove, Attack, Gather, Build, Stop, SetStance, PlaceBuilding, Produce, CancelProduction, SetRallyPoint, Sell, Repair, Capture, Enter, Unload, UseAbility, UsePower, `Custom`+ |
-| `Order` / `OrderType` | Move, AttackMove, Attack, Gather, Build, Repair, Capture, Enter, UseAbility, `Custom`+; `Argument` carries order data such as the ability id |
+| `PlayerCommand` / `CommandType` | Smart, Move, AttackMove, Attack, Gather, Build, Stop, SetStance, PlaceBuilding, Produce, CancelProduction, SetRallyPoint, Sell, Repair, Capture, Enter, Unload, UseAbility, UsePower, Patrol, Escort, ReturnToBase, `Custom`+ |
+| `Order` / `OrderType` | Move, AttackMove, Attack, Gather, Build, Repair, Capture, Enter, UseAbility, Patrol, Escort, ReturnToBase, `Custom`+; `Argument` carries order data such as the ability id |
 | `ActiveOrder`, `QueuedOrder` | Current order and shift-queue |
 | `OrderWriter` | `Issue(unit, order, queue)` and `Stop(unit)` |
 | `PlayerCommands` | `Any(mask)`: lets command systems skip their job sync on frames without their command types |
 
-Systems: `UnitCommandSystem` resolves unit commands through `OrderResolver` (Smart: hostile → Attack, node → Gather,
-unfinished allied building → Build, damaged allied building → Repair, allied container with room → Enter,
-capturable building → Capture, otherwise Move) and spreads group moves into a box `Formation`. `OrderDispatchSystem` promotes
-queued orders. `MoveOrderSystem` runs Move/AttackMove and completes them on arrival or when a crowded unit stalls
-near its goal. `PlayerCommandClearSystem` clears commands at the end of the order phase.
+Systems: `UnitCommandSystem` resolves unit commands through `OrderResolver` (Smart: hostile the weapon can hit →
+Attack, node → Gather, unfinished allied building → Build, damaged allied building → Repair, allied container with
+room → Enter, capturable building → Capture, own airfield → ReturnToBase for pad users, otherwise Move) and spreads
+group moves into a box `Formation`. `OrderDispatchSystem` promotes queued orders. `MoveOrderSystem` runs
+Move/AttackMove/Patrol and completes them on arrival or when a crowded unit stalls near its goal. Patrol is an
+attack-move whose finished leg rejoins the back of the queue; the command queues the leg back to where each unit
+stood, so units loop between the two points (shift adds more points to the loop). `EscortSystem` keeps an escort
+within `FollowDistance` of its friendly ward while combat auto-acquires around it, and ends the order when the ward
+dies. `PlayerCommandClearSystem` clears commands at the end of the order phase.
 
 ## Navigation and Units
 
@@ -77,7 +81,7 @@ near its goal. `PlayerCommandClearSystem` clears commands at the end of the orde
 | --- | --- |
 | `UnitAuthoring` | Move speed, radius, nav layer, population (on top of the common fields) |
 | `MoveDestination` | Enableable XZ goal |
-| `NavAgent`, `PathWaypoint`, `PathState` | Radius and `NavLayer` (Ground, Naval, Amphibious), remaining path corners, request bookkeeping |
+| `NavAgent`, `PathWaypoint`, `PathState` | Radius and `NavLayer` (Ground, Naval, Amphibious, Air), remaining path corners, request bookkeeping |
 | `NavObstacleAuthoring` / `NavObstacle` | Blocked XZ box (buildings add their footprint automatically) |
 | `NavAreaAuthoring` / `NavArea` | XZ box overriding the cells under it: Water, Blocked, or a walkable Deck (bridge) at its height with water kept below for ships |
 | `TerrainHeightAuthoring` / `TerrainHeight` | Terrain heights baked into a blob singleton; `Height(xz)` is bilinear, flat 0 without one |
@@ -92,7 +96,9 @@ last) and obstacles over that whenever any are added or removed, bumping the ver
 bridge). `PathfindingSystem` runs Burst grid A* (8-way, no corner cutting) over the agent's layer with line-of-sight
 smoothing, at most 48 searches per frame, and skips A* when the goal is directly visible. `MovementSystem` follows
 waypoints, separates overlapping units of layers that share a surface and never steps into cells closed to the
-agent's layer. Units steer on XZ; with a grid, Y follows the ground, deck or water level of the agent's layer.
+agent's layer. Units steer on XZ; with a grid, Y follows the ground, deck or water level of the agent's layer. Air
+units skip all of that: no A*, straight lines over obstacles, water and slopes, and they only separate from other
+aircraft (see Air).
 
 **Decision:** grid A* + smoothing + separation. Flow fields were deferred because every unit in a formation has its
 own goal. Measured: 500 units crossing a 200 × 200 map with obstacles averaged 0.26 ms per simulation tick.
@@ -107,7 +113,8 @@ start of the movement phase. Query it with a struct `ISpatialVisitor`. Targeting
 | Type | Role |
 | --- | --- |
 | `Health`, `Dead`, `SpawnOnDeath` | Hit points, death marker (enabled the frame before destruction), wreck prefab |
-| `WeaponAuthoring` / `Weapon` | Range, damage, cooldown, damage type, splash radius and edge damage, friendly fire, projectile prefab, acquire range |
+| `WeaponAuthoring` / `Weapon` | Range, damage, cooldown, damage type, splash radius and edge damage, friendly fire, projectile prefab, acquire range, `WeaponTargets` (Surface, Air or both; default Surface) |
+| `AmmoAuthoring` / `Ammo` | Optional rounds: each shot uses one, an empty weapon holds fire (drops its target and attack order), reloads while `Docked` |
 | `DamageEvent`, `DamageWriter` | A queued hit (target and/or splash, origin, source); every damage and heal goes through the `DamageQueue` singleton |
 | `ArmorFacing` | Front/side/rear multipliers from the Armor component's Directional fields |
 | `LastAttacker` | Who last damaged the entity, read on death for kill credit |
@@ -116,14 +123,37 @@ start of the movement phase. Query it with a struct `ISpatialVisitor`. Targeting
 | `DamageType` (asset), `ArmorAuthoring` / `ArmorModifier` | Damage multipliers per type |
 | `Projectile` | Shot in flight carrying its `DamageEvent` |
 
-Systems in order: `AttackOrderSystem` (explicit Attack orders) → `TargetAcquisitionSystem` (idle, attack-moving
-and holding units, plus towers, pick the nearest hostile, scanning every 4th frame) → `EngagementSystem` (leash,
+Systems in order: `AttackOrderSystem` (explicit Attack orders) → `TargetAcquisitionSystem` (idle, attack-moving,
+patrolling, escorting and holding units, plus towers, pick the nearest hostile their weapon can hit, scanning every
+4th frame) → `EngagementSystem` (leash,
 chase or stop in range) → `WeaponFireSystem` (queue an instant hit or spawn a projectile) → `ProjectileSystem` (home in, queue
 the hit on impact) → `DamageSystem` (last in the phase: damage-type armor × facing armor × the DamageTaken stat, splash
 falloff, `LastAttacker`; negative amounts heal, and healing splash reaches allies only). Games deal damage by appending
 to the queue with a `DamageWriter`. `DeathSystem` runs in the lifecycle phase.
 
+Target layers: aircraft are air targets, everything else is surface. `TargetLookup.IsValidTarget(…, targets)` adds
+the layer check, so acquisition, attack orders, engagement and Smart resolution all skip what the weapon can't hit,
+and a weapon's splash only reaches its own layers. The skirmish AI keeps air-only units home. Ranges stay on XZ.
+
 Not built in: rotating turrets. Stealth and detection are in Vision.
+
+## Air (aircraft)
+
+| Type | Role |
+| --- | --- |
+| `UnitAuthoring` Flight fields / `Flight` | On the Air nav layer: cruise altitude, climb speed, loiter radius (0 hovers; above 0 the idle aircraft keeps circling, for jets), uses landing pads |
+| `AirfieldAuthoring` / `LandingPad` | Pad offsets on a building, each holding one aircraft (`Aircraft`, null while free) |
+| `PadHome` | The aircraft's airfield and pad; null while homeless |
+| `Docked` | Enableable (replicated): landed on its pad; ammo reloads, games refuel or repair here |
+| `AirfieldRules` | `IsAirfieldOf`: a finished, owned building with pads |
+
+`MovementSystem` flies aircraft at their altitude above the surface below (terrain, water or deck), climbing at
+`ClimbSpeed`, and lands them on the surface while `Docked`. An airfield producing a pad user waits for a free pad and
+spawns it docked there. `PadSystem` (order phase) claims pads for new aircraft, frees pads whose aircraft died or moved
+on, drops the home of aircraft whose airfield was destroyed or captured (they take off and hover), undocks aircraft
+that move, and runs ReturnToBase: fly to the home pad, or first claim a free pad at the ordered own airfield, then
+dock. `RearmSystem` gives empty aircraft with a home a ReturnToBase order and reloads one round per `ReloadTime` while
+docked. Fuel, repair on the pad and pad rules beyond one aircraft each are game code reading `Docked`.
 
 ## Stats and Veterancy
 
@@ -324,13 +354,13 @@ are singletons that input and the HUD share. `PlacementMath` is the single sourc
 ## Input (client)
 
 `RTSInputActions` (Selection, Commands and Camera maps), `SelectionInputSystem`, `CommandInputSystem` (right-click
-Smart, A/S/H, targeted commands), `PlacementInputSystem` (ghost + PlaceBuilding), `WorldPointer` (Unity Physics
+Smart, A/S/H, P patrol and E escort + click, targeted commands), `PlacementInputSystem` (ghost + PlaceBuilding), `WorldPointer` (Unity Physics
 raycast, then the baked terrain, then the ground plane), `CameraController` (pan, edge scroll, zoom, rotate, map clamp, `FocusOn`).
 
 ## Presentation (client)
 
 `HUD.prefab` bundles the UI Toolkit `HUDController` (resource bar with power, selection panel with queue, command
-card with research, abilities and support powers, unload and sell, minimap, game-over banner), `OverlayRenderer` (selection rings, health bars, placement ghost, rally markers via
+card with research, abilities and support powers, return to base, unload and sell, minimap, game-over banner), `OverlayRenderer` (selection rings, health bars, placement ghost, rally markers via
 `Graphics.RenderMeshInstanced`), `FogOfWarRenderer` (overlay shader) and the drag-box marquee. `TeamColorSystem`
 tints owned meshes with the owner's colour through `URPMaterialPropertyBaseColor`, so use URP Lit materials.
 `FogVisibilitySystem` mirrors `FogHidden` and `Inside` onto `DisableRendering` for the entity and its child meshes.

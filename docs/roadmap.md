@@ -54,6 +54,7 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
   rally point
 - ✅ Stop, hold position (stance), attack-move (A + click)
 - ✅ Repair, Capture, Enter and Unload orders; Smart right-click picks them from the target (Phase 9b)
+- ✅ Patrol (P + click, loops between the points, shift adds points) and Escort (E + click a friendly unit)
 
 ## Phase 3: Pathfinding & steering ✅
 
@@ -137,8 +138,12 @@ Generic mechanisms a modern-warfare RTS needs, all data-driven and server-side s
 - ✅ Area fields: presence per field id, stat bonuses, heal and damage over time, no stacking
 - ✅ Cooldown abilities on units and buildings, player-level support powers, activation events for game code
 - ✅ Garrisons and transports: board, carry, fire out, unload, eject or die with the container
+- ✅ Aircraft: Air nav layer (straight flight at altitude, hover or loiter), weapon target layers (surface, air, both),
+  airfield landing pads, ammo and the rearm cycle (out of ammo → return → dock → reload), Return to Base
 - ✅ HUD: power readout, research state, ability and power buttons with cooldowns, unload and sell
 - ⬜ Upgrades as prerequisites, ability targeting cursor and range preview, selection panel cargo slots
+- ⬜ Aircraft follow-ups: jet turn rates and attack runs, landed aircraft as surface targets, intercept stance, ammo
+  readout and pad gizmos, patrol/escort command-card buttons
 
 ## Phase 10: Multiplayer (Netcode for Entities) 🟡
 

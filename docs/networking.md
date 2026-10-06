@@ -79,7 +79,7 @@ connection events, since network ids are reused), its slot is freed and its unit
 - **Players** are baked by `MatchAuthoring`, so `PlayerGhostSystem` turns each baked player into a ghost prefab
   at runtime (the same way on both sides) and the server spawns one ghost per slot.
 - **Fields**: components the client reads carry `[GhostField]` (health, faction, construction, production queue,
-  stock, population, power, abilities, match state). Static data comes from the client's own copy of the prefab.
+  stock, population, power, abilities, ammo, match state; `Stealthed`, `Inside` and `Docked` as enabled bits). Static data comes from the client's own copy of the prefab.
 - **References**: prefabs and assets can't cross the wire, so `ProductionQueueItem`, `ResearchedUpgrade` and
   `ResourceStock` also carry a type id, and `ReferenceResolveSystem` fills the reference back in on the client.
 

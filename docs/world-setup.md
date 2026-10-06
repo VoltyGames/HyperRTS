@@ -34,6 +34,7 @@ SimulationSystemGroup
  │   ├─ UnitCommandSystem, PlaceBuildingSystem,
  │   │  ProductionCommandSystem                        — commands become orders, sites, queue items
  │   ├─ OrderDispatchSystem → MoveOrderSystem          — next queued order; move goals
+ │   ├─ RearmSystem → PadSystem, EscortSystem           — rearm cycle, pads, return to base; escorts follow
  │   └─ (last) PlayerCommandClearSystem
  ├─ MovementSystemGroup                                (before TransformSystemGroup)
  │   ├─ (first) SpatialIndexSystem, NavGridSystem
