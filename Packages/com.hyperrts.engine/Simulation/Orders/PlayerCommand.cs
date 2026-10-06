@@ -64,6 +64,12 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Unit or producer to command; <c>Entity.Null</c> means the player's selected entities.</summary>
         public Entity Unit;
 
+        /// <summary>With <see cref="SubjectCount"/> above 0, the command's own group in the player's
+        /// <see cref="PlayerCommandSubject"/> buffer, which overrides <see cref="Unit"/> and the selection.</summary>
+        public ushort SubjectStart;
+
+        public ushort SubjectCount;
+
         public Entity Target;
         public float3 Position;
         public Entity Prefab;

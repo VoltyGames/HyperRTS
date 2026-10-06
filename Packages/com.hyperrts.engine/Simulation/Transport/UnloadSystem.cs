@@ -36,7 +36,8 @@ namespace HyperRTS.Simulation.Transport
             _exit.Update(ref state);
             var hasGrid = SystemAPI.TryGetSingleton<NavGrid>(out var grid) && grid.IsCreated;
 
-            foreach (var (player, commands) in SystemAPI.Query<RefRO<Player>, DynamicBuffer<PlayerCommand>>())
+            foreach (var (player, commands, listed) in SystemAPI
+                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>>())
             {
                 foreach (var command in commands)
                 {
@@ -45,7 +46,7 @@ namespace HyperRTS.Simulation.Transport
                         continue;
                     }
 
-                    foreach (var container in CommandSubjects.Collect(command.Unit, _selected))
+                    foreach (var container in CommandSubjects.Collect(command, listed, _selected))
                     {
                         if (SystemAPI.HasComponent<Container>(container) &&
                             SystemAPI.GetComponent<Faction>(container).Value == player.ValueRO.Faction)

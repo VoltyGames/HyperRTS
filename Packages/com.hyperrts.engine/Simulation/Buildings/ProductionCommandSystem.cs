@@ -42,9 +42,9 @@ namespace HyperRTS.Simulation.Buildings
                 return;
             }
 
-            foreach (var (player, commands, stock, researched) in SystemAPI
-                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<ResourceStock>,
-                             DynamicBuffer<ResearchedUpgrade>>()
+            foreach (var (player, commands, listed, stock, researched) in SystemAPI
+                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>,
+                             DynamicBuffer<ResourceStock>, DynamicBuffer<ResearchedUpgrade>>()
                          .WithNone<Defeated>())
             {
                 var faction = player.ValueRO.Faction;
@@ -53,14 +53,14 @@ namespace HyperRTS.Simulation.Buildings
                     switch (command.Type)
                     {
                         case CommandType.Produce:
-                            Produce(ref state, faction, command, stock, researched);
+                            Produce(ref state, faction, command, listed, stock, researched);
                             break;
                         case CommandType.CancelProduction:
-                            Cancel(ref state, faction, command, stock);
+                            Cancel(ref state, faction, command, listed, stock);
                             break;
                         case CommandType.SetRallyPoint:
                         case CommandType.Smart:
-                            SetRallyPoint(ref state, faction, command);
+                            SetRallyPoint(ref state, faction, command, listed);
                             break;
                     }
                 }
@@ -71,14 +71,15 @@ namespace HyperRTS.Simulation.Buildings
             PlayerCommands.Mask(CommandType.Produce, CommandType.SetRallyPoint) | PlayerCommands.Mask(CommandType.Smart);
 
         private void Produce(ref SystemState state, byte faction, in PlayerCommand command,
-            DynamicBuffer<ResourceStock> stock, DynamicBuffer<ResearchedUpgrade> researched)
+            DynamicBuffer<PlayerCommandSubject> listed, DynamicBuffer<ResourceStock> stock,
+            DynamicBuffer<ResearchedUpgrade> researched)
         {
             if (!UpgradeRules.CanQueue(state.EntityManager, _queues, researched, faction, command.Prefab))
             {
                 return;
             }
 
-            var producer = FindProducer(ref state, faction, command);
+            var producer = FindProducer(ref state, faction, command, listed);
             if (producer == Entity.Null)
             {
                 return;
@@ -93,15 +94,15 @@ namespace HyperRTS.Simulation.Buildings
                 return;
             }
 
-            var typeId = SystemAPI.HasComponent<EntityInfo>(prefab) ? SystemAPI.GetComponent<EntityInfo>(prefab).TypeId : 0;
+            var typeId = EntityInfo.TypeIdOf(state.EntityManager, prefab);
             queue.Add(new ProductionQueueItem { Prefab = prefab, TypeId = typeId });
         }
 
         private void Cancel(ref SystemState state, byte faction, in PlayerCommand command,
-            DynamicBuffer<ResourceStock> stock)
+            DynamicBuffer<PlayerCommandSubject> listed, DynamicBuffer<ResourceStock> stock)
         {
-            var producer = command.Unit != Entity.Null ? command.Unit : FirstSelectedWithQueue(ref state, faction);
-            if (!IsOwnedProducer(ref state, producer, faction))
+            var producer = FirstWithQueue(ref state, faction, command, listed);
+            if (producer == Entity.Null)
             {
                 return;
             }
@@ -126,9 +127,10 @@ namespace HyperRTS.Simulation.Buildings
             }
         }
 
-        private void SetRallyPoint(ref SystemState state, byte faction, in PlayerCommand command)
+        private void SetRallyPoint(ref SystemState state, byte faction, in PlayerCommand command,
+            DynamicBuffer<PlayerCommandSubject> listed)
         {
-            foreach (var producer in CommandSubjects.Collect(command.Unit, _selectedProducers))
+            foreach (var producer in CommandSubjects.Collect(command, listed, _selectedProducers))
             {
                 if (IsOwnedProducer(ref state, producer, faction))
                 {
@@ -139,11 +141,12 @@ namespace HyperRTS.Simulation.Buildings
         }
 
         /// <summary>The commanded producer, or the selected one with the shortest queue that offers the prefab.</summary>
-        private Entity FindProducer(ref SystemState state, byte faction, in PlayerCommand command)
+        private Entity FindProducer(ref SystemState state, byte faction, in PlayerCommand command,
+            DynamicBuffer<PlayerCommandSubject> listed)
         {
             var best = Entity.Null;
             var shortest = int.MaxValue;
-            foreach (var producer in CommandSubjects.Collect(command.Unit, _selectedProducers))
+            foreach (var producer in CommandSubjects.Collect(command, listed, _selectedProducers))
             {
                 if (!IsOwnedProducer(ref state, producer, faction) ||
                     ConstructionRules.IsUnderConstruction(state.EntityManager, producer) ||
@@ -163,10 +166,11 @@ namespace HyperRTS.Simulation.Buildings
             return best;
         }
 
-        /// <summary>True when any of the faction's producers already has <paramref name="prefab"/> queued.</summary>
-        private Entity FirstSelectedWithQueue(ref SystemState state, byte faction)
+        /// <summary>The first commanded producer the faction owns that has something queued.</summary>
+        private Entity FirstWithQueue(ref SystemState state, byte faction, in PlayerCommand command,
+            DynamicBuffer<PlayerCommandSubject> listed)
         {
-            foreach (var producer in _selectedProducers.ToEntityArray(Allocator.Temp))
+            foreach (var producer in CommandSubjects.Collect(command, listed, _selectedProducers))
             {
                 if (IsOwnedProducer(ref state, producer, faction) &&
                     !SystemAPI.GetBuffer<ProductionQueueItem>(producer).IsEmpty)

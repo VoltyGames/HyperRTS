@@ -155,7 +155,8 @@ namespace HyperRTS.Simulation.Buildings
                 return result;
             }
 
-            foreach (var unit in CommandSubjects.Collect(request.Command.Unit, _selectedBuilders))
+            var listed = SystemAPI.GetBuffer<PlayerCommandSubject>(request.Player);
+            foreach (var unit in CommandSubjects.Collect(request.Command, listed, _selectedBuilders))
             {
                 if (SystemAPI.HasBuffer<BuildOption>(unit) && SystemAPI.HasComponent<Faction>(unit) &&
                     SystemAPI.GetComponent<Faction>(unit).Value == request.Faction &&

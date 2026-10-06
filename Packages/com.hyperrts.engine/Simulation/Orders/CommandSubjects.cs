@@ -6,24 +6,38 @@ namespace HyperRTS.Simulation.Orders
     /// <summary>Who a <see cref="PlayerCommand"/> addresses; callers apply their own ownership and capability filter.</summary>
     public static class CommandSubjects
     {
-        /// <summary>The commanded unit, else every entity <paramref name="selected"/> matches.</summary>
-        public static void Collect(Entity unit, EntityQuery selected, NativeList<Entity> subjects)
+        /// <summary>
+        /// The command's listed group, else its <see cref="PlayerCommand.Unit"/>, else every entity
+        /// <paramref name="selected"/> matches.
+        /// </summary>
+        public static void Collect(in PlayerCommand command, DynamicBuffer<PlayerCommandSubject> listed,
+            EntityQuery selected, NativeList<Entity> subjects)
         {
             subjects.Clear();
-            if (unit != Entity.Null)
+            if (command.SubjectCount > 0)
             {
-                subjects.Add(unit);
+                for (var i = 0; i < command.SubjectCount; i++)
+                {
+                    subjects.Add(listed[command.SubjectStart + i].Value);
+                }
+
+                return;
             }
-            else
+
+            if (command.Unit != Entity.Null)
             {
-                subjects.AddRange(selected.ToEntityArray(Allocator.Temp));
+                subjects.Add(command.Unit);
+                return;
             }
+
+            subjects.AddRange(selected.ToEntityArray(Allocator.Temp));
         }
 
-        public static NativeList<Entity> Collect(Entity unit, EntityQuery selected)
+        public static NativeList<Entity> Collect(in PlayerCommand command, DynamicBuffer<PlayerCommandSubject> listed,
+            EntityQuery selected)
         {
             var subjects = new NativeList<Entity>(Allocator.Temp);
-            Collect(unit, selected, subjects);
+            Collect(command, listed, selected, subjects);
             return subjects;
         }
     }

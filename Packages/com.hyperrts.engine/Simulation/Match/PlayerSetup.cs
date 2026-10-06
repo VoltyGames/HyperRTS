@@ -49,6 +49,7 @@ namespace HyperRTS.Simulation.Match
             sink.Add<Defeated>();
             sink.SetEnabled<Defeated>(false);
             sink.AddBuffer<PlayerCommand>();
+            sink.AddBuffer<PlayerCommandSubject>();
             sink.AddBuffer<ResearchedUpgrade>();
             return sink.AddBuffer<ResourceStock>();
         }

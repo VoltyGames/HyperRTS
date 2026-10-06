@@ -40,8 +40,9 @@ namespace HyperRTS.Simulation.Buildings
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var sold = new NativeHashSet<Entity>(8, Allocator.Temp);
 
-            foreach (var (player, commands, stock) in SystemAPI
-                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<ResourceStock>>()
+            foreach (var (player, commands, listed, stock) in SystemAPI
+                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>,
+                             DynamicBuffer<ResourceStock>>()
                          .WithNone<Defeated>())
             {
                 foreach (var command in commands)
@@ -51,7 +52,7 @@ namespace HyperRTS.Simulation.Buildings
                         continue;
                     }
 
-                    foreach (var building in CommandSubjects.Collect(command.Unit, _selected))
+                    foreach (var building in CommandSubjects.Collect(command, listed, _selected))
                     {
                         if (IsOwnedBuilding(ref state, building, player.ValueRO.Faction) && sold.Add(building))
                         {

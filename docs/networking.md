@@ -37,7 +37,8 @@ In Play mode use **HyperRTS ▸ Network**. Builds accept `-server`, `-host`, `-c
    else makes it an observer (faction 0, sees everything). It replies with `JoinAccepted`.
 3. The client tags the player ghost of that faction as `LocalPlayer`, so input and HUD work unchanged.
 
-When a connection drops, its slot is freed and its units stay idle. The client remembers its slot
+The server links the connection to its slot (`ConnectionPlayer`). When a connection drops (read from Netcode's
+connection events, since network ids are reused), its slot is freed and its units stay idle. The client remembers its slot
 (`NetworkSession.PreferredFaction`) and gets it back on rejoin.
 
 ## Replication
@@ -58,9 +59,11 @@ A new component the HUD or overlays read needs `[GhostField]` on the fields that
 ## Commands
 
 The client never runs a `PlayerCommand`. `CommandSendSystem` turns each one into a `CommandRpc` carrying ghost
-ids: the commanded unit, or the selected units the player owns (up to 127). `CommandReceiveSystem` on the server
-keeps only units the sender owns, then writes the command to the sender's player entity. Group commands select
-their units on the server, because command systems read `Selected`. Everything else (cost, prerequisites,
+references: the target, and the commanded unit or the selected units the player owns (up to 127). Netcode sends
+them with their spawn tick, so a despawned ghost arrives as `Entity.Null`, never as a newer ghost reusing its id.
+`CommandReceiveSystem` on the server keeps only units the sender owns and writes the command to the sender's
+player entity in arrival order. A group command lists its units in the player's `PlayerCommandSubject` buffer,
+which `CommandSubjects.Collect` reads before `Unit` and the selection. Everything else (cost, prerequisites,
 cooldowns) is checked by the same systems as in single player.
 
 ## Fog of war
@@ -73,7 +76,7 @@ off, relevancy is disabled.
 
 Clicks raycast against Unity Physics, which Netcode only steps inside the prediction loop. The Match object needs
 `NetCodePhysicsConfig` with **Always Run** (the validator offers the fix), and client worlds set
-`PredictionLoopUpdateMode.AlwaysRun`.
+`PredictionLoopUpdateMode.AlwaysRun`. The server never raycasts, so `NetworkSession` disables its physics group.
 
 ## Limits
 

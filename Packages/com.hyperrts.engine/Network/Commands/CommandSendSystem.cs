@@ -29,6 +29,7 @@ namespace HyperRTS.Network.Commands
         {
             var player = SystemAPI.GetSingletonEntity<LocalPlayer>();
             var commands = SystemAPI.GetBuffer<PlayerCommand>(player);
+            var listed = SystemAPI.GetBuffer<PlayerCommandSubject>(player);
             if (commands.IsEmpty)
             {
                 return;
@@ -40,14 +41,16 @@ namespace HyperRTS.Network.Commands
             foreach (var command in commands)
             {
                 var rpc = ecb.CreateEntity();
-                ecb.AddComponent(rpc, ToRpc(ref state, command, faction));
+                ecb.AddComponent(rpc, ToRpc(ref state, command, listed, faction));
                 ecb.AddComponent<SendRpcCommandRequest>(rpc);
             }
 
             commands.Clear();
+            listed.Clear();
         }
 
-        private CommandRpc ToRpc(ref SystemState state, in PlayerCommand command, byte faction)
+        private CommandRpc ToRpc(ref SystemState state, in PlayerCommand command,
+            DynamicBuffer<PlayerCommandSubject> listed, byte faction)
         {
             var rpc = new CommandRpc
             {
@@ -55,15 +58,13 @@ namespace HyperRTS.Network.Commands
                 Queue = command.Queue,
                 Argument = command.Argument,
                 Position = command.Position,
-                Target = GhostId(ref state, command.Target),
-                PrefabTypeId = SystemAPI.HasComponent<EntityInfo>(command.Prefab)
-                    ? SystemAPI.GetComponent<EntityInfo>(command.Prefab).TypeId
-                    : 0,
+                Target = command.Target,
+                PrefabTypeId = EntityInfo.TypeIdOf(state.EntityManager, command.Prefab),
             };
 
             // A commanded unit goes as is; a selection only sends this player's own units.
             var isSingle = command.Unit != Entity.Null;
-            foreach (var subject in CommandSubjects.Collect(command.Unit, _selected))
+            foreach (var subject in CommandSubjects.Collect(command, listed, _selected))
             {
                 if (rpc.Subjects.Length == CommandRpc.MaxSubjects)
                 {
@@ -72,14 +73,11 @@ namespace HyperRTS.Network.Commands
 
                 if (isSingle || SystemAPI.GetComponent<Faction>(subject).Value == faction)
                 {
-                    rpc.Subjects.Add(GhostId(ref state, subject));
+                    rpc.Subjects.Add(subject);
                 }
             }
 
             return rpc;
         }
-
-        private int GhostId(ref SystemState state, Entity entity) =>
-            SystemAPI.HasComponent<GhostInstance>(entity) ? SystemAPI.GetComponent<GhostInstance>(entity).ghostId : 0;
     }
 }

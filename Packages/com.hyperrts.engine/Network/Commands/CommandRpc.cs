@@ -1,12 +1,14 @@
 using Unity.Collections;
+using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
 
 namespace HyperRTS.Network.Commands
 {
     /// <summary>
-    /// A <c>PlayerCommand</c> on the wire. Entities travel as ghost ids and prefabs as <c>EntityInfo.TypeId</c>;
-    /// selection is client-side, so the commanded units come along.
+    /// A <c>PlayerCommand</c> on the wire. Netcode sends entities as ghost references (id and spawn tick), so a
+    /// despawned ghost arrives as <c>Entity.Null</c> rather than as a newer ghost reusing its id. Prefabs travel as
+    /// <c>EntityInfo.TypeId</c>; selection is client-side, so the commanded units come along.
     /// </summary>
     public struct CommandRpc : IRpcCommand
     {
@@ -17,8 +19,10 @@ namespace HyperRTS.Network.Commands
         public bool Queue;
         public int Argument;
         public float3 Position;
-        public int Target;
+        public Entity Target;
         public int PrefabTypeId;
-        public FixedList512Bytes<int> Subjects;
+
+        [GhostFixedListCapacity(Capacity = MaxSubjects)]
+        public FixedList4096Bytes<Entity> Subjects;
     }
 }

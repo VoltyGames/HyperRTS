@@ -75,7 +75,8 @@ namespace HyperRTS.Simulation.Abilities
 
         private void Dispatch(ref SystemState state, in Context context)
         {
-            foreach (var (player, commands, entity) in SystemAPI.Query<RefRO<Player>, DynamicBuffer<PlayerCommand>>()
+            foreach (var (player, commands, listed, entity) in SystemAPI
+                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>>()
                          .WithNone<Defeated>().WithEntityAccess())
             {
                 foreach (var command in commands)
@@ -88,7 +89,7 @@ namespace HyperRTS.Simulation.Abilities
 
                     if (command.Type == CommandType.UseAbility)
                     {
-                        UseAbility(ref state, player.ValueRO.Faction, aimed, context);
+                        UseAbility(ref state, player.ValueRO.Faction, aimed, listed, context);
                     }
                     else if (command.Type == CommandType.UsePower)
                     {
@@ -107,12 +108,13 @@ namespace HyperRTS.Simulation.Abilities
             public MapSettings Map;
         }
 
-        private void UseAbility(ref SystemState state, byte faction, in PlayerCommand command, in Context context)
+        private void UseAbility(ref SystemState state, byte faction, in PlayerCommand command,
+            DynamicBuffer<PlayerCommandSubject> listed, in Context context)
         {
             var best = Entity.Null;
             var bestIndex = -1;
             var bestDistance = float.MaxValue;
-            foreach (var caster in CommandSubjects.Collect(command.Unit, _selected))
+            foreach (var caster in CommandSubjects.Collect(command, listed, _selected))
             {
                 var index = UsableIndex(ref state, caster, faction, command, context);
                 if (index < 0)

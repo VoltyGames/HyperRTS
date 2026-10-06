@@ -68,15 +68,12 @@ namespace HyperRTS.Network.Relevancy
         /// <summary>In-game connections holding a slot, with its faction; observers see all, so are left out.</summary>
         private NativeList<Viewer> Viewers(ref SystemState state)
         {
-            var players = PlayerConnections.ByNetworkId(SystemAPI.QueryBuilder().WithAll<PlayerConnection>().Build());
             var viewers = new NativeList<Viewer>(8, Allocator.Temp);
-            foreach (var id in SystemAPI.Query<RefRO<NetworkId>>().WithAll<NetworkStreamInGame>())
+            foreach (var (id, link) in SystemAPI.Query<RefRO<NetworkId>, RefRO<ConnectionPlayer>>()
+                         .WithAll<NetworkStreamInGame>())
             {
-                if (players.TryGetValue(id.ValueRO.Value, out var player))
-                {
-                    var faction = SystemAPI.GetComponent<Player>(player).Faction;
-                    viewers.Add(new Viewer { NetworkId = id.ValueRO.Value, Faction = faction });
-                }
+                var faction = SystemAPI.GetComponent<Player>(link.ValueRO.Player).Faction;
+                viewers.Add(new Viewer { NetworkId = id.ValueRO.Value, Faction = faction });
             }
 
             return viewers;

@@ -13,8 +13,11 @@ namespace HyperRTS.Network.Players
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct ServerJoinSystem : ISystem
     {
+        public void OnCreate(ref SystemState state) => state.RequireForUpdate<NetworkStreamDriver>();
+
         public void OnUpdate(ref SystemState state)
         {
+            // Network ids are reused, so drops are cleared before this tick's joins can claim one again.
             ReleaseDropped(ref state);
             var requests = SystemAPI.QueryBuilder().WithAll<JoinRequest, ReceiveRpcCommandRequest>().Build();
             var players = SystemAPI.QueryBuilder().WithAll<Player, PlayerConnection>().Build();
@@ -28,7 +31,14 @@ namespace HyperRTS.Network.Players
             {
                 var connection = entityManager.GetComponentData<ReceiveRpcCommandRequest>(request).SourceConnection;
                 var wanted = entityManager.GetComponentData<JoinRequest>(request).Faction;
-                var faction = Claim(ref state, wanted, entityManager.GetComponentData<NetworkId>(connection).Value);
+                var networkId = entityManager.GetComponentData<NetworkId>(connection).Value;
+                var slot = Claim(ref state, wanted, networkId);
+                byte faction = 0;
+                if (slot != Entity.Null)
+                {
+                    entityManager.AddComponentData(connection, new ConnectionPlayer { Player = slot });
+                    faction = entityManager.GetComponentData<Player>(slot).Faction;
+                }
 
                 entityManager.AddComponent<NetworkStreamInGame>(connection);
                 var reply = entityManager.CreateEntity();
@@ -38,8 +48,8 @@ namespace HyperRTS.Network.Players
             }
         }
 
-        /// <summary>The wanted slot if it is free, else the first free human slot, else 0 (observer).</summary>
-        private byte Claim(ref SystemState state, byte wanted, int networkId)
+        /// <summary>The wanted slot if it is free, else the first free human slot, else none (observer).</summary>
+        private Entity Claim(ref SystemState state, byte wanted, int networkId)
         {
             var slot = Entity.Null;
             foreach (var (player, connection, entity) in SystemAPI.Query<RefRO<Player>, RefRO<PlayerConnection>>()
@@ -62,28 +72,29 @@ namespace HyperRTS.Network.Players
                 }
             }
 
-            if (slot == Entity.Null)
+            if (slot != Entity.Null)
             {
-                return 0;
+                SystemAPI.SetComponent(slot, new PlayerConnection { NetworkId = networkId });
             }
 
-            SystemAPI.SetComponent(slot, new PlayerConnection { NetworkId = networkId });
-            return SystemAPI.GetComponent<Player>(slot).Faction;
+            return slot;
         }
 
         private void ReleaseDropped(ref SystemState state)
         {
-            var live = new NativeHashSet<int>(8, Allocator.Temp);
-            foreach (var id in SystemAPI.Query<RefRO<NetworkId>>())
+            foreach (var evt in SystemAPI.GetSingleton<NetworkStreamDriver>().ConnectionEventsForTick)
             {
-                live.Add(id.ValueRO.Value);
-            }
-
-            foreach (var connection in SystemAPI.Query<RefRW<PlayerConnection>>())
-            {
-                if (connection.ValueRO.NetworkId != 0 && !live.Contains(connection.ValueRO.NetworkId))
+                if (evt.State != ConnectionState.State.Disconnected)
                 {
-                    connection.ValueRW.NetworkId = 0;
+                    continue;
+                }
+
+                foreach (var connection in SystemAPI.Query<RefRW<PlayerConnection>>())
+                {
+                    if (connection.ValueRO.NetworkId == evt.Id.Value)
+                    {
+                        connection.ValueRW.NetworkId = 0;
+                    }
                 }
             }
         }

@@ -11,6 +11,10 @@ namespace HyperRTS.Simulation.Common
         public FixedString64Bytes Name;
         public UnityObjectRef<Texture2D> Icon;
 
+        /// <summary>The <see cref="TypeId"/> of <paramref name="entity"/>, or 0 when it has no <see cref="EntityInfo"/>.</summary>
+        public static int TypeIdOf(EntityManager entityManager, Entity entity) =>
+            entityManager.HasComponent<EntityInfo>(entity) ? entityManager.GetComponentData<EntityInfo>(entity).TypeId : 0;
+
         /// <summary>Deterministic FNV-1a hash, stable across runs and machines.</summary>
         public static int TypeIdFromName(string name)
         {

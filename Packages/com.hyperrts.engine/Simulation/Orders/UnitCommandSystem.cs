@@ -62,12 +62,13 @@ namespace HyperRTS.Simulation.Orders
             SystemAPI.TryGetSingleton<FactionRelations>(out var relations);
             var hasMap = SystemAPI.TryGetSingleton<MapSettings>(out var map);
             var subjects = new NativeList<Entity>(64, Allocator.Temp);
-            foreach (var (player, commands) in SystemAPI.Query<RefRO<Player>, DynamicBuffer<PlayerCommand>>())
+            foreach (var (player, commands, listed) in SystemAPI
+                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>>())
             {
                 for (var i = 0; i < commands.Length; i++)
                 {
                     var command = commands[i];
-                    if (!IsUnitCommand(command.Type) || !GatherSubjects(player.ValueRO.Faction, command.Unit, subjects))
+                    if (!IsUnitCommand(command.Type) || !GatherSubjects(player.ValueRO.Faction, command, listed, subjects))
                     {
                         continue;
                     }
@@ -89,9 +90,10 @@ namespace HyperRTS.Simulation.Orders
         private static bool IsUnitCommand(CommandType type) => (UnitCommands & PlayerCommands.Mask(type)) != 0;
 
         /// <summary>Keeps the command's subjects that this faction owns and that take orders, in order.</summary>
-        private bool GatherSubjects(byte faction, Entity unit, NativeList<Entity> subjects)
+        private bool GatherSubjects(byte faction, in PlayerCommand command, DynamicBuffer<PlayerCommandSubject> listed,
+            NativeList<Entity> subjects)
         {
-            CommandSubjects.Collect(unit, _selected, subjects);
+            CommandSubjects.Collect(command, listed, _selected, subjects);
             var kept = 0;
             for (var i = 0; i < subjects.Length; i++)
             {

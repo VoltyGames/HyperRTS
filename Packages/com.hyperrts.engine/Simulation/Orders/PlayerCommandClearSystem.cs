@@ -18,7 +18,11 @@ namespace HyperRTS.Simulation.Orders
         [BurstCompile]
         private partial struct ClearJob : IJobEntity
         {
-            private void Execute(DynamicBuffer<PlayerCommand> commands) => commands.Clear();
+            private void Execute(DynamicBuffer<PlayerCommand> commands, DynamicBuffer<PlayerCommandSubject> subjects)
+            {
+                commands.Clear();
+                subjects.Clear();
+            }
         }
     }
 }
