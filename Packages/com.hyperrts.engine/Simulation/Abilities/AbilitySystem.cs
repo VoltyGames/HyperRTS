@@ -25,7 +25,6 @@ namespace HyperRTS.Simulation.Abilities
     public partial struct AbilitySystem : ISystem
     {
         private EntityQuery _completed;
-        private EntityQuery _casters;
         private TargetLookup _targets;
         private ComponentLookup<Faction> _factions;
         private AbilityActivator _activator;
@@ -34,7 +33,6 @@ namespace HyperRTS.Simulation.Abilities
         public void OnCreate(ref SystemState state)
         {
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
-            _casters = SystemAPI.QueryBuilder().WithAll<ActiveOrder, Ability>().WithNone<Dead>().Build();
             _targets = new TargetLookup(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             _activator = new AbilityActivator(ref state);
@@ -54,16 +52,13 @@ namespace HyperRTS.Simulation.Abilities
 
             new CooldownJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
 
-            // The prerequisite snapshot below is a sync point; skip it while no ability holder has an order.
-            if (_casters.IsEmpty)
-            {
-                return;
-            }
-
+            var completed = new CompletedBuildings(_completed, state.WorldUpdateAllocator, state.Dependency,
+                out var gathered);
+            state.Dependency = gathered;
             new CastJob
             {
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
-                Completed = new CompletedBuildings(_completed, state.WorldUpdateAllocator),
+                Completed = completed,
                 Targets = _targets,
                 Factions = _factions,
                 Activator = _activator,

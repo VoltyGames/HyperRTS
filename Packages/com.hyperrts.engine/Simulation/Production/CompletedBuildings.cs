@@ -2,19 +2,35 @@ using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 
 namespace HyperRTS.Simulation.Production
 {
     /// <summary>Snapshot of living, completed buildings: the only ones that satisfy prerequisites.</summary>
     public readonly struct CompletedBuildings
     {
-        [ReadOnly] private readonly NativeArray<EntityInfo> _infos;
-        [ReadOnly] private readonly NativeArray<Faction> _owners;
+        [ReadOnly] private readonly NativeList<EntityInfo> _infos;
+        [ReadOnly] private readonly NativeList<Faction> _owners;
 
+        /// <summary>Snapshots now, on the main thread, waiting for jobs that write the building components.</summary>
         public CompletedBuildings(EntityQuery query, AllocatorManager.AllocatorHandle allocator)
         {
-            _infos = query.ToComponentDataArray<EntityInfo>(allocator);
-            _owners = query.ToComponentDataArray<Faction>(allocator);
+            _infos = new NativeList<EntityInfo>(allocator);
+            _owners = new NativeList<Faction>(allocator);
+            _infos.CopyFrom(query.ToComponentDataArray<EntityInfo>(Allocator.Temp));
+            _owners.CopyFrom(query.ToComponentDataArray<Faction>(Allocator.Temp));
+        }
+
+        /// <summary>
+        /// Snapshots in jobs after <paramref name="dependsOn"/>, without a main-thread sync; read it only in jobs that
+        /// depend on <paramref name="gathered"/>.
+        /// </summary>
+        public CompletedBuildings(EntityQuery query, AllocatorManager.AllocatorHandle allocator, JobHandle dependsOn,
+            out JobHandle gathered)
+        {
+            _infos = query.ToComponentDataListAsync<EntityInfo>(allocator, dependsOn, out var infos);
+            _owners = query.ToComponentDataListAsync<Faction>(allocator, dependsOn, out var owners);
+            gathered = JobHandle.CombineDependencies(infos, owners);
         }
 
         public static EntityQueryBuilder Query(Allocator allocator) =>
