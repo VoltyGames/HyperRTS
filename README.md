@@ -51,6 +51,7 @@ to a playable skirmish with your own units and buildings, and shows how to add m
 | [getting-started.md](docs/getting-started.md) | Your first game, step by step |
 | [modules.md](docs/modules.md) | Every module's components and systems |
 | [architecture.md](docs/architecture.md) | Assembly layering and the headless rule |
+| [networking.md](docs/networking.md) | Multiplayer: worlds, join, commands, replication, fog relevancy |
 | [world-setup.md](docs/world-setup.md) | Frame order, spawning, tests |
 | [selection.md](docs/selection.md) | Selection and input bindings |
 | [editor-ux.md](docs/editor-ux.md) | Menus, templates and authoring conventions |

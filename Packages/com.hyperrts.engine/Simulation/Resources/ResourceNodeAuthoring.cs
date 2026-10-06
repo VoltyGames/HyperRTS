@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
+using Unity.NetCode;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Resources
@@ -37,8 +38,8 @@ namespace HyperRTS.Simulation.Resources
     public struct ResourceNode : IComponentData
     {
         public UnityObjectRef<ResourceType> Type;
-        public int Amount;
-        public int MaxAmount;
+        [GhostField] public int Amount;
+        [GhostField] public int MaxAmount;
         public float RegrowthPerSecond;
 
         /// <summary>Fractional regrowth carried between frames.</summary>

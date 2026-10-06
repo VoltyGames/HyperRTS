@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.NetCode;
 
 namespace HyperRTS.Simulation.Buildings
 {
@@ -6,6 +7,10 @@ namespace HyperRTS.Simulation.Buildings
     [InternalBufferCapacity(5)]
     public struct ProductionQueueItem : IBufferElementData
     {
-        public Entity Prefab;
+        /// <summary>Not replicated; clients resolve it from <see cref="TypeId"/>.</summary>
+        [GhostField(SendData = false)] public Entity Prefab;
+
+        /// <summary>The prefab's <c>EntityInfo.TypeId</c>.</summary>
+        [GhostField] public int TypeId;
     }
 }

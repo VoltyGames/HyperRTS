@@ -120,7 +120,7 @@ namespace HyperRTS.Simulation.Buildings
 
                 if (UpgradeLookup.HasComponent(prefab))
                 {
-                    Research(faction.Value, prefab);
+                    Research(faction.Value, queue[0]);
                 }
                 else
                 {
@@ -133,11 +133,11 @@ namespace HyperRTS.Simulation.Buildings
                 producer.Elapsed = 0f;
             }
 
-            private void Research(byte faction, Entity upgrade)
+            private void Research(byte faction, ProductionQueueItem item)
             {
                 if (ResearchedLookup.TryGetBuffer(PlayerByFaction[faction], out var researched))
                 {
-                    researched.Add(new ResearchedUpgrade { Upgrade = upgrade });
+                    researched.Add(new ResearchedUpgrade { Upgrade = item.Prefab, TypeId = item.TypeId });
                 }
             }
 

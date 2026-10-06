@@ -11,6 +11,7 @@ using UnityEngine.InputSystem;
 namespace HyperRTS.Input.Selection
 {
     /// <summary>Turns mouse and control-group keys into the <see cref="SelectionInput"/> singleton.</summary>
+    [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     [UpdateBefore(typeof(SelectionSystem))]
     public partial class SelectionInputSystem : SystemBase

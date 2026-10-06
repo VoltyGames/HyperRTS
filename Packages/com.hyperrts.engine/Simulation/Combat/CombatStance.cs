@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.NetCode;
 
 namespace HyperRTS.Simulation.Combat
 {
@@ -22,7 +23,7 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>How an armed unit reacts to enemies when not explicitly ordered to attack.</summary>
     public struct CombatStance : IComponentData
     {
-        public Stance Value;
+        [GhostField] public Stance Value;
 
         /// <summary>Where the unit was when it last became idle; defensive units return here.</summary>
         public float3 Anchor;

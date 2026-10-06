@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Upgrades;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.NetCode;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Buildings
@@ -64,6 +65,6 @@ namespace HyperRTS.Simulation.Buildings
         public float Speed;
 
         /// <summary>Seconds of work done on the head of the queue.</summary>
-        public float Elapsed;
+        [GhostField] public float Elapsed;
     }
 }

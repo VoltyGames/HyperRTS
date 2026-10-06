@@ -13,6 +13,7 @@ namespace HyperRTS.Input.Commands
 {
     /// <summary>Turns hotkeys and world clicks into <see cref="PlayerCommand"/>s for the local player's selection.</summary>
     // OrderFirst (after selection) so every command consumer in the order phase sees this frame's commands.
+    [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     [UpdateAfter(typeof(SelectionSystem))]
     public partial class CommandInputSystem : SystemBase

@@ -15,6 +15,7 @@ namespace HyperRTS.Simulation.Vision
     /// times per second. With fog disabled the grid is filled once and left fully visible.
     /// </summary>
     [BurstCompile]
+    [WorldSystemFilter(SimulationWorlds.All)]
     [UpdateInGroup(typeof(CombatSystemGroup), OrderFirst = true)]
     public partial struct FogOfWarSystem : ISystem
     {

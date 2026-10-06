@@ -3,16 +3,21 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Units;
+using Unity.NetCode;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Templates
 {
-    /// <summary>Ready-to-bake GameObjects per role: a root with collider and authoring, and a primitive Model child.</summary>
+    /// <summary>
+    /// Ready-to-bake GameObjects per role: a root with collider, authoring and ghost (so it replicates), and a primitive
+    /// Model child.
+    /// </summary>
     public static class EntityTemplates
     {
         public static GameObject Unit(string name = "Unit")
         {
             var go = Template(name, PrimitiveType.Capsule, new Vector3(0.8f, 0.9f, 0.8f), 0.9f);
+            go.AddComponent<GhostAuthoringComponent>();
             var unit = go.AddComponent<UnitAuthoring>();
             unit.displayName = name;
             unit.radius = 0.4f;
@@ -26,6 +31,7 @@ namespace HyperRTS.Editor.Templates
         public static GameObject Building(string name = "Building", float width = 4f, float height = 2.5f)
         {
             var go = Template(name, PrimitiveType.Cube, new Vector3(width, height, width), height * 0.5f);
+            go.AddComponent<GhostAuthoringComponent>();
             var building = go.AddComponent<BuildingAuthoring>();
             building.displayName = name;
             building.footprint = new Vector2(width, width);
@@ -45,6 +51,7 @@ namespace HyperRTS.Editor.Templates
         public static GameObject ResourceNode()
         {
             var go = Template("Resource Node", PrimitiveType.Cylinder, new Vector3(2.4f, 0.6f, 2.4f), 0.6f);
+            go.AddComponent<GhostAuthoringComponent>();
             go.AddComponent<ResourceNodeAuthoring>();
             go.AddComponent<NavObstacleAuthoring>().size = new Vector2(2f, 2f);
             return go;

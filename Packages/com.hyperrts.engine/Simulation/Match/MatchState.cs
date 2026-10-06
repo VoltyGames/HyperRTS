@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.NetCode;
 
 namespace HyperRTS.Simulation.Match
 {
@@ -12,10 +13,10 @@ namespace HyperRTS.Simulation.Match
     /// <summary>Singleton match outcome; <see cref="WinningTeam"/> is 0 for a draw.</summary>
     public struct MatchState : IComponentData
     {
-        public MatchPhase Phase;
-        public byte WinningTeam;
+        [GhostField] public MatchPhase Phase;
+        [GhostField] public byte WinningTeam;
 
         /// <summary>Bit per faction that has owned a <see cref="VictoryCritical"/> entity; only those can lose.</summary>
-        public uint Contenders;
+        [GhostField] public uint Contenders;
     }
 }

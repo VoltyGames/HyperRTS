@@ -12,6 +12,7 @@ namespace HyperRTS.Input.Commands
 {
     /// <summary>Drives building placement mode: moves the snapped ghost and confirms it as a PlaceBuilding command.</summary>
     // After CommandInputSystem, so a cancelling right-click can't also become a smart command this frame.
+    [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     [UpdateAfter(typeof(CommandInputSystem))]
     public partial class PlacementInputSystem : SystemBase

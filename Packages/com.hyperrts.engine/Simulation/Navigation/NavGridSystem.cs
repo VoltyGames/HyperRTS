@@ -15,6 +15,7 @@ namespace HyperRTS.Simulation.Navigation
     /// whenever obstacles are added, removed or change archetype. Obstacles are assumed not to move.
     /// </summary>
     [BurstCompile]
+    [WorldSystemFilter(SimulationWorlds.All)]
     [UpdateInGroup(typeof(MovementSystemGroup), OrderFirst = true)]
     public partial struct NavGridSystem : ISystem
     {

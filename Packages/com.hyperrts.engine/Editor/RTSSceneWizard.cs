@@ -2,6 +2,7 @@ using System.IO;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using Unity.NetCode;
 using Unity.Scenes;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -83,6 +84,8 @@ namespace HyperRTS.Editor
         {
             var entities = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
             var match = new GameObject("Match").AddComponent<MatchAuthoring>();
+            match.gameObject.AddComponent<GhostAuthoringComponent>();
+            match.gameObject.AddComponent<NetCodePhysicsConfig>().PhysicGroupRunMode = PhysicGroupRunMode.AlwaysRun;
             match.mapSize = mapSize;
             match.players.Clear();
             for (var i = 0; i < players; i++)

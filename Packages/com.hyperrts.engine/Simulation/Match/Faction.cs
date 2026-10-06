@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.NetCode;
 
 namespace HyperRTS.Simulation.Match
 {
@@ -6,6 +7,6 @@ namespace HyperRTS.Simulation.Match
     public struct Faction : IComponentData
     {
         public const byte Neutral = 0;
-        public byte Value;
+        [GhostField] public byte Value;
     }
 }

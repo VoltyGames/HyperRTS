@@ -93,7 +93,8 @@ namespace HyperRTS.Simulation.Buildings
                 return;
             }
 
-            queue.Add(new ProductionQueueItem { Prefab = prefab });
+            var typeId = SystemAPI.HasComponent<EntityInfo>(prefab) ? SystemAPI.GetComponent<EntityInfo>(prefab).TypeId : 0;
+            queue.Add(new ProductionQueueItem { Prefab = prefab, TypeId = typeId });
         }
 
         private void Cancel(ref SystemState state, byte faction, in PlayerCommand command,

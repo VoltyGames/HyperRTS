@@ -17,6 +17,7 @@ namespace HyperRTS.Simulation.Selection
     /// <summary>Applies the <see cref="SelectionInput"/> gesture by toggling <see cref="Selected"/>.</summary>
     // OrderFirst so selection settles before any command consumer in the order phase.
     [BurstCompile]
+    [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial struct SelectionSystem : ISystem
     {

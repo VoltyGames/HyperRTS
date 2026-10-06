@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.NetCode;
 
 namespace HyperRTS.Simulation.Resources
 {
@@ -6,7 +7,12 @@ namespace HyperRTS.Simulation.Resources
     [InternalBufferCapacity(4)]
     public struct ResourceStock : IBufferElementData
     {
-        public UnityObjectRef<ResourceType> Type;
-        public int Amount;
+        /// <summary>Not replicated; clients resolve it from <see cref="TypeId"/>.</summary>
+        [GhostField(SendData = false)] public UnityObjectRef<ResourceType> Type;
+
+        /// <summary><see cref="ResourceType.Id"/>, filled in on the server.</summary>
+        [GhostField] public int TypeId;
+
+        [GhostField] public int Amount;
     }
 }

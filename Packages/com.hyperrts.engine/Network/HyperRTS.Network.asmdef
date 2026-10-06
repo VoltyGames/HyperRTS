@@ -1,0 +1,24 @@
+{
+  "name": "HyperRTS.Network",
+  "rootNamespace": "HyperRTS.Network",
+  "references": [
+    "HyperRTS.Core",
+    "HyperRTS.Simulation",
+    "Unity.Burst",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.Mathematics",
+    "Unity.NetCode",
+    "Unity.Networking.Transport",
+    "Unity.Transforms"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

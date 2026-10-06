@@ -13,6 +13,7 @@ namespace HyperRTS.Simulation.Vision
     /// <see cref="FogHidden"/>, so every consumer reads one answer.
     /// </summary>
     [BurstCompile]
+    [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(CombatSystemGroup), OrderFirst = true)]
     [UpdateAfter(typeof(FogOfWarSystem))]
     public partial struct LocalFogViewSystem : ISystem

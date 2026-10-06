@@ -26,7 +26,7 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 | 8 | Fog of war & vision | ✅ | Per-team visible/explored grid, hidden enemies, fog overlay |
 | 9 | Factions & players | ✅ | Players, teams, relations, population, victory/defeat |
 | 9b | Generals-style mechanics | ✅ | Power, upgrades, veterancy, repair/sell, splash, facing armor, capture, area fields, abilities, transports |
-| 10 | Multiplayer (Netcode) | ⬜ | 2+ clients play one match in sync |
+| 10 | Multiplayer (Netcode) | 🟡 | 2+ clients play one match in sync |
 | 11 | Hardening & tooling | 🟡 | Tests, docs, sample game, scene wizard done; CI and perf budgets remain |
 
 ## Phase 0: Foundation ✅
@@ -133,15 +133,19 @@ Generic mechanisms a modern-warfare RTS needs, all data-driven and server-side s
 - ✅ HUD: power readout, research state, ability and power buttons with cooldowns, unload and sell
 - ⬜ Upgrades as prerequisites, ability targeting cursor and range preview, selection panel cargo slots
 
-## Phase 10: Multiplayer (Netcode for Entities) ⬜
+## Phase 10: Multiplayer (Netcode for Entities) 🟡
 
 - ✅ **Decision:** server-authoritative Netcode for Entities over deterministic lockstep. Burst doesn't promise
   cross-platform float determinism, Netcode is already in the stack, and the simulation is already headless-ready.
 - ✅ Groundwork: input reaches the simulation only through `PlayerCommand`, which maps to an RPC
-- ⬜ Simulation systems filtered to server/local worlds; ghosts for units, buildings, projectiles and players
-- ⬜ Commands as RPCs carrying the selected unit list (selection is client-side), server-side validation
-- ⬜ Connection flow, client → player binding, per-client fog and HUD on the client world
-- ⬜ Latency handling, rejoin
+- ✅ Simulation systems default to server/local worlds; selection, input and fog view opt into clients
+  ([`networking.md`](networking.md))
+- ✅ Ghosts for units, buildings, nodes, projectiles and the match (validator fix); players become ghosts at runtime
+- ✅ Commands as RPCs carrying the selected units as ghost ids; server keeps only owned units
+- ✅ Connection flow: host, dedicated server, client (menu and command line); slot binding, observers, rejoin
+- ✅ Per-client fog through ghost relevancy (no map hack)
+- ⬜ Measured in a real match: 500-unit bandwidth test, importance and send rate tuning
+- ⬜ Relay transport, "last seen" enemy buildings, command feedback before the server confirms
 
 ## Phase 11: Hardening, tooling & sample game 🟡
 

@@ -24,6 +24,7 @@ Packages/com.hyperrts.engine/
 │                  Resources, Selection, Spatial, Units, Vision, Tests/
 ├── Presentation/  team colours, overlays, fog rendering, UI Toolkit HUD, Tests/
 ├── Input/         camera, input actions, input → PlayerCommand bridge
+├── Network/       Netcode session, join, command RPCs, fog relevancy (docs/networking.md)
 ├── Editor/        validator, inspectors + handles, templates, catalog, debug/cheats, scene wizard, Tests/
 └── Prefabs/       RTSWorld rig (camera + HUD), UI/HUD
 ```
@@ -91,8 +92,9 @@ In Play mode, the Scene view's **HyperRTS Debug** overlay and **HyperRTS ▸ Che
 - Entities built with the `*Setup` helpers have no mesh. Rendered spawns instantiate baked prefabs.
 - SubScene entities stream in over the first frames: guard on singletons (`RequireForUpdate`) and never treat
   "nothing exists yet" as a game state (see `VictorySystem`).
-- Keep `OverrideAutomaticNetcodeBootstrap` (on `RTSWorld.prefab`) in single-player scenes, or Netcode replaces
-  the default world with client/server worlds.
+- Keep `OverrideAutomaticNetcodeBootstrap` (on `RTSWorld.prefab`) in scenes: single player is one local world and
+  `NetworkSession` creates the server/client worlds. Systems default to server/local worlds; client-side ones opt in
+  with `[WorldSystemFilter(SimulationWorlds.Presented)]`. A component the HUD reads needs `[GhostField]`s.
 - Entity type identity (`EntityInfo.TypeId`) is a hash of the display name: two prefab types must not share one.
 
 ## Docs
@@ -102,4 +104,5 @@ In Play mode, the Scene view's **HyperRTS Debug** overlay and **HyperRTS ▸ Che
 - [`world-setup`](docs/world-setup.md) - entity entry, system order, tests
 - [`editor-ux`](docs/editor-ux.md) - authoring conventions and editor tools
 - [`selection`](docs/selection.md) - selection pipeline
+- [`networking`](docs/networking.md) - multiplayer: worlds, join, commands, replication, fog relevancy
 - [`roadmap`](docs/roadmap.md) - check phase status before new work

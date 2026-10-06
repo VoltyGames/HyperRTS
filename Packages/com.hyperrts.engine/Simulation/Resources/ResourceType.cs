@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Resources
@@ -16,5 +17,8 @@ namespace HyperRTS.Simulation.Resources
 
         [Tooltip("Accent colour for HUD text and minimap nodes.")]
         public Color color = new(1f, 0.8f, 0.25f);
+
+        /// <summary>Stable across processes, unlike the asset's instance id, so the network can refer to it.</summary>
+        public int Id => EntityInfo.TypeIdFromName(name);
     }
 }
