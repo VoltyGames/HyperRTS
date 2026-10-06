@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.AI
 
         /// <summary>Closest free spot to <paramref name="home"/>, ring by ring; candidates are a building plus a gap apart.</summary>
         public static bool TryFindSpot(in MapSettings map, in NavGrid grid, float3 home, float2 footprint,
-            out float3 spot)
+            PlacementSurface surface, out float3 spot)
         {
             var step = math.cmax(footprint) + Gap;
             for (var ring = 1; ring <= MaxRings; ring++)
@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.AI
                 {
                     var cell = RingCell(ring, k);
                     var position = home + new float3(cell.x, 0f, cell.y) * step;
-                    if (IsFree(map, grid, position, footprint, out spot))
+                    if (IsFree(map, grid, position, footprint, surface, out spot))
                     {
                         return true;
                     }
@@ -50,10 +50,10 @@ namespace HyperRTS.Simulation.AI
 
         /// <summary>The single call into <see cref="PlacementMath"/>: the shared rules over a footprint padded by the gap.</summary>
         private static bool IsFree(in MapSettings map, in NavGrid grid, float3 position, float2 footprint,
-            out float3 spot)
+            PlacementSurface surface, out float3 spot)
         {
             spot = PlacementMath.Snap(map, position, footprint);
-            return PlacementMath.IsValid(map, grid, spot, footprint + 2f * Gap);
+            return PlacementMath.IsValid(map, grid, spot, footprint + 2f * Gap, surface);
         }
     }
 }
