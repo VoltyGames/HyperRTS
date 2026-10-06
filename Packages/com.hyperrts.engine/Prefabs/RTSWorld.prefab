@@ -57,7 +57,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3555598927700202188}
   - component: {fileID: 4665418945433789882}
-  - component: {fileID: 3001723857998268399}
   - component: {fileID: 823885573077874371}
   m_Layer: 0
   m_Name: Main Camera
@@ -78,7 +77,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 4180355712436290871}
   m_Father: {fileID: 5661322462128922307}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!20 &4665418945433789882
@@ -132,14 +132,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!81 &3001723857998268399
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8073591838981333275}
-  m_Enabled: 1
 --- !u!114 &823885573077874371
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -161,6 +153,60 @@ MonoBehaviour:
   maxZoom: 50
   defaultPosition: {x: 0, y: 35, z: -50}
   defaultRotation: {x: 0.25881904, y: 0, z: 0, w: 0.9659258}
+--- !u!1 &2911708524180355741
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4180355712436290871}
+  - component: {fileID: 3001723857998268399}
+  - component: {fileID: 7302519846513377720}
+  m_Layer: 0
+  m_Name: Sound Listener
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4180355712436290871
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2911708524180355741}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3555598927700202188}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!81 &3001723857998268399
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2911708524180355741}
+  m_Enabled: 1
+--- !u!114 &7302519846513377720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2911708524180355741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e32887e7793f4015aac8e88492ed9789, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HyperRTS.Presentation::HyperRTS.Presentation.Audio.SoundListener
+  view: {fileID: 4665418945433789882}
 --- !u!1001 &5325597525576703505
 PrefabInstance:
   m_ObjectHideFlags: 0
