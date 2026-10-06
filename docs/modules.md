@@ -365,8 +365,8 @@ queue head when population allows and sends new units to the rally point.
 | Type | Role |
 | --- | --- |
 | `AIPlayer` | Marks a computer-controlled player and holds its tuning |
-| `AIBuildOrder` (asset) / `AIBuildStep` | Opening per faction: building, unit or upgrade prefabs with a count, in order |
-| `AIDifficulty`, `AITuning` | Easy / Normal / Hard presets on `MatchAuthoring`: think interval, attack wave size, ability use |
+| `AIBuildOrder` (asset, in Match) / `AIBuildStep` | Opening per faction: building, unit or upgrade prefabs with a count, in order |
+| `AIDifficulty` (in Match), `AITuning` | Easy / Normal / Hard presets on `MatchAuthoring`: think interval, attack wave size, ability use |
 | `AIPlayerSetup` | Adds `AIPlayer` and its build-order buffer to a player entity |
 | `AIPlacement` | Ring search for a free building spot around the AI base, leaving a gap (uses `PlacementMath`) |
 
