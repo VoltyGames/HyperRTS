@@ -120,6 +120,7 @@ handled by their own modules.
 | `NavAreaAuthoring` / `NavArea` | XZ box overriding the cells under it: Water, Blocked, or a walkable Deck (bridge) at its height with water kept below for ships |
 | `TerrainHeightAuthoring` / `TerrainHeight` | Terrain heights baked into a blob singleton; `Height(xz)` is bilinear and `Raycast` hits the ground, both flat y = 0 without one (`RaycastPlane` for any horizontal plane) |
 | `NavGrid` | Singleton grid of `NavSurface` flags (Land, Water, Deck; 0 = blocked) with layer-aware `IsWalkable`, `IsAreaFree`, `HasLineOfSight`, `TryFindNearestWalkable`, plus `SurfaceHeight` / `HeightFor(layer)` |
+| `PlacementMath`, `PlacementSurface` | The single source of building placement rules (snap, bounds, free cells, surface), used by the simulation, the ghost, rally points and the AI |
 | `NavSetup`, `ViewGround` | Components for nav areas, obstacles and the terrain; ground points along a camera's view rays (camera, minimap, audio listener) |
 
 `MatchAuthoring` sets the water level (the surface ships ride at, used by Water areas), an opt-in flood toggle
@@ -339,7 +340,7 @@ same type when one runs dry. `ResourceNodeSystem` regrows or removes nodes.
 | --- | --- |
 | `BuildingAuthoring` | Footprint, population provided, starts-under-construction (`ConstructionProgress` is in Common) |
 | `BuilderAuthoring` / `Builder`, `BuildOption` | Build rate and placeable building prefabs |
-| `PlacementMath`, `PlacementSurface` | The single source of placement rules, used by the simulation, the ghost and the AI |
+| `BuildingPlacement` | The surface (`PlacementSurface`) a building's footprint must cover; `PlacementMath` (in Navigation) holds the placement rules |
 | `BuildingRules` | Build and repair target checks shared by orders and behaviours: `IsAlliedSite`, `NeedsRepair` |
 
 Systems: `PlaceBuildingSystem` validates placement (`PlacementMath`: map bounds, no overlap, and plain land, water or

@@ -1,8 +1,7 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Buildings
+namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>Building placement rules shared by the ghost preview, the authoritative placement command and the AI.</summary>
     public static class PlacementMath
