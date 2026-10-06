@@ -38,6 +38,8 @@ SimulationSystemGroup
  ├─ MovementSystemGroup                                (before TransformSystemGroup)
  │   ├─ (first) SpatialIndexSystem, NavGridSystem
  │   └─ PathfindingSystem → MovementSystem
+ ├─ ReplaySystemGroup                                  (local world, before TransformSystemGroup)
+ │   └─ ReplayPlaybackSystem                           — replay playback; the gameplay phases are off meanwhile
  ├─ CombatSystemGroup
  │   ├─ (first) FogOfWarSystem
  │   └─ AttackOrderSystem → TargetAcquisitionSystem → EngagementSystem → WeaponFireSystem → ProjectileSystem,
@@ -46,7 +48,8 @@ SimulationSystemGroup
  │   ├─ (first) PopulationSystem
  │   └─ ConstructionSystem, GatherSystem → ResourceNodeSystem, ProductionSystem
  └─ LifecycleSystemGroup
-     └─ DeathSystem → VictorySystem
+     ├─ DeathSystem → VictorySystem
+     └─ (last) ReplayRecorderSystem                    — samples the frame while recording
 PresentationSystemGroup
  └─ TeamColorSystem, FogVisibilitySystem               (+ HUD/overlay MonoBehaviours reading ECS)
 ```

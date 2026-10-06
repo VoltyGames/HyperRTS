@@ -148,6 +148,10 @@ Generic mechanisms a modern-warfare RTS needs, all data-driven and server-side s
 - ⬜ Measured in a real match: 500-unit bandwidth test, importance and send rate tuning
 - ✅ Relay transport for player-hosted matches (game supplies the allocation), lobby connection status
 - ⬜ "Last seen" enemy buildings, command feedback before the server confirms
+- ✅ **Decision:** replays record observed state (keyframes + deltas), not commands. The simulation isn't
+  deterministic and entity indices differ between worlds, so re-simulating a command log would desync.
+- ✅ Replays: recording in the authoritative world, GZip files, local playback with speed control and keyframe seek
+- ⬜ Replays: projectiles, resource nodes, passengers aboard, player stats and HUD controls
 
 ## Phase 11: Hardening, tooling & sample game 🟡
 

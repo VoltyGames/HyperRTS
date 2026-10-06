@@ -250,6 +250,24 @@ queue head when population allows and sends new units to the rally point.
 harvesters gather, idle producers train affordable units and research round-robin, and once enough idle combat units exist they
 attack-move to the nearest hostile building. Deterministic and easy to replace: disable it and write your own.
 
+## Replays
+
+| Type | Role |
+| --- | --- |
+| `ReplayRecorder` | `Start(world, sampleRate, keyframeInterval)`, `Snapshot`, `Stop` in the authoritative world; `MatchAuthoring.recordReplay` starts one with the match |
+| `Replay`, `ReplaySerializer` | Header (scene, sample rate, duration, players, result) plus samples; `Save`/`Load` as a GZip file |
+| `ReplayEntity`, `ReplayFrame`, `ReplayStream` | Quantized entity state (key, type, faction, position, yaw, health, construction); a keyframe or delta; the native sample lists |
+| `ReplayViewer` | `Begin(world, replay)` / `Stop` in a local world that loaded `Replay.ScenePath` |
+| `ReplayPlayback` | Singleton for a HUD: time, duration, speed, playing; writing the time seeks |
+
+`ReplayRecorderSystem` (last in the lifecycle phase) samples every entity with `EntityInfo` + `Faction` at 10 Hz,
+writing a keyframe every 10 s and, in between, only spawned or changed entities and removed keys. Replays store
+observed state, not commands, so playback never simulates: `ReplayViewer` turns the five gameplay phases off, and
+`ReplayPlaybackSystem` takes over the scene's entities (same type, nearest position), spawns later ones from baked
+prefabs (types without one are skipped with a warning), destroys removed ones, interpolates transforms between
+samples and shows everything (no fog). Seeking rebuilds from the nearest keyframe at or before the time.
+**HyperRTS ▸ Replays** saves the Play-mode recording or plays a replay file.
+
 ## Selection and Interaction (client state shared with the simulation)
 
 `Selectable`/`Selected` (enableable), `SelectionInput` (gesture written by input), `SelectionDragState`,
