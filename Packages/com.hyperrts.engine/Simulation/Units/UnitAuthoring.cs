@@ -64,17 +64,17 @@ namespace HyperRTS.Simulation.Units
                 UnitSetup.Add(ref sink, authoring.moveSpeed, authoring.radius, authoring.navLayer);
                 if (authoring.navLayer == NavLayer.Air)
                 {
-                    AirSetup.AddFlight(ref sink, new Flight
+                    sink.Add(new Flight
                     {
                         Altitude = authoring.flightAltitude,
                         ClimbSpeed = authoring.climbSpeed,
                         LoiterRadius = authoring.loiterRadius,
                     });
-                }
 
-                if (authoring.navLayer == NavLayer.Air && authoring.usesLandingPads)
-                {
-                    AirSetup.AddPadUser(ref sink);
+                    if (authoring.usesLandingPads)
+                    {
+                        AirSetup.AddPadUser(ref sink);
+                    }
                 }
             }
         }

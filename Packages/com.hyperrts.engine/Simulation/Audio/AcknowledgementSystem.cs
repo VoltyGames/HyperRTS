@@ -129,14 +129,7 @@ namespace HyperRTS.Simulation.Audio
                 return false;
             }
 
-            var typeId = _sounds.TypeIdFor(unit, slot);
-            if (typeId == 0)
-            {
-                return false;
-            }
-
-            _sounds.Add(typeId, slot, SystemAPI.GetComponent<LocalTransform>(unit).Position, faction);
-            return true;
+            return _sounds.Play(unit, slot, SystemAPI.GetComponent<LocalTransform>(unit).Position, faction);
         }
     }
 }

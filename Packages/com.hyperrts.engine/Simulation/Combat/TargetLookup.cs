@@ -69,13 +69,15 @@ namespace HyperRTS.Simulation.Combat
 
         public bool CanHit(Entity target, WeaponTargets targets)
         {
-            var layer = _agents.TryGetComponent(target, out var agent) ? agent.Layer : NavLayer.Ground;
-            return CombatMath.CanHit(targets, layer);
+            return CombatMath.CanHit(targets, NavAgent.LayerOf(_agents, target));
         }
 
-        /// <summary>Stealthed and outside every detector of the team (see <see cref="FogOfWar.IsCloakedFrom"/>).</summary>
+        /// <summary>
+        /// Stealthed and outside every detector of the team (see <see cref="FogOfWar.IsCloakedFrom"/>). Checks stealth
+        /// first so unstealthed candidates skip the transform lookup.
+        /// </summary>
         public bool IsCloakedFrom(Entity target, byte team) =>
-            _fog.IsCloakedFrom(team, Position(target), Stealthed.Of(_stealthed, target));
+            Stealthed.Of(_stealthed, target) && !_fog.IsDetected(Position(target), team);
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
 

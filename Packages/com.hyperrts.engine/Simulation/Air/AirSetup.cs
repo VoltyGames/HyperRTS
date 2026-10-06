@@ -3,14 +3,9 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Air
 {
-    /// <summary>Adds flight components to <c>Air</c>-layer units, pad use to aircraft, and pads to airfields.</summary>
+    /// <summary>Adds pad use to aircraft and pads to airfields.</summary>
     public static class AirSetup
     {
-        public static void AddFlight<TSink>(ref TSink sink, in Flight flight) where TSink : struct, IComponentSink
-        {
-            sink.Add(flight);
-        }
-
         /// <summary>The aircraft takes a pad at the airfield that builds it and docks there to rearm.</summary>
         public static void AddPadUser<TSink>(ref TSink sink) where TSink : struct, IComponentSink
         {

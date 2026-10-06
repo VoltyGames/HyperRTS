@@ -7,5 +7,10 @@ namespace HyperRTS.Simulation.Buildings
     public struct BuildingPlacement : IComponentData
     {
         public PlacementSurface Surface;
+
+        public static PlacementSurface SurfaceOf(EntityManager entityManager, Entity prefab) =>
+            entityManager.HasComponent<BuildingPlacement>(prefab)
+                ? entityManager.GetComponentData<BuildingPlacement>(prefab).Surface
+                : PlacementSurface.Land;
     }
 }

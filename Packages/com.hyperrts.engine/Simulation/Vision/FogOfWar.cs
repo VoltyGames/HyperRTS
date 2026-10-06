@@ -57,7 +57,41 @@ namespace HyperRTS.Simulation.Vision
             return InBounds(cell) && HasTeam(cells[Index(cell)], team);
         }
 
+        /// <summary>ORs <paramref name="bit"/> into every cell whose center lies within the flat circle.</summary>
+        public readonly void StampCircle(NativeArray<byte> cells, float3 center, float radius, byte bit)
+        {
+            var radiusSq = radius * radius;
+            var min = math.max(WorldToCell(center - radius), 0);
+            var max = math.min(WorldToCell(center + radius), Size - 1);
+
+            for (var y = min.y; y <= max.y; y++)
+            {
+                for (var x = min.x; x <= max.x; x++)
+                {
+                    var cellCenter = Min + (new float2(x, y) + 0.5f) * CellSize;
+                    if (math.distancesq(cellCenter, center.xz) <= radiusSq)
+                    {
+                        var index = Index(new int2(x, y));
+                        cells[index] = (byte)(cells[index] | bit);
+                    }
+                }
+            }
+        }
+
         /// <summary>Whether a <see cref="Visible"/> or <see cref="Explored"/> cell has the team's bit set.</summary>
         public static bool HasTeam(byte cell, byte team) => (cell & (1 << team)) != 0;
+
+        /// <summary>The team's cell bit; false for neutral and out-of-range teams, which never stamp.</summary>
+        public static bool TryGetTeamBit(byte team, out byte bit)
+        {
+            bit = 0;
+            if (team == 0 || team >= FactionRelations.MaxTeams)
+            {
+                return false;
+            }
+
+            bit = (byte)(1 << team);
+            return true;
+        }
     }
 }

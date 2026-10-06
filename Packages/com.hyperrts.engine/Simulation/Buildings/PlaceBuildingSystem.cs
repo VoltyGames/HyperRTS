@@ -119,18 +119,26 @@ namespace HyperRTS.Simulation.Buildings
             var prefab = request.Command.Prefab;
             var map = SystemAPI.GetSingleton<MapSettings>();
             var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
-            var surface = SystemAPI.TryGetComponent<BuildingPlacement>(prefab, out var placement)
-                ? placement.Surface
-                : PlacementSurface.Land;
-            var center = PlacementMath.Snap(map, request.Command.Position, footprint);
+            var surface = BuildingPlacement.SurfaceOf(state.EntityManager, prefab);
             SystemAPI.TryGetSingleton<NavGrid>(out var grid);
-            center.y = PlacementMath.Height(grid, center);
-            var required = SystemAPI.GetBuffer<Prerequisite>(prefab);
+            if (!PlacementMath.Resolve(map, grid, request.Command.Position, footprint, surface, out var center))
+            {
+                return false;
+            }
 
-            if (!PlacementMath.IsValid(map, grid, center, footprint, surface) || IsOccupied(center, footprint, sites) ||
-                !CompletedBuildings.MeetsPrerequisites(required, request.Faction, _completed) ||
-                !ResourceMath.TrySpend(SystemAPI.GetBuffer<ResourceStock>(request.Player),
-                    SystemAPI.GetBuffer<ResourceCost>(prefab)))
+            if (IsOccupied(center, footprint, sites))
+            {
+                return false;
+            }
+
+            var required = SystemAPI.GetBuffer<Prerequisite>(prefab);
+            if (!CompletedBuildings.MeetsPrerequisites(required, request.Faction, _completed))
+            {
+                return false;
+            }
+
+            var stock = SystemAPI.GetBuffer<ResourceStock>(request.Player);
+            if (!ResourceMath.TrySpend(stock, SystemAPI.GetBuffer<ResourceCost>(prefab)))
             {
                 return false;
             }

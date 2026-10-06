@@ -119,8 +119,13 @@ namespace HyperRTS.Simulation.Units
                 }
 
                 // Shoved off its line by the crowd, the unit may now face a wall between it and the next corner.
-                if (moving && !transform.Position.xz.Equals(wanted) && waypoints.Length > 0 &&
-                    !Grid.HasLineOfSight(transform.Position, waypoints[0].Position, 0f, agent.Layer))
+                var shoved = !transform.Position.xz.Equals(wanted);
+                if (!moving || !shoved || waypoints.Length == 0)
+                {
+                    return;
+                }
+
+                if (!Grid.HasLineOfSight(transform.Position, waypoints[0].Position, 0f, agent.Layer))
                 {
                     path.Status = PathStatus.None;
                 }

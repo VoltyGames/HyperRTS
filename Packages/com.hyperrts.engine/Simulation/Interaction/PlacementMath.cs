@@ -38,6 +38,15 @@ namespace HyperRTS.Simulation.Interaction
             return Covers(grid, center, footprint, surface);
         }
 
+        /// <summary>Snaps and grounds <paramref name="position"/> into <paramref name="center"/>, which is set even when the spot is invalid.</summary>
+        public static bool Resolve(in MapSettings map, in NavGrid grid, float3 position, float2 footprint,
+            PlacementSurface surface, out float3 center)
+        {
+            center = Snap(map, position, footprint);
+            center.y = Height(grid, center);
+            return IsValid(map, grid, center, footprint, surface);
+        }
+
         /// <summary>Height a building stands at: the water surface over water cells, the ground elsewhere.</summary>
         public static float Height(in NavGrid grid, float3 center) =>
             grid.IsCreated ? grid.SurfaceHeight(center) : center.y;

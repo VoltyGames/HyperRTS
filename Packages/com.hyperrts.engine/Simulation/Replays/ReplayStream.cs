@@ -17,8 +17,6 @@ namespace HyperRTS.Simulation.Replays
             Removed = new NativeList<int>(64, allocator),
         };
 
-        public readonly bool IsCreated => Frames.IsCreated;
-
         public void Dispose()
         {
             Frames.Dispose();

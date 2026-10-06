@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Units;
 using Unity.Collections;
@@ -23,7 +24,7 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < army.Length; i++)
             {
                 var targets = SystemAPI.GetComponent<Weapon>(army.Entities[i]).Targets;
-                if (army.IsOwnedBy(i, turn.Faction) && targets != WeaponTargets.Air)
+                if (army.IsOwnedBy(i, turn.Faction) && CombatMath.CanHit(targets, NavLayer.Ground))
                 {
                     wave.Add(i);
                     center += army.Position(i);
@@ -62,19 +63,13 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < targets.Length; i++)
             {
                 var entity = targets.Entities[i];
+                if (!_targetLookup.IsValidTarget(entity, faction, snapshot.Relations))
+                {
+                    continue;
+                }
+
                 var distance = math.distancesq(targets.Position(i).xz, from.xz);
-                if (!snapshot.Relations.IsHostile(faction, targets.Owners[i].Value))
-                {
-                    continue;
-                }
-
-                if (_targetLookup.IsCloakedFrom(entity, snapshot.Relations.TeamOf(faction)))
-                {
-                    continue;
-                }
-
-                if (SystemAPI.HasComponent<BuildingTag>(entity) && SystemAPI.HasComponent<VictoryCritical>(entity) &&
-                    distance < bestBase)
+                if (IsCriticalBuilding(ref state, entity) && distance < bestBase)
                 {
                     bestBase = distance;
                     basePosition = targets.Position(i);
@@ -89,5 +84,8 @@ namespace HyperRTS.Simulation.AI
             target = bestBase < float.MaxValue ? basePosition : unitPosition;
             return bestBase < float.MaxValue || bestUnit < float.MaxValue;
         }
+
+        private bool IsCriticalBuilding(ref SystemState state, Entity entity) =>
+            SystemAPI.HasComponent<BuildingTag>(entity) && SystemAPI.HasComponent<VictoryCritical>(entity);
     }
 }

@@ -18,6 +18,7 @@ namespace HyperRTS.Simulation.AI
             public Population Room;
             public DynamicBuffer<ResourceStock> Stock;
             public DynamicBuffer<ResearchedUpgrade> Researched;
+            public NativeHashSet<Entity> QueuedUpgrades;
             public CompletedBuildings Completed;
         }
 
@@ -69,19 +70,21 @@ namespace HyperRTS.Simulation.AI
         private void Train(ref SystemState state, in Turn turn, in Snapshot snapshot)
         {
             ref var ai = ref SystemAPI.GetComponentRW<AIPlayer>(turn.Player).ValueRW;
+            var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
+            UpgradeRules.CollectQueued(state.EntityManager, _queues, turn.Faction, queued);
             var budget = new Budget
             {
                 Faction = turn.Faction,
                 Room = SystemAPI.GetComponent<Population>(turn.Player),
                 Stock = SystemAPI.GetBuffer<ResourceStock>(turn.Player),
                 Researched = SystemAPI.GetBuffer<ResearchedUpgrade>(turn.Player),
+                QueuedUpgrades = queued,
                 Completed = snapshot.Completed,
             };
 
             foreach (var producer in snapshot.Producers)
             {
-                if (SystemAPI.GetComponent<Faction>(producer).Value != turn.Faction ||
-                    !SystemAPI.GetBuffer<ProductionQueueItem>(producer).IsEmpty)
+                if (!IsIdleProducer(ref state, producer, turn.Faction))
                 {
                     continue;
                 }
@@ -93,6 +96,18 @@ namespace HyperRTS.Simulation.AI
                     turn.Commands.Add(new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });
                 }
             }
+
+            queued.Dispose();
+        }
+
+        private bool IsIdleProducer(ref SystemState state, Entity producer, byte faction)
+        {
+            if (SystemAPI.GetComponent<Faction>(producer).Value != faction)
+            {
+                return false;
+            }
+
+            return SystemAPI.GetBuffer<ProductionQueueItem>(producer).IsEmpty;
         }
 
         /// <summary>Next option after the last one picked that fits population, stockpile and tech, skipping done or queued research.</summary>
@@ -103,10 +118,7 @@ namespace HyperRTS.Simulation.AI
             {
                 var index = (math.max(ai.NextOption, 0) + k) % options.Length;
                 var prefab = options[index].Prefab;
-                if (UpgradeRules.CanQueue(state.EntityManager, _queues, budget.Researched, budget.Faction, prefab) &&
-                    budget.Room.HasRoomFor(SystemAPI.GetComponent<Producible>(prefab).Population) &&
-                    ResourceMath.CanAfford(budget.Stock, SystemAPI.GetBuffer<ResourceCost>(prefab)) &&
-                    budget.Completed.MeetsPrerequisites(SystemAPI.GetBuffer<Prerequisite>(prefab), budget.Faction))
+                if (CanTrain(ref state, prefab, budget))
                 {
                     ai.NextOption = index + 1;
                     return prefab;
@@ -114,6 +126,26 @@ namespace HyperRTS.Simulation.AI
             }
 
             return Entity.Null;
+        }
+
+        private bool CanTrain(ref SystemState state, Entity prefab, in Budget budget)
+        {
+            if (!UpgradeRules.CanQueue(state.EntityManager, budget.Researched, budget.QueuedUpgrades, prefab))
+            {
+                return false;
+            }
+
+            if (!budget.Room.HasRoomFor(SystemAPI.GetComponent<Producible>(prefab).Population))
+            {
+                return false;
+            }
+
+            if (!ResourceMath.CanAfford(budget.Stock, SystemAPI.GetBuffer<ResourceCost>(prefab)))
+            {
+                return false;
+            }
+
+            return budget.Completed.MeetsPrerequisites(SystemAPI.GetBuffer<Prerequisite>(prefab), budget.Faction);
         }
     }
 }

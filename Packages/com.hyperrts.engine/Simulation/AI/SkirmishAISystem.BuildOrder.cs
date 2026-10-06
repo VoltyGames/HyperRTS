@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
@@ -115,9 +114,7 @@ namespace HyperRTS.Simulation.AI
 
             SystemAPI.TryGetSingleton<NavGrid>(out var grid);
             var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
-            var surface = SystemAPI.TryGetComponent<BuildingPlacement>(prefab, out var placement)
-                ? placement.Surface
-                : PlacementSurface.Land;
+            var surface = BuildingPlacement.SurfaceOf(state.EntityManager, prefab);
             if (!AIPlacement.TryFindSpot(map, grid, turn.Home, footprint, surface, out var spot))
             {
                 return false;
@@ -150,7 +147,7 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                if (length < bestLength || (length == bestLength && producer.Index < best.Index))
+                if (IsCloser(length, producer, bestLength, best))
                 {
                     best = producer;
                     bestLength = length;

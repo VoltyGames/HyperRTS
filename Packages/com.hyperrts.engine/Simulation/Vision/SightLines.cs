@@ -49,8 +49,14 @@ namespace HyperRTS.Simulation.Vision
                 var cell = center + (int2)math.round((float2)offset * step / steps);
                 var point = Fog.Min + ((float2)cell + 0.5f) * Fog.CellSize;
                 var distance = math.max(math.distance(point, origin.xy), 1e-3f);
+                // Cells along a ray never get nearer to the viewer, so the rest are out of range too.
+                if (distance > range)
+                {
+                    break;
+                }
+
                 var ground = Surface(point) - origin.z;
-                if ((ground + TargetHeight) / distance >= horizon && distance <= range)
+                if ((ground + TargetHeight) / distance >= horizon)
                 {
                     Mark(cell, bit);
                 }

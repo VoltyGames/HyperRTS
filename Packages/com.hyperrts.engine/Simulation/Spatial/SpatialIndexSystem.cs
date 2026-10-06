@@ -92,7 +92,7 @@ namespace HyperRTS.Simulation.Spatial
                     Radius = EntityRadius.Of(entity, AgentLookup, ObstacleLookup),
                     Faction = faction.Value,
                     IsUnit = !BuildingLookup.HasComponent(entity),
-                    Layer = AgentLookup.TryGetComponent(entity, out var agent) ? agent.Layer : NavLayer.Ground,
+                    Layer = NavAgent.LayerOf(AgentLookup, entity),
                 });
             }
         }

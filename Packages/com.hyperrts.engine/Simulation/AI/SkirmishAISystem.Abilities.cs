@@ -116,20 +116,20 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < targets.Length; i++)
             {
                 var entity = targets.Entities[i];
-                if (!Suits(ref state, ability, entity, faction, snapshot))
+                var position = targets.Position(i);
+                var distance = math.distancesq(position.xz, from.xz);
+                var bestEntity = best < 0 ? Entity.Null : targets.Entities[best];
+                if (!IsCloser(distance, entity, bestDistance, bestEntity))
                 {
                     continue;
                 }
 
-                var position = targets.Position(i);
                 if (ranged && !AbilityRules.InRange(ability, caster, from, entity, position, _targetLookup))
                 {
                     continue;
                 }
 
-                var distance = math.distancesq(position.xz, from.xz);
-                var bestEntity = best < 0 ? Entity.Null : targets.Entities[best];
-                if (IsCloser(distance, entity, bestDistance, bestEntity))
+                if (Suits(ref state, ability, entity, faction, snapshot))
                 {
                     best = i;
                     bestDistance = distance;

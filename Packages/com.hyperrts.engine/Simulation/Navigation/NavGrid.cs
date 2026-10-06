@@ -112,6 +112,14 @@ namespace HyperRTS.Simulation.Navigation
             max = WorldToCell(center + half - 0.001f);
         }
 
+        /// <summary><see cref="GetArea"/> clamped to the grid; empty (min above max) when the box is off the map.</summary>
+        public readonly void GetClampedArea(float3 center, float2 size, out int2 min, out int2 max)
+        {
+            GetArea(center, size, out min, out max);
+            min = math.max(min, 0);
+            max = math.min(max, Size - 1);
+        }
+
         /// <summary>Closest cell open to the layer by ring distance, up to <paramref name="maxRadius"/> rings out.</summary>
         public readonly bool TryFindNearestWalkable(int2 cell, int maxRadius, out int2 found,
             NavLayer layer = NavLayer.Ground)

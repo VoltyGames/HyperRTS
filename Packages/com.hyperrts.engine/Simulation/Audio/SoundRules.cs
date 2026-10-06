@@ -10,18 +10,16 @@ namespace HyperRTS.Simulation.Audio
         /// <summary>Voices (produced, select, move, attack) speak only to their owner.</summary>
         public static bool IsVoice(SoundSlot slot) => slot >= SoundSlot.Ready && slot < SoundSlot.Custom;
 
-        public static bool TryGetCue(DynamicBuffer<EntitySound> sounds, SoundSlot slot, out UnityObjectRef<SoundCue> cue)
+        public static bool HasCue(DynamicBuffer<EntitySound> sounds, SoundSlot slot)
         {
             foreach (var sound in sounds)
             {
                 if (sound.Slot == slot)
                 {
-                    cue = sound.Cue;
                     return true;
                 }
             }
 
-            cue = default;
             return false;
         }
 

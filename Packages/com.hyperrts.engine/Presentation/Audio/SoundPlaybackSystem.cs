@@ -23,6 +23,8 @@ namespace HyperRTS.Presentation.Audio
 
         private readonly SoundPool _pool = new(Voices);
         private readonly Dictionary<int, List<(SoundSlot Slot, SoundCue Cue)>> _cues = new();
+        private readonly HashSet<int> _missing = new();
+        private int _typedVersion;
         private EntityQuery _typed;
         private EntityQuery _fog;
         private GameObject _root;
@@ -72,8 +74,9 @@ namespace HyperRTS.Presentation.Audio
                 _listener = Object.FindAnyObjectByType<AudioListener>();
             }
 
-            foreach (var sound in sounds.ToNativeArray(Allocator.Temp))
+            for (var i = 0; i < sounds.Length; i++)
             {
+                var sound = sounds[i];
                 if (SoundRules.IsAudible(sound, view.Viewer, fog, relations))
                 {
                     Play(CueOf(sound.TypeId, sound.Slot), sound.Position);
@@ -147,9 +150,24 @@ namespace HyperRTS.Presentation.Audio
             return null;
         }
 
+        /// <summary>
+        /// Misses are cached too, until an entity with sounds is created or destroyed (a prefab streaming in).
+        /// </summary>
         private bool TryLoad(int typeId, out List<(SoundSlot Slot, SoundCue Cue)> cues)
         {
             cues = null;
+            var version = _typed.GetCombinedComponentOrderVersion();
+            if (version != _typedVersion)
+            {
+                _typedVersion = version;
+                _missing.Clear();
+            }
+
+            if (_missing.Contains(typeId))
+            {
+                return false;
+            }
+
             using var entities = _typed.ToEntityArray(Allocator.Temp);
             foreach (var entity in entities)
             {
@@ -168,6 +186,7 @@ namespace HyperRTS.Presentation.Audio
                 return true;
             }
 
+            _missing.Add(typeId);
             return false;
         }
 

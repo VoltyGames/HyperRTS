@@ -82,14 +82,10 @@ namespace HyperRTS.Input.Commands
             }
 
             var footprint = SystemAPI.GetComponent<NavObstacle>(placement.Prefab).Size;
-            var surface = SystemAPI.TryGetComponent<BuildingPlacement>(placement.Prefab, out var rule)
-                ? rule.Surface
-                : PlacementSurface.Land;
+            var surface = BuildingPlacement.SurfaceOf(EntityManager, placement.Prefab);
             SystemAPI.TryGetSingleton<NavGrid>(out var grid);
             CompleteDependency();
-            placement.Position = PlacementMath.Snap(in map, ground, footprint);
-            placement.Position.y = PlacementMath.Height(in grid, placement.Position);
-            placement.Valid = PlacementMath.IsValid(in map, in grid, placement.Position, footprint, surface);
+            placement.Valid = PlacementMath.Resolve(in map, in grid, ground, footprint, surface, out placement.Position);
         }
 
         private void Place(ref PlacementState placement, bool queue)

@@ -106,7 +106,7 @@ namespace HyperRTS.Simulation.Transport
                 return position;
             }
 
-            var layer = _agents.TryGetComponent(unit, out var agent) ? agent.Layer : NavLayer.Ground;
+            var layer = NavAgent.LayerOf(_agents, unit);
             if (grid.TryFindNearestWalkable(grid.WorldToCell(position), WalkableSearchRings, out var cell, layer))
             {
                 position.xz = grid.CellCenter(cell).xz;

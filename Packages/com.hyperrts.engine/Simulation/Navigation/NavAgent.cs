@@ -7,5 +7,9 @@ namespace HyperRTS.Simulation.Navigation
     {
         public float Radius;
         public NavLayer Layer;
+
+        /// <summary>Entities without an agent (buildings, props) sit on the ground.</summary>
+        public static NavLayer LayerOf(in ComponentLookup<NavAgent> agents, Entity entity) =>
+            agents.TryGetComponent(entity, out var agent) ? agent.Layer : NavLayer.Ground;
     }
 }

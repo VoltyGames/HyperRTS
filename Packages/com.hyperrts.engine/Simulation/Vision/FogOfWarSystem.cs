@@ -26,6 +26,7 @@ namespace HyperRTS.Simulation.Vision
 
         private double _nextUpdate;
         private bool _stampedWithFog;
+        private bool _revealed;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -72,12 +73,18 @@ namespace HyperRTS.Simulation.Vision
             new DetectionStampJob { Fog = fog, Relations = relations }.Schedule();
             if (!settings.FogOfWar)
             {
-                // Refilled each restamp, so switching fog off mid-match reveals everything.
-                state.Dependency = new RevealAllJob { Visible = fog.Visible, Explored = fog.Explored }
-                    .Schedule(fog.Visible.Length, 1024, state.Dependency);
+                // Nothing else writes the grid while fog is off, so one fill lasts until fog comes back on.
+                if (!_revealed)
+                {
+                    _revealed = true;
+                    state.Dependency = new RevealAllJob { Visible = fog.Visible, Explored = fog.Explored }
+                        .Schedule(fog.Visible.Length, 1024, state.Dependency);
+                }
+
                 return;
             }
 
+            _revealed = false;
             state.Dependency = new ClearBytesJob { Cells = fog.Visible }.Schedule(state.Dependency);
             SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
             new StampJob
@@ -142,13 +149,11 @@ namespace HyperRTS.Simulation.Vision
 
             private void Execute(in LocalTransform transform, in VisionRange vision, in Faction faction)
             {
-                var team = Relations.TeamOf(faction.Value);
-                if (team == 0 || team >= FactionRelations.MaxTeams || vision.Value <= 0f)
+                if (vision.Value <= 0f || !FogOfWar.TryGetTeamBit(Relations.TeamOf(faction.Value), out var bit))
                 {
                     return;
                 }
 
-                var bit = (byte)(1 << team);
                 if (Terrain.IsCreated)
                 {
                     var sight = new SightLines { Fog = Fog, Terrain = Terrain, WaterLevel = WaterLevel };
@@ -156,23 +161,7 @@ namespace HyperRTS.Simulation.Vision
                     return;
                 }
 
-                var center = transform.Position.xz;
-                var rangeSq = vision.Value * vision.Value;
-                var min = math.max(Fog.WorldToCell(transform.Position - vision.Value), 0);
-                var max = math.min(Fog.WorldToCell(transform.Position + vision.Value), Fog.Size - 1);
-
-                for (var y = min.y; y <= max.y; y++)
-                {
-                    for (var x = min.x; x <= max.x; x++)
-                    {
-                        var cellCenter = Fog.Min + (new float2(x, y) + 0.5f) * Fog.CellSize;
-                        if (math.distancesq(cellCenter, center) <= rangeSq)
-                        {
-                            var index = Fog.Index(new int2(x, y));
-                            Fog.Visible[index] = (byte)(Fog.Visible[index] | bit);
-                        }
-                    }
-                }
+                Fog.StampCircle(Fog.Visible, transform.Position, vision.Value, bit);
             }
         }
     }

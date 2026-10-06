@@ -36,24 +36,16 @@ namespace HyperRTS.Simulation.Audio
             _queue = queue;
         }
 
-        /// <summary>Plays <paramref name="source"/>'s cue for the slot (prefab or instance) at a position.</summary>
-        public void Play(Entity source, SoundSlot slot, float3 position, byte faction)
-        {
-            var typeId = TypeIdFor(source, slot);
-            if (typeId != 0)
-            {
-                _events[_queue].Add(new SoundEvent
-                {
-                    TypeId = typeId, Slot = slot, Faction = faction, Position = position,
-                    Stealthed = Stealthed.Of(_cloaks, source),
-                });
-            }
-        }
+        /// <summary>
+        /// Plays <paramref name="source"/>'s cue for the slot (prefab or instance) at a position; false if it has none.
+        /// </summary>
+        public bool Play(Entity source, SoundSlot slot, float3 position, byte faction) =>
+            Add(TypeIdFor(source, slot), slot, position, faction, Stealthed.Of(_cloaks, source));
 
         /// <summary><paramref name="source"/>'s type id if it has a cue for the slot, else 0.</summary>
         public int TypeIdFor(Entity source, SoundSlot slot)
         {
-            if (!_sounds.TryGetBuffer(source, out var sounds) || !SoundRules.TryGetCue(sounds, slot, out _))
+            if (!_sounds.TryGetBuffer(source, out var sounds) || !SoundRules.HasCue(sounds, slot))
             {
                 return 0;
             }
@@ -61,13 +53,19 @@ namespace HyperRTS.Simulation.Audio
             return _info.TryGetComponent(source, out var info) ? info.TypeId : 0;
         }
 
-        /// <summary>Plays the slot's cue of an entity type; a type id of 0 is ignored.</summary>
-        public void Add(int typeId, SoundSlot slot, float3 position, byte faction)
+        /// <summary>Plays the slot's cue of an entity type; a type id of 0 is ignored and returns false.</summary>
+        public bool Add(int typeId, SoundSlot slot, float3 position, byte faction, bool stealthed = false)
         {
-            if (typeId != 0)
+            if (typeId == 0)
             {
-                _events[_queue].Add(new SoundEvent { TypeId = typeId, Slot = slot, Faction = faction, Position = position });
+                return false;
             }
+
+            _events[_queue].Add(new SoundEvent
+            {
+                TypeId = typeId, Slot = slot, Faction = faction, Position = position, Stealthed = stealthed,
+            });
+            return true;
         }
     }
 }

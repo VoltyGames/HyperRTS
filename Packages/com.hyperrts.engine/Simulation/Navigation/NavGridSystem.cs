@@ -169,9 +169,7 @@ namespace HyperRTS.Simulation.Navigation
                     return;
                 }
 
-                Grid.GetArea(transform.Position, area.Size, out var min, out var max);
-                min = math.max(min, 0);
-                max = math.min(max, Grid.Size - 1);
+                Grid.GetClampedArea(transform.Position, area.Size, out var min, out var max);
                 for (var y = min.y; y <= max.y; y++)
                 {
                     for (var x = min.x; x <= max.x; x++)
@@ -208,9 +206,7 @@ namespace HyperRTS.Simulation.Navigation
 
             private void Execute(in NavObstacle obstacle, in LocalTransform transform)
             {
-                Grid.GetArea(transform.Position, obstacle.Size, out var min, out var max);
-                min = math.max(min, 0);
-                max = math.min(max, Grid.Size - 1);
+                Grid.GetClampedArea(transform.Position, obstacle.Size, out var min, out var max);
                 for (var y = min.y; y <= max.y; y++)
                 {
                     for (var x = min.x; x <= max.x; x++)
