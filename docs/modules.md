@@ -4,12 +4,23 @@ What each engine module owns, the components you author or read, and the systems
 live in `Packages/com.hyperrts.engine/Simulation/<Module>/` (namespace `HyperRTS.Simulation.<Module>`); client-only code is in
 `Input/` and `Presentation/`. For the frame order, see [`world-setup.md`](world-setup.md).
 
-Modules are layered. `Common` is the base: it uses no other module, and every other module may use it. A component
-two modules both need goes in `Common` or in the lower of the two, so dependencies stay one-way. Authoring files
-are exempt, since they assemble prefabs from every module's components. `ModuleLayoutTests` (in `Editor/Tests/`)
-checks this, that each namespace matches its folder, and that `*Authoring.cs` files hold only the authoring
-class and its `Baker` (runtime components live in their own files). Its allowlist of existing two-way pairs
-should only shrink: a new pair usually means a shared type belongs lower.
+Modules are layered, lowest first:
+
+```text
+Common < Navigation < Stats < Power < Vision < Spatial < Selection < Orders < Audio < Combat < Transport < Air
+  < Units < Resources < Match < Production < Upgrades < Buildings < Abilities < Fields < Veterancy < Capture
+  < AI < GameEntities < Commands < Interaction < Replays
+```
+
+A module's runtime code uses only the modules before it; `Common` uses none. A component two modules both need goes
+in `Common` or in the lower of the two, which is why `UnitTag`, `BuildingTag`, `Inside` and `AttackTarget` live in
+Common and `PlacementMath` in Navigation. To order two systems, put `[UpdateBefore]`/`[UpdateAfter]` on the one in
+the higher module. Authoring files are exempt, since they assemble prefabs from every module's components.
+`ModuleLayoutTests` (in `Editor/Tests/`) checks the order (every module must be in its `Layers` list), that each
+namespace matches its folder, and that `*Authoring.cs` files hold only the authoring class and its `Baker` (runtime
+components live in their own files). Its `AllowedBackEdges` holds the one upward use, `Production -> Upgrades`
+(production finishes research, and upgrades are produced), and should only shrink: a new back-edge usually means a
+shared type belongs lower.
 
 ## How the modules talk
 

@@ -39,7 +39,7 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
   tests share `*Setup` helpers through `IComponentSink` (replaced the granular authoring components and factories)
 - ✅ Every authoring component (engine or game) derives from `AuthoringBehaviour`, so inspectors and validation find it
 - ✅ Simulation modules layered on a base `Common` module; `ModuleLayoutTests` checks namespaces match folders and
-  allowlists the remaining two-way module pairs
+  modules follow a declared layer order (one allowlisted back-edge)
 
 ## Phase 1: Selection & input ✅
 

@@ -61,7 +61,7 @@ state in `Simulation/Interaction/`). Presentation and Input never reference each
 Namespaces follow the folder path: `HyperRTS.<Layer>.<Module>` (`HyperRTS.Simulation.Combat`,
 `HyperRTS.Presentation.Fog`, `HyperRTS.Input.Cameras`). `HyperRTS.Core` stays flat. A feature that spans layers
 (Selection) spans the matching layer namespaces. `ModuleLayoutTests` (in `HyperRTS.Editor.Tests`) checks this, and
-keeps Simulation modules layered on `Common` (see [`modules.md`](modules.md)).
+keeps Simulation modules in their declared layer order (see [`modules.md`](modules.md)).
 
 ## Adding code
 

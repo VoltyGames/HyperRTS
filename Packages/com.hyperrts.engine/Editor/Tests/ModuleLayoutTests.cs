@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,19 +12,20 @@ namespace HyperRTS.Editor.Tests
     /// <summary>Source layout rules: namespaces follow folders, modules stay layered, authoring files hold authoring.</summary>
     public class ModuleLayoutTests
     {
-        // Feature pairs that legitimately read each other's components. Shrink this list; never grow it casually:
-        // a new pair usually means a shared type belongs in Common or a lower module.
-        private static readonly string[] AllowedTwoWayPairs =
+        // Simulation modules, lowest first: each one may use only the modules before it.
+        private static readonly string[] Layers =
         {
-            "AI <-> Match",
-            "Buildings <-> Production",
-            "Buildings <-> Selection",
-            "Combat <-> Orders",
-            "Combat <-> Transport",
-            "Match <-> Production",
-            "Orders <-> Transport",
-            "Production <-> Upgrades",
-            "Selection <-> Transport",
+            "Common", "Navigation", "Stats", "Power", "Vision", "Spatial", "Selection", "Orders", "Audio", "Combat",
+            "Transport", "Air", "Units", "Resources", "Match", "Production", "Upgrades", "Buildings", "Abilities",
+            "Fields", "Veterancy", "Capture", "AI", "GameEntities", "Commands", "Interaction", "Replays",
+        };
+
+        // Uses of a higher layer that are part of the design. Shrink this list; never grow it casually: a new entry
+        // usually means a shared type belongs in Common or a lower module.
+        private static readonly string[] AllowedBackEdges =
+        {
+            // Production finishes research into the player's upgrades, and upgrades are produced like units.
+            "Production -> Upgrades",
         };
 
         private static readonly Regex Namespace = new(@"^namespace ([\w.]+)", RegexOptions.Multiline);
@@ -62,37 +64,38 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void CommonDependsOnNoOtherModule()
+        public void EveryModuleIsLayered()
         {
-            var dependencies = SimulationDependencies();
-            var common = dependencies.TryGetValue("Common", out var found) ? found : new HashSet<string>();
+            var root = Path.Combine(PackageRoot, "Simulation");
+            var modules = Directory.EnumerateDirectories(root).Select(Path.GetFileName).Where(name => name != "Tests")
+                .ToList();
 
-            Assert.IsEmpty(common, "Common is the base module: " + string.Join(", ", common));
+            var unlayered = modules.Except(Layers).ToList();
+            var unknown = Layers.Except(modules).ToList();
+            Assert.IsEmpty(unlayered, "Add these modules to Layers:\n" + string.Join("\n", unlayered));
+            Assert.IsEmpty(unknown, "No such module, remove from Layers:\n" + string.Join("\n", unknown));
         }
 
         [Test]
-        public void NoNewTwoWayModuleDependencies()
+        public void ModulesOnlyUseLowerLayers()
         {
             var dependencies = SimulationDependencies();
-            var pairs = new List<string>();
-            foreach (var pair in dependencies)
+            var upward = new List<string>();
+            foreach (var dependency in dependencies)
             {
-                var module = pair.Key;
-                var uses = pair.Value;
-                // Ordinal order visits each pair once.
-                foreach (var other in uses.Where(other => string.CompareOrdinal(module, other) < 0))
+                var edge = dependency.Key;
+                if (!IsUpward(edge) || AllowedBackEdges.Contains(edge))
                 {
-                    if (dependencies.TryGetValue(other, out var back) && back.Contains(module))
-                    {
-                        pairs.Add($"{module} <-> {other}");
-                    }
+                    continue;
                 }
+
+                upward.Add($"{edge} ({string.Join(", ", dependency.Value)})");
             }
 
-            var added = pairs.Except(AllowedTwoWayPairs).ToList();
-            var resolved = AllowedTwoWayPairs.Except(pairs).ToList();
-            Assert.IsEmpty(added, "New two-way module dependencies:\n" + string.Join("\n", added));
-            Assert.IsEmpty(resolved, "No longer two-way, remove from the allowlist:\n" + string.Join("\n", resolved));
+            var resolved = AllowedBackEdges.Where(edge => !dependencies.ContainsKey(edge) || !IsUpward(edge)).ToList();
+            Assert.IsEmpty(upward, "Uses of a higher layer (move the shared type lower):\n" + string.Join("\n", upward));
+            Assert.IsEmpty(resolved, "No longer a back-edge, remove it from the allowlist:\n" +
+                                     string.Join("\n", resolved));
         }
 
         [Test]
@@ -112,13 +115,13 @@ namespace HyperRTS.Editor.Tests
         }
 
         /// <summary>
-        /// Simulation module (top folder) to the other Simulation modules its runtime code imports. Authoring files are
-        /// left out: they assemble prefabs from every module's components.
+        /// Each "Module -> Used" edge between Simulation modules (top folders) to the runtime files that create it.
+        /// Authoring files are left out: they assemble prefabs from every module's components.
         /// </summary>
-        private static Dictionary<string, HashSet<string>> SimulationDependencies()
+        private static Dictionary<string, List<string>> SimulationDependencies()
         {
             var root = Path.Combine(PackageRoot, "Simulation");
-            var result = new Dictionary<string, HashSet<string>>();
+            var result = new Dictionary<string, List<string>>();
             foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             {
                 var module = RelativeTo(root, path).Split(Path.DirectorySeparatorChar)[0];
@@ -127,21 +130,32 @@ namespace HyperRTS.Editor.Tests
                     continue;
                 }
 
-                if (!result.TryGetValue(module, out var uses))
-                {
-                    result[module] = uses = new HashSet<string>();
-                }
-
                 foreach (Match match in SimulationUsing.Matches(File.ReadAllText(path)))
                 {
-                    if (match.Groups[1].Value != module)
+                    var used = match.Groups[1].Value;
+                    if (used == module)
                     {
-                        uses.Add(match.Groups[1].Value);
+                        continue;
                     }
+
+                    var edge = $"{module} -> {used}";
+                    if (!result.TryGetValue(edge, out var files))
+                    {
+                        result[edge] = files = new List<string>();
+                    }
+
+                    files.Add(RelativeTo(PackageRoot, path));
                 }
             }
 
             return result;
+        }
+
+        /// <summary>Whether a "Module -> Used" edge points at a later layer.</summary>
+        private static bool IsUpward(string edge)
+        {
+            var modules = edge.Split(new[] { " -> " }, StringSplitOptions.None);
+            return Array.IndexOf(Layers, modules[1]) > Array.IndexOf(Layers, modules[0]);
         }
 
         // Path.GetRelativePath is missing from the .NET Framework profile editor code may compile against.
