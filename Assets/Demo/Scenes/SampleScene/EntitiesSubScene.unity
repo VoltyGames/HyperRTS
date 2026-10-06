@@ -1769,8 +1769,18 @@ MonoBehaviour:
     startingResources:
     - type: {fileID: 11400000, guid: 54b276c9cecefc242ab4ef35b86bfced, type: 2}
       amount: 1500
-  aiThinkInterval: 2
-  aiAttackWaveSize: 10
+  easyAI:
+    thinkInterval: 4
+    attackWaveSize: 10
+    useAbilities: 0
+  normalAI:
+    thinkInterval: 2
+    attackWaveSize: 10
+    useAbilities: 1
+  hardAI:
+    thinkInterval: 1
+    attackWaveSize: 4
+    useAbilities: 1
 --- !u!4 &1409023205
 Transform:
   m_ObjectHideFlags: 0

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
@@ -38,6 +39,12 @@ namespace HyperRTS.Simulation.Match
 
         [Tooltip("Stockpile at match start.")]
         public List<ResourceQuantity> startingResources = new();
+
+        [Tooltip("AI only: tuning preset from the Match's AI settings.")]
+        public AIDifficulty difficulty = AIDifficulty.Normal;
+
+        [Tooltip("AI only: opening to build before training freely; empty trains from the start.")]
+        public AIBuildOrder buildOrder;
 
         /// <summary>Adds the components every player entity carries; returns its empty stockpile.</summary>
         public static DynamicBuffer<ResourceStock> Add<TSink>(ref TSink sink, byte faction, in FixedString32Bytes name,

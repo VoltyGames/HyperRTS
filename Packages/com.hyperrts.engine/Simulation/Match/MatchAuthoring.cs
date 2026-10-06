@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
 using Unity.Collections;
@@ -52,13 +53,21 @@ namespace HyperRTS.Simulation.Match
         };
 
         [Header("AI")]
-        [Tooltip("Seconds between AI decisions.")]
-        [Min(0.1f)]
-        public float aiThinkInterval = 2f;
+        [Tooltip("Tuning of AI slots set to Easy.")]
+        public AITuning easyAI = new() { thinkInterval = 4f, attackWaveSize = 10, useAbilities = false };
 
-        [Tooltip("Idle combat units the AI gathers before attacking.")]
-        [Min(1)]
-        public int aiAttackWaveSize = 6;
+        [Tooltip("Tuning of AI slots set to Normal.")]
+        public AITuning normalAI = new() { thinkInterval = 2f, attackWaveSize = 6, useAbilities = true };
+
+        [Tooltip("Tuning of AI slots set to Hard.")]
+        public AITuning hardAI = new() { thinkInterval = 1f, attackWaveSize = 4, useAbilities = true };
+
+        public AITuning AITuningFor(AIDifficulty difficulty) => difficulty switch
+        {
+            AIDifficulty.Easy => easyAI,
+            AIDifficulty.Hard => hardAI,
+            _ => normalAI,
+        };
 
         /// <summary>The map's ground rectangle (X by Z), centred on this transform.</summary>
         public Rect MapRect => new(new Vector2(transform.position.x, transform.position.z) - mapSize * 0.5f, mapSize);
@@ -112,12 +121,27 @@ namespace HyperRTS.Simulation.Match
                 }
                 else if (setup.control == PlayerControl.AI)
                 {
-                    AddComponent(player, new AIPlayer
+                    var steps = AIPlayerSetup.Add(ref sink, authoring.AITuningFor(setup.difficulty).ToComponent());
+                    AddBuildOrder(steps, setup.buildOrder);
+                }
+            }
+
+            private void AddBuildOrder(DynamicBuffer<AIBuildStep> steps, AIBuildOrder buildOrder)
+            {
+                if (buildOrder == null)
+                {
+                    return;
+                }
+
+                DependsOn(buildOrder);
+                foreach (var step in buildOrder.steps)
+                {
+                    if (step.prefab != null)
                     {
-                        ThinkInterval = authoring.aiThinkInterval,
-                        TimeUntilThink = authoring.aiThinkInterval,
-                        AttackWaveSize = authoring.aiAttackWaveSize,
-                    });
+                        // None: the prefab's own bakers pick its transform usage (upgrades have none).
+                        var prefab = GetEntity(step.prefab, TransformUsageFlags.None);
+                        steps.Add(new AIBuildStep { Prefab = prefab, Count = step.count });
+                    }
                 }
             }
 
