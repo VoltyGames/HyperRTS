@@ -177,10 +177,13 @@ namespace HyperRTS.Simulation.Tests
         public void PlaybackSeek_InAnyOrder_MatchesAFreshSeek()
         {
             var replay = Record(out _);
+            var last = replay.Frames.Length - 1;
+            Assert.GreaterOrEqual(last, 10, "enough frames to cross several keyframes");
             var playback = ReplayPlaybackState.Create(replay);
             try
             {
-                foreach (var index in new[] { 40, 3, 25, 26, 0, 44 })
+                // Back past keyframes, forward within one, onto a keyframe and to the end.
+                foreach (var index in new[] { last - 2, 3, 7, 8, 0, last })
                 {
                     playback.Seek(index);
                     var fresh = ReplayPlaybackState.Create(replay);
