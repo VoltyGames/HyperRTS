@@ -23,6 +23,12 @@ namespace HyperRTS.Presentation.HUD
             public Label Countdown;
             public int Id;
             public bool IsPower;
+
+            /// <summary>Soonest holder's cooldown this frame; MaxValue when no holder is left.</summary>
+            public float Remaining;
+
+            /// <summary>Whole seconds on the countdown, so its text only changes once a second.</summary>
+            public int Shown = -1;
         }
 
         /// <summary>Adds a button per distinct ability of <paramref name="casters"/>, then per support power.</summary>
@@ -55,20 +61,26 @@ namespace HyperRTS.Presentation.HUD
         {
             foreach (var entry in _entries)
             {
-                var remaining = Cooldown(context.EntityManager, entry);
-                entry.Button.SetEnabled(remaining <= 0f);
-                entry.Countdown.text = remaining > 0f && remaining < float.MaxValue ? math.ceil(remaining).ToString("0") : "";
+                entry.Remaining = float.MaxValue;
+            }
+
+            foreach (var caster in _casters)
+            {
+                Consider(context.EntityManager, caster, false);
+            }
+
+            Consider(context.EntityManager, _player, true);
+            foreach (var entry in _entries)
+            {
+                Show(entry);
             }
         }
 
         private void AddDistinct(HUDContext context, VisualElement root, in Ability ability, bool isPower)
         {
-            foreach (var entry in _entries)
+            if (Find(ability.Id, isPower) != null)
             {
-                if (entry.Id == ability.Id && entry.IsPower == isPower)
-                {
-                    return;
-                }
+                return;
             }
 
             var name = ability.Name.ToString();
@@ -95,25 +107,8 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        /// <summary>Seconds until the soonest holder can use the ability again; MaxValue when none is left.</summary>
-        private float Cooldown(EntityManager entityManager, Entry entry)
-        {
-            var best = float.MaxValue;
-            if (entry.IsPower)
-            {
-                Consider(entityManager, entry.Id, _player, ref best);
-                return best;
-            }
-
-            foreach (var caster in _casters)
-            {
-                Consider(entityManager, entry.Id, caster, ref best);
-            }
-
-            return best;
-        }
-
-        private static void Consider(EntityManager entityManager, int id, Entity holder, ref float best)
+        /// <summary>Lowers each matching entry's cooldown to this holder's, if it is sooner.</summary>
+        private void Consider(EntityManager entityManager, Entity holder, bool isPower)
         {
             if (!entityManager.Exists(holder) || !entityManager.HasBuffer<Ability>(holder))
             {
@@ -122,11 +117,44 @@ namespace HyperRTS.Presentation.HUD
 
             foreach (var ability in entityManager.GetBuffer<Ability>(holder, true))
             {
-                if (ability.Id == id)
+                var entry = Find(ability.Id, isPower);
+                if (entry != null)
                 {
-                    best = math.min(best, math.max(0f, ability.CooldownRemaining));
+                    entry.Remaining = math.min(entry.Remaining, math.max(0f, ability.CooldownRemaining));
                 }
             }
+        }
+
+        private Entry Find(int id, bool isPower)
+        {
+            foreach (var entry in _entries)
+            {
+                if (entry.Id == id && entry.IsPower == isPower)
+                {
+                    return entry;
+                }
+            }
+
+            return null;
+        }
+
+        private static void Show(Entry entry)
+        {
+            var ready = entry.Remaining <= 0f;
+            if (entry.Button.enabledSelf != ready)
+            {
+                entry.Button.SetEnabled(ready);
+            }
+
+            var cooling = !ready && entry.Remaining < float.MaxValue;
+            var seconds = cooling ? (int)math.ceil(entry.Remaining) : 0;
+            if (seconds == entry.Shown)
+            {
+                return;
+            }
+
+            entry.Shown = seconds;
+            entry.Countdown.text = seconds > 0 ? seconds.ToString() : "";
         }
     }
 }

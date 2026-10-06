@@ -30,6 +30,8 @@ namespace HyperRTS.Simulation.Fields
         private BufferLookup<StatModifier> _modifiers;
         private ComponentLookup<LocalTransform> _transforms;
         private DamageWriter _damage;
+        private EntityQuery _fieldQuery;
+        private bool _hadFields;
         private float _elapsed;
 
         public void OnCreate(ref SystemState state)
@@ -40,6 +42,7 @@ namespace HyperRTS.Simulation.Fields
             _modifiers = state.GetBufferLookup<StatModifier>();
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _damage = new DamageWriter(ref state);
+            _fieldQuery = SystemAPI.QueryBuilder().WithAll<AreaField>().Build();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<DamageQueue>();
@@ -61,6 +64,15 @@ namespace HyperRTS.Simulation.Fields
             }
 
             _elapsed -= Interval;
+
+            // Without fields there is nothing to apply; one more pass after the last one goes clears its bonuses.
+            var hasFields = !_fieldQuery.IsEmptyIgnoreFilter;
+            if (!hasFields && !_hadFields)
+            {
+                return;
+            }
+
+            _hadFields = hasFields;
             _fields.Update(ref state);
             _bonuses.Update(ref state);
             _modifiers.Update(ref state);

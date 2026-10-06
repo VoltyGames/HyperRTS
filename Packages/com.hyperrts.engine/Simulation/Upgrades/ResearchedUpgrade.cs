@@ -8,7 +8,5 @@ namespace HyperRTS.Simulation.Upgrades
     {
         /// <summary>The upgrade prefab, holding its <see cref="UpgradeEffect"/>s.</summary>
         public Entity Upgrade;
-
-        public int TypeId;
     }
 }

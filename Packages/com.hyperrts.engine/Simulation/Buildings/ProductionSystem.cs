@@ -29,7 +29,6 @@ namespace HyperRTS.Simulation.Buildings
         private ComponentLookup<ActiveOrder> _orderLookup;
         private ComponentLookup<Upgrade> _upgradeLookup;
         private ComponentLookup<Unpowered> _unpoweredLookup;
-        private ComponentLookup<EntityInfo> _infoLookup;
         private BufferLookup<ResearchedUpgrade> _researchedLookup;
 
         [BurstCompile]
@@ -42,7 +41,6 @@ namespace HyperRTS.Simulation.Buildings
             _orderLookup = state.GetComponentLookup<ActiveOrder>(true);
             _upgradeLookup = state.GetComponentLookup<Upgrade>(true);
             _unpoweredLookup = state.GetComponentLookup<Unpowered>(true);
-            _infoLookup = state.GetComponentLookup<EntityInfo>(true);
             _researchedLookup = state.GetBufferLookup<ResearchedUpgrade>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -56,7 +54,6 @@ namespace HyperRTS.Simulation.Buildings
             _orderLookup.Update(ref state);
             _upgradeLookup.Update(ref state);
             _unpoweredLookup.Update(ref state);
-            _infoLookup.Update(ref state);
             _researchedLookup.Update(ref state);
 
             var allocator = state.WorldUpdateAllocator;
@@ -75,7 +72,6 @@ namespace HyperRTS.Simulation.Buildings
                 OrderLookup = _orderLookup,
                 UpgradeLookup = _upgradeLookup,
                 UnpoweredLookup = _unpoweredLookup,
-                InfoLookup = _infoLookup,
                 ResearchedLookup = _researchedLookup,
             }.Schedule();
         }
@@ -97,7 +93,6 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<ActiveOrder> OrderLookup;
             [ReadOnly] public ComponentLookup<Upgrade> UpgradeLookup;
             [ReadOnly] public ComponentLookup<Unpowered> UnpoweredLookup;
-            [ReadOnly] public ComponentLookup<EntityInfo> InfoLookup;
             public BufferLookup<ResearchedUpgrade> ResearchedLookup;
 
             private void Execute(Entity entity, ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
@@ -142,7 +137,7 @@ namespace HyperRTS.Simulation.Buildings
             {
                 if (ResearchedLookup.TryGetBuffer(PlayerByFaction[faction], out var researched))
                 {
-                    researched.Add(new ResearchedUpgrade { Upgrade = upgrade, TypeId = InfoLookup[upgrade].TypeId });
+                    researched.Add(new ResearchedUpgrade { Upgrade = upgrade });
                 }
             }
 

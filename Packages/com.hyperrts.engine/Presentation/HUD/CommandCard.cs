@@ -62,10 +62,11 @@ namespace HyperRTS.Presentation.HUD
             }
 
             var completed = context.SnapshotCompleted();
+            var queued = context.SnapshotQueued();
             foreach (var (button, prefab) in _costed)
             {
-                button.SetEnabled(context.CanAfford(prefab) && context.PrerequisitesMet(prefab, completed) &&
-                                  context.CanQueueResearch(prefab));
+                var available = context.CanAfford(prefab) && context.PrerequisitesMet(prefab, completed);
+                button.SetEnabled(available && context.CanQueueResearch(prefab, queued));
             }
         }
 

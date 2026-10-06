@@ -83,10 +83,18 @@ namespace HyperRTS.Presentation.HUD
             !EntityManager.HasBuffer<Prerequisite>(prefab)
             || completed.MeetsPrerequisites(EntityManager.GetBuffer<Prerequisite>(prefab, true), View.Local.Faction);
 
+        /// <summary>This frame's prefabs the local player has queued, shared by every research button.</summary>
+        public NativeHashSet<Entity> SnapshotQueued()
+        {
+            var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
+            UpgradeRules.CollectQueued(EntityManager, _queues.In(EntityManager), View.Local.Faction, queued);
+            return queued;
+        }
+
         /// <summary>False for an upgrade the local player has researched or already queued somewhere.</summary>
-        public bool CanQueueResearch(Entity prefab) =>
-            UpgradeRules.CanQueue(EntityManager, _queues.In(EntityManager),
-                EntityManager.GetBuffer<ResearchedUpgrade>(View.LocalPlayer, true), View.Local.Faction, prefab);
+        public bool CanQueueResearch(Entity prefab, NativeHashSet<Entity> queued) =>
+            UpgradeRules.CanQueue(EntityManager, EntityManager.GetBuffer<ResearchedUpgrade>(View.LocalPlayer, true),
+                queued, prefab);
 
         /// <summary>Arms a targeted command; the input layer issues it on the next world click.</summary>
         public void ArmCommand(CommandType type, int argument)

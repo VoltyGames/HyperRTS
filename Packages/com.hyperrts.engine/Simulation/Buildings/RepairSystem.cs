@@ -21,6 +21,7 @@ namespace HyperRTS.Simulation.Buildings
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct RepairSystem : ISystem
     {
+        private DamageWriter _damage;
         private ComponentLookup<Health> _healthLookup;
         private ComponentLookup<Producible> _producibleLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
@@ -31,18 +32,21 @@ namespace HyperRTS.Simulation.Buildings
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _healthLookup = state.GetComponentLookup<Health>();
+            _damage = new DamageWriter(ref state);
+            _healthLookup = state.GetComponentLookup<Health>(true);
             _producibleLookup = state.GetComponentLookup<Producible>(true);
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _siteLookup = state.GetComponentLookup<ConstructionProgress>(true);
             state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<DamageQueue>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
             _healthLookup.Update(ref state);
             _producibleLookup.Update(ref state);
             _transformLookup.Update(ref state);
@@ -54,6 +58,7 @@ namespace HyperRTS.Simulation.Buildings
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Damage = _damage,
                 HealthLookup = _healthLookup,
                 ProducibleLookup = _producibleLookup,
                 TransformLookup = _transformLookup,
@@ -63,7 +68,7 @@ namespace HyperRTS.Simulation.Buildings
             }.Schedule();
         }
 
-        /// <summary>Single-threaded so several builders can repair one building.</summary>
+        /// <summary>Single-threaded: every heal appends to the one damage queue.</summary>
         [BurstCompile]
         [WithNone(typeof(Dead))]
         [WithPresent(typeof(MoveDestination))]
@@ -71,14 +76,15 @@ namespace HyperRTS.Simulation.Buildings
         {
             public float DeltaTime;
             public FactionRelations Relations;
-            public ComponentLookup<Health> HealthLookup;
+            public DamageWriter Damage;
+            [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public ComponentLookup<ConstructionProgress> SiteLookup;
 
-            private void Execute(in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
+            private void Execute(Entity entity, in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in LocalTransform transform,
                 in NavAgent agent, in Faction faction)
             {
@@ -104,10 +110,16 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 moving.ValueRW = false;
-                ref var health = ref HealthLookup.GetRefRW(target).ValueRW;
+                var maxHealth = HealthLookup[target].Max;
                 var buildTime = ProducibleLookup.TryGetComponent(target, out var producible) ? producible.BuildTime : 0f;
-                health.Current = math.min(health.Max,
-                    health.Current + DeltaTime * builder.Rate * health.Max / math.max(buildTime, 1f));
+                Damage.Add(new DamageEvent
+                {
+                    Target = target,
+                    Position = position,
+                    Source = entity,
+                    SourceFaction = faction.Value,
+                    Amount = -DeltaTime * builder.Rate * maxHealth / math.max(buildTime, 1f),
+                });
             }
         }
     }

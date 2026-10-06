@@ -35,12 +35,6 @@ namespace HyperRTS.Simulation.Upgrades
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            // Until someone finishes research there is nothing to apply or strip.
-            if (!AnyResearched(ref state))
-            {
-                return;
-            }
-
             _researched.Update(ref state);
             _effects.Update(ref state);
             _modifiers.Update(ref state);
@@ -52,19 +46,6 @@ namespace HyperRTS.Simulation.Upgrades
                 Effects = _effects,
                 Modifiers = _modifiers,
             }.ScheduleParallel();
-        }
-
-        private bool AnyResearched(ref SystemState state)
-        {
-            foreach (var researched in SystemAPI.Query<DynamicBuffer<ResearchedUpgrade>>())
-            {
-                if (!researched.IsEmpty)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         [BurstCompile]
@@ -117,7 +98,10 @@ namespace HyperRTS.Simulation.Upgrades
                 var modifiers = Modifiers[entity];
                 for (var i = 0; i < applied.Count && i < researched.Length; i++)
                 {
-                    StatMath.RemoveSource(modifiers, researched[i].TypeId);
+                    foreach (var effect in Effects[researched[i].Upgrade])
+                    {
+                        StatMath.RemoveSource(modifiers, effect.Modifier.Source);
+                    }
                 }
             }
         }

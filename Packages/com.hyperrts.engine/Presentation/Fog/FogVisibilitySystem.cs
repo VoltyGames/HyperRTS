@@ -37,7 +37,6 @@ namespace HyperRTS.Presentation.Fog
             };
 
             state.Dependency = new HideJob { Toggler = toggler }.ScheduleParallel(state.Dependency);
-            state.Dependency = new HidePassengerJob { Toggler = toggler }.ScheduleParallel(state.Dependency);
             state.Dependency = new RevealJob { Toggler = toggler }.ScheduleParallel(state.Dependency);
         }
 
@@ -65,20 +64,12 @@ namespace HyperRTS.Presentation.Fog
             }
         }
 
+        // WithAny matches an enableable Inside only while it is enabled.
         [BurstCompile]
-        [WithAll(typeof(EntityInfo), typeof(FogHidden))]
+        [WithAll(typeof(EntityInfo))]
+        [WithAny(typeof(FogHidden), typeof(Inside))]
         [WithNone(typeof(DisableRendering))]
         private partial struct HideJob : IJobEntity
-        {
-            public RenderToggler Toggler;
-
-            private void Execute([ChunkIndexInQuery] int sortKey, Entity entity) => Toggler.Set(sortKey, entity, true);
-        }
-
-        [BurstCompile]
-        [WithAll(typeof(EntityInfo), typeof(Inside))]
-        [WithNone(typeof(DisableRendering), typeof(FogHidden))]
-        private partial struct HidePassengerJob : IJobEntity
         {
             public RenderToggler Toggler;
 

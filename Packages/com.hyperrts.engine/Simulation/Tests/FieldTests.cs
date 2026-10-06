@@ -102,5 +102,21 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<StatModifier>(unit).Length);
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<FieldPresence>(unit).Length);
         }
+
+        [Test]
+        public void DestroyedLastField_RemovesBonus()
+        {
+            var armor = new StatModifier { Stat = Stat.DamageTaken, Percent = -0.5f };
+            var source = Field(1, float3.zero, "Shield", FieldTargets.Friendly | FieldTargets.Units, bonuses: armor);
+            var unit = _world.SpawnUnit(1, new float3(3f, 0f, 0f), speed: 0f);
+            _world.Run(0.5f);
+            Assert.AreEqual(1, _world.EntityManager.GetBuffer<StatModifier>(unit).Length);
+
+            _world.EntityManager.DestroyEntity(source);
+            _world.Run(0.5f);
+
+            Assert.AreEqual(0, _world.EntityManager.GetBuffer<StatModifier>(unit).Length);
+            Assert.AreEqual(0, _world.EntityManager.GetBuffer<FieldPresence>(unit).Length);
+        }
     }
 }
