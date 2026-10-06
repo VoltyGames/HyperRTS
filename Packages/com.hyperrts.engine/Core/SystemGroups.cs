@@ -47,4 +47,13 @@ namespace HyperRTS.Core
     public partial class LifecycleSystemGroup : ComponentSystemGroup
     {
     }
+
+    /// <summary>Replay playback, local world only: drives entities while the gameplay phases are switched off.</summary>
+    [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation, WorldSystemFilterFlags.LocalSimulation)]
+    [UpdateInGroup(typeof(SimulationSystemGroup))]
+    [UpdateAfter(typeof(MovementSystemGroup))]
+    [UpdateBefore(typeof(TransformSystemGroup))]
+    public partial class ReplaySystemGroup : ComponentSystemGroup
+    {
+    }
 }

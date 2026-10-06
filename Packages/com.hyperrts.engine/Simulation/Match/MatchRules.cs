@@ -11,6 +11,9 @@ namespace HyperRTS.Simulation.Match
         /// <summary>Share of a finished building's cost refunded when sold; unfinished ones refund in full.</summary>
         public float SellRefund;
 
+        /// <summary>Record a replay from the start of the match (<c>ReplayRecorderSystem</c>).</summary>
+        public bool RecordReplay;
+
         public static MatchRules Default => new() { LowPowerProductionRate = 0.5f, SellRefund = 0.5f };
     }
 }

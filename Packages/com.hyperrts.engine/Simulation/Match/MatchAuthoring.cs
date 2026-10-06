@@ -40,6 +40,9 @@ namespace HyperRTS.Simulation.Match
         [Range(0f, 1f)]
         public float sellRefund = 0.5f;
 
+        [Tooltip("Record a replay from the start of the match; save it with HyperRTS ▸ Replays ▸ Save Recording.")]
+        public bool recordReplay;
+
         [Header("Players")]
         [Tooltip("Player slots. Slot 1 is faction 1, the 'Owner' number on units and buildings.")]
         public List<PlayerSetup> players = new()
@@ -78,6 +81,7 @@ namespace HyperRTS.Simulation.Match
                 {
                     LowPowerProductionRate = authoring.lowPowerProductionRate,
                     SellRefund = authoring.sellRefund,
+                    RecordReplay = authoring.recordReplay,
                 });
 
                 var relations = new FactionRelations();
