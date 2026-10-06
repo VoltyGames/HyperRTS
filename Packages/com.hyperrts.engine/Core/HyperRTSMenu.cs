@@ -4,6 +4,7 @@ namespace HyperRTS.Core
     public static class HyperRTSMenu
     {
         public const string Root = "HyperRTS/";
+        public const string Audio = Root + "Audio/";
         public const string Buildings = Root + "Buildings/";
         public const string Cameras = Root + "Cameras/";
         public const string Combat = Root + "Combat/";
@@ -20,6 +21,7 @@ namespace HyperRTS.Core
     public static class HyperRTSIcons
     {
         private const string Dir = "Packages/com.hyperrts.engine/Editor/Icons/";
+        public const string Audio = Dir + "Audio.png";
         public const string Buildings = Dir + "Buildings.png";
         public const string Cameras = Dir + "Cameras.png";
         public const string Combat = Dir + "Combat.png";

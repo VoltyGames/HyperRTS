@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Power;
@@ -27,6 +28,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<UnitTag> _units;
         private ComponentLookup<Stealth> _stealth;
         private DamageWriter _damage;
+        private SoundWriter _sounds;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -36,7 +38,9 @@ namespace HyperRTS.Simulation.Combat
             _units = state.GetComponentLookup<UnitTag>(true);
             _stealth = state.GetComponentLookup<Stealth>();
             _damage = new DamageWriter(ref state);
+            _sounds = new SoundWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
+            state.RequireForUpdate<SoundQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -48,6 +52,7 @@ namespace HyperRTS.Simulation.Combat
             _units.Update(ref state);
             _stealth.Update(ref state);
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
+            _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
 
             // Single-threaded: every shot appends to the one damage queue.
             new FireJob
@@ -60,6 +65,7 @@ namespace HyperRTS.Simulation.Combat
                 Units = _units,
                 Stealth = _stealth,
                 Damage = _damage,
+                Sounds = _sounds,
             }.Schedule();
         }
 
@@ -75,6 +81,7 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<UnitTag> Units;
             public ComponentLookup<Stealth> Stealth;
             public DamageWriter Damage;
+            public SoundWriter Sounds;
 
             private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
                 EnabledRefRO<AttackTarget> attacking, in Faction faction)
@@ -101,10 +108,12 @@ namespace HyperRTS.Simulation.Combat
 
                 weapon.CooldownRemaining = weapon.Cooldown;
                 Reveal(entity);
+                var origin = Transforms[entity].Position;
+                Sounds.Play(entity, SoundSlot.Fire, origin, faction.Value);
                 if (weapon.ProjectilePrefab == Entity.Null)
                 {
-                    var origin = Transforms[entity].Position;
                     Damage.Add(CombatMath.Hit(weapon, entity, faction.Value, origin, target, targetPosition));
+                    Sounds.Play(entity, SoundSlot.Impact, targetPosition, faction.Value);
                 }
                 else
                 {
@@ -153,6 +162,7 @@ namespace HyperRTS.Simulation.Combat
                 Ecb.AddComponent(projectile, new Projectile
                 {
                     Speed = weapon.ProjectileSpeed,
+                    ImpactSoundTypeId = Sounds.TypeIdFor(shooter, SoundSlot.Impact),
                     Hit = CombatMath.Hit(weapon, shooter, faction.Value, origin, target, aim),
                 });
             }

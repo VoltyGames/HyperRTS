@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Audio;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -20,13 +21,16 @@ namespace HyperRTS.Simulation.Combat
 
         private TargetLookup _targets;
         private DamageWriter _damage;
+        private SoundWriter _sounds;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
             _damage = new DamageWriter(ref state);
+            _sounds = new SoundWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
+            state.RequireForUpdate<SoundQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -35,6 +39,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _targets.Update(ref state);
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
+            _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
 
             new HomingJob { Targets = _targets }.ScheduleParallel();
             new FlightJob
@@ -43,6 +48,7 @@ namespace HyperRTS.Simulation.Combat
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Damage = _damage,
+                Sounds = _sounds,
             }.Schedule();
         }
 
@@ -68,6 +74,7 @@ namespace HyperRTS.Simulation.Combat
             public float DeltaTime;
             public EntityCommandBuffer Ecb;
             public DamageWriter Damage;
+            public SoundWriter Sounds;
 
             private void Execute(Entity entity, ref LocalTransform transform, in Projectile projectile)
             {
@@ -86,6 +93,7 @@ namespace HyperRTS.Simulation.Combat
                 hit.Origin = transform.Position;
                 Damage.Add(hit);
                 Ecb.DestroyEntity(entity);
+                Sounds.Add(projectile.ImpactSoundTypeId, SoundSlot.Impact, transform.Position, hit.SourceFaction);
             }
         }
     }

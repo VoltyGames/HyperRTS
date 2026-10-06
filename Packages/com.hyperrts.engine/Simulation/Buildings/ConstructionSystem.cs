@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
@@ -26,6 +27,7 @@ namespace HyperRTS.Simulation.Buildings
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<Faction> _factionLookup;
+        private SoundWriter _sounds;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -35,7 +37,9 @@ namespace HyperRTS.Simulation.Buildings
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _factionLookup = state.GetComponentLookup<Faction>(true);
+            _sounds = new SoundWriter(ref state);
             state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<SoundQueue>();
         }
 
         [BurstCompile]
@@ -46,6 +50,7 @@ namespace HyperRTS.Simulation.Buildings
             _transformLookup.Update(ref state);
             _obstacleLookup.Update(ref state);
             _factionLookup.Update(ref state);
+            _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
 
             new BuildJob
             {
@@ -56,6 +61,7 @@ namespace HyperRTS.Simulation.Buildings
                 TransformLookup = _transformLookup,
                 ObstacleLookup = _obstacleLookup,
                 FactionLookup = _factionLookup,
+                Sounds = _sounds,
             }.Schedule();
         }
 
@@ -72,6 +78,7 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+            public SoundWriter Sounds;
 
             private void Execute(in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in LocalTransform transform,
@@ -102,6 +109,7 @@ namespace HyperRTS.Simulation.Buildings
                 if (Advance(site, builder.Rate))
                 {
                     busy.ValueRW = false;
+                    Sounds.Play(site, SoundSlot.Ready, sitePosition, FactionLookup[site].Value);
                 }
             }
 

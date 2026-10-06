@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
@@ -30,6 +31,7 @@ namespace HyperRTS.Simulation.Buildings
         private ComponentLookup<Upgrade> _upgradeLookup;
         private ComponentLookup<Unpowered> _unpoweredLookup;
         private BufferLookup<ResearchedUpgrade> _researchedLookup;
+        private SoundWriter _sounds;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -42,6 +44,8 @@ namespace HyperRTS.Simulation.Buildings
             _upgradeLookup = state.GetComponentLookup<Upgrade>(true);
             _unpoweredLookup = state.GetComponentLookup<Unpowered>(true);
             _researchedLookup = state.GetBufferLookup<ResearchedUpgrade>();
+            _sounds = new SoundWriter(ref state);
+            state.RequireForUpdate<SoundQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -55,6 +59,7 @@ namespace HyperRTS.Simulation.Buildings
             _upgradeLookup.Update(ref state);
             _unpoweredLookup.Update(ref state);
             _researchedLookup.Update(ref state);
+            _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
 
             var allocator = state.WorldUpdateAllocator;
             var rules = SystemAPI.TryGetSingleton<MatchRules>(out var match) ? match : MatchRules.Default;
@@ -73,6 +78,7 @@ namespace HyperRTS.Simulation.Buildings
                 UpgradeLookup = _upgradeLookup,
                 UnpoweredLookup = _unpoweredLookup,
                 ResearchedLookup = _researchedLookup,
+                Sounds = _sounds,
             }.Schedule();
         }
 
@@ -94,6 +100,7 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<Upgrade> UpgradeLookup;
             [ReadOnly] public ComponentLookup<Unpowered> UnpoweredLookup;
             public BufferLookup<ResearchedUpgrade> ResearchedLookup;
+            public SoundWriter Sounds;
 
             private void Execute(Entity entity, ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
                 in LocalTransform transform, in Faction faction, in RallyPoint rally, EnabledRefRO<RallyPoint> hasRally)
@@ -163,6 +170,7 @@ namespace HyperRTS.Simulation.Buildings
                 placement.Rotation = producer.Rotation;
                 Ecb.AddComponent(unit, placement);
                 Ecb.SetComponent(unit, faction);
+                Sounds.Play(prefab, SoundSlot.Ready, position, faction.Value);
 
                 if (rally && OrderLookup.HasComponent(prefab))
                 {

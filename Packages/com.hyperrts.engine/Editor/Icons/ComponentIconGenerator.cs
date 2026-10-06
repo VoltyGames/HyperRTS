@@ -12,6 +12,7 @@ namespace HyperRTS.Editor.Icons
 
         private static readonly (string IconPath, Color Color)[] Modules =
         {
+            (HyperRTSIcons.Audio, new Color(0.90f, 0.55f, 0.25f)),
             (HyperRTSIcons.Buildings, new Color(0.45f, 0.50f, 0.58f)),
             (HyperRTSIcons.Cameras, new Color(0.55f, 0.40f, 0.85f)),
             (HyperRTSIcons.Combat, new Color(0.85f, 0.25f, 0.22f)),
