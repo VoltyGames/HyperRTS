@@ -1,4 +1,7 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
+using Unity.Entities;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Audio
@@ -17,6 +20,9 @@ namespace HyperRTS.Presentation.Audio
         [Tooltip("Camera to follow; empty uses the main camera.")]
         public Camera view;
 
+        private readonly LiveQuery _terrain = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainHeight>()));
+
         private void LateUpdate()
         {
             var camera = view != null ? view : Camera.main;
@@ -28,7 +34,28 @@ namespace HyperRTS.Presentation.Audio
             var eye = camera.transform;
             var heading = Vector3.ProjectOnPlane(eye.forward, Vector3.up);
             var rotation = heading.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(heading) : eye.rotation;
-            transform.SetPositionAndRotation(GroundFocus(eye), rotation);
+            var focus = TryTerrainFocus(eye, camera.farClipPlane, out var ground) ? ground : GroundFocus(eye);
+            transform.SetPositionAndRotation(focus, rotation);
+        }
+
+        /// <summary>Where the view ray meets the baked terrain, when the match has one.</summary>
+        private bool TryTerrainFocus(Transform eye, float range, out Vector3 point)
+        {
+            point = default;
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+            {
+                return false;
+            }
+
+            if (!_terrain.In(world.EntityManager).TryGetSingleton(out TerrainHeight terrain))
+            {
+                return false;
+            }
+
+            var hit = terrain.Raycast(eye.position, eye.forward, range, out var ground);
+            point = ground;
+            return hit;
         }
 
         /// <summary>Where the view ray meets the y = 0 ground; below the camera when it doesn't look down.</summary>
