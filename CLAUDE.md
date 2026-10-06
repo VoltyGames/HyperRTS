@@ -51,7 +51,8 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
   share in `Common` or the lower module; authoring files may reference any module. `ModuleLayoutTests` enforces
   this; don't grow its two-way allowlist casually.
 - Authoring classes derive from `AuthoringBehaviour` (game ones too, for inspector warnings, summaries and
-  validation). One `*Authoring.cs` file holds the authoring class, its nested `Baker` and its component struct.
+  validation). One `*Authoring.cs` file holds the authoring class and its nested `Baker`; runtime components live
+  in their own files (`ModuleLayoutTests` enforces this).
   Bakers use `GetEntity(TransformUsageFlags.Dynamic)` and write component sets through the `*Setup` helpers
   (`IComponentSink`), so tests build the same entities.
 - Authoring classes carry `[AddComponentMenu]`, `[Icon]`, `[HelpURL]`, `[DisallowMultipleComponent]` and a
@@ -81,7 +82,7 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
 ## LOC
 
 - Files ≤ 300 lines, methods ≤ 40 lines. Split by responsibility when a file grows past that.
-- One type per file, except the authoring + baker + component trio.
+- One type per file, except authoring + baker; runtime components live in their own files.
 - Prefer deleting code to adding it. No dead code, unused usings or commented-out code.
 
 ## Run / test

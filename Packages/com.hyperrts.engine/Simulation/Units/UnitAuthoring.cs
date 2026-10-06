@@ -54,7 +54,4 @@ namespace HyperRTS.Simulation.Units
                 GetComponent<FlightAuthoring>() != null ? NavLayer.Air : authoring.navLayer;
         }
     }
-
-    /// <summary>Marks a movable, orderable unit.</summary>
-    public struct UnitTag : IComponentData { }
 }

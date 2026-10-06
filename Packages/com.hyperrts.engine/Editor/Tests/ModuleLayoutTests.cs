@@ -8,7 +8,7 @@ using UnityEditor.PackageManager;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>Source layout rules: namespaces follow folders and Simulation modules stay layered.</summary>
+    /// <summary>Source layout rules: namespaces follow folders, modules stay layered, authoring files hold authoring.</summary>
     public class ModuleLayoutTests
     {
         // Feature pairs that legitimately read each other's components. Shrink this list; never grow it casually:
@@ -28,6 +28,11 @@ namespace HyperRTS.Editor.Tests
 
         private static readonly Regex Namespace = new(@"^namespace ([\w.]+)", RegexOptions.Multiline);
         private static readonly Regex SimulationUsing = new(@"^using HyperRTS\.Simulation\.(\w+)", RegexOptions.Multiline);
+
+        // Namespace-level declarations sit at a 4-space indent; nested ones (Baker, entry classes) at 8.
+        private static readonly Regex RuntimeType = new(
+            @"^ {4}(?:\w+ )*(?:struct (\w+)[^{\n]*\b(?:IComponentData|IBufferElementData|ISystem|IEnableableComponent)\b|enum (\w+))",
+            RegexOptions.Multiline);
 
         private static string PackageRoot =>
             PackageInfo.FindForAssembly(typeof(AuthoringBehaviour).Assembly).resolvedPath;
@@ -88,6 +93,22 @@ namespace HyperRTS.Editor.Tests
             var resolved = AllowedTwoWayPairs.Except(pairs).ToList();
             Assert.IsEmpty(added, "New two-way module dependencies:\n" + string.Join("\n", added));
             Assert.IsEmpty(resolved, "No longer two-way, remove from the allowlist:\n" + string.Join("\n", resolved));
+        }
+
+        [Test]
+        public void AuthoringFilesHoldOnlyAuthoring()
+        {
+            var misplaced = new List<string>();
+            foreach (var path in Directory.EnumerateFiles(PackageRoot, "*Authoring.cs", SearchOption.AllDirectories))
+            {
+                foreach (Match match in RuntimeType.Matches(File.ReadAllText(path)))
+                {
+                    var type = match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value;
+                    misplaced.Add($"{RelativeTo(PackageRoot, path)}: {type}");
+                }
+            }
+
+            Assert.IsEmpty(misplaced, "Runtime types belong in their own files:\n" + string.Join("\n", misplaced));
         }
 
         /// <summary>

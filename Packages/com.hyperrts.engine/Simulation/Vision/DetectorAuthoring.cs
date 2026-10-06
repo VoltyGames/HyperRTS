@@ -2,7 +2,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
-using Unity.NetCode;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Vision
@@ -27,11 +26,5 @@ namespace HyperRTS.Simulation.Vision
                 StealthSetup.AddDetector(ref sink, authoring.radius);
             }
         }
-    }
-
-    /// <summary>Detection radius stamped into <see cref="FogOfWar.Detected"/> for the owner's team.</summary>
-    public struct Detector : IComponentData
-    {
-        [GhostField] public float Radius;
     }
 }

@@ -7,8 +7,9 @@ live in `Packages/com.hyperrts.engine/Simulation/<Module>/` (namespace `HyperRTS
 Modules are layered. `Common` is the base: it uses no other module, and every other module may use it. A component
 two modules both need goes in `Common` or in the lower of the two, so dependencies stay one-way. Authoring files
 are exempt, since they assemble prefabs from every module's components. `ModuleLayoutTests` (in `Editor/Tests/`)
-checks this and that each namespace matches its folder. Its allowlist of existing two-way pairs should only
-shrink: a new pair usually means a shared type belongs lower.
+checks this, that each namespace matches its folder, and that `*Authoring.cs` files hold only the authoring
+class and its `Baker` (runtime components live in their own files). Its allowlist of existing two-way pairs
+should only shrink: a new pair usually means a shared type belongs lower.
 
 ## How the modules talk
 

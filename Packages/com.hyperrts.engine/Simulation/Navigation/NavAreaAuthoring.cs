@@ -1,7 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Navigation
@@ -30,12 +29,5 @@ namespace HyperRTS.Simulation.Navigation
                 NavSetup.AddArea(ref sink, authoring.size, authoring.kind);
             }
         }
-    }
-
-    /// <summary>Axis-aligned XZ box stamped over the grid's terrain surfaces, before <see cref="NavObstacle"/>s.</summary>
-    public struct NavArea : IComponentData
-    {
-        public float2 Size;
-        public NavAreaKind Kind;
     }
 }

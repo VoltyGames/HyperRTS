@@ -1,7 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Navigation
@@ -27,11 +26,5 @@ namespace HyperRTS.Simulation.Navigation
                 NavSetup.AddObstacle(ref sink, authoring.size);
             }
         }
-    }
-
-    /// <summary>Axis-aligned XZ box that pathing and building placement treat as solid.</summary>
-    public struct NavObstacle : IComponentData
-    {
-        public float2 Size;
     }
 }
