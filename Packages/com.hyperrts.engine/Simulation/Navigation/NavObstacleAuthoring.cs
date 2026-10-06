@@ -5,7 +5,10 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>Blocks a box of the pathfinding grid (rocks, cliffs, water). Buildings block their footprint already.</summary>
+    /// <summary>
+    /// Blocks a box of the pathfinding grid (rocks, cliffs). Buildings block their footprint already; water and
+    /// bridges are Nav Areas.
+    /// </summary>
     [AddComponentMenu(HyperRTSMenu.Navigation + "Nav Obstacle")]
     [Icon(HyperRTSIcons.Navigation)]
     [HelpURL(HyperRTSDocs.Modules)]

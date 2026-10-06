@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
@@ -81,10 +82,14 @@ namespace HyperRTS.Input.Commands
             }
 
             var footprint = SystemAPI.GetComponent<NavObstacle>(placement.Prefab).Size;
+            var surface = SystemAPI.TryGetComponent<BuildingPlacement>(placement.Prefab, out var rule)
+                ? rule.Surface
+                : PlacementSurface.Land;
             SystemAPI.TryGetSingleton<NavGrid>(out var grid);
             CompleteDependency();
             placement.Position = PlacementMath.Snap(in map, ground, footprint);
-            placement.Valid = PlacementMath.IsValid(in map, in grid, placement.Position, footprint);
+            placement.Position.y = PlacementMath.Height(in grid, placement.Position);
+            placement.Valid = PlacementMath.IsValid(in map, in grid, placement.Position, footprint, surface);
         }
 
         private void Place(ref PlacementState placement, bool queue)

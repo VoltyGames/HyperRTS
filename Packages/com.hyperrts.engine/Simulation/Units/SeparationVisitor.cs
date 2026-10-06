@@ -1,20 +1,30 @@
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Spatial;
 using Unity.Entities;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Units
 {
-    /// <summary>Sums how far a unit must move to stop overlapping neighbouring units (half each, as both move).</summary>
+    /// <summary>
+    /// Sums how far a unit must move to stop overlapping neighbouring units (half each, as both move). Units on
+    /// layers that never share a surface (a ship under a bridge, a tank on it) ignore each other.
+    /// </summary>
     internal struct SeparationVisitor : ISpatialVisitor
     {
         public Entity Self;
         public float2 Position;
         public float Radius;
+        public NavLayer Layer;
         public float2 Push;
 
         public void Visit(in SpatialEntry entry)
         {
             if (entry.Entity == Self || !entry.IsUnit)
+            {
+                return;
+            }
+
+            if (!NavLayers.Share(Layer, entry.Layer))
             {
                 return;
             }

@@ -10,14 +10,17 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>How far (in cells) to look for open ground around a blocked start or goal.</summary>
         public const int NearestSearchRadius = 32;
 
-        public static void Plan(in NavGrid grid, float3 start, float3 goal, float radius,
-            DynamicBuffer<PathWaypoint> waypoints)
+        public static void Plan(in NavGrid grid, in PathRequest request, DynamicBuffer<PathWaypoint> waypoints)
         {
             waypoints.Clear();
+            var start = request.Start;
+            var goal = request.Goal;
+            var layer = request.Layer;
             var startCell = grid.WorldToCell(start);
             var goalCell = grid.WorldToCell(goal);
-            if (!grid.TryFindNearestWalkable(startCell, NearestSearchRadius, out var from) ||
-                !grid.TryFindNearestWalkable(goalCell, NearestSearchRadius, out var to))
+            var foundStart = grid.TryFindNearestWalkable(startCell, NearestSearchRadius, out var from, layer);
+            var foundGoal = grid.TryFindNearestWalkable(goalCell, NearestSearchRadius, out var to, layer);
+            if (!foundStart || !foundGoal)
             {
                 Add(waypoints, goal, start.y);
                 return;
@@ -32,25 +35,25 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             var end = to.Equals(goalCell) ? goal : grid.CellCenter(to);
-            var clearance = grid.Clearance(radius);
-            if (from.Equals(to) || grid.HasLineOfSight(origin, end, clearance))
+            var clearance = grid.Clearance(request.Radius);
+            if (from.Equals(to) || grid.HasLineOfSight(origin, end, clearance, layer))
             {
                 Add(waypoints, end, start.y);
                 return;
             }
 
             var cells = new NativeList<int2>(64, Allocator.Temp);
-            if (!GridAStar.Search(grid, from, to, cells))
+            if (!GridAStar.Search(grid, layer, from, to, cells))
             {
                 end = grid.CellCenter(cells[cells.Length - 1]);
             }
 
-            Smooth(grid, origin, end, clearance, cells, waypoints, start.y);
+            Smooth(grid, layer, origin, end, clearance, cells, waypoints, start.y);
             cells.Dispose();
         }
 
         // Greedy string pulling: keep a corner only when the anchor can't see the point after it.
-        private static void Smooth(in NavGrid grid, float3 origin, float3 end, float clearance,
+        private static void Smooth(in NavGrid grid, NavLayer layer, float3 origin, float3 end, float clearance,
             NativeList<int2> cells, DynamicBuffer<PathWaypoint> waypoints, float y)
         {
             var anchor = origin;
@@ -58,7 +61,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 var point = grid.CellCenter(cells[i]);
                 var next = i + 1 == cells.Length - 1 ? end : grid.CellCenter(cells[i + 1]);
-                if (!grid.HasLineOfSight(anchor, next, clearance))
+                if (!grid.HasLineOfSight(anchor, next, clearance, layer))
                 {
                     Add(waypoints, point, y);
                     anchor = point;

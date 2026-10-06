@@ -91,7 +91,7 @@ namespace HyperRTS.Simulation.Navigation
                 var goalMoved = math.distancesq(path.Goal.xz, goal.xz) > Grid.CellSize * Grid.CellSize;
                 if (path.Status == PathStatus.Ready && !goalMoved && path.GridVersion == Grid.Version)
                 {
-                    FollowSmallGoalMove(waypoints, goal);
+                    FollowSmallGoalMove(waypoints, goal, agent.Layer);
                     return;
                 }
 
@@ -113,14 +113,15 @@ namespace HyperRTS.Simulation.Navigation
                     Start = transform.Position,
                     Goal = goal,
                     Radius = agent.Radius,
+                    Layer = agent.Layer,
                     Frame = path.RequestFrame,
                 });
             }
 
             // Re-planning for sub-cell nudges (re-clicks, a creeping chase target) isn't worth a search.
-            private void FollowSmallGoalMove(DynamicBuffer<PathWaypoint> waypoints, float3 goal)
+            private void FollowSmallGoalMove(DynamicBuffer<PathWaypoint> waypoints, float3 goal, NavLayer layer)
             {
-                if (waypoints.Length == 0 || !Grid.IsWalkable(goal))
+                if (waypoints.Length == 0 || !Grid.IsWalkable(goal, layer))
                 {
                     return;
                 }
@@ -201,7 +202,7 @@ namespace HyperRTS.Simulation.Navigation
             public void Execute(int index)
             {
                 var request = Requests[index];
-                GridPathfinder.Plan(Grid, request.Start, request.Goal, request.Radius, WaypointLookup[request.Entity]);
+                GridPathfinder.Plan(Grid, request, WaypointLookup[request.Entity]);
                 StateLookup[request.Entity] = new PathState
                 {
                     Goal = request.Goal,

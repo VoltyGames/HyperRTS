@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>8-directional A* over a <see cref="NavGrid"/>; diagonals may not cut blocked corners.</summary>
+    /// <summary>8-directional A* over the <see cref="NavGrid"/> cells open to one layer; diagonals may not cut corners.</summary>
     internal struct GridAStar
     {
         /// <summary>Caps one search so a hopeless request can't stall a worker thread.</summary>
@@ -19,13 +19,15 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         private readonly NavGrid _grid;
+        private readonly NavSurface _surfaces;
         private readonly int2 _goal;
         private NativeHashMap<int, Record> _records;
         private OpenSet _open;
 
-        private GridAStar(in NavGrid grid, int2 goal)
+        private GridAStar(in NavGrid grid, NavSurface surfaces, int2 goal)
         {
             _grid = grid;
+            _surfaces = surfaces;
             _goal = goal;
             _records = new NativeHashMap<int, Record>(1024, Allocator.Temp);
             _open = new OpenSet(256, Allocator.Temp);
@@ -35,9 +37,9 @@ namespace HyperRTS.Simulation.Navigation
         /// Fills <paramref name="path"/> with cells from start to goal. When the goal is unreachable it leads to
         /// the explored cell closest to the goal instead and returns false.
         /// </summary>
-        public static bool Search(in NavGrid grid, int2 start, int2 goal, NativeList<int2> path)
+        public static bool Search(in NavGrid grid, NavLayer layer, int2 start, int2 goal, NativeList<int2> path)
         {
-            var search = new GridAStar(grid, goal);
+            var search = new GridAStar(grid, NavLayers.Surfaces(layer), goal);
             var last = search.Explore(start);
             search.Reconstruct(last, path);
             search.Dispose();
@@ -91,17 +93,12 @@ namespace HyperRTS.Simulation.Navigation
                 for (var dx = -1; dx <= 1; dx++)
                 {
                     var next = cell + new int2(dx, dy);
-                    if ((dx == 0 && dy == 0) || !_grid.IsWalkable(next))
+                    if ((dx == 0 && dy == 0) || !CanStep(cell, next))
                     {
                         continue;
                     }
 
                     var diagonal = dx != 0 && dy != 0;
-                    if (diagonal && (!_grid.IsWalkable(cell + new int2(dx, 0)) || !_grid.IsWalkable(cell + new int2(0, dy))))
-                    {
-                        continue;
-                    }
-
                     var nextCost = cost + (diagonal ? Diagonal : 1f);
                     var index = _grid.Index(next);
                     if (_records.TryGetValue(index, out var existing) && (existing.Closed || existing.Cost <= nextCost))
@@ -128,6 +125,9 @@ namespace HyperRTS.Simulation.Navigation
                 (path[i], path[j]) = (path[j], path[i]);
             }
         }
+
+        private readonly bool CanStep(int2 from, int2 to) =>
+            _grid.IsOpen(to, _surfaces) && !_grid.CutsCorner(from, to, _surfaces);
 
         // Octile distance, nudged up slightly so ties favour cells nearer the goal (fewer expansions).
         private readonly float Heuristic(int2 cell)

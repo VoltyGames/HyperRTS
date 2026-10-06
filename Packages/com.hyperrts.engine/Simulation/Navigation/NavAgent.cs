@@ -6,5 +6,6 @@ namespace HyperRTS.Simulation.Navigation
     public struct NavAgent : IComponentData
     {
         public float Radius;
+        public NavLayer Layer;
     }
 }

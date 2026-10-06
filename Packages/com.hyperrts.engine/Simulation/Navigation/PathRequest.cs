@@ -10,6 +10,7 @@ namespace HyperRTS.Simulation.Navigation
         public float3 Start;
         public float3 Goal;
         public float Radius;
+        public NavLayer Layer;
         public uint Frame;
     }
 }

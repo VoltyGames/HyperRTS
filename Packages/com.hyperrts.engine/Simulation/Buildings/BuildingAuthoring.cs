@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using UnityEngine;
@@ -27,6 +28,9 @@ namespace HyperRTS.Simulation.Buildings
         [Tooltip("Start as a construction site instead of finished (for scene-placed buildings).")]
         public bool startsUnderConstruction;
 
+        [Tooltip("Ground the footprint must cover when placed: land, water, or shoreline (both).")]
+        public PlacementSurface placementSurface;
+
         public override float Radius => EntityRadius.Of(new NavObstacle { Size = footprint });
 
         public class Baker : Baker<BuildingAuthoring>
@@ -38,7 +42,7 @@ namespace HyperRTS.Simulation.Buildings
 
                 var sink = new BakerSink(this, entity);
                 BuildingSetup.Add(ref sink, authoring.footprint, authoring.populationProvided,
-                    !authoring.startsUnderConstruction, authoring.power);
+                    !authoring.startsUnderConstruction, authoring.power, authoring.placementSurface);
             }
         }
     }

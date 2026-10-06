@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
@@ -13,16 +14,18 @@ namespace HyperRTS.Input.Commands
     public sealed class WorldPointer
     {
         private readonly EntityQuery _physics;
+        private readonly EntityQuery _terrain;
         private Camera _camera;
 
         public WorldPointer(ref SystemState state)
         {
             _physics = state.GetEntityQuery(ComponentType.ReadOnly<PhysicsWorldSingleton>());
+            _terrain = state.GetEntityQuery(ComponentType.ReadOnly<TerrainHeight>());
         }
 
         /// <summary>
         /// Raycasts physics when available. Only ownable entities and resource nodes count as targets; anything
-        /// else hit (terrain) supplies the ground point, otherwise the ray meets the y = 0 plane.
+        /// else hit (terrain) supplies the ground point, otherwise the ray meets the baked terrain or the y = 0 plane.
         /// </summary>
         public bool TryPick(ref SystemState state, float2 screen, out Entity target, out float3 ground)
         {
@@ -42,7 +45,7 @@ namespace HyperRTS.Input.Commands
             var direction = math.normalizesafe((float3)ray.direction);
             if (!TryCast(ref state, origin, direction * _camera.farClipPlane, out var hit))
             {
-                return CommandMath.TryGroundPoint(origin, direction, 0f, out ground);
+                return TryGround(origin, direction, out ground);
             }
 
             if (!IsTarget(state.EntityManager, hit.Entity))
@@ -52,12 +55,23 @@ namespace HyperRTS.Input.Commands
             }
 
             target = hit.Entity;
-            if (!CommandMath.TryGroundPoint(origin, direction, 0f, out ground))
+            if (!TryGround(origin, direction, out ground))
             {
                 ground = hit.Position;
             }
 
             return true;
+        }
+
+        private bool TryGround(float3 origin, float3 direction, out float3 ground)
+        {
+            if (_terrain.TryGetSingleton(out TerrainHeight terrain) &&
+                terrain.Raycast(origin, direction, _camera.farClipPlane, out ground))
+            {
+                return true;
+            }
+
+            return CommandMath.TryGroundPoint(origin, direction, 0f, out ground);
         }
 
         private bool TryCast(ref SystemState state, float3 origin, float3 delta, out Unity.Physics.RaycastHit hit)

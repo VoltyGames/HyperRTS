@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
@@ -9,6 +10,7 @@ using HyperRTS.Simulation.Upgrades;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Buildings
 {
@@ -134,7 +136,7 @@ namespace HyperRTS.Simulation.Buildings
             {
                 if (IsOwnedProducer(ref state, producer, faction))
                 {
-                    SystemAPI.SetComponent(producer, new RallyPoint { Position = command.Position });
+                    SystemAPI.SetComponent(producer, new RallyPoint { Position = OnSurface(ref state, command.Position) });
                     SystemAPI.SetComponentEnabled<RallyPoint>(producer, true);
                 }
             }
@@ -184,5 +186,16 @@ namespace HyperRTS.Simulation.Buildings
 
         private bool IsOwnedProducer(ref SystemState state, Entity entity, byte faction) =>
             SystemAPI.HasComponent<Producer>(entity) && SystemAPI.GetComponent<Faction>(entity).Value == faction;
+
+        /// <summary>Drops a rally point onto the ground, deck or water surface under it.</summary>
+        private float3 OnSurface(ref SystemState state, float3 position)
+        {
+            if (SystemAPI.TryGetSingleton<NavGrid>(out var grid) && grid.IsCreated)
+            {
+                position.y = grid.SurfaceHeight(position);
+            }
+
+            return position;
+        }
     }
 }

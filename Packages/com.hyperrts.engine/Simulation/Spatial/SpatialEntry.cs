@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -13,5 +14,8 @@ namespace HyperRTS.Simulation.Spatial
 
         /// <summary>False for buildings.</summary>
         public bool IsUnit;
+
+        /// <summary>The <see cref="NavAgent"/> layer; Ground for entities without one.</summary>
+        public NavLayer Layer;
     }
 }

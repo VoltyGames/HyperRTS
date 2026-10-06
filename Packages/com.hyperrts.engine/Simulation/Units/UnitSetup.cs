@@ -7,13 +7,14 @@ namespace HyperRTS.Simulation.Units
     /// <summary>Adds the movement and order components on top of <see cref="GameEntitySetup"/>.</summary>
     public static class UnitSetup
     {
-        public static void Add<TSink>(ref TSink sink, float moveSpeed, float radius) where TSink : struct, IComponentSink
+        public static void Add<TSink>(ref TSink sink, float moveSpeed, float radius, NavLayer layer = NavLayer.Ground)
+            where TSink : struct, IComponentSink
         {
             sink.Add<UnitTag>();
             sink.Add(new MovementSpeed { Value = moveSpeed });
             sink.Add<MoveDestination>();
             sink.SetEnabled<MoveDestination>(false);
-            sink.Add(new NavAgent { Radius = radius });
+            sink.Add(new NavAgent { Radius = radius, Layer = layer });
             sink.AddBuffer<PathWaypoint>();
             sink.Add<PathState>();
             sink.Add<ActiveOrder>();

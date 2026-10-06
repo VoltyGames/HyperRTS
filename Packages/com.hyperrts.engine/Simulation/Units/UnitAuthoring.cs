@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using UnityEngine;
 
@@ -24,6 +25,9 @@ namespace HyperRTS.Simulation.Units
         [Min(0.05f)]
         public float radius = 0.5f;
 
+        [Tooltip("Surface the unit moves on: Ground (land and decks), Naval (water) or Amphibious (both).")]
+        public NavLayer navLayer;
+
         [Tooltip("Population this unit uses while alive.")]
         [Min(0)]
         public int population = 1;
@@ -40,7 +44,7 @@ namespace HyperRTS.Simulation.Units
                 authoring.BakeGameEntity(this, entity);
 
                 var sink = new BakerSink(this, entity);
-                UnitSetup.Add(ref sink, authoring.moveSpeed, authoring.radius);
+                UnitSetup.Add(ref sink, authoring.moveSpeed, authoring.radius, authoring.navLayer);
             }
         }
     }

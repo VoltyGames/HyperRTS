@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Power;
@@ -10,10 +11,15 @@ namespace HyperRTS.Simulation.Buildings
     public static class BuildingSetup
     {
         public static void Add<TSink>(ref TSink sink, float2 footprint, int populationProvided, bool complete,
-            float power = 0f) where TSink : struct, IComponentSink
+            float power = 0f, PlacementSurface surface = PlacementSurface.Land) where TSink : struct, IComponentSink
         {
             sink.Add<BuildingTag>();
             sink.Add(new NavObstacle { Size = footprint });
+            if (surface != PlacementSurface.Land)
+            {
+                sink.Add(new BuildingPlacement { Surface = surface });
+            }
+
             sink.Add(new ConstructionProgress { Value = complete ? 1f : 0f });
             sink.SetEnabled<ConstructionProgress>(!complete);
 

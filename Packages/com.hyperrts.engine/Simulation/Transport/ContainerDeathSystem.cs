@@ -14,17 +14,17 @@ namespace HyperRTS.Simulation.Transport
     public partial struct ContainerDeathSystem : ISystem
     {
         private CargoExit _exit;
-        private NativeArray<byte> _noCells;
+        private NavGrid _noGrid;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _exit = new CargoExit(ref state);
-            _noCells = new NativeArray<byte>(1, Allocator.Persistent);
+            _noGrid = NavGrid.Placeholder();
         }
 
         [BurstCompile]
-        public void OnDestroy(ref SystemState state) => _noCells.Dispose();
+        public void OnDestroy(ref SystemState state) => _noGrid.Dispose();
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Transport
             {
                 Exit = _exit,
                 HasGrid = hasGrid,
-                Grid = hasGrid ? grid : new NavGrid { Cells = _noCells },
+                Grid = hasGrid ? grid : _noGrid,
             }.Schedule();
         }
 

@@ -101,10 +101,18 @@ namespace HyperRTS.Simulation.Transport
             math.sincos(slot * GoldenAngle, out var sin, out var cos);
             var position = center + new float3(cos, 0f, sin) * distance;
 
-            if (hasGrid && grid.TryFindNearestWalkable(grid.WorldToCell(position), WalkableSearchRings, out var cell))
+            if (!hasGrid)
+            {
+                return position;
+            }
+
+            var layer = _agents.TryGetComponent(unit, out var agent) ? agent.Layer : NavLayer.Ground;
+            if (grid.TryFindNearestWalkable(grid.WorldToCell(position), WalkableSearchRings, out var cell, layer))
             {
                 position.xz = grid.CellCenter(cell).xz;
             }
+
+            position.y = grid.HeightFor(position, layer);
 
             return position;
         }
