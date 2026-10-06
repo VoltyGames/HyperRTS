@@ -16,11 +16,7 @@ namespace HyperRTS.Simulation.Navigation
             var start = request.Start;
             var goal = request.Goal;
             var layer = request.Layer;
-            var startCell = grid.WorldToCell(start);
-            var goalCell = grid.WorldToCell(goal);
-            var foundStart = grid.TryFindNearestWalkable(startCell, NearestSearchRadius, out var from, layer);
-            var foundGoal = grid.TryFindNearestWalkable(goalCell, NearestSearchRadius, out var to, layer);
-            if (!foundStart || !foundGoal)
+            if (!TryFindOpenEnds(grid, request, out var from, out var to))
             {
                 Add(waypoints, goal, start.y);
                 return;
@@ -28,13 +24,13 @@ namespace HyperRTS.Simulation.Navigation
 
             // A unit inside a blocked cell (a building placed on it) first steps out to open ground.
             var origin = start;
-            if (!from.Equals(startCell))
+            if (!from.Equals(grid.WorldToCell(start)))
             {
                 origin = grid.CellCenter(from);
                 Add(waypoints, origin, start.y);
             }
 
-            var end = to.Equals(goalCell) ? goal : grid.CellCenter(to);
+            var end = to.Equals(grid.WorldToCell(goal)) ? goal : grid.CellCenter(to);
             var clearance = grid.Clearance(request.Radius);
             if (from.Equals(to) || grid.HasLineOfSight(origin, end, clearance, layer))
             {
@@ -50,6 +46,16 @@ namespace HyperRTS.Simulation.Navigation
 
             Smooth(grid, layer, origin, end, clearance, cells, waypoints, start.y);
             cells.Dispose();
+        }
+
+        /// <summary>The open cells nearest the start and the goal; false if either has none within reach.</summary>
+        private static bool TryFindOpenEnds(in NavGrid grid, in PathRequest request, out int2 from, out int2 to)
+        {
+            var startCell = grid.WorldToCell(request.Start);
+            var goalCell = grid.WorldToCell(request.Goal);
+            var foundStart = grid.TryFindNearestWalkable(startCell, NearestSearchRadius, out from, request.Layer);
+            var foundGoal = grid.TryFindNearestWalkable(goalCell, NearestSearchRadius, out to, request.Layer);
+            return foundStart && foundGoal;
         }
 
         // Greedy string pulling: keep a corner only when the anchor can't see the point after it.

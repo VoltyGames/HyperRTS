@@ -28,15 +28,10 @@ namespace HyperRTS.Simulation.Tests
             input.ViewProjection = float4x4.identity;
             input.ScreenSize = Screen;
 
-            var em = _world.EntityManager;
-            if (!em.CreateEntityQuery(typeof(SelectionInput)).TryGetSingletonEntity<SelectionInput>(out var singleton))
-            {
-                singleton = em.CreateEntity(typeof(SelectionInput));
-            }
-
-            em.SetComponentData(singleton, input);
+            var singleton = _world.EntityManager.CreateEntityQuery(typeof(SelectionInput));
+            singleton.SetSingleton(input);
             _world.Tick();
-            em.SetComponentData(singleton, new SelectionInput());
+            singleton.SetSingleton(new SelectionInput());
         }
 
         private void DragAll(bool subtract = false) => Send(new SelectionInput

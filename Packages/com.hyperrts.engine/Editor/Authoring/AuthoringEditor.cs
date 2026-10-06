@@ -1,12 +1,15 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Validation;
+using HyperRTS.Simulation.Common;
 using UnityEditor;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Authoring
 {
-    /// <summary>Default inspector plus the component's validation warnings; base of the HyperRTS inspectors.</summary>
-    public abstract class AuthoringEditor : UnityEditor.Editor
+    /// <summary>Default inspector plus validation warnings, for every authoring component (engine or game).</summary>
+    [CustomEditor(typeof(AuthoringBehaviour), true)]
+    [CanEditMultipleObjects]
+    public class AuthoringEditor : UnityEditor.Editor
     {
         private List<ValidationIssue> _issues = new();
 

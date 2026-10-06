@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Resources
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
-    public class HarvesterAuthoring : MonoBehaviour
+    public class HarvesterAuthoring : AuthoringBehaviour
     {
         [Tooltip("Cargo carried per trip.")]
         [Min(1)]

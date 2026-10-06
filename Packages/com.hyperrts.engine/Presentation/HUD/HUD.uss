@@ -90,6 +90,14 @@
     padding: 0;
 }
 
+.hud-resource__amount--full {
+    color: rgb(255, 102, 89);
+}
+
+.hud-resource__amount--low-power {
+    color: rgb(255, 184, 56);
+}
+
 /* Bottom row */
 
 .hud-bottom {

@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
@@ -56,7 +56,7 @@ namespace HyperRTS.Simulation.Audio
             state.CompleteDependency();
             _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
             var listed = SystemAPI.GetBuffer<PlayerCommandSubject>(player);
-            foreach (var unit in CommandSubjects.Collect(command, listed, _selected))
+            foreach (var unit in PlayerCommands.Collect(command, listed, _selected))
             {
                 if (TryAnswer(ref state, unit, slot, faction))
                 {

@@ -39,28 +39,18 @@ namespace HyperRTS.Presentation.Audio
         }
 
         /// <summary>Where the view ray meets the ground; the ground below the camera when it doesn't.</summary>
-        private float3 Focus(Transform eye, float range)
-        {
-            var terrain = MatchTerrain();
-            float3 position = eye.position;
-            if (terrain.Raycast(position, eye.forward, range, out var ground))
-            {
-                return ground;
-            }
-
-            return new float3(position.x, terrain.Height(position.xz), position.z);
-        }
+        private float3 Focus(Transform eye, float range) =>
+            ViewGround.Focus(MatchTerrain(), eye.position, eye.forward, range);
 
         /// <summary>The match's baked terrain; the default (flat y = 0) before a world or terrain exists.</summary>
         private TerrainHeight MatchTerrain()
         {
-            var world = World.DefaultGameObjectInjectionWorld;
-            if (world == null || !world.IsCreated)
+            if (!DefaultWorld.TryGetEntityManager(out var entityManager))
             {
                 return default;
             }
 
-            _terrain.In(world.EntityManager).TryGetSingleton(out TerrainHeight terrain);
+            _terrain.In(entityManager).TryGetSingleton(out TerrainHeight terrain);
             return terrain;
         }
     }

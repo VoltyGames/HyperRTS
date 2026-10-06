@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Authoring
         {
             get
             {
-                if (_stale || _match == null)
+                if (_stale)
                 {
                     _match = Object.FindAnyObjectByType<MatchAuthoring>();
                     _stale = false;

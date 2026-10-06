@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -14,7 +15,7 @@ namespace HyperRTS.Simulation.Navigation
     [Icon(HyperRTSIcons.Navigation)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
-    public class TerrainHeightAuthoring : MonoBehaviour
+    public class TerrainHeightAuthoring : AuthoringBehaviour
     {
         /// <summary>Finer samples than this cost memory without helping unit-scale movement.</summary>
         private const float MinSpacing = 1f;
@@ -41,7 +42,8 @@ namespace HyperRTS.Simulation.Navigation
                 DependsOn(data);
                 var height = Sample(data, GetComponent<Transform>().position);
                 AddBlobAsset(ref height.Blob, out _);
-                AddComponent(GetEntity(TransformUsageFlags.None), height);
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.None));
+                NavSetup.AddTerrain(ref sink, height);
             }
 
             private static TerrainHeight Sample(TerrainData data, Vector3 origin)

@@ -1,5 +1,5 @@
-using HyperRTS.Simulation.Interaction;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Collections;

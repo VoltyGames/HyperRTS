@@ -1,5 +1,4 @@
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using NUnit.Framework;
 using Unity.Entities;

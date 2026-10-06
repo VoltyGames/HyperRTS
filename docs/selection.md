@@ -27,7 +27,7 @@ Because input is plain data, selection is tested by injecting `SelectionInput` d
 | `Selected` | Enableable: membership is the enabled bit, so selecting causes no structural change |
 | `EntityInfo.TypeId` | Double-click selects every on-screen entity with the clicked entity's type |
 | `ControlGroup` | Bit mask of control groups, added on first assignment |
-| `SelectionDragState` | Marquee rectangle for the drag-box UI |
+| `SelectionDragState` | Marquee rectangle for the drag-box UI (client UI state, in [`Simulation/Interaction/`](../Packages/com.hyperrts.engine/Simulation/Interaction/)) |
 
 `SelectionSystem` toggles `Selected` with `EnabledRefRW` over a `WithPresent<Selected>` query. Click-picking uses a
 Unity Physics raycast against the baked colliders, so selectable prefabs need a collider.

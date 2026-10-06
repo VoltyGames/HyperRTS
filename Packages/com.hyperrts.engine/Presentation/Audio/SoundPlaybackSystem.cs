@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
@@ -37,6 +36,7 @@ namespace HyperRTS.Presentation.Audio
                 .WithOptions(EntityQueryOptions.IncludePrefab).Build();
             _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
             RequireForUpdate<SoundQueue>();
+            RequireForUpdate<PrefabRegistry>();
         }
 
         // The sources are DontSave, so they outlive scene reloads and must go with the world.
@@ -163,31 +163,42 @@ namespace HyperRTS.Presentation.Audio
                 _missing.Clear();
             }
 
-            if (_missing.Contains(typeId))
+            var source = _missing.Contains(typeId) ? Entity.Null : SourceOf(typeId);
+            if (source == Entity.Null)
             {
+                _missing.Add(typeId);
                 return false;
+            }
+
+            cues = new List<(SoundSlot, SoundCue)>();
+            foreach (var sound in EntityManager.GetBuffer<EntitySound>(source, true))
+            {
+                cues.Add((sound.Slot, sound.Cue.Value));
+            }
+
+            _cues[typeId] = cues;
+            return true;
+        }
+
+        /// <summary>The type's prefab, else any instance: a SubScene-placed entity may have no prefab loaded.</summary>
+        private Entity SourceOf(int typeId)
+        {
+            var prefab = SystemAPI.GetSingleton<PrefabRegistry>().Find(typeId);
+            if (EntityManager.HasBuffer<EntitySound>(prefab))
+            {
+                return prefab;
             }
 
             using var entities = _typed.ToEntityArray(Allocator.Temp);
             foreach (var entity in entities)
             {
-                if (EntityManager.GetComponentData<EntityInfo>(entity).TypeId != typeId)
+                if (EntityManager.GetComponentData<EntityInfo>(entity).TypeId == typeId)
                 {
-                    continue;
+                    return entity;
                 }
-
-                cues = new List<(SoundSlot, SoundCue)>();
-                foreach (var sound in EntityManager.GetBuffer<EntitySound>(entity, true))
-                {
-                    cues.Add((sound.Slot, sound.Cue.Value));
-                }
-
-                _cues[typeId] = cues;
-                return true;
             }
 
-            _missing.Add(typeId);
-            return false;
+            return Entity.Null;
         }
 
         private AudioSource[] Sources()

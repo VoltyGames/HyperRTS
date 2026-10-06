@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Common;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,7 +11,7 @@ namespace HyperRTS.Editor.Validation
         private List<ValidationIssue> _issues = new();
         private Vector2 _scroll;
 
-        [MenuItem("HyperRTS/Validate", false, 20)]
+        [MenuItem(EditorMenu.Validate, false, EditorMenu.ValidatePriority)]
         public static void Open() => GetWindow<ValidatorWindow>("HyperRTS Validator").Refresh();
 
         private void Refresh()

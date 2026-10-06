@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

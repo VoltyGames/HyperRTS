@@ -2,7 +2,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Entities;
@@ -23,25 +22,18 @@ namespace HyperRTS.Input.Commands
 
         protected override void OnCreate()
         {
-            _actions = new RTSInputActions();
+            _actions = InputActionsProvider.Actions;
             _pointer = new WorldPointer(ref CheckedStateRef);
-
-            SingletonUtility.Ensure<PendingCommand>(EntityManager);
-            SingletonUtility.Ensure<PlacementState>(EntityManager);
-            SingletonUtility.Ensure<PointerState>(EntityManager);
+            RequireForUpdate<PendingCommand>();
+            RequireForUpdate<PlacementState>();
+            RequireForUpdate<PointerState>();
             RequireForUpdate<LocalPlayer>();
         }
 
         // Not in OnCreate: without domain reload the Input System wipes action states after the world is created.
-        protected override void OnStartRunning() => _actions.Commands.Enable();
+        protected override void OnStartRunning() => InputActionsProvider.Enable(_actions.Commands);
 
-        protected override void OnStopRunning() => _actions.Commands.Disable();
-
-        protected override void OnDestroy()
-        {
-            _actions?.Dispose();
-            _actions = null;
-        }
+        protected override void OnStopRunning() => InputActionsProvider.Disable(_actions.Commands);
 
         protected override void OnUpdate()
         {

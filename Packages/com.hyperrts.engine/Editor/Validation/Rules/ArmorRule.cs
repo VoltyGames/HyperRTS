@@ -7,10 +7,8 @@ namespace HyperRTS.Editor.Validation.Rules
     {
         protected override void Check(ArmorAuthoring armor, ValidationIssues issues)
         {
-            if (armor.modifiers.Exists(entry => entry.damageType == null))
-            {
-                issues.Warn(armor, "An armor entry has no damage type and will be ignored.");
-            }
+            CheckEmptyEntries(armor, armor.modifiers, entry => entry.damageType == null,
+                "An armor entry has no damage type and will be ignored.", issues);
         }
     }
 }

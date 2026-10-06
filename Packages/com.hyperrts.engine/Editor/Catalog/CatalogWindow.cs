@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Authoring;
+using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Units;
 using UnityEditor;
 using UnityEngine;
@@ -35,7 +36,7 @@ namespace HyperRTS.Editor.Catalog
         private string _filter = "";
         private Vector2 _scroll;
 
-        [MenuItem("HyperRTS/Catalog", false, 21)]
+        [MenuItem(EditorMenu.Catalog, false, EditorMenu.CatalogPriority)]
         public static void Open() => GetWindow<CatalogWindow>("HyperRTS Catalog");
 
         // The prefab scan is a full project walk, so reload on the next draw instead of on every asset change.
@@ -67,8 +68,7 @@ namespace HyperRTS.Editor.Catalog
                 _filter = EditorGUILayout.TextField(_filter, EditorStyles.toolbarSearchField, GUILayout.Width(200));
             }
 
-            var visible = _prefabs.Where(prefab => prefab != null &&
-                prefab.DisplayName.IndexOf(_filter, System.StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+            var visible = _prefabs.Where(MatchesFilter).ToList();
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
             if (_tab == 0)
@@ -87,6 +87,16 @@ namespace HyperRTS.Editor.Catalog
             }
 
             EditorGUILayout.EndScrollView();
+        }
+
+        private bool MatchesFilter(GameEntityAuthoring prefab)
+        {
+            if (prefab == null)
+            {
+                return false;
+            }
+
+            return prefab.DisplayName.IndexOf(_filter, System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void DrawStats(List<GameEntityAuthoring> prefabs)

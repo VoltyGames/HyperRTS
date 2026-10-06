@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.AI

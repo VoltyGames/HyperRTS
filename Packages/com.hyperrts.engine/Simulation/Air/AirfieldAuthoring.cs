@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Air
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
-    public class AirfieldAuthoring : MonoBehaviour
+    public class AirfieldAuthoring : AuthoringBehaviour
     {
         [Tooltip("Pad positions relative to the building; each holds one aircraft.")]
         public Vector3[] padOffsets =

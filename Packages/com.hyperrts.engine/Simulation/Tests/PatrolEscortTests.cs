@@ -45,6 +45,35 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void QueuedPatrol_LoopsBetweenTheEndOfTheQueueAndTheNewPoint()
+        {
+            var unit = _world.SpawnUnit(1, float3.zero);
+            _world.MoveTo(unit, new float3(10f, 0f, 0f));
+            _world.Command(1, new PlayerCommand
+            {
+                Type = CommandType.Patrol, Unit = unit, Position = new float3(10f, 0f, 10f), Queue = true,
+            });
+
+            var legs = 0;
+            var goingOut = true;
+            for (var t = 0f; t < 14f; t += TestWorld.FrameTime)
+            {
+                _world.Tick();
+                var position = _world.PositionOf(unit);
+                var atPatrolPoint = position.z > 9.5f;
+                var atMoveEnd = position.z < 0.5f && position.x > 9.5f;
+                if (goingOut ? atPatrolPoint : atMoveEnd)
+                {
+                    legs++;
+                    goingOut = !goingOut;
+                }
+            }
+
+            Assert.GreaterOrEqual(legs, 3, "out, back to the move's end and out again");
+            Assert.AreEqual(OrderType.Patrol, _world.Get<ActiveOrder>(unit).Value.Type, "still patrolling");
+        }
+
+        [Test]
         public void Patrol_EngagesEnemiesOnTheWay()
         {
             var unit = _world.Arm(_world.SpawnUnit(1, float3.zero), range: 3f);

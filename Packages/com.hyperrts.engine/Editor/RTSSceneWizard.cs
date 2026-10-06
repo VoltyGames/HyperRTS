@@ -1,6 +1,8 @@
 using System.IO;
 using HyperRTS.Core;
+using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
 using Unity.NetCode;
 using Unity.Scenes;
@@ -11,7 +13,7 @@ using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Editor
 {
-    /// <summary>HyperRTS ▸ Create RTS Scene: a playable scene (rig, ground, SubScene with Match and bases) and docs links.</summary>
+    /// <summary>HyperRTS ▸ Create RTS Scene: a playable scene (rig, ground, SubScene with Match and bases).</summary>
     public class RTSSceneWizard : ScriptableWizard
     {
         [Tooltip("Playable area (X by Z); the ground is sized to match.")]
@@ -24,14 +26,8 @@ namespace HyperRTS.Editor
         [Tooltip("Optional building prefab placed for every player around the map (a command centre).")]
         public GameEntityAuthoring startingBase;
 
-        [MenuItem("HyperRTS/Create RTS Scene...", false, 0)]
+        [MenuItem(EditorMenu.CreateScene, false, EditorMenu.CreateScenePriority)]
         private static void Open() => DisplayWizard<RTSSceneWizard>("Create RTS Scene", "Create");
-
-        [MenuItem("HyperRTS/Documentation/Getting Started", false, 100)]
-        private static void OpenGettingStarted() => Help.BrowseURL(HyperRTSDocs.GettingStarted);
-
-        [MenuItem("HyperRTS/Documentation/Module Reference", false, 101)]
-        private static void OpenModules() => Help.BrowseURL(HyperRTSDocs.Modules);
 
         private void OnWizardCreate()
         {
@@ -90,11 +86,11 @@ namespace HyperRTS.Editor
             match.players.Clear();
             for (var i = 0; i < players; i++)
             {
-                match.players.Add(new PlayerSetup
+                match.players.Add(new PlayerSlot
                 {
                     name = i == 0 ? "Player" : $"AI {i}",
                     team = i + 1,
-                    color = PlayerSetup.Palette[i % PlayerSetup.Palette.Length],
+                    color = PlayerSlot.Palette[i % PlayerSlot.Palette.Length],
                     control = i == 0 ? PlayerControl.LocalHuman : PlayerControl.AI,
                 });
             }

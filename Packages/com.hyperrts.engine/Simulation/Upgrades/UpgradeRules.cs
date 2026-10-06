@@ -1,5 +1,5 @@
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Production;
 using Unity.Collections;
 using Unity.Entities;
 

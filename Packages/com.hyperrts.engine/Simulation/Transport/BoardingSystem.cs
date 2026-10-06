@@ -1,11 +1,9 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -91,7 +89,8 @@ namespace HyperRTS.Simulation.Transport
                 EnabledRefRW<ActiveOrder> busy, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
                 in NavAgent agent)
             {
-                if (!busy.ValueRO || order.Value.Type != OrderType.Enter || Boarding.IsInside(entity))
+                var entering = busy.ValueRO && order.Value.Type == OrderType.Enter;
+                if (!entering || Boarding.IsInside(entity))
                 {
                     return;
                 }
@@ -99,21 +98,19 @@ namespace HyperRTS.Simulation.Transport
                 var container = order.Value.Target;
                 if (!Boarding.CanBoard(entity, container, Relations))
                 {
-                    busy.ValueRW = false;
-                    moving.ValueRW = false;
+                    ActiveOrder.Finish(busy, moving);
                     return;
                 }
 
                 var position = TransformLookup[container].Position;
-                if (!ReachMath.InReach(TransformLookup[entity].Position, agent.Radius, position,
-                        ReachMath.HalfExtents(ObstacleLookup, container)))
+                var extents = ReachMath.HalfExtents(ObstacleLookup, container);
+                if (!ReachMath.Approach(ref destination, moving, TransformLookup[entity].Position, agent.Radius, position,
+                        extents))
                 {
-                    ReachMath.MoveTo(ref destination, moving, position);
                     return;
                 }
 
-                busy.ValueRW = false;
-                moving.ValueRW = false;
+                ActiveOrder.Finish(busy, moving);
                 Boarding.Board(entity, container, Settle(entity, container));
                 QueueLookup[entity].Clear();
             }

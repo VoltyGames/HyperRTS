@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Commands;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;

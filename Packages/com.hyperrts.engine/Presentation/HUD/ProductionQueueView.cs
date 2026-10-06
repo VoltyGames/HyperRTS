@@ -1,6 +1,5 @@
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using Unity.Entities;
 using UnityEngine.UIElements;
 
@@ -22,8 +21,10 @@ namespace HyperRTS.Presentation.HUD
         public void Refresh(HUDContext context, Entity producer)
         {
             var entityManager = context.EntityManager;
-            var visible = context.IsOwned(producer) && entityManager.HasBuffer<ProductionQueueItem>(producer)
-                && entityManager.GetBuffer<ProductionQueueItem>(producer, true).Length > 0;
+            var queued = entityManager.HasBuffer<ProductionQueueItem>(producer)
+                ? entityManager.GetBuffer<ProductionQueueItem>(producer, true).Length
+                : 0;
+            var visible = queued > 0 && context.IsOwned(producer);
             Root.SetVisible(visible);
             if (!visible)
             {

@@ -27,6 +27,8 @@ Defined in [`SystemGroups.cs`](../Packages/com.hyperrts.engine/Core/SystemGroups
 never in `SimulationSystemGroup` directly.
 
 ```text
+InitializationSystemGroup
+ └─ PrefabRegistrySystem                               — TypeId → prefab map, rebuilt when prefabs load
 SimulationSystemGroup
  ├─ OrderSystemGroup
  │   ├─ (first) SelectionInputSystem → SelectionSystem → CommandInputSystem → PlacementInputSystem,
@@ -50,6 +52,8 @@ SimulationSystemGroup
  │   └─ ConstructionSystem, GatherSystem → ResourceNodeSystem, ProductionSystem
  └─ LifecycleSystemGroup
      ├─ DeathSystem → VictorySystem
+     ├─ (last) MaxHealthStatSystem, WeaponStatSystem, MoveSpeedStatSystem, VisionStatSystem,
+     │         BuildRateStatSystem, ProductionSpeedStatSystem — re-apply stats whose modifiers changed
      └─ (last) ReplayRecorderSystem                    — samples the frame while recording
 PresentationSystemGroup
  └─ TeamColorSystem, FogVisibilitySystem               (+ HUD/overlay MonoBehaviours reading ECS)

@@ -136,6 +136,22 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(_world.World.GetExistingSystemManaged<CombatSystemGroup>().Enabled);
         }
 
+        [Test]
+        public void Stop_LeavesGameplayAsItWasBeforePlayback()
+        {
+            var replay = ReplayTests.Record(out _);
+            var combat = _world.World.GetExistingSystemManaged<CombatSystemGroup>();
+            ReplayViewer.Stop(_world.World);
+            combat.Enabled = false;
+
+            ReplayViewer.Begin(_world.World, replay);
+            Assert.IsFalse(_world.World.GetExistingSystemManaged<OrderSystemGroup>().Enabled, "paused for playback");
+            ReplayViewer.Stop(_world.World);
+
+            Assert.IsTrue(_world.World.GetExistingSystemManaged<OrderSystemGroup>().Enabled);
+            Assert.IsFalse(combat.Enabled, "a phase paused before playback stays paused");
+        }
+
         private float3 FirstPosition(string name)
         {
             var typeId = EntityInfo.TypeIdFromName(name);

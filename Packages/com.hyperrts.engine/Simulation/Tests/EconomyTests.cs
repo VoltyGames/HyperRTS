@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using NUnit.Framework;
@@ -31,7 +32,8 @@ namespace HyperRTS.Simulation.Tests
         private Entity SpawnDropOff(float3 position)
         {
             var building = _world.SpawnBuilding(1, position, new float2(4f, 4f));
-            _world.EntityManager.AddComponent<ResourceDropOff>(building);
+            var sink = new EntityManagerSink(_world.EntityManager, building);
+            ResourceDropOffSetup.Add(ref sink);
             return building;
         }
 

@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Transport;
 using Unity.Entities;
 using UnityEngine.UIElements;
@@ -15,7 +16,7 @@ namespace HyperRTS.Presentation.HUD
     /// Actions for the owned part of the selection: build, train and research, abilities and support powers, stance,
     /// return to base, unload and sell.
     /// </summary>
-    public sealed class CommandCard
+    public sealed class CommandCard : HUDPanel
     {
         private const string ActiveClass = "hud-command--active";
         private static readonly Stance[] Stances = (Stance[])Enum.GetValues(typeof(Stance));
@@ -30,15 +31,11 @@ namespace HyperRTS.Presentation.HUD
         private bool _canReturn;
         private int _hash = -1;
 
-        public CommandCard()
+        public CommandCard() : base("hud-commands")
         {
-            Root = HUDElements.Box("hud-commands");
-            Root.AddToClassList("hud-panel");
         }
 
-        public VisualElement Root { get; }
-
-        public void Refresh(HUDContext context)
+        public override void Refresh(HUDContext context)
         {
             if (context.SelectionHash != _hash)
             {
@@ -106,22 +103,7 @@ namespace HyperRTS.Presentation.HUD
                     continue;
                 }
 
-                if (entityManager.HasBuffer<BuildOption>(entity))
-                {
-                    foreach (var option in entityManager.GetBuffer<BuildOption>(entity, true))
-                    {
-                        AddDistinct(builds, option.Prefab);
-                    }
-                }
-
-                if (entityManager.HasBuffer<ProductionOption>(entity))
-                {
-                    foreach (var option in entityManager.GetBuffer<ProductionOption>(entity, true))
-                    {
-                        AddDistinct(products, option.Prefab);
-                    }
-                }
-
+                CollectPrefabs(entityManager, entity, builds, products);
                 if (entityManager.HasComponent<CombatStance>(entity))
                 {
                     _armed.Add(entity);
@@ -135,6 +117,26 @@ namespace HyperRTS.Presentation.HUD
                 _canSell |= entityManager.HasComponent<BuildingTag>(entity);
                 _canUnload |= entityManager.HasComponent<Container>(entity);
                 _canReturn |= entityManager.HasComponent<PadHome>(entity);
+            }
+        }
+
+        private static void CollectPrefabs(EntityManager entityManager, Entity entity, List<Entity> builds,
+            List<Entity> products)
+        {
+            if (entityManager.HasBuffer<BuildOption>(entity))
+            {
+                foreach (var option in entityManager.GetBuffer<BuildOption>(entity, true))
+                {
+                    AddDistinct(builds, option.Prefab);
+                }
+            }
+
+            if (entityManager.HasBuffer<ProductionOption>(entity))
+            {
+                foreach (var option in entityManager.GetBuffer<ProductionOption>(entity, true))
+                {
+                    AddDistinct(products, option.Prefab);
+                }
             }
         }
 

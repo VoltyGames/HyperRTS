@@ -2,7 +2,6 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Stats;
 using NUnit.Framework;
-using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
@@ -76,7 +75,8 @@ namespace HyperRTS.Simulation.Tests
         public void DirectionalArmor_ScalesByHitSide(float x, float y, float z, float multiplier)
         {
             var tank = _world.SpawnUnit(2, float3.zero);
-            _world.EntityManager.AddComponentData(tank, new ArmorFacing { Front = 0.5f, Side = 1f, Rear = 2f });
+            var sink = new EntityManagerSink(_world.EntityManager, tank);
+            ArmorSetup.AddFacing(ref sink, new ArmorFacing { Front = 0.5f, Side = 1f, Rear = 2f });
 
             Queue(new DamageEvent { Target = tank, Origin = new float3(x, y, z), SourceFaction = 1, Amount = 20f });
             _world.Tick();
@@ -89,8 +89,9 @@ namespace HyperRTS.Simulation.Tests
         {
             var shooter = _world.SpawnUnit(1, new float3(-5f, 0f, 0f));
             var target = _world.SpawnUnit(2, float3.zero);
+            var source = new StatSource(StatSourceKind.Custom, 99);
             _world.EntityManager.GetBuffer<StatModifier>(target)
-                .Add(new StatModifier { Stat = Stat.DamageTaken, Percent = -0.25f, Source = 99 });
+                .Add(new StatModifier { Stat = Stat.DamageTaken, Percent = -0.25f, Source = source });
 
             Queue(new DamageEvent { Target = target, Source = shooter, SourceFaction = 1, Amount = 40f });
             _world.Tick();

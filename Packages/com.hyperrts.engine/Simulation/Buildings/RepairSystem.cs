@@ -1,14 +1,12 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Production;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Buildings
@@ -21,6 +19,9 @@ namespace HyperRTS.Simulation.Buildings
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct RepairSystem : ISystem
     {
+        /// <summary>Floor on the full-repair time, so instant-build and unproduced structures don't heal in a frame.</summary>
+        private const float MinRepairTime = 1f;
+
         private DamageWriter _damage;
         private ComponentLookup<Health> _healthLookup;
         private ComponentLookup<Producible> _producibleLookup;
@@ -94,32 +95,39 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 var target = order.Value.Target;
-                if (!RepairRules.NeedsRepair(HealthLookup, SiteLookup, FactionLookup, Relations, target, faction.Value) ||
-                    !TransformLookup.HasComponent(target))
+                if (!CanRepair(target, faction.Value))
                 {
-                    busy.ValueRW = false;
-                    moving.ValueRW = false;
+                    ActiveOrder.Finish(busy, moving);
                     return;
                 }
 
                 var position = TransformLookup[target].Position;
-                if (!ReachMath.InReach(transform.Position, agent.Radius, position, ReachMath.HalfExtents(ObstacleLookup, target)))
+                var extents = ReachMath.HalfExtents(ObstacleLookup, target);
+                if (!ReachMath.Approach(ref destination, moving, transform.Position, agent.Radius, position, extents))
                 {
-                    ReachMath.MoveTo(ref destination, moving, position);
                     return;
                 }
 
-                moving.ValueRW = false;
-                var maxHealth = HealthLookup[target].Max;
-                var buildTime = ProducibleLookup.TryGetComponent(target, out var producible) ? producible.BuildTime : 0f;
+                var buildTime = Producible.BuildTimeOf(ProducibleLookup, target, MinRepairTime);
+                var perSecond = builder.Rate * HealthLookup[target].Max / buildTime;
                 Damage.Add(new DamageEvent
                 {
                     Target = target,
                     Position = position,
                     Source = entity,
                     SourceFaction = faction.Value,
-                    Amount = -DeltaTime * builder.Rate * maxHealth / math.max(buildTime, 1f),
+                    Amount = -DeltaTime * perSecond,
                 });
+            }
+
+            private bool CanRepair(Entity target, byte faction)
+            {
+                if (!TransformLookup.HasComponent(target))
+                {
+                    return false;
+                }
+
+                return BuildingRules.NeedsRepair(HealthLookup, SiteLookup, FactionLookup, Relations, target, faction);
             }
         }
     }

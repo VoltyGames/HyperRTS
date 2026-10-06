@@ -1,6 +1,6 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -11,11 +11,10 @@ namespace HyperRTS.Simulation.Vision
     /// <summary>
     /// Turns <see cref="Stealth"/> into <see cref="Stealthed"/>: hidden while stealth is enabled, unless the entity
     /// fired within its reveal time or, for still-only stealth, is moving. Firing restarts the timer in
-    /// <see cref="WeaponFireSystem"/>.
+    /// <c>WeaponFireSystem</c>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
-    [UpdateAfter(typeof(WeaponFireSystem))]
     public partial struct StealthSystem : ISystem
     {
         private ComponentLookup<MoveDestination> _moves;
@@ -53,7 +52,7 @@ namespace HyperRTS.Simulation.Vision
                 }
             }
 
-            private bool IsMoving(Entity entity) => Moves.HasComponent(entity) && Moves.IsComponentEnabled(entity);
+            private bool IsMoving(Entity entity) => Moves.HasEnabled(entity);
         }
     }
 }

@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -13,7 +14,7 @@ namespace HyperRTS.Simulation.Navigation
     [Icon(HyperRTSIcons.Navigation)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
-    public class NavObstacleAuthoring : MonoBehaviour
+    public class NavObstacleAuthoring : AuthoringBehaviour
     {
         [Tooltip("Blocked area (X by Z) centred on this transform.")]
         public Vector2 size = new(2f, 2f);
@@ -22,8 +23,8 @@ namespace HyperRTS.Simulation.Navigation
         {
             public override void Bake(NavObstacleAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new NavObstacle { Size = authoring.size });
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
+                NavSetup.AddObstacle(ref sink, authoring.size);
             }
         }
     }

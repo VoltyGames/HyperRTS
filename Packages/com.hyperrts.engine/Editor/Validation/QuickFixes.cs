@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Common;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -30,9 +31,11 @@ namespace HyperRTS.Editor.Validation
             collider.size = new Vector3(bounds.size.x / scale.x, bounds.size.y / scale.y, bounds.size.z / scale.z);
         }
 
+        public static Component AddComponent(GameObject go, Type type) => Undo.AddComponent(go, type);
+
         /// <summary>Swaps a scene instance in an option list for the prefab asset it came from.</summary>
         public static void UsePrefab<T>(Object owner, List<T> options, T instance) where T : Object =>
-            Edit(owner, "Use Prefab", () =>
+            EditorUndo.Record(owner, "Use Prefab", () =>
             {
                 var index = options.IndexOf(instance);
                 var source = PrefabUtility.GetCorrespondingObjectFromSource(instance);
@@ -43,15 +46,6 @@ namespace HyperRTS.Editor.Validation
             });
 
         public static void RemoveEmpty<T>(Object owner, List<T> list, Predicate<T> isEmpty) =>
-            Edit(owner, "Remove Empty Entries", () => list.RemoveAll(isEmpty));
-
-        /// <summary>Records an undoable change, keeping prefab-instance overrides.</summary>
-        public static void Edit(Object target, string label, Action change)
-        {
-            Undo.RecordObject(target, label);
-            change();
-            EditorUtility.SetDirty(target);
-            PrefabUtility.RecordPrefabInstancePropertyModifications(target);
-        }
+            EditorUndo.Record(owner, "Remove Empty Entries", () => list.RemoveAll(isEmpty));
     }
 }

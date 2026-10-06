@@ -1,5 +1,5 @@
 using HyperRTS.Network.Players;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
@@ -57,7 +57,7 @@ namespace HyperRTS.Network.Relevancy
                          .Query<RefRO<LocalTransform>, RefRO<Faction>, RefRO<GhostInstance>>().WithEntityAccess())
             {
                 // With fog off only stealth hides anything.
-                var stealthed = Stealthed.Of(cloaks, entity);
+                var stealthed = cloaks.HasEnabled(entity);
                 if (!fogOn && !stealthed)
                 {
                     continue;

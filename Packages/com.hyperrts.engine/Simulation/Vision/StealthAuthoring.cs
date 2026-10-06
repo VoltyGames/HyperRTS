@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace HyperRTS.Simulation.Vision
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class StealthAuthoring : MonoBehaviour
+    public class StealthAuthoring : AuthoringBehaviour
     {
         [Tooltip("Stealthed from the start. Off for stealth a game grants later (upgrade, ability, field).")]
         public bool startEnabled = true;

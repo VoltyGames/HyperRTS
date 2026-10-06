@@ -37,6 +37,9 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ `TestWorld` fixture running every simulation system in an isolated world
 - ✅ Unified authoring: `UnitAuthoring` / `BuildingAuthoring` on a shared `GameEntityAuthoring` base; bakers and
   tests share `*Setup` helpers through `IComponentSink` (replaced the granular authoring components and factories)
+- ✅ Every authoring component (engine or game) derives from `AuthoringBehaviour`, so inspectors and validation find it
+- ✅ Simulation modules layered on a base `Common` module; `ModuleLayoutTests` checks namespaces match folders and
+  allowlists the remaining two-way module pairs
 
 ## Phase 1: Selection & input ✅
 
@@ -128,7 +131,7 @@ Generic mechanisms a modern-warfare RTS needs, all data-driven and server-side s
 - ✅ **Decision:** one damage queue (`DamageEvent` + `DamageSystem`) for weapons, projectiles, abilities and fields,
   so armor, splash, facing and kill credit apply everywhere
 - ✅ **Decision:** one stat-modifier buffer (`StatModifier`, `(base + add) × (1 + Σpercent)`) shared by upgrades,
-  veterancy and area fields; sources are removable ids
+  veterancy and area fields; sources are removable `StatSource`s (kind + id), and each module applies its own stats
 - ✅ Splash with falloff and optional friendly fire; directional armor (front/side/rear); `LastAttacker` kill credit
 - ✅ Veterancy ranks with stat bonuses, paid by `experienceValue`
 - ✅ Upgrades researched through the production queue, applied to current and future units, swapped on capture

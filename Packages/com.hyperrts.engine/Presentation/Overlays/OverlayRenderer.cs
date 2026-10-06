@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Rendering;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Overlays
@@ -19,7 +20,6 @@ namespace HyperRTS.Presentation.Overlays
         [Tooltip("Overlay colours and sizes.")]
         private OverlayStyle style = new();
 
-        private readonly MatchView _view = new();
         private Material _front;
         private Mesh[] _meshes;
         private UnitOverlays _units;
@@ -39,7 +39,7 @@ namespace HyperRTS.Presentation.Overlays
         private void LateUpdate()
         {
             var camera = Camera.main;
-            if (material == null || camera == null || !_view.Refresh())
+            if (material == null || camera == null || !MatchView.TryGetDefault(out var view))
             {
                 return;
             }
@@ -50,8 +50,8 @@ namespace HyperRTS.Presentation.Overlays
                 _front = new Material(material) { renderQueue = material.renderQueue + 1, hideFlags = HideFlags.DontSave };
             }
 
-            _units.Gather(_view, style, camera.transform);
-            _commands.Gather(_view, style);
+            _units.Gather(view, style, camera.transform);
+            _commands.Gather(view, style);
             _units.Draw(material, _front, style, gameObject.layer);
             _commands.Draw(material, style, gameObject.layer);
         }

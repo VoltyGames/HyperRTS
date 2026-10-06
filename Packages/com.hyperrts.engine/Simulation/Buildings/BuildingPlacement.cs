@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Interaction;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Buildings

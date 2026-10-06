@@ -1,7 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Audio;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
@@ -21,6 +20,7 @@ namespace HyperRTS.Simulation.Combat
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
     [UpdateAfter(typeof(EngagementSystem))]
+    [UpdateBefore(typeof(StealthSystem))]
     public partial struct WeaponFireSystem : ISystem
     {
         private ComponentLookup<LocalTransform> _transforms;
@@ -64,7 +64,7 @@ namespace HyperRTS.Simulation.Combat
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Transforms = _transforms,
-                Health = _health,
+                HealthLookup = _health,
                 Units = _units,
                 Stealth = _stealth,
                 Ammo = _ammo,
@@ -81,7 +81,7 @@ namespace HyperRTS.Simulation.Combat
             public float DeltaTime;
             public EntityCommandBuffer Ecb;
             public ComponentLookup<LocalTransform> Transforms;
-            [ReadOnly] public ComponentLookup<Health> Health;
+            [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<UnitTag> Units;
             public ComponentLookup<Stealth> Stealth;
             public ComponentLookup<Ammo> Ammo;
@@ -94,8 +94,8 @@ namespace HyperRTS.Simulation.Combat
                 weapon.CooldownRemaining = math.max(0f, weapon.CooldownRemaining - DeltaTime);
 
                 var target = attack.Value;
-                if (!attacking.ValueRO || !attack.InRange ||
-                    !Health.TryGetComponent(target, out var health) || health.Current <= 0f)
+                var engaged = attacking.ValueRO && attack.InRange;
+                if (!engaged || !Health.IsAlive(HealthLookup, target))
                 {
                     return;
                 }
@@ -167,7 +167,7 @@ namespace HyperRTS.Simulation.Combat
             private void Launch(Entity shooter, in Weapon weapon, Entity target, float3 targetPosition,
                 in Faction faction)
             {
-                var lift = new float3(0f, ProjectileSystem.FlightHeight, 0f);
+                var lift = new float3(0f, weapon.ProjectileHeight, 0f);
                 var origin = Transforms[shooter].Position + lift;
                 var aim = targetPosition + lift;
 
@@ -184,6 +184,7 @@ namespace HyperRTS.Simulation.Combat
                 Ecb.AddComponent(projectile, new Projectile
                 {
                     Speed = weapon.ProjectileSpeed,
+                    Height = weapon.ProjectileHeight,
                     ImpactSoundTypeId = Sounds.TypeIdFor(shooter, SoundSlot.Impact),
                     Hit = CombatMath.Hit(weapon, shooter, faction.Value, origin, target, aim),
                 });

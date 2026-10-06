@@ -1,7 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
@@ -119,8 +118,7 @@ namespace HyperRTS.Simulation.Selection
 
         private Entity Raycast(ref SystemState state, in SelectionInput input)
         {
-            var needsRaycast = input.Command == SelectionCommand.Click ||
-                               input.Command == SelectionCommand.DoubleClick;
+            var needsRaycast = input.Command is SelectionCommand.Click or SelectionCommand.DoubleClick;
             if (!needsRaycast || !SystemAPI.TryGetSingleton<PhysicsWorldSingleton>(out var physicsWorld))
             {
                 return Entity.Null;

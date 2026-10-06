@@ -1,7 +1,7 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
@@ -174,16 +174,10 @@ namespace HyperRTS.Simulation.Combat
 
             private void Chase(Entity entity, float3 targetPosition)
             {
-                if (!Moves.HasComponent(entity))
+                if (Moves.HasComponent(entity))
                 {
-                    return;
-                }
-
-                var current = Moves[entity].Value;
-                if (!Moves.IsComponentEnabled(entity) ||
-                    math.distancesq(current.xz, targetPosition.xz) > RepathDistance * RepathDistance)
-                {
-                    MoveTo(entity, targetPosition);
+                    ReachMath.MoveTo(ref Moves.GetRefRW(entity).ValueRW, Moves.GetEnabledRefRW<MoveDestination>(entity),
+                        targetPosition, RepathDistance);
                 }
             }
 
@@ -195,16 +189,12 @@ namespace HyperRTS.Simulation.Combat
                 }
             }
 
-            private void MoveTo(Entity entity, float3 destination)
-            {
-                Moves[entity] = new MoveDestination { Value = destination };
-                Moves.SetComponentEnabled(entity, true);
-            }
+            private void MoveTo(Entity entity, float3 goal) =>
+                ReachMath.MoveTo(ref Moves.GetRefRW(entity).ValueRW, Moves.GetEnabledRefRW<MoveDestination>(entity), goal);
 
-            private bool IsMoving(Entity entity) => Moves.HasComponent(entity) && Moves.IsComponentEnabled(entity);
+            private bool IsMoving(Entity entity) => Moves.HasEnabled(entity);
 
-            private Order CurrentOrder(Entity entity) =>
-                Orders.HasComponent(entity) && Orders.IsComponentEnabled(entity) ? Orders[entity].Value : default;
+            private Order CurrentOrder(Entity entity) => Orders.HasEnabled(entity) ? Orders[entity].Value : default;
         }
     }
 }

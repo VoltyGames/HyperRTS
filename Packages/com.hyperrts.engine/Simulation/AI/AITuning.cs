@@ -1,5 +1,4 @@
 using System;
-using HyperRTS.Simulation.Match;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.AI
@@ -19,12 +18,22 @@ namespace HyperRTS.Simulation.AI
         [Tooltip("Fire ready unit, building and player abilities.")]
         public bool useAbilities = true;
 
+        [Tooltip("How close an enemy must come before self-targeted abilities (smoke, self-heal) are fired.")]
+        [Min(0f)]
+        public float selfCastRange = 10f;
+
+        [Tooltip("Clear margin (metres) kept around each new building so units don't get boxed in.")]
+        [Min(0f)]
+        public float buildingGap = 2f;
+
         public AIPlayer ToComponent() => new()
         {
             ThinkInterval = thinkInterval,
             TimeUntilThink = thinkInterval,
             AttackWaveSize = attackWaveSize,
             UseAbilities = useAbilities,
+            SelfCastRange = selfCastRange,
+            BuildingGap = buildingGap,
         };
     }
 }

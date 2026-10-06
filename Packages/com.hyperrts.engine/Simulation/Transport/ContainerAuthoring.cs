@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace HyperRTS.Simulation.Transport
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class ContainerAuthoring : MonoBehaviour
+    public class ContainerAuthoring : AuthoringBehaviour
     {
         [Tooltip("Total passenger size that fits.")]
         [Min(1)]

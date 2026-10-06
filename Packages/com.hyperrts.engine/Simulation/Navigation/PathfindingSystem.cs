@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -102,6 +101,12 @@ namespace HyperRTS.Simulation.Navigation
                     return;
                 }
 
+                Request(entity, ref path, waypoints, transform.Position, goal, agent, goalMoved);
+            }
+
+            private void Request(Entity entity, ref PathState path, DynamicBuffer<PathWaypoint> waypoints, float3 start,
+                float3 goal, in NavAgent agent, bool goalMoved)
+            {
                 if (path.Status != PathStatus.Requested)
                 {
                     // Corners toward an old, distant goal would lead the wrong way while the search waits.
@@ -117,7 +122,7 @@ namespace HyperRTS.Simulation.Navigation
                 Requests.AddNoResize(new PathRequest
                 {
                     Entity = entity,
-                    Start = transform.Position,
+                    Start = start,
                     Goal = goal,
                     Radius = agent.Radius,
                     Layer = agent.Layer,

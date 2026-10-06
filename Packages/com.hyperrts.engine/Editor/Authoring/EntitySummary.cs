@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using UnityEditor;
 using UnityEngine;
 
@@ -36,11 +37,10 @@ namespace HyperRTS.Editor.Authoring
             string.Join(", ", entity.cost.Where(quantity => quantity.type != null)
                 .Select(quantity => $"{quantity.amount} {quantity.type.displayName}"));
 
-        // Other HyperRTS components on the object, named as in the Add Component menu.
+        // Other authoring components on the object (engine or game), named as in the Add Component menu.
         private static string Modules(GameEntityAuthoring entity) =>
-            string.Join(", ", entity.GetComponents<MonoBehaviour>()
-                .Where(component => component != entity && component != null &&
-                                    component.GetType().Namespace?.StartsWith("HyperRTS") == true)
+            string.Join(", ", entity.GetComponents<AuthoringBehaviour>()
+                .Where(component => component != entity)
                 .Select(component => ComponentName(component.GetType())));
 
         private static string ComponentName(System.Type type) =>

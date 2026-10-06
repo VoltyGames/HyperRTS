@@ -7,6 +7,9 @@ namespace HyperRTS.Simulation.Combat
     {
         public float Speed;
 
+        /// <summary>Height above the target's pivot that the shot homes on.</summary>
+        public float Height;
+
         /// <summary>Queued on impact; its Position is the aim point, tracked while the target lives.</summary>
         public DamageEvent Hit;
 

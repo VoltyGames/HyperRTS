@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -18,7 +19,7 @@ namespace HyperRTS.Simulation.Abilities
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class AbilityAuthoring : MonoBehaviour
+    public class AbilityAuthoring : AuthoringBehaviour
     {
         [Serializable]
         public class Entry
@@ -74,12 +75,14 @@ namespace HyperRTS.Simulation.Abilities
         {
             public override void Bake(AbilityAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
-                var buffer = AddBuffer<Ability>(entity);
+                var abilities = new List<Ability>();
                 foreach (var entry in authoring.abilities)
                 {
-                    buffer.Add(BakeEntry(entry));
+                    abilities.Add(BakeEntry(entry));
                 }
+
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
+                AbilitySetup.Add(ref sink, abilities);
             }
 
             private Ability BakeEntry(Entry entry)

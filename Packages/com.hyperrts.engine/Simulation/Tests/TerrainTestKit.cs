@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using Unity.Entities;
@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Tests
     /// <summary>Terrain, water and nav layer helpers on top of <see cref="TestWorld"/>.</summary>
     public static class TerrainTestKit
     {
-        /// <summary>Call before the first tick: the nav grid reads these once, when it is created.</summary>
+        /// <summary>Changing these after the first tick rebuilds the nav grid.</summary>
         public static void ConfigureMap(this TestWorld world, float waterLevel = 0f, float maxSlope = 0f,
             bool floodTerrain = false)
         {
@@ -26,7 +26,8 @@ namespace HyperRTS.Simulation.Tests
         {
             var area = world.EntityManager.CreateEntity();
             world.EntityManager.AddComponentData(area, LocalTransform.FromPosition(position));
-            world.EntityManager.AddComponentData(area, new NavArea { Size = size, Kind = kind });
+            var sink = new EntityManagerSink(world.EntityManager, area);
+            NavSetup.AddArea(ref sink, size, kind);
             return area;
         }
 

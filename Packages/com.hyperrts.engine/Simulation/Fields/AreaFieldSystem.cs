@@ -1,7 +1,6 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Stats;
@@ -57,22 +56,11 @@ namespace HyperRTS.Simulation.Fields
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _elapsed += SystemAPI.Time.DeltaTime;
-            if (_elapsed < Interval)
+            if (!IsDue(SystemAPI.Time.DeltaTime))
             {
                 return;
             }
 
-            _elapsed -= Interval;
-
-            // Without fields there is nothing to apply; one more pass after the last one goes clears its bonuses.
-            var hasFields = !_fieldQuery.IsEmptyIgnoreFilter;
-            if (!hasFields && !_hadFields)
-            {
-                return;
-            }
-
-            _hadFields = hasFields;
             _fields.Update(ref state);
             _bonuses.Update(ref state);
             _modifiers.Update(ref state);
@@ -95,6 +83,25 @@ namespace HyperRTS.Simulation.Fields
                 Transforms = _transforms,
                 Damage = _damage,
             }.Schedule();
+        }
+
+        /// <summary>
+        /// Every <see cref="Interval"/> while fields exist. Without fields there is nothing to apply, but one more pass
+        /// after the last one goes clears its bonuses.
+        /// </summary>
+        private bool IsDue(float deltaTime)
+        {
+            _elapsed += deltaTime;
+            if (_elapsed < Interval)
+            {
+                return false;
+            }
+
+            _elapsed -= Interval;
+            var hasFields = !_fieldQuery.IsEmptyIgnoreFilter;
+            var due = hasFields || _hadFields;
+            _hadFields = hasFields;
+            return due;
         }
 
         [BurstCompile]
@@ -182,7 +189,7 @@ namespace HyperRTS.Simulation.Fields
 
                 foreach (var item in previous)
                 {
-                    StatMath.RemoveSource(modifiers, item.FieldId);
+                    StatMath.RemoveSource(modifiers, StatSource.Field(item.FieldId));
                 }
 
                 foreach (var item in current)

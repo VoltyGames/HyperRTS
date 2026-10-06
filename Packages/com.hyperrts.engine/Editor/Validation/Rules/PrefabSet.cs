@@ -1,10 +1,11 @@
 using System.Collections.Generic;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Editor.Common;
+using HyperRTS.Simulation.GameEntities;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
-    /// <summary>The project's HyperRTS prefabs, gathered once for every <see cref="IPrefabRule"/>.</summary>
+    /// <summary>The project's authoring prefabs, gathered once for every <see cref="IPrefabRule"/>.</summary>
     public sealed class PrefabSet
     {
         public PrefabSet(IReadOnlyList<GameObject> prefabs)
@@ -18,6 +19,6 @@ namespace HyperRTS.Editor.Validation.Rules
         /// <summary>The unit and building prefabs among <see cref="All"/>.</summary>
         public IReadOnlyList<GameEntityAuthoring> Entities { get; }
 
-        public static PrefabSet InProject() => new(EditorAssets.HyperRTSPrefabs());
+        public static PrefabSet InProject() => new(EditorAssets.AuthoringPrefabs());
     }
 }

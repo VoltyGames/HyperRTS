@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
 using Unity.Entities;
@@ -9,8 +10,11 @@ namespace HyperRTS.Presentation.Common
     /// <summary>Main-thread view of the match from the local player's side, shared by MonoBehaviour presenters.</summary>
     public sealed class MatchView
     {
+        private static MatchView _default;
+
         private readonly Color[] _factionColors = new Color[byte.MaxValue + 1];
         private World _world;
+        private int _frame = -1;
         private (int Order, uint Change) _colorsVersion = (-1, 0u);
         private EntityQuery _localPlayer;
         private EntityQuery _players;
@@ -20,17 +24,35 @@ namespace HyperRTS.Presentation.Common
 
         public EntityManager EntityManager { get; private set; }
         public bool IsReady { get; private set; }
+
+        /// <summary>False once the bound world is disposed, e.g. when a network session swaps worlds mid-frame.</summary>
+        public bool IsLive => _world != null && _world.IsCreated;
         public Entity LocalPlayer { get; private set; }
         public Player Local { get; private set; }
         public FactionRelations Relations { get; private set; }
         public bool HasMap { get; private set; }
         public MapSettings Map { get; private set; }
 
-        /// <summary>Re-reads the singletons; false until a world with a local player exists (edit mode, loading).</summary>
-        public bool Refresh()
+        /// <summary>The default world's view, refreshed once per frame however many presenters read it.</summary>
+        public static bool TryGetDefault(out MatchView view)
+        {
+            _default ??= new MatchView();
+            view = _default;
+            var world = DefaultWorld.TryGet(out var live) ? live : null;
+            var current = world == view._world && view._frame == Time.frameCount;
+            if (!current)
+            {
+                view._frame = Time.frameCount;
+                view.Refresh(world);
+            }
+
+            return view.IsReady;
+        }
+
+        /// <summary>Re-reads the singletons; false until <paramref name="world"/> has a local player (edit mode, loading).</summary>
+        public bool Refresh(World world)
         {
             IsReady = false;
-            var world = World.DefaultGameObjectInjectionWorld;
             if (world == null || !world.IsCreated)
             {
                 return false;
@@ -57,7 +79,7 @@ namespace HyperRTS.Presentation.Common
             return true;
         }
 
-        public Relation RelationTo(byte faction) => TeamRelation.Of(Local.Faction, faction, Relations);
+        public Relation RelationTo(byte faction) => Relations.RelationOf(Local.Faction, faction);
 
         /// <summary>Owner colour in sRGB, ready for UI and material property blocks.</summary>
         public Color ColorOf(byte faction) => _factionColors[faction];
@@ -110,5 +132,8 @@ namespace HyperRTS.Presentation.Common
 
             return (EntityManager.GetComponentOrderVersion<Player>(), change);
         }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => _default = null;
     }
 }

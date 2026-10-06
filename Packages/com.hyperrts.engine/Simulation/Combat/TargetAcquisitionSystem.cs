@@ -1,6 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Spatial;
@@ -74,8 +73,13 @@ namespace HyperRTS.Simulation.Combat
             private void Execute(Entity entity, in LocalTransform transform, in Weapon weapon, in CombatStance stance,
                 in VisionRange vision, in Faction faction, ref AttackTarget attack, EnabledRefRW<AttackTarget> attacking)
             {
-                if (attacking.ValueRO || stance.Value == Stance.Passive || entity.Index % ScanInterval != Slot ||
-                    !MayAutoAcquire(entity))
+                var scanning = entity.Index % ScanInterval == Slot;
+                if (!scanning || attacking.ValueRO || stance.Value == Stance.Passive)
+                {
+                    return;
+                }
+
+                if (!MayAutoAcquire(entity))
                 {
                     return;
                 }
@@ -108,7 +112,7 @@ namespace HyperRTS.Simulation.Combat
                     return false;
                 }
 
-                if (!Orders.HasComponent(entity) || !Orders.IsComponentEnabled(entity))
+                if (!Orders.HasEnabled(entity))
                 {
                     return true;
                 }

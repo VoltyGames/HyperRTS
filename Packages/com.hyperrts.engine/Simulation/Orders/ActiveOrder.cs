@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Orders
@@ -6,5 +7,12 @@ namespace HyperRTS.Simulation.Orders
     public struct ActiveOrder : IComponentData, IEnableableComponent
     {
         public Order Value;
+
+        /// <summary>Ends the order and halts the walk toward its target.</summary>
+        public static void Finish(EnabledRefRW<ActiveOrder> busy, EnabledRefRW<MoveDestination> moving)
+        {
+            busy.ValueRW = false;
+            moving.ValueRW = false;
+        }
     }
 }

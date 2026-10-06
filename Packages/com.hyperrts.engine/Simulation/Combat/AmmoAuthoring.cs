@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Combat
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(WeaponAuthoring), "a Weapon")]
-    public class AmmoAuthoring : MonoBehaviour
+    public class AmmoAuthoring : AuthoringBehaviour
     {
         [Tooltip("Rounds when full.")]
         [Min(1)]

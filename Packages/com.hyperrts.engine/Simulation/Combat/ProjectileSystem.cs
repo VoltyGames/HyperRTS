@@ -16,9 +16,6 @@ namespace HyperRTS.Simulation.Combat
     [UpdateAfter(typeof(WeaponFireSystem))]
     public partial struct ProjectileSystem : ISystem
     {
-        /// <summary>Height above the shooter and target pivots that projectiles fly at.</summary>
-        public const float FlightHeight = 1f;
-
         private TargetLookup _targets;
         private DamageWriter _damage;
         private SoundWriter _sounds;
@@ -62,7 +59,7 @@ namespace HyperRTS.Simulation.Combat
                 var target = projectile.Hit.Target;
                 if (Targets.IsAlive(target))
                 {
-                    projectile.Hit.Position = Targets.Position(target) + new float3(0f, FlightHeight, 0f);
+                    projectile.Hit.Position = Targets.Position(target) + new float3(0f, projectile.Height, 0f);
                 }
             }
         }

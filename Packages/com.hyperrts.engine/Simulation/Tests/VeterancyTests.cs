@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Tests
                 new VeterancyBonus
                 {
                     Rank = 1,
-                    Modifier = new StatModifier { Stat = Stat.Damage, Percent = 0.5f, Source = StatMath.VeterancySource },
+                    Modifier = new StatModifier { Stat = Stat.Damage, Percent = 0.5f, Source = StatSource.Veterancy },
                 },
             });
             return unit;
@@ -45,8 +45,8 @@ namespace HyperRTS.Simulation.Tests
             var unit = _world.SpawnUnit(1, float3.zero, speed: 4f);
             _world.EntityManager.SetComponentData(unit, new Health { Current = 50f, Max = 100f });
             var modifiers = _world.EntityManager.GetBuffer<StatModifier>(unit);
-            modifiers.Add(new StatModifier { Stat = Stat.MaxHealth, Add = 100f, Source = 7 });
-            modifiers.Add(new StatModifier { Stat = Stat.MoveSpeed, Percent = 0.5f, Source = 7 });
+            modifiers.Add(new StatModifier { Stat = Stat.MaxHealth, Add = 100f, Source = StatSource.Upgrade(7) });
+            modifiers.Add(new StatModifier { Stat = Stat.MoveSpeed, Percent = 0.5f, Source = StatSource.Upgrade(7) });
 
             _world.Tick();
 
@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(100f, _world.Get<Health>(unit).Current, 1e-3f);
             Assert.AreEqual(6f, _world.Get<MovementSpeed>(unit).Value, 1e-3f);
 
-            StatMath.RemoveSource(_world.EntityManager.GetBuffer<StatModifier>(unit), 7);
+            StatMath.RemoveSource(_world.EntityManager.GetBuffer<StatModifier>(unit), StatSource.Upgrade(7));
             _world.Tick();
 
             Assert.AreEqual(100f, _world.Get<Health>(unit).Max, 1e-3f);

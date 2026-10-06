@@ -1,7 +1,6 @@
-using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Navigation;
 using UnityEditor;
-using UnityEngine;
 
 namespace HyperRTS.Editor.Authoring
 {
@@ -13,13 +12,8 @@ namespace HyperRTS.Editor.Authoring
         private void OnSceneGUI()
         {
             var obstacle = (NavObstacleAuthoring)target;
-
-            EditorGUI.BeginChangeCheck();
-            var size = GroundHandles.Box(obstacle.transform.position, obstacle.size, Color.red);
-            if (EditorGUI.EndChangeCheck())
-            {
-                QuickFixes.Edit(obstacle, "Resize Nav Obstacle", () => obstacle.size = size);
-            }
+            GroundHandles.EditBox(obstacle, obstacle.transform.position, obstacle.size, NavColors.Blocked,
+                "Resize Nav Obstacle", size => obstacle.size = size);
         }
     }
 }

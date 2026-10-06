@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Capture
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
-    public class CapturerAuthoring : MonoBehaviour
+    public class CapturerAuthoring : AuthoringBehaviour
     {
         [Tooltip("Capture speed multiplier.")]
         [Min(0.01f)]

@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using HyperRTS.Simulation.Combat;
+using System.IO.Compression;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Replays;
-using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Collections;
-using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
@@ -54,7 +53,7 @@ namespace HyperRTS.Simulation.Tests
                 track.Add((frame * TestWorld.FrameTime, world.Get<LocalTransform>(mover).Position));
             }
 
-            return ReplayRecorder.Stop(world.World);
+            return ReplayRecorder.Stop(world.World, "Assets/Maps/Test.unity");
         }
 
         private static int KeyOf(Replay replay, string name)
@@ -172,6 +171,96 @@ namespace HyperRTS.Simulation.Tests
                 stepped.Dispose();
                 sought.Dispose();
             }
+        }
+
+        [Test]
+        public void PlaybackSeek_InAnyOrder_MatchesAFreshSeek()
+        {
+            var replay = Record(out _);
+            var playback = ReplayPlaybackState.Create(replay);
+            try
+            {
+                foreach (var index in new[] { 40, 3, 25, 26, 0, 44 })
+                {
+                    playback.Seek(index);
+                    var fresh = ReplayPlaybackState.Create(replay);
+                    fresh.Seek(index);
+                    AssertSameStates(fresh.From, playback.From, $"from, frame {index}");
+                    AssertSameStates(fresh.To, playback.To, $"to, frame {index}");
+                    fresh.Dispose();
+                }
+            }
+            finally
+            {
+                playback.Dispose();
+            }
+        }
+
+        private static void AssertSameStates(NativeHashMap<int, ReplayEntity> expected,
+            NativeHashMap<int, ReplayEntity> actual, string label)
+        {
+            Assert.AreEqual(expected.Count, actual.Count, label);
+            foreach (var pair in expected)
+            {
+                Assert.IsTrue(actual[pair.Key].SameState(pair.Value), $"{label}, key {pair.Key}");
+            }
+        }
+
+        [Test]
+        public void Serializer_RejectsCorruptCounts_AndTruncatedFiles()
+        {
+            var replay = Record(out _);
+            using var memory = new MemoryStream();
+            ReplaySerializer.Write(replay, memory);
+
+            using var truncated = Recompress(memory.ToArray(), bytes => bytes[..^7]);
+            Assert.Throws<InvalidDataException>(() => ReplaySerializer.Read(truncated));
+
+            // The frame count follows the header; a negative one must not allocate or loop.
+            using var corrupt = Recompress(memory.ToArray(), bytes =>
+            {
+                var at = HeaderLength(replay);
+                BitConverter.GetBytes(-5).CopyTo(bytes, at);
+                return bytes;
+            });
+            Assert.Throws<InvalidDataException>(() => ReplaySerializer.Read(corrupt));
+        }
+
+        private static MemoryStream Recompress(byte[] zipped, Func<byte[], byte[]> edit)
+        {
+            var bytes = edit(Unzip(zipped));
+            var output = new MemoryStream();
+            using (var zip = new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true))
+            {
+                zip.Write(bytes, 0, bytes.Length);
+            }
+
+            output.Position = 0;
+            return output;
+        }
+
+        private static byte[] Unzip(byte[] zipped)
+        {
+            using var raw = new MemoryStream();
+            using (var unzip = new GZipStream(new MemoryStream(zipped), CompressionMode.Decompress))
+            {
+                unzip.CopyTo(raw);
+            }
+
+            return raw.ToArray();
+        }
+
+        /// <summary>Where the frame count sits: an empty replay is its header plus a zero frame count.</summary>
+        private static int HeaderLength(Replay replay)
+        {
+            var empty = new Replay
+            {
+                ScenePath = replay.ScenePath, SampleRate = replay.SampleRate, Duration = replay.Duration,
+                Players = replay.Players, Result = replay.Result,
+            };
+            using var zipped = new MemoryStream();
+            ReplaySerializer.Write(empty, zipped);
+            return Unzip(zipped.ToArray()).Length - sizeof(int);
         }
 
         [Test]

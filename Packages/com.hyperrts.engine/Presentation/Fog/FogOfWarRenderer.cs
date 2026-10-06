@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
@@ -35,7 +36,6 @@ namespace HyperRTS.Presentation.Fog
         [Tooltip("Opacity over areas never seen.")]
         private float unexploredOpacity = 0.85f;
 
-        private readonly MatchView _view = new();
         private readonly LiveQuery _fogQuery = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<FogOfWar>()));
         private readonly LiveQuery _localView = new(entityManager =>
@@ -47,13 +47,19 @@ namespace HyperRTS.Presentation.Fog
 
         private void LateUpdate()
         {
-            if (material == null || !_view.Refresh() ||
-                !_localView.In(_view.EntityManager).TryGetSingleton(out LocalFogView view) || !view.Active)
+            if (material == null || !MatchView.TryGetDefault(out var match))
             {
                 return;
             }
 
-            var query = _fogQuery.In(_view.EntityManager);
+            var entityManager = match.EntityManager;
+            var hasView = _localView.In(entityManager).TryGetSingleton(out LocalFogView view);
+            if (!hasView || !view.Active)
+            {
+                return;
+            }
+
+            var query = _fogQuery.In(entityManager);
             if (!query.TryGetSingleton(out FogOfWar fog))
             {
                 return;

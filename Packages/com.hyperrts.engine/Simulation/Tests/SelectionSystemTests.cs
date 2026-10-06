@@ -47,15 +47,9 @@ namespace HyperRTS.Simulation.Tests
                 Subtract = subtract,
             };
 
-            if (!_entityManager.CreateEntityQuery(typeof(SelectionInput)).TryGetSingletonEntity<SelectionInput>(out var e))
-            {
-                e = _entityManager.CreateEntity(typeof(SelectionInput));
-            }
-
-            _entityManager.SetComponentData(e, input);
+            _entityManager.CreateEntityQuery(typeof(SelectionInput)).SetSingleton(input);
             _world.Tick();
         }
-
 
         [Test]
         public void RectContains_HandlesInsideOutsideEdgesAndInvertedCorners()
@@ -105,7 +99,6 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(SelectionMath.ResolveSelected(true, false, false, true));
             Assert.IsFalse(SelectionMath.ResolveSelected(true, true, true, true));
         }
-
 
         [Test]
         public void DragBox_SelectsEntitiesInsideRect_AndIsEcsQueryable()

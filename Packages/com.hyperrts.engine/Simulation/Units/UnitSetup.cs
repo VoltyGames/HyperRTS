@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Orders;
 
 namespace HyperRTS.Simulation.Units
 {
-    /// <summary>Adds the movement and order components on top of <see cref="GameEntitySetup"/>.</summary>
+    /// <summary>Adds the movement and order components on top of <c>GameEntitySetup</c>.</summary>
     public static class UnitSetup
     {
         public static void Add<TSink>(ref TSink sink, float moveSpeed, float radius, NavLayer layer = NavLayer.Ground)

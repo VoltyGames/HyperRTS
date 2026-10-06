@@ -185,7 +185,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 326671409750007419095c766a129973, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: HyperRTS.Simulation::HyperRTS.Simulation.Buildings.ProducerAuthoring
+  m_EditorClassIdentifier: HyperRTS.Simulation::HyperRTS.Simulation.Production.ProducerAuthoring
   productionOptions:
   - {fileID: 6537726676548369392, guid: ed4cdb1d356596c4aa38579731f16b75, type: 3}
   - {fileID: 8140853920548523324, guid: eb54ede9e046066429b5478390d398f7, type: 3}

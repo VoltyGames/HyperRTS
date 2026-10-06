@@ -19,19 +19,22 @@ code must never depend on anything under `Assets/`. See [`docs/architecture.md`]
 
 ```text
 Packages/com.hyperrts.engine/
-├── Core/          contracts: SystemGroups, HyperRTSMenu/Icons/Docs
-├── Simulation/    headless gameplay: AI, Buildings, Combat, Common, Interaction, Match, Navigation, Orders,
-│                  Resources, Selection, Spatial, Units, Vision, Tests/
-├── Presentation/  team colours, overlays, fog rendering, UI Toolkit HUD, Tests/
-├── Input/         camera, input actions, input → PlayerCommand bridge
-├── Network/       Netcode session, join, command RPCs, fog relevancy (docs/networking.md)
-├── Editor/        validator, inspectors + handles, templates, catalog, debug/cheats, scene wizard, Tests/
+├── Core/          contracts: SystemGroups, SimulationWorlds, HyperRTSMenu/Icons/Docs
+├── Simulation/    headless gameplay, one folder per module: Common (base), AI, Abilities, Air, Audio, Buildings,
+│                  Capture, Combat, Commands, Fields, GameEntities, Interaction, Match, Navigation, Orders, Power,
+│                  Production, Replays, Resources, Selection, Spatial, Stats, Transport, Units, Upgrades,
+│                  Veterancy, Vision, Tests/
+├── Presentation/  team colours, overlays, rendering helpers, fog, UI Toolkit HUD, audio playback, Tests/
+├── Input/         camera, shared input actions, input → PlayerCommand bridge
+├── Network/       Session, Players (join), Commands (RPCs), Replication, Relevancy, Audio (docs/networking.md)
+├── Editor/        Authoring (inspectors, handles), Validation, Templates, Catalog, PlayMode (debug draw, cheats),
+│                  Common, scene wizard, Tests/
 └── Prefabs/       RTSWorld rig (camera + HUD), UI/HUD
 ```
 
-`HyperRTS.Simulation` must never reference Graphics, InputSystem or UIElements. Data shared across layers
-(e.g. `PlacementState`, `PointerState`, `SelectionDragState`) lives in Simulation. Module map and contracts:
-[`docs/modules.md`](docs/modules.md).
+`HyperRTS.Simulation` must never reference Graphics, InputSystem or UIElements. Client UI state that input, HUD
+and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `CameraFocusRequest`) lives in
+`Simulation/Interaction`. Module map and contracts: [`docs/modules.md`](docs/modules.md).
 
 ## Gameplay contract
 
@@ -43,12 +46,17 @@ Packages/com.hyperrts.engine/
 
 ## Conventions
 
-- Namespaces: `HyperRTS.<Layer>.<Module>`; contracts stay in `HyperRTS.Core`.
-- An authoring MonoBehaviour, its nested `Baker` and its component struct share one `*Authoring.cs` file.
+- Namespaces follow the folder path (`HyperRTS.<Layer>.<Module>`); contracts stay in `HyperRTS.Core`.
+- Simulation modules are layered: `Common` is the base and uses no other module. Put a component two modules
+  share in `Common` or the lower module; authoring files may reference any module. `ModuleLayoutTests` enforces
+  this; don't grow its two-way allowlist casually.
+- Authoring classes derive from `AuthoringBehaviour` (game ones too, for inspector warnings, summaries and
+  validation). One `*Authoring.cs` file holds the authoring class, its nested `Baker` and its component struct.
   Bakers use `GetEntity(TransformUsageFlags.Dynamic)` and write component sets through the `*Setup` helpers
   (`IComponentSink`), so tests build the same entities.
 - Authoring classes carry `[AddComponentMenu]`, `[Icon]`, `[HelpURL]`, `[DisallowMultipleComponent]` and a
-  `[Tooltip]` per field. Paths come from `HyperRTSMenu.cs`. See [`docs/editor-ux.md`](docs/editor-ux.md).
+  `[Tooltip]` per field, with paths from `HyperRTSMenu`, `HyperRTSIcons` and `HyperRTSDocs`. See
+  [`docs/editor-ux.md`](docs/editor-ux.md).
 - Component fields PascalCase; authoring fields camelCase.
 - Acronyms are all-caps in identifiers, files and folders (`RTS`, `HUD`, `UI`, `AI`); USS class names stay
   lowercase kebab-case (`hud-root`).

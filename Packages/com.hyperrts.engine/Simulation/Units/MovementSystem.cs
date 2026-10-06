@@ -1,7 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
-using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Transport;
 using Unity.Burst;
@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Units
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
     [UpdateAfter(typeof(PathfindingSystem))]
+    [UpdateBefore(typeof(CargoFollowSystem))]
     public partial struct MovementSystem : ISystem
     {
         private NavGrid _noGrid;
@@ -37,9 +38,6 @@ namespace HyperRTS.Simulation.Units
         }
 
         public void OnDestroy(ref SystemState state) => _noGrid.Dispose();
-
-        /// <summary>Distance from the final waypoint that counts as arrived.</summary>
-        private static float ArriveTolerance(float radius) => math.max(0.05f, radius * 0.25f);
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
@@ -153,7 +151,7 @@ namespace HyperRTS.Simulation.Units
                 return heading * maxStep;
             }
 
-            private readonly bool IsLanded(Entity entity) => Docked.Of(DockedLookup, entity);
+            private readonly bool IsLanded(Entity entity) => DockedLookup.HasEnabled(entity);
 
             private readonly float2 Separation(Entity entity, float3 position, in NavAgent agent, float maxStep)
             {
@@ -179,7 +177,7 @@ namespace HyperRTS.Simulation.Units
                 var target = waypoints.Length > 0 ? waypoints[0].Position.xz : goal.xz;
                 var toTarget = target - position.xz;
                 var distance = math.length(toTarget);
-                if (waypoints.Length <= 1 && distance <= ArriveTolerance(agent.Radius))
+                if (waypoints.Length <= 1 && distance <= NavTolerances.Arrive(agent.Radius))
                 {
                     return false;
                 }
@@ -199,7 +197,7 @@ namespace HyperRTS.Simulation.Units
                     return true;
                 }
 
-                if (!HasGrid || distance > MoveOrderSystem.StallRadius(agent.Radius))
+                if (!HasGrid || distance > NavTolerances.Crowded(agent.Radius))
                 {
                     return false;
                 }

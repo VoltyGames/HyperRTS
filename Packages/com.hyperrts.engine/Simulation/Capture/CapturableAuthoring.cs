@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Capture
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
-    public class CapturableAuthoring : MonoBehaviour
+    public class CapturableAuthoring : AuthoringBehaviour
     {
         [Tooltip("Seconds one capturer needs; several capturers of one player add up.")]
         [Min(0.1f)]

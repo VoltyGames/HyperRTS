@@ -1,9 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -52,17 +48,17 @@ namespace HyperRTS.Simulation.Replays
             var entity = SystemAPI.GetSingletonEntity<ReplayPlaybackState>();
             var data = SystemAPI.GetComponent<ReplayPlaybackState>(entity);
             var clock = SystemAPI.GetComponent<ReplayPlayback>(entity);
-            Advance(ref clock, SystemAPI.Time.DeltaTime);
+            clock.Advance(SystemAPI.Time.DeltaTime);
 
             var index = data.Stream.FrameAt(clock.Time);
             if (data.Index < 0)
             {
-                MoveTo(ref data, index);
+                data.Seek(index);
                 TakeOver(ref state, ref data);
             }
             else if (index != data.Index)
             {
-                MoveTo(ref data, index);
+                data.Seek(index);
                 Sync(ref state, ref data);
             }
 
@@ -71,138 +67,47 @@ namespace HyperRTS.Simulation.Replays
             SystemAPI.SetComponent(entity, clock);
         }
 
-        private static void Advance(ref ReplayPlayback clock, float deltaTime)
-        {
-            if (clock.Playing)
-            {
-                clock.Time += deltaTime * clock.Speed;
-            }
-
-            clock.Time = math.clamp(clock.Time, 0f, clock.Duration);
-            if (clock.Time >= clock.Duration)
-            {
-                clock.Playing = false;
-            }
-        }
-
-        /// <summary>Rebuilds from a keyframe when going back or past one, otherwise steps through the deltas.</summary>
-        private static void MoveTo(ref ReplayPlaybackState data, int index)
-        {
-            var keyframe = data.Stream.KeyframeAtOrBefore(index);
-            if (index < data.Index || keyframe > data.Index)
-            {
-                data.Index = keyframe;
-                data.Stream.Apply(keyframe, data.From);
-            }
-
-            while (data.Index < index)
-            {
-                data.Index++;
-                data.Stream.Apply(data.Index, data.From);
-            }
-
-            data.To.Clear();
-            foreach (var pair in data.From)
-            {
-                data.To[pair.Key] = pair.Value;
-            }
-
-            if (index + 1 < data.Stream.Frames.Length)
-            {
-                data.Stream.Apply(index + 1, data.To);
-            }
-        }
-
+        /// <summary>Claims the scene's entities for the recorded ones, removes the rest and spawns what is missing.</summary>
         private void TakeOver(ref SystemState state, ref ReplayPlaybackState data)
         {
             var prefabs = SystemAPI.QueryBuilder().WithAll<EntityInfo, Prefab>()
                 .WithOptions(EntityQueryOptions.IncludePrefab).Build();
             PrefabLookup.ByTypeId(prefabs, data.Prefabs);
 
-            // The viewer sees everything: drop fog tags left from before playback started.
-            state.EntityManager.RemoveComponent<FogHidden>(SystemAPI.QueryBuilder().WithAll<FogHidden>().Build());
-            if (SystemAPI.TryGetSingletonRW<LocalFogView>(out var view))
-            {
-                view.ValueRW.Active = false;
-                view.ValueRW.Version++;
-            }
-
-            MatchScene(ref state, ref data);
-            Sync(ref state, ref data);
-        }
-
-        /// <summary>Pairs recorded entities with the scene's (same type, nearest) and removes unrecorded ones.</summary>
-        private void MatchScene(ref SystemState state, ref ReplayPlaybackState data)
-        {
             var scene = SystemAPI.QueryBuilder().WithAll<EntityInfo, Faction, LocalTransform>().Build();
-            var entities = scene.ToEntityArray(Allocator.Temp);
-            var infos = scene.ToComponentDataArray<EntityInfo>(Allocator.Temp);
-            var transforms = scene.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-            var claimed = new NativeArray<bool>(entities.Length, Allocator.Temp);
-
-            foreach (var pair in data.From)
-            {
-                var match = Nearest(pair.Value, infos, transforms, claimed);
-                if (match >= 0)
-                {
-                    claimed[match] = true;
-                    data.Live[pair.Key] = entities[match];
-                }
-            }
-
-            for (var i = 0; i < entities.Length; i++)
-            {
-                if (!claimed[i])
-                {
-                    state.EntityManager.DestroyEntity(entities[i]);
-                }
-            }
-        }
-
-        private static int Nearest(in ReplayEntity recorded, NativeArray<EntityInfo> infos,
-            NativeArray<LocalTransform> transforms, NativeArray<bool> claimed)
-        {
-            var best = -1;
-            var bestDistance = float.MaxValue;
-            for (var i = 0; i < infos.Length; i++)
-            {
-                if (claimed[i] || infos[i].TypeId != recorded.TypeId)
-                {
-                    continue;
-                }
-
-                var distance = math.distancesq(transforms[i].Position, recorded.Position);
-                if (distance < bestDistance)
-                {
-                    best = i;
-                    bestDistance = distance;
-                }
-            }
-
-            return best;
+            var unclaimed = new NativeList<Entity>(Allocator.Temp);
+            ReplaySceneMatch.Match(data.From, scene.ToEntityArray(Allocator.Temp),
+                scene.ToComponentDataArray<EntityInfo>(Allocator.Temp),
+                scene.ToComponentDataArray<LocalTransform>(Allocator.Temp), data.Live, unclaimed);
+            state.EntityManager.DestroyEntity(unclaimed.AsArray());
+            Sync(ref state, ref data);
         }
 
         /// <summary>Destroys entities whose key is gone and spawns the keys that have none.</summary>
         private static void Sync(ref SystemState state, ref ReplayPlaybackState data)
         {
-            var stale = new NativeList<int>(Allocator.Temp);
+            var staleKeys = new NativeList<int>(Allocator.Temp);
+            var stale = new NativeList<Entity>(Allocator.Temp);
             foreach (var pair in data.Live)
             {
-                if (!data.From.ContainsKey(pair.Key))
+                if (data.From.ContainsKey(pair.Key))
                 {
-                    stale.Add(pair.Key);
+                    continue;
+                }
+
+                staleKeys.Add(pair.Key);
+                if (state.EntityManager.Exists(pair.Value))
+                {
+                    stale.Add(pair.Value);
                 }
             }
 
-            foreach (var key in stale)
+            foreach (var key in staleKeys)
             {
-                if (state.EntityManager.Exists(data.Live[key]))
-                {
-                    state.EntityManager.DestroyEntity(data.Live[key]);
-                }
-
                 data.Live.Remove(key);
             }
+
+            state.EntityManager.DestroyEntity(stale.AsArray());
 
             foreach (var pair in data.From)
             {

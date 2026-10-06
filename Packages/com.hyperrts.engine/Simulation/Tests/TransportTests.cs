@@ -2,7 +2,6 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Transport;
-using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

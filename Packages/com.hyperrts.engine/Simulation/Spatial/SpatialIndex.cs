@@ -13,6 +13,12 @@ namespace HyperRTS.Simulation.Spatial
         public NativeParallelMultiHashMap<int, SpatialEntry> Cells;
         public float CellSize;
 
+        /// <summary>
+        /// Entries wider than a cell (airfields, shipyards). Cells hold the rest by centre, so queries pad by one cell
+        /// and scan this short list instead of padding every query by the widest building.
+        /// </summary>
+        public NativeList<SpatialEntry> Oversized;
+
         public readonly int2 CellOf(float3 position) => CellOf(position, CellSize);
 
         public static int2 CellOf(float3 position, float cellSize) => (int2)math.floor(position.xz / cellSize);
@@ -25,7 +31,6 @@ namespace HyperRTS.Simulation.Spatial
         /// <summary>Visits entries whose circle overlaps the query circle on the XZ plane.</summary>
         public readonly void Query<T>(float3 center, float radius, ref T visitor) where T : struct, ISpatialVisitor
         {
-            // Entries are filed by centre; the extra cell catches large ones (radius < CellSize) poking in.
             var search = radius + CellSize;
             var min = CellOf(center - search);
             var max = CellOf(center + search);
@@ -41,13 +46,24 @@ namespace HyperRTS.Simulation.Spatial
 
                     do
                     {
-                        var reach = radius + entry.Radius;
-                        if (math.distancesq(entry.Position.xz, center.xz) <= reach * reach)
-                        {
-                            visitor.Visit(entry);
-                        }
+                        VisitIfOverlapping(entry, center, radius, ref visitor);
                     } while (Cells.TryGetNextValue(out entry, ref iterator));
                 }
+            }
+
+            foreach (var entry in Oversized)
+            {
+                VisitIfOverlapping(entry, center, radius, ref visitor);
+            }
+        }
+
+        private static void VisitIfOverlapping<T>(in SpatialEntry entry, float3 center, float radius, ref T visitor)
+            where T : struct, ISpatialVisitor
+        {
+            var reach = radius + entry.Radius;
+            if (math.distancesq(entry.Position.xz, center.xz) <= reach * reach)
+            {
+                visitor.Visit(entry);
             }
         }
     }

@@ -1,16 +1,20 @@
+using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>Builds the in-game HUD (resources, minimap, selection, command card, banner) and keeps it in sync with ECS.</summary>
+    /// <summary>
+    /// Builds the in-game HUD (resources, minimap, selection, command card, banner) and keeps it in sync with ECS.
+    /// Games add or replace panels by overriding <see cref="CreatePanels"/>.
+    /// </summary>
     [AddComponentMenu(HyperRTSMenu.UI + "HUD")]
     [Icon(HyperRTSIcons.UI)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(PanelRenderer))]
-    public class HUDController : MonoBehaviour
+    public class HUDController : PanelContent
     {
         [SerializeField]
         [Tooltip("HUD style sheet (HUD.uss).")]
@@ -18,42 +22,29 @@ namespace HyperRTS.Presentation.HUD
 
         private readonly HUDContext _context = new();
         private readonly HUDPointerTracker _pointer = new();
-        private VisualElement _root;
-        private ResourceBar _resources;
-        private SelectionPanel _selection;
-        private CommandCard _commands;
-        private Minimap _minimap;
-        private GameOverBanner _banner;
-        private int _uiVersion = -1;
+        private readonly List<IHUDPanel> _panels = new();
 
-        // Register once (not in OnEnable) so reloads never duplicate the HUD.
-        private void Awake()
+        /// <summary>Adds the panels: the bottom row's go in <paramref name="bottom"/>, the rest on <paramref name="hud"/>.</summary>
+        protected virtual void CreatePanels(VisualElement hud, VisualElement bottom)
         {
-            GetComponent<PanelRenderer>().RegisterUIReloadCallback(OnUIReload);
+            Add(new Minimap(), bottom);
+            Add(new SelectionPanel(), bottom);
+            Add(new CommandCard(), bottom);
+            Add(new ResourceBar(), hud);
+            Add(new GameOverBanner(), hud);
         }
 
-        private void OnDestroy()
+        protected void Add(IHUDPanel panel, VisualElement parent)
         {
-            if (TryGetComponent<PanelRenderer>(out var panelRenderer))
+            parent.Add(panel.Root);
+            _panels.Add(panel);
+            if (panel.BlocksPointer)
             {
-                panelRenderer.UnregisterUIReloadCallback(OnUIReload);
+                _pointer.Track(panel.Root);
             }
         }
 
-        private void OnUIReload(PanelRenderer panelRenderer, VisualElement root, int version)
-        {
-            if (root == null || version == _uiVersion)
-            {
-                return;
-            }
-
-            _uiVersion = version;
-            _root?.RemoveFromHierarchy();
-            _root = Build();
-            root.Add(_root);
-        }
-
-        private VisualElement Build()
+        protected override VisualElement Build()
         {
             var hud = HUDElements.Box("hud-root");
             hud.pickingMode = PickingMode.Ignore;
@@ -62,47 +53,33 @@ namespace HyperRTS.Presentation.HUD
                 hud.styleSheets.Add(styleSheet);
             }
 
-            _resources = new ResourceBar();
-            _selection = new SelectionPanel();
-            _commands = new CommandCard();
-            _minimap = new Minimap();
-            _banner = new GameOverBanner();
-
             var bottom = HUDElements.Box("hud-bottom", hud);
             bottom.pickingMode = PickingMode.Ignore;
-            bottom.Add(_minimap.Root);
-            bottom.Add(_selection.Root);
-            bottom.Add(_commands.Root);
-            hud.Add(_resources.Root);
-            hud.Add(_banner.Root);
-
+            _panels.Clear();
             _pointer.Clear();
-            _pointer.Track(_resources.Root);
-            _pointer.Track(_minimap.Root);
-            _pointer.Track(_selection.Root);
-            _pointer.Track(_commands.Root);
+            CreatePanels(hud, bottom);
             return hud;
         }
 
         private void Update()
         {
-            if (_root == null)
+            if (Content == null)
             {
                 return;
             }
 
-            var ready = _context.Refresh();
-            _root.SetVisible(ready);
+            var ready = MatchView.TryGetDefault(out var view) && _context.Refresh(view);
+            Content.SetVisible(ready);
             if (!ready)
             {
                 return;
             }
 
-            _resources.Refresh(_context);
-            _selection.Refresh(_context);
-            _commands.Refresh(_context);
-            _minimap.Refresh(_context);
-            _banner.Refresh(_context);
+            foreach (var panel in _panels)
+            {
+                panel.Refresh(_context);
+            }
+
             _context.SetPointerOverUI(_pointer.IsOverUI());
         }
     }

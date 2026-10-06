@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 

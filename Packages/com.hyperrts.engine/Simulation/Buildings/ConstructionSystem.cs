@@ -1,15 +1,12 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Audio;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Production;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Buildings
@@ -92,20 +89,17 @@ namespace HyperRTS.Simulation.Buildings
                 var site = order.Value.Target;
                 if (!IsAlliedSite(site, faction.Value))
                 {
-                    busy.ValueRW = false;
-                    moving.ValueRW = false;
+                    ActiveOrder.Finish(busy, moving);
                     return;
                 }
 
                 var sitePosition = TransformLookup[site].Position;
                 var extents = ReachMath.HalfExtents(ObstacleLookup, site);
-                if (!ReachMath.InReach(transform.Position, agent.Radius, sitePosition, extents))
+                if (!ReachMath.Approach(ref destination, moving, transform.Position, agent.Radius, sitePosition, extents))
                 {
-                    ReachMath.MoveTo(ref destination, moving, sitePosition);
                     return;
                 }
 
-                moving.ValueRW = false;
                 if (Advance(site, builder.Rate))
                 {
                     busy.ValueRW = false;
@@ -113,17 +107,21 @@ namespace HyperRTS.Simulation.Buildings
                 }
             }
 
-            private bool IsAlliedSite(Entity site, byte faction) =>
-                TransformLookup.HasComponent(site) &&
-                ConstructionRules.IsAlliedSite(SiteLookup, FactionLookup, Relations, site, faction);
+            private bool IsAlliedSite(Entity site, byte faction)
+            {
+                if (!TransformLookup.HasComponent(site))
+                {
+                    return false;
+                }
+
+                return BuildingRules.IsAlliedSite(SiteLookup, FactionLookup, Relations, site, faction);
+            }
 
             /// <summary>Adds this frame's work and returns true once the site is finished.</summary>
             private bool Advance(Entity site, float rate)
             {
-                var buildTime = ProducibleLookup.TryGetComponent(site, out var producible) ? producible.BuildTime : 0f;
                 ref var progress = ref SiteLookup.GetRefRW(site).ValueRW;
-                progress.Value += DeltaTime * rate / math.max(buildTime, 0.01f);
-
+                progress.Value += DeltaTime * rate / Producible.BuildTimeOf(ProducibleLookup, site);
                 if (progress.Value < 1f)
                 {
                     return false;

@@ -1,15 +1,12 @@
 using System.Collections.Generic;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using Unity.Entities;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
     /// <summary>Details of one selected entity, or a tile per entity type with counts for a group.</summary>
-    public sealed class SelectionPanel
+    public sealed class SelectionPanel : HUDPanel
     {
         private const int MaxGroups = 12;
 
@@ -25,11 +22,8 @@ namespace HyperRTS.Presentation.HUD
         private float _shownCurrent = float.NaN;
         private float _shownMax = float.NaN;
 
-        public SelectionPanel()
+        public SelectionPanel() : base("hud-selection")
         {
-            Root = HUDElements.Box("hud-selection");
-            Root.AddToClassList("hud-panel");
-
             _single = HUDElements.Box("hud-single", Root);
             var header = HUDElements.Box("hud-single__header", _single);
             _iconSlot = HUDElements.Box("hud-single__icon-slot", header);
@@ -43,9 +37,7 @@ namespace HyperRTS.Presentation.HUD
             _groups = HUDElements.Box("hud-groups", Root);
         }
 
-        public VisualElement Root { get; }
-
-        public void Refresh(HUDContext context)
+        public override void Refresh(HUDContext context)
         {
             var selected = context.Selected;
             if (context.SelectionHash != _hash)
@@ -105,7 +97,7 @@ namespace HyperRTS.Presentation.HUD
                 }
             }
 
-            var building = ConstructionRules.IsUnderConstruction(entityManager, entity);
+            var building = entityManager.HasEnabled<ConstructionProgress>(entity);
             _construction.SetVisible(building);
             if (building)
             {

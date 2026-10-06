@@ -1,6 +1,5 @@
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -59,8 +58,7 @@ namespace HyperRTS.Simulation.Transport
                 return false;
             }
 
-            var alive = _health.TryGetComponent(container, out var health) && health.Current > 0f;
-            if (!alive || ConstructionRules.IsUnderConstruction(_sites, container))
+            if (!Health.IsAlive(_health, container) || _sites.HasEnabled(container))
             {
                 return false;
             }
@@ -68,7 +66,7 @@ namespace HyperRTS.Simulation.Transport
             return relations.IsAllied(_factions[unit].Value, _factions[container].Value);
         }
 
-        public bool IsInside(Entity entity) => TransportRules.IsInside(_inside, entity);
+        public bool IsInside(Entity entity) => _inside.HasEnabled(entity);
 
         /// <summary>Puts <paramref name="unit"/> aboard; <paramref name="stance"/> is restored when it gets out.</summary>
         public void Board(Entity unit, Entity container, Stance stance)

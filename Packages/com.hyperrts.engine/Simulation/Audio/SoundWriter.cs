@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Audio
         /// Plays <paramref name="source"/>'s cue for the slot (prefab or instance) at a position; false if it has none.
         /// </summary>
         public bool Play(Entity source, SoundSlot slot, float3 position, byte faction) =>
-            Add(TypeIdFor(source, slot), slot, position, faction, Stealthed.Of(_cloaks, source));
+            Add(TypeIdFor(source, slot), slot, position, faction, _cloaks.HasEnabled(source));
 
         /// <summary><paramref name="source"/>'s type id if it has a cue for the slot, else 0.</summary>
         public int TypeIdFor(Entity source, SoundSlot slot)

@@ -1,8 +1,7 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Entities;

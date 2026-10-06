@@ -8,9 +8,5 @@ namespace HyperRTS.Simulation.Air
     /// it off again.
     /// </summary>
     [GhostEnabledBit]
-    public struct Docked : IComponentData, IEnableableComponent
-    {
-        public static bool Of(in ComponentLookup<Docked> lookup, Entity entity) =>
-            lookup.HasComponent(entity) && lookup.IsComponentEnabled(entity);
-    }
+    public struct Docked : IComponentData, IEnableableComponent { }
 }

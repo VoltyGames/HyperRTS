@@ -1,10 +1,8 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Spatial;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -115,14 +113,10 @@ namespace HyperRTS.Simulation.Resources
                 var node = order.Value.Target;
                 var nodePosition = TransformLookup[node].Position;
                 var extents = ReachMath.HalfExtents(ObstacleLookup, node);
-                if (!ReachMath.InReach(transform.Position, agent.Radius, nodePosition, extents))
+                if (ReachMath.Approach(ref destination, moving, transform.Position, agent.Radius, nodePosition, extents))
                 {
-                    ReachMath.MoveTo(ref destination, moving, nodePosition);
-                    return;
+                    Gather(ref harvester, ref harvest, node, nodePosition);
                 }
-
-                moving.ValueRW = false;
-                Gather(ref harvester, ref harvest, node, nodePosition);
             }
 
             // Nothing left nearby: deliver what is carried, then the order is done.
@@ -132,8 +126,7 @@ namespace HyperRTS.Simulation.Resources
                 harvest.Phase = HarvestPhase.Returning;
                 if (harvester.CargoAmount <= 0)
                 {
-                    busy.ValueRW = false;
-                    moving.ValueRW = false;
+                    ActiveOrder.Finish(busy, moving);
                 }
             }
 
@@ -175,13 +168,12 @@ namespace HyperRTS.Simulation.Resources
                 }
 
                 var target = TransformLookup[dropOff].Position;
-                if (!ReachMath.InReach(position, radius, target, ReachMath.HalfExtents(ObstacleLookup, dropOff)))
+                var extents = ReachMath.HalfExtents(ObstacleLookup, dropOff);
+                if (!ReachMath.Approach(ref destination, moving, position, radius, target, extents))
                 {
-                    ReachMath.MoveTo(ref destination, moving, target);
                     return;
                 }
 
-                moving.ValueRW = false;
                 if (StockLookup.TryGetBuffer(PlayerByFaction[faction], out var stock))
                 {
                     ResourceMath.Add(stock, harvester.CargoType, harvester.CargoAmount);
@@ -194,41 +186,43 @@ namespace HyperRTS.Simulation.Resources
             private bool IsHarvestable(Entity node) =>
                 NodeLookup.TryGetComponent(node, out var data) && data.Amount > 0 && TransformLookup.HasComponent(node);
 
+            /// <summary>Retargets to the nearest node of the carried type near the depleted one.</summary>
             private bool TryReplaceNode(ref ActiveOrder order, in Harvester harvester, in HarvestState harvest)
             {
-                var best = Entity.Null;
-                var bestDistance = ReplacementRange * ReplacementRange;
-                foreach (var candidate in Nodes)
+                var closest = Closest.Within(ReplacementRange * ReplacementRange);
+                for (var i = 0; i < Nodes.Length; i++)
                 {
+                    var candidate = Nodes[i];
                     var node = NodeLookup[candidate];
-                    var distance = math.distancesq(TransformLookup[candidate].Position.xz, harvest.NodePosition.xz);
-                    if (node.Amount > 0 && node.Type.Equals(harvester.CargoType) && distance <= bestDistance)
+                    if (node.Amount <= 0 || !node.Type.Equals(harvester.CargoType))
                     {
-                        best = candidate;
-                        bestDistance = distance;
+                        continue;
                     }
+
+                    closest.Offer(i, candidate, DistanceSq(candidate, harvest.NodePosition));
                 }
 
-                order.Value.Target = best;
-                return best != Entity.Null;
+                order.Value.Target = closest.Entity;
+                return closest.Found;
             }
 
             private Entity NearestDropOff(float3 position, byte faction)
             {
-                var best = Entity.Null;
-                var bestDistance = float.MaxValue;
-                foreach (var candidate in DropOffs)
+                var closest = Closest.None;
+                for (var i = 0; i < DropOffs.Length; i++)
                 {
-                    var distance = math.distancesq(TransformLookup[candidate].Position.xz, position.xz);
-                    if (FactionLookup[candidate].Value == faction && distance < bestDistance)
+                    var candidate = DropOffs[i];
+                    if (FactionLookup[candidate].Value == faction)
                     {
-                        best = candidate;
-                        bestDistance = distance;
+                        closest.Offer(i, candidate, DistanceSq(candidate, position));
                     }
                 }
 
-                return best;
+                return closest.Entity;
             }
+
+            private readonly float DistanceSq(Entity entity, float3 position) =>
+                math.distancesq(TransformLookup[entity].Position.xz, position.xz);
         }
     }
 }

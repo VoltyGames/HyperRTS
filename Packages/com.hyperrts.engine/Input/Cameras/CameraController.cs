@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Interaction;
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using UnityEngine;
 
@@ -51,6 +52,9 @@ namespace HyperRTS.Input.Cameras
         private readonly LiveQuery _map = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<MapSettings>()));
 
+        private readonly LiveQuery _focusRequest = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadWrite<CameraFocusRequest>()));
+
         private RTSInputActions _actions;
 
         /// <summary>Centres the view on a world point, keeping height and rotation.</summary>
@@ -58,14 +62,12 @@ namespace HyperRTS.Input.Cameras
 
         private void Awake()
         {
-            _actions = new RTSInputActions();
+            _actions = InputActionsProvider.Actions;
         }
 
-        private void OnEnable() => _actions.Camera.Enable();
+        private void OnEnable() => InputActionsProvider.Enable(_actions.Camera);
 
-        private void OnDisable() => _actions.Camera.Disable();
-
-        private void OnDestroy() => _actions.Dispose();
+        private void OnDisable() => InputActionsProvider.Disable(_actions.Camera);
 
         private void Start()
         {
@@ -91,6 +93,12 @@ namespace HyperRTS.Input.Cameras
             if (camera.Reset.WasPressedThisFrame())
             {
                 ResetViewToDefault();
+                return;
+            }
+
+            if (TryTakeFocusRequest(out var requested))
+            {
+                FocusOn(requested);
                 return;
             }
 
@@ -141,38 +149,50 @@ namespace HyperRTS.Input.Cameras
             return new Vector2(x, y);
         }
 
-        /// <summary>The y = 0 ground point the camera looks at.</summary>
-        private Vector3 Focus()
-        {
-            var position = transform.position;
-            var forward = transform.forward;
-            if (forward.y > -0.01f)
-            {
-                return new Vector3(position.x, 0f, position.z);
-            }
-
-            return position + forward * (position.y / -forward.y);
-        }
+        /// <summary>The y = 0 ground point the camera looks at; zoom and panning keep the camera relative to it.</summary>
+        private Vector3 Focus() =>
+            ViewGround.Focus(default, transform.position, transform.forward, float.PositiveInfinity);
 
         /// <summary>Moves the camera so it looks at <paramref name="focus"/> from <paramref name="height"/>.</summary>
         private void PlaceAt(Vector3 focus, float height)
         {
             focus.y = 0f;
             var forward = transform.forward;
-            transform.position = forward.y > -0.01f
+
+            // The inverse of Focus: a view ray that never meets the ground looks at the point below the camera.
+            transform.position = forward.y > -1e-5f
                 ? new Vector3(focus.x, height, focus.z)
                 : focus - forward * (height / -forward.y);
         }
 
         private Vector3 ClampToMap(Vector3 point)
         {
-            var world = World.DefaultGameObjectInjectionWorld;
-            if (world == null || !world.IsCreated)
+            if (!DefaultWorld.TryGetEntityManager(out var entityManager))
             {
                 return point;
             }
 
-            return _map.In(world.EntityManager).TryGetSingleton(out MapSettings map) ? (Vector3)map.Clamp(point) : point;
+            return _map.In(entityManager).TryGetSingleton(out MapSettings map) ? (Vector3)map.Clamp(point) : point;
+        }
+
+        /// <summary>Takes the point the HUD (minimap) asked to centre on, clearing the request.</summary>
+        private bool TryTakeFocusRequest(out Vector3 point)
+        {
+            point = default;
+            if (!DefaultWorld.TryGetEntityManager(out var entityManager))
+            {
+                return false;
+            }
+
+            var query = _focusRequest.In(entityManager);
+            if (!query.TryGetSingleton(out CameraFocusRequest request) || !request.Pending)
+            {
+                return false;
+            }
+
+            query.SetSingleton(new CameraFocusRequest());
+            point = request.Point;
+            return true;
         }
     }
 }

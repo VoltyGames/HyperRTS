@@ -1,12 +1,11 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -17,19 +16,21 @@ namespace HyperRTS.Simulation.Capture
     /// <summary>
     /// Runs Capture orders: capturers walk to the building and add <c>Rate / CaptureTime</c> progress per second.
     /// A different player starting over resets it. On completion the building changes owner at the end of the frame,
-    /// refunds its queue to the old owner, drops its target and selection, and a single-use capturer is consumed.
+    /// refunds its queue to the old owner, drops its target, rally point and selection, and a single-use capturer is
+    /// consumed.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct CaptureSystem : ISystem
     {
-        private CaptureRules _rules;
+        private CaptureLookup _targets;
         private ComponentLookup<Capturable> _capturableLookup;
         private ComponentLookup<CaptureProgress> _progressLookup;
         private ComponentLookup<Faction> _factionLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<AttackTarget> _attackLookup;
+        private ComponentLookup<RallyPoint> _rallyLookup;
         private BufferLookup<ProductionQueueItem> _queueLookup;
         private BufferLookup<ResourceStock> _stockLookup;
         private BufferLookup<ResourceCost> _costLookup;
@@ -39,13 +40,14 @@ namespace HyperRTS.Simulation.Capture
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _rules = new CaptureRules(ref state);
+            _targets = new CaptureLookup(ref state);
             _capturableLookup = state.GetComponentLookup<Capturable>(true);
             _progressLookup = state.GetComponentLookup<CaptureProgress>();
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _attackLookup = state.GetComponentLookup<AttackTarget>(true);
+            _rallyLookup = state.GetComponentLookup<RallyPoint>(true);
             _queueLookup = state.GetBufferLookup<ProductionQueueItem>(true);
             _stockLookup = state.GetBufferLookup<ResourceStock>();
             _costLookup = state.GetBufferLookup<ResourceCost>(true);
@@ -58,13 +60,14 @@ namespace HyperRTS.Simulation.Capture
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _rules.Update(ref state);
+            _targets.Update(ref state);
             _capturableLookup.Update(ref state);
             _progressLookup.Update(ref state);
             _factionLookup.Update(ref state);
             _transformLookup.Update(ref state);
             _obstacleLookup.Update(ref state);
             _attackLookup.Update(ref state);
+            _rallyLookup.Update(ref state);
             _queueLookup.Update(ref state);
             _stockLookup.Update(ref state);
             _costLookup.Update(ref state);
@@ -76,13 +79,14 @@ namespace HyperRTS.Simulation.Capture
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
-                Rules = _rules,
+                Targets = _targets,
                 CapturableLookup = _capturableLookup,
                 ProgressLookup = _progressLookup,
                 FactionLookup = _factionLookup,
                 TransformLookup = _transformLookup,
                 ObstacleLookup = _obstacleLookup,
                 AttackLookup = _attackLookup,
+                RallyLookup = _rallyLookup,
                 QueueLookup = _queueLookup,
                 StockLookup = _stockLookup,
                 CostLookup = _costLookup,
@@ -100,13 +104,14 @@ namespace HyperRTS.Simulation.Capture
             public float DeltaTime;
             public FactionRelations Relations;
             public EntityCommandBuffer Ecb;
-            public CaptureRules Rules;
+            public CaptureLookup Targets;
             [ReadOnly] public ComponentLookup<Capturable> CapturableLookup;
             public ComponentLookup<CaptureProgress> ProgressLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<AttackTarget> AttackLookup;
+            [ReadOnly] public ComponentLookup<RallyPoint> RallyLookup;
             [ReadOnly] public BufferLookup<ProductionQueueItem> QueueLookup;
             public BufferLookup<ResourceStock> StockLookup;
             [ReadOnly] public BufferLookup<ResourceCost> CostLookup;
@@ -124,21 +129,19 @@ namespace HyperRTS.Simulation.Capture
 
                 var target = order.Value.Target;
                 var faction = FactionLookup[entity].Value;
-                if (!Rules.CanCapture(target, faction, Relations))
+                if (!Targets.CanCapture(target, faction, Relations))
                 {
-                    busy.ValueRW = false;
-                    moving.ValueRW = false;
+                    ActiveOrder.Finish(busy, moving);
                     return;
                 }
 
                 var position = TransformLookup[target].Position;
-                if (!ReachMath.InReach(transform.Position, agent.Radius, position, ReachMath.HalfExtents(ObstacleLookup, target)))
+                var extents = ReachMath.HalfExtents(ObstacleLookup, target);
+                if (!ReachMath.Approach(ref destination, moving, transform.Position, agent.Radius, position, extents))
                 {
-                    ReachMath.MoveTo(ref destination, moving, position);
                     return;
                 }
 
-                moving.ValueRW = false;
                 if (Advance(target, faction, capturer.Rate))
                 {
                     TakeOver(target, faction);
@@ -175,13 +178,19 @@ namespace HyperRTS.Simulation.Capture
                 Ecb.SetComponent(building, new Faction { Value = faction });
                 if (QueueLookup.TryGetBuffer(building, out var queue))
                 {
-                    Refund(queue, previous);
+                    RefundQueue(queue, previous);
                     Ecb.SetBuffer<ProductionQueueItem>(building);
                 }
 
+                // The old owner's orders don't carry over: no target, rally point or selection.
                 if (AttackLookup.HasComponent(building))
                 {
                     Ecb.SetComponentEnabled<AttackTarget>(building, false);
+                }
+
+                if (RallyLookup.HasComponent(building))
+                {
+                    Ecb.SetComponentEnabled<RallyPoint>(building, false);
                 }
 
                 if (SelectedLookup.HasComponent(building))
@@ -190,20 +199,11 @@ namespace HyperRTS.Simulation.Capture
                 }
             }
 
-            /// <summary>Lost production is refunded to whoever paid, as a cancel would.</summary>
-            private void Refund(DynamicBuffer<ProductionQueueItem> queue, byte owner)
+            private void RefundQueue(DynamicBuffer<ProductionQueueItem> queue, byte owner)
             {
-                if (!StockLookup.TryGetBuffer(PlayerByFaction[owner], out var stock))
+                if (StockLookup.TryGetBuffer(PlayerByFaction[owner], out var stock))
                 {
-                    return;
-                }
-
-                foreach (var item in queue)
-                {
-                    if (CostLookup.TryGetBuffer(item.Prefab, out var cost))
-                    {
-                        ResourceMath.Refund(stock, cost);
-                    }
+                    ProductionRules.RefundQueue(stock, queue, CostLookup);
                 }
             }
         }

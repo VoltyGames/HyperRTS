@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -10,9 +10,10 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Creates the <see cref="NavGrid"/> from <see cref="MapSettings"/> (terrain, slope and, when flooding, water
-    /// level give each cell its base surface), then re-stamps every <see cref="NavArea"/> and <see cref="NavObstacle"/>
-    /// over it whenever any are added, removed or change archetype. Areas and obstacles are assumed not to move.
+    /// Builds the <see cref="NavGrid"/> from <see cref="MapSettings"/> (terrain, slope and, when flooding, water
+    /// level give each cell its base surface), rebuilding it when the map or <see cref="TerrainHeight"/> changes. Then
+    /// re-stamps every <see cref="NavArea"/> and <see cref="NavObstacle"/> over it whenever any are added, removed or
+    /// change archetype. Areas and obstacles are assumed not to move.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]
@@ -22,6 +23,8 @@ namespace HyperRTS.Simulation.Navigation
         private EntityQuery _obstacles;
         private EntityQuery _areas;
         private NativeArray<byte> _base;
+        private MapSettings _builtMap;
+        private TerrainHeight _builtTerrain;
         private int _builtObstacleVersion;
         private int _builtAreaVersion;
 
@@ -50,15 +53,18 @@ namespace HyperRTS.Simulation.Navigation
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var created = false;
-            if (!SystemAPI.HasSingleton<NavGrid>())
+            var map = SystemAPI.GetSingleton<MapSettings>();
+            SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
+            var rebuilt = !SystemAPI.HasSingleton<NavGrid>() || !SameGround(map, terrain);
+            if (rebuilt)
             {
-                CreateGrid(ref state, SystemAPI.GetSingleton<MapSettings>());
-                created = true;
+                _builtMap = map;
+                _builtTerrain = terrain;
+                BuildGrid(ref state, map, terrain);
             }
 
-            var changed = TrackChanges(ref state);
-            if (!created && !changed)
+            var restamp = AreasChanged(ref state);
+            if (!rebuilt && !restamp)
             {
                 return;
             }
@@ -72,8 +78,26 @@ namespace HyperRTS.Simulation.Navigation
             state.Dependency = new ObstacleJob { Grid = grid }.Schedule(_obstacles, state.Dependency);
         }
 
+        /// <summary>Whether the grid was built from this map and terrain; a new map or late-streamed terrain rebuilds it.</summary>
+        private readonly bool SameGround(in MapSettings map, in TerrainHeight terrain)
+        {
+            if (!terrain.Blob.Equals(_builtTerrain.Blob))
+            {
+                return false;
+            }
+
+            var built = _builtMap;
+            if (!map.Min.Equals(built.Min) || !map.Size.Equals(built.Size) || map.NavCellSize != built.NavCellSize)
+            {
+                return false;
+            }
+
+            var sameWater = map.WaterLevel == built.WaterLevel && map.FloodTerrain == built.FloodTerrain;
+            return sameWater && map.MaxSlope == built.MaxSlope;
+        }
+
         /// <summary>True when areas or obstacles were added, removed or changed archetype since the last stamp.</summary>
-        private bool TrackChanges(ref SystemState state)
+        private bool AreasChanged(ref SystemState state)
         {
             var obstacles = state.EntityManager.GetComponentOrderVersion<NavObstacle>();
             var areas = state.EntityManager.GetComponentOrderVersion<NavArea>();
@@ -83,12 +107,12 @@ namespace HyperRTS.Simulation.Navigation
             return changed;
         }
 
-        private void CreateGrid(ref SystemState state, in MapSettings map)
+        /// <summary>Replaces the grid (keeping its version count, so paths revalidate) and classifies its base cells.</summary>
+        private void BuildGrid(ref SystemState state, in MapSettings map, in TerrainHeight terrain)
         {
             var cellSize = math.max(0.1f, map.NavCellSize);
             var size = math.max(1, (int2)math.ceil(map.Size / cellSize));
             var count = size.x * size.y;
-            SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
             var grid = new NavGrid
             {
                 Cells = new NativeArray<byte>(count, Allocator.Persistent),
@@ -99,7 +123,7 @@ namespace HyperRTS.Simulation.Navigation
                 Min = map.Min,
                 CellSize = cellSize,
             };
-            state.EntityManager.CreateSingleton(grid, "NavGrid");
+            ReplaceGrid(ref state, ref grid);
 
             if (_base.IsCreated)
             {
@@ -115,6 +139,21 @@ namespace HyperRTS.Simulation.Navigation
                 Flood = map.FloodTerrain,
                 MaxGradient = steep ? math.tan(math.radians(map.MaxSlope)) : float.PositiveInfinity,
             }.Schedule(count, 1024, state.Dependency);
+        }
+
+        private void ReplaceGrid(ref SystemState state, ref NavGrid grid)
+        {
+            if (!SystemAPI.TryGetSingletonRW<NavGrid>(out var current))
+            {
+                state.EntityManager.CreateSingleton(grid, "NavGrid");
+                return;
+            }
+
+            // Every job reading the old cells must finish before they are freed.
+            state.CompleteDependency();
+            grid.Version = current.ValueRO.Version;
+            current.ValueRW.Dispose();
+            current.ValueRW = grid;
         }
 
         /// <summary>Flooded terrain under the water level is water; land steeper than the slope limit is blocked.</summary>

@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;

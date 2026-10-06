@@ -1,6 +1,5 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using Unity.Burst;
 using Unity.Collections;
@@ -12,7 +11,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Creates the <see cref="FogOfWar"/> grid from <see cref="MapSettings"/> and restamps every team's vision
+    /// Creates the <see cref="FogOfWar"/> grid from <see cref="MapSettings"/> (again when the map's area changes) and restamps every team's vision
     /// (occluded by hills when there is a <see cref="TerrainHeight"/>) and detection a few times per second. With fog
     /// disabled the grid stays fully visible, but detection still runs.
     /// </summary>
@@ -27,6 +26,7 @@ namespace HyperRTS.Simulation.Vision
         private double _nextUpdate;
         private bool _stampedWithFog;
         private bool _revealed;
+        private MapSettings _builtMap;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -40,9 +40,7 @@ namespace HyperRTS.Simulation.Vision
             state.CompleteDependency();
             if (SystemAPI.TryGetSingletonRW<FogOfWar>(out var fog))
             {
-                fog.ValueRW.Visible.Dispose();
-                fog.ValueRW.Explored.Dispose();
-                fog.ValueRW.Detected.Dispose();
+                Dispose(fog.ValueRO);
             }
         }
 
@@ -50,14 +48,11 @@ namespace HyperRTS.Simulation.Vision
         public void OnUpdate(ref SystemState state)
         {
             var settings = SystemAPI.GetSingleton<MapSettings>();
-            if (!SystemAPI.HasSingleton<FogOfWar>())
-            {
-                state.EntityManager.CreateSingleton(CreateGrid(settings));
-            }
+            var rebuilt = EnsureGrid(ref state, settings);
 
             // Toggling fog restamps at once, so nothing reads a grid stamped under the old setting.
             var elapsed = SystemAPI.Time.ElapsedTime;
-            if (elapsed < _nextUpdate && settings.FogOfWar == _stampedWithFog)
+            if (!rebuilt && elapsed < _nextUpdate && settings.FogOfWar == _stampedWithFog)
             {
                 return;
             }
@@ -71,20 +66,25 @@ namespace HyperRTS.Simulation.Vision
             // Stealth applies with fog off too, so detection is restamped either way.
             state.Dependency = new ClearBytesJob { Cells = fog.Detected }.Schedule(state.Dependency);
             new DetectionStampJob { Fog = fog, Relations = relations }.Schedule();
-            if (!settings.FogOfWar)
+            if (settings.FogOfWar)
             {
-                // Nothing else writes the grid while fog is off, so one fill lasts until fog comes back on.
-                if (!_revealed)
-                {
-                    _revealed = true;
-                    state.Dependency = new RevealAllJob { Visible = fog.Visible, Explored = fog.Explored }
-                        .Schedule(fog.Visible.Length, 1024, state.Dependency);
-                }
-
+                _revealed = false;
+                StampVision(ref state, fog, relations, settings);
                 return;
             }
 
-            _revealed = false;
+            // Nothing else writes the grid while fog is off, so one fill lasts until fog comes back on.
+            if (!_revealed)
+            {
+                _revealed = true;
+                state.Dependency = new RevealAllJob { Visible = fog.Visible, Explored = fog.Explored }
+                    .Schedule(fog.Visible.Length, 1024, state.Dependency);
+            }
+        }
+
+        private void StampVision(ref SystemState state, in FogOfWar fog, in FactionRelations relations,
+            in MapSettings settings)
+        {
             state.Dependency = new ClearBytesJob { Cells = fog.Visible }.Schedule(state.Dependency);
             SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
             new StampJob
@@ -96,6 +96,43 @@ namespace HyperRTS.Simulation.Vision
             }.Schedule();
             state.Dependency = new ExploreJob { Visible = fog.Visible, Explored = fog.Explored }
                 .Schedule(fog.Explored.Length, 1024, state.Dependency);
+        }
+
+        /// <summary>Creates the grid, or replaces it when the map's area or fog cell size changed; true if it did.</summary>
+        private bool EnsureGrid(ref SystemState state, in MapSettings settings)
+        {
+            // Read-only check: write access would complete every job reading the fog, every frame.
+            var exists = SystemAPI.HasSingleton<FogOfWar>();
+            if (exists && SameArea(settings, _builtMap))
+            {
+                return false;
+            }
+
+            _builtMap = settings;
+            _revealed = false;
+            var grid = CreateGrid(settings);
+            if (!exists)
+            {
+                state.EntityManager.CreateSingleton(grid);
+                return true;
+            }
+
+            state.CompleteDependency();
+            ref var fog = ref SystemAPI.GetSingletonRW<FogOfWar>().ValueRW;
+            grid.Version = fog.Version + 1;
+            Dispose(fog);
+            fog = grid;
+            return true;
+        }
+
+        private static bool SameArea(in MapSettings a, in MapSettings b) =>
+            a.Min.Equals(b.Min) && a.Size.Equals(b.Size) && a.FogCellSize == b.FogCellSize;
+
+        private static void Dispose(in FogOfWar fog)
+        {
+            fog.Visible.Dispose();
+            fog.Explored.Dispose();
+            fog.Detected.Dispose();
         }
 
         private static FogOfWar CreateGrid(in MapSettings settings)

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using HyperRTS.Simulation.Match;
@@ -10,6 +12,9 @@ namespace HyperRTS.Simulation.Replays
     {
         public const int FormatVersion = 1;
         private const int Magic = 0x4C505248; // "HRPL"
+
+        /// <summary>Most elements reserved before any are read; larger lists grow as data arrives.</summary>
+        private const int PreallocateLimit = 4096;
 
         public static void Save(Replay replay, string path)
         {
@@ -48,39 +53,82 @@ namespace HyperRTS.Simulation.Replays
             }
         }
 
+        /// <summary>Throws <see cref="InvalidDataException"/> for files that aren't replays, are truncated or corrupt.</summary>
         public static Replay Read(Stream stream)
         {
             using var zip = new GZipStream(stream, CompressionMode.Decompress, leaveOpen: true);
             using var reader = new BinaryReader(zip);
-            var replay = ReadHeader(reader);
-            replay.Frames = new ReplayFrame[reader.ReadInt32()];
-            int entities = 0, removed = 0;
-            for (var i = 0; i < replay.Frames.Length; i++)
+            try
+            {
+                var replay = ReadHeader(reader);
+                ReadSamples(reader, replay);
+                return replay;
+            }
+            catch (EndOfStreamException exception)
+            {
+                throw new InvalidDataException("The replay file is truncated.", exception);
+            }
+        }
+
+        /// <summary>
+        /// Arrays grow as samples actually arrive rather than being sized up front from the counts, so a corrupt count
+        /// fails on the missing data instead of allocating it.
+        /// </summary>
+        private static void ReadSamples(BinaryReader reader, Replay replay)
+        {
+            var frameCount = ReadCount(reader, "frames");
+            var frames = new List<ReplayFrame>(Capacity(frameCount));
+            long entities = 0, removed = 0;
+            for (var i = 0; i < frameCount; i++)
             {
                 var frame = new ReplayFrame { Time = reader.ReadSingle(), Keyframe = reader.ReadBoolean() };
-                frame.EntityStart = entities;
-                frame.EntityCount = reader.ReadInt32();
-                frame.RemovedStart = removed;
-                frame.RemovedCount = reader.ReadInt32();
-                entities += frame.EntityCount;
-                removed += frame.RemovedCount;
-                replay.Frames[i] = frame;
+                frame.EntityStart = (int)entities;
+                frame.EntityCount = ReadCount(reader, "entity samples");
+                frame.RemovedStart = (int)removed;
+                frame.RemovedCount = ReadCount(reader, "removals");
+                entities = Total(entities + frame.EntityCount, "entity samples");
+                removed = Total(removed + frame.RemovedCount, "removals");
+                frames.Add(frame);
             }
 
-            replay.Entities = new ReplayEntity[entities];
-            for (var i = 0; i < entities; i++)
-            {
-                replay.Entities[i] = ReadEntity(reader);
-            }
-
-            replay.Removed = new int[removed];
-            for (var i = 0; i < removed; i++)
-            {
-                replay.Removed[i] = reader.ReadInt32();
-            }
-
-            return replay;
+            replay.Frames = frames.ToArray();
+            replay.Entities = ReadAll(reader, (int)entities, ReadEntity);
+            replay.Removed = ReadAll(reader, (int)removed, r => r.ReadInt32());
         }
+
+        private static int ReadCount(BinaryReader reader, string what)
+        {
+            var count = reader.ReadInt32();
+            if (count < 0)
+            {
+                throw new InvalidDataException($"Corrupt replay: {count} {what}.");
+            }
+
+            return count;
+        }
+
+        private static long Total(long total, string what)
+        {
+            if (total > int.MaxValue)
+            {
+                throw new InvalidDataException($"Corrupt replay: more {what} than a replay can hold.");
+            }
+
+            return total;
+        }
+
+        private static T[] ReadAll<T>(BinaryReader reader, int count, Func<BinaryReader, T> read)
+        {
+            var items = new List<T>(Capacity(count));
+            for (var i = 0; i < count; i++)
+            {
+                items.Add(read(reader));
+            }
+
+            return items.ToArray();
+        }
+
+        private static int Capacity(int count) => Math.Min(count, PreallocateLimit);
 
         private static void WriteHeader(BinaryWriter writer, Replay replay)
         {
@@ -125,7 +173,7 @@ namespace HyperRTS.Simulation.Replays
                 Result = new MatchState { Phase = (MatchPhase)reader.ReadByte(), WinningTeam = reader.ReadByte() },
             };
 
-            var players = reader.ReadInt32();
+            var players = ReadCount(reader, "players");
             for (var i = 0; i < players; i++)
             {
                 replay.Players.Add(new ReplayPlayerInfo

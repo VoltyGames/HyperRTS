@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Units;
 using Unity.Collections;
 using Unity.Entities;
@@ -56,8 +57,8 @@ namespace HyperRTS.Simulation.AI
             out float3 target)
         {
             var targets = snapshot.Targets;
-            int bestBase = -1, bestUnit = -1;
-            float bestBaseDistance = float.MaxValue, bestUnitDistance = float.MaxValue;
+            var nearestBase = Closest.None;
+            var nearestUnit = Closest.None;
             for (var i = 0; i < targets.Length; i++)
             {
                 var entity = targets.Entities[i];
@@ -66,31 +67,21 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                var distance = math.distancesq(targets.Position(i).xz, from.xz);
+                var distance = targets.DistanceSq(i, from);
                 if (IsCriticalBuilding(ref state, entity))
                 {
-                    if (IsCloser(distance, entity, bestBaseDistance, EntityAt(targets, bestBase)))
-                    {
-                        bestBase = i;
-                        bestBaseDistance = distance;
-                    }
+                    nearestBase.Offer(i, entity, distance);
                 }
                 else if (SystemAPI.HasComponent<UnitTag>(entity))
                 {
-                    if (IsCloser(distance, entity, bestUnitDistance, EntityAt(targets, bestUnit)))
-                    {
-                        bestUnit = i;
-                        bestUnitDistance = distance;
-                    }
+                    nearestUnit.Offer(i, entity, distance);
                 }
             }
 
-            var best = bestBase >= 0 ? bestBase : bestUnit;
+            var best = nearestBase.Found ? nearestBase.Index : nearestUnit.Index;
             target = best >= 0 ? targets.Position(best) : default;
             return best >= 0;
         }
-
-        private static Entity EntityAt(in AIGroup group, int index) => index < 0 ? Entity.Null : group.Entities[index];
 
         private bool IsCriticalBuilding(ref SystemState state, Entity entity) =>
             SystemAPI.HasComponent<BuildingTag>(entity) && SystemAPI.HasComponent<VictoryCritical>(entity);

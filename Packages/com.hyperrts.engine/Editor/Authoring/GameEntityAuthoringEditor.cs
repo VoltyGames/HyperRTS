@@ -1,6 +1,6 @@
 using System;
-using HyperRTS.Editor.Validation;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Editor.Common;
+using HyperRTS.Simulation.GameEntities;
 using UnityEditor;
 using UnityEngine;
 
@@ -44,7 +44,7 @@ namespace HyperRTS.Editor.Authoring
                 return;
             }
 
-            QuickFixes.Edit(entity, "Edit " + entity.DisplayName, () =>
+            EditorUndo.Record(entity, "Edit " + entity.DisplayName, () =>
             {
                 entity.visionRange = vision;
                 applyShape?.Invoke();

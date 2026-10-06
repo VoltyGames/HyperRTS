@@ -129,7 +129,9 @@ gameplay in a headless assembly, like the engine does.
 
 - **New behaviour**: add a component with an authoring component and baker, and a Burst `ISystem` in one of the
   phase groups (`OrderSystemGroup`, `MovementSystemGroup`, `CombatSystemGroup`, `ProductionSystemGroup`,
-  `LifecycleSystemGroup`). Systems are discovered automatically.
+  `LifecycleSystemGroup`). Systems are discovered automatically. Derive the authoring component from
+  `AuthoringBehaviour` instead of `MonoBehaviour`, so it gets the engine's inspector warnings, entity summaries and
+  validation (add rules as `AuthoringRule<T>` classes in an Editor assembly; see [`editor-ux.md`](editor-ux.md)).
 - **New order** (patrol, escort, lay mines...): pick a value from `OrderType.Custom` upward, issue it with
   `OrderWriter.Issue`, and write a system that runs units whose `ActiveOrder` has your type. Disable `ActiveOrder`
   when the order is done and the unit moves on to its next queued order. To move, set and enable `MoveDestination`.
@@ -142,7 +144,15 @@ gameplay in a headless assembly, like the engine does.
   kill credit apply. Negative amounts heal.
 - **Ability and field effects**: give an ability no built-in effects and read `AbilityActivation` after
   `AbilitySystem`; read an entity's `FieldPresence` for what its area fields mean in your game. Change stats with a
-  `StatModifier` under your own source id.
+  `StatModifier` whose `StatSource` kind is `StatSourceKind.Custom` (128) or above, so removing yours never strips
+  the engine's.
+- **Custom stat** (fuel capacity, jamming strength): pick a value from `Stat.Custom` (128) upward and add modifiers
+  for it as usual. The engine never applies custom stats: write a system, last in `LifecycleSystemGroup` with a
+  change filter on `StatModifier`, that sets your component's value to `StatMath.Apply(modifiers, bases, stat,
+  value)` (`bases` is the entity's `BaseStat` buffer, which keeps the authored value).
+- **HUD panel**: implement `IHUDPanel` (or derive from `HUDPanel` for a boxed one), subclass `HUDController`,
+  override `CreatePanels` to add yours with `Add(panel, parent)` alongside or instead of the built-in ones, and put
+  the subclass on your HUD in place of `HUDController`.
 - **Spawn from code**: `ecb.Instantiate(prefabEntity)`, then set `LocalTransform` and `Faction`. Prefab entities
   come from authoring references such as a producer's options. Tests and tools can build complete entities without
   baking through `GameEntitySetup` / `UnitSetup` / `BuildingSetup` with an `EntityManagerSink`.
@@ -165,7 +175,7 @@ gameplay in a headless assembly, like the engine does.
 | Garrisons, transports | `Container` on the building or vehicle, `Passenger` on the units |
 | General's powers, unit abilities | `Abilities` on units and buildings; player-level powers are `Ability` buffers on the player entity |
 | Radar jamming, healing zones | `Area Field` with bonuses, heal or damage, and `FieldPresence` for game rules |
-| Aircraft | Game-side for now (see the roadmap) |
+| Aircraft | Unit + `Flight` (Air layer); `Airfield` pads on a building; `Ammo` reloads while docked |
 
 ## Next steps
 

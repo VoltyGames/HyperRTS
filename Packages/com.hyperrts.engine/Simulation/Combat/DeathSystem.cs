@@ -1,4 +1,6 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Audio;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -12,6 +14,7 @@ namespace HyperRTS.Simulation.Combat
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
+    [UpdateBefore(typeof(DeathSoundSystem))]
     public partial struct DeathSystem : ISystem
     {
         private ComponentLookup<SpawnOnDeath> _spawnLookup;

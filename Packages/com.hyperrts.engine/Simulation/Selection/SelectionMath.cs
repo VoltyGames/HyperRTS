@@ -10,8 +10,7 @@ namespace HyperRTS.Simulation.Selection
         {
             var min = math.min(a, b);
             var max = math.max(a, b);
-            return point.x >= min.x && point.x <= max.x &&
-                   point.y >= min.y && point.y <= max.y;
+            return math.all(point >= min & point <= max);
         }
 
         /// <summary>World point to screen pixels; false when behind the camera.</summary>

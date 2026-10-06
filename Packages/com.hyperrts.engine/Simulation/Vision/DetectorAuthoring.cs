@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using Unity.NetCode;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace HyperRTS.Simulation.Vision
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class DetectorAuthoring : MonoBehaviour
+    public class DetectorAuthoring : AuthoringBehaviour
     {
         [Tooltip("Detection radius in world units, separate from the vision range.")]
         [Min(0f)]

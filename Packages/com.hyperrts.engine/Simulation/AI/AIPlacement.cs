@@ -1,5 +1,5 @@
-using HyperRTS.Simulation.Interaction;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Mathematics;
 
@@ -8,23 +8,24 @@ namespace HyperRTS.Simulation.AI
     /// <summary>Ring search for a building spot around an AI base, keeping lanes open between buildings.</summary>
     public static class AIPlacement
     {
-        /// <summary>Clear margin kept around each new building so units don't get boxed in.</summary>
-        public const float Gap = 2f;
-
+        /// <summary>How far the search looks, in building-plus-gap steps from home.</summary>
         public const int MaxRings = 12;
 
-        /// <summary>Closest free spot to <paramref name="home"/>, ring by ring; candidates are a building plus a gap apart.</summary>
+        /// <summary>
+        /// Closest free spot to <paramref name="home"/>, ring by ring; candidates are a building plus
+        /// <paramref name="gap"/> apart, and the gap stays clear around the spot.
+        /// </summary>
         public static bool TryFindSpot(in MapSettings map, in NavGrid grid, float3 home, float2 footprint,
-            PlacementSurface surface, out float3 spot)
+            PlacementSurface surface, float gap, out float3 spot)
         {
-            var step = math.cmax(footprint) + Gap;
+            var step = math.cmax(footprint) + gap;
             for (var ring = 1; ring <= MaxRings; ring++)
             {
                 for (var k = 0; k < ring * 8; k++)
                 {
                     var cell = RingCell(ring, k);
                     var position = home + new float3(cell.x, 0f, cell.y) * step;
-                    if (IsFree(map, grid, position, footprint, surface, out spot))
+                    if (IsFree(map, grid, position, footprint, surface, gap, out spot))
                     {
                         return true;
                     }
@@ -50,10 +51,10 @@ namespace HyperRTS.Simulation.AI
 
         /// <summary>The single call into <see cref="PlacementMath"/>: the shared rules over a footprint padded by the gap.</summary>
         private static bool IsFree(in MapSettings map, in NavGrid grid, float3 position, float2 footprint,
-            PlacementSurface surface, out float3 spot)
+            PlacementSurface surface, float gap, out float3 spot)
         {
             spot = PlacementMath.Snap(map, position, footprint);
-            return PlacementMath.IsValid(map, grid, spot, footprint + 2f * Gap, surface);
+            return PlacementMath.IsValid(map, grid, spot, footprint + 2f * gap, surface);
         }
     }
 }

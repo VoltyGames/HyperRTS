@@ -3,8 +3,8 @@ using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Upgrades;
 using Unity.Burst;
@@ -206,9 +206,5 @@ namespace HyperRTS.Simulation.AI
 
             return best;
         }
-
-        /// <summary>Distance comparison with the entity index as a deterministic tie-break.</summary>
-        private static bool IsCloser(float distance, Entity entity, float bestDistance, Entity best) =>
-            distance < bestDistance || (distance == bestDistance && entity.Index < best.Index);
     }
 }

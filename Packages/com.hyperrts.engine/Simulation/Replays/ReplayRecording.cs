@@ -7,6 +7,9 @@ namespace HyperRTS.Simulation.Replays
     /// <summary>Singleton in the authoritative world while recording; see <see cref="ReplayRecorder"/>.</summary>
     public struct ReplayRecording : IComponentData, IDisposable
     {
+        public const float DefaultSampleRate = 10f;
+        public const float DefaultKeyframeInterval = 10f;
+
         public ReplayStream Stream;
 
         /// <summary>Each recorded entity's last sampled state, for change detection and its key.</summary>
@@ -24,7 +27,8 @@ namespace HyperRTS.Simulation.Replays
         public float LastKeyframe;
         public int NextKey;
 
-        public static ReplayRecording Create(float sampleRate, float keyframeInterval) => new()
+        public static ReplayRecording Create(float sampleRate = DefaultSampleRate,
+            float keyframeInterval = DefaultKeyframeInterval) => new()
         {
             Stream = ReplayStream.Create(Allocator.Persistent),
             Last = new NativeHashMap<Entity, ReplayEntity>(256, Allocator.Persistent),

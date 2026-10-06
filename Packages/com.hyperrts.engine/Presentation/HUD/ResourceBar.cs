@@ -9,9 +9,10 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD
 {
     /// <summary>Top bar: the local player's stockpile per resource type, population used / cap and power.</summary>
-    public sealed class ResourceBar
+    public sealed class ResourceBar : HUDPanel
     {
-        private static readonly Color FullPopulation = new(1f, 0.4f, 0.35f);
+        private const string FullPopulationClass = "hud-resource__amount--full";
+        private const string LowPowerClass = "hud-resource__amount--low-power";
 
         private readonly VisualElement _resources;
         private readonly Label _population;
@@ -23,10 +24,8 @@ namespace HyperRTS.Presentation.HUD
         private Population _shownPopulation = new() { Used = -1 };
         private PowerGrid _shownPower = new() { Produced = -1f };
 
-        public ResourceBar()
+        public ResourceBar() : base("hud-topbar")
         {
-            Root = HUDElements.Box("hud-topbar");
-            Root.AddToClassList("hud-panel");
             _resources = HUDElements.Box("hud-topbar__resources", Root);
 
             var population = HUDElements.Box("hud-resource", Root);
@@ -38,9 +37,7 @@ namespace HyperRTS.Presentation.HUD
             _power = HUDElements.Text("", "hud-resource__amount", _powerEntry);
         }
 
-        public VisualElement Root { get; }
-
-        public void Refresh(HUDContext context)
+        public override void Refresh(HUDContext context)
         {
             var stock = context.Stock;
             var hash = stock.Length;
@@ -109,7 +106,7 @@ namespace HyperRTS.Presentation.HUD
             _shownPower = grid;
             _powerEntry.SetVisible(grid.Produced > 0f || grid.Consumed > 0f);
             _power.text = $"{grid.Consumed:0} / {grid.Produced:0}";
-            _power.style.color = grid.IsLow ? new StyleColor(FullPopulation) : new StyleColor(StyleKeyword.Null);
+            _power.EnableInClassList(LowPowerClass, grid.IsLow);
         }
 
         private void RefreshPopulation(HUDContext context)
@@ -128,9 +125,7 @@ namespace HyperRTS.Presentation.HUD
 
             _shownPopulation = population;
             _population.text = $"{population.Used} / {population.Cap}";
-            _population.style.color = population.Used >= population.Cap
-                ? new StyleColor(FullPopulation)
-                : new StyleColor(StyleKeyword.Null);
+            _population.EnableInClassList(FullPopulationClass, population.Used >= population.Cap);
         }
     }
 }

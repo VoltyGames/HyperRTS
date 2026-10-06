@@ -1,6 +1,4 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Transport;
@@ -103,8 +101,7 @@ namespace HyperRTS.Simulation.Replays
             if (rules.RecordReplay)
             {
                 _autoStarted = true;
-                state.EntityManager.CreateSingleton(ReplayRecording.Create(ReplayRecorder.DefaultSampleRate,
-                    ReplayRecorder.DefaultKeyframeInterval));
+                state.EntityManager.CreateSingleton(ReplayRecording.Create());
             }
         }
 
@@ -119,7 +116,7 @@ namespace HyperRTS.Simulation.Replays
                 var known = recording.Last.TryGetValue(entity, out var last);
                 var key = known ? last.Key : recording.NextKey++;
                 var healthFraction = health.TryGetComponent(entity, out var hp) ? hp.Fraction : 1f;
-                var building = ConstructionRules.IsUnderConstruction(construction, entity);
+                var building = construction.HasEnabled(entity);
                 var progress = building ? construction[entity].Value : 0f;
                 var current = ReplayEntity.Capture(key, info.ValueRO.TypeId, faction.ValueRO.Value, transform.ValueRO,
                     healthFraction, progress, building);

@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Replays
@@ -10,11 +12,11 @@ namespace HyperRTS.Simulation.Replays
     /// </summary>
     public static class ReplayViewer
     {
-        private static readonly Type[] GameplayGroups =
-        {
-            typeof(OrderSystemGroup), typeof(MovementSystemGroup), typeof(CombatSystemGroup),
-            typeof(ProductionSystemGroup), typeof(LifecycleSystemGroup),
-        };
+        /// <summary>Every phase group in <c>SystemGroups</c> except replay playback's own, so new phases are paused too.</summary>
+        private static readonly Type[] GameplayGroups = typeof(OrderSystemGroup).Assembly.GetTypes()
+            .Where(type => type.IsSubclassOf(typeof(ComponentSystemGroup)) && type != typeof(ReplaySystemGroup))
+            .OrderBy(type => type.FullName, StringComparer.Ordinal)
+            .ToArray();
 
         public static void Begin(World world, Replay replay)
         {
@@ -24,10 +26,12 @@ namespace HyperRTS.Simulation.Replays
             }
 
             Stop(world);
-            SetGameplay(world, false);
+            var data = ReplayPlaybackState.Create(replay);
+            data.GameplayEnabled = PauseGameplay(world);
             var entityManager = world.EntityManager;
+            LocalFogViewSystem.SetRevealAll(entityManager, true);
             var entity = entityManager.CreateEntity();
-            entityManager.AddComponentData(entity, ReplayPlaybackState.Create(replay));
+            entityManager.AddComponentData(entity, data);
             entityManager.AddComponentData(entity, new ReplayPlayback
             {
                 Duration = replay.Duration,
@@ -42,7 +46,7 @@ namespace HyperRTS.Simulation.Replays
             return query.HasSingleton<ReplayPlaybackState>();
         }
 
-        /// <summary>Ends playback and turns gameplay back on; the world keeps the replayed entities.</summary>
+        /// <summary>Ends playback and restores the gameplay phases as they were; the world keeps the replayed entities.</summary>
         public static void Stop(World world)
         {
             var entityManager = world.EntityManager;
@@ -52,19 +56,40 @@ namespace HyperRTS.Simulation.Replays
                 return;
             }
 
-            entityManager.GetComponentData<ReplayPlaybackState>(entity).Dispose();
+            var data = entityManager.GetComponentData<ReplayPlaybackState>(entity);
+            data.Dispose();
             entityManager.DestroyEntity(entity);
-            SetGameplay(world, true);
+            RestoreGameplay(world, data.GameplayEnabled);
+            LocalFogViewSystem.SetRevealAll(entityManager, false);
         }
 
-        private static void SetGameplay(World world, bool enabled)
+        /// <summary>Turns the gameplay phases off; returns which were on, one bit per <see cref="GameplayGroups"/> entry.</summary>
+        private static ulong PauseGameplay(World world)
         {
-            foreach (var type in GameplayGroups)
+            var enabled = 0ul;
+            for (var i = 0; i < GameplayGroups.Length; i++)
             {
-                var group = world.GetExistingSystemManaged(type);
+                var group = world.GetExistingSystemManaged(GameplayGroups[i]);
+                if (group == null)
+                {
+                    continue;
+                }
+
+                enabled |= group.Enabled ? 1ul << i : 0ul;
+                group.Enabled = false;
+            }
+
+            return enabled;
+        }
+
+        private static void RestoreGameplay(World world, ulong enabled)
+        {
+            for (var i = 0; i < GameplayGroups.Length; i++)
+            {
+                var group = world.GetExistingSystemManaged(GameplayGroups[i]);
                 if (group != null)
                 {
-                    group.Enabled = enabled;
+                    group.Enabled = (enabled & (1ul << i)) != 0;
                 }
             }
         }

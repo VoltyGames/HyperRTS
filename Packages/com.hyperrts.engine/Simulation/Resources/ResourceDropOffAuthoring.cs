@@ -12,14 +12,14 @@ namespace HyperRTS.Simulation.Resources
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
-    public class ResourceDropOffAuthoring : MonoBehaviour
+    public class ResourceDropOffAuthoring : AuthoringBehaviour
     {
         public class Baker : Baker<ResourceDropOffAuthoring>
         {
             public override void Bake(ResourceDropOffAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent<ResourceDropOff>(entity);
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
+                ResourceDropOffSetup.Add(ref sink);
             }
         }
     }

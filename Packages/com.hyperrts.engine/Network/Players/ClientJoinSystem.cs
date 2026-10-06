@@ -1,5 +1,4 @@
-using HyperRTS.Network.Session;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
@@ -31,12 +30,13 @@ namespace HyperRTS.Network.Players
                 return;
             }
 
+            SystemAPI.TryGetSingleton(out JoinPreference preference);
             var entityManager = state.EntityManager;
             foreach (var connection in connections.ToEntityArray(Allocator.Temp))
             {
                 entityManager.AddComponent<NetworkStreamInGame>(connection);
                 var request = entityManager.CreateEntity();
-                entityManager.AddComponentData(request, new JoinRequest { Faction = NetworkSession.PreferredFaction });
+                entityManager.AddComponentData(request, new JoinRequest { Faction = preference.Faction });
                 entityManager.AddComponent<SendRpcCommandRequest>(request);
             }
         }
@@ -47,7 +47,6 @@ namespace HyperRTS.Network.Players
             foreach (var reply in accepted.ToEntityArray(Allocator.Temp))
             {
                 var faction = state.EntityManager.GetComponentData<JoinAccepted>(reply).Faction;
-                NetworkSession.PreferredFaction = faction;
                 if (!SystemAPI.TryGetSingletonRW<LocalFaction>(out var local))
                 {
                     state.EntityManager.CreateSingleton(new LocalFaction { Value = faction });

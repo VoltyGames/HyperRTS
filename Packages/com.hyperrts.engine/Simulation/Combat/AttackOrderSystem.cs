@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using Unity.Burst;
 using Unity.Collections;
@@ -57,8 +57,8 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 var target = order.Value.Target;
-                if (!Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets) ||
-                    Ammo.IsEmpty(AmmoLookup, entity))
+                var valid = Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets);
+                if (!valid || Ammo.IsEmpty(AmmoLookup, entity))
                 {
                     // EngagementSystem drops the stale AttackTarget and halts the chase.
                     hasOrder.ValueRW = false;

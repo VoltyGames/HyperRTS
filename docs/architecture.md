@@ -8,15 +8,15 @@ input or UI**.
 
 | Assembly | Folder | Holds | May reference |
 | --- | --- | --- | --- |
-| `HyperRTS.Core` | `Core/` | Contracts only: phase `SystemGroups`, `HyperRTSMenu`/`Icons`/`Docs` | Entities, Transforms, Mathematics, Collections, Burst |
+| `HyperRTS.Core` | `Core/` | Contracts only: phase `SystemGroups`, `SimulationWorlds`, `HyperRTSMenu`/`Icons`/`Docs` | Entities, Transforms, Collections (needed by the Entities source generators) |
 | `HyperRTS.Simulation` | `Simulation/` | Components, systems, authoring + bakers, setup helpers. The headless gameplay layer | Core, Entities(.Hybrid), Transforms, Mathematics, Collections, Burst, **Physics**, NetCode (`[GhostField]` only) |
-| `HyperRTS.Network` | `Network/` | Session start/stop, join, command RPCs, fog relevancy ([`networking.md`](networking.md)) | Core, Simulation, Entities, NetCode, Transport |
-| `HyperRTS.Presentation` | `Presentation/` | Team colours, overlays, fog rendering, UI Toolkit HUD | Core, Simulation, Entities, **Entities.Graphics**, Transforms |
-| `HyperRTS.Input` | `Input/` | Camera, input → command bridge, input actions | Core, Simulation, Entities, Transforms, **Physics**, **InputSystem** |
+| `HyperRTS.Network` | `Network/` | Session start/stop, join, command RPCs, replication, fog relevancy ([`networking.md`](networking.md)) | Core, Simulation, Entities, Transforms, Mathematics, Collections, Burst, NetCode, Transport, **Physics** (switched off on the server) |
+| `HyperRTS.Presentation` | `Presentation/` | Team colours, overlays, fog rendering, UI Toolkit HUD | Core, Simulation, Entities, **Entities.Graphics**, Transforms, Mathematics(.Extensions), Collections, Burst |
+| `HyperRTS.Input` | `Input/` | Camera, input → command bridge, input actions | Core, Simulation, Entities, Mathematics, Collections, **Physics**, **InputSystem** |
 | `HyperRTS.Editor` | `Editor/` | Validator, inspectors and handles, templates, catalog, Play-mode debug and cheats, scene wizard | Core, Simulation, Presentation, Network, Entities, Scenes, NetCode, `Editor` platform |
 | `HyperRTS.Simulation.Tests` | `Simulation/Tests/` | EditMode tests through `TestWorld` | Core, Simulation |
 | `HyperRTS.Presentation.Tests` | `Presentation/Tests/` | EditMode tests for presentation helpers and systems | Core, Simulation, Presentation |
-| `HyperRTS.Editor.Tests` | `Editor/Tests/` | Validation rules, templates, and a project-wide "no validation errors" check | Core, Simulation, Editor |
+| `HyperRTS.Editor.Tests` | `Editor/Tests/` | Validation rules, templates, module layout, and a project-wide "no validation errors" check | Core, Simulation, Editor |
 
 ```text
             Core            (contracts; no graphics/input/UI)
@@ -42,8 +42,8 @@ grep -rn "UnityEngine.InputSystem\|Unity.Rendering\|UnityEngine.UIElements" Pack
 
 ## Crossing the boundary: data down, rendering and input up
 
-Data that the simulation owns but clients read, or that two client layers share, lives in `Simulation`.
-Presentation and Input never reference each other.
+Data that the simulation owns but clients read, or that two client layers share, lives in `Simulation` (client UI
+state in `Simulation/Interaction/`). Presentation and Input never reference each other.
 
 - **Commands.** Input (and the AI) write `PlayerCommand`s to the player entity. This is the only way intent enters
   the simulation, and it is the message a networked build would send.
@@ -58,13 +58,16 @@ Presentation and Input never reference each other.
 
 ## Namespaces
 
-Namespaces follow the assembly: `HyperRTS.<Layer>.<Module>` (`HyperRTS.Simulation.Combat`,
+Namespaces follow the folder path: `HyperRTS.<Layer>.<Module>` (`HyperRTS.Simulation.Combat`,
 `HyperRTS.Presentation.Fog`, `HyperRTS.Input.Cameras`). `HyperRTS.Core` stays flat. A feature that spans layers
-(Selection) spans the matching layer namespaces.
+(Selection) spans the matching layer namespaces. `ModuleLayoutTests` (in `HyperRTS.Editor.Tests`) checks this, and
+keeps Simulation modules layered on `Common` (see [`modules.md`](modules.md)).
 
 ## Adding code
 
-- Gameplay component, system or authoring → `Simulation/<Module>/`, namespace `HyperRTS.Simulation.<Module>`.
+- Gameplay component, system or authoring → `Simulation/<Module>/`, namespace `HyperRTS.Simulation.<Module>`. A
+  component two modules share goes in `Common` or the lower module. Authoring classes derive from
+  `AuthoringBehaviour`.
 - Needs rendering or UI → `Presentation/`. Needs InputSystem → `Input/`. Both reference `Simulation`, never the
   reverse.
 - If presentation or input needs a value the simulation produces, put the **data component** in `Simulation` and

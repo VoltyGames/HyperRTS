@@ -1,10 +1,8 @@
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport;
@@ -159,7 +157,7 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void Capture_RefundsQueueToOldOwner_AndDropsSelection()
+        public void Capture_RefundsQueueToOldOwner_AndDropsSelectionAndRallyPoint()
         {
             var prefab = _world.MakePrefab(_world.SpawnUnit(0, new float3(90f, 0f, 90f)));
             _world.SetBuildTime(prefab, 100f);
@@ -170,6 +168,7 @@ namespace HyperRTS.Simulation.Tests
             CaptureSetup.AddCapturable(ref sink, 1f);
             _world.EntityManager.GetBuffer<ProductionQueueItem>(factory).Add(new ProductionQueueItem { Prefab = prefab });
             _world.EntityManager.SetComponentEnabled<Selected>(factory, true);
+            _world.EntityManager.SetComponentEnabled<RallyPoint>(factory, true);
             var engineer = Capturer(float3.zero);
             var before = _world.Stock(2, _supplies);
 
@@ -180,6 +179,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(before + 30, _world.Stock(2, _supplies), "the old owner gets its queue back");
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<ProductionQueueItem>(factory).Length);
             Assert.IsFalse(_world.IsEnabled<Selected>(factory));
+            Assert.IsFalse(_world.IsEnabled<RallyPoint>(factory), "the old owner's rally point is dropped");
         }
 
         [Test]

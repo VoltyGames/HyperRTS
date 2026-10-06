@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using Unity.Entities;

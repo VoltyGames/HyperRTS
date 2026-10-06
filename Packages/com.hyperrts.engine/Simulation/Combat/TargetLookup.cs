@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Vision;
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Combat
         }
 
         /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
-        public bool IsAlive(Entity entity) => _health.TryGetComponent(entity, out var health) && health.Current > 0f;
+        public bool IsAlive(Entity entity) => Health.IsAlive(_health, entity);
 
         /// <summary>Alive, hostile, not tucked inside a container and not hidden from the attacker by stealth.</summary>
         public bool IsValidTarget(Entity target, byte attackerFaction, in FactionRelations relations)
@@ -77,7 +77,7 @@ namespace HyperRTS.Simulation.Combat
         /// first so unstealthed candidates skip the transform lookup.
         /// </summary>
         public bool IsCloakedFrom(Entity target, byte team) =>
-            Stealthed.Of(_stealthed, target) && !_fog.IsDetected(Position(target), team);
+            _stealthed.HasEnabled(target) && !_fog.IsDetected(Position(target), team);
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
 
@@ -85,7 +85,8 @@ namespace HyperRTS.Simulation.Combat
         public float Radius(Entity entity) =>
             EntityRadius.Of(IsInside(entity) ? _inside[entity].Container : entity, _agents, _obstacles);
 
-        private bool IsInside(Entity entity) => TransportRules.IsInside(_inside, entity);
+        /// <summary>Tucked inside a transport or garrison: hidden and untargetable.</summary>
+        public bool IsInside(Entity entity) => _inside.HasEnabled(entity);
 
         /// <summary>
         /// The system caches the query, so this is a lookup after the first call, which (from the constructor) makes

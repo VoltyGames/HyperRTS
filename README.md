@@ -60,7 +60,7 @@ to a playable skirmish with your own units and buildings, and shows how to add m
 ## Layout
 
 ```text
-Packages/com.hyperrts.engine/   the engine (UPM package): Core, Simulation, Presentation, Input, Editor, Prefabs
+Packages/com.hyperrts.engine/   the engine (UPM package): Core, Simulation, Presentation, Input, Network, Editor, Prefabs
 Assets/Demo/                    the sample game (prefabs, data, scene)
 docs/                           documentation
 ```

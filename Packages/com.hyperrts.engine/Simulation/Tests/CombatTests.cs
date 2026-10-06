@@ -1,9 +1,8 @@
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Units;
 using NUnit.Framework;
-using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
@@ -125,8 +124,8 @@ namespace HyperRTS.Simulation.Tests
             _world.Arm(_world.SpawnUnit(1, float3.zero), range: 8f, damage: 40f, cooldown: 100f, projectile: prefab,
                 damageType: bullet);
             var tank = _world.SpawnUnit(2, new float3(6f, 0f, 0f));
-            _world.EntityManager.AddBuffer<ArmorModifier>(tank)
-                .Add(new ArmorModifier { DamageType = bullet, Multiplier = 0.5f });
+            var sink = new EntityManagerSink(_world.EntityManager, tank);
+            ArmorSetup.Add(ref sink, new[] { new ArmorModifier { DamageType = bullet, Multiplier = 0.5f } });
 
             using var projectiles = _world.EntityManager.CreateEntityQuery(typeof(Projectile));
             for (var frame = 0; frame < 30 && projectiles.IsEmpty; frame++)

@@ -1,6 +1,5 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
@@ -64,7 +63,7 @@ namespace HyperRTS.Network.Commands
 
             // A commanded unit goes as is; a selection only sends this player's own units.
             var isSingle = command.Unit != Entity.Null;
-            foreach (var subject in CommandSubjects.Collect(command, listed, _selected))
+            foreach (var subject in PlayerCommands.Collect(command, listed, _selected))
             {
                 if (rpc.Subjects.Length == CommandRpc.MaxSubjects)
                 {

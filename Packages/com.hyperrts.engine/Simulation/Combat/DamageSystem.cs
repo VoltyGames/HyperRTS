@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Stats;
 using Unity.Burst;

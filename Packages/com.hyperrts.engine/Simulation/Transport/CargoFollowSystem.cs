@@ -1,6 +1,5 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Units;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;
@@ -13,7 +12,6 @@ namespace HyperRTS.Simulation.Transport
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
-    [UpdateAfter(typeof(MovementSystem))]
     public partial struct CargoFollowSystem : ISystem
     {
         private ComponentLookup<LocalTransform> _transforms;

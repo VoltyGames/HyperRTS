@@ -1,7 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
-using HyperRTS.Simulation.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -38,9 +38,6 @@ namespace HyperRTS.Simulation.Orders
             new MoveOrderJob { Attacks = _attacks, DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
         }
 
-        /// <summary>How close a stalled unit must be for its move to count as done.</summary>
-        internal static float StallRadius(float radius) => radius * 4f + 1f;
-
         [BurstCompile]
         [WithPresent(typeof(MoveOrderState), typeof(MoveDestination))]
         private partial struct MoveOrderJob : IJobEntity
@@ -53,13 +50,13 @@ namespace HyperRTS.Simulation.Orders
                 EnabledRefRW<MoveDestination> moving, in LocalTransform transform, in NavAgent agent,
                 DynamicBuffer<QueuedOrder> queue)
             {
-                if (order.Value.Type != OrderType.Move && !order.Value.Type.IsAttackMove())
+                if (!order.Value.Type.UsesFormation())
                 {
                     return;
                 }
 
                 // Combat owns movement while engaged; re-apply the goal once it lets go.
-                if (Attacks.HasComponent(entity) && Attacks.IsComponentEnabled(entity))
+                if (Attacks.HasEnabled(entity))
                 {
                     driving.ValueRW = false;
                     return;
@@ -80,9 +77,8 @@ namespace HyperRTS.Simulation.Orders
                 // A disabled destination means locomotion arrived, or got as close as the grid allows.
                 if (!moving.ValueRO || stalled)
                 {
-                    moving.ValueRW = false;
+                    ActiveOrder.Finish(busy, moving);
                     driving.ValueRW = false;
-                    busy.ValueRW = false;
                     if (order.Value.Type == OrderType.Patrol && queue.Length > 0)
                     {
                         queue.Add(new QueuedOrder { Value = order.Value });
@@ -99,7 +95,8 @@ namespace HyperRTS.Simulation.Orders
                 }
 
                 progress.StallTime += DeltaTime;
-                return progress.StallTime >= StallSeconds && math.distance(position.xz, goal.xz) <= StallRadius(radius);
+                var near = math.distance(position.xz, goal.xz) <= NavTolerances.Crowded(radius);
+                return near && progress.StallTime >= StallSeconds;
             }
         }
     }

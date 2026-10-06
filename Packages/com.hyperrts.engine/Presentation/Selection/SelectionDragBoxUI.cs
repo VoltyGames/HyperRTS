@@ -1,6 +1,7 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Interaction;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -13,8 +14,7 @@ namespace HyperRTS.Presentation.Selection
     [Icon(HyperRTSIcons.Selection)]
     [HelpURL(HyperRTSDocs.Roadmap)]
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(PanelRenderer))]
-    public class SelectionDragBoxUI : MonoBehaviour
+    public class SelectionDragBoxUI : PanelContent
     {
         [Header("Drag Box")]
         [SerializeField]
@@ -32,38 +32,7 @@ namespace HyperRTS.Presentation.Selection
         private readonly LiveQuery _dragQuery = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<SelectionDragState>()));
 
-        private VisualElement _marquee;
-        private int _uiVersion = -1;
-
-        // PanelRenderer delivers its root through this callback. Register once (not in OnEnable) to avoid duplicate elements.
-        private void Awake()
-        {
-            GetComponent<PanelRenderer>().RegisterUIReloadCallback(OnUIReload);
-        }
-
-        private void OnDestroy()
-        {
-            if (TryGetComponent<PanelRenderer>(out var panelRenderer))
-            {
-                panelRenderer.UnregisterUIReloadCallback(OnUIReload);
-            }
-        }
-
-        // Fires on load and on asset changes; skip versions already built.
-        private void OnUIReload(PanelRenderer panelRenderer, VisualElement root, int version)
-        {
-            if (root == null || version == _uiVersion)
-            {
-                return;
-            }
-
-            _uiVersion = version;
-            _marquee?.RemoveFromHierarchy();
-            _marquee = BuildMarquee();
-            root.Add(_marquee);
-        }
-
-        private VisualElement BuildMarquee()
+        protected override VisualElement Build()
         {
             var marquee = new VisualElement { pickingMode = PickingMode.Ignore };
             var style = marquee.style;
@@ -83,31 +52,32 @@ namespace HyperRTS.Presentation.Selection
 
         private void Update()
         {
-            if (_marquee?.panel == null)
+            var marquee = Content;
+            if (marquee?.panel == null)
             {
                 return;
             }
 
             if (!TryGetDragState(out var drag) || !drag.IsDragging)
             {
-                _marquee.style.display = DisplayStyle.None;
+                marquee.style.display = DisplayStyle.None;
                 return;
             }
 
-            var rect = ScreenToPanelRect(_marquee.panel, drag.StartScreen, drag.CurrentScreen);
-            _marquee.style.display = DisplayStyle.Flex;
-            _marquee.style.left = rect.x;
-            _marquee.style.top = rect.y;
-            _marquee.style.width = rect.width;
-            _marquee.style.height = rect.height;
+            var rect = ScreenToPanelRect(marquee.panel, drag.StartScreen, drag.CurrentScreen);
+            marquee.style.display = DisplayStyle.Flex;
+            marquee.style.left = rect.x;
+            marquee.style.top = rect.y;
+            marquee.style.width = rect.width;
+            marquee.style.height = rect.height;
         }
 
         // False until a world with the singleton exists (edit mode, headless server).
         private bool TryGetDragState(out SelectionDragState state)
         {
             state = default;
-            var world = World.DefaultGameObjectInjectionWorld;
-            return world != null && world.IsCreated && _dragQuery.In(world.EntityManager).TryGetSingleton(out state);
+            return DefaultWorld.TryGetEntityManager(out var entityManager)
+                && _dragQuery.In(entityManager).TryGetSingleton(out state);
         }
 
         // Input reports bottom-left screen pixels; panels are top-left and may be scaled.

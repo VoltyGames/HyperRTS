@@ -1,7 +1,8 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
@@ -52,7 +53,7 @@ namespace HyperRTS.Simulation.Buildings
                         continue;
                     }
 
-                    foreach (var building in CommandSubjects.Collect(command, listed, _selected))
+                    foreach (var building in PlayerCommands.Collect(command, listed, _selected))
                     {
                         if (IsOwnedBuilding(ref state, building, player.ValueRO.Faction) && sold.Add(building))
                         {
@@ -64,29 +65,28 @@ namespace HyperRTS.Simulation.Buildings
             }
         }
 
-        private bool IsOwnedBuilding(ref SystemState state, Entity entity, byte faction) =>
-            SystemAPI.HasComponent<BuildingTag>(entity) && !SystemAPI.IsComponentEnabled<Dead>(entity) &&
-            SystemAPI.GetComponent<Faction>(entity).Value == faction;
+        private bool IsOwnedBuilding(ref SystemState state, Entity entity, byte faction)
+        {
+            if (!SystemAPI.HasComponent<BuildingTag>(entity) || state.EntityManager.HasEnabled<Dead>(entity))
+            {
+                return false;
+            }
+
+            return SystemAPI.GetComponent<Faction>(entity).Value == faction;
+        }
 
         private void Sell(ref SystemState state, Entity building, DynamicBuffer<ResourceStock> stock, float refund)
         {
-            var unfinished = ConstructionRules.IsUnderConstruction(state.EntityManager, building);
+            var unfinished = state.EntityManager.HasEnabled<ConstructionProgress>(building);
             if (SystemAPI.HasBuffer<ResourceCost>(building))
             {
                 ResourceMath.Refund(stock, SystemAPI.GetBuffer<ResourceCost>(building), unfinished ? 1f : refund);
             }
 
-            if (!SystemAPI.HasBuffer<ProductionQueueItem>(building))
+            if (SystemAPI.HasBuffer<ProductionQueueItem>(building))
             {
-                return;
-            }
-
-            foreach (var item in SystemAPI.GetBuffer<ProductionQueueItem>(building))
-            {
-                if (SystemAPI.HasBuffer<ResourceCost>(item.Prefab))
-                {
-                    ResourceMath.Refund(stock, SystemAPI.GetBuffer<ResourceCost>(item.Prefab));
-                }
+                ProductionRules.RefundQueue(stock, SystemAPI.GetBuffer<ProductionQueueItem>(building),
+                    SystemAPI.GetBufferLookup<ResourceCost>(true));
             }
         }
     }

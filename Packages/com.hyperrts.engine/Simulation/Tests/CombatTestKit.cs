@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Units;
 using Unity.Entities;
 using Unity.Transforms;
 
@@ -20,6 +19,7 @@ namespace HyperRTS.Simulation.Tests
                 Cooldown = cooldown,
                 ProjectilePrefab = projectile,
                 ProjectileSpeed = 10f,
+                ProjectileHeight = 1f,
                 DamageType = damageType,
                 Targets = targets,
             };

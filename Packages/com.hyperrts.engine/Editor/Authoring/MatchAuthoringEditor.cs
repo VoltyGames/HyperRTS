@@ -1,5 +1,4 @@
-using HyperRTS.Editor.Validation;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
 using UnityEditor;
 using UnityEngine;
@@ -12,6 +11,8 @@ namespace HyperRTS.Editor.Authoring
     {
         // Drawing more lines than this would stall the Scene view on fine grids.
         private const int MaxGridLines = 1000;
+
+        private static readonly Color MapColor = new(1f, 0.85f, 0.2f);
 
         private static bool _showNavGrid;
         private static bool _showFogGrid;
@@ -83,7 +84,7 @@ namespace HyperRTS.Editor.Authoring
         [DrawGizmo(GizmoType.NonSelected)]
         private static void DrawMapOutline(MatchAuthoring match, GizmoType type)
         {
-            Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.8f);
+            Gizmos.color = GroundHandles.Faded(MapColor, 0.8f);
             Gizmos.DrawWireCube(match.transform.position, new Vector3(match.mapSize.x, 0f, match.mapSize.y));
         }
 
@@ -102,12 +103,7 @@ namespace HyperRTS.Editor.Authoring
                 DrawGrid(center, match.mapSize, match.fogCellSize, new Color(0.6f, 0.6f, 0.25f, 0.35f));
             }
 
-            EditorGUI.BeginChangeCheck();
-            var size = GroundHandles.Box(center, match.mapSize, new Color(1f, 0.85f, 0.2f));
-            if (EditorGUI.EndChangeCheck())
-            {
-                QuickFixes.Edit(match, "Resize Map", () => match.mapSize = size);
-            }
+            GroundHandles.EditBox(match, center, match.mapSize, MapColor, "Resize Map", size => match.mapSize = size);
         }
 
         private static void DrawGrid(Vector3 center, Vector2 size, float cell, Color color)

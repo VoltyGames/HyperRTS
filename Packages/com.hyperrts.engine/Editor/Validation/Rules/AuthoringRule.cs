@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
@@ -17,28 +19,45 @@ namespace HyperRTS.Editor.Validation.Rules
         protected static void CheckPrefabOptions<TOption>(Component owner, List<TOption> options, string label,
             ValidationIssues issues) where TOption : Object
         {
-            if (options.Exists(option => option == null))
-            {
-                issues.Warn(owner, $"{label} list has empty entries that will be ignored.", "Remove Empty",
-                    () => QuickFixes.RemoveEmpty(owner, options, option => option == null));
-            }
+            CheckEmptyEntries(owner, options, option => option == null,
+                $"{label} list has empty entries that will be ignored.", issues);
 
             foreach (var option in options)
             {
-                if (option == null || PrefabUtility.IsPartOfPrefabAsset(option))
-                {
-                    continue;
-                }
+                CheckPrefabReference(owner, option, label, issues, () => QuickFixes.UsePrefab(owner, options, option));
+            }
+        }
 
-                var message = $"{label} '{option.name}' is a scene object; reference the prefab asset.";
-                if (PrefabUtility.GetCorrespondingObjectFromSource(option) != null)
-                {
-                    issues.Warn(owner, message, "Use Prefab", () => QuickFixes.UsePrefab(owner, options, option));
-                }
-                else
-                {
-                    issues.Warn(owner, message);
-                }
+        /// <summary>
+        /// A referenced prefab must be an asset: a scene object stops existing once the scene bakes. Offers
+        /// <paramref name="usePrefab"/> as a fix when the object is an instance of a prefab.
+        /// </summary>
+        protected static void CheckPrefabReference(Component owner, Object reference, string label,
+            ValidationIssues issues, Action usePrefab = null)
+        {
+            if (reference == null || PrefabUtility.IsPartOfPrefabAsset(reference))
+            {
+                return;
+            }
+
+            var message = $"{label} '{reference.name}' is a scene object; reference the prefab asset.";
+            var hasSource = PrefabUtility.GetCorrespondingObjectFromSource(reference) != null;
+            if (usePrefab != null && hasSource)
+            {
+                issues.Warn(owner, message, "Use Prefab", usePrefab);
+                return;
+            }
+
+            issues.Warn(owner, message);
+        }
+
+        /// <summary>Warns about list entries the baker skips, with a fix that removes them.</summary>
+        protected static void CheckEmptyEntries<TItem>(Component owner, List<TItem> list, Predicate<TItem> isEmpty,
+            string message, ValidationIssues issues)
+        {
+            if (list.Exists(isEmpty))
+            {
+                issues.Warn(owner, message, "Remove Empty", () => QuickFixes.RemoveEmpty(owner, list, isEmpty));
             }
         }
 

@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace HyperRTS.Simulation.Audio
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class EntitySoundsAuthoring : MonoBehaviour
+    public class EntitySoundsAuthoring : AuthoringBehaviour
     {
         [Header("World")]
         [Tooltip("Each shot, at the shooter.")]

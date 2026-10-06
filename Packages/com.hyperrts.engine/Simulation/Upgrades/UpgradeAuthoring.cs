@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;
 using Unity.Collections;
@@ -18,7 +19,7 @@ namespace HyperRTS.Simulation.Upgrades
     [Icon(HyperRTSIcons.Buildings)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
-    public class UpgradeAuthoring : MonoBehaviour
+    public class UpgradeAuthoring : AuthoringBehaviour
     {
         [Serializable]
         public class Effect
@@ -63,28 +64,10 @@ namespace HyperRTS.Simulation.Upgrades
                 var text = new FixedString64Bytes();
                 text.CopyFromTruncated(authoring.DisplayName);
 
-                var costs = new List<ResourceCost>();
-                foreach (var quantity in authoring.cost)
-                {
-                    if (quantity.type != null)
-                    {
-                        costs.Add(new ResourceCost { Type = quantity.type, Amount = quantity.amount });
-                    }
-                }
-
-                var required = new List<Prerequisite>();
-                foreach (var prerequisite in authoring.prerequisites)
-                {
-                    if (prerequisite != null)
-                    {
-                        DependsOn(prerequisite);
-                        required.Add(new Prerequisite { TypeId = prerequisite.TypeId });
-                    }
-                }
-
                 var sink = new BakerSink(this, entity);
                 UpgradeSetup.Add(ref sink, new EntityInfo { TypeId = authoring.TypeId, Name = text, Icon = authoring.icon },
-                    authoring.researchTime, costs, required, BakeEffects(authoring));
+                    authoring.researchTime, ProducibleBaking.Costs(authoring.cost),
+                    ProducibleBaking.Prerequisites(this, authoring.prerequisites), BakeEffects(authoring));
             }
 
             private List<UpgradeEffect> BakeEffects(UpgradeAuthoring authoring)
@@ -94,7 +77,7 @@ namespace HyperRTS.Simulation.Upgrades
                 {
                     foreach (var bonus in effect.bonuses)
                     {
-                        var modifier = bonus.ToModifier(authoring.TypeId);
+                        var modifier = bonus.ToModifier(StatSource.Upgrade(authoring.TypeId));
                         if (effect.appliesTo.Count == 0)
                         {
                             effects.Add(new UpgradeEffect { Modifier = modifier });

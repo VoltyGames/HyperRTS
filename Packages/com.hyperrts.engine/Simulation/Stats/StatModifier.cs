@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Stats
         public Stat Stat;
         public float Add;
         public float Percent;
-        public int Source;
+        public StatSource Source;
     }
 
     /// <summary>Inspector form of a <see cref="StatModifier"/>; the owner supplies the source.</summary>
@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Stats
         [Tooltip("Fraction added on top: 0.25 = +25%, -0.5 = half. Percents from every source add up.")]
         public float percent;
 
-        public readonly StatModifier ToModifier(int source) =>
+        public readonly StatModifier ToModifier(StatSource source) =>
             new() { Stat = stat, Add = add, Percent = percent, Source = source };
     }
 }

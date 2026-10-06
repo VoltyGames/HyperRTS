@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Buildings
     [Icon(HyperRTSIcons.Buildings)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
-    public class BuilderAuthoring : MonoBehaviour
+    public class BuilderAuthoring : AuthoringBehaviour
     {
         [Tooltip("Building prefabs this unit can place.")]
         public List<BuildingAuthoring> buildOptions = new();

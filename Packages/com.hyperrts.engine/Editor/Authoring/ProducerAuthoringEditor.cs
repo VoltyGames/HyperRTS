@@ -1,5 +1,5 @@
-using HyperRTS.Editor.Validation;
-using HyperRTS.Simulation.Buildings;
+using HyperRTS.Editor.Common;
+using HyperRTS.Simulation.Production;
 using UnityEditor;
 using UnityEngine;
 
@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.Authoring
             var moved = Handles.PositionHandle(spawn, Quaternion.identity);
             if (EditorGUI.EndChangeCheck())
             {
-                QuickFixes.Edit(producer, "Move Spawn Point", () => producer.spawnOffset = transform.InverseTransformPoint(moved));
+                EditorUndo.Record(producer, "Move Spawn Point", () => producer.spawnOffset = transform.InverseTransformPoint(moved));
             }
         }
     }

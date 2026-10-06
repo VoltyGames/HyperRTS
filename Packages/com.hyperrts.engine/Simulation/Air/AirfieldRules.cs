@@ -1,5 +1,4 @@
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Air
@@ -11,7 +10,7 @@ namespace HyperRTS.Simulation.Air
         public static bool IsAirfieldOf(in BufferLookup<LandingPad> pads, in ComponentLookup<Faction> factions,
             in ComponentLookup<ConstructionProgress> sites, Entity airfield, byte faction)
         {
-            if (!pads.HasBuffer(airfield) || ConstructionRules.IsUnderConstruction(sites, airfield))
+            if (!pads.HasBuffer(airfield) || sites.HasEnabled(airfield))
             {
                 return false;
             }

@@ -1,19 +1,16 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
 using Unity.Entities;
-using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Simulation.Replays
 {
     /// <summary>Starts, reads and stops replay recording in an authoritative world (single player or server).</summary>
     public static class ReplayRecorder
     {
-        public const float DefaultSampleRate = 10f;
-        public const float DefaultKeyframeInterval = 10f;
-
         /// <summary>Starts a new recording, discarding any running one; the first sample is taken this frame.</summary>
-        public static void Start(World world, float sampleRate = DefaultSampleRate,
-            float keyframeInterval = DefaultKeyframeInterval)
+        public static void Start(World world, float sampleRate = ReplayRecording.DefaultSampleRate,
+            float keyframeInterval = ReplayRecording.DefaultKeyframeInterval)
         {
             Discard(world);
             world.EntityManager.CreateSingleton(ReplayRecording.Create(sampleRate, keyframeInterval));
@@ -25,15 +22,18 @@ namespace HyperRTS.Simulation.Replays
             return query.HasSingleton<ReplayRecording>();
         }
 
-        /// <summary>A copy of what is recorded so far, with the players and result; recording goes on.</summary>
-        public static Replay Snapshot(World world)
+        /// <summary>
+        /// A copy of what is recorded so far, with the players and result; recording goes on. <paramref name="scenePath"/>
+        /// is the scene a viewer opens to replay it: the one holding the map's SubScene, not a SubScene itself.
+        /// </summary>
+        public static Replay Snapshot(World world, string scenePath)
         {
             var entityManager = world.EntityManager;
             using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<ReplayRecording>());
             var recording = query.GetSingleton<ReplayRecording>();
             var replay = new Replay
             {
-                ScenePath = SceneManager.GetActiveScene().path,
+                ScenePath = scenePath ?? "",
                 SampleRate = 1f / recording.SampleInterval,
             };
 
@@ -44,10 +44,10 @@ namespace HyperRTS.Simulation.Replays
             return replay;
         }
 
-        /// <summary>Ends the recording and returns it.</summary>
-        public static Replay Stop(World world)
+        /// <summary>Ends the recording and returns it; see <see cref="Snapshot(World, string)"/>.</summary>
+        public static Replay Stop(World world, string scenePath)
         {
-            var replay = Snapshot(world);
+            var replay = Snapshot(world, scenePath);
             Discard(world);
             return replay;
         }

@@ -1,6 +1,5 @@
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;
 using HyperRTS.Simulation.Upgrades;
@@ -43,7 +42,10 @@ namespace HyperRTS.Simulation.Tests
                     new UpgradeEffect
                     {
                         AppliesTo = appliesTo,
-                        Modifier = new StatModifier { Stat = Stat.MaxHealth, Add = 50f, Source = typeId },
+                        Modifier = new StatModifier
+                        {
+                            Stat = Stat.MaxHealth, Add = 50f, Source = StatSource.Upgrade(typeId),
+                        },
                     },
                 });
             return _world.MakePrefab(upgrade);
@@ -65,13 +67,13 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual(50, _world.Stock(1, _supplies));
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<ResearchedUpgrade>(_world.Player(1)).Length);
-            Assert.AreEqual(150f, _world.Get<Combat.Health>(tank).Max);
-            Assert.AreEqual(100f, _world.Get<Combat.Health>(jeep).Max, "other types are unaffected");
-            Assert.AreEqual(100f, _world.Get<Combat.Health>(enemyTank).Max, "other players are unaffected");
+            Assert.AreEqual(150f, _world.Get<Health>(tank).Max);
+            Assert.AreEqual(100f, _world.Get<Health>(jeep).Max, "other types are unaffected");
+            Assert.AreEqual(100f, _world.Get<Health>(enemyTank).Max, "other players are unaffected");
 
             var newTank = _world.SpawnUnit(1, new float3(14f, 0f, 0f), name: "Tank");
             _world.Tick(frames: 2);
-            Assert.AreEqual(150f, _world.Get<Combat.Health>(newTank).Max, "later spawns catch up");
+            Assert.AreEqual(150f, _world.Get<Health>(newTank).Max, "later spawns catch up");
         }
 
         [Test]
@@ -103,12 +105,12 @@ namespace HyperRTS.Simulation.Tests
             _world.Give(1, _supplies, 100);
             _world.Produce(1, lab, upgrade);
             _world.Run(3f);
-            Assert.AreEqual(150f, _world.Get<Combat.Health>(unit).Max);
+            Assert.AreEqual(150f, _world.Get<Health>(unit).Max);
 
             _world.EntityManager.SetComponentData(unit, new Faction { Value = 2 });
             _world.Tick(frames: 2);
 
-            Assert.AreEqual(100f, _world.Get<Combat.Health>(unit).Max);
+            Assert.AreEqual(100f, _world.Get<Health>(unit).Max);
         }
     }
 }

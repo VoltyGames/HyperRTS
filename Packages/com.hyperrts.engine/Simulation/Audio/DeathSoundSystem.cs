@@ -1,16 +1,14 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Audio
 {
-    /// <summary>Plays the death cue of everything <see cref="DeathSystem"/> marked <see cref="Dead"/> this frame.</summary>
+    /// <summary>Plays the death cue of everything <c>DeathSystem</c> marked <see cref="Dead"/> this frame.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
-    [UpdateAfter(typeof(DeathSystem))]
     public partial struct DeathSoundSystem : ISystem
     {
         private SoundWriter _sounds;

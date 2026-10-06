@@ -1,10 +1,8 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Interaction;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
@@ -143,17 +141,24 @@ namespace HyperRTS.Simulation.Buildings
                 return false;
             }
 
+            var building = SpawnSite(ref state, prefab, center, request.Faction, ecb);
+            sites.Add(new Site { Center = center, Footprint = footprint });
+            order = new Order { Type = OrderType.Build, Target = building, Position = center };
+            return true;
+        }
+
+        /// <summary>An unbuilt instance of <paramref name="prefab"/>; builders raise it through Build orders.</summary>
+        private Entity SpawnSite(ref SystemState state, Entity prefab, float3 center, byte faction,
+            EntityCommandBuffer ecb)
+        {
             var building = ecb.Instantiate(prefab);
             var transform = SystemAPI.GetComponent<LocalTransform>(prefab);
             transform.Position = center;
             ecb.SetComponent(building, transform);
-            ecb.SetComponent(building, new Faction { Value = request.Faction });
+            ecb.SetComponent(building, new Faction { Value = faction });
             ecb.SetComponent(building, new ConstructionProgress { Value = 0f });
             ecb.SetComponentEnabled<ConstructionProgress>(building, true);
-
-            sites.Add(new Site { Center = center, Footprint = footprint });
-            order = new Order { Type = OrderType.Build, Target = building, Position = center };
-            return true;
+            return building;
         }
 
         /// <summary>The commanded unit, or the player's selected builders, that can place the prefab.</summary>
@@ -161,24 +166,48 @@ namespace HyperRTS.Simulation.Buildings
         {
             var result = new NativeList<Entity>(Allocator.Temp);
             var prefab = request.Command.Prefab;
-            if (!SystemAPI.HasComponent<BuildingTag>(prefab) || !SystemAPI.HasComponent<ConstructionProgress>(prefab) ||
-                !SystemAPI.HasComponent<NavObstacle>(prefab) || !SystemAPI.HasComponent<LocalTransform>(prefab))
+            if (!IsPlaceable(ref state, prefab))
             {
                 return result;
             }
 
             var listed = SystemAPI.GetBuffer<PlayerCommandSubject>(request.Player);
-            foreach (var unit in CommandSubjects.Collect(request.Command, listed, _selectedBuilders))
+            foreach (var unit in PlayerCommands.Collect(request.Command, listed, _selectedBuilders))
             {
-                if (SystemAPI.HasBuffer<BuildOption>(unit) && SystemAPI.HasComponent<Faction>(unit) &&
-                    SystemAPI.GetComponent<Faction>(unit).Value == request.Faction &&
-                    ProductionRules.Offers(SystemAPI.GetBuffer<BuildOption>(unit), prefab))
+                if (CanBuild(ref state, unit, request.Faction, prefab))
                 {
                     result.Add(unit);
                 }
             }
 
             return result;
+        }
+
+        /// <summary>A building prefab carrying everything placement reads.</summary>
+        private bool IsPlaceable(ref SystemState state, Entity prefab)
+        {
+            if (!SystemAPI.HasComponent<BuildingTag>(prefab) || !SystemAPI.HasComponent<ConstructionProgress>(prefab))
+            {
+                return false;
+            }
+
+            return SystemAPI.HasComponent<NavObstacle>(prefab) && SystemAPI.HasComponent<LocalTransform>(prefab);
+        }
+
+        /// <summary>An owned builder listing <paramref name="prefab"/> among its build options.</summary>
+        private bool CanBuild(ref SystemState state, Entity unit, byte faction, Entity prefab)
+        {
+            if (!SystemAPI.HasBuffer<BuildOption>(unit) || !SystemAPI.HasComponent<Faction>(unit))
+            {
+                return false;
+            }
+
+            if (SystemAPI.GetComponent<Faction>(unit).Value != faction)
+            {
+                return false;
+            }
+
+            return ProductionRules.Offers(SystemAPI.GetBuffer<BuildOption>(unit), prefab);
         }
 
         /// <summary>Checks existing obstacles too: the nav grid may lag a frame behind newly placed sites.</summary>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ namespace HyperRTS.Simulation.Combat
     [Icon(HyperRTSIcons.Combat)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
-    public class ArmorAuthoring : MonoBehaviour
+    public class ArmorAuthoring : AuthoringBehaviour
     {
         [Serializable]
         public struct Entry
@@ -49,19 +50,21 @@ namespace HyperRTS.Simulation.Combat
         {
             public override void Bake(ArmorAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
-                var buffer = AddBuffer<ArmorModifier>(entity);
+                var modifiers = new List<ArmorModifier>();
                 foreach (var entry in authoring.modifiers)
                 {
                     if (entry.damageType != null)
                     {
-                        buffer.Add(new ArmorModifier { DamageType = entry.damageType, Multiplier = entry.multiplier });
+                        modifiers.Add(new ArmorModifier { DamageType = entry.damageType, Multiplier = entry.multiplier });
                     }
                 }
 
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
+                ArmorSetup.Add(ref sink, modifiers);
                 if (authoring.IsDirectional)
                 {
-                    AddComponent(entity, new ArmorFacing { Front = authoring.front, Side = authoring.side, Rear = authoring.rear });
+                    ArmorSetup.AddFacing(ref sink,
+                        new ArmorFacing { Front = authoring.front, Side = authoring.side, Rear = authoring.rear });
                 }
             }
         }

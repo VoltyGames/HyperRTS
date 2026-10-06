@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Vision;

@@ -1,5 +1,4 @@
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Spatial;
@@ -51,6 +50,22 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(collector.Found.Contains(near));
             Assert.IsTrue(collector.Found.Contains(building), "edge distance counts, not centre distance");
             Assert.IsFalse(collector.Found.Contains(far));
+        }
+
+        [Test]
+        public void SpatialIndex_FindsEntitiesWiderThanACell_FromBeyondTheirCentreCell()
+        {
+            var airfield = _world.SpawnBuilding(1, new float3(20f, 0f, 0f), new float2(40f, 40f));
+
+            _world.Tick();
+            _world.EntityManager.CompleteAllTrackedJobs();
+
+            using var query = _world.EntityManager.CreateEntityQuery(typeof(SpatialIndex));
+            var index = query.GetSingleton<SpatialIndex>();
+            var collector = new Collector { Found = new NativeList<Entity>(Allocator.Temp) };
+            index.Query(float3.zero, 1f, ref collector);
+
+            Assert.IsTrue(collector.Found.Contains(airfield), "its 20 m radius reaches a query two cells from its centre");
         }
 
         [Test]

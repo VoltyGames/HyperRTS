@@ -4,8 +4,8 @@ using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Rules;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
@@ -60,6 +60,15 @@ namespace HyperRTS.Editor.Tests
             var harvester = Track(EntityTemplates.Building()).AddComponent<HarvesterAuthoring>();
 
             Assert.IsTrue(AuthoringChecks.For(harvester).Any(issue => issue.Message.Contains("needs a Unit")));
+        }
+
+        [Test]
+        public void SceneObjectAsDeathSpawnIsReported()
+        {
+            var unit = Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
+            unit.deathSpawn = Track(EntityTemplates.Unit("Wreck"));
+
+            Assert.IsTrue(AuthoringChecks.For(unit).Any(issue => issue.Message.StartsWith("Death spawn 'Wreck'")));
         }
 
         [TestCaseSource(nameof(Templates))]

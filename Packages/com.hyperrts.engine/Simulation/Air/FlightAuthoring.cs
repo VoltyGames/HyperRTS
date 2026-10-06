@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Air
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
-    public class FlightAuthoring : MonoBehaviour
+    public class FlightAuthoring : AuthoringBehaviour
     {
         [Tooltip("Cruise height above the ground or water.")]
         [Min(0f)]

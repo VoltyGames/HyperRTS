@@ -1,6 +1,7 @@
 using System.Linq;
 using Unity.NetCode;
 using Unity.Scenes;
+using UnityEngine;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
@@ -12,13 +13,20 @@ namespace HyperRTS.Editor.Validation.Rules
             foreach (var roots in scenes.Roots.Where(root => !root.scene.isSubScene).GroupBy(root => root.scene))
             {
                 var subSceneRoot = roots.FirstOrDefault(root => root.GetComponentInChildren<SubScene>(true) != null);
-                if (subSceneRoot != null &&
-                    !roots.Any(root => root.GetComponentInChildren<OverrideAutomaticNetcodeBootstrap>(true) != null))
+                if (subSceneRoot == null)
+                {
+                    continue;
+                }
+
+                if (!roots.Any(HasBootstrapOverride))
                 {
                     issues.Warn(subSceneRoot,
                         "No OverrideAutomaticNetcodeBootstrap: Netcode will replace the world. Add the RTS World rig.");
                 }
             }
         }
+
+        private static bool HasBootstrapOverride(GameObject root) =>
+            root.GetComponentInChildren<OverrideAutomaticNetcodeBootstrap>(true) != null;
     }
 }

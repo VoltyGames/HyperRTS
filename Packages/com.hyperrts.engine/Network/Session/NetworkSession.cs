@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Network.Players;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Networking.Transport;
@@ -18,7 +19,10 @@ namespace HyperRTS.Network.Session
     {
         public const ushort DefaultPort = 7979;
 
-        /// <summary>Slot (faction) to ask for when joining; reconnecting clients get their old slot back.</summary>
+        /// <summary>
+        /// Slot (faction) to ask for when joining. Updated to the granted slot when the client world closes, so a
+        /// reconnecting client gets its old slot back.
+        /// </summary>
         public static byte PreferredFaction { get; set; }
 
         public static bool IsRunning => ClientServerBootstrap.ServerWorld != null || ClientServerBootstrap.ClientWorld != null;
@@ -148,6 +152,7 @@ namespace HyperRTS.Network.Session
         {
             var world = ClientServerBootstrap.CreateClientWorld("ClientWorld");
             world.EntityManager.CreateSingleton(ClientTickRate());
+            world.EntityManager.CreateSingleton(new JoinPreference { Faction = PreferredFaction });
             using (var query = DriverQuery(world))
             {
                 ref var driver = ref query.GetSingletonRW<NetworkStreamDriver>().ValueRW;
@@ -205,6 +210,7 @@ namespace HyperRTS.Network.Session
 
         private static void DisposeWorlds()
         {
+            RememberSlot();
             var worlds = new List<World> { World.DefaultGameObjectInjectionWorld };
             worlds.AddRange(ClientServerBootstrap.ServerWorlds);
             worlds.AddRange(ClientServerBootstrap.ClientWorlds);
@@ -215,6 +221,21 @@ namespace HyperRTS.Network.Session
                 {
                     world.Dispose();
                 }
+            }
+        }
+
+        private static void RememberSlot()
+        {
+            var client = ClientServerBootstrap.ClientWorld;
+            if (client == null || !client.IsCreated)
+            {
+                return;
+            }
+
+            using var query = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalFaction>());
+            if (query.TryGetSingleton(out LocalFaction granted))
+            {
+                PreferredFaction = granted.Value;
             }
         }
 

@@ -1,7 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Network.Players;
 using HyperRTS.Simulation.Audio;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Entities;

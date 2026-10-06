@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Spatial;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -26,5 +27,23 @@ namespace HyperRTS.Simulation.AI
         public readonly float3 Position(int index) => Transforms[index].Position;
 
         public readonly bool IsOwnedBy(int index, byte faction) => Owners[index].Value == faction;
+
+        /// <summary>Squared distance on the ground plane, the measure every AI search ranks by.</summary>
+        public readonly float DistanceSq(int index, float3 from) => math.distancesq(Position(index).xz, from.xz);
+
+        /// <summary>Index of the entity owned by <paramref name="faction"/> nearest to a point, or -1.</summary>
+        public readonly int NearestOwned(byte faction, float3 from)
+        {
+            var closest = Closest.None;
+            for (var i = 0; i < Length; i++)
+            {
+                if (IsOwnedBy(i, faction))
+                {
+                    closest.Offer(i, Entities[i], DistanceSq(i, from));
+                }
+            }
+
+            return closest.Index;
+        }
     }
 }

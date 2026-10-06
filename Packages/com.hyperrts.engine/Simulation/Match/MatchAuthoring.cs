@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Match
     [Icon(HyperRTSIcons.Match)]
     [HelpURL(HyperRTSDocs.GettingStarted)]
     [DisallowMultipleComponent]
-    public class MatchAuthoring : MonoBehaviour
+    public class MatchAuthoring : AuthoringBehaviour
     {
         [Header("Map")]
         [Tooltip("Playable area (X by Z) centred on this transform.")]
@@ -56,10 +56,10 @@ namespace HyperRTS.Simulation.Match
 
         [Header("Players")]
         [Tooltip("Player slots. Slot 1 is faction 1, the 'Owner' number on units and buildings.")]
-        public List<PlayerSetup> players = new()
+        public List<PlayerSlot> players = new()
         {
-            new PlayerSetup { name = "Player", team = 1, color = PlayerSetup.Palette[0] },
-            new PlayerSetup { name = "Enemy", team = 2, color = PlayerSetup.Palette[1], control = PlayerControl.AI },
+            new PlayerSlot { name = "Player", team = 1, color = PlayerSlot.Palette[0] },
+            new PlayerSlot { name = "Enemy", team = 2, color = PlayerSlot.Palette[1], control = PlayerControl.AI },
         };
 
         [Header("AI")]
@@ -117,25 +117,25 @@ namespace HyperRTS.Simulation.Match
                 AddComponent(entity, relations);
             }
 
-            private void BakePlayer(MatchAuthoring authoring, PlayerSetup setup, byte faction)
+            private void BakePlayer(MatchAuthoring authoring, PlayerSlot slot, byte faction)
             {
-                var player = CreateAdditionalEntity(TransformUsageFlags.None, entityName: setup.name);
+                var player = CreateAdditionalEntity(TransformUsageFlags.None, entityName: slot.name);
                 var playerName = new FixedString32Bytes();
-                playerName.CopyFromTruncated(setup.name);
-                float4 color = (Vector4)setup.color.linear;
+                playerName.CopyFromTruncated(slot.name);
+                float4 color = (Vector4)slot.color.linear;
 
                 var sink = new BakerSink(this, player);
                 var stock = PlayerSetup.Add(ref sink, faction, playerName, color, populationCap: 0);
-                AddStartingResources(stock, setup);
+                AddStartingResources(stock, slot);
 
-                if (setup.control == PlayerControl.LocalHuman)
+                if (slot.control == PlayerControl.LocalHuman)
                 {
                     AddComponent<LocalPlayer>(player);
                 }
-                else if (setup.control == PlayerControl.AI)
+                else if (slot.control == PlayerControl.AI)
                 {
-                    var steps = AIPlayerSetup.Add(ref sink, authoring.AITuningFor(setup.difficulty).ToComponent());
-                    AddBuildOrder(steps, setup.buildOrder);
+                    var steps = AIPlayerSetup.Add(ref sink, authoring.AITuningFor(slot.difficulty).ToComponent());
+                    AddBuildOrder(steps, slot.buildOrder);
                 }
             }
 
@@ -158,9 +158,9 @@ namespace HyperRTS.Simulation.Match
                 }
             }
 
-            private static void AddStartingResources(DynamicBuffer<ResourceStock> stock, PlayerSetup setup)
+            private static void AddStartingResources(DynamicBuffer<ResourceStock> stock, PlayerSlot slot)
             {
-                foreach (var quantity in setup.startingResources)
+                foreach (var quantity in slot.startingResources)
                 {
                     if (quantity.type != null)
                     {

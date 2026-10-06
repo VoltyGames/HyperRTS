@@ -1,8 +1,7 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
-using HyperRTS.Simulation.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -48,7 +47,7 @@ namespace HyperRTS.Simulation.Orders
             _attacks.Update(ref state);
             new EscortJob
             {
-                Health = _health,
+                HealthLookup = _health,
                 Transforms = _transforms,
                 Agents = _agents,
                 Obstacles = _obstacles,
@@ -60,7 +59,7 @@ namespace HyperRTS.Simulation.Orders
         [WithPresent(typeof(MoveDestination))]
         private partial struct EscortJob : IJobEntity
         {
-            [ReadOnly] public ComponentLookup<Health> Health;
+            [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             [ReadOnly] public ComponentLookup<NavAgent> Agents;
             [ReadOnly] public ComponentLookup<NavObstacle> Obstacles;
@@ -76,15 +75,14 @@ namespace HyperRTS.Simulation.Orders
                 }
 
                 var ward = order.Value.Target;
-                if (!Health.TryGetComponent(ward, out var health) || health.Current <= 0f)
+                if (!Health.IsAlive(HealthLookup, ward))
                 {
-                    busy.ValueRW = false;
-                    moving.ValueRW = false;
+                    ActiveOrder.Finish(busy, moving);
                     return;
                 }
 
                 // Combat owns movement while engaged.
-                if (Attacks.HasComponent(entity) && Attacks.IsComponentEnabled(entity))
+                if (Attacks.HasEnabled(entity))
                 {
                     return;
                 }

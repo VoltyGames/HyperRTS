@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Validation.Rules;
 using UnityEngine;
 

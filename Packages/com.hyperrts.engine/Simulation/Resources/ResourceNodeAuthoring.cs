@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Resources
     [Icon(HyperRTSIcons.Resources)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
-    public class ResourceNodeAuthoring : MonoBehaviour
+    public class ResourceNodeAuthoring : AuthoringBehaviour
     {
         [Tooltip("Resource this node yields.")]
         public ResourceType type;

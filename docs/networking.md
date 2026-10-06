@@ -68,8 +68,9 @@ calls `Stop()` or starts a new session, so the UI can show why instead of an emp
 3. The client tags the player ghost of that faction as `LocalPlayer`, so input and HUD work unchanged.
 
 The server links the connection to its slot (`ConnectionPlayer`). When a connection drops (read from Netcode's
-connection events, since network ids are reused), its slot is freed and its units stay idle. The client remembers its slot
-(`NetworkSession.PreferredFaction`) and gets it back on rejoin.
+connection events, since network ids are reused), its slot is freed and its units stay idle. The client world asks for the slot in its `JoinPreference` singleton, seeded
+from `NetworkSession.PreferredFaction`, which takes the granted slot when the client world closes, so a rejoin gets it
+back.
 
 ## Replication
 
@@ -81,7 +82,8 @@ connection events, since network ids are reused), its slot is freed and its unit
 - **Fields**: components the client reads carry `[GhostField]` (health, faction, construction, production queue,
   stock, population, power, abilities, ammo, match state; `Stealthed`, `Inside` and `Docked` as enabled bits). Static data comes from the client's own copy of the prefab.
 - **References**: prefabs and assets can't cross the wire, so `ProductionQueueItem`, `ResearchedUpgrade` and
-  `ResourceStock` also carry a type id, and `ReferenceResolveSystem` fills the reference back in on the client.
+  `ResourceStock` also carry a type id, and `ReferenceResolveSystem` (`Network/Replication/`) fills the reference
+  back in on the client, finding prefabs through the `PrefabRegistry` singleton.
 
 A new component the HUD or overlays read needs `[GhostField]` on the fields that change, and
 `[GhostEnabledBit]` if it is enableable.
@@ -89,11 +91,12 @@ A new component the HUD or overlays read needs `[GhostField]` on the fields that
 ## Commands
 
 The client never runs a `PlayerCommand`. `CommandSendSystem` turns each one into a `CommandRpc` carrying ghost
-references: the target, and the commanded unit or the selected units the player owns (up to 127). Netcode sends
-them with their spawn tick, so a despawned ghost arrives as `Entity.Null`, never as a newer ghost reusing its id.
+references: the target, and the commanded unit or the selected units the player owns (up to 127); a prefab travels
+as its `EntityInfo.TypeId` and the server looks it up in the `PrefabRegistry`. Netcode sends ghost references with
+their spawn tick, so a despawned ghost arrives as `Entity.Null`, never as a newer ghost reusing its id.
 `CommandReceiveSystem` on the server keeps only units the sender owns and writes the command to the sender's
 player entity in arrival order. A group command lists its units in the player's `PlayerCommandSubject` buffer,
-which `CommandSubjects.Collect` reads before `Unit` and the selection. Everything else (cost, prerequisites,
+which `PlayerCommands.Collect` reads before `Unit` and the selection. Everything else (cost, prerequisites,
 cooldowns) is checked by the same systems as in single player.
 
 ## Fog of war

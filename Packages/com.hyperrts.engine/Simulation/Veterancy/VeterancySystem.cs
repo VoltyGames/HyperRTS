@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Veterancy
             new PromoteJob { ModifierLookup = _modifierLookup }.ScheduleParallel();
         }
 
-        /// <summary>Writes modifiers through a lookup so only promotions wake the stat system's change filter.</summary>
+        /// <summary>Writes modifiers through a lookup so only promotions wake the stat systems' change filters.</summary>
         [BurstCompile]
         [WithChangeFilter(typeof(Experience))]
         private partial struct PromoteJob : IJobEntity
@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Veterancy
                     return;
                 }
 
-                StatMath.RemoveSource(modifiers, StatMath.VeterancySource);
+                StatMath.RemoveSource(modifiers, StatSource.Veterancy);
                 foreach (var bonus in bonuses)
                 {
                     if (bonus.Rank <= rank)

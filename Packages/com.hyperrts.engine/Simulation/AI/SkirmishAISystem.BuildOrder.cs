@@ -3,7 +3,9 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Upgrades;
 using Unity.Collections;
 using Unity.Entities;
@@ -115,7 +117,8 @@ namespace HyperRTS.Simulation.AI
             SystemAPI.TryGetSingleton<NavGrid>(out var grid);
             var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
             var surface = BuildingPlacement.SurfaceOf(state.EntityManager, prefab);
-            if (!AIPlacement.TryFindSpot(map, grid, turn.Home, footprint, surface, out var spot))
+            var gap = SystemAPI.GetComponent<AIPlayer>(turn.Player).BuildingGap;
+            if (!AIPlacement.TryFindSpot(map, grid, turn.Home, footprint, surface, gap, out var spot))
             {
                 return false;
             }
@@ -137,29 +140,23 @@ namespace HyperRTS.Simulation.AI
                 return false;
             }
 
-            var best = Entity.Null;
-            var bestLength = int.MaxValue;
-            foreach (var producer in snapshot.Producers)
+            var shortest = Closest.None;
+            for (var i = 0; i < snapshot.Producers.Length; i++)
             {
+                var producer = snapshot.Producers[i];
                 var length = SystemAPI.GetBuffer<ProductionQueueItem>(producer).Length;
-                if (!CanQueueAt(ref state, producer, turn.Faction, prefab, length))
+                if (CanQueueAt(ref state, producer, turn.Faction, prefab, length))
                 {
-                    continue;
-                }
-
-                if (IsCloser(length, producer, bestLength, best))
-                {
-                    best = producer;
-                    bestLength = length;
+                    shortest.Offer(i, producer, length);
                 }
             }
 
-            if (best == Entity.Null)
+            if (!shortest.Found)
             {
                 return false;
             }
 
-            turn.Commands.Add(new PlayerCommand { Type = CommandType.Produce, Unit = best, Prefab = prefab });
+            turn.Commands.Add(new PlayerCommand { Type = CommandType.Produce, Unit = shortest.Entity, Prefab = prefab });
             return true;
         }
 

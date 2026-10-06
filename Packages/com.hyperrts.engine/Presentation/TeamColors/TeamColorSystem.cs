@@ -1,5 +1,5 @@
-using HyperRTS.Presentation.Common;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Presentation.Rendering;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -9,13 +9,18 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.TeamColors
 {
-    /// <summary>Tints owned meshes with their player's colour, only for new entities or when the owner changes.</summary>
+    /// <summary>
+    /// Tints owned meshes with their player's colour, only for new entities or when the owner changes. An entity whose
+    /// player hasn't arrived yet (ghosts stream in any order) stays uncoloured and is retried every frame.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial struct TeamColorSystem : ISystem
     {
         private EntityQuery _uncolored;
         private EntityQuery _recolored;
+        private int _playerVersion;
+        private int _factionVersion;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -30,7 +35,7 @@ namespace HyperRTS.Presentation.TeamColors
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (_uncolored.IsEmpty && _recolored.IsEmpty)
+            if (_recolored.IsEmpty && !HasNewWork(ref state))
             {
                 return;
             }
@@ -56,6 +61,27 @@ namespace HyperRTS.Presentation.TeamColors
             state.Dependency = new RecolorJob { Painter = painter }.Schedule(state.Dependency);
         }
 
+        // Entities whose player hasn't arrived only get another try once players or owned entities come or go,
+        // so a faction that never gets a player doesn't cost a pass every frame.
+        private bool HasNewWork(ref SystemState state)
+        {
+            if (_uncolored.IsEmpty)
+            {
+                return false;
+            }
+
+            var players = state.EntityManager.GetComponentOrderVersion<Player>();
+            var owned = state.EntityManager.GetComponentOrderVersion<Faction>();
+            if (players == _playerVersion && owned == _factionVersion)
+            {
+                return false;
+            }
+
+            _playerVersion = players;
+            _factionVersion = owned;
+            return true;
+        }
+
         private struct TeamPainter
         {
             [ReadOnly] public NativeArray<float4> Colors;
@@ -64,13 +90,18 @@ namespace HyperRTS.Presentation.TeamColors
             [ReadOnly] public ComponentLookup<MaterialMeshInfo> Meshes;
             public EntityCommandBuffer Commands;
 
-            // Neutral and player-less factions keep their authored materials.
-            public void Paint(Entity root, byte faction)
+            /// <summary>False while the faction has no player yet; neutral entities keep their authored materials.</summary>
+            public bool Paint(Entity root, byte faction)
             {
-                var color = Colors[faction];
-                if (faction == Faction.Neutral || color.w == 0f)
+                if (faction == Faction.Neutral)
                 {
-                    return;
+                    return true;
+                }
+
+                var color = Colors[faction];
+                if (color.w == 0f)
+                {
+                    return false;
                 }
 
                 var targets = new FixedList512Bytes<Entity>();
@@ -82,6 +113,8 @@ namespace HyperRTS.Presentation.TeamColors
                         Commands.AddComponent(target, new URPMaterialPropertyBaseColor { Value = color });
                     }
                 }
+
+                return true;
             }
         }
 
@@ -93,8 +126,10 @@ namespace HyperRTS.Presentation.TeamColors
 
             private void Execute(Entity entity, in Faction faction)
             {
-                Painter.Commands.AddComponent(entity, new TeamColored { Faction = faction.Value });
-                Painter.Paint(entity, faction.Value);
+                if (Painter.Paint(entity, faction.Value))
+                {
+                    Painter.Commands.AddComponent(entity, new TeamColored { Faction = faction.Value });
+                }
             }
         }
 
@@ -112,7 +147,11 @@ namespace HyperRTS.Presentation.TeamColors
                 }
 
                 colored.Faction = faction.Value;
-                Painter.Paint(entity, faction.Value);
+                if (!Painter.Paint(entity, faction.Value))
+                {
+                    // The new owner's player hasn't arrived: hand the entity back to ColorNewJob to retry.
+                    Painter.Commands.RemoveComponent<TeamColored>(entity);
+                }
             }
         }
     }

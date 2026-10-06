@@ -2,8 +2,8 @@ using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using NUnit.Framework;
 using Unity.Entities;
@@ -88,8 +88,8 @@ namespace HyperRTS.Simulation.Tests
             foreach (var unit in _world.All<Weapon>())
             {
                 var order = _world.Get<ActiveOrder>(unit).Value;
-                if (_world.IsEnabled<ActiveOrder>(unit) && order.Type == OrderType.AttackMove &&
-                    math.distance(order.Position, new float3(60f, 0f, 0f)) < 5f)
+                var attackMoving = _world.IsEnabled<ActiveOrder>(unit) && order.Type == OrderType.AttackMove;
+                if (attackMoving && math.distance(order.Position, new float3(60f, 0f, 0f)) < 5f)
                 {
                     attacking++;
                 }
@@ -97,6 +97,29 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.GreaterOrEqual(attacking, 2, "a wave of trained soldiers was sent at the enemy base");
             Assert.Less(_world.Stock(2, _supplies), 100, "training was paid for");
+        }
+
+        [Test]
+        public void AI_BudgetsItsStockpile_AcrossIdleProducers()
+        {
+            var soldier = SoldierPrefab();
+            var tank = _world.MakePrefab(_world.SpawnUnit(0, new float3(90f, 0f, 80f), name: "Tank"));
+            _world.SetCost(tank, _supplies, 15);
+            _world.SetBuildTime(soldier, 30f);
+            _world.SetBuildTime(tank, 30f);
+            var first = _world.MakeProducer(_world.SpawnBuilding(2, float3.zero, new float2(4f, 4f)),
+                new float3(0f, 0f, -4f), soldier, tank);
+            var second = _world.MakeProducer(_world.SpawnBuilding(2, new float3(10f, 0f, 0f), new float2(4f, 4f)),
+                new float3(0f, 0f, -4f), soldier, tank);
+            _world.SpawnProvider(2, new float3(-20f, 0f, 0f), 10);
+            _world.Give(2, _supplies, 20);
+
+            _world.Tick(frames: 3);
+
+            // With the soldier's cost set aside, the tank is out of reach and the second producer trains a soldier too.
+            Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(first).Length);
+            Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(second).Length);
+            Assert.AreEqual(0, _world.Stock(2, _supplies));
         }
 
         [Test]

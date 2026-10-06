@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Veterancy
             {
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Experience = _experience,
-                Health = _health,
+                HealthLookup = _health,
             }.Schedule();
         }
 
@@ -45,14 +45,17 @@ namespace HyperRTS.Simulation.Veterancy
         {
             public FactionRelations Relations;
             public ComponentLookup<Experience> Experience;
-            [ReadOnly] public ComponentLookup<Health> Health;
+            [ReadOnly] public ComponentLookup<Health> HealthLookup;
 
             private void Execute(in LastAttacker attacker, in ExperienceValue value, in Faction faction)
             {
+                if (value.Value <= 0f || !Relations.IsHostile(attacker.Faction, faction.Value))
+                {
+                    return;
+                }
+
                 var killer = attacker.Source;
-                if (value.Value <= 0f || !Relations.IsHostile(attacker.Faction, faction.Value) ||
-                    !Experience.HasComponent(killer) || !Health.TryGetComponent(killer, out var health) ||
-                    health.Current <= 0f)
+                if (!Experience.HasComponent(killer) || !Health.IsAlive(HealthLookup, killer))
                 {
                     return;
                 }

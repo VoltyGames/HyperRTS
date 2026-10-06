@@ -1,8 +1,8 @@
 using System;
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

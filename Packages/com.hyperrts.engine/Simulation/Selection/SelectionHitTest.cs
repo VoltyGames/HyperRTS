@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
@@ -31,8 +30,15 @@ namespace HyperRTS.Simulation.Selection
         public ComponentLookup<BuildingTag> Buildings;
         public ComponentLookup<ControlGroup> Groups;
 
-        public bool IsHit(Entity entity, float3 position) =>
-            !Hidden.HasComponent(entity) && !TransportRules.IsInside(Inside, entity) && MatchesGesture(entity, position);
+        public bool IsHit(Entity entity, float3 position)
+        {
+            if (Hidden.HasComponent(entity) || Inside.HasEnabled(entity))
+            {
+                return false;
+            }
+
+            return MatchesGesture(entity, position);
+        }
 
         private bool MatchesGesture(Entity entity, float3 position)
         {
@@ -45,9 +51,7 @@ namespace HyperRTS.Simulation.Selection
                     return InDragBox(position) && (PreferredRank < 0 || Rank(entity) == PreferredRank);
 
                 case SelectionCommand.DoubleClick:
-                    return DoubleClickType != 0 && Info.HasComponent(entity) &&
-                           Info[entity].TypeId == DoubleClickType && FactionOf(entity) == DoubleClickFaction &&
-                           OnScreen(position);
+                    return IsDoubleClickedType(entity) && OnScreen(position);
 
                 case SelectionCommand.RecallGroup:
                     return Groups.HasComponent(entity) && (Groups[entity].Mask & (1 << Input.Group)) != 0;
@@ -55,6 +59,17 @@ namespace HyperRTS.Simulation.Selection
                 default:
                     return false;
             }
+        }
+
+        /// <summary>Same type and owner as the double-clicked entity.</summary>
+        private bool IsDoubleClickedType(Entity entity)
+        {
+            if (DoubleClickType == 0 || !Info.TryGetComponent(entity, out var info))
+            {
+                return false;
+            }
+
+            return info.TypeId == DoubleClickType && FactionOf(entity) == DoubleClickFaction;
         }
 
         public bool InDragBox(float3 position) =>

@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -13,7 +14,7 @@ namespace HyperRTS.Simulation.Navigation
     [Icon(HyperRTSIcons.Navigation)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
-    public class NavAreaAuthoring : MonoBehaviour
+    public class NavAreaAuthoring : AuthoringBehaviour
     {
         [Tooltip("Area (X by Z) centred on this transform.")]
         public Vector2 size = new(4f, 4f);
@@ -25,8 +26,8 @@ namespace HyperRTS.Simulation.Navigation
         {
             public override void Bake(NavAreaAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
-                AddComponent(entity, new NavArea { Size = authoring.size, Kind = authoring.kind });
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
+                NavSetup.AddArea(ref sink, authoring.size, authoring.kind);
             }
         }
     }

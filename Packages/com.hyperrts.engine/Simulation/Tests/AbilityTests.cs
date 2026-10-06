@@ -1,7 +1,8 @@
 using HyperRTS.Simulation.Abilities;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Transport;
+using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
@@ -109,7 +110,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(strike.Id, Events()[0].AbilityId);
             using var beacons = _world.EntityManager.CreateEntityQuery(
                 ComponentType.ReadOnly<LocalTransform>(), ComponentType.Exclude<EntityInfo>(),
-                ComponentType.ReadOnly<Match.Faction>());
+                ComponentType.ReadOnly<Faction>());
             using var positions = beacons.ToComponentDataArray<LocalTransform>(Allocator.Temp);
             Assert.AreEqual(1, positions.Length);
             Assert.AreEqual(60f, positions[0].Position.x, 1e-3f);
@@ -137,6 +138,55 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual(70f, _world.Get<Health>(enemy).Current, 1e-3f);
             Assert.AreEqual(60f, AbilityOf(_world.Player(1)).CooldownRemaining, 0.1f);
+        }
+
+        [Test]
+        public void EntityAbility_IgnoresCloakedAndGarrisonedEnemies()
+        {
+            var snipe = Spec("Snipe", AbilityTarget.Entity, 0f, 30f, 40f);
+            Give(_world.Player(1), snipe);
+            var cloaked = _world.SpawnUnit(2, new float3(20f, 0f, 0f), speed: 0f);
+            var sink = new EntityManagerSink(_world.EntityManager, cloaked);
+            StealthSetup.AddStealth(ref sink, new Stealth { RevealDuration = 1f }, true);
+            var bunker = _world.SpawnBuilding(2, new float3(-20f, 0f, 0f), new float2(4f, 4f));
+            var garrisoned = _world.SpawnUnit(2, new float3(-20f, 0f, 0f), speed: 0f);
+            _world.EntityManager.AddComponentData(garrisoned, new Inside { Container = bunker });
+            var visible = _world.SpawnUnit(2, new float3(0f, 0f, 20f), speed: 0f);
+
+            foreach (var target in new[] { cloaked, garrisoned })
+            {
+                _world.Command(1, new PlayerCommand
+                {
+                    Type = CommandType.UsePower, Target = target, Argument = snipe.Id,
+                });
+                _world.Tick();
+                Assert.AreEqual(0f, AbilityOf(_world.Player(1)).CooldownRemaining, "never fired");
+            }
+
+            _world.Command(1, new PlayerCommand { Type = CommandType.UsePower, Target = visible, Argument = snipe.Id });
+            _world.Tick();
+            Assert.AreEqual(60f, _world.Get<Health>(visible).Current, 1e-3f);
+        }
+
+        [Test]
+        public void UnitAbility_LosingItsBuildingMidWalk_CancelsTheCast()
+        {
+            var grenade = Spec("Grenade", AbilityTarget.Point, 5f, 20f, 50f, 3f);
+            grenade.RequiredTypeId = EntityInfo.TypeIdFromName("Armory");
+            var soldier = Give(_world.SpawnUnit(1, float3.zero), grenade);
+            var armory = _world.SpawnBuilding(1, new float3(-30f, 0f, 0f), new float2(4f, 4f), name: "Armory");
+            var enemy = _world.SpawnUnit(2, new float3(30f, 0f, 0f), speed: 0f);
+            _world.Command(1, new PlayerCommand
+            {
+                Type = CommandType.UseAbility, Unit = soldier, Position = new float3(30f, 0f, 0f), Argument = grenade.Id,
+            });
+            _world.Tick();
+
+            _world.EntityManager.DestroyEntity(armory);
+            _world.Run(8f);
+
+            Assert.AreEqual(100f, _world.Get<Health>(enemy).Current, 1e-3f);
+            Assert.IsFalse(_world.IsEnabled<ActiveOrder>(soldier));
         }
     }
 }

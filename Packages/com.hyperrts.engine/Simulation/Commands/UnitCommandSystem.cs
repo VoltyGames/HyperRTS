@@ -1,0 +1,255 @@
+using HyperRTS.Core;
+using HyperRTS.Simulation.Abilities;
+using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Selection;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
+
+namespace HyperRTS.Simulation.Commands
+{
+    /// <summary>
+    /// Turns unit <see cref="PlayerCommand"/>s into orders for the commanded unit or the player's selected units.
+    /// Ground moves of several units are spread into a <see cref="Formation"/>; a patrol also queues the leg back to
+    /// where each unit stands or its queue ends. Producers are not handled here.
+    /// </summary>
+    [BurstCompile]
+    [UpdateInGroup(typeof(OrderSystemGroup))]
+    [UpdateAfter(typeof(SelectionSystem))]
+    [UpdateBefore(typeof(OrderDispatchSystem))]
+    [UpdateBefore(typeof(AbilityCommandSystem))]
+    public partial struct UnitCommandSystem : ISystem
+    {
+        private OrderWriter _writer;
+        private OrderResolver _resolver;
+        private ComponentLookup<Faction> _factions;
+        private ComponentLookup<LocalTransform> _transforms;
+        private ComponentLookup<NavAgent> _agents;
+        private ComponentLookup<CombatStance> _stances;
+        private EntityQuery _selected;
+
+        [BurstCompile]
+        public void OnCreate(ref SystemState state)
+        {
+            _writer = new OrderWriter(ref state);
+            _resolver = new OrderResolver(ref state);
+            _factions = state.GetComponentLookup<Faction>(true);
+            _transforms = state.GetComponentLookup<LocalTransform>(true);
+            _agents = state.GetComponentLookup<NavAgent>(true);
+            _stances = state.GetComponentLookup<CombatStance>();
+            _selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction>().WithPresent<ActiveOrder>()
+                .WithNone<Dead>().Build();
+            state.RequireForUpdate<PlayerCommand>();
+        }
+
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
+        {
+            // Most frames carry no commands; skip the sync with every job touching unit components.
+            if (!PlayerCommands.Any(ref state, UnitCommands))
+            {
+                return;
+            }
+
+            state.CompleteDependency();
+            _writer.Update(ref state);
+            _resolver.Update(ref state);
+            _factions.Update(ref state);
+            _transforms.Update(ref state);
+            _agents.Update(ref state);
+            _stances.Update(ref state);
+
+            SystemAPI.TryGetSingleton<FactionRelations>(out var relations);
+            var hasMap = SystemAPI.TryGetSingleton<MapSettings>(out var map);
+            var subjects = new NativeList<Entity>(64, Allocator.Temp);
+            foreach (var (player, commands, listed) in SystemAPI
+                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>>())
+            {
+                for (var i = 0; i < commands.Length; i++)
+                {
+                    var command = commands[i];
+                    if (!IsUnitCommand(command.Type) || !GatherSubjects(player.ValueRO.Faction, command, listed, subjects))
+                    {
+                        continue;
+                    }
+
+                    if (hasMap)
+                    {
+                        command.Position = map.Clamp(command.Position);
+                    }
+
+                    Execute(command, subjects.AsArray(), relations, hasMap, map);
+                }
+            }
+        }
+
+        private static ulong UnitCommands =>
+            PlayerCommands.Mask(CommandType.Smart, CommandType.SetStance) |
+            PlayerCommands.Mask(CommandType.Repair, CommandType.Enter) |
+            PlayerCommands.Mask(CommandType.Patrol, CommandType.ReturnToBase);
+
+        private static bool IsUnitCommand(CommandType type) => (UnitCommands & PlayerCommands.Mask(type)) != 0;
+
+        /// <summary>Keeps the command's subjects that this faction owns and that take orders, in order.</summary>
+        private bool GatherSubjects(byte faction, in PlayerCommand command, DynamicBuffer<PlayerCommandSubject> listed,
+            NativeList<Entity> subjects)
+        {
+            PlayerCommands.Collect(command, listed, _selected, subjects);
+            var kept = 0;
+            for (var i = 0; i < subjects.Length; i++)
+            {
+                var entity = subjects[i];
+                if (TakesOrdersFrom(entity, faction))
+                {
+                    subjects[kept++] = entity;
+                }
+            }
+
+            subjects.Length = kept;
+            return kept > 0;
+        }
+
+        private bool TakesOrdersFrom(Entity entity, byte faction)
+        {
+            if (!_writer.CanReceiveOrders(entity))
+            {
+                return false;
+            }
+
+            return _factions.TryGetComponent(entity, out var owner) && owner.Value == faction;
+        }
+
+        private void Execute(in PlayerCommand command, NativeArray<Entity> subjects, in FactionRelations relations,
+            bool hasMap, in MapSettings map)
+        {
+            if (TryApplyDirectly(command, subjects))
+            {
+                return;
+            }
+
+            var movers = new NativeList<Entity>(subjects.Length, Allocator.Temp);
+            var moveTypes = new NativeList<OrderType>(subjects.Length, Allocator.Temp);
+            foreach (var unit in subjects)
+            {
+                var type = _resolver.Resolve(command.Type, unit, command.Target, relations);
+                if (type == OrderType.None)
+                {
+                    continue;
+                }
+
+                if (type.UsesFormation())
+                {
+                    movers.Add(unit);
+                    moveTypes.Add(type);
+                }
+                else
+                {
+                    var order = new Order { Type = type, Position = command.Position, Target = command.Target };
+                    _writer.Issue(unit, order, command.Queue);
+                }
+            }
+
+            IssueFormation(command, movers.AsArray(), moveTypes.AsArray(), hasMap, map);
+            movers.Dispose();
+            moveTypes.Dispose();
+        }
+
+        /// <summary>Stop and stance changes need no order; true if the command was one of them.</summary>
+        private bool TryApplyDirectly(in PlayerCommand command, NativeArray<Entity> subjects)
+        {
+            switch (command.Type)
+            {
+                case CommandType.Stop:
+                    foreach (var unit in subjects)
+                    {
+                        _writer.Stop(unit);
+                    }
+
+                    return true;
+                case CommandType.SetStance:
+                    SetStance(subjects, (Stance)command.Argument);
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private void IssueFormation(in PlayerCommand command, NativeArray<Entity> movers, NativeArray<OrderType> types,
+            bool hasMap, in MapSettings map)
+        {
+            if (movers.Length == 0)
+            {
+                return;
+            }
+
+            var positions = new NativeArray<float3>(movers.Length, Allocator.Temp);
+            var slots = new NativeArray<float3>(movers.Length, Allocator.Temp);
+            var radius = 0f;
+            for (var i = 0; i < movers.Length; i++)
+            {
+                positions[i] = _transforms[movers[i]].Position;
+                var own = _agents.TryGetComponent(movers[i], out var agent) ? agent.Radius : EntityRadius.Default;
+                radius = math.max(radius, own);
+            }
+
+            Formation.Assign(positions, command.Position, radius * 2.5f, slots);
+            for (var i = 0; i < movers.Length; i++)
+            {
+                var order = new Order { Type = types[i], Position = hasMap ? map.Clamp(slots[i]) : slots[i] };
+                if (order.Type == OrderType.Patrol)
+                {
+                    IssuePatrol(movers[i], order, positions[i], command.Queue);
+                }
+                else
+                {
+                    _writer.Issue(movers[i], order, command.Queue);
+                }
+            }
+
+            positions.Dispose();
+            slots.Dispose();
+        }
+
+        /// <summary>
+        /// Patrols loop between the new point and where the unit would otherwise end up: here, or the end of its queue.
+        /// Queued onto a route that already ends in a patrol leg, the point joins that loop instead.
+        /// </summary>
+        private void IssuePatrol(Entity unit, in Order leg, float3 position, bool queue)
+        {
+            var start = position;
+            if (queue && _writer.TryGetLastOrder(unit, out var last))
+            {
+                if (last.Type == OrderType.Patrol)
+                {
+                    _writer.Issue(unit, leg, true);
+                    return;
+                }
+
+                // Only ground moves end at their Position; other orders end wherever their target is.
+                if (last.Type.UsesFormation())
+                {
+                    start = last.Position;
+                }
+            }
+
+            _writer.Issue(unit, leg, queue);
+            _writer.Issue(unit, new Order { Type = OrderType.Patrol, Position = start }, true);
+        }
+
+        private void SetStance(NativeArray<Entity> subjects, Stance stance)
+        {
+            foreach (var unit in subjects)
+            {
+                if (_stances.HasComponent(unit))
+                {
+                    _stances[unit] = new CombatStance { Value = stance, Anchor = _transforms[unit].Position };
+                }
+            }
+        }
+    }
+}

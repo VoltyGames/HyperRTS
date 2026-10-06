@@ -1,9 +1,9 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
 using Unity.Collections;
@@ -19,7 +19,6 @@ namespace HyperRTS.Simulation.Abilities
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
-    [UpdateAfter(typeof(UnitCommandSystem))]
     public partial struct AbilityCommandSystem : ISystem
     {
         private EntityQuery _selected;
@@ -114,7 +113,7 @@ namespace HyperRTS.Simulation.Abilities
             var best = Entity.Null;
             var bestIndex = -1;
             var bestDistance = float.MaxValue;
-            foreach (var caster in CommandSubjects.Collect(command, listed, _selected))
+            foreach (var caster in PlayerCommands.Collect(command, listed, _selected))
             {
                 var index = UsableIndex(ref state, caster, faction, command, context);
                 if (index < 0)
@@ -149,8 +148,7 @@ namespace HyperRTS.Simulation.Abilities
         private int UsableIndex(ref SystemState state, Entity caster, byte faction, in PlayerCommand command,
             in Context context)
         {
-            if (!SystemAPI.HasBuffer<Ability>(caster) || SystemAPI.GetComponent<Faction>(caster).Value != faction ||
-                ConstructionRules.IsUnderConstruction(state.EntityManager, caster) || PowerRules.IsUnpowered(state.EntityManager, caster))
+            if (!CanCast(ref state, caster, faction))
             {
                 return -1;
             }
@@ -160,9 +158,21 @@ namespace HyperRTS.Simulation.Abilities
             return index >= 0 && IsUsable(abilities[index], faction, command, context) ? index : -1;
         }
 
+        /// <summary>An owned caster that is finished and powered.</summary>
+        private bool CanCast(ref SystemState state, Entity caster, byte faction)
+        {
+            if (!SystemAPI.HasBuffer<Ability>(caster) || SystemAPI.GetComponent<Faction>(caster).Value != faction)
+            {
+                return false;
+            }
+
+            var building = state.EntityManager.HasEnabled<ConstructionProgress>(caster);
+            return !building && !state.EntityManager.HasEnabled<Unpowered>(caster);
+        }
+
         private bool IsUsable(in Ability ability, byte faction, in PlayerCommand command, in Context context) =>
-            ability.IsReady && (ability.RequiredTypeId == 0 || context.Completed.Owns(faction, ability.RequiredTypeId)) &&
-            AbilityRules.IsValidTarget(ability, command.Target, faction, _targets, _factions, context.Relations);
+            AbilityRules.IsUsable(ability, command.Target, faction, context.Completed, _targets, _factions,
+                context.Relations);
 
         private void Cast(ref SystemState state, Entity caster, int index, byte faction, in PlayerCommand command,
             in Context context)

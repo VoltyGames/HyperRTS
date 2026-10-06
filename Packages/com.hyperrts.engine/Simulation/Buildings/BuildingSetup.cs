@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Power;
@@ -7,14 +6,14 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Buildings
 {
-    /// <summary>Adds the building components on top of <see cref="GameEntitySetup"/>.</summary>
+    /// <summary>Adds the building components on top of <c>GameEntitySetup</c>.</summary>
     public static class BuildingSetup
     {
         public static void Add<TSink>(ref TSink sink, float2 footprint, int populationProvided, bool complete,
             float power = 0f, PlacementSurface surface = PlacementSurface.Land) where TSink : struct, IComponentSink
         {
             sink.Add<BuildingTag>();
-            sink.Add(new NavObstacle { Size = footprint });
+            NavSetup.AddObstacle(ref sink, footprint);
             if (surface != PlacementSurface.Land)
             {
                 sink.Add(new BuildingPlacement { Surface = surface });

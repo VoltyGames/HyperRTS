@@ -1,7 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -28,6 +26,9 @@ namespace HyperRTS.Simulation.Power
             new FlagJob { Produced = produced, Consumed = consumed }.ScheduleParallel();
         }
 
+        private static PowerGrid GridOf(NativeArray<float> produced, NativeArray<float> consumed, byte faction) =>
+            new() { Produced = produced[faction], Consumed = consumed[faction] };
+
         [BurstCompile]
         [WithNone(typeof(ConstructionProgress), typeof(Dead))]
         private partial struct CountJob : IJobEntity
@@ -49,7 +50,7 @@ namespace HyperRTS.Simulation.Power
             [ReadOnly] public NativeArray<float> Consumed;
 
             private void Execute(ref PowerGrid grid, in Player player) =>
-                grid = new PowerGrid { Produced = Produced[player.Faction], Consumed = Consumed[player.Faction] };
+                grid = GridOf(Produced, Consumed, player.Faction);
         }
 
         [BurstCompile]
@@ -61,7 +62,7 @@ namespace HyperRTS.Simulation.Power
 
             private void Execute(in Faction faction, EnabledRefRW<Unpowered> unpowered)
             {
-                var low = Consumed[faction.Value] > Produced[faction.Value];
+                var low = GridOf(Produced, Consumed, faction.Value).IsLow;
                 if (unpowered.ValueRO != low)
                 {
                     unpowered.ValueRW = low;

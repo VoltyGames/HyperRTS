@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Production;
 using UnityEditor;
 using UnityEngine;
 

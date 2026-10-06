@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Tests
             var id = EntityInfo.TypeIdFromName(name);
             for (var i = 0; i < bonuses.Length; i++)
             {
-                bonuses[i].Source = id;
+                bonuses[i].Source = StatSource.Field(id);
             }
 
             var sink = new EntityManagerSink(_world.EntityManager, source);
@@ -117,6 +117,26 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<StatModifier>(unit).Length);
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<FieldPresence>(unit).Length);
+        }
+
+        [Test]
+        public void LeavingField_KeepsOtherSourcesWithTheSameId()
+        {
+            var armor = new StatModifier { Stat = Stat.DamageTaken, Percent = -0.5f };
+            Field(1, float3.zero, "Shield", FieldTargets.Friendly | FieldTargets.Units, bonuses: armor);
+            var unit = _world.SpawnUnit(1, new float3(3f, 0f, 0f), speed: 0f);
+            var upgrade = StatSource.Upgrade(EntityInfo.TypeIdFromName("Shield"));
+            _world.EntityManager.GetBuffer<StatModifier>(unit)
+                .Add(new StatModifier { Stat = Stat.MaxHealth, Add = 50f, Source = upgrade });
+            _world.Run(0.5f);
+
+            _world.EntityManager.SetComponentData(unit, LocalTransform.FromPosition(new float3(50f, 0f, 0f)));
+            _world.Run(0.5f);
+
+            var modifiers = _world.EntityManager.GetBuffer<StatModifier>(unit);
+            Assert.AreEqual(1, modifiers.Length, "an upgrade sharing the field's id survives");
+            Assert.AreEqual(upgrade, modifiers[0].Source);
+            Assert.AreEqual(150f, _world.Get<Health>(unit).Max, 1e-3f);
         }
     }
 }

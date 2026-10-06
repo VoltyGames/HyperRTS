@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Fog;
 using HyperRTS.Presentation.TeamColors;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Collections;
@@ -15,6 +14,7 @@ namespace HyperRTS.Presentation.Tests
     public class PresentationSystemTests
     {
         private static readonly float4 Blue = new(0f, 0f, 1f, 1f);
+        private static readonly float4 Red = new(1f, 0f, 0f, 1f);
 
         private World _world;
         private EntityManager _em;
@@ -33,7 +33,7 @@ namespace HyperRTS.Presentation.Tests
 
             var local = _em.CreateEntity(typeof(LocalPlayer));
             _em.AddComponentData(local, new Player { Faction = 1, Color = Blue });
-            _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 2, Color = new float4(1f, 0f, 0f, 1f) });
+            _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 2, Color = Red });
         }
 
         [TearDown]
@@ -65,6 +65,33 @@ namespace HyperRTS.Presentation.Tests
             Run(_teamColor);
 
             Assert.AreEqual(Blue, _em.GetComponentData<URPMaterialPropertyBaseColor>(unit).Value);
+        }
+
+        [Test]
+        public void TeamColor_WaitsForTheOwnersPlayer()
+        {
+            var unit = Spawn(3, float3.zero);
+            Run(_teamColor);
+            Assert.IsFalse(_em.HasComponent<URPMaterialPropertyBaseColor>(unit), "no player 3 yet");
+
+            _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 3, Color = Blue });
+            Run(_teamColor);
+
+            Assert.AreEqual(Blue, _em.GetComponentData<URPMaterialPropertyBaseColor>(unit).Value);
+        }
+
+        [Test]
+        public void TeamColor_RecolorsWhenACapturersPlayerArrivesLate()
+        {
+            var unit = Spawn(1, float3.zero);
+            Run(_teamColor);
+
+            _em.SetComponentData(unit, new Faction { Value = 3 });
+            Run(_teamColor);
+            _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 3, Color = Red });
+            Run(_teamColor);
+
+            Assert.AreEqual(Red, _em.GetComponentData<URPMaterialPropertyBaseColor>(unit).Value);
         }
 
         [Test]

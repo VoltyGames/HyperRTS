@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Simulation.Abilities;
-using UnityEditor;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
@@ -18,10 +17,7 @@ namespace HyperRTS.Editor.Validation.Rules
                     issues.Warn(authoring, $"Two abilities are named '{ability.name}'; the name is the ability's id.");
                 }
 
-                if (ability.spawnPrefab != null && !PrefabUtility.IsPartOfPrefabAsset(ability.spawnPrefab))
-                {
-                    issues.Warn(authoring, $"'{ability.name}' spawns a scene object; reference the prefab asset.");
-                }
+                CheckPrefabReference(authoring, ability.spawnPrefab, $"'{ability.name}' spawn prefab", issues);
             }
 
             if (authoring.abilities.Any(ability => ability.spawnPrefab == null && ability.damage == 0f))

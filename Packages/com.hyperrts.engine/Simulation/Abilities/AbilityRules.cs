@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Production;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -21,7 +22,27 @@ namespace HyperRTS.Simulation.Abilities
             return -1;
         }
 
-        /// <summary>Entity-targeted abilities need a living target matching the filter; the others accept anything.</summary>
+        /// <summary>Ready, its required building owned and aimed at a valid target; checked on issue and firing.</summary>
+        public static bool IsUsable(in Ability ability, Entity target, byte faction, in CompletedBuildings completed,
+            in TargetLookup targets, in ComponentLookup<Faction> factions, in FactionRelations relations)
+        {
+            if (!ability.IsReady)
+            {
+                return false;
+            }
+
+            if (ability.RequiredTypeId != 0 && !completed.Owns(faction, ability.RequiredTypeId))
+            {
+                return false;
+            }
+
+            return IsValidTarget(ability, target, faction, targets, factions, relations);
+        }
+
+        /// <summary>
+        /// Entity-targeted abilities need a living target outside any container that matches the filter; the others
+        /// accept anything.
+        /// </summary>
         public static bool IsValidTarget(in Ability ability, Entity target, byte faction, in TargetLookup targets,
             in ComponentLookup<Faction> factions, in FactionRelations relations)
         {
@@ -30,18 +51,33 @@ namespace HyperRTS.Simulation.Abilities
                 return true;
             }
 
-            if (!targets.IsAlive(target) || !factions.TryGetComponent(target, out var owner))
+            if (!factions.TryGetComponent(target, out var owner))
             {
                 return false;
             }
 
-            return ability.Filter switch
+            var hostile = relations.IsHostile(faction, owner.Value);
+            if (!MatchesFilter(ability.Filter, hostile, relations.IsAllied(faction, owner.Value)))
             {
-                AbilityTargetFilter.Hostile => relations.IsHostile(faction, owner.Value),
-                AbilityTargetFilter.Allied => relations.IsAllied(faction, owner.Value),
+                return false;
+            }
+
+            // Enemies follow weapon targeting, so an ability can't find what stealth hides from guns.
+            if (hostile)
+            {
+                return targets.IsValidTarget(target, faction, relations);
+            }
+
+            return targets.IsAlive(target) && !targets.IsInside(target);
+        }
+
+        private static bool MatchesFilter(AbilityTargetFilter filter, bool hostile, bool allied) =>
+            filter switch
+            {
+                AbilityTargetFilter.Hostile => hostile,
+                AbilityTargetFilter.Allied => allied,
                 _ => true,
             };
-        }
 
         /// <summary>Where the ability lands: the caster itself, the clicked point, or the target entity.</summary>
         public static float3 Aim(in Ability ability, float3 caster, Entity target, float3 point, in TargetLookup targets) =>

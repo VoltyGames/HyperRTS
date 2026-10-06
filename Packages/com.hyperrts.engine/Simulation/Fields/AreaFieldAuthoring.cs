@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Stats;
 using Unity.Entities;
 using UnityEngine;
@@ -17,7 +18,7 @@ namespace HyperRTS.Simulation.Fields
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class AreaFieldAuthoring : MonoBehaviour
+    public class AreaFieldAuthoring : AuthoringBehaviour
     {
         [Tooltip("Field type; entities in several fields of one name are affected once. Games match it by FieldId.")]
         public string fieldName = "Field";
@@ -52,7 +53,7 @@ namespace HyperRTS.Simulation.Fields
                 var modifiers = new List<StatModifier>();
                 foreach (var bonus in authoring.bonuses)
                 {
-                    modifiers.Add(bonus.ToModifier(authoring.FieldId));
+                    modifiers.Add(bonus.ToModifier(StatSource.Field(authoring.FieldId)));
                 }
 
                 var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));

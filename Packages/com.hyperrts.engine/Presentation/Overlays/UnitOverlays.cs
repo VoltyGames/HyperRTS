@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Common;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport;

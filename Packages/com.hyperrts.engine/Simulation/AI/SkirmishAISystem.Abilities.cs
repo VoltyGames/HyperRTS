@@ -1,8 +1,8 @@
 using HyperRTS.Simulation.Abilities;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
+using HyperRTS.Simulation.Spatial;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -10,9 +10,6 @@ namespace HyperRTS.Simulation.AI
 {
     public partial struct SkirmishAISystem
     {
-        /// <summary>How close an enemy must be before a self-targeted ability (smoke, self-heal) is worth firing.</summary>
-        private const float SelfCastRange = 10f;
-
         /// <summary>Where and at whom an ability will be fired.</summary>
         private struct Aim
         {
@@ -34,7 +31,7 @@ namespace HyperRTS.Simulation.AI
 
                 foreach (var ability in SystemAPI.GetBuffer<Ability>(caster))
                 {
-                    if (TryAim(ref state, ability, caster, casters.Position(i), true, turn.Faction, snapshot, out var aim))
+                    if (TryAim(ref state, ability, caster, casters.Position(i), true, turn, snapshot, out var aim))
                     {
                         turn.Commands.Add(Command(CommandType.UseAbility, caster, ability, aim));
                         break;
@@ -49,7 +46,7 @@ namespace HyperRTS.Simulation.AI
 
             foreach (var power in SystemAPI.GetBuffer<Ability>(turn.Player))
             {
-                if (TryAim(ref state, power, turn.Player, turn.Home, false, turn.Faction, snapshot, out var aim))
+                if (TryAim(ref state, power, turn.Player, turn.Home, false, turn, snapshot, out var aim))
                 {
                     turn.Commands.Add(Command(CommandType.UsePower, Entity.Null, power, aim));
                 }
@@ -63,21 +60,22 @@ namespace HyperRTS.Simulation.AI
 
         private static bool CanCast(ref SystemState state, Entity caster)
         {
-            if (ConstructionRules.IsUnderConstruction(state.EntityManager, caster))
+            if (state.EntityManager.HasEnabled<ConstructionProgress>(caster))
             {
                 return false;
             }
 
-            return !PowerRules.IsUnpowered(state.EntityManager, caster);
+            return !state.EntityManager.HasEnabled<Unpowered>(caster);
         }
 
         /// <summary>
         /// Self-targeted abilities fire when an enemy is near; aimed ones at the nearest suitable target, which must be
         /// in range when <paramref name="ranged"/> (player powers reach anywhere).
         /// </summary>
-        private bool TryAim(ref SystemState state, in Ability ability, Entity caster, float3 from, bool ranged, byte faction,
-            in Snapshot snapshot, out Aim aim)
+        private bool TryAim(ref SystemState state, in Ability ability, Entity caster, float3 from, bool ranged,
+            in Turn turn, in Snapshot snapshot, out Aim aim)
         {
+            var faction = turn.Faction;
             aim = new Aim { Target = Entity.Null, Position = from };
             if (!ability.IsReady)
             {
@@ -91,7 +89,8 @@ namespace HyperRTS.Simulation.AI
 
             if (ability.Target == AbilityTarget.None)
             {
-                return HostileWithin(faction, from, math.max(ability.Radius, SelfCastRange), snapshot);
+                var range = math.max(ability.Radius, SystemAPI.GetComponent<AIPlayer>(turn.Player).SelfCastRange);
+                return HostileWithin(faction, from, range, snapshot);
             }
 
             var index = BestTarget(ref state, ability, caster, from, ranged, faction, snapshot);
@@ -111,32 +110,29 @@ namespace HyperRTS.Simulation.AI
             in Snapshot snapshot)
         {
             var targets = snapshot.Targets;
-            var best = -1;
-            var bestDistance = float.MaxValue;
+            var closest = Closest.None;
             for (var i = 0; i < targets.Length; i++)
             {
+                // Distance first, so the costlier range and suitability checks only run for would-be winners.
                 var entity = targets.Entities[i];
-                var position = targets.Position(i);
-                var distance = math.distancesq(position.xz, from.xz);
-                var bestEntity = best < 0 ? Entity.Null : targets.Entities[best];
-                if (!IsCloser(distance, entity, bestDistance, bestEntity))
+                var distance = targets.DistanceSq(i, from);
+                if (!closest.IsBeatenBy(distance, entity))
                 {
                     continue;
                 }
 
-                if (ranged && !AbilityRules.InRange(ability, caster, from, entity, position, _targetLookup))
+                if (ranged && !AbilityRules.InRange(ability, caster, from, entity, targets.Position(i), _targetLookup))
                 {
                     continue;
                 }
 
                 if (Suits(ref state, ability, entity, faction, snapshot))
                 {
-                    best = i;
-                    bestDistance = distance;
+                    closest.Offer(i, entity, distance);
                 }
             }
 
-            return best;
+            return closest.Index;
         }
 
         /// <summary>Heals (allied filter or negative damage) go to hurt allies; everything else at enemies.</summary>
@@ -163,7 +159,7 @@ namespace HyperRTS.Simulation.AI
             var targets = snapshot.Targets;
             for (var i = 0; i < targets.Length; i++)
             {
-                var near = math.distancesq(targets.Position(i).xz, from.xz) <= range * range;
+                var near = targets.DistanceSq(i, from) <= range * range;
                 if (near && _targetLookup.IsValidTarget(targets.Entities[i], faction, snapshot.Relations))
                 {
                     return true;

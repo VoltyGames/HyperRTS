@@ -106,6 +106,27 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void TerrainStreamingInLate_RebuildsTheNavGrid()
+        {
+            _world.ConfigureMap(waterLevel: -1f, floodTerrain: true);
+            _world.Tick();
+            var basin = new float3(8f, 0f, 0f);
+            Assert.IsTrue(_world.Grid().IsWalkable(basin), "flat ground before the terrain arrives");
+            var version = _world.Grid().Version;
+
+            _world.CreateTerrain(p => p.x > 4f ? -10f : 0f);
+            _world.Tick();
+
+            var grid = _world.Grid();
+            Assert.Greater(grid.Version, version, "paths revalidate against the new grid");
+            Assert.IsTrue(grid.IsWalkable(basin, NavLayer.Naval), "the basin floods once the terrain is in");
+
+            _world.ConfigureMap(waterLevel: -20f, floodTerrain: true);
+            _world.Tick();
+            Assert.IsTrue(_world.Grid().IsWalkable(basin), "a lower water level drains it again");
+        }
+
+        [Test]
         public void Ridge_HidesTheGroundBehindIt()
         {
             // A 10 m ridge along z at x = 4..6, flat ground around it.

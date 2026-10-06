@@ -167,9 +167,13 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             var side = new float2(-delta.y, delta.x) / length * clearance;
-            return IsSegmentClear(from.xz, to.xz, surfaces) &&
-                   IsSegmentClear(from.xz + side, to.xz + side, surfaces) &&
-                   IsSegmentClear(from.xz - side, to.xz - side, surfaces);
+            if (!IsSegmentClear(from.xz, to.xz, surfaces))
+            {
+                return false;
+            }
+
+            var leftClear = IsSegmentClear(from.xz + side, to.xz + side, surfaces);
+            return leftClear && IsSegmentClear(from.xz - side, to.xz - side, surfaces);
         }
 
         internal readonly bool IsOpen(int2 cell, NavSurface surfaces) =>

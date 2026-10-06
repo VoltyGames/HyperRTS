@@ -4,8 +4,10 @@ using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using UnityEditor;
@@ -16,6 +18,7 @@ namespace HyperRTS.Editor.Tests
     public class QuickFixTests : TemplateFixture
     {
         private const string Folder = "Assets/_QuickFixTests";
+
         [TearDown]
         public void DeleteFolder() => AssetDatabase.DeleteAsset(Folder);
 
@@ -69,6 +72,27 @@ namespace HyperRTS.Editor.Tests
 
             Assert.IsTrue(unit.TryGetComponent<FlightAuthoring>(out _));
             Assert.IsFalse(AuthoringChecks.For(unit).Any(issue => issue.FixLabel == "Add Flight"));
+        }
+
+        [Test]
+        public void AddRequiredPutsTheMissingAuthoringOnTheObject()
+        {
+            var producer = Track(new GameObject("Producer")).AddComponent<ProducerAuthoring>();
+
+            Fix(producer, "Add Building");
+
+            Assert.IsTrue(producer.TryGetComponent<BuildingAuthoring>(out _));
+        }
+
+        [Test]
+        public void RemoveEmptyDropsArmorEntriesWithoutADamageType()
+        {
+            var armor = Track(EntityTemplates.Unit()).AddComponent<ArmorAuthoring>();
+            armor.modifiers.Add(new ArmorAuthoring.Entry { multiplier = 2f });
+
+            Fix(armor, "Remove Empty");
+
+            Assert.IsEmpty(armor.modifiers);
         }
 
         [Test]

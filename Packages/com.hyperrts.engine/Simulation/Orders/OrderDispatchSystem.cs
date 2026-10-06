@@ -7,7 +7,6 @@ namespace HyperRTS.Simulation.Orders
     /// <summary>Starts the next <see cref="QueuedOrder"/> on units whose <see cref="ActiveOrder"/> has finished.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
-    [UpdateAfter(typeof(UnitCommandSystem))]
     public partial struct OrderDispatchSystem : ISystem
     {
         [BurstCompile]

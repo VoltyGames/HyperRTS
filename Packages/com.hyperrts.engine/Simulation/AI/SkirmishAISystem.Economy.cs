@@ -1,8 +1,9 @@
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Upgrades;
 using Unity.Collections;
 using Unity.Entities;
@@ -16,7 +17,9 @@ namespace HyperRTS.Simulation.AI
         {
             public byte Faction;
             public Population Room;
-            public DynamicBuffer<ResourceStock> Stock;
+
+            /// <summary>The stockpile left after what this think already queued.</summary>
+            public NativeArray<ResourceStock> Stock;
             public DynamicBuffer<ResearchedUpgrade> Researched;
             public NativeHashSet<Entity> QueuedUpgrades;
             public CompletedBuildings Completed;
@@ -51,27 +54,16 @@ namespace HyperRTS.Simulation.AI
 
         private static int NearestNode(in AIGroup nodes, NativeArray<ResourceNode> data, float3 from)
         {
-            var best = -1;
-            var bestDistance = float.MaxValue;
-            var bestEntity = Entity.Null;
+            var closest = Closest.None;
             for (var i = 0; i < nodes.Length; i++)
             {
-                if (data[i].Amount <= 0)
+                if (data[i].Amount > 0)
                 {
-                    continue;
-                }
-
-                var distance = math.distancesq(nodes.Position(i).xz, from.xz);
-                var entity = nodes.Entities[i];
-                if (IsCloser(distance, entity, bestDistance, bestEntity))
-                {
-                    best = i;
-                    bestDistance = distance;
-                    bestEntity = entity;
+                    closest.Offer(i, nodes.Entities[i], nodes.DistanceSq(i, from));
                 }
             }
 
-            return best;
+            return closest.Index;
         }
 
         /// <summary>After the build order: every idle producer trains or researches round-robin.</summary>
@@ -84,7 +76,7 @@ namespace HyperRTS.Simulation.AI
             {
                 Faction = turn.Faction,
                 Room = SystemAPI.GetComponent<Population>(turn.Player),
-                Stock = SystemAPI.GetBuffer<ResourceStock>(turn.Player),
+                Stock = SystemAPI.GetBuffer<ResourceStock>(turn.Player).ToNativeArray(Allocator.Temp),
                 Researched = SystemAPI.GetBuffer<ResearchedUpgrade>(turn.Player),
                 QueuedUpgrades = queued,
                 Completed = snapshot.Completed,
@@ -101,11 +93,13 @@ namespace HyperRTS.Simulation.AI
                 if (prefab != Entity.Null)
                 {
                     budget.Room.Used += SystemAPI.GetComponent<Producible>(prefab).Population;
+                    ResourceMath.Deduct(budget.Stock, SystemAPI.GetBuffer<ResourceCost>(prefab));
                     turn.Commands.Add(new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });
                 }
             }
 
             queued.Dispose();
+            budget.Stock.Dispose();
         }
 
         private bool IsIdleProducer(ref SystemState state, Entity producer, byte faction)

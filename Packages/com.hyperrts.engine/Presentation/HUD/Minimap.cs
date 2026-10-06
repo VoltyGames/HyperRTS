@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Transport;
@@ -16,9 +15,8 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD
 {
     /// <summary>Map overview: owner-coloured blips, resource nodes, the camera view; click or drag to move the camera.</summary>
-    public sealed class Minimap
+    public sealed class Minimap : HUDPanel
     {
-        private const float GroundHeight = 0f;
         private const float MaxViewDistance = 1000f;
         private const float BlipInterval = 0.1f;
 
@@ -29,18 +27,20 @@ namespace HyperRTS.Presentation.HUD
             ComponentType.ReadOnly<ResourceNode>(),
             ComponentType.ReadOnly<LocalToWorld>()));
 
+        private readonly LiveQuery _terrain = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainHeight>()));
+
         private readonly List<(Vector2 Point, Color Color, float Radius)> _blips = new();
         private readonly Vector2[] _view = new Vector2[4];
         private readonly VisualElement _canvas;
         private readonly VisualElement _viewLayer;
+        private HUDContext _context;
         private MapSettings _map;
         private bool _hasMap;
         private float _nextBlipTime;
 
-        public Minimap()
+        public Minimap() : base("hud-minimap")
         {
-            Root = HUDElements.Box("hud-minimap");
-            Root.AddToClassList("hud-panel");
             _canvas = HUDElements.Box("hud-minimap__canvas", Root);
             _canvas.generateVisualContent += PaintBlips;
             _canvas.RegisterCallback<PointerDownEvent>(OnPointerDown);
@@ -51,16 +51,15 @@ namespace HyperRTS.Presentation.HUD
             _viewLayer.generateVisualContent += PaintView;
         }
 
-        public VisualElement Root { get; }
-
-        public void Refresh(HUDContext context)
+        public override void Refresh(HUDContext context)
         {
+            _context = context;
             var view = context.View;
             _hasMap = view.HasMap;
             _map = view.Map;
             if (_hasMap)
             {
-                GatherCameraView();
+                GatherCameraView(context.EntityManager);
             }
 
             _viewLayer.MarkDirtyRepaint();
@@ -115,16 +114,21 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        private void GatherCameraView()
+        private void GatherCameraView(EntityManager entityManager)
         {
             var camera = Camera.main;
+            _terrain.In(entityManager).TryGetSingleton(out TerrainHeight terrain);
             for (var i = 0; i < _view.Length; i++)
             {
-                var corner = new Vector3(i == 1 || i == 2 ? 1f : 0f, i >= 2 ? 1f : 0f, 0f);
-                var ground = camera != null
-                    ? MinimapMath.GroundPoint(camera.ViewportPointToRay(corner), GroundHeight, MaxViewDistance)
-                    : Vector3.zero;
-                _view[i] = MinimapMath.WorldToMinimap(new float2(ground.x, ground.z), _map.Min, _map.Size);
+                var ground = float3.zero;
+                if (camera != null)
+                {
+                    var corner = new Vector3(i == 1 || i == 2 ? 1f : 0f, i >= 2 ? 1f : 0f, 0f);
+                    var ray = camera.ViewportPointToRay(corner);
+                    ground = ViewGround.Reach(terrain, ray.origin, ray.direction, MaxViewDistance);
+                }
+
+                _view[i] = MinimapMath.WorldToMinimap(ground.xz, _map.Min, _map.Size);
             }
         }
 
@@ -187,20 +191,18 @@ namespace HyperRTS.Presentation.HUD
 
         private void OnPointerUp(PointerUpEvent evt) => _canvas.ReleasePointer(evt.pointerId);
 
-        // Shifts the camera so its look point lands on the clicked spot, keeping height and angle.
+        // The camera moves itself (keeping height, angle and the map bounds) when it reads the request.
         private void Focus(Vector2 local)
         {
-            var camera = Camera.main;
             var size = _canvas.contentRect.size;
-            if (!_hasMap || camera == null || size.x <= 0f || size.y <= 0f)
+            var hasArea = size.x > 0f && size.y > 0f;
+            if (!_hasMap || !hasArea || _context == null)
             {
                 return;
             }
 
             var target = MinimapMath.MinimapToWorld(new Vector2(local.x / size.x, local.y / size.y), _map.Min, _map.Size);
-            var transform = camera.transform;
-            var focus = MinimapMath.GroundPoint(new Ray(transform.position, transform.forward), GroundHeight, MaxViewDistance);
-            transform.position += new Vector3(target.x - focus.x, 0f, target.y - focus.z);
+            _context.FocusCamera(new float3(target.x, 0f, target.y));
         }
     }
 }

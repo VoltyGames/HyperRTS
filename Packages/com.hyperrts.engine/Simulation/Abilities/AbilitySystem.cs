@@ -1,9 +1,10 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Power;
+using HyperRTS.Simulation.Production;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -12,8 +13,10 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Abilities
 {
     /// <summary>
-    /// Ticks every ability cooldown and runs UseAbility orders: the caster walks into range of its point or entity
-    /// target, then fires. The order ends on firing, or when the ability or target is no longer usable.
+    /// Ticks ability cooldowns and runs UseAbility orders: the caster walks into range of its point or entity target,
+    /// then fires. The order ends on firing, or when the ability, its required building or the target is no longer
+    /// usable. Like weapons, cooldowns hold while the caster is under construction or unpowered, so a superweapon
+    /// only starts charging once it is finished.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -21,6 +24,8 @@ namespace HyperRTS.Simulation.Abilities
     [UpdateBefore(typeof(DamageSystem))]
     public partial struct AbilitySystem : ISystem
     {
+        private EntityQuery _completed;
+        private EntityQuery _casters;
         private TargetLookup _targets;
         private ComponentLookup<Faction> _factions;
         private AbilityActivator _activator;
@@ -28,6 +33,8 @@ namespace HyperRTS.Simulation.Abilities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
+            _casters = SystemAPI.QueryBuilder().WithAll<ActiveOrder, Ability>().WithNone<Dead>().Build();
             _targets = new TargetLookup(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             _activator = new AbilityActivator(ref state);
@@ -46,9 +53,17 @@ namespace HyperRTS.Simulation.Abilities
                 SystemAPI.GetSingletonEntity<AbilityEvents>());
 
             new CooldownJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
+
+            // The prerequisite snapshot below is a sync point; skip it while no ability holder has an order.
+            if (_casters.IsEmpty)
+            {
+                return;
+            }
+
             new CastJob
             {
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Completed = new CompletedBuildings(_completed, state.WorldUpdateAllocator),
                 Targets = _targets,
                 Factions = _factions,
                 Activator = _activator,
@@ -58,6 +73,7 @@ namespace HyperRTS.Simulation.Abilities
         }
 
         [BurstCompile]
+        [WithNone(typeof(ConstructionProgress), typeof(Unpowered))]
         private partial struct CooldownJob : IJobEntity
         {
             public float DeltaTime;
@@ -82,6 +98,7 @@ namespace HyperRTS.Simulation.Abilities
         private partial struct CastJob : IJobEntity
         {
             public FactionRelations Relations;
+            [ReadOnly] public CompletedBuildings Completed;
             public TargetLookup Targets;
             [ReadOnly] public ComponentLookup<Faction> Factions;
             public AbilityActivator Activator;
@@ -99,11 +116,9 @@ namespace HyperRTS.Simulation.Abilities
                 var faction = Factions[entity].Value;
                 var index = AbilityRules.IndexOf(abilities, order.Value.Argument);
                 var target = order.Value.Target;
-                if (index < 0 || !abilities[index].IsReady ||
-                    !AbilityRules.IsValidTarget(abilities[index], target, faction, Targets, Factions, Relations))
+                if (index < 0 || !IsUsable(abilities[index], target, faction))
                 {
-                    busy.ValueRW = false;
-                    moving.ValueRW = false;
+                    ActiveOrder.Finish(busy, moving);
                     return;
                 }
 
@@ -114,10 +129,12 @@ namespace HyperRTS.Simulation.Abilities
                     return;
                 }
 
-                moving.ValueRW = false;
-                busy.ValueRW = false;
+                ActiveOrder.Finish(busy, moving);
                 Activator.Activate(ref abilities.ElementAt(index), entity, faction, target, aim, Ecb);
             }
+
+            private bool IsUsable(in Ability ability, Entity target, byte faction) =>
+                AbilityRules.IsUsable(ability, target, faction, Completed, Targets, Factions, Relations);
         }
     }
 }

@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Transport
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
-    public class PassengerAuthoring : MonoBehaviour
+    public class PassengerAuthoring : AuthoringBehaviour
     {
         [Tooltip("Space taken in a container (e.g. 1 for infantry, 3 for a light vehicle).")]
         [Min(1)]

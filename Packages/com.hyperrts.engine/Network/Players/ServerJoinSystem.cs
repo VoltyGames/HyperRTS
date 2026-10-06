@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.AI;
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
@@ -26,26 +27,37 @@ namespace HyperRTS.Network.Players
                 return;
             }
 
-            var entityManager = state.EntityManager;
             foreach (var request in requests.ToEntityArray(Allocator.Temp))
             {
-                var connection = entityManager.GetComponentData<ReceiveRpcCommandRequest>(request).SourceConnection;
-                var wanted = entityManager.GetComponentData<JoinRequest>(request).Faction;
-                var networkId = entityManager.GetComponentData<NetworkId>(connection).Value;
-                var slot = Claim(ref state, wanted, networkId);
-                byte faction = 0;
-                if (slot != Entity.Null)
-                {
-                    entityManager.AddComponentData(connection, new ConnectionPlayer { Player = slot });
-                    faction = entityManager.GetComponentData<Player>(slot).Faction;
-                }
-
-                entityManager.AddComponent<NetworkStreamInGame>(connection);
-                var reply = entityManager.CreateEntity();
-                entityManager.AddComponentData(reply, new JoinAccepted { Faction = faction });
-                entityManager.AddComponentData(reply, new SendRpcCommandRequest { TargetConnection = connection });
-                entityManager.DestroyEntity(request);
+                Join(ref state, request);
+                state.EntityManager.DestroyEntity(request);
             }
+        }
+
+        /// <summary>Binds the sender to a slot; repeats from a connection already in game can't claim more.</summary>
+        private void Join(ref SystemState state, Entity request)
+        {
+            var entityManager = state.EntityManager;
+            var connection = entityManager.GetComponentData<ReceiveRpcCommandRequest>(request).SourceConnection;
+            if (!entityManager.Exists(connection) || entityManager.HasComponent<NetworkStreamInGame>(connection))
+            {
+                return;
+            }
+
+            var wanted = entityManager.GetComponentData<JoinRequest>(request).Faction;
+            var networkId = entityManager.GetComponentData<NetworkId>(connection).Value;
+            var slot = Claim(ref state, wanted, networkId);
+            byte faction = 0;
+            if (slot != Entity.Null)
+            {
+                entityManager.AddComponentData(connection, new ConnectionPlayer { Player = slot });
+                faction = entityManager.GetComponentData<Player>(slot).Faction;
+            }
+
+            entityManager.AddComponent<NetworkStreamInGame>(connection);
+            var reply = entityManager.CreateEntity();
+            entityManager.AddComponentData(reply, new JoinAccepted { Faction = faction });
+            entityManager.AddComponentData(reply, new SendRpcCommandRequest { TargetConnection = connection });
         }
 
         /// <summary>The wanted slot if it is free, else the first free human slot, else none (observer).</summary>

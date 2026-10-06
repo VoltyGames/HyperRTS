@@ -1,8 +1,9 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
+using HyperRTS.Simulation.Spatial;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.AI
 {
@@ -30,7 +31,7 @@ namespace HyperRTS.Simulation.AI
                 {
                     Entity = builder,
                     Idle = !SystemAPI.IsComponentEnabled<ActiveOrder>(builder),
-                    Distance = math.distancesq(builders.Position(i).xz, turn.Home.xz),
+                    Distance = builders.DistanceSq(i, turn.Home),
                 };
                 if (candidate.Beats(best))
                 {
@@ -60,7 +61,7 @@ namespace HyperRTS.Simulation.AI
                     return Idle;
                 }
 
-                return IsCloser(Distance, Entity, other.Distance, other.Entity);
+                return Closest.IsCloser(Distance, Entity, other.Distance, other.Entity);
             }
         }
 
@@ -87,7 +88,9 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                var site = turn.Busy.Contains(builder) ? -1 : Nearest(snapshot.Sites, turn.Faction, builders.Position(i));
+                var site = turn.Busy.Contains(builder)
+                    ? -1
+                    : snapshot.Sites.NearestOwned(turn.Faction, builders.Position(i));
                 if (site < 0)
                 {
                     continue;
@@ -99,25 +102,6 @@ namespace HyperRTS.Simulation.AI
                 });
                 turn.Busy.Add(builder);
             }
-        }
-
-        /// <summary>Index of the entity in <paramref name="group"/> owned by <paramref name="faction"/> nearest to a point.</summary>
-        private static int Nearest(in AIGroup group, byte faction, float3 from)
-        {
-            var best = -1;
-            var bestDistance = float.MaxValue;
-            for (var i = 0; i < group.Length; i++)
-            {
-                var distance = math.distancesq(group.Position(i).xz, from.xz);
-                var bestEntity = best < 0 ? Entity.Null : group.Entities[best];
-                if (group.IsOwnedBy(i, faction) && IsCloser(distance, group.Entities[i], bestDistance, bestEntity))
-                {
-                    best = i;
-                    bestDistance = distance;
-                }
-            }
-
-            return best;
         }
     }
 }

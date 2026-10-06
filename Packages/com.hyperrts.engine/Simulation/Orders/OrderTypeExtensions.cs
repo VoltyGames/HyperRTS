@@ -8,5 +8,9 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>Attack-moves toward <see cref="Order.Position"/>, which units head back to after each fight.</summary>
         public static bool IsAttackMove(this OrderType type) => type is OrderType.AttackMove or OrderType.Patrol;
+
+        /// <summary>Walks to <see cref="Order.Position"/>: groups spread into a formation and the move order runs it.</summary>
+        public static bool UsesFormation(this OrderType type) =>
+            type is OrderType.Move or OrderType.AttackMove or OrderType.Patrol;
     }
 }

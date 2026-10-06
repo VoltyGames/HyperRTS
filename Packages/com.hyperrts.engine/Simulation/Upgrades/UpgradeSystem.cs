@@ -1,7 +1,6 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Stats;
 using Unity.Burst;
 using Unity.Collections;
@@ -55,7 +54,7 @@ namespace HyperRTS.Simulation.Upgrades
             [ReadOnly] public BufferLookup<ResearchedUpgrade> Researched;
             [ReadOnly] public BufferLookup<UpgradeEffect> Effects;
 
-            // Each entity writes only its own buffer, and only when its set changes, so StatSystem's filter stays quiet.
+            // Each entity writes only its own buffer, and only when its set changes, so stat change filters stay quiet.
             [NativeDisableParallelForRestriction] public BufferLookup<StatModifier> Modifiers;
 
             private void Execute(Entity entity, ref AppliedUpgrades applied, in EntityInfo info, in Faction faction)
@@ -66,8 +65,12 @@ namespace HyperRTS.Simulation.Upgrades
                     applied = new AppliedUpgrades { Faction = faction.Value };
                 }
 
-                if (!Researched.TryGetBuffer(PlayerByFaction[faction.Value], out var researched) ||
-                    applied.Count >= researched.Length || !Modifiers.HasBuffer(entity))
+                if (!Researched.TryGetBuffer(PlayerByFaction[faction.Value], out var researched))
+                {
+                    return;
+                }
+
+                if (applied.Count >= researched.Length || !Modifiers.HasBuffer(entity))
                 {
                     return;
                 }
@@ -89,8 +92,12 @@ namespace HyperRTS.Simulation.Upgrades
 
             private void Strip(Entity entity, in AppliedUpgrades applied)
             {
-                if (applied.Count == 0 || !Modifiers.HasBuffer(entity) ||
-                    !Researched.TryGetBuffer(PlayerByFaction[applied.Faction], out var researched))
+                if (applied.Count == 0 || !Modifiers.HasBuffer(entity))
+                {
+                    return;
+                }
+
+                if (!Researched.TryGetBuffer(PlayerByFaction[applied.Faction], out var researched))
                 {
                     return;
                 }

@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Resources
@@ -5,34 +6,31 @@ namespace HyperRTS.Simulation.Resources
     /// <summary>Stockpile arithmetic. Buffers are tiny, so linear scans beat lookups.</summary>
     public static class ResourceMath
     {
-        public static int GetAmount(DynamicBuffer<ResourceStock> stock, UnityObjectRef<ResourceType> type)
-        {
-            foreach (var item in stock)
-            {
-                if (item.Type.Equals(type))
-                {
-                    return item.Amount;
-                }
-            }
+        public static int GetAmount(DynamicBuffer<ResourceStock> stock, UnityObjectRef<ResourceType> type) =>
+            GetAmount(stock.AsNativeArray(), type);
 
-            return 0;
+        public static int GetAmount(NativeArray<ResourceStock> stock, UnityObjectRef<ResourceType> type)
+        {
+            var index = IndexOf(stock, type);
+            return index >= 0 ? stock[index].Amount : 0;
         }
 
         public static void Add(DynamicBuffer<ResourceStock> stock, UnityObjectRef<ResourceType> type, int amount)
         {
-            for (var i = 0; i < stock.Length; i++)
+            var index = IndexOf(stock.AsNativeArray(), type);
+            if (index >= 0)
             {
-                if (stock[i].Type.Equals(type))
-                {
-                    stock.ElementAt(i).Amount += amount;
-                    return;
-                }
+                stock.ElementAt(index).Amount += amount;
+                return;
             }
 
             stock.Add(new ResourceStock { Type = type, Amount = amount });
         }
 
-        public static bool CanAfford(DynamicBuffer<ResourceStock> stock, DynamicBuffer<ResourceCost> cost)
+        public static bool CanAfford(DynamicBuffer<ResourceStock> stock, DynamicBuffer<ResourceCost> cost) =>
+            CanAfford(stock.AsNativeArray(), cost);
+
+        public static bool CanAfford(NativeArray<ResourceStock> stock, DynamicBuffer<ResourceCost> cost)
         {
             foreach (var item in cost)
             {
@@ -43,6 +41,23 @@ namespace HyperRTS.Simulation.Resources
             }
 
             return true;
+        }
+
+        /// <summary>Takes an affordable cost out of a stockpile copy, e.g. one an AI budgets several purchases from.</summary>
+        public static void Deduct(NativeArray<ResourceStock> stock, DynamicBuffer<ResourceCost> cost)
+        {
+            foreach (var item in cost)
+            {
+                var index = IndexOf(stock, item.Type);
+                if (index < 0)
+                {
+                    continue;
+                }
+
+                var held = stock[index];
+                held.Amount -= item.Amount;
+                stock[index] = held;
+            }
         }
 
         /// <summary>Deducts the cost if affordable; otherwise leaves the stock untouched.</summary>
@@ -67,6 +82,19 @@ namespace HyperRTS.Simulation.Resources
             {
                 Add(stock, item.Type, item.Amount);
             }
+        }
+
+        private static int IndexOf(NativeArray<ResourceStock> stock, UnityObjectRef<ResourceType> type)
+        {
+            for (var i = 0; i < stock.Length; i++)
+            {
+                if (stock[i].Type.Equals(type))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         /// <summary>Refunds <paramref name="share"/> of the cost, rounded down per resource.</summary>

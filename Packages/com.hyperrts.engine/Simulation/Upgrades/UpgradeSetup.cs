@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 
 namespace HyperRTS.Simulation.Upgrades

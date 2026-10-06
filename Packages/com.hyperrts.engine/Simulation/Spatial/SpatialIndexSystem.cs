@@ -1,7 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Transport;
 using Unity.Burst;
@@ -37,6 +36,7 @@ namespace HyperRTS.Simulation.Spatial
             {
                 Cells = new NativeParallelMultiHashMap<int, SpatialEntry>(1024, Allocator.Persistent),
                 CellSize = CellSize,
+                Oversized = new NativeList<SpatialEntry>(16, Allocator.Persistent),
             }, "SpatialIndex");
         }
 
@@ -46,6 +46,7 @@ namespace HyperRTS.Simulation.Spatial
             if (SystemAPI.TryGetSingletonRW<SpatialIndex>(out var index))
             {
                 index.ValueRW.Cells.Dispose();
+                index.ValueRW.Oversized.Dispose();
             }
         }
 
@@ -55,9 +56,16 @@ namespace HyperRTS.Simulation.Spatial
             ref var index = ref SystemAPI.GetSingletonRW<SpatialIndex>().ValueRW;
             var count = _indexed.CalculateEntityCount();
             index.Cells.Clear();
+            index.Oversized.Clear();
             if (index.Cells.Capacity < count)
             {
                 index.Cells.Capacity = count;
+            }
+
+            // The parallel writer can't grow the list, so size it for the worst case.
+            if (index.Oversized.Capacity < count)
+            {
+                index.Oversized.Capacity = count;
             }
 
             _agentLookup.Update(ref state);
@@ -67,6 +75,7 @@ namespace HyperRTS.Simulation.Spatial
             new IndexJob
             {
                 Writer = index.Cells.AsParallelWriter(),
+                Oversized = index.Oversized.AsParallelWriter(),
                 CellSize = index.CellSize,
                 AgentLookup = _agentLookup,
                 ObstacleLookup = _obstacleLookup,
@@ -78,6 +87,7 @@ namespace HyperRTS.Simulation.Spatial
         private partial struct IndexJob : IJobEntity
         {
             public NativeParallelMultiHashMap<int, SpatialEntry>.ParallelWriter Writer;
+            public NativeList<SpatialEntry>.ParallelWriter Oversized;
             public float CellSize;
             [ReadOnly] public ComponentLookup<NavAgent> AgentLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
@@ -85,7 +95,7 @@ namespace HyperRTS.Simulation.Spatial
 
             private void Execute(Entity entity, in LocalTransform transform, in Faction faction)
             {
-                Writer.Add(SpatialIndex.Key(SpatialIndex.CellOf(transform.Position, CellSize)), new SpatialEntry
+                var entry = new SpatialEntry
                 {
                     Entity = entity,
                     Position = transform.Position,
@@ -93,7 +103,15 @@ namespace HyperRTS.Simulation.Spatial
                     Faction = faction.Value,
                     IsUnit = !BuildingLookup.HasComponent(entity),
                     Layer = NavAgent.LayerOf(AgentLookup, entity),
-                });
+                };
+
+                if (entry.Radius > CellSize)
+                {
+                    Oversized.AddNoResize(entry);
+                    return;
+                }
+
+                Writer.Add(SpatialIndex.Key(SpatialIndex.CellOf(transform.Position, CellSize)), entry);
             }
         }
     }

@@ -1,5 +1,4 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
@@ -33,28 +32,21 @@ namespace HyperRTS.Input.Selection
 
         protected override void OnCreate()
         {
-            _actions = new RTSInputActions();
-
+            _actions = InputActionsProvider.Actions;
             var selection = _actions.Selection;
             _groupKeys = new[] { selection.Group1, selection.Group2, selection.Group3, selection.Group4, selection.Group5 };
 
-            SingletonUtility.Ensure<SelectionInput>(EntityManager);
-            SingletonUtility.Ensure<SelectionDragState>(EntityManager);
-            SingletonUtility.Ensure<PendingCommand>(EntityManager);
-            SingletonUtility.Ensure<PlacementState>(EntityManager);
-            SingletonUtility.Ensure<PointerState>(EntityManager);
+            RequireForUpdate<SelectionInput>();
+            RequireForUpdate<SelectionDragState>();
+            RequireForUpdate<PendingCommand>();
+            RequireForUpdate<PlacementState>();
+            RequireForUpdate<PointerState>();
         }
 
         // Not in OnCreate: without domain reload the Input System wipes action states after the world is created.
-        protected override void OnStartRunning() => _actions.Selection.Enable();
+        protected override void OnStartRunning() => InputActionsProvider.Enable(_actions.Selection);
 
-        protected override void OnStopRunning() => _actions.Selection.Disable();
-
-        protected override void OnDestroy()
-        {
-            _actions?.Dispose();
-            _actions = null;
-        }
+        protected override void OnStopRunning() => InputActionsProvider.Disable(_actions.Selection);
 
         protected override void OnUpdate()
         {
@@ -80,10 +72,20 @@ namespace HyperRTS.Input.Selection
         }
 
         /// <summary>Clicks over the HUD, in placement mode or confirming a targeted command are not selections.</summary>
-        private bool IsPointerClaimed() =>
-            SystemAPI.GetSingleton<PointerState>().OverUI ||
-            SystemAPI.GetSingleton<PlacementState>().Active ||
-            SystemAPI.GetSingleton<PendingCommand>().Type != CommandType.None;
+        private bool IsPointerClaimed()
+        {
+            if (SystemAPI.GetSingleton<PointerState>().OverUI)
+            {
+                return true;
+            }
+
+            if (SystemAPI.GetSingleton<PlacementState>().Active)
+            {
+                return true;
+            }
+
+            return SystemAPI.GetSingleton<PendingCommand>().Type != CommandType.None;
+        }
 
         private void UpdateGesture(Camera camera, ref SelectionInput input)
         {

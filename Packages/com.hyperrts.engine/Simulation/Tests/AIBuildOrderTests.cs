@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using NUnit.Framework;
 using Unity.Entities;
@@ -15,6 +14,8 @@ namespace HyperRTS.Simulation.Tests
     /// <summary>AI build orders: buildings placed by builders, units queued, counts respected.</summary>
     public class AIBuildOrderTests
     {
+        private const float BuildingGap = 2f;
+
         private TestWorld _world;
         private ResourceType _supplies;
         private Entity _soldier;
@@ -27,7 +28,7 @@ namespace HyperRTS.Simulation.Tests
             _world.CreateMatch(1, 2);
             _supplies = ScriptableObject.CreateInstance<ResourceType>();
             var sink = new EntityManagerSink(_world.EntityManager, _world.Player(2));
-            AIPlayerSetup.Add(ref sink, new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 50 });
+            AIPlayerSetup.Add(ref sink, new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 50, BuildingGap = BuildingGap });
 
             _world.SpawnBuilding(2, float3.zero, new float2(4f, 4f), name: "HQ", populationProvided: 20);
             _soldier = _world.MakePrefab(_world.SpawnUnit(0, new float3(90f, 0f, 90f), name: "Soldier"));
@@ -86,7 +87,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(1, barracks.Count, "one barracks placed");
             Assert.IsFalse(_world.IsEnabled<ConstructionProgress>(barracks[0]), "the builder finished it");
             var offset = math.abs(_world.Get<LocalTransform>(barracks[0]).Position.xz);
-            Assert.GreaterOrEqual(math.cmax(offset) - 4f, AIPlacement.Gap - 1e-3f, "a lane is left next to the HQ");
+            Assert.GreaterOrEqual(math.cmax(offset) - 4f, BuildingGap - 1e-3f, "a lane is left next to the HQ");
             Assert.GreaterOrEqual(Owned("Soldier").Count, 1, "then a soldier was trained there");
         }
 

@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Interaction;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using UnityEngine;

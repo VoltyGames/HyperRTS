@@ -3,7 +3,7 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Orders
 {
-    /// <summary>Cheap pre-check so command systems skip their job sync on the many frames without commands.</summary>
+    /// <summary>Reading <see cref="PlayerCommand"/> buffers: a cheap pre-check and who each command addresses.</summary>
     public static class PlayerCommands
     {
         /// <summary>A set of built-in command types for <see cref="Any"/>; custom types are never matched.</summary>
@@ -20,7 +20,10 @@ namespace HyperRTS.Simulation.Orders
             return mask;
         }
 
-        /// <summary>Whether any player recorded a command whose type is in <paramref name="mask"/> this frame.</summary>
+        /// <summary>
+        /// Whether any player recorded a command whose type is in <paramref name="mask"/> this frame, so command
+        /// systems skip their job sync on the many frames without commands.
+        /// </summary>
         public static bool Any(ref SystemState state, ulong mask)
         {
             var players = new EntityQueryBuilder(Allocator.Temp).WithAll<PlayerCommand>().Build(ref state);
@@ -36,6 +39,41 @@ namespace HyperRTS.Simulation.Orders
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Who a command addresses (callers apply their own ownership filter): the command's listed group, else its
+        /// <see cref="PlayerCommand.Unit"/>, else every entity <paramref name="selected"/> matches.
+        /// </summary>
+        public static void Collect(in PlayerCommand command, DynamicBuffer<PlayerCommandSubject> listed,
+            EntityQuery selected, NativeList<Entity> subjects)
+        {
+            subjects.Clear();
+            if (command.SubjectCount > 0)
+            {
+                for (var i = 0; i < command.SubjectCount; i++)
+                {
+                    subjects.Add(listed[command.SubjectStart + i].Value);
+                }
+
+                return;
+            }
+
+            if (command.Unit != Entity.Null)
+            {
+                subjects.Add(command.Unit);
+                return;
+            }
+
+            subjects.AddRange(selected.ToEntityArray(Allocator.Temp));
+        }
+
+        public static NativeList<Entity> Collect(in PlayerCommand command, DynamicBuffer<PlayerCommandSubject> listed,
+            EntityQuery selected)
+        {
+            var subjects = new NativeList<Entity>(Allocator.Temp);
+            Collect(command, listed, selected, subjects);
+            return subjects;
         }
     }
 }

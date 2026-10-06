@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
@@ -67,13 +68,17 @@ namespace HyperRTS.Simulation.Tests
             }
         }
 
-        /// <summary>Updates only the simulation group so the pushed time isn't overwritten.</summary>
+        /// <summary>
+        /// Updates the simulation group, plus the prefab registry from initialization, but not the whole
+        /// initialization group, so the pushed time isn't overwritten.
+        /// </summary>
         public void Tick(float deltaTime = FrameTime, int frames = 1)
         {
             for (var i = 0; i < frames; i++)
             {
                 _elapsed += deltaTime;
                 World.SetTime(new TimeData(_elapsed, deltaTime));
+                World.GetExistingSystem<PrefabRegistrySystem>().Update(World.Unmanaged);
                 World.GetExistingSystemManaged<SimulationSystemGroup>().Update();
             }
         }
@@ -126,7 +131,8 @@ namespace HyperRTS.Simulation.Tests
             var terrain = TerrainHeight.Create(heights, size, min, spacing, Allocator.Persistent);
             heights.Dispose();
             _terrains.Add(terrain.Blob);
-            EntityManager.CreateSingleton(terrain);
+            var sink = new EntityManagerSink(EntityManager, EntityManager.CreateEntity());
+            NavSetup.AddTerrain(ref sink, terrain);
         }
 
         public Entity Player(byte faction)

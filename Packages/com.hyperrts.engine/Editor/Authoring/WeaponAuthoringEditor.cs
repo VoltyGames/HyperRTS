@@ -1,6 +1,5 @@
-using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation;
 using UnityEditor;
 using UnityEngine;
@@ -24,12 +23,8 @@ namespace HyperRTS.Editor.Authoring
                 Handles.DrawWireDisc(center, Vector3.up, weapon.acquireRange);
             }
 
-            EditorGUI.BeginChangeCheck();
-            var reach = GroundHandles.Radius(center, weapon.range + self, Color.red, "Reach");
-            if (EditorGUI.EndChangeCheck())
-            {
-                QuickFixes.Edit(weapon, "Edit Weapon Range", () => weapon.range = Mathf.Max(0.1f, reach - self));
-            }
+            GroundHandles.EditRadius(weapon, center, weapon.range + self, Color.red, "Reach", "Edit Weapon Range",
+                reach => weapon.range = Mathf.Max(0.1f, reach - self));
         }
     }
 }

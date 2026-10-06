@@ -1,7 +1,7 @@
-using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Fog;
 using HyperRTS.Presentation.HUD;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -39,17 +39,28 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
-        public void GroundPoint_HitsPlaneOrCapsAboveHorizon()
+        public void ViewGround_Reach_HitsGroundOrCapsAboveHorizon()
         {
-            var down = MinimapMath.GroundPoint(new Ray(new Vector3(0f, 10f, 0f), new Vector3(0f, -1f, 1f)), 0f, 1000f);
-            var up = MinimapMath.GroundPoint(new Ray(new Vector3(0f, 10f, 0f), Vector3.forward), 0f, 50f);
+            var eye = new float3(0f, 10f, 0f);
+            var down = ViewGround.Reach(default, eye, math.normalize(new float3(0f, -1f, 1f)), 1000f);
+            var up = ViewGround.Reach(default, eye, new float3(0f, 0f, 1f), 50f);
 
-            Assert.That(Vector3.Distance(new Vector3(0f, 0f, 10f), down), Is.LessThan(1e-3f));
-            Assert.That(Vector3.Distance(new Vector3(0f, 0f, 50f), up), Is.LessThan(1e-3f));
+            Assert.That(math.distance(new float3(0f, 0f, 10f), down), Is.LessThan(1e-3f));
+            Assert.That(math.distance(new float3(0f, 0f, 50f), up), Is.LessThan(1e-3f));
         }
 
         [Test]
-        public void TeamRelation_ClassifiesOwnAllyEnemyNeutral()
+        public void ViewGround_Focus_FallsBackBelowTheCamera()
+        {
+            var eye = new float3(4f, 10f, -2f);
+
+            var focus = ViewGround.Focus(default, eye, new float3(0f, 0f, 1f), 1000f);
+
+            Assert.That(math.distance(new float3(4f, 0f, -2f), focus), Is.LessThan(1e-3f));
+        }
+
+        [Test]
+        public void RelationOf_ClassifiesOwnAllyEnemyNeutral()
         {
             var relations = new FactionRelations();
             relations.Teams.Add(0);
@@ -57,10 +68,10 @@ namespace HyperRTS.Presentation.Tests
             relations.Teams.Add(1);
             relations.Teams.Add(2);
 
-            Assert.AreEqual(Relation.Own, TeamRelation.Of(1, 1, relations));
-            Assert.AreEqual(Relation.Ally, TeamRelation.Of(1, 2, relations));
-            Assert.AreEqual(Relation.Enemy, TeamRelation.Of(1, 3, relations));
-            Assert.AreEqual(Relation.Neutral, TeamRelation.Of(1, Faction.Neutral, relations));
+            Assert.AreEqual(Relation.Own, relations.RelationOf(1, 1));
+            Assert.AreEqual(Relation.Ally, relations.RelationOf(1, 2));
+            Assert.AreEqual(Relation.Enemy, relations.RelationOf(1, 3));
+            Assert.AreEqual(Relation.Neutral, relations.RelationOf(1, Faction.Neutral));
         }
     }
 }

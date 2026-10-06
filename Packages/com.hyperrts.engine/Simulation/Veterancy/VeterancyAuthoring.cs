@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Stats;
 using Unity.Entities;
 using UnityEngine;
@@ -14,7 +15,7 @@ namespace HyperRTS.Simulation.Veterancy
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class VeterancyAuthoring : MonoBehaviour
+    public class VeterancyAuthoring : AuthoringBehaviour
     {
         [Serializable]
         public class Rank
@@ -45,7 +46,7 @@ namespace HyperRTS.Simulation.Veterancy
                         bonuses.Add(new VeterancyBonus
                         {
                             Rank = (byte)(i + 1),
-                            Modifier = bonus.ToModifier(StatMath.VeterancySource),
+                            Modifier = bonus.ToModifier(StatSource.Veterancy),
                         });
                     }
                 }

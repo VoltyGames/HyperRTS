@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace HyperRTS.Simulation.Combat
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class WeaponAuthoring : MonoBehaviour
+    public class WeaponAuthoring : AuthoringBehaviour
     {
         [Tooltip("Firing range in world units, measured edge to edge.")]
         [Min(0.1f)]
@@ -46,6 +47,10 @@ namespace HyperRTS.Simulation.Combat
         [Min(0.1f)]
         public float projectileSpeed = 25f;
 
+        [Tooltip("Height above the shooter's and target's pivots that projectiles fly at.")]
+        [Min(0f)]
+        public float projectileHeight = 1f;
+
         [Tooltip("What the weapon can hit: Surface (ground and naval units, buildings), Air (aircraft), or both.")]
         public WeaponTargets targets;
 
@@ -74,6 +79,7 @@ namespace HyperRTS.Simulation.Combat
                         ? GetEntity(authoring.projectilePrefab, TransformUsageFlags.Dynamic)
                         : Entity.Null,
                     ProjectileSpeed = authoring.projectileSpeed,
+                    ProjectileHeight = authoring.projectileHeight,
                     AcquireRange = authoring.acquireRange,
                     Targets = authoring.targets,
                 };
@@ -97,6 +103,10 @@ namespace HyperRTS.Simulation.Combat
         public bool FriendlyFire;
         public Entity ProjectilePrefab;
         public float ProjectileSpeed;
+
+        /// <summary>Height above the shooter's and target's pivots that projectiles fly at; 0 flies pivot to pivot.</summary>
+        public float ProjectileHeight;
+
         public float AcquireRange;
 
         /// <summary>What the weapon can hit; units and orders never aim it at anything else.</summary>

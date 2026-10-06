@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
@@ -81,7 +81,6 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void FogHidden_TagsOnlyUnseenEnemies_AndDeselectsThem()
         {
-            _world.EntityManager.CreateEntity(typeof(SelectionInput));
             var scout = _world.SpawnUnit(1, float3.zero);
             var seen = _world.SpawnUnit(2, new float3(5f, 0f, 0f));
             var unseen = _world.SpawnUnit(2, new float3(50f, 0f, 0f));

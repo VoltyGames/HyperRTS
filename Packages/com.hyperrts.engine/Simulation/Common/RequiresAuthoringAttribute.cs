@@ -4,7 +4,7 @@ namespace HyperRTS.Simulation.Common
 {
     /// <summary>
     /// An authoring component this one needs on the same object. Unlike <c>[RequireComponent]</c> it only warns,
-    /// so an abstract base such as <see cref="GameEntityAuthoring"/> can be required.
+    /// so an abstract base such as <c>GameEntityAuthoring</c> can be required.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public sealed class RequiresAuthoringAttribute : Attribute

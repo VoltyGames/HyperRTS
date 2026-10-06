@@ -2,7 +2,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using Unity.Entities;
@@ -23,24 +22,17 @@ namespace HyperRTS.Input.Commands
 
         protected override void OnCreate()
         {
-            _actions = new RTSInputActions();
+            _actions = InputActionsProvider.Actions;
             _pointer = new WorldPointer(ref CheckedStateRef);
-
-            SingletonUtility.Ensure<PlacementState>(EntityManager);
-            SingletonUtility.Ensure<PointerState>(EntityManager);
+            RequireForUpdate<PlacementState>();
+            RequireForUpdate<PointerState>();
             RequireForUpdate<LocalPlayer>();
         }
 
         // Not in OnCreate: without domain reload the Input System wipes action states after the world is created.
-        protected override void OnStartRunning() => _actions.Commands.Enable();
+        protected override void OnStartRunning() => InputActionsProvider.Enable(_actions.Commands);
 
-        protected override void OnStopRunning() => _actions.Commands.Disable();
-
-        protected override void OnDestroy()
-        {
-            _actions?.Dispose();
-            _actions = null;
-        }
+        protected override void OnStopRunning() => InputActionsProvider.Disable(_actions.Commands);
 
         protected override void OnUpdate()
         {
@@ -51,8 +43,8 @@ namespace HyperRTS.Input.Commands
             }
 
             var commands = _actions.Commands;
-            if (placement.Prefab == Entity.Null || commands.Cancel.WasPressedThisFrame() ||
-                commands.Command.WasPressedThisFrame())
+            var cancelled = commands.Cancel.WasPressedThisFrame() || commands.Command.WasPressedThisFrame();
+            if (placement.Prefab == Entity.Null || cancelled)
             {
                 SystemAPI.SetSingleton(new PlacementState());
                 return;

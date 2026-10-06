@@ -1,9 +1,9 @@
 using HyperRTS.Presentation.Common;
-using HyperRTS.Simulation.Buildings;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
 using Unity.Collections;
 using Unity.Entities;
@@ -45,8 +45,8 @@ namespace HyperRTS.Presentation.Overlays
         public void Gather(MatchView view, OverlayStyle style)
         {
             var entityManager = view.EntityManager;
-            if (_placement.In(entityManager).TryGetSingleton(out PlacementState placement) && placement.Active &&
-                entityManager.HasComponent<NavObstacle>(placement.Prefab))
+            var placing = _placement.In(entityManager).TryGetSingleton(out PlacementState placement) && placement.Active;
+            if (placing && entityManager.HasComponent<NavObstacle>(placement.Prefab))
             {
                 var footprint = entityManager.GetComponentData<NavObstacle>(placement.Prefab).Size;
                 var size = new Vector3(footprint.x, style.ghostHeight, footprint.y);

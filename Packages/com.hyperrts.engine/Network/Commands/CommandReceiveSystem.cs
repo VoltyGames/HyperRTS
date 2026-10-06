@@ -1,10 +1,8 @@
 using HyperRTS.Core;
 using HyperRTS.Network.Players;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 
@@ -21,23 +19,19 @@ namespace HyperRTS.Network.Commands
     public partial struct CommandReceiveSystem : ISystem
     {
         private EntityQuery _rpcs;
-        private EntityQuery _prefabs;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _rpcs = SystemAPI.QueryBuilder().WithAll<CommandRpc, ReceiveRpcCommandRequest>().Build();
-            _prefabs = SystemAPI.QueryBuilder().WithAll<EntityInfo, Prefab>()
-                .WithOptions(EntityQueryOptions.IncludePrefab).Build();
             state.RequireForUpdate(_rpcs);
+            state.RequireForUpdate<PrefabRegistry>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var prefabs = new NativeHashMap<int, Entity>(64, Allocator.Temp);
-            PrefabLookup.ByTypeId(_prefabs, prefabs);
-
+            var prefabs = SystemAPI.GetSingleton<PrefabRegistry>();
             foreach (var (rpc, request) in SystemAPI.Query<RefRO<CommandRpc>, RefRO<ReceiveRpcCommandRequest>>())
             {
                 var connection = request.ValueRO.SourceConnection;
@@ -50,7 +44,7 @@ namespace HyperRTS.Network.Commands
             state.EntityManager.DestroyEntity(_rpcs);
         }
 
-        private void Apply(ref SystemState state, Entity player, in CommandRpc rpc, NativeHashMap<int, Entity> prefabs)
+        private void Apply(ref SystemState state, Entity player, in CommandRpc rpc, in PrefabRegistry prefabs)
         {
             var faction = SystemAPI.GetComponent<Player>(player).Faction;
             var command = new PlayerCommand
@@ -60,7 +54,7 @@ namespace HyperRTS.Network.Commands
                 Argument = rpc.Argument,
                 Position = rpc.Position,
                 Target = rpc.Target,
-                Prefab = prefabs.TryGetValue(rpc.PrefabTypeId, out var prefab) ? prefab : Entity.Null,
+                Prefab = prefabs.Find(rpc.PrefabTypeId),
             };
 
             if (rpc.Subjects.Length == 1)
@@ -75,21 +69,27 @@ namespace HyperRTS.Network.Commands
             }
             else
             {
-                var listed = SystemAPI.GetBuffer<PlayerCommandSubject>(player);
-                var start = listed.Length;
-                foreach (var unit in rpc.Subjects)
-                {
-                    if (IsOwned(ref state, unit, faction))
-                    {
-                        listed.Add(new PlayerCommandSubject { Value = unit });
-                    }
-                }
-
-                command.SubjectStart = (ushort)start;
-                command.SubjectCount = (ushort)(listed.Length - start);
+                ListSubjects(ref state, player, rpc, faction, ref command);
             }
 
             SystemAPI.GetBuffer<PlayerCommand>(player).Add(command);
+        }
+
+        private void ListSubjects(ref SystemState state, Entity player, in CommandRpc rpc, byte faction,
+            ref PlayerCommand command)
+        {
+            var listed = SystemAPI.GetBuffer<PlayerCommandSubject>(player);
+            var start = listed.Length;
+            foreach (var unit in rpc.Subjects)
+            {
+                if (IsOwned(ref state, unit, faction))
+                {
+                    listed.Add(new PlayerCommandSubject { Value = unit });
+                }
+            }
+
+            command.SubjectStart = (ushort)start;
+            command.SubjectCount = (ushort)(listed.Length - start);
         }
 
         private bool IsOwned(ref SystemState state, Entity entity, byte faction) =>

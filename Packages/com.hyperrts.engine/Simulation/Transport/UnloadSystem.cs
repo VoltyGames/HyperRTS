@@ -1,6 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
@@ -46,10 +45,14 @@ namespace HyperRTS.Simulation.Transport
                         continue;
                     }
 
-                    foreach (var container in CommandSubjects.Collect(command, listed, _selected))
+                    foreach (var container in PlayerCommands.Collect(command, listed, _selected))
                     {
-                        if (SystemAPI.HasComponent<Container>(container) &&
-                            SystemAPI.GetComponent<Faction>(container).Value == player.ValueRO.Faction)
+                        if (!SystemAPI.HasComponent<Container>(container))
+                        {
+                            continue;
+                        }
+
+                        if (SystemAPI.GetComponent<Faction>(container).Value == player.ValueRO.Faction)
                         {
                             _exit.Unload(container, SystemAPI.GetBuffer<Cargo>(container), command.Argument, hasGrid,
                                 grid);
