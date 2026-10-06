@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(4f);
 
             Assert.Less(math.distance(PositionOf(unit).xz, goal.xz), 0.2f);
-            Assert.AreEqual(2f, PositionOf(unit).y, "movement keeps the unit's own height");
+            Assert.AreEqual(0f, PositionOf(unit).y, "movement settles the unit on the flat ground");
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(unit));
             Assert.IsFalse(_world.IsEnabled<MoveDestination>(unit));
         }
