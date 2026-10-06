@@ -11,12 +11,26 @@ namespace HyperRTS.Simulation.Navigation
                     return NavSurface.Water;
                 case NavLayer.Amphibious:
                     return NavSurface.Land | NavSurface.Water;
+                // Movement never consults the grid for aircraft; this only serves spot searches (unloading).
+                case NavLayer.Air:
+                    return NavSurface.Land | NavSurface.Water | NavSurface.Deck;
                 default:
                     return NavSurface.Land;
             }
         }
 
-        /// <summary>Whether two agents can be in each other's way (a ship and a tank on a bridge above it can't).</summary>
-        public static bool Share(NavLayer a, NavLayer b) => (Surfaces(a) & Surfaces(b)) != 0;
+        /// <summary>
+        /// Whether two agents can be in each other's way: a ship and a tank on a bridge above it can't, and aircraft
+        /// only meet other aircraft.
+        /// </summary>
+        public static bool Share(NavLayer a, NavLayer b)
+        {
+            if (a == NavLayer.Air || b == NavLayer.Air)
+            {
+                return a == b;
+            }
+
+            return (Surfaces(a) & Surfaces(b)) != 0;
+        }
     }
 }

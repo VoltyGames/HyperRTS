@@ -8,5 +8,8 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Moves over land and water alike (hovercraft, amphibious vehicles).</summary>
         Amphibious = 2,
+
+        /// <summary>Flies straight over everything at its <c>Flight</c> altitude, ignoring the grid.</summary>
+        Air = 3,
     }
 }

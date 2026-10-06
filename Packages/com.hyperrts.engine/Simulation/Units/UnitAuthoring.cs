@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
@@ -25,12 +26,25 @@ namespace HyperRTS.Simulation.Units
         [Min(0.05f)]
         public float radius = 0.5f;
 
-        [Tooltip("Surface the unit moves on: Ground (land and decks), Naval (water) or Amphibious (both).")]
+        [Tooltip("Surface the unit moves on: Ground (land and decks), Naval (water), Amphibious (both) or Air (flies over everything).")]
         public NavLayer navLayer;
 
         [Tooltip("Population this unit uses while alive.")]
         [Min(0)]
         public int population = 1;
+
+        [Header("Flight (Air layer only)")]
+        [Tooltip("Cruise height above the ground or water.")]
+        [Min(0f)]
+        public float flightAltitude = 12f;
+
+        [Tooltip("Vertical speed for take-off, landing and following the terrain.")]
+        [Min(0.1f)]
+        public float climbSpeed = 6f;
+
+        [Tooltip("0 hovers when idle (helicopters); otherwise keeps circling at this radius (jets).")]
+        [Min(0f)]
+        public float loiterRadius;
 
         public override float Radius => radius;
 
@@ -45,6 +59,15 @@ namespace HyperRTS.Simulation.Units
 
                 var sink = new BakerSink(this, entity);
                 UnitSetup.Add(ref sink, authoring.moveSpeed, authoring.radius, authoring.navLayer);
+                if (authoring.navLayer == NavLayer.Air)
+                {
+                    AirSetup.AddFlight(ref sink, new Flight
+                    {
+                        Altitude = authoring.flightAltitude,
+                        ClimbSpeed = authoring.climbSpeed,
+                        LoiterRadius = authoring.loiterRadius,
+                    });
+                }
             }
         }
     }

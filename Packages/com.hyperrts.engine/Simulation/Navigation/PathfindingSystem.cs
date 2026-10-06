@@ -13,6 +13,7 @@ namespace HyperRTS.Simulation.Navigation
     /// <summary>
     /// Plans <see cref="PathWaypoint"/>s for units whose <see cref="MoveDestination"/> is new, moved by more than a
     /// cell, or whose grid changed. Searches are capped per frame, oldest request first, to bound the frame cost.
+    /// Aircraft (<see cref="NavLayer.Air"/>) never search: they fly straight.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
@@ -87,6 +88,12 @@ namespace HyperRTS.Simulation.Navigation
                     return;
                 }
 
+                if (agent.Layer == NavLayer.Air)
+                {
+                    Straight(ref path, waypoints, destination.Value);
+                    return;
+                }
+
                 var goal = destination.Value;
                 var goalMoved = math.distancesq(path.Goal.xz, goal.xz) > Grid.CellSize * Grid.CellSize;
                 if (path.Status == PathStatus.Ready && !goalMoved && path.GridVersion == Grid.Version)
@@ -148,10 +155,15 @@ namespace HyperRTS.Simulation.Navigation
                     return;
                 }
 
-                waypoints.Clear();
-                waypoints.Add(new PathWaypoint { Position = destination.Value });
-                path = new PathState { Goal = destination.Value, Status = PathStatus.Ready };
+                Straight(ref path, waypoints, destination.Value);
             }
+        }
+
+        private static void Straight(ref PathState path, DynamicBuffer<PathWaypoint> waypoints, float3 goal)
+        {
+            waypoints.Clear();
+            waypoints.Add(new PathWaypoint { Position = goal });
+            path = new PathState { Goal = goal, Status = PathStatus.Ready };
         }
 
         private static void Reset(ref PathState path, DynamicBuffer<PathWaypoint> waypoints)

@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Spatial;
@@ -14,7 +15,8 @@ namespace HyperRTS.Simulation.Units
     /// <summary>
     /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> (disabled on arrival),
     /// pushes overlapping units of the same layer apart and never steps into a cell closed to the agent's layer.
-    /// Steers on XZ; with a <see cref="NavGrid"/>, Y follows the layer's surface (ground, deck or water).
+    /// Steers on XZ; with a <see cref="NavGrid"/>, Y follows the layer's surface (ground, deck or water). Aircraft
+    /// ignore the grid, climb to their <see cref="Flight"/> altitude and, if they can't hover, circle when idle.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
@@ -22,10 +24,12 @@ namespace HyperRTS.Simulation.Units
     public partial struct MovementSystem : ISystem
     {
         private NavGrid _noGrid;
+        private ComponentLookup<Flight> _flights;
 
         public void OnCreate(ref SystemState state)
         {
             _noGrid = NavGrid.Placeholder();
+            _flights = state.GetComponentLookup<Flight>(true);
             state.RequireForUpdate<SpatialIndex>();
         }
 
@@ -38,11 +42,13 @@ namespace HyperRTS.Simulation.Units
         public void OnUpdate(ref SystemState state)
         {
             var hasGrid = SystemAPI.TryGetSingleton<NavGrid>(out var grid) && grid.IsCreated;
+            _flights.Update(ref state);
             new MoveJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Grid = hasGrid ? grid : _noGrid,
                 HasGrid = hasGrid,
+                Flights = _flights,
                 DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }
@@ -55,6 +61,7 @@ namespace HyperRTS.Simulation.Units
             [ReadOnly] public SpatialIndex Index;
             [ReadOnly] public NavGrid Grid;
             public bool HasGrid;
+            [ReadOnly] public ComponentLookup<Flight> Flights;
             public float DeltaTime;
 
             // `ref`, not `in`: it must share one writable handle with EnabledRefRW.
@@ -73,26 +80,69 @@ namespace HyperRTS.Simulation.Units
                     waypoints.Clear();
                 }
 
+                var flying = agent.Layer == NavLayer.Air;
+                if (flying && !moving.ValueRO)
+                {
+                    step = Loiter(entity, transform.Rotation, maxStep, ref heading);
+                }
+
                 var from = transform.Position.xz;
                 var wanted = from + step + Separation(entity, transform.Position, agent, maxStep);
-                transform.Position.xz = Constrain(from, wanted, NavLayers.Surfaces(agent.Layer));
-                if (HasGrid)
+                if (flying)
                 {
-                    transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
+                    Fly(entity, ref transform, wanted);
+                }
+                else
+                {
+                    Walk(ref transform, from, wanted, agent, moving.ValueRO, waypoints, ref path);
                 }
 
                 if (math.any(heading != 0f))
                 {
                     transform.Rotation = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
                 }
+            }
+
+            private readonly void Walk(ref LocalTransform transform, float2 from, float2 wanted, in NavAgent agent,
+                bool moving, DynamicBuffer<PathWaypoint> waypoints, ref PathState path)
+            {
+                transform.Position.xz = Constrain(from, wanted, NavLayers.Surfaces(agent.Layer));
+                if (HasGrid)
+                {
+                    transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
+                }
 
                 // Shoved off its line by the crowd, the unit may now face a wall between it and the next corner.
-                if (moving.ValueRO && !transform.Position.xz.Equals(wanted) && waypoints.Length > 0 &&
+                if (moving && !transform.Position.xz.Equals(wanted) && waypoints.Length > 0 &&
                     !Grid.HasLineOfSight(transform.Position, waypoints[0].Position, 0f, agent.Layer))
                 {
                     path.Status = PathStatus.None;
                 }
             }
+
+            /// <summary>Aircraft go wherever they steer and climb toward their altitude over the surface below.</summary>
+            private readonly void Fly(Entity entity, ref LocalTransform transform, float2 wanted)
+            {
+                transform.Position.xz = wanted;
+                var surface = HasGrid ? Grid.SurfaceHeight(transform.Position) : 0f;
+                transform.Position.y = Flights.TryGetComponent(entity, out var flight)
+                    ? FlightMath.Climb(transform.Position.y, surface, flight, IsLanded(entity), DeltaTime)
+                    : surface;
+            }
+
+            /// <summary>An idle aircraft that can't hover keeps flying a circle; one that can stays put.</summary>
+            private readonly float2 Loiter(Entity entity, quaternion rotation, float maxStep, ref float2 heading)
+            {
+                if (!Flights.TryGetComponent(entity, out var flight) || flight.LoiterRadius <= 0f || IsLanded(entity))
+                {
+                    return float2.zero;
+                }
+
+                heading = FlightMath.Loiter(rotation, maxStep, flight.LoiterRadius);
+                return heading * maxStep;
+            }
+
+            private readonly bool IsLanded(Entity entity) => false;
 
             private readonly float2 Separation(Entity entity, float3 position, in NavAgent agent, float maxStep)
             {
