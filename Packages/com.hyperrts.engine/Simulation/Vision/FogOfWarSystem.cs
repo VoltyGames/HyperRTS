@@ -92,7 +92,7 @@ namespace HyperRTS.Simulation.Vision
                 Fog = fog,
                 Relations = relations,
                 Terrain = terrain,
-                WaterLevel = settings.WaterLevel,
+                WaterFloor = settings.FloodTerrain ? settings.WaterLevel : float.NegativeInfinity,
             }.Schedule();
             state.Dependency = new ExploreJob { Visible = fog.Visible, Explored = fog.Explored }
                 .Schedule(fog.Explored.Length, 1024, state.Dependency);
@@ -145,7 +145,7 @@ namespace HyperRTS.Simulation.Vision
             public FogOfWar Fog;
             public FactionRelations Relations;
             public TerrainHeight Terrain;
-            public float WaterLevel;
+            public float WaterFloor;
 
             private void Execute(in LocalTransform transform, in VisionRange vision, in Faction faction)
             {
@@ -156,7 +156,7 @@ namespace HyperRTS.Simulation.Vision
 
                 if (Terrain.IsCreated)
                 {
-                    var sight = new SightLines { Fog = Fog, Terrain = Terrain, WaterLevel = WaterLevel };
+                    var sight = new SightLines { Fog = Fog, Terrain = Terrain, WaterFloor = WaterFloor };
                     sight.Stamp(transform.Position, vision.Value, bit);
                     return;
                 }

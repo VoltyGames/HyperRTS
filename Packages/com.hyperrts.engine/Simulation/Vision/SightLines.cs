@@ -19,8 +19,8 @@ namespace HyperRTS.Simulation.Vision
         public FogOfWar Fog;
         public TerrainHeight Terrain;
 
-        /// <summary>Water hides the bed below it, so sight lines see its surface instead.</summary>
-        public float WaterLevel;
+        /// <summary>Flooded terrain hides its bed below this surface; negative infinity when nothing floods.</summary>
+        public float WaterFloor;
 
         public void Stamp(float3 position, float range, byte bit)
         {
@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Vision
             }
         }
 
-        private readonly float Surface(float2 point) => math.max(Terrain.Height(point), WaterLevel);
+        private readonly float Surface(float2 point) => math.max(Terrain.Height(point), WaterFloor);
 
         private void Mark(int2 cell, byte bit)
         {

@@ -11,12 +11,14 @@ namespace HyperRTS.Simulation.Tests
     public static class TerrainTestKit
     {
         /// <summary>Call before the first tick: the nav grid reads these once, when it is created.</summary>
-        public static void ConfigureMap(this TestWorld world, float waterLevel, float maxSlope = 0f)
+        public static void ConfigureMap(this TestWorld world, float waterLevel = 0f, float maxSlope = 0f,
+            bool floodTerrain = false)
         {
             using var query = world.EntityManager.CreateEntityQuery(typeof(MapSettings));
             var map = query.GetSingleton<MapSettings>();
             map.WaterLevel = waterLevel;
             map.MaxSlope = maxSlope;
+            map.FloodTerrain = floodTerrain;
             query.SetSingleton(map);
         }
 

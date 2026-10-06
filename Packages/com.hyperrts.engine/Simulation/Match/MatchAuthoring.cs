@@ -32,8 +32,11 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("Hide what the local player's team can't see.")]
         public bool fogOfWar = true;
 
-        [Tooltip("Terrain below this height is water, open to ships only; ships ride at it.")]
+        [Tooltip("Height of the water surface (Water nav areas, flooded terrain); ships ride at it.")]
         public float waterLevel;
+
+        [Tooltip("Turn terrain below the water level into water, open to ships only. Off: only Water nav areas are water.")]
+        public bool floodBelowWaterLevel;
 
         [Tooltip("Steepest ground (degrees) units may drive on; steeper Terrain Height cells are blocked. 0 = no limit.")]
         [Range(0f, 90f)]
@@ -92,6 +95,7 @@ namespace HyperRTS.Simulation.Match
                     FogCellSize = authoring.fogCellSize,
                     FogOfWar = authoring.fogOfWar,
                     WaterLevel = authoring.waterLevel,
+                    FloodTerrain = authoring.floodBelowWaterLevel,
                     MaxSlope = authoring.maxSlope,
                 });
                 AddComponent(entity, new MatchState { Phase = MatchPhase.Playing });

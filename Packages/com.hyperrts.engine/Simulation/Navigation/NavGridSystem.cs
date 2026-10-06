@@ -10,9 +10,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Creates the <see cref="NavGrid"/> from <see cref="MapSettings"/> (terrain, water level and slope give each cell
-    /// its base surface), then re-stamps every <see cref="NavArea"/> and <see cref="NavObstacle"/> over it whenever
-    /// any are added, removed or change archetype. Areas and obstacles are assumed not to move.
+    /// Creates the <see cref="NavGrid"/> from <see cref="MapSettings"/> (terrain, slope and, when flooding, water
+    /// level give each cell its base surface), then re-stamps every <see cref="NavArea"/> and <see cref="NavObstacle"/>
+    /// over it whenever any are added, removed or change archetype. Areas and obstacles are assumed not to move.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]
@@ -112,28 +112,40 @@ namespace HyperRTS.Simulation.Navigation
             {
                 Grid = grid,
                 Base = _base,
+                Flood = map.FloodTerrain,
                 MaxGradient = steep ? math.tan(math.radians(map.MaxSlope)) : float.PositiveInfinity,
             }.Schedule(count, 1024, state.Dependency);
         }
 
-        /// <summary>Terrain under the water level is water; land steeper than the slope limit is blocked.</summary>
+        /// <summary>Flooded terrain under the water level is water; land steeper than the slope limit is blocked.</summary>
         [BurstCompile]
         private struct ClassifyJob : IJobParallelFor
         {
             [ReadOnly] public NavGrid Grid;
             public NativeArray<byte> Base;
+            public bool Flood;
             public float MaxGradient;
 
             public void Execute(int index)
             {
                 var center = Grid.CellCenter(Grid.Cell(index)).xz;
-                if (Grid.Terrain.Height(center) < Grid.WaterLevel)
+                if (IsFlooded(center))
                 {
                     Base[index] = (byte)NavSurface.Water;
                     return;
                 }
 
                 Base[index] = (byte)(IsTooSteep(center) ? NavSurface.Blocked : NavSurface.Land);
+            }
+
+            private readonly bool IsFlooded(float2 center)
+            {
+                if (!Flood)
+                {
+                    return false;
+                }
+
+                return Grid.Terrain.Height(center) < Grid.WaterLevel;
             }
 
             private readonly bool IsTooSteep(float2 center)

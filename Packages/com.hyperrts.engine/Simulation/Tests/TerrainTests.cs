@@ -27,12 +27,7 @@ namespace HyperRTS.Simulation.Tests
 
         private static float Rolling(float2 p) => p.x * 0.2f + math.sin(p.y * 0.1f) * 2f;
 
-        /// <summary>Rolling hills dip below 0, so keep the sea under them.</summary>
-        private void CreateHills()
-        {
-            _world.CreateTerrain(Rolling);
-            _world.ConfigureMap(waterLevel: -100f);
-        }
+        private void CreateHills() => _world.CreateTerrain(Rolling);
 
         private static FogOfWar Fog(TestWorld world)
         {
@@ -83,12 +78,31 @@ namespace HyperRTS.Simulation.Tests
         {
             // A 60-degree ramp east of x = 10, flat ground elsewhere.
             _world.CreateTerrain(p => p.x > 10f ? (p.x - 10f) * 1.8f : 0f);
-            _world.ConfigureMap(waterLevel: 0f, maxSlope: 45f);
+            _world.ConfigureMap(maxSlope: 45f);
             _world.Tick();
 
             var grid = _world.Grid();
             Assert.IsTrue(grid.IsWalkable(float3.zero));
             Assert.IsFalse(grid.IsWalkable(new float3(20f, 0f, 0f)), "steeper than the limit");
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TerrainBelowWaterLevel_FloodsOnlyWhenFloodTerrainIsOn(bool flood)
+        {
+            // A 10 m deep basin east of x = 4, flat ground elsewhere.
+            _world.CreateTerrain(p => p.x > 4f ? -10f : 0f);
+            _world.ConfigureMap(waterLevel: -1f, floodTerrain: flood);
+            _world.SpawnUnit(1, float3.zero);
+            _world.Tick();
+
+            var basin = new float3(8f, 0f, 0f);
+            var grid = _world.Grid();
+            Assert.IsTrue(grid.IsWalkable(float3.zero), "dry ground stays land");
+            Assert.AreEqual(!flood, grid.IsWalkable(basin, NavLayer.Ground), "basin floor is land");
+            Assert.AreEqual(flood, grid.IsWalkable(basin, NavLayer.Naval), "basin is water");
+            // The near shore hides the deep floor; only a water surface rises into view.
+            Assert.AreEqual(flood, Fog(_world).IsVisible(new float3(9f, 0f, 0f), Team1), "fog sees the water surface");
         }
 
         [Test]

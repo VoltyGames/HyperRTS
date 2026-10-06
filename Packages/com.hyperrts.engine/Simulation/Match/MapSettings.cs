@@ -12,8 +12,11 @@ namespace HyperRTS.Simulation.Match
         public float FogCellSize;
         public bool FogOfWar;
 
-        /// <summary>Terrain below this height is water; ships ride at it.</summary>
+        /// <summary>Height of the water surface; ships ride at it.</summary>
         public float WaterLevel;
+
+        /// <summary>Terrain below <see cref="WaterLevel"/> becomes water; otherwise only Water nav areas are.</summary>
+        public bool FloodTerrain;
 
         /// <summary>Steepest walkable ground in degrees; 0 means no limit.</summary>
         public float MaxSlope;

@@ -87,11 +87,12 @@ dies. `PlayerCommandClearSystem` clears commands at the end of the order phase.
 | `TerrainHeightAuthoring` / `TerrainHeight` | Terrain heights baked into a blob singleton; `Height(xz)` is bilinear and `Raycast` hits the ground, both flat y = 0 without one (`RaycastPlane` for any horizontal plane) |
 | `NavGrid` | Singleton grid of `NavSurface` flags (Land, Water, Deck; 0 = blocked) with layer-aware `IsWalkable`, `IsAreaFree`, `HasLineOfSight`, `TryFindNearestWalkable`, plus `SurfaceHeight` / `HeightFor(layer)` |
 
-`MatchAuthoring` sets the water level (terrain below it is water; ships ride at it) and an optional max slope (steeper
-terrain is blocked). An agent may enter cells that share a flag with its layer, so ships pass under a deck that tanks
-drive over.
+`MatchAuthoring` sets the water level (the surface ships ride at, used by Water areas), an opt-in flood toggle
+(`MapSettings.FloodTerrain`: terrain below the water level becomes water too; off by default) and an optional max slope
+(steeper terrain is blocked). An agent may enter cells that share a flag with its layer, so ships pass under a deck that
+tanks drive over.
 
-Systems: `NavGridSystem` classifies each cell once from terrain, water level and slope, then stamps areas (decks
+Systems: `NavGridSystem` classifies each cell once from terrain, slope and, when flooding is on, the water level, then stamps areas (decks
 last) and obstacles over that whenever any are added or removed, bumping the version so units re-path (a destroyed
 bridge). `PathfindingSystem` runs Burst grid A* (8-way, no corner cutting) over the agent's layer with line-of-sight
 smoothing, at most 48 searches per frame, and skips A* when the goal is directly visible. `MovementSystem` follows
@@ -247,7 +248,7 @@ walk-into-range orders.
 
 `FogOfWarSystem` restamps vision and detection 10 times per second; with a `TerrainHeight`, vision is occluded by
 hills (`SightLines`: rays from the viewer's eye, 2 m up, keep the steepest sight line so far, so cost stays
-proportional to the vision area). With fog disabled every cell stays visible but detection still runs, so stealth works with fog off. `StealthSystem` (after `WeaponFireSystem`, which restarts the
+proportional to the vision area; with flooding on, terrain below the water level is seen as the water surface). With fog disabled every cell stays visible but detection still runs, so stealth works with fog off. `StealthSystem` (after `WeaponFireSystem`, which restarts the
 reveal timer on each shot) sets `Stealthed`. `LocalFogViewSystem` publishes the local player's `LocalFogView` and
 tags hostile entities they can't see (fog or undetected stealth) with `FogHidden` once per restamp; selection,
 picking, the HUD and rendering all skip tagged entities. `TargetLookup.IsValidTarget` rejects undetected stealthed
