@@ -69,11 +69,11 @@ namespace HyperRTS.Simulation.AI
                 var distance = targets.DistanceSq(i, from);
                 if (IsCriticalBuilding(ref state, entity))
                 {
-                    nearestBase.Offer(i, entity, distance);
+                    nearestBase.Consider(i, entity, distance);
                 }
                 else if (SystemAPI.HasComponent<UnitTag>(entity))
                 {
-                    nearestUnit.Offer(i, entity, distance);
+                    nearestUnit.Consider(i, entity, distance);
                 }
             }
 

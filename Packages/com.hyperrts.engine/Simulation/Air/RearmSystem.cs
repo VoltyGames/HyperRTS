@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Air
         {
             public OrderWriter Writer;
 
-            private void Execute(Entity entity, in Ammo ammo, in PadHome home)
+            private void Execute(Entity entity, in Ammo ammo, in HomePad home)
             {
                 if (ammo.Current > 0 || home.Airfield == Entity.Null)
                 {

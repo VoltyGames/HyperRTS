@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.HUD
 {
     /// <summary>
     /// Command-card buttons for the selection's abilities and the local player's support powers, greyed out with a
-    /// countdown while cooling down. Aimed abilities arm a targeted command for the next world click.
+    /// countdown while cooling down. Aimed abilities start targeting for the next world click.
     /// </summary>
     public sealed class AbilityButtons
     {
@@ -103,7 +103,7 @@ namespace HyperRTS.Presentation.HUD
             }
             else
             {
-                context.ArmCommand(type, id);
+                context.BeginTargeting(type, id);
             }
         }
 

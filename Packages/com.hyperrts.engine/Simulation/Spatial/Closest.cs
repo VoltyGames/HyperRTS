@@ -26,12 +26,13 @@ namespace HyperRTS.Simulation.Spatial
         public static bool IsCloser(float distance, Entity entity, float bestDistance, Entity best) =>
             distance < bestDistance || (distance == bestDistance && entity.Index < best.Index);
 
-        public readonly bool IsBeatenBy(float distance, Entity entity) => IsCloser(distance, entity, Distance, Entity);
+        public readonly bool IsCloserThanBest(float distance, Entity entity) =>
+            IsCloser(distance, entity, Distance, Entity);
 
         /// <summary>Takes the candidate when it is closer; true if it did.</summary>
-        public bool Offer(int index, Entity entity, float distance)
+        public bool Consider(int index, Entity entity, float distance)
         {
-            if (!IsBeatenBy(distance, entity))
+            if (!IsCloserThanBest(distance, entity))
             {
                 return false;
             }

@@ -6,7 +6,7 @@ namespace HyperRTS.Simulation.Production
     /// <summary>Option-list and refund rules shared by the build, production, sell and capture behaviours.</summary>
     public static class ProductionRules
     {
-        public static bool Offers<T>(DynamicBuffer<T> options, Entity prefab)
+        public static bool HasOption<T>(DynamicBuffer<T> options, Entity prefab)
             where T : unmanaged, IBufferElementData, IPrefabOption
         {
             foreach (var option in options)

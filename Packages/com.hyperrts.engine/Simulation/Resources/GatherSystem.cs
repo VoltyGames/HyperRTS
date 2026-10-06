@@ -199,7 +199,7 @@ namespace HyperRTS.Simulation.Resources
                         continue;
                     }
 
-                    closest.Offer(i, candidate, DistanceSq(candidate, harvest.NodePosition));
+                    closest.Consider(i, candidate, DistanceSq(candidate, harvest.NodePosition));
                 }
 
                 order.Value.Target = closest.Entity;
@@ -214,7 +214,7 @@ namespace HyperRTS.Simulation.Resources
                     var candidate = DropOffs[i];
                     if (FactionLookup[candidate].Value == faction)
                     {
-                        closest.Offer(i, candidate, DistanceSq(candidate, position));
+                        closest.Consider(i, candidate, DistanceSq(candidate, position));
                     }
                 }
 

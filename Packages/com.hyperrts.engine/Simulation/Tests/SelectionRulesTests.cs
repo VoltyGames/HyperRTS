@@ -50,10 +50,10 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void DragRank_OrdersOwnedUnitsOverOwnedBuildingsOverOthers()
         {
-            Assert.AreEqual(2, SelectionMath.DragRank(true, true, false));
-            Assert.AreEqual(1, SelectionMath.DragRank(true, false, true));
-            Assert.AreEqual(0, SelectionMath.DragRank(false, true, false));
-            Assert.AreEqual(0, SelectionMath.DragRank(true, false, false));
+            Assert.AreEqual(2, SelectionMath.DragPriority(true, true, false));
+            Assert.AreEqual(1, SelectionMath.DragPriority(true, false, true));
+            Assert.AreEqual(0, SelectionMath.DragPriority(false, true, false));
+            Assert.AreEqual(0, SelectionMath.DragPriority(true, false, false));
         }
 
         [Test]

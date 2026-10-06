@@ -117,7 +117,7 @@ namespace HyperRTS.Presentation.HUD
 
                 _canSell |= entityManager.HasComponent<BuildingTag>(entity);
                 _canUnload |= entityManager.HasComponent<Container>(entity);
-                _canReturn |= entityManager.HasComponent<PadHome>(entity);
+                _canReturn |= entityManager.HasComponent<HomePad>(entity);
             }
         }
 

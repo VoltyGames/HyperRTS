@@ -8,12 +8,13 @@ namespace HyperRTS.Simulation.Stats
     {
         public static float Evaluate(DynamicBuffer<StatModifier> modifiers, Stat stat, float baseValue)
         {
-            Totals(modifiers, stat, out var add, out var percent);
+            SumModifiers(modifiers, stat, out var add, out var percent);
             return math.max(0f, (baseValue + add) * (1f + percent));
         }
 
         /// <summary>The summed <see cref="StatModifier.Add"/> and <see cref="StatModifier.Percent"/> of a stat.</summary>
-        public static void Totals(DynamicBuffer<StatModifier> modifiers, Stat stat, out float add, out float percent)
+        public static void SumModifiers(DynamicBuffer<StatModifier> modifiers, Stat stat, out float add,
+            out float percent)
         {
             add = 0f;
             percent = 0f;
@@ -27,16 +28,16 @@ namespace HyperRTS.Simulation.Stats
             }
         }
 
-        /// <summary>The modified value of a stat currently at <paramref name="live"/>; see <see cref="BaseOf"/>.</summary>
+        /// <summary>The modified value of a stat now at <paramref name="live"/>; see <see cref="BaseValue"/>.</summary>
         public static float Apply(DynamicBuffer<StatModifier> modifiers, DynamicBuffer<BaseStat> bases, Stat stat,
             float live) =>
-            Evaluate(modifiers, stat, BaseOf(bases, stat, live));
+            Evaluate(modifiers, stat, BaseValue(bases, stat, live));
 
         /// <summary>
         /// The stat's base value, captured from <paramref name="live"/> on first use: afterwards the live value holds
         /// modified results, and only the base still remembers the authored one.
         /// </summary>
-        public static float BaseOf(DynamicBuffer<BaseStat> bases, Stat stat, float live)
+        public static float BaseValue(DynamicBuffer<BaseStat> bases, Stat stat, float live)
         {
             foreach (var item in bases)
             {

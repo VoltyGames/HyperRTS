@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Air
     public partial struct PadSystem : ISystem
     {
         private BufferLookup<LandingPad> _pads;
-        private ComponentLookup<PadHome> _homes;
+        private ComponentLookup<HomePad> _homes;
         private ComponentLookup<Faction> _factions;
         private ComponentLookup<ConstructionProgress> _sites;
         private ComponentLookup<LocalTransform> _transforms;
@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Air
         public void OnCreate(ref SystemState state)
         {
             _pads = state.GetBufferLookup<LandingPad>();
-            _homes = state.GetComponentLookup<PadHome>(true);
+            _homes = state.GetComponentLookup<HomePad>(true);
             _factions = state.GetComponentLookup<Faction>(true);
             _sites = state.GetComponentLookup<ConstructionProgress>(true);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
@@ -55,7 +55,7 @@ namespace HyperRTS.Simulation.Air
         [BurstCompile]
         private partial struct ReleaseJob : IJobEntity
         {
-            [ReadOnly] public ComponentLookup<PadHome> Homes;
+            [ReadOnly] public ComponentLookup<HomePad> Homes;
 
             private void Execute(Entity entity, DynamicBuffer<LandingPad> pads)
             {
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Air
         {
             public Airfields Airfields;
 
-            private void Execute(Entity entity, ref PadHome home, EnabledRefRW<Docked> docked,
+            private void Execute(Entity entity, ref HomePad home, EnabledRefRW<Docked> docked,
                 EnabledRefRO<MoveDestination> moving, in Faction faction)
             {
                 // Any move lifts a docked aircraft off its pad.
@@ -114,7 +114,7 @@ namespace HyperRTS.Simulation.Air
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
 
             private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
-                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, ref PadHome home,
+                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, ref HomePad home,
                 EnabledRefRW<Docked> docked, in NavAgent agent, in Faction faction)
             {
                 if (order.Value.Type != OrderType.ReturnToBase)
@@ -158,7 +158,7 @@ namespace HyperRTS.Simulation.Air
                 AirfieldRules.IsAirfieldOf(Pads, Factions, Sites, airfield, faction);
 
             /// <summary>Takes the home pad if free; false when another aircraft holds it.</summary>
-            public bool Claim(Entity aircraft, in PadHome home)
+            public bool Claim(Entity aircraft, in HomePad home)
             {
                 var pads = Pads[home.Airfield];
                 if (home.Pad < 0 || home.Pad >= pads.Length)
@@ -176,7 +176,7 @@ namespace HyperRTS.Simulation.Air
             }
 
             /// <summary>Moves the aircraft's home to a free pad of the airfield; the old pad frees next frame.</summary>
-            public void TryRehome(Entity aircraft, ref PadHome home, Entity airfield, byte faction)
+            public void TryRehome(Entity aircraft, ref HomePad home, Entity airfield, byte faction)
             {
                 if (!IsOwn(airfield, faction))
                 {
@@ -191,7 +191,7 @@ namespace HyperRTS.Simulation.Air
                 }
 
                 pads.ElementAt(free).Aircraft = aircraft;
-                home = new PadHome { Airfield = airfield, Pad = free };
+                home = new HomePad { Airfield = airfield, Pad = free };
             }
         }
     }

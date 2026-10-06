@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Selection
         }
 
         /// <summary>Drag-box priority: owned units over owned buildings over everything else.</summary>
-        public static int DragRank(bool owned, bool isUnit, bool isBuilding)
+        public static int DragPriority(bool owned, bool isUnit, bool isBuilding)
         {
             if (!owned)
             {

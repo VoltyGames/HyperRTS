@@ -99,8 +99,8 @@ namespace HyperRTS.Presentation.HUD
             UpgradeRules.CanQueue(EntityManager, EntityManager.GetBuffer<ResearchedUpgrade>(View.LocalPlayer, true),
                 queued, prefab);
 
-        /// <summary>Arms a targeted command; the input layer issues it on the next world click.</summary>
-        public void ArmCommand(CommandType type, int argument) =>
+        /// <summary>Starts targeting a command; the input layer issues it on the next world click.</summary>
+        public void BeginTargeting(CommandType type, int argument) =>
             Write(_pending, new PendingCommand { Type = type, Argument = argument });
 
         public void Issue(PlayerCommand command)

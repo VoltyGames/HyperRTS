@@ -193,7 +193,7 @@ Not built in: rotating turrets. Stealth and detection are in Vision.
 | --- | --- |
 | `FlightAuthoring` / `Flight` | Makes a unit an aircraft (its `NavAgent` goes on the Air layer; a unit set to Air without it is flagged by the validator): cruise altitude, climb speed, loiter radius (0 hovers; above 0 the idle aircraft keeps circling, for jets), uses landing pads |
 | `AirfieldAuthoring` / `LandingPad` | Pad offsets on a building, each holding one aircraft (`Aircraft`, null while free) |
-| `PadHome` | The aircraft's airfield and pad; null while homeless |
+| `HomePad` | The aircraft's airfield and pad; null while homeless |
 | `Docked` | Enableable (replicated): landed on its pad; ammo reloads, games refuel or repair here |
 | `AirfieldRules` | `IsAirfieldOf`: a finished, owned building with pads |
 
@@ -366,7 +366,7 @@ them.
 | `ProducerAuthoring` / `Producer`, `ProductionOption`, `ProductionQueueItem`, `RallyPoint` | Unit training and research queue |
 | `Producible` | Build time and population cost, read from prefabs |
 | `Prerequisite`, `CompletedBuildings` | Buffer of building `TypeId`s required first; the check shared by the simulation, the AI and the HUD |
-| `IPrefabOption`, `ProductionRules` | Option buffers naming prefabs; `Offers`, `Refund` and `RefundQueue`, shared by build, production, sell and capture |
+| `IPrefabOption`, `ProductionRules` | Option buffers naming prefabs; `HasOption`, `Refund` and `RefundQueue`, shared by build, production, sell and capture |
 
 Systems: `ProductionCommandSystem` handles Produce / Cancel (refund) / rally points. `ProductionSystem` trains the
 queue head when population allows and sends new units to the rally point.

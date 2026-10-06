@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Navigation
         /// Whether two agents can be in each other's way: a ship and a tank on a bridge above it can't, and aircraft
         /// only meet other aircraft.
         /// </summary>
-        public static bool Share(NavLayer a, NavLayer b)
+        public static bool CanBlock(NavLayer a, NavLayer b)
         {
             if (a == NavLayer.Air || b == NavLayer.Air)
             {

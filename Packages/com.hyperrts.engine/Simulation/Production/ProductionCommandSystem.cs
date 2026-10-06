@@ -186,7 +186,7 @@ namespace HyperRTS.Simulation.Production
                 return false;
             }
 
-            return ProductionRules.Offers(SystemAPI.GetBuffer<ProductionOption>(producer), prefab);
+            return ProductionRules.HasOption(SystemAPI.GetBuffer<ProductionOption>(producer), prefab);
         }
 
         /// <summary>The first commanded producer the faction owns that has something queued.</summary>

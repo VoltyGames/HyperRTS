@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Production
         private ComponentLookup<Unpowered> _unpoweredLookup;
         private BufferLookup<ResearchedUpgrade> _researchedLookup;
         private BufferLookup<LandingPad> _padLookup;
-        private ComponentLookup<PadHome> _padUserLookup;
+        private ComponentLookup<HomePad> _padUserLookup;
         private SoundWriter _sounds;
 
         [BurstCompile]
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Production
             _unpoweredLookup = state.GetComponentLookup<Unpowered>(true);
             _researchedLookup = state.GetBufferLookup<ResearchedUpgrade>();
             _padLookup = state.GetBufferLookup<LandingPad>(true);
-            _padUserLookup = state.GetComponentLookup<PadHome>(true);
+            _padUserLookup = state.GetComponentLookup<HomePad>(true);
             _sounds = new SoundWriter(ref state);
             state.RequireForUpdate<SoundQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -110,7 +110,7 @@ namespace HyperRTS.Simulation.Production
             [ReadOnly] public ComponentLookup<Unpowered> UnpoweredLookup;
             public BufferLookup<ResearchedUpgrade> ResearchedLookup;
             [ReadOnly] public BufferLookup<LandingPad> PadLookup;
-            [ReadOnly] public ComponentLookup<PadHome> PadUserLookup;
+            [ReadOnly] public ComponentLookup<HomePad> PadUserLookup;
             public SoundWriter Sounds;
 
             private void Execute(Entity entity, ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
@@ -192,7 +192,7 @@ namespace HyperRTS.Simulation.Production
             {
                 if (pad >= 0)
                 {
-                    Ecb.SetComponent(unit, new PadHome { Airfield = airfield, Pad = pad });
+                    Ecb.SetComponent(unit, new HomePad { Airfield = airfield, Pad = pad });
                     Ecb.SetComponentEnabled<Docked>(unit, true);
                 }
             }

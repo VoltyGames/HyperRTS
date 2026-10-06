@@ -128,7 +128,7 @@ namespace HyperRTS.Simulation.Abilities
                 }
 
                 var distance = math.distancesq(from.xz, AbilityRules.Aim(ability, from, command.Target, command.Position, _targets).xz);
-                closest.Offer(index, caster, distance);
+                closest.Consider(index, caster, distance);
             }
 
             if (closest.Found)

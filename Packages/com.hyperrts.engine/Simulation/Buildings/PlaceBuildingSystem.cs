@@ -207,7 +207,7 @@ namespace HyperRTS.Simulation.Buildings
                 return false;
             }
 
-            return ProductionRules.Offers(SystemAPI.GetBuffer<BuildOption>(unit), prefab);
+            return ProductionRules.HasOption(SystemAPI.GetBuffer<BuildOption>(unit), prefab);
         }
 
         /// <summary>Checks existing obstacles too: the nav grid may lag a frame behind newly placed sites.</summary>

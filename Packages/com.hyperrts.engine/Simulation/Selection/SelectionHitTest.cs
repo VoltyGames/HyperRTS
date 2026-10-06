@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Selection
         /// <summary>Local player's faction, or -1 without a local player (then nothing counts as owned).</summary>
         public int LocalFaction;
 
-        /// <summary>Drag boxes keep only entities of this <see cref="SelectionMath.DragRank"/>; -1 keeps all.</summary>
+        /// <summary>Drag boxes keep only this <see cref="SelectionMath.DragPriority"/>; -1 keeps all.</summary>
         public int PreferredRank;
 
         public ComponentLookup<FogHidden> Hidden;
@@ -74,7 +74,7 @@ namespace HyperRTS.Simulation.Selection
             SelectionMath.RectContains(Input.DragMin, Input.DragMax, screen);
 
         public int Rank(Entity entity) =>
-            SelectionMath.DragRank(IsOwned(entity), Units.HasComponent(entity), Buildings.HasComponent(entity));
+            SelectionMath.DragPriority(IsOwned(entity), Units.HasComponent(entity), Buildings.HasComponent(entity));
 
         /// <summary>Control groups hold only the local player's entities (anything without a local player).</summary>
         public bool CanJoinGroup(Entity entity) => LocalFaction < 0 || IsOwned(entity);

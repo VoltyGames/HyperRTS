@@ -59,7 +59,7 @@ namespace HyperRTS.Simulation.AI
             {
                 if (data[i].Amount > 0)
                 {
-                    closest.Offer(i, nodes.Entities[i], nodes.DistanceSq(i, from));
+                    closest.Consider(i, nodes.Entities[i], nodes.DistanceSq(i, from));
                 }
             }
 

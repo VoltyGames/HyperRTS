@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                if (!ProductionRules.Offers(SystemAPI.GetBuffer<BuildOption>(builder), prefab))
+                if (!ProductionRules.HasOption(SystemAPI.GetBuffer<BuildOption>(builder), prefab))
                 {
                     continue;
                 }

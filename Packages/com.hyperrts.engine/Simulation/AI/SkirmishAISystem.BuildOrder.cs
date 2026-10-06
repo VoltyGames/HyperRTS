@@ -147,7 +147,7 @@ namespace HyperRTS.Simulation.AI
                 var length = SystemAPI.GetBuffer<ProductionQueueItem>(producer).Length;
                 if (CanQueueAt(ref state, producer, turn.Faction, prefab, length))
                 {
-                    shortest.Offer(i, producer, length);
+                    shortest.Consider(i, producer, length);
                 }
             }
 
@@ -168,7 +168,7 @@ namespace HyperRTS.Simulation.AI
             }
 
             var hasRoom = queued < SystemAPI.GetComponent<Producer>(producer).QueueLimit;
-            return hasRoom && ProductionRules.Offers(SystemAPI.GetBuffer<ProductionOption>(producer), prefab);
+            return hasRoom && ProductionRules.HasOption(SystemAPI.GetBuffer<ProductionOption>(producer), prefab);
         }
     }
 }

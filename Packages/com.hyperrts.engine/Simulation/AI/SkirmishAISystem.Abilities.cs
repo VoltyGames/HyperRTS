@@ -105,7 +105,7 @@ namespace HyperRTS.Simulation.AI
                 // Distance first, so the costlier range and suitability checks only run for would-be winners.
                 var entity = targets.Entities[i];
                 var distance = targets.DistanceSq(i, from);
-                if (!closest.IsBeatenBy(distance, entity))
+                if (!closest.IsCloserThanBest(distance, entity))
                 {
                     continue;
                 }
@@ -117,7 +117,7 @@ namespace HyperRTS.Simulation.AI
 
                 if (Suits(ref state, ability, entity, faction, snapshot))
                 {
-                    closest.Offer(i, entity, distance);
+                    closest.Consider(i, entity, distance);
                 }
             }
 

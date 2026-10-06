@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Combat
             {
                 weapon.Damage = StatMath.Apply(modifiers, bases, Stat.Damage, weapon.Damage);
                 weapon.Range = StatMath.Apply(modifiers, bases, Stat.Range, weapon.Range);
-                weapon.Cooldown = Cooldown(modifiers, StatMath.BaseOf(bases, Stat.FireRate, weapon.Cooldown));
+                weapon.Cooldown = Cooldown(modifiers, StatMath.BaseValue(bases, Stat.FireRate, weapon.Cooldown));
             }
         }
 
@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Combat
         /// </summary>
         public static float Cooldown(DynamicBuffer<StatModifier> modifiers, float baseCooldown)
         {
-            StatMath.Totals(modifiers, Stat.FireRate, out var add, out var percent);
+            StatMath.SumModifiers(modifiers, Stat.FireRate, out var add, out var percent);
             var multiplier = math.max(MinFireRate, (1f + add * baseCooldown) * (1f + percent));
             return baseCooldown / multiplier;
         }

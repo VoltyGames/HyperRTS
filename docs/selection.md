@@ -49,8 +49,8 @@ a click selects anything (enemies for info).
 Control groups: Ctrl+N stores the local player's selected entities in group N (a `ControlGroup` bit mask
 component added on first assignment), N recalls the group, Shift+N adds it to the selection.
 
-Clicks over the HUD (`PointerState.OverUI`), in placement mode (`PlacementState.Active`) or with a targeted
-command armed (`PendingCommand`) never reach selection; `CommandInputSystem` and `PlacementInputSystem` turn them
+Clicks over the HUD (`PointerState.OverUI`), in placement mode (`PlacementState.Active`) or while targeting a
+command (`PendingCommand`) never reach selection; `CommandInputSystem` and `PlacementInputSystem` turn them
 into `PlayerCommand`s instead.
 
 ## Verify

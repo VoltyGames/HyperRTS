@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Commands
         private ComponentLookup<Health> _health;
         private ComponentLookup<Capturer> _capturers;
         private ComponentLookup<UnitTag> _units;
-        private ComponentLookup<PadHome> _padUsers;
+        private ComponentLookup<HomePad> _padUsers;
         private BufferLookup<LandingPad> _pads;
         private CaptureLookup _capture;
         private Boarding _boarding;
@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Commands
             _health = state.GetComponentLookup<Health>(true);
             _capturers = state.GetComponentLookup<Capturer>(true);
             _units = state.GetComponentLookup<UnitTag>(true);
-            _padUsers = state.GetComponentLookup<PadHome>(true);
+            _padUsers = state.GetComponentLookup<HomePad>(true);
             _pads = state.GetBufferLookup<LandingPad>(true);
             _capture = new CaptureLookup(ref state);
             _boarding = new Boarding(ref state, true);

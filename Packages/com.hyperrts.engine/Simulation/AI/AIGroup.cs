@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.AI
             {
                 if (IsOwnedBy(i, faction))
                 {
-                    closest.Offer(i, Entities[i], DistanceSq(i, from));
+                    closest.Consider(i, Entities[i], DistanceSq(i, from));
                 }
             }
 

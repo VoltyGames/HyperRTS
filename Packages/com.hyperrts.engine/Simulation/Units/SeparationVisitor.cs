@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Units
                 return;
             }
 
-            if (!NavLayers.Share(Layer, entry.Layer))
+            if (!NavLayers.CanBlock(Layer, entry.Layer))
             {
                 return;
             }

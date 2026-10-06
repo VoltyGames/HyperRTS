@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Replays
                     continue;
                 }
 
-                closest.Offer(i, entities[i], math.distancesq(transforms[i].Position, recorded.Position));
+                closest.Consider(i, entities[i], math.distancesq(transforms[i].Position, recorded.Position));
             }
 
             return closest.Index;

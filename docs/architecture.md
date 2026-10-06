@@ -49,9 +49,9 @@ state in `Simulation/Interaction/`). Presentation and Input never reference each
   the simulation, and it is the message a networked build would send.
 - **Selection.** `SelectionInputSystem` (Input) writes the `SelectionInput` gesture; `SelectionSystem` (Simulation)
   toggles `Selected`; the HUD and overlays read `Selected`.
-- **Placement and targeted commands.** The HUD starts placement by writing `PlacementState` (or arms attack-move
-  via `PendingCommand`); `PlacementInputSystem` moves the ghost and confirms with a `PlaceBuilding` command; the
-  overlay draws the ghost. `PlacementMath` holds the rules both sides use.
+- **Placement and targeted commands.** The HUD starts placement by writing `PlacementState` (or starts targeting
+  attack-move via `PendingCommand`); `PlacementInputSystem` moves the ghost and confirms with a `PlaceBuilding`
+  command; the overlay draws the ghost. `PlacementMath` holds the rules both sides use.
 - **UI hit-testing.** The HUD writes `PointerState.OverUI`; input ignores world clicks while it is set.
 - **Visuals from data.** Team colour comes from `Player.Color`, fog hiding from `FogOfWar`, health bars from `Health`.
   A headless world never adds any render component.
