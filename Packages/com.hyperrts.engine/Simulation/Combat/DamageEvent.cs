@@ -29,6 +29,9 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>Splash also hurts the source's allies.</summary>
         public bool FriendlyFire;
+
+        /// <summary>Layers the splash reaches: the weapon's targets, else the surface only.</summary>
+        public WeaponTargets Reach;
     }
 
     /// <summary>Tags the singleton holding this frame's <see cref="DamageEvent"/>s.</summary>

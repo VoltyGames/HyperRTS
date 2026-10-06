@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -9,6 +10,14 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Gap between two footprints on the XZ plane; weapon ranges are measured edge to edge.</summary>
         public static float EdgeDistance(float3 a, float radiusA, float3 b, float radiusB) =>
             math.max(0f, math.distance(a.xz, b.xz) - radiusA - radiusB);
+
+        /// <summary>Aircraft are air targets; everything else (units on any other layer, buildings) is surface.</summary>
+        public static bool CanHit(WeaponTargets targets, NavLayer layer) => targets switch
+        {
+            WeaponTargets.Surface => layer != NavLayer.Air,
+            WeaponTargets.Air => layer == NavLayer.Air,
+            _ => true,
+        };
 
         public static float AcquireRange(in Weapon weapon, float visionRange) =>
             math.max(weapon.AcquireRange > 0f ? weapon.AcquireRange : visionRange, weapon.Range);
@@ -50,6 +59,7 @@ namespace HyperRTS.Simulation.Combat
             Radius = weapon.SplashRadius,
             EdgeFactor = weapon.SplashEdgeFactor,
             FriendlyFire = weapon.FriendlyFire,
+            Reach = weapon.Targets,
         };
     }
 }

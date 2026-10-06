@@ -46,6 +46,9 @@ namespace HyperRTS.Simulation.Combat
         [Min(0.1f)]
         public float projectileSpeed = 25f;
 
+        [Tooltip("What the weapon can hit: Surface (ground and naval units, buildings), Air (aircraft), or both.")]
+        public WeaponTargets targets;
+
         [Tooltip("Distance at which idle units spot enemies; 0 uses the vision range.")]
         [Min(0f)]
         public float acquireRange;
@@ -72,6 +75,7 @@ namespace HyperRTS.Simulation.Combat
                         : Entity.Null,
                     ProjectileSpeed = authoring.projectileSpeed,
                     AcquireRange = authoring.acquireRange,
+                    Targets = authoring.targets,
                 };
 
                 var sink = new BakerSink(this, entity);
@@ -94,5 +98,8 @@ namespace HyperRTS.Simulation.Combat
         public Entity ProjectilePrefab;
         public float ProjectileSpeed;
         public float AcquireRange;
+
+        /// <summary>What the weapon can hit; units and orders never aim it at anything else.</summary>
+        public WeaponTargets Targets;
     }
 }

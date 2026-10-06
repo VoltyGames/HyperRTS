@@ -9,7 +9,9 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>Read-only view of other entities for combat jobs: alive, hostile, detected, where and how big.</summary>
+    /// <summary>
+    /// Read-only view of other entities for combat jobs: alive, hostile, detected, hittable, where and how big.
+    /// </summary>
     public struct TargetLookup
     {
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
@@ -58,6 +60,17 @@ namespace HyperRTS.Simulation.Combat
 
             var hostile = relations.IsHostile(attackerFaction, faction.Value);
             return hostile && !IsCloakedFrom(target, relations.TeamOf(attackerFaction));
+        }
+
+        /// <summary>A valid target (see above) that a weapon reaching <paramref name="targets"/> can hit.</summary>
+        public bool IsValidTarget(Entity target, byte attackerFaction, in FactionRelations relations,
+            WeaponTargets targets) =>
+            IsValidTarget(target, attackerFaction, relations) && CanHit(target, targets);
+
+        public bool CanHit(Entity target, WeaponTargets targets)
+        {
+            var layer = _agents.TryGetComponent(target, out var agent) ? agent.Layer : NavLayer.Ground;
+            return CombatMath.CanHit(targets, layer);
         }
 
         /// <summary>Stealthed and outside every detector of the team (see <see cref="FogOfWar.IsCloakedFrom"/>).</summary>

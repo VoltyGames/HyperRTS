@@ -8,7 +8,8 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Runs <see cref="OrderType.Attack"/> orders: points <see cref="AttackTarget"/> at the order's target and
-    /// completes the order once that target is dead, gone, no longer hostile or hidden by stealth.
+    /// completes the order once that target is dead, gone, no longer hostile, hidden by stealth or out of the
+    /// weapon's reach (an aircraft for a ground-only gun).
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -42,7 +43,7 @@ namespace HyperRTS.Simulation.Combat
             public FactionRelations Relations;
 
             private void Execute(ref ActiveOrder order, EnabledRefRW<ActiveOrder> hasOrder, ref AttackTarget attack,
-                EnabledRefRW<AttackTarget> attacking, in Faction faction)
+                EnabledRefRW<AttackTarget> attacking, in Faction faction, in Weapon weapon)
             {
                 if (order.Value.Type != OrderType.Attack)
                 {
@@ -50,7 +51,7 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 var target = order.Value.Target;
-                if (!Targets.IsValidTarget(target, faction.Value, Relations))
+                if (!Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets))
                 {
                     // EngagementSystem drops the stale AttackTarget and halts the chase.
                     hasOrder.ValueRW = false;

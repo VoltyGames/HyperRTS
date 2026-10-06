@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Tests
     {
         public static Entity Arm(this TestWorld world, Entity entity, Stance stance = Stance.Aggressive,
             float range = 4f, float damage = 25f, float cooldown = 0.5f, Entity projectile = default,
-            UnityObjectRef<DamageType> damageType = default)
+            UnityObjectRef<DamageType> damageType = default, WeaponTargets targets = WeaponTargets.Surface)
         {
             var weapon = new Weapon
             {
@@ -21,6 +21,7 @@ namespace HyperRTS.Simulation.Tests
                 ProjectilePrefab = projectile,
                 ProjectileSpeed = 10f,
                 DamageType = damageType,
+                Targets = targets,
             };
             var sink = new EntityManagerSink(world.EntityManager, entity);
             WeaponSetup.Add(ref sink, weapon, stance, world.Get<LocalTransform>(entity).Position);

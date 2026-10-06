@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Points idle, attack-moving and hold-position weapons (and finished towers) at the nearest hostile in range that
-    /// stealth doesn't hide. Units on any other order never auto-acquire.
+    /// the weapon can hit and stealth doesn't hide. Units on any other order never auto-acquire.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -83,6 +83,7 @@ namespace HyperRTS.Simulation.Combat
                     Relations = Relations,
                     Targets = Targets,
                     Faction = faction.Value,
+                    Reach = weapon.Targets,
                     Center = transform.Position,
                     BestDistance = float.MaxValue,
                 };
@@ -105,13 +106,14 @@ namespace HyperRTS.Simulation.Combat
             public FactionRelations Relations;
             public TargetLookup Targets;
             public byte Faction;
+            public WeaponTargets Reach;
             public float3 Center;
             public Entity Best;
             public float BestDistance;
 
             public void Visit(in SpatialEntry entry)
             {
-                if (!Relations.IsHostile(Faction, entry.Faction))
+                if (!Relations.IsHostile(Faction, entry.Faction) || !CombatMath.CanHit(Reach, entry.Layer))
                 {
                     return;
                 }

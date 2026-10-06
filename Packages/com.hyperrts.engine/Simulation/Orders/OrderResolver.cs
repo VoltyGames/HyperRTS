@@ -105,7 +105,8 @@ namespace HyperRTS.Simulation.Orders
         }
 
         private bool CanAttack(Entity unit, Entity target, in FactionRelations relations) =>
-            _weapons.HasComponent(unit) && _targets.IsValidTarget(target, _factions[unit].Value, relations);
+            _weapons.TryGetComponent(unit, out var weapon) &&
+            _targets.IsValidTarget(target, _factions[unit].Value, relations, weapon.Targets);
 
         private bool CanGather(Entity unit, Entity target) =>
             _harvesters.HasComponent(unit) && _nodes.HasComponent(target);

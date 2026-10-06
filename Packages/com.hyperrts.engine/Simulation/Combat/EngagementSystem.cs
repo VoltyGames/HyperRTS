@@ -84,7 +84,7 @@ namespace HyperRTS.Simulation.Combat
                 // An ordered attack chases indefinitely; the stance only governs targets the unit picked itself.
                 var target = attack.Value;
                 var ordered = order.Type == OrderType.Attack && order.Target == target;
-                if (!Targets.IsValidTarget(target, faction.Value, Relations) ||
+                if (!Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets) ||
                     (!ordered && ShouldLeash(entity, transform.Position, weapon, vision, stance, target)))
                 {
                     Release(entity, order, stance, ref attack, attacking);

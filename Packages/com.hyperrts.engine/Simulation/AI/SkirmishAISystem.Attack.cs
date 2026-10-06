@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Units;
@@ -10,7 +11,10 @@ namespace HyperRTS.Simulation.AI
 {
     public partial struct SkirmishAISystem
     {
-        /// <summary>Once enough idle combat units gather, attack-moves them all at the nearest enemy base.</summary>
+        /// <summary>
+        /// Once enough idle combat units gather, attack-moves them all at the nearest enemy base. Units that can't hit
+        /// the ground (air-to-air) stay home to defend.
+        /// </summary>
         private void Attack(ref SystemState state, in Turn turn, in Snapshot snapshot)
         {
             var army = snapshot.Army;
@@ -18,7 +22,8 @@ namespace HyperRTS.Simulation.AI
             var center = float3.zero;
             for (var i = 0; i < army.Length; i++)
             {
-                if (army.IsOwnedBy(i, turn.Faction))
+                var targets = SystemAPI.GetComponent<Weapon>(army.Entities[i]).Targets;
+                if (army.IsOwnedBy(i, turn.Faction) && targets != WeaponTargets.Air)
                 {
                     wave.Add(i);
                     center += army.Position(i);

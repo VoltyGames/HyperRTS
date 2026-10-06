@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Combat
 
                 foreach (var victim in victims)
                 {
-                    if (victim.Entity == hit.Target || !SplashReaches(hit, victim.Faction))
+                    if (victim.Entity == hit.Target || !SplashReaches(hit, victim))
                     {
                         continue;
                     }
@@ -109,10 +109,20 @@ namespace HyperRTS.Simulation.Combat
                 }
             }
 
-            /// <summary>Damage splashes onto enemies (and allies with friendly fire); heals splash onto allies only.</summary>
-            private bool SplashReaches(in DamageEvent hit, byte victim) =>
-                hit.Amount < 0f ? Relations.IsAllied(hit.SourceFaction, victim)
-                    : hit.FriendlyFire || Relations.IsHostile(hit.SourceFaction, victim);
+            /// <summary>
+            /// Damage splashes onto enemies (and allies with friendly fire) and heals onto allies only, on the layers
+            /// the hit reaches: a shell bursting on the ground spares the aircraft above it.
+            /// </summary>
+            private bool SplashReaches(in DamageEvent hit, in SpatialEntry victim)
+            {
+                if (!CombatMath.CanHit(hit.Reach, victim.Layer))
+                {
+                    return false;
+                }
+
+                return hit.Amount < 0f ? Relations.IsAllied(hit.SourceFaction, victim.Faction)
+                    : hit.FriendlyFire || Relations.IsHostile(hit.SourceFaction, victim.Faction);
+            }
 
             private void Apply(Entity target, float amount, in DamageEvent hit)
             {
