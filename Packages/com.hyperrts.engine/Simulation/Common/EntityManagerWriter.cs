@@ -3,12 +3,12 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Common
 {
     /// <summary>Writes setup helpers straight into an <see cref="EntityManager"/> (tests, tools).</summary>
-    public readonly struct EntityManagerSink : IComponentSink
+    public readonly struct EntityManagerWriter : IEntityWriter
     {
         private readonly EntityManager _entityManager;
         private readonly Entity _entity;
 
-        public EntityManagerSink(EntityManager entityManager, Entity entity)
+        public EntityManagerWriter(EntityManager entityManager, Entity entity)
         {
             _entityManager = entityManager;
             _entity = entity;

@@ -5,18 +5,19 @@ namespace HyperRTS.Simulation.Transport
     /// <summary>Adds the container and passenger components.</summary>
     public static class TransportSetup
     {
-        public static void AddContainer<TSink>(ref TSink sink, in Container container) where TSink : struct, IComponentSink
+        public static void AddContainer<TWriter>(ref TWriter writer, in Container container)
+            where TWriter : struct, IEntityWriter
         {
-            sink.Add(container);
-            sink.AddBuffer<Cargo>();
+            writer.Add(container);
+            writer.AddBuffer<Cargo>();
         }
 
-        public static void AddPassenger<TSink>(ref TSink sink, int size) where TSink : struct, IComponentSink
+        public static void AddPassenger<TWriter>(ref TWriter writer, int size) where TWriter : struct, IEntityWriter
         {
-            sink.Add(new Passenger { Size = size });
-            sink.Add<Inside>();
-            sink.Add<PassengerStance>();
-            sink.SetEnabled<Inside>(false);
+            writer.Add(new Passenger { Size = size });
+            writer.Add<Inside>();
+            writer.Add<PassengerStance>();
+            writer.SetEnabled<Inside>(false);
         }
     }
 }

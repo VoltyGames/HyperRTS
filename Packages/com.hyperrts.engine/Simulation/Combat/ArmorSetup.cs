@@ -6,10 +6,11 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>Adds per-damage-type and directional armor.</summary>
     public static class ArmorSetup
     {
-        public static void Add<TSink>(ref TSink sink, IReadOnlyList<ArmorModifier> modifiers)
-            where TSink : struct, IComponentSink => sink.AddBuffer(modifiers);
+        public static void Add<TWriter>(ref TWriter writer, IReadOnlyList<ArmorModifier> modifiers)
+            where TWriter : struct, IEntityWriter => writer.AddBuffer(modifiers);
 
-        public static void AddFacing<TSink>(ref TSink sink, in ArmorFacing facing) where TSink : struct, IComponentSink =>
-            sink.Add(facing);
+        public static void AddFacing<TWriter>(ref TWriter writer, in ArmorFacing facing)
+            where TWriter : struct, IEntityWriter =>
+            writer.Add(facing);
     }
 }

@@ -27,8 +27,9 @@ namespace HyperRTS.Simulation.Tests
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
             _supplies = ScriptableObject.CreateInstance<ResourceType>();
-            var sink = new EntityManagerSink(_world.EntityManager, _world.Player(2));
-            AIPlayerSetup.Add(ref sink, new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 50, BuildingGap = BuildingGap });
+            var writer = new EntityManagerWriter(_world.EntityManager, _world.Player(2));
+            AIPlayerSetup.Add(ref writer,
+                new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 50, BuildingGap = BuildingGap });
 
             _world.SpawnBuilding(2, float3.zero, new float2(4f, 4f), name: "HQ", populationProvided: 20);
             _soldier = _world.MakePrefab(_world.SpawnUnit(0, new float3(90f, 0f, 90f), name: "Soldier"));

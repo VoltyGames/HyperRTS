@@ -61,7 +61,7 @@ The base module: ownership, identity, health and the helpers every other module 
 | `ConstructionProgress` | Enableable 0..1; unfinished buildings don't produce, provide population, accept cargo, fire or satisfy prerequisites |
 | `EntityInfo` | `TypeId` (hash of the display name: instances of one prefab share it), `Name`, `Icon` |
 | `PrefabRegistry` | Singleton `TypeId` → prefab map (`PrefabRegistrySystem`, rebuilt only when prefabs load); resolves network commands, replicated buffers and sounds. `PrefabLookup` builds such a map from any query |
-| `IComponentSink` | Target of every `*Setup` helper: `BakerSink` for bakers, `EntityManagerSink` for tests and tools |
+| `IEntityWriter` | Target of every `*Setup` helper: `BakerWriter` in bakers, `EntityManagerWriter` in tests and tools |
 | `AuthoringBehaviour` | Base class of every authoring component, engine or game; the inspector, entity summaries and validation find components through it |
 | `EnabledExtensions` | `lookup.HasEnabled(entity)` (also on `EntityManager`): has the component and it is enabled. Use it for optional toggles such as `Unpowered`, `Inside`, `Docked` and `Stealthed` |
 | `DefaultWorld`, `LiveQuery` | For MonoBehaviours: the world they present, and an entity query recreated when that world is replaced |

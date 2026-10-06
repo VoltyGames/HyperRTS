@@ -36,7 +36,7 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ Ordered phase groups Order → Movement → Combat → Production → Lifecycle ([`world-setup.md`](world-setup.md))
 - ✅ `TestWorld` fixture running every simulation system in an isolated world
 - ✅ Unified authoring: `UnitAuthoring` / `BuildingAuthoring` on a shared `GameEntityAuthoring` base; bakers and
-  tests share `*Setup` helpers through `IComponentSink` (replaced the granular authoring components and factories)
+  tests share `*Setup` helpers through `IEntityWriter` (replaced the granular authoring components and factories)
 - ✅ Every authoring component (engine or game) derives from `AuthoringBehaviour`, so inspectors and validation find it
 - ✅ Simulation modules layered on a base `Common` module; `ModuleLayoutTests` checks namespaces match folders and
   modules follow a declared layer order (one allowlisted back-edge)

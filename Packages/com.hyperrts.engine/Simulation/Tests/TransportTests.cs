@@ -27,8 +27,8 @@ namespace HyperRTS.Simulation.Tests
         private Entity Passenger(float3 position, int size = 1, bool armed = false)
         {
             var unit = _world.SpawnUnit(1, position);
-            var sink = new EntityManagerSink(_world.EntityManager, unit);
-            TransportSetup.AddPassenger(ref sink, size);
+            var writer = new EntityManagerWriter(_world.EntityManager, unit);
+            TransportSetup.AddPassenger(ref writer, size);
             if (armed)
             {
                 _world.Arm(unit, range: 3f, damage: 10f);
@@ -40,8 +40,8 @@ namespace HyperRTS.Simulation.Tests
         private Entity Bunker(float3 position, int capacity = 2, bool fire = false, bool survive = true)
         {
             var bunker = _world.SpawnBuilding(1, position, new float2(4f, 4f));
-            var sink = new EntityManagerSink(_world.EntityManager, bunker);
-            TransportSetup.AddContainer(ref sink, new Container
+            var writer = new EntityManagerWriter(_world.EntityManager, bunker);
+            TransportSetup.AddContainer(ref writer, new Container
             {
                 Capacity = capacity, MaxPassengerSize = 2, PassengersFire = fire, PassengersSurvive = survive,
             });
@@ -77,9 +77,9 @@ namespace HyperRTS.Simulation.Tests
         {
             var ship = Bunker(float3.zero, capacity: 4);
             var truck = _world.SpawnUnit(1, new float3(5f, 0f, 0f), radius: 1f);
-            var sink = new EntityManagerSink(_world.EntityManager, truck);
-            TransportSetup.AddContainer(ref sink, new Container { Capacity = 4, MaxPassengerSize = 1 });
-            TransportSetup.AddPassenger(ref sink, 2);
+            var writer = new EntityManagerWriter(_world.EntityManager, truck);
+            TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
+            TransportSetup.AddPassenger(ref writer, 2);
             Enter(truck, ship);
             _world.Run(2f);
             Assert.IsTrue(IsInside(truck));
@@ -96,8 +96,8 @@ namespace HyperRTS.Simulation.Tests
         public void Passengers_RideAlong_AndIgnoreOrders()
         {
             var truck = _world.SpawnUnit(1, float3.zero, speed: 5f, radius: 1f);
-            var sink = new EntityManagerSink(_world.EntityManager, truck);
-            TransportSetup.AddContainer(ref sink, new Container { Capacity = 4, MaxPassengerSize = 1 });
+            var writer = new EntityManagerWriter(_world.EntityManager, truck);
+            TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
             var rider = Passenger(new float3(4f, 0f, 0f));
             Enter(rider, truck);
             _world.Run(2f);

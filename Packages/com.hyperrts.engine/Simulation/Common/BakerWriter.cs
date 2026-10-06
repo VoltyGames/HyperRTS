@@ -3,12 +3,12 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Common
 {
     /// <summary>Writes setup helpers into a baker.</summary>
-    public readonly struct BakerSink : IComponentSink
+    public readonly struct BakerWriter : IEntityWriter
     {
         private readonly IBaker _baker;
         private readonly Entity _entity;
 
-        public BakerSink(IBaker baker, Entity entity)
+        public BakerWriter(IBaker baker, Entity entity)
         {
             _baker = baker;
             _entity = entity;

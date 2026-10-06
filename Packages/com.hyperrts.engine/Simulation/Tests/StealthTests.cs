@@ -26,16 +26,16 @@ namespace HyperRTS.Simulation.Tests
 
         private Entity Stealthy(Entity entity, float reveal = 1f, bool onlyWhenStill = false, bool enabled = true)
         {
-            var sink = new EntityManagerSink(_world.EntityManager, entity);
-            StealthSetup.AddStealth(ref sink,
+            var writer = new EntityManagerWriter(_world.EntityManager, entity);
+            StealthSetup.AddStealth(ref writer,
                 new Stealth { RevealDuration = reveal, OnlyWhenStill = onlyWhenStill }, enabled);
             return entity;
         }
 
         private Entity Detect(Entity entity, float radius)
         {
-            var sink = new EntityManagerSink(_world.EntityManager, entity);
-            StealthSetup.AddDetector(ref sink, radius);
+            var writer = new EntityManagerWriter(_world.EntityManager, entity);
+            StealthSetup.AddDetector(ref writer, radius);
             return entity;
         }
 

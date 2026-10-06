@@ -155,7 +155,7 @@ gameplay in a headless assembly, like the engine does.
   the subclass on your HUD in place of `HUDController`.
 - **Spawn from code**: `ecb.Instantiate(prefabEntity)`, then set `LocalTransform` and `Faction`. Prefab entities
   come from authoring references such as a producer's options. Tests and tools can build complete entities without
-  baking through `GameEntitySetup` / `UnitSetup` / `BuildingSetup` with an `EntityManagerSink`.
+  baking through `GameEntitySetup` / `UnitSetup` / `BuildingSetup` with an `EntityManagerWriter`.
 
 ### Mapping a C&C Generals-style design
 

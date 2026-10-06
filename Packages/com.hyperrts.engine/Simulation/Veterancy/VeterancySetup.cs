@@ -7,17 +7,17 @@ namespace HyperRTS.Simulation.Veterancy
     public static class VeterancySetup
     {
         // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
-        public static void Add<TSink>(ref TSink sink, IReadOnlyList<float> thresholds,
-            IReadOnlyList<VeterancyBonus> bonuses) where TSink : struct, IComponentSink
+        public static void Add<TWriter>(ref TWriter writer, IReadOnlyList<float> thresholds,
+            IReadOnlyList<VeterancyBonus> bonuses) where TWriter : struct, IEntityWriter
         {
-            sink.Add<Experience>();
-            var ranks = sink.AddBuffer<VeterancyRank>();
+            writer.Add<Experience>();
+            var ranks = writer.AddBuffer<VeterancyRank>();
             foreach (var threshold in thresholds)
             {
                 ranks.Add(new VeterancyRank { Experience = threshold });
             }
 
-            sink.AddBuffer(bonuses);
+            writer.AddBuffer(bonuses);
         }
     }
 }

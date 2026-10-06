@@ -122,11 +122,11 @@ namespace HyperRTS.Simulation.Tests
         public void Capture_TakesOverNeutralBuilding_AndConsumesSingleUseCapturer()
         {
             var derrick = _world.SpawnBuilding(0, new float3(10f, 0f, 0f), Footprint);
-            var sink = new EntityManagerSink(_world.EntityManager, derrick);
-            CaptureSetup.AddCapturable(ref sink, 2f);
+            var writer = new EntityManagerWriter(_world.EntityManager, derrick);
+            CaptureSetup.AddCapturable(ref writer, 2f);
             var engineer = _world.SpawnUnit(1, float3.zero);
-            sink = new EntityManagerSink(_world.EntityManager, engineer);
-            CaptureSetup.AddCapturer(ref sink, 1f, consumedOnCapture: true);
+            writer = new EntityManagerWriter(_world.EntityManager, engineer);
+            CaptureSetup.AddCapturer(ref writer, 1f, consumedOnCapture: true);
 
             _world.Command(1, new PlayerCommand { Type = CommandType.Smart, Unit = engineer, Target = derrick });
             _world.Run(1.5f);
@@ -141,12 +141,12 @@ namespace HyperRTS.Simulation.Tests
         public void Capture_ResetsWhenAnotherPlayerStarts()
         {
             var post = _world.SpawnBuilding(0, new float3(10f, 0f, 0f), Footprint);
-            var sink = new EntityManagerSink(_world.EntityManager, post);
-            CaptureSetup.AddCapturable(ref sink, 100f);
+            var writer = new EntityManagerWriter(_world.EntityManager, post);
+            CaptureSetup.AddCapturable(ref writer, 100f);
             _world.EntityManager.SetComponentData(post, new CaptureProgress { Faction = 2, Value = 0.9f });
             var ranger = _world.SpawnUnit(1, new float3(5f, 0f, 0f));
-            sink = new EntityManagerSink(_world.EntityManager, ranger);
-            CaptureSetup.AddCapturer(ref sink, 1f, consumedOnCapture: false);
+            writer = new EntityManagerWriter(_world.EntityManager, ranger);
+            CaptureSetup.AddCapturer(ref writer, 1f, consumedOnCapture: false);
 
             _world.Command(1, new PlayerCommand { Type = CommandType.Capture, Unit = ranger, Target = post });
             _world.Run(2f);
@@ -164,8 +164,8 @@ namespace HyperRTS.Simulation.Tests
             _world.SetCost(prefab, _supplies, 30);
             var factory = _world.MakeProducer(_world.SpawnBuilding(2, new float3(10f, 0f, 0f), Footprint),
                 new float3(0f, 0f, -4f), prefab);
-            var sink = new EntityManagerSink(_world.EntityManager, factory);
-            CaptureSetup.AddCapturable(ref sink, 1f);
+            var writer = new EntityManagerWriter(_world.EntityManager, factory);
+            CaptureSetup.AddCapturable(ref writer, 1f);
             _world.EntityManager.GetBuffer<ProductionQueueItem>(factory).Add(new ProductionQueueItem { Prefab = prefab });
             _world.EntityManager.SetComponentEnabled<Selected>(factory, true);
             _world.EntityManager.SetComponentEnabled<RallyPoint>(factory, true);
@@ -186,12 +186,12 @@ namespace HyperRTS.Simulation.Tests
         public void Capture_IsRefused_WhileGarrisoned()
         {
             var bunker = _world.SpawnBuilding(2, new float3(10f, 0f, 0f), Footprint);
-            var sink = new EntityManagerSink(_world.EntityManager, bunker);
-            CaptureSetup.AddCapturable(ref sink, 1f);
-            TransportSetup.AddContainer(ref sink, new Container { Capacity = 2, MaxPassengerSize = 1 });
+            var writer = new EntityManagerWriter(_world.EntityManager, bunker);
+            CaptureSetup.AddCapturable(ref writer, 1f);
+            TransportSetup.AddContainer(ref writer, new Container { Capacity = 2, MaxPassengerSize = 1 });
             var guard = _world.SpawnUnit(2, new float3(14f, 0f, 0f));
-            sink = new EntityManagerSink(_world.EntityManager, guard);
-            TransportSetup.AddPassenger(ref sink, 1);
+            writer = new EntityManagerWriter(_world.EntityManager, guard);
+            TransportSetup.AddPassenger(ref writer, 1);
             _world.Command(2, new PlayerCommand { Type = CommandType.Enter, Unit = guard, Target = bunker });
             _world.Run(1f);
             Assert.IsTrue(_world.IsEnabled<Inside>(guard));
@@ -206,8 +206,8 @@ namespace HyperRTS.Simulation.Tests
         private Entity Capturer(float3 position)
         {
             var unit = _world.SpawnUnit(1, position);
-            var sink = new EntityManagerSink(_world.EntityManager, unit);
-            CaptureSetup.AddCapturer(ref sink, 1f, consumedOnCapture: false);
+            var writer = new EntityManagerWriter(_world.EntityManager, unit);
+            CaptureSetup.AddCapturer(ref writer, 1f, consumedOnCapture: false);
             return unit;
         }
     }

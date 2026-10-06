@@ -6,11 +6,11 @@ namespace HyperRTS.Simulation.AI
     /// <summary>Makes a player entity computer-controlled; fill the returned buffer with its build order.</summary>
     public static class AIPlayerSetup
     {
-        public static DynamicBuffer<AIBuildStep> Add<TSink>(ref TSink sink, in AIPlayer ai)
-            where TSink : struct, IComponentSink
+        public static DynamicBuffer<AIBuildStep> Add<TWriter>(ref TWriter writer, in AIPlayer ai)
+            where TWriter : struct, IEntityWriter
         {
-            sink.Add(ai);
-            return sink.AddBuffer<AIBuildStep>();
+            writer.Add(ai);
+            return writer.AddBuffer<AIBuildStep>();
         }
     }
 }

@@ -7,21 +7,21 @@ namespace HyperRTS.Simulation.Units
     /// <summary>Adds the movement and order components on top of <c>GameEntitySetup</c>.</summary>
     public static class UnitSetup
     {
-        public static void Add<TSink>(ref TSink sink, float moveSpeed, float radius, NavLayer layer = NavLayer.Ground)
-            where TSink : struct, IComponentSink
+        public static void Add<TWriter>(ref TWriter writer, float moveSpeed, float radius,
+            NavLayer layer = NavLayer.Ground) where TWriter : struct, IEntityWriter
         {
-            sink.Add<UnitTag>();
-            sink.Add(new MovementSpeed { Value = moveSpeed });
-            sink.Add<MoveDestination>();
-            sink.SetEnabled<MoveDestination>(false);
-            sink.Add(new NavAgent { Radius = radius, Layer = layer });
-            sink.AddBuffer<PathWaypoint>();
-            sink.Add<PathState>();
-            sink.Add<ActiveOrder>();
-            sink.SetEnabled<ActiveOrder>(false);
-            sink.AddBuffer<QueuedOrder>();
-            sink.Add<MoveOrderState>();
-            sink.SetEnabled<MoveOrderState>(false);
+            writer.Add<UnitTag>();
+            writer.Add(new MovementSpeed { Value = moveSpeed });
+            writer.Add<MoveDestination>();
+            writer.SetEnabled<MoveDestination>(false);
+            writer.Add(new NavAgent { Radius = radius, Layer = layer });
+            writer.AddBuffer<PathWaypoint>();
+            writer.Add<PathState>();
+            writer.Add<ActiveOrder>();
+            writer.SetEnabled<ActiveOrder>(false);
+            writer.AddBuffer<QueuedOrder>();
+            writer.Add<MoveOrderState>();
+            writer.SetEnabled<MoveOrderState>(false);
         }
     }
 }

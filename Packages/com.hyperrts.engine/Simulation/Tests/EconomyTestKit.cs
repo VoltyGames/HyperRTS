@@ -18,22 +18,22 @@ namespace HyperRTS.Simulation.Tests
         {
             var node = world.EntityManager.CreateEntity();
             world.EntityManager.AddComponentData(node, LocalTransform.FromPosition(position));
-            var sink = new EntityManagerSink(world.EntityManager, node);
-            ResourceNodeSetup.Add(ref sink, type, amount, regrowth);
+            var writer = new EntityManagerWriter(world.EntityManager, node);
+            ResourceNodeSetup.Add(ref writer, type, amount, regrowth);
             return node;
         }
 
         public static Entity MakeHarvester(this TestWorld world, Entity unit, int capacity, float gatherRate)
         {
-            var sink = new EntityManagerSink(world.EntityManager, unit);
-            HarvesterSetup.Add(ref sink, capacity, gatherRate);
+            var writer = new EntityManagerWriter(world.EntityManager, unit);
+            HarvesterSetup.Add(ref writer, capacity, gatherRate);
             return unit;
         }
 
         public static Entity MakeBuilder(this TestWorld world, Entity unit, params Entity[] options)
         {
-            var sink = new EntityManagerSink(world.EntityManager, unit);
-            var buffer = BuilderSetup.Add(ref sink, 1f);
+            var writer = new EntityManagerWriter(world.EntityManager, unit);
+            var buffer = BuilderSetup.Add(ref writer, 1f);
             foreach (var option in options)
             {
                 buffer.Add(new BuildOption { Prefab = option });
@@ -45,8 +45,8 @@ namespace HyperRTS.Simulation.Tests
         public static Entity MakeProducer(this TestWorld world, Entity building, float3 spawnOffset,
             params Entity[] options)
         {
-            var sink = new EntityManagerSink(world.EntityManager, building);
-            var buffer = ProducerSetup.Add(ref sink, spawnOffset, 5);
+            var writer = new EntityManagerWriter(world.EntityManager, building);
+            var buffer = ProducerSetup.Add(ref writer, spawnOffset, 5);
             foreach (var option in options)
             {
                 buffer.Add(new ProductionOption { Prefab = option });

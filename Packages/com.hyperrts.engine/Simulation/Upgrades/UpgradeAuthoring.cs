@@ -64,9 +64,9 @@ namespace HyperRTS.Simulation.Upgrades
                 var text = new FixedString64Bytes();
                 text.CopyFromTruncated(authoring.DisplayName);
 
-                var sink = new BakerSink(this, entity);
-                UpgradeSetup.Add(ref sink, new EntityInfo { TypeId = authoring.TypeId, Name = text, Icon = authoring.icon },
-                    authoring.researchTime, ProducibleBaking.Costs(authoring.cost),
+                var writer = new BakerWriter(this, entity);
+                var info = new EntityInfo { TypeId = authoring.TypeId, Name = text, Icon = authoring.icon };
+                UpgradeSetup.Add(ref writer, info, authoring.researchTime, ProducibleBaking.Costs(authoring.cost),
                     ProducibleBaking.Prerequisites(this, authoring.prerequisites), BakeEffects(authoring));
             }
 

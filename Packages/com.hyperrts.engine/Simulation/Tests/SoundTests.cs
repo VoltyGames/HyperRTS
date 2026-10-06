@@ -36,8 +36,8 @@ namespace HyperRTS.Simulation.Tests
 
         private Entity Voiced(Entity entity, params SoundSlot[] slots)
         {
-            var sink = new EntityManagerSink(_world.EntityManager, entity);
-            var sounds = SoundSetup.Add(ref sink);
+            var writer = new EntityManagerWriter(_world.EntityManager, entity);
+            var sounds = SoundSetup.Add(ref writer);
             foreach (var slot in slots)
             {
                 SoundSetup.Set(sounds, slot, _cue);

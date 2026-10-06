@@ -84,8 +84,8 @@ namespace HyperRTS.Simulation.Combat
                     Targets = authoring.targets,
                 };
 
-                var sink = new BakerSink(this, entity);
-                WeaponSetup.Add(ref sink, weapon, authoring.stance, authoring.transform.position);
+                var writer = new BakerWriter(this, entity);
+                WeaponSetup.Add(ref writer, weapon, authoring.stance, authoring.transform.position);
             }
         }
     }

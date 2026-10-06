@@ -32,8 +32,8 @@ namespace HyperRTS.Simulation.Tests
 
         private Entity[] Squad(byte faction, AIDifficulty difficulty, float3 at)
         {
-            var sink = new EntityManagerSink(_world.EntityManager, _world.Player(faction));
-            AIPlayerSetup.Add(ref sink, _match.AITuningFor(difficulty).ToComponent());
+            var writer = new EntityManagerWriter(_world.EntityManager, _world.Player(faction));
+            AIPlayerSetup.Add(ref writer, _match.AITuningFor(difficulty).ToComponent());
 
             var squad = new Entity[5];
             for (var i = 0; i < squad.Length; i++)

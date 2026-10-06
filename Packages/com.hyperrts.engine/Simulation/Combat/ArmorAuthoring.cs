@@ -59,11 +59,11 @@ namespace HyperRTS.Simulation.Combat
                     }
                 }
 
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                ArmorSetup.Add(ref sink, modifiers);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                ArmorSetup.Add(ref writer, modifiers);
                 if (authoring.IsDirectional)
                 {
-                    ArmorSetup.AddFacing(ref sink,
+                    ArmorSetup.AddFacing(ref writer,
                         new ArmorFacing { Front = authoring.front, Side = authoring.side, Rear = authoring.rear });
                 }
             }

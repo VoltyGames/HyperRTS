@@ -22,8 +22,8 @@ namespace HyperRTS.Simulation.Navigation
         {
             public override void Bake(NavObstacleAuthoring authoring)
             {
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                NavSetup.AddObstacle(ref sink, authoring.size);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                NavSetup.AddObstacle(ref writer, authoring.size);
             }
         }
     }

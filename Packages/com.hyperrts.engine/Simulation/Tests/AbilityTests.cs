@@ -145,8 +145,8 @@ namespace HyperRTS.Simulation.Tests
             var snipe = Spec("Snipe", AbilityTarget.Entity, 0f, 30f, 40f);
             Give(_world.Player(1), snipe);
             var cloaked = _world.SpawnUnit(2, new float3(20f, 0f, 0f), speed: 0f);
-            var sink = new EntityManagerSink(_world.EntityManager, cloaked);
-            StealthSetup.AddStealth(ref sink, new Stealth { RevealDuration = 1f }, true);
+            var writer = new EntityManagerWriter(_world.EntityManager, cloaked);
+            StealthSetup.AddStealth(ref writer, new Stealth { RevealDuration = 1f }, true);
             var bunker = _world.SpawnBuilding(2, new float3(-20f, 0f, 0f), new float2(4f, 4f));
             var garrisoned = _world.SpawnUnit(2, new float3(-20f, 0f, 0f), speed: 0f);
             _world.EntityManager.AddComponentData(garrisoned, new Inside { Container = bunker });

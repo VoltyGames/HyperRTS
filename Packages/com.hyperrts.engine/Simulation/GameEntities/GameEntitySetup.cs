@@ -18,36 +18,37 @@ namespace HyperRTS.Simulation.GameEntities
     public static class GameEntitySetup
     {
         // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
-        public static void Add<TSink>(ref TSink sink, in GameEntitySpec spec, IReadOnlyList<ResourceCost> cost = null,
-            IReadOnlyList<Prerequisite> prerequisites = null) where TSink : struct, IComponentSink
+        public static void Add<TWriter>(ref TWriter writer, in GameEntitySpec spec,
+            IReadOnlyList<ResourceCost> cost = null, IReadOnlyList<Prerequisite> prerequisites = null)
+            where TWriter : struct, IEntityWriter
         {
-            sink.Add(new EntityInfo { TypeId = spec.TypeId, Name = spec.Name, Icon = spec.Icon });
-            sink.Add(new Faction { Value = spec.Owner });
-            sink.Add(new Health { Current = spec.MaxHealth, Max = spec.MaxHealth });
-            sink.Add<Dead>();
-            sink.SetEnabled<Dead>(false);
-            sink.Add<LastAttacker>();
-            sink.AddBuffer<BaseStat>();
-            sink.AddBuffer<StatModifier>();
-            sink.AddBuffer<FieldPresence>();
-            sink.Add(new ExperienceValue { Value = spec.ExperienceValue });
-            sink.Add(new AppliedUpgrades { Faction = spec.Owner });
-            sink.Add(new VisionRange { Value = spec.VisionRange });
-            sink.Add(new Producible { BuildTime = spec.BuildTime, Population = spec.Population });
-            sink.AddBuffer(cost);
-            sink.AddBuffer(prerequisites);
-            sink.Add<Selectable>();
-            sink.Add<Selected>();
-            sink.SetEnabled<Selected>(false);
+            writer.Add(new EntityInfo { TypeId = spec.TypeId, Name = spec.Name, Icon = spec.Icon });
+            writer.Add(new Faction { Value = spec.Owner });
+            writer.Add(new Health { Current = spec.MaxHealth, Max = spec.MaxHealth });
+            writer.Add<Dead>();
+            writer.SetEnabled<Dead>(false);
+            writer.Add<LastAttacker>();
+            writer.AddBuffer<BaseStat>();
+            writer.AddBuffer<StatModifier>();
+            writer.AddBuffer<FieldPresence>();
+            writer.Add(new ExperienceValue { Value = spec.ExperienceValue });
+            writer.Add(new AppliedUpgrades { Faction = spec.Owner });
+            writer.Add(new VisionRange { Value = spec.VisionRange });
+            writer.Add(new Producible { BuildTime = spec.BuildTime, Population = spec.Population });
+            writer.AddBuffer(cost);
+            writer.AddBuffer(prerequisites);
+            writer.Add<Selectable>();
+            writer.Add<Selected>();
+            writer.SetEnabled<Selected>(false);
 
             if (spec.CountsForVictory)
             {
-                sink.Add<VictoryCritical>();
+                writer.Add<VictoryCritical>();
             }
 
             if (spec.DeathPrefab != Entity.Null)
             {
-                sink.Add(new SpawnOnDeath { Prefab = spec.DeathPrefab });
+                writer.Add(new SpawnOnDeath { Prefab = spec.DeathPrefab });
             }
         }
     }

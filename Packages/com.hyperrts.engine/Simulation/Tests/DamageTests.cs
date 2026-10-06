@@ -75,8 +75,8 @@ namespace HyperRTS.Simulation.Tests
         public void DirectionalArmor_ScalesByHitSide(float x, float y, float z, float multiplier)
         {
             var tank = _world.SpawnUnit(2, float3.zero);
-            var sink = new EntityManagerSink(_world.EntityManager, tank);
-            ArmorSetup.AddFacing(ref sink, new ArmorFacing { Front = 0.5f, Side = 1f, Rear = 2f });
+            var writer = new EntityManagerWriter(_world.EntityManager, tank);
+            ArmorSetup.AddFacing(ref writer, new ArmorFacing { Front = 0.5f, Side = 1f, Rear = 2f });
 
             Queue(new DamageEvent { Target = tank, Origin = new float3(x, y, z), SourceFaction = 1, Amount = 20f });
             _world.Tick();
@@ -116,8 +116,8 @@ namespace HyperRTS.Simulation.Tests
         public void SplashWeapon_HitsTargetAndNeighbours()
         {
             var gun = _world.SpawnUnit(1, float3.zero);
-            var sink = new EntityManagerSink(_world.EntityManager, gun);
-            WeaponSetup.Add(ref sink, new Weapon
+            var writer = new EntityManagerWriter(_world.EntityManager, gun);
+            WeaponSetup.Add(ref writer, new Weapon
             {
                 Range = 8f, Damage = 30f, Cooldown = 100f, SplashRadius = 3f, SplashEdgeFactor = 1f,
             }, Stance.Aggressive, float3.zero);

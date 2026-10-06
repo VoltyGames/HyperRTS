@@ -26,8 +26,8 @@ namespace HyperRTS.Simulation.Tests
         {
             var area = world.EntityManager.CreateEntity();
             world.EntityManager.AddComponentData(area, LocalTransform.FromPosition(position));
-            var sink = new EntityManagerSink(world.EntityManager, area);
-            NavSetup.AddArea(ref sink, size, kind);
+            var writer = new EntityManagerWriter(world.EntityManager, area);
+            NavSetup.AddArea(ref writer, size, kind);
             return area;
         }
 

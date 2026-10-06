@@ -34,8 +34,8 @@ namespace HyperRTS.Simulation.Production
         {
             public override void Bake(ProducerAuthoring authoring)
             {
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                var options = ProducerSetup.Add(ref sink, authoring.spawnOffset, authoring.queueLimit);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var options = ProducerSetup.Add(ref writer, authoring.spawnOffset, authoring.queueLimit);
                 AddOptions(options, authoring.productionOptions, TransformUsageFlags.Dynamic);
                 AddOptions(options, authoring.researchOptions, TransformUsageFlags.None);
             }

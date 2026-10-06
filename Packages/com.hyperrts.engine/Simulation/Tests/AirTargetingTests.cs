@@ -58,8 +58,8 @@ namespace HyperRTS.Simulation.Tests
         public void GroundSplash_SparesTheAircraftAbove()
         {
             var gun = _world.SpawnUnit(1, float3.zero);
-            var sink = new EntityManagerSink(_world.EntityManager, gun);
-            WeaponSetup.Add(ref sink, new Weapon
+            var writer = new EntityManagerWriter(_world.EntityManager, gun);
+            WeaponSetup.Add(ref writer, new Weapon
             {
                 Range = 8f, Damage = 30f, Cooldown = 100f, SplashRadius = 3f, SplashEdgeFactor = 1f,
                 Targets = WeaponTargets.Surface,

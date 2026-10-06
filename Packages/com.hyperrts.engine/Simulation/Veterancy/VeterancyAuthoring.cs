@@ -51,8 +51,8 @@ namespace HyperRTS.Simulation.Veterancy
                     }
                 }
 
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                VeterancySetup.Add(ref sink, thresholds, bonuses);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                VeterancySetup.Add(ref writer, thresholds, bonuses);
             }
         }
     }

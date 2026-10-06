@@ -28,8 +28,8 @@ namespace HyperRTS.Simulation.Combat
         {
             public override void Bake(AmmoAuthoring authoring)
             {
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                WeaponSetup.AddAmmo(ref sink, authoring.rounds, authoring.reloadTime);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                WeaponSetup.AddAmmo(ref writer, authoring.rounds, authoring.reloadTime);
             }
         }
     }

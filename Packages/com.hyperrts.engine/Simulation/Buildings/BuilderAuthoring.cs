@@ -24,8 +24,8 @@ namespace HyperRTS.Simulation.Buildings
         {
             public override void Bake(BuilderAuthoring authoring)
             {
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                var options = BuilderSetup.Add(ref sink, authoring.buildRate);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var options = BuilderSetup.Add(ref writer, authoring.buildRate);
                 foreach (var option in authoring.buildOptions)
                 {
                     if (option != null)

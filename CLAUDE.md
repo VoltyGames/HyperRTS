@@ -55,7 +55,7 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
   validation). One `*Authoring.cs` file holds the authoring class and its nested `Baker`; runtime components live
   in their own files (`ModuleLayoutTests` enforces this).
   Bakers use `GetEntity(TransformUsageFlags.Dynamic)` and write component sets through the `*Setup` helpers
-  (`IComponentSink`), so tests build the same entities.
+  (`IEntityWriter`), so tests build the same entities.
 - Authoring classes carry `[AddComponentMenu]`, `[Icon]`, `[HelpURL]`, `[DisallowMultipleComponent]` and a
   `[Tooltip]` per field, with paths from `HyperRTSMenu`, `HyperRTSIcons` and `HyperRTSDocs`. See
   [`docs/editor-ux.md`](docs/editor-ux.md).

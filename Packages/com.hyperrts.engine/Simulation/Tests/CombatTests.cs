@@ -125,8 +125,8 @@ namespace HyperRTS.Simulation.Tests
             _world.Arm(_world.SpawnUnit(1, float3.zero), range: 8f, damage: 40f, cooldown: 100f, projectile: prefab,
                 damageType: bullet);
             var tank = _world.SpawnUnit(2, new float3(6f, 0f, 0f));
-            var sink = new EntityManagerSink(_world.EntityManager, tank);
-            ArmorSetup.Add(ref sink, new[] { new ArmorModifier { DamageType = bullet, Multiplier = 0.5f } });
+            var writer = new EntityManagerWriter(_world.EntityManager, tank);
+            ArmorSetup.Add(ref writer, new[] { new ArmorModifier { DamageType = bullet, Multiplier = 0.5f } });
 
             using var projectiles = _world.EntityManager.CreateEntityQuery(typeof(Projectile));
             for (var frame = 0; frame < 30 && projectiles.IsEmpty; frame++)

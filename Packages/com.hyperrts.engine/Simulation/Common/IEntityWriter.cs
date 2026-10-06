@@ -4,7 +4,7 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Common
 {
     /// <summary>Target for setup helpers, so bakers, tests and runtime code build identical entities.</summary>
-    public interface IComponentSink
+    public interface IEntityWriter
     {
         void Add<T>() where T : unmanaged, IComponentData;
         void Add<T>(in T component) where T : unmanaged, IComponentData;
@@ -12,13 +12,13 @@ namespace HyperRTS.Simulation.Common
         void SetEnabled<T>(bool enabled) where T : unmanaged, IComponentData, IEnableableComponent;
     }
 
-    public static class ComponentSinkExtensions
+    public static class EntityWriterExtensions
     {
         /// <summary>Adds a buffer holding <paramref name="items"/>; a null list adds it empty.</summary>
-        public static void AddBuffer<TSink, T>(ref this TSink sink, IReadOnlyList<T> items)
-            where TSink : struct, IComponentSink where T : unmanaged, IBufferElementData
+        public static void AddBuffer<TWriter, T>(ref this TWriter writer, IReadOnlyList<T> items)
+            where TWriter : struct, IEntityWriter where T : unmanaged, IBufferElementData
         {
-            var buffer = sink.AddBuffer<T>();
+            var buffer = writer.AddBuffer<T>();
             if (items == null)
             {
                 return;

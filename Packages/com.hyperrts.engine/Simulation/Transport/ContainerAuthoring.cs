@@ -32,8 +32,8 @@ namespace HyperRTS.Simulation.Transport
         {
             public override void Bake(ContainerAuthoring authoring)
             {
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                TransportSetup.AddContainer(ref sink, new Container
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                TransportSetup.AddContainer(ref writer, new Container
                 {
                     Capacity = authoring.capacity,
                     MaxPassengerSize = authoring.maxPassengerSize,

@@ -45,8 +45,8 @@ namespace HyperRTS.Simulation.Units
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 authoring.BakeGameEntity(this, entity);
 
-                var sink = new BakerSink(this, entity);
-                UnitSetup.Add(ref sink, authoring.moveSpeed, authoring.radius, Layer(authoring));
+                var writer = new BakerWriter(this, entity);
+                UnitSetup.Add(ref writer, authoring.moveSpeed, authoring.radius, Layer(authoring));
             }
 
             // Flight bakes the Flight component, so its presence alone makes the unit an aircraft.

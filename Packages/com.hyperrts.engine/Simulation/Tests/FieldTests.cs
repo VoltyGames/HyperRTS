@@ -35,8 +35,8 @@ namespace HyperRTS.Simulation.Tests
                 bonuses[i].Source = StatSource.Field(id);
             }
 
-            var sink = new EntityManagerSink(_world.EntityManager, source);
-            FieldSetup.AddField(ref sink, new AreaField
+            var writer = new EntityManagerWriter(_world.EntityManager, source);
+            FieldSetup.AddField(ref writer, new AreaField
             {
                 FieldId = id, Radius = 10f, Affects = affects, HealPerSecond = heal, DamagePerSecond = damage,
             }, bonuses);

@@ -34,9 +34,9 @@ namespace HyperRTS.Simulation.Tests
         private Entity UpgradePrefab(string name, int appliesTo)
         {
             var upgrade = _world.EntityManager.CreateEntity();
-            var sink = new EntityManagerSink(_world.EntityManager, upgrade);
+            var writer = new EntityManagerWriter(_world.EntityManager, upgrade);
             var typeId = EntityInfo.TypeIdFromName(name);
-            UpgradeSetup.Add(ref sink, new EntityInfo { TypeId = typeId, Name = name }, 2f,
+            UpgradeSetup.Add(ref writer, new EntityInfo { TypeId = typeId, Name = name }, 2f,
                 new[] { new ResourceCost { Type = _supplies, Amount = 50 } }, new Prerequisite[0], new[]
                 {
                     new UpgradeEffect

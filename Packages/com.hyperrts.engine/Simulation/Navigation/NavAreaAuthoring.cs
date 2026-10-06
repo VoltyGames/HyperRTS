@@ -25,8 +25,8 @@ namespace HyperRTS.Simulation.Navigation
         {
             public override void Bake(NavAreaAuthoring authoring)
             {
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                NavSetup.AddArea(ref sink, authoring.size, authoring.kind);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                NavSetup.AddArea(ref writer, authoring.size, authoring.kind);
             }
         }
     }

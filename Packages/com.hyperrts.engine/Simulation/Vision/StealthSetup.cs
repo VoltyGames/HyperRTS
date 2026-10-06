@@ -5,18 +5,19 @@ namespace HyperRTS.Simulation.Vision
     /// <summary>Adds the stealth and detector components.</summary>
     public static class StealthSetup
     {
-        public static void AddStealth<TSink>(ref TSink sink, in Stealth stealth, bool enabled)
-            where TSink : struct, IComponentSink
+        public static void AddStealth<TWriter>(ref TWriter writer, in Stealth stealth, bool enabled)
+            where TWriter : struct, IEntityWriter
         {
-            sink.Add(stealth);
-            sink.SetEnabled<Stealth>(enabled);
+            writer.Add(stealth);
+            writer.SetEnabled<Stealth>(enabled);
 
             // Set now so a fresh spawn is never visible for the frame before StealthSystem runs.
-            sink.Add<Stealthed>();
-            sink.SetEnabled<Stealthed>(enabled);
+            writer.Add<Stealthed>();
+            writer.SetEnabled<Stealthed>(enabled);
         }
 
-        public static void AddDetector<TSink>(ref TSink sink, float radius) where TSink : struct, IComponentSink =>
-            sink.Add(new Detector { Radius = radius });
+        public static void AddDetector<TWriter>(ref TWriter writer, float radius)
+            where TWriter : struct, IEntityWriter =>
+            writer.Add(new Detector { Radius = radius });
     }
 }

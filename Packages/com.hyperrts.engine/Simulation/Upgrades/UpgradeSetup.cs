@@ -9,17 +9,17 @@ namespace HyperRTS.Simulation.Upgrades
     public static class UpgradeSetup
     {
         // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
-        public static void Add<TSink>(ref TSink sink, in EntityInfo info, float researchTime,
+        public static void Add<TWriter>(ref TWriter writer, in EntityInfo info, float researchTime,
             IReadOnlyList<ResourceCost> cost, IReadOnlyList<Prerequisite> prerequisites,
-            IReadOnlyList<UpgradeEffect> effects) where TSink : struct, IComponentSink
+            IReadOnlyList<UpgradeEffect> effects) where TWriter : struct, IEntityWriter
         {
-            sink.Add<Upgrade>();
-            sink.Add(info);
-            sink.Add(new Producible { BuildTime = researchTime });
+            writer.Add<Upgrade>();
+            writer.Add(info);
+            writer.Add(new Producible { BuildTime = researchTime });
 
-            sink.AddBuffer(cost);
-            sink.AddBuffer(prerequisites);
-            sink.AddBuffer(effects);
+            writer.AddBuffer(cost);
+            writer.AddBuffer(prerequisites);
+            writer.AddBuffer(effects);
         }
     }
 }

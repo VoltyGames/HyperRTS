@@ -16,19 +16,19 @@ namespace HyperRTS.Simulation.Tests
         {
             var aircraft = world.SpawnUnit(faction, position, speed: speed, name: "Aircraft");
             world.EntityManager.SetComponentData(aircraft, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air });
-            var sink = new EntityManagerSink(world.EntityManager, aircraft);
-            AirSetup.AddFlight(ref sink, altitude, climbSpeed: 20f, loiterRadius);
+            var writer = new EntityManagerWriter(world.EntityManager, aircraft);
+            AirSetup.AddFlight(ref writer, altitude, climbSpeed: 20f, loiterRadius);
             return aircraft;
         }
 
         /// <summary>Lets the aircraft take a pad and, with rounds above 0, limits its weapon's ammo.</summary>
         public static Entity UsePads(this TestWorld world, Entity aircraft, int rounds = 0, float reloadTime = 0.5f)
         {
-            var sink = new EntityManagerSink(world.EntityManager, aircraft);
-            AirSetup.AddPadUser(ref sink);
+            var writer = new EntityManagerWriter(world.EntityManager, aircraft);
+            AirSetup.AddPadUser(ref writer);
             if (rounds > 0)
             {
-                WeaponSetup.AddAmmo(ref sink, rounds, reloadTime);
+                WeaponSetup.AddAmmo(ref writer, rounds, reloadTime);
             }
 
             return aircraft;
@@ -37,8 +37,8 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnAirfield(this TestWorld world, byte faction, float3 position, params float3[] pads)
         {
             var airfield = world.SpawnBuilding(faction, position, new float2(4f, 4f), name: "Airfield");
-            var sink = new EntityManagerSink(world.EntityManager, airfield);
-            var buffer = AirSetup.AddAirfield(ref sink);
+            var writer = new EntityManagerWriter(world.EntityManager, airfield);
+            var buffer = AirSetup.AddAirfield(ref writer);
             foreach (var offset in pads)
             {
                 buffer.Add(new LandingPad { Offset = offset });

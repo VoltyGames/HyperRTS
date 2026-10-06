@@ -81,8 +81,8 @@ namespace HyperRTS.Simulation.Abilities
                     abilities.Add(BakeEntry(entry));
                 }
 
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                AbilitySetup.Add(ref sink, abilities);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                AbilitySetup.Add(ref writer, abilities);
             }
 
             private Ability BakeEntry(Entry entry)

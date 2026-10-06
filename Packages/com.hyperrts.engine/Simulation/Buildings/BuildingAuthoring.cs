@@ -40,8 +40,8 @@ namespace HyperRTS.Simulation.Buildings
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 authoring.BakeGameEntity(this, entity);
 
-                var sink = new BakerSink(this, entity);
-                BuildingSetup.Add(ref sink, authoring.footprint, authoring.populationProvided,
+                var writer = new BakerWriter(this, entity);
+                BuildingSetup.Add(ref writer, authoring.footprint, authoring.populationProvided,
                     !authoring.startsUnderConstruction, authoring.power, authoring.placementSurface);
             }
         }

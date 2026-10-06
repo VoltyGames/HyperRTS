@@ -26,8 +26,8 @@ namespace HyperRTS.Simulation.Resources
         {
             public override void Bake(HarvesterAuthoring authoring)
             {
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                HarvesterSetup.Add(ref sink, authoring.capacity, authoring.gatherRate);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                HarvesterSetup.Add(ref writer, authoring.capacity, authoring.gatherRate);
             }
         }
     }

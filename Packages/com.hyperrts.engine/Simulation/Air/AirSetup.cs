@@ -7,22 +7,23 @@ namespace HyperRTS.Simulation.Air
     public static class AirSetup
     {
         /// <summary>Flies the unit at <paramref name="altitude"/>; its <c>NavAgent</c> must be on the Air layer.</summary>
-        public static void AddFlight<TSink>(ref TSink sink, float altitude, float climbSpeed, float loiterRadius)
-            where TSink : struct, IComponentSink
+        public static void AddFlight<TWriter>(ref TWriter writer, float altitude, float climbSpeed, float loiterRadius)
+            where TWriter : struct, IEntityWriter
         {
-            sink.Add(new Flight { Altitude = altitude, ClimbSpeed = climbSpeed, LoiterRadius = loiterRadius });
+            writer.Add(new Flight { Altitude = altitude, ClimbSpeed = climbSpeed, LoiterRadius = loiterRadius });
         }
 
         /// <summary>The aircraft takes a pad at the airfield that builds it and docks there to rearm.</summary>
-        public static void AddPadUser<TSink>(ref TSink sink) where TSink : struct, IComponentSink
+        public static void AddPadUser<TWriter>(ref TWriter writer) where TWriter : struct, IEntityWriter
         {
-            sink.Add<PadHome>();
-            sink.Add<Docked>();
-            sink.SetEnabled<Docked>(false);
+            writer.Add<PadHome>();
+            writer.Add<Docked>();
+            writer.SetEnabled<Docked>(false);
         }
 
         /// <summary>Fill the returned buffer with one <see cref="LandingPad"/> per pad.</summary>
-        public static DynamicBuffer<LandingPad> AddAirfield<TSink>(ref TSink sink) where TSink : struct, IComponentSink =>
-            sink.AddBuffer<LandingPad>();
+        public static DynamicBuffer<LandingPad> AddAirfield<TWriter>(ref TWriter writer)
+            where TWriter : struct, IEntityWriter =>
+            writer.AddBuffer<LandingPad>();
     }
 }

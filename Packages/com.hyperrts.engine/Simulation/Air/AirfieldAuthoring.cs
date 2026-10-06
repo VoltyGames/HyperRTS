@@ -27,8 +27,8 @@ namespace HyperRTS.Simulation.Air
         {
             public override void Bake(AirfieldAuthoring authoring)
             {
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                var pads = AirSetup.AddAirfield(ref sink);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var pads = AirSetup.AddAirfield(ref writer);
                 foreach (var offset in authoring.padOffsets)
                 {
                     pads.Add(new LandingPad { Offset = offset });

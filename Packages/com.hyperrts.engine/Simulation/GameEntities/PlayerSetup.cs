@@ -14,18 +14,18 @@ namespace HyperRTS.Simulation.GameEntities
     public static class PlayerSetup
     {
         /// <summary>Returns the player's empty stockpile.</summary>
-        public static DynamicBuffer<ResourceStock> Add<TSink>(ref TSink sink, byte faction, in FixedString32Bytes name,
-            float4 color, int populationCap) where TSink : struct, IComponentSink
+        public static DynamicBuffer<ResourceStock> Add<TWriter>(ref TWriter writer, byte faction,
+            in FixedString32Bytes name, float4 color, int populationCap) where TWriter : struct, IEntityWriter
         {
-            sink.Add(new Player { Faction = faction, Name = name, Color = color });
-            sink.Add(new Population { Cap = populationCap });
-            sink.Add<PowerGrid>();
-            sink.Add<Defeated>();
-            sink.SetEnabled<Defeated>(false);
-            sink.AddBuffer<PlayerCommand>();
-            sink.AddBuffer<PlayerCommandSubject>();
-            sink.AddBuffer<ResearchedUpgrade>();
-            return sink.AddBuffer<ResourceStock>();
+            writer.Add(new Player { Faction = faction, Name = name, Color = color });
+            writer.Add(new Population { Cap = populationCap });
+            writer.Add<PowerGrid>();
+            writer.Add<Defeated>();
+            writer.SetEnabled<Defeated>(false);
+            writer.AddBuffer<PlayerCommand>();
+            writer.AddBuffer<PlayerCommandSubject>();
+            writer.AddBuffer<ResearchedUpgrade>();
+            return writer.AddBuffer<ResourceStock>();
         }
     }
 }

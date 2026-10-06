@@ -24,8 +24,9 @@ namespace HyperRTS.Simulation.Tests
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
             _supplies = ScriptableObject.CreateInstance<ResourceType>();
-            var sink = new EntityManagerSink(_world.EntityManager, _world.Player(2));
-            AIPlayerSetup.Add(ref sink, new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 2, UseAbilities = true });
+            var writer = new EntityManagerWriter(_world.EntityManager, _world.Player(2));
+            AIPlayerSetup.Add(ref writer,
+                new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 2, UseAbilities = true });
         }
 
         [TearDown]
@@ -40,8 +41,8 @@ namespace HyperRTS.Simulation.Tests
             var prefab = _world.MakePrefab(_world.SpawnUnit(0, new float3(90f, 0f, 90f)));
             _world.SetBuildTime(prefab, 0.5f);
             _world.SetCost(prefab, _supplies, 10);
-            var sink = new EntityManagerSink(_world.EntityManager, prefab);
-            WeaponSetup.Add(ref sink, new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f }, Stance.Aggressive,
+            var writer = new EntityManagerWriter(_world.EntityManager, prefab);
+            WeaponSetup.Add(ref writer, new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f }, Stance.Aggressive,
                 float3.zero);
             return prefab;
         }

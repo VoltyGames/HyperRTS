@@ -6,17 +6,17 @@ namespace HyperRTS.Simulation.Resources
     /// <summary>Adds the components of a neutral, full resource node.</summary>
     public static class ResourceNodeSetup
     {
-        public static void Add<TSink>(ref TSink sink, UnityObjectRef<ResourceType> type, int amount,
-            float regrowthPerSecond) where TSink : struct, IComponentSink
+        public static void Add<TWriter>(ref TWriter writer, UnityObjectRef<ResourceType> type, int amount,
+            float regrowthPerSecond) where TWriter : struct, IEntityWriter
         {
-            sink.Add(new ResourceNode
+            writer.Add(new ResourceNode
             {
                 Type = type,
                 Amount = amount,
                 MaxAmount = amount,
                 RegrowthPerSecond = regrowthPerSecond,
             });
-            sink.Add(new Faction { Value = Faction.Neutral });
+            writer.Add(new Faction { Value = Faction.Neutral });
         }
     }
 }

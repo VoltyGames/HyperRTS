@@ -42,8 +42,8 @@ namespace HyperRTS.Simulation.Navigation
                 DependsOn(data);
                 var height = Sample(data, GetComponent<Transform>().position);
                 AddBlobAsset(ref height.Blob, out _);
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.None));
-                NavSetup.AddTerrain(ref sink, height);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.None));
+                NavSetup.AddTerrain(ref writer, height);
             }
 
             private static TerrainHeight Sample(TerrainData data, Vector3 origin)

@@ -63,7 +63,7 @@ public class WeaponAuthoring : AuthoringBehaviour
   [`HyperRTSIcons`](../Packages/com.hyperrts.engine/Core/HyperRTSIcons.cs) and
   [`HyperRTSDocs`](../Packages/com.hyperrts.engine/Core/HyperRTSDocs.cs). A new module adds one line to `HyperRTSMenu` and `HyperRTSIcons`, plus an accent
   colour in the icon generator.
-- **Shared setup.** Bakers write components through the `*Setup` helpers and an `IComponentSink`, so tests and
+- **Shared setup.** Bakers write components through the `*Setup` helpers and an `IEntityWriter`, so tests and
   tools build the same entities as baking.
 
 ## Validation

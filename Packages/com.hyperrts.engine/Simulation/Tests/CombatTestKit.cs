@@ -23,8 +23,8 @@ namespace HyperRTS.Simulation.Tests
                 DamageType = damageType,
                 Targets = targets,
             };
-            var sink = new EntityManagerSink(world.EntityManager, entity);
-            WeaponSetup.Add(ref sink, weapon, stance, world.Get<LocalTransform>(entity).Position);
+            var writer = new EntityManagerWriter(world.EntityManager, entity);
+            WeaponSetup.Add(ref writer, weapon, stance, world.Get<LocalTransform>(entity).Position);
             return entity;
         }
 

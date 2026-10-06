@@ -7,14 +7,14 @@ namespace HyperRTS.Simulation.Production
     /// <summary>Adds the production components to a building; fill the returned buffer with unit prefabs.</summary>
     public static class ProducerSetup
     {
-        public static DynamicBuffer<ProductionOption> Add<TSink>(ref TSink sink, float3 spawnOffset, int queueLimit)
-            where TSink : struct, IComponentSink
+        public static DynamicBuffer<ProductionOption> Add<TWriter>(ref TWriter writer, float3 spawnOffset,
+            int queueLimit) where TWriter : struct, IEntityWriter
         {
-            sink.Add(new Producer { SpawnOffset = spawnOffset, QueueLimit = queueLimit, Speed = 1f });
-            sink.AddBuffer<ProductionQueueItem>();
-            sink.Add<RallyPoint>();
-            sink.SetEnabled<RallyPoint>(false);
-            return sink.AddBuffer<ProductionOption>();
+            writer.Add(new Producer { SpawnOffset = spawnOffset, QueueLimit = queueLimit, Speed = 1f });
+            writer.AddBuffer<ProductionQueueItem>();
+            writer.Add<RallyPoint>();
+            writer.SetEnabled<RallyPoint>(false);
+            return writer.AddBuffer<ProductionOption>();
         }
     }
 }

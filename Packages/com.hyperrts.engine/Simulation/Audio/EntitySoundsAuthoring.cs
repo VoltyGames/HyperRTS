@@ -44,8 +44,8 @@ namespace HyperRTS.Simulation.Audio
         {
             public override void Bake(EntitySoundsAuthoring authoring)
             {
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                var sounds = SoundSetup.Add(ref sink);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var sounds = SoundSetup.Add(ref writer);
                 SoundSetup.Set(sounds, SoundSlot.Fire, authoring.fire);
                 SoundSetup.Set(sounds, SoundSlot.Impact, authoring.impact);
                 SoundSetup.Set(sounds, SoundSlot.Death, authoring.death);

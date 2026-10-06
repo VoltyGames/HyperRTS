@@ -80,7 +80,7 @@ To order it around, append a `PlayerCommand` (`Unit = unit`) to its owner's buff
 system.
 
 For tests and tools without baking, `GameEntitySetup`, `UnitSetup` and `BuildingSetup` write the exact baked
-component set through an `IComponentSink` (`EntityManagerSink`). Those entities have no mesh, so they only show up
+component set through an `IEntityWriter` (`EntityManagerWriter`). Those entities have no mesh, so they only show up
 in **Window ▸ Entities**.
 
 ## Don't auto-spawn on startup

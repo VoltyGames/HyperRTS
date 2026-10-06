@@ -7,11 +7,11 @@ namespace HyperRTS.Simulation.Fields
     /// <summary>Adds an area field and its stat bonuses.</summary>
     public static class FieldSetup
     {
-        public static void AddField<TSink>(ref TSink sink, in AreaField field, IReadOnlyList<StatModifier> bonuses)
-            where TSink : struct, IComponentSink
+        public static void AddField<TWriter>(ref TWriter writer, in AreaField field,
+            IReadOnlyList<StatModifier> bonuses) where TWriter : struct, IEntityWriter
         {
-            sink.Add(field);
-            var buffer = sink.AddBuffer<AreaFieldBonus>();
+            writer.Add(field);
+            var buffer = writer.AddBuffer<AreaFieldBonus>();
             foreach (var bonus in bonuses)
             {
                 buffer.Add(new AreaFieldBonus { Modifier = bonus });

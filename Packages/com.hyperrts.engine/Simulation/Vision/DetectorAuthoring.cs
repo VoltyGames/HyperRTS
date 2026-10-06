@@ -22,8 +22,8 @@ namespace HyperRTS.Simulation.Vision
         {
             public override void Bake(DetectorAuthoring authoring)
             {
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                StealthSetup.AddDetector(ref sink, authoring.radius);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                StealthSetup.AddDetector(ref writer, authoring.radius);
             }
         }
     }

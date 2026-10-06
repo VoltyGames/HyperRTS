@@ -66,10 +66,10 @@ namespace HyperRTS.Simulation.GameEntities
         /// <summary>Bakes the shared components; subclasses call this before adding their own.</summary>
         protected void BakeGameEntity(IBaker baker, Entity entity)
         {
-            var sink = new BakerSink(baker, entity);
+            var writer = new BakerWriter(baker, entity);
             var displayText = new FixedString64Bytes();
             displayText.CopyFromTruncated(DisplayName);
-            GameEntitySetup.Add(ref sink, new GameEntitySpec
+            GameEntitySetup.Add(ref writer, new GameEntitySpec
             {
                 TypeId = TypeId,
                 Name = displayText,

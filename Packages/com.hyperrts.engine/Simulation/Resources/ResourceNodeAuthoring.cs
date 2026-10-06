@@ -28,8 +28,8 @@ namespace HyperRTS.Simulation.Resources
         {
             public override void Bake(ResourceNodeAuthoring authoring)
             {
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                ResourceNodeSetup.Add(ref sink, authoring.type, authoring.amount, authoring.regrowthPerSecond);
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                ResourceNodeSetup.Add(ref writer, authoring.type, authoring.amount, authoring.regrowthPerSecond);
             }
         }
     }

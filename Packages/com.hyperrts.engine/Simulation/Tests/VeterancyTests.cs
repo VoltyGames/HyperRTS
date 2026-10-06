@@ -27,8 +27,8 @@ namespace HyperRTS.Simulation.Tests
         private Entity Veteran(float3 position)
         {
             var unit = _world.Arm(_world.SpawnUnit(1, position), damage: 50f);
-            var sink = new EntityManagerSink(_world.EntityManager, unit);
-            VeterancySetup.Add(ref sink, new[] { 10f, 100f }, new[]
+            var writer = new EntityManagerWriter(_world.EntityManager, unit);
+            VeterancySetup.Add(ref writer, new[] { 10f, 100f }, new[]
             {
                 new VeterancyBonus
                 {

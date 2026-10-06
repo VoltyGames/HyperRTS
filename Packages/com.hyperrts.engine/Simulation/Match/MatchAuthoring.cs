@@ -126,8 +126,8 @@ namespace HyperRTS.Simulation.Match
                 playerName.CopyFromTruncated(slot.name);
                 float4 color = (Vector4)slot.color.linear;
 
-                var sink = new BakerSink(this, player);
-                var stock = PlayerSetup.Add(ref sink, faction, playerName, color, populationCap: 0);
+                var writer = new BakerWriter(this, player);
+                var stock = PlayerSetup.Add(ref writer, faction, playerName, color, populationCap: 0);
                 AddStartingResources(stock, slot);
 
                 if (slot.control == PlayerControl.LocalHuman)
@@ -136,7 +136,7 @@ namespace HyperRTS.Simulation.Match
                 }
                 else if (slot.control == PlayerControl.AI)
                 {
-                    var steps = AIPlayerSetup.Add(ref sink, authoring.AITuningFor(slot.difficulty).ToComponent());
+                    var steps = AIPlayerSetup.Add(ref writer, authoring.AITuningFor(slot.difficulty).ToComponent());
                     AddBuildOrder(steps, slot.buildOrder);
                 }
             }

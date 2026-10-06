@@ -56,8 +56,8 @@ namespace HyperRTS.Simulation.Fields
                     modifiers.Add(bonus.ToModifier(StatSource.Field(authoring.FieldId)));
                 }
 
-                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
-                FieldSetup.AddField(ref sink, new AreaField
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                FieldSetup.AddField(ref writer, new AreaField
                 {
                     FieldId = authoring.FieldId,
                     Radius = authoring.radius,
