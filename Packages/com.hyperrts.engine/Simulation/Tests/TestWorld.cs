@@ -4,8 +4,10 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Units;
+using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -22,6 +24,7 @@ namespace HyperRTS.Simulation.Tests
         public const float FrameTime = 1f / 30f;
 
         public readonly World World;
+        private readonly List<BlobAssetReference<HeightfieldBlob>> _terrains = new();
         private double _elapsed;
 
         public TestWorld()
@@ -56,6 +59,11 @@ namespace HyperRTS.Simulation.Tests
             if (World.IsCreated)
             {
                 World.Dispose();
+            }
+
+            foreach (var terrain in _terrains)
+            {
+                terrain.Dispose();
             }
         }
 
@@ -104,10 +112,27 @@ namespace HyperRTS.Simulation.Tests
             EntityManager.AddComponentData(match, relations);
         }
 
+        /// <summary>Bakes a heightfield over the test map from a height function, as Terrain Height authoring does.</summary>
+        public void CreateTerrain(Func<float2, float> height, float spacing = 1f)
+        {
+            var min = new float2(-100f, -100f);
+            var size = (int2)(200f / spacing) + 1;
+            var heights = new NativeArray<float>(size.x * size.y, Allocator.Temp);
+            for (var i = 0; i < heights.Length; i++)
+            {
+                heights[i] = height(min + new float2(i % size.x, i / size.x) * spacing);
+            }
+
+            var terrain = TerrainHeight.Create(heights, size, min, spacing, Allocator.Persistent);
+            heights.Dispose();
+            _terrains.Add(terrain.Blob);
+            EntityManager.CreateSingleton(terrain);
+        }
+
         public Entity Player(byte faction)
         {
             using var query = EntityManager.CreateEntityQuery(typeof(Player));
-            using var players = query.ToEntityArray(Unity.Collections.Allocator.Temp);
+            using var players = query.ToEntityArray(Allocator.Temp);
             foreach (var player in players)
             {
                 if (Get<Player>(player).Faction == faction)

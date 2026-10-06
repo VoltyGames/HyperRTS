@@ -69,11 +69,16 @@ namespace HyperRTS.Simulation.Tests
                 "outside the map");
 
             var cells = new NativeArray<byte>(400, Allocator.Temp);
+            for (var i = 0; i < cells.Length; i++)
+            {
+                cells[i] = (byte)NavSurface.Land;
+            }
+
             var grid = new NavGrid { Cells = cells, Size = new int2(20, 20), Min = map.Min, CellSize = 1f };
             Assert.IsTrue(PlacementMath.IsValid(in map, in grid, float3.zero, footprint), "free cells");
 
             var blocked = grid.WorldToCell(new float3(0.5f, 0f, 0.5f));
-            cells[grid.Index(blocked)] = 1;
+            cells[grid.Index(blocked)] = (byte)NavSurface.Blocked;
             Assert.IsFalse(PlacementMath.IsValid(in map, in grid, float3.zero, footprint), "blocked cell under footprint");
             Assert.IsTrue(PlacementMath.IsValid(in map, in grid, new float3(-4f, 0f, -4f), footprint), "elsewhere is free");
             cells.Dispose();
