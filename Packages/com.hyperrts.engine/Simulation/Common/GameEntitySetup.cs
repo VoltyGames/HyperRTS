@@ -1,7 +1,11 @@
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Fields;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Stats;
+using HyperRTS.Simulation.Upgrades;
+using HyperRTS.Simulation.Veterancy;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 
@@ -17,6 +21,12 @@ namespace HyperRTS.Simulation.Common
             sink.Add(new Health { Current = spec.MaxHealth, Max = spec.MaxHealth });
             sink.Add<Dead>();
             sink.SetEnabled<Dead>(false);
+            sink.Add<LastAttacker>();
+            sink.Add<BaseStats>();
+            sink.AddBuffer<StatModifier>();
+            sink.AddBuffer<FieldPresence>();
+            sink.Add(new ExperienceValue { Value = spec.ExperienceValue });
+            sink.Add(new AppliedUpgrades { Faction = spec.Owner });
             sink.Add(new VisionRange { Value = spec.VisionRange });
             sink.Add(new Producible { BuildTime = spec.BuildTime, Population = spec.Population });
             sink.AddBuffer<ResourceCost>();

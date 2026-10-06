@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
@@ -9,7 +10,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Fog
 {
-    /// <summary>Mirrors <see cref="FogHidden"/> onto rendering; structural changes only on state flips.</summary>
+    /// <summary>
+    /// Mirrors <see cref="FogHidden"/> and passengers being <see cref="Inside"/> onto rendering; structural changes
+    /// only on state flips.
+    /// </summary>
     // The root's own DisableRendering records what was applied, so each job visits only roots that flipped.
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -33,6 +37,7 @@ namespace HyperRTS.Presentation.Fog
             };
 
             state.Dependency = new HideJob { Toggler = toggler }.ScheduleParallel(state.Dependency);
+            state.Dependency = new HidePassengerJob { Toggler = toggler }.ScheduleParallel(state.Dependency);
             state.Dependency = new RevealJob { Toggler = toggler }.ScheduleParallel(state.Dependency);
         }
 
@@ -71,8 +76,18 @@ namespace HyperRTS.Presentation.Fog
         }
 
         [BurstCompile]
+        [WithAll(typeof(EntityInfo), typeof(Inside))]
+        [WithNone(typeof(DisableRendering), typeof(FogHidden))]
+        private partial struct HidePassengerJob : IJobEntity
+        {
+            public RenderToggler Toggler;
+
+            private void Execute([ChunkIndexInQuery] int sortKey, Entity entity) => Toggler.Set(sortKey, entity, true);
+        }
+
+        [BurstCompile]
         [WithAll(typeof(EntityInfo), typeof(DisableRendering))]
-        [WithNone(typeof(FogHidden))]
+        [WithNone(typeof(FogHidden), typeof(Inside))]
         private partial struct RevealJob : IJobEntity
         {
             public RenderToggler Toggler;

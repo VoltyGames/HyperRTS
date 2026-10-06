@@ -69,7 +69,7 @@ namespace HyperRTS.Input.Commands
             var commands = _actions.Commands;
             if (commands.AttackMove.WasPressedThisFrame())
             {
-                pending.Type = CommandType.AttackMove;
+                pending = new PendingCommand { Type = CommandType.AttackMove };
             }
 
             if (commands.Stop.WasPressedThisFrame())
@@ -102,7 +102,11 @@ namespace HyperRTS.Input.Commands
 
             var queue = commands.Queue.IsPressed();
             var type = rightClick ? CommandType.Smart : pending.Type;
-            Issue(player, new PlayerCommand { Type = type, Target = target, Position = ground, Queue = queue });
+            var argument = rightClick ? 0 : pending.Argument;
+            Issue(player, new PlayerCommand
+            {
+                Type = type, Target = target, Position = ground, Queue = queue, Argument = argument,
+            });
 
             // Shift keeps the targeting mode for the next waypoint.
             if (targetClick && !queue)

@@ -3,6 +3,8 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Power;
+using HyperRTS.Simulation.Upgrades;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -13,7 +15,7 @@ namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>
     /// Trains the head of each completed producer's queue while the owner has population room, then spawns it at the
-    /// spawn offset and sends it to the rally point.
+    /// spawn offset and sends it to the rally point. A finished upgrade is recorded on the owner instead.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
@@ -25,6 +27,10 @@ namespace HyperRTS.Simulation.Buildings
         private ComponentLookup<Producible> _producibleLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<ActiveOrder> _orderLookup;
+        private ComponentLookup<Upgrade> _upgradeLookup;
+        private ComponentLookup<Unpowered> _unpoweredLookup;
+        private ComponentLookup<EntityInfo> _infoLookup;
+        private BufferLookup<ResearchedUpgrade> _researchedLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -34,6 +40,10 @@ namespace HyperRTS.Simulation.Buildings
             _producibleLookup = state.GetComponentLookup<Producible>(true);
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _orderLookup = state.GetComponentLookup<ActiveOrder>(true);
+            _upgradeLookup = state.GetComponentLookup<Upgrade>(true);
+            _unpoweredLookup = state.GetComponentLookup<Unpowered>(true);
+            _infoLookup = state.GetComponentLookup<EntityInfo>(true);
+            _researchedLookup = state.GetBufferLookup<ResearchedUpgrade>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -44,11 +54,18 @@ namespace HyperRTS.Simulation.Buildings
             _producibleLookup.Update(ref state);
             _transformLookup.Update(ref state);
             _orderLookup.Update(ref state);
+            _upgradeLookup.Update(ref state);
+            _unpoweredLookup.Update(ref state);
+            _infoLookup.Update(ref state);
+            _researchedLookup.Update(ref state);
 
             var allocator = state.WorldUpdateAllocator;
             new ProduceJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
+                LowPowerRate = SystemAPI.TryGetSingleton<MatchRules>(out var rules)
+                    ? rules.LowPowerProductionRate
+                    : MatchRules.Default.LowPowerProductionRate,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 PlayerByFaction = PlayerLookup.ByFaction(_players, allocator),
@@ -57,6 +74,10 @@ namespace HyperRTS.Simulation.Buildings
                 ProducibleLookup = _producibleLookup,
                 TransformLookup = _transformLookup,
                 OrderLookup = _orderLookup,
+                UpgradeLookup = _upgradeLookup,
+                UnpoweredLookup = _unpoweredLookup,
+                InfoLookup = _infoLookup,
+                ResearchedLookup = _researchedLookup,
             }.Schedule();
         }
 
@@ -67,6 +88,7 @@ namespace HyperRTS.Simulation.Buildings
         private partial struct ProduceJob : IJobEntity
         {
             public float DeltaTime;
+            public float LowPowerRate;
             public EntityCommandBuffer Ecb;
             [ReadOnly] public NativeArray<Entity> PlayerByFaction;
             public NativeArray<int> SpawnedPopulation;
@@ -74,8 +96,12 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<ActiveOrder> OrderLookup;
+            [ReadOnly] public ComponentLookup<Upgrade> UpgradeLookup;
+            [ReadOnly] public ComponentLookup<Unpowered> UnpoweredLookup;
+            [ReadOnly] public ComponentLookup<EntityInfo> InfoLookup;
+            public BufferLookup<ResearchedUpgrade> ResearchedLookup;
 
-            private void Execute(ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
+            private void Execute(Entity entity, ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
                 in LocalTransform transform, in Faction faction, in RallyPoint rally, EnabledRefRO<RallyPoint> hasRally)
             {
                 if (queue.IsEmpty)
@@ -91,17 +117,34 @@ namespace HyperRTS.Simulation.Buildings
                     return;
                 }
 
-                producer.Elapsed += DeltaTime;
+                var lowPower = UnpoweredLookup.HasComponent(entity) && UnpoweredLookup.IsComponentEnabled(entity);
+                producer.Elapsed += DeltaTime * producer.Speed * (lowPower ? LowPowerRate : 1f);
                 if (producer.Elapsed < producible.BuildTime)
                 {
                     return;
                 }
 
-                Spawn(prefab, transform.TransformPoint(producer.SpawnOffset), transform, faction,
-                    hasRally.ValueRO, rally.Position);
-                SpawnedPopulation[faction.Value] += producible.Population;
+                if (UpgradeLookup.HasComponent(prefab))
+                {
+                    Research(faction.Value, prefab);
+                }
+                else
+                {
+                    Spawn(prefab, transform.TransformPoint(producer.SpawnOffset), transform, faction,
+                        hasRally.ValueRO, rally.Position);
+                    SpawnedPopulation[faction.Value] += producible.Population;
+                }
+
                 queue.RemoveAt(0);
                 producer.Elapsed = 0f;
+            }
+
+            private void Research(byte faction, Entity upgrade)
+            {
+                if (ResearchedLookup.TryGetBuffer(PlayerByFaction[faction], out var researched))
+                {
+                    researched.Add(new ResearchedUpgrade { Upgrade = upgrade, TypeId = InfoLookup[upgrade].TypeId });
+                }
             }
 
             private bool HasRoomFor(byte faction, int population)

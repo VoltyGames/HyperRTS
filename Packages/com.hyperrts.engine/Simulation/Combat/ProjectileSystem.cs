@@ -1,6 +1,5 @@
 using HyperRTS.Core;
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -8,8 +7,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// Flies projectiles toward their target (or its last known position once it dies) and applies armor-scaled
-    /// damage on arrival, then destroys the projectile.
+    /// Flies projectiles toward their target (or its last known position once it dies), queues their
+    /// <see cref="DamageEvent"/> on arrival and destroys them.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -20,15 +19,14 @@ namespace HyperRTS.Simulation.Combat
         public const float FlightHeight = 1f;
 
         private TargetLookup _targets;
-        private ComponentLookup<Health> _health;
-        private BufferLookup<ArmorModifier> _armor;
+        private DamageWriter _damage;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
-            _health = state.GetComponentLookup<Health>();
-            _armor = state.GetBufferLookup<ArmorModifier>(true);
+            _damage = new DamageWriter(ref state);
+            state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -36,8 +34,7 @@ namespace HyperRTS.Simulation.Combat
         public void OnUpdate(ref SystemState state)
         {
             _targets.Update(ref state);
-            _health.Update(ref state);
-            _armor.Update(ref state);
+            _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
 
             new HomingJob { Targets = _targets }.ScheduleParallel();
             new FlightJob
@@ -45,8 +42,7 @@ namespace HyperRTS.Simulation.Combat
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
-                Health = _health,
-                Armor = _armor,
+                Damage = _damage,
             }.Schedule();
         }
 
@@ -64,14 +60,13 @@ namespace HyperRTS.Simulation.Combat
             }
         }
 
-        // Single-threaded: several projectiles may land on the same target in one frame.
+        // Single-threaded: every impact appends to the one damage queue.
         [BurstCompile]
         private partial struct FlightJob : IJobEntity
         {
             public float DeltaTime;
             public EntityCommandBuffer Ecb;
-            public ComponentLookup<Health> Health;
-            [ReadOnly] public BufferLookup<ArmorModifier> Armor;
+            public DamageWriter Damage;
 
             private void Execute(Entity entity, ref LocalTransform transform, in Projectile projectile)
             {
@@ -86,7 +81,10 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                CombatMath.ApplyDamage(ref Health, Armor, projectile.Target, projectile.Damage, projectile.DamageType);
+                var hit = projectile.Hit;
+                hit.Position = projectile.TargetPosition;
+                hit.Origin = transform.Position;
+                Damage.Add(hit);
                 Ecb.DestroyEntity(entity);
             }
         }

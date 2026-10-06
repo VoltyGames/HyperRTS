@@ -9,7 +9,8 @@ namespace HyperRTS.Simulation.Combat
         public Entity Target;
         public float3 TargetPosition;
         public float Speed;
-        public float Damage;
-        public UnityObjectRef<DamageType> DamageType;
+
+        /// <summary>Queued on impact with the impact point and direction filled in.</summary>
+        public DamageEvent Hit;
     }
 }

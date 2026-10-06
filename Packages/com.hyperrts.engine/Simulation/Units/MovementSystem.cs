@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Spatial;
+using HyperRTS.Simulation.Transport;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -47,6 +48,7 @@ namespace HyperRTS.Simulation.Units
         }
 
         [BurstCompile]
+        [WithNone(typeof(Inside))]
         [WithPresent(typeof(MoveDestination))]
         private partial struct MoveJob : IJobEntity
         {

@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Transport;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -10,7 +11,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Spatial
 {
-    /// <summary>Rebuilds the <see cref="SpatialIndex"/> from every living entity with health and an owner.</summary>
+    /// <summary>
+    /// Rebuilds the <see cref="SpatialIndex"/> from every living entity with health and an owner, except passengers
+    /// inside a container.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup), OrderFirst = true)]
     public partial struct SpatialIndexSystem : ISystem
@@ -24,7 +28,7 @@ namespace HyperRTS.Simulation.Spatial
 
         public void OnCreate(ref SystemState state)
         {
-            _indexed = SystemAPI.QueryBuilder().WithAll<LocalTransform, Faction, Health>().WithNone<Dead>().Build();
+            _indexed = SystemAPI.QueryBuilder().WithAll<LocalTransform, Faction, Health>().WithNone<Dead, Inside>().Build();
             _agentLookup = state.GetComponentLookup<NavAgent>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _buildingLookup = state.GetComponentLookup<BuildingTag>(true);

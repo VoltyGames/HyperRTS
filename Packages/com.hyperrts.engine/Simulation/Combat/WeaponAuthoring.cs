@@ -25,6 +25,17 @@ namespace HyperRTS.Simulation.Combat
         [Min(0.05f)]
         public float cooldown = 1f;
 
+        [Tooltip("Radius around the impact that also takes damage; 0 hits only the target.")]
+        [Min(0f)]
+        public float splashRadius;
+
+        [Tooltip("Fraction of the damage dealt at the splash edge (1 = no falloff).")]
+        [Range(0f, 1f)]
+        public float splashEdgeDamage = 0.5f;
+
+        [Tooltip("Splash also hurts the shooter's own and allied units.")]
+        public bool friendlyFire;
+
         [Tooltip("Optional damage category that armor can scale.")]
         public DamageType damageType;
 
@@ -53,6 +64,9 @@ namespace HyperRTS.Simulation.Combat
                     Damage = authoring.damage,
                     Cooldown = authoring.cooldown,
                     DamageType = authoring.damageType,
+                    SplashRadius = authoring.splashRadius,
+                    SplashEdgeFactor = authoring.splashEdgeDamage,
+                    FriendlyFire = authoring.friendlyFire,
                     ProjectilePrefab = authoring.projectilePrefab != null
                         ? GetEntity(authoring.projectilePrefab, TransformUsageFlags.Dynamic)
                         : Entity.Null,
@@ -74,6 +88,9 @@ namespace HyperRTS.Simulation.Combat
         public float Cooldown;
         public float CooldownRemaining;
         public UnityObjectRef<DamageType> DamageType;
+        public float SplashRadius;
+        public float SplashEdgeFactor;
+        public bool FriendlyFire;
         public Entity ProjectilePrefab;
         public float ProjectileSpeed;
         public float AcquireRange;

@@ -12,6 +12,10 @@ namespace HyperRTS.Simulation.Orders
         Attack = 3,
         Gather = 4,
         Build = 5,
+        Repair = 6,
+        Capture = 7,
+        Enter = 8,
+        UseAbility = 9,
         Custom = 128,
     }
 
@@ -21,5 +25,8 @@ namespace HyperRTS.Simulation.Orders
         public OrderType Type;
         public float3 Position;
         public Entity Target;
+
+        /// <summary>Order-specific value, e.g. the ability id of <see cref="OrderType.UseAbility"/>.</summary>
+        public int Argument;
     }
 }

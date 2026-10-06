@@ -3,12 +3,13 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
-    /// <summary>Production options are prefabs and units spawn clear of the building.</summary>
+    /// <summary>Production and research options are prefabs and units spawn clear of the building.</summary>
     public sealed class ProducerRule : AuthoringRule<ProducerAuthoring>
     {
         protected override void Check(ProducerAuthoring producer, ValidationIssues issues)
         {
             CheckPrefabOptions(producer, producer.productionOptions, "Production option", issues);
+            CheckPrefabOptions(producer, producer.researchOptions, "Research option", issues);
 
             if (producer.TryGetComponent(out BuildingAuthoring building) &&
                 Mathf.Abs(producer.spawnOffset.x) < building.footprint.x * 0.5f &&

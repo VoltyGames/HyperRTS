@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
@@ -25,6 +26,7 @@ namespace HyperRTS.Simulation.Selection
         private ComponentLookup<BuildingTag> _buildingLookup;
         private ComponentLookup<ControlGroup> _groupLookup;
         private ComponentLookup<FogHidden> _hiddenLookup;
+        private ComponentLookup<Inside> _insideLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -35,6 +37,7 @@ namespace HyperRTS.Simulation.Selection
             _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
             _groupLookup = state.GetComponentLookup<ControlGroup>(true);
             _hiddenLookup = state.GetComponentLookup<FogHidden>(true);
+            _insideLookup = state.GetComponentLookup<Inside>(true);
             state.RequireForUpdate<SelectionInput>();
         }
 
@@ -75,6 +78,7 @@ namespace HyperRTS.Simulation.Selection
         private SelectionHitTest CreateHitTest(ref SystemState state, in SelectionInput input)
         {
             _hiddenLookup.Update(ref state);
+            _insideLookup.Update(ref state);
             _infoLookup.Update(ref state);
             _factionLookup.Update(ref state);
             _unitLookup.Update(ref state);
@@ -88,6 +92,7 @@ namespace HyperRTS.Simulation.Selection
                 LocalFaction = LocalFaction(ref state),
                 PreferredRank = -1,
                 Hidden = _hiddenLookup,
+                Inside = _insideLookup,
                 Info = _infoLookup,
                 Factions = _factionLookup,
                 Units = _unitLookup,

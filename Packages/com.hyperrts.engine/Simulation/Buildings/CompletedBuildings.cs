@@ -41,7 +41,8 @@ namespace HyperRTS.Simulation.Buildings
             return true;
         }
 
-        private bool Owns(byte faction, int typeId)
+        /// <summary>True when <paramref name="faction"/> owns a completed building of type <paramref name="typeId"/>.</summary>
+        public bool Owns(byte faction, int typeId)
         {
             for (var i = 0; i < _infos.Length; i++)
             {

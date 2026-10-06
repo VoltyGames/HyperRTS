@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using UnityEngine;
@@ -7,17 +8,20 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>Top bar: the local player's stockpile per resource type and population used / cap.</summary>
+    /// <summary>Top bar: the local player's stockpile per resource type, population used / cap and power.</summary>
     public sealed class ResourceBar
     {
         private static readonly Color FullPopulation = new(1f, 0.4f, 0.35f);
 
         private readonly VisualElement _resources;
         private readonly Label _population;
+        private readonly VisualElement _powerEntry;
+        private readonly Label _power;
         private readonly List<Label> _amounts = new();
         private readonly List<int> _shown = new();
         private int _typesHash = -1;
         private Population _shownPopulation = new() { Used = -1 };
+        private PowerGrid _shownPower = new() { Produced = -1f };
 
         public ResourceBar()
         {
@@ -28,6 +32,10 @@ namespace HyperRTS.Presentation.HUD
             var population = HUDElements.Box("hud-resource", Root);
             HUDElements.Text("POP", "hud-resource__name", population);
             _population = HUDElements.Text("", "hud-resource__amount", population);
+
+            _powerEntry = HUDElements.Box("hud-resource", Root);
+            HUDElements.Text("PWR", "hud-resource__name", _powerEntry);
+            _power = HUDElements.Text("", "hud-resource__amount", _powerEntry);
         }
 
         public VisualElement Root { get; }
@@ -57,6 +65,7 @@ namespace HyperRTS.Presentation.HUD
             }
 
             RefreshPopulation(context);
+            RefreshPower(context);
         }
 
         private void Rebuild(DynamicBuffer<ResourceStock> stock)
@@ -83,6 +92,24 @@ namespace HyperRTS.Presentation.HUD
                 _amounts.Add(amount);
                 _shown.Add(int.MinValue);
             }
+        }
+
+        /// <summary>Shown once the player has any power plant or consumer; red while consumption exceeds supply.</summary>
+        private void RefreshPower(HUDContext context)
+        {
+            var player = context.View.LocalPlayer;
+            var grid = context.EntityManager.HasComponent<PowerGrid>(player)
+                ? context.EntityManager.GetComponentData<PowerGrid>(player)
+                : default;
+            if (grid.Produced == _shownPower.Produced && grid.Consumed == _shownPower.Consumed)
+            {
+                return;
+            }
+
+            _shownPower = grid;
+            _powerEntry.SetVisible(grid.Produced > 0f || grid.Consumed > 0f);
+            _power.text = $"{grid.Consumed:0} / {grid.Produced:0}";
+            _power.style.color = grid.IsLow ? new StyleColor(FullPopulation) : new StyleColor(StyleKeyword.Null);
         }
 
         private void RefreshPopulation(HUDContext context)

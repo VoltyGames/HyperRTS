@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Upgrades;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Buildings
 {
-    /// <summary>Lets a building train the listed units through a queue (barracks, factory).</summary>
+    /// <summary>Lets a building train the listed units and research upgrades through one queue (barracks, lab).</summary>
     [AddComponentMenu(HyperRTSMenu.Buildings + "Producer")]
     [Icon(HyperRTSIcons.Buildings)]
     [HelpURL(HyperRTSDocs.Modules)]
@@ -18,6 +19,9 @@ namespace HyperRTS.Simulation.Buildings
     {
         [Tooltip("Unit prefabs this building can train.")]
         public List<UnitAuthoring> productionOptions = new();
+
+        [Tooltip("Upgrade prefabs this building can research, each once per player.")]
+        public List<UpgradeAuthoring> researchOptions = new();
 
         [Tooltip("Local offset where finished units appear.")]
         public Vector3 spawnOffset = new(0f, 0f, -4f);
@@ -39,6 +43,14 @@ namespace HyperRTS.Simulation.Buildings
                         options.Add(new ProductionOption { Prefab = GetEntity(option, TransformUsageFlags.Dynamic) });
                     }
                 }
+
+                foreach (var option in authoring.researchOptions)
+                {
+                    if (option != null)
+                    {
+                        options.Add(new ProductionOption { Prefab = GetEntity(option, TransformUsageFlags.None) });
+                    }
+                }
             }
         }
     }
@@ -49,7 +61,10 @@ namespace HyperRTS.Simulation.Buildings
         public float3 SpawnOffset;
         public int QueueLimit;
 
-        /// <summary>Seconds spent on the head of the queue.</summary>
+        /// <summary>Production speed multiplier (1 = build times as listed); stats and power change it.</summary>
+        public float Speed;
+
+        /// <summary>Seconds of work done on the head of the queue.</summary>
         public float Elapsed;
     }
 }

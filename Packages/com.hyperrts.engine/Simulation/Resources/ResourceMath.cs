@@ -68,5 +68,14 @@ namespace HyperRTS.Simulation.Resources
                 Add(stock, item.Type, item.Amount);
             }
         }
+
+        /// <summary>Refunds <paramref name="share"/> of the cost, rounded down per resource.</summary>
+        public static void Refund(DynamicBuffer<ResourceStock> stock, DynamicBuffer<ResourceCost> cost, float share)
+        {
+            foreach (var item in cost)
+            {
+                Add(stock, item.Type, (int)(item.Amount * share));
+            }
+        }
     }
 }

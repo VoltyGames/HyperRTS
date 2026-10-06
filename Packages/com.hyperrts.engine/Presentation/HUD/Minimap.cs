@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
@@ -88,7 +89,8 @@ namespace HyperRTS.Presentation.HUD
             ComponentType.ReadOnly<Faction>(),
             ComponentType.ReadOnly<LocalToWorld>(),
             obstacle,
-            ComponentType.Exclude<FogHidden>()));
+            ComponentType.Exclude<FogHidden>(),
+            ComponentType.Exclude<Inside>()));
 
         private void GatherNodes(EntityManager entityManager)
         {

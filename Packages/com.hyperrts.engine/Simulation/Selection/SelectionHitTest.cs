@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
@@ -23,13 +24,17 @@ namespace HyperRTS.Simulation.Selection
         public int PreferredRank;
 
         public ComponentLookup<FogHidden> Hidden;
+        public ComponentLookup<Inside> Inside;
         public ComponentLookup<EntityInfo> Info;
         public ComponentLookup<Faction> Factions;
         public ComponentLookup<UnitTag> Units;
         public ComponentLookup<BuildingTag> Buildings;
         public ComponentLookup<ControlGroup> Groups;
 
-        public bool IsHit(Entity entity, float3 position) => !Hidden.HasComponent(entity) && MatchesGesture(entity, position);
+        public bool IsHit(Entity entity, float3 position) =>
+            !Hidden.HasComponent(entity) && !IsInside(entity) && MatchesGesture(entity, position);
+
+        private bool IsInside(Entity entity) => Inside.HasComponent(entity) && Inside.IsComponentEnabled(entity);
 
         private bool MatchesGesture(Entity entity, float3 position)
         {

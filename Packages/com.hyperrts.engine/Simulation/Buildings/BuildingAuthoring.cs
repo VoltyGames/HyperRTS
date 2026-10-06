@@ -21,6 +21,9 @@ namespace HyperRTS.Simulation.Buildings
         [Min(0)]
         public int populationProvided;
 
+        [Tooltip("Power generated once complete; negative draws power and stops working while the owner is low.")]
+        public float power;
+
         [Tooltip("Start as a construction site instead of finished (for scene-placed buildings).")]
         public bool startsUnderConstruction;
 
@@ -35,7 +38,7 @@ namespace HyperRTS.Simulation.Buildings
 
                 var sink = new BakerSink(this, entity);
                 BuildingSetup.Add(ref sink, authoring.footprint, authoring.populationProvided,
-                    !authoring.startsUnderConstruction);
+                    !authoring.startsUnderConstruction, authoring.power);
             }
         }
     }

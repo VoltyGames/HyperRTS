@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
@@ -55,7 +56,7 @@ namespace HyperRTS.Simulation.Combat
         }
 
         [BurstCompile]
-        [WithNone(typeof(ConstructionProgress))]
+        [WithNone(typeof(ConstructionProgress), typeof(Unpowered))]
         [WithPresent(typeof(AttackTarget))]
         private partial struct AcquireJob : IJobEntity
         {

@@ -29,6 +29,27 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Cancel queue slot <see cref="PlayerCommand.Argument"/> (-1 = last) at a producer.</summary>
         CancelProduction = 11,
         SetRallyPoint = 12,
+
+        /// <summary>Sell the commanded or selected buildings for a refund.</summary>
+        Sell = 13,
+
+        /// <summary>Builders restore an allied building's health.</summary>
+        Repair = 14,
+
+        /// <summary>Take over <see cref="PlayerCommand.Target"/>, a capturable building.</summary>
+        Capture = 15,
+
+        /// <summary>Board or garrison <see cref="PlayerCommand.Target"/>.</summary>
+        Enter = 16,
+
+        /// <summary>Let passengers out; <see cref="PlayerCommand.Argument"/> is the slot, -1 for all.</summary>
+        Unload = 17,
+
+        /// <summary>Unit ability <see cref="PlayerCommand.Argument"/> (its id) at Target or Position.</summary>
+        UseAbility = 18,
+
+        /// <summary>Player-level ability (support power) <see cref="PlayerCommand.Argument"/> at Target or Position.</summary>
+        UsePower = 19,
         Custom = 128,
     }
 

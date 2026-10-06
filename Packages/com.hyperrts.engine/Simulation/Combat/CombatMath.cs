@@ -32,17 +32,24 @@ namespace HyperRTS.Simulation.Combat
             return 1f;
         }
 
-        /// <summary>Subtracts armor-scaled damage; ignores targets that are already gone or dead.</summary>
-        public static void ApplyDamage(ref ComponentLookup<Health> health, in BufferLookup<ArmorModifier> armor,
-            Entity target, float damage, UnityObjectRef<DamageType> damageType)
-        {
-            if (!health.TryGetComponent(target, out var current) || current.Current <= 0f)
-            {
-                return;
-            }
+        /// <summary>Linear falloff from full damage at the centre to <paramref name="edgeFactor"/> at the radius.</summary>
+        public static float SplashFactor(float gap, float radius, float edgeFactor) =>
+            math.lerp(1f, edgeFactor, math.saturate(gap / math.max(radius, 1e-4f)));
 
-            current.Current = math.max(0f, current.Current - damage * ArmorMultiplier(armor, target, damageType));
-            health[target] = current;
-        }
+        /// <summary>The hit a weapon deals: full damage to the target plus its splash, if any.</summary>
+        public static DamageEvent Hit(in Weapon weapon, Entity source, byte faction, float3 origin, Entity target,
+            float3 position) => new()
+        {
+            Target = target,
+            Position = position,
+            Origin = origin,
+            Source = source,
+            SourceFaction = faction,
+            Amount = weapon.Damage,
+            Type = weapon.DamageType,
+            Radius = weapon.SplashRadius,
+            EdgeFactor = weapon.SplashEdgeFactor,
+            FriendlyFire = weapon.FriendlyFire,
+        };
     }
 }

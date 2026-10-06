@@ -82,7 +82,9 @@ namespace HyperRTS.Simulation.Orders
             }
         }
 
-        private static bool IsUnitCommand(CommandType type) => type is >= CommandType.Smart and <= CommandType.SetStance;
+        private static bool IsUnitCommand(CommandType type) =>
+            type is >= CommandType.Smart and <= CommandType.SetStance or CommandType.Repair or CommandType.Capture
+                or CommandType.Enter;
 
         private bool HasUnitCommand(ref SystemState state)
         {

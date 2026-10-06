@@ -1,14 +1,19 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Transport;
 using Unity.Entities;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>Actions for the owned part of the selection: build, train and combat stance.</summary>
+    /// <summary>
+    /// Actions for the owned part of the selection: build, train and research, abilities and support powers, stance,
+    /// unload and sell.
+    /// </summary>
     public sealed class CommandCard
     {
         private const string ActiveClass = "hud-command--active";
@@ -17,6 +22,10 @@ namespace HyperRTS.Presentation.HUD
         private readonly List<(Button Button, Entity Prefab)> _costed = new();
         private readonly List<(Button Button, Stance Stance)> _stances = new();
         private readonly List<Entity> _armed = new();
+        private readonly List<Entity> _casters = new();
+        private readonly AbilityButtons _abilities = new();
+        private bool _canSell;
+        private bool _canUnload;
         private int _hash = -1;
 
         public CommandCard()
@@ -36,6 +45,7 @@ namespace HyperRTS.Presentation.HUD
             }
 
             RefreshAvailability(context);
+            _abilities.Refresh(context);
 
             var common = CommonStance(context.EntityManager);
             foreach (var (button, stance) in _stances)
@@ -54,7 +64,8 @@ namespace HyperRTS.Presentation.HUD
             var completed = context.SnapshotCompleted();
             foreach (var (button, prefab) in _costed)
             {
-                button.SetEnabled(context.CanAfford(prefab) && context.PrerequisitesMet(prefab, completed));
+                button.SetEnabled(context.CanAfford(prefab) && context.PrerequisitesMet(prefab, completed) &&
+                                  context.CanQueueResearch(prefab));
             }
         }
 
@@ -64,13 +75,19 @@ namespace HyperRTS.Presentation.HUD
             _costed.Clear();
             _stances.Clear();
             _armed.Clear();
+            _casters.Clear();
+            _canSell = false;
+            _canUnload = false;
 
             var builds = new List<Entity>();
             var products = new List<Entity>();
             CollectOptions(context, builds, products);
             AddPrefabButtons(context, builds, prefab => context.StartPlacement(prefab));
             AddPrefabButtons(context, products, prefab => context.Issue(new PlayerCommand { Type = CommandType.Produce, Prefab = prefab }));
+            _abilities.Build(context, Root, _casters);
             AddStanceButtons(context);
+            AddActionButton(context, _canUnload, "Unload", CommandType.Unload, -1);
+            AddActionButton(context, _canSell, "Sell", CommandType.Sell, 0);
             Root.SetShown(Root.childCount > 0);
         }
 
@@ -104,7 +121,27 @@ namespace HyperRTS.Presentation.HUD
                 {
                     _armed.Add(entity);
                 }
+
+                if (entityManager.HasBuffer<Ability>(entity))
+                {
+                    _casters.Add(entity);
+                }
+
+                _canSell |= entityManager.HasComponent<BuildingTag>(entity);
+                _canUnload |= entityManager.HasComponent<Container>(entity);
             }
+        }
+
+        private void AddActionButton(HUDContext context, bool shown, string caption, CommandType type, int argument)
+        {
+            if (!shown)
+            {
+                return;
+            }
+
+            var button = new CommandButton(caption, () => context.Issue(new PlayerCommand { Type = type, Argument = argument }));
+            button.AddToClassList("hud-command--stance");
+            Root.Add(button);
         }
 
         private void AddPrefabButtons(HUDContext context, List<Entity> prefabs, Action<Entity> onClick)

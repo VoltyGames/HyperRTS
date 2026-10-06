@@ -6,6 +6,7 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Upgrades;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -27,6 +28,7 @@ namespace HyperRTS.Simulation.AI
             public byte Faction;
             public Population Room;
             public DynamicBuffer<ResourceStock> Stock;
+            public DynamicBuffer<ResearchedUpgrade> Researched;
             public CompletedBuildings Completed;
         }
 
@@ -159,6 +161,7 @@ namespace HyperRTS.Simulation.AI
                 Faction = faction,
                 Room = SystemAPI.GetComponent<Population>(player),
                 Stock = SystemAPI.GetBuffer<ResourceStock>(player),
+                Researched = SystemAPI.GetBuffer<ResearchedUpgrade>(player),
                 Completed = snapshot.Completed,
             };
 
@@ -179,7 +182,7 @@ namespace HyperRTS.Simulation.AI
             }
         }
 
-        /// <summary>Next option after the last one picked that fits population, stockpile and tech.</summary>
+        /// <summary>Next option after the last one picked that fits population, stockpile and tech, skipping done research.</summary>
         private Entity PickOption(ref SystemState state, ref AIPlayer ai, DynamicBuffer<ProductionOption> options,
             in Budget budget)
         {
@@ -187,7 +190,8 @@ namespace HyperRTS.Simulation.AI
             {
                 var index = (math.max(ai.NextOption, 0) + k) % options.Length;
                 var prefab = options[index].Prefab;
-                if (budget.Room.HasRoomFor(SystemAPI.GetComponent<Producible>(prefab).Population) &&
+                if (!(SystemAPI.HasComponent<Upgrade>(prefab) && UpgradeRules.IsResearched(budget.Researched, prefab)) &&
+                    budget.Room.HasRoomFor(SystemAPI.GetComponent<Producible>(prefab).Population) &&
                     ResourceMath.CanAfford(budget.Stock, SystemAPI.GetBuffer<ResourceCost>(prefab)) &&
                     budget.Completed.MeetsPrerequisites(SystemAPI.GetBuffer<Prerequisite>(prefab), budget.Faction))
                 {

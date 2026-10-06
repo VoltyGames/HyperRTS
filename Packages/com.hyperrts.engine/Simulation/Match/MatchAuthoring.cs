@@ -31,6 +31,15 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("Hide what the local player's team can't see.")]
         public bool fogOfWar = true;
 
+        [Header("Rules")]
+        [Tooltip("Production speed of power-consuming producers while their owner's power is low.")]
+        [Range(0f, 1f)]
+        public float lowPowerProductionRate = 0.5f;
+
+        [Tooltip("Share of a finished building's cost refunded when sold; unfinished buildings refund in full.")]
+        [Range(0f, 1f)]
+        public float sellRefund = 0.5f;
+
         [Header("Players")]
         [Tooltip("Player slots. Slot 1 is faction 1, the 'Owner' number on units and buildings.")]
         public List<PlayerSetup> players = new()
@@ -65,6 +74,11 @@ namespace HyperRTS.Simulation.Match
                     FogOfWar = authoring.fogOfWar,
                 });
                 AddComponent(entity, new MatchState { Phase = MatchPhase.Playing });
+                AddComponent(entity, new MatchRules
+                {
+                    LowPowerProductionRate = authoring.lowPowerProductionRate,
+                    SellRefund = authoring.sellRefund,
+                });
 
                 var relations = new FactionRelations();
                 relations.Teams.Add(0);

@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Buildings
         public static DynamicBuffer<ProductionOption> Add<TSink>(ref TSink sink, float3 spawnOffset, int queueLimit)
             where TSink : struct, IComponentSink
         {
-            sink.Add(new Producer { SpawnOffset = spawnOffset, QueueLimit = queueLimit });
+            sink.Add(new Producer { SpawnOffset = spawnOffset, QueueLimit = queueLimit, Speed = 1f });
             sink.AddBuffer<ProductionQueueItem>();
             sink.Add<RallyPoint>();
             sink.SetEnabled<RallyPoint>(false);

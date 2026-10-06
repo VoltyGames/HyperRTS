@@ -7,5 +7,8 @@ namespace HyperRTS.Simulation.Interaction
     public struct PendingCommand : IComponentData
     {
         public CommandType Type;
+
+        /// <summary>Passed on as <see cref="PlayerCommand.Argument"/>, e.g. the ability id.</summary>
+        public int Argument;
     }
 }

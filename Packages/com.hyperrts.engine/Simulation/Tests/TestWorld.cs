@@ -91,6 +91,7 @@ namespace HyperRTS.Simulation.Tests
                 FogOfWar = true,
             });
             EntityManager.AddComponentData(match, new MatchState());
+            EntityManager.AddComponentData(match, MatchRules.Default);
 
             var relations = new FactionRelations();
             relations.Teams.Add(0);
@@ -130,10 +131,10 @@ namespace HyperRTS.Simulation.Tests
         }
 
         public Entity SpawnBuilding(byte faction, float3 position, float2 footprint, bool complete = true,
-            float buildTime = 10f, string name = "Building", int populationProvided = 0)
+            float buildTime = 10f, string name = "Building", int populationProvided = 0, float power = 0f)
         {
             var building = CreateGameEntity(faction, position, 500f, name, out var sink, buildTime);
-            BuildingSetup.Add(ref sink, footprint, populationProvided, complete);
+            BuildingSetup.Add(ref sink, footprint, populationProvided, complete, power);
             return building;
         }
 
@@ -160,6 +161,7 @@ namespace HyperRTS.Simulation.Tests
                 BuildTime = buildTime,
                 Population = 1,
                 CountsForVictory = true,
+                ExperienceValue = 10f,
             });
             return entity;
         }

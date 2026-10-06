@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Upgrades;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -43,9 +45,11 @@ namespace HyperRTS.Simulation.Match
         {
             sink.Add(new Player { Faction = faction, Name = name, Color = color });
             sink.Add(new Population { Cap = populationCap });
+            sink.Add<PowerGrid>();
             sink.Add<Defeated>();
             sink.SetEnabled<Defeated>(false);
             sink.AddBuffer<PlayerCommand>();
+            sink.AddBuffer<ResearchedUpgrade>();
             return sink.AddBuffer<ResourceStock>();
         }
     }

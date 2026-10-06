@@ -1,0 +1,49 @@
+using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Units;
+using Unity.Entities;
+using UnityEngine;
+
+namespace HyperRTS.Simulation.Transport
+{
+    /// <summary>Lets a unit board transports and garrison buildings.</summary>
+    [AddComponentMenu(HyperRTSMenu.Units + "Passenger")]
+    [Icon(HyperRTSIcons.Units)]
+    [HelpURL(HyperRTSDocs.Modules)]
+    [DisallowMultipleComponent]
+    [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
+    public class PassengerAuthoring : MonoBehaviour
+    {
+        [Tooltip("Space taken in a container (e.g. 1 for infantry, 3 for a light vehicle).")]
+        [Min(1)]
+        public int size = 1;
+
+        public class Baker : Baker<PassengerAuthoring>
+        {
+            public override void Bake(PassengerAuthoring authoring)
+            {
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
+                TransportSetup.AddPassenger(ref sink, authoring.size);
+            }
+        }
+    }
+
+    /// <summary>A unit that can enter containers.</summary>
+    public struct Passenger : IComponentData
+    {
+        public int Size;
+    }
+
+    /// <summary>
+    /// Enabled while the passenger is inside <see cref="Container"/>: hidden, untargetable, carried along, and firing
+    /// out only if the container allows it.
+    /// </summary>
+    public struct Inside : IComponentData, IEnableableComponent
+    {
+        public Entity Container;
+
+        /// <summary>Stance restored on exit; inside, passengers hold position or stay passive.</summary>
+        public Stance Stance;
+    }
+}

@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Upgrades;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
@@ -27,6 +28,13 @@ namespace HyperRTS.Presentation.HUD
 
         private readonly LiveQuery _pointer = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<PointerState>()));
+
+        private readonly LiveQuery _pending = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<PendingCommand>()));
+
+        private readonly LiveQuery _queues = new(entityManager => entityManager.CreateEntityQuery(
+            ComponentType.ReadOnly<ProductionQueueItem>(),
+            ComponentType.ReadOnly<Faction>()));
 
         public MatchView View { get; } = new();
 
@@ -75,6 +83,39 @@ namespace HyperRTS.Presentation.HUD
         public bool PrerequisitesMet(Entity prefab, in CompletedBuildings completed) =>
             !EntityManager.HasBuffer<Prerequisite>(prefab)
             || completed.MeetsPrerequisites(EntityManager.GetBuffer<Prerequisite>(prefab, true), View.Local.Faction);
+
+        /// <summary>False for an upgrade the local player has researched or already queued somewhere.</summary>
+        public bool CanQueueResearch(Entity prefab)
+        {
+            if (!EntityManager.HasComponent<Upgrade>(prefab))
+            {
+                return true;
+            }
+
+            if (UpgradeRules.IsResearched(EntityManager.GetBuffer<ResearchedUpgrade>(View.LocalPlayer, true), prefab))
+            {
+                return false;
+            }
+
+            using var producers = _queues.In(EntityManager).ToEntityArray(Allocator.Temp);
+            foreach (var producer in producers)
+            {
+                if (IsOwned(producer) &&
+                    UpgradeRules.IsQueued(EntityManager.GetBuffer<ProductionQueueItem>(producer, true), prefab))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>Arms a targeted command; the input layer issues it on the next world click.</summary>
+        public void ArmCommand(CommandType type, int argument)
+        {
+            var entity = SingletonUtility.Ensure<PendingCommand>(EntityManager, _pending.In(EntityManager));
+            EntityManager.SetComponentData(entity, new PendingCommand { Type = type, Argument = argument });
+        }
 
         public void Issue(PlayerCommand command)
         {

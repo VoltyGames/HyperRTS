@@ -292,6 +292,15 @@
     height: 36px;
 }
 
+.hud-command__cooldown {
+    position: absolute;
+    top: 3px;
+    right: 5px;
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(255, 210, 120);
+}
+
 .hud-command__name {
     font-size: 10px;
     padding: 0;

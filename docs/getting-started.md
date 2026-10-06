@@ -128,14 +128,19 @@ gameplay in a headless assembly, like the engine does.
 - **New behaviour**: add a component with an authoring component and baker, and a Burst `ISystem` in one of the
   phase groups (`OrderSystemGroup`, `MovementSystemGroup`, `CombatSystemGroup`, `ProductionSystemGroup`,
   `LifecycleSystemGroup`). Systems are discovered automatically.
-- **New order** (garrison, repair, capture...): pick a value from `OrderType.Custom` upward, issue it with
+- **New order** (patrol, escort, lay mines...): pick a value from `OrderType.Custom` upward, issue it with
   `OrderWriter.Issue`, and write a system that runs units whose `ActiveOrder` has your type. Disable `ActiveOrder`
   when the order is done and the unit moves on to its next queued order. To move, set and enable `MoveDestination`.
-- **New command** (superweapon, special power): pick a value from `CommandType.Custom` upward, append it to the
+- **New command** (toggle a mode, call reinforcements): pick a value from `CommandType.Custom` upward, append it to the
   player's `PlayerCommand` buffer from your UI, and consume it in `OrderSystemGroup` (commands are cleared at the
   end of that group).
-- **React to deaths** (score, veterancy, bounty): in `LifecycleSystemGroup` after `DeathSystem`, query entities
-  with `Dead` enabled. They are destroyed at the end of the frame.
+- **React to deaths** (score, bounty): in `LifecycleSystemGroup` after `DeathSystem`, query entities with `Dead`
+  enabled; `LastAttacker` says who did it. They are destroyed at the end of the frame.
+- **Deal damage or heal**: append a `DamageEvent` through a `DamageWriter` before `DamageSystem`, so armor, splash and
+  kill credit apply. Negative amounts heal.
+- **Ability and field effects**: give an ability no built-in effects and read `AbilityActivation` after
+  `AbilitySystem`; read an entity's `FieldPresence` for what its area fields mean in your game. Change stats with a
+  `StatModifier` under your own source id.
 - **Spawn from code**: `ecb.Instantiate(prefabEntity)`, then set `LocalTransform` and `Faction`. Prefab entities
   come from authoring references such as a producer's options. Tests and tools can build complete entities without
   baking through `GameEntitySetup` / `UnitSetup` / `BuildingSetup` with an `EntityManagerSink`.
@@ -147,10 +152,18 @@ gameplay in a headless assembly, like the engine does.
 | Dozer / worker | Unit + `Builder` |
 | Supply truck, supply dock | Unit + `Harvester`; `Resource Node`; HQ with `Resource Drop-Off` |
 | Barracks, War Factory | Building + `Producer`, `Prerequisites` |
-| Power plants | Not built in: add a `Power` component per player and gate production in your own system. Until then, use **Population Provided** for supply depots |
-| Infantry vs tank damage | `Damage Type` assets + `Armor` multipliers |
+| Power plants | Building **Power**: positive generates, negative draws; consumers go `Unpowered` while power is low |
+| Infantry vs tank damage, thin rear armor | `Damage Type` assets + `Armor` multipliers and its Directional fields |
+| Artillery, grenades | `Weapon` splash radius and edge damage |
 | Defensive structures | Building + `Weapon` |
-| Upgrades, veterancy, general's powers, garrisons, aircraft | Game-side: new components, orders and commands (see above) |
+| Upgrades | `Upgrade` prefabs in a producer's **Research Options** |
+| Veterancy | `Veterancy` ranks with stat bonuses; kills pay `experienceValue` |
+| Repair and sell | Builders repair damaged buildings (right-click); **Sell** on the command card |
+| Oil derricks, tech buildings | Building + `Capturable`; units with `Capturer` |
+| Garrisons, transports | `Container` on the building or vehicle, `Passenger` on the units |
+| General's powers, unit abilities | `Abilities` on units and buildings; player-level powers are `Ability` buffers on the player entity |
+| Radar jamming, healing zones | `Area Field` with bonuses, heal or damage, and `FieldPresence` for game rules |
+| Aircraft | Game-side for now (see the roadmap) |
 
 ## Next steps
 

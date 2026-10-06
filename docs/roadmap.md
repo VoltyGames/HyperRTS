@@ -25,6 +25,7 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 | 7 | Combat depth & AI | ✅ | Auto-acquire, stances, projectiles, armor, skirmish AI |
 | 8 | Fog of war & vision | ✅ | Per-team visible/explored grid, hidden enemies, fog overlay |
 | 9 | Factions & players | ✅ | Players, teams, relations, population, victory/defeat |
+| 9b | Generals-style mechanics | ✅ | Power, upgrades, veterancy, repair/sell, splash, facing armor, capture, area fields, abilities, transports |
 | 10 | Multiplayer (Netcode) | ⬜ | 2+ clients play one match in sync |
 | 11 | Hardening & tooling | 🟡 | Tests, docs, sample game, scene wizard done; CI and perf budgets remain |
 
@@ -51,7 +52,7 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ Smart right-click: hostile → attack, node → gather, unfinished building → build, ground → move; producers →
   rally point
 - ✅ Stop, hold position (stance), attack-move (A + click)
-- ⬜ Garrison / enter-building order (game-side via `OrderType.Custom`)
+- ✅ Repair, Capture, Enter and Unload orders; Smart right-click picks them from the target (Phase 9b)
 
 ## Phase 3: Pathfinding & steering ✅
 
@@ -78,8 +79,7 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ Construction progresses only while builders work; several builders stack
 - ✅ Production queue with cost on enqueue, cancel with refund, population check, rally points
 - ✅ Data-driven prerequisites (`Prerequisite` + `CompletedBuildings`, also used by the HUD)
-- ⬜ Upgrades/research, building sell/repair, power (see the Generals mapping in
-  [`getting-started.md`](getting-started.md))
+- ✅ Upgrades/research, building sell/repair, power (Phase 9b)
 
 ## Phase 6: Rendering spawned entities ✅
 
@@ -96,7 +96,8 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ Attack-move; stances Aggressive / Defensive / Hold / Passive; leashing
 - ✅ `Dead` marker frame + `SpawnOnDeath` hook before destruction
 - ✅ Skirmish AI: harvesting, production and attack waves, only through `PlayerCommand`s
-- ⬜ Splash damage, kill credit/veterancy, micro AI (kiting, focus fire), AI base building
+- ✅ Splash damage, kill credit and veterancy (Phase 9b)
+- ⬜ Micro AI (kiting, focus fire), AI base building
 
 ## Phase 8: Fog of war & vision ✅
 
@@ -111,6 +112,26 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ Player entities from `MatchAuthoring`: team, colour, local/AI/remote control, starting resources
 - ✅ `FactionRelations` (team-based hostility) used by targeting, commands and fog
 - ✅ Population used/cap; victory/defeat from `VictoryCritical` entities
+
+## Phase 9b: Generals-style mechanics ✅
+
+Generic mechanisms a modern-warfare RTS needs, all data-driven and server-side state only (ready for Phase 10).
+
+- ✅ **Decision:** one damage queue (`DamageEvent` + `DamageSystem`) for weapons, projectiles, abilities and fields,
+  so armor, splash, facing and kill credit apply everywhere
+- ✅ **Decision:** one stat-modifier buffer (`StatModifier`, `(base + add) × (1 + Σpercent)`) shared by upgrades,
+  veterancy and area fields; sources are removable ids
+- ✅ Splash with falloff and optional friendly fire; directional armor (front/side/rear); `LastAttacker` kill credit
+- ✅ Veterancy ranks with stat bonuses, paid by `experienceValue`
+- ✅ Upgrades researched through the production queue, applied to current and future units, swapped on capture
+- ✅ Power per player; consumers go `Unpowered` (weapons hold fire, production slows by `MatchRules`)
+- ✅ Sell (share refund, full for sites) and builder repair
+- ✅ Capturable buildings and capturer units
+- ✅ Area fields: presence per field id, stat bonuses, heal and damage over time, no stacking
+- ✅ Cooldown abilities on units and buildings, player-level support powers, activation events for game code
+- ✅ Garrisons and transports: board, carry, fire out, unload, eject or die with the container
+- ✅ HUD: power readout, research state, ability and power buttons with cooldowns, unload and sell
+- ⬜ Upgrades as prerequisites, ability targeting cursor and range preview, selection panel cargo slots
 
 ## Phase 10: Multiplayer (Netcode for Entities) ⬜
 

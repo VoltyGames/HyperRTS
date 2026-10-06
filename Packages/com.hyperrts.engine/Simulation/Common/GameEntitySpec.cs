@@ -17,5 +17,6 @@ namespace HyperRTS.Simulation.Common
         public int Population;
         public bool CountsForVictory;
         public Entity DeathPrefab;
+        public float ExperienceValue;
     }
 }

@@ -32,6 +32,10 @@ namespace HyperRTS.Simulation.Common
         [Tooltip("Optional prefab spawned where this dies (wreck, debris).")]
         public GameObject deathSpawn;
 
+        [Tooltip("Experience a veteran-capable killer earns for destroying this.")]
+        [Min(0f)]
+        public float experienceValue = 10f;
+
         [Tooltip("The owner is defeated once no entity with this flag remains.")]
         public bool countsForVictory = true;
 
@@ -74,6 +78,7 @@ namespace HyperRTS.Simulation.Common
                 BuildTime = buildTime,
                 Population = Population,
                 CountsForVictory = countsForVictory,
+                ExperienceValue = experienceValue,
                 DeathPrefab = deathSpawn != null ? baker.GetEntity(deathSpawn, TransformUsageFlags.Dynamic) : Entity.Null,
             });
 

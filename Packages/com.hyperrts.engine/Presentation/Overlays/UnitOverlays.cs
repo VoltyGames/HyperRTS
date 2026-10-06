@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
@@ -21,7 +22,8 @@ namespace HyperRTS.Presentation.Overlays
             ComponentType.ReadOnly<Health>(),
             ComponentType.ReadOnly<Faction>(),
             ComponentType.ReadOnly<LocalToWorld>(),
-            ComponentType.Exclude<FogHidden>()));
+            ComponentType.Exclude<FogHidden>(),
+            ComponentType.Exclude<Inside>()));
 
         // Enabled-only, so the loop never asks EntityManager per entity whether it is selected.
         private readonly LiveQuery _selected = new(entityManager => entityManager.CreateEntityQuery(

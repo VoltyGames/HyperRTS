@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Units;
 using Unity.Burst;
 using Unity.Collections;
@@ -11,8 +12,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// Ticks weapon cooldowns and fires at in-range targets: an instant armor-scaled hit, or a launched
-    /// <see cref="Projectile"/> when the weapon has a prefab. Unfinished buildings stay silent.
+    /// Ticks weapon cooldowns and fires at in-range targets: an instant <see cref="DamageEvent"/>, or a launched
+    /// <see cref="Projectile"/> when the weapon has a prefab. Unfinished and unpowered buildings stay silent.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -21,16 +22,17 @@ namespace HyperRTS.Simulation.Combat
     {
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<Health> _health;
-        private BufferLookup<ArmorModifier> _armor;
         private ComponentLookup<UnitTag> _units;
+        private DamageWriter _damage;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _transforms = state.GetComponentLookup<LocalTransform>();
-            _health = state.GetComponentLookup<Health>();
-            _armor = state.GetBufferLookup<ArmorModifier>(true);
+            _health = state.GetComponentLookup<Health>(true);
             _units = state.GetComponentLookup<UnitTag>(true);
+            _damage = new DamageWriter(ref state);
+            state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -39,10 +41,10 @@ namespace HyperRTS.Simulation.Combat
         {
             _transforms.Update(ref state);
             _health.Update(ref state);
-            _armor.Update(ref state);
             _units.Update(ref state);
+            _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
 
-            // Single-threaded: many shooters may hit the same target's Health in one frame.
+            // Single-threaded: every shot appends to the one damage queue.
             new FireJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
@@ -50,22 +52,22 @@ namespace HyperRTS.Simulation.Combat
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Transforms = _transforms,
                 Health = _health,
-                Armor = _armor,
                 Units = _units,
+                Damage = _damage,
             }.Schedule();
         }
 
         [BurstCompile]
-        [WithNone(typeof(ConstructionProgress))]
+        [WithNone(typeof(ConstructionProgress), typeof(Unpowered))]
         [WithPresent(typeof(AttackTarget))]
         private partial struct FireJob : IJobEntity
         {
             public float DeltaTime;
             public EntityCommandBuffer Ecb;
             public ComponentLookup<LocalTransform> Transforms;
-            public ComponentLookup<Health> Health;
-            [ReadOnly] public BufferLookup<ArmorModifier> Armor;
+            [ReadOnly] public ComponentLookup<Health> Health;
             [ReadOnly] public ComponentLookup<UnitTag> Units;
+            public DamageWriter Damage;
 
             private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
                 EnabledRefRO<AttackTarget> attacking, in Faction faction)
@@ -93,7 +95,8 @@ namespace HyperRTS.Simulation.Combat
                 weapon.CooldownRemaining = weapon.Cooldown;
                 if (weapon.ProjectilePrefab == Entity.Null)
                 {
-                    CombatMath.ApplyDamage(ref Health, Armor, target, weapon.Damage, weapon.DamageType);
+                    var origin = Transforms[entity].Position;
+                    Damage.Add(CombatMath.Hit(weapon, entity, faction.Value, origin, target, targetPosition));
                 }
                 else
                 {
@@ -135,8 +138,7 @@ namespace HyperRTS.Simulation.Combat
                     Target = target,
                     TargetPosition = aim,
                     Speed = weapon.ProjectileSpeed,
-                    Damage = weapon.Damage,
-                    DamageType = weapon.DamageType,
+                    Hit = CombatMath.Hit(weapon, shooter, faction.Value, origin, target, aim),
                 });
             }
         }

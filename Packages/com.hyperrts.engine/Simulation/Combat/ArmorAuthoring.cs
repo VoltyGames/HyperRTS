@@ -6,7 +6,10 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>Scales incoming damage per <see cref="DamageType"/> (e.g. tanks take 25% from bullets).</summary>
+    /// <summary>
+    /// Scales incoming damage per <see cref="DamageType"/> (e.g. tanks take 25% from bullets) and by the side the hit
+    /// comes from (thin rear armor).
+    /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Armor")]
     [Icon(HyperRTSIcons.Combat)]
     [HelpURL(HyperRTSDocs.Modules)]
@@ -27,6 +30,21 @@ namespace HyperRTS.Simulation.Combat
         [Tooltip("Per-type multipliers; unlisted types deal full damage.")]
         public List<Entry> modifiers = new();
 
+        [Header("Directional")]
+        [Tooltip("Damage multiplier for hits within 45° of the front.")]
+        [Min(0f)]
+        public float front = 1f;
+
+        [Tooltip("Damage multiplier for hits from the sides.")]
+        [Min(0f)]
+        public float side = 1f;
+
+        [Tooltip("Damage multiplier for hits within 45° of the rear.")]
+        [Min(0f)]
+        public float rear = 1f;
+
+        public bool IsDirectional => front != 1f || side != 1f || rear != 1f;
+
         public class Baker : Baker<ArmorAuthoring>
         {
             public override void Bake(ArmorAuthoring authoring)
@@ -39,6 +57,11 @@ namespace HyperRTS.Simulation.Combat
                     {
                         buffer.Add(new ArmorModifier { DamageType = entry.damageType, Multiplier = entry.multiplier });
                     }
+                }
+
+                if (authoring.IsDirectional)
+                {
+                    AddComponent(entity, new ArmorFacing { Front = authoring.front, Side = authoring.side, Rear = authoring.rear });
                 }
             }
         }
