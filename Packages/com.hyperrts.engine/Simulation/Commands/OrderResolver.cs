@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Transport;
-using HyperRTS.Simulation.Units;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Commands

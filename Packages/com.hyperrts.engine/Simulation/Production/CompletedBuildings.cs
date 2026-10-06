@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;

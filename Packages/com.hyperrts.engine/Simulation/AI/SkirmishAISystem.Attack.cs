@@ -1,10 +1,9 @@
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Spatial;
-using HyperRTS.Simulation.Units;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

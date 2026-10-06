@@ -44,6 +44,7 @@ The base module: ownership, identity, health and the helpers every other module 
 | `Player`, `PlayerLookup` | Player entity identity (faction, name, colour; team from `FactionRelations.TeamOf`); faction → player entity, rebuilt per frame for jobs |
 | `LocalPlayer`, `Defeated` | The player this client controls; enabled once a player is defeated |
 | `MapSettings` | Singleton: playable bounds, grid resolutions, water level, flooding, max slope |
+| `UnitTag`, `BuildingTag` | Marks a movable, orderable unit; marks a static structure |
 | `Health`, `Dead` | Hit points (`Health.IsAlive` treats a missing entity as dead); death marker enabled the frame before destruction |
 | `ConstructionProgress` | Enableable 0..1; unfinished buildings don't produce, provide population, accept cargo, fire or satisfy prerequisites |
 | `EntityInfo` | `TypeId` (hash of the display name: instances of one prefab share it), `Name`, `Icon` |

@@ -2,7 +2,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Power;
-using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
