@@ -50,6 +50,7 @@ namespace HyperRTS.Simulation.AI
         private EntityQuery _producers;
         private EntityQuery _targets;
         private EntityQuery _completed;
+        private EntityQuery _queues;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -63,6 +64,7 @@ namespace HyperRTS.Simulation.AI
                 .WithNone<ConstructionProgress, Dead>().Build();
             _targets = SystemAPI.QueryBuilder().WithAll<Health, Faction, LocalTransform>().WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
+            _queues = UpgradeRules.QueueQuery(Allocator.Temp).Build(ref state);
             state.RequireForUpdate<FactionRelations>();
         }
 
@@ -182,7 +184,7 @@ namespace HyperRTS.Simulation.AI
             }
         }
 
-        /// <summary>Next option after the last one picked that fits population, stockpile and tech, skipping done research.</summary>
+        /// <summary>Next option after the last one picked that fits population, stockpile and tech, skipping done or queued research.</summary>
         private Entity PickOption(ref SystemState state, ref AIPlayer ai, DynamicBuffer<ProductionOption> options,
             in Budget budget)
         {
@@ -190,7 +192,7 @@ namespace HyperRTS.Simulation.AI
             {
                 var index = (math.max(ai.NextOption, 0) + k) % options.Length;
                 var prefab = options[index].Prefab;
-                if (!(SystemAPI.HasComponent<Upgrade>(prefab) && UpgradeRules.IsResearched(budget.Researched, prefab)) &&
+                if (UpgradeRules.CanQueue(state.EntityManager, _queues, budget.Researched, budget.Faction, prefab) &&
                     budget.Room.HasRoomFor(SystemAPI.GetComponent<Producible>(prefab).Population) &&
                     ResourceMath.CanAfford(budget.Stock, SystemAPI.GetBuffer<ResourceCost>(prefab)) &&
                     budget.Completed.MeetsPrerequisites(SystemAPI.GetBuffer<Prerequisite>(prefab), budget.Faction))

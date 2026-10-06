@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Transport
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!HasUnloadCommand(ref state))
+            if (!PlayerCommands.Any(ref state, PlayerCommands.Mask(CommandType.Unload)))
             {
                 return;
             }
@@ -50,29 +50,12 @@ namespace HyperRTS.Simulation.Transport
                         if (SystemAPI.HasComponent<Container>(container) &&
                             SystemAPI.GetComponent<Faction>(container).Value == player.ValueRO.Faction)
                         {
-                            var freed = _exit.Unload(container, SystemAPI.GetBuffer<Cargo>(container), command.Argument,
-                                hasGrid, grid);
-                            SystemAPI.GetComponentRW<Container>(container).ValueRW.Used -= freed;
+                            _exit.Unload(container, SystemAPI.GetBuffer<Cargo>(container), command.Argument, hasGrid,
+                                grid);
                         }
                     }
                 }
             }
-        }
-
-        private bool HasUnloadCommand(ref SystemState state)
-        {
-            foreach (var commands in SystemAPI.Query<DynamicBuffer<PlayerCommand>>())
-            {
-                foreach (var command in commands)
-                {
-                    if (command.Type == CommandType.Unload)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
         }
     }
 }

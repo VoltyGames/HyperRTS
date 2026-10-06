@@ -29,33 +29,16 @@ namespace HyperRTS.Simulation.Stats
         public static float DamageTaken(in BufferLookup<StatModifier> modifiers, Entity entity) =>
             modifiers.TryGetBuffer(entity, out var buffer) ? Evaluate(buffer, Stat.DamageTaken, 1f) : 1f;
 
-        /// <summary>Removes every modifier from <paramref name="source"/>; returns true when any was removed.</summary>
-        public static bool RemoveSource(DynamicBuffer<StatModifier> modifiers, int source)
+        /// <summary>Removes every modifier from <paramref name="source"/>.</summary>
+        public static void RemoveSource(DynamicBuffer<StatModifier> modifiers, int source)
         {
-            var removed = false;
             for (var i = modifiers.Length - 1; i >= 0; i--)
             {
                 if (modifiers[i].Source == source)
                 {
                     modifiers.RemoveAtSwapBack(i);
-                    removed = true;
                 }
             }
-
-            return removed;
-        }
-
-        public static bool HasSource(DynamicBuffer<StatModifier> modifiers, int source)
-        {
-            foreach (var modifier in modifiers)
-            {
-                if (modifier.Source == source)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }

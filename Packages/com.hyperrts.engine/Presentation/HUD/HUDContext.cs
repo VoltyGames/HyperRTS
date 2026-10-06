@@ -32,9 +32,8 @@ namespace HyperRTS.Presentation.HUD
         private readonly LiveQuery _pending = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<PendingCommand>()));
 
-        private readonly LiveQuery _queues = new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<ProductionQueueItem>(),
-            ComponentType.ReadOnly<Faction>()));
+        private readonly LiveQuery _queues = new(entityManager =>
+            UpgradeRules.QueueQuery(Allocator.Temp).Build(entityManager));
 
         public MatchView View { get; } = new();
 
@@ -85,30 +84,9 @@ namespace HyperRTS.Presentation.HUD
             || completed.MeetsPrerequisites(EntityManager.GetBuffer<Prerequisite>(prefab, true), View.Local.Faction);
 
         /// <summary>False for an upgrade the local player has researched or already queued somewhere.</summary>
-        public bool CanQueueResearch(Entity prefab)
-        {
-            if (!EntityManager.HasComponent<Upgrade>(prefab))
-            {
-                return true;
-            }
-
-            if (UpgradeRules.IsResearched(EntityManager.GetBuffer<ResearchedUpgrade>(View.LocalPlayer, true), prefab))
-            {
-                return false;
-            }
-
-            using var producers = _queues.In(EntityManager).ToEntityArray(Allocator.Temp);
-            foreach (var producer in producers)
-            {
-                if (IsOwned(producer) &&
-                    UpgradeRules.IsQueued(EntityManager.GetBuffer<ProductionQueueItem>(producer, true), prefab))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+        public bool CanQueueResearch(Entity prefab) =>
+            UpgradeRules.CanQueue(EntityManager, _queues.In(EntityManager),
+                EntityManager.GetBuffer<ResearchedUpgrade>(View.LocalPlayer, true), View.Local.Faction, prefab);
 
         /// <summary>Arms a targeted command; the input layer issues it on the next world click.</summary>
         public void ArmCommand(CommandType type, int argument)

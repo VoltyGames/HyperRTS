@@ -42,9 +42,7 @@ namespace HyperRTS.Simulation.Tests
             var plant = _world.SpawnBuilding(1, new float3(-20f, 0f, 0f), Footprint, power: 5f);
             var radar = _world.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, power: -10f);
             var tower = _world.SpawnBuilding(1, new float3(0f, 0f, 20f), Footprint, power: -1f);
-            var sink = new EntityManagerSink(_world.EntityManager, tower);
-            WeaponSetup.Add(ref sink, new Weapon { Range = 6f, Damage = 10f, Cooldown = 0.5f }, Stance.Aggressive,
-                new float3(0f, 0f, 20f));
+            _world.Arm(tower, range: 6f, damage: 10f);
             var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 25f), speed: 0f);
 
             _world.Run(1f);
@@ -71,7 +69,7 @@ namespace HyperRTS.Simulation.Tests
             _world.SpawnProvider(1, new float3(-20f, 0f, 0f), 10);
             var factory = _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, Footprint, power: -5f),
                 new float3(0f, 0f, -4f), prefab);
-            _world.Command(1, new PlayerCommand { Type = CommandType.Produce, Unit = factory, Prefab = prefab });
+            _world.Produce(1, factory, prefab);
 
             _world.Run(2.5f);
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(factory).Length, "half speed");

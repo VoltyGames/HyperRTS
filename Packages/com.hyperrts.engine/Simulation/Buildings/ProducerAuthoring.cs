@@ -36,19 +36,18 @@ namespace HyperRTS.Simulation.Buildings
             {
                 var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
                 var options = ProducerSetup.Add(ref sink, authoring.spawnOffset, authoring.queueLimit);
-                foreach (var option in authoring.productionOptions)
-                {
-                    if (option != null)
-                    {
-                        options.Add(new ProductionOption { Prefab = GetEntity(option, TransformUsageFlags.Dynamic) });
-                    }
-                }
+                AddOptions(options, authoring.productionOptions, TransformUsageFlags.Dynamic);
+                AddOptions(options, authoring.researchOptions, TransformUsageFlags.None);
+            }
 
-                foreach (var option in authoring.researchOptions)
+            private void AddOptions<T>(DynamicBuffer<ProductionOption> options, List<T> prefabs,
+                TransformUsageFlags flags) where T : Component
+            {
+                foreach (var prefab in prefabs)
                 {
-                    if (option != null)
+                    if (prefab != null)
                     {
-                        options.Add(new ProductionOption { Prefab = GetEntity(option, TransformUsageFlags.None) });
+                        options.Add(new ProductionOption { Prefab = GetEntity(prefab, flags) });
                     }
                 }
             }

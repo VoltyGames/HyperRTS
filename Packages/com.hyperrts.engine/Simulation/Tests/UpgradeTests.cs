@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;
 using HyperRTS.Simulation.Upgrades;
@@ -50,9 +49,6 @@ namespace HyperRTS.Simulation.Tests
             return _world.MakePrefab(upgrade);
         }
 
-        private void Produce(Entity producer, Entity prefab) =>
-            _world.Command(1, new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });
-
         [Test]
         public void Research_AppliesToMatchingUnits_IncludingLaterSpawns()
         {
@@ -64,7 +60,7 @@ namespace HyperRTS.Simulation.Tests
             var enemyTank = _world.SpawnUnit(2, new float3(-30f, 0f, 0f), name: "Tank");
             _world.Give(1, _supplies, 100);
 
-            Produce(lab, upgrade);
+            _world.Produce(1, lab, upgrade);
             _world.Run(3f);
 
             Assert.AreEqual(50, _world.Stock(1, _supplies));
@@ -85,13 +81,13 @@ namespace HyperRTS.Simulation.Tests
             var lab = _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), float3.zero, upgrade);
             _world.Give(1, _supplies, 500);
 
-            Produce(lab, upgrade);
-            Produce(lab, upgrade);
+            _world.Produce(1, lab, upgrade);
+            _world.Produce(1, lab, upgrade);
             _world.Tick();
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(lab).Length, "no duplicate queue");
 
             _world.Run(3f);
-            Produce(lab, upgrade);
+            _world.Produce(1, lab, upgrade);
             _world.Tick();
 
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<ProductionQueueItem>(lab).Length, "already researched");
@@ -105,7 +101,7 @@ namespace HyperRTS.Simulation.Tests
             var lab = _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), float3.zero, upgrade);
             var unit = _world.SpawnUnit(1, new float3(10f, 0f, 0f));
             _world.Give(1, _supplies, 100);
-            Produce(lab, upgrade);
+            _world.Produce(1, lab, upgrade);
             _world.Run(3f);
             Assert.AreEqual(150f, _world.Get<Combat.Health>(unit).Max);
 

@@ -72,6 +72,9 @@ namespace HyperRTS.Simulation.Tests
             world.EntityManager.SetComponentEnabled<ActiveOrder>(unit, true);
         }
 
+        public static void Produce(this TestWorld world, byte faction, Entity producer, Entity prefab) =>
+            world.Command(faction, new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });
+
         public static void SetBuildTime(this TestWorld world, Entity entity, float seconds, int population = 1) =>
             world.EntityManager.SetComponentData(entity, new Producible { BuildTime = seconds, Population = population });
 

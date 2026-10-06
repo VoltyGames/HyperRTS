@@ -60,12 +60,11 @@ namespace HyperRTS.Simulation.Buildings
             _researchedLookup.Update(ref state);
 
             var allocator = state.WorldUpdateAllocator;
+            var rules = SystemAPI.TryGetSingleton<MatchRules>(out var match) ? match : MatchRules.Default;
             new ProduceJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                LowPowerRate = SystemAPI.TryGetSingleton<MatchRules>(out var rules)
-                    ? rules.LowPowerProductionRate
-                    : MatchRules.Default.LowPowerProductionRate,
+                LowPowerRate = rules.LowPowerProductionRate,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 PlayerByFaction = PlayerLookup.ByFaction(_players, allocator),
@@ -117,7 +116,7 @@ namespace HyperRTS.Simulation.Buildings
                     return;
                 }
 
-                var lowPower = UnpoweredLookup.HasComponent(entity) && UnpoweredLookup.IsComponentEnabled(entity);
+                var lowPower = PowerRules.IsUnpowered(UnpoweredLookup, entity);
                 producer.Elapsed += DeltaTime * producer.Speed * (lowPower ? LowPowerRate : 1f);
                 if (producer.Elapsed < producible.BuildTime)
                 {

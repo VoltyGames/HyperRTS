@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Transport
             public bool HasGrid;
             [ReadOnly] public NavGrid Grid;
 
-            private void Execute(Entity entity, ref Container container, DynamicBuffer<Cargo> cargo)
+            private void Execute(Entity entity, in Container container, DynamicBuffer<Cargo> cargo)
             {
                 if (cargo.IsEmpty)
                 {
@@ -62,8 +62,6 @@ namespace HyperRTS.Simulation.Transport
                 {
                     Exit.KillAll(entity, cargo);
                 }
-
-                container.Used = 0;
             }
         }
     }

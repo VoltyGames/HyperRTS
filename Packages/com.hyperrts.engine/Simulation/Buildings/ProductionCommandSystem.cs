@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Buildings
     {
         private EntityQuery _selectedProducers;
         private EntityQuery _completed;
+        private EntityQuery _queues;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -29,13 +30,14 @@ namespace HyperRTS.Simulation.Buildings
             _selectedProducers = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, Faction, Selected>()
                 .WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
+            _queues = UpgradeRules.QueueQuery(Allocator.Temp).Build(ref state);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             // Most frames carry no producer commands; skip fetching writable stockpiles.
-            if (!HasProducerCommand(ref state))
+            if (!PlayerCommands.Any(ref state, ProducerCommands))
             {
                 return;
             }
@@ -65,31 +67,13 @@ namespace HyperRTS.Simulation.Buildings
             }
         }
 
-        private static bool IsProducerCommand(CommandType type) =>
-            type is CommandType.Produce or CommandType.CancelProduction or CommandType.SetRallyPoint
-                or CommandType.Smart;
-
-        private bool HasProducerCommand(ref SystemState state)
-        {
-            foreach (var commands in SystemAPI.Query<DynamicBuffer<PlayerCommand>>())
-            {
-                foreach (var command in commands)
-                {
-                    if (IsProducerCommand(command.Type))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
+        private static ulong ProducerCommands =>
+            PlayerCommands.Mask(CommandType.Produce, CommandType.SetRallyPoint) | PlayerCommands.Mask(CommandType.Smart);
 
         private void Produce(ref SystemState state, byte faction, in PlayerCommand command,
             DynamicBuffer<ResourceStock> stock, DynamicBuffer<ResearchedUpgrade> researched)
         {
-            if (SystemAPI.HasComponent<Upgrade>(command.Prefab) &&
-                (UpgradeRules.IsResearched(researched, command.Prefab) || IsQueued(ref state, faction, command.Prefab)))
+            if (!UpgradeRules.CanQueue(state.EntityManager, _queues, researched, faction, command.Prefab))
             {
                 return;
             }
@@ -179,19 +163,6 @@ namespace HyperRTS.Simulation.Buildings
         }
 
         /// <summary>True when any of the faction's producers already has <paramref name="prefab"/> queued.</summary>
-        private bool IsQueued(ref SystemState state, byte faction, Entity prefab)
-        {
-            foreach (var (queue, owner) in SystemAPI.Query<DynamicBuffer<ProductionQueueItem>, RefRO<Faction>>())
-            {
-                if (owner.ValueRO.Value == faction && UpgradeRules.IsQueued(queue, prefab))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         private Entity FirstSelectedWithQueue(ref SystemState state, byte faction)
         {
             foreach (var producer in _selectedProducers.ToEntityArray(Allocator.Temp))

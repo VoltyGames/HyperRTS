@@ -62,9 +62,6 @@ namespace HyperRTS.Simulation.Tests
                 Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position,
             });
 
-        private void Produce(Entity producer, Entity prefab) =>
-            _world.Command(1, new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });
-
         private int QueueLength(Entity producer) => _world.EntityManager.GetBuffer<ProductionQueueItem>(producer).Length;
 
         [Test]
@@ -142,7 +139,7 @@ namespace HyperRTS.Simulation.Tests
             _world.SpawnProvider(1, new float3(20f, 0f, 20f), 10);
             _world.Give(1, _supplies, 100);
 
-            Produce(producer, prefab);
+            _world.Produce(1, producer, prefab);
             _world.Tick();
             Assert.AreEqual(70, _world.Stock(1, _supplies));
             Assert.AreEqual(1, QueueLength(producer));
@@ -166,8 +163,8 @@ namespace HyperRTS.Simulation.Tests
             _world.SpawnProvider(1, new float3(20f, 0f, 20f), 10);
             _world.Give(1, _supplies, 100);
 
-            Produce(producer, prefab);
-            Produce(producer, prefab);
+            _world.Produce(1, producer, prefab);
+            _world.Produce(1, producer, prefab);
             _world.Tick();
             Assert.AreEqual(40, _world.Stock(1, _supplies));
 
@@ -187,7 +184,7 @@ namespace HyperRTS.Simulation.Tests
             _world.SpawnUnit(1, new float3(10f, 0f, 10f));
             _world.Give(1, _supplies, 100);
 
-            Produce(producer, prefab);
+            _world.Produce(1, producer, prefab);
             _world.Run(3f);
             Assert.AreEqual(1, _world.All<UnitTag>().Length, "the cap is full");
             Assert.AreEqual(1, QueueLength(producer));
@@ -208,7 +205,7 @@ namespace HyperRTS.Simulation.Tests
             var rally = new float3(10f, 0f, 10f);
 
             _world.Command(1, new PlayerCommand { Type = CommandType.SetRallyPoint, Position = rally });
-            Produce(producer, prefab);
+            _world.Produce(1, producer, prefab);
             for (var frame = 0; frame < 60 && _world.All<UnitTag>().Length == 0; frame++)
             {
                 _world.Tick();
@@ -230,18 +227,18 @@ namespace HyperRTS.Simulation.Tests
             var producer = Producer(prefab);
             _world.Give(1, _supplies, 100);
 
-            Produce(producer, prefab);
+            _world.Produce(1, producer, prefab);
             _world.Tick();
             Assert.AreEqual(0, QueueLength(producer), "no barracks");
 
             var barracks = _world.SpawnBuilding(1, new float3(20f, 0f, 0f), new float2(4f, 4f), complete: false,
                 name: "Barracks");
-            Produce(producer, prefab);
+            _world.Produce(1, producer, prefab);
             _world.Tick();
             Assert.AreEqual(0, QueueLength(producer), "an unfinished barracks doesn't count");
 
             _world.EntityManager.SetComponentEnabled<ConstructionProgress>(barracks, false);
-            Produce(producer, prefab);
+            _world.Produce(1, producer, prefab);
             _world.Tick();
             Assert.AreEqual(1, QueueLength(producer));
             Assert.AreEqual(90, _world.Stock(1, _supplies));
@@ -254,7 +251,7 @@ namespace HyperRTS.Simulation.Tests
             var producer = Producer(prefab, complete: false);
             _world.Give(1, _supplies, 100);
 
-            Produce(producer, prefab);
+            _world.Produce(1, producer, prefab);
             _world.Tick();
 
             Assert.AreEqual(0, QueueLength(producer));

@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Orders
         public void OnUpdate(ref SystemState state)
         {
             // Most frames carry no commands; skip the sync with every job touching unit components.
-            if (!HasUnitCommand(ref state))
+            if (!PlayerCommands.Any(ref state, UnitCommands))
             {
                 return;
             }
@@ -82,25 +82,11 @@ namespace HyperRTS.Simulation.Orders
             }
         }
 
-        private static bool IsUnitCommand(CommandType type) =>
-            type is >= CommandType.Smart and <= CommandType.SetStance or CommandType.Repair or CommandType.Capture
-                or CommandType.Enter;
+        private static ulong UnitCommands =>
+            PlayerCommands.Mask(CommandType.Smart, CommandType.SetStance) |
+            PlayerCommands.Mask(CommandType.Repair, CommandType.Enter);
 
-        private bool HasUnitCommand(ref SystemState state)
-        {
-            foreach (var commands in SystemAPI.Query<DynamicBuffer<PlayerCommand>>())
-            {
-                foreach (var command in commands)
-                {
-                    if (IsUnitCommand(command.Type))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
+        private static bool IsUnitCommand(CommandType type) => (UnitCommands & PlayerCommands.Mask(type)) != 0;
 
         /// <summary>Keeps the command's subjects that this faction owns and that take orders, in order.</summary>
         private bool GatherSubjects(byte faction, Entity unit, NativeList<Entity> subjects)

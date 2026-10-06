@@ -53,9 +53,10 @@ namespace HyperRTS.Simulation.Combat
 
             private void Execute(ref Projectile projectile)
             {
-                if (Targets.IsAlive(projectile.Target))
+                var target = projectile.Hit.Target;
+                if (Targets.IsAlive(target))
                 {
-                    projectile.TargetPosition = Targets.Position(projectile.Target) + new float3(0f, FlightHeight, 0f);
+                    projectile.Hit.Position = Targets.Position(target) + new float3(0f, FlightHeight, 0f);
                 }
             }
         }
@@ -70,7 +71,7 @@ namespace HyperRTS.Simulation.Combat
 
             private void Execute(Entity entity, ref LocalTransform transform, in Projectile projectile)
             {
-                var toTarget = projectile.TargetPosition - transform.Position;
+                var toTarget = projectile.Hit.Position - transform.Position;
                 var distance = math.length(toTarget);
                 var step = projectile.Speed * DeltaTime;
 
@@ -82,7 +83,6 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 var hit = projectile.Hit;
-                hit.Position = projectile.TargetPosition;
                 hit.Origin = transform.Position;
                 Damage.Add(hit);
                 Ecb.DestroyEntity(entity);

@@ -104,7 +104,7 @@ namespace HyperRTS.Simulation.Combat
                         continue;
                     }
 
-                    var gap = math.max(0f, math.distance(victim.Position.xz, hit.Position.xz) - victim.Radius);
+                    var gap = CombatMath.EdgeDistance(victim.Position, victim.Radius, hit.Position, 0f);
                     Apply(victim.Entity, hit.Amount * CombatMath.SplashFactor(gap, hit.Radius, hit.EdgeFactor), hit);
                 }
             }

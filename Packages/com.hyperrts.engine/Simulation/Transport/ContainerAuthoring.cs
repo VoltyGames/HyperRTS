@@ -51,16 +51,15 @@ namespace HyperRTS.Simulation.Transport
         public bool PassengersFire;
         public bool PassengersSurvive;
 
-        /// <summary>Total size of the passengers aboard.</summary>
-        public int Used;
+        public readonly bool Fits(DynamicBuffer<Cargo> cargo, int size)
+        {
+            var used = 0;
+            foreach (var item in cargo)
+            {
+                used += item.Size;
+            }
 
-        public readonly bool Fits(int size) => size <= MaxPassengerSize && Used + size <= Capacity;
-    }
-
-    /// <summary>A passenger aboard, in boarding order.</summary>
-    [InternalBufferCapacity(0)]
-    public struct Cargo : IBufferElementData
-    {
-        public Entity Unit;
+            return size <= MaxPassengerSize && used + size <= Capacity;
+        }
     }
 }

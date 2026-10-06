@@ -23,9 +23,8 @@ namespace HyperRTS.Simulation.Orders
         private ComponentLookup<ConstructionProgress> _construction;
         private ComponentLookup<Health> _health;
         private ComponentLookup<Capturer> _capturers;
-        private ComponentLookup<Capturable> _capturables;
-        private ComponentLookup<Passenger> _passengers;
-        private ComponentLookup<Container> _containers;
+        private CaptureRules _capture;
+        private Boarding _boarding;
 
         public OrderResolver(ref SystemState state)
         {
@@ -38,9 +37,8 @@ namespace HyperRTS.Simulation.Orders
             _construction = state.GetComponentLookup<ConstructionProgress>(true);
             _health = state.GetComponentLookup<Health>(true);
             _capturers = state.GetComponentLookup<Capturer>(true);
-            _capturables = state.GetComponentLookup<Capturable>(true);
-            _passengers = state.GetComponentLookup<Passenger>(true);
-            _containers = state.GetComponentLookup<Container>(true);
+            _capture = new CaptureRules(ref state);
+            _boarding = new Boarding(ref state, true);
         }
 
         public void Update(ref SystemState state)
@@ -54,9 +52,8 @@ namespace HyperRTS.Simulation.Orders
             _construction.Update(ref state);
             _health.Update(ref state);
             _capturers.Update(ref state);
-            _capturables.Update(ref state);
-            _passengers.Update(ref state);
-            _containers.Update(ref state);
+            _capture.Update(ref state);
+            _boarding.Update(ref state);
         }
 
         public OrderType Resolve(CommandType command, Entity unit, Entity target, in FactionRelations relations)
@@ -122,13 +119,9 @@ namespace HyperRTS.Simulation.Orders
             RepairRules.NeedsRepair(_health, _construction, _factions, relations, target, _factions[unit].Value);
 
         private bool CanCapture(Entity unit, Entity target, in FactionRelations relations) =>
-            _capturers.HasComponent(unit) && _capturables.HasComponent(target) && _targets.IsAlive(target) &&
-            !relations.IsAllied(_factions[unit].Value, _factions[target].Value);
+            _capturers.HasComponent(unit) && _capture.CanCapture(target, _factions[unit].Value, relations);
 
         private bool CanEnter(Entity unit, Entity target, in FactionRelations relations) =>
-            unit != target && _passengers.TryGetComponent(unit, out var passenger) &&
-            _containers.TryGetComponent(target, out var container) && container.Fits(passenger.Size) &&
-            _targets.IsAlive(target) && !ConstructionRules.IsUnderConstruction(_construction, target) &&
-            relations.IsAllied(_factions[unit].Value, _factions[target].Value);
+            _boarding.CanBoard(unit, target, relations);
     }
 }

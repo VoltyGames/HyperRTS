@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Abilities
         {
             var events = SystemAPI.GetSingletonEntity<AbilityEvents>();
             SystemAPI.GetBuffer<AbilityActivation>(events).Clear();
-            if (!HasAbilityCommand(ref state))
+            if (!PlayerCommands.Any(ref state, PlayerCommands.Mask(CommandType.UseAbility, CommandType.UsePower)))
             {
                 return;
             }
@@ -107,22 +107,6 @@ namespace HyperRTS.Simulation.Abilities
             public MapSettings Map;
         }
 
-        private bool HasAbilityCommand(ref SystemState state)
-        {
-            foreach (var commands in SystemAPI.Query<DynamicBuffer<PlayerCommand>>())
-            {
-                foreach (var command in commands)
-                {
-                    if (command.Type is CommandType.UseAbility or CommandType.UsePower)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
         private void UseAbility(ref SystemState state, byte faction, in PlayerCommand command, in Context context)
         {
             var best = Entity.Null;
@@ -164,7 +148,7 @@ namespace HyperRTS.Simulation.Abilities
             in Context context)
         {
             if (!SystemAPI.HasBuffer<Ability>(caster) || SystemAPI.GetComponent<Faction>(caster).Value != faction ||
-                ConstructionRules.IsUnderConstruction(state.EntityManager, caster) || IsUnpowered(ref state, caster))
+                ConstructionRules.IsUnderConstruction(state.EntityManager, caster) || PowerRules.IsUnpowered(state.EntityManager, caster))
             {
                 return -1;
             }
@@ -177,9 +161,6 @@ namespace HyperRTS.Simulation.Abilities
         private bool IsUsable(in Ability ability, byte faction, in PlayerCommand command, in Context context) =>
             ability.IsReady && (ability.RequiredTypeId == 0 || context.Completed.Owns(faction, ability.RequiredTypeId)) &&
             AbilityRules.IsValidTarget(ability, command.Target, faction, _targets, _factions, context.Relations);
-
-        private bool IsUnpowered(ref SystemState state, Entity entity) =>
-            SystemAPI.HasComponent<Unpowered>(entity) && SystemAPI.IsComponentEnabled<Unpowered>(entity);
 
         private void Cast(ref SystemState state, Entity caster, int index, byte faction, in PlayerCommand command,
             in Context context)

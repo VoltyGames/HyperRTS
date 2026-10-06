@@ -1,16 +1,13 @@
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>A shot in flight, homing on <see cref="Target"/> (or its last known position) and hitting on arrival.</summary>
+    /// <summary>A shot in flight, homing on its hit's target (or its last known position) and hitting on arrival.</summary>
     public struct Projectile : IComponentData
     {
-        public Entity Target;
-        public float3 TargetPosition;
         public float Speed;
 
-        /// <summary>Queued on impact with the impact point and direction filled in.</summary>
+        /// <summary>Queued on impact; its Position is the aim point, tracked while the target lives.</summary>
         public DamageEvent Hit;
     }
 }

@@ -32,8 +32,7 @@ namespace HyperRTS.Simulation.Tests
             TransportSetup.AddPassenger(ref sink, size);
             if (armed)
             {
-                WeaponSetup.Add(ref sink, new Weapon { Range = 3f, Damage = 10f, Cooldown = 0.5f }, Stance.Aggressive,
-                    position);
+                _world.Arm(unit, range: 3f, damage: 10f);
             }
 
             return unit;
@@ -68,7 +67,6 @@ namespace HyperRTS.Simulation.Tests
 
             _world.Run(4f);
 
-            Assert.AreEqual(2, _world.Get<Container>(bunker).Used);
             Assert.AreEqual(2, _world.EntityManager.GetBuffer<Cargo>(bunker).Length);
             Assert.IsTrue(IsInside(a) && IsInside(b));
             Assert.IsFalse(IsInside(c), "no room left");
@@ -104,9 +102,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(2f);
 
             var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 4.5f), speed: 0f);
-            var sink = new EntityManagerSink(_world.EntityManager, enemy);
-            WeaponSetup.Add(ref sink, new Weapon { Range = 3f, Damage = 10f, Cooldown = 0.5f }, Stance.HoldPosition,
-                new float3(0f, 0f, 4.5f));
+            _world.Arm(enemy, Stance.HoldPosition, range: 3f, damage: 10f);
             _world.Run(2f);
 
             Assert.Less(_world.Get<Health>(enemy).Current, 100f, "fires from the bunker's edge");
@@ -126,7 +122,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick();
 
             Assert.IsFalse(IsInside(rifle));
-            Assert.AreEqual(0, _world.Get<Container>(bunker).Used);
+            Assert.AreEqual(0, _world.EntityManager.GetBuffer<Cargo>(bunker).Length);
             Assert.AreEqual(Stance.Aggressive, _world.Get<CombatStance>(rifle).Value);
             Assert.Greater(math.length(_world.Get<LocalTransform>(rifle).Position.xz), 2f, "outside the footprint");
         }

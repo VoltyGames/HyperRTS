@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Stats;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Veterancy
@@ -11,15 +12,27 @@ namespace HyperRTS.Simulation.Veterancy
     [UpdateAfter(typeof(KillCreditSystem))]
     public partial struct VeterancySystem : ISystem
     {
-        [BurstCompile]
-        public void OnUpdate(ref SystemState state) => new PromoteJob().ScheduleParallel();
+        private BufferLookup<StatModifier> _modifierLookup;
 
+        [BurstCompile]
+        public void OnCreate(ref SystemState state) => _modifierLookup = state.GetBufferLookup<StatModifier>();
+
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
+        {
+            _modifierLookup.Update(ref state);
+            new PromoteJob { ModifierLookup = _modifierLookup }.ScheduleParallel();
+        }
+
+        /// <summary>Writes modifiers through a lookup so only promotions wake the stat system's change filter.</summary>
         [BurstCompile]
         [WithChangeFilter(typeof(Experience))]
         private partial struct PromoteJob : IJobEntity
         {
-            private void Execute(ref Experience experience, DynamicBuffer<VeterancyRank> ranks,
-                DynamicBuffer<VeterancyBonus> bonuses, DynamicBuffer<StatModifier> modifiers)
+            [NativeDisableParallelForRestriction] public BufferLookup<StatModifier> ModifierLookup;
+
+            private void Execute(Entity entity, ref Experience experience, in DynamicBuffer<VeterancyRank> ranks,
+                in DynamicBuffer<VeterancyBonus> bonuses)
             {
                 var rank = RankFor(experience.Points, ranks);
                 if (rank == experience.Rank)
@@ -28,6 +41,11 @@ namespace HyperRTS.Simulation.Veterancy
                 }
 
                 experience.Rank = rank;
+                if (!ModifierLookup.TryGetBuffer(entity, out var modifiers))
+                {
+                    return;
+                }
+
                 StatMath.RemoveSource(modifiers, StatMath.VeterancySource);
                 foreach (var bonus in bonuses)
                 {

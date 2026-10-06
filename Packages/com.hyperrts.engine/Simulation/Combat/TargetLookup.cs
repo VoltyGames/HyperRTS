@@ -52,6 +52,6 @@ namespace HyperRTS.Simulation.Combat
         public float Radius(Entity entity) =>
             EntityRadius.Of(IsInside(entity) ? _inside[entity].Container : entity, _agents, _obstacles);
 
-        private bool IsInside(Entity entity) => _inside.HasComponent(entity) && _inside.IsComponentEnabled(entity);
+        private bool IsInside(Entity entity) => TransportRules.IsInside(_inside, entity);
     }
 }

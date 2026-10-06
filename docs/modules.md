@@ -63,6 +63,7 @@ first own something, so SubScene streaming at startup is safe.
 | `Order` / `OrderType` | Move, AttackMove, Attack, Gather, Build, Repair, Capture, Enter, UseAbility, `Custom`+; `Argument` carries order data such as the ability id |
 | `ActiveOrder`, `QueuedOrder` | Current order and shift-queue |
 | `OrderWriter` | `Issue(unit, order, queue)` and `Stop(unit)` |
+| `PlayerCommands` | `Any(mask)`: lets command systems skip their job sync on frames without their command types |
 
 Systems: `UnitCommandSystem` resolves unit commands through `OrderResolver` (Smart: hostile → Attack, node → Gather,
 unfinished allied building → Build, damaged allied building → Repair, allied container with room → Enter,
@@ -157,6 +158,7 @@ owner draws more than it generates. Unpowered weapons hold fire, unpowered produ
 | `RepairSystem`, `RepairRules` | Builders restore an allied finished building at their build speed |
 | `CapturableAuthoring` / `Capturable`, `CaptureProgress` | Building others can take over in `captureTime` seconds |
 | `CapturerAuthoring` / `Capturer` | Unit that captures, optionally used up on completion |
+| `CaptureRules` | Capture-target check shared by orders and `CaptureSystem` |
 
 `CaptureSystem` advances progress while capturers are in reach (another player starting over resets it), then
 changes the owner at the end of the frame and clears the building's queue and target.
@@ -167,6 +169,7 @@ changes the owner at the end of the frame and clears the building's queue and ta
 | --- | --- |
 | `ContainerAuthoring` / `Container`, `Cargo` | Capacity, largest passenger size, passengers fire out, passengers survive its death |
 | `PassengerAuthoring` / `Passenger`, `Inside` | Size; `Inside` is enabled while aboard and remembers the stance to restore |
+| `Boarding`, `TransportRules` | Who may board what (shared by orders and `BoardingSystem`); `IsInside` |
 
 `BoardingSystem` runs Enter orders. Aboard, a passenger is dropped from the spatial index (untargetable, no splash),
 takes no orders, is deselected and hidden, and holds position (firing out from the container's edge) or goes

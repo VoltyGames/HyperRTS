@@ -32,9 +32,7 @@ namespace HyperRTS.Simulation.Selection
         public ComponentLookup<ControlGroup> Groups;
 
         public bool IsHit(Entity entity, float3 position) =>
-            !Hidden.HasComponent(entity) && !IsInside(entity) && MatchesGesture(entity, position);
-
-        private bool IsInside(Entity entity) => Inside.HasComponent(entity) && Inside.IsComponentEnabled(entity);
+            !Hidden.HasComponent(entity) && !TransportRules.IsInside(Inside, entity) && MatchesGesture(entity, position);
 
         private bool MatchesGesture(Entity entity, float3 position)
         {

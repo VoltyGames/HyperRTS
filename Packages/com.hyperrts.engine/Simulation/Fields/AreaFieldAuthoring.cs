@@ -79,11 +79,4 @@ namespace HyperRTS.Simulation.Fields
         public float DamagePerSecond;
         public UnityObjectRef<DamageType> DamageType;
     }
-
-    /// <summary>A modifier the field grants, with the field id as its source.</summary>
-    [InternalBufferCapacity(1)]
-    public struct AreaFieldBonus : IBufferElementData
-    {
-        public StatModifier Modifier;
-    }
 }

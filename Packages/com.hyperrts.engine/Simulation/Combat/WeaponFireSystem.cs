@@ -135,8 +135,6 @@ namespace HyperRTS.Simulation.Combat
                 Ecb.AddComponent(projectile, new Faction { Value = faction.Value });
                 Ecb.AddComponent(projectile, new Projectile
                 {
-                    Target = target,
-                    TargetPosition = aim,
                     Speed = weapon.ProjectileSpeed,
                     Hit = CombatMath.Hit(weapon, shooter, faction.Value, origin, target, aim),
                 });

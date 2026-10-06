@@ -21,11 +21,8 @@ namespace HyperRTS.Simulation.Transport
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct BoardingSystem : ISystem
     {
+        private Boarding _boarding;
         private ComponentLookup<Container> _containerLookup;
-        private BufferLookup<Cargo> _cargoLookup;
-        private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<Health> _healthLookup;
-        private ComponentLookup<ConstructionProgress> _siteLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<CombatStance> _stanceLookup;
@@ -36,11 +33,8 @@ namespace HyperRTS.Simulation.Transport
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _containerLookup = state.GetComponentLookup<Container>();
-            _cargoLookup = state.GetBufferLookup<Cargo>();
-            _factionLookup = state.GetComponentLookup<Faction>(true);
-            _healthLookup = state.GetComponentLookup<Health>(true);
-            _siteLookup = state.GetComponentLookup<ConstructionProgress>(true);
+            _boarding = new Boarding(ref state, false);
+            _containerLookup = state.GetComponentLookup<Container>(true);
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _stanceLookup = state.GetComponentLookup<CombatStance>();
@@ -53,11 +47,8 @@ namespace HyperRTS.Simulation.Transport
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _boarding.Update(ref state);
             _containerLookup.Update(ref state);
-            _cargoLookup.Update(ref state);
-            _factionLookup.Update(ref state);
-            _healthLookup.Update(ref state);
-            _siteLookup.Update(ref state);
             _transformLookup.Update(ref state);
             _obstacleLookup.Update(ref state);
             _stanceLookup.Update(ref state);
@@ -68,11 +59,8 @@ namespace HyperRTS.Simulation.Transport
             new BoardJob
             {
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Boarding = _boarding,
                 ContainerLookup = _containerLookup,
-                CargoLookup = _cargoLookup,
-                FactionLookup = _factionLookup,
-                HealthLookup = _healthLookup,
-                SiteLookup = _siteLookup,
                 TransformLookup = _transformLookup,
                 ObstacleLookup = _obstacleLookup,
                 StanceLookup = _stanceLookup,
@@ -84,16 +72,14 @@ namespace HyperRTS.Simulation.Transport
 
         /// <summary>Single-threaded: several passengers may board one container in a frame.</summary>
         [BurstCompile]
+        [WithAll(typeof(Passenger))]
         [WithNone(typeof(Dead))]
         [WithPresent(typeof(MoveDestination), typeof(Inside))]
         private partial struct BoardJob : IJobEntity
         {
             public FactionRelations Relations;
-            public ComponentLookup<Container> ContainerLookup;
-            public BufferLookup<Cargo> CargoLookup;
-            [ReadOnly] public ComponentLookup<Faction> FactionLookup;
-            [ReadOnly] public ComponentLookup<Health> HealthLookup;
-            [ReadOnly] public ComponentLookup<ConstructionProgress> SiteLookup;
+            public Boarding Boarding;
+            [ReadOnly] public ComponentLookup<Container> ContainerLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             public ComponentLookup<CombatStance> StanceLookup;
@@ -101,7 +87,7 @@ namespace HyperRTS.Simulation.Transport
             public ComponentLookup<Selected> SelectedLookup;
             public BufferLookup<QueuedOrder> QueueLookup;
 
-            private void Execute(Entity entity, in Passenger passenger, ref ActiveOrder order,
+            private void Execute(Entity entity, ref ActiveOrder order,
                 EnabledRefRW<ActiveOrder> busy, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
                 in NavAgent agent, ref Inside inside, EnabledRefRW<Inside> aboard)
             {
@@ -111,7 +97,7 @@ namespace HyperRTS.Simulation.Transport
                 }
 
                 var container = order.Value.Target;
-                if (!CanBoard(entity, container, passenger.Size))
+                if (!Boarding.CanBoard(entity, container, Relations))
                 {
                     busy.ValueRW = false;
                     moving.ValueRW = false;
@@ -130,16 +116,9 @@ namespace HyperRTS.Simulation.Transport
                 moving.ValueRW = false;
                 aboard.ValueRW = true;
                 inside = new Inside { Container = container, Stance = Settle(entity, container) };
-                ContainerLookup.GetRefRW(container).ValueRW.Used += passenger.Size;
-                CargoLookup[container].Add(new Cargo { Unit = entity });
+                Boarding.Board(entity, container);
                 QueueLookup[entity].Clear();
             }
-
-            private bool CanBoard(Entity entity, Entity container, int size) =>
-                ContainerLookup.TryGetComponent(container, out var data) && data.Fits(size) &&
-                HealthLookup.TryGetComponent(container, out var health) && health.Current > 0f &&
-                !ConstructionRules.IsUnderConstruction(SiteLookup, container) &&
-                Relations.IsAllied(FactionLookup[entity].Value, FactionLookup[container].Value);
 
             /// <summary>Drops target and selection and picks the inside stance; returns the stance to restore.</summary>
             private Stance Settle(Entity entity, Entity container)

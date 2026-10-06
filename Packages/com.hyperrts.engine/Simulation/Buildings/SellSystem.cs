@@ -30,12 +30,12 @@ namespace HyperRTS.Simulation.Buildings
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!HasSellCommand(ref state))
+            if (!PlayerCommands.Any(ref state, PlayerCommands.Mask(CommandType.Sell)))
             {
                 return;
             }
 
-            var refund = SystemAPI.TryGetSingleton<MatchRules>(out var rules) ? rules.SellRefund : MatchRules.Default.SellRefund;
+            var rules = SystemAPI.TryGetSingleton<MatchRules>(out var match) ? match : MatchRules.Default;
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var sold = new NativeHashSet<Entity>(8, Allocator.Temp);
@@ -55,28 +55,12 @@ namespace HyperRTS.Simulation.Buildings
                     {
                         if (IsOwnedBuilding(ref state, building, player.ValueRO.Faction) && sold.Add(building))
                         {
-                            Sell(ref state, building, stock, refund);
+                            Sell(ref state, building, stock, rules.SellRefund);
                             ecb.DestroyEntity(building);
                         }
                     }
                 }
             }
-        }
-
-        private bool HasSellCommand(ref SystemState state)
-        {
-            foreach (var commands in SystemAPI.Query<DynamicBuffer<PlayerCommand>>())
-            {
-                foreach (var command in commands)
-                {
-                    if (command.Type == CommandType.Sell)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
         }
 
         private bool IsOwnedBuilding(ref SystemState state, Entity entity, byte faction) =>

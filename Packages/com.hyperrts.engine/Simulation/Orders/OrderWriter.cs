@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>Passengers inside a container take no orders until they get out.</summary>
         public bool CanReceiveOrders(Entity unit) =>
-            _active.HasComponent(unit) && !(_inside.HasComponent(unit) && _inside.IsComponentEnabled(unit));
+            _active.HasComponent(unit) && !TransportRules.IsInside(_inside, unit);
 
         /// <summary>Replaces current orders, or appends when <paramref name="queue"/> and the unit is busy.</summary>
         public void Issue(Entity unit, in Order order, bool queue)

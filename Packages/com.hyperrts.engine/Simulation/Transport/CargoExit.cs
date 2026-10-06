@@ -18,7 +18,6 @@ namespace HyperRTS.Simulation.Transport
         private ComponentLookup<Inside> _inside;
         private ComponentLookup<CombatStance> _stances;
         private ComponentLookup<LocalTransform> _transforms;
-        [ReadOnly] private ComponentLookup<Passenger> _passengers;
         [ReadOnly] private ComponentLookup<NavAgent> _agents;
         [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
         private ComponentLookup<Health> _health;
@@ -29,7 +28,6 @@ namespace HyperRTS.Simulation.Transport
             _inside = state.GetComponentLookup<Inside>();
             _stances = state.GetComponentLookup<CombatStance>();
             _transforms = state.GetComponentLookup<LocalTransform>();
-            _passengers = state.GetComponentLookup<Passenger>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
             _obstacles = state.GetComponentLookup<NavObstacle>(true);
             _health = state.GetComponentLookup<Health>();
@@ -41,17 +39,15 @@ namespace HyperRTS.Simulation.Transport
             _inside.Update(ref state);
             _stances.Update(ref state);
             _transforms.Update(ref state);
-            _passengers.Update(ref state);
             _agents.Update(ref state);
             _obstacles.Update(ref state);
             _health.Update(ref state);
             _attackers.Update(ref state);
         }
 
-        /// <summary>Lets out passenger <paramref name="slot"/> (or all for -1); returns the size freed.</summary>
-        public int Unload(Entity container, DynamicBuffer<Cargo> cargo, int slot, bool hasGrid, in NavGrid grid)
+        /// <summary>Lets out passenger <paramref name="slot"/> (or all for -1).</summary>
+        public void Unload(Entity container, DynamicBuffer<Cargo> cargo, int slot, bool hasGrid, in NavGrid grid)
         {
-            var freed = 0;
             for (var i = cargo.Length - 1; i >= 0; i--)
             {
                 if (slot >= 0 && i != slot)
@@ -63,12 +59,9 @@ namespace HyperRTS.Simulation.Transport
                 cargo.RemoveAt(i);
                 if (_inside.HasComponent(unit))
                 {
-                    freed += _passengers[unit].Size;
                     Exit(unit, ExitPosition(container, unit, i, hasGrid, grid));
                 }
             }
-
-            return freed;
         }
 
         /// <summary>Kills every passenger, crediting whoever destroyed the container.</summary>

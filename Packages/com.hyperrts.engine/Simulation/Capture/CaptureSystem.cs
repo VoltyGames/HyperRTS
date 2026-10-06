@@ -21,10 +21,10 @@ namespace HyperRTS.Simulation.Capture
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct CaptureSystem : ISystem
     {
+        private CaptureRules _rules;
         private ComponentLookup<Capturable> _capturableLookup;
         private ComponentLookup<CaptureProgress> _progressLookup;
         private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<Health> _healthLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<AttackTarget> _attackLookup;
@@ -33,10 +33,10 @@ namespace HyperRTS.Simulation.Capture
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _rules = new CaptureRules(ref state);
             _capturableLookup = state.GetComponentLookup<Capturable>(true);
             _progressLookup = state.GetComponentLookup<CaptureProgress>();
             _factionLookup = state.GetComponentLookup<Faction>(true);
-            _healthLookup = state.GetComponentLookup<Health>(true);
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _attackLookup = state.GetComponentLookup<AttackTarget>(true);
@@ -48,10 +48,10 @@ namespace HyperRTS.Simulation.Capture
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _rules.Update(ref state);
             _capturableLookup.Update(ref state);
             _progressLookup.Update(ref state);
             _factionLookup.Update(ref state);
-            _healthLookup.Update(ref state);
             _transformLookup.Update(ref state);
             _obstacleLookup.Update(ref state);
             _attackLookup.Update(ref state);
@@ -63,10 +63,10 @@ namespace HyperRTS.Simulation.Capture
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
+                Rules = _rules,
                 CapturableLookup = _capturableLookup,
                 ProgressLookup = _progressLookup,
                 FactionLookup = _factionLookup,
-                HealthLookup = _healthLookup,
                 TransformLookup = _transformLookup,
                 ObstacleLookup = _obstacleLookup,
                 AttackLookup = _attackLookup,
@@ -83,10 +83,10 @@ namespace HyperRTS.Simulation.Capture
             public float DeltaTime;
             public FactionRelations Relations;
             public EntityCommandBuffer Ecb;
+            public CaptureRules Rules;
             [ReadOnly] public ComponentLookup<Capturable> CapturableLookup;
             public ComponentLookup<CaptureProgress> ProgressLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
-            [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<AttackTarget> AttackLookup;
@@ -103,7 +103,7 @@ namespace HyperRTS.Simulation.Capture
 
                 var target = order.Value.Target;
                 var faction = FactionLookup[entity].Value;
-                if (!CanCapture(target, faction))
+                if (!Rules.CanCapture(target, faction, Relations))
                 {
                     busy.ValueRW = false;
                     moving.ValueRW = false;
@@ -128,10 +128,6 @@ namespace HyperRTS.Simulation.Capture
                     }
                 }
             }
-
-            private bool CanCapture(Entity target, byte faction) =>
-                CapturableLookup.HasComponent(target) && HealthLookup.TryGetComponent(target, out var health) &&
-                health.Current > 0f && !Relations.IsAllied(faction, FactionLookup[target].Value);
 
             /// <summary>Adds this frame's work and returns true once the capture completes.</summary>
             private bool Advance(Entity target, byte faction, float rate)
