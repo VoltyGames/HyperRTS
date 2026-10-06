@@ -32,6 +32,7 @@ namespace HyperRTS.Simulation.Replays
             _construction = state.GetComponentLookup<ConstructionProgress>();
             state.RequireForUpdate<ReplayPlaybackState>();
             state.RequireForUpdate<MapSettings>();
+            state.RequireForUpdate<PrefabRegistry>();
         }
 
         public void OnDestroy(ref SystemState state)
@@ -70,10 +71,6 @@ namespace HyperRTS.Simulation.Replays
         /// <summary>Claims the scene's entities for the recorded ones, removes the rest and spawns what is missing.</summary>
         private void TakeOver(ref SystemState state, ref ReplayPlaybackState data)
         {
-            var prefabs = SystemAPI.QueryBuilder().WithAll<EntityInfo, Prefab>()
-                .WithOptions(EntityQueryOptions.IncludePrefab).Build();
-            PrefabLookup.ByTypeId(prefabs, data.Prefabs);
-
             var scene = SystemAPI.QueryBuilder().WithAll<EntityInfo, Faction, LocalTransform>().Build();
             var unclaimed = new NativeList<Entity>(Allocator.Temp);
             ReplaySceneMatch.Match(data.From, scene.ToEntityArray(Allocator.Temp),
@@ -84,8 +81,9 @@ namespace HyperRTS.Simulation.Replays
         }
 
         /// <summary>Destroys entities whose key is gone and spawns the keys that have none.</summary>
-        private static void Sync(ref SystemState state, ref ReplayPlaybackState data)
+        private void Sync(ref SystemState state, ref ReplayPlaybackState data)
         {
+            var registry = SystemAPI.GetSingleton<PrefabRegistry>();
             var staleKeys = new NativeList<int>(Allocator.Temp);
             var stale = new NativeList<Entity>(Allocator.Temp);
             foreach (var pair in data.Live)
@@ -111,17 +109,19 @@ namespace HyperRTS.Simulation.Replays
 
             foreach (var pair in data.From)
             {
-                if (!data.Live.ContainsKey(pair.Key) && TrySpawn(ref state, ref data, pair.Value.TypeId, out var spawned))
+                if (!data.Live.ContainsKey(pair.Key) && TrySpawn(ref state, ref data, registry, pair.Value.TypeId, out var spawned))
                 {
                     data.Live[pair.Key] = spawned;
                 }
             }
         }
 
-        private static bool TrySpawn(ref SystemState state, ref ReplayPlaybackState data, int typeId, out Entity spawned)
+        private static bool TrySpawn(ref SystemState state, ref ReplayPlaybackState data, in PrefabRegistry registry,
+            int typeId, out Entity spawned)
         {
             spawned = Entity.Null;
-            if (data.Prefabs.TryGetValue(typeId, out var prefab))
+            var prefab = registry.Find(typeId);
+            if (prefab != Entity.Null)
             {
                 spawned = state.EntityManager.Instantiate(prefab);
                 return true;

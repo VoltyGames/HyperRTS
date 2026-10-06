@@ -2,9 +2,9 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Spatial;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -110,9 +110,7 @@ namespace HyperRTS.Simulation.Abilities
         private void UseAbility(ref SystemState state, byte faction, in PlayerCommand command,
             DynamicBuffer<PlayerCommandSubject> listed, in Context context)
         {
-            var best = Entity.Null;
-            var bestIndex = -1;
-            var bestDistance = float.MaxValue;
+            var closest = Closest.None;
             foreach (var caster in PlayerCommands.Collect(command, listed, _selected))
             {
                 var index = UsableIndex(ref state, caster, faction, command, context);
@@ -130,17 +128,12 @@ namespace HyperRTS.Simulation.Abilities
                 }
 
                 var distance = math.distancesq(from.xz, AbilityRules.Aim(ability, from, command.Target, command.Position, _targets).xz);
-                if (distance < bestDistance || (distance == bestDistance && caster.Index < best.Index))
-                {
-                    best = caster;
-                    bestIndex = index;
-                    bestDistance = distance;
-                }
+                closest.Offer(index, caster, distance);
             }
 
-            if (best != Entity.Null)
+            if (closest.Found)
             {
-                Cast(ref state, best, bestIndex, faction, command, context);
+                Cast(ref state, closest.Entity, closest.Index, faction, command, context);
             }
         }
 
@@ -166,8 +159,7 @@ namespace HyperRTS.Simulation.Abilities
                 return false;
             }
 
-            var building = state.EntityManager.HasEnabled<ConstructionProgress>(caster);
-            return !building && !state.EntityManager.HasEnabled<Unpowered>(caster);
+            return AbilityRules.CanCast(state.EntityManager, caster);
         }
 
         private bool IsUsable(in Ability ability, byte faction, in PlayerCommand command, in Context context) =>

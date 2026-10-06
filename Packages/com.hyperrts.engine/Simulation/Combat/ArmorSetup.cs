@@ -7,14 +7,7 @@ namespace HyperRTS.Simulation.Combat
     public static class ArmorSetup
     {
         public static void Add<TSink>(ref TSink sink, IReadOnlyList<ArmorModifier> modifiers)
-            where TSink : struct, IComponentSink
-        {
-            var buffer = sink.AddBuffer<ArmorModifier>();
-            foreach (var modifier in modifiers)
-            {
-                buffer.Add(modifier);
-            }
-        }
+            where TSink : struct, IComponentSink => sink.AddBuffer(modifiers);
 
         public static void AddFacing<TSink>(ref TSink sink, in ArmorFacing facing) where TSink : struct, IComponentSink =>
             sink.Add(facing);

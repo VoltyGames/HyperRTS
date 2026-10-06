@@ -34,8 +34,8 @@ namespace HyperRTS.Simulation.GameEntities
             sink.Add(new AppliedUpgrades { Faction = spec.Owner });
             sink.Add(new VisionRange { Value = spec.VisionRange });
             sink.Add(new Producible { BuildTime = spec.BuildTime, Population = spec.Population });
-            Fill(sink.AddBuffer<ResourceCost>(), cost);
-            Fill(sink.AddBuffer<Prerequisite>(), prerequisites);
+            sink.AddBuffer(cost);
+            sink.AddBuffer(prerequisites);
             sink.Add<Selectable>();
             sink.Add<Selected>();
             sink.SetEnabled<Selected>(false);
@@ -48,20 +48,6 @@ namespace HyperRTS.Simulation.GameEntities
             if (spec.DeathPrefab != Entity.Null)
             {
                 sink.Add(new SpawnOnDeath { Prefab = spec.DeathPrefab });
-            }
-        }
-
-        private static void Fill<T>(DynamicBuffer<T> buffer, IReadOnlyList<T> items)
-            where T : unmanaged, IBufferElementData
-        {
-            if (items == null)
-            {
-                return;
-            }
-
-            foreach (var item in items)
-            {
-                buffer.Add(item);
             }
         }
     }

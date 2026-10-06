@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             var built = _builtMap;
-            if (!map.Min.Equals(built.Min) || !map.Size.Equals(built.Size) || map.NavCellSize != built.NavCellSize)
+            if (!map.SameArea(built) || map.NavCellSize != built.NavCellSize)
             {
                 return false;
             }

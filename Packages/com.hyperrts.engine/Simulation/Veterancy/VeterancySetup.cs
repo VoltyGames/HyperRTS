@@ -17,11 +17,7 @@ namespace HyperRTS.Simulation.Veterancy
                 ranks.Add(new VeterancyRank { Experience = threshold });
             }
 
-            var bonusBuffer = sink.AddBuffer<VeterancyBonus>();
-            foreach (var bonus in bonuses)
-            {
-                bonusBuffer.Add(bonus);
-            }
+            sink.AddBuffer(bonuses);
         }
     }
 }

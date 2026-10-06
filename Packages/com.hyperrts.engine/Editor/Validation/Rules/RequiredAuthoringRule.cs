@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Validation.Rules
                 }
 
                 issues.Warn(component, message, "Add " + NameOf(required.Type).Replace(" Authoring", ""),
-                    () => QuickFixes.AddComponent(component.gameObject, required.Type));
+                    () => Undo.AddComponent(component.gameObject, required.Type));
             }
         }
 

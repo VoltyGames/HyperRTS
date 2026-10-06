@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Production;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -20,6 +21,17 @@ namespace HyperRTS.Simulation.Abilities
             }
 
             return -1;
+        }
+
+        /// <summary>A caster that is finished and powered; the AI and player commands both cast only from these.</summary>
+        public static bool CanCast(EntityManager entityManager, Entity caster)
+        {
+            if (entityManager.HasEnabled<ConstructionProgress>(caster))
+            {
+                return false;
+            }
+
+            return !entityManager.HasEnabled<Unpowered>(caster);
         }
 
         /// <summary>Ready, its required building owned and aimed at a valid target; checked on issue and firing.</summary>

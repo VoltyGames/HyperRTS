@@ -86,8 +86,7 @@ namespace HyperRTS.Presentation.Common
 
         public bool TryGetMatch(out MatchState match) => _match.TryGetSingleton(out match);
 
-        public bool IsLocalDefeated() =>
-            EntityManager.HasComponent<Defeated>(LocalPlayer) && EntityManager.IsComponentEnabled<Defeated>(LocalPlayer);
+        public bool IsLocalDefeated() => EntityManager.HasEnabled<Defeated>(LocalPlayer);
 
         private void Bind(World world)
         {

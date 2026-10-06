@@ -143,9 +143,8 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                // Index order varies run to run, so ties go to the lower entity index for determinism.
                 var distance = math.distance(entry.Position.xz, Center.xz) - entry.Radius;
-                if (distance < BestDistance || (distance == BestDistance && entry.Entity.Index < Best.Index))
+                if (Closest.IsCloser(distance, entry.Entity, BestDistance, Best))
                 {
                     Best = entry.Entity;
                     BestDistance = distance;

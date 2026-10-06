@@ -7,13 +7,6 @@ namespace HyperRTS.Simulation.Abilities
     public static class AbilitySetup
     {
         public static void Add<TSink>(ref TSink sink, IReadOnlyList<Ability> abilities)
-            where TSink : struct, IComponentSink
-        {
-            var buffer = sink.AddBuffer<Ability>();
-            foreach (var ability in abilities)
-            {
-                buffer.Add(ability);
-            }
-        }
+            where TSink : struct, IComponentSink => sink.AddBuffer(abilities);
     }
 }

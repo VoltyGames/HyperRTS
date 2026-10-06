@@ -31,8 +31,6 @@ namespace HyperRTS.Editor.Validation
             collider.size = new Vector3(bounds.size.x / scale.x, bounds.size.y / scale.y, bounds.size.z / scale.z);
         }
 
-        public static Component AddComponent(GameObject go, Type type) => Undo.AddComponent(go, type);
-
         /// <summary>Swaps a scene instance in an option list for the prefab asset it came from.</summary>
         public static void UsePrefab<T>(Object owner, List<T> options, T instance) where T : Object =>
             EditorUndo.Record(owner, "Use Prefab", () =>

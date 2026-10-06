@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Units;
+using UnityEditor;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
@@ -20,7 +21,7 @@ namespace HyperRTS.Editor.Validation.Rules
             }
 
             issues.Warn(unit, "Nav layer is Air but there is no Flight component: the unit will skim the ground.",
-                "Add Flight", () => QuickFixes.AddComponent(unit.gameObject, typeof(FlightAuthoring)));
+                "Add Flight", () => Undo.AddComponent<FlightAuthoring>(unit.gameObject));
         }
     }
 }

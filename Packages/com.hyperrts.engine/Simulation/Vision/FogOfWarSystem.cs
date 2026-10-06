@@ -126,7 +126,7 @@ namespace HyperRTS.Simulation.Vision
         }
 
         private static bool SameArea(in MapSettings a, in MapSettings b) =>
-            a.Min.Equals(b.Min) && a.Size.Equals(b.Size) && a.FogCellSize == b.FogCellSize;
+            a.SameArea(b) && a.FogCellSize == b.FogCellSize;
 
         private static void Dispose(in FogOfWar fog)
         {

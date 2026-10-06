@@ -142,8 +142,7 @@ namespace HyperRTS.Simulation.Air
                     return;
                 }
 
-                moving.ValueRW = false;
-                busy.ValueRW = false;
+                ActiveOrder.Finish(busy, moving);
                 docked.ValueRW = true;
             }
         }

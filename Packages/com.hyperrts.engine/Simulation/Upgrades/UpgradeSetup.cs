@@ -17,23 +17,9 @@ namespace HyperRTS.Simulation.Upgrades
             sink.Add(info);
             sink.Add(new Producible { BuildTime = researchTime });
 
-            var costs = sink.AddBuffer<ResourceCost>();
-            foreach (var item in cost)
-            {
-                costs.Add(item);
-            }
-
-            var required = sink.AddBuffer<Prerequisite>();
-            foreach (var item in prerequisites)
-            {
-                required.Add(item);
-            }
-
-            var granted = sink.AddBuffer<UpgradeEffect>();
-            foreach (var item in effects)
-            {
-                granted.Add(item);
-            }
+            sink.AddBuffer(cost);
+            sink.AddBuffer(prerequisites);
+            sink.AddBuffer(effects);
         }
     }
 }

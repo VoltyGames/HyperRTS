@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Spatial;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -24,7 +23,7 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < casters.Length; i++)
             {
                 var caster = casters.Entities[i];
-                if (!casters.IsOwnedBy(i, turn.Faction) || !CanCast(ref state, caster))
+                if (!casters.IsOwnedBy(i, turn.Faction) || !AbilityRules.CanCast(state.EntityManager, caster))
                 {
                     continue;
                 }
@@ -57,16 +56,6 @@ namespace HyperRTS.Simulation.AI
         {
             Type = type, Unit = caster, Target = aim.Target, Position = aim.Position, Argument = ability.Id,
         };
-
-        private static bool CanCast(ref SystemState state, Entity caster)
-        {
-            if (state.EntityManager.HasEnabled<ConstructionProgress>(caster))
-            {
-                return false;
-            }
-
-            return !state.EntityManager.HasEnabled<Unpowered>(caster);
-        }
 
         /// <summary>
         /// Self-targeted abilities fire when an enemy is near; aimed ones at the nearest suitable target, which must be
