@@ -19,6 +19,9 @@ namespace HyperRTS.Simulation.Audio
         public byte Faction;
 
         public float3 Position;
+
+        /// <summary>The source was stealthed: only teams detecting it hear it.</summary>
+        public bool Stealthed;
     }
 
     /// <summary>Tags the singleton holding this frame's <see cref="SoundEvent"/>s.</summary>

@@ -209,11 +209,13 @@ namespace HyperRTS.Simulation.Tests
             var hiddenShot = new SoundEvent { Slot = SoundSlot.Fire, Faction = 1 };
             var seenShot = new SoundEvent { Slot = SoundSlot.Fire, Faction = 1, Position = new float3(52f, 0f, 50f) };
 
-            Assert.IsTrue(SoundRules.IsAudible(voice, 1, true, fog, relations));
-            Assert.IsFalse(SoundRules.IsAudible(voice, 2, true, fog, relations), "voices are private");
-            Assert.IsFalse(SoundRules.IsAudible(hiddenShot, 2, true, fog, relations), "hidden by fog");
-            Assert.IsTrue(SoundRules.IsAudible(seenShot, 2, true, fog, relations));
-            Assert.IsTrue(SoundRules.IsAudible(hiddenShot, 2, false, fog, relations), "fog off");
+            Assert.IsTrue(SoundRules.IsAudible(voice, 1, fog, relations));
+            Assert.IsFalse(SoundRules.IsAudible(voice, 2, fog, relations), "voices are private");
+            Assert.IsFalse(SoundRules.IsAudible(hiddenShot, 2, fog, relations), "hidden by fog");
+            Assert.IsTrue(SoundRules.IsAudible(seenShot, 2, fog, relations));
+            seenShot.Stealthed = true;
+            Assert.IsFalse(SoundRules.IsAudible(seenShot, 2, fog, relations), "undetected stealth is silent");
+            Assert.IsTrue(SoundRules.IsAudible(hiddenShot, 1, fog, relations), "own sounds always");
         }
 
         private T Single<T>() where T : unmanaged, IComponentData

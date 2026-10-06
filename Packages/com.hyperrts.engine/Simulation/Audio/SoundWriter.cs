@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -14,6 +15,7 @@ namespace HyperRTS.Simulation.Audio
         private BufferLookup<SoundEvent> _events;
         [ReadOnly] private BufferLookup<EntitySound> _sounds;
         [ReadOnly] private ComponentLookup<EntityInfo> _info;
+        [ReadOnly] private ComponentLookup<Stealthed> _cloaks;
         private Entity _queue;
 
         public SoundWriter(ref SystemState state) : this()
@@ -21,6 +23,7 @@ namespace HyperRTS.Simulation.Audio
             _events = state.GetBufferLookup<SoundEvent>();
             _sounds = state.GetBufferLookup<EntitySound>(true);
             _info = state.GetComponentLookup<EntityInfo>(true);
+            _cloaks = state.GetComponentLookup<Stealthed>(true);
         }
 
         /// <summary>Call each update before scheduling; the queue exists once <see cref="SoundClearSystem"/> is created.</summary>
@@ -29,12 +32,23 @@ namespace HyperRTS.Simulation.Audio
             _events.Update(ref state);
             _sounds.Update(ref state);
             _info.Update(ref state);
+            _cloaks.Update(ref state);
             _queue = queue;
         }
 
         /// <summary>Plays <paramref name="source"/>'s cue for the slot (prefab or instance) at a position.</summary>
-        public void Play(Entity source, SoundSlot slot, float3 position, byte faction) =>
-            Add(TypeIdFor(source, slot), slot, position, faction);
+        public void Play(Entity source, SoundSlot slot, float3 position, byte faction)
+        {
+            var typeId = TypeIdFor(source, slot);
+            if (typeId != 0)
+            {
+                _events[_queue].Add(new SoundEvent
+                {
+                    TypeId = typeId, Slot = slot, Faction = faction, Position = position,
+                    Stealthed = Stealthed.Of(_cloaks, source),
+                });
+            }
+        }
 
         /// <summary><paramref name="source"/>'s type id if it has a cue for the slot, else 0.</summary>
         public int TypeIdFor(Entity source, SoundSlot slot)

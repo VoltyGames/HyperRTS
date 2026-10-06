@@ -74,7 +74,7 @@ namespace HyperRTS.Presentation.Audio
 
             foreach (var sound in sounds.ToNativeArray(Allocator.Temp))
             {
-                if (SoundRules.IsAudible(sound, view.Viewer, view.Active, fog, relations))
+                if (SoundRules.IsAudible(sound, view.Viewer, fog, relations))
                 {
                     Play(CueOf(sound.TypeId, sound.Slot), sound.Position);
                 }

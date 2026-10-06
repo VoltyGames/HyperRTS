@@ -11,7 +11,7 @@ namespace HyperRTS.Network.Audio
 {
     /// <summary>
     /// Server: sends each client the frame's sounds it may hear (<see cref="SoundRules.IsAudible"/>: what its team
-    /// sees, plus its own voices). The server itself never plays audio.
+    /// sees and detects, plus its own voices). The server itself never plays audio.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
@@ -39,7 +39,7 @@ namespace HyperRTS.Network.Audio
             }
 
             var relations = SystemAPI.GetSingleton<FactionRelations>();
-            var fogActive = IsFogActive(ref state, out var fog);
+            SystemAPI.TryGetSingleton(out FogOfWar fog);
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>().WithAll<NetworkStreamInGame>()
@@ -49,7 +49,7 @@ namespace HyperRTS.Network.Audio
                 var sent = 0;
                 for (var i = 0; i < sounds.Length && sent < MaxPerTick; i++)
                 {
-                    if (!SoundRules.IsAudible(sounds[i], listener, fogActive, fog, relations))
+                    if (!SoundRules.IsAudible(sounds[i], listener, fog, relations))
                     {
                         continue;
                     }
@@ -60,17 +60,6 @@ namespace HyperRTS.Network.Audio
                     sent++;
                 }
             }
-        }
-
-        private bool IsFogActive(ref SystemState state, out FogOfWar fog)
-        {
-            fog = default;
-            if (!SystemAPI.TryGetSingleton(out MapSettings map) || !map.FogOfWar)
-            {
-                return false;
-            }
-
-            return SystemAPI.TryGetSingleton(out fog) && fog.IsCreated;
         }
 
         /// <summary>The connection's faction; observers (no slot) hear every world sound.</summary>

@@ -26,23 +26,22 @@ namespace HyperRTS.Simulation.Audio
         }
 
         /// <summary>
-        /// Voices reach their owner only; everything else reaches whoever can see where it happens. Without fog
-        /// (<paramref name="fogActive"/> false) every non-voice event is audible.
+        /// Voices reach their owner only; everything else reaches whoever could see its source there, by the same
+        /// fog and stealth rule as entities. Without a fog grid every non-voice event is audible.
         /// </summary>
-        public static bool IsAudible(in SoundEvent sound, byte listener, bool fogActive, in FogOfWar fog,
-            in FactionRelations relations)
+        public static bool IsAudible(in SoundEvent sound, byte listener, in FogOfWar fog, in FactionRelations relations)
         {
             if (IsVoice(sound.Slot))
             {
                 return sound.Faction == listener;
             }
 
-            if (!fogActive)
+            if (!fog.IsCreated)
             {
                 return true;
             }
 
-            return !fog.IsHiddenFrom(relations, listener, sound.Faction, sound.Position);
+            return !fog.IsHiddenFrom(relations, listener, sound.Faction, sound.Position, sound.Stealthed);
         }
     }
 }
