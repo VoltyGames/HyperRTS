@@ -42,7 +42,7 @@ Shared identity for units and buildings.
 
 | Type | Role |
 | --- | --- |
-| `MatchAuthoring` | One per map: map size, nav/fog cell sizes, fog toggle, player slots, AI tuning |
+| `MatchAuthoring` | One per map: map size, nav/fog cell sizes, fog toggle, player slots, AI tuning per difficulty |
 | `MapSettings` | Singleton: playable bounds and grid resolutions |
 | `Player` | Per player entity: faction number, team, name, colour. Also holds `ResourceStock`, `Population`, `PlayerCommand`, `Defeated` |
 | `LocalPlayer` / `AIPlayer` | Who drives the player |
@@ -246,9 +246,21 @@ queue head when population allows and sends new units to the rally point.
 
 ## AI
 
-`SkirmishAISystem` drives every `AIPlayer` through `PlayerCommand`s only (the same path as a human): idle
-harvesters gather, idle producers train affordable units and research round-robin, and once enough idle combat units exist they
-attack-move to the nearest hostile building. Deterministic and easy to replace: disable it and write your own.
+| Type | Role |
+| --- | --- |
+| `AIBuildOrder` (asset) / `AIBuildStep` | Opening per faction: building, unit or upgrade prefabs with a count, in order |
+| `AIDifficulty`, `AITuning` | Easy / Normal / Hard presets on `MatchAuthoring`: think interval, attack wave size, ability use |
+| `AIPlayerSetup` | Adds `AIPlayer` and its build-order buffer to a player entity |
+| `AIPlacement` | Ring search for a free building spot around the AI base, leaving a gap (uses `PlacementMath`) |
+
+`SkirmishAISystem` drives every `AIPlayer` through `PlayerCommand`s only (the same path as a human). Each think it
+starts the first unmet build-order step it can afford (existing, queued and unfinished entities count): buildings
+are placed near its base by an idle (else the nearest) builder, units and upgrades are queued at a producer. Once
+every step is met, idle producers train and research round-robin. Idle builders finish abandoned sites, idle
+harvesters gather, ready abilities and player powers fire at the nearest suitable target (hurt allies for heals,
+in range unless unlimited; undetected stealth is skipped), and once enough idle combat units exist they attack-move
+to the nearest hostile building. Deterministic (ties broken by entity index) and easy to replace: disable it and
+write your own.
 
 ## Replays
 

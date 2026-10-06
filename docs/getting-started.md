@@ -97,8 +97,10 @@ Inside the SubScene:
 ## 7. Players and AI
 
 Each `Match` player slot has a **Control**: `LocalHuman` (you), `AI` (built-in skirmish AI) or `Remote` (idle in
-single player). The AI keeps harvesters working, trains units from its producers and attacks the nearest enemy base
-once **AI Attack Wave Size** idle combat units are ready. It doesn't place new buildings, so give it a base.
+single player). An AI slot also picks a **Difficulty** (tuned under the Match's **AI** header) and an optional
+**Build Order** asset (**Create ▸ HyperRTS ▸ Match ▸ AI Build Order**): buildings, units and upgrades with counts,
+worked through in order with its builders and producers. Afterwards it trains freely, keeps harvesters working,
+uses abilities and attacks the nearest enemy base once its wave size of idle combat units is ready.
 
 A player is defeated when it loses every entity flagged **Counts For Victory**. When only one team is left the
 HUD shows Victory or Defeat.

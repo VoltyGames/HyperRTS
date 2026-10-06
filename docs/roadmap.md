@@ -97,7 +97,8 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ `Dead` marker frame + `SpawnOnDeath` hook before destruction
 - ✅ Skirmish AI: harvesting, production and attack waves, only through `PlayerCommand`s
 - ✅ Splash damage, kill credit and veterancy (Phase 9b)
-- ⬜ Micro AI (kiting, focus fire), AI base building
+- ✅ AI base building from data-driven build orders, ability and power use, Easy / Normal / Hard presets
+- ⬜ Micro AI (kiting, focus fire)
 
 ## Phase 8: Fog of war & vision ✅
 
