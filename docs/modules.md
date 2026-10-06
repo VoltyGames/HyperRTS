@@ -142,7 +142,7 @@ Not built in: rotating turrets. Stealth and detection are in Vision.
 
 | Type | Role |
 | --- | --- |
-| `UnitAuthoring` Flight fields / `Flight` | On the Air nav layer: cruise altitude, climb speed, loiter radius (0 hovers; above 0 the idle aircraft keeps circling, for jets), uses landing pads |
+| `FlightAuthoring` / `Flight` | Makes a unit an aircraft (its `NavAgent` goes on the Air layer; a unit set to Air without it is flagged by the validator): cruise altitude, climb speed, loiter radius (0 hovers; above 0 the idle aircraft keeps circling, for jets), uses landing pads |
 | `AirfieldAuthoring` / `LandingPad` | Pad offsets on a building, each holding one aircraft (`Aircraft`, null while free) |
 | `PadHome` | The aircraft's airfield and pad; null while homeless |
 | `Docked` | Enableable (replicated): landed on its pad; ammo reloads, games refuel or repair here |

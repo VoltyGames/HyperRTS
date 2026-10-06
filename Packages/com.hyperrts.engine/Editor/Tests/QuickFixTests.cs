@@ -2,8 +2,10 @@ using System.Linq;
 using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using UnityEditor;
@@ -55,6 +57,18 @@ namespace HyperRTS.Editor.Tests
             Fix(producer, "Remove Empty");
 
             CollectionAssert.AreEqual(new[] { asset.GetComponent<UnitAuthoring>() }, producer.productionOptions);
+        }
+
+        [Test]
+        public void AddFlightTurnsAnAirLayerUnitIntoAnAircraft()
+        {
+            var unit = Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
+            unit.navLayer = NavLayer.Air;
+
+            Fix(unit, "Add Flight");
+
+            Assert.IsTrue(unit.TryGetComponent<FlightAuthoring>(out _));
+            Assert.IsFalse(AuthoringChecks.For(unit).Any(issue => issue.FixLabel == "Add Flight"));
         }
 
         [Test]

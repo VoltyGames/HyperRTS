@@ -18,10 +18,7 @@ namespace HyperRTS.Simulation.Tests
             var aircraft = world.SpawnUnit(faction, position, speed: speed, name: "Aircraft");
             world.EntityManager.SetComponentData(aircraft, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air });
             var sink = new EntityManagerSink(world.EntityManager, aircraft);
-            sink.Add(new Flight
-            {
-                Altitude = altitude, ClimbSpeed = 20f, LoiterRadius = loiterRadius,
-            });
+            AirSetup.AddFlight(ref sink, altitude, climbSpeed: 20f, loiterRadius);
             return aircraft;
         }
 
