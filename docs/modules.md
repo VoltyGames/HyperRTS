@@ -115,7 +115,7 @@ the hit on impact) → `DamageSystem` (last in the phase: damage-type armor × f
 falloff, `LastAttacker`; negative amounts heal, and healing splash reaches allies only). Games deal damage by appending
 to the queue with a `DamageWriter`. `DeathSystem` runs in the lifecycle phase.
 
-Not built in: stealth/detection, rotating turrets.
+Not built in: rotating turrets. Stealth and detection are in Vision.
 
 ## Stats and Veterancy
 
@@ -198,10 +198,23 @@ walk-into-range orders.
 
 ## Vision
 
-`VisionRange` on units and buildings; `FogOfWar` singleton with one bit per team for *visible now* and *explored*.
-`FogOfWarSystem` restamps it 10 times per second (or fills it once when the match disables fog).
-`LocalFogViewSystem` publishes the local player's `LocalFogView` and tags hostile entities they can't see with
-`FogHidden` once per restamp; selection, picking, the HUD and rendering all skip tagged entities.
+| Type | Role |
+| --- | --- |
+| `VisionRange` | Sight radius on units and buildings |
+| `FogOfWar` | Singleton grid, one bit per team for *visible now*, *explored* and *detected*; `CanSee`/`IsHiddenFrom` combine fog and stealth, `IsCloakedFrom` is the stealth half |
+| `StealthAuthoring` / `Stealth` | Enableable (games toggle it at runtime): reveal time after firing, stealthed only when still |
+| `Stealthed` | Enableable result (replicated): hidden right now from hostile teams without a detector on it |
+| `DetectorAuthoring` / `Detector` | Detection radius, separate from vision |
+| `FogHidden`, `LocalFogView` | Hostile roots the local player can't see; who the local player views as |
+
+`FogOfWarSystem` restamps vision and detection 10 times per second; with fog disabled every cell stays visible but
+detection still runs, so stealth works with fog off. `StealthSystem` (after `WeaponFireSystem`, which restarts the
+reveal timer on each shot) sets `Stealthed`. `LocalFogViewSystem` publishes the local player's `LocalFogView` and
+tags hostile entities they can't see (fog or undetected stealth) with `FogHidden` once per restamp; selection,
+picking, the HUD and rendering all skip tagged entities. `TargetLookup.IsValidTarget` rejects undetected stealthed
+targets, so auto-acquisition, attack orders, engagement and command resolution all ignore them; the skirmish AI skips
+them and `FogRelevancySystem` doesn't replicate them. Splash still hits them. Showing own stealthed units as
+stealthed (e.g. translucent) is left to games, which read `Stealthed`.
 
 ## Resources
 

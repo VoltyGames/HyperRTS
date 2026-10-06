@@ -104,7 +104,8 @@ phase favours generic, data-driven, Burst-safe pieces over game-specific code.
 - ✅ Per-team visible/explored bit grid (`FogOfWar`), restamped 10 times per second
 - ✅ Hostile entities outside vision are hidden; fog overlay shader with soft edges; minimap respects fog
 - ✅ Fog can be disabled per match
-- ⬜ Stealth/detection, "last seen" building ghosts, line-of-sight occlusion
+- ✅ Stealth (revealed by firing, optionally only when still) and per-team detection, also with fog off
+- ⬜ "Last seen" building ghosts, line-of-sight occlusion
 
 ## Phase 9: Factions & players ✅
 

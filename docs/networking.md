@@ -99,8 +99,8 @@ cooldowns) is checked by the same systems as in single player.
 ## Fog of war
 
 `FogRelevancySystem` sends each client only the owned ghosts its team can see, so map hacks have nothing to
-reveal. Ghosts without a `Faction` (players, the match) always replicate, and observers see everything. With fog
-off, relevancy is disabled.
+reveal. Undetected stealthed enemies count as unseen, with fog on or off. Ghosts without a `Faction` (players, the
+match) always replicate, and observers see everything.
 
 ## Physics
 

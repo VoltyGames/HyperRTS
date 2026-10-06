@@ -40,7 +40,8 @@ SimulationSystemGroup
  │   └─ PathfindingSystem → MovementSystem
  ├─ CombatSystemGroup
  │   ├─ (first) FogOfWarSystem
- │   └─ AttackOrderSystem → TargetAcquisitionSystem → EngagementSystem → WeaponFireSystem → ProjectileSystem
+ │   └─ AttackOrderSystem → TargetAcquisitionSystem → EngagementSystem → WeaponFireSystem → ProjectileSystem,
+ │      StealthSystem (after WeaponFireSystem)
  ├─ ProductionSystemGroup
  │   ├─ (first) PopulationSystem
  │   └─ ConstructionSystem, GatherSystem → ResourceNodeSystem, ProductionSystem
