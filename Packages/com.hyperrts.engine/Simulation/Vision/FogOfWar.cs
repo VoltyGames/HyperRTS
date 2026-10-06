@@ -7,12 +7,14 @@ namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
     /// Singleton fog-of-war grid over the map. Each cell holds one bit per team (bit n = team n) for what is
-    /// visible right now and what has ever been seen. With fog disabled every cell is visible to everyone.
+    /// visible right now, what has ever been seen and what a detector covers. With fog disabled every cell is visible
+    /// to everyone, but stealth still needs detection.
     /// </summary>
     public struct FogOfWar : IComponentData
     {
         public NativeArray<byte> Visible;
         public NativeArray<byte> Explored;
+        public NativeArray<byte> Detected;
         public int2 Size;
         public float2 Min;
         public float CellSize;
@@ -34,10 +36,20 @@ namespace HyperRTS.Simulation.Vision
 
         public readonly bool IsExplored(float3 position, byte team) => Test(Explored, position, team);
 
-        /// <summary>Hostile entities outside the viewer team's sight are hidden; own, allied and neutral never are.</summary>
+        public readonly bool IsDetected(float3 position, byte team) => Test(Detected, position, team);
+
+        /// <summary>Stealth hides an entity from a team none of whose detectors covers it, with or without fog.</summary>
+        public readonly bool IsCloakedFrom(byte team, float3 position, bool stealthed) =>
+            stealthed && !IsDetected(position, team);
+
+        /// <summary>Whether a team sees an entity there: in its sight and, if stealthed, detected.</summary>
+        public readonly bool CanSee(byte team, float3 position, bool stealthed) =>
+            IsVisible(position, team) && !IsCloakedFrom(team, position, stealthed);
+
+        /// <summary>Hostile entities the viewer team can't see are hidden; own, allied and neutral never are.</summary>
         public readonly bool IsHiddenFrom(in FactionRelations relations, byte viewerFaction, byte faction,
-            float3 position) =>
-            relations.IsHostile(viewerFaction, faction) && !IsVisible(position, relations.TeamOf(viewerFaction));
+            float3 position, bool stealthed) =>
+            relations.IsHostile(viewerFaction, faction) && !CanSee(relations.TeamOf(viewerFaction), position, stealthed);
 
         private readonly bool Test(NativeArray<byte> cells, float3 position, byte team)
         {

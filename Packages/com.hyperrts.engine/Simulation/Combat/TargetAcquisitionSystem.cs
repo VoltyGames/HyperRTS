@@ -14,8 +14,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// Points idle, attack-moving and hold-position weapons (and finished towers) at the nearest hostile in range.
-    /// Units on any other order never auto-acquire.
+    /// Points idle, attack-moving and hold-position weapons (and finished towers) at the nearest hostile in range that
+    /// stealth doesn't hide. Units on any other order never auto-acquire.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -81,6 +81,7 @@ namespace HyperRTS.Simulation.Combat
                 var finder = new NearestHostile
                 {
                     Relations = Relations,
+                    Targets = Targets,
                     Faction = faction.Value,
                     Center = transform.Position,
                     BestDistance = float.MaxValue,
@@ -102,6 +103,7 @@ namespace HyperRTS.Simulation.Combat
         private struct NearestHostile : ISpatialVisitor
         {
             public FactionRelations Relations;
+            public TargetLookup Targets;
             public byte Faction;
             public float3 Center;
             public Entity Best;
@@ -110,6 +112,11 @@ namespace HyperRTS.Simulation.Combat
             public void Visit(in SpatialEntry entry)
             {
                 if (!Relations.IsHostile(Faction, entry.Faction))
+                {
+                    return;
+                }
+
+                if (Targets.IsCloakedFrom(entry.Entity, Relations.TeamOf(Faction)))
                 {
                     return;
                 }

@@ -10,8 +10,9 @@ using Unity.Transforms;
 namespace HyperRTS.Network.Relevancy
 {
     /// <summary>
-    /// Server-side fog of war: owned ghosts hidden from a client's team are marked irrelevant to it, so a hacked client
-    /// has nothing hidden to reveal. Ghosts without an owner (players, the match) always replicate; observers see all.
+    /// Server-side fog of war: owned ghosts hidden from a client's team (by fog or undetected stealth) are marked
+    /// irrelevant to it, so a hacked client has nothing hidden to reveal. Ghosts without an owner (players, the match)
+    /// always replicate; observers see all.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
@@ -39,7 +40,7 @@ namespace HyperRTS.Network.Relevancy
         {
             ref var relevancy = ref SystemAPI.GetSingletonRW<GhostRelevancy>().ValueRW;
             relevancy.GhostRelevancySet.Clear();
-            if (!SystemAPI.GetSingleton<MapSettings>().FogOfWar || !SystemAPI.TryGetSingleton<FogOfWar>(out var fog))
+            if (!SystemAPI.TryGetSingleton<FogOfWar>(out var fog))
             {
                 relevancy.GhostRelevancyMode = GhostRelevancyMode.Disabled;
                 return;
@@ -47,16 +48,26 @@ namespace HyperRTS.Network.Relevancy
 
             // Only hostile, hidden pairs are listed, so observers and allies cost nothing.
             relevancy.GhostRelevancyMode = GhostRelevancyMode.SetIsIrrelevant;
+            var fogOn = SystemAPI.GetSingleton<MapSettings>().FogOfWar;
             var relations = SystemAPI.GetSingleton<FactionRelations>();
             var viewers = Viewers(ref state);
-            foreach (var (transform, owner, ghost) in
-                     SystemAPI.Query<RefRO<LocalTransform>, RefRO<Faction>, RefRO<GhostInstance>>())
+            state.EntityManager.CompleteDependencyBeforeRO<Stealthed>();
+            var cloaks = SystemAPI.GetComponentLookup<Stealthed>(true);
+            foreach (var (transform, owner, ghost, entity) in SystemAPI
+                         .Query<RefRO<LocalTransform>, RefRO<Faction>, RefRO<GhostInstance>>().WithEntityAccess())
             {
+                // With fog off only stealth hides anything.
+                var stealthed = Stealthed.Of(cloaks, entity);
+                if (!fogOn && !stealthed)
+                {
+                    continue;
+                }
+
                 var position = transform.ValueRO.Position;
                 var faction = owner.ValueRO.Value;
                 foreach (var viewer in viewers)
                 {
-                    if (fog.IsHiddenFrom(relations, viewer.Faction, faction, position))
+                    if (fog.IsHiddenFrom(relations, viewer.Faction, faction, position, stealthed))
                     {
                         relevancy.GhostRelevancySet.TryAdd(
                             new RelevantGhostForConnection(viewer.NetworkId, ghost.ValueRO.ghostId), 1);

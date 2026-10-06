@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Upgrades;
+using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -232,11 +233,12 @@ namespace HyperRTS.Simulation.AI
             }
         }
 
-        /// <summary>Nearest hostile critical building, else the nearest hostile unit.</summary>
+        /// <summary>Nearest hostile critical building, else the nearest hostile unit; undetected stealth is skipped.</summary>
         private bool TryFindTarget(ref SystemState state, byte faction, float3 from, in AIGroup targets,
             out float3 target)
         {
             var relations = SystemAPI.GetSingleton<FactionRelations>();
+            SystemAPI.TryGetSingleton(out FogOfWar fog);
             var bestBase = float.MaxValue;
             var bestUnit = float.MaxValue;
             float3 basePosition = default, unitPosition = default;
@@ -246,6 +248,12 @@ namespace HyperRTS.Simulation.AI
                 var entity = targets.Entities[i];
                 var distance = math.distancesq(targets.Position(i).xz, from.xz);
                 if (!relations.IsHostile(faction, targets.Owners[i].Value))
+                {
+                    continue;
+                }
+
+                var stealthed = IsStealthed(ref state, entity);
+                if (fog.IsCloakedFrom(relations.TeamOf(faction), targets.Position(i), stealthed))
                 {
                     continue;
                 }
@@ -266,5 +274,8 @@ namespace HyperRTS.Simulation.AI
             target = bestBase < float.MaxValue ? basePosition : unitPosition;
             return bestBase < float.MaxValue || bestUnit < float.MaxValue;
         }
+
+        private bool IsStealthed(ref SystemState state, Entity entity) =>
+            SystemAPI.HasComponent<Stealthed>(entity) && SystemAPI.IsComponentEnabled<Stealthed>(entity);
     }
 }

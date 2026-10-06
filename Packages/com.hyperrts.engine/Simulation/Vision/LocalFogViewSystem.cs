@@ -31,10 +31,10 @@ namespace HyperRTS.Simulation.Vision
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var view = Evaluate(ref state, out var fog, out var relations);
+            var view = Evaluate(ref state, out var fog, out var relations, out var hides);
             ref var published = ref SystemAPI.GetSingletonRW<LocalFogView>().ValueRW;
             var changed = view.Active != published.Active || view.Viewer != published.Viewer ||
-                          (view.Active && fog.Version != _fogVersion);
+                          (hides && fog.Version != _fogVersion);
 
             // Faction's order version covers spawns, which must not show until the next restamp.
             var factionOrder = state.EntityManager.GetComponentOrderVersion<Faction>();
@@ -53,34 +53,36 @@ namespace HyperRTS.Simulation.Vision
 
             var commands = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            state.Dependency = view.Active
+            state.Dependency = hides
                 ? new HideJob
                 {
                     Fog = fog,
                     Relations = relations,
                     Viewer = view.Viewer,
                     Hidden = SystemAPI.GetComponentLookup<FogHidden>(true),
+                    Cloaked = SystemAPI.GetComponentLookup<Stealthed>(true),
                     Commands = commands,
                 }.ScheduleParallel(state.Dependency)
                 : new RevealAllJob { Commands = commands }.ScheduleParallel(state.Dependency);
         }
 
-        private LocalFogView Evaluate(ref SystemState state, out FogOfWar fog, out FactionRelations relations)
+        /// <summary>The view is active with fog on; entities are hidden whenever there is a team to see as (stealth).</summary>
+        private LocalFogView Evaluate(ref SystemState state, out FogOfWar fog, out FactionRelations relations,
+            out bool hides)
         {
-            fog = default;
-            relations = default;
-            var enabled = SystemAPI.TryGetSingleton(out MapSettings map) && map.FogOfWar
-                && SystemAPI.TryGetSingleton(out fog) && fog.IsCreated
-                && SystemAPI.TryGetSingleton(out relations);
-
             var view = new LocalFogView { Viewer = Faction.Neutral };
             foreach (var player in SystemAPI.Query<RefRO<Player>>().WithAll<LocalPlayer>())
             {
                 view.Viewer = player.ValueRO.Faction;
             }
 
+            SystemAPI.TryGetSingleton(out relations);
+            SystemAPI.TryGetSingleton(out fog);
             view.Team = relations.TeamOf(view.Viewer);
-            view.Active = enabled && view.Team != 0;
+            hides = view.Team != 0 && fog.IsCreated;
+
+            var fogOn = SystemAPI.TryGetSingleton(out MapSettings map) && map.FogOfWar;
+            view.Active = hides && fogOn;
             return view;
         }
 
@@ -92,12 +94,14 @@ namespace HyperRTS.Simulation.Vision
             public FactionRelations Relations;
             public byte Viewer;
             [ReadOnly] public ComponentLookup<FogHidden> Hidden;
+            [ReadOnly] public ComponentLookup<Stealthed> Cloaked;
             public EntityCommandBuffer.ParallelWriter Commands;
 
             private void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in Faction faction,
                 in LocalTransform transform)
             {
-                var hide = Fog.IsHiddenFrom(in Relations, Viewer, faction.Value, transform.Position);
+                var stealthed = Stealthed.Of(Cloaked, entity);
+                var hide = Fog.IsHiddenFrom(in Relations, Viewer, faction.Value, transform.Position, stealthed);
                 if (hide == Hidden.HasComponent(entity))
                 {
                     return;

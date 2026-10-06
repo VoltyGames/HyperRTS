@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Runs <see cref="OrderType.Attack"/> orders: points <see cref="AttackTarget"/> at the order's target and
-    /// completes the order once that target is dead, gone or no longer hostile.
+    /// completes the order once that target is dead, gone, no longer hostile or hidden by stealth.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

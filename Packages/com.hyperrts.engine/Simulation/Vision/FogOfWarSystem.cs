@@ -11,8 +11,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Creates the <see cref="FogOfWar"/> grid from <see cref="MapSettings"/> and restamps every team's vision a few
-    /// times per second. With fog disabled the grid is filled once and left fully visible.
+    /// Creates the <see cref="FogOfWar"/> grid from <see cref="MapSettings"/> and restamps every team's vision and
+    /// detection a few times per second. With fog disabled the grid stays fully visible, but detection still runs.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]
@@ -23,6 +23,7 @@ namespace HyperRTS.Simulation.Vision
         public const float UpdateInterval = 0.1f;
 
         private double _nextUpdate;
+        private bool _stampedWithFog;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -38,6 +39,7 @@ namespace HyperRTS.Simulation.Vision
             {
                 fog.ValueRW.Visible.Dispose();
                 fog.ValueRW.Explored.Dispose();
+                fog.ValueRW.Detected.Dispose();
             }
         }
 
@@ -50,18 +52,32 @@ namespace HyperRTS.Simulation.Vision
                 state.EntityManager.CreateSingleton(CreateGrid(settings));
             }
 
+            // Toggling fog restamps at once, so nothing reads a grid stamped under the old setting.
             var elapsed = SystemAPI.Time.ElapsedTime;
-            if (!settings.FogOfWar || elapsed < _nextUpdate)
+            if (elapsed < _nextUpdate && settings.FogOfWar == _stampedWithFog)
             {
                 return;
             }
 
             _nextUpdate = elapsed + UpdateInterval;
+            _stampedWithFog = settings.FogOfWar;
             ref var fog = ref SystemAPI.GetSingletonRW<FogOfWar>().ValueRW;
+            var relations = SystemAPI.GetSingleton<FactionRelations>();
             fog.Version++;
 
+            // Stealth applies with fog off too, so detection is restamped either way.
+            state.Dependency = new ClearBytesJob { Cells = fog.Detected }.Schedule(state.Dependency);
+            new DetectionStampJob { Fog = fog, Relations = relations }.Schedule();
+            if (!settings.FogOfWar)
+            {
+                // Refilled each restamp, so switching fog off mid-match reveals everything.
+                state.Dependency = new RevealAllJob { Visible = fog.Visible, Explored = fog.Explored }
+                    .Schedule(fog.Visible.Length, 1024, state.Dependency);
+                return;
+            }
+
             state.Dependency = new ClearBytesJob { Cells = fog.Visible }.Schedule(state.Dependency);
-            new StampJob { Fog = fog, Relations = SystemAPI.GetSingleton<FactionRelations>() }.Schedule();
+            new StampJob { Fog = fog, Relations = relations }.Schedule();
             state.Dependency = new ExploreJob { Visible = fog.Visible, Explored = fog.Explored }
                 .Schedule(fog.Explored.Length, 1024, state.Dependency);
         }
@@ -72,27 +88,29 @@ namespace HyperRTS.Simulation.Vision
             var size = math.max((int2)math.ceil(settings.Size / cellSize), 1);
             var count = size.x * size.y;
 
-            var fog = new FogOfWar
+            return new FogOfWar
             {
                 Visible = new NativeArray<byte>(count, Allocator.Persistent),
                 Explored = new NativeArray<byte>(count, Allocator.Persistent),
+                Detected = new NativeArray<byte>(count, Allocator.Persistent),
                 Size = size,
                 Min = settings.Min,
                 CellSize = cellSize,
                 Version = 1,
             };
+        }
 
-            // Fog off: everything is visible and explored for every team, permanently.
-            if (!settings.FogOfWar)
+        [BurstCompile]
+        private struct RevealAllJob : IJobParallelFor
+        {
+            public NativeArray<byte> Visible;
+            public NativeArray<byte> Explored;
+
+            public void Execute(int index)
             {
-                for (var i = 0; i < count; i++)
-                {
-                    fog.Visible[i] = byte.MaxValue;
-                    fog.Explored[i] = byte.MaxValue;
-                }
+                Visible[index] = byte.MaxValue;
+                Explored[index] = byte.MaxValue;
             }
-
-            return fog;
         }
 
         [BurstCompile]

@@ -1,0 +1,36 @@
+using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
+using Unity.Entities;
+using Unity.NetCode;
+using UnityEngine;
+
+namespace HyperRTS.Simulation.Vision
+{
+    /// <summary>Reveals hostile stealthed entities within a radius to this entity's team.</summary>
+    [AddComponentMenu(HyperRTSMenu.Vision + "Detector")]
+    [Icon(HyperRTSIcons.Vision)]
+    [HelpURL(HyperRTSDocs.Modules)]
+    [DisallowMultipleComponent]
+    [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
+    public class DetectorAuthoring : MonoBehaviour
+    {
+        [Tooltip("Detection radius in world units, separate from the vision range.")]
+        [Min(0f)]
+        public float radius = 10f;
+
+        public class Baker : Baker<DetectorAuthoring>
+        {
+            public override void Bake(DetectorAuthoring authoring)
+            {
+                var sink = new BakerSink(this, GetEntity(TransformUsageFlags.Dynamic));
+                StealthSetup.AddDetector(ref sink, authoring.radius);
+            }
+        }
+    }
+
+    /// <summary>Detection radius stamped into <see cref="FogOfWar.Detected"/> for the owner's team.</summary>
+    public struct Detector : IComponentData
+    {
+        [GhostField] public float Radius;
+    }
+}

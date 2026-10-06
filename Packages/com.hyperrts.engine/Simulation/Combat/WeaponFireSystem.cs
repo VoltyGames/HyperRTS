@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -13,7 +14,8 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Ticks weapon cooldowns and fires at in-range targets: an instant <see cref="DamageEvent"/>, or a launched
-    /// <see cref="Projectile"/> when the weapon has a prefab. Unfinished and unpowered buildings stay silent.
+    /// <see cref="Projectile"/> when the weapon has a prefab. Unfinished and unpowered buildings stay silent; a shot
+    /// reveals a stealthed shooter for its <see cref="Stealth.RevealDuration"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -23,6 +25,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<Health> _health;
         private ComponentLookup<UnitTag> _units;
+        private ComponentLookup<Stealth> _stealth;
         private DamageWriter _damage;
 
         [BurstCompile]
@@ -31,6 +34,7 @@ namespace HyperRTS.Simulation.Combat
             _transforms = state.GetComponentLookup<LocalTransform>();
             _health = state.GetComponentLookup<Health>(true);
             _units = state.GetComponentLookup<UnitTag>(true);
+            _stealth = state.GetComponentLookup<Stealth>();
             _damage = new DamageWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -42,6 +46,7 @@ namespace HyperRTS.Simulation.Combat
             _transforms.Update(ref state);
             _health.Update(ref state);
             _units.Update(ref state);
+            _stealth.Update(ref state);
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
 
             // Single-threaded: every shot appends to the one damage queue.
@@ -53,6 +58,7 @@ namespace HyperRTS.Simulation.Combat
                 Transforms = _transforms,
                 Health = _health,
                 Units = _units,
+                Stealth = _stealth,
                 Damage = _damage,
             }.Schedule();
         }
@@ -67,6 +73,7 @@ namespace HyperRTS.Simulation.Combat
             public ComponentLookup<LocalTransform> Transforms;
             [ReadOnly] public ComponentLookup<Health> Health;
             [ReadOnly] public ComponentLookup<UnitTag> Units;
+            public ComponentLookup<Stealth> Stealth;
             public DamageWriter Damage;
 
             private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
@@ -93,6 +100,7 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 weapon.CooldownRemaining = weapon.Cooldown;
+                Reveal(entity);
                 if (weapon.ProjectilePrefab == Entity.Null)
                 {
                     var origin = Transforms[entity].Position;
@@ -101,6 +109,15 @@ namespace HyperRTS.Simulation.Combat
                 else
                 {
                     Launch(entity, weapon, target, targetPosition, faction);
+                }
+            }
+
+            private void Reveal(Entity shooter)
+            {
+                var stealth = Stealth.GetRefRWOptional(shooter);
+                if (stealth.IsValid)
+                {
+                    stealth.ValueRW.RevealTimer = stealth.ValueRO.RevealDuration;
                 }
             }
 
