@@ -438,7 +438,8 @@ once per presented world, so no layer depends on which starts first.
 counts map users and lets menus or rebinding `Suspend`/`Resume` every map), `SelectionInputSystem`, `CommandInputSystem` (right-click Smart, A/S/H, P patrol and E escort +
 click, targeted commands), `PlacementInputSystem` (ghost + PlaceBuilding), `WorldPointer` (Unity Physics raycast,
 then the baked terrain, then the ground plane), `CameraController` (pan, edge scroll, zoom, rotate, map clamp,
-`FocusOn`; it also centres on a pending `CameraFocusRequest`).
+`FocusOn`; it also centres on a pending `CameraFocusRequest`, and opens a match on the local player's buildings
+through `HomeBase` unless `startAtHome` is off).
 
 ## Presentation (client)
 
@@ -450,5 +451,7 @@ card with research, abilities and support powers, return to base, unload and sel
 carries `OverlayRenderer` (selection rings, health bars, placement ghost, rally markers via
 `Graphics.RenderMeshInstanced`), `FogOfWarRenderer` (overlay shader) and the drag-box marquee. `Rendering/` holds the
 shared draw helpers (`OverlayMeshes`, `InstanceBatch`, `RenderHierarchy`, `EntityExtent`). `TeamColorSystem`
-tints owned meshes with the owner's colour through `URPMaterialPropertyBaseColor`, so use URP Lit materials.
+tints owned meshes with the owner's colour through `URPMaterialPropertyBaseColor`, so use URP Lit materials. An
+optional client-side `TeamColorOverride` singleton shows listed factions in other colours (colour-blind palettes,
+own / ally / enemy); `TeamColorSystem` repaints when it changes and `MatchView.ColorOf` returns the same colours.
 `FogVisibilitySystem` mirrors `FogHidden` and `Inside` onto `DisableRendering` for the entity and its child meshes.

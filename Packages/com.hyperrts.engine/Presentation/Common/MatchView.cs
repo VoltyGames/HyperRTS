@@ -1,4 +1,5 @@
 ﻿using System;
+using HyperRTS.Presentation.TeamColors;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
@@ -17,9 +18,10 @@ namespace HyperRTS.Presentation.Common
         private readonly Color[] _factionColors = new Color[byte.MaxValue + 1];
         private World _world;
         private int _frame = -1;
-        private (int Order, uint Change) _colorsVersion = (-1, 0u);
+        private (int Players, int Override, uint Change) _colorsVersion = (-1, -1, 0u);
         private EntityQuery _localPlayer;
         private EntityQuery _players;
+        private EntityQuery _colorOverride;
         private EntityQuery _relations;
         private EntityQuery _map;
         private EntityQuery _match;
@@ -106,10 +108,11 @@ namespace HyperRTS.Presentation.Common
         private void Bind(World world)
         {
             _world = world;
-            _colorsVersion = (-1, 0u);
+            _colorsVersion = (-1, -1, 0u);
             EntityManager = world.EntityManager;
             _localPlayer = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalPlayer>(), ComponentType.ReadOnly<Player>());
             _players = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<Player>());
+            _colorOverride = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<TeamColorOverride>());
             _relations = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<FactionRelations>());
             _map = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MapSettings>());
             _match = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MatchState>());
@@ -127,26 +130,34 @@ namespace HyperRTS.Presentation.Common
 
             _colorsVersion = version;
             Array.Fill(_factionColors, Color.gray);
+            _colorOverride.TryGetSingleton(out TeamColorOverride colorOverride);
             using var players = _players.ToComponentDataArray<Player>(Allocator.Temp);
             foreach (var player in players)
             {
-                var linear = new Color(player.Color.x, player.Color.y, player.Color.z, 1f);
-                _factionColors[player.Faction] = linear.gamma;
+                var color = colorOverride.TryGet(player.Faction, out var replaced) ? replaced : player.Color;
+                _factionColors[player.Faction] = new Color(color.x, color.y, color.z, 1f).gamma;
             }
         }
 
-        // Colours change only when players are added, removed or rewritten.
-        private (int Order, uint Change) PlayersVersion()
+        // Colours change only when players or the colour override are added, removed or rewritten.
+        private (int Players, int Override, uint Change) PlayersVersion()
         {
-            var handle = EntityManager.GetComponentTypeHandle<Player>(true);
+            var change = Math.Max(LatestChange<Player>(_players), LatestChange<TeamColorOverride>(_colorOverride));
+            return (EntityManager.GetComponentOrderVersion<Player>(),
+                EntityManager.GetComponentOrderVersion<TeamColorOverride>(), change);
+        }
+
+        private uint LatestChange<T>(EntityQuery query) where T : unmanaged, IComponentData
+        {
+            var handle = EntityManager.GetComponentTypeHandle<T>(true);
             var change = 0u;
-            using var chunks = _players.ToArchetypeChunkArray(Allocator.Temp);
+            using var chunks = query.ToArchetypeChunkArray(Allocator.Temp);
             foreach (var chunk in chunks)
             {
                 change = Math.Max(change, chunk.GetChangeVersion(ref handle));
             }
 
-            return (EntityManager.GetComponentOrderVersion<Player>(), change);
+            return change;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
