@@ -148,7 +148,6 @@ namespace HyperRTS.Simulation.GameEntities
             }
         }
 
-        /// <summary>The baked tuning of a difficulty; Normal's defaults when the match baked none.</summary>
         private static AIDifficultyTuning TuningFor(NativeArray<AIDifficultyTuning> tunings, AIDifficulty difficulty)
         {
             foreach (var tuning in tunings)
@@ -159,14 +158,12 @@ namespace HyperRTS.Simulation.GameEntities
                 }
             }
 
-            return new AITuning().ToTuning(difficulty);
+            throw new System.InvalidOperationException($"The Match baked no tuning for {difficulty}.");
         }
 
         // Copied out: the structural changes that follow would invalidate the buffer.
         private NativeArray<AIDifficultyTuning> CopyTunings(ref SystemState state) =>
-            SystemAPI.TryGetSingletonBuffer<AIDifficultyTuning>(out var buffer, true)
-                ? buffer.ToNativeArray(Allocator.Temp)
-                : new NativeArray<AIDifficultyTuning>(0, Allocator.Temp);
+            SystemAPI.GetSingletonBuffer<AIDifficultyTuning>(true).ToNativeArray(Allocator.Temp);
 
         private static void SetTeam(ref FactionRelations relations, byte faction, byte team)
         {

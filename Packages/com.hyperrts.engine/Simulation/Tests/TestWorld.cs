@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
@@ -91,7 +92,9 @@ namespace HyperRTS.Simulation.Tests
         public bool IsEnabled<T>(Entity entity) where T : unmanaged, IComponentData, IEnableableComponent =>
             EntityManager.IsComponentEnabled<T>(entity);
 
-        /// <summary>Creates map, relations and one player per team entry (faction = index + 1, first is local).</summary>
+        /// <summary>
+        /// Creates map, relations, AI tunings and one player per team entry (faction = index + 1, first is local).
+        /// </summary>
         public void CreateMatch(params byte[] teams)
         {
             var match = EntityManager.CreateEntity();
@@ -115,6 +118,11 @@ namespace HyperRTS.Simulation.Tests
             }
 
             EntityManager.AddComponentData(match, relations);
+            var tunings = EntityManager.AddBuffer<AIDifficultyTuning>(match);
+            foreach (AIDifficulty difficulty in Enum.GetValues(typeof(AIDifficulty)))
+            {
+                tunings.Add(new AITuning().ToTuning(difficulty));
+            }
         }
 
         /// <summary>Bakes a heightfield over the test map from a height function, as Terrain Height authoring does.</summary>
