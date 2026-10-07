@@ -1,4 +1,4 @@
-using Unity.Mathematics;
+﻿using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Replays
 {
@@ -11,5 +11,8 @@ namespace HyperRTS.Simulation.Replays
 
         /// <summary>Linear RGBA team colour.</summary>
         public float4 Color;
+
+        /// <summary>The game's army id (<c>PlayerSide</c>).</summary>
+        public byte Side;
     }
 }
