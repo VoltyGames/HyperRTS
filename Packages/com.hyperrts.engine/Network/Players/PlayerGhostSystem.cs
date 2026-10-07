@@ -1,5 +1,6 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
@@ -12,6 +13,7 @@ namespace HyperRTS.Network.Players
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
+    [UpdateAfter(typeof(MatchSetupSystem))]
     public partial struct PlayerGhostSystem : ISystem
     {
         private EntityQuery _baked;

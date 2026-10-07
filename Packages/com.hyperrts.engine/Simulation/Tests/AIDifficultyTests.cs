@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.AI;
+﻿using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
@@ -42,6 +42,18 @@ namespace HyperRTS.Simulation.Tests
             }
 
             return squad;
+        }
+
+        [Test]
+        public void TopDifficulties_ThinkFastest_AndOnlyBrutalCheats()
+        {
+            var hard = _match.AITuningFor(AIDifficulty.Hard);
+            var expert = _match.AITuningFor(AIDifficulty.Expert);
+            var brutal = _match.AITuningFor(AIDifficulty.Brutal);
+            Assert.Less(expert.thinkInterval, hard.thinkInterval);
+            Assert.AreEqual(1f, expert.incomeMultiplier);
+            Assert.Greater(brutal.incomeMultiplier, 1f);
+            Assert.AreEqual(AIDifficulty.Brutal, brutal.ToTuning(AIDifficulty.Brutal).Difficulty);
         }
 
         [Test]

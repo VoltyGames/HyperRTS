@@ -1,3 +1,4 @@
+﻿using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
@@ -74,10 +75,24 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("Tuning of AI slots set to Hard.")]
         public AITuning hardAI = new() { thinkInterval = 1f, attackWaveSize = 4, useAbilities = true };
 
+        [Tooltip("Tuning of AI slots set to Expert.")]
+        public AITuning expertAI = new() { thinkInterval = 0.5f, attackWaveSize = 4, useAbilities = true };
+
+        [Tooltip("Tuning of AI slots set to Brutal: Expert play plus an income bonus.")]
+        public AITuning brutalAI = new()
+        {
+            thinkInterval = 0.5f, attackWaveSize = 4, useAbilities = true, incomeMultiplier = 1.25f,
+        };
+
+        [Tooltip("Build order of slots without their own, used when a match setup turns a human slot into an AI.")]
+        public AIBuildOrder defaultBuildOrder;
+
         public AITuning AITuningFor(AIDifficulty difficulty) => difficulty switch
         {
             AIDifficulty.Easy => easyAI,
             AIDifficulty.Hard => hardAI,
+            AIDifficulty.Expert => expertAI,
+            AIDifficulty.Brutal => brutalAI,
             _ => normalAI,
         };
 
@@ -117,6 +132,17 @@ namespace HyperRTS.Simulation.Match
                 }
 
                 AddComponent(entity, relations);
+                AddTunings(entity, authoring);
+            }
+
+            // Every difficulty is baked, so a match setup can hand any slot to the AI at runtime.
+            private void AddTunings(Entity match, MatchAuthoring authoring)
+            {
+                var tunings = AddBuffer<AIDifficultyTuning>(match);
+                foreach (AIDifficulty difficulty in Enum.GetValues(typeof(AIDifficulty)))
+                {
+                    tunings.Add(authoring.AITuningFor(difficulty).ToTuning(difficulty));
+                }
             }
 
             private void BakePlayer(MatchAuthoring authoring, PlayerSlot slot, byte faction)
@@ -129,15 +155,30 @@ namespace HyperRTS.Simulation.Match
                 var writer = new BakerWriter(this, player);
                 var stock = PlayerSetup.Add(ref writer, faction, playerName, color, populationCap: 0);
                 AddStartingResources(stock, slot);
+                var buildOrder = slot.buildOrder != null ? slot.buildOrder : authoring.defaultBuildOrder;
+
+                if (slot.control == PlayerControl.AI)
+                {
+                    var tuning = authoring.AITuningFor(slot.difficulty);
+                    AddBuildOrder(AIPlayerSetup.Add(ref writer, tuning.ToComponent()), buildOrder);
+                    AddIncomeBonus(player, tuning.incomeMultiplier);
+                    return;
+                }
 
                 if (slot.control == PlayerControl.LocalHuman)
                 {
                     AddComponent<LocalPlayer>(player);
                 }
-                else if (slot.control == PlayerControl.AI)
+
+                // Kept for a match setup that hands this slot to the AI.
+                AddBuildOrder(writer.AddBuffer<AIBuildStep>(), buildOrder);
+            }
+
+            private void AddIncomeBonus(Entity player, float multiplier)
+            {
+                if (!Mathf.Approximately(multiplier, 1f))
                 {
-                    var steps = AIPlayerSetup.Add(ref writer, authoring.AITuningFor(slot.difficulty).ToComponent());
-                    AddBuildOrder(steps, slot.buildOrder);
+                    AddComponent(player, new IncomeMultiplier { Value = multiplier });
                 }
             }
 

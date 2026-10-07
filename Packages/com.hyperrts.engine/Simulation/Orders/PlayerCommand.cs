@@ -1,4 +1,4 @@
-using Unity.Entities;
+﻿using Unity.Entities;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Orders
@@ -59,6 +59,9 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>Aircraft fly to their pad and dock; an own airfield as Target rehomes them there if a pad is free.</summary>
         ReturnToBase = 22,
+
+        /// <summary>The issuing player concedes and is defeated; its units stay on the map.</summary>
+        Surrender = 23,
         Custom = 128,
     }
 
