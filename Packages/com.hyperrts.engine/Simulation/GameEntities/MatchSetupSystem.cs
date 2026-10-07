@@ -18,6 +18,7 @@ namespace HyperRTS.Simulation.GameEntities
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.All)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
+    [UpdateAfter(typeof(LocalGhostActivationSystem))]
     public partial struct MatchSetupSystem : ISystem
     {
         private EntityQuery _players;
