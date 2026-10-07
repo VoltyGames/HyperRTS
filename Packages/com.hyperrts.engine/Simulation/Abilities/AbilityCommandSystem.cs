@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
@@ -25,6 +25,8 @@ namespace HyperRTS.Simulation.Abilities
         private EntityQuery _completed;
         private OrderWriter _writer;
         private TargetLookup _targets;
+        private EntityQuery _fogQuery;
+        private EntityQuery _commanders;
         private ComponentLookup<Faction> _factions;
         private AbilityCaster _caster;
 
@@ -37,6 +39,8 @@ namespace HyperRTS.Simulation.Abilities
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _writer = new OrderWriter(ref state);
             _targets = new TargetLookup(ref state);
+            _fogQuery = TargetLookup.FogQuery(ref state);
+            _commanders = PlayerCommands.Query(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<DamageQueue>();
@@ -49,14 +53,15 @@ namespace HyperRTS.Simulation.Abilities
         {
             var events = SystemAPI.GetSingletonEntity<AbilityEvents>();
             SystemAPI.GetBuffer<AbilityActivation>(events).Clear();
-            if (!PlayerCommands.Any(ref state, PlayerCommands.Mask(CommandType.UseAbility, CommandType.UsePower)))
+            var mask = PlayerCommands.Mask(CommandType.UseAbility, CommandType.UsePower);
+            if (!PlayerCommands.Any(ref state, _commanders, mask))
             {
                 return;
             }
 
             state.CompleteDependency();
             _writer.Update(ref state);
-            _targets.Update(ref state);
+            _targets.Update(ref state, _fogQuery);
             _factions.Update(ref state);
             _caster.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(), events);
 

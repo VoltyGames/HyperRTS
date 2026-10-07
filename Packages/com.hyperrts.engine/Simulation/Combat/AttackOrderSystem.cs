@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using Unity.Burst;
@@ -17,12 +17,14 @@ namespace HyperRTS.Simulation.Combat
     public partial struct AttackOrderSystem : ISystem
     {
         private TargetLookup _targets;
+        private EntityQuery _fogQuery;
         private ComponentLookup<Ammo> _ammo;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
+            _fogQuery = TargetLookup.FogQuery(ref state);
             _ammo = state.GetComponentLookup<Ammo>(true);
             state.RequireForUpdate<FactionRelations>();
         }
@@ -30,7 +32,7 @@ namespace HyperRTS.Simulation.Combat
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _targets.Update(ref state);
+            _targets.Update(ref state, _fogQuery);
             _ammo.Update(ref state);
             new AttackOrderJob
             {

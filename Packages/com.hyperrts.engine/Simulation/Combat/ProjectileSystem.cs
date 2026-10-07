@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Audio;
 using Unity.Burst;
 using Unity.Entities;
@@ -17,6 +17,7 @@ namespace HyperRTS.Simulation.Combat
     public partial struct ProjectileSystem : ISystem
     {
         private TargetLookup _targets;
+        private EntityQuery _fogQuery;
         private DamageWriter _damage;
         private SoundWriter _sounds;
 
@@ -24,6 +25,7 @@ namespace HyperRTS.Simulation.Combat
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
+            _fogQuery = TargetLookup.FogQuery(ref state);
             _damage = new DamageWriter(ref state);
             _sounds = new SoundWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
@@ -34,7 +36,7 @@ namespace HyperRTS.Simulation.Combat
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _targets.Update(ref state);
+            _targets.Update(ref state, _fogQuery);
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
             _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
 

@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
@@ -20,10 +20,12 @@ namespace HyperRTS.Simulation.Buildings
     public partial struct SellSystem : ISystem
     {
         private EntityQuery _selected;
+        private EntityQuery _commanders;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _commanders = PlayerCommands.Query(ref state);
             _selected = SystemAPI.QueryBuilder().WithAll<BuildingTag, Selected, Faction>().WithNone<Dead>().Build();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -31,7 +33,7 @@ namespace HyperRTS.Simulation.Buildings
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!PlayerCommands.Any(ref state, PlayerCommands.Mask(CommandType.Sell)))
+            if (!PlayerCommands.Any(ref state, _commanders, PlayerCommands.Mask(CommandType.Sell)))
             {
                 return;
             }

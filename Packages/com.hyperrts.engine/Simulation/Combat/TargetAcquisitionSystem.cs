@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
@@ -25,6 +25,7 @@ namespace HyperRTS.Simulation.Combat
         public const int ScanInterval = 4;
 
         private TargetLookup _targets;
+        private EntityQuery _fogQuery;
         private ComponentLookup<ActiveOrder> _orders;
         private ComponentLookup<Ammo> _ammo;
         private uint _frame;
@@ -33,6 +34,7 @@ namespace HyperRTS.Simulation.Combat
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
+            _fogQuery = TargetLookup.FogQuery(ref state);
             _orders = state.GetComponentLookup<ActiveOrder>(true);
             _ammo = state.GetComponentLookup<Ammo>(true);
             state.RequireForUpdate<SpatialIndex>();
@@ -42,7 +44,7 @@ namespace HyperRTS.Simulation.Combat
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _targets.Update(ref state);
+            _targets.Update(ref state, _fogQuery);
             _orders.Update(ref state);
             _ammo.Update(ref state);
             _frame++;

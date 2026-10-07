@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Air;
+﻿using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
 using HyperRTS.Simulation.Combat;
@@ -50,10 +50,11 @@ namespace HyperRTS.Simulation.Commands
             _boarding = new Boarding(ref state, true);
         }
 
-        public void Update(ref SystemState state)
+        /// <summary><paramref name="fog"/> is the system's <see cref="TargetLookup.FogQuery"/>.</summary>
+        public void Update(ref SystemState state, EntityQuery fog)
         {
             _factions.Update(ref state);
-            _targets.Update(ref state);
+            _targets.Update(ref state, fog);
             _weapons.Update(ref state);
             _harvesters.Update(ref state);
             _nodes.Update(ref state);

@@ -11,10 +11,15 @@ namespace HyperRTS.Simulation.Match
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct SurrenderSystem : ISystem
     {
+        private EntityQuery _commanders;
+
+        [BurstCompile]
+        public void OnCreate(ref SystemState state) => _commanders = PlayerCommands.Query(ref state);
+
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!PlayerCommands.Any(ref state, PlayerCommands.Mask(CommandType.Surrender)))
+            if (!PlayerCommands.Any(ref state, _commanders, PlayerCommands.Mask(CommandType.Surrender)))
             {
                 return;
             }
