@@ -86,7 +86,8 @@ back.
 
 - **Ghosts**: units, buildings, resource nodes, projectiles and the Match object need a
   `GhostAuthoringComponent` on the prefab root. **HyperRTS ▸ Validate** flags missing ones with a *Make Ghost*
-  fix, and the templates and scene wizard add it.
+  fix, and the templates and scene wizard add it. Netcode only accepts a ghost placed in a scene as an instance of a
+  ghost prefab, so the scene wizard saves each map's Match as `<Map>_Match.prefab` and places an instance.
 - **Players** are baked by `MatchAuthoring`, so `PlayerGhostSystem` turns each baked player into a ghost prefab
   at runtime (the same way on both sides) and the server spawns one ghost per slot.
 - **Fields**: components the client reads carry `[GhostField]` (health, faction, construction, production queue,
