@@ -1,4 +1,4 @@
-using Unity.Entities;
+﻿using Unity.Entities;
 using Unity.NetCode;
 
 namespace HyperRTS.Simulation.Match
@@ -18,5 +18,8 @@ namespace HyperRTS.Simulation.Match
 
         /// <summary>Bit per faction that has owned a <see cref="VictoryCritical"/> entity; only those can lose.</summary>
         [GhostField] public uint Contenders;
+
+        /// <summary>Networked matches: set by the server once every human slot has joined (or the wait ran out).</summary>
+        [GhostField] public bool Started;
     }
 }
