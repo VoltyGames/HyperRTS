@@ -1,17 +1,21 @@
-using HyperRTS.Presentation.Common;
-using HyperRTS.Simulation.Match;
+﻿using System;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>Victory / defeat banner for the local team once the match ends or the local player is defeated.</summary>
+    /// <summary>
+    /// Victory / defeat banner for the local team once the match ends or the local player is defeated. Games pass
+    /// <c>title</c> to show localized text.
+    /// </summary>
     public sealed class GameOverBanner : IHUDPanel
     {
         private readonly Label _title;
+        private readonly Func<MatchOutcome, string> _format;
         private MatchOutcome _shown;
 
-        public GameOverBanner()
+        public GameOverBanner(Func<MatchOutcome, string> title = null)
         {
+            _format = title ?? (outcome => outcome.ToString().ToUpperInvariant());
             Root = HUDElements.Box("hud-banner");
             Root.pickingMode = PickingMode.Ignore;
             _title = HUDElements.Text("", "hud-banner__title", Root);
@@ -25,7 +29,7 @@ namespace HyperRTS.Presentation.HUD
 
         public void Refresh(HUDContext context)
         {
-            var outcome = Outcome(context.View);
+            var outcome = MatchOutcomes.Of(context.View);
             if (outcome == _shown)
             {
                 return;
@@ -33,25 +37,9 @@ namespace HyperRTS.Presentation.HUD
 
             _shown = outcome;
             Root.SetVisible(outcome != MatchOutcome.None);
-            _title.text = outcome == MatchOutcome.None ? "" : outcome.ToString().ToUpperInvariant();
+            _title.text = outcome == MatchOutcome.None ? "" : _format(outcome);
             _title.EnableInClassList("hud-banner__title--victory", outcome == MatchOutcome.Victory);
             _title.EnableInClassList("hud-banner__title--defeat", outcome == MatchOutcome.Defeat);
-        }
-
-        private static MatchOutcome Outcome(MatchView view)
-        {
-            if (!view.TryGetMatch(out var match) || match.Phase != MatchPhase.Ended)
-            {
-                return view.IsLocalDefeated() ? MatchOutcome.Defeat : MatchOutcome.None;
-            }
-
-            if (match.WinningTeam == 0)
-            {
-                return MatchOutcome.Draw;
-            }
-
-            var localTeam = view.Relations.TeamOf(view.Local.Faction);
-            return match.WinningTeam == localTeam ? MatchOutcome.Victory : MatchOutcome.Defeat;
         }
     }
 }
