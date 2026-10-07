@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+﻿using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
@@ -36,7 +36,11 @@ namespace HyperRTS.Network.Players
             {
                 entityManager.AddComponent<NetworkStreamInGame>(connection);
                 var request = entityManager.CreateEntity();
-                entityManager.AddComponentData(request, new JoinRequest { Faction = preference.Faction });
+                entityManager.AddComponentData(request, new JoinRequest
+                {
+                    Faction = preference.Faction,
+                    Observe = preference.Observe,
+                });
                 entityManager.AddComponent<SendRpcCommandRequest>(request);
             }
         }

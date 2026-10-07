@@ -1,4 +1,4 @@
-using Unity.NetCode;
+﻿using Unity.NetCode;
 
 namespace HyperRTS.Network.Players
 {
@@ -7,5 +7,8 @@ namespace HyperRTS.Network.Players
     {
         /// <summary>Preferred slot, so a reconnecting client gets its old one back; 0 takes any free slot.</summary>
         public byte Faction;
+
+        /// <summary>Join as an observer: claim no slot.</summary>
+        public bool Observe;
     }
 }

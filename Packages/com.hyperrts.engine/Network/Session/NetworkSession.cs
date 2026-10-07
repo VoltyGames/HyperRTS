@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using HyperRTS.Network.Players;
 using Unity.Entities;
@@ -7,23 +7,28 @@ using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using Unity.Physics.Systems;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Network.Session
 {
     /// <summary>
     /// Starts and stops a networked match: replaces the single-player world with server and/or client worlds and
-    /// reloads the active scene so its SubScene streams into them.
+    /// loads a scene (by default the active one, see <see cref="SessionScene"/>) so its SubScene streams into them.
     /// </summary>
     public static class NetworkSession
     {
         public const ushort DefaultPort = 7979;
+
+        /// <summary>The scene load the last start or <see cref="LoadScene"/> began, for loading screens; null if none.</summary>
+        public static AsyncOperation SceneLoad => SessionSceneLoader.Current;
 
         /// <summary>
         /// Slot (faction) to ask for when joining. Updated to the granted slot when the client world closes, so a
         /// reconnecting client gets its old slot back.
         /// </summary>
         public static byte PreferredFaction { get; set; }
+
+        /// <summary>Join as an observer instead of claiming a slot.</summary>
+        public static bool JoinAsObserver { get; set; }
 
         public static bool IsRunning => ClientServerBootstrap.ServerWorld != null || ClientServerBootstrap.ClientWorld != null;
 
@@ -35,30 +40,40 @@ namespace HyperRTS.Network.Session
         public static event Action<NetworkStatus> StatusChanged;
 
         /// <summary>Server and client in this process, as for custom lobbies and LAN games.</summary>
-        public static bool StartHost(ushort port = DefaultPort) => Host(port, null, null);
+        public static bool StartHost(ushort port = DefaultPort) => StartHost(port, SessionScene.ReloadActive);
+
+        public static bool StartHost(ushort port, SessionScene scene) => Host(port, null, null, scene);
 
         /// <summary>
         /// Player-hosted match over a relay allocation the game obtained (Unity Relay, Steam, its own backend):
         /// remote players join through the relay, the local player over IPC.
         /// </summary>
         public static bool StartRelayHost(RelayServerData hostRelay, ushort port = DefaultPort) =>
-            Host(port, new RelayDriverConstructor(hostRelay), new RelayDriverConstructor(default));
+            StartRelayHost(hostRelay, port, SessionScene.ReloadActive);
+
+        public static bool StartRelayHost(RelayServerData hostRelay, ushort port, SessionScene scene) =>
+            Host(port, new RelayDriverConstructor(hostRelay), new RelayDriverConstructor(default), scene);
 
         /// <summary>Dedicated server: no local player.</summary>
-        public static bool StartServer(ushort port = DefaultPort)
+        public static bool StartServer(ushort port = DefaultPort) => StartServer(port, SessionScene.ReloadActive);
+
+        public static bool StartServer(ushort port, SessionScene scene)
         {
             DisposeWorlds();
-            if (!StartServerWorld(port, null))
+            if (!StartServerWorld(port, null, scene))
             {
                 return false;
             }
 
             SetStatus(NetworkStatus.Connected);
-            ReloadScene();
+            SessionSceneLoader.Load(scene);
             return true;
         }
 
-        public static bool StartClient(string address, ushort port = DefaultPort)
+        public static bool StartClient(string address, ushort port = DefaultPort) =>
+            StartClient(address, port, SessionScene.ReloadActive);
+
+        public static bool StartClient(string address, ushort port, SessionScene scene)
         {
             if (!NetworkEndpoint.TryParse(address, port, out var endpoint))
             {
@@ -66,12 +81,15 @@ namespace HyperRTS.Network.Session
                 return false;
             }
 
-            Join(endpoint, null);
+            Join(endpoint, null, scene);
             return true;
         }
 
         /// <summary>Joins a player-hosted match through the relay allocation the game joined with the host's code.</summary>
-        public static bool StartRelayClient(RelayServerData clientRelay)
+        public static bool StartRelayClient(RelayServerData clientRelay) =>
+            StartRelayClient(clientRelay, SessionScene.ReloadActive);
+
+        public static bool StartRelayClient(RelayServerData clientRelay, SessionScene scene)
         {
             if (!clientRelay.Endpoint.IsValid)
             {
@@ -79,18 +97,25 @@ namespace HyperRTS.Network.Session
                 return false;
             }
 
-            Join(clientRelay.Endpoint, new RelayDriverConstructor(clientRelay));
+            Join(clientRelay.Endpoint, new RelayDriverConstructor(clientRelay), scene);
             return true;
         }
 
-        /// <summary>Back to a single-player world.</summary>
-        public static void Stop()
+        /// <summary>Back to a single-player world, reloading the active scene.</summary>
+        public static void Stop() => StartLocal(SessionScene.ReloadActive);
+
+        /// <summary>Replaces every world with a fresh single-player world and loads <paramref name="scene"/> into it.</summary>
+        public static void StartLocal(SessionScene scene)
         {
             DisposeWorlds();
             DefaultWorldInitialization.Initialize("Default World");
             SetStatus(NetworkStatus.Idle);
-            ReloadScene();
+            SessionSceneLoader.Load(scene);
         }
+
+        /// <summary>Loads a map into the running session's worlds, as when a lobby that started with
+        /// <see cref="SessionScene.Keep"/> launches its match.</summary>
+        public static void LoadScene(string path) => SessionSceneLoader.Load(SessionScene.Load(path));
 
         internal static void SetStatus(NetworkStatus status, NetworkStreamDisconnectReason reason = default)
         {
@@ -105,28 +130,28 @@ namespace HyperRTS.Network.Session
         }
 
         private static bool Host(ushort port, INetworkStreamDriverConstructor serverDrivers,
-            INetworkStreamDriverConstructor clientDrivers)
+            INetworkStreamDriverConstructor clientDrivers, SessionScene scene)
         {
             DisposeWorlds();
-            if (!StartServerWorld(port, serverDrivers))
+            if (!StartServerWorld(port, serverDrivers, scene))
             {
                 return false;
             }
 
             StartClientWorld(NetworkEndpoint.LoopbackIpv4.WithPort(port), clientDrivers);
-            ReloadScene();
+            SessionSceneLoader.Load(scene);
             return true;
         }
 
-        private static void Join(NetworkEndpoint server, INetworkStreamDriverConstructor drivers)
+        private static void Join(NetworkEndpoint server, INetworkStreamDriverConstructor drivers, SessionScene scene)
         {
             DisposeWorlds();
             StartClientWorld(server, drivers);
-            ReloadScene();
+            SessionSceneLoader.Load(scene);
         }
 
         /// <summary>Creates the server world and listens; goes back to single player when that fails.</summary>
-        private static bool StartServerWorld(ushort port, INetworkStreamDriverConstructor drivers)
+        private static bool StartServerWorld(ushort port, INetworkStreamDriverConstructor drivers, SessionScene scene)
         {
             var world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
             DisablePhysics(world);
@@ -142,7 +167,7 @@ namespace HyperRTS.Network.Session
             if (!listening)
             {
                 Debug.LogError($"[HyperRTS] Could not listen on port {port}.");
-                Stop();
+                StartLocal(scene);
             }
 
             return listening;
@@ -152,7 +177,7 @@ namespace HyperRTS.Network.Session
         {
             var world = ClientServerBootstrap.CreateClientWorld("ClientWorld");
             world.EntityManager.CreateSingleton(ClientTickRate());
-            world.EntityManager.CreateSingleton(new JoinPreference { Faction = PreferredFaction });
+            world.EntityManager.CreateSingleton(new JoinPreference { Faction = PreferredFaction, Observe = JoinAsObserver });
             using (var query = DriverQuery(world))
             {
                 ref var driver = ref query.GetSingletonRW<NetworkStreamDriver>().ValueRW;
@@ -239,21 +264,11 @@ namespace HyperRTS.Network.Session
             }
         }
 
-        private static void ReloadScene()
-        {
-            var scene = SceneManager.GetActiveScene();
-#if UNITY_EDITOR
-            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(scene.path,
-                new LoadSceneParameters(LoadSceneMode.Single));
-#else
-            SceneManager.LoadScene(scene.buildIndex);
-#endif
-        }
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
             PreferredFaction = 0;
+            JoinAsObserver = false;
             Status = NetworkStatus.Idle;
             DisconnectReason = default;
             StatusChanged = null;

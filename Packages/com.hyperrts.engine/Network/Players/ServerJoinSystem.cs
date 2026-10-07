@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.AI;
+﻿using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
@@ -7,8 +7,8 @@ using Unity.NetCode;
 namespace HyperRTS.Network.Players
 {
     /// <summary>
-    /// Binds joining connections to free human slots (observers when none is left) and frees the slot of a dropped
-    /// connection, so its owner can reconnect while the units wait.
+    /// Binds joining connections to free human slots (observers when none is left or they asked to watch) and frees
+    /// the slot of a dropped connection, so its owner can reconnect while the units wait.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
@@ -44,9 +44,9 @@ namespace HyperRTS.Network.Players
                 return;
             }
 
-            var wanted = entityManager.GetComponentData<JoinRequest>(request).Faction;
+            var wanted = entityManager.GetComponentData<JoinRequest>(request);
             var networkId = entityManager.GetComponentData<NetworkId>(connection).Value;
-            var slot = Claim(ref state, wanted, networkId);
+            var slot = wanted.Observe ? Entity.Null : Claim(ref state, wanted.Faction, networkId);
             byte faction = 0;
             if (slot != Entity.Null)
             {

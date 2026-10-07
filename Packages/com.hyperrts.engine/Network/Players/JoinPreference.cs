@@ -1,4 +1,4 @@
-using Unity.Entities;
+﻿using Unity.Entities;
 
 namespace HyperRTS.Network.Players
 {
@@ -7,5 +7,8 @@ namespace HyperRTS.Network.Players
     {
         /// <summary>0 takes any free slot.</summary>
         public byte Faction;
+
+        /// <summary>Watch the match instead of claiming a slot.</summary>
+        public bool Observe;
     }
 }

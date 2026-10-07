@@ -19,18 +19,27 @@ player.
 
 ## Starting a match
 
-`HyperRTS.Network.Session.NetworkSession` swaps the local world for client and/or server worlds, then reloads the
-active scene so its SubScene streams into them:
+`HyperRTS.Network.Session.NetworkSession` swaps the local world for client and/or server worlds, then loads a scene
+so its SubScene streams into them:
 
 - `StartHost(port)`: server and client in one process (custom lobbies, LAN).
 - `StartServer(port)`: dedicated server, no local player.
 - `StartClient(address, port)`: join a server.
 - `StartRelayHost(relayData)` / `StartRelayClient(relayData)`: the same over a relay (below).
 - `Stop()`: back to single player.
+- `StartLocal(scene)`: a fresh single-player world with the given scene (a game's menu or a skirmish map).
+
+Each start takes an optional `SessionScene`: `ReloadActive` (the default, for a map played from its own scene),
+`Load(path)`, or `Keep` to load nothing. A lobby connects with `Keep` while the menu stays up, then every peer calls
+`LoadScene(path)` to stream the map into the running worlds. `SceneLoad` exposes the load for a progress bar.
+
+To configure the match itself (open and closed slots, teams, colours, AI, starting resources, fog) every peer sets
+the same `MatchSetupRequest` before the map loads; see [modules](modules.md#match-players-teams-victory).
 
 The `Start*` calls return `false` when the session can't start (bad address, port in use) and stay in single
 player. In Play mode use **HyperRTS ▸ Network**. Builds accept `-server`, `-host`, `-connect <address>` and
-`-port <n>`; a dedicated server runs with `-batchmode -nographics -server`. Relay needs runtime data from the
+`-port <n>`, plus `-scene <path>` to pick the map; a dedicated server runs with
+`-batchmode -nographics -server -scene <map>`. Relay needs runtime data from the
 game, so it has no menu item or flag.
 
 ## Relay (player-hosted matches)
@@ -64,7 +73,8 @@ calls `Stop()` or starts a new session, so the UI can show why instead of an emp
 
 1. Once the match is loaded, the client sends `JoinRequest` with its preferred slot.
 2. The server binds the connection to that slot if it is free, else the first free human slot (no `AIPlayer`),
-   else makes it an observer (faction 0, sees everything). It replies with `JoinAccepted`.
+   else makes it an observer (faction 0, sees everything). A client that set `NetworkSession.JoinAsObserver`
+   (`JoinPreference.Observe`) always becomes an observer. The server replies with `JoinAccepted`.
 3. The client tags the player ghost of that faction as `LocalPlayer`, so input and HUD work unchanged.
 
 The server links the connection to its slot (`ConnectionPlayer`). When a connection drops (read from Netcode's
