@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Navigation;
@@ -48,6 +48,12 @@ namespace HyperRTS.Input.Cameras
 
         [Tooltip("Rotation the camera resets to (Home key).")]
         public Quaternion defaultRotation = Quaternion.Euler(30, 0, 0);
+
+        [Tooltip("Open the match centred on the local player's buildings once they exist.")]
+        public bool startAtHome = true;
+
+        private readonly HomeBase _home = new();
+        private bool _homed;
 
         private readonly LiveQuery _map = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<MapSettings>()));
@@ -99,6 +105,12 @@ namespace HyperRTS.Input.Cameras
             if (TryTakeFocusRequest(out var requested))
             {
                 FocusOn(requested);
+                return;
+            }
+
+            if (TryFindHomeOnce(out var home))
+            {
+                FocusOn(home);
                 return;
             }
 
@@ -173,6 +185,19 @@ namespace HyperRTS.Input.Cameras
             }
 
             return _map.In(entityManager).TryGetSingleton(out MapSettings map) ? (Vector3)map.Clamp(point) : point;
+        }
+
+        /// <summary>The local player's base the first time it can be found, while <see cref="startAtHome"/> is set.</summary>
+        private bool TryFindHomeOnce(out Vector3 home)
+        {
+            home = default;
+            if (_homed || !startAtHome || !DefaultWorld.TryGetEntityManager(out var entityManager))
+            {
+                return false;
+            }
+
+            _homed = _home.TryFind(entityManager, out home);
+            return _homed;
         }
 
         /// <summary>Takes the point the HUD (minimap) asked to centre on, clearing the request.</summary>

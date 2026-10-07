@@ -8,6 +8,7 @@
     "Unity.Mathematics",
     "Unity.Collections",
     "Unity.Physics",
+    "Unity.Transforms",
     "Unity.InputSystem"
   ],
   "includePlatforms": [],
