@@ -1,6 +1,7 @@
-using HyperRTS.Editor.Common;
+﻿using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
@@ -22,7 +23,7 @@ namespace HyperRTS.Editor.PlayMode
         {
             if (change == PlayModeStateChange.EnteredEditMode)
             {
-                Time.timeScale = 1f;
+                LocalGameSpeed.Reset();
             }
         };
 
