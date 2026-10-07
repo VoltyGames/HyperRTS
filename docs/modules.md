@@ -101,6 +101,10 @@ server and clients so their player ghosts match. It destroys closed slots' playe
 every difficulty, scales starting stock and overrides fog. Authoritative worlds also destroy what closed slots own (a
 prespawned ghost once it has its ghost id). Every slot bakes its build order, so any slot can become AI.
 
+`PlayerStats` (in Common, replicated) keeps each player's match totals: units trained (`ProductionSystem`), buildings
+finished (`ConstructionSystem`), resources delivered (`GatherSystem`), and units and buildings lost or destroyed
+(`CasualtyStatsSystem` in Combat, right after `DeathSystem`, crediting the `LastAttacker`'s player).
+
 ## Orders
 
 | Type | Role |

@@ -29,6 +29,7 @@ namespace HyperRTS.Simulation.Resources
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<Faction> _factionLookup;
         private ComponentLookup<IncomeMultiplier> _incomeLookup;
+        private ComponentLookup<PlayerStats> _statsLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -43,6 +44,7 @@ namespace HyperRTS.Simulation.Resources
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _incomeLookup = state.GetComponentLookup<IncomeMultiplier>(true);
+            _statsLookup = state.GetComponentLookup<PlayerStats>();
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<Harvester, ActiveOrder>().Build());
         }
 
@@ -60,6 +62,7 @@ namespace HyperRTS.Simulation.Resources
             _obstacleLookup.Update(ref state);
             _factionLookup.Update(ref state);
             _incomeLookup.Update(ref state);
+            _statsLookup.Update(ref state);
 
             new GatherJob
             {
@@ -73,6 +76,7 @@ namespace HyperRTS.Simulation.Resources
                 ObstacleLookup = _obstacleLookup,
                 FactionLookup = _factionLookup,
                 IncomeLookup = _incomeLookup,
+                StatsLookup = _statsLookup,
             }.Schedule();
         }
 
@@ -92,6 +96,7 @@ namespace HyperRTS.Simulation.Resources
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public ComponentLookup<IncomeMultiplier> IncomeLookup;
+            public ComponentLookup<PlayerStats> StatsLookup;
 
             private void Execute(ref Harvester harvester, ref HarvestState harvest, ref ActiveOrder order,
                 EnabledRefRW<ActiveOrder> busy, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
@@ -182,11 +187,21 @@ namespace HyperRTS.Simulation.Resources
                 var player = PlayerByFaction[faction];
                 if (StockLookup.TryGetBuffer(player, out var stock))
                 {
-                    ResourceMath.Add(stock, harvester.CargoType, Delivered(player, harvester.CargoAmount));
+                    var delivered = Delivered(player, harvester.CargoAmount);
+                    ResourceMath.Add(stock, harvester.CargoType, delivered);
+                    CountGathered(player, delivered);
                 }
 
                 harvester.CargoAmount = 0;
                 harvest.Phase = HarvestPhase.Gathering;
+            }
+
+            private void CountGathered(Entity player, int amount)
+            {
+                if (StatsLookup.TryGetRefRW(player, out var stats))
+                {
+                    stats.ValueRW.ResourcesGathered += amount;
+                }
             }
 
             private int Delivered(Entity player, int cargo) =>

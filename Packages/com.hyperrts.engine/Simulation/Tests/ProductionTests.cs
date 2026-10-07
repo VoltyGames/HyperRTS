@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+﻿using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
@@ -87,6 +87,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsFalse(_world.IsEnabled<ConstructionProgress>(site));
             Assert.AreEqual(1f, _world.Get<ConstructionProgress>(site).Value);
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(builder), "the Build order completes with the site");
+            Assert.AreEqual(1, _world.Get<PlayerStats>(_world.Player(1)).BuildingsBuilt);
         }
 
         [Test]
@@ -152,6 +153,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(new float3(0f, 0f, -4f), _world.Get<LocalTransform>(units[0]).Position);
             Assert.AreEqual(1, _world.Get<Faction>(units[0]).Value);
             Assert.AreEqual(0, QueueLength(producer));
+            Assert.AreEqual(1, _world.Get<PlayerStats>(_world.Player(1)).UnitsBuilt);
         }
 
         [Test]

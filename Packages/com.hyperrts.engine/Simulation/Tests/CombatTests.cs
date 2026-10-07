@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Combat;
+﻿using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
@@ -36,6 +36,23 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsFalse(_world.EntityManager.Exists(enemy));
             Assert.IsFalse(_world.IsEnabled<AttackTarget>(soldier), "drops the target once it is gone");
             Assert.IsFalse(_world.IsEnabled<MoveDestination>(soldier), "stops where it won");
+        }
+
+        [Test]
+        public void Deaths_CountAsLossesForTheOwner_AndKillsForTheAttacker()
+        {
+            _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
+            _world.SpawnUnit(2, new float3(6f, 0f, 0f));
+            var outpost = _world.SpawnBuilding(2, new float3(-8f, 0f, 0f), new float2(2f, 2f));
+            _world.EntityManager.SetComponentData(outpost, new Health { Current = 10f, Max = 500f });
+
+            _world.Run(10f);
+
+            var attacker = _world.Get<PlayerStats>(_world.Player(1));
+            var victim = _world.Get<PlayerStats>(_world.Player(2));
+            Assert.AreEqual((1, 1), (attacker.UnitsKilled, attacker.BuildingsDestroyed));
+            Assert.AreEqual((1, 1), (victim.UnitsLost, victim.BuildingsLost));
+            Assert.AreEqual((0, 0), (attacker.UnitsLost, victim.UnitsKilled));
         }
 
         [Test]

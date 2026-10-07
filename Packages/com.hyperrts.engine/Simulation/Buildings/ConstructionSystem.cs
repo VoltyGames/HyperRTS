@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
@@ -19,21 +19,25 @@ namespace HyperRTS.Simulation.Buildings
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct ConstructionSystem : ISystem
     {
+        private EntityQuery _players;
         private ComponentLookup<ConstructionProgress> _siteLookup;
         private ComponentLookup<Producible> _producibleLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<Faction> _factionLookup;
+        private ComponentLookup<PlayerStats> _statsLookup;
         private SoundWriter _sounds;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
             _siteLookup = state.GetComponentLookup<ConstructionProgress>();
             _producibleLookup = state.GetComponentLookup<Producible>(true);
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _factionLookup = state.GetComponentLookup<Faction>(true);
+            _statsLookup = state.GetComponentLookup<PlayerStats>();
             _sounds = new SoundWriter(ref state);
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<SoundQueue>();
@@ -47,6 +51,7 @@ namespace HyperRTS.Simulation.Buildings
             _transformLookup.Update(ref state);
             _obstacleLookup.Update(ref state);
             _factionLookup.Update(ref state);
+            _statsLookup.Update(ref state);
             _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
 
             new BuildJob
@@ -58,6 +63,8 @@ namespace HyperRTS.Simulation.Buildings
                 TransformLookup = _transformLookup,
                 ObstacleLookup = _obstacleLookup,
                 FactionLookup = _factionLookup,
+                PlayerByFaction = PlayerLookup.ByFaction(_players, state.WorldUpdateAllocator),
+                StatsLookup = _statsLookup,
                 Sounds = _sounds,
             }.Schedule();
         }
@@ -75,6 +82,8 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+            [ReadOnly] public NativeArray<Entity> PlayerByFaction;
+            public ComponentLookup<PlayerStats> StatsLookup;
             public SoundWriter Sounds;
 
             private void Execute(in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
@@ -104,6 +113,7 @@ namespace HyperRTS.Simulation.Buildings
                 {
                     busy.ValueRW = false;
                     Sounds.Play(site, SoundSlot.Ready, sitePosition, FactionLookup[site].Value);
+                    CountBuilt(FactionLookup[site].Value);
                 }
             }
 
@@ -115,6 +125,14 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 return BuildingRules.IsAlliedSite(SiteLookup, FactionLookup, Relations, site, faction);
+            }
+
+            private void CountBuilt(byte faction)
+            {
+                if (StatsLookup.TryGetRefRW(PlayerByFaction[faction], out var stats))
+                {
+                    stats.ValueRW.BuildingsBuilt++;
+                }
             }
 
             /// <summary>Adds this frame's work and returns true once the site is finished.</summary>

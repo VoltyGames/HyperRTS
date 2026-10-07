@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
@@ -34,6 +34,7 @@ namespace HyperRTS.Simulation.Production
         private BufferLookup<ResearchedUpgrade> _researchedLookup;
         private BufferLookup<LandingPad> _padLookup;
         private ComponentLookup<HomePad> _padUserLookup;
+        private ComponentLookup<PlayerStats> _statsLookup;
         private SoundWriter _sounds;
 
         [BurstCompile]
@@ -49,6 +50,7 @@ namespace HyperRTS.Simulation.Production
             _researchedLookup = state.GetBufferLookup<ResearchedUpgrade>();
             _padLookup = state.GetBufferLookup<LandingPad>(true);
             _padUserLookup = state.GetComponentLookup<HomePad>(true);
+            _statsLookup = state.GetComponentLookup<PlayerStats>();
             _sounds = new SoundWriter(ref state);
             state.RequireForUpdate<SoundQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -66,6 +68,7 @@ namespace HyperRTS.Simulation.Production
             _researchedLookup.Update(ref state);
             _padLookup.Update(ref state);
             _padUserLookup.Update(ref state);
+            _statsLookup.Update(ref state);
             _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
 
             var allocator = state.WorldUpdateAllocator;
@@ -87,6 +90,7 @@ namespace HyperRTS.Simulation.Production
                 ResearchedLookup = _researchedLookup,
                 PadLookup = _padLookup,
                 PadUserLookup = _padUserLookup,
+                StatsLookup = _statsLookup,
                 Sounds = _sounds,
             }.Schedule();
         }
@@ -111,6 +115,7 @@ namespace HyperRTS.Simulation.Production
             public BufferLookup<ResearchedUpgrade> ResearchedLookup;
             [ReadOnly] public BufferLookup<LandingPad> PadLookup;
             [ReadOnly] public ComponentLookup<HomePad> PadUserLookup;
+            public ComponentLookup<PlayerStats> StatsLookup;
             public SoundWriter Sounds;
 
             private void Execute(Entity entity, ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
@@ -146,6 +151,7 @@ namespace HyperRTS.Simulation.Production
                         hasRally.ValueRO, rally.Position);
                     DockOnPad(unit, entity, pad);
                     SpawnedPopulation[faction.Value] += producible.Population;
+                    CountBuilt(faction.Value);
                 }
 
                 queue.RemoveAt(0);
@@ -157,6 +163,14 @@ namespace HyperRTS.Simulation.Production
                 if (ResearchedLookup.TryGetBuffer(PlayerByFaction[faction], out var researched))
                 {
                     researched.Add(new ResearchedUpgrade { Upgrade = item.Prefab, TypeId = item.TypeId });
+                }
+            }
+
+            private void CountBuilt(byte faction)
+            {
+                if (StatsLookup.TryGetRefRW(PlayerByFaction[faction], out var stats))
+                {
+                    stats.ValueRW.UnitsBuilt++;
                 }
             }
 

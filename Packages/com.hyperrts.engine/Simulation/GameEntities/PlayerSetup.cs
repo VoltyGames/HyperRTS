@@ -19,6 +19,7 @@ namespace HyperRTS.Simulation.GameEntities
         {
             writer.Add(new Player { Faction = faction, Name = name, Color = color });
             writer.Add<PlayerSide>();
+            writer.Add<PlayerStats>();
             writer.Add(new Population { Cap = populationCap });
             writer.Add<PowerGrid>();
             writer.Add<Defeated>();

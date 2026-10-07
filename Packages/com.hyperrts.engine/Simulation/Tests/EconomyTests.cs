@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+﻿using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using NUnit.Framework;
@@ -55,6 +55,7 @@ namespace HyperRTS.Simulation.Tests
             var cargo = _world.Get<Harvester>(harvester).CargoAmount;
             Assert.GreaterOrEqual(stock, 20, "several trips were delivered");
             Assert.AreEqual(100, stock + left + cargo, "nothing is created or lost");
+            Assert.AreEqual(stock, _world.Get<PlayerStats>(_world.Player(1)).ResourcesGathered);
             Assert.IsTrue(_world.IsEnabled<ActiveOrder>(harvester), "the loop keeps running");
         }
 
