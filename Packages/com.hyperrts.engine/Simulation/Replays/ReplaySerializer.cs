@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -10,7 +10,8 @@ namespace HyperRTS.Simulation.Replays
     /// <summary>Reads and writes <see cref="Replay"/> files: a GZip stream of a small header and the samples.</summary>
     public static class ReplaySerializer
     {
-        public const int FormatVersion = 1;
+        /// <summary>2 added game metadata and player sides.</summary>
+        public const int FormatVersion = 2;
         private const int Magic = 0x4C505248; // "HRPL"
 
         /// <summary>Most elements reserved before any are read; larger lists grow as data arrives.</summary>
@@ -20,6 +21,22 @@ namespace HyperRTS.Simulation.Replays
         {
             using var file = File.Create(path);
             Write(replay, file);
+        }
+
+        /// <summary>Only the header (players, result, metadata): cheap enough to list a folder of replays.</summary>
+        public static Replay LoadHeader(string path)
+        {
+            using var file = File.OpenRead(path);
+            using var zip = new GZipStream(file, CompressionMode.Decompress);
+            using var reader = new BinaryReader(zip);
+            try
+            {
+                return ReadHeader(reader);
+            }
+            catch (EndOfStreamException exception)
+            {
+                throw new InvalidDataException("The replay file is truncated.", exception);
+            }
         }
 
         public static Replay Load(string path)
@@ -139,6 +156,7 @@ namespace HyperRTS.Simulation.Replays
             writer.Write(replay.Duration);
             writer.Write((byte)replay.Result.Phase);
             writer.Write(replay.Result.WinningTeam);
+            writer.Write(replay.Metadata ?? "");
             writer.Write(replay.Players.Count);
             foreach (var player in replay.Players)
             {
@@ -149,6 +167,7 @@ namespace HyperRTS.Simulation.Replays
                 writer.Write(player.Color.y);
                 writer.Write(player.Color.z);
                 writer.Write(player.Color.w);
+                writer.Write(player.Side);
             }
         }
 
@@ -172,6 +191,7 @@ namespace HyperRTS.Simulation.Replays
                 Duration = reader.ReadSingle(),
                 Result = new MatchState { Phase = (MatchPhase)reader.ReadByte(), WinningTeam = reader.ReadByte() },
             };
+            replay.Metadata = reader.ReadString();
 
             var players = ReadCount(reader, "players");
             for (var i = 0; i < players; i++)
@@ -182,6 +202,7 @@ namespace HyperRTS.Simulation.Replays
                     Team = reader.ReadByte(),
                     Name = reader.ReadString(),
                     Color = new float4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
+                    Side = reader.ReadByte(),
                 });
             }
 

@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+﻿using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
 using Unity.Entities;
@@ -77,10 +77,28 @@ namespace HyperRTS.Simulation.Replays
                     Team = relations.TeamOf(player.Faction),
                     Name = player.Name.ToString(),
                     Color = player.Color,
+                    Side = SideOf(entityManager, player.Faction),
                 });
             }
 
             replay.Players.Sort((a, b) => a.Faction.CompareTo(b.Faction));
+        }
+
+        private static byte SideOf(EntityManager entityManager, byte faction)
+        {
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<Player>(),
+                ComponentType.ReadOnly<PlayerSide>());
+            using var players = query.ToComponentDataArray<Player>(Allocator.Temp);
+            using var sides = query.ToComponentDataArray<PlayerSide>(Allocator.Temp);
+            for (var i = 0; i < players.Length; i++)
+            {
+                if (players[i].Faction == faction)
+                {
+                    return sides[i].Value;
+                }
+            }
+
+            return 0;
         }
     }
 }

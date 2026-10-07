@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
@@ -9,6 +9,9 @@ namespace HyperRTS.Simulation.Replays
     public sealed class Replay
     {
         public string ScenePath = "";
+
+        /// <summary>Game data the engine stores but never reads (a JSON of map id, settings...).</summary>
+        public string Metadata = "";
         public float SampleRate;
         public float Duration;
         public List<ReplayPlayerInfo> Players = new();
