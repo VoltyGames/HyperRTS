@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Power;
@@ -127,8 +127,7 @@ namespace HyperRTS.Simulation.Combat
 
             private bool TryUseRound(Entity shooter)
             {
-                var ammo = Ammo.GetRefRWOptional(shooter);
-                if (!ammo.IsValid)
+                if (!Ammo.TryGetRefRW(shooter, out var ammo))
                 {
                     return true;
                 }
@@ -144,8 +143,7 @@ namespace HyperRTS.Simulation.Combat
 
             private void Reveal(Entity shooter)
             {
-                var stealth = Stealth.GetRefRWOptional(shooter);
-                if (stealth.IsValid)
+                if (Stealth.TryGetRefRW(shooter, out var stealth))
                 {
                     stealth.ValueRW.RevealTimer = stealth.ValueRO.RevealDuration;
                 }
