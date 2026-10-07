@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
@@ -28,6 +28,7 @@ namespace HyperRTS.Simulation.Resources
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<Faction> _factionLookup;
+        private ComponentLookup<IncomeMultiplier> _incomeLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -41,6 +42,7 @@ namespace HyperRTS.Simulation.Resources
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _factionLookup = state.GetComponentLookup<Faction>(true);
+            _incomeLookup = state.GetComponentLookup<IncomeMultiplier>(true);
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<Harvester, ActiveOrder>().Build());
         }
 
@@ -57,6 +59,7 @@ namespace HyperRTS.Simulation.Resources
             _transformLookup.Update(ref state);
             _obstacleLookup.Update(ref state);
             _factionLookup.Update(ref state);
+            _incomeLookup.Update(ref state);
 
             new GatherJob
             {
@@ -69,6 +72,7 @@ namespace HyperRTS.Simulation.Resources
                 TransformLookup = _transformLookup,
                 ObstacleLookup = _obstacleLookup,
                 FactionLookup = _factionLookup,
+                IncomeLookup = _incomeLookup,
             }.Schedule();
         }
 
@@ -87,6 +91,7 @@ namespace HyperRTS.Simulation.Resources
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+            [ReadOnly] public ComponentLookup<IncomeMultiplier> IncomeLookup;
 
             private void Execute(ref Harvester harvester, ref HarvestState harvest, ref ActiveOrder order,
                 EnabledRefRW<ActiveOrder> busy, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
@@ -174,14 +179,18 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
-                if (StockLookup.TryGetBuffer(PlayerByFaction[faction], out var stock))
+                var player = PlayerByFaction[faction];
+                if (StockLookup.TryGetBuffer(player, out var stock))
                 {
-                    ResourceMath.Add(stock, harvester.CargoType, harvester.CargoAmount);
+                    ResourceMath.Add(stock, harvester.CargoType, Delivered(player, harvester.CargoAmount));
                 }
 
                 harvester.CargoAmount = 0;
                 harvest.Phase = HarvestPhase.Gathering;
             }
+
+            private int Delivered(Entity player, int cargo) =>
+                IncomeLookup.TryGetComponent(player, out var income) ? (int)math.round(cargo * income.Value) : cargo;
 
             private bool IsHarvestable(Entity node) =>
                 NodeLookup.TryGetComponent(node, out var data) && data.Amount > 0 && TransformLookup.HasComponent(node);

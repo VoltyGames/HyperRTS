@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+﻿using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
@@ -18,6 +18,7 @@ namespace HyperRTS.Simulation.GameEntities
             in FixedString32Bytes name, float4 color, int populationCap) where TWriter : struct, IEntityWriter
         {
             writer.Add(new Player { Faction = faction, Name = name, Color = color });
+            writer.Add<PlayerSide>();
             writer.Add(new Population { Cap = populationCap });
             writer.Add<PowerGrid>();
             writer.Add<Defeated>();

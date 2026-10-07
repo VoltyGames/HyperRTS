@@ -86,11 +86,20 @@ Shared identity for units and buildings, and the component set of a player entit
 | `PlayerSlot`, `PlayerControl` | One slot on the Match: name, team, colour, control (LocalHuman, AI, Remote), starting resources, AI difficulty and build order. Its list position + 1 is the faction number |
 | `MatchState` | Singleton: `Playing`/`Ended` and the winning team |
 | `MatchRules` | Match singleton: low-power production rate, sell refund, replay recording |
+| `MatchSetup`, `SlotSetup`, `MatchSetupRequest` | Runtime match configuration from a game's lobby or skirmish screen: per slot open/closed, control, team, colour, name, AI difficulty and side, plus starting-resource scale and a `FogOverride`. Set the request before the map loads |
+| `LocalGameSpeed` | Pause and speed for single-player matches (`Time.timeScale`); camera and HUD use unscaled time |
 | `VictoryCritical`, `PopulationProvider`, `Population` | Flags and the per-player used/cap count read by the systems below |
 
 Systems: `PopulationSystem` (in Production, first in its phase) recounts used/cap each frame. `VictorySystem` defeats players who lost every
 `VictoryCritical` entity they had and ends the match when one team is left. Players are never defeated before they
-first own something, so SubScene streaming at startup is safe.
+first own something, so SubScene streaming at startup is safe. `SurrenderSystem` defeats a player who sends
+`CommandType.Surrender`.
+
+`MatchSetupSystem` (in GameEntities, first in the order phase) applies a `MatchSetup` once per world, the same way on
+server and clients so their player ghosts match. It destroys closed slots' players, sets names, colours, teams and
+`PlayerSide` (the game's army id), adds or removes `AIPlayer` from the `AIDifficultyTuning` buffer the Match bakes for
+every difficulty, scales starting stock and overrides fog. Authoritative worlds also destroy what closed slots own (a
+prespawned ghost once it has its ghost id). Every slot bakes its build order, so any slot can become AI.
 
 ## Orders
 
@@ -377,7 +386,8 @@ queue head when population allows and sends new units to the rally point.
 | --- | --- |
 | `AIPlayer` | Marks a computer-controlled player and holds its tuning |
 | `AIBuildOrder` (asset, in Match) / `AIBuildStep` | Opening per faction: building, unit or upgrade prefabs with a count, in order |
-| `AIDifficulty` (in Match), `AITuning` | Easy / Normal / Hard presets on `MatchAuthoring`: think interval, attack wave size, ability use |
+| `AIDifficulty` (in Match), `AITuning` | Easy / Normal / Hard / Expert / Brutal presets on `MatchAuthoring`: think interval, attack wave size, ability use, income multiplier (Brutal's bonus, applied through `IncomeMultiplier` in Resources) |
+| `AIDifficultyTuning` | Every difficulty's tuning, baked on the Match for `MatchSetupSystem` |
 | `AIPlayerSetup` | Adds `AIPlayer` and its build-order buffer to a player entity |
 | `AIPlacement` | Ring search for a free building spot around the AI base, leaving a gap (uses `PlacementMath`) |
 
@@ -424,8 +434,8 @@ once per presented world, so no layer depends on which starts first.
 
 ## Input (client)
 
-`RTSInputActions` (Selection, Commands and Camera maps; `InputActionsProvider` holds the one shared instance and
-counts map users), `SelectionInputSystem`, `CommandInputSystem` (right-click Smart, A/S/H, P patrol and E escort +
+`RTSInputActions` (Selection, Commands and Camera maps; `InputActionsProvider` holds the one shared instance,
+counts map users and lets menus or rebinding `Suspend`/`Resume` every map), `SelectionInputSystem`, `CommandInputSystem` (right-click Smart, A/S/H, P patrol and E escort +
 click, targeted commands), `PlacementInputSystem` (ghost + PlaceBuilding), `WorldPointer` (Unity Physics raycast,
 then the baked terrain, then the ground plane), `CameraController` (pan, edge scroll, zoom, rotate, map clamp,
 `FocusOn`; it also centres on a pending `CameraFocusRequest`).

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using HyperRTS.Simulation.Match;
 using UnityEngine;
 
@@ -26,6 +26,17 @@ namespace HyperRTS.Simulation.AI
         [Tooltip("Clear margin (metres) kept around each new building so units don't get boxed in.")]
         [Min(0f)]
         public float buildingGap = 2f;
+
+        [Tooltip("Multiplies the resources this AI's harvesters deliver. 1 is fair; above 1 is a labelled cheat.")]
+        [Min(0.1f)]
+        public float incomeMultiplier = 1f;
+
+        public AIDifficultyTuning ToTuning(AIDifficulty difficulty) => new()
+        {
+            Difficulty = difficulty,
+            Tuning = ToComponent(),
+            IncomeMultiplier = incomeMultiplier,
+        };
 
         public AIPlayer ToComponent() => new()
         {
