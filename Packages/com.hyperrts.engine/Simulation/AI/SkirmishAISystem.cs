@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
@@ -66,6 +66,7 @@ namespace HyperRTS.Simulation.AI
         private EntityQuery _completed;
         private EntityQuery _queues;
         private TargetLookup _targetLookup;
+        private EntityQuery _fogQuery;
         private ComponentLookup<Faction> _factions;
 
         [BurstCompile]
@@ -89,6 +90,7 @@ namespace HyperRTS.Simulation.AI
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _queues = UpgradeRules.QueueQuery(Allocator.Temp).Build(ref state);
             _targetLookup = new TargetLookup(ref state);
+            _fogQuery = TargetLookup.FogQuery(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             state.RequireForUpdate<FactionRelations>();
         }
@@ -103,7 +105,7 @@ namespace HyperRTS.Simulation.AI
             }
 
             state.CompleteDependency();
-            _targetLookup.Update(ref state);
+            _targetLookup.Update(ref state, _fogQuery);
             _factions.Update(ref state);
             var snapshot = TakeSnapshot();
             foreach (var player in due)

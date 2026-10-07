@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
@@ -26,6 +26,7 @@ namespace HyperRTS.Simulation.Abilities
     {
         private EntityQuery _completed;
         private TargetLookup _targets;
+        private EntityQuery _fogQuery;
         private ComponentLookup<Faction> _factions;
         private AbilityCaster _caster;
 
@@ -34,6 +35,7 @@ namespace HyperRTS.Simulation.Abilities
         {
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _targets = new TargetLookup(ref state);
+            _fogQuery = TargetLookup.FogQuery(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<DamageQueue>();
@@ -45,7 +47,7 @@ namespace HyperRTS.Simulation.Abilities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _targets.Update(ref state);
+            _targets.Update(ref state, _fogQuery);
             _factions.Update(ref state);
             _caster.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
                 SystemAPI.GetSingletonEntity<AbilityEvents>());

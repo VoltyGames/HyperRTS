@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
@@ -27,6 +27,7 @@ namespace HyperRTS.Simulation.Combat
         public const float LeashFactor = 1.5f;
 
         private TargetLookup _targets;
+        private EntityQuery _fogQuery;
         private ComponentLookup<ActiveOrder> _orders;
         private ComponentLookup<MoveDestination> _moves;
         private ComponentLookup<Ammo> _ammo;
@@ -35,6 +36,7 @@ namespace HyperRTS.Simulation.Combat
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
+            _fogQuery = TargetLookup.FogQuery(ref state);
             _orders = state.GetComponentLookup<ActiveOrder>(true);
             _moves = state.GetComponentLookup<MoveDestination>();
             _ammo = state.GetComponentLookup<Ammo>(true);
@@ -44,7 +46,7 @@ namespace HyperRTS.Simulation.Combat
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _targets.Update(ref state);
+            _targets.Update(ref state, _fogQuery);
             _orders.Update(ref state);
             _moves.Update(ref state);
             _ammo.Update(ref state);

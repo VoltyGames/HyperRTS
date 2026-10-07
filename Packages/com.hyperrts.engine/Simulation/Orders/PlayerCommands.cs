@@ -1,4 +1,4 @@
-using Unity.Collections;
+﻿using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Orders
@@ -20,13 +20,16 @@ namespace HyperRTS.Simulation.Orders
             return mask;
         }
 
+        /// <summary>Players that can hold commands; build it in OnCreate for <see cref="Any"/>.</summary>
+        public static EntityQuery Query(ref SystemState state) =>
+            new EntityQueryBuilder(Allocator.Temp).WithAll<PlayerCommand>().Build(ref state);
+
         /// <summary>
         /// Whether any player recorded a command whose type is in <paramref name="mask"/> this frame, so command
         /// systems skip their job sync on the many frames without commands.
         /// </summary>
-        public static bool Any(ref SystemState state, ulong mask)
+        public static bool Any(ref SystemState state, EntityQuery players, ulong mask)
         {
-            var players = new EntityQueryBuilder(Allocator.Temp).WithAll<PlayerCommand>().Build(ref state);
             foreach (var player in players.ToEntityArray(Allocator.Temp))
             {
                 foreach (var command in state.EntityManager.GetBuffer<PlayerCommand>(player, true))

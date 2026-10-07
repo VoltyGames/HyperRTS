@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
@@ -27,6 +27,8 @@ namespace HyperRTS.Simulation.Commands
     {
         private OrderWriter _writer;
         private OrderResolver _resolver;
+        private EntityQuery _fogQuery;
+        private EntityQuery _commanders;
         private ComponentLookup<Faction> _factions;
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<NavAgent> _agents;
@@ -38,6 +40,8 @@ namespace HyperRTS.Simulation.Commands
         {
             _writer = new OrderWriter(ref state);
             _resolver = new OrderResolver(ref state);
+            _fogQuery = TargetLookup.FogQuery(ref state);
+            _commanders = PlayerCommands.Query(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
@@ -51,14 +55,14 @@ namespace HyperRTS.Simulation.Commands
         public void OnUpdate(ref SystemState state)
         {
             // Most frames carry no commands; skip the sync with every job touching unit components.
-            if (!PlayerCommands.Any(ref state, UnitCommands))
+            if (!PlayerCommands.Any(ref state, _commanders, UnitCommands))
             {
                 return;
             }
 
             state.CompleteDependency();
             _writer.Update(ref state);
-            _resolver.Update(ref state);
+            _resolver.Update(ref state, _fogQuery);
             _factions.Update(ref state);
             _transforms.Update(ref state);
             _agents.Update(ref state);

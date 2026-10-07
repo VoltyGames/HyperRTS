@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+﻿using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
@@ -34,7 +34,8 @@ namespace HyperRTS.Simulation.Combat
             FogQuery(ref state).TryGetSingleton(out _fog);
         }
 
-        public void Update(ref SystemState state)
+        /// <summary><paramref name="fog"/> is the system's <see cref="FogQuery"/>, built once in OnCreate.</summary>
+        public void Update(ref SystemState state, EntityQuery fog)
         {
             _transforms.Update(ref state);
             _health.Update(ref state);
@@ -43,7 +44,7 @@ namespace HyperRTS.Simulation.Combat
             _obstacles.Update(ref state);
             _inside.Update(ref state);
             _stealthed.Update(ref state);
-            FogQuery(ref state).TryGetSingleton(out _fog);
+            fog.TryGetSingleton(out _fog);
         }
 
         /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
@@ -88,11 +89,11 @@ namespace HyperRTS.Simulation.Combat
         public bool IsInside(Entity entity) => _inside.HasEnabled(entity);
 
         /// <summary>
-        /// The system caches the query, so this is a lookup after the first call, which (from the constructor) makes
-        /// the system's jobs wait for the fog restamp. A stored query couldn't travel into jobs, and Burst only lets
-        /// the [ReadOnly] fog field be filled through <c>out</c>.
+        /// The fog singleton's query. Systems build it in OnCreate and pass it to <see cref="Update"/>: this lookup
+        /// travels into jobs, which can't carry a query, and Burst only lets the [ReadOnly] fog field be filled
+        /// through <c>out</c>. Building it here also makes the system's jobs wait for the fog restamp.
         /// </summary>
-        private static EntityQuery FogQuery(ref SystemState state) =>
+        public static EntityQuery FogQuery(ref SystemState state) =>
             new EntityQueryBuilder(Allocator.Temp).WithAll<FogOfWar>().Build(ref state);
     }
 }

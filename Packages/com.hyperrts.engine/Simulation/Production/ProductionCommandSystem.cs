@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
@@ -20,12 +20,14 @@ namespace HyperRTS.Simulation.Production
     public partial struct ProductionCommandSystem : ISystem
     {
         private EntityQuery _selectedProducers;
+        private EntityQuery _commanders;
         private EntityQuery _completed;
         private EntityQuery _queues;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _commanders = PlayerCommands.Query(ref state);
             _selectedProducers = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, Faction, Selected>()
                 .WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
@@ -36,7 +38,7 @@ namespace HyperRTS.Simulation.Production
         public void OnUpdate(ref SystemState state)
         {
             // Most frames carry no producer commands; skip fetching writable stockpiles.
-            if (!PlayerCommands.Any(ref state, ProducerCommands))
+            if (!PlayerCommands.Any(ref state, _commanders, ProducerCommands))
             {
                 return;
             }

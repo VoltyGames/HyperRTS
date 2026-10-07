@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
@@ -14,11 +14,13 @@ namespace HyperRTS.Simulation.Transport
     public partial struct UnloadSystem : ISystem
     {
         private EntityQuery _selected;
+        private EntityQuery _commanders;
         private CargoExit _exit;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _commanders = PlayerCommands.Query(ref state);
             _selected = SystemAPI.QueryBuilder().WithAll<Container, Selected, Faction>().WithNone<Dead>().Build();
             _exit = new CargoExit(ref state);
         }
@@ -26,7 +28,7 @@ namespace HyperRTS.Simulation.Transport
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!PlayerCommands.Any(ref state, PlayerCommands.Mask(CommandType.Unload)))
+            if (!PlayerCommands.Any(ref state, _commanders, PlayerCommands.Mask(CommandType.Unload)))
             {
                 return;
             }
