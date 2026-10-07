@@ -51,9 +51,8 @@ namespace HyperRTS.Editor
             PrefabUtility.InstantiatePrefab(rig != null ? rig : EditorAssets.RigPrefab, scene);
             EditorSceneManager.SaveScene(scene, path);
 
-            var basePath = Path.ChangeExtension(path, null);
-            var subScenePath = basePath + "_Entities.unity";
-            CreateSubScene(subScenePath, CreateMatchPrefab(basePath + "_Match.prefab"));
+            var subScenePath = Path.ChangeExtension(path, null) + "_Entities.unity";
+            CreateSubScene(subScenePath);
             var subScene = new GameObject("SubScene").AddComponent<SubScene>();
             subScene.SceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(subScenePath);
             subScene.AutoLoadScene = true;
@@ -80,23 +79,14 @@ namespace HyperRTS.Editor
             ground.transform.localScale = new Vector3(mapSize.x / 10f, 1f, mapSize.y / 10f);
         }
 
-        // Netcode accepts a ghost placed in a scene only as an instance of a ghost prefab, so each map's Match is one.
-        private static GameObject CreateMatchPrefab(string path)
-        {
-            var match = new GameObject("Match");
-            match.AddComponent<MatchAuthoring>();
-            match.AddComponent<GhostAuthoringComponent>();
-            match.AddComponent<NetCodePhysicsConfig>().PhysicGroupRunMode = PhysicGroupRunMode.AlwaysRun;
-            var prefab = PrefabUtility.SaveAsPrefabAsset(match, path);
-            DestroyImmediate(match);
-            return prefab;
-        }
-
-        private void CreateSubScene(string path, GameObject matchPrefab)
+        // The Match stays a plain object (its players become ghosts of their own); MatchState is the ghost.
+        private void CreateSubScene(string path)
         {
             var entities = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(matchPrefab, entities);
-            var match = instance.GetComponent<MatchAuthoring>();
+            var match = new GameObject("Match").AddComponent<MatchAuthoring>();
+            match.gameObject.AddComponent<NetCodePhysicsConfig>().PhysicGroupRunMode = PhysicGroupRunMode.AlwaysRun;
+            EditorSceneManager.MoveGameObjectToScene(match.gameObject, entities);
+            PrefabUtility.InstantiatePrefab(EditorAssets.MatchStatePrefab, entities);
             match.mapSize = mapSize;
             match.players.Clear();
             for (var i = 0; i < players; i++)
@@ -110,7 +100,6 @@ namespace HyperRTS.Editor
                 });
             }
 
-            PrefabUtility.RecordPrefabInstancePropertyModifications(match);
             PlaceBases(entities);
             EditorSceneManager.SaveScene(entities, path);
             EditorSceneManager.CloseScene(entities, true);

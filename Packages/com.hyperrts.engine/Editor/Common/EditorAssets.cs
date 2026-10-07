@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
@@ -12,7 +12,13 @@ namespace HyperRTS.Editor.Common
     {
         private const string RigGuid = "4b013d5a34cf1e34d8d223e003462d25";
 
+        private const string MatchStateGuid = "37a4b4ac2aee31d42895a37c3d702bed";
+
         public static GameObject RigPrefab => AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(RigGuid));
+
+        /// <summary>The ghost carrying MatchState; every map's SubScene holds one.</summary>
+        public static GameObject MatchStatePrefab =>
+            AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(MatchStateGuid));
 
         /// <summary>Every unit and building prefab in the project.</summary>
         public static List<GameEntityAuthoring> EntityPrefabs() => EntityPrefabs(AuthoringPrefabs());

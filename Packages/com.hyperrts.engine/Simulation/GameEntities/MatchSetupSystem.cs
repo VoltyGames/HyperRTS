@@ -21,6 +21,7 @@ namespace HyperRTS.Simulation.GameEntities
     [UpdateAfter(typeof(LocalGhostActivationSystem))]
     public partial struct MatchSetupSystem : ISystem
     {
+        private EntityQuery _match;
         private EntityQuery _players;
         private EntityQuery _owned;
         private bool _retryOwned;
@@ -30,7 +31,11 @@ namespace HyperRTS.Simulation.GameEntities
             _players = SystemAPI.QueryBuilder().WithAll<Player>().WithNone<GhostInstance>().Build();
             _owned = SystemAPI.QueryBuilder().WithAll<Faction>().WithNone<Parent>().Build();
             _owned.SetChangedVersionFilter(ComponentType.ReadOnly<Faction>());
-            state.RequireForUpdate<FactionRelations>();
+            // Disabled included: in network worlds the Match is a prespawned ghost Netcode keeps disabled at first,
+            // and the setup must land before the players become ghosts.
+            _match = SystemAPI.QueryBuilder().WithAll<FactionRelations, MapSettings>()
+                .WithOptions(EntityQueryOptions.IncludeDisabledEntities).Build();
+            state.RequireForUpdate(_match);
         }
 
         public void OnUpdate(ref SystemState state)
@@ -78,8 +83,10 @@ namespace HyperRTS.Simulation.GameEntities
         private void Apply(ref SystemState state, ref MatchSetup setup)
         {
             var entityManager = state.EntityManager;
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
-            var tunings = CopyTunings(ref state);
+            var match = _match.GetSingletonEntity();
+            var relations = entityManager.GetComponentData<FactionRelations>(match);
+            // Copied out: the structural changes that follow would invalidate the buffer.
+            var tunings = entityManager.GetBuffer<AIDifficultyTuning>(match, true).ToNativeArray(Allocator.Temp);
             var players = _players.ToEntityArray(Allocator.Temp);
             foreach (var player in players)
             {
@@ -98,8 +105,8 @@ namespace HyperRTS.Simulation.GameEntities
                 ScaleStock(entityManager.GetBuffer<ResourceStock>(player), setup.StartingResourceScale);
             }
 
-            SystemAPI.SetSingleton(relations);
-            ApplyFog(ref state, setup.Fog);
+            entityManager.SetComponentData(match, relations);
+            ApplyFog(entityManager, match, setup.Fog);
         }
 
         private static void ApplySlot(EntityManager entityManager, Entity player, in SlotSetup slot,
@@ -161,9 +168,6 @@ namespace HyperRTS.Simulation.GameEntities
             throw new System.InvalidOperationException($"The Match baked no tuning for {difficulty}.");
         }
 
-        // Copied out: the structural changes that follow would invalidate the buffer.
-        private NativeArray<AIDifficultyTuning> CopyTunings(ref SystemState state) =>
-            SystemAPI.GetSingletonBuffer<AIDifficultyTuning>(true).ToNativeArray(Allocator.Temp);
 
         private static void SetTeam(ref FactionRelations relations, byte faction, byte team)
         {
@@ -185,14 +189,16 @@ namespace HyperRTS.Simulation.GameEntities
             }
         }
 
-        private void ApplyFog(ref SystemState state, FogOverride fog)
+        private static void ApplyFog(EntityManager entityManager, Entity match, FogOverride fog)
         {
-            if (fog == FogOverride.Map || !SystemAPI.TryGetSingletonRW<MapSettings>(out var map))
+            if (fog == FogOverride.Map)
             {
                 return;
             }
 
-            map.ValueRW.FogOfWar = fog == FogOverride.On;
+            var map = entityManager.GetComponentData<MapSettings>(match);
+            map.FogOfWar = fog == FogOverride.On;
+            entityManager.SetComponentData(match, map);
         }
 
         /// <summary>

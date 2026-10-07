@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Common
     /// its prespawn systems register them, which only run in client and server worlds. Single player has neither, so
     /// this enables them there and they play as plain entities.
     /// </summary>
-    [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation)]
+    [WorldSystemFilter(SimulationWorlds.All)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial struct LocalGhostActivationSystem : ISystem
     {
@@ -21,6 +21,9 @@ namespace HyperRTS.Simulation.Common
             _waiting = SystemAPI.QueryBuilder().WithAll<PreSpawnedGhostIndex, Disabled>()
                 .WithOptions(EntityQueryOptions.IncludeDisabledEntities).Build();
             state.RequireForUpdate(_waiting);
+
+            // Exists in every world so others can order after it; Netcode handles the client and server worlds.
+            state.Enabled = !state.WorldUnmanaged.IsServer() && !state.WorldUnmanaged.IsClient();
         }
 
         public void OnUpdate(ref SystemState state)
