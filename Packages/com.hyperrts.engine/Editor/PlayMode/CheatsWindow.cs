@@ -1,7 +1,8 @@
-using System.Linq;
+﻿using System.Linq;
 using HyperRTS.Network.Session;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Match;
 using Unity.Entities;
 using UnityEditor;
 using UnityEngine;
@@ -51,7 +52,11 @@ namespace HyperRTS.Editor.PlayMode
             DrawSpawn(entityManager, faction);
 
             EditorGUILayout.Space();
-            Time.timeScale = EditorGUILayout.Slider("Game speed", Time.timeScale, 0f, 4f);
+            var speed = EditorGUILayout.Slider("Game speed", LocalGameSpeed.Scale, 0f, 4f);
+            if (!Mathf.Approximately(speed, LocalGameSpeed.Scale))
+            {
+                LocalGameSpeed.SetScale(speed);
+            }
         }
 
         private void DrawPlayerCheats(EntityManager entityManager, Entity player, byte faction)

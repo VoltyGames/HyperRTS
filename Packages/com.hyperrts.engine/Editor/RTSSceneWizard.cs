@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using HyperRTS.Core;
 using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Common;
@@ -39,13 +39,16 @@ namespace HyperRTS.Editor
             }
         }
 
-        /// <summary>Builds and saves the scene at a project path such as <c>Assets/Scenes/Map.unity</c>.</summary>
-        public void CreateSceneAt(string path)
+        /// <summary>
+        /// Builds and saves the scene at a project path such as <c>Assets/Scenes/Map.unity</c>, with the engine's
+        /// RTSWorld rig unless the game passes its own (a variant with its HUD).
+        /// </summary>
+        public void CreateSceneAt(string path, GameObject rig = null)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             CreateLight();
             CreateGround();
-            PrefabUtility.InstantiatePrefab(EditorAssets.RigPrefab, scene);
+            PrefabUtility.InstantiatePrefab(rig != null ? rig : EditorAssets.RigPrefab, scene);
             EditorSceneManager.SaveScene(scene, path);
 
             var subScenePath = Path.ChangeExtension(path, null) + "_Entities.unity";
