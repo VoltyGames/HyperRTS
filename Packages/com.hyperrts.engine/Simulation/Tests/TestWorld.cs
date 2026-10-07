@@ -31,6 +31,8 @@ namespace HyperRTS.Simulation.Tests
 
         public TestWorld()
         {
+            // Statics outlive Play mode (no domain reload), so a game's last match setup must not leak into tests.
+            MatchSetupRequest.Clear();
             World = new World("HyperRTS Test World");
 
             var simulation = typeof(UnitTag).Assembly;

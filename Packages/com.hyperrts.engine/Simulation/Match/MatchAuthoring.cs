@@ -12,12 +12,14 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Match
 {
-    /// <summary>Match rules for a map: playable area, grids and players. Place exactly one in the SubScene.</summary>
+    /// <summary>
+    /// Match rules for a map: playable area, grids and players. Place exactly one in the SubScene, as a plain object:
+    /// its players become ghosts of their own, and the replicated state lives on <see cref="MatchStateAuthoring"/>.
+    /// </summary>
     [AddComponentMenu(HyperRTSMenu.Match + "Match")]
     [Icon(HyperRTSIcons.Match)]
     [HelpURL(HyperRTSDocs.GettingStarted)]
     [DisallowMultipleComponent]
-    [RequiresGhost]
     public class MatchAuthoring : AuthoringBehaviour
     {
         [Header("Map")]
@@ -115,7 +117,6 @@ namespace HyperRTS.Simulation.Match
                     FloodTerrain = authoring.floodBelowWaterLevel,
                     MaxSlope = authoring.maxSlope,
                 });
-                AddComponent(entity, new MatchState { Phase = MatchPhase.Playing });
                 AddComponent(entity, new MatchRules
                 {
                     LowPowerProductionRate = authoring.lowPowerProductionRate,
