@@ -95,7 +95,8 @@ namespace HyperRTS.Simulation.Tests
         public void AISlots_UseTheBakedTuningOfTheirDifficulty()
         {
             _world.CreateMatch(1, 2);
-            var tunings = _world.EntityManager.AddBuffer<AIDifficultyTuning>(MatchEntity());
+            var tunings = _world.EntityManager.GetBuffer<AIDifficultyTuning>(MatchEntity());
+            tunings.Clear();
             tunings.Add(new AIDifficultyTuning
             {
                 Difficulty = AIDifficulty.Brutal,
