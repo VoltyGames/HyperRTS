@@ -69,6 +69,13 @@ dedicated server is `Connected` once it listens. When a connection fails or clos
 `Disconnected` with Netcode's `DisconnectReason` (timeout, closed by remote, max attempts...) until the game
 calls `Stop()` or starts a new session, so the UI can show why instead of an empty world.
 
+## Match start
+
+`MatchStartSystem` holds a networked match on the server until every human slot (no `AIPlayer`) has a connection,
+so the AI and the first players to load don't get a head start. The order phase keeps running so player ghosts spawn
+and joins bind; movement, combat, production, lifecycle and the skirmish AI wait. After 60 seconds it starts
+anyway. It then sets `MatchState.Started`, which client loading screens wait for. Single-player matches never hold.
+
 ## Join and reconnect
 
 1. Once the match is loaded, the client sends `JoinRequest` with its preferred slot.
@@ -84,10 +91,11 @@ back.
 
 ## Replication
 
-- **Ghosts**: units, buildings, resource nodes, projectiles and the Match object need a
-  `GhostAuthoringComponent` on the prefab root. **HyperRTS ▸ Validate** flags missing ones with a *Make Ghost*
-  fix, and the templates and scene wizard add it. Netcode only accepts a ghost placed in a scene as an instance of a
-  ghost prefab, so the scene wizard saves each map's Match as `<Map>_Match.prefab` and places an instance.
+- **Ghosts**: units, buildings, resource nodes and projectiles need a `GhostAuthoringComponent` on the prefab root.
+  **HyperRTS ▸ Validate** flags missing ones with a *Make Ghost* fix, and the templates add it. The Match object stays
+  a plain scene object, because the players it bakes become ghosts of their own; its replicated state (`MatchState`)
+  is the engine's `MatchState` ghost prefab, which the scene wizard places in every map. In single player,
+  `LocalGhostActivationSystem` enables such prespawned ghosts, which Netcode would otherwise leave disabled.
 - **Players** are baked by `MatchAuthoring`, so `PlayerGhostSystem` turns each baked player into a ghost prefab
   at runtime (the same way on both sides) and the server spawns one ghost per slot.
 - **Fields**: components the client reads carry `[GhostField]` (health, faction, construction, production queue,
