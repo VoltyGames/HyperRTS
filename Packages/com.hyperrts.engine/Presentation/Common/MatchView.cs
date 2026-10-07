@@ -1,6 +1,8 @@
-using System;
+﻿using System;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Orders;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -21,6 +23,8 @@ namespace HyperRTS.Presentation.Common
         private EntityQuery _relations;
         private EntityQuery _map;
         private EntityQuery _match;
+        private EntityQuery _placement;
+        private EntityQuery _pending;
 
         public EntityManager EntityManager { get; private set; }
         public bool IsReady { get; private set; }
@@ -88,6 +92,17 @@ namespace HyperRTS.Presentation.Common
 
         public bool IsLocalDefeated() => EntityManager.HasEnabled<Defeated>(LocalPlayer);
 
+        /// <summary>Whether a building placement or targeted command waits for a click, which Escape cancels first.</summary>
+        public bool IsInteractionPending()
+        {
+            if (_placement.TryGetSingleton(out PlacementState placement) && placement.Active)
+            {
+                return true;
+            }
+
+            return _pending.TryGetSingleton(out PendingCommand pending) && pending.Type != CommandType.None;
+        }
+
         private void Bind(World world)
         {
             _world = world;
@@ -98,6 +113,8 @@ namespace HyperRTS.Presentation.Common
             _relations = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<FactionRelations>());
             _map = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MapSettings>());
             _match = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MatchState>());
+            _placement = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<PlacementState>());
+            _pending = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<PendingCommand>());
         }
 
         private void RefreshColors()
