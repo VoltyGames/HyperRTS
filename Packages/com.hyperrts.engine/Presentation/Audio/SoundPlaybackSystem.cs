@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
@@ -156,7 +156,7 @@ namespace HyperRTS.Presentation.Audio
         private bool TryLoad(int typeId, out List<(SoundSlot Slot, SoundCue Cue)> cues)
         {
             cues = null;
-            var version = _typed.GetCombinedComponentOrderVersion();
+            var version = _typed.GetCombinedComponentOrderVersion(includeEntityType: true);
             if (version != _typedVersion)
             {
                 _typedVersion = version;
