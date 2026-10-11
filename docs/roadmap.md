@@ -55,19 +55,6 @@ Status of the engine and the work still open. Update it when a feature lands or 
 - Observer HUD (minimap, banner and overlays without a local player).
 - Host migration, automatic reconnect.
 
-### Architecture
-
-- `CommandSystemGroup` and open order traits, so games add Smart resolutions and custom orders without edits.
-- Shared `TargetedOrder` helper for the approach-then-act behaviours (build, repair, capture, gather, board).
-- `Inoperative` state with reasons, replacing the repeated `WithNone<ConstructionProgress, Unpowered>` filters.
-- Domain events (`Produced`, `Completed`, `OwnerChanged`) instead of inline sound and stats calls.
-- One purchase rule (`ProducibleRules`) for placement, production, AI and HUD.
-- Research as a generic producible in Production, removing the `Production → Upgrades` back-edge.
-- `HyperRTS.Client` assembly for client state now in `Simulation/Interaction` and `LiveQuery`.
-- Extensible command card (entries from registered sources, with grid slots and hotkeys).
-- Explicit session phases and deferred `StatusChanged`.
-- `TestWorld` that loads game assemblies.
-
 ### Hardening
 
 - CI running EditMode tests and project validation, including closed map scenes.
