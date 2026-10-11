@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Burst;
@@ -10,14 +11,17 @@ namespace HyperRTS.Simulation.Replays
 {
     /// <summary>
     /// While a <see cref="ReplayRecording"/> exists, samples every gameplay entity at its rate after the frame's
-    /// gameplay ran: a keyframe every few seconds, deltas of what changed in between. Starts one itself when
-    /// <see cref="MatchRules.RecordReplay"/> is set.
+    /// gameplay ran: a keyframe every few seconds, deltas of what changed in between, and every impact since the last
+    /// sample. Starts one itself when <see cref="MatchRules.RecordReplay"/> is set.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
     public partial struct ReplayRecorderSystem : ISystem
     {
         private bool _autoStarted;
+
+        [BurstCompile]
+        public void OnCreate(ref SystemState state) => state.RequireForUpdate<ImpactQueue>();
 
         public void OnDestroy(ref SystemState state)
         {
@@ -37,6 +41,7 @@ namespace HyperRTS.Simulation.Replays
             }
 
             var recording = SystemAPI.GetComponent<ReplayRecording>(entity);
+            RecordImpacts(ref state, recording.Stream);
             if (!TryBeginFrame(ref recording, SystemAPI.Time.ElapsedTime, out var frame))
             {
                 return;
@@ -47,8 +52,18 @@ namespace HyperRTS.Simulation.Replays
             CollectRemoved(ref recording, frame.Keyframe);
             frame.EntityCount = recording.Stream.Entities.Length - frame.EntityStart;
             frame.RemovedCount = recording.Stream.Removed.Length - frame.RemovedStart;
+            frame.ImpactCount = recording.Stream.Impacts.Length - frame.ImpactStart;
             recording.Stream.Frames.Add(frame);
             SystemAPI.SetComponent(entity, recording);
+        }
+
+        /// <summary>Shots land between samples, so every frame's impacts are kept for the next sample.</summary>
+        private void RecordImpacts(ref SystemState state, ReplayStream stream)
+        {
+            foreach (var impact in SystemAPI.GetSingletonBuffer<ImpactEvent>(true))
+            {
+                stream.Impacts.Add(ReplayImpact.Capture(impact));
+            }
         }
 
         /// <summary>Whether a sample is due; the first is taken at once and counts as time zero.</summary>
@@ -86,6 +101,7 @@ namespace HyperRTS.Simulation.Replays
                 Keyframe = keyframe,
                 EntityStart = recording.Stream.Entities.Length,
                 RemovedStart = recording.Stream.Removed.Length,
+                ImpactStart = recording.Stream.SampledImpacts,
             };
             return true;
         }

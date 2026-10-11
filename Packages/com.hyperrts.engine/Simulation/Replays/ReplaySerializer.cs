@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Match;
 using Unity.Mathematics;
 
@@ -10,8 +11,8 @@ namespace HyperRTS.Simulation.Replays
     /// <summary>Reads and writes <see cref="Replay"/> files: a GZip stream of a small header and the samples.</summary>
     public static class ReplaySerializer
     {
-        /// <summary>2 added game metadata and player sides.</summary>
-        public const int FormatVersion = 2;
+        /// <summary>2 added game metadata and player sides, 3 the impacts of each sample.</summary>
+        public const int FormatVersion = 3;
         private const int Magic = 0x4C505248; // "HRPL"
 
         /// <summary>Most elements reserved before any are read; larger lists grow as data arrives.</summary>
@@ -57,6 +58,7 @@ namespace HyperRTS.Simulation.Replays
                 writer.Write(frame.Keyframe);
                 writer.Write(frame.EntityCount);
                 writer.Write(frame.RemovedCount);
+                writer.Write(frame.ImpactCount);
             }
 
             foreach (var entity in replay.Entities)
@@ -67,6 +69,11 @@ namespace HyperRTS.Simulation.Replays
             foreach (var key in replay.Removed)
             {
                 writer.Write(key);
+            }
+
+            foreach (var impact in replay.Impacts)
+            {
+                WriteImpact(writer, impact);
             }
         }
 
@@ -95,7 +102,7 @@ namespace HyperRTS.Simulation.Replays
         {
             var frameCount = ReadCount(reader, "frames");
             var frames = new List<ReplayFrame>(Capacity(frameCount));
-            long entities = 0, removed = 0;
+            long entities = 0, removed = 0, impacts = 0;
             for (var i = 0; i < frameCount; i++)
             {
                 var frame = new ReplayFrame { Time = reader.ReadSingle(), Keyframe = reader.ReadBoolean() };
@@ -103,14 +110,18 @@ namespace HyperRTS.Simulation.Replays
                 frame.EntityCount = ReadCount(reader, "entity samples");
                 frame.RemovedStart = (int)removed;
                 frame.RemovedCount = ReadCount(reader, "removals");
+                frame.ImpactStart = (int)impacts;
+                frame.ImpactCount = ReadCount(reader, "impacts");
                 entities = Total(entities + frame.EntityCount, "entity samples");
                 removed = Total(removed + frame.RemovedCount, "removals");
+                impacts = Total(impacts + frame.ImpactCount, "impacts");
                 frames.Add(frame);
             }
 
             replay.Frames = frames.ToArray();
             replay.Entities = ReadAll(reader, (int)entities, ReadEntity);
             replay.Removed = ReadAll(reader, (int)removed, r => r.ReadInt32());
+            replay.Impacts = ReadAll(reader, (int)impacts, ReadImpact);
         }
 
         private static int ReadCount(BinaryReader reader, string what)
@@ -233,6 +244,28 @@ namespace HyperRTS.Simulation.Replays
             Faction = reader.ReadByte(),
             Health = reader.ReadByte(),
             Progress = reader.ReadByte(),
+        };
+
+        private static void WriteImpact(BinaryWriter writer, in ReplayImpact impact)
+        {
+            writer.Write(impact.TypeId);
+            writer.Write(impact.X);
+            writer.Write(impact.Y);
+            writer.Write(impact.Z);
+            writer.Write(impact.Radius);
+            writer.Write(impact.Faction);
+            writer.Write((byte)impact.Surface);
+        }
+
+        private static ReplayImpact ReadImpact(BinaryReader reader) => new()
+        {
+            TypeId = reader.ReadInt32(),
+            X = reader.ReadInt16(),
+            Y = reader.ReadInt16(),
+            Z = reader.ReadInt16(),
+            Radius = reader.ReadUInt16(),
+            Faction = reader.ReadByte(),
+            Surface = (ImpactSurface)reader.ReadByte(),
         };
     }
 }

@@ -28,6 +28,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<Ammo> _ammo;
         private DamageWriter _damage;
         private SoundWriter _sounds;
+        private ImpactWriter _impacts;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -39,8 +40,10 @@ namespace HyperRTS.Simulation.Combat
             _ammo = state.GetComponentLookup<Ammo>();
             _damage = new DamageWriter(ref state);
             _sounds = new SoundWriter(ref state);
+            _impacts = new ImpactWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<SoundQueue>();
+            state.RequireForUpdate<ImpactQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -54,6 +57,7 @@ namespace HyperRTS.Simulation.Combat
             _ammo.Update(ref state);
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
             _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
+            _impacts.Update(ref state, SystemAPI.GetSingletonEntity<ImpactQueue>());
 
             // Single-threaded: every shot appends to the one damage queue.
             new FireJob
@@ -68,6 +72,7 @@ namespace HyperRTS.Simulation.Combat
                 Ammo = _ammo,
                 Damage = _damage,
                 Sounds = _sounds,
+                Impacts = _impacts,
             }.Schedule();
         }
 
@@ -85,6 +90,7 @@ namespace HyperRTS.Simulation.Combat
             public ComponentLookup<Ammo> Ammo;
             public DamageWriter Damage;
             public SoundWriter Sounds;
+            public ImpactWriter Impacts;
 
             private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
                 EnabledRefRO<AttackTarget> attacking, in Faction faction)
@@ -115,8 +121,10 @@ namespace HyperRTS.Simulation.Combat
                 Sounds.Play(entity, SoundSlot.Fire, origin, faction.Value);
                 if (weapon.ProjectilePrefab == Entity.Null)
                 {
-                    Damage.Add(CombatMath.Hit(weapon, entity, faction.Value, origin, target, targetPosition));
+                    var hit = CombatMath.Hit(weapon, entity, faction.Value, origin, target, targetPosition);
+                    Damage.Add(hit);
                     Sounds.Play(entity, SoundSlot.Impact, targetPosition, faction.Value);
+                    Impacts.Add(Impacts.TypeIdFor(entity), hit);
                 }
                 else
                 {
@@ -182,6 +190,7 @@ namespace HyperRTS.Simulation.Combat
                     Speed = weapon.ProjectileSpeed,
                     Height = weapon.ProjectileHeight,
                     ImpactSoundTypeId = Sounds.TypeIdFor(shooter, SoundSlot.Impact),
+                    ImpactMarkTypeId = Impacts.TypeIdFor(shooter),
                     Hit = CombatMath.Hit(weapon, shooter, faction.Value, origin, target, aim),
                 });
             }

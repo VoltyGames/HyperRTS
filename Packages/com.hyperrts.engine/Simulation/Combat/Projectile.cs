@@ -15,5 +15,8 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>Shooter type whose impact cue plays on arrival (0 = silent); outlives the shooter.</summary>
         public int ImpactSoundTypeId;
+
+        /// <summary>Shooter type whose impact marks the hit leaves (0 = none); outlives the shooter.</summary>
+        public int ImpactMarkTypeId;
     }
 }

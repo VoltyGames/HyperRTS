@@ -11,6 +11,7 @@
         "Unity.Transforms",
         "Unity.Mathematics",
         "Unity.Collections",
+        "Unity.RenderPipelines.Universal.Runtime",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
@@ -11,13 +12,16 @@ namespace HyperRTS.Simulation.Replays
 {
     /// <summary>
     /// Shows a replay without simulating: takes over the scene's entities (same type, nearest position), then each
-    /// frame spawns, destroys and interpolates entities to the recorded state at <see cref="ReplayPlayback.Time"/>.
-    /// Seeking rebuilds from the nearest keyframe at or before the time.
+    /// frame spawns, destroys and interpolates entities to the recorded state at <see cref="ReplayPlayback.Time"/>,
+    /// and queues the impacts it passes. Seeking rebuilds from the nearest keyframe at or before the time.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ReplaySystemGroup))]
     public partial struct ReplayPlaybackSystem : ISystem
     {
+        /// <summary>Seconds of impacts a seek (or the start) queues at once, so the ground shows the recent marks.</summary>
+        public const float SeekImpactSeconds = 30f;
+
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<Faction> _factions;
         private ComponentLookup<Health> _health;
@@ -33,6 +37,7 @@ namespace HyperRTS.Simulation.Replays
             state.RequireForUpdate<ReplayPlaybackState>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<PrefabRegistry>();
+            state.RequireForUpdate<ImpactQueue>();
         }
 
         public void OnDestroy(ref SystemState state)
@@ -51,21 +56,39 @@ namespace HyperRTS.Simulation.Replays
             var clock = SystemAPI.GetComponent<ReplayPlayback>(entity);
             clock.Advance(SystemAPI.Time.DeltaTime);
 
+            var previous = data.Index;
             var index = data.Stream.FrameAt(clock.Time);
-            if (data.Index < 0)
+            if (previous < 0)
             {
                 data.Seek(index);
                 TakeOver(ref state, ref data);
             }
-            else if (index != data.Index)
+            else if (index != previous)
             {
                 data.Seek(index);
                 Sync(ref state, ref data);
             }
 
             Show(ref state, in data, clock.Time);
+            QueueImpacts(ref state, data.Stream, previous, index, clock.Time);
             SystemAPI.SetComponent(entity, data);
             SystemAPI.SetComponent(entity, clock);
+        }
+
+        /// <summary>
+        /// Refills the impact queue, whose clear system is off with the gameplay, with the frames just passed. A jump
+        /// queues only the last <see cref="SeekImpactSeconds"/> rather than a whole battle in one frame.
+        /// </summary>
+        private void QueueImpacts(ref SystemState state, in ReplayStream stream, int previous, int index, float time)
+        {
+            var queue = SystemAPI.GetSingletonBuffer<ImpactEvent>();
+            queue.Clear();
+            var recent = stream.FrameAfter(time - SeekImpactSeconds);
+            var first = previous >= 0 && index >= previous ? math.max(previous + 1, recent) : recent;
+            for (var frame = first; frame <= index; frame++)
+            {
+                stream.AddImpacts(frame, queue);
+            }
         }
 
         /// <summary>Claims the scene's entities for the recorded ones, removes the rest and spawns what is missing.</summary>

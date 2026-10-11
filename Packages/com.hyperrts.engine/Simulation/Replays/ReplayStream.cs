@@ -1,5 +1,7 @@
 using System;
+using HyperRTS.Simulation.Combat;
 using Unity.Collections;
+using Unity.Entities;
 
 namespace HyperRTS.Simulation.Replays
 {
@@ -9,12 +11,14 @@ namespace HyperRTS.Simulation.Replays
         public NativeList<ReplayFrame> Frames;
         public NativeList<ReplayEntity> Entities;
         public NativeList<int> Removed;
+        public NativeList<ReplayImpact> Impacts;
 
         public static ReplayStream Create(Allocator allocator) => new()
         {
             Frames = new NativeList<ReplayFrame>(64, allocator),
             Entities = new NativeList<ReplayEntity>(1024, allocator),
             Removed = new NativeList<int>(64, allocator),
+            Impacts = new NativeList<ReplayImpact>(256, allocator),
         };
 
         public void Dispose()
@@ -22,6 +26,35 @@ namespace HyperRTS.Simulation.Replays
             Frames.Dispose();
             Entities.Dispose();
             Removed.Dispose();
+            Impacts.Dispose();
+        }
+
+        /// <summary>Impacts the frames so far hold; those recorded after them belong to the next sample.</summary>
+        public readonly int SampledImpacts
+        {
+            get
+            {
+                if (Frames.IsEmpty)
+                {
+                    return 0;
+                }
+
+                var last = Frames[Frames.Length - 1];
+                return last.ImpactStart + last.ImpactCount;
+            }
+        }
+
+        /// <summary>The first frame recorded after <paramref name="time"/>.</summary>
+        public readonly int FrameAfter(float time) => time < Frames[0].Time ? 0 : FrameAt(time) + 1;
+
+        /// <summary>Adds a frame's impacts to <paramref name="queue"/>.</summary>
+        public readonly void AddImpacts(int frame, DynamicBuffer<ImpactEvent> queue)
+        {
+            var sample = Frames[frame];
+            for (var i = sample.ImpactStart; i < sample.ImpactStart + sample.ImpactCount; i++)
+            {
+                queue.Add(Impacts[i].ToEvent());
+            }
         }
 
         /// <summary>The last frame at or before <paramref name="time"/> (the first frame before it starts).</summary>
