@@ -243,7 +243,7 @@ Unpowered weapons hold fire; unpowered producers run at `MatchRules.LowPowerProd
 | `ResourceNodeAuthoring` / `ResourceNode` | Neutral deposit, finite or regrowing |
 | `ResourceDropOffAuthoring` | Where harvesters deposit |
 | `HarvesterAuthoring` / `Harvester`, `HarvestState` | Capacity, gather rate, trip state |
-| `IncomeMultiplier` | Player income scale (Brutal AI bonus) |
+| Player `Stat.Income` | Delivered resources are scaled by the owner's `StatModifier`s on `Stat.Income` (an AI difficulty bonus, a game's faction perk) |
 
 `GatherSystem` runs node → fill → nearest drop-off → deposit, switching to a nearby node of the same type when one
 runs dry. `ResourceNodeSystem` regrows or removes nodes.

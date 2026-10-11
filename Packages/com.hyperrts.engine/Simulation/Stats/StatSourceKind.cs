@@ -8,6 +8,9 @@ namespace HyperRTS.Simulation.Stats
         Veterancy = 2,
         Field = 3,
 
+        /// <summary>An AI difficulty's handicap or bonus, on the AI player.</summary>
+        Difficulty = 4,
+
         /// <summary>Kinds from here up belong to games; the engine never uses them.</summary>
         Custom = 128,
     }

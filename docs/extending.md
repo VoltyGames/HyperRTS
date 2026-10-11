@@ -37,6 +37,7 @@ Mirror the engine's layering:
 | Field effects (jamming) | Read the entity's `FieldPresence` |
 | Disable an entity (EMP, stun) | Set a bit from `OfflineReason.Custom` up in its `Offline.Reasons` and clear it when the effect ends; `OfflineSystem` enables `Offline`. Units need `Offline` added (disabled) in their baker |
 | Change a stat | `StatModifier` with a `StatSource` kind from `StatSourceKind.Custom` (128) up, so removing yours never strips the engine's |
+| A player-wide bonus (cheaper income) | Add a `StatModifier` to the player entity's buffer: `Stat.Income`, or a custom stat your own system reads with `StatMath.Evaluate` |
 | A custom stat (fuel) | `Stat` value from `Stat.Custom` (128) up. A system last in `LifecycleSystemGroup`, change-filtered on `StatModifier`, sets your value with `StatMath.Apply(modifiers, bases, stat, value)` |
 | A sound | `SoundWriter.Play(entity, slot, ...)` before the end of the lifecycle phase; custom slots from `SoundSlot.Custom` |
 | Spawn from code | `ecb.Instantiate(prefab)`, set `LocalTransform` and `Faction`. Prefab entities come from authoring references (`PrefabRegistry` by `TypeId`) |

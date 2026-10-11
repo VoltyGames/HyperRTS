@@ -1,8 +1,9 @@
-﻿using HyperRTS.Simulation.AI;
+using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Stats;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -111,7 +112,8 @@ namespace HyperRTS.Simulation.Tests
 
             var ai = _world.Player(2);
             Assert.AreEqual(0.25f, _world.Get<AIPlayer>(ai).ThinkInterval);
-            Assert.AreEqual(1.5f, _world.Get<IncomeMultiplier>(ai).Value);
+            var modifiers = _world.EntityManager.GetBuffer<StatModifier>(ai);
+            Assert.AreEqual(1.5f, StatMath.Evaluate(modifiers, Stat.Income, 1f), 1e-5f);
         }
 
         [Test]

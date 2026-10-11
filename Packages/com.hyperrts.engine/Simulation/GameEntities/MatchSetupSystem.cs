@@ -3,6 +3,7 @@ using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Stats;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -125,7 +126,7 @@ namespace HyperRTS.Simulation.GameEntities
             }
 
             entityManager.RemoveComponent<AIPlayer>(player);
-            entityManager.RemoveComponent<IncomeMultiplier>(player);
+            SetIncomeBonus(entityManager, player, 1f);
             if (slot.Control == PlayerControl.LocalHuman)
             {
                 entityManager.AddComponent<LocalPlayer>(player);
@@ -145,13 +146,20 @@ namespace HyperRTS.Simulation.GameEntities
                 entityManager.AddBuffer<AIBuildStep>(player);
             }
 
-            if (!AIDifficultyTuning.IsFairIncome(tuning.IncomeMultiplier))
+            SetIncomeBonus(entityManager, player, tuning.IncomeMultiplier);
+        }
+
+        /// <summary>Replaces the player's difficulty income modifier; a fair multiplier leaves none.</summary>
+        private static void SetIncomeBonus(EntityManager entityManager, Entity player, float multiplier)
+        {
+            var modifiers = entityManager.GetBuffer<StatModifier>(player);
+            StatMath.RemoveKind(modifiers, StatSourceKind.Difficulty);
+            if (!AIDifficultyTuning.IsFairIncome(multiplier))
             {
-                entityManager.AddComponentData(player, new IncomeMultiplier { Value = tuning.IncomeMultiplier });
-            }
-            else
-            {
-                entityManager.RemoveComponent<IncomeMultiplier>(player);
+                modifiers.Add(new StatModifier
+                {
+                    Stat = Stat.Income, Percent = multiplier - 1f, Source = StatSource.Difficulty,
+                });
             }
         }
 

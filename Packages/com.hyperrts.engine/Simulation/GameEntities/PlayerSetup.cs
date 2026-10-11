@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Stats;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -27,6 +28,8 @@ namespace HyperRTS.Simulation.GameEntities
             writer.AddBuffer<PlayerCommand>();
             writer.AddBuffer<PlayerCommandSubject>();
             writer.AddBuffer<CompletedResearch>();
+            // Player-wide stats such as Income; games add their own.
+            writer.AddBuffer<StatModifier>();
             return writer.AddBuffer<ResourceStock>();
         }
     }

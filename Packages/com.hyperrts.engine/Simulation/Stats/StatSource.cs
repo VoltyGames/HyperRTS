@@ -23,6 +23,8 @@ namespace HyperRTS.Simulation.Stats
 
         public static StatSource Field(int fieldId) => new(StatSourceKind.Field, fieldId);
 
+        public static StatSource Difficulty => new(StatSourceKind.Difficulty, 0);
+
         public readonly bool Equals(StatSource other) => Kind == other.Kind && Id == other.Id;
 
         public override readonly bool Equals(object obj) => obj is StatSource other && Equals(other);

@@ -22,6 +22,9 @@ namespace HyperRTS.Simulation.Stats
         DamageTaken = 6,
         BuildRate = 7,
         ProductionSpeed = 8,
+
+        /// <summary>On a player: resources its harvesters deliver, as a multiplier (base 1).</summary>
+        Income = 9,
         Custom = 128,
     }
 }

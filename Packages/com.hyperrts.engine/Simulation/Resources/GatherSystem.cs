@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Spatial;
+using HyperRTS.Simulation.Stats;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -26,7 +27,7 @@ namespace HyperRTS.Simulation.Resources
         private BufferLookup<ResourceStock> _stockLookup;
         private TargetReach _reach;
         private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<IncomeMultiplier> _incomeLookup;
+        private BufferLookup<StatModifier> _modifierLookup;
         private ComponentLookup<PlayerStats> _statsLookup;
 
         [BurstCompile]
@@ -40,7 +41,7 @@ namespace HyperRTS.Simulation.Resources
             _stockLookup = state.GetBufferLookup<ResourceStock>();
             _reach = new TargetReach(ref state);
             _factionLookup = state.GetComponentLookup<Faction>(true);
-            _incomeLookup = state.GetComponentLookup<IncomeMultiplier>(true);
+            _modifierLookup = state.GetBufferLookup<StatModifier>(true);
             _statsLookup = state.GetComponentLookup<PlayerStats>();
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<Harvester, ActiveOrder>().Build());
         }
@@ -57,7 +58,7 @@ namespace HyperRTS.Simulation.Resources
             _stockLookup.Update(ref state);
             _reach.Update(ref state);
             _factionLookup.Update(ref state);
-            _incomeLookup.Update(ref state);
+            _modifierLookup.Update(ref state);
             _statsLookup.Update(ref state);
 
             new GatherJob
@@ -70,7 +71,7 @@ namespace HyperRTS.Simulation.Resources
                 StockLookup = _stockLookup,
                 Reach = _reach,
                 FactionLookup = _factionLookup,
-                IncomeLookup = _incomeLookup,
+                ModifierLookup = _modifierLookup,
                 StatsLookup = _statsLookup,
             }.Schedule();
         }
@@ -89,7 +90,7 @@ namespace HyperRTS.Simulation.Resources
             public BufferLookup<ResourceStock> StockLookup;
             public TargetReach Reach;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
-            [ReadOnly] public ComponentLookup<IncomeMultiplier> IncomeLookup;
+            [ReadOnly] public BufferLookup<StatModifier> ModifierLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
 
             private void Execute(ref Harvester harvester, ref HarvestState harvest, ref ActiveOrder order,
@@ -195,8 +196,13 @@ namespace HyperRTS.Simulation.Resources
                 }
             }
 
-            private int Delivered(Entity player, int cargo) =>
-                IncomeLookup.TryGetComponent(player, out var income) ? (int)math.round(cargo * income.Value) : cargo;
+            private int Delivered(Entity player, int cargo)
+            {
+                var income = ModifierLookup.TryGetBuffer(player, out var modifiers)
+                    ? StatMath.Evaluate(modifiers, Stat.Income, 1f)
+                    : 1f;
+                return (int)math.round(cargo * income);
+            }
 
             private bool IsHarvestable(Entity node) =>
                 NodeLookup.TryGetComponent(node, out var data) && data.Amount > 0 && Reach.Exists(node);
