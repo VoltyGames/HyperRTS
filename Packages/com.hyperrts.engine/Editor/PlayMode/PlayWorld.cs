@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.PlayMode
 
         public static bool TryGetSingleton<T>(EntityManager entityManager, out T value) where T : unmanaged, IComponentData
         {
-            var queries = QueriesOf(entityManager.World);
+            var queries = GetQueries(entityManager.World);
             if (!queries.TryGetValue(typeof(T), out var query))
             {
                 queries[typeof(T)] = query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<T>());
@@ -52,7 +52,7 @@ namespace HyperRTS.Editor.PlayMode
             World local = null;
             foreach (var world in World.All)
             {
-                var role = RoleOf(world);
+                var role = GetRole(world);
                 if ((role & roles) == 0)
                 {
                     continue;
@@ -69,7 +69,7 @@ namespace HyperRTS.Editor.PlayMode
             return local;
         }
 
-        private static WorldSystemFilterFlags RoleOf(World world)
+        private static WorldSystemFilterFlags GetRole(World world)
         {
             if (!world.IsCreated || world.IsThinClient())
             {
@@ -91,7 +91,7 @@ namespace HyperRTS.Editor.PlayMode
         }
 
         // Queries belong to their world, so each world keeps its own and disposed worlds are dropped.
-        private static Dictionary<Type, EntityQuery> QueriesOf(World world)
+        private static Dictionary<Type, EntityQuery> GetQueries(World world)
         {
             if (Singletons.TryGetValue(world, out var queries))
             {

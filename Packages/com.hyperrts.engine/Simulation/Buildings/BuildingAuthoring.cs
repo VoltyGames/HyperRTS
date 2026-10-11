@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Buildings
         [Tooltip("Ground the footprint must cover when placed: land, water, or shoreline (both).")]
         public PlacementSurface placementSurface;
 
-        public override float Radius => EntityRadius.Of(new NavObstacle { Size = footprint });
+        public override float Radius => EntityRadius.Get(new NavObstacle { Size = footprint });
 
         public class Baker : Baker<BuildingAuthoring>
         {

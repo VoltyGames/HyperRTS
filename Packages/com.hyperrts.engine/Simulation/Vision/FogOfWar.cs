@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Hostile entities the viewer team can't see are hidden; own, allied and neutral never are.</summary>
         public readonly bool IsHiddenFrom(in FactionRelations relations, byte viewerFaction, byte faction,
             float3 position, bool stealthed) =>
-            relations.IsHostile(viewerFaction, faction) && !CanSee(relations.TeamOf(viewerFaction), position, stealthed);
+            relations.IsHostile(viewerFaction, faction) && !CanSee(relations.GetTeam(viewerFaction), position, stealthed);
 
         private readonly bool Test(NativeArray<ushort> cells, float3 position, byte team)
         {

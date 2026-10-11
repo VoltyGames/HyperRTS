@@ -45,13 +45,13 @@ namespace HyperRTS.Network.Replication
             {
                 for (var i = 0; i < stock.Length; i++)
                 {
-                    stock.ElementAt(i).Type = ResourceOf(stock[i].TypeId);
+                    stock.ElementAt(i).Type = FindResource(stock[i].TypeId);
                 }
             }
         }
 
         // Assets referenced by the SubScene are loaded, so they can be found by id.
-        private ResourceType ResourceOf(int typeId)
+        private ResourceType FindResource(int typeId)
         {
             if (typeId == 0)
             {

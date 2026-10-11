@@ -59,7 +59,7 @@ namespace HyperRTS.Simulation.Combat
             }
 
             var hostile = relations.IsHostile(attackerFaction, faction.Value);
-            return hostile && !IsCloakedFrom(target, relations.TeamOf(attackerFaction));
+            return hostile && !IsCloakedFrom(target, relations.GetTeam(attackerFaction));
         }
 
         /// <summary>A valid target (see above) that a weapon reaching <paramref name="targets"/> can hit.</summary>
@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Combat
 
         public bool CanHit(Entity target, WeaponTargets targets)
         {
-            return CombatMath.CanHit(targets, NavAgent.LayerOf(_agents, target));
+            return CombatMath.CanHit(targets, NavAgent.GetLayer(_agents, target));
         }
 
         /// <summary>
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>Passengers take their container's footprint, so they fire from its edge.</summary>
         public float Radius(Entity entity) =>
-            EntityRadius.Of(IsInside(entity) ? _inside[entity].Container : entity, _agents, _obstacles);
+            EntityRadius.Get(IsInside(entity) ? _inside[entity].Container : entity, _agents, _obstacles);
 
         /// <summary>Tucked inside a transport or garrison: hidden and untargetable.</summary>
         public bool IsInside(Entity entity) => _inside.HasEnabled(entity);

@@ -105,7 +105,7 @@ namespace HyperRTS.Simulation.Production
                 return;
             }
 
-            var typeId = EntityInfo.TypeIdOf(state.EntityManager, prefab);
+            var typeId = EntityInfo.GetTypeId(state.EntityManager, prefab);
             queue.Add(new ProductionQueueItem { Prefab = prefab, TypeId = typeId });
         }
 

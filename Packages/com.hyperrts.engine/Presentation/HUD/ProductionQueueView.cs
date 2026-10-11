@@ -61,7 +61,7 @@ namespace HyperRTS.Presentation.HUD
                     Argument = index,
                 }));
                 slot.AddToClassList("hud-slot");
-                slot.Add(HUDIcon.Of(context.EntityManager, queue[i].Prefab, "hud-slot__icon"));
+                slot.Add(HUDIcon.Create(context.EntityManager, queue[i].Prefab, "hud-slot__icon"));
                 Root.Add(slot);
 
                 if (i == 0)

@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Common
         public UnityObjectRef<Texture2D> Icon;
 
         /// <summary>The <see cref="TypeId"/> of <paramref name="entity"/>, or 0 when it has no <see cref="EntityInfo"/>.</summary>
-        public static int TypeIdOf(EntityManager entityManager, Entity entity) =>
+        public static int GetTypeId(EntityManager entityManager, Entity entity) =>
             entityManager.HasComponent<EntityInfo>(entity) ? entityManager.GetComponentData<EntityInfo>(entity).TypeId : 0;
 
         public static int TypeIdFromName(string name) => (int)Fnv1a(name);

@@ -101,7 +101,7 @@ namespace HyperRTS.Simulation.Transport
         private float3 ExitPosition(Entity container, Entity unit, int slot, bool hasGrid, in NavGrid grid)
         {
             var center = _transforms[container].Position;
-            var distance = EntityRadius.Of(container, _agents, _obstacles) + EntityRadius.Of(unit, _agents, _obstacles) + 0.5f;
+            var distance = EntityRadius.Get(container, _agents, _obstacles) + EntityRadius.Get(unit, _agents, _obstacles) + 0.5f;
             math.sincos(slot * GoldenAngle, out var sin, out var cos);
             var position = center + new float3(cos, 0f, sin) * distance;
 
@@ -110,7 +110,7 @@ namespace HyperRTS.Simulation.Transport
                 return position;
             }
 
-            var layer = NavAgent.LayerOf(_agents, unit);
+            var layer = NavAgent.GetLayer(_agents, unit);
             if (grid.TryFindNearestWalkable(grid.WorldToCell(position), WalkableSearchRings, out var cell, layer))
             {
                 position.xz = grid.CellCenter(cell).xz;

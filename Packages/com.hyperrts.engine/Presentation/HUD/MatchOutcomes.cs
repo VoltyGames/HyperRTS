@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.HUD
     public static class MatchOutcomes
     {
         /// <summary>None while the match goes on and the local player is still in it.</summary>
-        public static MatchOutcome Of(MatchView view)
+        public static MatchOutcome Get(MatchView view)
         {
             if (!view.TryGetMatch(out var match) || match.Phase != MatchPhase.Ended)
             {
@@ -19,7 +19,7 @@ namespace HyperRTS.Presentation.HUD
                 return MatchOutcome.Draw;
             }
 
-            var localTeam = view.Relations.TeamOf(view.Local.Faction);
+            var localTeam = view.Relations.GetTeam(view.Local.Faction);
             return match.WinningTeam == localTeam ? MatchOutcome.Victory : MatchOutcome.Defeat;
         }
     }

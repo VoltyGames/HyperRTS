@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Air
     public static class AirfieldRules
     {
         /// <summary>A finished building with landing pads that <paramref name="faction"/> owns.</summary>
-        public static bool IsAirfieldOf(in BufferLookup<LandingPad> pads, in ComponentLookup<Faction> factions,
+        public static bool IsOwnedAirfield(in BufferLookup<LandingPad> pads, in ComponentLookup<Faction> factions,
             in ComponentLookup<ConstructionProgress> sites, Entity airfield, byte faction)
         {
             if (!pads.HasBuffer(airfield) || sites.HasEnabled(airfield))

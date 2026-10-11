@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Selection
                 return false;
             }
 
-            return info.TypeId == DoubleClickType && FactionOf(entity) == DoubleClickFaction;
+            return info.TypeId == DoubleClickType && GetFaction(entity) == DoubleClickFaction;
         }
 
         public bool InDragBox(float3 position) =>
@@ -80,9 +80,9 @@ namespace HyperRTS.Simulation.Selection
         public bool CanJoinGroup(Entity entity) => LocalFaction < 0 || IsOwned(entity);
 
         /// <summary>The entity's faction, or -1 when it has none.</summary>
-        public int FactionOf(Entity entity) => Factions.TryGetComponent(entity, out var faction) ? faction.Value : -1;
+        public int GetFaction(Entity entity) => Factions.TryGetComponent(entity, out var faction) ? faction.Value : -1;
 
-        private bool IsOwned(Entity entity) => LocalFaction >= 0 && FactionOf(entity) == LocalFaction;
+        private bool IsOwned(Entity entity) => LocalFaction >= 0 && GetFaction(entity) == LocalFaction;
 
         private bool OnScreen(float3 position) =>
             SelectionMath.WorldToScreenPoint(Input.ViewProjection, position, Input.ScreenSize, out var screen) &&

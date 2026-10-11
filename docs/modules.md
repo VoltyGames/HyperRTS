@@ -22,7 +22,7 @@ Base module: ownership, identity, health, shared helpers.
 | Type | Role |
 | --- | --- |
 | `Faction` | Owner on every ownable entity (0 = neutral) |
-| `FactionRelations`, `Relation` | Singleton: team per faction. `IsHostile`, `IsAllied`, `RelationOf` (Own, Ally, Enemy, Neutral) |
+| `FactionRelations`, `Relation` | Singleton: team per faction. `IsHostile`, `IsAllied`, `GetRelation` (Own, Ally, Enemy, Neutral) |
 | `Player`, `PlayerLookup` | Player entity identity (faction, name, colour); faction → player entity, rebuilt per frame for jobs |
 | `LocalPlayer`, `Defeated` | The player this client controls; enabled once a player is defeated |
 | `PlayerStats` | Replicated match totals: units trained, buildings finished, resources delivered, units and buildings lost and destroyed |
@@ -179,7 +179,7 @@ Not built in: turrets that rotate independently.
 | `AirfieldAuthoring` / `LandingPad` | Pad offsets on a building, one aircraft each |
 | `HomePad` | The aircraft's airfield and pad |
 | `Docked` | Enableable, replicated: landed on its pad |
-| `AirfieldRules` | `IsAirfieldOf`: finished, owned building with pads |
+| `AirfieldRules` | `IsOwnedAirfield`: finished, owned building with pads |
 
 - An airfield producing a pad user waits for a free pad and spawns it docked.
 - `PadSystem` claims and frees pads, drops homes of destroyed or captured airfields, undocks moving aircraft, runs
@@ -448,7 +448,7 @@ Client only (`HyperRTS.Presentation`). `HUD.prefab` holds:
 Other client pieces:
 
 - `MatchView`: once-per-frame read model for MonoBehaviours (local player, relations, match, colours),
-  `CancelInteraction`, `ColorOf`.
+  `CancelInteraction`, `GetColor`.
 - `TeamColorSystem` tints owned meshes through `URPMaterialPropertyBaseColor` (use URP Lit). A
   `TeamColorOverride` singleton shows factions in other colours (colour-blind palettes, own / ally / enemy).
 - `FogVisibilitySystem` mirrors `FogHidden` and `Inside` onto `DisableRendering`.

@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Production
         public int Population;
 
         /// <summary>Seconds of work to construct or fully repair <paramref name="entity"/>, floored.</summary>
-        public static float BuildTimeOf(in ComponentLookup<Producible> lookup, Entity entity, float floor = MinBuildTime) =>
+        public static float GetBuildTime(in ComponentLookup<Producible> lookup, Entity entity, float floor = MinBuildTime) =>
             math.max(lookup.TryGetComponent(entity, out var producible) ? producible.BuildTime : 0f, floor);
     }
 }

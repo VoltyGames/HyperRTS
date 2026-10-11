@@ -25,19 +25,19 @@ namespace HyperRTS.Editor.Validation.Rules
                     continue;
                 }
 
-                var message = $"{NameOf(component.GetType())} needs {required.Description} on the same object.";
+                var message = $"{DisplayName(component.GetType())} needs {required.Description} on the same object.";
                 if (required.Type.IsAbstract)
                 {
                     issues.Warn(component, message);
                     continue;
                 }
 
-                issues.Warn(component, message, "Add " + NameOf(required.Type).Replace(" Authoring", ""),
+                issues.Warn(component, message, "Add " + DisplayName(required.Type).Replace(" Authoring", ""),
                     () => Undo.AddComponent(component.gameObject, required.Type));
             }
         }
 
-        private static string NameOf(Type type) => ObjectNames.NicifyVariableName(type.Name);
+        private static string DisplayName(Type type) => ObjectNames.NicifyVariableName(type.Name);
 
         private static RequiresAuthoringAttribute[] Required(Type type)
         {

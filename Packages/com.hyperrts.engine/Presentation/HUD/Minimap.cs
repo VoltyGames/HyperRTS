@@ -109,7 +109,7 @@ namespace HyperRTS.Presentation.HUD
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < factions.Length; i++)
             {
-                AddBlip(transforms[i].Position.xz, view.ColorOf(factions[i].Value), radius);
+                AddBlip(transforms[i].Position.xz, view.GetColor(factions[i].Value), radius);
             }
         }
 

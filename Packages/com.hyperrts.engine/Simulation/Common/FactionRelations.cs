@@ -10,19 +10,19 @@ namespace HyperRTS.Simulation.Common
 
         public FixedList32Bytes<byte> Teams;
 
-        public readonly byte TeamOf(byte faction) => faction < Teams.Length ? Teams[faction] : (byte)0;
+        public readonly byte GetTeam(byte faction) => faction < Teams.Length ? Teams[faction] : (byte)0;
 
         public readonly bool IsHostile(byte a, byte b)
         {
-            var teamA = TeamOf(a);
-            var teamB = TeamOf(b);
+            var teamA = GetTeam(a);
+            var teamB = GetTeam(b);
             return teamA != 0 && teamB != 0 && teamA != teamB;
         }
 
-        public readonly bool IsAllied(byte a, byte b) => a == b || (TeamOf(a) != 0 && TeamOf(a) == TeamOf(b));
+        public readonly bool IsAllied(byte a, byte b) => a == b || (GetTeam(a) != 0 && GetTeam(a) == GetTeam(b));
 
         /// <summary>How <paramref name="other"/> relates to <paramref name="local"/>, for colour-coding.</summary>
-        public readonly Relation RelationOf(byte local, byte other)
+        public readonly Relation GetRelation(byte local, byte other)
         {
             if (other == Faction.Neutral)
             {

@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Authoring
         private void OnSceneGUI()
         {
             var area = (NavAreaAuthoring)target;
-            GroundHandles.EditBox(area, area.transform.position, area.size, NavColors.Of(area.kind), "Resize Nav Area",
+            GroundHandles.EditBox(area, area.transform.position, area.size, NavColors.Get(area.kind), "Resize Nav Area",
                 size => area.size = size);
         }
     }

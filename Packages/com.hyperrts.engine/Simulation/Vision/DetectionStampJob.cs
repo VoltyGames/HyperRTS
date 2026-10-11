@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Vision
 
         private void Execute(in LocalTransform transform, in Detector detector, in Faction faction)
         {
-            if (detector.Radius <= 0f || !FogOfWar.TryGetTeamBit(Relations.TeamOf(faction.Value), out var bit))
+            if (detector.Radius <= 0f || !FogOfWar.TryGetTeamBit(Relations.GetTeam(faction.Value), out var bit))
             {
                 return;
             }

@@ -108,7 +108,7 @@ namespace HyperRTS.Simulation.Buildings
                     return;
                 }
 
-                var buildTime = Producible.BuildTimeOf(ProducibleLookup, target, MinRepairTime);
+                var buildTime = Producible.GetBuildTime(ProducibleLookup, target, MinRepairTime);
                 var perSecond = builder.Rate * HealthLookup[target].Max / buildTime;
                 Damage.Add(new DamageEvent
                 {

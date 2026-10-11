@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Tests
         private static SoundEvent Find(List<SoundEvent> heard, SoundSlot slot) =>
             heard.Find(sound => sound.Slot == slot);
 
-        private int TypeIdOf(Entity entity) => _world.Get<EntityInfo>(entity).TypeId;
+        private int GetTypeId(Entity entity) => _world.Get<EntityInfo>(entity).TypeId;
 
         [Test]
         public void InstantWeapon_PlaysFireAtShooter_AndImpactAtTarget()
@@ -81,7 +81,7 @@ namespace HyperRTS.Simulation.Tests
             var heard = Heard(0.5f);
 
             var fire = Find(heard, SoundSlot.Fire);
-            Assert.AreEqual(TypeIdOf(shooter), fire.TypeId);
+            Assert.AreEqual(GetTypeId(shooter), fire.TypeId);
             Assert.AreEqual(1, fire.Faction);
             Assert.AreEqual(float3.zero, fire.Position);
             Assert.AreEqual(new float3(3f, 0f, 0f), Find(heard, SoundSlot.Impact).Position);
@@ -103,7 +103,7 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.SetComponentData(bullet, LocalTransform.Identity);
             var shooter = Voiced(_world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Mortar"), range: 8f,
                 cooldown: 100f, projectile: bullet), SoundSlot.Impact);
-            var typeId = TypeIdOf(shooter);
+            var typeId = GetTypeId(shooter);
             _world.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             using var projectiles = _world.EntityManager.CreateEntityQuery(typeof(Projectile));
@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.Tests
         {
             _world.AddWeapon(_world.SpawnUnit(1, float3.zero), damage: 100f);
             var victim = Voiced(_world.SpawnUnit(2, new float3(3f, 0f, 0f), name: "Victim"), SoundSlot.Death);
-            var typeId = TypeIdOf(victim);
+            var typeId = GetTypeId(victim);
 
             var death = Find(Heard(1f), SoundSlot.Death);
 
@@ -146,7 +146,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Produce(1, producer, prefab);
             var ready = Find(Heard(1f), SoundSlot.Ready);
 
-            Assert.AreEqual(TypeIdOf(prefab), ready.TypeId);
+            Assert.AreEqual(GetTypeId(prefab), ready.TypeId);
             Assert.AreEqual(1, ready.Faction);
             Assert.AreEqual(new float3(0f, 0f, -4f), ready.Position);
         }
@@ -159,7 +159,7 @@ namespace HyperRTS.Simulation.Tests
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, new float3(2f, 0f, 0f)));
             _world.Order(builder, OrderType.Build, site);
 
-            Assert.AreEqual(TypeIdOf(site), Find(Heard(2f), SoundSlot.Ready).TypeId);
+            Assert.AreEqual(GetTypeId(site), Find(Heard(2f), SoundSlot.Ready).TypeId);
         }
 
         [Test]
@@ -183,7 +183,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Command(1, move);
             _world.Tick();
             Assert.AreEqual(SoundSlot.Move, Queued()[0].Slot);
-            Assert.AreEqual(TypeIdOf(unit), Queued()[0].TypeId);
+            Assert.AreEqual(GetTypeId(unit), Queued()[0].TypeId);
 
             _world.Command(1, move);
             _world.Tick();

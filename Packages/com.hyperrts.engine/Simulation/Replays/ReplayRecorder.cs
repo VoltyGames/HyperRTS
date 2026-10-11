@@ -78,7 +78,7 @@ namespace HyperRTS.Simulation.Replays
                 replay.Players.Add(new ReplayPlayerInfo
                 {
                     Faction = player.Faction,
-                    Team = relations.TeamOf(player.Faction),
+                    Team = relations.GetTeam(player.Faction),
                     Name = player.Name.ToString(),
                     Color = player.Color,
                     Side = sides[i].Value,

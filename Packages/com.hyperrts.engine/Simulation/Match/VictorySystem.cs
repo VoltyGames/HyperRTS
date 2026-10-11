@@ -68,9 +68,9 @@ namespace HyperRTS.Simulation.Match
                 }
                 else if (winner == 0)
                 {
-                    winner = relations.TeamOf(player.ValueRO.Faction);
+                    winner = relations.GetTeam(player.ValueRO.Faction);
                 }
-                else if (winner != relations.TeamOf(player.ValueRO.Faction))
+                else if (winner != relations.GetTeam(player.ValueRO.Faction))
                 {
                     return;
                 }

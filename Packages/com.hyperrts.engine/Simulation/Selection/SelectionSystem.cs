@@ -101,7 +101,7 @@ namespace HyperRTS.Simulation.Selection
             if (input.Command == SelectionCommand.DoubleClick && _infoLookup.HasComponent(test.Clicked))
             {
                 test.DoubleClickType = _infoLookup[test.Clicked].TypeId;
-                test.DoubleClickFaction = test.FactionOf(test.Clicked);
+                test.DoubleClickFaction = test.GetFaction(test.Clicked);
             }
 
             // Ctrl-drag removes everything in the box, so only plain and Shift drags filter by rank.

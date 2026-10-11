@@ -74,7 +74,7 @@ namespace HyperRTS.Input.Commands
             }
 
             var footprint = SystemAPI.GetComponent<NavObstacle>(placement.Prefab).Size;
-            var surface = BuildingPlacement.SurfaceOf(EntityManager, placement.Prefab);
+            var surface = BuildingPlacement.GetSurface(EntityManager, placement.Prefab);
             SystemAPI.TryGetSingleton<NavGrid>(out var grid);
             CompleteDependency();
             placement.Valid = PlacementMath.Resolve(in map, in grid, ground, footprint, surface, out placement.Position);

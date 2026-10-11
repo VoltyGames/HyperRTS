@@ -53,6 +53,6 @@ namespace HyperRTS.Presentation.Tests
 
         // Colours go through linear-to-gamma, so compare approximately.
         private void AssertColor(Color expected, byte faction, string message = null) =>
-            Assert.IsTrue(expected == _view.ColorOf(faction), message ?? $"faction {faction}: {_view.ColorOf(faction)}");
+            Assert.IsTrue(expected == _view.GetColor(faction), message ?? $"faction {faction}: {_view.GetColor(faction)}");
     }
 }

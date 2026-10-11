@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Power
             new FlagJob { Produced = produced, Consumed = consumed }.ScheduleParallel();
         }
 
-        private static PowerGrid GridOf(NativeArray<float> produced, NativeArray<float> consumed, byte faction) =>
+        private static PowerGrid GetGrid(NativeArray<float> produced, NativeArray<float> consumed, byte faction) =>
             new() { Produced = produced[faction], Consumed = consumed[faction] };
 
         [BurstCompile]
@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Power
             [ReadOnly] public NativeArray<float> Consumed;
 
             private void Execute(ref PowerGrid grid, in Player player) =>
-                grid = GridOf(Produced, Consumed, player.Faction);
+                grid = GetGrid(Produced, Consumed, player.Faction);
         }
 
         [BurstCompile]
@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Power
 
             private void Execute(in Faction faction, EnabledRefRW<Unpowered> unpowered)
             {
-                var low = GridOf(Produced, Consumed, faction.Value).IsLow;
+                var low = GetGrid(Produced, Consumed, faction.Value).IsLow;
                 if (unpowered.ValueRO != low)
                 {
                     unpowered.ValueRW = low;

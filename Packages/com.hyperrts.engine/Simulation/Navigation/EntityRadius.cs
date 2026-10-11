@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>For entities with neither a <see cref="NavAgent"/> nor a <see cref="NavObstacle"/>.</summary>
         public const float Default = 0.5f;
 
-        public static float Of(Entity entity, in ComponentLookup<NavAgent> agents,
+        public static float Get(Entity entity, in ComponentLookup<NavAgent> agents,
             in ComponentLookup<NavObstacle> obstacles)
         {
             if (agents.TryGetComponent(entity, out var agent))
@@ -17,10 +17,10 @@ namespace HyperRTS.Simulation.Navigation
                 return agent.Radius;
             }
 
-            return obstacles.TryGetComponent(entity, out var obstacle) ? Of(obstacle) : Default;
+            return obstacles.TryGetComponent(entity, out var obstacle) ? Get(obstacle) : Default;
         }
 
-        public static float Of(EntityManager entityManager, Entity entity)
+        public static float Get(EntityManager entityManager, Entity entity)
         {
             if (entityManager.HasComponent<NavAgent>(entity))
             {
@@ -28,12 +28,12 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             return entityManager.HasComponent<NavObstacle>(entity)
-                ? Of(entityManager.GetComponentData<NavObstacle>(entity))
+                ? Get(entityManager.GetComponentData<NavObstacle>(entity))
                 : Default;
         }
 
         /// <summary>Half the longest side, so the circle spans the box's width.</summary>
-        public static float Of(in NavObstacle obstacle) => math.cmax(obstacle.Size) * 0.5f;
+        public static float Get(in NavObstacle obstacle) => math.cmax(obstacle.Size) * 0.5f;
 
         /// <summary>Gap between two footprints on the XZ plane; weapon ranges are measured edge to edge.</summary>
         public static float EdgeDistance(float3 a, float radiusA, float3 b, float radiusB) =>

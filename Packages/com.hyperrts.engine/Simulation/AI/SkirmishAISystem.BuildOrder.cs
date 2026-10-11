@@ -116,7 +116,7 @@ namespace HyperRTS.Simulation.AI
 
             SystemAPI.TryGetSingleton<NavGrid>(out var grid);
             var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
-            var surface = BuildingPlacement.SurfaceOf(state.EntityManager, prefab);
+            var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var gap = SystemAPI.GetComponent<AIPlayer>(turn.Player).BuildingGap;
             if (!AIPlacement.TryFindSpot(map, grid, turn.Home, footprint, surface, gap, out var spot))
             {

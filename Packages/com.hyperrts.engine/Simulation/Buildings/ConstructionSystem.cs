@@ -139,7 +139,7 @@ namespace HyperRTS.Simulation.Buildings
             private bool Advance(Entity site, float rate)
             {
                 ref var progress = ref SiteLookup.GetRefRW(site).ValueRW;
-                progress.Value += DeltaTime * rate / Producible.BuildTimeOf(ProducibleLookup, site);
+                progress.Value += DeltaTime * rate / Producible.GetBuildTime(ProducibleLookup, site);
                 if (progress.Value < 1f)
                 {
                     return false;

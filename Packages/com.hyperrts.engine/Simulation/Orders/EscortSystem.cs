@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Orders
                 }
 
                 var wardPosition = Transforms[ward].Position;
-                var wardRadius = EntityRadius.Of(ward, Agents, Obstacles);
+                var wardRadius = EntityRadius.Get(ward, Agents, Obstacles);
                 var gap = EntityRadius.EdgeDistance(transform.Position, agent.Radius, wardPosition, wardRadius);
                 if (gap > FollowDistance)
                 {

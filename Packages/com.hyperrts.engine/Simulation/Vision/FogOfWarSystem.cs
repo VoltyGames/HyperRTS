@@ -186,7 +186,7 @@ namespace HyperRTS.Simulation.Vision
 
             private void Execute(in LocalTransform transform, in VisionRange vision, in Faction faction)
             {
-                if (vision.Value <= 0f || !FogOfWar.TryGetTeamBit(Relations.TeamOf(faction.Value), out var bit))
+                if (vision.Value <= 0f || !FogOfWar.TryGetTeamBit(Relations.GetTeam(faction.Value), out var bit))
                 {
                     return;
                 }

@@ -79,7 +79,7 @@ namespace HyperRTS.Presentation.Audio
                 var sound = sounds[i];
                 if (SoundRules.IsAudible(sound, view.Viewer, fog, relations))
                 {
-                    Play(CueOf(sound.TypeId, sound.Slot), sound.Position);
+                    Play(FindCue(sound.TypeId, sound.Slot), sound.Position);
                 }
             }
         }
@@ -132,7 +132,7 @@ namespace HyperRTS.Presentation.Audio
         /// Cues come from any prefab or instance of the type, cached per type: a dead unit's own entity may be gone,
         /// and on a client the event names a type the server resolved.
         /// </summary>
-        private SoundCue CueOf(int typeId, SoundSlot slot)
+        private SoundCue FindCue(int typeId, SoundSlot slot)
         {
             if (!_cues.TryGetValue(typeId, out var cues) && !TryLoad(typeId, out cues))
             {
@@ -163,7 +163,7 @@ namespace HyperRTS.Presentation.Audio
                 _missing.Clear();
             }
 
-            var source = _missing.Contains(typeId) ? Entity.Null : SourceOf(typeId);
+            var source = _missing.Contains(typeId) ? Entity.Null : FindSource(typeId);
             if (source == Entity.Null)
             {
                 _missing.Add(typeId);
@@ -181,7 +181,7 @@ namespace HyperRTS.Presentation.Audio
         }
 
         /// <summary>The type's prefab, else any instance: a SubScene-placed entity may have no prefab loaded.</summary>
-        private Entity SourceOf(int typeId)
+        private Entity FindSource(int typeId)
         {
             var prefab = SystemAPI.GetSingleton<PrefabRegistry>().Find(typeId);
             if (EntityManager.HasBuffer<EntitySound>(prefab))

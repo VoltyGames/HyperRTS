@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Common
         public static readonly Color Water = new(0.2f, 0.45f, 1f);
         public static readonly Color Deck = new(1f, 0.8f, 0.2f);
 
-        public static Color Of(NavAreaKind kind)
+        public static Color Get(NavAreaKind kind)
         {
             switch (kind)
             {

@@ -103,7 +103,7 @@ namespace HyperRTS.Simulation.Vision
 
             SystemAPI.TryGetSingleton(out relations);
             SystemAPI.TryGetSingleton(out fog);
-            view.Team = relations.TeamOf(view.Viewer);
+            view.Team = relations.GetTeam(view.Viewer);
             hides = view.Team != 0 && fog.IsCreated && !revealAll;
 
             var fogOn = SystemAPI.TryGetSingleton(out MapSettings map) && map.FogOfWar;

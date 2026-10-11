@@ -23,7 +23,7 @@ namespace HyperRTS.Presentation.HUD
 
         public void Refresh(HUDContext context)
         {
-            var outcome = MatchOutcomes.Of(context.View);
+            var outcome = MatchOutcomes.Get(context.View);
             if (outcome == _shown)
             {
                 return;

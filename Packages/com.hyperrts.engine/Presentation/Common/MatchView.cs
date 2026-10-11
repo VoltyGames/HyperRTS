@@ -85,10 +85,10 @@ namespace HyperRTS.Presentation.Common
             return true;
         }
 
-        public Relation RelationTo(byte faction) => Relations.RelationOf(Local.Faction, faction);
+        public Relation RelationTo(byte faction) => Relations.GetRelation(Local.Faction, faction);
 
         /// <summary>Owner colour in sRGB, ready for UI and material property blocks.</summary>
-        public Color ColorOf(byte faction) => _factionColors[faction];
+        public Color GetColor(byte faction) => _factionColors[faction];
 
         public bool TryGetMatch(out MatchState match) => _match.TryGetSingleton(out match);
 

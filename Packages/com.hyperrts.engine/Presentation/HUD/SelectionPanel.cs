@@ -63,10 +63,10 @@ namespace HyperRTS.Presentation.HUD
                 var entity = selected[0];
                 var entityManager = context.EntityManager;
                 _iconSlot.Clear();
-                var icon = HUDIcon.Of(entityManager, entity, "hud-single__icon");
+                var icon = HUDIcon.Create(entityManager, entity, "hud-single__icon");
                 if (entityManager.HasComponent<Faction>(entity))
                 {
-                    var color = context.View.ColorOf(entityManager.GetComponentData<Faction>(entity).Value);
+                    var color = context.View.GetColor(entityManager.GetComponentData<Faction>(entity).Value);
                     icon.style.borderBottomColor = color;
                 }
 
@@ -129,7 +129,7 @@ namespace HyperRTS.Presentation.HUD
             {
                 var entity = representatives[i];
                 var tile = HUDElements.Box("hud-group", _groups);
-                tile.Add(HUDIcon.Of(entityManager, entity, "hud-group__icon"));
+                tile.Add(HUDIcon.Create(entityManager, entity, "hud-group__icon"));
                 var typeId = entityManager.GetComponentData<EntityInfo>(entity).TypeId;
                 HUDElements.Text(counts[typeId].ToString(), "hud-group__count", tile);
             }

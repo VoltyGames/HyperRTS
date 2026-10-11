@@ -58,7 +58,7 @@ namespace HyperRTS.Network.Commands
                 Argument = command.Argument,
                 Position = command.Position,
                 Target = command.Target,
-                PrefabTypeId = EntityInfo.TypeIdOf(state.EntityManager, command.Prefab),
+                PrefabTypeId = EntityInfo.GetTypeId(state.EntityManager, command.Prefab),
             };
 
             // A commanded unit goes as is; a selection only sends this player's own units.

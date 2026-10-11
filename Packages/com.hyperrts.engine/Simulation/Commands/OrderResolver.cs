@@ -155,7 +155,7 @@ namespace HyperRTS.Simulation.Commands
 
         private bool CanLandAt(Entity unit, Entity target) =>
             _padUsers.HasComponent(unit) &&
-            AirfieldRules.IsAirfieldOf(_pads, _factions, _construction, target, _factions[unit].Value);
+            AirfieldRules.IsOwnedAirfield(_pads, _factions, _construction, target, _factions[unit].Value);
 
         private bool CanEnter(Entity unit, Entity target, in FactionRelations relations) =>
             _boarding.CanBoard(unit, target, relations);

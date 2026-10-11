@@ -97,10 +97,10 @@ namespace HyperRTS.Simulation.Spatial
                 {
                     Entity = entity,
                     Position = transform.Position,
-                    Radius = EntityRadius.Of(entity, AgentLookup, ObstacleLookup),
+                    Radius = EntityRadius.Get(entity, AgentLookup, ObstacleLookup),
                     Faction = faction.Value,
                     IsUnit = !BuildingLookup.HasComponent(entity),
-                    Layer = NavAgent.LayerOf(AgentLookup, entity),
+                    Layer = NavAgent.GetLayer(AgentLookup, entity),
                 };
 
                 if (entry.Radius > CellSize)
@@ -109,7 +109,7 @@ namespace HyperRTS.Simulation.Spatial
                     return;
                 }
 
-                Writer.Add(SpatialIndex.Key(SpatialIndex.CellOf(transform.Position, CellSize)), entry);
+                Writer.Add(SpatialIndex.Key(SpatialIndex.CellAt(transform.Position, CellSize)), entry);
             }
         }
     }

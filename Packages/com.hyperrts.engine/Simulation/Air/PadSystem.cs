@@ -155,7 +155,7 @@ namespace HyperRTS.Simulation.Air
             [ReadOnly] public ComponentLookup<ConstructionProgress> Sites;
 
             public bool IsOwn(Entity airfield, byte faction) =>
-                AirfieldRules.IsAirfieldOf(Pads, Factions, Sites, airfield, faction);
+                AirfieldRules.IsOwnedAirfield(Pads, Factions, Sites, airfield, faction);
 
             /// <summary>Takes the home pad if free; false when another aircraft holds it.</summary>
             public bool Claim(Entity aircraft, in HomePad home)

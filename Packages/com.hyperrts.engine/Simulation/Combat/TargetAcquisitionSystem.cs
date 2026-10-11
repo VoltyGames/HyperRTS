@@ -140,7 +140,7 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                if (Targets.IsCloakedFrom(entry.Entity, Relations.TeamOf(Faction)))
+                if (Targets.IsCloakedFrom(entry.Entity, Relations.GetTeam(Faction)))
                 {
                     return;
                 }

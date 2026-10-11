@@ -23,7 +23,7 @@ namespace HyperRTS.Presentation.HUD
         }
 
         /// <summary>Icon of a unit or building prefab or instance, from its <see cref="EntityInfo"/>.</summary>
-        public static HUDIcon Of(EntityManager entityManager, Entity entity, string className)
+        public static HUDIcon Create(EntityManager entityManager, Entity entity, string className)
         {
             var info = entityManager.GetComponentData<EntityInfo>(entity);
             return new HUDIcon(info.Icon.Value, HUDText.EntityName(info.Name.ToString()), className);

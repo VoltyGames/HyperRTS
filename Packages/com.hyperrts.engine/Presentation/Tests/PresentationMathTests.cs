@@ -68,10 +68,10 @@ namespace HyperRTS.Presentation.Tests
             relations.Teams.Add(1);
             relations.Teams.Add(2);
 
-            Assert.AreEqual(Relation.Own, relations.RelationOf(1, 1));
-            Assert.AreEqual(Relation.Ally, relations.RelationOf(1, 2));
-            Assert.AreEqual(Relation.Enemy, relations.RelationOf(1, 3));
-            Assert.AreEqual(Relation.Neutral, relations.RelationOf(1, Faction.Neutral));
+            Assert.AreEqual(Relation.Own, relations.GetRelation(1, 1));
+            Assert.AreEqual(Relation.Ally, relations.GetRelation(1, 2));
+            Assert.AreEqual(Relation.Enemy, relations.GetRelation(1, 3));
+            Assert.AreEqual(Relation.Neutral, relations.GetRelation(1, Faction.Neutral));
         }
     }
 }

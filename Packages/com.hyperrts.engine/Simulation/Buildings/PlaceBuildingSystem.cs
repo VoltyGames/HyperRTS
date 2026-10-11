@@ -117,7 +117,7 @@ namespace HyperRTS.Simulation.Buildings
             var prefab = request.Command.Prefab;
             var map = SystemAPI.GetSingleton<MapSettings>();
             var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
-            var surface = BuildingPlacement.SurfaceOf(state.EntityManager, prefab);
+            var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             SystemAPI.TryGetSingleton<NavGrid>(out var grid);
             if (!PlacementMath.Resolve(map, grid, request.Command.Position, footprint, surface, out var center))
             {

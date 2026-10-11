@@ -19,9 +19,9 @@ namespace HyperRTS.Simulation.Spatial
         /// </summary>
         public NativeList<SpatialEntry> Oversized;
 
-        public readonly int2 CellOf(float3 position) => CellOf(position, CellSize);
+        public readonly int2 CellAt(float3 position) => CellAt(position, CellSize);
 
-        public static int2 CellOf(float3 position, float cellSize) => (int2)math.floor(position.xz / cellSize);
+        public static int2 CellAt(float3 position, float cellSize) => (int2)math.floor(position.xz / cellSize);
 
         /// <summary>Unique for cells within ±32k of the origin, so queries never see foreign cells twice.</summary>
         public static int Key(int2 cell) => (cell.x & 0xFFFF) | (cell.y << 16);
@@ -32,8 +32,8 @@ namespace HyperRTS.Simulation.Spatial
         public readonly void Query<T>(float3 center, float radius, ref T visitor) where T : struct, ISpatialVisitor
         {
             var search = radius + CellSize;
-            var min = CellOf(center - search);
-            var max = CellOf(center + search);
+            var min = CellAt(center - search);
+            var max = CellAt(center + search);
 
             for (var y = min.y; y <= max.y; y++)
             {
