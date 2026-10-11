@@ -61,6 +61,7 @@ namespace HyperRTS.Editor.Maps.Report
                 throw new System.InvalidOperationException($"Map '{map}' has no main camera to capture its views with.");
             }
 
+            MapSubScenes.Load();
             var folder = MapReport.ViewsFolder(map);
             Directory.CreateDirectory(folder);
             var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
@@ -68,8 +69,11 @@ namespace HyperRTS.Editor.Maps.Report
             var paths = new List<string>();
             var transform = camera.transform;
             var (position, rotation, fieldOfView) = (transform.position, transform.rotation, camera.fieldOfView);
+            var mask = camera.overrideSceneCullingMask;
             try
             {
+                // Entities streamed into the editor world carry the editor's scene mask, which a game camera skips.
+                camera.overrideSceneCullingMask = ulong.MaxValue;
                 camera.fieldOfView = rules.viewFieldOfView;
                 foreach (var view in views)
                 {
@@ -84,6 +88,7 @@ namespace HyperRTS.Editor.Maps.Report
             {
                 transform.SetPositionAndRotation(position, rotation);
                 camera.fieldOfView = fieldOfView;
+                camera.overrideSceneCullingMask = mask;
                 Object.DestroyImmediate(target);
                 Object.DestroyImmediate(image);
             }

@@ -50,10 +50,13 @@ namespace HyperRTS.Editor.Maps.Build
         /// <summary>Publishes the ground picture to the foliage shaders while the scene is open.</summary>
         private static void CreateGroundColor(Texture2D picture, Rect area, Transform root)
         {
-            var ground = new GameObject("Ground Color").AddComponent<GroundColor>();
-            ground.transform.SetParent(root, false);
+            var go = new GameObject("Ground Color");
+            go.SetActive(false);
+            go.transform.SetParent(root, false);
+            var ground = go.AddComponent<GroundColor>();
             ground.picture = picture;
             ground.area = area;
+            go.SetActive(true);
         }
 
         private static Terrain CreateTerrain(TerrainData data, Material material, MapClimate climate, Vector3 origin,
