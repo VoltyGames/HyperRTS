@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.Selection
     /// <summary>Drag-box marquee drawn from <see cref="SelectionDragState"/>.</summary>
     [AddComponentMenu(HyperRTSMenu.Selection + "Selection Drag Box UI")]
     [Icon(HyperRTSIcons.Selection)]
-    [HelpURL(HyperRTSDocs.Roadmap)]
+    [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     public class SelectionDragBoxUI : PanelContent
     {

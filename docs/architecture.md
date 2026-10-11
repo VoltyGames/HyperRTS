@@ -1,76 +1,138 @@
-# Architecture: layered assemblies
+# Architecture
 
-HyperRTS code is split into **layered assemblies** under `Packages/com.hyperrts.engine/`, for one reason: the **simulation must
-run headless**. A dedicated server (roadmap phase 10) and the EditMode tests run gameplay with **no rendering,
-input or UI**.
+## Assemblies
 
-## The assemblies
+The engine is split so the simulation runs headless (dedicated server, EditMode tests) with no rendering, input
+or UI.
 
-| Assembly | Folder | Holds | May reference |
-| --- | --- | --- | --- |
-| `HyperRTS.Core` | `Core/` | Contracts only: phase `SystemGroups`, `SimulationWorlds`, `HyperRTSMenu`/`Icons`/`Docs` | Entities, Transforms, Collections (needed by the Entities source generators) |
-| `HyperRTS.Simulation` | `Simulation/` | Components, systems, authoring + bakers, setup helpers. The headless gameplay layer | Core, Entities(.Hybrid), Transforms, Mathematics, Collections, Burst, **Physics**, NetCode (`[GhostField]` only) |
-| `HyperRTS.Network` | `Network/` | Session start/stop, join, command RPCs, replication, fog relevancy ([`networking.md`](networking.md)) | Core, Simulation, Entities, Transforms, Mathematics, Collections, Burst, NetCode, Transport, **Physics** (switched off on the server) |
-| `HyperRTS.Presentation` | `Presentation/` | Team colours, overlays, fog rendering, UI Toolkit HUD | Core, Simulation, Entities, **Entities.Graphics**, Transforms, Mathematics(.Extensions), Collections, Burst |
-| `HyperRTS.Input` | `Input/` | Camera, input → command bridge, input actions | Core, Simulation, Entities, Mathematics, Collections, **Physics**, **InputSystem** |
-| `HyperRTS.Editor` | `Editor/` | Validator, inspectors and handles, templates, catalog, Play-mode debug and cheats, scene wizard | Core, Simulation, Presentation, Network, Entities, Scenes, NetCode, `Editor` platform |
-| `HyperRTS.Simulation.Tests` | `Simulation/Tests/` | EditMode tests through `TestWorld` | Core, Simulation |
-| `HyperRTS.Presentation.Tests` | `Presentation/Tests/` | EditMode tests for presentation helpers and systems | Core, Simulation, Presentation |
-| `HyperRTS.Editor.Tests` | `Editor/Tests/` | Validation rules, templates, module layout, and a project-wide "no validation errors" check | Core, Simulation, Editor |
+| Assembly | Folder | Holds |
+| --- | --- | --- |
+| `HyperRTS.Core` | `Core/` | Phase groups, world filters, menu / icon / doc paths |
+| `HyperRTS.Simulation` | `Simulation/` | Components, systems, authoring and bakers, `*Setup` helpers, client UI state (`Interaction/`) |
+| `HyperRTS.Network` | `Network/` | Session, join, command RPCs, replication, fog relevancy, sound forwarding |
+| `HyperRTS.Presentation` | `Presentation/` | HUD, overlays, fog rendering, team colours, audio playback |
+| `HyperRTS.Input` | `Input/` | Camera, input actions, input → `PlayerCommand` |
+| `HyperRTS.Editor` | `Editor/` | Inspectors, validation, templates, catalog, debug draw, cheats, scene wizard |
+| `HyperRTS.*.Tests` | `*/Tests/` | EditMode tests |
 
 ```text
-            Core            (contracts; no graphics/input/UI)
-             ▲
-        Simulation          (headless gameplay; Physics OK)
-          ▲      ▲
-  Presentation   Input       (client only: URP/UI, InputSystem)
-          ▲      ▲
-        Editor (+ Tests)
+                 Core
+                  ▲
+              Simulation
+        ▲         ▲          ▲
+   Network   Presentation   Input
+        ▲         ▲          ▲
+             Editor, Tests
 ```
 
-## The invariant
+Rules:
 
-> `HyperRTS.Simulation` must never reference `Unity.Entities.Graphics`, `Unity.InputSystem` or `UIElements`.
+- `HyperRTS.Simulation` never references `Unity.Entities.Graphics`, `Unity.InputSystem` or `UIElements`. It may use
+  Physics and NetCode attributes (`[GhostField]`, ghost authoring).
+- Network, Presentation and Input never reference each other. Data they share lives in Simulation.
+- Engine code never depends on anything under `Assets/`.
 
-A headless world loads `Core` + `Simulation` only. System discovery is global, so client systems (team colours,
-input bridge) simply don't exist when their assemblies are absent.
+## Modules
 
-```sh
-# expect: no matches
-grep -rn "UnityEngine.InputSystem\|Unity.Rendering\|UnityEngine.UIElements" Packages/com.hyperrts.engine/Simulation
+Simulation is split into modules, one folder and namespace each (`HyperRTS.Simulation.<Module>`). Modules are
+layered, lowest first:
+
+```text
+Common < Navigation < Stats < Power < Vision < Spatial < Selection < Orders < Audio < Combat < Transport < Air
+  < Units < Resources < Match < Production < Upgrades < Buildings < Abilities < Fields < Veterancy < Capture
+  < AI < GameEntities < Commands < Interaction < Replays
 ```
 
-## Crossing the boundary: data down, rendering and input up
+- A module uses only modules before it. A type two modules need goes in `Common` or the lower module.
+- To order two systems, put `[UpdateBefore]`/`[UpdateAfter]` on the one in the higher module.
+- `*Authoring.cs` files may use any module; they hold only the authoring class and its `Baker`.
+- `ModuleLayoutTests` enforces the order, namespace = folder, and the authoring file rule. Its back-edge
+  allowlist has one entry, `Production → Upgrades`, and may only shrink.
 
-Data that the simulation owns but clients read, or that two client layers share, lives in `Simulation` (client UI
-state in `Simulation/Interaction/`). Presentation and Input never reference each other.
+Per-module reference: [modules](modules.md).
 
-- **Commands.** Input (and the AI) write `PlayerCommand`s to the player entity. This is the only way intent enters
-  the simulation, and it is the message a networked build would send.
-- **Selection.** `SelectionInputSystem` (Input) writes the `SelectionInput` gesture; `SelectionSystem` (Simulation)
-  toggles `Selected`; the HUD and overlays read `Selected`.
-- **Placement and targeted commands.** The HUD starts placement by writing `PlacementState` (or starts targeting
-  attack-move via `PendingCommand`); `PlacementInputSystem` moves the ghost and confirms with a `PlaceBuilding`
-  command; the overlay draws the ghost. `PlacementMath` holds the rules both sides use.
-- **UI hit-testing.** The HUD writes `PointerState.OverUI`; input ignores world clicks while it is set.
-- **Visuals from data.** Team colour comes from `Player.Color`, fog hiding from `FogOfWar`, health bars from `Health`.
-  A headless world never adds any render component.
+## Gameplay contract
 
-## Namespaces
+| Rule | Detail |
+| --- | --- |
+| Intent is a command | Input, AI and network append `PlayerCommand`s to the player entity. Consumed in `OrderSystemGroup`, cleared at its end |
+| Orders go through `OrderWriter` | `Issue(unit, order, queue)` and `Stop(unit)`. The system that owns an order type disables `ActiveOrder` when done |
+| Move by destination | Set and enable `MoveDestination`. Navigation disables it on arrival |
+| Combat owns movement | While `AttackTarget` is enabled, combat writes `MoveDestination` |
+| Ownership | `Faction` on every ownable entity (0 = neutral). `FactionRelations` decides hostility by team |
+| Damage goes through the queue | Append a `DamageEvent` with `DamageWriter`, so armor, splash and kill credit apply |
+| Spawn baked prefabs | `ecb.Instantiate(prefab)`, then set `LocalTransform` and `Faction` |
 
-Namespaces follow the folder path: `HyperRTS.<Layer>.<Module>` (`HyperRTS.Simulation.Combat`,
-`HyperRTS.Presentation.Fog`, `HyperRTS.Input.Cameras`). `HyperRTS.Core` stays flat. A feature that spans layers
-(Selection) spans the matching layer namespaces. `ModuleLayoutTests` (in `HyperRTS.Editor.Tests`) checks this, and
-keeps Simulation modules in their declared layer order (see [`modules.md`](modules.md)).
+## Worlds
 
-## Adding code
+| World | Exists in | Runs |
+| --- | --- | --- |
+| Local | Single player, replays | Everything |
+| Server | Dedicated server, host | Gameplay, AI, commands, relevancy |
+| Client | Client, host | Selection, input, fog view, presentation, HUD |
 
-- Gameplay component, system or authoring → `Simulation/<Module>/`, namespace `HyperRTS.Simulation.<Module>`. A
-  component two modules share goes in `Common` or the lower module. Authoring classes derive from
-  `AuthoringBehaviour`.
-- Needs rendering or UI → `Presentation/`. Needs InputSystem → `Input/`. Both reference `Simulation`, never the
-  reverse.
-- If presentation or input needs a value the simulation produces, put the **data component** in `Simulation` and
-  read it from above.
-- A game built on the engine adds its own assemblies on top with the same layering. See
-  [`getting-started.md`](getting-started.md#9-adding-your-own-mechanics).
+- Systems default to the authoritative worlds (`SimulationWorlds.Authoritative`: local and server).
+- Client-side systems opt in with `[WorldSystemFilter(SimulationWorlds.Presented)]` (local and client) or
+  `SimulationWorlds.All`.
+- Single player needs `OverrideAutomaticNetcodeBootstrap` in the scene (it is on `RTSWorld.prefab`); otherwise
+  Netcode creates client and server worlds instead of one local world.
+- `NetworkSession` creates and replaces worlds at runtime. See [networking](networking.md).
+
+## Frame order
+
+Every gameplay system sits in one of the phase groups from `Core/SystemGroups.cs`, never in
+`SimulationSystemGroup` directly. The exception is network plumbing that must run whatever the phase state:
+`ClientJoinSystem`, `ServerJoinSystem`, `NetworkStatusSystem`, `FogRelevancySystem`, `ResourceIdSystem`.
+
+```text
+InitializationSystemGroup
+ └─ PrefabRegistrySystem                    TypeId → prefab map
+SimulationSystemGroup
+ ├─ OrderSystemGroup
+ │   ├─ first   ClientSingletonSystem, MatchSetupSystem, PlayerGhostSystem, LocalGhostActivationSystem,
+ │   │          MatchStartSystem, ReferenceResolveSystem, SoundClearSystem, SoundReceiveSystem,
+ │   │          SelectionInputSystem, SelectionSystem, CommandInputSystem, PlacementInputSystem,
+ │   │          CommandReceiveSystem, SkirmishAISystem
+ │   ├─         UnitCommandSystem, AbilityCommandSystem, PlaceBuildingSystem, ProductionCommandSystem,
+ │   │          SellSystem, UnloadSystem, SurrenderSystem, AcknowledgementSystem,
+ │   │          OrderDispatchSystem, MoveOrderSystem, EscortSystem, RearmSystem, PadSystem
+ │   └─ last    PowerSystem, CommandSendSystem, PlayerCommandClearSystem
+ ├─ MovementSystemGroup                     before TransformSystemGroup
+ │   ├─ first   SpatialIndexSystem, NavGridSystem
+ │   └─         PathfindingSystem, MovementSystem, CargoFollowSystem
+ ├─ ReplaySystemGroup                       local world; replay playback only
+ ├─ CombatSystemGroup
+ │   ├─ first   FogOfWarSystem, LocalFogViewSystem
+ │   ├─         AttackOrderSystem, TargetAcquisitionSystem, EngagementSystem, WeaponFireSystem,
+ │   │          ProjectileSystem, StealthSystem, AbilitySystem, AbilitySoundSystem, AreaFieldSystem
+ │   └─ last    DamageSystem
+ ├─ ProductionSystemGroup
+ │   ├─ first   PopulationSystem
+ │   └─         ConstructionSystem, RepairSystem, CaptureSystem, GatherSystem, ResourceNodeSystem,
+ │              ProductionSystem, UpgradeSystem, BoardingSystem
+ └─ LifecycleSystemGroup
+     ├─         DeathSystem, VictorySystem, CasualtyStatsSystem, KillCreditSystem, VeterancySystem,
+     │          ContainerDeathSystem, DeathSoundSystem
+     └─ last    *StatSystem (MaxHealth, Weapon, MoveSpeed, Vision, BuildRate, ProductionSpeed),
+                ReplayRecorderSystem, SoundSendSystem
+PresentationSystemGroup
+ └─ TeamColorSystem, FogVisibilitySystem, SoundPlaybackSystem   (+ HUD and overlay MonoBehaviours)
+```
+
+Order within a row follows each system's `[UpdateBefore]`/`[UpdateAfter]`. Window ▸ Entities ▸ Systems shows the
+live order.
+
+- Movement runs before transforms, so a move shows the same frame.
+- Lifecycle runs last, so all damage lands before `DeathSystem` marks entities `Dead`. They are destroyed at the
+  end of the frame.
+- A system that reads `PlayerCommand`s must be in `OrderSystemGroup`.
+
+## Entities at startup
+
+- Gameplay objects (the `Match`, units, buildings, nodes, obstacles) live in a SubScene and bake into entities.
+- Prefabs referenced from authoring (production and build options, projectiles, death spawns) bake as entity
+  prefabs. Runtime spawns instantiate them, so they render like placed ones.
+- SubScenes stream in over the first frames. Guard on singletons with `RequireForUpdate`, and never treat
+  "nothing exists yet" as a game state (`VictorySystem` ignores players that never owned anything).
+- Never add a system that spawns gameplay entities on its own: discovery is global, so it would also run in test
+  worlds. Spawn from a command or an explicit call.

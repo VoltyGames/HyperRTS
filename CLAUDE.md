@@ -13,8 +13,8 @@ don't edit it or copy its architecture.
 ## Layout
 
 `Packages/com.hyperrts.engine/` is the engine (code + shipped assets) as an embedded UPM package, split into layered
-assemblies so the simulation can run headless: `Core ← Simulation ← {Presentation, Input}`, with Editor/Tests on top.
-The sample game is `Assets/Demo/`. Games consume the package (e.g. as a submodule + `file:` reference), so engine
+assemblies so the simulation can run headless: `Core ← Simulation ← {Network, Presentation, Input}`, with
+Editor/Tests on top. The sample game is `Assets/Demo/`. Games consume the package (e.g. as a submodule + `file:` reference), so engine
 code must never depend on anything under `Assets/`. See [`docs/architecture.md`](docs/architecture.md).
 
 ```text
@@ -29,7 +29,7 @@ Packages/com.hyperrts.engine/
 ├── Network/       Session, Players (join), Commands (RPCs), Replication, Relevancy, Audio (docs/networking.md)
 ├── Editor/        Authoring (inspectors, handles), Validation, Templates, Catalog, PlayMode (debug draw, cheats),
 │                  Common, scene wizard, Tests/
-└── Prefabs/       RTSWorld rig (camera + HUD), UI/HUD
+└── Prefabs/       RTSWorld rig (camera + HUD), MatchState ghost, UI/HUD
 ```
 
 `HyperRTS.Simulation` must never reference Graphics, InputSystem or UIElements. Client UI state that input, HUD
@@ -58,13 +58,14 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
   (`IEntityWriter`), so tests build the same entities.
 - Authoring classes carry `[AddComponentMenu]`, `[Icon]`, `[HelpURL]`, `[DisallowMultipleComponent]` and a
   `[Tooltip]` per field, with paths from `HyperRTSMenu`, `HyperRTSIcons` and `HyperRTSDocs`. See
-  [`docs/editor-ux.md`](docs/editor-ux.md).
+  [`docs/editor.md`](docs/editor.md).
 - Component fields PascalCase; authoring fields camelCase.
 - Acronyms are all-caps in identifiers, files and folders (`RTS`, `HUD`, `UI`, `AI`); USS class names stay
   lowercase kebab-case (`hud-root`).
 - Systems are `[BurstCompile] partial struct : ISystem`, placed in a phase group from `SystemGroups.cs`
-  (never `SimulationSystemGroup` directly). Per-entity work goes in Burst `IJobEntity` jobs: `ScheduleParallel`,
-  or `Schedule` when writing other entities through a `ComponentLookup`.
+  (never `SimulationSystemGroup` directly; only network plumbing such as join and relevancy sits there).
+  Per-entity work goes in Burst `IJobEntity` jobs: `ScheduleParallel`, or `Schedule` when writing other entities
+  through a `ComponentLookup`.
 - Components are unmanaged: `FixedStringNNBytes` for strings, `UnityObjectRef<T>` for Unity objects. Managed
   components are deprecated in Entities 6.6.
 - Runtime toggles (orders, construction, selection) are `IEnableableComponent`s flipped with `EnabledRefRW<T>`.
@@ -72,6 +73,9 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
 - Structural changes go through an `EntityCommandBuffer` (`EndSimulationEntityCommandBufferSystem` from jobs).
   `ecb.CreateEntity` returns the real entity at record time.
 - Time comes from `SystemAPI.Time`, never `UnityEngine.Time`.
+- UI is UI Toolkit everywhere: HUD, menus, world-space UI, inspectors, property drawers, editor windows and
+  overlays. uGUI only for UI that needs Animation Clips or Timeline. No IMGUI; Scene view `Handles` are the one
+  exception (no UI Toolkit equivalent). Mass per-unit markers (health bars, rings) are instanced meshes, not UI.
 
 ## Comments
 
@@ -109,10 +113,11 @@ In Play mode, the Scene view's **HyperRTS Debug** overlay and **HyperRTS ▸ Che
 
 ## Docs
 
-- [`getting-started`](docs/getting-started.md) - building a game on the engine
-- [`modules`](docs/modules.md) - module reference and contracts
-- [`world-setup`](docs/world-setup.md) - entity entry, system order, tests
-- [`editor-ux`](docs/editor-ux.md) - authoring conventions and editor tools
-- [`selection`](docs/selection.md) - selection pipeline
-- [`networking`](docs/networking.md) - multiplayer: worlds, join, commands, replication, fog relevancy
-- [`roadmap`](docs/roadmap.md) - check phase status before new work
+- [`getting-started`](docs/getting-started.md) - first skirmish in the editor, controls
+- [`architecture`](docs/architecture.md) - assemblies, module layers, contract, worlds, frame order
+- [`modules`](docs/modules.md) - components and systems per module
+- [`extending`](docs/extending.md) - game code, HUD, AI, front-end integration
+- [`networking`](docs/networking.md) - sessions, join, commands, replication, fog relevancy
+- [`editor`](docs/editor.md) - menus, authoring conventions, validation, debug tools
+- [`testing`](docs/testing.md) - `TestWorld`, test kits, CI validation
+- [`roadmap`](docs/roadmap.md) - status and open work; check before new work
