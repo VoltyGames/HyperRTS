@@ -30,6 +30,8 @@ Base module: ownership, identity, health, shared helpers.
 | `UnitTag`, `BuildingTag` | Movable orderable unit; static structure |
 | `Inside` | Enabled while a passenger is aboard a container |
 | `Health`, `Dead` | Hit points; death marker enabled the frame before destruction |
+| `Destructible` | Map scenery anyone can wreck (fences, trees, houses, bridges): splash from every side hits it, explicit attack orders may target it, fog never hides it. `Crush` is the smallest `Crusher` size that flattens it |
+| `Crusher` | A vehicle that flattens destructible scenery it drives over (size compared with `Destructible.Crush`) |
 | `ConstructionProgress` | Enableable 0..1. Unfinished buildings don't produce, provide population, fire or satisfy prerequisites |
 | `GameEvents`: `UnitProduced`, `BuildingCompleted`, `OwnerChanged` | This frame's gameplay events on one singleton, cleared first in the order phase by `GameEventSystem`. Sounds, stats and cleanup react to them; so can games |
 | `Ownership.Transfer` | The one way to change an owner: sets `Faction` through the ECB and raises `OwnerChanged` |
@@ -119,8 +121,10 @@ Producer, ability, placement, sell and unload commands are handled by their own 
 | `MoveDestination` | Enableable XZ goal |
 | `PathWaypoint`, `PathState` | Remaining path corners, request bookkeeping |
 | `NavGrid`, `NavSurface` | Singleton grid of Land / Water / Deck flags (0 = blocked): `IsWalkable`, `IsAreaFree`, `HasLineOfSight`, `TryFindNearestWalkable`, `HeightFor(layer)` |
-| `NavObstacleAuthoring` / `NavObstacle` | Blocked XZ box (buildings add their footprint) |
-| `NavAreaAuthoring` / `NavArea` | Box overriding cells: Water, Blocked, or a walkable Deck (bridge) with water kept below |
+| `NavObstacleAuthoring` / `NavObstacle` | Blocked XZ box (buildings add their footprint), turned with the entity |
+| `NavAreaAuthoring` / `NavArea` | Box overriding cells: Water, Blocked, or a walkable Deck (bridge) with water kept below; turned with the entity |
+| `NavBox` | A box turned about Y: world `Extents`, `Contains`. `NavGrid.GetBoxArea` / `InBox` stamp it (any overlap counts; 90° turns stamp exactly) |
+| `NavGround` | How cells get their surface (`Classify`: flooded terrain is water, too steep is blocked; `Stamp`: what an area leaves). Map tools measure maps with the same rules |
 | `TerrainHeightAuthoring` / `TerrainHeight` | Baked heightfield: `Height(xz)`, `Raycast`. Flat y = 0 without one |
 | `PlacementMath`, `PlacementSurface` | The building placement rules, shared by simulation, ghost, rally points and AI |
 | `TargetReach` | Walks a unit to a target's footprint for orders that act on it (build, repair, capture, board, gather): `Approach`, `Position`, `Exists` |
@@ -132,7 +136,9 @@ Systems:
 - `NavGridSystem` classifies cells from terrain, slope and water, stamps areas and obstacles, and bumps a version
   when they change so units re-path.
 - `PathfindingSystem`: Burst grid A* (8-way, no corner cutting) on the agent's layer, line-of-sight smoothing,
-  at most 48 searches per frame, skipped when the goal is directly visible.
+  at most 48 searches per frame, skipped when the goal is directly visible. A search expands at most
+  `NavGrid.MaxSearchExpansions` cells, then heads for the closest cell found; the map report warns when a
+  base-to-base path needs more.
 
 Units on layers that share a surface flag share cells: ships pass under a deck that tanks drive over.
 
@@ -163,7 +169,10 @@ the lower entity index.
 | `LastAttacker` | Who last damaged the entity (kill credit) |
 | `Projectile` | Shot in flight carrying its `DamageEvent` |
 | `SpawnOnDeath` | Wreck prefab spawned on death |
-| `TargetLookup` | `IsValidTarget`: hostile, alive, on a layer the weapon hits, not hidden by stealth |
+| `TargetLookup` | `IsValidTarget`: hostile, alive, on a layer the weapon hits, not hidden by stealth. `IsAttackable` also accepts living `Destructible` scenery, for explicit attack orders only |
+| `DestructibleAuthoring` | Marks a building or unit `Destructible`, or makes standalone scenery: health, crush rating, remains, optional blocked box (`DestructibleSetup.AddScenery`) |
+| `DamageStagesAuthoring` / `DamageStage`, `ShownDamageStage` | Child models shown by health fraction (intact, damaged), with an effect per step; presentation swaps them |
+| `SpawnEffectAuthoring` / `SpawnEffect` | Effect played once where an entity appears (the dust of a ruin, a fallen tree) |
 
 Systems in order:
 
@@ -173,7 +182,9 @@ Systems in order:
 3. `EngagementSystem` chases, stops in range, or releases (target invalid, out of ammo, or leashed by stance).
 4. `WeaponFireSystem` queues an instant hit or spawns a projectile.
 5. `ProjectileSystem` homes in and queues the hit on impact.
-6. `DamageSystem` (last) applies armor × facing × `DamageTaken` stat, splash falloff, `LastAttacker`.
+6. `CrushSystem` (before damage) queues a lethal, uncredited hit on scenery under a moving crusher.
+7. `DamageSystem` (last) applies armor × facing × `DamageTaken` stat, splash falloff, `LastAttacker`. Splash
+   reaches enemies, allies with friendly fire, and `Destructible` scenery.
 
 Not built in: turrets that rotate independently.
 
@@ -244,10 +255,12 @@ Unpowered weapons hold fire; unpowered producers run at `MatchRules.LowPowerProd
 | `ResourceNodeAuthoring` / `ResourceNode` | Neutral deposit, finite or regrowing |
 | `ResourceDropOffAuthoring` | Where harvesters deposit |
 | `HarvesterAuthoring` / `Harvester`, `HarvestState` | Capacity, gather rate, trip state |
+| `ResourceIncomeAuthoring` / `ResourceIncome` | Passive income for the owner (an oil derrick) plus a one-time bonus to its first owner; neutral pays nothing |
 | Player `Stat.Income` | Delivered resources are scaled by the owner's `StatModifier`s on `Stat.Income` (an AI difficulty bonus, a game's faction perk) |
 
 `GatherSystem` runs node → fill → nearest drop-off → deposit, switching to a nearby node of the same type when one
-runs dry. `ResourceNodeSystem` regrows or removes nodes.
+runs dry. `ResourceNodeSystem` regrows or removes nodes. `ResourceIncomeSystem` pays incomes (counted in
+`PlayerStats.ResourcesGathered`).
 
 ## Buildings
 
@@ -297,6 +310,7 @@ old owner and clears target and selection. A garrisoned building can't be captur
 | Type | Role |
 | --- | --- |
 | `ContainerAuthoring` / `Container`, `Cargo` | Capacity, largest passenger, passengers fire out, passengers survive its death |
+| `NeutralGarrison` | A neutral building anyone may board; it belongs to its passengers while occupied (`NeutralGarrisonSystem`) and is neutral again when empty |
 | `PassengerAuthoring` / `Passenger`, `PassengerStance` | Size; stance restored on exit |
 | `Boarding` | `CanBoard`, `Board`, `IsInside` |
 
@@ -336,7 +350,15 @@ effects.
   With fog off every cell is visible, but detection still runs.
 - `StealthSystem` sets `Stealthed`; firing restarts the reveal timer.
 - `LocalFogViewSystem` tags hostile entities the local player can't see with `FogHidden`. Selection, picking, HUD
-  and rendering skip them. Splash still hits them.
+  and rendering skip them. Splash still hits them. `Destructible` map structures are never hidden, whoever holds
+  them.
+
+## Animation
+
+Machines in the map (pumpjacks, turbines). `MachineAuthoring` / `MachineClock` on the root (optionally running only
+while owned); `MachinePartAuthoring` / `MachinePart` on moving children: `Spin` about an axis, `Swing` in step with
+the spin around an offset, or `Link` (sit on one transform, aim the up axis at another, for connecting rods).
+Presentation's `MachineSystem` poses the parts from the clock, so parts of one machine stay in step.
 
 ## Audio
 
@@ -454,7 +476,7 @@ Client only (`HyperRTS.Presentation`). `HUD.prefab` holds:
 | `CommandCard`, `ICommandSource`, `CommandEntry` | The card asks each source for entries when the selection changes and refreshes them every frame. Defaults: `PurchaseCommands` (build, train, research), `AbilityCommands` (abilities, powers), `StanceCommands`, `UnitActionCommands` (return, unload, sell). An entry can take a grid `Slot` and a letter or digit `Hotkey`, fed by `HotkeyInputSystem` through the `HotkeyPresses` singleton |
 | `HUDText` | All HUD strings by key. `Get(key)` for fixed text, `Name(key, authored)` for entity, resource and ability names. Set `HUDText.Current` to translate |
 | `OverlayRenderer` | Selection rings, health bars, placement ghost, rally markers (instanced meshes) |
-| `FogOfWarRenderer` | Fog overlay shader |
+| `FogOfWarRenderer` | Fog drawn as a box around the map that the shader projects onto the depth buffer, so hills, trees and buildings are fogged where they stand; scenery past the playable edge stays dim |
 | `SelectionDragBoxUI` | Marquee |
 
 `HUDText` keys:
@@ -474,3 +496,11 @@ Other client pieces:
 - `SoundPlaybackSystem` plays the `SoundQueue` through a pool of 32 sources with per-cue limits and priority.
   `SoundListener` keeps the `AudioListener` on the camera's ground focus.
 - `Rendering/`: `OverlayMeshes`, `InstanceBatch`, `RenderHierarchy`, `EntityExtent`.
+- `Minimap` draws the scene's `MinimapImage` (a top-down picture map tools bake), the local fog of war, blips
+  (squares for structures) and the camera view.
+- `Destruction/`: `DamageStageSystem` shows the stage model matching health (others scaled to zero, so fog's
+  rendering toggles stay untouched) and plays the step's effect; `SpawnEffectSystem` plays spawn effects once.
+- `Animation/MachineSystem` poses machine parts.
+- `Environment/`: `HyperRTS/Water` (depth-based colour and clarity, refraction, downstream ripples along the mesh's
+  V, sun glint, sky reflection, shore foam; needs the Depth and Opaque Textures) and `HyperRTS/Foliage` (alpha-cut,
+  two-sided, wind sway, translucency, hue variation; instanced and DOTS-instanced), with `WaterRipples.png`.

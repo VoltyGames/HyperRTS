@@ -13,6 +13,7 @@ Scene view `Handles`, which have no UI Toolkit equivalent.
 | **HyperRTS ▸ Cheats** | Play mode: add resources, instant build, fog toggle, spawn any prefab at the view, control another player (single player), game speed. Acts on the authoritative world; instant build completes through the construction and production systems. Any cheat drops the running replay recording |
 | **HyperRTS ▸ Network** | Play mode: host, join localhost, dedicated server, stop |
 | **HyperRTS ▸ Replays** | Save the Play-mode recording, or play a replay file |
+| **HyperRTS ▸ Maps** | Build the selected `.map.json` (or the open map's), Build All, Auto-rebuild on spec change, Open Report |
 | **HyperRTS ▸ Generate Component Icons** | Regenerates the per-module icons in `Editor/Icons/` |
 | **HyperRTS ▸ Documentation** | Opens getting started or the module reference |
 | **GameObject ▸ HyperRTS ▸ RTS World**, **Match** | The rig prefab; a Match |
@@ -119,6 +120,30 @@ RTSSceneBuilder.Build(new RTSSceneSpec
 The builder validates the spec (throws on a bad path, player count or size), saves the scene and its
 `<Scene>_Entities.unity` SubScene, and calls `Furnish` with the open SubScene, its `Match` and each player's base
 position before saving it. It returns the `SubScene` component in the new scene.
+
+## Maps from specs
+
+A map is a JSON spec (`<Map>.map.json`) that `MapBuilder.Build(specPath)` turns into a scene, a SubScene and a
+report. The spec authors one symmetry sector; the builder copies it (`rotate-180`, `mirror-x`, `mirror-z`,
+`rotate-3` to `rotate-8`; slots interleave so slots 1 and 2 always face each other) and:
+
+1. shapes the terrain (relief, hills, river valleys and fords, ravines, roads levelled onto embankments, ramps to
+   bridge decks), lowering it so open ground is at y = 0;
+2. places start kits, resources, props, bridges (each carries its walkable deck, so destroying it opens the river
+   again), towns along the roads, prop rows and scatters;
+3. paints the terrain layers, plants trees (entity versions inside the playable area when the climate has them,
+   terrain trees in the scenery margin) and grass;
+4. writes the scene: Terrain, river mesh, the climate's atmosphere and sky, baked environment lighting, the
+   minimap picture; gameplay prefabs go into the SubScene as `[Generated] …` roots, scenery under `[Generated]`
+   in the main scene. `[Dressing]` roots are never touched;
+5. measures it on a nav grid built like `NavGridSystem`'s (rush times, attack paths by corridor closing, reach,
+   buildable ground, resources per base) and writes `Logs/MapReports/<Map>.json` and `.png`.
+
+The game provides one `MapPalette` (kinds → prefabs, start kit, town kits, rig), one `MapRules` (thresholds per
+mode) and a `MapClimate` per climate key (layers, surfaces, trees, grass, water, atmosphere), and can implement
+`IMapBuildHook` to list built maps in its menus. Batch mode:
+`-executeMethod HyperRTS.Editor.Maps.Tools.MapCommandLine.Build -map <spec>` exits 0, 1 on report errors, 2 on a
+crash. `MapSpecRule` shows a map's report errors in **HyperRTS ▸ Validate**.
 
 ## Play-mode debugging
 
