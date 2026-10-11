@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Ground
         private const float BankDrop = 4f;
         private const float BankWobble = 1.2f;
         private const float RavineWobble = 1.5f;
-        private const float RavineFloor = 0.3f;
+        private const float RavineFloor = 0.45f;
         private const float RimDrop = 0.12f;
         private const float SwellScale = 0.3f;
         private const float FordEdge = 3f;

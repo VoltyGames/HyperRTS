@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
@@ -16,6 +17,8 @@ namespace HyperRTS.Editor.Maps.Planning
 
         private const int WobbleChannel = 1;
         private const float WoodedReach = 0.75f;
+        private const float PatchSize = 28f;
+        private const float ThresholdStep = 2f;
 
         public static void Plan(MapPlanContext context)
         {
@@ -41,6 +44,37 @@ namespace HyperRTS.Editor.Maps.Planning
         private static float Distance(MapLine line, MapNoise wobble, Vector2 p) =>
             line.Distance(p) + wobble.Sample(p, 15f) * Wobble;
 
+        /// <summary>
+        /// The patch noise level that leaves <paramref name="wooded"/> of this ravine's floor above it: noise averaged
+        /// over the symmetry's copies has a narrow, shifting range, so a fixed cut would wood one balka and bare another.
+        /// </summary>
+        private static float Threshold(MapLine line, MapNoise patches, float reach, float wooded)
+        {
+            var samples = new List<float>();
+            for (var along = 0f; along <= line.Length; along += ThresholdStep)
+            {
+                var point = MapGeometry.PointAlong(line.Points, along, out var direction);
+                var across = new Vector2(-direction.y, direction.x);
+                for (var side = -1f; side <= 1f; side += 0.5f)
+                {
+                    samples.Add(patches.Sample(point + across * (reach * side), PatchSize));
+                }
+            }
+
+            samples.Sort();
+            var index = Mathf.Clamp(Mathf.FloorToInt((1f - wooded) * samples.Count), 0, samples.Count - 1);
+            return samples[index];
+        }
+
+        /// <summary>A random point on the ravine's floor and lower walls, up to <paramref name="reach"/> off its line.</summary>
+        private static Vector2 OnFloor(MapLine line, float reach, System.Random random)
+        {
+            var along = (float)random.NextDouble() * line.Length;
+            var point = MapGeometry.PointAlong(line.Points, along, out var direction);
+            var across = new Vector2(-direction.y, direction.x);
+            return point + across * (reach * ((float)random.NextDouble() * 2f - 1f));
+        }
+
         private static void PlantWoods(MapPlanContext context, MapNoise wobble)
         {
             var surface = context.Climate.Surface(context.Climate.ravineSurface);
@@ -61,14 +95,14 @@ namespace HyperRTS.Editor.Maps.Planning
                 var line = new MapLine(MapGeometry.ToVectors(spec.points), spec.width, spec.width * 0.5f);
                 var reach = spec.width * 0.5f * WoodedReach;
                 var hectares = line.Length * reach * 2f * spec.wooded / 10000f;
-                var threshold = 1f - 2f * spec.wooded;
+                var threshold = Threshold(line, patches, reach, spec.wooded);
                 var random = Placement.MapPlacer.Random(context.Seed, 24, ravine.Index);
                 MapTreeScatter.Scatter(context, surface.trees, hectares, surface.treeSpacing, random,
-                    () => MapTreeScatter.In(line.Bounds, random), p =>
+                    () => OnFloor(line, reach, random), p =>
                     {
                         var inSector = context.Layout.Symmetry.InSector(p);
                         var onFloor = Distance(line, wobble, p) < reach;
-                        return inSector && onFloor && patches.Sample(p, 28f) > threshold;
+                        return inSector && onFloor && patches.Sample(p, PatchSize) > threshold;
                     }, $"ravine {ravine.Index + 1}");
             }
         }
