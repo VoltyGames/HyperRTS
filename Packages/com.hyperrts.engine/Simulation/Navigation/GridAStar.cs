@@ -6,9 +6,6 @@ namespace HyperRTS.Simulation.Navigation
     /// <summary>8-directional A* over the <see cref="NavGrid"/> cells open to one layer; diagonals may not cut corners.</summary>
     internal struct GridAStar
     {
-        /// <summary>Caps one search so a hopeless request can't stall a worker thread.</summary>
-        public const int MaxExpansions = 20000;
-
         private const float Diagonal = 1.41421356f;
 
         private struct Record
@@ -55,7 +52,7 @@ namespace HyperRTS.Simulation.Navigation
             _records[best] = new Record { Parent = -1 };
             _open.Push(best, bestHeuristic);
 
-            for (var expansions = 0; expansions < MaxExpansions && _open.TryPop(out var current);)
+            for (var expansions = 0; expansions < NavGrid.MaxSearchExpansions && _open.TryPop(out var current);)
             {
                 var record = _records[current];
                 if (record.Closed)

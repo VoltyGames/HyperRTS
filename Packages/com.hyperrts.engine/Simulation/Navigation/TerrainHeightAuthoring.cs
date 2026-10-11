@@ -23,6 +23,28 @@ namespace HyperRTS.Simulation.Navigation
         [Tooltip("Heightmap to bake; empty uses the Terrain on this object. This transform is the Terrain's corner.")]
         public TerrainData terrainData;
 
+        /// <summary>The heightfield a baked Terrain gives the simulation; editor tools measure maps with it.</summary>
+        public static TerrainHeight Sample(TerrainData data, Vector3 origin, Allocator allocator)
+        {
+            var extent = new float2(data.size.x, data.size.z);
+            var spacing = math.max(MinSpacing, math.min(data.heightmapScale.x, data.heightmapScale.z));
+            var size = math.max((int2)math.ceil(extent / spacing) + 1, 2);
+            var heights = new NativeArray<float>(size.x * size.y, Allocator.Temp);
+            for (var y = 0; y < size.y; y++)
+            {
+                for (var x = 0; x < size.x; x++)
+                {
+                    var uv = math.saturate(new float2(x, y) * spacing / extent);
+                    heights[y * size.x + x] = data.GetInterpolatedHeight(uv.x, uv.y) + origin.y;
+                }
+            }
+
+            var height = TerrainHeight.Create(heights, size, new float2(origin.x, origin.z), spacing,
+                allocator);
+            heights.Dispose();
+            return height;
+        }
+
         public class Baker : Baker<TerrainHeightAuthoring>
         {
             public override void Bake(TerrainHeightAuthoring authoring)
@@ -40,31 +62,10 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 DependsOn(data);
-                var height = Sample(data, GetComponent<Transform>().position);
+                var height = Sample(data, GetComponent<Transform>().position, Allocator.Persistent);
                 AddBlobAsset(ref height.Blob, out _);
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.None));
                 NavSetup.AddTerrain(ref writer, height);
-            }
-
-            private static TerrainHeight Sample(TerrainData data, Vector3 origin)
-            {
-                var extent = new float2(data.size.x, data.size.z);
-                var spacing = math.max(MinSpacing, math.min(data.heightmapScale.x, data.heightmapScale.z));
-                var size = math.max((int2)math.ceil(extent / spacing) + 1, 2);
-                var heights = new NativeArray<float>(size.x * size.y, Allocator.Temp);
-                for (var y = 0; y < size.y; y++)
-                {
-                    for (var x = 0; x < size.x; x++)
-                    {
-                        var uv = math.saturate(new float2(x, y) * spacing / extent);
-                        heights[y * size.x + x] = data.GetInterpolatedHeight(uv.x, uv.y) + origin.y;
-                    }
-                }
-
-                var height = TerrainHeight.Create(heights, size, new float2(origin.x, origin.z), spacing,
-                    Allocator.Persistent);
-                heights.Dispose();
-                return height;
             }
         }
     }

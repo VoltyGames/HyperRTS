@@ -131,13 +131,12 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             _base = new NativeArray<byte>(count, Allocator.Persistent);
-            var steep = map.MaxSlope > 0f && map.MaxSlope < 90f;
             state.Dependency = new ClassifyJob
             {
                 Grid = grid,
                 Base = _base,
                 Flood = map.FloodTerrain,
-                MaxGradient = steep ? math.tan(math.radians(map.MaxSlope)) : float.PositiveInfinity,
+                MaxGradient = NavGround.MaxGradient(map.MaxSlope),
             }.Schedule(count, 1024, state.Dependency);
         }
 
@@ -156,7 +155,7 @@ namespace HyperRTS.Simulation.Navigation
             current.ValueRW = grid;
         }
 
-        /// <summary>Flooded terrain under the water level is water; land steeper than the slope limit is blocked.</summary>
+        /// <summary>Gives each cell the surface the ground alone makes (<see cref="NavGround"/>).</summary>
         [BurstCompile]
         private struct ClassifyJob : IJobParallelFor
         {
@@ -168,32 +167,8 @@ namespace HyperRTS.Simulation.Navigation
             public void Execute(int index)
             {
                 var center = Grid.CellCenter(Grid.Cell(index)).xz;
-                if (IsFlooded(center))
-                {
-                    Base[index] = (byte)NavSurface.Water;
-                    return;
-                }
-
-                Base[index] = (byte)(IsTooSteep(center) ? NavSurface.Blocked : NavSurface.Land);
-            }
-
-            private readonly bool IsFlooded(float2 center)
-            {
-                if (!Flood)
-                {
-                    return false;
-                }
-
-                return Grid.Terrain.Height(center) < Grid.WaterLevel;
-            }
-
-            private readonly bool IsTooSteep(float2 center)
-            {
-                var half = Grid.CellSize * 0.5f;
-                var terrain = Grid.Terrain;
-                var dx = terrain.Height(center + new float2(half, 0f)) - terrain.Height(center - new float2(half, 0f));
-                var dz = terrain.Height(center + new float2(0f, half)) - terrain.Height(center - new float2(0f, half));
-                return math.length(new float2(dx, dz)) > MaxGradient * Grid.CellSize;
+                Base[index] = (byte)NavGround.Classify(Grid.Terrain, center, Grid.CellSize, Grid.WaterLevel, Flood,
+                    MaxGradient);
             }
         }
 
@@ -220,31 +195,24 @@ namespace HyperRTS.Simulation.Navigation
                     return;
                 }
 
-                Grid.GetClampedArea(transform.Position, area.Size, out var min, out var max);
+                var box = new NavBox(transform.Position, transform.Rotation, area.Size);
+                Grid.GetBoxArea(box, out var min, out var max);
                 for (var y = min.y; y <= max.y; y++)
                 {
                     for (var x = min.x; x <= max.x; x++)
                     {
+                        if (!Grid.InBox(box, new int2(x, y)))
+                        {
+                            continue;
+                        }
+
                         var index = Grid.Index(new int2(x, y));
-                        Grid.Cells[index] = Stamp(area.Kind, (NavSurface)Grid.Cells[index]);
+                        Grid.Cells[index] = (byte)NavGround.Stamp(area.Kind, (NavSurface)Grid.Cells[index]);
                         if (Decks)
                         {
                             Grid.DeckHeights[index] = transform.Position.y;
                         }
                     }
-                }
-            }
-
-            private static byte Stamp(NavAreaKind kind, NavSurface cell)
-            {
-                switch (kind)
-                {
-                    case NavAreaKind.Water:
-                        return (byte)NavSurface.Water;
-                    case NavAreaKind.Blocked:
-                        return (byte)NavSurface.Blocked;
-                    default:
-                        return (byte)((cell & NavSurface.Water) | NavSurface.Land | NavSurface.Deck);
                 }
             }
         }
@@ -257,12 +225,16 @@ namespace HyperRTS.Simulation.Navigation
 
             private void Execute(in NavObstacle obstacle, in LocalTransform transform)
             {
-                Grid.GetClampedArea(transform.Position, obstacle.Size, out var min, out var max);
+                var box = new NavBox(transform.Position, transform.Rotation, obstacle.Size);
+                Grid.GetBoxArea(box, out var min, out var max);
                 for (var y = min.y; y <= max.y; y++)
                 {
                     for (var x = min.x; x <= max.x; x++)
                     {
-                        Grid.Cells[Grid.Index(new int2(x, y))] = (byte)NavSurface.Blocked;
+                        if (Grid.InBox(box, new int2(x, y)))
+                        {
+                            Grid.Cells[Grid.Index(new int2(x, y))] = (byte)NavSurface.Blocked;
+                        }
                     }
                 }
             }

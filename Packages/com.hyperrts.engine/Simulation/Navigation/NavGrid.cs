@@ -10,6 +10,12 @@ namespace HyperRTS.Simulation.Navigation
     /// </summary>
     public struct NavGrid : IComponentData
     {
+        /// <summary>
+        /// Most cells one path search expands, so a hopeless request can't stall a worker thread; past it a unit heads
+        /// for the closest cell found. Map tools warn when a cross-map path needs more.
+        /// </summary>
+        public const int MaxSearchExpansions = 20000;
+
         public NativeArray<byte> Cells;
 
         /// <summary>Surface height of <see cref="NavSurface.Deck"/> cells; other entries are unused.</summary>
@@ -119,6 +125,14 @@ namespace HyperRTS.Simulation.Navigation
             min = math.max(min, 0);
             max = math.min(max, Size - 1);
         }
+
+        /// <summary>Clamped cell range of a turned box's world-axis bounds; test each cell with <see cref="InBox"/>.</summary>
+        public readonly void GetBoxArea(in NavBox box, out int2 min, out int2 max) =>
+            GetClampedArea(new float3(box.Center.x, 0f, box.Center.y), box.Extents * 2f, out min, out max);
+
+        /// <summary>Whether a cell in <see cref="GetBoxArea"/>'s range is covered: any overlap with the turned box counts.</summary>
+        public readonly bool InBox(in NavBox box, int2 cell) =>
+            box.IsAxisAligned || box.Contains(CellCenter(cell).xz, CellSize * 0.5f);
 
         /// <summary>Closest cell open to the layer by ring distance, up to <paramref name="maxRadius"/> rings out.</summary>
         public readonly bool TryFindNearestWalkable(int2 cell, int maxRadius, out int2 found,
