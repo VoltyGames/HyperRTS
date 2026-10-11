@@ -69,6 +69,18 @@ namespace HyperRTS.Presentation.Tests
             return _context.SelectionHash;
         }
 
+        [Test]
+        public void Observer_SeesTheMatch_WithoutALocalPlayer()
+        {
+            _em.DestroyEntity(_em.CreateEntityQuery(typeof(LocalPlayer)).GetSingletonEntity());
+            _em.CreateSingleton(new FactionRelations());
+
+            Assert.IsTrue(_view.Refresh(_world));
+            Assert.IsFalse(_view.HasLocalPlayer);
+            Assert.IsFalse(_view.IsLocalDefeated());
+            Assert.IsTrue(_context.Refresh(_view));
+        }
+
         private void Refresh()
         {
             _view.Refresh(_world);

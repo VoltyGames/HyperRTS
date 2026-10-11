@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HyperRTS.Presentation.TeamColors;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Interaction;
@@ -10,7 +10,10 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Common
 {
-    /// <summary>Main-thread view of the match from the local player's side, shared by MonoBehaviour presenters.</summary>
+    /// <summary>
+    /// Main-thread view of the match from the local player's side, or an observer's when this world has no local
+    /// player; shared by MonoBehaviour presenters.
+    /// </summary>
     public sealed class MatchView
     {
         private static MatchView _default;
@@ -33,8 +36,13 @@ namespace HyperRTS.Presentation.Common
 
         /// <summary>False once the bound world is disposed, e.g. when a network session swaps worlds mid-frame.</summary>
         public bool IsLive => _world != null && _world.IsCreated;
+        /// <summary><c>Entity.Null</c> for an observer.</summary>
         public Entity LocalPlayer { get; private set; }
+
+        /// <summary>The local player's identity; default (neutral) for an observer.</summary>
         public Player Local { get; private set; }
+
+        public bool HasLocalPlayer => LocalPlayer != Entity.Null;
         public FactionRelations Relations { get; private set; }
         public bool HasMap { get; private set; }
         public MapSettings Map { get; private set; }
@@ -55,7 +63,7 @@ namespace HyperRTS.Presentation.Common
             return view.IsReady;
         }
 
-        /// <summary>Re-reads the singletons; false until <paramref name="world"/> has a local player (edit mode, loading).</summary>
+        /// <summary>Re-reads the singletons; false until <paramref name="world"/> has a local player or a match.</summary>
         public bool Refresh(World world)
         {
             IsReady = false;
@@ -71,15 +79,16 @@ namespace HyperRTS.Presentation.Common
 
             HasMap = _map.TryGetSingleton(out MapSettings map);
             Map = map;
-            _relations.TryGetSingleton(out FactionRelations relations);
+            var hasMatch = _relations.TryGetSingleton(out FactionRelations relations);
             Relations = relations;
-            if (!_localPlayer.TryGetSingletonEntity<Player>(out var local))
+            var hasLocal = _localPlayer.TryGetSingletonEntity<Player>(out var local);
+            if (!hasLocal && !hasMatch)
             {
                 return false;
             }
 
-            LocalPlayer = local;
-            Local = EntityManager.GetComponentData<Player>(local);
+            LocalPlayer = hasLocal ? local : Entity.Null;
+            Local = hasLocal ? EntityManager.GetComponentData<Player>(local) : default;
             RefreshColors();
             IsReady = true;
             return true;
@@ -92,7 +101,7 @@ namespace HyperRTS.Presentation.Common
 
         public bool TryGetMatch(out MatchState match) => _match.TryGetSingleton(out match);
 
-        public bool IsLocalDefeated() => EntityManager.HasEnabled<Defeated>(LocalPlayer);
+        public bool IsLocalDefeated() => HasLocalPlayer && EntityManager.HasEnabled<Defeated>(LocalPlayer);
 
         /// <summary>
         /// Cancels a building placement or a targeted command waiting for a click; false when neither was pending.

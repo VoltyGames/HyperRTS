@@ -50,6 +50,8 @@ namespace HyperRTS.Presentation.HUD
             _viewLayer.generateVisualContent += PaintView;
         }
 
+        public override bool NeedsPlayer => false;
+
         public override void Refresh(HUDContext context)
         {
             _context = context;

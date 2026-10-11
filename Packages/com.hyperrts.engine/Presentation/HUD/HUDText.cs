@@ -26,6 +26,7 @@ namespace HyperRTS.Presentation.HUD
             ["outcome.victory"] = "VICTORY",
             ["outcome.defeat"] = "DEFEAT",
             ["outcome.draw"] = "DRAW",
+            ["outcome.ended"] = "MATCH OVER",
         };
 
         public static HUDText Current { get; set; } = new();

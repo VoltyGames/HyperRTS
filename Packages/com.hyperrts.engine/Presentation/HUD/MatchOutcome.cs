@@ -7,5 +7,8 @@ namespace HyperRTS.Presentation.HUD
         Victory = 1,
         Defeat = 2,
         Draw = 3,
+
+        /// <summary>The match ended, seen by an observer, who is on no side.</summary>
+        Ended = 4,
     }
 }

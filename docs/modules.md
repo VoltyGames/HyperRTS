@@ -462,7 +462,7 @@ Client only (`HyperRTS.Presentation`). `HUD.prefab` holds:
 
 Other client pieces:
 
-- `MatchView`: once-per-frame read model for MonoBehaviours (local player, relations, match, colours),
+- `MatchView`: once-per-frame read model for MonoBehaviours (local player or observer, relations, match, colours),
   `CancelInteraction`, `GetColor`.
 - `TeamColorSystem` tints owned meshes through `URPMaterialPropertyBaseColor` (use URP Lit). A
   `TeamColorOverride` singleton shows factions in other colours (colour-blind palettes, own / ally / enemy).

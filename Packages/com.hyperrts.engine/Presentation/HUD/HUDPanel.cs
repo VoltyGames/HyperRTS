@@ -15,6 +15,8 @@ namespace HyperRTS.Presentation.HUD
 
         public virtual bool BlocksPointer => true;
 
+        public virtual bool NeedsPlayer => true;
+
         public abstract void Refresh(HUDContext context);
     }
 }

@@ -90,7 +90,8 @@ A game shell (menus, lobby, loading) drives a match through these:
 | Host or join with the menu still up | `NetworkSession.StartHost(port, SessionScene.Keep)` / `StartClient(address, port, SessionScene.Keep)`, then every peer `NetworkSession.LoadScene(path)` |
 | Loading progress | `NetworkSession.SceneLoad`; networked matches also wait for `MatchState.Started` |
 | Connection state | Poll `NetworkSession.Status` and `DisconnectReason` from a `MonoBehaviour` update |
-| Read the match from MonoBehaviours | `MatchView.TryGetDefault(out view)`: local player, relations, match state, colours |
+| Read the match from MonoBehaviours | `MatchView.TryGetDefault(out view)`: local player (`HasLocalPlayer` false for observers), relations, match state, colours |
+| A HUD panel | Implement `IHUDPanel` (or derive `HUDPanel`) and add it in `HUDController.CreatePanels`; `NeedsPlayer = false` keeps it for observers |
 | Pause and speed (single player) | `LocalGameSpeed.SetScale`, `Reset` |
 | Escape for a pause menu | Set `InputActionsProvider.FrontEndOwnsCancel`; call `MatchView.CancelInteraction()` first |
 | Block gameplay keys under menus | `InputActionsProvider.Suspend(owner)` / `Resume(owner)` |

@@ -77,6 +77,16 @@ namespace HyperRTS.Presentation.HUD
 
             foreach (var panel in _panels)
             {
+                // Observers keep only the panels that need no player; the rest manage their own visibility.
+                if (panel.NeedsPlayer)
+                {
+                    panel.Root.SetVisible(view.HasLocalPlayer);
+                    if (!view.HasLocalPlayer)
+                    {
+                        continue;
+                    }
+                }
+
                 panel.Refresh(_context);
             }
 

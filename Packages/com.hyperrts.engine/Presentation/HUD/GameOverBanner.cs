@@ -21,6 +21,8 @@ namespace HyperRTS.Presentation.HUD
 
         public bool BlocksPointer => false;
 
+        public bool NeedsPlayer => false;
+
         public void Refresh(HUDContext context)
         {
             var outcome = MatchOutcomes.Get(context.View);

@@ -96,7 +96,7 @@ namespace HyperRTS.Presentation.HUD
 
         public void Issue(PlayerCommand command)
         {
-            if (View.IsReady)
+            if (View.HasLocalPlayer)
             {
                 EntityManager.GetBuffer<PlayerCommand>(View.LocalPlayer).Add(command);
             }
