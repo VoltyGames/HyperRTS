@@ -112,5 +112,22 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual(100f, _world.Get<Health>(unit).Max);
         }
+
+        [Test]
+        public void CapturedEntity_LosesUpgradesWhenTheOldOwnerIsGone()
+        {
+            var upgrade = UpgradePrefab("Sensors", 0);
+            var lab = _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), float3.zero, upgrade);
+            var unit = _world.SpawnUnit(1, new float3(10f, 0f, 0f));
+            _world.AddResources(1, _supplies, 100);
+            _world.Produce(1, lab, upgrade);
+            _world.Run(3f);
+
+            _world.EntityManager.DestroyEntity(_world.Player(1));
+            _world.EntityManager.SetComponentData(unit, new Faction { Value = 2 });
+            _world.Tick(frames: 2);
+
+            Assert.AreEqual(100f, _world.Get<Health>(unit).Max);
+        }
     }
 }

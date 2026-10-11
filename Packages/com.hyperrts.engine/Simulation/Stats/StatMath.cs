@@ -66,5 +66,17 @@ namespace HyperRTS.Simulation.Stats
                 }
             }
         }
+
+        /// <summary>Removes every modifier whose source is of <paramref name="kind"/>.</summary>
+        public static void RemoveKind(DynamicBuffer<StatModifier> modifiers, StatSourceKind kind)
+        {
+            for (var i = modifiers.Length - 1; i >= 0; i--)
+            {
+                if (modifiers[i].Source.Kind == kind)
+                {
+                    modifiers.RemoveAtSwapBack(i);
+                }
+            }
+        }
     }
 }

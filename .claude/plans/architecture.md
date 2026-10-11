@@ -17,12 +17,7 @@ documentation: update or delete items as they land.
 - Fog holds 15 teams; `MatchSetupSystem` throws past that.
 - Editor UI on UI Toolkit; inspectors validate every selected object.
 - `RTSSceneBuilder.Build(RTSSceneSpec)` behind the scene wizard.
-
-## Open bugs
-
-| Bug | Evidence | Fix |
-| --- | --- | --- |
-| A captured entity keeps old upgrades if the old owner's player entity no longer exists | `UpgradeSystem.Strip` returns early without the player's `ResearchedUpgrade` | Strip by `StatSource` kind, not by looking up the old player |
+- Captured entities drop old upgrades by source kind, even when the old owner is gone.
 
 ## Simulation
 

@@ -92,23 +92,9 @@ namespace HyperRTS.Simulation.Upgrades
 
             private void Strip(Entity entity, in AppliedUpgrades applied)
             {
-                if (applied.Count == 0 || !Modifiers.HasBuffer(entity))
+                if (applied.Count > 0 && Modifiers.TryGetBuffer(entity, out var modifiers))
                 {
-                    return;
-                }
-
-                if (!Researched.TryGetBuffer(PlayerByFaction[applied.Faction], out var researched))
-                {
-                    return;
-                }
-
-                var modifiers = Modifiers[entity];
-                for (var i = 0; i < applied.Count && i < researched.Length; i++)
-                {
-                    foreach (var effect in Effects[researched[i].Upgrade])
-                    {
-                        StatMath.RemoveSource(modifiers, effect.Modifier.Source);
-                    }
+                    StatMath.RemoveKind(modifiers, StatSourceKind.Upgrade);
                 }
             }
         }
