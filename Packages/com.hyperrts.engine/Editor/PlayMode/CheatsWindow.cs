@@ -1,130 +1,204 @@
-﻿using System.Linq;
+using System.Collections.Generic;
+using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Network.Session;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEditor;
-using UnityEngine;
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
     /// <summary>HyperRTS ▸ Cheats: resources, fog, instant build, spawning, player switching and game speed.</summary>
     public class CheatsWindow : EditorWindow
     {
-        private int _player;
-        private int _prefab;
-        private int _amount = 1000;
+        private const long PollMilliseconds = 250;
+
+        private HelpBox _status;
+        private VisualElement _controls;
+        private PopupField<string> _player;
+        private PopupField<string> _prefab;
+        private IntegerField _amount;
+        private Button _control;
+        private Toggle _fog;
+        private Slider _speed;
 
         [MenuItem(EditorMenu.Cheats, false, EditorMenu.CheatsPriority)]
         public static void Open() => GetWindow<CheatsWindow>("HyperRTS Cheats");
 
-        private void OnInspectorUpdate()
+        public void CreateGUI()
         {
-            if (Application.isPlaying)
-            {
-                Repaint();
-            }
+            var root = rootVisualElement;
+            EditorAssets.AddStyles(root);
+            _status = new HelpBox("", HelpBoxMessageType.Info);
+            _status.AddToClassList("hrts-note");
+            root.Add(_status);
+
+            _controls = new VisualElement();
+            _controls.AddToClassList("hrts-note");
+            BuildPlayerControls(_controls);
+            BuildWorldControls(_controls);
+            root.Add(_controls);
+
+            root.schedule.Execute(Poll).Every(PollMilliseconds);
+            Poll();
         }
 
-        private void OnGUI()
+        private void BuildPlayerControls(VisualElement parent)
         {
-            // Cheats change game state, so they go to the server when hosting, not to the client the HUD shows.
-            if (!PlayWorld.TryGetAuthoritative(out var entityManager))
+            _player = Popup("Player");
+            parent.Add(_player);
+
+            _amount = new IntegerField("Resources") { value = 1000 };
+            parent.Add(Row(_amount, new Button(() => Act((manager, player, _) =>
+                Cheats.AddResources(manager, player, _amount.value))) { text = "Add" }));
+
+            _control = new Button(() => Act((manager, player, _) => Cheats.MakeLocal(manager, player)))
             {
-                EditorGUILayout.HelpBox("Cheats work in Play mode.", MessageType.Info);
-                return;
-            }
-
-            var players = Cheats.Players(entityManager);
-            if (players.Length == 0)
+                text = "Control this player",
+            };
+            var instantBuild = new Button(() => Act((manager, _, faction) => Cheats.InstantBuild(manager, faction)))
             {
-                EditorGUILayout.HelpBox("No players yet: the SubScene is still loading.", MessageType.Info);
-                return;
-            }
-
-            var names = players.Select(entity => PlayerLabel(entityManager, entity)).ToArray();
-            _player = EditorGUILayout.Popup("Player", Mathf.Min(_player, names.Length - 1), names);
-            var player = players[_player];
-            var faction = entityManager.GetComponentData<Player>(player).Faction;
-
-            DrawPlayerCheats(entityManager, player, faction);
-            DrawSpawn(entityManager, faction);
-
-            EditorGUILayout.Space();
-            var speed = EditorGUILayout.Slider("Game speed", LocalGameSpeed.Scale, 0f, 4f);
-            if (!Mathf.Approximately(speed, LocalGameSpeed.Scale))
-            {
-                LocalGameSpeed.SetScale(speed);
-            }
+                text = "Instant build",
+            };
+            var buttons = new VisualElement();
+            buttons.AddToClassList("hrts-buttons");
+            buttons.Add(instantBuild);
+            buttons.Add(_control);
+            parent.Add(buttons);
         }
 
-        private void DrawPlayerCheats(EntityManager entityManager, Entity player, byte faction)
+        private void BuildWorldControls(VisualElement parent)
         {
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                _amount = EditorGUILayout.IntField("Resources", _amount);
-                if (GUILayout.Button("Add", GUILayout.Width(60)))
-                {
-                    Cheats.AddResources(entityManager, player, _amount);
-                }
-            }
+            _fog = new Toggle("Fog of war");
+            _fog.RegisterValueChangedCallback(change => Act((manager, _, _) => Cheats.SetFog(manager, change.newValue)));
+            parent.Add(_fog);
 
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button("Instant build"))
-                {
-                    Cheats.InstantBuild(entityManager, faction);
-                }
+            _prefab = Popup("Spawn");
+            parent.Add(Row(_prefab, new Button(SpawnAtView) { text = "At view" }));
 
-                using (new EditorGUI.DisabledScope(!CanControl(entityManager, player)))
-                {
-                    if (GUILayout.Button("Control this player"))
-                    {
-                        Cheats.MakeLocal(entityManager, player);
-                    }
-                }
-            }
-
-            var fog = Cheats.FogEnabled(entityManager);
-            if (EditorGUILayout.Toggle("Fog of war", fog) != fog)
-            {
-                Cheats.SetFog(entityManager, !fog);
-            }
+            _speed = new Slider("Game speed", 0f, 4f) { showInputField = true };
+            _speed.RegisterValueChangedCallback(change => LocalGameSpeed.SetScale(change.newValue));
+            parent.Add(_speed);
         }
 
-        private void DrawSpawn(EntityManager entityManager, byte faction)
+        // Cheats change game state, so they go to the server when hosting, not to the client the HUD shows.
+        private void Poll()
         {
-            var prefabs = Cheats.Prefabs(entityManager);
-            if (prefabs.Length == 0)
+            var ready = TryGetPlayers(out var manager, out var players, out var message);
+            _status.text = message;
+            _status.style.display = ready ? DisplayStyle.None : DisplayStyle.Flex;
+            _controls.style.display = ready ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!ready)
             {
                 return;
             }
 
-            var names = prefabs.Select(entity => entityManager.GetComponentData<EntityInfo>(entity).Name.ToString()).ToArray();
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                _prefab = EditorGUILayout.Popup("Spawn", Mathf.Min(_prefab, names.Length - 1), names);
-                if (GUILayout.Button("At view", GUILayout.Width(60)))
-                {
-                    Cheats.Spawn(entityManager, prefabs[_prefab], faction, Cheats.ViewCenter(entityManager));
-                }
-            }
+            SetChoices(_player, PlayerLabels(manager, players));
+            SetChoices(_prefab, PrefabNames(manager, Cheats.Prefabs(manager)));
+            _control.SetEnabled(CanControl(manager, players[System.Math.Min(_player.index, players.Length - 1)]));
+            _fog.SetValueWithoutNotify(Cheats.FogEnabled(manager));
+            _speed.SetValueWithoutNotify(LocalGameSpeed.Scale);
         }
+
+        private static bool TryGetPlayers(out EntityManager manager, out NativeArray<Entity> players, out string message)
+        {
+            players = default;
+            if (!PlayWorld.TryGetAuthoritative(out manager))
+            {
+                message = "Cheats work in Play mode.";
+                return false;
+            }
+
+            players = Cheats.Players(manager);
+            message = players.Length == 0 ? "No players yet: the SubScene is still loading." : "";
+            return players.Length > 0;
+        }
+
+        /// <summary>Runs a cheat on the selected player, re-read now since entities change between polls.</summary>
+        private void Act(System.Action<EntityManager, Entity, byte> cheat)
+        {
+            if (!TryGetPlayers(out var manager, out var players, out _))
+            {
+                return;
+            }
+
+            var player = players[System.Math.Min(_player.index, players.Length - 1)];
+            cheat(manager, player, manager.GetComponentData<Player>(player).Faction);
+        }
+
+        private void SpawnAtView() => Act((manager, _, faction) =>
+        {
+            var prefabs = Cheats.Prefabs(manager);
+            if (_prefab.index >= 0 && _prefab.index < prefabs.Length)
+            {
+                Cheats.Spawn(manager, prefabs[_prefab.index], faction, Cheats.ViewCenter(manager));
+            }
+        });
 
         // Over the network the server decides which connection controls a player.
-        private static bool CanControl(EntityManager entityManager, Entity player) =>
-            !NetworkSession.IsRunning && !entityManager.HasComponent<LocalPlayer>(player);
+        private static bool CanControl(EntityManager manager, Entity player) =>
+            !NetworkSession.IsRunning && !manager.HasComponent<LocalPlayer>(player);
 
-        private static string PlayerLabel(EntityManager entityManager, Entity player)
+        private static List<string> PlayerLabels(EntityManager manager, NativeArray<Entity> players)
         {
-            var name = entityManager.GetComponentData<Player>(player).Name.ToString();
-            if (entityManager.HasComponent<LocalPlayer>(player))
+            var labels = new List<string>(players.Length);
+            foreach (var player in players)
             {
-                return name + " (you)";
+                var name = manager.GetComponentData<Player>(player).Name.ToString();
+                if (manager.HasComponent<LocalPlayer>(player))
+                {
+                    name += " (you)";
+                }
+                else if (manager.HasComponent<AIPlayer>(player))
+                {
+                    name += " (AI)";
+                }
+
+                labels.Add(name);
             }
 
-            return entityManager.HasComponent<AIPlayer>(player) ? name + " (AI)" : name;
+            return labels;
+        }
+
+        private static List<string> PrefabNames(EntityManager manager, NativeArray<Entity> prefabs)
+        {
+            var names = new List<string>(prefabs.Length);
+            foreach (var prefab in prefabs)
+            {
+                names.Add(manager.GetComponentData<EntityInfo>(prefab).Name.ToString());
+            }
+
+            return names;
+        }
+
+        // Polls rebuild the lists; touching the field only on a real change keeps an open dropdown stable.
+        private static void SetChoices(PopupField<string> field, List<string> choices)
+        {
+            if (choices.Count == 0 || choices.SequenceEqual(field.choices))
+            {
+                return;
+            }
+
+            var index = field.index >= 0 && field.index < choices.Count ? field.index : 0;
+            field.choices = choices;
+            field.index = index;
+        }
+
+        private static PopupField<string> Popup(string label) => new(label) { choices = new List<string>() };
+
+        private static VisualElement Row(VisualElement field, Button button)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("hrts-row");
+            field.AddToClassList("hrts-row__grow");
+            row.Add(field);
+            row.Add(button);
+            return row;
         }
     }
 }

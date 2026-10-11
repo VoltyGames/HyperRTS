@@ -1,7 +1,9 @@
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Authoring
 {
@@ -17,53 +19,73 @@ namespace HyperRTS.Editor.Authoring
         private static bool _showNavGrid;
         private static bool _showFogGrid;
 
-        private int[] _counts = { };
+        private VisualElement _owners;
 
-        public override void OnInspectorGUI()
+        protected override void BuildFooter(VisualElement root)
         {
-            base.OnInspectorGUI();
-            var match = (MatchAuthoring)target;
+            var section = new VisualElement();
+            section.AddToClassList("hrts-section");
+            var title = new Label("Open scenes");
+            title.AddToClassList("hrts-section__title");
+            section.Add(title);
+            _owners = new VisualElement();
+            section.Add(_owners);
 
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Open scenes", EditorStyles.boldLabel);
-            DrawOwnerCounts(match);
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                _showNavGrid = GUILayout.Toggle(_showNavGrid, "Nav Grid", "Button");
-                _showFogGrid = GUILayout.Toggle(_showFogGrid, "Fog Grid", "Button");
-                if (GUILayout.Button("Frame Map"))
-                {
-                    var size = new Vector3(match.mapSize.x, 1f, match.mapSize.y);
-                    SceneView.lastActiveSceneView?.Frame(new Bounds(match.transform.position, size), false);
-                }
-            }
-
-            if (GUI.changed)
-            {
-                SceneView.RepaintAll();
-            }
+            var buttons = new VisualElement();
+            buttons.AddToClassList("hrts-buttons");
+            buttons.Add(GridToggle("Nav Grid", _showNavGrid, value => _showNavGrid = value));
+            buttons.Add(GridToggle("Fog Grid", _showFogGrid, value => _showFogGrid = value));
+            buttons.Add(new Button(FrameMap) { text = "Frame Map" });
+            section.Add(buttons);
+            root.Add(section);
         }
 
-        private void DrawOwnerCounts(MatchAuthoring match)
+        // A full scene scan, so it runs on edits and hierarchy changes, never per frame.
+        protected override void Refresh()
         {
-            // A full scene scan, so only on Layout; Repaint and input events reuse it.
-            if (Event.current.type == EventType.Layout || _counts.Length != match.players.Count + 1)
-            {
-                _counts = CountOwners(match.players.Count);
-            }
-
-            EditorGUILayout.LabelField("Neutral", $"{_counts[0]} entities");
+            var match = (MatchAuthoring)target;
+            var counts = CountOwners(match.players.Count);
+            _owners.Clear();
+            _owners.Add(OwnerRow(Color.grey, "Neutral", counts[0]));
             for (var i = 0; i < match.players.Count; i++)
             {
                 var player = match.players[i];
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    EditorGUI.DrawRect(GUILayoutUtility.GetRect(12f, 16f, GUILayout.Width(12f)), player.color);
-                    EditorGUILayout.LabelField($"{i + 1}. {player.name} (team {player.team}, {player.control})",
-                        $"{_counts[i + 1]} entities");
-                }
+                var name = $"{i + 1}. {player.name} (team {player.team}, {player.control})";
+                _owners.Add(OwnerRow(player.color, name, counts[i + 1]));
             }
+        }
+
+        private static VisualElement OwnerRow(Color color, string name, int count)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("hrts-row");
+            var swatch = new VisualElement();
+            swatch.AddToClassList("hrts-swatch");
+            swatch.style.backgroundColor = color;
+            row.Add(swatch);
+            var label = new Label(name);
+            label.AddToClassList("hrts-row__grow");
+            row.Add(label);
+            row.Add(new Label($"{count} entities"));
+            return row;
+        }
+
+        private static ToolbarToggle GridToggle(string text, bool value, System.Action<bool> set)
+        {
+            var toggle = new ToolbarToggle { text = text, value = value };
+            toggle.RegisterValueChangedCallback(change =>
+            {
+                set(change.newValue);
+                SceneView.RepaintAll();
+            });
+            return toggle;
+        }
+
+        private void FrameMap()
+        {
+            var match = (MatchAuthoring)target;
+            var size = new Vector3(match.mapSize.x, 1f, match.mapSize.y);
+            SceneView.lastActiveSceneView?.Frame(new Bounds(match.transform.position, size), false);
         }
 
         private static int[] CountOwners(int players)

@@ -1,0 +1,107 @@
+.hrts-summary {
+    margin: 0 0 4px 0;
+}
+
+.hrts-issue {
+    flex-direction: row;
+    align-items: stretch;
+    margin: 1px 0;
+}
+
+.hrts-issue__context {
+    width: 140px;
+    margin: 0 2px 0 0;
+}
+
+.hrts-issue__message {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 0;
+}
+
+.hrts-issue__fix {
+    width: 100px;
+    margin: 0 0 0 2px;
+    white-space: normal;
+}
+
+.hrts-section {
+    margin-top: 8px;
+}
+
+.hrts-section__title {
+    -unity-font-style: bold;
+    margin: 0 0 2px 3px;
+}
+
+.hrts-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.hrts-row__grow {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.hrts-swatch {
+    width: 12px;
+    height: 12px;
+    margin: 0 4px 0 3px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.hrts-buttons {
+    flex-direction: row;
+    margin-top: 4px;
+}
+
+.hrts-buttons > * {
+    flex-grow: 1;
+}
+
+.hrts-fill {
+    flex-grow: 1;
+}
+
+.hrts-toolbar-label {
+    -unity-text-align: middle-right;
+    font-size: 10px;
+    margin-right: 4px;
+}
+
+.hrts-note {
+    margin: 4px;
+}
+
+.hrts-table__cell {
+    margin: 0 2px;
+}
+
+.hrts-table__number {
+    -unity-text-align: middle-right;
+}
+
+.hrts-tree__node {
+    margin: 0 0 6px 0;
+    padding: 4px;
+    border-width: 1px;
+    border-color: rgba(128, 128, 128, 0.4);
+    border-radius: 3px;
+}
+
+.hrts-tree__name {
+    -unity-font-style: bold;
+}
+
+.hrts-tree__line {
+    margin-left: 8px;
+    white-space: normal;
+}
+
+.hrts-tabs,
+.hrts-tabs .unity-tab-view__content-container,
+.hrts-tabs .unity-tab__content-container {
+    flex-grow: 1;
+}

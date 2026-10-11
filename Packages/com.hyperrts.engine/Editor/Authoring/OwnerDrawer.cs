@@ -1,7 +1,11 @@
+using System.Collections.Generic;
+using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Authoring
 {
@@ -9,34 +13,66 @@ namespace HyperRTS.Editor.Authoring
     [CustomPropertyDrawer(typeof(OwnerAttribute))]
     public sealed class OwnerDrawer : PropertyDrawer
     {
-        private const float Swatch = 16f;
-        private const float Gap = 2f;
-
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
-            var match = SceneMatch.Current;
-            var slots = match != null ? Mathf.Max(match.players.Count, property.intValue) : OwnerAttribute.Max;
-            var labels = new GUIContent[slots + 1];
-            var values = new int[slots + 1];
-            for (var i = 0; i <= slots; i++)
+            var row = new VisualElement();
+            EditorAssets.AddStyles(row);
+            row.AddToClassList("hrts-row");
+
+            var field = new PopupField<int>(property.displayName, Choices(property.intValue), property.intValue,
+                Label, Label);
+            field.AddToClassList(BaseField<int>.alignedFieldUssClassName);
+            field.AddToClassList("hrts-row__grow");
+            var swatch = new VisualElement();
+            swatch.AddToClassList("hrts-swatch");
+            row.Add(field);
+            row.Add(swatch);
+
+            void Show()
             {
-                values[i] = i;
-                labels[i] = new GUIContent(Label(match, i));
+                field.choices = Choices(property.intValue);
+                field.showMixedValue = property.hasMultipleDifferentValues;
+                field.SetValueWithoutNotify(property.intValue);
+                swatch.style.backgroundColor = SceneMatch.PlayerColor(property.intValue);
             }
 
-            var field = new Rect(position.x, position.y, position.width - Swatch - Gap, position.height);
-            EditorGUI.IntPopup(field, property, labels, values, label);
-            EditorGUI.DrawRect(new Rect(field.xMax + Gap, position.y, Swatch, position.height),
-                SceneMatch.PlayerColor(property.intValue));
+            field.RegisterValueChangedCallback(change =>
+            {
+                property.intValue = change.newValue;
+                property.serializedObject.ApplyModifiedProperties();
+                Show();
+            });
+
+            // Undo, other inspectors and Match edits (renamed or added players) change what the field shows.
+            row.TrackPropertyValue(property, _ => Show());
+            row.RegisterCallback<AttachToPanelEvent>(_ => EditorApplication.hierarchyChanged += Show);
+            row.RegisterCallback<DetachFromPanelEvent>(_ => EditorApplication.hierarchyChanged -= Show);
+            Show();
+            return row;
         }
 
-        private static string Label(MatchAuthoring match, int owner)
+        // Every player slot of the scene's Match, plus the current value when it has no slot.
+        private static List<int> Choices(int current)
+        {
+            var match = SceneMatch.Current;
+            var slots = match != null ? Mathf.Max(match.players.Count, current) : Mathf.Max(OwnerAttribute.Max, current);
+            var choices = new List<int>(slots + 1);
+            for (var i = 0; i <= slots; i++)
+            {
+                choices.Add(i);
+            }
+
+            return choices;
+        }
+
+        private static string Label(int owner)
         {
             if (owner == 0)
             {
                 return "0. Neutral";
             }
 
+            var match = SceneMatch.Current;
             if (match == null)
             {
                 return $"{owner}. Player {owner}";
