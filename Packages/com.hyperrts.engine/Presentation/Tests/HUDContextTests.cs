@@ -4,6 +4,7 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -99,6 +100,23 @@ namespace HyperRTS.Presentation.Tests
             card.Refresh(_context);
 
             Assert.AreEqual(1, source.Pressed);
+        }
+
+        [Test]
+        public void UnitActions_OfferSell_OnlyForBuildingsNotAGarrisonItsOccupantsHold()
+        {
+            Refresh();
+            var depot = _em.CreateEntity(typeof(BuildingTag));
+            var house = _em.CreateEntity(typeof(BuildingTag), typeof(NeutralGarrison));
+            var source = new UnitActionCommands();
+
+            var garrisonOnly = new List<CommandEntry>();
+            source.Build(_context, new[] { house }, garrisonOnly);
+            var withDepot = new List<CommandEntry>();
+            source.Build(_context, new[] { house, depot }, withDepot);
+
+            Assert.IsEmpty(garrisonOnly, "a house you occupy isn't yours to sell");
+            Assert.AreEqual(1, withDepot.Count);
         }
 
         private sealed class TestSource : ICommandSource

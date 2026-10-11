@@ -21,6 +21,7 @@ namespace HyperRTS.Simulation.Transport
         private Boarding _boarding;
         private ComponentLookup<Container> _containerLookup;
         private TargetReach _reach;
+        private EntityQuery _map;
         private ComponentLookup<CombatStance> _stanceLookup;
         private ComponentLookup<AttackTarget> _attackLookup;
         private ComponentLookup<Selected> _selectedLookup;
@@ -32,6 +33,7 @@ namespace HyperRTS.Simulation.Transport
             _boarding = new Boarding(ref state, false);
             _containerLookup = state.GetComponentLookup<Container>(true);
             _reach = new TargetReach(ref state);
+            _map = TargetReach.MapQuery(ref state);
             _stanceLookup = state.GetComponentLookup<CombatStance>();
             _attackLookup = state.GetComponentLookup<AttackTarget>();
             _selectedLookup = state.GetComponentLookup<Selected>();
@@ -44,7 +46,7 @@ namespace HyperRTS.Simulation.Transport
         {
             _boarding.Update(ref state);
             _containerLookup.Update(ref state);
-            _reach.Update(ref state);
+            _reach.Update(ref state, _map);
             _stanceLookup.Update(ref state);
             _attackLookup.Update(ref state);
             _selectedLookup.Update(ref state);

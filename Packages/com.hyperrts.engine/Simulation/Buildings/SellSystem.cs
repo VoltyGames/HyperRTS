@@ -14,6 +14,7 @@ namespace HyperRTS.Simulation.Buildings
     /// <summary>
     /// Sells the commanded or selected owned buildings: refunds <see cref="MatchRules.SellRefund"/> of a finished
     /// building's cost (all of an unfinished one's) plus its queued production, then removes it without a wreck.
+    /// Only <see cref="BuildingRules.IsSellable"/> buildings sell: not a neutral garrison its occupants hold.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -57,7 +58,7 @@ namespace HyperRTS.Simulation.Buildings
 
                     foreach (var building in PlayerCommands.Collect(command, listed, _selected))
                     {
-                        if (IsOwnedBuilding(ref state, building, player.ValueRO.Faction) && sold.Add(building))
+                        if (IsSellableBuilding(ref state, building, player.ValueRO.Faction) && sold.Add(building))
                         {
                             Sell(ref state, building, stock, rules.SellRefund);
                             ecb.DestroyEntity(building);
@@ -67,9 +68,9 @@ namespace HyperRTS.Simulation.Buildings
             }
         }
 
-        private bool IsOwnedBuilding(ref SystemState state, Entity entity, byte faction)
+        private bool IsSellableBuilding(ref SystemState state, Entity entity, byte faction)
         {
-            if (!SystemAPI.HasComponent<BuildingTag>(entity) || state.EntityManager.HasEnabled<Dead>(entity))
+            if (!BuildingRules.IsSellable(state.EntityManager, entity) || state.EntityManager.HasEnabled<Dead>(entity))
             {
                 return false;
             }

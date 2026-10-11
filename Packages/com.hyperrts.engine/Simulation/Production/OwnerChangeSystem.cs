@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Transport;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -16,6 +17,7 @@ namespace HyperRTS.Simulation.Production
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
+    [UpdateAfter(typeof(NeutralGarrisonSystem))]
     public partial struct OwnerChangeSystem : ISystem
     {
         private BufferLookup<ProductionQueueItem> _queues;

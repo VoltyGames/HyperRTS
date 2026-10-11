@@ -11,8 +11,9 @@ namespace HyperRTS.Presentation.TeamColors
 {
     /// <summary>
     /// Tints owned meshes with their player's colour (or the <see cref="TeamColorOverride"/>'s), only for new entities,
-    /// when the owner changes or when the override does. An entity whose
-    /// player hasn't arrived yet (ghosts stream in any order) stays uncoloured and is retried every frame.
+    /// when the owner changes or when the override does. An entity that turns neutral gets its authored materials
+    /// back. An entity whose player hasn't arrived yet (ghosts stream in any order) stays uncoloured and is retried
+    /// every frame.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -162,6 +163,20 @@ namespace HyperRTS.Presentation.TeamColors
 
                 return true;
             }
+
+            /// <summary>Gives a root that had a player's colour (and is neutral now) its authored materials back.</summary>
+            public void Unpaint(Entity root)
+            {
+                var targets = new FixedList512Bytes<Entity>();
+                RenderHierarchy.Collect(root, Linked, Children, ref targets);
+                foreach (var target in targets)
+                {
+                    if (Meshes.HasComponent(target))
+                    {
+                        Commands.RemoveComponent<URPMaterialPropertyBaseColor>(target);
+                    }
+                }
+            }
         }
 
         [BurstCompile]
@@ -193,6 +208,12 @@ namespace HyperRTS.Presentation.TeamColors
                 }
 
                 colored.Faction = faction.Value;
+                if (faction.Value == Faction.Neutral)
+                {
+                    Painter.Unpaint(entity);
+                    return;
+                }
+
                 if (!Painter.Paint(entity, faction.Value))
                 {
                     // The new owner's player hasn't arrived: hand the entity back to ColorNewJob to retry.

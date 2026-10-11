@@ -26,6 +26,7 @@ namespace HyperRTS.Simulation.Buildings
         private ComponentLookup<Health> _healthLookup;
         private ComponentLookup<Producible> _producibleLookup;
         private TargetReach _reach;
+        private EntityQuery _map;
         private ComponentLookup<Faction> _factionLookup;
         private ComponentLookup<ConstructionProgress> _siteLookup;
 
@@ -36,6 +37,7 @@ namespace HyperRTS.Simulation.Buildings
             _healthLookup = state.GetComponentLookup<Health>(true);
             _producibleLookup = state.GetComponentLookup<Producible>(true);
             _reach = new TargetReach(ref state);
+            _map = TargetReach.MapQuery(ref state);
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _siteLookup = state.GetComponentLookup<ConstructionProgress>(true);
             state.RequireForUpdate<FactionRelations>();
@@ -48,7 +50,7 @@ namespace HyperRTS.Simulation.Buildings
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
             _healthLookup.Update(ref state);
             _producibleLookup.Update(ref state);
-            _reach.Update(ref state);
+            _reach.Update(ref state, _map);
             _factionLookup.Update(ref state);
             _siteLookup.Update(ref state);
 

@@ -24,6 +24,7 @@ namespace HyperRTS.Simulation.Capture
         private ComponentLookup<CaptureProgress> _progressLookup;
         private ComponentLookup<Faction> _factionLookup;
         private TargetReach _reach;
+        private EntityQuery _map;
         private BufferLookup<OwnerChanged> _ownerChangedLookup;
 
         [BurstCompile]
@@ -34,6 +35,7 @@ namespace HyperRTS.Simulation.Capture
             _progressLookup = state.GetComponentLookup<CaptureProgress>();
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _reach = new TargetReach(ref state);
+            _map = TargetReach.MapQuery(ref state);
             _ownerChangedLookup = state.GetBufferLookup<OwnerChanged>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<GameEvents>();
@@ -47,7 +49,7 @@ namespace HyperRTS.Simulation.Capture
             _capturableLookup.Update(ref state);
             _progressLookup.Update(ref state);
             _factionLookup.Update(ref state);
-            _reach.Update(ref state);
+            _reach.Update(ref state, _map);
             _ownerChangedLookup.Update(ref state);
 
             new CaptureJob

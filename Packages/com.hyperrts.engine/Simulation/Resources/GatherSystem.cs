@@ -26,6 +26,7 @@ namespace HyperRTS.Simulation.Resources
         private ComponentLookup<ResourceNode> _nodeLookup;
         private BufferLookup<ResourceStock> _stockLookup;
         private TargetReach _reach;
+        private EntityQuery _map;
         private ComponentLookup<Faction> _factionLookup;
         private BufferLookup<StatModifier> _modifierLookup;
         private ComponentLookup<PlayerStats> _statsLookup;
@@ -40,6 +41,7 @@ namespace HyperRTS.Simulation.Resources
             _nodeLookup = state.GetComponentLookup<ResourceNode>();
             _stockLookup = state.GetBufferLookup<ResourceStock>();
             _reach = new TargetReach(ref state);
+            _map = TargetReach.MapQuery(ref state);
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _modifierLookup = state.GetBufferLookup<StatModifier>(true);
             _statsLookup = state.GetComponentLookup<PlayerStats>();
@@ -56,7 +58,7 @@ namespace HyperRTS.Simulation.Resources
 
             _nodeLookup.Update(ref state);
             _stockLookup.Update(ref state);
-            _reach.Update(ref state);
+            _reach.Update(ref state, _map);
             _factionLookup.Update(ref state);
             _modifierLookup.Update(ref state);
             _statsLookup.Update(ref state);

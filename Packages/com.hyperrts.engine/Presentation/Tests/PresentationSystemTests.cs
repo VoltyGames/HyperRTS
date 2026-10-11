@@ -68,6 +68,27 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void TeamColor_DropsTheTintWhenTheOwnerBecomesNeutral()
+        {
+            var building = Spawn(1, float3.zero);
+            var child = _em.CreateEntity(typeof(MaterialMeshInfo));
+            _em.AddBuffer<LinkedEntityGroup>(building).AddRange(new NativeArray<LinkedEntityGroup>(
+                new LinkedEntityGroup[] { building, child }, Allocator.Temp));
+            Run(_teamColor);
+            Assert.AreEqual(Blue, _em.GetComponentData<URPMaterialPropertyBaseColor>(child).Value);
+
+            _em.SetComponentData(building, new Faction { Value = Faction.Neutral });
+            Run(_teamColor);
+
+            Assert.IsFalse(_em.HasComponent<URPMaterialPropertyBaseColor>(building));
+            Assert.IsFalse(_em.HasComponent<URPMaterialPropertyBaseColor>(child), "back to its authored look");
+
+            _em.SetComponentData(building, new Faction { Value = 2 });
+            Run(_teamColor);
+            Assert.AreEqual(Red, _em.GetComponentData<URPMaterialPropertyBaseColor>(child).Value, "a new owner tints it again");
+        }
+
+        [Test]
         public void TeamColor_WaitsForTheOwnersPlayer()
         {
             var unit = Spawn(3, float3.zero);
@@ -113,6 +134,24 @@ namespace HyperRTS.Presentation.Tests
             Run(_fog);
             Assert.IsFalse(_em.HasComponent<DisableRendering>(enemy));
             Assert.IsFalse(_em.HasComponent<DisableRendering>(child));
+        }
+
+        [Test]
+        public void Fog_HidesAPassengerInside_AndShowsItAgainOnceOut()
+        {
+            var passenger = Spawn(1, float3.zero);
+            var child = _em.CreateEntity(typeof(MaterialMeshInfo));
+            _em.AddBuffer<LinkedEntityGroup>(passenger).AddRange(new NativeArray<LinkedEntityGroup>(
+                new LinkedEntityGroup[] { passenger, child }, Allocator.Temp));
+            _em.AddComponentData(passenger, new Inside { Container = Entity.Null });
+
+            Run(_fog);
+            Assert.IsTrue(_em.HasComponent<DisableRendering>(child), "aboard: not drawn");
+
+            _em.SetComponentEnabled<Inside>(passenger, false);
+            Run(_fog);
+            Assert.IsFalse(_em.HasComponent<DisableRendering>(passenger));
+            Assert.IsFalse(_em.HasComponent<DisableRendering>(child), "out again: drawn");
         }
 
         private Entity Spawn(byte faction, float3 position)

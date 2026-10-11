@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Air;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Transport;
@@ -20,7 +21,7 @@ namespace HyperRTS.Presentation.HUD
             {
                 canReturn |= entityManager.HasComponent<HomePad>(entity);
                 canUnload |= entityManager.HasComponent<Container>(entity);
-                canSell |= entityManager.HasComponent<BuildingTag>(entity);
+                canSell |= BuildingRules.IsSellable(entityManager, entity);
             }
 
             Add(context, entries, canReturn, "command.return", CommandType.ReturnToBase, 0);
