@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Network.Players;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using Unity.Burst;
 using Unity.Entities;
@@ -11,7 +12,8 @@ namespace HyperRTS.Network.Commands
     /// <summary>
     /// Turns received <see cref="CommandRpc"/>s into <see cref="PlayerCommand"/>s on the sender's player, in arrival
     /// order. A group command lists its units, keeping only those the player owns, in
-    /// <see cref="PlayerCommandSubject"/>; observers' commands are dropped.
+    /// <see cref="PlayerCommandSubject"/>; observers' commands, and every command before
+    /// <see cref="MatchState.Started"/>, are dropped.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
@@ -26,11 +28,18 @@ namespace HyperRTS.Network.Commands
             _rpcs = SystemAPI.QueryBuilder().WithAll<CommandRpc, ReceiveRpcCommandRequest>().Build();
             state.RequireForUpdate(_rpcs);
             state.RequireForUpdate<PrefabRegistry>();
+            state.RequireForUpdate<MatchState>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (!SystemAPI.GetSingleton<MatchState>().Started)
+            {
+                state.EntityManager.DestroyEntity(_rpcs);
+                return;
+            }
+
             var prefabs = SystemAPI.GetSingleton<PrefabRegistry>();
             foreach (var (rpc, request) in SystemAPI.Query<RefRO<CommandRpc>, RefRO<ReceiveRpcCommandRequest>>())
             {

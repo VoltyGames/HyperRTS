@@ -59,6 +59,10 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("Record a replay from the start of the match; save it with HyperRTS ▸ Replays ▸ Save Recording.")]
         public bool recordReplay;
 
+        [Tooltip("Networked matches: seconds to wait for every human player to load before starting without them.")]
+        [Min(1f)]
+        public float joinTimeout = 60f;
+
         [Header("Players")]
         [Tooltip("Player slots. Slot 1 is faction 1, the 'Owner' number on units and buildings.")]
         public List<PlayerSlot> players = new()
@@ -92,10 +96,11 @@ namespace HyperRTS.Simulation.Match
         public AITuning AITuningFor(AIDifficulty difficulty) => difficulty switch
         {
             AIDifficulty.Easy => easyAI,
+            AIDifficulty.Normal => normalAI,
             AIDifficulty.Hard => hardAI,
             AIDifficulty.Expert => expertAI,
             AIDifficulty.Brutal => brutalAI,
-            _ => normalAI,
+            _ => throw new ArgumentOutOfRangeException(nameof(difficulty), difficulty, "Unknown AI difficulty."),
         };
 
         /// <summary>The map's ground rectangle (X by Z), centred on this transform.</summary>
@@ -122,6 +127,7 @@ namespace HyperRTS.Simulation.Match
                     LowPowerProductionRate = authoring.lowPowerProductionRate,
                     SellRefund = authoring.sellRefund,
                     RecordReplay = authoring.recordReplay,
+                    JoinTimeout = authoring.joinTimeout,
                 });
 
                 var relations = new FactionRelations();

@@ -14,6 +14,12 @@ namespace HyperRTS.Simulation.Match
         /// <summary>Record a replay from the start of the match (<c>ReplayRecorderSystem</c>).</summary>
         public bool RecordReplay;
 
-        public static MatchRules Default => new() { LowPowerProductionRate = 0.5f, SellRefund = 0.5f };
+        /// <summary>Networked matches: seconds the server waits for every human slot to join before starting anyway.</summary>
+        public float JoinTimeout;
+
+        public static MatchRules Default => new()
+        {
+            LowPowerProductionRate = 0.5f, SellRefund = 0.5f, JoinTimeout = 60f,
+        };
     }
 }
