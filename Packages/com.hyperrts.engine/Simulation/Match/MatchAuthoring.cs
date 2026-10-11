@@ -5,7 +5,6 @@ using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Stats;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -184,12 +183,9 @@ namespace HyperRTS.Simulation.Match
 
             private void AddIncomeBonus(Entity player, float multiplier)
             {
-                if (!AIDifficultyTuning.IsFairIncome(multiplier))
+                if (AIDifficultyTuning.TryGetIncomeBonus(multiplier, out var bonus))
                 {
-                    AppendToBuffer(player, new StatModifier
-                    {
-                        Stat = Stat.Income, Percent = multiplier - 1f, Source = StatSource.Difficulty,
-                    });
+                    AppendToBuffer(player, bonus);
                 }
             }
 

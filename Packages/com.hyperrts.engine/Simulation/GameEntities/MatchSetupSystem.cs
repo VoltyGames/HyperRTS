@@ -154,12 +154,9 @@ namespace HyperRTS.Simulation.GameEntities
         {
             var modifiers = entityManager.GetBuffer<StatModifier>(player);
             StatMath.RemoveKind(modifiers, StatSourceKind.Difficulty);
-            if (!AIDifficultyTuning.IsFairIncome(multiplier))
+            if (AIDifficultyTuning.TryGetIncomeBonus(multiplier, out var bonus))
             {
-                modifiers.Add(new StatModifier
-                {
-                    Stat = Stat.Income, Percent = multiplier - 1f, Source = StatSource.Difficulty,
-                });
+                modifiers.Add(bonus);
             }
         }
 

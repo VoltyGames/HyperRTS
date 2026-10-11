@@ -1,4 +1,5 @@
 ﻿using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Stats;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -13,7 +14,17 @@ namespace HyperRTS.Simulation.AI
         /// <summary>Multiplies resources this AI delivers; 1 is fair.</summary>
         public float IncomeMultiplier;
 
-        /// <summary>Whether <paramref name="incomeMultiplier"/> is 1 within float noise, so no bonus is needed.</summary>
-        public static bool IsFairIncome(float incomeMultiplier) => math.abs(incomeMultiplier - 1f) <= 0.001f;
+        /// <summary>
+        /// The difficulty income modifier for <paramref name="incomeMultiplier"/>; false when it is 1 within float noise,
+        /// so no bonus is needed.
+        /// </summary>
+        public static bool TryGetIncomeBonus(float incomeMultiplier, out StatModifier bonus)
+        {
+            bonus = new StatModifier
+            {
+                Stat = Stat.Income, Percent = incomeMultiplier - 1f, Source = StatSource.Difficulty,
+            };
+            return math.abs(bonus.Percent) > 0.001f;
+        }
     }
 }
