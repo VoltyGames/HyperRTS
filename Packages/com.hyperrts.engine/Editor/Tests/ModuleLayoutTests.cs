@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Tests
         // Simulation modules, lowest first: each one may use only the modules before it.
         private static readonly string[] Layers =
         {
-            "Common", "Navigation", "Stats", "Power", "Vision", "Spatial", "Selection", "Orders", "Audio", "Combat",
+            "Common", "Animation", "Navigation", "Stats", "Power", "Vision", "Spatial", "Selection", "Orders", "Audio", "Combat",
             "Transport", "Air", "Units", "Resources", "Match", "Production", "Upgrades", "Buildings", "Abilities",
             "Fields", "Veterancy", "Capture", "AI", "GameEntities", "Commands", "Replays",
         };
