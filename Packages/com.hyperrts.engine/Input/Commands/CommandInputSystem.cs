@@ -40,7 +40,7 @@ namespace HyperRTS.Input.Commands
             var player = SystemAPI.GetSingletonEntity<LocalPlayer>();
             var pending = SystemAPI.GetSingleton<PendingCommand>();
 
-            if (_actions.Commands.Cancel.WasPressedThisFrame() || SystemAPI.GetSingleton<PlacementState>().Active)
+            if (InputActionsProvider.CancelPressed || SystemAPI.GetSingleton<PlacementState>().Active)
             {
                 // Placement owns the mouse while active.
                 pending.Type = CommandType.None;

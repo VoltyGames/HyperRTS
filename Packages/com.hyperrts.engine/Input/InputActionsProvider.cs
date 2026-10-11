@@ -19,6 +19,15 @@ namespace HyperRTS.Input
 
         public static bool IsSuspended => Suspenders.Count > 0;
 
+        /// <summary>
+        /// Set by a front end that owns Escape (and cancels through <c>MatchView.CancelInteraction</c>), so the input
+        /// systems ignore Commands/Cancel. Off by default: the engine cancels placement and targeting itself.
+        /// </summary>
+        public static bool FrontEndOwnsCancel { get; set; }
+
+        /// <summary>Commands/Cancel this frame, unless <see cref="FrontEndOwnsCancel"/>.</summary>
+        public static bool CancelPressed => !FrontEndOwnsCancel && Actions.Commands.Cancel.WasPressedThisFrame();
+
         public static void Enable(InputActionMap map)
         {
             Users.TryGetValue(map, out var count);
@@ -78,6 +87,7 @@ namespace HyperRTS.Input
         {
             Users.Clear();
             Suspenders.Clear();
+            FrontEndOwnsCancel = false;
             _actions?.Dispose();
             _actions = null;
         }
