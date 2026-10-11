@@ -27,7 +27,15 @@ documentation: update or delete items as they land.
     and OwnerChangeSystem; Ownership.Transfer is the one owner change.
   - PurchaseRules + Buyer shared by orders, placement, AI and HUD.
   - Research lives in Production; prerequisites accept research; back-edge allowlist empty.
-- Declined: E2 (a per-frame present-command set; scanning a few buffers is cheap) and E3 (the contract already
+- Phase B (E17–E19, E21, E22) and E14, E15:
+  - HyperRTS.Client assembly holds Interaction/, DefaultWorld, LiveQuery.
+  - Command card built from ICommandSources; entries take grid slots and letter/digit hotkeys.
+  - Observers: MatchView ready without a local player; player-only panels hide; outcome Ended.
+  - Hosting opens the port before tearing anything down; no fallback world; StatusChanged removed (poll Status).
+  - IPrefabReference + PrefabReferences for game buffers.
+  - PlayerRegistry singleton; one Faction.Max.
+- Declined: E20 (each interaction write is a different action in its natural owner), explicit session phases
+  (NetworkStatus covers what the UI needs), E2 (a per-frame present-command set; scanning a few buffers is cheap) and E3 (the contract already
   gives steering to the active order, and to combat only while AttackTarget is enabled).
 
 ## Simulation
@@ -38,20 +46,12 @@ documentation: update or delete items as they land.
 | E11 | Ability definition and cooldown in one 120-byte replicated element; closed targeting enum; no cost | Definition in a blob or prefab, runtime `{Id, Cooldown}`; optional `ResourceCost`; effect prefabs |
 | E12 | AI is one system with a fixed pipeline, omniscient on every difficulty | `AISystemGroup`: scheduler, blackboard snapshot, one system per behaviour; fog-honest option |
 | E13 | Damage and sound writers force single-threaded scheduling | `NativeStream` writers, sorted in the consumer |
-| E14 | `PlayerLookup.ByFaction` rebuilt in 6 systems per frame | `PlayerRegistry` singleton rebuilt on change |
-| E15 | Faction limits disagree (30, 32, 256) | One `MaxFactions`, validated in `MatchSetupSystem` |
 | E16 | `TestWorld` loads only engine systems | `TestWorld(params Assembly[] extra)`; test kits as an assembly |
 
 ## Client, network, editor
 
 | # | Finding | Fix |
 | --- | --- | --- |
-| E17 | Command card is `sealed` with a fixed button set; hotkeys hard-coded in `CommandInputSystem` | `CommandEntry` model from registered `ICommandSource`s with grid slot and hotkey |
-| E18 | Observers get no HUD: `MatchView` requires a `LocalPlayer` | `MatchView.Viewer` (0 = observer); gate panels individually |
-| E19 | Client state in the headless assembly (`Interaction/`, `LiveQuery`, `DefaultWorld`); Input duplicates `MatchView` queries | `HyperRTS.Client` assembly between Simulation and Presentation / Input |
-| E20 | Interaction state written from three places; static `FrontEndOwnsCancel` | One `InteractionActions` API; a cancel-request singleton |
-| E21 | `Stop()` reloads the active scene; a failed `StartHost` falls back to single player on the map; `StatusChanged` fires inside a world update | `SessionPhase`; deferred events; no fallback world on failure |
-| E22 | `ReferenceResolveSystem` hard-codes three buffer types | Registered resolvers per type |
 | E25 | CI validation never opens map scenes | `ProjectValidator.Scenes(paths)` opening each scene and SubScene |
 | E26 | Templates, catalog columns and cheats are hard-coded | Discovery like rules: `EntityTemplate`, `[CatalogColumn]`, `CheatSection` |
 | E27 | Cheats bypass systems; replays after cheats desync | Complete through the systems; flag cheated recordings |
@@ -60,6 +60,5 @@ documentation: update or delete items as they land.
 
 | Phase | Work | Size |
 | --- | --- | --- |
-| B | Client assembly, command card model, observer HUD, session phases (E17–E22) | Large |
-| C | Player modifiers, abilities split, AI behaviour systems, parallel writers (E10–E15) | Large |
+| C | Player modifiers, abilities split, AI behaviour systems, parallel writers (E10–E13) | Large |
 | D | CI with scene validation, `TestWorld` for game assemblies, determinism test, editor discovery (E16, E25–E27) | Medium |
