@@ -22,6 +22,10 @@ namespace HyperRTS.Input.Cameras
         [Tooltip("Pan speed (arrow keys, screen edges) in units per second at minimum zoom; scales with height.")]
         public float moveSpeed = 10f;
 
+        [Tooltip("Player preference scaling the pan speed; set at runtime by a settings menu.")]
+        [Min(0f)]
+        public float speedMultiplier = 1f;
+
         [Tooltip("Yaw in degrees per 500 pixels of middle-mouse drag.")]
         public float rotationSpeed = 100f;
 
@@ -49,11 +53,16 @@ namespace HyperRTS.Input.Cameras
         [Tooltip("Rotation the camera resets to (Home key).")]
         public Quaternion defaultRotation = Quaternion.Euler(30, 0, 0);
 
-        [Tooltip("Open the match centred on the local player's buildings once they exist.")]
+        [Tooltip("Open the match centred on the local player's buildings, if they have any once they join.")]
         public bool startAtHome = true;
 
+        [Tooltip("Seconds after the local player joins to keep looking for their buildings (network ghosts can arrive a few snapshots apart).")]
+        [Min(0f)]
+        public float homeSearchSeconds = 3f;
+
         private readonly HomeBase _home = new();
-        private bool _homed;
+        private bool _homeDone;
+        private float _homeDeadline = float.NaN;
 
         private readonly LiveQuery _map = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<MapSettings>()));
@@ -116,7 +125,7 @@ namespace HyperRTS.Input.Cameras
 
             var focus = Focus();
             var height = transform.position.y;
-            var speed = moveSpeed * Mathf.Max(1f, height / Mathf.Max(minZoom, 0.01f));
+            var speed = moveSpeed * speedMultiplier * Mathf.Max(1f, height / Mathf.Max(minZoom, 0.01f));
             focus += PanDirection() * (speed * Time.unscaledDeltaTime);
 
             var scroll = camera.Zoom.ReadValue<float>();
@@ -187,17 +196,32 @@ namespace HyperRTS.Input.Cameras
             return _map.In(entityManager).TryGetSingleton(out MapSettings map) ? (Vector3)map.Clamp(point) : point;
         }
 
-        /// <summary>The local player's base the first time it can be found, while <see cref="startAtHome"/> is set.</summary>
+        /// <summary>
+        /// The local player's base, looked for during <see cref="homeSearchSeconds"/> after the local player
+        /// exists (while <see cref="startAtHome"/> is set); a player with no buildings by then keeps the view.
+        /// </summary>
         private bool TryFindHomeOnce(out Vector3 home)
         {
             home = default;
-            if (_homed || !startAtHome || !DefaultWorld.TryGetEntityManager(out var entityManager))
+            if (_homeDone || !startAtHome || !DefaultWorld.TryGetEntityManager(out var entityManager))
             {
                 return false;
             }
 
-            _homed = _home.TryFind(entityManager, out home);
-            return _homed;
+            if (!_home.TryGetLocalFaction(entityManager, out var faction))
+            {
+                return false;
+            }
+
+            if (float.IsNaN(_homeDeadline))
+            {
+                _homeDeadline = Time.unscaledTime + homeSearchSeconds;
+            }
+
+            var found = _home.TryFind(entityManager, faction, out home);
+            var expired = Time.unscaledTime >= _homeDeadline;
+            _homeDone = found || expired;
+            return found;
         }
 
         /// <summary>Takes the point the HUD (minimap) asked to centre on, clearing the request.</summary>
