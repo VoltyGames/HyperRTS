@@ -73,8 +73,10 @@ calls `Stop()` or starts a new session, so the UI can show why instead of an emp
 
 `MatchStartSystem` holds a networked match on the server until every human slot (no `AIPlayer`) has a connection,
 so the AI and the first players to load don't get a head start. The order phase keeps running so player ghosts spawn
-and joins bind; movement, combat, production, lifecycle and the skirmish AI wait. After 60 seconds it starts
-anyway. It then sets `MatchState.Started`, which client loading screens wait for. Single-player matches never hold.
+and joins bind; movement, combat, production, lifecycle and the skirmish AI wait, and `CommandReceiveSystem`
+drops every player command, so nothing in the order phase (placing, selling, abilities) acts early. After
+`MatchRules.JoinTimeout` seconds (the Match's **Join Timeout**, 60 by default) it starts anyway. It then sets
+`MatchState.Started`, which client loading screens wait for. Single-player matches never hold.
 
 ## Join and reconnect
 

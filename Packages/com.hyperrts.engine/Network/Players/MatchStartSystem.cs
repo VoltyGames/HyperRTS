@@ -1,4 +1,5 @@
-﻿using HyperRTS.Core;
+﻿using System;
+using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
@@ -10,16 +11,15 @@ namespace HyperRTS.Network.Players
 {
     /// <summary>
     /// Holds a networked match until every human slot has a connection, so nobody (AI included) plays while others
-    /// still load; after <see cref="WaitSeconds"/> it starts anyway and late players join a running match. Sets
-    /// <see cref="MatchState.Started"/> for loading screens. Not Burst: it switches managed system groups.
+    /// still load; after <see cref="MatchRules.JoinTimeout"/> it starts anyway and late players join a running match.
+    /// Sets <see cref="MatchState.Started"/>, which loading screens wait for and command receiving requires.
+    /// Not Burst: it switches managed system groups.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     [UpdateAfter(typeof(PlayerGhostSystem))]
     public partial struct MatchStartSystem : ISystem
     {
-        public const double WaitSeconds = 60;
-
         private EntityQuery _humans;
         private double _waitingSince;
         private bool _holding;
@@ -46,7 +46,7 @@ namespace HyperRTS.Network.Players
                 SetGameplay(ref state, false);
             }
 
-            if (!AllJoined() && now - _waitingSince < WaitSeconds)
+            if (!AllJoined() && now - _waitingSince < JoinTimeout(ref state))
             {
                 return;
             }
@@ -54,6 +54,17 @@ namespace HyperRTS.Network.Players
             match.Started = true;
             _holding = false;
             SetGameplay(ref state, true);
+        }
+
+        private double JoinTimeout(ref SystemState state)
+        {
+            var timeout = SystemAPI.GetSingleton<MatchRules>().JoinTimeout;
+            if (timeout <= 0f)
+            {
+                throw new InvalidOperationException($"MatchRules.JoinTimeout must be positive, got {timeout}.");
+            }
+
+            return timeout;
         }
 
         // Player ghosts spawn a frame after the map loads, so an empty query is "not yet", not "nobody".
