@@ -12,8 +12,8 @@ namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>
     /// Runs Build orders: builders walk to an allied site and add <c>Rate / BuildTime</c> progress per second while
-    /// in reach. Completion disables <see cref="ConstructionProgress"/> and raises <see cref="BuildingCompleted"/>; sites
-    /// never progress on their own, but one set to full progress completes the same way.
+    /// in reach. Any site at full progress (built, or raised by a cheat or game effect) then completes: it disables
+    /// <see cref="ConstructionProgress"/> and raises <see cref="BuildingCompleted"/>. Sites never progress on their own.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
@@ -54,8 +54,6 @@ namespace HyperRTS.Simulation.Buildings
                 ProducibleLookup = _producibleLookup,
                 Reach = _reach,
                 FactionLookup = _factionLookup,
-                Completed = _completedLookup,
-                Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
 
             new FinishJob
@@ -77,8 +75,6 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
             public TargetReach Reach;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
-            public BufferLookup<BuildingCompleted> Completed;
-            public Entity Events;
 
             private void Execute(in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in LocalTransform transform,
@@ -104,7 +100,6 @@ namespace HyperRTS.Simulation.Buildings
                 if (Advance(site, builder.Rate))
                 {
                     busy.ValueRW = false;
-                    Completed[Events].Add(new BuildingCompleted { Building = site, Faction = FactionLookup[site].Value });
                 }
             }
 
@@ -118,7 +113,7 @@ namespace HyperRTS.Simulation.Buildings
                 return BuildingRules.IsAlliedSite(SiteLookup, FactionLookup, Relations, site, faction);
             }
 
-            /// <summary>Adds this frame's work and returns true once the site is finished.</summary>
+            /// <summary>Adds this frame's work and returns true once the site is at full progress.</summary>
             private bool Advance(Entity site, float rate)
             {
                 ref var progress = ref SiteLookup.GetRefRW(site).ValueRW;
@@ -129,12 +124,11 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 progress.Value = 1f;
-                SiteLookup.SetComponentEnabled(site, false);
                 return true;
             }
         }
 
-        /// <summary>Completes sites raised to full some other way (an editor cheat, a game effect) like built ones.</summary>
+        /// <summary>Completes every site at full progress, however it got there.</summary>
         [BurstCompile]
         [WithNone(typeof(Dead))]
         private partial struct FinishJob : IJobEntity
