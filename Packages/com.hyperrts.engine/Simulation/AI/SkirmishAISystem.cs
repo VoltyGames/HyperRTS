@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.AI
             public FogOfWar Fog;
         }
 
-        /// <summary>One AI's think: who it is, where its base is, and the units already given a job this think.</summary>
+        /// <summary>One AI's think: who it is, where its base is, what it can buy, and the units already given a job this think.</summary>
         private struct Turn
         {
             public Entity Player;
@@ -54,6 +54,7 @@ namespace HyperRTS.Simulation.AI
             public float3 Home;
             public DynamicBuffer<PlayerCommand> Commands;
             public NativeList<Entity> Busy;
+            public Buyer Buyer;
         }
 
         private EntityQuery _idleHarvesters;
@@ -163,6 +164,8 @@ namespace HyperRTS.Simulation.AI
                 Home = Home(faction, snapshot),
                 Commands = SystemAPI.GetBuffer<PlayerCommand>(player),
                 Busy = new NativeList<Entity>(Allocator.Temp),
+                Buyer = Buyer.Snapshot(state.EntityManager, _queues, faction, snapshot.Completed,
+                    SystemAPI.GetBuffer<CompletedResearch>(player)),
             };
 
             var buildOrderDone = FollowBuildOrder(ref state, turn, snapshot);

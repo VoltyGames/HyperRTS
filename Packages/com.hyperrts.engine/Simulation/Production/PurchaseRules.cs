@@ -21,19 +21,13 @@ namespace HyperRTS.Simulation.Production
             return buyer.Buildings.MeetsPrerequisites(required, buyer.Faction, buyer.Research);
         }
 
-        public static bool CanBuy(EntityManager entityManager, Entity prefab, in Buyer buyer,
-            DynamicBuffer<ResourceStock> stock)
-        {
-            var cost = entityManager.GetBuffer<ResourceCost>(prefab, true);
-            return IsUnlocked(entityManager, prefab, buyer) && ResourceMath.CanAfford(stock, cost);
-        }
-
-        /// <summary>As above, against a stockpile copy a planner deducts from (the AI).</summary>
+        /// <summary>Checks without paying, against a live stockpile or a copy a planner deducts from (the AI).</summary>
         public static bool CanBuy(EntityManager entityManager, Entity prefab, in Buyer buyer,
             NativeArray<ResourceStock> stock)
         {
+            // Cost first: it is the cheap check and the one that fails most often.
             var cost = entityManager.GetBuffer<ResourceCost>(prefab, true);
-            return IsUnlocked(entityManager, prefab, buyer) && ResourceMath.CanAfford(stock, cost);
+            return ResourceMath.CanAfford(stock, cost) && IsUnlocked(entityManager, prefab, buyer);
         }
 
         /// <summary>Checks and pays; a refused purchase costs nothing.</summary>

@@ -89,18 +89,8 @@ namespace HyperRTS.Simulation.AI
 
         private bool TryStart(ref SystemState state, in Turn turn, in Snapshot snapshot, Entity prefab)
         {
-            var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
-            ResearchRules.CollectQueued(state.EntityManager, _queues, turn.Faction, queued);
-            var buyer = new Buyer
-            {
-                Faction = turn.Faction,
-                Buildings = snapshot.Completed,
-                Research = SystemAPI.GetBuffer<CompletedResearch>(turn.Player),
-                QueuedResearch = queued,
-            };
-
             var stock = SystemAPI.GetBuffer<ResourceStock>(turn.Player);
-            if (!PurchaseRules.CanBuy(state.EntityManager, prefab, buyer, stock))
+            if (!PurchaseRules.CanBuy(state.EntityManager, prefab, turn.Buyer, stock.AsNativeArray()))
             {
                 return false;
             }

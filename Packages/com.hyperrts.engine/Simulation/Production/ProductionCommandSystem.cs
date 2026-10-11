@@ -2,7 +2,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
@@ -43,21 +42,23 @@ namespace HyperRTS.Simulation.Production
                 return;
             }
 
+            var buildings = new CompletedBuildings(_completed, Allocator.Temp);
             foreach (var (player, commands, listed, stock, researched) in SystemAPI
                          .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>,
                              DynamicBuffer<ResourceStock>, DynamicBuffer<CompletedResearch>>()
                          .WithNone<Defeated>())
             {
                 var faction = player.ValueRO.Faction;
+                var buyer = Buyer.Snapshot(state.EntityManager, _queues, faction, buildings, researched);
                 foreach (var command in commands)
                 {
                     switch (command.Type)
                     {
                         case CommandType.Produce:
-                            Produce(ref state, faction, command, listed, stock, researched);
+                            Produce(ref state, faction, command, listed, stock, buyer);
                             break;
                         case CommandType.CancelProduction:
-                            Cancel(ref state, faction, command, listed, stock);
+                            Cancel(ref state, faction, command, listed, stock, buyer);
                             break;
                         case CommandType.SetRallyPoint:
                         case CommandType.Smart:
@@ -72,8 +73,7 @@ namespace HyperRTS.Simulation.Production
             TypeSet.Range(CommandType.Produce, CommandType.SetRallyPoint).With(CommandType.Smart);
 
         private void Produce(ref SystemState state, byte faction, in PlayerCommand command,
-            DynamicBuffer<PlayerCommandSubject> listed, DynamicBuffer<ResourceStock> stock,
-            DynamicBuffer<CompletedResearch> researched)
+            DynamicBuffer<PlayerCommandSubject> listed, DynamicBuffer<ResourceStock> stock, in Buyer buyer)
         {
             var producer = FindProducer(ref state, faction, command, listed);
             if (producer == Entity.Null)
@@ -88,16 +88,6 @@ namespace HyperRTS.Simulation.Production
                 return;
             }
 
-            var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
-            ResearchRules.CollectQueued(state.EntityManager, _queues, faction, queued);
-            var buyer = new Buyer
-            {
-                Faction = faction,
-                Buildings = new CompletedBuildings(_completed, Allocator.Temp),
-                Research = researched,
-                QueuedResearch = queued,
-            };
-
             if (!PurchaseRules.TryBuy(state.EntityManager, prefab, buyer, stock))
             {
                 return;
@@ -105,10 +95,11 @@ namespace HyperRTS.Simulation.Production
 
             var typeId = EntityInfo.GetTypeId(state.EntityManager, prefab);
             queue.Add(new ProductionQueueItem { Prefab = prefab, TypeId = typeId });
+            buyer.QueuedResearch.Add(prefab);
         }
 
         private void Cancel(ref SystemState state, byte faction, in PlayerCommand command,
-            DynamicBuffer<PlayerCommandSubject> listed, DynamicBuffer<ResourceStock> stock)
+            DynamicBuffer<PlayerCommandSubject> listed, DynamicBuffer<ResourceStock> stock, in Buyer buyer)
         {
             var producer = FirstWithQueue(ref state, faction, command, listed);
             if (producer == Entity.Null)
@@ -125,6 +116,8 @@ namespace HyperRTS.Simulation.Production
 
             var prefab = queue[index].Prefab;
             queue.RemoveAt(index);
+            // Research is queued once per player, so the cancelled one is free to queue again this frame.
+            buyer.QueuedResearch.Remove(prefab);
             if (index == 0)
             {
                 SystemAPI.GetComponentRW<Producer>(producer).ValueRW.Elapsed = 0f;

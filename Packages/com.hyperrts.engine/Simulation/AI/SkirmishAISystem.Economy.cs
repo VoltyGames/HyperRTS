@@ -66,19 +66,11 @@ namespace HyperRTS.Simulation.AI
         private void Train(ref SystemState state, in Turn turn, in Snapshot snapshot)
         {
             ref var ai = ref SystemAPI.GetComponentRW<AIPlayer>(turn.Player).ValueRW;
-            var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
-            ResearchRules.CollectQueued(state.EntityManager, _queues, turn.Faction, queued);
             var budget = new Budget
             {
                 Room = SystemAPI.GetComponent<Population>(turn.Player),
                 Stock = SystemAPI.GetBuffer<ResourceStock>(turn.Player).ToNativeArray(Allocator.Temp),
-                Buyer = new Buyer
-                {
-                    Faction = turn.Faction,
-                    Buildings = snapshot.Completed,
-                    Research = SystemAPI.GetBuffer<CompletedResearch>(turn.Player),
-                    QueuedResearch = queued,
-                },
+                Buyer = turn.Buyer,
             };
 
             foreach (var producer in snapshot.Producers)
@@ -97,7 +89,6 @@ namespace HyperRTS.Simulation.AI
                 }
             }
 
-            queued.Dispose();
             budget.Stock.Dispose();
         }
 

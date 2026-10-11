@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Production;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

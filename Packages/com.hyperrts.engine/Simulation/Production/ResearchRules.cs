@@ -29,21 +29,7 @@ namespace HyperRTS.Simulation.Production
             }
         }
 
-        /// <summary>False for research <paramref name="faction"/> has finished or already queued anywhere.</summary>
-        public static bool CanQueue(EntityManager entityManager, EntityQuery queues,
-            DynamicBuffer<CompletedResearch> completed, byte faction, Entity prefab)
-        {
-            if (!entityManager.HasComponent<Research>(prefab))
-            {
-                return true;
-            }
-
-            var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
-            CollectQueued(entityManager, queues, faction, queued);
-            return CanQueue(entityManager, completed, queued, prefab);
-        }
-
-        /// <summary>As above, against a <see cref="CollectQueued"/> snapshot shared by many checks.</summary>
+        /// <summary>False for research already in <paramref name="completed"/> or in <paramref name="queued"/>, a <see cref="CollectQueued"/> snapshot.</summary>
         public static bool CanQueue(EntityManager entityManager, DynamicBuffer<CompletedResearch> completed,
             NativeHashSet<Entity> queued, Entity prefab)
         {

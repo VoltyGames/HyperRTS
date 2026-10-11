@@ -77,24 +77,17 @@ namespace HyperRTS.Presentation.HUD
         public DynamicBuffer<ResourceStock> Stock => EntityManager.GetBuffer<ResourceStock>(View.LocalPlayer, true);
 
         /// <summary>The local player as a buyer this frame, shared by every button that checks a purchase.</summary>
-        public Buyer SnapshotBuyer()
-        {
-            var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
-            ResearchRules.CollectQueued(EntityManager, _queues.In(EntityManager), View.Local.Faction, queued);
-            return new Buyer
-            {
-                Faction = View.Local.Faction,
-                Buildings = new CompletedBuildings(_completed.In(EntityManager), Allocator.Temp),
-                Research = EntityManager.GetBuffer<CompletedResearch>(View.LocalPlayer, true),
-                QueuedResearch = queued,
-            };
-        }
+        public Buyer SnapshotBuyer() =>
+            Buyer.Snapshot(EntityManager, _queues.In(EntityManager), View.Local.Faction,
+                new CompletedBuildings(_completed.In(EntityManager), Allocator.Temp),
+                EntityManager.GetBuffer<CompletedResearch>(View.LocalPlayer, true));
 
-        /// <summary>The letter or digit was pressed last frame while gameplay input was live.</summary>
-        public bool WasHotkeyPressed(char key) =>
-            _hotkeys.In(EntityManager).TryGetSingleton(out HotkeyPresses presses) && presses.Contains(key);
+        /// <summary>The letters and digits pressed last frame while gameplay input was live; none without the singleton.</summary>
+        public HotkeyPresses Hotkeys =>
+            _hotkeys.In(EntityManager).TryGetSingleton(out HotkeyPresses presses) ? presses : default;
 
-        public bool CanBuy(Entity prefab, in Buyer buyer) => PurchaseRules.CanBuy(EntityManager, prefab, buyer, Stock);
+        public bool CanBuy(Entity prefab, in Buyer buyer) => 
+            PurchaseRules.CanBuy(EntityManager, prefab, buyer, Stock.AsNativeArray());
 
         /// <summary>Starts targeting a command; the input layer issues it on the next world click.</summary>
         public void BeginTargeting(CommandType type, int argument) =>
