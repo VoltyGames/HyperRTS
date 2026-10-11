@@ -1,5 +1,7 @@
 using System.IO;
 using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Metrics;
 using HyperRTS.Editor.Maps.Report;
@@ -36,8 +38,10 @@ namespace HyperRTS.Editor.Maps.Build
             var climate = project.Climate;
             var data = MapTerrainWriter.Write(paths.Terrain, layout, generation.Heights, generation.Splat,
                 generation.Details, generation.TerrainTrees, climate);
+            var ground = Ground(paths, generation, climate, data);
             var (main, entities, root) = MapSceneWriter.Open(paths, layout, project);
-            MapEnvironmentWriter.Write(paths, layout, generation.Shapes, data, climate, entities, root);
+            MapEnvironmentWriter.Write(paths, layout, generation.Shapes, data, ground, climate, entities, root);
+            MapRoadMeshWriter.Write(paths, layout, generation.Shapes, generation.Heights, root);
             MapPlacementWriter.Write(generation.Placer.Placements, generation.Heights, layout.Datum, entities, root);
             EditorSceneManager.SaveScene(main);
             MapLightingBaker.Bake(paths);
@@ -57,6 +61,15 @@ namespace HyperRTS.Editor.Maps.Build
             }
 
             return report;
+        }
+
+        /// <summary>The terrain material with its macro map, and the ground colour picture foliage blends into.</summary>
+        private static MapGroundLook Ground(MapPaths paths, MapGeneration generation, MapClimate climate, TerrainData data)
+        {
+            var macro = MapMacroPainter.Write(paths.Macro, generation.Layout, generation.Land, generation.Shapes);
+            var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, macro, generation.RowAngle);
+            var picture = MapGroundColor.Write(paths.Ground, generation.Splat, climate, macro);
+            return new MapGroundLook(material, picture);
         }
 
         private static MapReport Measure(MapSpec spec, MapGeneration generation, MapProject project, TerrainData data,

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
@@ -15,8 +14,6 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Colour of this ground in the report's overview image.")]
         public Color mapColor = Color.grey;
-
-        public List<MapDetailCoverage> details = new();
 
         [Tooltip("Turns the texture clockwise on the ground (degrees); at 0 the image's top faces north.")]
         public float rotation;

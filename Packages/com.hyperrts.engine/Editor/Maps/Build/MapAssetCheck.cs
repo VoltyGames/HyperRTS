@@ -24,23 +24,6 @@ namespace HyperRTS.Editor.Maps.Build
                 issues.Error($"{name}: {problem}");
             }
 
-            foreach (var layer in climate.layers)
-            {
-                foreach (var detail in layer.details)
-                {
-                    Require(climate.DetailIndex(detail.detail) >= 0, $"{name}: layer '{layer.key}' grows unknown detail '{detail.detail}'.", issues);
-                }
-            }
-
-            foreach (var surface in climate.surfaces)
-            {
-                Require(climate.LayerIndex(surface.layer) >= 0, $"{name}: surface '{surface.key}' paints unknown layer '{surface.layer}'.", issues);
-                foreach (var tree in surface.trees)
-                {
-                    Require(climate.TreeIndex(tree.tree) >= 0, $"{name}: surface '{surface.key}' grows unknown tree '{tree.tree}'.", issues);
-                }
-            }
-
             foreach (var tree in climate.trees)
             {
                 Require(tree.prefab != null, $"{name}: tree '{tree.key}' has no prefab.", issues);

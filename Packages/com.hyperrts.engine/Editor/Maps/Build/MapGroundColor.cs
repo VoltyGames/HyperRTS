@@ -21,18 +21,13 @@ namespace HyperRTS.Editor.Maps.Build
         {
             var size = splat.GetLength(0) / Downsample;
             var albedo = LayerAlbedo(climate, splat.GetLength(2));
-            var tint = macro != null ? Read(macro, size) : null;
+            var tint = Read(macro, size);
             var pixels = new Color32[size * size];
             for (var z = 0; z < size; z++)
             {
                 for (var x = 0; x < size; x++)
                 {
-                    var color = Ground(splat, albedo, x, z);
-                    if (tint != null)
-                    {
-                        color *= tint[z * size + x] * 2f;
-                    }
-
+                    var color = Ground(splat, albedo, x, z) * tint[z * size + x] * 2f;
                     color.a = 1f;
                     pixels[z * size + x] = color.gamma;
                 }

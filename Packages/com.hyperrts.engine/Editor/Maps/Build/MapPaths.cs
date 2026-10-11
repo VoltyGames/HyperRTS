@@ -39,6 +39,12 @@ namespace HyperRTS.Editor.Maps.Build
         /// <summary>The terrain shader's per-map tint and wetness picture.</summary>
         public string Macro => $"{Folder}/{Name}_Macro.png";
 
+        /// <summary>The terrain's HyperRTS/Terrain material.</summary>
+        public string TerrainMaterial => $"{Folder}/{Name}_Terrain.mat";
+
+        /// <summary>The top-down ground colour foliage blends into at its roots.</summary>
+        public string Ground => $"{Folder}/{Name}_Ground.png";
+
         public string Roads => $"{Folder}/{Name}_Roads.asset";
 
         public string Minimap => $"{Folder}/{Name}_Minimap.png";

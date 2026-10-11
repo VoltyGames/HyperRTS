@@ -1,6 +1,7 @@
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Navigation;
 using UnityEditor;
@@ -17,10 +18,11 @@ namespace HyperRTS.Editor.Maps.Build
     public static class MapEnvironmentWriter
     {
         public static Terrain Write(MapPaths paths, MapLayout layout, MapShapes shapes, TerrainData data,
-            MapClimate climate, Scene entities, Transform root)
+            MapGroundLook ground, MapClimate climate, Scene entities, Transform root)
         {
             var origin = new Vector3(layout.TerrainBounds.xMin, -layout.Datum, layout.TerrainBounds.yMin);
-            var terrain = CreateTerrain(data, climate, origin, root);
+            var terrain = CreateTerrain(data, ground.Material, climate, origin, root);
+            CreateGroundColor(ground.Picture, layout.TerrainBounds, root);
             var height = MapSceneWriter.CreateEntityObject(entities, "Terrain Height");
             height.transform.position = origin;
             height.AddComponent<TerrainHeightAuthoring>().terrainData = data;
@@ -45,14 +47,24 @@ namespace HyperRTS.Editor.Maps.Build
             EditorUtility.SetDirty(minimap);
         }
 
-        private static Terrain CreateTerrain(TerrainData data, MapClimate climate, Vector3 origin, Transform root)
+        /// <summary>Publishes the ground picture to the foliage shaders while the scene is open.</summary>
+        private static void CreateGroundColor(Texture2D picture, Rect area, Transform root)
+        {
+            var ground = new GameObject("Ground Color").AddComponent<GroundColor>();
+            ground.transform.SetParent(root, false);
+            ground.picture = picture;
+            ground.area = area;
+        }
+
+        private static Terrain CreateTerrain(TerrainData data, Material material, MapClimate climate, Vector3 origin,
+            Transform root)
         {
             var go = Terrain.CreateTerrainGameObject(data);
             go.name = "Terrain";
             go.transform.SetParent(root, false);
             go.transform.position = origin;
             var terrain = go.GetComponent<Terrain>();
-            terrain.materialTemplate = GraphicsSettings.currentRenderPipeline.defaultTerrainMaterial;
+            terrain.materialTemplate = material;
             terrain.drawInstanced = true;
             terrain.heightmapPixelError = 3f;
             terrain.basemapDistance = 1000f;
