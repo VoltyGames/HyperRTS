@@ -370,7 +370,7 @@ effects.
 2. Finish abandoned sites with idle builders; send idle harvesters to gather.
 3. After the build order: train and research round-robin at idle producers.
 4. Use ready abilities and player powers on the nearest suitable target.
-5. Attack-move to the nearest hostile building once enough idle combat units exist. With `HonorsFog` it only
+5. Attack-move to the nearest hostile building once enough idle combat units exist. With `LimitedByFog` it only
    targets units its team sees and buildings it has explored, and sweeps the map centre when it knows of none.
 
 Ties break by entity index. To replace it, disable the system and drive your own `PlayerCommand`s.

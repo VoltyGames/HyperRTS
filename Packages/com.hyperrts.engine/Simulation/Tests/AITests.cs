@@ -101,10 +101,10 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void FogHonestAI_SweepsTheMapCentre_InsteadOfAnUnseenBase()
+        public void FogLimitedAI_SweepsTheMapCentre_InsteadOfAnUnseenBase()
         {
             var ai = _world.Get<AIPlayer>(_world.Player(2));
-            ai.HonorsFog = true;
+            ai.LimitedByFog = true;
             _world.EntityManager.SetComponentData(_world.Player(2), ai);
             var soldier = SoldierPrefab();
             _world.MakeProducer(_world.SpawnBuilding(2, new float3(-40f, 0f, 0f), new float2(4f, 4f)),

@@ -14,13 +14,13 @@ namespace HyperRTS.Simulation.AI
         public bool UseAbilities;
 
         /// <summary>Enemy distance that triggers self-targeted abilities.</summary>
-        public float SelfCastRange;
+        public float SelfAbilityTriggerRange;
 
         /// <summary>Clear margin kept around each building the AI places.</summary>
         public float BuildingGap;
 
         /// <summary>Attacks only what its team sees, or buildings it has explored; otherwise sweeps the map centre.</summary>
-        public bool HonorsFog;
+        public bool LimitedByFog;
 
         /// <summary>Round-robin cursor over production options.</summary>
         public int NextOption;

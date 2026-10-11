@@ -78,7 +78,7 @@ namespace HyperRTS.Simulation.AI
 
             if (ability.Target == AbilityTarget.None)
             {
-                var range = math.max(ability.Radius, SystemAPI.GetComponent<AIPlayer>(turn.Player).SelfCastRange);
+                var range = math.max(ability.Radius, SystemAPI.GetComponent<AIPlayer>(turn.Player).SelfAbilityTriggerRange);
                 return HostileWithin(faction, from, range, snapshot);
             }
 

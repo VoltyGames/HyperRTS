@@ -38,11 +38,11 @@ namespace HyperRTS.Simulation.AI
                 return;
             }
 
-            var honest = SystemAPI.GetComponent<AIPlayer>(turn.Player).HonorsFog;
-            if (!TryFindTarget(ref state, turn.Faction, center / wave.Length, honest, snapshot, out var target))
+            var limitedByFog = SystemAPI.GetComponent<AIPlayer>(turn.Player).LimitedByFog;
+            if (!TryFindTarget(ref state, turn.Faction, center / wave.Length, limitedByFog, snapshot, out var target))
             {
                 // Nothing known: sweep through the middle, where attack-move meets whatever is there.
-                if (!honest || !SystemAPI.TryGetSingleton<MapSettings>(out var map))
+                if (!limitedByFog || !SystemAPI.TryGetSingleton<MapSettings>(out var map))
                 {
                     return;
                 }
@@ -60,11 +60,11 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>
-        /// Nearest hostile critical building, else the nearest hostile unit; undetected stealth is skipped, and an
-        /// <paramref name="honest"/> AI skips what its team hasn't seen.
+        /// Nearest hostile critical building, else the nearest hostile unit; undetected stealth is skipped, and with
+        /// <paramref name="limitedByFog"/> so is what the team hasn't seen.
         /// </summary>
-        private bool TryFindTarget(ref SystemState state, byte faction, float3 from, bool honest, in Snapshot snapshot,
-            out float3 target)
+        private bool TryFindTarget(ref SystemState state, byte faction, float3 from, bool limitedByFog,
+            in Snapshot snapshot, out float3 target)
         {
             var team = snapshot.Relations.GetTeam(faction);
             var targets = snapshot.Targets;
@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.AI
                 }
 
                 var building = IsCriticalBuilding(ref state, entity);
-                if (honest && !IsKnown(snapshot.Fog, targets.Position(i), team, building))
+                if (limitedByFog && !IsKnown(snapshot.Fog, targets.Position(i), team, building))
                 {
                     continue;
                 }
