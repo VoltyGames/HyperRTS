@@ -26,6 +26,9 @@ namespace HyperRTS.Editor
         public const string Network = Root + "Network/";
         public const int NetworkPriority = 30;
 
+        public const string Maps = Root + "Maps/";
+        public const int MapsPriority = 40;
+
         public const string Replays = Root + "Replays/";
         public const int ReplaysPriority = 50;
 

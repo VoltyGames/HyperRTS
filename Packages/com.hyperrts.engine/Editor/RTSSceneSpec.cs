@@ -19,6 +19,9 @@ namespace HyperRTS.Editor
         /// <summary>Optional building placed for every player on a ring around the centre.</summary>
         public GameEntityAuthoring StartingBase { get; set; }
 
+        /// <summary>Adds a directional light and a ground plane; off when the caller lights and grounds the scene itself.</summary>
+        public bool Environment { get; set; } = true;
+
         /// <summary>Camera and HUD rig; null uses the engine's RTSWorld (a game passes its own variant).</summary>
         public GameObject Rig { get; set; }
 

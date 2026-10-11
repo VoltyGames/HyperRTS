@@ -1,0 +1,91 @@
+using System.IO;
+using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Metrics;
+using HyperRTS.Editor.Maps.Report;
+using HyperRTS.Editor.Maps.Spec;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace HyperRTS.Editor.Maps.Build
+{
+    /// <summary>
+    /// Builds a map from its spec: generates the ground and everything on it, writes the scene and SubScene, measures
+    /// the result and writes the report. Errors before the scene stage stop the build with a report and leave the
+    /// last good scene alone.
+    /// </summary>
+    public static class MapBuilder
+    {
+        public static MapReport Build(string specPath)
+        {
+            var spec = JsonUtility.FromJson<MapSpec>(File.ReadAllText(specPath));
+            var paths = new MapPaths(specPath, spec.name);
+            var issues = new MapIssues();
+            var project = MapProject.Load(spec.climate);
+            var generation = MapGeneration.Run(spec, project, issues);
+            if (generation == null)
+            {
+                var failed = MapReport.Create(spec, issues, new MapMetrics());
+                failed.Write(null);
+                return Log(failed);
+            }
+
+            var layout = generation.Layout;
+            var climate = project.Climate;
+            var data = MapTerrainWriter.Write(paths.Terrain, layout, generation.Heights, generation.Splat,
+                generation.Details, generation.TerrainTrees, climate);
+            var (main, entities, root) = MapSceneWriter.Open(paths, layout, project);
+            MapEnvironmentWriter.Write(paths, layout, generation.Shapes, data, climate, entities, root);
+            MapPlacementWriter.Write(generation.Placer.Placements, generation.Heights, layout.Datum, entities, root);
+            EditorSceneManager.SaveScene(main);
+            MapLightingBaker.Bake(paths);
+            var minimap = MapMinimapCapture.Capture(layout, paths.Minimap);
+            MapEnvironmentWriter.SetMinimap(root, minimap);
+            var report = Measure(spec, generation, project, data, entities, issues);
+            EditorSceneManager.SaveScene(entities);
+            EditorSceneManager.SaveScene(main);
+            EditorSceneManager.CloseScene(entities, true);
+            AssetDatabase.SaveAssets();
+            Log(report);
+            var result = new MapBuildResult(spec, paths, report, layout.Spawns.Count, minimap);
+            foreach (var hook in TypeDiscovery.Instances<IMapBuildHook>())
+            {
+                hook.OnBuilt(result);
+            }
+
+            return report;
+        }
+
+        private static MapReport Measure(MapSpec spec, MapGeneration generation, MapProject project, TerrainData data,
+            Scene entities, MapIssues issues)
+        {
+            var layout = generation.Layout;
+            var origin = new Vector3(layout.TerrainBounds.xMin, -layout.Datum, layout.TerrainBounds.yMin);
+            var water = layout.Terrain.waterLevel - layout.Datum;
+            using var nav = MapNavGrid.Build(entities, data, origin, layout.Bounds, water, project.Rules);
+            var measurer = MapMeasurer.Measure(layout, nav, generation.Placer, generation.TreeCount, project.Palette,
+                project.Rules, issues);
+            var report = MapReport.Create(spec, issues, measurer.Metrics);
+            report.Write(MapOverviewImage.Draw(layout, generation.Heights, generation.Splat, project.Climate, nav,
+                generation.Shapes, generation.Placer.Placements, measurer.Paths));
+            return report;
+        }
+
+        private static MapReport Log(MapReport report)
+        {
+            var summary = $"HyperRTS: map '{report.map}' built with {report.errors.Count} errors and {report.warnings.Count} warnings. Report: {MapReport.JsonPath(report.map)}";
+            if (report.Passed)
+            {
+                Debug.Log(summary);
+            }
+            else
+            {
+                Debug.LogError(summary + "\n" + string.Join("\n", report.errors));
+            }
+
+            return report;
+        }
+    }
+}

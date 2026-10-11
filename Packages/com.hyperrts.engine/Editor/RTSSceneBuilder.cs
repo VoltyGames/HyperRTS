@@ -22,8 +22,12 @@ namespace HyperRTS.Editor
         {
             Validate(spec);
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            CreateLight();
-            CreateGround(spec.MapSize);
+            if (spec.Environment)
+            {
+                CreateLight();
+                CreateGround(spec.MapSize);
+            }
+
             PrefabUtility.InstantiatePrefab(spec.Rig != null ? spec.Rig : EditorAssets.RigPrefab, scene);
             EditorSceneManager.SaveScene(scene, spec.ScenePath);
 
