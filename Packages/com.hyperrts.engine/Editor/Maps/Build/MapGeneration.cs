@@ -3,6 +3,7 @@ using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Planning;
@@ -91,6 +92,7 @@ namespace HyperRTS.Editor.Maps.Build
             var context = new MapPlanContext(layout, generation.Shapes, generation.Heights, project.Palette, climate,
                 generation.Placer, issues);
             MapLandPlanner.Plan(context);
+            MapRoadChecks.Check(layout, generation.Shapes, issues);
             generation.Land = context.Land;
             generation.RowAngle = context.RowAngle;
             generation.Trees = context.Trees;
