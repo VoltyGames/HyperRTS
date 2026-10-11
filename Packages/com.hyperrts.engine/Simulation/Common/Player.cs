@@ -5,7 +5,7 @@ using Unity.NetCode;
 
 namespace HyperRTS.Simulation.Common
 {
-    /// <summary>Identity of a player entity; its team comes from <see cref="FactionRelations.TeamOf"/>.</summary>
+    /// <summary>Identity of a player entity; its team comes from <see cref="FactionRelations.GetTeam"/>.</summary>
     public struct Player : IComponentData
     {
         [GhostField] public byte Faction;

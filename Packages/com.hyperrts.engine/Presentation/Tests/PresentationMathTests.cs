@@ -60,7 +60,7 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
-        public void RelationOf_ClassifiesOwnAllyEnemyNeutral()
+        public void GetRelation_ClassifiesOwnAllyEnemyNeutral()
         {
             var relations = new FactionRelations();
             relations.Teams.Add(0);
