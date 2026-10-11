@@ -17,8 +17,10 @@ namespace HyperRTS.Simulation.AI
 {
     /// <summary>
     /// Skirmish AI for <see cref="AIPlayer"/>s: follows its <see cref="AIBuildStep"/> build order, then keeps producers
-    /// training; keeps harvesters gathering, fires ready abilities and sends idle armies at the nearest enemy base.
-    /// It only issues <see cref="PlayerCommand"/>s, exactly like a human player. Split by concern over partial files.
+    /// training; keeps harvesters on the map's resource fields in the slot's expansion order, fires ready abilities and
+    /// sends idle armies at an enemy base along one of the map's attack lanes (see <see cref="AIMapHints"/>, which the
+    /// map must carry). It only issues <see cref="PlayerCommand"/>s, exactly like a human player. Split by concern
+    /// over partial files.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
@@ -41,6 +43,7 @@ namespace HyperRTS.Simulation.AI
             public NativeArray<Entity> Producers;
             public CompletedBuildings Completed;
             public FactionRelations Relations;
+            public AIMapHintsView Hints;
 
             /// <summary>Default (not created) in a match without fog, where everything counts as seen.</summary>
             public FogOfWar Fog;
@@ -97,6 +100,9 @@ namespace HyperRTS.Simulation.AI
             _fogQuery = TargetLookup.FogQuery(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             state.RequireForUpdate<FactionRelations>();
+
+            // Without the map's hints there is no AI; AIMapHintsCheckSystem says so.
+            state.RequireForUpdate<AIMapHints>();
         }
 
         [BurstCompile]
@@ -111,7 +117,7 @@ namespace HyperRTS.Simulation.AI
             state.CompleteDependency();
             _targetLookup.Update(ref state, _fogQuery);
             _factions.Update(ref state);
-            var snapshot = TakeSnapshot();
+            var snapshot = TakeSnapshot(ref state);
             foreach (var player in due)
             {
                 Think(ref state, player, snapshot);
@@ -135,7 +141,7 @@ namespace HyperRTS.Simulation.AI
             return due;
         }
 
-        private Snapshot TakeSnapshot() => new()
+        private Snapshot TakeSnapshot(ref SystemState state) => new()
         {
             Harvesters = AIGroup.From(_idleHarvesters),
             Nodes = AIGroup.From(_nodes),
@@ -151,8 +157,16 @@ namespace HyperRTS.Simulation.AI
             Producers = _producers.ToEntityArray(Allocator.Temp),
             Completed = new CompletedBuildings(_completed, Allocator.Temp),
             Relations = SystemAPI.GetSingleton<FactionRelations>(),
+            Hints = TakeHints(ref state),
             Fog = _fogQuery.TryGetSingleton(out FogOfWar fog) ? fog : default,
         };
+
+        private AIMapHintsView TakeHints(ref SystemState state)
+        {
+            var hints = SystemAPI.GetSingletonEntity<AIMapHints>();
+            return new AIMapHintsView(SystemAPI.GetBuffer<AISlotHint>(hints),
+                SystemAPI.GetBuffer<AILaneHint>(hints), SystemAPI.GetBuffer<AIHintPoint>(hints));
+        }
 
         private void Think(ref SystemState state, Entity player, in Snapshot snapshot)
         {

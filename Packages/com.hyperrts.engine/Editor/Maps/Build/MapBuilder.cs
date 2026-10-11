@@ -81,6 +81,8 @@ namespace HyperRTS.Editor.Maps.Build
             using var nav = MapNavGrid.Build(entities, data, origin, layout.Bounds, water, project.Rules);
             var measurer = MapMeasurer.Measure(layout, nav, generation.Placer, generation.Trees.Count, project.Palette,
                 project.Rules, issues);
+            MapHintWriter.Write(entities, layout, generation.Shapes, generation.Placer.Placements, nav, project.Palette,
+                project.Rules, issues);
             var report = MapReport.Create(spec, issues, measurer.Metrics);
             report.Write(MapOverviewImage.Draw(layout, generation.Heights, generation.Splat, project.Climate, nav,
                 generation.Shapes, generation.Placer.Placements, measurer.Paths));

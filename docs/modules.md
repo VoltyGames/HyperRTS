@@ -127,8 +127,8 @@ Producer, ability, placement, sell and unload commands are handled by their own 
 | `NavGround` | How cells get their surface (`Classify`: flooded terrain is water, too steep is blocked; `Stamp`: what an area leaves). Map tools measure maps with the same rules |
 | `TerrainHeightAuthoring` / `TerrainHeight` | Baked heightfield: `Height(xz)`, `Raycast`. Flat y = 0 without one |
 | `PlacementMath`, `PlacementSurface` | The building placement rules, shared by simulation, ghost, rally points and AI |
-| `TargetReach` | Walks a unit to a target's footprint for orders that act on it (build, repair, capture, board, gather): `Approach`, `Position`, `Exists` |
-| `ReachMath`, `NavTolerances` | The math under it (`InReach`, `Approach`, `MoveTo`); arrival tolerances |
+| `TargetReach` | Walks a unit to a target's footprint for orders that act on it (build, repair, capture, board, gather): `Approach`, `Position`, `Exists`. Systems pass it `MapQuery` so "at it" follows the map's nav cell size |
+| `ReachMath`, `NavTolerances` | The math under it (`Reach`, `InReach`, `Approach`, `MoveTo`); arrival tolerances. A unit parks on the nearest open cell, up to 1.5 cells from the footprint, so coarse grids widen the reach |
 | `ViewGround` | Ground points along a camera's view rays (camera, minimap, audio listener) |
 
 Systems:
@@ -269,12 +269,12 @@ runs dry. `ResourceNodeSystem` regrows or removes nodes. `ResourceIncomeSystem` 
 | `BuildingAuthoring` | Footprint, population provided, power, starts under construction |
 | `BuilderAuthoring` / `Builder`, `BuildOption` | Build rate and placeable building prefabs |
 | `BuildingPlacement` | Surface the footprint must cover (land, water, shoreline) |
-| `BuildingRules` | `IsAlliedSite`, `NeedsRepair` |
+| `BuildingRules` | `IsAlliedSite`, `NeedsRepair`, `IsSellable` |
 
 - `PlaceBuildingSystem` validates placement, charges the cost, spawns a site and orders builders to it.
 - `ConstructionSystem` advances sites while builders work on them.
 - `RepairSystem`: builders restore allied finished buildings at their build speed.
-- `SellSystem` refunds `MatchRules.SellRefund` of a finished building (all of a site) plus its queue.
+- `SellSystem` refunds `MatchRules.SellRefund` of a finished building (all of a site) plus its queue. A `NeutralGarrison` is never sellable (`BuildingRules.IsSellable`, also what the HUD's Sell button asks).
 
 ## Production
 
@@ -310,7 +310,7 @@ old owner and clears target and selection. A garrisoned building can't be captur
 | Type | Role |
 | --- | --- |
 | `ContainerAuthoring` / `Container`, `Cargo` | Capacity, largest passenger, passengers fire out, passengers survive its death |
-| `NeutralGarrison` | A neutral building anyone may board; it belongs to its passengers while occupied (`NeutralGarrisonSystem`) and is neutral again when empty |
+| `NeutralGarrison` | A neutral building anyone may board; it belongs to its passengers while occupied (`NeutralGarrisonSystem`) and is neutral again when empty; each change goes through `Ownership.Transfer`, so the building drops its selection and the team tint is cleared |
 | `PassengerAuthoring` / `Passenger`, `PassengerStance` | Size; stance restored on exit |
 | `Boarding` | `CanBoard`, `Board`, `IsInside` |
 
@@ -386,15 +386,24 @@ Presentation's `MachineSystem` poses the parts from the clock, so parts of one m
 | `AIBuildStep` | One build-order entry: building, unit or upgrade prefab and count |
 | `AIPlayerSetup` | Adds `AIPlayer` and its build order to a player entity |
 | `AIPlacement` | Ring search for a free building spot around the base |
+| `AIMapHintsAuthoring`, `AIMapHints` | The map's bot hints, one singleton per match: per slot the resource fields by walking distance from its base (`AISlotHint`) and defence points; attack lanes between enemy slots (`AILaneHint`); positions in `AIHintPoint` ranges. Read through `AIMapHintsView`; map builders write them |
+| `AIRoutes` | Seeded, integer-only choice of an attack lane |
+| `AIMapHintsCheckSystem` | Logs one error naming the map when AI players run on a map without hints (or without their slot) |
 
-`SkirmishAISystem` drives each `AIPlayer` through `PlayerCommand`s only. Each think:
+`SkirmishAISystem` drives each `AIPlayer` through `PlayerCommand`s only, and only on a map that carries
+`AIMapHints`. Each think:
 
 1. Start the first unmet build-order step it can afford.
-2. Finish abandoned sites with idle builders; send idle harvesters to gather.
+2. Finish abandoned sites with idle builders; send idle harvesters to the first field of the slot's expansion order
+   that still has resources.
 3. After the build order: train and research round-robin at idle producers.
 4. Use ready abilities and player powers on the nearest suitable target.
-5. Attack-move to the nearest hostile building once enough idle combat units exist. With `LimitedByFog` it only
-   targets units its team sees and buildings it has explored, and sweeps the map centre when it knows of none.
+5. Once enough idle combat units exist, pick the nearest hostile building (else unit) among the enemies the map has
+   lanes to, and attack-move them along one lane to that enemy: shift-queued attack-moves through the lane's
+   waypoints from the one nearest the wave, then the target. The lane is a seeded choice (`AIPlayer.RouteSeed`,
+   the faction, the enemy, `AIPlayer.Attacks`), so bots and successive attacks vary their route. With
+   `LimitedByFog` it only targets units its team sees and buildings it has explored, and sweeps the map centre when
+   it knows of none.
 
 Ties break by entity index. To replace it, disable the system and drive your own `PlayerCommand`s.
 

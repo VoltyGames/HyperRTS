@@ -60,18 +60,59 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
+        /// <summary>Slot 2's expansion order is the given positions (x, z); the world's other hints stay.</summary>
+        private void ExpandInOrder(params Vector2[] fields)
+        {
+            var data = new AIMapHintsData();
+            data.AddSlot(1, new Vector2[0], new Vector2[0]);
+            data.AddSlot(2, fields, new Vector2[0]);
+            data.AddLane(1, 2, new Vector2[0]);
+            data.AddLane(2, 1, new Vector2[0]);
+            _world.CreateHints(data);
+        }
+
         [Test]
-        public void AI_SendsIdleHarvesterToNearestNode()
+        public void AI_SendsIdleHarvesterToTheFirstFieldOfItsExpansionOrder_NotTheNearest()
         {
             var harvester = _world.MakeHarvester(_world.SpawnUnit(2, float3.zero), 10, 1f);
-            _world.SpawnNode(new float3(30f, 0f, 0f), _supplies, 100);
-            var near = _world.SpawnNode(new float3(5f, 0f, 0f), _supplies, 100);
+            var main = _world.SpawnNode(new float3(30f, 0f, 0f), _supplies, 100);
+            _world.SpawnNode(new float3(5f, 0f, 0f), _supplies, 100);
+            ExpandInOrder(new Vector2(30f, 0f), new Vector2(5f, 0f));
 
             _world.Tick();
 
             Assert.IsTrue(_world.IsEnabled<ActiveOrder>(harvester));
             Assert.AreEqual(OrderType.Gather, _world.Get<ActiveOrder>(harvester).Value.Type);
-            Assert.AreEqual(near, _world.Get<ActiveOrder>(harvester).Value.Target);
+            Assert.AreEqual(main, _world.Get<ActiveOrder>(harvester).Value.Target);
+        }
+
+        [Test]
+        public void AI_MovesToTheNextFieldInOrder_OnceTheFirstIsSpent()
+        {
+            var harvester = _world.MakeHarvester(_world.SpawnUnit(2, float3.zero), 10, 1f);
+            var spent = _world.SpawnNode(new float3(30f, 0f, 0f), _supplies, 100);
+            var next = _world.SpawnNode(new float3(60f, 0f, 0f), _supplies, 100);
+            _world.SpawnNode(new float3(5f, 0f, 0f), _supplies, 100);
+            ExpandInOrder(new Vector2(30f, 0f), new Vector2(60f, 0f), new Vector2(5f, 0f));
+            var node = _world.Get<ResourceNode>(spent);
+            node.Amount = 0;
+            _world.EntityManager.SetComponentData(spent, node);
+
+            _world.Tick();
+
+            Assert.AreEqual(next, _world.Get<ActiveOrder>(harvester).Value.Target);
+        }
+
+        [Test]
+        public void AI_IgnoresFieldsTheMapDoesNotHint()
+        {
+            var harvester = _world.MakeHarvester(_world.SpawnUnit(2, float3.zero), 10, 1f);
+            _world.SpawnNode(new float3(5f, 0f, 0f), _supplies, 100);
+            ExpandInOrder(new Vector2(30f, 0f));
+
+            _world.Tick();
+
+            Assert.IsFalse(_world.IsEnabled<ActiveOrder>(harvester), "no hinted field has resources");
         }
 
         [Test]

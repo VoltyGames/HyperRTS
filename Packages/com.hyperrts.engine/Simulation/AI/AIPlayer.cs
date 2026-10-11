@@ -24,5 +24,14 @@ namespace HyperRTS.Simulation.AI
 
         /// <summary>Round-robin cursor over production options.</summary>
         public int NextOption;
+
+        /// <summary>
+        /// Seed of the attack lane choice (see <see cref="AIRoutes.PickLane"/>). Bots differ by faction and vary by
+        /// <see cref="Attacks"/> whatever it is; a game sets it from its match seed to vary matches too.
+        /// </summary>
+        public uint RouteSeed;
+
+        /// <summary>Attacks sent along a lane so far.</summary>
+        public int Attacks;
     }
 }

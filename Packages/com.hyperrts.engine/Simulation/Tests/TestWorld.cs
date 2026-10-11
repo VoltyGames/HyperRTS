@@ -95,7 +95,9 @@ namespace HyperRTS.Simulation.Tests
             EntityManager.IsComponentEnabled<T>(entity);
 
         /// <summary>
-        /// Creates map, relations, AI tunings and one player per team entry (faction = index + 1, first is local).
+        /// Creates map, relations, AI tunings and one player per team entry (faction = index + 1, first is local),
+        /// plus the AI map hints every AI needs: a slot per player and a direct lane (no waypoints) between enemies;
+        /// <see cref="AIHintsTestKit.CreateHints"/> replaces them.
         /// </summary>
         public void CreateMatch(params byte[] teams)
         {
@@ -125,6 +127,8 @@ namespace HyperRTS.Simulation.Tests
             {
                 tunings.Add(new AITuning().ToTuning(difficulty));
             }
+
+            this.CreateHints(AIHintsTestKit.DirectHints(teams));
         }
 
         /// <summary>Bakes a heightfield over the test map from a height function, as Terrain Height authoring does.</summary>

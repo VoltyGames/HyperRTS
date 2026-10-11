@@ -21,10 +21,15 @@ namespace HyperRTS.Simulation.AI
             public Buyer Buyer;
         }
 
+        /// <summary>A hinted node counts as the field's own when it stands this close to the hint (squared metres).</summary>
+        private const float NodeMatchRadiusSq = 4f * 4f;
+
+        /// <summary>Sends idle harvesters to the first field in the slot's expansion order that still has resources.</summary>
         private static void SendHarvesters(in Turn turn, in Snapshot snapshot)
         {
             var harvesters = snapshot.Harvesters;
             var nodes = snapshot.Nodes;
+            var node = -1;
             for (var i = 0; i < harvesters.Length; i++)
             {
                 if (!harvesters.IsOwnedBy(i, turn.Faction) || turn.Busy.Contains(harvesters.Entities[i]))
@@ -32,7 +37,7 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                var node = NearestNode(nodes, snapshot.NodeData, harvesters.Position(i));
+                node = node >= 0 ? node : FirstExpansionNode(turn.Faction, snapshot);
                 if (node < 0)
                 {
                     return;
@@ -48,14 +53,39 @@ namespace HyperRTS.Simulation.AI
             }
         }
 
-        private static int NearestNode(in AIGroup nodes, NativeArray<ResourceNode> data, float3 from)
+        /// <summary>
+        /// The live node (index in the snapshot's nodes) of the first expansion hint that has one: the slot's main
+        /// field while it lasts, then each next-nearest by walking distance; -1 when every field is spent.
+        /// </summary>
+        private static int FirstExpansionNode(byte faction, in Snapshot snapshot)
         {
-            var closest = Closest.None;
+            var hints = snapshot.Hints;
+            if (!hints.TryGetSlot(faction, out var slot))
+            {
+                return -1;
+            }
+
+            for (var k = 0; k < slot.ExpansionCount; k++)
+            {
+                var node = LiveNodeAt(snapshot, hints.Point(slot.ExpansionStart + k));
+                if (node >= 0)
+                {
+                    return node;
+                }
+            }
+
+            return -1;
+        }
+
+        private static int LiveNodeAt(in Snapshot snapshot, float2 point)
+        {
+            var nodes = snapshot.Nodes;
+            var closest = Closest.Within(NodeMatchRadiusSq);
             for (var i = 0; i < nodes.Length; i++)
             {
-                if (data[i].Amount > 0)
+                if (snapshot.NodeData[i].Amount > 0)
                 {
-                    closest.Consider(i, nodes.Entities[i], nodes.DistanceSq(i, from));
+                    closest.Consider(i, nodes.Entities[i], math.distancesq(nodes.Position(i).xz, point));
                 }
             }
 

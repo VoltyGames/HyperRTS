@@ -77,6 +77,9 @@ IMGUI.
 `SkirmishAISystem` is self-contained and only writes `PlayerCommand`s.
 
 - Tune it with difficulty presets on `Match` and `AIBuildOrder` assets per side.
+- It needs the map's bot hints (`AIMapHintsAuthoring` in the SubScene: expansion order, attack lanes, defence
+  points). The map builder writes them; without them AI players stay idle and `AIMapHintsCheckSystem` logs an error
+  naming the map.
 - Replace it: disable the system (`state.Enabled = false` from a game system, or remove `AIPlayer`) and write your
   own system that appends `PlayerCommand`s for players with `AIPlayer`.
 

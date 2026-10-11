@@ -57,6 +57,9 @@ namespace HyperRTS.Editor.Maps.Metrics
             return new MapNavGrid(grid, terrain);
         }
 
+        /// <summary>A nav grid made by hand (tests, tools) rather than from a scene; it owns <paramref name="grid"/>.</summary>
+        public static MapNavGrid Wrap(NavGrid grid) => new(grid, default);
+
         public bool IsWalkable(int2 cell) => Grid.IsWalkable(cell);
 
         public float3 Center(int2 cell) => Grid.CellCenter(cell);
@@ -70,7 +73,10 @@ namespace HyperRTS.Editor.Maps.Metrics
         public void Dispose()
         {
             Grid.Dispose();
-            _terrain.Blob.Dispose();
+            if (_terrain.IsCreated)
+            {
+                _terrain.Blob.Dispose();
+            }
         }
 
         private static void StampAreas(NavGrid grid, GameObject[] roots)
