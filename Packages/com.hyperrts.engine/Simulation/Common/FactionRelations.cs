@@ -6,11 +6,34 @@ namespace HyperRTS.Simulation.Common
     /// <summary>Team per faction (index = faction). Different non-neutral teams are hostile.</summary>
     public struct FactionRelations : IComponentData
     {
-        public const int MaxTeams = 16;
+        /// <summary>Fog keeps one bit per team in a <c>ushort</c> cell (bit 0, neutral, never stamps).</summary>
+        public const int MaxTeams = sizeof(ushort) * 8;
 
         public FixedList32Bytes<byte> Teams;
 
         public readonly byte GetTeam(byte faction) => faction < Teams.Length ? Teams[faction] : (byte)0;
+
+        /// <summary>Puts <paramref name="faction"/> on <paramref name="team"/>; throws for a slot or team past the limits.</summary>
+        public void SetTeam(byte faction, int team)
+        {
+            if (faction > Faction.Max)
+            {
+                throw new System.ArgumentException($"Slot {faction} is past the last faction, {Faction.Max}.");
+            }
+
+            // A team past the fog's bits would silently never see anything.
+            if (team < 0 || team >= MaxTeams)
+            {
+                throw new System.ArgumentException($"Slot {faction} has team {team}; teams go from 0 to {MaxTeams - 1}.");
+            }
+
+            while (Teams.Length <= faction)
+            {
+                Teams.Add(0);
+            }
+
+            Teams[faction] = (byte)team;
+        }
 
         public readonly bool IsHostile(byte a, byte b)
         {

@@ -81,17 +81,14 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Whether a <see cref="Visible"/> or <see cref="Explored"/> cell has the team's bit set.</summary>
         public static bool HasTeam(ushort cell, byte team) => (cell & (1 << team)) != 0;
 
-        /// <summary>The team's cell bit; false for neutral and out-of-range teams, which never stamp.</summary>
+        /// <summary>
+        /// The team's cell bit; false for neutral, which never stamps. Teams fit the cell: baking and match setup reject
+        /// any past <see cref="FactionRelations.MaxTeams"/>.
+        /// </summary>
         public static bool TryGetTeamBit(byte team, out ushort bit)
         {
-            bit = 0;
-            if (team == 0 || team >= FactionRelations.MaxTeams)
-            {
-                return false;
-            }
-
             bit = (ushort)(1 << team);
-            return true;
+            return team != 0;
         }
     }
 }

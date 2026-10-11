@@ -95,13 +95,13 @@ namespace HyperRTS.Simulation.GameEntities
                 if (!setup.IsOpen(faction))
                 {
                     setup.ClosedFactions |= Faction.Bit(faction);
-                    SetTeam(ref relations, faction, 0);
+                    relations.SetTeam(faction, 0);
                     entityManager.DestroyEntity(player);
                     continue;
                 }
 
                 var slot = setup.Slots[faction - 1];
-                SetTeam(ref relations, faction, slot.Team);
+                relations.SetTeam(faction, slot.Team);
                 ApplySlot(entityManager, player, slot, tunings);
                 ScaleStock(entityManager.GetBuffer<ResourceStock>(player), setup.StartingResourceScale);
             }
@@ -171,29 +171,6 @@ namespace HyperRTS.Simulation.GameEntities
             }
 
             throw new System.InvalidOperationException($"The Match baked no tuning for {difficulty}.");
-        }
-
-
-        private static void SetTeam(ref FactionRelations relations, byte faction, byte team)
-        {
-            if (faction > Faction.Max)
-            {
-                throw new System.ArgumentException($"Slot {faction} is past the last faction, {Faction.Max}.");
-            }
-
-            // Fog keeps one bit per team, so a team past the limit would silently never see anything.
-            if (team >= FactionRelations.MaxTeams)
-            {
-                throw new System.ArgumentException(
-                    $"Slot {faction} has team {team}; teams go up to {FactionRelations.MaxTeams - 1}.");
-            }
-
-            while (relations.Teams.Length <= faction)
-            {
-                relations.Teams.Add(0);
-            }
-
-            relations.Teams[faction] = team;
         }
 
         private static void ScaleStock(DynamicBuffer<ResourceStock> stock, float scale)

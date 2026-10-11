@@ -130,12 +130,18 @@ namespace HyperRTS.Simulation.Match
                     JoinTimeout = authoring.joinTimeout,
                 });
 
+                if (authoring.players.Count > Faction.Max)
+                {
+                    throw new ArgumentException(
+                        $"The Match has {authoring.players.Count} player slots; at most {Faction.Max} fit.");
+                }
+
                 var relations = new FactionRelations();
-                relations.Teams.Add(0);
                 for (var i = 0; i < authoring.players.Count; i++)
                 {
-                    relations.Teams.Add((byte)authoring.players[i].team);
-                    BakePlayer(authoring, authoring.players[i], (byte)(i + 1));
+                    var faction = (byte)(i + 1);
+                    relations.SetTeam(faction, authoring.players[i].team);
+                    BakePlayer(authoring, authoring.players[i], faction);
                 }
 
                 AddComponent(entity, relations);

@@ -63,6 +63,16 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void SetTeam_RejectsTeamsPastTheFogBits_AndSlotsPastTheLastFaction()
+        {
+            var relations = new FactionRelations();
+
+            Assert.Throws<System.ArgumentException>(() => relations.SetTeam(1, FactionRelations.MaxTeams));
+            Assert.Throws<System.ArgumentException>(() => relations.SetTeam(1, -1));
+            Assert.Throws<System.ArgumentException>(() => relations.SetTeam(Faction.Max + 1, 1));
+        }
+
+        [Test]
         public void Fog_KeepsExploredCells_AfterTheUnitLeaves()
         {
             var scout = _world.SpawnUnit(1, float3.zero);
