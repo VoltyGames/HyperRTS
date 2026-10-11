@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
     /// Grass, crops and small plants from the land use: each surface's plants cover the share it asks for, broken
-    /// into clumps by noise at two scales; reeds stand in the shallows along the banks. Nothing grows on roads, in
+    /// into clumps by noise at two scales (crops grow evenly); reeds stand in the shallows along the banks. Nothing grows on roads, in
     /// deep water or on placed objects.
     /// </summary>
     public static class MapDetailPainter
@@ -59,9 +59,10 @@ namespace HyperRTS.Editor.Maps.Ground
 
                     var offset = new Vector2(jitter.Sample(p, 5f), jitter.Sample(p + new Vector2(97f, 41f), 5f)) * 1.2f;
                     var region = land.TryCell(p + offset, out var cx, out var cz) ? land.RegionIndex(cx, cz) : 0;
+                    var cover = Sown(land, region) ? 0.92f + 0.08f * clumps.Sample(p, 9f) : clump;
                     foreach (var (detail, coverage) in plants[region])
                     {
-                        layers[detail][z, x] = Mathf.RoundToInt(Mathf.Clamp01(coverage * clump) * 255f);
+                        layers[detail][z, x] = Mathf.RoundToInt(Mathf.Clamp01(coverage * cover) * 255f);
                     }
                 }
             }
@@ -70,6 +71,9 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         /// <summary>Reeds in stands from just inside the water to a few metres up the bank, only where it's shallow.</summary>
+        /// <summary>Crops are sown evenly: a field's plants keep their cover instead of clumping like wild grass.</summary>
+        private static bool Sown(MapLand land, int region) => region > 0 && land.Regions[region].Kind == MapLandKind.Field;
+
         private static int Reeds(MapShapes shapes, MapClimate climate, MapNoise clumps, Vector2 p, float height,
             float water)
         {
