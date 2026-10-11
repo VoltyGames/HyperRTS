@@ -1,0 +1,166 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Geometry;
+using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Placement;
+using HyperRTS.Editor.Maps.Planning;
+using HyperRTS.Editor.Maps.Spec;
+using HyperRTS.Editor.Maps.Symmetry;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
+namespace HyperRTS.Editor.Tests
+{
+    /// <summary>
+    /// A 240 m rotate-180 map with one village on a straight east-west road at z = -60 (in the authored half),
+    /// built in code: a climate with the village surfaces, a palette with one prefab per kit key, and the land planners
+    /// that run before settlements. Dispose destroys the assets it made.
+    /// </summary>
+    internal sealed class MapSettlementFixture : IDisposable
+    {
+        public const float RoadZ = -60f;
+        public const float BaseRadius = 15f;
+        private readonly List<Object> _made = new();
+
+        private MapSettlementFixture()
+        {
+        }
+
+        public MapPlanContext Context { get; private set; }
+
+        public MapPalette Palette { get; private set; }
+
+        public IReadOnlyList<MapPlacement> Placements => Context.Placer.Placements;
+
+        /// <summary>The placements of one palette key in the authored half (z at or below 0).</summary>
+        public List<MapPlacement> InSector(string key) =>
+            Placements.Where(p => p.Entry.key == key && p.Position.y <= 0f).ToList();
+
+        /// <summary>
+        /// Builds the map and runs the planners up to and including settlements. <paramref name="spawn"/> is the
+        /// authored base, <paramref name="edit"/> adjusts the village kit before planning.
+        /// </summary>
+        public static MapSettlementFixture Plan(bool river = false, bool road = true, Vector2? spawn = null,
+            int count = 6, Action<MapSettlementKit> edit = null)
+        {
+            var fixture = new MapSettlementFixture();
+            fixture.Build(river, road, spawn ?? new Vector2(0f, -100f), count, edit);
+            var context = fixture.Context;
+            MapWaterPlanner.ClaimWater(context);
+            MapRoadPlanner.Plan(context);
+            MapWaterPlanner.ClaimBanks(context);
+            MapBasePlanner.Plan(context);
+            MapSettlementPlanner.Plan(context);
+            return fixture;
+        }
+
+        public void Dispose()
+        {
+            foreach (var made in _made)
+            {
+                Object.DestroyImmediate(made);
+            }
+        }
+
+        private void Build(bool river, bool road, Vector2 spawn, int count, Action<MapSettlementKit> edit)
+        {
+            var spec = new MapSpec
+            {
+                name = "Test", climate = "Test", mode = "1v1", seed = 11,
+                size = new MapPoint(240f, 240f), symmetry = MapSymmetry.Rotate180,
+                terrain = new MapTerrainSpec { resolution = 257, margin = 20f, relief = 0f },
+                spawns = new List<MapSpawnSpec> { new() { pos = new MapPoint(spawn.x, spawn.y) } },
+                settlements = new List<MapSettlementSpec>
+                {
+                    new() { center = new MapPoint(0f, RoadZ), radius = 80f, kind = "Village", count = count },
+                },
+            };
+            if (road)
+            {
+                spec.roads.Add(new MapRoadSpec
+                {
+                    kind = "Street", points = new List<MapPoint> { new(-110f, RoadZ), new(110f, RoadZ) },
+                });
+            }
+
+            if (river)
+            {
+                spec.rivers.Add(new MapRiverSpec
+                {
+                    points = new List<MapPoint> { new(-110f, -85f), new(110f, -85f) }, width = 10f, valleyWidth = 30f,
+                });
+            }
+
+            var issues = new MapIssues();
+            var layout = MapExpander.Expand(spec, issues);
+            Palette = MakePalette(edit);
+            var climate = MakeClimate();
+            var shapes = new MapShapes(layout, Palette, climate, issues);
+            var heights = MapHeightShaper.Shape(layout, shapes);
+            var placer = MapPlacer.Place(layout, shapes, heights, Palette, climate, issues);
+            Context = new MapPlanContext(layout, shapes, heights, Palette, climate, placer, issues);
+        }
+
+        private MapPalette MakePalette(Action<MapSettlementKit> edit)
+        {
+            var palette = Make<MapPalette>();
+            palette.baseRadius = BaseRadius;
+            palette.entries.Add(Entry("House", 10f, 8f));
+            palette.entries.Add(Entry("Barn", 6f, 5f));
+            palette.entries.Add(Entry("Fence", 1f, 2.5f));
+            palette.entries.Add(Entry("Gate", 1.2f, 3f));
+            palette.entries.Add(Entry("Pole", 1.5f, 1.5f));
+            palette.entries.Add(Entry("Pipe", 0.5f, 3f));
+            palette.entries.Add(Entry("Well", 1.5f, 1.5f));
+            var kit = new MapSettlementKit
+            {
+                key = "Village", plot = new Vector2(24f, 36f), plotJitter = 0f, frontGap = 2f, frontYard = 5f,
+                maxOutbuildings = 1, frontFence = "Fence", sideFence = "Fence", gate = "Gate",
+                yardSurface = "Yard", gardenSurface = "Garden", backSurface = "Orchard", gardenShare = 0.5f,
+                orchardTree = "Apple", orchardSpacing = 3f, streetPipe = "Pipe", streetPole = "Pole", poleSpacing = 30f,
+            };
+            kit.houses.Add("House");
+            kit.outbuildings.Add("Barn");
+            kit.extras.Add(new MapPlotProp { kind = "Well", chance = 1f, zone = MapPlotZone.Yard });
+            edit?.Invoke(kit);
+            palette.settlementKits.Add(kit);
+            return palette;
+        }
+
+        private MapClimate MakeClimate()
+        {
+            var climate = Make<MapClimate>();
+            climate.name = "Test";
+            foreach (var key in new[] { "Meadow", "Road", "Verge", "Yard", "Garden", "Orchard" })
+            {
+                climate.layers.Add(new MapClimateLayer { key = key });
+                climate.surfaces.Add(new MapClimateSurface { key = key, layer = key });
+            }
+
+            climate.groundSurface = "Meadow";
+            climate.baseSurface = "Meadow";
+            climate.shoreSurface = "Meadow";
+            climate.floodplainSurface = "Meadow";
+            climate.trees.Add(new MapClimateTree { key = "Apple" });
+            climate.roadClasses.Add(new MapRoadClass
+            {
+                key = "Street", width = 6f, surface = "Road", vergeWidth = 3f, vergeSurface = "Verge",
+            });
+            return climate;
+        }
+
+        private MapPaletteEntry Entry(string key, float width, float depth) =>
+            new() { key = key, prefab = Make(new GameObject(key)), size = new Vector2(width, depth) };
+
+        private T Make<T>() where T : ScriptableObject => Make(ScriptableObject.CreateInstance<T>());
+
+        private T Make<T>(T made) where T : Object
+        {
+            _made.Add(made);
+            return made;
+        }
+    }
+}
