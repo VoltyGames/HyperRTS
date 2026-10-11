@@ -4,11 +4,11 @@ using Unity.Jobs;
 
 namespace HyperRTS.Simulation.Vision
 {
-    /// <summary>Zeroes a byte grid before it is restamped.</summary>
+    /// <summary>Zeroes a fog grid before it is restamped.</summary>
     [BurstCompile]
-    internal struct ClearBytesJob : IJob
+    internal struct ClearCellsJob : IJob
     {
-        public NativeArray<byte> Cells;
+        public NativeArray<ushort> Cells;
 
         public void Execute()
         {

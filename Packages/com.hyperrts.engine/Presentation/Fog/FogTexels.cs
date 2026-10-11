@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.Fog
     /// <summary>Converts fog-of-war team bitmasks into per-cell overlay opacity (0 = clear).</summary>
     public static class FogTexels
     {
-        public static void Fill(NativeArray<byte> visible, NativeArray<byte> explored, byte team,
+        public static void Fill(NativeArray<ushort> visible, NativeArray<ushort> explored, byte team,
             byte exploredAlpha, byte unexploredAlpha, NativeArray<byte> output)
         {
             new FillJob
@@ -24,8 +24,8 @@ namespace HyperRTS.Presentation.Fog
         [BurstCompile]
         private struct FillJob : IJob
         {
-            [ReadOnly] public NativeArray<byte> Visible;
-            [ReadOnly] public NativeArray<byte> Explored;
+            [ReadOnly] public NativeArray<ushort> Visible;
+            [ReadOnly] public NativeArray<ushort> Explored;
             public int Mask;
             public byte ExploredAlpha;
             public byte UnexploredAlpha;

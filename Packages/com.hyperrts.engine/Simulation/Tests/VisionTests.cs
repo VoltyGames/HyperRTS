@@ -46,6 +46,23 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void Fog_StampsTheHighestTeam()
+        {
+            const byte lastTeam = FactionRelations.MaxTeams - 1;
+            using var world = new TestWorld();
+            world.CreateMatch(lastTeam, Team1);
+            world.SpawnUnit(1, float3.zero);
+
+            world.Tick();
+            world.EntityManager.CompleteAllTrackedJobs();
+            using var query = world.EntityManager.CreateEntityQuery(typeof(FogOfWar));
+            var fog = query.GetSingleton<FogOfWar>();
+
+            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), lastTeam), "an eight-player FFA needs teams past 7");
+            Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team1));
+        }
+
+        [Test]
         public void Fog_KeepsExploredCells_AfterTheUnitLeaves()
         {
             var scout = _world.SpawnUnit(1, float3.zero);

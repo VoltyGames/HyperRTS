@@ -12,9 +12,9 @@ namespace HyperRTS.Simulation.Vision
     /// </summary>
     public struct FogOfWar : IComponentData
     {
-        public NativeArray<byte> Visible;
-        public NativeArray<byte> Explored;
-        public NativeArray<byte> Detected;
+        public NativeArray<ushort> Visible;
+        public NativeArray<ushort> Explored;
+        public NativeArray<ushort> Detected;
         public int2 Size;
         public float2 Min;
         public float CellSize;
@@ -51,14 +51,14 @@ namespace HyperRTS.Simulation.Vision
             float3 position, bool stealthed) =>
             relations.IsHostile(viewerFaction, faction) && !CanSee(relations.TeamOf(viewerFaction), position, stealthed);
 
-        private readonly bool Test(NativeArray<byte> cells, float3 position, byte team)
+        private readonly bool Test(NativeArray<ushort> cells, float3 position, byte team)
         {
             var cell = WorldToCell(position);
             return InBounds(cell) && HasTeam(cells[Index(cell)], team);
         }
 
         /// <summary>ORs <paramref name="bit"/> into every cell whose center lies within the flat circle.</summary>
-        public readonly void StampCircle(NativeArray<byte> cells, float3 center, float radius, byte bit)
+        public readonly void StampCircle(NativeArray<ushort> cells, float3 center, float radius, ushort bit)
         {
             var radiusSq = radius * radius;
             var min = math.max(WorldToCell(center - radius), 0);
@@ -72,17 +72,17 @@ namespace HyperRTS.Simulation.Vision
                     if (math.distancesq(cellCenter, center.xz) <= radiusSq)
                     {
                         var index = Index(new int2(x, y));
-                        cells[index] = (byte)(cells[index] | bit);
+                        cells[index] = (ushort)(cells[index] | bit);
                     }
                 }
             }
         }
 
         /// <summary>Whether a <see cref="Visible"/> or <see cref="Explored"/> cell has the team's bit set.</summary>
-        public static bool HasTeam(byte cell, byte team) => (cell & (1 << team)) != 0;
+        public static bool HasTeam(ushort cell, byte team) => (cell & (1 << team)) != 0;
 
         /// <summary>The team's cell bit; false for neutral and out-of-range teams, which never stamp.</summary>
-        public static bool TryGetTeamBit(byte team, out byte bit)
+        public static bool TryGetTeamBit(byte team, out ushort bit)
         {
             bit = 0;
             if (team == 0 || team >= FactionRelations.MaxTeams)
@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Vision
                 return false;
             }
 
-            bit = (byte)(1 << team);
+            bit = (ushort)(1 << team);
             return true;
         }
     }

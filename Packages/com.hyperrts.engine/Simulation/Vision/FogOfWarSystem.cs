@@ -64,7 +64,7 @@ namespace HyperRTS.Simulation.Vision
             fog.Version++;
 
             // Stealth applies with fog off too, so detection is restamped either way.
-            state.Dependency = new ClearBytesJob { Cells = fog.Detected }.Schedule(state.Dependency);
+            state.Dependency = new ClearCellsJob { Cells = fog.Detected }.Schedule(state.Dependency);
             new DetectionStampJob { Fog = fog, Relations = relations }.Schedule();
             if (settings.FogOfWar)
             {
@@ -85,7 +85,7 @@ namespace HyperRTS.Simulation.Vision
         private void StampVision(ref SystemState state, in FogOfWar fog, in FactionRelations relations,
             in MapSettings settings)
         {
-            state.Dependency = new ClearBytesJob { Cells = fog.Visible }.Schedule(state.Dependency);
+            state.Dependency = new ClearCellsJob { Cells = fog.Visible }.Schedule(state.Dependency);
             SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
             new StampJob
             {
@@ -143,9 +143,9 @@ namespace HyperRTS.Simulation.Vision
 
             return new FogOfWar
             {
-                Visible = new NativeArray<byte>(count, Allocator.Persistent),
-                Explored = new NativeArray<byte>(count, Allocator.Persistent),
-                Detected = new NativeArray<byte>(count, Allocator.Persistent),
+                Visible = new NativeArray<ushort>(count, Allocator.Persistent),
+                Explored = new NativeArray<ushort>(count, Allocator.Persistent),
+                Detected = new NativeArray<ushort>(count, Allocator.Persistent),
                 Size = size,
                 Min = settings.Min,
                 CellSize = cellSize,
@@ -156,21 +156,21 @@ namespace HyperRTS.Simulation.Vision
         [BurstCompile]
         private struct RevealAllJob : IJobParallelFor
         {
-            public NativeArray<byte> Visible;
-            public NativeArray<byte> Explored;
+            public NativeArray<ushort> Visible;
+            public NativeArray<ushort> Explored;
 
             public void Execute(int index)
             {
-                Visible[index] = byte.MaxValue;
-                Explored[index] = byte.MaxValue;
+                Visible[index] = ushort.MaxValue;
+                Explored[index] = ushort.MaxValue;
             }
         }
 
         [BurstCompile]
         private struct ExploreJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<byte> Visible;
-            public NativeArray<byte> Explored;
+            [ReadOnly] public NativeArray<ushort> Visible;
+            public NativeArray<ushort> Explored;
 
             public void Execute(int index) => Explored[index] |= Visible[index];
         }
