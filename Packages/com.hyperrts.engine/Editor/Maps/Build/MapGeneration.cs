@@ -92,7 +92,7 @@ namespace HyperRTS.Editor.Maps.Build
             var context = new MapPlanContext(layout, generation.Shapes, generation.Heights, project.Palette, climate,
                 generation.Placer, issues);
             MapLandPlanner.Plan(context);
-            MapRoadChecks.Check(layout, generation.Shapes, issues);
+            MapRoadChecks.Check(layout, generation.Shapes, project.Palette.baseRadius, issues);
             generation.Land = context.Land;
             generation.RowAngle = context.RowAngle;
             generation.Trees = context.Trees;

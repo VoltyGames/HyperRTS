@@ -20,7 +20,9 @@ namespace HyperRTS.Editor.Maps.Layout
         private const float TailBase = 20f;
         private const float SeamTolerance = 1f;
         private const float EndTouch = 1.5f;
-        private const float Snapped = 0.5f;
+        // An end this close that already meets at a steep angle just moves onto the road: re-laying a curve over a
+        // short spur would kink it.
+        private const float Snapped = 3f;
         private static readonly float[] Handles = { 0.4f, 0.2f };
 
         public static void Join(List<MapRefinedRoad> roads, MapSymmetry symmetry, Rect playable)
@@ -44,7 +46,8 @@ namespace HyperRTS.Editor.Maps.Layout
                 return;
             }
 
-            var target = Nearest(road, roads, symmetry, end);
+            var finish = (end - line[^2]).normalized;
+            var target = Nearest(road, roads, symmetry, end, finish);
             if (target == null)
             {
                 return;
@@ -54,8 +57,12 @@ namespace HyperRTS.Editor.Maps.Layout
             road.Points = atStart ? Reversed(joined) : joined;
         }
 
-        /// <summary>The closest point of another road within reach of the end, or null.</summary>
-        private static Target Nearest(MapRefinedRoad road, List<MapRefinedRoad> roads, MapSymmetry symmetry, Vector2 end)
+        /// <summary>
+        /// The closest point of another road within reach of the end and ahead of it, or null. A road behind the end
+        /// (a spur leaving it) isn't joined: that would fold the road back onto itself.
+        /// </summary>
+        private static Target Nearest(MapRefinedRoad road, List<MapRefinedRoad> roads, MapSymmetry symmetry, Vector2 end,
+            Vector2 finish)
         {
             Target best = null;
             var reach = Reach + road.Class.width;
@@ -81,6 +88,12 @@ namespace HyperRTS.Editor.Maps.Layout
                 }
 
                 if (!symmetry.InSector(point))
+                {
+                    continue;
+                }
+
+                var behind = Vector2.Dot(point - end, finish) <= 0f;
+                if (behind && distance > Snapped)
                 {
                     continue;
                 }

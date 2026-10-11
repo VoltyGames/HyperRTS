@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Report
 {
     /// <summary>
     /// Warnings about the authored roads in the built map: dead ends (an end that meets no road, the map edge, the
-    /// symmetry seam or a settlement) and bends tighter than half their class's curve radius. A feature found in
+    /// symmetry seam, a base or a settlement) and bends tighter than half their class's curve radius. A feature found in
     /// every copy of the sector is reported once, at its authored-sector place.
     /// </summary>
     public static class MapRoadChecks
@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Report
         private const float BendStep = 3f;
         private const float BendShare = 0.5f;
 
-        public static void Check(MapLayout layout, MapShapes shapes, MapIssues issues)
+        public static void Check(MapLayout layout, MapShapes shapes, float baseRadius, MapIssues issues)
         {
             var reported = new HashSet<string>();
             foreach (var road in shapes.Roads)
@@ -29,13 +29,13 @@ namespace HyperRTS.Editor.Maps.Report
                 }
 
                 var points = road.Line.Points;
-                CheckEnd(layout, shapes, road, points[0], reported, issues);
-                CheckEnd(layout, shapes, road, points[^1], reported, issues);
+                CheckEnd(layout, shapes, road, points[0], baseRadius, reported, issues);
+                CheckEnd(layout, shapes, road, points[^1], baseRadius, reported, issues);
                 CheckBends(layout, road, reported, issues);
             }
         }
 
-        private static void CheckEnd(MapLayout layout, MapShapes shapes, MapRoad road, Vector2 end,
+        private static void CheckEnd(MapLayout layout, MapShapes shapes, MapRoad road, Vector2 end, float baseRadius,
             HashSet<string> reported, MapIssues issues)
         {
             if (!layout.Bounds.Contains(end) || MapGeometry.OnEdge(end, layout.Bounds))
@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Maps.Report
 
             var sector = layout.Symmetry.ToSector(end, out _);
             var onSeam = layout.Symmetry.SeamDistance(sector) < SeamTolerance;
-            if (onSeam || InSettlement(layout, end))
+            if (onSeam || InSettlement(layout, end) || AtBase(layout, end, baseRadius))
             {
                 return;
             }
@@ -94,6 +94,20 @@ namespace HyperRTS.Editor.Maps.Report
             foreach (var other in shapes.Roads)
             {
                 if (other != road && other.Line.Distance(end) <= other.Width * 0.5f + Touch)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>A road ending at a base leads somewhere: it's the base's way out.</summary>
+        private static bool AtBase(MapLayout layout, Vector2 point, float baseRadius)
+        {
+            foreach (var spawn in layout.Spawns)
+            {
+                if ((spawn.Position - point).magnitude <= baseRadius + Touch)
                 {
                     return true;
                 }

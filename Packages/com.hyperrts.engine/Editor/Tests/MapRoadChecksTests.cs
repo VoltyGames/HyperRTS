@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Tests
             var layout = MapRoadFixture.Layout(spec);
             var shapes = MapRoadFixture.Shapes(layout, climate);
             var issues = new MapIssues();
-            MapRoadChecks.Check(layout, shapes, issues);
+            MapRoadChecks.Check(layout, shapes, 20f, issues);
             return issues;
         }
 
