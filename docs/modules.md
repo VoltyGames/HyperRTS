@@ -31,6 +31,7 @@ Base module: ownership, identity, health, shared helpers.
 | `Inside` | Enabled while a passenger is aboard a container |
 | `Health`, `Dead` | Hit points; death marker enabled the frame before destruction |
 | `ConstructionProgress` | Enableable 0..1. Unfinished buildings don't produce, provide population, fire or satisfy prerequisites |
+| `Offline`, `OfflineReason` | Enableable "out of action" state with a reason mask: `UnderConstruction`, `Unpowered`, and game reasons from `Custom` up. Offline entities don't fire, cast, run fields or produce. Buildings carry it; add it to units a game can disable |
 | `AttackTarget` | Enableable current target (here so orders can halt attacks) |
 | `EntityInfo` | `TypeId` (hash of the display name), `Name`, `Icon` |
 | `PrefabRegistry` | Singleton `TypeId` → prefab map; resolves network commands, replicated buffers and sounds |
@@ -225,6 +226,9 @@ entities, catches up later spawns, and swaps sets when an entity changes owner. 
 `BuildingAuthoring.power` adds a `PowerSupply` (positive generates, negative draws). `PowerSystem` (end of the
 order phase) totals each player's `PowerGrid` and enables `Unpowered` on consumers while demand exceeds supply.
 Unpowered weapons hold fire; unpowered producers run at `MatchRules.LowPowerProductionRate`.
+
+`OfflineSystem` (right after) recomputes the engine's `OfflineReason`s, keeps any game reasons, and enables
+`Offline` while one holds. A building offline for a game reason neither supplies nor draws power.
 
 ## Resources
 

@@ -158,6 +158,9 @@ namespace HyperRTS.Simulation.Buildings
             ecb.SetComponent(building, new Faction { Value = faction });
             ecb.SetComponent(building, new ConstructionProgress { Value = 0f });
             ecb.SetComponentEnabled<ConstructionProgress>(building, true);
+            // Offline from the first frame, before OfflineSystem sees the site.
+            ecb.SetComponent(building, new Offline { Reasons = OfflineReason.UnderConstruction });
+            ecb.SetComponentEnabled<Offline>(building, true);
             return building;
         }
 

@@ -21,6 +21,8 @@ namespace HyperRTS.Simulation.Buildings
 
             writer.Add(new ConstructionProgress { Value = complete ? 1f : 0f });
             writer.SetEnabled<ConstructionProgress>(!complete);
+            writer.Add(new Offline { Reasons = complete ? OfflineReason.None : OfflineReason.UnderConstruction });
+            writer.SetEnabled<Offline>(!complete);
 
             if (populationProvided > 0)
             {

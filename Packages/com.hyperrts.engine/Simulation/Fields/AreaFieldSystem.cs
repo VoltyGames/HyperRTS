@@ -1,7 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Stats;
 using Unity.Burst;
@@ -113,7 +112,7 @@ namespace HyperRTS.Simulation.Fields
         }
 
         [BurstCompile]
-        [WithNone(typeof(ConstructionProgress), typeof(Unpowered), typeof(Dead))]
+        [WithNone(typeof(Offline), typeof(Dead))]
         private partial struct CollectJob : IJobEntity
         {
             [ReadOnly] public SpatialIndex Index;

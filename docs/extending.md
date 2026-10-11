@@ -32,6 +32,7 @@ Mirror the engine's layering:
 | Deal damage or heal | `DamageWriter` → `DamageEvent` before `DamageSystem`. Negative heals |
 | Ability effects | An ability without built-in effects; read `AbilityActivation` after `AbilitySystem` |
 | Field effects (jamming) | Read the entity's `FieldPresence` |
+| Disable an entity (EMP, stun) | Set a bit from `OfflineReason.Custom` up in its `Offline.Reasons` and clear it when the effect ends; `OfflineSystem` enables `Offline`. Units need `Offline` added (disabled) in their baker |
 | Change a stat | `StatModifier` with a `StatSource` kind from `StatSourceKind.Custom` (128) up, so removing yours never strips the engine's |
 | A custom stat (fuel) | `Stat` value from `Stat.Custom` (128) up. A system last in `LifecycleSystemGroup`, change-filtered on `StatModifier`, sets your value with `StatMath.Apply(modifiers, bases, stat, value)` |
 | A sound | `SoundWriter.Play(entity, slot, ...)` before the end of the lifecycle phase; custom slots from `SoundSlot.Custom` |

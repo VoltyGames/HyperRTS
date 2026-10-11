@@ -1,9 +1,8 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Production;
 using Unity.Burst;
 using Unity.Collections;
@@ -70,7 +69,7 @@ namespace HyperRTS.Simulation.Abilities
         }
 
         [BurstCompile]
-        [WithNone(typeof(ConstructionProgress), typeof(Unpowered))]
+        [WithNone(typeof(Offline))]
         private partial struct CooldownJob : IJobEntity
         {
             public float DeltaTime;

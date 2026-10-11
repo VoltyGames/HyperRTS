@@ -79,6 +79,60 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void GameOfflineReason_SilencesTowersAndPlants_UntilCleared()
+        {
+            var plant = _world.SpawnBuilding(1, new float3(-20f, 0f, 0f), Footprint, power: 5f);
+            var tower = _world.SpawnBuilding(1, new float3(0f, 0f, 20f), Footprint);
+            _world.AddWeapon(tower, range: 6f, damage: 10f);
+            var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 25f), speed: 0f);
+            var emp = new Offline { Reasons = OfflineReason.Custom };
+            _world.EntityManager.SetComponentData(tower, emp);
+            _world.EntityManager.SetComponentData(plant, emp);
+
+            _world.Run(1f);
+
+            Assert.IsTrue(_world.IsEnabled<Offline>(tower));
+            Assert.AreEqual(100f, _world.Get<Health>(enemy).Current, "an offline tower holds fire");
+            Assert.AreEqual(0f, _world.Get<PowerGrid>(_world.Player(1)).Produced, "an offline plant supplies nothing");
+
+            _world.EntityManager.SetComponentData(tower, new Offline());
+            _world.Run(1f);
+
+            Assert.IsFalse(_world.IsEnabled<Offline>(tower));
+            Assert.Less(_world.Get<Health>(enemy).Current, 100f);
+        }
+
+        [Test]
+        public void GameOfflineReason_HaltsProduction()
+        {
+            var prefab = _world.MakePrefab(_world.SpawnUnit(0, new float3(90f, 0f, 90f)));
+            _world.SetBuildTime(prefab, 1f);
+            _world.SpawnProvider(1, new float3(-20f, 0f, 0f), 10);
+            var factory = _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, Footprint), new float3(0f, 0f, -4f),
+                prefab);
+            _world.EntityManager.SetComponentData(factory, new Offline { Reasons = OfflineReason.Custom });
+            _world.Produce(1, factory, prefab);
+
+            _world.Run(2f);
+
+            Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(factory).Length);
+        }
+
+        [Test]
+        public void Site_IsOfflineUntilBuilt()
+        {
+            var site = _world.SpawnBuilding(1, float3.zero, Footprint, complete: false);
+            _world.Tick();
+            Assert.IsTrue(_world.IsEnabled<Offline>(site));
+
+            _world.EntityManager.SetComponentEnabled<ConstructionProgress>(site, false);
+            _world.Tick();
+
+            Assert.IsFalse(_world.IsEnabled<Offline>(site));
+            Assert.AreEqual(OfflineReason.None, _world.Get<Offline>(site).Reasons);
+        }
+
+        [Test]
         public void Sell_RefundsShareOfCost_AndRemovesBuilding()
         {
             var depot = _world.SpawnBuilding(1, float3.zero, Footprint);

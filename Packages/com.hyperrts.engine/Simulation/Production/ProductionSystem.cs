@@ -1,10 +1,9 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Upgrades;
 using Unity.Burst;
 using Unity.Collections;
@@ -30,7 +29,7 @@ namespace HyperRTS.Simulation.Production
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<ActiveOrder> _orderLookup;
         private ComponentLookup<Upgrade> _upgradeLookup;
-        private ComponentLookup<Unpowered> _unpoweredLookup;
+        private ComponentLookup<Offline> _offlineLookup;
         private BufferLookup<ResearchedUpgrade> _researchedLookup;
         private BufferLookup<LandingPad> _padLookup;
         private ComponentLookup<HomePad> _padUserLookup;
@@ -46,7 +45,7 @@ namespace HyperRTS.Simulation.Production
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _orderLookup = state.GetComponentLookup<ActiveOrder>(true);
             _upgradeLookup = state.GetComponentLookup<Upgrade>(true);
-            _unpoweredLookup = state.GetComponentLookup<Unpowered>(true);
+            _offlineLookup = state.GetComponentLookup<Offline>(true);
             _researchedLookup = state.GetBufferLookup<ResearchedUpgrade>();
             _padLookup = state.GetBufferLookup<LandingPad>(true);
             _padUserLookup = state.GetComponentLookup<HomePad>(true);
@@ -64,7 +63,7 @@ namespace HyperRTS.Simulation.Production
             _transformLookup.Update(ref state);
             _orderLookup.Update(ref state);
             _upgradeLookup.Update(ref state);
-            _unpoweredLookup.Update(ref state);
+            _offlineLookup.Update(ref state);
             _researchedLookup.Update(ref state);
             _padLookup.Update(ref state);
             _padUserLookup.Update(ref state);
@@ -86,7 +85,7 @@ namespace HyperRTS.Simulation.Production
                 TransformLookup = _transformLookup,
                 OrderLookup = _orderLookup,
                 UpgradeLookup = _upgradeLookup,
-                UnpoweredLookup = _unpoweredLookup,
+                OfflineLookup = _offlineLookup,
                 ResearchedLookup = _researchedLookup,
                 PadLookup = _padLookup,
                 PadUserLookup = _padUserLookup,
@@ -111,7 +110,7 @@ namespace HyperRTS.Simulation.Production
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<ActiveOrder> OrderLookup;
             [ReadOnly] public ComponentLookup<Upgrade> UpgradeLookup;
-            [ReadOnly] public ComponentLookup<Unpowered> UnpoweredLookup;
+            [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
             public BufferLookup<ResearchedUpgrade> ResearchedLookup;
             [ReadOnly] public BufferLookup<LandingPad> PadLookup;
             [ReadOnly] public ComponentLookup<HomePad> PadUserLookup;
@@ -134,7 +133,14 @@ namespace HyperRTS.Simulation.Production
                     return;
                 }
 
-                var lowPower = UnpoweredLookup.HasEnabled(entity);
+                // Low power only slows production; any other reason (an EMP) halts it.
+                var offline = OfflineLookup.TryGetComponent(entity, out var found) ? found : default;
+                if (offline.HasReasonOtherThan(OfflineReason.Unpowered))
+                {
+                    return;
+                }
+
+                var lowPower = (offline.Reasons & OfflineReason.Unpowered) != 0;
                 producer.Elapsed += DeltaTime * producer.Speed * (lowPower ? LowPowerRate : 1f);
                 if (producer.Elapsed < producible.BuildTime)
                 {
