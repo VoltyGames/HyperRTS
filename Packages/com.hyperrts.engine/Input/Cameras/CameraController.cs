@@ -124,6 +124,12 @@ namespace HyperRTS.Input.Cameras
                 return;
             }
 
+            // A menu suspends the map; a disabled Point reads (0, 0), the bottom-left corner, and would edge scroll.
+            if (!camera.enabled)
+            {
+                return;
+            }
+
             var focus = Focus();
             var height = transform.position.y;
             var speed = moveSpeed * speedMultiplier * Mathf.Max(1f, height / Mathf.Max(minZoom, 0.01f));
