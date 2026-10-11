@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using UnityEditor;
-using UnityEngine;
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Validation
 {
@@ -9,70 +10,51 @@ namespace HyperRTS.Editor.Validation
     public class ValidatorWindow : EditorWindow
     {
         private List<ValidationIssue> _issues = new();
-        private Vector2 _scroll;
+        private Label _counts;
+        private HelpBox _empty;
+        private IssueList _list;
 
         [MenuItem(EditorMenu.Validate, false, EditorMenu.ValidatePriority)]
         public static void Open() => GetWindow<ValidatorWindow>("HyperRTS Validator").Refresh();
 
+        public void CreateGUI()
+        {
+            var root = rootVisualElement;
+            EditorAssets.AddStyles(root);
+
+            var toolbar = new Toolbar();
+            toolbar.Add(new ToolbarButton(Refresh) { text = "Validate" });
+            toolbar.Add(new ToolbarSpacer { flex = true });
+            _counts = new Label();
+            _counts.AddToClassList("hrts-toolbar-label");
+            toolbar.Add(_counts);
+            root.Add(toolbar);
+
+            _empty = new HelpBox("No problems found. Closed SubScenes aren't checked: open them to include their " +
+                                 "content.", HelpBoxMessageType.Info);
+            _empty.AddToClassList("hrts-note");
+            root.Add(_empty);
+
+            var scroll = new ScrollView();
+            scroll.AddToClassList("hrts-fill");
+            _list = new IssueList(Refresh, showContext: true);
+            scroll.Add(_list);
+            root.Add(scroll);
+            Refresh();
+        }
+
         private void Refresh()
         {
             _issues = ProjectValidator.Run();
-            Repaint();
-        }
-
-        private void OnGUI()
-        {
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            if (_list == null)
             {
-                if (GUILayout.Button("Validate", EditorStyles.toolbarButton, GUILayout.Width(80)))
-                {
-                    Refresh();
-                }
-
-                GUILayout.FlexibleSpace();
-                GUILayout.Label($"{Count(MessageType.Error)} errors · {Count(MessageType.Warning)} warnings · " +
-                                $"{Count(MessageType.Info)} notes", EditorStyles.miniLabel);
-            }
-
-            if (_issues.Count == 0)
-            {
-                EditorGUILayout.HelpBox("No problems found. Closed SubScenes aren't checked: open them to include their " +
-                                        "content.", MessageType.Info);
                 return;
             }
 
-            _scroll = EditorGUILayout.BeginScrollView(_scroll);
-            foreach (var issue in _issues)
-            {
-                if (DrawIssue(issue))
-                {
-                    EditorApplication.delayCall += Refresh;
-                    break;
-                }
-            }
-
-            EditorGUILayout.EndScrollView();
-        }
-
-        /// <summary>Returns true when a quick fix ran and the list is stale.</summary>
-        private static bool DrawIssue(ValidationIssue issue)
-        {
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                using (new EditorGUI.DisabledScope(issue.Context == null))
-                {
-                    var label = issue.Context != null ? issue.Context.name : "-";
-                    if (GUILayout.Button(label, GUILayout.Width(140), GUILayout.Height(38)))
-                    {
-                        EditorAssets.Reveal(issue.Context);
-                    }
-                }
-
-                using (new EditorGUILayout.VerticalScope())
-                {
-                    return IssueGUI.Draw(issue);
-                }
-            }
+            _counts.text = $"{Count(MessageType.Error)} errors · {Count(MessageType.Warning)} warnings · " +
+                           $"{Count(MessageType.Info)} notes";
+            _empty.style.display = _issues.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            _list.Show(_issues);
         }
 
         private int Count(MessageType severity) => _issues.FindAll(issue => issue.Severity == severity).Count;

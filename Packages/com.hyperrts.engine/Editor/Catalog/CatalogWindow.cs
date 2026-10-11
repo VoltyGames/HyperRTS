@@ -1,93 +1,113 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.GameEntities;
-using HyperRTS.Simulation.Units;
 using UnityEditor;
-using UnityEngine;
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Catalog
 {
     /// <summary>HyperRTS ▸ Catalog: every unit and building prefab in one editable stats table, plus the tech tree.</summary>
     public class CatalogWindow : EditorWindow
     {
-        private static readonly string[] Tabs = { "Stats", "Tech Tree" };
-        private const float Narrow = 64f;
-
-        private static readonly (string Header, System.Type Component, string Field)[] Columns =
-        {
-            ("HP", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.maxHealth)),
-            ("Build s", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.buildTime)),
-            ("Vision", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.visionRange)),
-            ("Speed", typeof(UnitAuthoring), nameof(UnitAuthoring.moveSpeed)),
-            ("Damage", typeof(WeaponAuthoring), nameof(WeaponAuthoring.damage)),
-            ("Cooldown", typeof(WeaponAuthoring), nameof(WeaponAuthoring.cooldown)),
-            ("Range", typeof(WeaponAuthoring), nameof(WeaponAuthoring.range)),
-        };
+        // Asset changes arrive in bursts; one project walk after they settle is enough.
+        private const long ReloadDelayMilliseconds = 500;
 
         private List<GameEntityAuthoring> _prefabs = new();
-        private readonly Dictionary<Component, SerializedObject> _serialized = new();
-        private TechTreeView _techTree;
-        private bool _stale = true;
-        private int _tab;
         private string _filter = "";
-        private Vector2 _scroll;
+        private bool _reloadPending;
+        private StatsTable _stats;
+        private TechTreeView _techTree;
+        private TabView _tabs;
+        private Tab _treeTab;
 
         [MenuItem(EditorMenu.Catalog, false, EditorMenu.CatalogPriority)]
         public static void Open() => GetWindow<CatalogWindow>("HyperRTS Catalog");
 
-        // The prefab scan is a full project walk, so reload on the next draw instead of on every asset change.
-        private void OnProjectChange() => _stale = true;
+        public void CreateGUI()
+        {
+            var root = rootVisualElement;
+            EditorAssets.AddStyles(root);
 
-        private void OnDisable() => ClearSerialized();
+            var toolbar = new Toolbar();
+            toolbar.Add(new ToolbarSpacer { flex = true });
+            var search = new ToolbarSearchField();
+            search.RegisterValueChangedCallback(change =>
+            {
+                _filter = change.newValue;
+                ShowPrefabs();
+            });
+            toolbar.Add(search);
+            root.Add(toolbar);
+
+            _stats = new StatsTable();
+            _techTree = new TechTreeView();
+            var treeScroll = new ScrollView();
+            treeScroll.AddToClassList("hrts-fill");
+            treeScroll.Add(_techTree);
+
+            _tabs = new TabView();
+            _tabs.AddToClassList("hrts-tabs");
+            _tabs.Add(Tab("Stats", _stats));
+            _treeTab = Tab("Tech Tree", treeScroll);
+            _tabs.Add(_treeTab);
+            _tabs.activeTabChanged += (_, _) => ShowPrefabs();
+            root.Add(_tabs);
+            Reload();
+        }
+
+        private void OnEnable() => ObjectChangeEvents.changesPublished += OnObjectsChanged;
+
+        private void OnDisable()
+        {
+            ObjectChangeEvents.changesPublished -= OnObjectsChanged;
+            _stats?.Release();
+        }
+
+        private void OnProjectChange()
+        {
+            if (_reloadPending || _tabs == null)
+            {
+                return;
+            }
+
+            _reloadPending = true;
+            rootVisualElement.schedule.Execute(Reload).ExecuteLater(ReloadDelayMilliseconds);
+        }
+
+        // Inspector edits to options or prerequisites show up in the open tree right away.
+        private void OnObjectsChanged(ref ObjectChangeEventStream stream)
+        {
+            if (_tabs != null && _tabs.activeTab == _treeTab)
+            {
+                _techTree.Show(_prefabs, Visible());
+            }
+        }
 
         private void Reload()
         {
-            ClearSerialized();
+            _reloadPending = false;
             _prefabs = EditorAssets.EntityPrefabs()
                 .OrderBy(prefab => prefab is BuildingAuthoring)
                 .ThenBy(prefab => prefab.DisplayName)
                 .ToList();
-            _stale = false;
+            ShowPrefabs();
         }
 
-        private void OnGUI()
+        private void ShowPrefabs()
         {
-            if (_stale)
+            if (_tabs.activeTab == _treeTab)
             {
-                Reload();
+                _techTree.Show(_prefabs, Visible());
+                return;
             }
 
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
-            {
-                _tab = GUILayout.Toolbar(_tab, Tabs, EditorStyles.toolbarButton, GUILayout.Width(160));
-                GUILayout.FlexibleSpace();
-                _filter = EditorGUILayout.TextField(_filter, EditorStyles.toolbarSearchField, GUILayout.Width(200));
-            }
-
-            var visible = _prefabs.Where(MatchesFilter).ToList();
-
-            _scroll = EditorGUILayout.BeginScrollView(_scroll);
-            if (_tab == 0)
-            {
-                DrawStats(visible);
-            }
-            else
-            {
-                // Rebuilt per layout (one pass over the prefabs) so inspector edits to options show up live.
-                if (_techTree == null || Event.current.type == EventType.Layout)
-                {
-                    _techTree = new TechTreeView(_prefabs);
-                }
-
-                _techTree.Draw(visible);
-            }
-
-            EditorGUILayout.EndScrollView();
+            _stats.Show(Visible());
         }
+
+        private List<GameEntityAuthoring> Visible() => _prefabs.Where(MatchesFilter).ToList();
 
         private bool MatchesFilter(GameEntityAuthoring prefab)
         {
@@ -99,76 +119,12 @@ namespace HyperRTS.Editor.Catalog
             return prefab.DisplayName.IndexOf(_filter, System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private void DrawStats(List<GameEntityAuthoring> prefabs)
+        private static Tab Tab(string label, VisualElement content)
         {
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
-            {
-                Header("Name", 140f);
-                foreach (var column in Columns)
-                {
-                    Header(column.Header, Narrow);
-                }
-
-                Header("DPS", Narrow);
-                GUILayout.Label("Cost", EditorStyles.miniBoldLabel);
-            }
-
-            foreach (var prefab in prefabs)
-            {
-                DrawRow(prefab);
-            }
+            var tab = new Tab(label);
+            tab.AddToClassList("hrts-fill");
+            tab.Add(content);
+            return tab;
         }
-
-        private void DrawRow(GameEntityAuthoring prefab)
-        {
-            using var row = new EditorGUILayout.HorizontalScope();
-            if (GUILayout.Button(prefab.DisplayName, EditorStyles.linkLabel, GUILayout.Width(140f)))
-            {
-                EditorAssets.Reveal(prefab.gameObject);
-            }
-
-            foreach (var column in Columns)
-            {
-                var component = prefab.GetComponent(column.Component);
-                if (component == null)
-                {
-                    GUILayout.Label("-", GUILayout.Width(Narrow));
-                    continue;
-                }
-
-                // PropertyField keeps the field's [Min] limits, undo and prefab overrides.
-                var serialized = Serialized(component);
-                serialized.Update();
-                EditorGUILayout.PropertyField(serialized.FindProperty(column.Field), GUIContent.none, GUILayout.Width(Narrow));
-                serialized.ApplyModifiedProperties();
-            }
-
-            var weapon = prefab.GetComponent<WeaponAuthoring>();
-            GUILayout.Label(weapon != null ? EntitySummary.Dps(weapon).ToString("0.#") : "-", GUILayout.Width(Narrow));
-            GUILayout.Label(EntitySummary.CostText(prefab), EditorStyles.miniLabel);
-        }
-
-        private SerializedObject Serialized(Component component)
-        {
-            if (!_serialized.TryGetValue(component, out var serialized))
-            {
-                _serialized[component] = serialized = new SerializedObject(component);
-            }
-
-            return serialized;
-        }
-
-        private void ClearSerialized()
-        {
-            foreach (var serialized in _serialized.Values)
-            {
-                serialized.Dispose();
-            }
-
-            _serialized.Clear();
-        }
-
-        private static void Header(string text, float width) =>
-            GUILayout.Label(text, EditorStyles.miniBoldLabel, GUILayout.Width(width));
     }
 }

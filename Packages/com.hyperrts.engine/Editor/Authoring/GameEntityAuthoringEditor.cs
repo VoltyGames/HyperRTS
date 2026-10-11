@@ -3,6 +3,7 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.GameEntities;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Authoring
 {
@@ -11,21 +12,26 @@ namespace HyperRTS.Editor.Authoring
     [CanEditMultipleObjects]
     public class GameEntityAuthoringEditor : AuthoringEditor
     {
-        private string _summary;
+        private HelpBox _summary;
 
-        public override void OnInspectorGUI()
+        protected override void BuildHeader(VisualElement root)
         {
-            if (targets.Length == 1)
+            if (targets.Length != 1)
             {
-                if (Event.current.type == EventType.Layout || _summary == null)
-                {
-                    _summary = EntitySummary.Line((GameEntityAuthoring)target);
-                }
-
-                EditorGUILayout.LabelField(_summary, EditorStyles.helpBox);
+                return;
             }
 
-            base.OnInspectorGUI();
+            _summary = new HelpBox("", HelpBoxMessageType.None);
+            _summary.AddToClassList("hrts-summary");
+            root.Add(_summary);
+        }
+
+        protected override void Refresh()
+        {
+            if (_summary != null)
+            {
+                _summary.text = EntitySummary.Line((GameEntityAuthoring)target);
+            }
         }
 
         /// <summary>Draws the entity's shape handle; returns the edit to apply when it was dragged, if any.</summary>

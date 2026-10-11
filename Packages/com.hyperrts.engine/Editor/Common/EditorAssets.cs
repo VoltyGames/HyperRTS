@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
+using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Common
 {
@@ -13,6 +16,20 @@ namespace HyperRTS.Editor.Common
         private const string RigGuid = "4b013d5a34cf1e34d8d223e003462d25";
 
         private const string MatchStateGuid = "37a4b4ac2aee31d42895a37c3d702bed";
+
+        private const string StyleSheetGuid = "0fa35f4436964b3da1f222c72ef6f506";
+
+        /// <summary>Adds the shared editor style sheet (HyperRTSEditor.uss) to a window or inspector root.</summary>
+        public static void AddStyles(VisualElement root)
+        {
+            var sheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(AssetDatabase.GUIDToAssetPath(StyleSheetGuid));
+            if (sheet == null)
+            {
+                throw new InvalidOperationException("HyperRTS: Editor/Common/HyperRTSEditor.uss is missing.");
+            }
+
+            root.styleSheets.Add(sheet);
+        }
 
         public static GameObject RigPrefab => AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(RigGuid));
 
