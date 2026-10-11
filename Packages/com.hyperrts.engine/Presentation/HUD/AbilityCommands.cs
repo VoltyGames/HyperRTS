@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Orders;
@@ -11,7 +12,7 @@ namespace HyperRTS.Presentation.HUD
     /// Command-card buttons for the selection's abilities and the local player's support powers, greyed out with a
     /// countdown while cooling down. Aimed abilities start targeting for the next world click.
     /// </summary>
-    public sealed class AbilityButtons
+    public sealed class AbilityCommands : ICommandSource
     {
         private readonly List<Entry> _entries = new();
         private readonly List<Entity> _casters = new();
@@ -31,20 +32,25 @@ namespace HyperRTS.Presentation.HUD
             public int Shown = -1;
         }
 
-        /// <summary>Adds a button per distinct ability of <paramref name="casters"/>, then per support power.</summary>
-        public void Build(HUDContext context, VisualElement root, List<Entity> casters)
+        /// <summary>Adds a button per distinct ability of the owned casters, then per support power.</summary>
+        public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
         {
             _entries.Clear();
             _casters.Clear();
-            _casters.AddRange(casters);
             _player = context.View.LocalPlayer;
 
             var entityManager = context.EntityManager;
-            foreach (var caster in casters)
+            foreach (var caster in owned)
             {
+                if (!entityManager.HasBuffer<Ability>(caster))
+                {
+                    continue;
+                }
+
+                _casters.Add(caster);
                 foreach (var ability in entityManager.GetBuffer<Ability>(caster, true))
                 {
-                    AddDistinct(context, root, ability, false);
+                    AddDistinct(context, entries, ability, false);
                 }
             }
 
@@ -52,7 +58,7 @@ namespace HyperRTS.Presentation.HUD
             {
                 foreach (var ability in entityManager.GetBuffer<Ability>(_player, true))
                 {
-                    AddDistinct(context, root, ability, true);
+                    AddDistinct(context, entries, ability, true);
                 }
             }
         }
@@ -76,7 +82,7 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        private void AddDistinct(HUDContext context, VisualElement root, in Ability ability, bool isPower)
+        private void AddDistinct(HUDContext context, List<CommandEntry> entries, in Ability ability, bool isPower)
         {
             if (Find(ability.Id, isPower) != null)
             {
@@ -87,11 +93,12 @@ namespace HyperRTS.Presentation.HUD
             var type = isPower ? CommandType.UsePower : CommandType.UseAbility;
             var target = ability.Target;
             var id = ability.Id;
-            var button = new CommandButton("", () => Use(context, type, target, id));
+            Action invoke = () => Use(context, type, target, id);
+            var button = new CommandButton("", invoke);
             button.Add(new HUDIcon(ability.Icon.Value, name, "hud-command__icon"));
             HUDElements.Text(name, "hud-command__name", button);
             var countdown = HUDElements.Text("", "hud-command__cooldown", button);
-            root.Add(button);
+            entries.Add(new CommandEntry(button, invoke));
             _entries.Add(new Entry { Button = button, Countdown = countdown, Id = id, IsPower = isPower });
         }
 

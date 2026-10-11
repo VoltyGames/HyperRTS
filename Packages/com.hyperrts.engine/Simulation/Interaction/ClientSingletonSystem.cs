@@ -24,6 +24,7 @@ namespace HyperRTS.Simulation.Interaction
             entityManager.CreateSingleton<PlacementState>();
             entityManager.CreateSingleton<PointerState>();
             entityManager.CreateSingleton<CameraFocusRequest>();
+            entityManager.CreateSingleton<HotkeyPresses>();
             state.Enabled = false;
         }
     }

@@ -28,6 +28,7 @@ namespace HyperRTS.Presentation.HUD
         private readonly LiveQuery _pending = Singleton<PendingCommand>();
         private readonly LiveQuery _placement = Singleton<PlacementState>();
         private readonly LiveQuery _cameraFocus = Singleton<CameraFocusRequest>();
+        private readonly LiveQuery _hotkeys = Singleton<HotkeyPresses>();
 
         private readonly LiveQuery _queues = new(entityManager =>
             ResearchRules.QueueQuery(Allocator.Temp).Build(entityManager));
@@ -87,6 +88,10 @@ namespace HyperRTS.Presentation.HUD
                 QueuedResearch = queued,
             };
         }
+
+        /// <summary>The letter or digit was pressed last frame while gameplay input was live.</summary>
+        public bool WasHotkeyPressed(char key) =>
+            _hotkeys.In(EntityManager).TryGetSingleton(out HotkeyPresses presses) && presses.Contains(key);
 
         public bool CanBuy(Entity prefab, in Buyer buyer) => PurchaseRules.CanBuy(EntityManager, prefab, buyer, Stock);
 

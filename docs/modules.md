@@ -447,7 +447,8 @@ Client only (`HyperRTS.Presentation`). `HUD.prefab` holds:
 | Component | Role |
 | --- | --- |
 | `HUDController` | UI Toolkit HUD on a `PanelRenderer`. Builds its `IHUDPanel`s in `CreatePanels` and refreshes them every frame from a `HUDContext` |
-| Panels | `ResourceBar` (resources, power, population), `SelectionPanel` (with queue), `CommandCard` (build, train, research, abilities, powers, stances, return, unload, sell), `Minimap`, `GameOverBanner` |
+| Panels | `ResourceBar` (resources, power, population), `SelectionPanel` (with queue), `CommandCard`, `Minimap`, `GameOverBanner` |
+| `CommandCard`, `ICommandSource`, `CommandEntry` | The card asks each source for entries when the selection changes and refreshes them every frame. Defaults: `PurchaseCommands` (build, train, research), `AbilityCommands` (abilities, powers), `StanceCommands`, `UnitActionCommands` (return, unload, sell). An entry can take a grid `Slot` and a letter or digit `Hotkey`, fed by `HotkeyInputSystem` through the `HotkeyPresses` singleton |
 | `HUDText` | All HUD strings by key. `Get(key)` for fixed text, `Name(key, authored)` for entity, resource and ability names. Set `HUDText.Current` to translate |
 | `OverlayRenderer` | Selection rings, health bars, placement ghost, rally markers (instanced meshes) |
 | `FogOfWarRenderer` | Fog overlay shader |

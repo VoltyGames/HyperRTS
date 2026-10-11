@@ -1,39 +1,29 @@
-using System;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Abilities;
-using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Production;
-using HyperRTS.Simulation.Transport;
+using System.Linq;
 using Unity.Entities;
-using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
     /// <summary>
-    /// Actions for the owned part of the selection: build, train and research, abilities and support powers, stance,
-    /// return to base, unload and sell.
+    /// Actions for the owned part of the selection, gathered from <see cref="ICommandSource"/>s: by default building,
+    /// training and research, abilities and support powers, stances, and return, unload and sell. Games add their own
+    /// sources, whose entries can take grid slots and hotkeys.
     /// </summary>
     public sealed class CommandCard : HUDPanel
     {
-        private const string ActiveClass = "hud-command--active";
-        private static readonly Stance[] Stances = (Stance[])Enum.GetValues(typeof(Stance));
-
-        private readonly List<(Button Button, Entity Prefab)> _costed = new();
-        private readonly List<(Button Button, Stance Stance)> _stances = new();
-        private readonly List<Entity> _armed = new();
-        private readonly List<Entity> _casters = new();
-        private readonly AbilityButtons _abilities = new();
-        private bool _canSell;
-        private bool _canUnload;
-        private bool _canReturn;
+        private readonly List<ICommandSource> _sources;
+        private readonly List<CommandEntry> _entries = new();
+        private readonly List<Entity> _owned = new();
         private int _hash = -1;
 
-        public CommandCard() : base("hud-commands")
+        /// <summary>The engine's sources, then <paramref name="extra"/>.</summary>
+        public CommandCard(params ICommandSource[] extra) : base("hud-commands")
         {
+            _sources = new List<ICommandSource>
+            {
+                new PurchaseCommands(), new AbilityCommands(), new StanceCommands(), new UnitActionCommands(),
+            };
+            _sources.AddRange(extra);
         }
 
         public override void Refresh(HUDContext context)
@@ -44,171 +34,55 @@ namespace HyperRTS.Presentation.HUD
                 Rebuild(context);
             }
 
-            RefreshAvailability(context);
-            _abilities.Refresh(context);
-
-            var common = CommonStance(context.EntityManager);
-            foreach (var (button, stance) in _stances)
+            foreach (var source in _sources)
             {
-                button.EnableInClassList(ActiveClass, common == stance);
-            }
-        }
-
-        private void RefreshAvailability(HUDContext context)
-        {
-            if (_costed.Count == 0)
-            {
-                return;
+                source.Refresh(context);
             }
 
-            var buyer = context.SnapshotBuyer();
-            foreach (var (button, prefab) in _costed)
-            {
-                button.SetEnabled(context.CanBuy(prefab, buyer));
-            }
+            PressHotkeys(context);
         }
 
         private void Rebuild(HUDContext context)
         {
             Root.Clear();
-            _costed.Clear();
-            _stances.Clear();
-            _armed.Clear();
-            _casters.Clear();
-            _canSell = false;
-            _canUnload = false;
-            _canReturn = false;
+            _entries.Clear();
+            _owned.Clear();
+            foreach (var entity in context.Selected)
+            {
+                if (context.IsOwned(entity))
+                {
+                    _owned.Add(entity);
+                }
+            }
 
-            var builds = new List<Entity>();
-            var products = new List<Entity>();
-            CollectOptions(context, builds, products);
-            AddPrefabButtons(context, builds, prefab => context.StartPlacement(prefab));
-            AddPrefabButtons(context, products, prefab => context.Issue(new PlayerCommand { Type = CommandType.Produce, Prefab = prefab }));
-            _abilities.Build(context, Root, _casters);
-            AddStanceButtons(context);
-            AddActionButton(context, _canReturn, "command.return", CommandType.ReturnToBase, 0);
-            AddActionButton(context, _canUnload, "command.unload", CommandType.Unload, -1);
-            AddActionButton(context, _canSell, "command.sell", CommandType.Sell, 0);
+            foreach (var source in _sources)
+            {
+                source.Build(context, _owned, _entries);
+            }
+
+            // OrderBy is stable, so entries without a slot keep their sources' order after the slotted ones.
+            foreach (var entry in _entries.OrderBy(entry => entry.Slot < 0 ? int.MaxValue : entry.Slot))
+            {
+                if (entry.Hotkey != '\0')
+                {
+                    HUDElements.Text(entry.Hotkey.ToString(), "hud-command__hotkey", entry.Button);
+                }
+
+                Root.Add(entry.Button);
+            }
+
             Root.SetShown(Root.childCount > 0);
         }
 
-        private void CollectOptions(HUDContext context, List<Entity> builds, List<Entity> products)
+        private void PressHotkeys(HUDContext context)
         {
-            var entityManager = context.EntityManager;
-            foreach (var entity in context.Selected)
+            foreach (var entry in _entries)
             {
-                if (!context.IsOwned(entity))
+                var pressed = entry.Hotkey != '\0' && context.WasHotkeyPressed(entry.Hotkey);
+                if (pressed && entry.Button.enabledInHierarchy)
                 {
-                    continue;
+                    entry.Invoke();
                 }
-
-                CollectPrefabs(entityManager, entity, builds, products);
-                if (entityManager.HasComponent<CombatStance>(entity))
-                {
-                    _armed.Add(entity);
-                }
-
-                if (entityManager.HasBuffer<Ability>(entity))
-                {
-                    _casters.Add(entity);
-                }
-
-                _canSell |= entityManager.HasComponent<BuildingTag>(entity);
-                _canUnload |= entityManager.HasComponent<Container>(entity);
-                _canReturn |= entityManager.HasComponent<HomePad>(entity);
-            }
-        }
-
-        private static void CollectPrefabs(EntityManager entityManager, Entity entity, List<Entity> builds,
-            List<Entity> products)
-        {
-            if (entityManager.HasBuffer<BuildOption>(entity))
-            {
-                foreach (var option in entityManager.GetBuffer<BuildOption>(entity, true))
-                {
-                    AddDistinct(builds, option.Prefab);
-                }
-            }
-
-            if (entityManager.HasBuffer<ProductionOption>(entity))
-            {
-                foreach (var option in entityManager.GetBuffer<ProductionOption>(entity, true))
-                {
-                    AddDistinct(products, option.Prefab);
-                }
-            }
-        }
-
-        private void AddActionButton(HUDContext context, bool shown, string key, CommandType type, int argument)
-        {
-            if (!shown)
-            {
-                return;
-            }
-
-            var button = new CommandButton(HUDText.Text(key), () => context.Issue(new PlayerCommand { Type = type, Argument = argument }));
-            button.AddToClassList("hud-command--stance");
-            Root.Add(button);
-        }
-
-        private void AddPrefabButtons(HUDContext context, List<Entity> prefabs, Action<Entity> onClick)
-        {
-            foreach (var prefab in prefabs)
-            {
-                var button = CommandButton.ForPrefab(context.EntityManager, prefab, () => onClick(prefab));
-                _costed.Add((button, prefab));
-                Root.Add(button);
-            }
-        }
-
-        private void AddStanceButtons(HUDContext context)
-        {
-            if (_armed.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var stance in Stances)
-            {
-                var button = new CommandButton(HUDText.StanceName(stance), () => context.Issue(new PlayerCommand
-                {
-                    Type = CommandType.SetStance,
-                    Argument = (int)stance,
-                }));
-                button.AddToClassList("hud-command--stance");
-                _stances.Add((button, stance));
-                Root.Add(button);
-            }
-        }
-
-        /// <summary>The stance every armed unit shares, or null when they differ.</summary>
-        private Stance? CommonStance(EntityManager entityManager)
-        {
-            Stance? common = null;
-            foreach (var entity in _armed)
-            {
-                if (!entityManager.Exists(entity))
-                {
-                    return null;
-                }
-
-                var stance = entityManager.GetComponentData<CombatStance>(entity).Value;
-                if (common.HasValue && common != stance)
-                {
-                    return null;
-                }
-
-                common = stance;
-            }
-
-            return common;
-        }
-
-        private static void AddDistinct(List<Entity> list, Entity entity)
-        {
-            if (entity != Entity.Null && !list.Contains(entity))
-            {
-                list.Add(entity);
             }
         }
     }

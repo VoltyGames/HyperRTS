@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common;
@@ -79,6 +80,46 @@ namespace HyperRTS.Presentation.Tests
             Assert.IsFalse(_view.HasLocalPlayer);
             Assert.IsFalse(_view.IsLocalDefeated());
             Assert.IsTrue(_context.Refresh(_view));
+        }
+
+        [Test]
+        public void CommandCard_PlacesSlottedEntriesFirst_AndPressesHotkeys()
+        {
+            var source = new TestSource();
+            var card = new CommandCard(source);
+            Refresh();
+            card.Refresh(_context);
+
+            Assert.AreEqual(source.Slotted.Button, card.Root[0], "slot 0 comes before unslotted entries");
+            Assert.AreEqual(0, source.Pressed);
+
+            var presses = new HotkeyPresses();
+            presses.Keys.Add('J');
+            _em.CreateEntityQuery(typeof(HotkeyPresses)).SetSingleton(presses);
+            card.Refresh(_context);
+
+            Assert.AreEqual(1, source.Pressed);
+        }
+
+        private sealed class TestSource : ICommandSource
+        {
+            public CommandEntry Slotted;
+            public int Pressed;
+
+            public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
+            {
+                entries.Add(new CommandEntry(new CommandButton("Later", () => { }), () => { }));
+                Slotted = new CommandEntry(new CommandButton("Jam", () => Pressed++), () => Pressed++)
+                {
+                    Slot = 0,
+                    Hotkey = 'j',
+                };
+                entries.Add(Slotted);
+            }
+
+            public void Refresh(HUDContext context)
+            {
+            }
         }
 
         private void Refresh()
