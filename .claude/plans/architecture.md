@@ -18,20 +18,22 @@ documentation: update or delete items as they land.
 - Editor UI on UI Toolkit; inspectors validate every selected object.
 - `RTSSceneBuilder.Build(RTSSceneSpec)` behind the scene wizard.
 - Captured entities drop old upgrades by source kind, even when the old owner is gone.
+- Phase A (E1, E4–E9):
+  - TypeSet (256 types) replaces 64-bit command masks; OrderTraits.Register for custom orders;
+    SmartOrderRule buffer for game right-click behaviour.
+  - TargetReach shared by build, repair, capture, board and gather.
+  - Offline + OfflineReason (construction, power, game reasons such as EMP) replaces six filters.
+  - GameEvents (UnitProduced, BuildingCompleted, OwnerChanged) with ReadySoundSystem, BuildStatsSystem
+    and OwnerChangeSystem; Ownership.Transfer is the one owner change.
+  - PurchaseRules + Buyer shared by orders, placement, AI and HUD.
+  - Research lives in Production; prerequisites accept research; back-edge allowlist empty.
+- Declined: E2 (a per-frame present-command set; scanning a few buffers is cheap) and E3 (the contract already
+  gives steering to the active order, and to combat only while AttackTarget is enabled).
 
 ## Simulation
 
 | # | Finding | Fix |
 | --- | --- | --- |
-| E1 | Smart resolution (`OrderResolver`) and order traits (`OrderTypeExtensions`) are closed switches; `PlayerCommands.Mask` returns 0 for types ≥ 64 | Split `UnitCommandSystem` into resolve and issue stages; games add resolvers between them. `OrderTraits` table singleton. 256-bit command mask |
-| E2 | About 7 command systems each rescan every player's buffer on the main thread | `CommandSystemGroup` in the order phase; one present-types bitset per frame; `PlayerCommands.OwnedSubjects` helper |
-| E3 | 11 systems write `MoveDestination`; arbitration is "last phase wins" plus copied `AttackTarget` checks | Explicit owner (`LocomotionOwner`) or a documented priority, enforced in one helper |
-| E4 | Approach-then-act order skeleton copied 6 times (Construction, Repair, Capture, Boarding, Gather, Ability) | `TargetedOrder` helper returning `Invalid / Approaching / InReach` |
-| E5 | "Finished and powered" filter written 6 times; games can't add EMP or stun | `Inoperative` enableable tag with a reason mask, computed in one system |
-| E6 | Gameplay calls audio and stats inline (`ProductionSystem` has 11 lookups) | Frame event buffers `Produced`, `Completed`, `OwnerChanged` |
-| E7 | Purchase rule coded 3 times (production, placement, AI) | `ProducibleRules.CanPurchase` / `TryPurchase`, HUD included |
-| E8 | Ownership change handled in 4 places; Capture depends on Production, Resources and Selection | `OwnershipWriter.Transfer` emitting `OwnerChanged` |
-| E9 | Back-edge Production → Upgrades; prerequisites accept only buildings | Generic research in Production; prerequisites accept any `TypeId` |
 | E10 | No player-level modifiers: `IncomeMultiplier`, low-power rate and power are special cases | `StatModifier` buffer on players; low power as a modifier source |
 | E11 | Ability definition and cooldown in one 120-byte replicated element; closed targeting enum; no cost | Definition in a blob or prefab, runtime `{Id, Cooldown}`; optional `ResourceCost`; effect prefabs |
 | E12 | AI is one system with a fixed pipeline, omniscient on every difficulty | `AISystemGroup`: scheduler, blackboard snapshot, one system per behaviour; fog-honest option |
@@ -58,7 +60,6 @@ documentation: update or delete items as they land.
 
 | Phase | Work | Size |
 | --- | --- | --- |
-| A | Order and command extensibility, `TargetedOrder`, `Inoperative`, domain events, purchase rules (E1–E9) | Large |
 | B | Client assembly, command card model, observer HUD, session phases (E17–E22) | Large |
 | C | Player modifiers, abilities split, AI behaviour systems, parallel writers (E10–E15) | Large |
 | D | CI with scene validation, `TestWorld` for game assemblies, determinism test, editor discovery (E16, E25–E27) | Medium |
