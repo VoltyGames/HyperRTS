@@ -140,7 +140,7 @@ namespace HyperRTS.Editor.PlayMode
                 return new float3(0f, terrain.Height(float2.zero), 0f);
             }
 
-            var center = map.Min + map.Size * 0.5f;
+            var center = map.Center.xz;
             return new float3(center.x, terrain.Height(center), center.y);
         }
     }

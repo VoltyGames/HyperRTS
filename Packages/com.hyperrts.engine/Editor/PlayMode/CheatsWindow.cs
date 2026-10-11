@@ -102,7 +102,7 @@ namespace HyperRTS.Editor.PlayMode
 
             SetChoices(_player, PlayerLabels(manager, players));
             SetChoices(_prefab, PrefabNames(manager, Cheats.Prefabs(manager)));
-            _control.SetEnabled(CanControl(manager, players[System.Math.Min(_player.index, players.Length - 1)]));
+            _control.SetEnabled(CanControl(manager, SelectedPlayer(players)));
             _fog.SetValueWithoutNotify(Cheats.FogEnabled(manager));
             _speed.SetValueWithoutNotify(LocalGameSpeed.Scale);
         }
@@ -129,10 +129,13 @@ namespace HyperRTS.Editor.PlayMode
                 return;
             }
 
-            var player = players[System.Math.Min(_player.index, players.Length - 1)];
+            var player = SelectedPlayer(players);
             cheat(manager, player, manager.GetComponentData<Player>(player).Faction);
             StopRecording(manager.World);
         }
+
+        private Entity SelectedPlayer(NativeArray<Entity> players) =>
+            players[System.Math.Min(_player.index, players.Length - 1)];
 
         // Cheats change the world outside the recorded commands, so the recording would no longer play back.
         private static void StopRecording(World world)
