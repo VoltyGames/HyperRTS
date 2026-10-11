@@ -16,13 +16,21 @@ namespace HyperRTS.Simulation.Common
             state.EntityManager.SetName(events, "GameEvents");
         }
 
+        // Scheduled, so last frame's readers needn't finish on the main thread first.
         [BurstCompile]
-        public void OnUpdate(ref SystemState state)
+        public void OnUpdate(ref SystemState state) => new ClearJob().Schedule();
+
+        [BurstCompile]
+        [WithAll(typeof(GameEvents))]
+        private partial struct ClearJob : IJobEntity
         {
-            var events = SystemAPI.GetSingletonEntity<GameEvents>();
-            SystemAPI.GetBuffer<UnitProduced>(events).Clear();
-            SystemAPI.GetBuffer<BuildingCompleted>(events).Clear();
-            SystemAPI.GetBuffer<OwnerChanged>(events).Clear();
+            private void Execute(DynamicBuffer<UnitProduced> produced, DynamicBuffer<BuildingCompleted> completed,
+                DynamicBuffer<OwnerChanged> ownerChanges)
+            {
+                produced.Clear();
+                completed.Clear();
+                ownerChanges.Clear();
+            }
         }
     }
 }
