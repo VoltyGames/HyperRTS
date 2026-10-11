@@ -11,9 +11,9 @@ namespace HyperRTS.Editor.Catalog
     /// <summary>Per prefab: what it requires, what makes it, what it makes and what it unlocks.</summary>
     internal sealed class TechTreeView : VisualElement
     {
-        private readonly Dictionary<GameEntityAuthoring, List<GameEntityAuthoring>> _makes = new();
-        private readonly Dictionary<GameEntityAuthoring, List<GameEntityAuthoring>> _madeBy = new();
-        private readonly Dictionary<GameEntityAuthoring, List<GameEntityAuthoring>> _unlocks = new();
+        private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _makes = new();
+        private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _madeBy = new();
+        private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _unlocks = new();
 
         /// <summary>Rebuilds the links from <paramref name="all"/> and shows the <paramref name="visible"/> ones.</summary>
         public void Show(IEnumerable<GameEntityAuthoring> all, IEnumerable<GameEntityAuthoring> visible)
@@ -60,12 +60,13 @@ namespace HyperRTS.Editor.Catalog
             return node;
         }
 
-        private static List<GameEntityAuthoring> Makes(GameEntityAuthoring prefab)
+        private static List<ProducibleAuthoring> Makes(GameEntityAuthoring prefab)
         {
-            var made = new List<GameEntityAuthoring>();
+            var made = new List<ProducibleAuthoring>();
             if (prefab.TryGetComponent(out ProducerAuthoring producer))
             {
                 made.AddRange(producer.productionOptions);
+                made.AddRange(producer.researchOptions);
             }
 
             if (prefab.TryGetComponent(out BuilderAuthoring builder))
@@ -77,18 +78,18 @@ namespace HyperRTS.Editor.Catalog
             return made;
         }
 
-        private static void Append(Dictionary<GameEntityAuthoring, List<GameEntityAuthoring>> map,
-            GameEntityAuthoring key, GameEntityAuthoring value)
+        private static void Append(Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> map,
+            ProducibleAuthoring key, ProducibleAuthoring value)
         {
             if (!map.TryGetValue(key, out var list))
             {
-                map[key] = list = new List<GameEntityAuthoring>();
+                map[key] = list = new List<ProducibleAuthoring>();
             }
 
             list.Add(value);
         }
 
-        private static void AddLine(VisualElement node, string label, IEnumerable<GameEntityAuthoring> prefabs)
+        private static void AddLine(VisualElement node, string label, IEnumerable<ProducibleAuthoring> prefabs)
         {
             if (prefabs == null)
             {

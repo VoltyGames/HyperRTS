@@ -22,16 +22,16 @@ namespace HyperRTS.Simulation.GameEntities
             return costs;
         }
 
-        /// <summary>Rebakes the owner when a required building is renamed, since only its type id is kept.</summary>
-        public static List<Prerequisite> Prerequisites(IBaker baker, IEnumerable<GameEntityAuthoring> buildings)
+        /// <summary>Rebakes the owner when a required type is renamed, since only its type id is kept.</summary>
+        public static List<Prerequisite> Prerequisites(IBaker baker, IEnumerable<ProducibleAuthoring> types)
         {
             var required = new List<Prerequisite>();
-            foreach (var building in buildings)
+            foreach (var type in types)
             {
-                if (building != null)
+                if (type != null)
                 {
-                    baker.DependsOn(building);
-                    required.Add(new Prerequisite { TypeId = building.TypeId });
+                    baker.DependsOn(type);
+                    required.Add(new Prerequisite { TypeId = type.TypeId });
                 }
             }
 

@@ -1,4 +1,4 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Upgrades;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -88,7 +87,7 @@ namespace HyperRTS.Simulation.AI
             _casters = SystemAPI.QueryBuilder().WithAll<Ability, Faction, LocalTransform>().WithNone<Dead>().Build();
             _owned = SystemAPI.QueryBuilder().WithAll<EntityInfo, Faction, LocalTransform>().WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
-            _queues = UpgradeRules.QueueQuery(Allocator.Temp).Build(ref state);
+            _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
             _targetLookup = new TargetLookup(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
             _factions = state.GetComponentLookup<Faction>(true);

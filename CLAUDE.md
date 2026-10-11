@@ -50,7 +50,7 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
 - Simulation modules are layered (order in `docs/modules.md`): a module uses only lower ones, and `Common` is the
   base. Put a component two modules share in `Common` or the lower module; authoring files may reference any
   module. `ModuleLayoutTests` enforces this; a new module needs a place in its `Layers`, and don't grow its
-  back-edge allowlist casually.
+  back-edge allowlist (empty now).
 - Authoring classes derive from `AuthoringBehaviour` (game ones too, for inspector warnings, summaries and
   validation). One `*Authoring.cs` file holds the authoring class and its nested `Baker`; runtime components live
   in their own files (`ModuleLayoutTests` enforces this).

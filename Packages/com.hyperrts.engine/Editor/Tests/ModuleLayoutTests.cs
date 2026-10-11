@@ -22,11 +22,7 @@ namespace HyperRTS.Editor.Tests
 
         // Uses of a higher layer that are part of the design. Shrink this list; never grow it casually: a new entry
         // usually means a shared type belongs in Common or a lower module.
-        private static readonly string[] AllowedBackEdges =
-        {
-            // Production finishes research into the player's upgrades, and upgrades are produced like units.
-            "Production -> Upgrades",
-        };
+        private static readonly string[] AllowedBackEdges = { };
 
         private static readonly Regex Namespace = new(@"^namespace ([\w.]+)", RegexOptions.Multiline);
         private static readonly Regex SimulationUsing = new(@"^using HyperRTS\.Simulation\.(\w+)", RegexOptions.Multiline);

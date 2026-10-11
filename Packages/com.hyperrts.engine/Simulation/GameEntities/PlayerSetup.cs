@@ -1,9 +1,9 @@
-﻿using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Upgrades;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.GameEntities
             writer.SetEnabled<Defeated>(false);
             writer.AddBuffer<PlayerCommand>();
             writer.AddBuffer<PlayerCommandSubject>();
-            writer.AddBuffer<ResearchedUpgrade>();
+            writer.AddBuffer<CompletedResearch>();
             return writer.AddBuffer<ResourceStock>();
         }
     }

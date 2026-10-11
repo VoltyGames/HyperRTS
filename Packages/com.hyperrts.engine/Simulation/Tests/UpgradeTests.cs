@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(3f);
 
             Assert.AreEqual(50, _world.ResourcesOf(1, _supplies));
-            Assert.AreEqual(1, _world.EntityManager.GetBuffer<ResearchedUpgrade>(_world.Player(1)).Length);
+            Assert.AreEqual(1, _world.EntityManager.GetBuffer<CompletedResearch>(_world.Player(1)).Length);
             Assert.AreEqual(150f, _world.Get<Health>(tank).Max);
             Assert.AreEqual(100f, _world.Get<Health>(jeep).Max, "other types are unaffected");
             Assert.AreEqual(100f, _world.Get<Health>(enemyTank).Max, "other players are unaffected");
@@ -94,6 +94,29 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<ProductionQueueItem>(lab).Length, "already researched");
             Assert.AreEqual(450, _world.ResourcesOf(1, _supplies));
+        }
+
+        [Test]
+        public void FinishedResearch_SatisfiesAPrerequisite()
+        {
+            var doctrine = UpgradePrefab("Doctrine", 0);
+            var tank = _world.MakePrefab(_world.SpawnUnit(0, new float3(90f, 0f, 90f), name: "Tank"));
+            var required = new Prerequisite { TypeId = EntityInfo.TypeIdFromName("Doctrine") };
+            _world.EntityManager.GetBuffer<Prerequisite>(tank).Add(required);
+            var lab = _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), float3.zero,
+                doctrine, tank);
+            _world.AddResources(1, _supplies, 100);
+
+            _world.Produce(1, lab, tank);
+            _world.Tick();
+            Assert.AreEqual(0, _world.EntityManager.GetBuffer<ProductionQueueItem>(lab).Length, "not researched yet");
+
+            _world.Produce(1, lab, doctrine);
+            _world.Run(3f);
+            _world.Produce(1, lab, tank);
+            _world.Tick();
+
+            Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(lab).Length);
         }
 
         [Test]

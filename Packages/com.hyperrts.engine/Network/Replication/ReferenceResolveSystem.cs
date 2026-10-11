@@ -3,7 +3,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Upgrades;
 using Unity.Entities;
 
 namespace HyperRTS.Network.Replication
@@ -32,12 +31,12 @@ namespace HyperRTS.Network.Replication
                 }
             }
 
-            foreach (var researched in SystemAPI.Query<DynamicBuffer<ResearchedUpgrade>>()
-                         .WithChangeFilter<ResearchedUpgrade>())
+            foreach (var researched in SystemAPI.Query<DynamicBuffer<CompletedResearch>>()
+                         .WithChangeFilter<CompletedResearch>())
             {
                 for (var i = 0; i < researched.Length; i++)
                 {
-                    researched.ElementAt(i).Upgrade = prefabs.Find(researched[i].TypeId);
+                    researched.ElementAt(i).Prefab = prefabs.Find(researched[i].TypeId);
                 }
             }
 

@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Production
         [Tooltip("Unit prefabs this building can train.")]
         public List<UnitAuthoring> productionOptions = new();
 
-        [Tooltip("Upgrade prefabs this building can research, each once per player.")]
+        [Tooltip("Research prefabs (upgrades) this building can research, each once per player.")]
         public List<UpgradeAuthoring> researchOptions = new();
 
         [Tooltip("Local offset where finished units appear.")]

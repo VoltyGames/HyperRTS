@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using Unity.Collections;
 using Unity.Entities;
@@ -9,7 +10,7 @@ namespace HyperRTS.Simulation.GameEntities
 {
     /// <summary>Base for <c>UnitAuthoring</c> and <c>BuildingAuthoring</c>: identity, owner, health, vision, cost.</summary>
     [RequiresGhost]
-    public abstract class GameEntityAuthoring : AuthoringBehaviour
+    public abstract class GameEntityAuthoring : ProducibleAuthoring
     {
         [Header("Identity")]
         [Tooltip("Name shown in the HUD. Instances sharing a name are one type (double-click, prerequisites).")]
@@ -49,12 +50,10 @@ namespace HyperRTS.Simulation.GameEntities
         [Min(0f)]
         public float buildTime = 10f;
 
-        [Tooltip("Buildings the owner must have completed before this can be produced.")]
-        public List<GameEntityAuthoring> prerequisites = new();
+        [Tooltip("Completed buildings or finished research the owner needs before this can be produced.")]
+        public List<ProducibleAuthoring> prerequisites = new();
 
-        public int TypeId => EntityInfo.TypeIdFromName(DisplayName);
-
-        public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
+        public override string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
 
         /// <summary>Edge-to-edge reach is measured from this, matching <see cref="Navigation.EntityRadius"/> at runtime.</summary>
         public abstract float Radius { get; }

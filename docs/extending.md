@@ -48,7 +48,7 @@ Mirror the engine's layering:
 | Power plants | Building **Power** (positive generates, negative draws) |
 | Damage vs armor, weak rear armor | `Damage Type` assets + `Armor`, directional fields |
 | Artillery | `Weapon` splash radius and edge damage |
-| Upgrades | `Upgrade` prefabs in a producer's **Research Options** |
+| Upgrades, tech unlocks | `UpgradeAuthoring` prefabs in a producer's **Research Options**; list one in a prerequisite to gate units or buildings behind it |
 | Veterancy | `Veterancy` ranks; kills pay `experienceValue` |
 | Oil derricks, tech buildings | Building + `Capturable`; units with `Capturer` |
 | Garrisons, transports | `Container` on the building or vehicle, `Passenger` on the units |

@@ -38,15 +38,28 @@ namespace HyperRTS.Simulation.Production
                 .WithNone<ConstructionProgress, Dead>();
 
         /// <summary>Only snapshots <paramref name="completed"/> when something is required.</summary>
-        public static bool MeetsPrerequisites(DynamicBuffer<Prerequisite> required, byte faction, EntityQuery completed) =>
-            required.IsEmpty || new CompletedBuildings(completed, Allocator.Temp).MeetsPrerequisites(required, faction);
+        public static bool MeetsPrerequisites(DynamicBuffer<Prerequisite> required, byte faction,
+            DynamicBuffer<CompletedResearch> research, EntityQuery completed)
+        {
+            if (required.IsEmpty)
+            {
+                return true;
+            }
 
-        /// <summary>True when <paramref name="faction"/> owns a completed building of every required type.</summary>
-        public bool MeetsPrerequisites(DynamicBuffer<Prerequisite> required, byte faction)
+            return new CompletedBuildings(completed, Allocator.Temp).MeetsPrerequisites(required, faction, research);
+        }
+
+        /// <summary>
+        /// True when <paramref name="faction"/> has, for every required type, a completed building of it or finished
+        /// research of it in <paramref name="research"/>.
+        /// </summary>
+        public bool MeetsPrerequisites(DynamicBuffer<Prerequisite> required, byte faction,
+            DynamicBuffer<CompletedResearch> research)
         {
             foreach (var prerequisite in required)
             {
-                if (!Owns(faction, prerequisite.TypeId))
+                var met = Owns(faction, prerequisite.TypeId) || ResearchRules.IsDone(research, prerequisite.TypeId);
+                if (!met)
                 {
                     return false;
                 }

@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Upgrades;
+using HyperRTS.Simulation.Production;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -28,9 +28,9 @@ namespace HyperRTS.Simulation.Production
         private ComponentLookup<Producible> _producibleLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<ActiveOrder> _orderLookup;
-        private ComponentLookup<Upgrade> _upgradeLookup;
+        private ComponentLookup<Research> _researchLookup;
         private ComponentLookup<Offline> _offlineLookup;
-        private BufferLookup<ResearchedUpgrade> _researchedLookup;
+        private BufferLookup<CompletedResearch> _completedResearchLookup;
         private BufferLookup<LandingPad> _padLookup;
         private ComponentLookup<HomePad> _padUserLookup;
         private ComponentLookup<PlayerStats> _statsLookup;
@@ -44,9 +44,9 @@ namespace HyperRTS.Simulation.Production
             _producibleLookup = state.GetComponentLookup<Producible>(true);
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _orderLookup = state.GetComponentLookup<ActiveOrder>(true);
-            _upgradeLookup = state.GetComponentLookup<Upgrade>(true);
+            _researchLookup = state.GetComponentLookup<Research>(true);
             _offlineLookup = state.GetComponentLookup<Offline>(true);
-            _researchedLookup = state.GetBufferLookup<ResearchedUpgrade>();
+            _completedResearchLookup = state.GetBufferLookup<CompletedResearch>();
             _padLookup = state.GetBufferLookup<LandingPad>(true);
             _padUserLookup = state.GetComponentLookup<HomePad>(true);
             _statsLookup = state.GetComponentLookup<PlayerStats>();
@@ -62,9 +62,9 @@ namespace HyperRTS.Simulation.Production
             _producibleLookup.Update(ref state);
             _transformLookup.Update(ref state);
             _orderLookup.Update(ref state);
-            _upgradeLookup.Update(ref state);
+            _researchLookup.Update(ref state);
             _offlineLookup.Update(ref state);
-            _researchedLookup.Update(ref state);
+            _completedResearchLookup.Update(ref state);
             _padLookup.Update(ref state);
             _padUserLookup.Update(ref state);
             _statsLookup.Update(ref state);
@@ -84,9 +84,9 @@ namespace HyperRTS.Simulation.Production
                 ProducibleLookup = _producibleLookup,
                 TransformLookup = _transformLookup,
                 OrderLookup = _orderLookup,
-                UpgradeLookup = _upgradeLookup,
+                ResearchLookup = _researchLookup,
                 OfflineLookup = _offlineLookup,
-                ResearchedLookup = _researchedLookup,
+                CompletedResearchLookup = _completedResearchLookup,
                 PadLookup = _padLookup,
                 PadUserLookup = _padUserLookup,
                 StatsLookup = _statsLookup,
@@ -109,9 +109,9 @@ namespace HyperRTS.Simulation.Production
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<ActiveOrder> OrderLookup;
-            [ReadOnly] public ComponentLookup<Upgrade> UpgradeLookup;
+            [ReadOnly] public ComponentLookup<Research> ResearchLookup;
             [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
-            public BufferLookup<ResearchedUpgrade> ResearchedLookup;
+            public BufferLookup<CompletedResearch> CompletedResearchLookup;
             [ReadOnly] public BufferLookup<LandingPad> PadLookup;
             [ReadOnly] public ComponentLookup<HomePad> PadUserLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
@@ -147,9 +147,9 @@ namespace HyperRTS.Simulation.Production
                     return;
                 }
 
-                if (UpgradeLookup.HasComponent(prefab))
+                if (ResearchLookup.HasComponent(prefab))
                 {
-                    Research(faction.Value, queue[0]);
+                    RecordResearch(faction.Value, queue[0]);
                 }
                 else
                 {
@@ -164,11 +164,11 @@ namespace HyperRTS.Simulation.Production
                 producer.Elapsed = 0f;
             }
 
-            private void Research(byte faction, ProductionQueueItem item)
+            private void RecordResearch(byte faction, ProductionQueueItem item)
             {
-                if (ResearchedLookup.TryGetBuffer(PlayerByFaction[faction], out var researched))
+                if (CompletedResearchLookup.TryGetBuffer(PlayerByFaction[faction], out var researched))
                 {
-                    researched.Add(new ResearchedUpgrade { Upgrade = item.Prefab, TypeId = item.TypeId });
+                    researched.Add(new CompletedResearch { Prefab = item.Prefab, TypeId = item.TypeId });
                 }
             }
 

@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Upgrades;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
@@ -31,7 +30,7 @@ namespace HyperRTS.Presentation.HUD
         private readonly LiveQuery _cameraFocus = Singleton<CameraFocusRequest>();
 
         private readonly LiveQuery _queues = new(entityManager =>
-            UpgradeRules.QueueQuery(Allocator.Temp).Build(entityManager));
+            ResearchRules.QueueQuery(Allocator.Temp).Build(entityManager));
 
         public MatchView View { get; private set; }
 
@@ -84,19 +83,20 @@ namespace HyperRTS.Presentation.HUD
 
         public bool PrerequisitesMet(Entity prefab, in CompletedBuildings completed) =>
             !EntityManager.HasBuffer<Prerequisite>(prefab)
-            || completed.MeetsPrerequisites(EntityManager.GetBuffer<Prerequisite>(prefab, true), View.Local.Faction);
+            || completed.MeetsPrerequisites(EntityManager.GetBuffer<Prerequisite>(prefab, true), View.Local.Faction,
+                EntityManager.GetBuffer<CompletedResearch>(View.LocalPlayer, true));
 
         /// <summary>This frame's prefabs the local player has queued, shared by every research button.</summary>
         public NativeHashSet<Entity> SnapshotQueued()
         {
             var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
-            UpgradeRules.CollectQueued(EntityManager, _queues.In(EntityManager), View.Local.Faction, queued);
+            ResearchRules.CollectQueued(EntityManager, _queues.In(EntityManager), View.Local.Faction, queued);
             return queued;
         }
 
         /// <summary>False for an upgrade the local player has researched or already queued somewhere.</summary>
         public bool CanQueueResearch(Entity prefab, NativeHashSet<Entity> queued) =>
-            UpgradeRules.CanQueue(EntityManager, EntityManager.GetBuffer<ResearchedUpgrade>(View.LocalPlayer, true),
+            ResearchRules.CanQueue(EntityManager, EntityManager.GetBuffer<CompletedResearch>(View.LocalPlayer, true),
                 queued, prefab);
 
         /// <summary>Starts targeting a command; the input layer issues it on the next world click.</summary>

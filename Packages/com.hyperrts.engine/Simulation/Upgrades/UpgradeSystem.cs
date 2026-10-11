@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.Upgrades
     public partial struct UpgradeSystem : ISystem
     {
         private EntityQuery _players;
-        private BufferLookup<ResearchedUpgrade> _researched;
+        private BufferLookup<CompletedResearch> _researched;
         private BufferLookup<UpgradeEffect> _effects;
         private BufferLookup<StatModifier> _modifiers;
 
@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Upgrades
         public void OnCreate(ref SystemState state)
         {
             _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
-            _researched = state.GetBufferLookup<ResearchedUpgrade>(true);
+            _researched = state.GetBufferLookup<CompletedResearch>(true);
             _effects = state.GetBufferLookup<UpgradeEffect>(true);
             _modifiers = state.GetBufferLookup<StatModifier>();
         }
@@ -51,7 +51,7 @@ namespace HyperRTS.Simulation.Upgrades
         private partial struct ApplyJob : IJobEntity
         {
             [ReadOnly] public NativeArray<Entity> PlayerByFaction;
-            [ReadOnly] public BufferLookup<ResearchedUpgrade> Researched;
+            [ReadOnly] public BufferLookup<CompletedResearch> Researched;
             [ReadOnly] public BufferLookup<UpgradeEffect> Effects;
 
             // Each entity writes only its own buffer, and only when its set changes, so stat change filters stay quiet.
@@ -78,7 +78,13 @@ namespace HyperRTS.Simulation.Upgrades
                 var modifiers = Modifiers[entity];
                 for (var i = applied.Count; i < researched.Length; i++)
                 {
-                    foreach (var effect in Effects[researched[i].Upgrade])
+                    // Research that only unlocks something has no effects.
+                    if (!Effects.TryGetBuffer(researched[i].Prefab, out var effects))
+                    {
+                        continue;
+                    }
+
+                    foreach (var effect in effects)
                     {
                         if (effect.AppliesTo == 0 || effect.AppliesTo == info.TypeId)
                         {

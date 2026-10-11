@@ -4,7 +4,6 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Spatial;
-using HyperRTS.Simulation.Upgrades;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -20,8 +19,8 @@ namespace HyperRTS.Simulation.AI
 
             /// <summary>The stockpile left after what this think already queued.</summary>
             public NativeArray<ResourceStock> Stock;
-            public DynamicBuffer<ResearchedUpgrade> Researched;
-            public NativeHashSet<Entity> QueuedUpgrades;
+            public DynamicBuffer<CompletedResearch> Researched;
+            public NativeHashSet<Entity> QueuedResearch;
             public CompletedBuildings Completed;
         }
 
@@ -71,14 +70,14 @@ namespace HyperRTS.Simulation.AI
         {
             ref var ai = ref SystemAPI.GetComponentRW<AIPlayer>(turn.Player).ValueRW;
             var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
-            UpgradeRules.CollectQueued(state.EntityManager, _queues, turn.Faction, queued);
+            ResearchRules.CollectQueued(state.EntityManager, _queues, turn.Faction, queued);
             var budget = new Budget
             {
                 Faction = turn.Faction,
                 Room = SystemAPI.GetComponent<Population>(turn.Player),
                 Stock = SystemAPI.GetBuffer<ResourceStock>(turn.Player).ToNativeArray(Allocator.Temp),
-                Researched = SystemAPI.GetBuffer<ResearchedUpgrade>(turn.Player),
-                QueuedUpgrades = queued,
+                Researched = SystemAPI.GetBuffer<CompletedResearch>(turn.Player),
+                QueuedResearch = queued,
                 Completed = snapshot.Completed,
             };
 
@@ -132,7 +131,7 @@ namespace HyperRTS.Simulation.AI
 
         private bool CanTrain(ref SystemState state, Entity prefab, in Budget budget)
         {
-            if (!UpgradeRules.CanQueue(state.EntityManager, budget.Researched, budget.QueuedUpgrades, prefab))
+            if (!ResearchRules.CanQueue(state.EntityManager, budget.Researched, budget.QueuedResearch, prefab))
             {
                 return false;
             }
@@ -147,7 +146,8 @@ namespace HyperRTS.Simulation.AI
                 return false;
             }
 
-            return budget.Completed.MeetsPrerequisites(SystemAPI.GetBuffer<Prerequisite>(prefab), budget.Faction);
+            return budget.Completed.MeetsPrerequisites(SystemAPI.GetBuffer<Prerequisite>(prefab), budget.Faction,
+                budget.Researched);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;
 using Unity.Collections;
@@ -19,7 +20,7 @@ namespace HyperRTS.Simulation.Upgrades
     [Icon(HyperRTSIcons.Buildings)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
-    public class UpgradeAuthoring : AuthoringBehaviour
+    public class UpgradeAuthoring : ProducibleAuthoring
     {
         [Serializable]
         public class Effect
@@ -44,15 +45,13 @@ namespace HyperRTS.Simulation.Upgrades
         [Min(0f)]
         public float researchTime = 30f;
 
-        [Tooltip("Buildings the owner must have completed before researching.")]
-        public List<GameEntityAuthoring> prerequisites = new();
+        [Tooltip("Completed buildings or finished research the owner needs before researching.")]
+        public List<ProducibleAuthoring> prerequisites = new();
 
         [Tooltip("What the upgrade changes.")]
         public List<Effect> effects = new();
 
-        public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
-
-        public int TypeId => EntityInfo.TypeIdFromName(DisplayName);
+        public override string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
 
         private void Reset() => displayName = name;
 

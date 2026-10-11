@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Upgrades
             IReadOnlyList<ResourceCost> cost, IReadOnlyList<Prerequisite> prerequisites,
             IReadOnlyList<UpgradeEffect> effects) where TWriter : struct, IEntityWriter
         {
-            writer.Add<Upgrade>();
+            writer.Add<Research>();
             writer.Add(info);
             writer.Add(new Producible { BuildTime = researchTime });
 

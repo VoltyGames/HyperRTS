@@ -1,10 +1,10 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Upgrades;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Production
             _selectedProducers = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, Faction, Selected>()
                 .WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
-            _queues = UpgradeRules.QueueQuery(Allocator.Temp).Build(ref state);
+            _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
         }
 
         [BurstCompile]
@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Production
 
             foreach (var (player, commands, listed, stock, researched) in SystemAPI
                          .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>,
-                             DynamicBuffer<ResourceStock>, DynamicBuffer<ResearchedUpgrade>>()
+                             DynamicBuffer<ResourceStock>, DynamicBuffer<CompletedResearch>>()
                          .WithNone<Defeated>())
             {
                 var faction = player.ValueRO.Faction;
@@ -73,9 +73,9 @@ namespace HyperRTS.Simulation.Production
 
         private void Produce(ref SystemState state, byte faction, in PlayerCommand command,
             DynamicBuffer<PlayerCommandSubject> listed, DynamicBuffer<ResourceStock> stock,
-            DynamicBuffer<ResearchedUpgrade> researched)
+            DynamicBuffer<CompletedResearch> researched)
         {
-            if (!UpgradeRules.CanQueue(state.EntityManager, _queues, researched, faction, command.Prefab))
+            if (!ResearchRules.CanQueue(state.EntityManager, _queues, researched, faction, command.Prefab))
             {
                 return;
             }
@@ -94,7 +94,7 @@ namespace HyperRTS.Simulation.Production
             }
 
             var required = SystemAPI.GetBuffer<Prerequisite>(prefab);
-            if (!CompletedBuildings.MeetsPrerequisites(required, faction, _completed))
+            if (!CompletedBuildings.MeetsPrerequisites(required, faction, researched, _completed))
             {
                 return;
             }

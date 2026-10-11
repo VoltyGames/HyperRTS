@@ -130,7 +130,8 @@ namespace HyperRTS.Simulation.Buildings
             }
 
             var required = SystemAPI.GetBuffer<Prerequisite>(prefab);
-            if (!CompletedBuildings.MeetsPrerequisites(required, request.Faction, _completed))
+            var research = SystemAPI.GetBuffer<CompletedResearch>(request.Player);
+            if (!CompletedBuildings.MeetsPrerequisites(required, request.Faction, research, _completed))
             {
                 return false;
             }

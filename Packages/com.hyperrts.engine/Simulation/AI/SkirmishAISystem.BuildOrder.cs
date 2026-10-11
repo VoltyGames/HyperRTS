@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Spatial;
-using HyperRTS.Simulation.Upgrades;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -33,7 +32,7 @@ namespace HyperRTS.Simulation.AI
                 }
 
                 counts.TryGetValue(SystemAPI.GetComponent<EntityInfo>(step.Prefab).TypeId, out var owned);
-                var wanted = SystemAPI.HasComponent<Upgrade>(step.Prefab) ? math.min(step.Count, 1) : step.Count;
+                var wanted = SystemAPI.HasComponent<Research>(step.Prefab) ? math.min(step.Count, 1) : step.Count;
                 if (owned >= wanted)
                 {
                     continue;
@@ -74,9 +73,9 @@ namespace HyperRTS.Simulation.AI
                 }
             }
 
-            foreach (var upgrade in SystemAPI.GetBuffer<ResearchedUpgrade>(turn.Player))
+            foreach (var research in SystemAPI.GetBuffer<CompletedResearch>(turn.Player))
             {
-                Increment(counts, upgrade.TypeId);
+                Increment(counts, research.TypeId);
             }
 
             return counts;
@@ -96,7 +95,8 @@ namespace HyperRTS.Simulation.AI
                 return false;
             }
 
-            if (!snapshot.Completed.MeetsPrerequisites(SystemAPI.GetBuffer<Prerequisite>(prefab), turn.Faction))
+            var research = SystemAPI.GetBuffer<CompletedResearch>(turn.Player);
+            if (!snapshot.Completed.MeetsPrerequisites(SystemAPI.GetBuffer<Prerequisite>(prefab), turn.Faction, research))
             {
                 return false;
             }

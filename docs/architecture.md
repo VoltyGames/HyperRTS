@@ -47,7 +47,7 @@ Common < Navigation < Stats < Power < Vision < Spatial < Selection < Orders < Au
 - To order two systems, put `[UpdateBefore]`/`[UpdateAfter]` on the one in the higher module.
 - `*Authoring.cs` files may use any module; they hold only the authoring class and its `Baker`.
 - `ModuleLayoutTests` enforces the order, namespace = folder, and the authoring file rule. Its back-edge
-  allowlist has one entry, `Production → Upgrades`, and may only shrink.
+  allowlist is empty; keep it that way.
 
 Per-module reference: [modules](modules.md).
 

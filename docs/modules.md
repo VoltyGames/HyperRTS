@@ -50,7 +50,7 @@ Shared identity for units and buildings, and the player entity's component set.
 | `GameEntityAuthoring` | Base of `UnitAuthoring` / `BuildingAuthoring`: name, icon, owner, health, vision, cost, build time, prerequisites, death spawn, experience value, counts-for-victory |
 | `GameEntitySpec`, `GameEntitySetup` | Values and component set every unit and building carries |
 | `ProducibleBaking` | Bakes cost and prerequisite lists (shared with upgrades) |
-| `PlayerSetup` | Player entity: `Player`, `PlayerSide`, `PlayerStats`, `Population`, `PowerGrid`, `Defeated`, `PlayerCommand`, `PlayerCommandSubject`, `ResearchedUpgrade`, `ResourceStock` |
+| `PlayerSetup` | Player entity: `Player`, `PlayerSide`, `PlayerStats`, `Population`, `PowerGrid`, `Defeated`, `PlayerCommand`, `PlayerCommandSubject`, `CompletedResearch`, `ResourceStock` |
 | `MatchSetupSystem` | Applies a runtime `MatchSetup` once per world (see [Match](#match)) |
 
 ## Match
@@ -215,12 +215,11 @@ swaps the rank modifiers.
 
 | Type | Role |
 | --- | --- |
-| `UpgradeAuthoring` / `Upgrade`, `UpgradeEffect` | Research prefab: name, icon, cost, time, prerequisites, stat bonuses per target type (none = all) |
-| `ResearchedUpgrade` | Player buffer of finished research |
-| `AppliedUpgrades` | How many of the owner's upgrades an entity carries |
+| `UpgradeAuthoring` / `UpgradeEffect` | Research prefab with stat bonuses per target type (none = all): name, icon, cost, time, prerequisites |
+| `AppliedUpgrades` | How many of the owner's finished research an entity carries |
 
-Research options go into a producer's queue like units. `UpgradeSystem` adds modifiers to matching owned
-entities, catches up later spawns, and swaps sets when an entity changes owner. Each upgrade is researched once.
+`UpgradeSystem` adds the effects of the owner's `CompletedResearch` to matching owned entities, catches up later
+spawns, and swaps sets when an entity changes owner (dropping every `StatSourceKind.Upgrade` modifier).
 
 ## Power
 
@@ -265,11 +264,14 @@ runs dry. `ResourceNodeSystem` regrows or removes nodes.
 | --- | --- |
 | `ProducerAuthoring` / `Producer`, `ProductionOption`, `ProductionQueueItem`, `RallyPoint` | Unit training and research queue |
 | `Producible` | Build time and population cost |
-| `Prerequisite`, `CompletedBuildings` | Required building `TypeId`s; check shared by simulation, AI and HUD |
+| `Prerequisite`, `CompletedBuildings` | Required `TypeId`s, met by a completed building or finished research; check shared by simulation, AI and HUD |
+| `ProducibleAuthoring` | Base of unit, building and research authoring: `DisplayName` and the `TypeId` prerequisites name |
+| `Research`, `CompletedResearch`, `ResearchRules` | A producible that is researched once instead of spawned; the player's finished research (replicated by `TypeId`); queue-once checks |
 | `ProductionRules` | `HasOption`, `Refund`, `RefundQueue` |
 
 `ProductionCommandSystem` handles Produce, Cancel (refund) and rally points. `ProductionSystem` trains the queue
-head when population allows and sends units to the rally point.
+head when population allows and sends units to the rally point; a finished `Research` is added to the owner's
+`CompletedResearch` instead.
 
 ## Capture
 
