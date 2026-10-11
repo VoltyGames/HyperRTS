@@ -90,7 +90,9 @@ Systems:
 | `ActiveOrder`, `QueuedOrder` | Current order (enableable; disabled = idle) and shift-queue |
 | `OrderWriter` | `Issue(unit, order, queue)`, `Stop(unit)` |
 | `PlayerCommandSubject` | Player buffer: the units a group command lists, each command owning a range |
-| `PlayerCommands` | `Any(mask)` skips frames without a system's command types; `Collect` lists who a command addresses (listed group, else `Unit`, else the selection) |
+| `PlayerCommands` | `Any(types)` skips frames without a system's command types; `Collect` lists who a command addresses (listed group, else `Unit`, else the selection) |
+| `TypeSet` | Set of command or order types, custom ones included: `TypeSet.Of(...)`, `Range`, `With`, `Contains` |
+| `OrderTraits`, `OrderTrait` | `Register(type, traits)` lets a custom order engage while moving, attack-move or use formations, like the built-in ones |
 
 Systems:
 
@@ -105,7 +107,8 @@ Systems:
 `UnitCommandSystem` turns unit commands into orders through `OrderResolver`. Smart resolves, in order: hostile the
 weapon can hit → Attack, resource node → Gather, unfinished allied building → Build, damaged allied building →
 Repair, allied container with room → Enter, capturable building → Capture, own airfield → ReturnToBase,
-otherwise Move. Group moves spread into a box `Formation`.
+otherwise Move. A unit's `SmartOrderRule`s come first: each names a target component (by stable type hash) and
+the relations it applies to, and gives its order. Group moves spread into a box `Formation`.
 
 Producer, ability, placement, sell and unload commands are handled by their own modules.
 

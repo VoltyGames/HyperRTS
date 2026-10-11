@@ -1,4 +1,4 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
@@ -55,7 +55,8 @@ namespace HyperRTS.Simulation.Commands
         public void OnUpdate(ref SystemState state)
         {
             // Most frames carry no commands; skip the sync with every job touching unit components.
-            if (!PlayerCommands.Any(ref state, _commanders, UnitCommands))
+            var unitCommands = UnitCommands;
+            if (!PlayerCommands.Any(ref state, _commanders, unitCommands))
             {
                 return;
             }
@@ -77,7 +78,12 @@ namespace HyperRTS.Simulation.Commands
                 for (var i = 0; i < commands.Length; i++)
                 {
                     var command = commands[i];
-                    if (!IsUnitCommand(command.Type) || !GatherSubjects(player.ValueRO.Faction, command, listed, subjects))
+                    if (!unitCommands.Contains(command.Type))
+                    {
+                        continue;
+                    }
+
+                    if (!GatherSubjects(player.ValueRO.Faction, command, listed, subjects))
                     {
                         continue;
                     }
@@ -92,12 +98,10 @@ namespace HyperRTS.Simulation.Commands
             }
         }
 
-        private static ulong UnitCommands =>
-            PlayerCommands.Mask(CommandType.Smart, CommandType.SetStance) |
-            PlayerCommands.Mask(CommandType.Repair, CommandType.Enter) |
-            PlayerCommands.Mask(CommandType.Patrol, CommandType.ReturnToBase);
-
-        private static bool IsUnitCommand(CommandType type) => (UnitCommands & PlayerCommands.Mask(type)) != 0;
+        private static TypeSet UnitCommands =>
+            TypeSet.Range(CommandType.Smart, CommandType.SetStance)
+                .With(TypeSet.Range(CommandType.Repair, CommandType.Enter))
+                .With(TypeSet.Range(CommandType.Patrol, CommandType.ReturnToBase));
 
         /// <summary>Keeps the command's subjects that this faction owns and that take orders, in order.</summary>
         private bool GatherSubjects(byte faction, in PlayerCommand command, DynamicBuffer<PlayerCommandSubject> listed,

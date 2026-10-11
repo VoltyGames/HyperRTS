@@ -1,4 +1,4 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
@@ -53,8 +53,8 @@ namespace HyperRTS.Simulation.Abilities
         {
             var events = SystemAPI.GetSingletonEntity<AbilityEvents>();
             SystemAPI.GetBuffer<AbilityActivation>(events).Clear();
-            var mask = PlayerCommands.Mask(CommandType.UseAbility, CommandType.UsePower);
-            if (!PlayerCommands.Any(ref state, _commanders, mask))
+            var types = TypeSet.Range(CommandType.UseAbility, CommandType.UsePower);
+            if (!PlayerCommands.Any(ref state, _commanders, types))
             {
                 return;
             }

@@ -201,5 +201,47 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(OrderType.Move, _world.Get<ActiveOrder>(own).Value.Type);
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(enemy), "another player's selection is not commanded");
         }
+
+        [Test]
+        public void TypeSet_HoldsCustomTypes()
+        {
+            var custom = (CommandType)200;
+            var set = TypeSet.Of(CommandType.Move).With(custom);
+
+            Assert.IsTrue(set.Contains(custom));
+            Assert.IsTrue(set.Contains(CommandType.Move));
+            Assert.IsFalse(set.Contains((CommandType)136));
+        }
+
+        [Test]
+        public void RegisteredOrderTraits_ApplyToCustomTypes()
+        {
+            // The table outlives the test (no domain reload between runs), so only the registered state is checked.
+            var sweep = (OrderType)141;
+            OrderTraits.Register(sweep, OrderTrait.EngagesWhileMoving | OrderTrait.UsesFormation);
+
+            Assert.IsTrue(sweep.EngagesWhileMoving());
+            Assert.IsTrue(sweep.UsesFormation());
+            Assert.IsFalse(sweep.IsAttackMove());
+        }
+
+        [Test]
+        public void SmartOrderRule_ChoosesTheGameOrder_ForMatchingTargets()
+        {
+            var jam = OrderType.Custom + 3;
+            var unit = SpawnSelected(float3.zero);
+            _world.EntityManager.AddBuffer<SmartOrderRule>(unit)
+                .Add(SmartOrderRule.For<UnitTag>(jam, RelationMask.Enemy));
+            var enemy = _world.SpawnUnit(2, new float3(10f, 0f, 0f));
+            var friend = _world.SpawnUnit(1, new float3(-10f, 0f, 0f));
+
+            Command(CommandType.Smart, PositionOf(enemy), enemy);
+            RunCommands();
+            Assert.AreEqual(jam, _world.Get<ActiveOrder>(unit).Value.Type);
+
+            Command(CommandType.Smart, PositionOf(friend), friend);
+            RunCommands();
+            Assert.AreEqual(OrderType.Move, _world.Get<ActiveOrder>(unit).Value.Type, "the rule is for enemies only");
+        }
     }
 }

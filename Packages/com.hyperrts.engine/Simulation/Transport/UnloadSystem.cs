@@ -1,4 +1,4 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Transport
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!PlayerCommands.Any(ref state, _commanders, PlayerCommands.Mask(CommandType.Unload)))
+            if (!PlayerCommands.Any(ref state, _commanders, TypeSet.Of(CommandType.Unload)))
             {
                 return;
             }

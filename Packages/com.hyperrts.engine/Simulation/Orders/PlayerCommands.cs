@@ -1,4 +1,4 @@
-﻿using Unity.Collections;
+using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Orders
@@ -6,35 +6,21 @@ namespace HyperRTS.Simulation.Orders
     /// <summary>Reading <see cref="PlayerCommand"/> buffers: a cheap pre-check and who each command addresses.</summary>
     public static class PlayerCommands
     {
-        /// <summary>A set of built-in command types for <see cref="Any"/>; custom types are never matched.</summary>
-        public static ulong Mask(CommandType type) => (int)type < 64 ? 1ul << (int)type : 0;
-
-        public static ulong Mask(CommandType first, CommandType last)
-        {
-            var mask = 0ul;
-            for (var type = (int)first; type <= (int)last; type++)
-            {
-                mask |= Mask((CommandType)type);
-            }
-
-            return mask;
-        }
-
         /// <summary>Players that can hold commands; build it in OnCreate for <see cref="Any"/>.</summary>
         public static EntityQuery Query(ref SystemState state) =>
             new EntityQueryBuilder(Allocator.Temp).WithAll<PlayerCommand>().Build(ref state);
 
         /// <summary>
-        /// Whether any player recorded a command whose type is in <paramref name="mask"/> this frame, so command
+        /// Whether any player recorded a command whose type is in <paramref name="types"/> this frame, so command
         /// systems skip their job sync on the many frames without commands.
         /// </summary>
-        public static bool Any(ref SystemState state, EntityQuery players, ulong mask)
+        public static bool Any(ref SystemState state, EntityQuery players, in TypeSet types)
         {
             foreach (var player in players.ToEntityArray(Allocator.Temp))
             {
                 foreach (var command in state.EntityManager.GetBuffer<PlayerCommand>(player, true))
                 {
-                    if ((mask & Mask(command.Type)) != 0)
+                    if (types.Contains(command.Type))
                     {
                         return true;
                     }

@@ -1,4 +1,4 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using Unity.Burst;
@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Match
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!PlayerCommands.Any(ref state, _commanders, PlayerCommands.Mask(CommandType.Surrender)))
+            if (!PlayerCommands.Any(ref state, _commanders, TypeSet.Of(CommandType.Surrender)))
             {
                 return;
             }

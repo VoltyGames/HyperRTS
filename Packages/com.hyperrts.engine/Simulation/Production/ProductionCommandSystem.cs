@@ -68,8 +68,8 @@ namespace HyperRTS.Simulation.Production
             }
         }
 
-        private static ulong ProducerCommands =>
-            PlayerCommands.Mask(CommandType.Produce, CommandType.SetRallyPoint) | PlayerCommands.Mask(CommandType.Smart);
+        private static TypeSet ProducerCommands =>
+            TypeSet.Range(CommandType.Produce, CommandType.SetRallyPoint).With(CommandType.Smart);
 
         private void Produce(ref SystemState state, byte faction, in PlayerCommand command,
             DynamicBuffer<PlayerCommandSubject> listed, DynamicBuffer<ResourceStock> stock,

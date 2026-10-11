@@ -1,4 +1,4 @@
-﻿using HyperRTS.Simulation.Air;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
 using HyperRTS.Simulation.Combat;
@@ -11,9 +11,9 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Commands
 {
     /// <summary>
-    /// Picks the order a unit gets for a command from its capabilities and the target: Smart chooses
-    /// attack/gather/build/repair/enter/capture/land/move, explicit commands fall back to Move when the unit can't
-    /// comply (Return to Base is skipped by units without a pad).
+    /// Picks the order a unit gets for a command from its capabilities and the target: Smart first tries the unit's
+    /// <see cref="SmartOrderRule"/>s, then chooses attack/gather/build/repair/enter/capture/land/move; explicit commands
+    /// fall back to Move when the unit can't comply (Return to Base is skipped by units without a pad).
     /// </summary>
     public struct OrderResolver
     {
@@ -31,6 +31,8 @@ namespace HyperRTS.Simulation.Commands
         private BufferLookup<LandingPad> _pads;
         private CaptureLookup _capture;
         private Boarding _boarding;
+        private BufferLookup<SmartOrderRule> _rules;
+        private EntityManager _entityManager;
 
         public OrderResolver(ref SystemState state)
         {
@@ -48,6 +50,8 @@ namespace HyperRTS.Simulation.Commands
             _pads = state.GetBufferLookup<LandingPad>(true);
             _capture = new CaptureLookup(ref state);
             _boarding = new Boarding(ref state, true);
+            _rules = state.GetBufferLookup<SmartOrderRule>(true);
+            _entityManager = state.EntityManager;
         }
 
         /// <summary><paramref name="fog"/> is the system's <see cref="TargetLookup.FogQuery"/>.</summary>
@@ -67,6 +71,8 @@ namespace HyperRTS.Simulation.Commands
             _pads.Update(ref state);
             _capture.Update(ref state);
             _boarding.Update(ref state);
+            _rules.Update(ref state);
+            _entityManager = state.EntityManager;
         }
 
         public OrderType Resolve(CommandType command, Entity unit, Entity target, in FactionRelations relations)
@@ -92,6 +98,11 @@ namespace HyperRTS.Simulation.Commands
 
         private OrderType ResolveSmart(Entity unit, Entity target, in FactionRelations relations)
         {
+            if (TryRule(unit, target, relations, out var ruled))
+            {
+                return ruled;
+            }
+
             if (CanAttack(unit, target, relations))
             {
                 return OrderType.Attack;
@@ -123,6 +134,34 @@ namespace HyperRTS.Simulation.Commands
             }
 
             return CanCapture(unit, target, relations) ? OrderType.Capture : OrderType.Move;
+        }
+
+        private bool TryRule(Entity unit, Entity target, in FactionRelations relations, out OrderType order)
+        {
+            order = OrderType.None;
+            if (target == Entity.Null || !_rules.TryGetBuffer(unit, out var rules))
+            {
+                return false;
+            }
+
+            var owner = _factions.TryGetComponent(target, out var faction) ? faction.Value : Faction.Neutral;
+            var relation = relations.GetRelation(_factions[unit].Value, owner);
+            foreach (var rule in rules)
+            {
+                if (!rule.Relations.Includes(relation))
+                {
+                    continue;
+                }
+
+                var type = TypeManager.GetTypeIndexFromStableTypeHash(rule.TargetComponent);
+                if (_entityManager.HasComponent(target, ComponentType.FromTypeIndex(type)))
+                {
+                    order = rule.Order;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private bool CanEscort(Entity unit, Entity target, in FactionRelations relations)
