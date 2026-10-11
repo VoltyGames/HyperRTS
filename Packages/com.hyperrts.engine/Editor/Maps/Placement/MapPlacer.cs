@@ -9,8 +9,9 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Placement
 {
     /// <summary>
-    /// Decides every palette prefab the map places: start kits, resources, props, bridges, towns, prop rows and
-    /// scatters. Random choices are made once in the authored sector and copied, so every copy matches.
+    /// Places the spec's palette prefabs: start kits, resources, props, bridges, prop rows and scatters; the land
+    /// planners add settlements and surface props through it. Random choices are made once in the authored sector
+    /// and copied, so every copy matches.
     /// </summary>
     public sealed class MapPlacer
     {
@@ -37,9 +38,6 @@ namespace HyperRTS.Editor.Maps.Placement
 
         public MapClearance Clearance { get; }
 
-        /// <summary>Yards behind town buildings, where the climate's garden trees grow.</summary>
-        public List<Vector2> Yards { get; } = new();
-
         internal MapHeights Heights { get; }
 
         public static MapPlacer Place(MapLayout layout, MapShapes shapes, MapHeights heights, MapPalette palette,
@@ -50,7 +48,6 @@ namespace HyperRTS.Editor.Maps.Placement
             placer.PlaceResources();
             placer.PlaceProps();
             placer.PlaceBridges();
-            new MapTownPlanner(placer, layout, shapes, palette, issues).Plan();
             placer.PlaceLines();
             placer.PlaceScatters();
             return placer;
@@ -79,6 +76,15 @@ namespace HyperRTS.Editor.Maps.Placement
             foreach (var copy in copies.Where(c => c.Index == index))
             {
                 Add(new MapPlacement(entry, copy.Transform.Apply(position), copy.Transform.ApplyYaw(yaw)) { Scale = scale });
+            }
+        }
+
+        /// <summary>Places a choice made at an authored-sector point in every copy of the sector.</summary>
+        internal void AddEverywhere(MapPaletteEntry entry, Vector2 sectorPoint, float yaw, float scale)
+        {
+            foreach (var copy in _layout.Symmetry.Copies)
+            {
+                Add(new MapPlacement(entry, copy.Apply(sectorPoint), copy.ApplyYaw(yaw)) { Scale = scale });
             }
         }
 

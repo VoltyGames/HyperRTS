@@ -4,8 +4,9 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
-    /// Levels each road onto a smoothed height profile taken from the ground before ravines were cut, so a road
-    /// crosses a ravine on an embankment. River channels under the road are left alone (fords and bridges).
+    /// Levels each road whose class asks for it onto a smoothed height profile taken from the ground before ravines
+    /// were cut, so a road crosses a ravine on an embankment. River channels under the road are left alone (fords and
+    /// bridges); tracks just follow the ground.
     /// </summary>
     public static class MapRoadLeveller
     {
@@ -17,8 +18,14 @@ namespace HyperRTS.Editor.Maps.Ground
 
         public static void Level(MapHeights heights, MapHeights open, MapShapes shapes, float water)
         {
-            foreach (var road in shapes.Roads)
+            foreach (var shape in shapes.Roads)
             {
+                if (!shape.Class.level || shape.Generated)
+                {
+                    continue;
+                }
+
+                var road = shape.Line;
                 var profile = Profile(road, open, water);
                 heights.ForEachIn(road.Bounds, (x, z, p) =>
                 {

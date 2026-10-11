@@ -6,7 +6,10 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Geometry
 {
-    /// <summary>The layout's rivers, roads, ravines and crossings in map space, built once and shared by every pass.</summary>
+    /// <summary>
+    /// The layout's rivers, roads, ravines and crossings in map space, built once and shared by every pass. Planners
+    /// add the tracks they lay with <see cref="AddRoad"/>.
+    /// </summary>
     public sealed class MapShapes
     {
         /// <summary>Ground beside a road eased into it (metres past its edge), so cuts and fills stay gentle.</summary>
@@ -20,17 +23,18 @@ namespace HyperRTS.Editor.Maps.Geometry
         public const float FordWade = 0.15f;
 
         private const float FordBanks = 8f;
+        private const int WidthNoiseChannel = 20;
 
-        public MapShapes(MapLayout layout, MapPalette palette, MapIssues issues)
+        public MapShapes(MapLayout layout, MapPalette palette, MapClimate climate, MapIssues issues)
         {
             var water = layout.Terrain.waterLevel;
             var overhang = layout.Terrain.margin + 10f;
+            var width = new MapNoise(layout.Symmetry, layout.Spec.seed, WidthNoiseChannel);
             foreach (var river in layout.Rivers)
             {
                 var spec = river.Placed;
                 var points = MapGeometry.ExtendAtEdge(MapGeometry.ToVectors(spec.points), layout.Bounds, overhang);
-                var line = new MapLine(points, spec.width, spec.valleyWidth * 0.5f, null);
-                Rivers.Add((line, spec));
+                Rivers.Add(new MapRiverShape(new MapLine(points, spec.width, spec.valleyWidth * 0.5f), spec, width));
                 foreach (var crossing in spec.crossings)
                 {
                     AddCrossing(MapGeometry.ToVectors(spec.points), crossing, water, palette, issues);
@@ -39,33 +43,34 @@ namespace HyperRTS.Editor.Maps.Geometry
 
             foreach (var road in layout.Roads)
             {
-                var spec = road.Placed;
-                var points = MapGeometry.ExtendAtEdge(MapGeometry.ToVectors(spec.points), layout.Bounds, overhang);
-                Roads.Add(new MapLine(points, spec.width, spec.width * 0.5f + RoadShoulder, spec.kind));
+                AddAuthoredRoad(road, layout, climate, overhang, issues);
             }
 
             foreach (var ravine in layout.Ravines)
             {
                 var spec = ravine.Placed;
-                Ravines.Add((new MapLine(MapGeometry.ToVectors(spec.points), spec.width, spec.width * 0.5f, null), spec));
+                Ravines.Add((new MapLine(MapGeometry.ToVectors(spec.points), spec.width, spec.width * 0.5f + spec.rim), spec));
             }
         }
 
-        public List<(MapLine Line, MapRiverSpec Spec)> Rivers { get; } = new();
+        public List<MapRiverShape> Rivers { get; } = new();
 
-        public List<MapLine> Roads { get; } = new();
+        public List<MapRoad> Roads { get; } = new();
 
         public List<(MapLine Line, MapRavineSpec Spec)> Ravines { get; } = new();
 
         public List<MapCrossing> Crossings { get; } = new();
 
+        /// <summary>A road laid by a planner (field or access track).</summary>
+        public void AddRoad(MapRoad road) => Roads.Add(road);
+
         /// <summary>Distance to the nearest river's water edge (negative over the water), or infinity far from rivers.</summary>
         public float RiverEdgeDistance(Vector2 point)
         {
             var best = float.PositiveInfinity;
-            foreach (var (line, spec) in Rivers)
+            foreach (var river in Rivers)
             {
-                best = Mathf.Min(best, line.Distance(point) - spec.width * 0.5f);
+                best = Mathf.Min(best, river.EdgeDistance(point));
             }
 
             return best;
@@ -77,7 +82,7 @@ namespace HyperRTS.Editor.Maps.Geometry
             var best = float.PositiveInfinity;
             foreach (var road in Roads)
             {
-                best = Mathf.Min(best, road.Distance(point) - road.Width * 0.5f);
+                best = Mathf.Min(best, road.Line.Distance(point) - road.Width * 0.5f);
             }
 
             return best;
@@ -97,12 +102,29 @@ namespace HyperRTS.Editor.Maps.Geometry
             return false;
         }
 
+        private void AddAuthoredRoad(MapCopy<MapRoadSpec> road, MapLayout layout, MapClimate climate, float overhang,
+            MapIssues issues)
+        {
+            var spec = road.Placed;
+            var roadClass = climate.RoadClass(spec.kind);
+            if (roadClass == null)
+            {
+                issues.Error($"Road {road.Index + 1}: road class '{spec.kind}' is not in climate '{climate.name}'.");
+                return;
+            }
+
+            var width = roadClass.width;
+            var points = MapGeometry.ExtendAtEdge(MapGeometry.ToVectors(spec.points), layout.Bounds, overhang);
+            Roads.Add(new MapRoad(new MapLine(points, width, width * 0.5f + RoadShoulder), roadClass, false));
+        }
+
         /// <summary>Crossing positions are fractions of the authored river, before it was run on past the edge.</summary>
         private void AddCrossing(List<Vector2> river, MapCrossingSpec spec, float water, MapPalette palette,
             MapIssues issues)
         {
             var width = Rivers[^1].Spec.width;
             var position = MapGeometry.PointAlong(river, spec.t * MapGeometry.Length(river), out var direction);
+            Rivers[^1].Pin(position);
 
             // A crossing where a river meets its own copy (the centre) is listed by both copies; keep one.
             if (Crossings.Exists(c => (c.Position - position).sqrMagnitude < 1f))

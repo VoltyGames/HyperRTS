@@ -48,6 +48,7 @@ namespace HyperRTS.Editor.Maps.Build
             EditorSceneManager.SaveScene(main);
             EditorSceneManager.CloseScene(entities, true);
             AssetDatabase.SaveAssets();
+            CaptureViews(spec, generation, project);
             Log(report);
             var result = new MapBuildResult(spec, paths, report, layout.Spawns.Count, minimap);
             foreach (var hook in TypeDiscovery.Instances<IMapBuildHook>())
@@ -65,12 +66,24 @@ namespace HyperRTS.Editor.Maps.Build
             var origin = new Vector3(layout.TerrainBounds.xMin, -layout.Datum, layout.TerrainBounds.yMin);
             var water = layout.Terrain.waterLevel - layout.Datum;
             using var nav = MapNavGrid.Build(entities, data, origin, layout.Bounds, water, project.Rules);
-            var measurer = MapMeasurer.Measure(layout, nav, generation.Placer, generation.TreeCount, project.Palette,
+            var measurer = MapMeasurer.Measure(layout, nav, generation.Placer, generation.Trees.Count, project.Palette,
                 project.Rules, issues);
             var report = MapReport.Create(spec, issues, measurer.Metrics);
             report.Write(MapOverviewImage.Draw(layout, generation.Heights, generation.Splat, project.Climate, nav,
                 generation.Shapes, generation.Placer.Placements, measurer.Paths));
             return report;
+        }
+
+        /// <summary>Fresh screenshots with every build, unless there's no graphics device (batch mode with -nographics).</summary>
+        private static void CaptureViews(MapSpec spec, MapGeneration generation, MapProject project)
+        {
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                return;
+            }
+
+            var views = MapViews.For(generation.Layout, generation.Shapes, project.Rules);
+            MapViews.Capture(spec.name, views, project.Rules);
         }
 
         private static MapReport Log(MapReport report)

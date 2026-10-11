@@ -30,12 +30,15 @@ namespace HyperRTS.Editor.Maps.Layout
                 p.yaw = t.ApplyYaw(p.yaw);
             });
             layout.Hills = expander.Points(spec.hills, "hill", h => h.shared, h => h.pos, (h, t) => h.pos = t.Apply(h.pos));
-            layout.Towns = expander.Points(spec.towns, "town", _ => false, w => w.center,
+            layout.Settlements = expander.Points(spec.settlements, "settlement", _ => false, w => w.center,
                 (w, t) => w.center = t.Apply(w.center));
-            layout.Areas = expander.Lines(spec.areas, "area", a => a.shared, a => a.points);
-            layout.Roads = expander.Lines(spec.roads, "road", r => r.shared, r => r.points);
             layout.Rivers = expander.Lines(spec.rivers, "river", r => r.shared, r => r.points);
             layout.Ravines = expander.Lines(spec.ravines, "ravine", r => r.shared, r => r.points);
+            layout.Roads = expander.Lines(spec.roads, "road", r => r.shared, r => r.points);
+            layout.Woods = expander.Lines(spec.woods, "wood", w => w.shared, w => w.points);
+            layout.Belts = expander.Lines(spec.belts, "belt", b => b.shared, b => b.points);
+            layout.Farmland = expander.Lines(spec.farmland, "farmland", f => f.shared, f => f.points, true);
+            layout.Areas = expander.Lines(spec.areas, "area", a => a.shared, a => a.points);
             layout.Lines = expander.Lines(spec.lines, "line", l => l.shared, l => l.points);
             layout.Scatters = expander.Lines(spec.scatters, "scatter", s => s.shared, s => s.points);
             ContinueRivers(layout.Rivers);
@@ -55,11 +58,6 @@ namespace HyperRTS.Editor.Maps.Layout
 
         private static void CheckHeader(MapSpec spec, MapIssues issues)
         {
-            if (spec.formatVersion != MapSpec.CurrentFormat)
-            {
-                throw new ArgumentException($"Spec format {spec.formatVersion} is not the current format {MapSpec.CurrentFormat}.");
-            }
-
             if (string.IsNullOrEmpty(spec.name) || string.IsNullOrEmpty(spec.climate))
             {
                 throw new ArgumentException("A spec needs a name and a climate.");
@@ -148,8 +146,9 @@ namespace HyperRTS.Editor.Maps.Layout
                 Func<T, MapPoint> anchor, Action<T, MapTransform> transform) where T : class =>
                 Expand(authored, label, _layout.Bounds, shared, f => new[] { anchor(f).ToVector2() }, transform);
 
+            /// <summary><paramref name="mayBeEmpty"/>: no points is allowed (farmland that fills the free land).</summary>
             public List<MapCopy<T>> Lines<T>(List<T> authored, string label, Func<T, bool> shared,
-                Func<T, List<MapPoint>> points) where T : class =>
+                Func<T, List<MapPoint>> points, bool mayBeEmpty = false) where T : class =>
                 Expand(authored, label, _layout.TerrainBounds, shared, f => points(f).Select(p => p.ToVector2()).ToList(), (f, t) =>
                 {
                     var list = points(f);
@@ -157,11 +156,12 @@ namespace HyperRTS.Editor.Maps.Layout
                     {
                         list[i] = t.Apply(list[i]);
                     }
-                });
+                }, mayBeEmpty);
 
             /// <summary>Gameplay points must lie in the playable area; lines and areas may reach into the margin.</summary>
             private List<MapCopy<T>> Expand<T>(List<T> authored, string label, Rect bounds, Func<T, bool> shared,
-                Func<T, IReadOnlyList<Vector2>> anchors, Action<T, MapTransform> transform) where T : class
+                Func<T, IReadOnlyList<Vector2>> anchors, Action<T, MapTransform> transform, bool mayBeEmpty = false)
+                where T : class
             {
                 var copies = new List<MapCopy<T>>();
                 var symmetry = _layout.Symmetry;
@@ -169,7 +169,8 @@ namespace HyperRTS.Editor.Maps.Layout
                 {
                     var feature = authored[index];
                     var points = anchors(feature);
-                    if (!Check(label, index, points, bounds, shared(feature)))
+                    var unbounded = mayBeEmpty && points.Count == 0;
+                    if (!unbounded && !Check(label, index, points, bounds, shared(feature)))
                     {
                         continue;
                     }

@@ -25,6 +25,15 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Random uniform scale range.")]
         public Vector2 scale = Vector2.one;
 
+        [Tooltip("Climate surface painted under and around the footprint (a gravel pad); empty for none.")]
+        public string pad;
+
+        [Tooltip("How far the pad reaches past the footprint (metres).")]
+        public float padMargin = 3f;
+
+        [Tooltip("Road class of an access track run from the pad to the nearest road; empty for none.")]
+        public string access;
+
         public float Radius => Mathf.Max(size.x, size.y) * 0.5f;
 
         /// <summary>Prefabs with HyperRTS authoring bake into the SubScene; the rest are scenery in the main scene.</summary>

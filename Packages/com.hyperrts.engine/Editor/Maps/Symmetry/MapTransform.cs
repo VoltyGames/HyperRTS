@@ -46,6 +46,9 @@ namespace HyperRTS.Editor.Maps.Symmetry
 
         public Vector2 Apply(Vector2 point) => new(_m00 * point.x + _m01 * point.y, _m10 * point.x + _m11 * point.y);
 
+        /// <summary>The point this copy moves onto <paramref name="point"/> (rotations and mirrors invert by transposing).</summary>
+        public Vector2 ApplyInverse(Vector2 point) => new(_m00 * point.x + _m10 * point.y, _m01 * point.x + _m11 * point.y);
+
         public MapPoint Apply(MapPoint point)
         {
             var moved = Apply(point.ToVector2());

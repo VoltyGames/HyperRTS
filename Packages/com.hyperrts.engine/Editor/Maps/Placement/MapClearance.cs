@@ -5,14 +5,18 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Placement
 {
-    /// <summary>Where generated objects may go: off roads, water, ravines and bases, and apart from each other.</summary>
+    /// <summary>
+    /// Where generated objects may go: off roads, water, ravines and bases, and apart from each other. Reserved
+    /// circles sit in a spatial hash, since villages and belts reserve thousands.
+    /// </summary>
     public sealed class MapClearance
     {
         private const float EdgeMargin = 4f;
+        private const float Cell = 8f;
         private readonly MapLayout _layout;
         private readonly MapShapes _shapes;
         private readonly float _baseRadius;
-        private readonly List<(Vector2 Position, float Radius)> _taken = new();
+        private readonly Dictionary<Vector2Int, List<(Vector2 Position, float Radius)>> _cells = new();
 
         public MapClearance(MapLayout layout, MapShapes shapes, float baseRadius)
         {
@@ -58,20 +62,50 @@ namespace HyperRTS.Editor.Maps.Placement
         /// <summary>True when nothing reserved overlaps a circle.</summary>
         public bool IsFree(Vector2 point, float radius)
         {
-            foreach (var (position, taken) in _taken)
+            var min = Key(point - Vector2.one * radius);
+            var max = Key(point + Vector2.one * radius);
+            for (var z = min.y; z <= max.y; z++)
             {
-                if ((position - point).magnitude < radius + taken)
+                for (var x = min.x; x <= max.x; x++)
                 {
-                    return false;
+                    if (!_cells.TryGetValue(new Vector2Int(x, z), out var list))
+                    {
+                        continue;
+                    }
+
+                    foreach (var (position, taken) in list)
+                    {
+                        if ((position - point).magnitude < radius + taken)
+                        {
+                            return false;
+                        }
+                    }
                 }
             }
 
             return true;
         }
 
-        public void Reserve(Vector2 point, float radius) => _taken.Add((point, radius));
+        /// <summary>Reserves a circle in every hash cell it overlaps, so a query only looks at its own cells.</summary>
+        public void Reserve(Vector2 point, float radius)
+        {
+            var min = Key(point - Vector2.one * radius);
+            var max = Key(point + Vector2.one * radius);
+            for (var z = min.y; z <= max.y; z++)
+            {
+                for (var x = min.x; x <= max.x; x++)
+                {
+                    var key = new Vector2Int(x, z);
+                    if (!_cells.TryGetValue(key, out var list))
+                    {
+                        _cells[key] = list = new List<(Vector2, float)>();
+                    }
 
-        /// <summary>Everything reserved so far, for passes (trees) that must keep off placed objects.</summary>
-        public IReadOnlyList<(Vector2 Position, float Radius)> Taken => _taken;
+                    list.Add((point, radius));
+                }
+            }
+        }
+
+        private static Vector2Int Key(Vector2 point) => Vector2Int.FloorToInt(point / Cell);
     }
 }

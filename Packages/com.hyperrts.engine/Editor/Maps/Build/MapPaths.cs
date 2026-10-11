@@ -36,6 +36,11 @@ namespace HyperRTS.Editor.Maps.Build
 
         public string Water => $"{Folder}/{Name}_Water.asset";
 
+        /// <summary>The terrain shader's per-map tint and wetness picture.</summary>
+        public string Macro => $"{Folder}/{Name}_Macro.png";
+
+        public string Roads => $"{Folder}/{Name}_Roads.asset";
+
         public string Minimap => $"{Folder}/{Name}_Minimap.png";
 
         /// <summary>The map name of a spec file path (<c>Kalyna.map.json</c> → <c>Kalyna</c>).</summary>

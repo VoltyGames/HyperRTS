@@ -13,7 +13,6 @@ namespace HyperRTS.Editor.Tests
     {
         private static MapSpec Spec(string mode, string symmetry, params MapPoint[] spawns) => new()
         {
-            formatVersion = MapSpec.CurrentFormat,
             name = "Test",
             climate = "Test",
             mode = mode,

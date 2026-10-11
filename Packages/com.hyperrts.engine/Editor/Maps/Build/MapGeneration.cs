@@ -2,17 +2,19 @@ using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Placement;
+using HyperRTS.Editor.Maps.Planning;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Build
 {
     /// <summary>
-    /// Everything a build makes before it touches a scene: the expanded layout, the shaped and painted ground, what
-    /// stands on it, trees and grass. Trees inside the playable area become entity placements when the climate has
-    /// a destructible version of them.
+    /// Everything a build makes before it touches a scene: the refined and expanded layout, the shaped ground, the
+    /// land use and what stands on it, then the painted ground, trees and plants. Trees inside the playable area
+    /// become entity placements when the climate has a destructible version of them.
     /// </summary>
     public sealed class MapGeneration
     {
@@ -24,18 +26,57 @@ namespace HyperRTS.Editor.Maps.Build
         public MapShapes Shapes { get; private set; }
         public MapHeights Heights { get; private set; }
         public MapPlacer Placer { get; private set; }
+        public MapLand Land { get; private set; }
+
+        /// <summary>Direction of the crop rows (degrees clockwise from north) the terrain material turns row layers to.</summary>
+        public float RowAngle { get; private set; }
+
         public float[,,] Splat { get; private set; }
         public List<int[,]> Details { get; private set; }
+        public List<MapTree> Trees { get; private set; }
 
         /// <summary>Trees left to the terrain (the scenery margin, and species without an entity version).</summary>
         public List<MapTree> TerrainTrees { get; } = new();
 
-        public int TreeCount { get; private set; }
-
         /// <summary>The generated map, or null when the spec or assets have errors (they are in <paramref name="issues"/>).</summary>
         public static MapGeneration Run(MapSpec spec, MapProject project, MapIssues issues)
         {
+            var generation = Plan(spec, project, issues);
+            if (generation == null)
+            {
+                return null;
+            }
+
+            var climate = project.Climate;
+            var layout = generation.Layout;
+            generation.Level(project.Palette, issues);
+            generation.Splat = MapSplatPainter.Paint(layout, generation.Land, generation.Heights, climate,
+                MapTerrainWriter.AlphamapResolution(layout), issues);
+            if (issues.HasErrors)
+            {
+                return null;
+            }
+
+            generation.Details = MapDetailPainter.Paint(layout, generation.Land, generation.Shapes, generation.Heights,
+                climate, generation.Placer.Clearance, MapTerrainWriter.DetailResolution(layout));
+            generation.SplitTrees(climate);
+            return generation;
+        }
+
+        /// <summary>
+        /// The layout, ground shape, land use, placements and trees, without painting: what a preview needs, in
+        /// seconds. Null on errors.
+        /// </summary>
+        public static MapGeneration Plan(MapSpec spec, MapProject project, MapIssues issues)
+        {
             MapAssetCheck.Check(project, issues);
+            MapKitCheck.Check(project, issues);
+            if (issues.HasErrors)
+            {
+                return null;
+            }
+
+            MapRefiner.Refine(spec, project.Climate, issues);
             var layout = MapExpander.Expand(spec, issues);
             if (issues.HasErrors)
             {
@@ -43,23 +84,17 @@ namespace HyperRTS.Editor.Maps.Build
             }
 
             var climate = project.Climate;
-            var generation = new MapGeneration { Layout = layout, Shapes = new MapShapes(layout, project.Palette, issues) };
+            var generation = new MapGeneration { Layout = layout };
+            generation.Shapes = new MapShapes(layout, project.Palette, climate, issues);
             generation.Heights = MapHeightShaper.Shape(layout, generation.Shapes);
             generation.Placer = MapPlacer.Place(layout, generation.Shapes, generation.Heights, project.Palette, climate, issues);
-            generation.Level(project.Palette, issues);
-            var resolution = MapTerrainWriter.AlphamapResolution(layout);
-            generation.Splat = MapSplatPainter.Paint(layout, generation.Shapes, generation.Heights, climate, resolution, issues);
-            if (issues.HasErrors)
-            {
-                return null;
-            }
-
-            var trees = MapTreePlanter.Plant(layout, generation.Shapes, generation.Heights, climate, generation.Placer, issues);
-            generation.TreeCount = trees.Count;
-            generation.Details = MapDetailPainter.Paint(layout, generation.Shapes, generation.Heights, climate, generation.Splat,
-                generation.Placer.Clearance, MapTerrainWriter.DetailResolution(layout));
-            generation.SplitTrees(trees, climate);
-            return generation;
+            var context = new MapPlanContext(layout, generation.Shapes, generation.Heights, project.Palette, climate,
+                generation.Placer, issues);
+            MapLandPlanner.Plan(context);
+            generation.Land = context.Land;
+            generation.RowAngle = context.RowAngle;
+            generation.Trees = context.Trees;
+            return issues.HasErrors ? null : generation;
         }
 
         /// <summary>Levels every base and every footprint that asks for it, then keeps heights in the terrain's range.</summary>
@@ -85,10 +120,10 @@ namespace HyperRTS.Editor.Maps.Build
             }
         }
 
-        private void SplitTrees(List<MapTree> trees, MapClimate climate)
+        private void SplitTrees(MapClimate climate)
         {
             var entries = new Dictionary<int, MapPaletteEntry>();
-            foreach (var tree in trees)
+            foreach (var tree in Trees)
             {
                 var species = climate.trees[tree.Prototype];
                 if (species.destructible == null || !Layout.Bounds.Contains(tree.Position))

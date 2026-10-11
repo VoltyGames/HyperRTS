@@ -18,12 +18,15 @@ namespace HyperRTS.Editor.Maps.Symmetry
         private const float Tolerance = 0.5f;
 
         private readonly Func<Vector2, bool> _inSector;
+        private readonly Func<Vector2, float> _seamDistance;
 
-        private MapSymmetry(string name, IReadOnlyList<MapTransform> copies, Func<Vector2, bool> inSector)
+        private MapSymmetry(string name, IReadOnlyList<MapTransform> copies, Func<Vector2, bool> inSector,
+            Func<Vector2, float> seamDistance)
         {
             Name = name;
             Copies = copies;
             _inSector = inSector;
+            _seamDistance = seamDistance;
         }
 
         public string Name { get; }
@@ -38,13 +41,13 @@ namespace HyperRTS.Editor.Maps.Symmetry
             {
                 case MirrorXName:
                     return new MapSymmetry(name, new[] { MapTransform.Identity, MapTransform.MirrorX },
-                        p => p.x <= Tolerance);
+                        p => p.x <= Tolerance, p => Mathf.Abs(p.x));
                 case MirrorZName:
                     return new MapSymmetry(name, new[] { MapTransform.Identity, MapTransform.MirrorZ },
-                        p => p.y <= Tolerance);
+                        p => p.y <= Tolerance, p => Mathf.Abs(p.y));
                 case Rotate180:
                     return new MapSymmetry(name, new[] { MapTransform.Identity, MapTransform.Rotation(180f) },
-                        p => p.y <= Tolerance);
+                        p => p.y <= Tolerance, p => Mathf.Abs(p.y));
             }
 
             if (name != null && name.StartsWith(RotatePrefix, StringComparison.Ordinal)
@@ -59,6 +62,27 @@ namespace HyperRTS.Editor.Maps.Symmetry
 
         /// <summary>Whether an authored point lies in the sector, allowing half a metre over its edges.</summary>
         public bool InSector(Vector2 point) => _inSector(point);
+
+        /// <summary>
+        /// The authored-sector point that the copy <paramref name="copy"/> moves onto a map point, so anything chosen
+        /// per sector point (a field's crop) comes out the same in every copy.
+        /// </summary>
+        public Vector2 ToSector(Vector2 point, out int copy)
+        {
+            for (copy = 0; copy < Copies.Count; copy++)
+            {
+                var authored = Copies[copy].ApplyInverse(point);
+                if (_inSector(authored))
+                {
+                    return authored;
+                }
+            }
+
+            throw new InvalidOperationException($"Symmetry {Name} has no copy covering {point}.");
+        }
+
+        /// <summary>Distance from a sector point to the sector's edges, where its copies meet it.</summary>
+        public float SeamDistance(Vector2 sectorPoint) => _seamDistance(sectorPoint);
 
         /// <summary>Copies interleave slots, so slots 1 and 2 always face each other in a two-player game.</summary>
         public int Slot(int sectorSpawn, int copy) => sectorSpawn * Copies.Count + copy + 1;
@@ -95,7 +119,15 @@ namespace HyperRTS.Editor.Maps.Symmetry
                 copies[i] = i == 0 ? MapTransform.Identity : MapTransform.Rotation(i * wedge);
             }
 
-            return new MapSymmetry(name, copies, p => InWedge(p, wedge));
+            var far = MapTransform.Rotation(wedge).Apply(Vector2.right);
+            return new MapSymmetry(name, copies, p => InWedge(p, wedge),
+                p => Mathf.Min(RayDistance(p, Vector2.right), RayDistance(p, far)));
+        }
+
+        private static float RayDistance(Vector2 point, Vector2 direction)
+        {
+            var along = Mathf.Max(0f, Vector2.Dot(point, direction));
+            return (point - direction * along).magnitude;
         }
 
         private static bool InWedge(Vector2 point, float wedge)

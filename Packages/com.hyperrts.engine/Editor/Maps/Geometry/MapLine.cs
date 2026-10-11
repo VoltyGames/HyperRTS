@@ -6,11 +6,10 @@ namespace HyperRTS.Editor.Maps.Geometry
     /// <summary>A placed polyline (river, road, ravine) in map space with its width and a bounds box for quick rejects.</summary>
     public sealed class MapLine
     {
-        public MapLine(List<Vector2> points, float width, float reach, string kind)
+        public MapLine(List<Vector2> points, float width, float reach)
         {
             Points = points;
             Width = width;
-            Kind = kind;
             Bounds = MapGeometry.Bounds(points, reach);
             Length = MapGeometry.Length(points);
         }
@@ -18,8 +17,6 @@ namespace HyperRTS.Editor.Maps.Geometry
         public List<Vector2> Points { get; }
 
         public float Width { get; }
-
-        public string Kind { get; }
 
         public float Length { get; }
 

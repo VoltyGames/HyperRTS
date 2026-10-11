@@ -39,12 +39,15 @@ namespace HyperRTS.Editor.Maps.Layout
 
         public List<MapCopy<MapResourceSpec>> Resources { get; set; } = new();
         public List<MapCopy<MapPropSpec>> Props { get; set; } = new();
-        public List<MapCopy<MapTownSpec>> Towns { get; set; } = new();
-        public List<MapCopy<MapAreaSpec>> Areas { get; set; } = new();
-        public List<MapCopy<MapRoadSpec>> Roads { get; set; } = new();
         public List<MapCopy<MapRiverSpec>> Rivers { get; set; } = new();
-        public List<MapCopy<MapHillSpec>> Hills { get; set; } = new();
         public List<MapCopy<MapRavineSpec>> Ravines { get; set; } = new();
+        public List<MapCopy<MapHillSpec>> Hills { get; set; } = new();
+        public List<MapCopy<MapRoadSpec>> Roads { get; set; } = new();
+        public List<MapCopy<MapSettlementSpec>> Settlements { get; set; } = new();
+        public List<MapCopy<MapWoodSpec>> Woods { get; set; } = new();
+        public List<MapCopy<MapBeltSpec>> Belts { get; set; } = new();
+        public List<MapCopy<MapFarmlandSpec>> Farmland { get; set; } = new();
+        public List<MapCopy<MapAreaSpec>> Areas { get; set; } = new();
         public List<MapCopy<MapLineSpec>> Lines { get; set; } = new();
         public List<MapCopy<MapScatterSpec>> Scatters { get; set; } = new();
     }

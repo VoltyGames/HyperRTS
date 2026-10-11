@@ -10,9 +10,6 @@ namespace HyperRTS.Editor.Maps.Spec
     [Serializable]
     public sealed class MapSpec
     {
-        public const int CurrentFormat = 1;
-
-        public int formatVersion;
         public string name;
         public string displayName;
         public string mode;
@@ -27,12 +24,15 @@ namespace HyperRTS.Editor.Maps.Spec
         public List<MapSpawnSpec> spawns = new();
         public List<MapResourceSpec> resources = new();
         public List<MapPropSpec> props = new();
-        public List<MapTownSpec> towns = new();
-        public List<MapAreaSpec> areas = new();
-        public List<MapRoadSpec> roads = new();
         public List<MapRiverSpec> rivers = new();
-        public List<MapHillSpec> hills = new();
         public List<MapRavineSpec> ravines = new();
+        public List<MapHillSpec> hills = new();
+        public List<MapRoadSpec> roads = new();
+        public List<MapSettlementSpec> settlements = new();
+        public List<MapWoodSpec> woods = new();
+        public List<MapBeltSpec> belts = new();
+        public List<MapFarmlandSpec> farmland = new();
+        public List<MapAreaSpec> areas = new();
         public List<MapLineSpec> lines = new();
         public List<MapScatterSpec> scatters = new();
     }

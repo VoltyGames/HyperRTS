@@ -8,11 +8,16 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Tools
 {
-    /// <summary>HyperRTS ▸ Maps: build the selected or open map, build them all, auto-rebuild, open the report.</summary>
+    /// <summary>
+    /// HyperRTS ▸ Maps: build the selected or open map, preview it, capture its views, build them all, auto-rebuild,
+    /// open the report.
+    /// </summary>
     public static class MapMenu
     {
         private const string AutoRebuildKey = "HyperRTS.Maps.AutoRebuild";
         private const string Build = EditorMenu.Maps + "Build";
+        private const string Preview = EditorMenu.Maps + "Preview";
+        private const string Views = EditorMenu.Maps + "Capture Views";
         private const string BuildAll = EditorMenu.Maps + "Build All";
         private const string AutoRebuild = EditorMenu.Maps + "Auto-rebuild";
         private const string OpenReport = EditorMenu.Maps + "Open Report";
@@ -51,7 +56,34 @@ namespace HyperRTS.Editor.Maps.Tools
             BuildSpec(spec);
         }
 
-        [MenuItem(BuildAll, false, EditorMenu.MapsPriority + 1)]
+        [MenuItem(Preview, false, EditorMenu.MapsPriority + 1)]
+        private static void PreviewCurrent()
+        {
+            var spec = CurrentSpec();
+            if (spec == null)
+            {
+                Debug.LogWarning("HyperRTS: select a .map.json spec or open a map scene to preview it.");
+                return;
+            }
+
+            MapPreview.Run(spec);
+            EditorUtility.OpenWithDefaultApp(MapReport.ImagePath(MapPaths.NameOf(spec) + MapReport.PreviewSuffix));
+        }
+
+        [MenuItem(Views, false, EditorMenu.MapsPriority + 1)]
+        private static void CaptureCurrent()
+        {
+            var spec = CurrentSpec();
+            if (spec == null || !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                return;
+            }
+
+            MapViewCapture.Capture(spec);
+            EditorUtility.RevealInFinder(MapReport.ViewsFolder(MapPaths.NameOf(spec)));
+        }
+
+        [MenuItem(BuildAll, false, EditorMenu.MapsPriority + 2)]
         private static void BuildEvery()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
@@ -65,7 +97,7 @@ namespace HyperRTS.Editor.Maps.Tools
             }
         }
 
-        [MenuItem(AutoRebuild, false, EditorMenu.MapsPriority + 2)]
+        [MenuItem(AutoRebuild, false, EditorMenu.MapsPriority + 3)]
         private static void ToggleAutoRebuild() => AutoRebuildOn = !AutoRebuildOn;
 
         [MenuItem(AutoRebuild, true)]
@@ -75,7 +107,7 @@ namespace HyperRTS.Editor.Maps.Tools
             return true;
         }
 
-        [MenuItem(OpenReport, false, EditorMenu.MapsPriority + 3)]
+        [MenuItem(OpenReport, false, EditorMenu.MapsPriority + 4)]
         private static void OpenCurrentReport()
         {
             var spec = CurrentSpec();

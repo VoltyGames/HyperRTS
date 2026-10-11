@@ -26,6 +26,19 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Thresholds per mode.")]
         public List<MapModeRules> modes = new();
 
+        [Header("Views")]
+        [Tooltip("Pitch of the match camera (degrees down from the horizon); map screenshots use it.")]
+        public float viewPitch = 52f;
+
+        [Tooltip("Usual match camera height above the ground (metres).")]
+        public float viewHeight = 48f;
+
+        [Tooltip("Closest match camera height (metres), for close-up screenshots.")]
+        public float viewCloseHeight = 18f;
+
+        [Tooltip("Vertical field of view of the match camera (degrees).")]
+        public float viewFieldOfView = 45f;
+
         public MapModeRules Mode(string mode) => modes.Find(m => m.mode == mode);
     }
 }

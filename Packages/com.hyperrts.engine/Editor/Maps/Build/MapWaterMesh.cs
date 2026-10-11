@@ -20,9 +20,10 @@ namespace HyperRTS.Editor.Maps.Build
             var vertices = new List<Vector3>();
             var uvs = new List<Vector2>();
             var triangles = new List<int>();
-            foreach (var (line, spec) in shapes.Rivers)
+            foreach (var river in shapes.Rivers)
             {
-                AddRibbon(MapGeometry.ExtendAtEdge(line.Points, bounds, EdgeOverhang), spec.width * 0.5f + BankMargin, height, vertices, uvs, triangles);
+                var half = river.Spec.width * 0.5f * (1f + river.Spec.widthVariation) + BankMargin;
+                AddRibbon(MapGeometry.ExtendAtEdge(river.Line.Points, bounds, EdgeOverhang), half, height, vertices, uvs, triangles);
             }
 
             var mesh = new Mesh { name = "Rivers", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
