@@ -67,38 +67,25 @@ namespace HyperRTS.Simulation.Replays
         {
             using var relationsQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<FactionRelations>());
             relationsQuery.TryGetSingleton(out FactionRelations relations);
-            using var playerQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<Player>());
+            using var playerQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<Player>(),
+                ComponentType.ReadOnly<PlayerSide>());
             using var players = playerQuery.ToComponentDataArray<Player>(Allocator.Temp);
-            foreach (var player in players)
+            using var sides = playerQuery.ToComponentDataArray<PlayerSide>(Allocator.Temp);
+
+            for (var i = 0; i < players.Length; i++)
             {
+                var player = players[i];
                 replay.Players.Add(new ReplayPlayerInfo
                 {
                     Faction = player.Faction,
                     Team = relations.TeamOf(player.Faction),
                     Name = player.Name.ToString(),
                     Color = player.Color,
-                    Side = SideOf(entityManager, player.Faction),
+                    Side = sides[i].Value,
                 });
             }
 
             replay.Players.Sort((a, b) => a.Faction.CompareTo(b.Faction));
-        }
-
-        private static byte SideOf(EntityManager entityManager, byte faction)
-        {
-            using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<Player>(),
-                ComponentType.ReadOnly<PlayerSide>());
-            using var players = query.ToComponentDataArray<Player>(Allocator.Temp);
-            using var sides = query.ToComponentDataArray<PlayerSide>(Allocator.Temp);
-            for (var i = 0; i < players.Length; i++)
-            {
-                if (players[i].Faction == faction)
-                {
-                    return sides[i].Value;
-                }
-            }
-
-            return 0;
         }
     }
 }

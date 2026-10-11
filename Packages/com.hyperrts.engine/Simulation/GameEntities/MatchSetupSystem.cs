@@ -145,7 +145,7 @@ namespace HyperRTS.Simulation.GameEntities
                 entityManager.AddBuffer<AIBuildStep>(player);
             }
 
-            if (math.abs(tuning.IncomeMultiplier - 1f) > 0.001f)
+            if (!AIDifficultyTuning.IsFairIncome(tuning.IncomeMultiplier))
             {
                 entityManager.AddComponentData(player, new IncomeMultiplier { Value = tuning.IncomeMultiplier });
             }

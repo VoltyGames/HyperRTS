@@ -177,7 +177,7 @@ namespace HyperRTS.Simulation.Match
 
             private void AddIncomeBonus(Entity player, float multiplier)
             {
-                if (!Mathf.Approximately(multiplier, 1f))
+                if (!AIDifficultyTuning.IsFairIncome(multiplier))
                 {
                     AddComponent(player, new IncomeMultiplier { Value = multiplier });
                 }

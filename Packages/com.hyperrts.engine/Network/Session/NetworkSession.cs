@@ -40,24 +40,19 @@ namespace HyperRTS.Network.Session
         public static event Action<NetworkStatus> StatusChanged;
 
         /// <summary>Server and client in this process, as for custom lobbies and LAN games.</summary>
-        public static bool StartHost(ushort port = DefaultPort) => StartHost(port, SessionScene.ReloadActive);
-
-        public static bool StartHost(ushort port, SessionScene scene) => Host(port, null, null, scene);
+        public static bool StartHost(ushort port = DefaultPort, SessionScene scene = default) =>
+            Host(port, null, null, scene);
 
         /// <summary>
         /// Player-hosted match over a relay allocation the game obtained (Unity Relay, Steam, its own backend):
         /// remote players join through the relay, the local player over IPC.
         /// </summary>
-        public static bool StartRelayHost(RelayServerData hostRelay, ushort port = DefaultPort) =>
-            StartRelayHost(hostRelay, port, SessionScene.ReloadActive);
-
-        public static bool StartRelayHost(RelayServerData hostRelay, ushort port, SessionScene scene) =>
+        public static bool StartRelayHost(RelayServerData hostRelay, ushort port = DefaultPort,
+            SessionScene scene = default) =>
             Host(port, new RelayDriverConstructor(hostRelay), new RelayDriverConstructor(default), scene);
 
         /// <summary>Dedicated server: no local player.</summary>
-        public static bool StartServer(ushort port = DefaultPort) => StartServer(port, SessionScene.ReloadActive);
-
-        public static bool StartServer(ushort port, SessionScene scene)
+        public static bool StartServer(ushort port = DefaultPort, SessionScene scene = default)
         {
             DisposeWorlds();
             if (!StartServerWorld(port, null, scene))
@@ -70,10 +65,7 @@ namespace HyperRTS.Network.Session
             return true;
         }
 
-        public static bool StartClient(string address, ushort port = DefaultPort) =>
-            StartClient(address, port, SessionScene.ReloadActive);
-
-        public static bool StartClient(string address, ushort port, SessionScene scene)
+        public static bool StartClient(string address, ushort port = DefaultPort, SessionScene scene = default)
         {
             if (!NetworkEndpoint.TryParse(address, port, out var endpoint))
             {
@@ -86,10 +78,7 @@ namespace HyperRTS.Network.Session
         }
 
         /// <summary>Joins a player-hosted match through the relay allocation the game joined with the host's code.</summary>
-        public static bool StartRelayClient(RelayServerData clientRelay) =>
-            StartRelayClient(clientRelay, SessionScene.ReloadActive);
-
-        public static bool StartRelayClient(RelayServerData clientRelay, SessionScene scene)
+        public static bool StartRelayClient(RelayServerData clientRelay, SessionScene scene = default)
         {
             if (!clientRelay.Endpoint.IsValid)
             {
