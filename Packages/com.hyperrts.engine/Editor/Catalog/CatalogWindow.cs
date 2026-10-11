@@ -18,6 +18,7 @@ namespace HyperRTS.Editor.Catalog
         private List<GameEntityAuthoring> _prefabs = new();
         private string _filter = "";
         private bool _reloadPending;
+        private bool _treePending;
         private StatsTable _stats;
         private TechTreeView _techTree;
         private TabView _tabs;
@@ -77,10 +78,22 @@ namespace HyperRTS.Editor.Catalog
             rootVisualElement.schedule.Execute(Reload).ExecuteLater(ReloadDelayMilliseconds);
         }
 
-        // Inspector edits to options or prerequisites show up in the open tree right away.
+        // Inspector edits to options or prerequisites show up in the open tree, once a burst of edits (a drag) settles.
         private void OnObjectsChanged(ref ObjectChangeEventStream stream)
         {
-            if (_tabs != null && _tabs.activeTab == _treeTab)
+            if (_treePending || _tabs == null || _tabs.activeTab != _treeTab)
+            {
+                return;
+            }
+
+            _treePending = true;
+            rootVisualElement.schedule.Execute(RefreshTree).ExecuteLater(ReloadDelayMilliseconds);
+        }
+
+        private void RefreshTree()
+        {
+            _treePending = false;
+            if (_tabs.activeTab == _treeTab)
             {
                 _techTree.Show(_prefabs, Visible());
             }
