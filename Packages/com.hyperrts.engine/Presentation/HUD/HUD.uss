@@ -122,6 +122,8 @@
     overflow: hidden;
 }
 
+.hud-minimap__fog,
+.hud-minimap__blips,
 .hud-minimap__view {
     position: absolute;
     left: 0;

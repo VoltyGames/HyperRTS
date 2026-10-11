@@ -14,7 +14,10 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>Map overview: owner-coloured blips, resource nodes, the camera view; click or drag to move the camera.</summary>
+    /// <summary>
+    /// Map overview: the scene's <see cref="MinimapImage"/>, the local fog of war, owner-coloured blips (squares for
+    /// structures), resource nodes and the camera view; click or drag to move the camera.
+    /// </summary>
     public sealed class Minimap : HUDPanel
     {
         private const float MaxViewDistance = 1000f;
@@ -30,10 +33,15 @@ namespace HyperRTS.Presentation.HUD
         private readonly LiveQuery _terrain = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainHeight>()));
 
-        private readonly List<(Vector2 Point, Color Color, float Radius)> _blips = new();
+        private static readonly Color Outline = new(0f, 0f, 0f, 0.7f);
+
+        private readonly List<(Vector2 Point, Color Color, float Radius, bool Square)> _blips = new();
         private readonly Vector2[] _view = new Vector2[4];
         private readonly VisualElement _canvas;
+        private readonly VisualElement _blipLayer;
         private readonly VisualElement _viewLayer;
+        private readonly MinimapFog _fog;
+        private bool _imageSearched;
         private HUDContext _context;
         private MapSettings _map;
         private bool _hasMap;
@@ -42,12 +50,13 @@ namespace HyperRTS.Presentation.HUD
         public Minimap() : base("hud-minimap")
         {
             _canvas = HUDElements.Box("hud-minimap__canvas", Root);
-            _canvas.generateVisualContent += PaintBlips;
+            _fog = new MinimapFog(Layer("hud-minimap__fog"));
+            _blipLayer = Layer("hud-minimap__blips");
+            _blipLayer.generateVisualContent += PaintBlips;
             _canvas.RegisterCallback<PointerDownEvent>(OnPointerDown);
             _canvas.RegisterCallback<PointerMoveEvent>(OnPointerMove);
             _canvas.RegisterCallback<PointerUpEvent>(OnPointerUp);
-            _viewLayer = HUDElements.Box("hud-minimap__view", _canvas);
-            _viewLayer.pickingMode = PickingMode.Ignore;
+            _viewLayer = Layer("hud-minimap__view");
             _viewLayer.generateVisualContent += PaintView;
         }
 
@@ -62,6 +71,12 @@ namespace HyperRTS.Presentation.HUD
             if (_hasMap)
             {
                 GatherCameraView(context.EntityManager);
+                FindImage();
+                _fog.Refresh(context.EntityManager);
+            }
+            else
+            {
+                _imageSearched = false;
             }
 
             _viewLayer.MarkDirtyRepaint();
@@ -77,11 +92,11 @@ namespace HyperRTS.Presentation.HUD
             if (_hasMap)
             {
                 GatherNodes(context.EntityManager);
-                GatherEntities(view, _units, 2.5f);
-                GatherEntities(view, _structures, 4f);
+                GatherEntities(view, _units, 2.2f, false);
+                GatherEntities(view, _structures, 3.2f, true);
             }
 
-            _canvas.MarkDirtyRepaint();
+            _blipLayer.MarkDirtyRepaint();
         }
 
         // Units and structures differ only by NavObstacle, which sets their blip size.
@@ -93,6 +108,28 @@ namespace HyperRTS.Presentation.HUD
             ComponentType.Exclude<FogHidden>(),
             ComponentType.Exclude<Inside>()));
 
+        private VisualElement Layer(string className)
+        {
+            var layer = HUDElements.Box(className, _canvas);
+            layer.pickingMode = PickingMode.Ignore;
+            return layer;
+        }
+
+        /// <summary>The scene's map picture, looked up once per match; without one the canvas keeps its plain fill.</summary>
+        private void FindImage()
+        {
+            if (_imageSearched)
+            {
+                return;
+            }
+
+            _imageSearched = true;
+            var image = Object.FindAnyObjectByType<MinimapImage>();
+            _canvas.style.backgroundImage = image != null && image.image != null
+                ? new StyleBackground(image.image)
+                : new StyleBackground(StyleKeyword.Null);
+        }
+
         private void GatherNodes(EntityManager entityManager)
         {
             var query = _nodes.In(entityManager);
@@ -101,18 +138,18 @@ namespace HyperRTS.Presentation.HUD
             for (var i = 0; i < nodes.Length; i++)
             {
                 var type = nodes[i].Type.Value;
-                AddBlip(transforms[i].Position.xz, type != null ? type.color : Color.white, 3f);
+                AddBlip(transforms[i].Position.xz, type != null ? type.color : Color.white, 2.4f, true);
             }
         }
 
-        private void GatherEntities(MatchView view, LiveQuery liveQuery, float radius)
+        private void GatherEntities(MatchView view, LiveQuery liveQuery, float radius, bool square)
         {
             var query = liveQuery.In(view.EntityManager);
             using var factions = query.ToComponentDataArray<Faction>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < factions.Length; i++)
             {
-                AddBlip(transforms[i].Position.xz, view.GetColor(factions[i].Value), radius);
+                AddBlip(transforms[i].Position.xz, view.GetColor(factions[i].Value), radius, square);
             }
         }
 
@@ -134,8 +171,8 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        private void AddBlip(float2 world, Color color, float radius) =>
-            _blips.Add((MinimapMath.WorldToMinimap(world, _map.Min, _map.Size), color, radius));
+        private void AddBlip(float2 world, Color color, float radius, bool square) =>
+            _blips.Add((MinimapMath.WorldToMinimap(world, _map.Min, _map.Size), color, radius, square));
 
         private void PaintBlips(MeshGenerationContext context)
         {
@@ -144,14 +181,30 @@ namespace HyperRTS.Presentation.HUD
                 return;
             }
 
-            var size = _canvas.contentRect.size;
+            var size = _blipLayer.contentRect.size;
             var painter = context.painter2D;
-            foreach (var (point, color, radius) in _blips)
+            painter.strokeColor = Outline;
+            painter.lineWidth = 1f;
+            foreach (var (point, color, radius, square) in _blips)
             {
+                var center = Vector2.Scale(point, size);
                 painter.fillColor = color;
                 painter.BeginPath();
-                painter.Arc(Vector2.Scale(point, size), radius, 0f, 360f);
+                if (square)
+                {
+                    painter.MoveTo(center + new Vector2(-radius, -radius));
+                    painter.LineTo(center + new Vector2(radius, -radius));
+                    painter.LineTo(center + new Vector2(radius, radius));
+                    painter.LineTo(center + new Vector2(-radius, radius));
+                    painter.ClosePath();
+                }
+                else
+                {
+                    painter.Arc(center, radius, 0f, 360f);
+                }
+
                 painter.Fill();
+                painter.Stroke();
             }
         }
 
