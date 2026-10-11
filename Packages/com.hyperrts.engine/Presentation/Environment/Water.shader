@@ -1,6 +1,7 @@
 // River and lake surface: colour and clarity from the water depth (depth texture), refraction of the bottom
 // (opaque texture), ripples that drift downstream along the mesh's V coordinate (metres), sun glint, sky reflection
-// by fresnel, and foam where the water meets the shore. Needs the URP asset's Depth and Opaque Textures.
+// by fresnel, foam where the water meets the shore, and cloud shadows from the sun's cookie. Needs the URP asset's
+// Depth and Opaque Textures.
 Shader "HyperRTS/Water"
 {
     Properties
@@ -42,6 +43,7 @@ Shader "HyperRTS/Water"
             #pragma fragment Frag
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -122,6 +124,17 @@ Shader "HyperRTS/Water"
                 return normalize(half3(first.xy + second.xy, first.z * second.z));
             }
 
+            // Clouds dim the sunlight the water scatters back up, about two thirds of it; the sky's share stays. The
+            // refracted bottom already carries the cloud shadow on the ground.
+            half3 CloudShade(float3 positionWS)
+            {
+                #if defined(_LIGHT_COOKIES)
+                    return lerp(half3(1.0, 1.0, 1.0), SampleMainLightCookie(positionWS), 0.65);
+                #else
+                    return half3(1.0, 1.0, 1.0);
+                #endif
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 half3 first;
@@ -140,10 +153,11 @@ Shader "HyperRTS/Water"
                 }
 
                 half3 bottom = SampleSceneColor(refracted);
-                half3 tint = lerp(_ShallowColor.rgb, _DeepColor.rgb, saturate(depth / _DepthRange));
+                half3 tint = lerp(_ShallowColor.rgb, _DeepColor.rgb, saturate(depth / _DepthRange)) * CloudShade(input.positionWS);
                 half3 body = lerp(tint, bottom * _ShallowColor.rgb * 1.8, exp(-depth / _Clarity));
 
-                Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS));
+                // The cookie variant tints the sun's colour with the cloud cover, shading glint and foam.
+                Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
                 half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 half3 halfway = normalize(sun.direction + view);
                 half glint = pow(saturate(dot(normalWS, halfway)), exp2(_Smoothness * 11.0)) * sun.shadowAttenuation;
