@@ -6,7 +6,7 @@ namespace HyperRTS.Simulation.Common
     /// <summary>Team per faction (index = faction). Different non-neutral teams are hostile.</summary>
     public struct FactionRelations : IComponentData
     {
-        public const int MaxTeams = 8;
+        public const int MaxTeams = 16;
 
         public FixedList32Bytes<byte> Teams;
 

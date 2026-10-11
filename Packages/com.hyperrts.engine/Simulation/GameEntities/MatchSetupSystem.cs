@@ -171,6 +171,13 @@ namespace HyperRTS.Simulation.GameEntities
 
         private static void SetTeam(ref FactionRelations relations, byte faction, byte team)
         {
+            // Fog keeps one bit per team, so a team past the limit would silently never see anything.
+            if (team >= FactionRelations.MaxTeams)
+            {
+                throw new System.ArgumentException(
+                    $"Slot {faction} has team {team}; teams go up to {FactionRelations.MaxTeams - 1}.");
+            }
+
             while (relations.Teams.Length <= faction)
             {
                 relations.Teams.Add(0);

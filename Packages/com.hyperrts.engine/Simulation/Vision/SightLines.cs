@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Flooded terrain hides its bed below this surface; negative infinity when nothing floods.</summary>
         public float WaterFloor;
 
-        public void Stamp(float3 position, float range, byte bit)
+        public void Stamp(float3 position, float range, ushort bit)
         {
             var center = Fog.WorldToCell(position);
             var radius = (int)math.ceil(range / Fog.CellSize);
@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Vision
         }
 
         // origin: viewer XZ in .xy and eye height in .z.
-        private void Cast(float3 origin, int2 center, int2 offset, float range, byte bit)
+        private void Cast(float3 origin, int2 center, int2 offset, float range, ushort bit)
         {
             var steps = math.cmax(math.abs(offset));
             var horizon = float.NegativeInfinity;
@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Vision
 
         private readonly float Surface(float2 point) => math.max(Terrain.Height(point), WaterFloor);
 
-        private void Mark(int2 cell, byte bit)
+        private void Mark(int2 cell, ushort bit)
         {
             if (!Fog.InBounds(cell))
             {
@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.Vision
             }
 
             var index = Fog.Index(cell);
-            Fog.Visible[index] = (byte)(Fog.Visible[index] | bit);
+            Fog.Visible[index] = (ushort)(Fog.Visible[index] | bit);
         }
     }
 }
