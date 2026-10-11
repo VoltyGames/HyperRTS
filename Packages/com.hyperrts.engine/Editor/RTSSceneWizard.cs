@@ -2,7 +2,6 @@ using HyperRTS.Core;
 using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
-using Unity.Scenes;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEditor.UIElements;
@@ -60,7 +59,7 @@ namespace HyperRTS.Editor
                 return;
             }
 
-            RTSSceneBuilder.Build(new RTSSceneSpec
+            var subScene = RTSSceneBuilder.Build(new RTSSceneSpec
             {
                 ScenePath = path,
                 MapSize = _mapSize.value,
@@ -68,7 +67,7 @@ namespace HyperRTS.Editor
                 StartingBase = (GameEntityAuthoring)_startingBase.value,
             });
 
-            UnityEditor.Selection.activeGameObject = FindAnyObjectByType<SubScene>().gameObject;
+            UnityEditor.Selection.activeGameObject = subScene.gameObject;
             Debug.Log("HyperRTS: scene created. Open the SubScene (tick its checkbox) and add units and buildings " +
                       "with GameObject ▸ HyperRTS. See " + HyperRTSDocs.GettingStarted);
             Close();

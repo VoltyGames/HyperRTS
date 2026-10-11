@@ -118,7 +118,7 @@ RTSSceneBuilder.Build(new RTSSceneSpec
 
 The builder validates the spec (throws on a bad path, player count or size), saves the scene and its
 `<Scene>_Entities.unity` SubScene, and calls `Furnish` with the open SubScene, its `Match` and each player's base
-position before saving it.
+position before saving it. It returns the `SubScene` component in the new scene.
 
 ## Play-mode debugging
 

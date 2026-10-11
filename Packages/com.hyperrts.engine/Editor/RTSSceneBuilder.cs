@@ -17,8 +17,8 @@ namespace HyperRTS.Editor
     /// <summary>Creates a playable RTS scene (rig, light, ground, SubScene with Match and bases) from a spec.</summary>
     public static class RTSSceneBuilder
     {
-        /// <summary>Builds and saves the scene and its SubScene; returns the SubScene's path.</summary>
-        public static string Build(RTSSceneSpec spec)
+        /// <summary>Builds and saves the scene and its SubScene; returns the SubScene component in the new scene.</summary>
+        public static SubScene Build(RTSSceneSpec spec)
         {
             Validate(spec);
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -33,11 +33,11 @@ namespace HyperRTS.Editor
             subScene.SceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(subScenePath);
             subScene.AutoLoadScene = true;
             EditorSceneManager.SaveScene(scene);
-            return subScenePath;
+            return subScene;
         }
 
         /// <summary>Bases sit on a circle around the centre, player 1 at the bottom of the map.</summary>
-        public static List<Vector3> BasePositions(Vector2 mapSize, int players)
+        private static List<Vector3> BasePositions(Vector2 mapSize, int players)
         {
             var radius = Mathf.Min(mapSize.x, mapSize.y) * 0.35f;
             var positions = new List<Vector3>(players);
