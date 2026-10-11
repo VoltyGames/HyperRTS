@@ -108,8 +108,8 @@ namespace HyperRTS.Presentation.Tests
 
             public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
             {
-                entries.Add(new CommandEntry(new CommandButton("Later", () => { }), () => { }));
-                Slotted = new CommandEntry(new CommandButton("Jam", () => Pressed++), () => Pressed++)
+                entries.Add(new CommandEntry("Later", () => { }));
+                Slotted = new CommandEntry("Jam", () => Pressed++)
                 {
                     Slot = 0,
                     Hotkey = 'j',

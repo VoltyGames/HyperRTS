@@ -35,11 +35,9 @@ namespace HyperRTS.Presentation.HUD
             foreach (var stance in Stances)
             {
                 var command = new PlayerCommand { Type = CommandType.SetStance, Argument = (int)stance };
-                Action invoke = () => context.Issue(command);
-                var button = new CommandButton(HUDText.StanceName(stance), invoke);
-                button.AddToClassList("hud-command--stance");
-                _buttons.Add((button, stance));
-                entries.Add(new CommandEntry(button, invoke));
+                var entry = new CommandEntry(HUDText.StanceName(stance), () => context.Issue(command));
+                _buttons.Add((entry.Button, stance));
+                entries.Add(entry);
             }
         }
 

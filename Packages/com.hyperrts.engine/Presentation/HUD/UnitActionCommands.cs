@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
@@ -42,10 +41,7 @@ namespace HyperRTS.Presentation.HUD
             }
 
             var command = new PlayerCommand { Type = type, Argument = argument };
-            Action invoke = () => context.Issue(command);
-            var button = new CommandButton(HUDText.Text(key), invoke);
-            button.AddToClassList("hud-command--stance");
-            entries.Add(new CommandEntry(button, invoke));
+            entries.Add(new CommandEntry(HUDText.Text(key), () => context.Issue(command)));
         }
     }
 }

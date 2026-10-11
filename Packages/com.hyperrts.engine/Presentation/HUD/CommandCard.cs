@@ -76,9 +76,15 @@ namespace HyperRTS.Presentation.HUD
 
         private void PressHotkeys(HUDContext context)
         {
+            var hotkeys = context.Hotkeys;
+            if (hotkeys.Keys.IsEmpty)
+            {
+                return;
+            }
+
             foreach (var entry in _entries)
             {
-                var pressed = entry.Hotkey != '\0' && context.WasHotkeyPressed(entry.Hotkey);
+                var pressed = entry.Hotkey != '\0' && hotkeys.Contains(entry.Hotkey);
                 if (pressed && entry.Button.enabledInHierarchy)
                 {
                     entry.Invoke();

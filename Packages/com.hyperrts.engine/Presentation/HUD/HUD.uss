@@ -285,7 +285,7 @@
     opacity: 0.4;
 }
 
-.hud-command--stance {
+.hud-command--text {
     height: 32px;
     justify-content: center;
 }
