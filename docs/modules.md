@@ -346,7 +346,7 @@ effects.
 
 - `SoundClearSystem` empties the queue at the start of each frame.
 - Writers: `WeaponFireSystem` (Fire, instant Impact), projectiles (Impact), `DeathSoundSystem`,
-  `AbilitySoundSystem`, `ProductionSystem` and `ConstructionSystem` (Ready). Games append with `SoundWriter`
+  `AbilitySoundSystem` and `ReadySoundSystem` (Ready, from `UnitProduced` and `BuildingCompleted`). Games append with `SoundWriter`
   before the end of the lifecycle phase.
 - `AcknowledgementSystem` (client, single player) plays one selected or commanded unit's voice, at most once a
   second.
