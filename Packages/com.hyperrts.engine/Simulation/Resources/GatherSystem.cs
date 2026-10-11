@@ -22,7 +22,6 @@ namespace HyperRTS.Simulation.Resources
 
         private EntityQuery _nodes;
         private EntityQuery _dropOffs;
-        private EntityQuery _players;
         private ComponentLookup<ResourceNode> _nodeLookup;
         private BufferLookup<ResourceStock> _stockLookup;
         private TargetReach _reach;
@@ -36,7 +35,7 @@ namespace HyperRTS.Simulation.Resources
             _nodes = SystemAPI.QueryBuilder().WithAll<ResourceNode, LocalTransform>().Build();
             _dropOffs = SystemAPI.QueryBuilder().WithAll<ResourceDropOff, LocalTransform, Faction>()
                 .WithNone<ConstructionProgress, Dead>().Build();
-            _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
+            state.RequireForUpdate<PlayerRegistry>();
             _nodeLookup = state.GetComponentLookup<ResourceNode>();
             _stockLookup = state.GetBufferLookup<ResourceStock>();
             _reach = new TargetReach(ref state);
@@ -66,7 +65,7 @@ namespace HyperRTS.Simulation.Resources
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Nodes = nodes.AsDeferredJobArray(),
                 DropOffs = dropOffs.AsDeferredJobArray(),
-                PlayerByFaction = PlayerLookup.ByFaction(_players, allocator),
+                Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 NodeLookup = _nodeLookup,
                 StockLookup = _stockLookup,
                 Reach = _reach,
@@ -85,7 +84,7 @@ namespace HyperRTS.Simulation.Resources
             public float DeltaTime;
             [ReadOnly] public NativeArray<Entity> Nodes;
             [ReadOnly] public NativeArray<Entity> DropOffs;
-            [ReadOnly] public NativeArray<Entity> PlayerByFaction;
+            public PlayerRegistry Players;
             public ComponentLookup<ResourceNode> NodeLookup;
             public BufferLookup<ResourceStock> StockLookup;
             public TargetReach Reach;
@@ -176,7 +175,7 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
-                var player = PlayerByFaction[faction];
+                var player = Players[faction];
                 if (StockLookup.TryGetBuffer(player, out var stock))
                 {
                     var delivered = Delivered(player, harvester.CargoAmount);

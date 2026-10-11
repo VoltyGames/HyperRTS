@@ -38,13 +38,13 @@ namespace HyperRTS.Simulation.Match
             var alive = 0u;
             foreach (var owner in _critical.ToComponentDataArray<Faction>(Allocator.Temp))
             {
-                alive |= Bit(owner.Value);
+                alive |= Faction.Bit(owner.Value);
             }
 
             match.Contenders |= alive;
             foreach (var (player, entity) in SystemAPI.Query<RefRO<Player>>().WithNone<Defeated>().WithEntityAccess())
             {
-                var bit = Bit(player.ValueRO.Faction);
+                var bit = Faction.Bit(player.ValueRO.Faction);
                 if ((match.Contenders & bit) != 0 && (alive & bit) == 0)
                 {
                     SystemAPI.SetComponentEnabled<Defeated>(entity, true);
@@ -83,6 +83,5 @@ namespace HyperRTS.Simulation.Match
             }
         }
 
-        private static uint Bit(byte faction) => faction < 32 ? 1u << faction : 0u;
     }
 }

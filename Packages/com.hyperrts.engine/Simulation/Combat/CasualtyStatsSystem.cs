@@ -1,4 +1,4 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
@@ -15,7 +15,6 @@ namespace HyperRTS.Simulation.Combat
     [UpdateAfter(typeof(DeathSystem))]
     public partial struct CasualtyStatsSystem : ISystem
     {
-        private EntityQuery _players;
         private EntityQuery _dying;
         private ComponentLookup<PlayerStats> _statsLookup;
         private ComponentLookup<LastAttacker> _attackerLookup;
@@ -24,7 +23,7 @@ namespace HyperRTS.Simulation.Combat
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
+            state.RequireForUpdate<PlayerRegistry>();
             _dying = SystemAPI.QueryBuilder().WithAll<Dead, Faction>().WithAny<UnitTag, BuildingTag>().Build();
             _statsLookup = state.GetComponentLookup<PlayerStats>();
             _attackerLookup = state.GetComponentLookup<LastAttacker>(true);
@@ -45,7 +44,7 @@ namespace HyperRTS.Simulation.Combat
             _buildingLookup.Update(ref state);
             new CountJob
             {
-                PlayerByFaction = PlayerLookup.ByFaction(_players, state.WorldUpdateAllocator),
+                Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 StatsLookup = _statsLookup,
                 AttackerLookup = _attackerLookup,
                 BuildingLookup = _buildingLookup,
@@ -58,7 +57,7 @@ namespace HyperRTS.Simulation.Combat
         [WithAny(typeof(UnitTag), typeof(BuildingTag))]
         private partial struct CountJob : IJobEntity
         {
-            [ReadOnly] public NativeArray<Entity> PlayerByFaction;
+            public PlayerRegistry Players;
             public ComponentLookup<PlayerStats> StatsLookup;
             [ReadOnly] public ComponentLookup<LastAttacker> AttackerLookup;
             [ReadOnly] public ComponentLookup<BuildingTag> BuildingLookup;
@@ -66,7 +65,7 @@ namespace HyperRTS.Simulation.Combat
             private void Execute(Entity entity, in Faction faction)
             {
                 var building = BuildingLookup.HasComponent(entity);
-                if (StatsLookup.TryGetRefRW(PlayerByFaction[faction.Value], out var owner))
+                if (StatsLookup.TryGetRefRW(Players[faction.Value], out var owner))
                 {
                     ref var stats = ref owner.ValueRW;
                     if (building)
@@ -89,7 +88,7 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                if (!StatsLookup.TryGetRefRW(PlayerByFaction[attacker.Faction], out var killer))
+                if (!StatsLookup.TryGetRefRW(Players[attacker.Faction], out var killer))
                 {
                     return;
                 }

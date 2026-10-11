@@ -24,8 +24,8 @@ namespace HyperRTS.Simulation.Power
         public void OnUpdate(ref SystemState state)
         {
             _offline.Update(ref state);
-            var produced = CollectionHelper.CreateNativeArray<float>(PlayerLookup.Capacity, state.WorldUpdateAllocator);
-            var consumed = CollectionHelper.CreateNativeArray<float>(PlayerLookup.Capacity, state.WorldUpdateAllocator);
+            var produced = CollectionHelper.CreateNativeArray<float>(PlayerRegistry.Capacity, state.WorldUpdateAllocator);
+            var consumed = CollectionHelper.CreateNativeArray<float>(PlayerRegistry.Capacity, state.WorldUpdateAllocator);
 
             new CountJob { Produced = produced, Consumed = consumed, Offline = _offline }.Schedule();
             new ApplyJob { Produced = produced, Consumed = consumed }.ScheduleParallel();

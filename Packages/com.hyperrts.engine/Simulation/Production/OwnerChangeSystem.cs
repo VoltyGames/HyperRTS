@@ -16,7 +16,6 @@ namespace HyperRTS.Simulation.Production
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     public partial struct OwnerChangeSystem : ISystem
     {
-        private EntityQuery _players;
         private BufferLookup<ProductionQueueItem> _queues;
         private BufferLookup<ResourceStock> _stocks;
         private BufferLookup<ResourceCost> _costs;
@@ -27,7 +26,7 @@ namespace HyperRTS.Simulation.Production
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
+            state.RequireForUpdate<PlayerRegistry>();
             _queues = state.GetBufferLookup<ProductionQueueItem>(true);
             _stocks = state.GetBufferLookup<ResourceStock>();
             _costs = state.GetBufferLookup<ResourceCost>(true);
@@ -52,7 +51,7 @@ namespace HyperRTS.Simulation.Production
             {
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
-                PlayerByFaction = PlayerLookup.ByFaction(_players, state.WorldUpdateAllocator),
+                Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 Queues = _queues,
                 Stocks = _stocks,
                 Costs = _costs,
@@ -67,7 +66,7 @@ namespace HyperRTS.Simulation.Production
         private partial struct ClearJob : IJobEntity
         {
             public EntityCommandBuffer Ecb;
-            [ReadOnly] public NativeArray<Entity> PlayerByFaction;
+            public PlayerRegistry Players;
             [ReadOnly] public BufferLookup<ProductionQueueItem> Queues;
             public BufferLookup<ResourceStock> Stocks;
             [ReadOnly] public BufferLookup<ResourceCost> Costs;
@@ -93,7 +92,7 @@ namespace HyperRTS.Simulation.Production
                     return;
                 }
 
-                if (Stocks.TryGetBuffer(PlayerByFaction[owner], out var stock))
+                if (Stocks.TryGetBuffer(Players[owner], out var stock))
                 {
                     ProductionRules.RefundQueue(stock, queue, Costs);
                 }

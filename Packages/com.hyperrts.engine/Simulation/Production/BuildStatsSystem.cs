@@ -11,13 +11,12 @@ namespace HyperRTS.Simulation.Production
     [UpdateInGroup(typeof(ProductionSystemGroup), OrderLast = true)]
     public partial struct BuildStatsSystem : ISystem
     {
-        private EntityQuery _players;
         private ComponentLookup<PlayerStats> _stats;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
+            state.RequireForUpdate<PlayerRegistry>();
             _stats = state.GetComponentLookup<PlayerStats>();
             state.RequireForUpdate<GameEvents>();
         }
@@ -28,7 +27,7 @@ namespace HyperRTS.Simulation.Production
             _stats.Update(ref state);
             new CountJob
             {
-                PlayerByFaction = PlayerLookup.ByFaction(_players, state.WorldUpdateAllocator),
+                Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 Stats = _stats,
             }.Schedule();
         }
@@ -37,14 +36,14 @@ namespace HyperRTS.Simulation.Production
         [WithAll(typeof(GameEvents))]
         private partial struct CountJob : IJobEntity
         {
-            [ReadOnly] public NativeArray<Entity> PlayerByFaction;
+            public PlayerRegistry Players;
             public ComponentLookup<PlayerStats> Stats;
 
             private void Execute(in DynamicBuffer<UnitProduced> units, in DynamicBuffer<BuildingCompleted> buildings)
             {
                 foreach (var produced in units)
                 {
-                    if (Stats.TryGetRefRW(PlayerByFaction[produced.Faction], out var stats))
+                    if (Stats.TryGetRefRW(Players[produced.Faction], out var stats))
                     {
                         stats.ValueRW.UnitsBuilt++;
                     }
@@ -52,7 +51,7 @@ namespace HyperRTS.Simulation.Production
 
                 foreach (var completed in buildings)
                 {
-                    if (Stats.TryGetRefRW(PlayerByFaction[completed.Faction], out var stats))
+                    if (Stats.TryGetRefRW(Players[completed.Faction], out var stats))
                     {
                         stats.ValueRW.BuildingsBuilt++;
                     }

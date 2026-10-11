@@ -21,9 +21,9 @@ Base module: ownership, identity, health, shared helpers.
 
 | Type | Role |
 | --- | --- |
-| `Faction` | Owner on every ownable entity (0 = neutral) |
+| `Faction` | Owner on every ownable entity (0 = neutral, up to `Faction.Max` = 29). `Faction.Bit` for 32-bit faction sets |
 | `FactionRelations`, `Relation` | Singleton: team per faction. `IsHostile`, `IsAllied`, `GetRelation` (Own, Ally, Enemy, Neutral) |
-| `Player`, `PlayerLookup` | Player entity identity (faction, name, colour); faction → player entity, rebuilt per frame for jobs |
+| `Player`, `PlayerRegistry` | Player entity identity (faction, name, colour); singleton faction → player entity, rebuilt first each frame; jobs take a copy and index it by faction |
 | `LocalPlayer`, `Defeated` | The player this client controls; enabled once a player is defeated |
 | `PlayerStats` | Replicated match totals: units trained, buildings finished, resources delivered, units and buildings lost and destroyed |
 | `MapSettings` | Singleton: playable bounds, grid cell sizes, water level, flooding, max slope |

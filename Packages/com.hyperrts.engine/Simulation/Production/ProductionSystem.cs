@@ -22,7 +22,6 @@ namespace HyperRTS.Simulation.Production
     [UpdateAfter(typeof(PopulationSystem))]
     public partial struct ProductionSystem : ISystem
     {
-        private EntityQuery _players;
         private ComponentLookup<Population> _populationLookup;
         private ComponentLookup<Producible> _producibleLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
@@ -37,7 +36,7 @@ namespace HyperRTS.Simulation.Production
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
+            state.RequireForUpdate<PlayerRegistry>();
             _populationLookup = state.GetComponentLookup<Population>(true);
             _producibleLookup = state.GetComponentLookup<Producible>(true);
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
@@ -74,8 +73,8 @@ namespace HyperRTS.Simulation.Production
                 LowPowerRate = rules.LowPowerProductionRate,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
-                PlayerByFaction = PlayerLookup.ByFaction(_players, allocator),
-                SpawnedPopulation = CollectionHelper.CreateNativeArray<int>(PlayerLookup.Capacity, allocator),
+                Players = SystemAPI.GetSingleton<PlayerRegistry>(),
+                SpawnedPopulation = CollectionHelper.CreateNativeArray<int>(PlayerRegistry.Capacity, allocator),
                 PopulationLookup = _populationLookup,
                 ProducibleLookup = _producibleLookup,
                 TransformLookup = _transformLookup,
@@ -99,7 +98,7 @@ namespace HyperRTS.Simulation.Production
             public float DeltaTime;
             public float LowPowerRate;
             public EntityCommandBuffer Ecb;
-            [ReadOnly] public NativeArray<Entity> PlayerByFaction;
+            public PlayerRegistry Players;
             public NativeArray<int> SpawnedPopulation;
             [ReadOnly] public ComponentLookup<Population> PopulationLookup;
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
@@ -165,7 +164,7 @@ namespace HyperRTS.Simulation.Production
 
             private void RecordResearch(byte faction, ProductionQueueItem item)
             {
-                if (CompletedResearchLookup.TryGetBuffer(PlayerByFaction[faction], out var researched))
+                if (CompletedResearchLookup.TryGetBuffer(Players[faction], out var researched))
                 {
                     researched.Add(new CompletedResearch { Prefab = item.Prefab, TypeId = item.TypeId });
                 }
@@ -173,7 +172,7 @@ namespace HyperRTS.Simulation.Production
 
             private bool HasRoomFor(byte faction, int population)
             {
-                if (!PopulationLookup.TryGetComponent(PlayerByFaction[faction], out var current))
+                if (!PopulationLookup.TryGetComponent(Players[faction], out var current))
                 {
                     return true;
                 }

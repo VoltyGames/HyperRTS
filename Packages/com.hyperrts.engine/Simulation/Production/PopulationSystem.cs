@@ -15,8 +15,8 @@ namespace HyperRTS.Simulation.Production
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var used = CollectionHelper.CreateNativeArray<int>(PlayerLookup.Capacity, state.WorldUpdateAllocator);
-            var cap = CollectionHelper.CreateNativeArray<int>(PlayerLookup.Capacity, state.WorldUpdateAllocator);
+            var used = CollectionHelper.CreateNativeArray<int>(PlayerRegistry.Capacity, state.WorldUpdateAllocator);
+            var cap = CollectionHelper.CreateNativeArray<int>(PlayerRegistry.Capacity, state.WorldUpdateAllocator);
 
             new CountUsedJob { Used = used }.Schedule();
             new CountCapJob { Cap = cap }.Schedule();

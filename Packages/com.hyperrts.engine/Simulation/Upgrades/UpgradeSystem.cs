@@ -17,7 +17,6 @@ namespace HyperRTS.Simulation.Upgrades
     [UpdateAfter(typeof(ProductionSystem))]
     public partial struct UpgradeSystem : ISystem
     {
-        private EntityQuery _players;
         private BufferLookup<CompletedResearch> _researched;
         private BufferLookup<UpgradeEffect> _effects;
         private BufferLookup<StatModifier> _modifiers;
@@ -25,7 +24,7 @@ namespace HyperRTS.Simulation.Upgrades
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
+            state.RequireForUpdate<PlayerRegistry>();
             _researched = state.GetBufferLookup<CompletedResearch>(true);
             _effects = state.GetBufferLookup<UpgradeEffect>(true);
             _modifiers = state.GetBufferLookup<StatModifier>();
@@ -40,7 +39,7 @@ namespace HyperRTS.Simulation.Upgrades
 
             new ApplyJob
             {
-                PlayerByFaction = PlayerLookup.ByFaction(_players, state.WorldUpdateAllocator),
+                Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 Researched = _researched,
                 Effects = _effects,
                 Modifiers = _modifiers,
@@ -50,7 +49,7 @@ namespace HyperRTS.Simulation.Upgrades
         [BurstCompile]
         private partial struct ApplyJob : IJobEntity
         {
-            [ReadOnly] public NativeArray<Entity> PlayerByFaction;
+            public PlayerRegistry Players;
             [ReadOnly] public BufferLookup<CompletedResearch> Researched;
             [ReadOnly] public BufferLookup<UpgradeEffect> Effects;
 
@@ -65,7 +64,7 @@ namespace HyperRTS.Simulation.Upgrades
                     applied = new AppliedUpgrades { Faction = faction.Value };
                 }
 
-                if (!Researched.TryGetBuffer(PlayerByFaction[faction.Value], out var researched))
+                if (!Researched.TryGetBuffer(Players[faction.Value], out var researched))
                 {
                     return;
                 }

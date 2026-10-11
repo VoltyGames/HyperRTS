@@ -1,4 +1,4 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
@@ -93,7 +93,7 @@ namespace HyperRTS.Simulation.GameEntities
                 var faction = entityManager.GetComponentData<Player>(player).Faction;
                 if (!setup.IsOpen(faction))
                 {
-                    setup.ClosedFactions |= Bit(faction);
+                    setup.ClosedFactions |= Faction.Bit(faction);
                     SetTeam(ref relations, faction, 0);
                     entityManager.DestroyEntity(player);
                     continue;
@@ -171,6 +171,11 @@ namespace HyperRTS.Simulation.GameEntities
 
         private static void SetTeam(ref FactionRelations relations, byte faction, byte team)
         {
+            if (faction > Faction.Max)
+            {
+                throw new System.ArgumentException($"Slot {faction} is past the last faction, {Faction.Max}.");
+            }
+
             // Fog keeps one bit per team, so a team past the limit would silently never see anything.
             if (team >= FactionRelations.MaxTeams)
             {
@@ -225,7 +230,7 @@ namespace HyperRTS.Simulation.GameEntities
             _retryOwned = false;
             foreach (var entity in _owned.ToEntityArray(Allocator.Temp))
             {
-                if ((Bit(entityManager.GetComponentData<Faction>(entity).Value) & closed) == 0)
+                if ((Faction.Bit(entityManager.GetComponentData<Faction>(entity).Value) & closed) == 0)
                 {
                     continue;
                 }
@@ -254,6 +259,5 @@ namespace HyperRTS.Simulation.GameEntities
                    entityManager.GetComponentData<GhostInstance>(entity).ghostId != 0;
         }
 
-        private static uint Bit(byte faction) => faction < 32 ? 1u << faction : 0u;
     }
 }
