@@ -16,6 +16,7 @@ namespace HyperRTS.Simulation.Combat
     public partial struct CasualtyStatsSystem : ISystem
     {
         private EntityQuery _players;
+        private EntityQuery _dying;
         private ComponentLookup<PlayerStats> _statsLookup;
         private ComponentLookup<LastAttacker> _attackerLookup;
         private ComponentLookup<BuildingTag> _buildingLookup;
@@ -24,6 +25,7 @@ namespace HyperRTS.Simulation.Combat
         public void OnCreate(ref SystemState state)
         {
             _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
+            _dying = SystemAPI.QueryBuilder().WithAll<Dead, Faction>().WithAny<UnitTag, BuildingTag>().Build();
             _statsLookup = state.GetComponentLookup<PlayerStats>();
             _attackerLookup = state.GetComponentLookup<LastAttacker>(true);
             _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
@@ -33,6 +35,11 @@ namespace HyperRTS.Simulation.Combat
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (_dying.IsEmpty)
+            {
+                return;
+            }
+
             _statsLookup.Update(ref state);
             _attackerLookup.Update(ref state);
             _buildingLookup.Update(ref state);
@@ -42,7 +49,7 @@ namespace HyperRTS.Simulation.Combat
                 StatsLookup = _statsLookup,
                 AttackerLookup = _attackerLookup,
                 BuildingLookup = _buildingLookup,
-            }.Schedule();
+            }.Schedule(_dying);
         }
 
         /// <summary>Single-threaded: many deaths can credit one player.</summary>
