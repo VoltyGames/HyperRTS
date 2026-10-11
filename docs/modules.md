@@ -33,7 +33,7 @@ Base module: ownership, identity, health, shared helpers.
 | `ConstructionProgress` | Enableable 0..1. Unfinished buildings don't produce, provide population, fire or satisfy prerequisites |
 | `GameEvents`: `UnitProduced`, `BuildingCompleted`, `OwnerChanged` | This frame's gameplay events on one singleton, cleared first in the order phase by `GameEventSystem`. Sounds, stats and cleanup react to them; so can games |
 | `Ownership.Transfer` | The one way to change an owner: sets `Faction` through the ECB and raises `OwnerChanged` |
-| `Offline`, `OfflineReason` | Enableable "out of action" state with a reason mask: `UnderConstruction`, `Unpowered`, and game reasons from `Custom` up. Offline entities don't fire, cast, run fields or produce. Buildings carry it; add it to units a game can disable |
+| `Offline`, `OfflineReason` | Enableable "out of action" state with a reason mask: `UnderConstruction`, `Unpowered`, and game reasons from `Custom` up. Offline entities don't fire, cast, run fields or produce. Each source sets and clears its own reason with `Offline.Set`. Buildings carry it; add it to units a game can disable |
 | `AttackTarget` | Enableable current target (here so orders can halt attacks) |
 | `EntityInfo` | `TypeId` (hash of the display name), `Name`, `Icon` |
 | `PrefabRegistry` | Singleton `TypeId` → prefab map; resolves network commands, replicated buffers and sounds |
@@ -228,7 +228,8 @@ spawns, and swaps sets when an entity changes owner (dropping every `StatSourceK
 ## Power
 
 `BuildingAuthoring.power` adds a `PowerSupply` (positive generates, negative draws). `PowerSystem` (end of the
-order phase) totals each player's `PowerGrid` and enables `Unpowered` on consumers while demand exceeds supply.
+order phase) totals each player's `PowerGrid` and sets `OfflineReason.Unpowered` on consumers while demand exceeds
+supply.
 Unpowered weapons hold fire; unpowered producers run at `MatchRules.LowPowerProductionRate`.
 
 `OfflineSystem` (right after) recomputes the engine's `OfflineReason`s, keeps any game reasons, and enables

@@ -2,7 +2,7 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Common
 {
-    /// <summary>"Has the component and it is enabled", for optional toggles like <c>Unpowered</c> or <c>Inside</c>.</summary>
+    /// <summary>"Has the component and it is enabled", for optional toggles like <c>Inside</c>.</summary>
     public static class EnabledExtensions
     {
         public static bool HasEnabled<T>(this in ComponentLookup<T> lookup, Entity entity)

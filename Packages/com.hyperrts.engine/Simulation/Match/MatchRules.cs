@@ -5,7 +5,7 @@ namespace HyperRTS.Simulation.Match
     /// <summary>Match-wide tuning on the match singleton; systems fall back to <see cref="Default"/> without one.</summary>
     public struct MatchRules : IComponentData
     {
-        /// <summary>Production speed of an <c>Unpowered</c> producer.</summary>
+        /// <summary>Production speed of an unpowered producer (<c>OfflineReason.Unpowered</c>).</summary>
         public float LowPowerProductionRate;
 
         /// <summary>Share of a finished building's cost refunded when sold; unfinished ones refund in full.</summary>

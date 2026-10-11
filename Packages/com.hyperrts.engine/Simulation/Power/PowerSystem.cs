@@ -8,8 +8,9 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Power
 {
     /// <summary>
-    /// Totals each player's <see cref="PowerGrid"/> from completed buildings and flags consumers
-    /// <see cref="Unpowered"/> while the owner draws more than it produces. Runs before combat so weapons see it.
+    /// Totals each player's <see cref="PowerGrid"/> from completed buildings and sets
+    /// <see cref="OfflineReason.Unpowered"/> on consumers while the owner draws more than it produces. Runs before
+    /// combat so weapons see it.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderLast = true)]
@@ -66,20 +67,23 @@ namespace HyperRTS.Simulation.Power
                 grid = GetGrid(Produced, Consumed, player.Faction);
         }
 
+        /// <summary>Sets the reason every frame, so a game overwriting <see cref="Offline"/> can't leave it stale.</summary>
         [BurstCompile]
-        [WithPresent(typeof(Unpowered))]
+        [WithPresent(typeof(Offline))]
         private partial struct FlagJob : IJobEntity
         {
             [ReadOnly] public NativeArray<float> Produced;
             [ReadOnly] public NativeArray<float> Consumed;
 
-            private void Execute(in Faction faction, EnabledRefRW<Unpowered> unpowered)
+            private void Execute(in Faction faction, in PowerSupply supply, ref Offline offline)
             {
-                var low = GetGrid(Produced, Consumed, faction.Value).IsLow;
-                if (unpowered.ValueRO != low)
+                if (supply.Amount >= 0f)
                 {
-                    unpowered.ValueRW = low;
+                    return;
                 }
+
+                var low = GetGrid(Produced, Consumed, faction.Value).IsLow;
+                offline.Set(OfflineReason.Unpowered, low);
             }
         }
     }

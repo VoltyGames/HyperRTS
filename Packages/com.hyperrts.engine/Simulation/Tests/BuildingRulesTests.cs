@@ -50,13 +50,13 @@ namespace HyperRTS.Simulation.Tests
             var grid = _world.Get<PowerGrid>(_world.Player(1));
             Assert.AreEqual(5f, grid.Produced);
             Assert.AreEqual(11f, grid.Consumed);
-            Assert.IsTrue(_world.IsEnabled<Unpowered>(radar));
+            Assert.AreEqual(OfflineReason.Unpowered, _world.Get<Offline>(radar).Reasons);
             Assert.AreEqual(100f, _world.Get<Health>(enemy).Current, "an unpowered tower holds fire");
 
             _world.SpawnBuilding(1, new float3(-30f, 0f, 0f), Footprint, power: 10f);
             _world.Run(2f);
 
-            Assert.IsFalse(_world.IsEnabled<Unpowered>(radar));
+            Assert.AreEqual(OfflineReason.None, _world.Get<Offline>(radar).Reasons);
             Assert.Less(_world.Get<Health>(enemy).Current, 100f, "power restored, the tower fires");
             Assert.IsTrue(_world.EntityManager.Exists(plant));
         }
@@ -130,6 +130,22 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.IsFalse(_world.IsEnabled<Offline>(site));
             Assert.AreEqual(OfflineReason.None, _world.Get<Offline>(site).Reasons);
+        }
+
+        [Test]
+        public void GameOverwritingOffline_KeepsTheEngineReasons()
+        {
+            var site = _world.SpawnBuilding(1, float3.zero, Footprint, complete: false);
+            var radar = _world.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, power: -5f);
+            _world.SpawnBuilding(1, new float3(-20f, 0f, 0f), Footprint, power: -5f);
+            var emp = new Offline { Reasons = OfflineReason.Custom };
+            _world.EntityManager.SetComponentData(site, emp);
+            _world.EntityManager.SetComponentData(radar, emp);
+
+            _world.Tick();
+
+            Assert.AreEqual(OfflineReason.Custom | OfflineReason.UnderConstruction, _world.Get<Offline>(site).Reasons);
+            Assert.AreEqual(OfflineReason.Custom | OfflineReason.Unpowered, _world.Get<Offline>(radar).Reasons);
         }
 
         [Test]

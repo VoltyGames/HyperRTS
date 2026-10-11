@@ -33,12 +33,6 @@ namespace HyperRTS.Simulation.Buildings
             {
                 writer.Add(new PowerSupply { Amount = power });
             }
-
-            if (power < 0f)
-            {
-                writer.Add<Unpowered>();
-                writer.SetEnabled<Unpowered>(false);
-            }
         }
     }
 }

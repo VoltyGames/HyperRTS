@@ -1,9 +1,13 @@
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.NetCode;
 
 namespace HyperRTS.Simulation.Power
 {
-    /// <summary>Per-player power from completed buildings; consumers go <see cref="Unpowered"/> while it is low.</summary>
+    /// <summary>
+    /// Per-player power from completed buildings; consumers go offline (<see cref="OfflineReason.Unpowered"/>) while it
+    /// is low.
+    /// </summary>
     public struct PowerGrid : IComponentData
     {
         [GhostField] public float Produced;
