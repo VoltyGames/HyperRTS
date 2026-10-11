@@ -74,13 +74,16 @@ namespace HyperRTS.Simulation.Orders
             _active.SetComponentEnabled(unit, true);
         }
 
-        /// <summary>Clears all orders and halts movement and attacks.</summary>
+        /// <summary>Clears all orders and halts movement and attacks; on an entity without orders (a tower), only halts.</summary>
         public void Stop(Entity unit)
         {
             if (_active.HasComponent(unit))
             {
                 Interrupt(unit);
+                return;
             }
+
+            _halt.Apply(unit);
         }
 
         private void Interrupt(Entity unit)

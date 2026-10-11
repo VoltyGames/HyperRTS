@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Commands;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
 using NUnit.Framework;
@@ -60,6 +61,26 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(_world.IsEnabled<ActiveOrder>(unit));
             Assert.AreEqual(OrderType.Move, _world.Get<ActiveOrder>(unit).Value.Type);
             Assert.IsFalse(_world.IsEnabled<AttackTarget>(unit), "the queued move isn't held back by the old target");
+        }
+
+        [Test]
+        public void OwnerChange_StopsTheOldOwnersOrders()
+        {
+            var unit = _world.SpawnUnit(1, float3.zero);
+            var goal = new Order { Type = OrderType.Move, Position = new float3(20f, 0f, 0f) };
+            _world.EntityManager.SetComponentData(unit, new ActiveOrder { Value = goal });
+            _world.EntityManager.SetComponentEnabled<ActiveOrder>(unit, true);
+            _world.EntityManager.GetBuffer<QueuedOrder>(unit).Add(new QueuedOrder { Value = goal });
+            _world.EntityManager.SetComponentEnabled<MoveDestination>(unit, true);
+            var events = _world.EntityManager.CreateEntityQuery(typeof(GameEvents)).GetSingletonEntity();
+            _world.EntityManager.GetBuffer<OwnerChanged>(events)
+                .Add(new OwnerChanged { Entity = unit, From = 1, To = 2 });
+
+            _world.World.GetExistingSystem<OwnerChangeSystem>().Update(_world.World.Unmanaged);
+
+            Assert.IsFalse(_world.IsEnabled<ActiveOrder>(unit));
+            Assert.AreEqual(0, _world.EntityManager.GetBuffer<QueuedOrder>(unit).Length);
+            Assert.IsFalse(_world.IsEnabled<MoveDestination>(unit));
         }
 
         [Test]

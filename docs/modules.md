@@ -275,10 +275,10 @@ runs dry. `ResourceNodeSystem` regrows or removes nodes.
 | `ProductionRules` | `HasOption`, `Refund`, `RefundQueue` |
 
 `ProductionCommandSystem` handles Produce, Cancel (refund) and rally points. `BuildStatsSystem` counts
-`UnitProduced` and `BuildingCompleted` into `PlayerStats`; `OwnerChangeSystem` refunds a transferred producer's
-queue to the old owner and drops its target, rally point and selection. `ProductionSystem` trains the queue
-head when population allows and sends units to the rally point; a finished `Research` is added to the owner's
-`CompletedResearch` instead.
+`UnitProduced` and `BuildingCompleted` into `PlayerStats`; `OwnerChangeSystem` refunds a transferred entity's
+queue to the old owner, stops its orders and attack, and drops its rally point and selection. `ProductionSystem`
+trains the queue head when population allows and sends units to the rally point; a finished `Research` is added
+to the owner's `CompletedResearch` instead.
 
 ## Capture
 

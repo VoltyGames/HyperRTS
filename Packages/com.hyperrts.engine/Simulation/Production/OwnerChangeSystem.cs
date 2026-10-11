@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
@@ -10,7 +11,8 @@ namespace HyperRTS.Simulation.Production
 {
     /// <summary>
     /// Clears what the old owner left on an entity that changed hands this frame (<see cref="OwnerChanged"/>): its
-    /// production queue is refunded to the old owner, and its target, rally point and selection are dropped.
+    /// production queue is refunded to the old owner, it stops every order, movement and attack, and its rally point
+    /// and selection are dropped.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
@@ -19,7 +21,7 @@ namespace HyperRTS.Simulation.Production
         private BufferLookup<ProductionQueueItem> _queues;
         private BufferLookup<ResourceStock> _stocks;
         private BufferLookup<ResourceCost> _costs;
-        private ComponentLookup<AttackTarget> _attacks;
+        private OrderWriter _orders;
         private ComponentLookup<RallyPoint> _rallies;
         private ComponentLookup<Selected> _selected;
 
@@ -30,7 +32,7 @@ namespace HyperRTS.Simulation.Production
             _queues = state.GetBufferLookup<ProductionQueueItem>(true);
             _stocks = state.GetBufferLookup<ResourceStock>();
             _costs = state.GetBufferLookup<ResourceCost>(true);
-            _attacks = state.GetComponentLookup<AttackTarget>(true);
+            _orders = new OrderWriter(ref state);
             _rallies = state.GetComponentLookup<RallyPoint>(true);
             _selected = state.GetComponentLookup<Selected>(true);
             state.RequireForUpdate<GameEvents>();
@@ -43,7 +45,7 @@ namespace HyperRTS.Simulation.Production
             _queues.Update(ref state);
             _stocks.Update(ref state);
             _costs.Update(ref state);
-            _attacks.Update(ref state);
+            _orders.Update(ref state);
             _rallies.Update(ref state);
             _selected.Update(ref state);
 
@@ -55,12 +57,13 @@ namespace HyperRTS.Simulation.Production
                 Queues = _queues,
                 Stocks = _stocks,
                 Costs = _costs,
-                Attacks = _attacks,
+                Orders = _orders,
                 Rallies = _rallies,
                 Selected = _selected,
             }.Schedule();
         }
 
+        /// <summary>Single-threaded: the order writer holds writable lookups.</summary>
         [BurstCompile]
         [WithAll(typeof(GameEvents))]
         private partial struct ClearJob : IJobEntity
@@ -70,7 +73,7 @@ namespace HyperRTS.Simulation.Production
             [ReadOnly] public BufferLookup<ProductionQueueItem> Queues;
             public BufferLookup<ResourceStock> Stocks;
             [ReadOnly] public BufferLookup<ResourceCost> Costs;
-            [ReadOnly] public ComponentLookup<AttackTarget> Attacks;
+            public OrderWriter Orders;
             [ReadOnly] public ComponentLookup<RallyPoint> Rallies;
             [ReadOnly] public ComponentLookup<Selected> Selected;
 
@@ -79,7 +82,7 @@ namespace HyperRTS.Simulation.Production
                 foreach (var change in changes)
                 {
                     RefundQueue(change.Entity, change.From);
-                    Disable(Attacks, change.Entity);
+                    Orders.Stop(change.Entity);
                     Disable(Rallies, change.Entity);
                     Disable(Selected, change.Entity);
                 }
