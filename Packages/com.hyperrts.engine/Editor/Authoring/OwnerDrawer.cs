@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Authoring
         private static List<int> Choices(int current)
         {
             var match = SceneMatch.Current;
-            var slots = match != null ? Mathf.Max(match.players.Count, current) : Mathf.Max(OwnerAttribute.Max, current);
+            var slots = match != null ? Mathf.Max(match.players.Count, current) : Mathf.Max(Faction.Max, current);
             var choices = new List<int>(slots + 1);
             for (var i = 0; i <= slots; i++)
             {
