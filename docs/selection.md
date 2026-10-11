@@ -39,7 +39,7 @@ Unity Physics raycast against the baked colliders, so selectable prefabs need a 
 | Map | Bindings |
 | --- | --- |
 | Selection | `Select` left click/drag, `Additive` Shift, `Subtract` Ctrl, `Group1-5` keys 1-5, `AssignGroup` Ctrl |
-| Commands | `Command` right click, `Confirm` left click, `AttackMove` A, `Stop` S, `HoldPosition` H, `Queue` Shift, `Cancel` Esc |
+| Commands | `Command` right click, `Confirm` left click, `AttackMove` A, `Stop` S, `HoldPosition` H, `Queue` Shift, `Cancel` Esc (unless `InputActionsProvider.FrontEndOwnsCancel`) |
 | Camera | `Pan` arrow keys, `Zoom` scroll, `Rotate` middle-drag (`Look`), `Reset` Home |
 
 Short press = click; drag past a threshold = box; two quick clicks = double-click. Shift adds, Ctrl removes, no

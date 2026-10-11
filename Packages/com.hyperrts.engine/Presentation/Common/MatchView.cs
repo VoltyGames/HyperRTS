@@ -94,15 +94,25 @@ namespace HyperRTS.Presentation.Common
 
         public bool IsLocalDefeated() => EntityManager.HasEnabled<Defeated>(LocalPlayer);
 
-        /// <summary>Whether a building placement or targeted command waits for a click, which Escape cancels first.</summary>
-        public bool IsInteractionPending()
+        /// <summary>
+        /// Cancels a building placement or a targeted command waiting for a click; false when neither was pending.
+        /// For a front end that owns Escape (<c>InputActionsProvider.FrontEndOwnsCancel</c>).
+        /// </summary>
+        public bool CancelInteraction()
         {
-            if (_placement.TryGetSingleton(out PlacementState placement) && placement.Active)
+            var placing = _placement.TryGetSingleton(out PlacementState placement) && placement.Active;
+            var targeting = _pending.TryGetSingleton(out PendingCommand pending) && pending.Type != CommandType.None;
+            if (placing)
             {
-                return true;
+                _placement.SetSingleton(new PlacementState());
             }
 
-            return _pending.TryGetSingleton(out PendingCommand pending) && pending.Type != CommandType.None;
+            if (targeting)
+            {
+                _pending.SetSingleton(new PendingCommand());
+            }
+
+            return placing || targeting;
         }
 
         private void Bind(World world)
@@ -116,8 +126,8 @@ namespace HyperRTS.Presentation.Common
             _relations = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<FactionRelations>());
             _map = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MapSettings>());
             _match = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MatchState>());
-            _placement = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<PlacementState>());
-            _pending = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<PendingCommand>());
+            _placement = EntityManager.CreateEntityQuery(ComponentType.ReadWrite<PlacementState>());
+            _pending = EntityManager.CreateEntityQuery(ComponentType.ReadWrite<PendingCommand>());
         }
 
         private void RefreshColors()
