@@ -34,7 +34,7 @@ Each start takes an optional `SessionScene`: `ReloadActive` (the default, for a 
 `LoadScene(path)` to stream the map into the running worlds. `SceneLoad` exposes the load for a progress bar.
 
 To configure the match itself (open and closed slots, teams, colours, AI, starting resources, fog) every peer sets
-the same `MatchSetupRequest` before the map loads; see [modules](modules.md#match-players-teams-victory).
+the same `MatchSetupRequest` before the map loads; see [modules](modules.md#match).
 
 The `Start*` calls return `false` when the session can't start (bad address, port in use) and stay in single
 player. In Play mode use **HyperRTS ▸ Network**. Builds accept `-server`, `-host`, `-connect <address>` and

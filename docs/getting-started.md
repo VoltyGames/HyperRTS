@@ -1,188 +1,112 @@
-# Getting started: build your first RTS on HyperRTS
+# Getting started
 
-This guide takes you from an empty scene to a playable skirmish: a base, workers that build, harvesters that
-bring in money, factories that train an army, and an AI opponent. Everything is done in the Editor with authoring
-components; no code is needed until you want new mechanics.
+From an empty project to a playable skirmish against the AI, in the editor, without code. The finished result is
+`Assets/Demo/Scenes/SampleScene.unity`; its prefabs in `Assets/Demo/Prefabs/` are good templates.
 
-If you just want to see the engine running, open `Assets/Demo/Scenes/SampleScene.unity` and press Play. That
-scene is the finished result of this guide (a small C&C Generals-style map), and its prefabs in
-`Assets/Demo/Prefabs/` are good templates to copy.
+## How a game is put together
 
-## 1. How a HyperRTS game is put together
+| Concept | In HyperRTS |
+| --- | --- |
+| Gameplay objects | Authoring GameObjects inside a **SubScene** bake into entities. Camera, HUD, light and ground stay GameObjects |
+| Unit and building types | Prefabs. The prefab is the definition: name, icon, cost, build time, health, weapon |
+| Players | Slots on the one `Match` component: team, colour, human or AI, starting resources. A unit's **Owner** is a slot number (1 = first, 0 = neutral) |
+| Player actions | `PlayerCommand`s on the player entity, from input or the AI. Game code can issue the same commands |
 
-- **Authoring GameObjects bake into entities.** Units, buildings, resource nodes and the match rules live inside a
-  **SubScene**. On Play, Unity bakes them into ECS entities and the engine's systems take over. Anything outside the
-  SubScene (camera, HUD, light, ground) stays a normal GameObject.
-- **Prefabs are the unit and building types.** A producer lists unit prefabs, a builder lists building prefabs, and
-  the engine instantiates the baked prefab at runtime. There is no separate database: the prefab *is* the
-  definition (name, icon, cost, build time, health, weapon...).
-- **Players are defined by one `Match` component.** It holds the map size, the player slots (team, colour, human or
-  AI, starting resources) and AI settings. A unit's `Owner` field is a player slot number (1 = first player,
-  0 = neutral).
-- **All player intent is a command.** Mouse and hotkeys (or the AI) append `PlayerCommand`s to the player entity;
-  simulation systems turn them into unit orders. Your game code can issue the same commands.
+## 1. Create the scene
 
-## 2. Create the scene
-
-Use **HyperRTS ▸ Create RTS Scene...** and pick a path. You get:
+**HyperRTS ▸ Create RTS Scene...**: pick map size, player count and an optional starting-base prefab. You get:
 
 | Object | What it is |
 | --- | --- |
-| `RTSWorld` | Prefab rig: Main Camera with `CameraController`, the `HUD` (resource bar, selection panel, command card, minimap), and the Netcode override that keeps single-player in one local world |
-| `Ground` | A 200 × 200 plane. Clicks on empty ground fall back to the y = 0 plane, so the ground needs no collider |
+| `RTSWorld` | Rig prefab: camera with `CameraController`, the HUD, and the Netcode override that keeps single player in one world |
+| `Ground` | 200 × 200 plane. Clicks on empty ground fall back to y = 0, so it needs no collider |
 | `Directional Light` | |
-| `SubScene` | Holds `<Scene>_Entities.unity` with a `Match` object. Tick the SubScene's checkbox to edit its contents |
+| `MatchState` | Ghost that replicates the match state in multiplayer |
+| `SubScene` | `<Scene>_Entities.unity` with the `Match`. Tick the SubScene's checkbox to edit it |
 
-Doing it by hand instead: drop `Packages/com.hyperrts.engine/Prefabs/RTSWorld.prefab` (or **GameObject ▸ HyperRTS ▸ RTS World**)
-into a scene, add a SubScene (**GameObject ▸ New Sub Scene ▸ Empty Scene**) and put a **GameObject ▸ HyperRTS ▸
-Match** inside it.
+## 2. Define resources
 
-## 3. Define your resources
+**Assets ▸ Create ▸ HyperRTS ▸ Resources ▸ Resource Type**, one per resource ("Supplies", "Oil"). Set the name,
+colour and icon. Then give each `Match` player slot its **Starting Resources**.
 
-**Assets ▸ Create ▸ HyperRTS ▸ Resources ▸ Resource Type**: one asset per resource ("Supplies", "Gold", "Oil").
-Set its display name, colour and optional icon; the HUD shows each one the local player holds.
+## 3. Make a unit
 
-Then select the `Match` object and give each player slot its **Starting Resources**.
+1. In the SubScene: **GameObject ▸ HyperRTS ▸ Units ▸ Unit** (or Combat Unit, Worker, Harvester). Replace the
+   `Model` child with your mesh; keep the collider on the root.
+2. On `Unit` set **Display Name**, **Max Health**, **Vision Range**, **Move Speed**, **Radius**, **Population**,
+   **Cost**, **Build Time**.
+3. Add behaviour with components (**Add Component ▸ HyperRTS**):
 
-## 4. Make a unit
+   | Component | Gives the unit |
+   | --- | --- |
+   | `Combat ▸ Weapon` | Attack: range, damage, cooldown, optional projectile prefab |
+   | `Combat ▸ Armor` | Damage multipliers per **Damage Type** asset |
+   | `Resources ▸ Harvester` | Gathering and returning to a drop-off |
+   | `Buildings ▸ Builder` | Placing and constructing the buildings in **Build Options** |
 
-1. In the SubScene: **GameObject ▸ HyperRTS ▸ Unit**. You get a root with a box collider and a capsule model
-   child. Replace the model with your own mesh; keep the collider on the root (clicks and right-click targets need
-   it).
-2. On the `Unit` component set **Display Name**, **Max Health**, **Vision Range**, **Move Speed**, **Radius**,
-   **Population**, **Cost** and **Build Time**.
-3. Give it abilities by adding components (Add Component ▸ HyperRTS):
+4. Drag it into a project folder to make a prefab. Delete the scene instance unless it should start on the map
+   (then set its **Owner**).
 
-   | Component | Makes the unit... |
-   |---|---|
-   | `Combat ▸ Weapon` | attack: range, damage, cooldown, optional projectile prefab, stance |
-   | `Combat ▸ Armor` | take less (or more) damage from given **Damage Type** assets |
-   | `Resources ▸ Harvester` | gather from resource nodes and return cargo to a drop-off |
-   | `Buildings ▸ Builder` | place and construct the buildings listed in **Build Options** |
+A weapon without a projectile prefab hits instantly. With one, the shot flies and deals damage on arrival.
 
-4. Drag it into a project folder to make it a prefab. Remove the instance from the scene unless you want it on
-   the map at start (then set its **Owner**).
+## 4. Make buildings
 
-A weapon with no projectile prefab hits instantly (infantry rifles, melee). With a projectile prefab (any small
-mesh, no collider) the shot flies to the target and deals damage on arrival.
+**GameObject ▸ HyperRTS ▸ Buildings ▸ Building**, then set name, health, **Footprint**, **Population Provided**,
+cost and build time.
 
-## 5. Make buildings
-
-**GameObject ▸ HyperRTS ▸ Building**, then on `Building` set the name, health, **Footprint** (blocked ground
-area, also used for placement), **Population Provided**, cost and build time.
-
-| Add | For a... |
+| Add | For |
 | --- | --- |
-| `Buildings ▸ Producer` | barracks / factory: list unit prefabs in **Production Options**, set **Spawn Offset** |
-| `Resources ▸ Resource Drop-Off` | HQ / supply center: harvesters deposit here |
-| `Combat ▸ Weapon` | defensive tower (fires once construction is finished) |
+| `Buildings ▸ Producer` | Barracks, factory: unit prefabs in **Production Options**, **Spawn Offset** |
+| `Resources ▸ Resource Drop-Off` | HQ, supply center |
+| `Combat ▸ Weapon` | Defensive tower (fires once built) |
 
-**Prerequisites** (on any unit or building) lists buildings the owner must have finished first, such as a War
-Factory needing a Barracks. The HUD greys out buttons whose prerequisites or cost aren't met.
+**Prerequisites** on any unit or building lists buildings the owner must have finished first. The HUD greys out
+buttons whose prerequisites or cost aren't met.
 
-Buildings placed in the SubScene start finished. Buildings placed by players start as construction sites, and only
-progress while a builder works on them.
+Buildings placed in the SubScene start finished. Buildings placed by players start as sites and progress only
+while a builder works on them.
 
-## 6. Lay out the map
+## 5. Lay out the map
 
 Inside the SubScene:
 
-- Size the playable area with **Map Size** on `Match` (the yellow gizmo). The pathfinding and fog grids cover it.
-- Place starting buildings and units and set each one's **Owner**. Give every player a drop-off and a building with
+- **Map Size** on `Match` (yellow gizmo) sizes the playable area and the pathfinding and fog grids.
+- Place starting buildings and units and set each **Owner**. Every player needs a drop-off and a building with
   **Population Provided**, or nobody can train units.
-- **GameObject ▸ HyperRTS ▸ Resource Node** for deposits: pick a **Resource Type** and amount (regrowth > 0 makes it
+- **GameObject ▸ HyperRTS ▸ Map ▸ Resource Node**: pick a **Resource Type** and amount (regrowth > 0 makes it
   renewable).
-- **GameObject ▸ HyperRTS ▸ Nav Obstacle** for rocks, cliffs and water units must path around.
+- **GameObject ▸ HyperRTS ▸ Map ▸ Nav Obstacle** for rocks and cliffs.
 
-## 7. Players and AI
+Run **HyperRTS ▸ Validate** to list setup problems; most have a one-click fix.
 
-Each `Match` player slot has a **Control**: `LocalHuman` (you), `AI` (built-in skirmish AI) or `Remote` (idle in
-single player). An AI slot also picks a **Difficulty** (tuned under the Match's **AI** header) and an optional
-**Build Order** asset (**Create ▸ HyperRTS ▸ Match ▸ AI Build Order**): buildings, units and upgrades with counts,
-worked through in order with its builders and producers. Afterwards it trains freely, keeps harvesters working,
-uses abilities and attacks the nearest enemy base once its wave size of idle combat units is ready.
+## 6. Players and AI
 
-A player is defeated when it loses every entity flagged **Counts For Victory**. When only one team is left the
-HUD shows Victory or Defeat.
+Each player slot has a **Control**: `LocalHuman`, `AI` or `Remote` (idle in single player). An AI slot picks a
+**Difficulty** (tuned under the Match's **AI** header) and an optional **Build Order**
+(**Assets ▸ Create ▸ HyperRTS ▸ Match ▸ AI Build Order**).
 
-## 8. Play
+A player is defeated after losing every entity flagged **Counts For Victory**. When one team is left, the HUD
+shows the result.
+
+## Play
 
 | Input | Action |
 | --- | --- |
-| Left click / drag | Select (drag prefers your units). Double-click selects all of that type on screen |
+| Left click / drag | Select. A drag prefers your units. Double-click selects all of that type on screen |
 | Shift / Ctrl + select | Add to / remove from selection |
-| Right click | Smart command: move, attack an enemy, harvest a node, build a site, or set a producer's rally point |
+| Right click | Smart command: move, attack, gather, build, repair, enter, capture, or set a rally point |
 | Shift + right click | Queue the order |
-| A, then left click | Attack-move |
+| A / P / E, then left click | Attack-move / patrol / escort |
 | S / H | Stop / hold position |
-| Ctrl+1-5, 1-5 | Assign / recall control group |
-| Arrow keys, screen edge, scroll, middle drag, Home | Camera pan, zoom, rotate, reset |
+| Esc | Cancel placement or a targeted command |
+| Ctrl+1–5, 1–5, Shift+1–5 | Assign, recall, add control group |
+| Arrows, screen edge, scroll, middle drag, Home | Pan, zoom, rotate, reset camera |
 
-Command-card buttons train units, start building placement (left click to place, Shift to keep placing,
-right click or Esc to cancel) and set stances. Click a queued unit to cancel it and get a refund.
+Command-card buttons train units, research, start placement (left click places, Shift keeps placing, right click
+or Esc cancels), use abilities and set stances. Click a queued item to cancel it with a refund.
 
-## 9. Adding your own mechanics
+## Next
 
-Create your game's own assembly (for example `Assets/MyGame/MyGame.asmdef`) referencing `HyperRTS.Core` and
-`HyperRTS.Simulation`, plus `HyperRTS.Presentation` or `HyperRTS.Input` if it renders or reads input. Keep
-gameplay in a headless assembly, like the engine does.
-
-- **New behaviour**: add a component with an authoring component and baker, and a Burst `ISystem` in one of the
-  phase groups (`OrderSystemGroup`, `MovementSystemGroup`, `CombatSystemGroup`, `ProductionSystemGroup`,
-  `LifecycleSystemGroup`). Systems are discovered automatically. Derive the authoring component from
-  `AuthoringBehaviour` instead of `MonoBehaviour`, so it gets the engine's inspector warnings, entity summaries and
-  validation (add rules as `AuthoringRule<T>` classes in an Editor assembly; see [`editor-ux.md`](editor-ux.md)).
-- **New order** (patrol, escort, lay mines...): pick a value from `OrderType.Custom` upward, issue it with
-  `OrderWriter.Issue`, and write a system that runs units whose `ActiveOrder` has your type. Disable `ActiveOrder`
-  when the order is done and the unit moves on to its next queued order. To move, set and enable `MoveDestination`.
-- **New command** (toggle a mode, call reinforcements): pick a value from `CommandType.Custom` upward, append it to the
-  player's `PlayerCommand` buffer from your UI, and consume it in `OrderSystemGroup` (commands are cleared at the
-  end of that group).
-- **React to deaths** (score, bounty): in `LifecycleSystemGroup` after `DeathSystem`, query entities with `Dead`
-  enabled; `LastAttacker` says who did it. They are destroyed at the end of the frame.
-- **Deal damage or heal**: append a `DamageEvent` through a `DamageWriter` before `DamageSystem`, so armor, splash and
-  kill credit apply. Negative amounts heal.
-- **Ability and field effects**: give an ability no built-in effects and read `AbilityActivation` after
-  `AbilitySystem`; read an entity's `FieldPresence` for what its area fields mean in your game. Change stats with a
-  `StatModifier` whose `StatSource` kind is `StatSourceKind.Custom` (128) or above, so removing yours never strips
-  the engine's.
-- **Custom stat** (fuel capacity, jamming strength): pick a value from `Stat.Custom` (128) upward and add modifiers
-  for it as usual. The engine never applies custom stats: write a system, last in `LifecycleSystemGroup` with a
-  change filter on `StatModifier`, that sets your component's value to `StatMath.Apply(modifiers, bases, stat,
-  value)` (`bases` is the entity's `BaseStat` buffer, which keeps the authored value).
-- **HUD panel**: implement `IHUDPanel` (or derive from `HUDPanel` for a boxed one), subclass `HUDController`,
-  override `CreatePanels` to add yours with `Add(panel, parent)` alongside or instead of the built-in ones, and put
-  the subclass on your HUD in place of `HUDController`.
-- **HUD language**: subclass `HUDText`, override `Get` (fixed keys such as `command.sell`) and `Name` (keys such
-  as `entity.war-factory`) to read your string tables, and set `HUDText.Current` at startup, e.g. from a
-  `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]` method. Key list: [`modules`](modules.md#presentation-client).
-- **Spawn from code**: `ecb.Instantiate(prefabEntity)`, then set `LocalTransform` and `Faction`. Prefab entities
-  come from authoring references such as a producer's options. Tests and tools can build complete entities without
-  baking through `GameEntitySetup` / `UnitSetup` / `BuildingSetup` with an `EntityManagerWriter`.
-
-### Mapping a C&C Generals-style design
-
-| Generals feature | In HyperRTS |
-| --- | --- |
-| Dozer / worker | Unit + `Builder` |
-| Supply truck, supply dock | Unit + `Harvester`; `Resource Node`; HQ with `Resource Drop-Off` |
-| Barracks, War Factory | Building + `Producer`, `Prerequisites` |
-| Power plants | Building **Power**: positive generates, negative draws; consumers go `Unpowered` while power is low |
-| Infantry vs tank damage, thin rear armor | `Damage Type` assets + `Armor` multipliers and its Directional fields |
-| Artillery, grenades | `Weapon` splash radius and edge damage |
-| Defensive structures | Building + `Weapon` |
-| Upgrades | `Upgrade` prefabs in a producer's **Research Options** |
-| Veterancy | `Veterancy` ranks with stat bonuses; kills pay `experienceValue` |
-| Repair and sell | Builders repair damaged buildings (right-click); **Sell** on the command card |
-| Oil derricks, tech buildings | Building + `Capturable`; units with `Capturer` |
-| Garrisons, transports | `Container` on the building or vehicle, `Passenger` on the units |
-| General's powers, unit abilities | `Abilities` on units and buildings; player-level powers are `Ability` buffers on the player entity |
-| Radar jamming, healing zones | `Area Field` with bonuses, heal or damage, and `FieldPresence` for game rules |
-| Aircraft | Unit + `Flight` (Air layer); `Airfield` pads on a building; `Ammo` reloads while docked |
-
-## Next steps
-
-- [`modules.md`](modules.md): every module's components and systems, and how they talk to each other.
-- [`architecture.md`](architecture.md): the assembly layout and the headless rule.
-- [`world-setup.md`](world-setup.md): system order and the frame pipeline.
-- [`roadmap.md`](roadmap.md): what's done and what's next.
+- Writing game code on top of the engine: [extending](extending.md).
+- Every component and system: [modules](modules.md).
+- Multiplayer: [networking](networking.md).

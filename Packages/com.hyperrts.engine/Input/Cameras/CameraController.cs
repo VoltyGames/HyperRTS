@@ -10,7 +10,7 @@ namespace HyperRTS.Input.Cameras
     /// <summary>RTS camera that orbits a ground focus point: pan, edge scroll, zoom by height, yaw and map clamping.</summary>
     [AddComponentMenu(HyperRTSMenu.Cameras + "Camera Controller")]
     [Icon(HyperRTSIcons.Cameras)]
-    [HelpURL(HyperRTSDocs.Roadmap)]
+    [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
     public class CameraController : MonoBehaviour
