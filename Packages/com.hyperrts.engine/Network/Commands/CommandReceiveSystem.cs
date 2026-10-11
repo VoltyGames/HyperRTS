@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Network.Players;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
@@ -62,7 +63,7 @@ namespace HyperRTS.Network.Commands
                 Queue = rpc.Queue,
                 Argument = rpc.Argument,
                 Position = rpc.Position,
-                Target = rpc.Target,
+                Target = rpc.TargetScenery != 0 ? FindScenery(ref state, rpc.TargetScenery) : rpc.Target,
                 Prefab = prefabs.Find(rpc.PrefabTypeId),
             };
 
@@ -103,5 +104,20 @@ namespace HyperRTS.Network.Commands
 
         private bool IsOwned(ref SystemState state, Entity entity, byte faction) =>
             SystemAPI.HasComponent<Faction>(entity) && SystemAPI.GetComponent<Faction>(entity).Value == faction;
+
+        /// <summary>The map scenery with this id; scenery targets are rare enough to look up by scanning.</summary>
+        private Entity FindScenery(ref SystemState state, ulong id)
+        {
+            foreach (var (scenery, entity) in SystemAPI.Query<RefRO<SceneryId>>().WithNone<GhostInstance>()
+                         .WithEntityAccess())
+            {
+                if (scenery.ValueRO.Value == id)
+                {
+                    return entity;
+                }
+            }
+
+            return Entity.Null;
+        }
     }
 }

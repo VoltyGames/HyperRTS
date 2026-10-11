@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
@@ -58,6 +59,7 @@ namespace HyperRTS.Network.Commands
                 Argument = command.Argument,
                 Position = command.Position,
                 Target = command.Target,
+                TargetScenery = SceneryTarget(ref state, command.Target),
                 PrefabTypeId = EntityInfo.GetTypeId(state.EntityManager, command.Prefab),
             };
 
@@ -77,6 +79,17 @@ namespace HyperRTS.Network.Commands
             }
 
             return rpc;
+        }
+
+        /// <summary>The target's <see cref="SceneryId"/> when it is map scenery rather than a ghost, else 0.</summary>
+        private ulong SceneryTarget(ref SystemState state, Entity target)
+        {
+            if (!SystemAPI.HasComponent<SceneryId>(target) || SystemAPI.HasComponent<GhostInstance>(target))
+            {
+                return 0;
+            }
+
+            return SystemAPI.GetComponent<SceneryId>(target).Value;
         }
     }
 }

@@ -30,7 +30,8 @@ namespace HyperRTS.Simulation.Tests
             var entity = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(entity, LocalTransform.FromPosition(position));
             var writer = new EntityManagerWriter(_world.EntityManager, entity);
-            DestructibleSetup.AddScenery(ref writer, 50f, crush, remains, float2.zero);
+            DestructibleSetup.AddScenery(ref writer, 50f, crush, remains, float2.zero,
+                SceneryId.At(position, quaternion.identity));
             return entity;
         }
 

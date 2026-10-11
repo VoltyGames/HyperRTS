@@ -9,8 +9,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// Marks zero-health entities <see cref="Dead"/>, spawns their <see cref="SpawnOnDeath"/> prefab and destroys
-    /// them at the end of the frame. Systems after this one in the lifecycle phase can react to <see cref="Dead"/>.
+    /// Marks zero-health entities <see cref="Dead"/>, spawns their <see cref="SpawnOnDeath"/> prefab in their place and
+    /// destroys them whole (<see cref="EntityParts"/>) at the end of the frame. Systems after this one in the lifecycle
+    /// phase can react to <see cref="Dead"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
@@ -18,11 +19,15 @@ namespace HyperRTS.Simulation.Combat
     public partial struct DeathSystem : ISystem
     {
         private ComponentLookup<SpawnOnDeath> _spawnLookup;
+        private BufferLookup<LinkedEntityGroup> _groups;
+        private BufferLookup<Child> _children;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _spawnLookup = state.GetComponentLookup<SpawnOnDeath>(true);
+            _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
+            _children = state.GetBufferLookup<Child>(true);
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -30,10 +35,15 @@ namespace HyperRTS.Simulation.Combat
         public void OnUpdate(ref SystemState state)
         {
             _spawnLookup.Update(ref state);
+            _groups.Update(ref state);
+            _children.Update(ref state);
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
 
-            new DeathJob { Ecb = ecb.AsParallelWriter(), SpawnLookup = _spawnLookup }.ScheduleParallel();
+            new DeathJob
+            {
+                Ecb = ecb.AsParallelWriter(), SpawnLookup = _spawnLookup, Groups = _groups, Children = _children,
+            }.ScheduleParallel();
         }
 
         [BurstCompile]
@@ -43,6 +53,8 @@ namespace HyperRTS.Simulation.Combat
         {
             public EntityCommandBuffer.ParallelWriter Ecb;
             [ReadOnly] public ComponentLookup<SpawnOnDeath> SpawnLookup;
+            [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
+            [ReadOnly] public BufferLookup<Child> Children;
 
             private void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in Health health,
                 in LocalTransform transform, EnabledRefRW<Dead> dead)
@@ -53,12 +65,15 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 dead.ValueRW = true;
-                Ecb.DestroyEntity(sortKey, entity);
+                var parts = new NativeList<Entity>(4, Allocator.Temp);
+                EntityParts.Collect(entity, Groups, Children, parts);
+                Ecb.DestroyEntity(sortKey, parts.AsArray());
 
+                // Remains stand, turn and scale like what died, so a big tree leaves a big trunk.
                 if (SpawnLookup.TryGetComponent(entity, out var spawn))
                 {
                     var remains = Ecb.Instantiate(sortKey, spawn.Prefab);
-                    Ecb.SetComponent(sortKey, remains, LocalTransform.FromPositionRotation(transform.Position, transform.Rotation));
+                    Ecb.SetComponent(sortKey, remains, transform);
                 }
             }
         }

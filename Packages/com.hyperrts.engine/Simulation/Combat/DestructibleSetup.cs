@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Combat
     {
         /// <summary>A standalone piece of scenery; <paramref name="block"/> of zero leaves pathing open.</summary>
         public static void AddScenery<TWriter>(ref TWriter writer, float maxHealth, int crush, Entity remains,
-            float2 block) where TWriter : struct, IEntityWriter
+            float2 block, SceneryId id) where TWriter : struct, IEntityWriter
         {
             writer.Add(new Health { Current = maxHealth, Max = maxHealth });
             writer.Add(new Faction { Value = Faction.Neutral });
@@ -18,6 +18,7 @@ namespace HyperRTS.Simulation.Combat
             writer.SetEnabled<Dead>(false);
             writer.Add<LastAttacker>();
             writer.Add(new Destructible { Crush = crush });
+            writer.Add(id);
             if (remains != Entity.Null)
             {
                 writer.Add(new SpawnOnDeath { Prefab = remains });

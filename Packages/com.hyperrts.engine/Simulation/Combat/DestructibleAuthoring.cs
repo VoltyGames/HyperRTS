@@ -8,13 +8,13 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Makes map scenery wreckable by anyone (fences, trees, wrecks, bridges). On a building or unit it only marks
-    /// it destructible (its own health and death spawn apply); on its own it adds health, death and remains.
+    /// it destructible (its own health and death spawn apply); on its own it adds health, death and remains. Scenery
+    /// placed in a SubScene is no ghost: multiplayer sends its state by <see cref="SceneryId"/>.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Destructible")]
     [Icon(HyperRTSIcons.Combat)]
     [HelpURL(HyperRTSDocs.Modules)]
     [DisallowMultipleComponent]
-    [RequiresGhost]
     public class DestructibleAuthoring : AuthoringBehaviour
     {
         [Tooltip("Smallest crusher size that flattens it by driving over it; 0 = never crushed.")]
@@ -45,7 +45,9 @@ namespace HyperRTS.Simulation.Combat
                 var remains = authoring.remains != null
                     ? GetEntity(authoring.remains, TransformUsageFlags.Dynamic)
                     : Entity.Null;
-                DestructibleSetup.AddScenery(ref writer, authoring.maxHealth, authoring.crushedBy, remains, authoring.block);
+                var place = GetComponent<Transform>();
+                DestructibleSetup.AddScenery(ref writer, authoring.maxHealth, authoring.crushedBy, remains,
+                    authoring.block, SceneryId.At(place.position, place.rotation));
             }
         }
     }

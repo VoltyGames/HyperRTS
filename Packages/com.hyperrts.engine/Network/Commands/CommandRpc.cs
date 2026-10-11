@@ -20,6 +20,10 @@ namespace HyperRTS.Network.Commands
         public int Argument;
         public float3 Position;
         public Entity Target;
+
+        /// <summary>A map scenery target's <c>SceneryId</c>: scenery isn't a ghost, so <see cref="Target"/> can't carry it.</summary>
+        public ulong TargetScenery;
+
         public int PrefabTypeId;
 
         [GhostFixedListCapacity(Capacity = MaxSubjects)]

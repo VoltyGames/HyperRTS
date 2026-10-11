@@ -12,7 +12,8 @@ namespace HyperRTS.Network.Relevancy
     /// <summary>
     /// Server-side fog of war: owned ghosts hidden from a client's team (by fog or undetected stealth) are marked
     /// irrelevant to it, so a hacked client has nothing hidden to reveal. Ghosts without an owner (players, the match)
-    /// always replicate; observers see all.
+    /// always replicate, and so do <see cref="Destructible"/> map buildings, which fog never hides whoever holds them
+    /// (irrelevant, they would vanish from the map). Observers see all.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
@@ -54,7 +55,8 @@ namespace HyperRTS.Network.Relevancy
             state.EntityManager.CompleteDependencyBeforeRO<Stealthed>();
             var cloaks = SystemAPI.GetComponentLookup<Stealthed>(true);
             foreach (var (transform, owner, ghost, entity) in SystemAPI
-                         .Query<RefRO<LocalTransform>, RefRO<Faction>, RefRO<GhostInstance>>().WithEntityAccess())
+                         .Query<RefRO<LocalTransform>, RefRO<Faction>, RefRO<GhostInstance>>().WithNone<Destructible>()
+                         .WithEntityAccess())
             {
                 // With fog off only stealth hides anything.
                 var stealthed = cloaks.HasEnabled(entity);
