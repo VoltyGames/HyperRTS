@@ -101,6 +101,39 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void FogHonestAI_SweepsTheMapCentre_InsteadOfAnUnseenBase()
+        {
+            var ai = _world.Get<AIPlayer>(_world.Player(2));
+            ai.HonorsFog = true;
+            _world.EntityManager.SetComponentData(_world.Player(2), ai);
+            var soldier = SoldierPrefab();
+            _world.MakeProducer(_world.SpawnBuilding(2, new float3(-40f, 0f, 0f), new float2(4f, 4f)),
+                new float3(0f, 0f, -4f), soldier);
+            _world.SpawnProvider(2, new float3(-60f, 0f, 0f), 10);
+            _world.SpawnBuilding(1, new float3(60f, 0f, 0f), new float2(4f, 4f));
+            _world.AddResources(2, _supplies, 100);
+
+            _world.Run(3f);
+
+            var towardBase = 0;
+            var towardCentre = 0;
+            foreach (var unit in _world.All<Weapon>())
+            {
+                var order = _world.Get<ActiveOrder>(unit).Value;
+                if (!_world.IsEnabled<ActiveOrder>(unit) || order.Type != OrderType.AttackMove)
+                {
+                    continue;
+                }
+
+                towardBase += math.distance(order.Position, new float3(60f, 0f, 0f)) < 5f ? 1 : 0;
+                towardCentre += math.distance(order.Position, float3.zero) < 5f ? 1 : 0;
+            }
+
+            Assert.AreEqual(0, towardBase, "the enemy base was never seen");
+            Assert.GreaterOrEqual(towardCentre, 2);
+        }
+
+        [Test]
         public void AI_BudgetsItsStockpile_AcrossIdleProducers()
         {
             var soldier = SoldierPrefab();

@@ -19,6 +19,9 @@ namespace HyperRTS.Simulation.AI
         /// <summary>Clear margin kept around each building the AI places.</summary>
         public float BuildingGap;
 
+        /// <summary>Attacks only what its team sees, or buildings it has explored; otherwise sweeps the map centre.</summary>
+        public bool HonorsFog;
+
         /// <summary>Round-robin cursor over production options.</summary>
         public int NextOption;
     }

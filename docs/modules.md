@@ -358,7 +358,7 @@ effects.
 
 | Type | Role |
 | --- | --- |
-| `AIPlayer`, `AITuning` | Marks a computer player; think interval, wave size, ability use, income multiplier |
+| `AIPlayer`, `AITuning` | Marks a computer player; think interval, wave size, ability use, income multiplier, fog honesty |
 | `AIDifficultyTuning` | Every difficulty's tuning, baked on the Match |
 | `AIBuildStep` | One build-order entry: building, unit or upgrade prefab and count |
 | `AIPlayerSetup` | Adds `AIPlayer` and its build order to a player entity |
@@ -370,7 +370,8 @@ effects.
 2. Finish abandoned sites with idle builders; send idle harvesters to gather.
 3. After the build order: train and research round-robin at idle producers.
 4. Use ready abilities and player powers on the nearest suitable target.
-5. Attack-move to the nearest hostile building once enough idle combat units exist.
+5. Attack-move to the nearest hostile building once enough idle combat units exist. With `HonorsFog` it only
+   targets units its team sees and buildings it has explored, and sweeps the map centre when it knows of none.
 
 Ties break by entity index. To replace it, disable the system and drive your own `PlayerCommand`s.
 

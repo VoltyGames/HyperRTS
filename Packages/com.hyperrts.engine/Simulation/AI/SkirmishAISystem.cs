@@ -6,6 +6,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -40,6 +41,9 @@ namespace HyperRTS.Simulation.AI
             public NativeArray<Entity> Producers;
             public CompletedBuildings Completed;
             public FactionRelations Relations;
+
+            /// <summary>Default (not created) in a match without fog, where everything counts as seen.</summary>
+            public FogOfWar Fog;
         }
 
         /// <summary>One AI's think: who it is, where its base is, and the units already given a job this think.</summary>
@@ -146,6 +150,7 @@ namespace HyperRTS.Simulation.AI
             Producers = _producers.ToEntityArray(Allocator.Temp),
             Completed = new CompletedBuildings(_completed, Allocator.Temp),
             Relations = SystemAPI.GetSingleton<FactionRelations>(),
+            Fog = _fogQuery.TryGetSingleton(out FogOfWar fog) ? fog : default,
         };
 
         private void Think(ref SystemState state, Entity player, in Snapshot snapshot)

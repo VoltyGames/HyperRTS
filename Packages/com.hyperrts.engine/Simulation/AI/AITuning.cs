@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HyperRTS.Simulation.Match;
 using UnityEngine;
 
@@ -27,6 +27,9 @@ namespace HyperRTS.Simulation.AI
         [Min(0f)]
         public float buildingGap = 2f;
 
+        [Tooltip("Attack only enemies its team can see, or buildings it has explored, like a human; off knows every enemy position.")]
+        public bool honorFog;
+
         [Tooltip("Multiplies the resources this AI's harvesters deliver. 1 is fair; above 1 is a labelled cheat.")]
         [Min(0.1f)]
         public float incomeMultiplier = 1f;
@@ -46,6 +49,7 @@ namespace HyperRTS.Simulation.AI
             UseAbilities = useAbilities,
             SelfCastRange = selfCastRange,
             BuildingGap = buildingGap,
+            HonorsFog = honorFog,
         };
     }
 }

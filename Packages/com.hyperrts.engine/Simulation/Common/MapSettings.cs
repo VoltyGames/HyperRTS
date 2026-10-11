@@ -23,6 +23,9 @@ namespace HyperRTS.Simulation.Common
 
         public readonly float2 Max => Min + Size;
 
+        /// <summary>Middle of the playable area, at height 0.</summary>
+        public readonly float3 Center => new(Min.x + Size.x * 0.5f, 0f, Min.y + Size.y * 0.5f);
+
         /// <summary>Same playable area as <paramref name="other"/>; grids built over one fit the other.</summary>
         public readonly bool SameArea(in MapSettings other) => Min.Equals(other.Min) && Size.Equals(other.Size);
 

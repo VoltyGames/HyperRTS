@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Spatial;
+using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -37,9 +38,16 @@ namespace HyperRTS.Simulation.AI
                 return;
             }
 
-            if (!TryFindTarget(ref state, turn.Faction, center / wave.Length, snapshot, out var target))
+            var honest = SystemAPI.GetComponent<AIPlayer>(turn.Player).HonorsFog;
+            if (!TryFindTarget(ref state, turn.Faction, center / wave.Length, honest, snapshot, out var target))
             {
-                return;
+                // Nothing known: sweep through the middle, where attack-move meets whatever is there.
+                if (!honest || !SystemAPI.TryGetSingleton<MapSettings>(out var map))
+                {
+                    return;
+                }
+
+                target = map.Center;
             }
 
             foreach (var i in wave)
@@ -51,10 +59,14 @@ namespace HyperRTS.Simulation.AI
             }
         }
 
-        /// <summary>Nearest hostile critical building, else the nearest hostile unit; undetected stealth is skipped.</summary>
-        private bool TryFindTarget(ref SystemState state, byte faction, float3 from, in Snapshot snapshot,
+        /// <summary>
+        /// Nearest hostile critical building, else the nearest hostile unit; undetected stealth is skipped, and an
+        /// <paramref name="honest"/> AI skips what its team hasn't seen.
+        /// </summary>
+        private bool TryFindTarget(ref SystemState state, byte faction, float3 from, bool honest, in Snapshot snapshot,
             out float3 target)
         {
+            var team = snapshot.Relations.GetTeam(faction);
             var targets = snapshot.Targets;
             var nearestBase = Closest.None;
             var nearestUnit = Closest.None;
@@ -66,8 +78,14 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
+                var building = IsCriticalBuilding(ref state, entity);
+                if (honest && !IsKnown(snapshot.Fog, targets.Position(i), team, building))
+                {
+                    continue;
+                }
+
                 var distance = targets.DistanceSq(i, from);
-                if (IsCriticalBuilding(ref state, entity))
+                if (building)
                 {
                     nearestBase.Consider(i, entity, distance);
                 }
@@ -80,6 +98,17 @@ namespace HyperRTS.Simulation.AI
             var best = nearestBase.Found ? nearestBase.Index : nearestUnit.Index;
             target = best >= 0 ? targets.Position(best) : default;
             return best >= 0;
+        }
+
+        /// <summary>Units must be in sight; buildings stay known once explored, as they would on a human's map.</summary>
+        private static bool IsKnown(in FogOfWar fog, float3 position, byte team, bool building)
+        {
+            if (!fog.IsCreated)
+            {
+                return true;
+            }
+
+            return building ? fog.IsExplored(position, team) : fog.IsVisible(position, team);
         }
 
         private bool IsCriticalBuilding(ref SystemState state, Entity entity) =>
