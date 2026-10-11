@@ -28,6 +28,9 @@ namespace HyperRTS.Simulation.Transport
         [Tooltip("Passengers get out when this is destroyed; otherwise they die with it.")]
         public bool passengersSurvive = true;
 
+        [Tooltip("A neutral building anyone may garrison; it belongs to whoever is inside, and is neutral again when empty.")]
+        public bool neutralGarrison;
+
         public class Baker : Baker<ContainerAuthoring>
         {
             public override void Bake(ContainerAuthoring authoring)
@@ -40,6 +43,10 @@ namespace HyperRTS.Simulation.Transport
                     PassengersFire = authoring.passengersFire,
                     PassengersSurvive = authoring.passengersSurvive,
                 });
+                if (authoring.neutralGarrison)
+                {
+                    writer.Add<NeutralGarrison>();
+                }
             }
         }
     }

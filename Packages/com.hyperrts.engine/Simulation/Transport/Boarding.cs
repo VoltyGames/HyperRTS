@@ -16,6 +16,7 @@ namespace HyperRTS.Simulation.Transport
         [ReadOnly] private ComponentLookup<Health> _health;
         [ReadOnly] private ComponentLookup<ConstructionProgress> _sites;
         [ReadOnly] private ComponentLookup<Faction> _factions;
+        [ReadOnly] private ComponentLookup<NeutralGarrison> _garrisons;
 
         /// <summary>Order resolution only checks, so it passes <paramref name="isReadOnly"/> and never boards.</summary>
         public Boarding(ref SystemState state, bool isReadOnly)
@@ -28,6 +29,7 @@ namespace HyperRTS.Simulation.Transport
             _health = state.GetComponentLookup<Health>(true);
             _sites = state.GetComponentLookup<ConstructionProgress>(true);
             _factions = state.GetComponentLookup<Faction>(true);
+            _garrisons = state.GetComponentLookup<NeutralGarrison>(true);
         }
 
         public void Update(ref SystemState state)
@@ -40,9 +42,13 @@ namespace HyperRTS.Simulation.Transport
             _health.Update(ref state);
             _sites.Update(ref state);
             _factions.Update(ref state);
+            _garrisons.Update(ref state);
         }
 
-        /// <summary>A living, finished container allied with <paramref name="unit"/> with room for it.</summary>
+        /// <summary>
+        /// A living, finished container with room for <paramref name="unit"/>, allied with it or an empty neutral
+        /// garrison building.
+        /// </summary>
         public bool CanBoard(Entity unit, Entity container, in FactionRelations relations)
         {
             if (unit == container || !_passengers.TryGetComponent(unit, out var passenger))
@@ -66,7 +72,9 @@ namespace HyperRTS.Simulation.Transport
                 return false;
             }
 
-            return relations.IsAllied(_factions[unit].Value, _factions[container].Value);
+            var owner = _factions[container].Value;
+            var free = owner == Faction.Neutral && _garrisons.HasComponent(container);
+            return free || relations.IsAllied(_factions[unit].Value, owner);
         }
 
         public bool IsInside(Entity entity) => _inside.HasEnabled(entity);
