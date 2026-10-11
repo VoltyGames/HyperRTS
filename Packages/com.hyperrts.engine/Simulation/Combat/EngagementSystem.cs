@@ -117,7 +117,11 @@ namespace HyperRTS.Simulation.Combat
             private bool ShouldRelease(Entity entity, float3 position, in Weapon weapon, in VisionRange vision,
                 in Faction faction, in CombatStance stance, Entity target, bool ordered)
             {
-                if (!Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets))
+                // Only orders point units at scenery, so an ordered target need only be attackable.
+                var keep = ordered
+                    ? Targets.IsAttackable(target, faction.Value, Relations, weapon.Targets)
+                    : Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets);
+                if (!keep)
                 {
                     return true;
                 }

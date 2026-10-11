@@ -25,6 +25,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<ArmorFacing> _facing;
         private BufferLookup<ArmorModifier> _armor;
         private BufferLookup<StatModifier> _modifiers;
+        private ComponentLookup<Destructible> _destructibles;
 
         public void OnCreate(ref SystemState state)
         {
@@ -34,6 +35,7 @@ namespace HyperRTS.Simulation.Combat
             _facing = state.GetComponentLookup<ArmorFacing>(true);
             _armor = state.GetBufferLookup<ArmorModifier>(true);
             _modifiers = state.GetBufferLookup<StatModifier>(true);
+            _destructibles = state.GetComponentLookup<Destructible>(true);
 
             var queue = state.EntityManager.CreateEntity(typeof(DamageQueue), typeof(DamageEvent));
             state.EntityManager.SetName(queue, "DamageQueue");
@@ -50,6 +52,7 @@ namespace HyperRTS.Simulation.Combat
             _facing.Update(ref state);
             _armor.Update(ref state);
             _modifiers.Update(ref state);
+            _destructibles.Update(ref state);
 
             new ResolveJob
             {
@@ -61,6 +64,7 @@ namespace HyperRTS.Simulation.Combat
                 Facing = _facing,
                 Armor = _armor,
                 Modifiers = _modifiers,
+                Destructibles = _destructibles,
             }.Schedule();
         }
 
@@ -76,6 +80,7 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<ArmorFacing> Facing;
             [ReadOnly] public BufferLookup<ArmorModifier> Armor;
             [ReadOnly] public BufferLookup<StatModifier> Modifiers;
+            [ReadOnly] public ComponentLookup<Destructible> Destructibles;
 
             private void Execute(DynamicBuffer<DamageEvent> events)
             {
@@ -111,8 +116,8 @@ namespace HyperRTS.Simulation.Combat
             }
 
             /// <summary>
-            /// Damage splashes onto enemies (and allies with friendly fire) and heals onto allies only, on the layers
-            /// the hit reaches: a shell bursting on the ground spares the aircraft above it.
+            /// Damage splashes onto enemies (and allies with friendly fire) and onto destructible scenery, and heals
+            /// onto allies only, on the layers the hit reaches: a shell bursting on the ground spares the aircraft above.
             /// </summary>
             private bool SplashReaches(in DamageEvent hit, in SpatialEntry victim)
             {
@@ -121,8 +126,13 @@ namespace HyperRTS.Simulation.Combat
                     return false;
                 }
 
-                return hit.Amount < 0f ? Relations.IsAllied(hit.SourceFaction, victim.Faction)
-                    : hit.FriendlyFire || Relations.IsHostile(hit.SourceFaction, victim.Faction);
+                if (hit.Amount < 0f)
+                {
+                    return Relations.IsAllied(hit.SourceFaction, victim.Faction);
+                }
+
+                return hit.FriendlyFire || Relations.IsHostile(hit.SourceFaction, victim.Faction)
+                    || Destructibles.HasComponent(victim.Entity);
             }
 
             private void Apply(Entity target, float amount, in DamageEvent hit)

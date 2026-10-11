@@ -80,9 +80,9 @@ namespace HyperRTS.Simulation.Commands
             return command switch
             {
                 CommandType.Smart => ResolveSmart(unit, target, relations),
-                CommandType.Attack => CanAttack(unit, target, relations) ? OrderType.Attack : OrderType.Move,
-                // Attack-move clicked on an enemy attacks it directly.
-                CommandType.AttackMove => CanAttack(unit, target, relations) ? OrderType.Attack
+                CommandType.Attack => CanForceAttack(unit, target, relations) ? OrderType.Attack : OrderType.Move,
+                // Attack-move clicked on an enemy or on scenery attacks it directly.
+                CommandType.AttackMove => CanForceAttack(unit, target, relations) ? OrderType.Attack
                     : _weapons.HasComponent(unit) ? OrderType.AttackMove : OrderType.Move,
                 CommandType.Patrol => OrderType.Patrol,
                 CommandType.Escort => CanEscort(unit, target, relations) ? OrderType.Escort : OrderType.Move,
@@ -177,6 +177,11 @@ namespace HyperRTS.Simulation.Commands
         private bool CanAttack(Entity unit, Entity target, in FactionRelations relations) =>
             _weapons.TryGetComponent(unit, out var weapon) &&
             _targets.IsValidTarget(target, _factions[unit].Value, relations, weapon.Targets);
+
+        /// <summary>Explicit attack orders may also target destructible scenery; smart clicks never do.</summary>
+        private bool CanForceAttack(Entity unit, Entity target, in FactionRelations relations) =>
+            _weapons.TryGetComponent(unit, out var weapon) &&
+            _targets.IsAttackable(target, _factions[unit].Value, relations, weapon.Targets);
 
         private bool CanGather(Entity unit, Entity target) =>
             _harvesters.HasComponent(unit) && _nodes.HasComponent(target);

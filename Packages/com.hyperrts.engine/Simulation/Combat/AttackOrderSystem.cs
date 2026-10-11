@@ -59,7 +59,7 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 var target = order.Value.Target;
-                var valid = Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets);
+                var valid = Targets.IsAttackable(target, faction.Value, Relations, weapon.Targets);
                 if (!valid || Ammo.IsEmpty(AmmoLookup, entity))
                 {
                     // EngagementSystem drops the stale AttackTarget and halts the chase.

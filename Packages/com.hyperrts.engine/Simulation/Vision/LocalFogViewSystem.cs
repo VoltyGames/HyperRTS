@@ -111,8 +111,10 @@ namespace HyperRTS.Simulation.Vision
             return view;
         }
 
+        /// <summary>Destructible map structures stay drawn whoever owns them, like the terrain they stand on.</summary>
         [BurstCompile]
         [WithAll(typeof(EntityInfo))]
+        [WithNone(typeof(Destructible))]
         private partial struct HideJob : IJobEntity
         {
             [ReadOnly] public FogOfWar Fog;

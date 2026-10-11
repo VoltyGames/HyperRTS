@@ -20,6 +20,7 @@ namespace HyperRTS.Simulation.Combat
         [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
         [ReadOnly] private ComponentLookup<Inside> _inside;
         [ReadOnly] private ComponentLookup<Stealthed> _stealthed;
+        [ReadOnly] private ComponentLookup<Destructible> _destructibles;
         [ReadOnly] private FogOfWar _fog;
 
         public TargetLookup(ref SystemState state)
@@ -31,6 +32,7 @@ namespace HyperRTS.Simulation.Combat
             _obstacles = state.GetComponentLookup<NavObstacle>(true);
             _inside = state.GetComponentLookup<Inside>(true);
             _stealthed = state.GetComponentLookup<Stealthed>(true);
+            _destructibles = state.GetComponentLookup<Destructible>(true);
             FogQuery(ref state).TryGetSingleton(out _fog);
         }
 
@@ -44,6 +46,7 @@ namespace HyperRTS.Simulation.Combat
             _obstacles.Update(ref state);
             _inside.Update(ref state);
             _stealthed.Update(ref state);
+            _destructibles.Update(ref state);
             fog.TryGetSingleton(out _fog);
         }
 
@@ -60,6 +63,21 @@ namespace HyperRTS.Simulation.Combat
 
             var hostile = relations.IsHostile(attackerFaction, faction.Value);
             return hostile && !IsCloakedFrom(target, relations.GetTeam(attackerFaction));
+        }
+
+        /// <summary>
+        /// What an explicit attack order may target: a valid hostile target, or any living <see cref="Destructible"/>
+        /// map scenery the weapon can hit. Units never pick scenery on their own.
+        /// </summary>
+        public bool IsAttackable(Entity target, byte attackerFaction, in FactionRelations relations, WeaponTargets targets)
+        {
+            if (IsValidTarget(target, attackerFaction, relations, targets))
+            {
+                return true;
+            }
+
+            var scenery = _destructibles.HasComponent(target) && IsAlive(target) && !IsInside(target);
+            return scenery && CanHit(target, targets);
         }
 
         /// <summary>A valid target (see above) that a weapon reaching <paramref name="targets"/> can hit.</summary>
