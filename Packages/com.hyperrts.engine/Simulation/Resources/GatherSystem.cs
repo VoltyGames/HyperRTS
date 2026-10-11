@@ -1,4 +1,4 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
@@ -25,8 +25,7 @@ namespace HyperRTS.Simulation.Resources
         private EntityQuery _players;
         private ComponentLookup<ResourceNode> _nodeLookup;
         private BufferLookup<ResourceStock> _stockLookup;
-        private ComponentLookup<LocalTransform> _transformLookup;
-        private ComponentLookup<NavObstacle> _obstacleLookup;
+        private TargetReach _reach;
         private ComponentLookup<Faction> _factionLookup;
         private ComponentLookup<IncomeMultiplier> _incomeLookup;
         private ComponentLookup<PlayerStats> _statsLookup;
@@ -40,8 +39,7 @@ namespace HyperRTS.Simulation.Resources
             _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
             _nodeLookup = state.GetComponentLookup<ResourceNode>();
             _stockLookup = state.GetBufferLookup<ResourceStock>();
-            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
-            _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
+            _reach = new TargetReach(ref state);
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _incomeLookup = state.GetComponentLookup<IncomeMultiplier>(true);
             _statsLookup = state.GetComponentLookup<PlayerStats>();
@@ -58,8 +56,7 @@ namespace HyperRTS.Simulation.Resources
 
             _nodeLookup.Update(ref state);
             _stockLookup.Update(ref state);
-            _transformLookup.Update(ref state);
-            _obstacleLookup.Update(ref state);
+            _reach.Update(ref state);
             _factionLookup.Update(ref state);
             _incomeLookup.Update(ref state);
             _statsLookup.Update(ref state);
@@ -72,8 +69,7 @@ namespace HyperRTS.Simulation.Resources
                 PlayerByFaction = PlayerLookup.ByFaction(_players, allocator),
                 NodeLookup = _nodeLookup,
                 StockLookup = _stockLookup,
-                TransformLookup = _transformLookup,
-                ObstacleLookup = _obstacleLookup,
+                Reach = _reach,
                 FactionLookup = _factionLookup,
                 IncomeLookup = _incomeLookup,
                 StatsLookup = _statsLookup,
@@ -92,8 +88,7 @@ namespace HyperRTS.Simulation.Resources
             [ReadOnly] public NativeArray<Entity> PlayerByFaction;
             public ComponentLookup<ResourceNode> NodeLookup;
             public BufferLookup<ResourceStock> StockLookup;
-            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
-            [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
+            public TargetReach Reach;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public ComponentLookup<IncomeMultiplier> IncomeLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
@@ -121,9 +116,8 @@ namespace HyperRTS.Simulation.Resources
                 }
 
                 var node = order.Value.Target;
-                var nodePosition = TransformLookup[node].Position;
-                var extents = ReachMath.HalfExtents(ObstacleLookup, node);
-                if (ReachMath.Approach(ref destination, moving, transform.Position, agent.Radius, nodePosition, extents))
+                var nodePosition = Reach.Position(node);
+                if (Reach.Approach(node, transform.Position, agent.Radius, ref destination, moving))
                 {
                     Gather(ref harvester, ref harvest, node, nodePosition);
                 }
@@ -177,9 +171,7 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
-                var target = TransformLookup[dropOff].Position;
-                var extents = ReachMath.HalfExtents(ObstacleLookup, dropOff);
-                if (!ReachMath.Approach(ref destination, moving, position, radius, target, extents))
+                if (!Reach.Approach(dropOff, position, radius, ref destination, moving))
                 {
                     return;
                 }
@@ -208,7 +200,7 @@ namespace HyperRTS.Simulation.Resources
                 IncomeLookup.TryGetComponent(player, out var income) ? (int)math.round(cargo * income.Value) : cargo;
 
             private bool IsHarvestable(Entity node) =>
-                NodeLookup.TryGetComponent(node, out var data) && data.Amount > 0 && TransformLookup.HasComponent(node);
+                NodeLookup.TryGetComponent(node, out var data) && data.Amount > 0 && Reach.Exists(node);
 
             /// <summary>Retargets to the nearest node of the carried type near the depleted one.</summary>
             private bool TryReplaceNode(ref ActiveOrder order, in Harvester harvester, in HarvestState harvest)
@@ -246,7 +238,7 @@ namespace HyperRTS.Simulation.Resources
             }
 
             private readonly float DistanceSq(Entity entity, float3 position) =>
-                math.distancesq(TransformLookup[entity].Position.xz, position.xz);
+                math.distancesq(Reach.Position(entity).xz, position.xz);
         }
     }
 }

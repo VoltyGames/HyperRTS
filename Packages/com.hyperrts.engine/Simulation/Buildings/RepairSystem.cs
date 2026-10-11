@@ -25,8 +25,7 @@ namespace HyperRTS.Simulation.Buildings
         private DamageWriter _damage;
         private ComponentLookup<Health> _healthLookup;
         private ComponentLookup<Producible> _producibleLookup;
-        private ComponentLookup<LocalTransform> _transformLookup;
-        private ComponentLookup<NavObstacle> _obstacleLookup;
+        private TargetReach _reach;
         private ComponentLookup<Faction> _factionLookup;
         private ComponentLookup<ConstructionProgress> _siteLookup;
 
@@ -36,8 +35,7 @@ namespace HyperRTS.Simulation.Buildings
             _damage = new DamageWriter(ref state);
             _healthLookup = state.GetComponentLookup<Health>(true);
             _producibleLookup = state.GetComponentLookup<Producible>(true);
-            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
-            _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
+            _reach = new TargetReach(ref state);
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _siteLookup = state.GetComponentLookup<ConstructionProgress>(true);
             state.RequireForUpdate<FactionRelations>();
@@ -50,8 +48,7 @@ namespace HyperRTS.Simulation.Buildings
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
             _healthLookup.Update(ref state);
             _producibleLookup.Update(ref state);
-            _transformLookup.Update(ref state);
-            _obstacleLookup.Update(ref state);
+            _reach.Update(ref state);
             _factionLookup.Update(ref state);
             _siteLookup.Update(ref state);
 
@@ -62,8 +59,7 @@ namespace HyperRTS.Simulation.Buildings
                 Damage = _damage,
                 HealthLookup = _healthLookup,
                 ProducibleLookup = _producibleLookup,
-                TransformLookup = _transformLookup,
-                ObstacleLookup = _obstacleLookup,
+                Reach = _reach,
                 FactionLookup = _factionLookup,
                 SiteLookup = _siteLookup,
             }.Schedule();
@@ -80,8 +76,7 @@ namespace HyperRTS.Simulation.Buildings
             public DamageWriter Damage;
             [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
-            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
-            [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
+            public TargetReach Reach;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public ComponentLookup<ConstructionProgress> SiteLookup;
 
@@ -101,9 +96,8 @@ namespace HyperRTS.Simulation.Buildings
                     return;
                 }
 
-                var position = TransformLookup[target].Position;
-                var extents = ReachMath.HalfExtents(ObstacleLookup, target);
-                if (!ReachMath.Approach(ref destination, moving, transform.Position, agent.Radius, position, extents))
+                var position = Reach.Position(target);
+                if (!Reach.Approach(target, transform.Position, agent.Radius, ref destination, moving))
                 {
                     return;
                 }
@@ -122,7 +116,7 @@ namespace HyperRTS.Simulation.Buildings
 
             private bool CanRepair(Entity target, byte faction)
             {
-                if (!TransformLookup.HasComponent(target))
+                if (!Reach.Exists(target))
                 {
                     return false;
                 }

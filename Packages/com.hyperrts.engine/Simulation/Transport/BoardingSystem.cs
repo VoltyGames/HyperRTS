@@ -7,7 +7,6 @@ using HyperRTS.Simulation.Selection;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Transport
 {
@@ -21,8 +20,7 @@ namespace HyperRTS.Simulation.Transport
     {
         private Boarding _boarding;
         private ComponentLookup<Container> _containerLookup;
-        private ComponentLookup<LocalTransform> _transformLookup;
-        private ComponentLookup<NavObstacle> _obstacleLookup;
+        private TargetReach _reach;
         private ComponentLookup<CombatStance> _stanceLookup;
         private ComponentLookup<AttackTarget> _attackLookup;
         private ComponentLookup<Selected> _selectedLookup;
@@ -33,8 +31,7 @@ namespace HyperRTS.Simulation.Transport
         {
             _boarding = new Boarding(ref state, false);
             _containerLookup = state.GetComponentLookup<Container>(true);
-            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
-            _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
+            _reach = new TargetReach(ref state);
             _stanceLookup = state.GetComponentLookup<CombatStance>();
             _attackLookup = state.GetComponentLookup<AttackTarget>();
             _selectedLookup = state.GetComponentLookup<Selected>();
@@ -47,8 +44,7 @@ namespace HyperRTS.Simulation.Transport
         {
             _boarding.Update(ref state);
             _containerLookup.Update(ref state);
-            _transformLookup.Update(ref state);
-            _obstacleLookup.Update(ref state);
+            _reach.Update(ref state);
             _stanceLookup.Update(ref state);
             _attackLookup.Update(ref state);
             _selectedLookup.Update(ref state);
@@ -59,8 +55,7 @@ namespace HyperRTS.Simulation.Transport
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Boarding = _boarding,
                 ContainerLookup = _containerLookup,
-                TransformLookup = _transformLookup,
-                ObstacleLookup = _obstacleLookup,
+                Reach = _reach,
                 StanceLookup = _stanceLookup,
                 AttackLookup = _attackLookup,
                 SelectedLookup = _selectedLookup,
@@ -78,8 +73,7 @@ namespace HyperRTS.Simulation.Transport
             public FactionRelations Relations;
             public Boarding Boarding;
             [ReadOnly] public ComponentLookup<Container> ContainerLookup;
-            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
-            [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
+            public TargetReach Reach;
             public ComponentLookup<CombatStance> StanceLookup;
             public ComponentLookup<AttackTarget> AttackLookup;
             public ComponentLookup<Selected> SelectedLookup;
@@ -102,10 +96,7 @@ namespace HyperRTS.Simulation.Transport
                     return;
                 }
 
-                var position = TransformLookup[container].Position;
-                var extents = ReachMath.HalfExtents(ObstacleLookup, container);
-                if (!ReachMath.Approach(ref destination, moving, TransformLookup[entity].Position, agent.Radius, position,
-                        extents))
+                if (!Reach.Approach(container, Reach.Position(entity), agent.Radius, ref destination, moving))
                 {
                     return;
                 }

@@ -1,4 +1,4 @@
-﻿using HyperRTS.Core;
+using HyperRTS.Core;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
@@ -22,8 +22,7 @@ namespace HyperRTS.Simulation.Buildings
         private EntityQuery _players;
         private ComponentLookup<ConstructionProgress> _siteLookup;
         private ComponentLookup<Producible> _producibleLookup;
-        private ComponentLookup<LocalTransform> _transformLookup;
-        private ComponentLookup<NavObstacle> _obstacleLookup;
+        private TargetReach _reach;
         private ComponentLookup<Faction> _factionLookup;
         private ComponentLookup<PlayerStats> _statsLookup;
         private SoundWriter _sounds;
@@ -34,8 +33,7 @@ namespace HyperRTS.Simulation.Buildings
             _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
             _siteLookup = state.GetComponentLookup<ConstructionProgress>();
             _producibleLookup = state.GetComponentLookup<Producible>(true);
-            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
-            _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
+            _reach = new TargetReach(ref state);
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _statsLookup = state.GetComponentLookup<PlayerStats>();
             _sounds = new SoundWriter(ref state);
@@ -48,8 +46,7 @@ namespace HyperRTS.Simulation.Buildings
         {
             _siteLookup.Update(ref state);
             _producibleLookup.Update(ref state);
-            _transformLookup.Update(ref state);
-            _obstacleLookup.Update(ref state);
+            _reach.Update(ref state);
             _factionLookup.Update(ref state);
             _statsLookup.Update(ref state);
             _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
@@ -60,8 +57,7 @@ namespace HyperRTS.Simulation.Buildings
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 SiteLookup = _siteLookup,
                 ProducibleLookup = _producibleLookup,
-                TransformLookup = _transformLookup,
-                ObstacleLookup = _obstacleLookup,
+                Reach = _reach,
                 FactionLookup = _factionLookup,
                 PlayerByFaction = PlayerLookup.ByFaction(_players, state.WorldUpdateAllocator),
                 StatsLookup = _statsLookup,
@@ -79,8 +75,7 @@ namespace HyperRTS.Simulation.Buildings
             public FactionRelations Relations;
             public ComponentLookup<ConstructionProgress> SiteLookup;
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
-            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
-            [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
+            public TargetReach Reach;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public NativeArray<Entity> PlayerByFaction;
             public ComponentLookup<PlayerStats> StatsLookup;
@@ -102,9 +97,8 @@ namespace HyperRTS.Simulation.Buildings
                     return;
                 }
 
-                var sitePosition = TransformLookup[site].Position;
-                var extents = ReachMath.HalfExtents(ObstacleLookup, site);
-                if (!ReachMath.Approach(ref destination, moving, transform.Position, agent.Radius, sitePosition, extents))
+                var sitePosition = Reach.Position(site);
+                if (!Reach.Approach(site, transform.Position, agent.Radius, ref destination, moving))
                 {
                     return;
                 }
@@ -119,7 +113,7 @@ namespace HyperRTS.Simulation.Buildings
 
             private bool IsAlliedSite(Entity site, byte faction)
             {
-                if (!TransformLookup.HasComponent(site))
+                if (!Reach.Exists(site))
                 {
                     return false;
                 }

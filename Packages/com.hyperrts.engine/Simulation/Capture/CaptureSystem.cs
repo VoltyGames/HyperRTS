@@ -26,8 +26,7 @@ namespace HyperRTS.Simulation.Capture
         private ComponentLookup<Capturable> _capturableLookup;
         private ComponentLookup<CaptureProgress> _progressLookup;
         private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<LocalTransform> _transformLookup;
-        private ComponentLookup<NavObstacle> _obstacleLookup;
+        private TargetReach _reach;
         private ComponentLookup<AttackTarget> _attackLookup;
         private ComponentLookup<RallyPoint> _rallyLookup;
         private BufferLookup<ProductionQueueItem> _queueLookup;
@@ -43,8 +42,7 @@ namespace HyperRTS.Simulation.Capture
             _capturableLookup = state.GetComponentLookup<Capturable>(true);
             _progressLookup = state.GetComponentLookup<CaptureProgress>();
             _factionLookup = state.GetComponentLookup<Faction>(true);
-            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
-            _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
+            _reach = new TargetReach(ref state);
             _attackLookup = state.GetComponentLookup<AttackTarget>(true);
             _rallyLookup = state.GetComponentLookup<RallyPoint>(true);
             _queueLookup = state.GetBufferLookup<ProductionQueueItem>(true);
@@ -63,8 +61,7 @@ namespace HyperRTS.Simulation.Capture
             _capturableLookup.Update(ref state);
             _progressLookup.Update(ref state);
             _factionLookup.Update(ref state);
-            _transformLookup.Update(ref state);
-            _obstacleLookup.Update(ref state);
+            _reach.Update(ref state);
             _attackLookup.Update(ref state);
             _rallyLookup.Update(ref state);
             _queueLookup.Update(ref state);
@@ -82,8 +79,7 @@ namespace HyperRTS.Simulation.Capture
                 CapturableLookup = _capturableLookup,
                 ProgressLookup = _progressLookup,
                 FactionLookup = _factionLookup,
-                TransformLookup = _transformLookup,
-                ObstacleLookup = _obstacleLookup,
+                Reach = _reach,
                 AttackLookup = _attackLookup,
                 RallyLookup = _rallyLookup,
                 QueueLookup = _queueLookup,
@@ -107,8 +103,7 @@ namespace HyperRTS.Simulation.Capture
             [ReadOnly] public ComponentLookup<Capturable> CapturableLookup;
             public ComponentLookup<CaptureProgress> ProgressLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
-            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
-            [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
+            public TargetReach Reach;
             [ReadOnly] public ComponentLookup<AttackTarget> AttackLookup;
             [ReadOnly] public ComponentLookup<RallyPoint> RallyLookup;
             [ReadOnly] public BufferLookup<ProductionQueueItem> QueueLookup;
@@ -134,9 +129,7 @@ namespace HyperRTS.Simulation.Capture
                     return;
                 }
 
-                var position = TransformLookup[target].Position;
-                var extents = ReachMath.HalfExtents(ObstacleLookup, target);
-                if (!ReachMath.Approach(ref destination, moving, transform.Position, agent.Radius, position, extents))
+                if (!Reach.Approach(target, transform.Position, agent.Radius, ref destination, moving))
                 {
                     return;
                 }
