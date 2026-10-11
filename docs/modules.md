@@ -31,6 +31,8 @@ Base module: ownership, identity, health, shared helpers.
 | `Inside` | Enabled while a passenger is aboard a container |
 | `Health`, `Dead` | Hit points; death marker enabled the frame before destruction |
 | `ConstructionProgress` | Enableable 0..1. Unfinished buildings don't produce, provide population, fire or satisfy prerequisites |
+| `GameEvents`: `UnitProduced`, `BuildingCompleted`, `OwnerChanged` | This frame's gameplay events on one singleton, cleared first in the order phase by `GameEventSystem`. Sounds, stats and cleanup react to them; so can games |
+| `Ownership.Transfer` | The one way to change an owner: sets `Faction` through the ECB and raises `OwnerChanged` |
 | `Offline`, `OfflineReason` | Enableable "out of action" state with a reason mask: `UnderConstruction`, `Unpowered`, and game reasons from `Custom` up. Offline entities don't fire, cast, run fields or produce. Buildings carry it; add it to units a game can disable |
 | `AttackTarget` | Enableable current target (here so orders can halt attacks) |
 | `EntityInfo` | `TypeId` (hash of the display name), `Name`, `Icon` |
@@ -270,7 +272,9 @@ runs dry. `ResourceNodeSystem` regrows or removes nodes.
 | `Research`, `CompletedResearch`, `ResearchRules` | A producible that is researched once instead of spawned; the player's finished research (replicated by `TypeId`); queue-once checks |
 | `ProductionRules` | `HasOption`, `Refund`, `RefundQueue` |
 
-`ProductionCommandSystem` handles Produce, Cancel (refund) and rally points. `ProductionSystem` trains the queue
+`ProductionCommandSystem` handles Produce, Cancel (refund) and rally points. `BuildStatsSystem` counts
+`UnitProduced` and `BuildingCompleted` into `PlayerStats`; `OwnerChangeSystem` refunds a transferred producer's
+queue to the old owner and drops its target, rally point and selection. `ProductionSystem` trains the queue
 head when population allows and sends units to the rally point; a finished `Research` is added to the owner's
 `CompletedResearch` instead.
 

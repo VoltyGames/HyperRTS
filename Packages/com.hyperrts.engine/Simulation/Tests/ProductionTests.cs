@@ -91,6 +91,33 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void FinishingABuilding_RaisesBuildingCompleted_ForThatFrameOnly()
+        {
+            var site = _world.SpawnBuilding(1, new float3(4f, 0f, 0f), new float2(4f, 4f), complete: false,
+                buildTime: 0.5f);
+            var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero));
+            _world.Order(builder, OrderType.Build, site);
+
+            var raised = 0;
+            for (var frame = 0; frame < 120 && raised == 0; frame++)
+            {
+                _world.Tick();
+                raised = Events<BuildingCompleted>().Length;
+            }
+
+            Assert.AreEqual(1, raised);
+            Assert.AreEqual(site, Events<BuildingCompleted>()[0].Building);
+            _world.Tick();
+            Assert.AreEqual(0, Events<BuildingCompleted>().Length, "cleared at the start of the next frame");
+        }
+
+        private DynamicBuffer<T> Events<T>() where T : unmanaged, IBufferElementData
+        {
+            var events = _world.EntityManager.CreateEntityQuery(typeof(GameEvents)).GetSingletonEntity();
+            return _world.EntityManager.GetBuffer<T>(events);
+        }
+
+        [Test]
         public void ConstructionSite_DoesNotProgressWithoutBuilders()
         {
             var site = _world.SpawnBuilding(1, float3.zero, new float2(4f, 4f), complete: false, buildTime: 1f);

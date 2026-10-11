@@ -1,5 +1,4 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
@@ -13,32 +12,29 @@ namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>
     /// Runs Build orders: builders walk to an allied site and add <c>Rate / BuildTime</c> progress per second while
-    /// in reach. Completion disables <see cref="ConstructionProgress"/>; sites never progress on their own.
+    /// in reach. Completion disables <see cref="ConstructionProgress"/> and raises <see cref="BuildingCompleted"/>; sites
+    /// never progress on their own.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct ConstructionSystem : ISystem
     {
-        private EntityQuery _players;
         private ComponentLookup<ConstructionProgress> _siteLookup;
         private ComponentLookup<Producible> _producibleLookup;
         private TargetReach _reach;
         private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<PlayerStats> _statsLookup;
-        private SoundWriter _sounds;
+        private BufferLookup<BuildingCompleted> _completedLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
             _siteLookup = state.GetComponentLookup<ConstructionProgress>();
             _producibleLookup = state.GetComponentLookup<Producible>(true);
             _reach = new TargetReach(ref state);
             _factionLookup = state.GetComponentLookup<Faction>(true);
-            _statsLookup = state.GetComponentLookup<PlayerStats>();
-            _sounds = new SoundWriter(ref state);
+            _completedLookup = state.GetBufferLookup<BuildingCompleted>();
             state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<SoundQueue>();
+            state.RequireForUpdate<GameEvents>();
         }
 
         [BurstCompile]
@@ -48,8 +44,7 @@ namespace HyperRTS.Simulation.Buildings
             _producibleLookup.Update(ref state);
             _reach.Update(ref state);
             _factionLookup.Update(ref state);
-            _statsLookup.Update(ref state);
-            _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
+            _completedLookup.Update(ref state);
 
             new BuildJob
             {
@@ -59,9 +54,8 @@ namespace HyperRTS.Simulation.Buildings
                 ProducibleLookup = _producibleLookup,
                 Reach = _reach,
                 FactionLookup = _factionLookup,
-                PlayerByFaction = PlayerLookup.ByFaction(_players, state.WorldUpdateAllocator),
-                StatsLookup = _statsLookup,
-                Sounds = _sounds,
+                Completed = _completedLookup,
+                Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
         }
 
@@ -77,9 +71,8 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
             public TargetReach Reach;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
-            [ReadOnly] public NativeArray<Entity> PlayerByFaction;
-            public ComponentLookup<PlayerStats> StatsLookup;
-            public SoundWriter Sounds;
+            public BufferLookup<BuildingCompleted> Completed;
+            public Entity Events;
 
             private void Execute(in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in LocalTransform transform,
@@ -97,7 +90,6 @@ namespace HyperRTS.Simulation.Buildings
                     return;
                 }
 
-                var sitePosition = Reach.Position(site);
                 if (!Reach.Approach(site, transform.Position, agent.Radius, ref destination, moving))
                 {
                     return;
@@ -106,8 +98,7 @@ namespace HyperRTS.Simulation.Buildings
                 if (Advance(site, builder.Rate))
                 {
                     busy.ValueRW = false;
-                    Sounds.Play(site, SoundSlot.Ready, sitePosition, FactionLookup[site].Value);
-                    CountBuilt(FactionLookup[site].Value);
+                    Completed[Events].Add(new BuildingCompleted { Building = site, Faction = FactionLookup[site].Value });
                 }
             }
 
@@ -119,14 +110,6 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 return BuildingRules.IsAlliedSite(SiteLookup, FactionLookup, Relations, site, faction);
-            }
-
-            private void CountBuilt(byte faction)
-            {
-                if (StatsLookup.TryGetRefRW(PlayerByFaction[faction], out var stats))
-                {
-                    stats.ValueRW.BuildingsBuilt++;
-                }
             }
 
             /// <summary>Adds this frame's work and returns true once the site is finished.</summary>

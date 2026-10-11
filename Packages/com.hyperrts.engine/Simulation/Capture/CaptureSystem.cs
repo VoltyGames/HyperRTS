@@ -2,9 +2,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Production;
-using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Selection;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -14,8 +11,8 @@ namespace HyperRTS.Simulation.Capture
 {
     /// <summary>
     /// Runs Capture orders: capturers walk to the building and add <c>Rate / CaptureTime</c> progress per second.
-    /// A different player starting over resets it. On completion the building changes owner at the end of the frame,
-    /// refunds its queue to the old owner, drops its target, rally point and selection, and a single-use capturer is
+    /// A different player starting over resets it. On completion the building is transferred
+    /// (<see cref="Ownership.Transfer"/>; it changes owner at the end of the frame) and a single-use capturer is
     /// consumed.
     /// </summary>
     [BurstCompile]
@@ -27,13 +24,7 @@ namespace HyperRTS.Simulation.Capture
         private ComponentLookup<CaptureProgress> _progressLookup;
         private ComponentLookup<Faction> _factionLookup;
         private TargetReach _reach;
-        private ComponentLookup<AttackTarget> _attackLookup;
-        private ComponentLookup<RallyPoint> _rallyLookup;
-        private BufferLookup<ProductionQueueItem> _queueLookup;
-        private BufferLookup<ResourceStock> _stockLookup;
-        private BufferLookup<ResourceCost> _costLookup;
-        private ComponentLookup<Selected> _selectedLookup;
-        private EntityQuery _players;
+        private BufferLookup<OwnerChanged> _ownerChangedLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -43,14 +34,9 @@ namespace HyperRTS.Simulation.Capture
             _progressLookup = state.GetComponentLookup<CaptureProgress>();
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _reach = new TargetReach(ref state);
-            _attackLookup = state.GetComponentLookup<AttackTarget>(true);
-            _rallyLookup = state.GetComponentLookup<RallyPoint>(true);
-            _queueLookup = state.GetBufferLookup<ProductionQueueItem>(true);
-            _stockLookup = state.GetBufferLookup<ResourceStock>();
-            _costLookup = state.GetBufferLookup<ResourceCost>(true);
-            _selectedLookup = state.GetComponentLookup<Selected>(true);
-            _players = SystemAPI.QueryBuilder().WithAll<Player>().Build();
+            _ownerChangedLookup = state.GetBufferLookup<OwnerChanged>();
             state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<GameEvents>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -62,12 +48,7 @@ namespace HyperRTS.Simulation.Capture
             _progressLookup.Update(ref state);
             _factionLookup.Update(ref state);
             _reach.Update(ref state);
-            _attackLookup.Update(ref state);
-            _rallyLookup.Update(ref state);
-            _queueLookup.Update(ref state);
-            _stockLookup.Update(ref state);
-            _costLookup.Update(ref state);
-            _selectedLookup.Update(ref state);
+            _ownerChangedLookup.Update(ref state);
 
             new CaptureJob
             {
@@ -80,13 +61,8 @@ namespace HyperRTS.Simulation.Capture
                 ProgressLookup = _progressLookup,
                 FactionLookup = _factionLookup,
                 Reach = _reach,
-                AttackLookup = _attackLookup,
-                RallyLookup = _rallyLookup,
-                QueueLookup = _queueLookup,
-                StockLookup = _stockLookup,
-                CostLookup = _costLookup,
-                SelectedLookup = _selectedLookup,
-                PlayerByFaction = PlayerLookup.ByFaction(_players, state.WorldUpdateAllocator),
+                OwnerChanged = _ownerChangedLookup,
+                Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
         }
 
@@ -104,13 +80,8 @@ namespace HyperRTS.Simulation.Capture
             public ComponentLookup<CaptureProgress> ProgressLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             public TargetReach Reach;
-            [ReadOnly] public ComponentLookup<AttackTarget> AttackLookup;
-            [ReadOnly] public ComponentLookup<RallyPoint> RallyLookup;
-            [ReadOnly] public BufferLookup<ProductionQueueItem> QueueLookup;
-            public BufferLookup<ResourceStock> StockLookup;
-            [ReadOnly] public BufferLookup<ResourceCost> CostLookup;
-            [ReadOnly] public ComponentLookup<Selected> SelectedLookup;
-            [ReadOnly] public NativeArray<Entity> PlayerByFaction;
+            public BufferLookup<OwnerChanged> OwnerChanged;
+            public Entity Events;
 
             private void Execute(Entity entity, in Capturer capturer, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in LocalTransform transform,
@@ -134,14 +105,16 @@ namespace HyperRTS.Simulation.Capture
                     return;
                 }
 
-                if (Advance(target, faction, capturer.Rate))
+                if (!Advance(target, faction, capturer.Rate))
                 {
-                    TakeOver(target, faction);
-                    busy.ValueRW = false;
-                    if (capturer.ConsumedOnCapture)
-                    {
-                        Ecb.DestroyEntity(entity);
-                    }
+                    return;
+                }
+
+                Ownership.Transfer(Ecb, OwnerChanged[Events], target, FactionLookup[target].Value, faction);
+                busy.ValueRW = false;
+                if (capturer.ConsumedOnCapture)
+                {
+                    Ecb.DestroyEntity(entity);
                 }
             }
 
@@ -162,41 +135,6 @@ namespace HyperRTS.Simulation.Capture
 
                 progress = default;
                 return true;
-            }
-
-            private void TakeOver(Entity building, byte faction)
-            {
-                var previous = FactionLookup[building].Value;
-                Ecb.SetComponent(building, new Faction { Value = faction });
-                if (QueueLookup.TryGetBuffer(building, out var queue))
-                {
-                    RefundQueue(queue, previous);
-                    Ecb.SetBuffer<ProductionQueueItem>(building);
-                }
-
-                // The old owner's orders don't carry over: no target, rally point or selection.
-                if (AttackLookup.HasComponent(building))
-                {
-                    Ecb.SetComponentEnabled<AttackTarget>(building, false);
-                }
-
-                if (RallyLookup.HasComponent(building))
-                {
-                    Ecb.SetComponentEnabled<RallyPoint>(building, false);
-                }
-
-                if (SelectedLookup.HasComponent(building))
-                {
-                    Ecb.SetComponentEnabled<Selected>(building, false);
-                }
-            }
-
-            private void RefundQueue(DynamicBuffer<ProductionQueueItem> queue, byte owner)
-            {
-                if (StockLookup.TryGetBuffer(PlayerByFaction[owner], out var stock))
-                {
-                    ProductionRules.RefundQueue(stock, queue, CostLookup);
-                }
             }
         }
     }

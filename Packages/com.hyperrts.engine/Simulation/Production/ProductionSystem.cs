@@ -1,6 +1,5 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
@@ -15,8 +14,8 @@ namespace HyperRTS.Simulation.Production
 {
     /// <summary>
     /// Trains the head of each completed producer's queue while the owner has population room, then spawns it at the
-    /// spawn offset and sends it to the rally point. Aircraft that use pads wait for a free pad at an airfield and
-    /// spawn docked on it. A finished upgrade is recorded on the owner instead.
+    /// spawn offset, raises <see cref="UnitProduced"/> and sends it to the rally point. Aircraft that use pads wait for
+    /// a free pad at an airfield and spawn docked on it. Finished research is recorded on the owner instead.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
@@ -33,8 +32,7 @@ namespace HyperRTS.Simulation.Production
         private BufferLookup<CompletedResearch> _completedResearchLookup;
         private BufferLookup<LandingPad> _padLookup;
         private ComponentLookup<HomePad> _padUserLookup;
-        private ComponentLookup<PlayerStats> _statsLookup;
-        private SoundWriter _sounds;
+        private BufferLookup<UnitProduced> _producedLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -49,9 +47,8 @@ namespace HyperRTS.Simulation.Production
             _completedResearchLookup = state.GetBufferLookup<CompletedResearch>();
             _padLookup = state.GetBufferLookup<LandingPad>(true);
             _padUserLookup = state.GetComponentLookup<HomePad>(true);
-            _statsLookup = state.GetComponentLookup<PlayerStats>();
-            _sounds = new SoundWriter(ref state);
-            state.RequireForUpdate<SoundQueue>();
+            _producedLookup = state.GetBufferLookup<UnitProduced>();
+            state.RequireForUpdate<GameEvents>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -67,8 +64,7 @@ namespace HyperRTS.Simulation.Production
             _completedResearchLookup.Update(ref state);
             _padLookup.Update(ref state);
             _padUserLookup.Update(ref state);
-            _statsLookup.Update(ref state);
-            _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
+            _producedLookup.Update(ref state);
 
             var allocator = state.WorldUpdateAllocator;
             var rules = SystemAPI.TryGetSingleton<MatchRules>(out var match) ? match : MatchRules.Default;
@@ -89,8 +85,8 @@ namespace HyperRTS.Simulation.Production
                 CompletedResearchLookup = _completedResearchLookup,
                 PadLookup = _padLookup,
                 PadUserLookup = _padUserLookup,
-                StatsLookup = _statsLookup,
-                Sounds = _sounds,
+                Produced = _producedLookup,
+                Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
         }
 
@@ -114,8 +110,8 @@ namespace HyperRTS.Simulation.Production
             public BufferLookup<CompletedResearch> CompletedResearchLookup;
             [ReadOnly] public BufferLookup<LandingPad> PadLookup;
             [ReadOnly] public ComponentLookup<HomePad> PadUserLookup;
-            public ComponentLookup<PlayerStats> StatsLookup;
-            public SoundWriter Sounds;
+            public BufferLookup<UnitProduced> Produced;
+            public Entity Events;
 
             private void Execute(Entity entity, ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
                 in LocalTransform transform, in Faction faction, in RallyPoint rally, EnabledRefRO<RallyPoint> hasRally)
@@ -153,11 +149,14 @@ namespace HyperRTS.Simulation.Production
                 }
                 else
                 {
-                    var unit = Spawn(prefab, SpawnPoint(entity, producer, transform, pad), transform, faction,
-                        hasRally.ValueRO, rally.Position);
+                    var position = SpawnPoint(entity, producer, transform, pad);
+                    var unit = Spawn(prefab, position, transform, faction, hasRally.ValueRO, rally.Position);
                     DockOnPad(unit, entity, pad);
                     SpawnedPopulation[faction.Value] += producible.Population;
-                    CountBuilt(faction.Value);
+                    Produced[Events].Add(new UnitProduced
+                    {
+                        Producer = entity, Prefab = prefab, Faction = faction.Value, Position = position,
+                    });
                 }
 
                 queue.RemoveAt(0);
@@ -169,14 +168,6 @@ namespace HyperRTS.Simulation.Production
                 if (CompletedResearchLookup.TryGetBuffer(PlayerByFaction[faction], out var researched))
                 {
                     researched.Add(new CompletedResearch { Prefab = item.Prefab, TypeId = item.TypeId });
-                }
-            }
-
-            private void CountBuilt(byte faction)
-            {
-                if (StatsLookup.TryGetRefRW(PlayerByFaction[faction], out var stats))
-                {
-                    stats.ValueRW.UnitsBuilt++;
                 }
             }
 
@@ -228,7 +219,6 @@ namespace HyperRTS.Simulation.Production
                 placement.Rotation = producer.Rotation;
                 Ecb.AddComponent(unit, placement);
                 Ecb.SetComponent(unit, faction);
-                Sounds.Play(prefab, SoundSlot.Ready, position, faction.Value);
 
                 if (rally && OrderLookup.HasComponent(prefab))
                 {
