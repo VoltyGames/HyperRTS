@@ -23,6 +23,29 @@ namespace HyperRTS.Presentation.HUD
         private readonly HUDContext _context = new();
         private readonly HUDPointerTracker _pointer = new();
         private readonly List<IHUDPanel> _panels = new();
+        private string _theme;
+
+        /// <summary>
+        /// A class on <c>hud-root</c> that restyles the whole HUD (for example a theme for the local player's side);
+        /// null for none. Kept when the panel rebuilds.
+        /// </summary>
+        public string Theme
+        {
+            get => _theme;
+            set
+            {
+                if (_theme != null)
+                {
+                    Content?.RemoveFromClassList(_theme);
+                }
+
+                _theme = value;
+                if (_theme != null)
+                {
+                    Content?.AddToClassList(_theme);
+                }
+            }
+        }
 
         /// <summary>Adds the panels: the bottom row's go in <paramref name="bottom"/>, the rest on <paramref name="hud"/>.</summary>
         protected virtual void CreatePanels(VisualElement hud, VisualElement bottom)
@@ -48,6 +71,11 @@ namespace HyperRTS.Presentation.HUD
         {
             var hud = HUDElements.Box("hud-root");
             hud.pickingMode = PickingMode.Ignore;
+            if (_theme != null)
+            {
+                hud.AddToClassList(_theme);
+            }
+
             if (styleSheet != null)
             {
                 hud.styleSheets.Add(styleSheet);
