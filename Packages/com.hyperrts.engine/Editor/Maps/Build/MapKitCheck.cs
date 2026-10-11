@@ -87,6 +87,7 @@ namespace HyperRTS.Editor.Maps.Build
                     var name = $"farmland kit '{kit.key}'";
                     Require(kit.crops.Count > 0, $"{name} has no crops.");
                     kit.crops.ForEach(c => Surface(c.surface, name));
+                    kit.leftovers.ForEach(c => Surface(c.surface, name));
                     Surface(kit.marginSurface, name);
                     Optional(kit.beltKit, k => _climate.BeltKit(k) != null, $"{name} belt kit");
                     Optional(kit.trackClass, k => _climate.RoadClass(k) != null, $"{name} track class");

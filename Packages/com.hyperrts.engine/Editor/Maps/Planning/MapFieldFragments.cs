@@ -3,15 +3,19 @@ using System.Collections.Generic;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// Sizes of the connected pieces of each field (roads and rivers cut fields into pieces), so slivers too small to
-    /// farm can be left to the margin.
+    /// The connected pieces of each field (roads, rivers and ravines cut fields into pieces), measured so slivers can be
+    /// left to the margin: how many cells a piece has, and how far its innermost cell lies from the piece's edge (half
+    /// the widest strip across it).
     /// </summary>
     public static class MapFieldFragments
     {
-        /// <summary>For every cell, the cell count of the four-connected piece of its field it belongs to (0 off fields).</summary>
-        public static int[] Sizes(int[] fields, int width, int height)
+        /// <summary>
+        /// For every cell, its piece's cell count and its piece's largest <paramref name="edge"/> distance (0 off fields).
+        /// </summary>
+        public static (int[] Sizes, float[] Reach) Measure(int[] fields, float[] edge, int width, int height)
         {
             var sizes = new int[fields.Length];
+            var reach = new float[fields.Length];
             var piece = new List<int>();
             var queue = new Queue<int>();
             for (var start = 0; start < fields.Length; start++)
@@ -22,13 +26,20 @@ namespace HyperRTS.Editor.Maps.Planning
                 }
 
                 Flood(fields, width, height, start, sizes, piece, queue);
+                var deepest = 0f;
+                foreach (var cell in piece)
+                {
+                    deepest = edge[cell] > deepest ? edge[cell] : deepest;
+                }
+
                 foreach (var cell in piece)
                 {
                     sizes[cell] = piece.Count;
+                    reach[cell] = deepest;
                 }
             }
 
-            return sizes;
+            return (sizes, reach);
         }
 
         private static void Flood(int[] fields, int width, int height, int start, int[] sizes, List<int> piece,

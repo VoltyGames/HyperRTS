@@ -33,7 +33,13 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Road class of the tracks along the field ends; empty for none.")]
         public string trackClass;
 
-        [Tooltip("Field fragments smaller than this (m²) become margin ground.")]
+        [Tooltip("Field fragments smaller than this (m²) become leftover ground.")]
         public float minField = 1500f;
+
+        [Tooltip("Field fragments narrower than this (m) at their widest become leftover ground: no strip between a ravine and a track.")]
+        public float minFieldWidth = 20f;
+
+        [Tooltip("Surfaces for the pieces too small or narrow to farm (fallow, pasture), one picked per field; empty leaves them margin.")]
+        public List<MapCropShare> leftovers = new();
     }
 }
