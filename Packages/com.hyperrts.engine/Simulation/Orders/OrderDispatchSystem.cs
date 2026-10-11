@@ -9,23 +9,34 @@ namespace HyperRTS.Simulation.Orders
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct OrderDispatchSystem : ISystem
     {
+        private OrderHalt _halt;
+
+        public void OnCreate(ref SystemState state) => _halt = new OrderHalt(ref state);
+
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new DispatchJob().ScheduleParallel();
+            _halt.Update(ref state);
+            new DispatchJob { Halt = _halt }.ScheduleParallel();
         }
 
         [BurstCompile]
         [WithDisabled(typeof(ActiveOrder))]
         private partial struct DispatchJob : IJobEntity
         {
-            private void Execute(ref ActiveOrder active, EnabledRefRW<ActiveOrder> busy, DynamicBuffer<QueuedOrder> queue)
+            // Writes only the entity being processed.
+            public OrderHalt Halt;
+
+            private void Execute(Entity entity, ref ActiveOrder active, EnabledRefRW<ActiveOrder> busy,
+                DynamicBuffer<QueuedOrder> queue)
             {
                 if (queue.Length == 0)
                 {
                     return;
                 }
 
+                // Same reset as a fresh order, so a target picked up while idle can't hold the next order back.
+                Halt.Apply(entity);
                 active.Value = queue[0].Value;
                 queue.RemoveAt(0);
                 busy.ValueRW = true;

@@ -44,6 +44,25 @@ namespace HyperRTS.Simulation.Tests
             _world.World.GetExistingSystem<UnitCommandSystem>().Update(_world.World.Unmanaged);
 
         [Test]
+        public void QueuedOrder_DropsATargetPickedUpWhileIdle()
+        {
+            var unit = _world.SpawnUnit(1, float3.zero);
+            _world.AddWeapon(unit);
+            var enemy = _world.SpawnUnit(2, new float3(3f, 0f, 0f));
+            _world.EntityManager.SetComponentData(unit, new AttackTarget { Value = enemy });
+            _world.EntityManager.SetComponentEnabled<AttackTarget>(unit, true);
+            var goal = new float3(-10f, 0f, 0f);
+            _world.EntityManager.GetBuffer<QueuedOrder>(unit)
+                .Add(new QueuedOrder { Value = new Order { Type = OrderType.Move, Position = goal } });
+
+            _world.World.GetExistingSystem<OrderDispatchSystem>().Update(_world.World.Unmanaged);
+
+            Assert.IsTrue(_world.IsEnabled<ActiveOrder>(unit));
+            Assert.AreEqual(OrderType.Move, _world.Get<ActiveOrder>(unit).Value.Type);
+            Assert.IsFalse(_world.IsEnabled<AttackTarget>(unit), "the queued move isn't held back by the old target");
+        }
+
+        [Test]
         public void RightClickMove_ReachesThePointAndGoesIdle()
         {
             var unit = SpawnSelected(new float3(0f, 2f, 0f));

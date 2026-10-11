@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -10,18 +9,14 @@ namespace HyperRTS.Simulation.Orders
     {
         private ComponentLookup<ActiveOrder> _active;
         private BufferLookup<QueuedOrder> _queue;
-        private ComponentLookup<MoveDestination> _move;
-        private ComponentLookup<AttackTarget> _attack;
-        private ComponentLookup<MoveOrderState> _moveOrder;
+        private OrderHalt _halt;
         [ReadOnly] private ComponentLookup<Inside> _inside;
 
         public OrderWriter(ref SystemState state)
         {
             _active = state.GetComponentLookup<ActiveOrder>();
             _queue = state.GetBufferLookup<QueuedOrder>();
-            _move = state.GetComponentLookup<MoveDestination>();
-            _attack = state.GetComponentLookup<AttackTarget>();
-            _moveOrder = state.GetComponentLookup<MoveOrderState>();
+            _halt = new OrderHalt(ref state);
             _inside = state.GetComponentLookup<Inside>(true);
         }
 
@@ -29,9 +24,7 @@ namespace HyperRTS.Simulation.Orders
         {
             _active.Update(ref state);
             _queue.Update(ref state);
-            _move.Update(ref state);
-            _attack.Update(ref state);
-            _moveOrder.Update(ref state);
+            _halt.Update(ref state);
             _inside.Update(ref state);
         }
 
@@ -94,21 +87,7 @@ namespace HyperRTS.Simulation.Orders
         {
             _active.SetComponentEnabled(unit, false);
             _queue[unit].Clear();
-
-            if (_move.HasComponent(unit))
-            {
-                _move.SetComponentEnabled(unit, false);
-            }
-
-            if (_attack.HasComponent(unit))
-            {
-                _attack.SetComponentEnabled(unit, false);
-            }
-
-            if (_moveOrder.HasComponent(unit))
-            {
-                _moveOrder.SetComponentEnabled(unit, false);
-            }
+            _halt.Apply(unit);
         }
     }
 }
