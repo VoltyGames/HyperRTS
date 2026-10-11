@@ -8,7 +8,8 @@ or UI.
 | Assembly | Folder | Holds |
 | --- | --- | --- |
 | `HyperRTS.Core` | `Core/` | Phase groups, world filters, menu / icon / doc paths |
-| `HyperRTS.Simulation` | `Simulation/` | Components, systems, authoring and bakers, `*Setup` helpers, client UI state (`Interaction/`) |
+| `HyperRTS.Simulation` | `Simulation/` | Components, systems, authoring and bakers, `*Setup` helpers |
+| `HyperRTS.Client` | `Client/` | Client-only state shared by input, HUD and overlays (`Interaction/`), `DefaultWorld`, `LiveQuery`. A dedicated server never loads it |
 | `HyperRTS.Network` | `Network/` | Session, join, command RPCs, replication, fog relevancy, sound forwarding |
 | `HyperRTS.Presentation` | `Presentation/` | HUD, overlays, fog rendering, team colours, audio playback |
 | `HyperRTS.Input` | `Input/` | Camera, input actions, input → `PlayerCommand` |
@@ -19,17 +20,20 @@ or UI.
                  Core
                   ▲
               Simulation
-        ▲         ▲          ▲
-   Network   Presentation   Input
-        ▲         ▲          ▲
-             Editor, Tests
+        ▲                    ▲
+     Network               Client
+        ▲               ▲         ▲
+        │         Presentation   Input
+        ▲               ▲         ▲
+                 Editor, Tests
 ```
 
 Rules:
 
 - `HyperRTS.Simulation` never references `Unity.Entities.Graphics`, `Unity.InputSystem` or `UIElements`. It may use
   Physics and NetCode attributes (`[GhostField]`, ghost authoring).
-- Network, Presentation and Input never reference each other. Data they share lives in Simulation.
+- Network, Presentation and Input never reference each other. Client-only data Presentation and Input share
+  lives in Client; data the server also needs lives in Simulation.
 - Engine code never depends on anything under `Assets/`.
 
 ## Modules
@@ -40,7 +44,7 @@ layered, lowest first:
 ```text
 Common < Navigation < Stats < Power < Vision < Spatial < Selection < Orders < Audio < Combat < Transport < Air
   < Units < Resources < Match < Production < Upgrades < Buildings < Abilities < Fields < Veterancy < Capture
-  < AI < GameEntities < Commands < Interaction < Replays
+  < AI < GameEntities < Commands < Replays
 ```
 
 - A module uses only modules before it. A type two modules need goes in `Common` or the lower module.

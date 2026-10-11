@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Interaction
+namespace HyperRTS.Client.Interaction
 {
     /// <summary>Client singleton: a ground point the HUD (minimap) asks the camera to centre on; the camera clears it.</summary>
     public struct CameraFocusRequest : IComponentData

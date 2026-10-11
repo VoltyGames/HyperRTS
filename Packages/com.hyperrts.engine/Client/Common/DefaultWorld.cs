@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Client.Common
 {
     /// <summary>The world MonoBehaviours present (single player or this client), while one exists.</summary>
     public static class DefaultWorld

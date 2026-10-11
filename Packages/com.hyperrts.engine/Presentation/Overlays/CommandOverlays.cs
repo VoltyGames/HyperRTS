@@ -1,7 +1,8 @@
+using HyperRTS.Client.Common;
+using HyperRTS.Client.Interaction;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;

@@ -1,5 +1,5 @@
+using HyperRTS.Client.Interaction;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Entities;

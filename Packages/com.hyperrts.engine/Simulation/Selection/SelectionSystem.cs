@@ -35,7 +35,8 @@ namespace HyperRTS.Simulation.Selection
             _groupLookup = state.GetComponentLookup<ControlGroup>(true);
             _hiddenLookup = state.GetComponentLookup<FogHidden>(true);
             _insideLookup = state.GetComponentLookup<Inside>(true);
-            state.RequireForUpdate<SelectionInput>();
+            // Input writes it, so it must exist before either system runs.
+            state.EntityManager.CreateSingleton<SelectionInput>();
         }
 
         [BurstCompile]

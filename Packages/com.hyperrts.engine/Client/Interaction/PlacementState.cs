@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Interaction
+namespace HyperRTS.Client.Interaction
 {
     /// <summary>
     /// Client-side building placement mode: the HUD starts it, input moves the ghost, presentation draws it.

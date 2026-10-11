@@ -40,7 +40,6 @@ Base module: ownership, identity, health, shared helpers.
 | `IEntityWriter` | Target of every `*Setup` helper: `BakerWriter` in bakers, `EntityManagerWriter` in tests and tools |
 | `AuthoringBehaviour` | Base of every authoring component, engine or game |
 | `EnabledExtensions` | `lookup.HasEnabled(entity)`: has the component and it is enabled |
-| `DefaultWorld`, `LiveQuery` | For MonoBehaviours: the presented world, and a query recreated when that world is replaced |
 | `[Owner]`, `[RequiresAuthoring]` | Player dropdown in the inspector; an authoring component needed alongside |
 
 ## GameEntities
@@ -407,10 +406,11 @@ Ties break by entity index. To replace it, disable the system and drive your own
 - Shift adds, Ctrl removes, no modifier replaces.
 - Ctrl+N stores group N, N recalls it, Shift+N adds it.
 
-## Interaction
+## Interaction (HyperRTS.Client)
 
-Client UI state shared by input, HUD and overlays. `ClientSingletonSystem` creates the singletons once per
-presented world.
+Client UI state shared by input, HUD and overlays, in the `HyperRTS.Client` assembly. `ClientSingletonSystem`
+creates the singletons once per presented world. `DefaultWorld` and `LiveQuery` (in `Client/Common`) give
+MonoBehaviours the presented world and a query recreated when that world is replaced.
 
 | Singleton | Role |
 | --- | --- |
@@ -419,6 +419,7 @@ presented world.
 | `PointerState` | `OverUI`: the HUD is under the cursor, so world clicks are ignored |
 | `SelectionDragState` | Marquee rectangle |
 | `CameraFocusRequest` | Minimap click → camera |
+| `HotkeyPresses` | Letters and digits pressed while gameplay input is live, for command card hotkeys |
 
 ## Input
 

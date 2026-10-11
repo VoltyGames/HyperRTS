@@ -1,9 +1,8 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Selection;
 using Unity.Burst;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Interaction
+namespace HyperRTS.Client.Interaction
 {
     /// <summary>
     /// Creates the client-side singletons that input, HUD and overlays share, once per presented world, so no layer
@@ -18,7 +17,6 @@ namespace HyperRTS.Simulation.Interaction
         public void OnCreate(ref SystemState state)
         {
             var entityManager = state.EntityManager;
-            entityManager.CreateSingleton<SelectionInput>();
             entityManager.CreateSingleton<SelectionDragState>();
             entityManager.CreateSingleton<PendingCommand>();
             entityManager.CreateSingleton<PlacementState>();

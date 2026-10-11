@@ -1,5 +1,5 @@
+using HyperRTS.Client.Interaction;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Interaction;
 using Unity.Entities;
 using UnityEngine.InputSystem;
 

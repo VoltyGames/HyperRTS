@@ -1,7 +1,7 @@
 using Unity.Collections;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Interaction
+namespace HyperRTS.Client.Interaction
 {
     /// <summary>
     /// Client singleton: the letters and digits pressed last frame while gameplay input was live, written by input for

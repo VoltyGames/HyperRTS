@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Interaction
+namespace HyperRTS.Client.Interaction
 {
     /// <summary>
     /// A targeted command (e.g. attack-move) pending from a hotkey or HUD button; the next world click issues it.

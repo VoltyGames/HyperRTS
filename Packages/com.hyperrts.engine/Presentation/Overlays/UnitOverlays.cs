@@ -1,3 +1,4 @@
+using HyperRTS.Client.Common;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;

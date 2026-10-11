@@ -1,7 +1,8 @@
 using System;
+using HyperRTS.Client.Common;
+using HyperRTS.Client.Interaction;
 using HyperRTS.Presentation.TeamColors;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using Unity.Collections;

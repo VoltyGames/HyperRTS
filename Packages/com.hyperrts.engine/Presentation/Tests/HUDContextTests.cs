@@ -1,8 +1,8 @@
 using System.Collections.Generic;
+using HyperRTS.Client.Interaction;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Selection;
 using NUnit.Framework;
 using Unity.Entities;

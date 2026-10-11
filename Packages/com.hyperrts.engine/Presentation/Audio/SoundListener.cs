@@ -1,3 +1,4 @@
+using HyperRTS.Client.Common;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;

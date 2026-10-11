@@ -4,6 +4,7 @@
     "references": [
         "HyperRTS.Core",
         "HyperRTS.Simulation",
+    "HyperRTS.Client",
         "HyperRTS.Presentation",
         "Unity.Entities",
         "Unity.Entities.Graphics",

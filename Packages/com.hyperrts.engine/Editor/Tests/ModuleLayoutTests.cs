@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Tests
         {
             "Common", "Navigation", "Stats", "Power", "Vision", "Spatial", "Selection", "Orders", "Audio", "Combat",
             "Transport", "Air", "Units", "Resources", "Match", "Production", "Upgrades", "Buildings", "Abilities",
-            "Fields", "Veterancy", "Capture", "AI", "GameEntities", "Commands", "Interaction", "Replays",
+            "Fields", "Veterancy", "Capture", "AI", "GameEntities", "Commands", "Replays",
         };
 
         // Uses of a higher layer that are part of the design. Shrink this list; never grow it casually: a new entry

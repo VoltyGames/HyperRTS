@@ -1,7 +1,7 @@
 using System;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Client.Common
 {
     /// <summary>
     /// Entity query for MonoBehaviours that is recreated when the world it belongs to is replaced. Built lazily:

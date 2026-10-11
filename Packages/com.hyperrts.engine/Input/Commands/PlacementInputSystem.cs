@@ -1,7 +1,7 @@
+using HyperRTS.Client.Interaction;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Interaction;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using Unity.Entities;

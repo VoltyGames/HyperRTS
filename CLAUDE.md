@@ -13,7 +13,7 @@ don't edit it or copy its architecture.
 ## Layout
 
 `Packages/com.hyperrts.engine/` is the engine (code + shipped assets) as an embedded UPM package, split into layered
-assemblies so the simulation can run headless: `Core ← Simulation ← {Network, Presentation, Input}`, with
+assemblies so the simulation can run headless: `Core ← Simulation ← {Network, Client ← {Presentation, Input}}`, with
 Editor/Tests on top. The sample game is `Assets/Demo/`. Games consume the package (e.g. as a submodule + `file:` reference), so engine
 code must never depend on anything under `Assets/`. See [`docs/architecture.md`](docs/architecture.md).
 
@@ -21,9 +21,10 @@ code must never depend on anything under `Assets/`. See [`docs/architecture.md`]
 Packages/com.hyperrts.engine/
 ├── Core/          contracts: SystemGroups, SimulationWorlds, HyperRTSMenu/Icons/Docs
 ├── Simulation/    headless gameplay, one folder per module: Common (base), AI, Abilities, Air, Audio, Buildings,
-│                  Capture, Combat, Commands, Fields, GameEntities, Interaction, Match, Navigation, Orders, Power,
+│                  Capture, Combat, Commands, Fields, GameEntities, Match, Navigation, Orders, Power,
 │                  Production, Replays, Resources, Selection, Spatial, Stats, Transport, Units, Upgrades,
 │                  Veterancy, Vision, Tests/
+├── Client/        client-only state input, HUD and overlays share (Interaction), DefaultWorld, LiveQuery
 ├── Presentation/  team colours, overlays, rendering helpers, fog, UI Toolkit HUD, audio playback, Tests/
 ├── Input/         camera, shared input actions, input → PlayerCommand bridge
 ├── Network/       Session, Players (join), Commands (RPCs), Replication, Relevancy, Audio (docs/networking.md)
@@ -34,7 +35,7 @@ Packages/com.hyperrts.engine/
 
 `HyperRTS.Simulation` must never reference Graphics, InputSystem or UIElements. Client UI state that input, HUD
 and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `CameraFocusRequest`) lives in
-`Simulation/Interaction`. Module map and contracts: [`docs/modules.md`](docs/modules.md).
+`Client/Interaction` (`HyperRTS.Client`), which a headless server never loads. Module map and contracts: [`docs/modules.md`](docs/modules.md).
 
 ## Gameplay contract
 
