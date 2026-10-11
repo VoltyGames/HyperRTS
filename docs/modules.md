@@ -119,7 +119,8 @@ Producer, ability, placement, sell and unload commands are handled by their own 
 | `NavAreaAuthoring` / `NavArea` | Box overriding cells: Water, Blocked, or a walkable Deck (bridge) with water kept below |
 | `TerrainHeightAuthoring` / `TerrainHeight` | Baked heightfield: `Height(xz)`, `Raycast`. Flat y = 0 without one |
 | `PlacementMath`, `PlacementSurface` | The building placement rules, shared by simulation, ghost, rally points and AI |
-| `ReachMath`, `NavTolerances` | Walk-up helpers for orders on a target (`InReach`, `Approach`, `MoveTo`); arrival tolerances |
+| `TargetReach` | Walks a unit to a target's footprint for orders that act on it (build, repair, capture, board, gather): `Approach`, `Position`, `Exists` |
+| `ReachMath`, `NavTolerances` | The math under it (`InReach`, `Approach`, `MoveTo`); arrival tolerances |
 | `ViewGround` | Ground points along a camera's view rays (camera, minimap, audio listener) |
 
 Systems:

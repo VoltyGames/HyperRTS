@@ -26,7 +26,7 @@ Mirror the engine's layering:
 | You want | Do |
 | --- | --- |
 | A new behaviour | Component + authoring + Burst `ISystem` in a phase group |
-| A new order (lay mines) | `OrderType` value from `OrderType.Custom` up. Issue with `OrderWriter.Issue`. A system runs units whose `ActiveOrder` has your type, moves them with `MoveDestination`, and disables `ActiveOrder` when done |
+| A new order (lay mines) | `OrderType` value from `OrderType.Custom` up. Issue with `OrderWriter.Issue`. A system runs units whose `ActiveOrder` has your type, walks them up with `TargetReach.Approach` (or sets `MoveDestination`), and disables `ActiveOrder` when done |
 | A new command (call reinforcements) | `CommandType` value from `CommandType.Custom` up. Append to the player's `PlayerCommand` buffer; consume in `OrderSystemGroup` |
 | React to deaths (bounty) | In `LifecycleSystemGroup` after `DeathSystem`, query entities with `Dead` enabled; `LastAttacker` says who did it |
 | Deal damage or heal | `DamageWriter` → `DamageEvent` before `DamageSystem`. Negative heals |
