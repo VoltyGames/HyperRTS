@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Upgrades;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -154,6 +155,29 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(first).Length);
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(second).Length);
             Assert.AreEqual(0, _world.ResourcesOf(2, _supplies));
+        }
+
+        [Test]
+        public void AI_QueuesAResearchOnce_AcrossIdleProducers()
+        {
+            var research = _world.EntityManager.CreateEntity();
+            var writer = new EntityManagerWriter(_world.EntityManager, research);
+            UpgradeSetup.Add(ref writer, new EntityInfo { TypeId = EntityInfo.TypeIdFromName("Optics"), Name = "Optics" },
+                30f, new[] { new ResourceCost { Type = _supplies, Amount = 50 } }, new Prerequisite[0],
+                new UpgradeEffect[0]);
+            research = _world.MakePrefab(research);
+            var first = _world.MakeProducer(_world.SpawnBuilding(2, float3.zero, new float2(4f, 4f)), float3.zero,
+                research);
+            var second = _world.MakeProducer(_world.SpawnBuilding(2, new float3(10f, 0f, 0f), new float2(4f, 4f)),
+                float3.zero, research);
+            _world.AddResources(2, _supplies, 500);
+
+            _world.Tick(frames: 3);
+
+            var queued = _world.EntityManager.GetBuffer<ProductionQueueItem>(first).Length +
+                         _world.EntityManager.GetBuffer<ProductionQueueItem>(second).Length;
+            Assert.AreEqual(1, queued);
+            Assert.AreEqual(450, _world.ResourcesOf(2, _supplies));
         }
 
         [Test]

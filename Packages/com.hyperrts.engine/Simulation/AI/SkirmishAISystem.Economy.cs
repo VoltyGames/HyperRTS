@@ -86,6 +86,8 @@ namespace HyperRTS.Simulation.AI
                     budget.Room.Used += SystemAPI.GetComponent<Producible>(prefab).Population;
                     ResourceMath.Deduct(budget.Stock, SystemAPI.GetBuffer<ResourceCost>(prefab));
                     turn.Commands.Add(new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });
+                    // As the server does, so a second idle producer doesn't pick the same research this think.
+                    budget.Buyer.QueuedResearch.Add(prefab);
                 }
             }
 
