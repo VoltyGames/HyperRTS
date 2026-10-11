@@ -4,16 +4,36 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
-    /// <summary>A terrain texture layer and the grass that grows wherever it is painted.</summary>
+    /// <summary>A terrain texture layer, how the terrain shader lays it on the ground, and the grass that grows wherever it is painted.</summary>
     [Serializable]
     public sealed class MapClimateLayer
     {
         public string key;
+
+        [Tooltip("Diffuse, normal and mask maps (mask: occlusion G, height B, smoothness A), tile size, normal scale, tint (Diffuse Remap Max) and mask remap.")]
         public TerrainLayer terrainLayer;
 
         [Tooltip("Colour of this ground in the report's overview image.")]
         public Color mapColor = Color.grey;
 
         public List<MapDetailCoverage> details = new();
+
+        [Tooltip("Turns the texture clockwise on the ground (degrees); at 0 the image's top faces north.")]
+        public float rotation;
+
+        [Tooltip("Lays the texture's rows, which run left to right in the image, along the map's crop rows (Rotation turns them further).")]
+        public bool followsRows;
+
+        [Tooltip("How far the texture's tallest texels push through neighbouring layers where they meet; 0 blends by weight alone.")]
+        [Range(0f, 2f)]
+        public float heightBlend = 1f;
+
+        [Tooltip("How much the map's macro tint and the broad brightness variation colour this layer.")]
+        [Range(0f, 1f)]
+        public float macroStrength = 1f;
+
+        [Tooltip("How far (in tiles) anti-tiling shifts copies of the texture so it never visibly repeats; 0 is off. Copies of row layers shift only along the rows.")]
+        [Range(0f, 1f)]
+        public float antiTiling = 1f;
     }
 }

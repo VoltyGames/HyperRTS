@@ -10,8 +10,6 @@ namespace HyperRTS.Editor.Maps.Build
     /// </summary>
     public static class MapAssetCheck
     {
-        private const int MaxLayers = 8;
-
         public static void Check(MapProject project, MapIssues issues)
         {
             CheckClimate(project.Climate, issues);
@@ -21,18 +19,13 @@ namespace HyperRTS.Editor.Maps.Build
         private static void CheckClimate(MapClimate climate, MapIssues issues)
         {
             var name = $"Climate '{climate.name}'";
-            if (climate.layers.Count == 0 || climate.layers.Count > MaxLayers)
+            foreach (var problem in MapTerrainTextures.Problems(climate))
             {
-                issues.Error($"{name} has {climate.layers.Count} layers; use 1 to {MaxLayers}.");
+                issues.Error($"{name}: {problem}");
             }
 
             foreach (var layer in climate.layers)
             {
-                if (layer.terrainLayer == null)
-                {
-                    issues.Error($"{name}: layer '{layer.key}' has no Terrain Layer.");
-                }
-
                 foreach (var detail in layer.details)
                 {
                     Require(climate.DetailIndex(detail.detail) >= 0, $"{name}: layer '{layer.key}' grows unknown detail '{detail.detail}'.", issues);
