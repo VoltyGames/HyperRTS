@@ -82,7 +82,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 }
                 else
                 {
-                    rejections.Add(problem);
+                    rejections.Add(problem, plot.Center);
                 }
             }
 

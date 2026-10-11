@@ -15,6 +15,11 @@ namespace HyperRTS.Editor.Maps.Planning
     internal static class MapPlotFinder
     {
         private const int Channel = 33;
+        private const float Shortest = 0.5f;
+
+        // A plot's copy lies across the seam at the mirrored spot, so a small gap keeps the two apart.
+        private const float SeamGap = 2f;
+        private static readonly float[] Depths = { 1f, 0.8f, 0.65f, Shortest };
 
         public static List<MapPlot> Find(MapPlanContext context, MapSettlementKit kit, IReadOnlyList<MapRoad> streets,
             Vector2 center, float radius, int settlement, MapPlotRejections rejections)
@@ -50,54 +55,57 @@ namespace HyperRTS.Editor.Maps.Planning
                 along += frontage;
                 var normal = MapStreets.Left(direction) * side;
                 var front = middle + normal * (road.Width * 0.5f + kit.frontGap);
-                var plot = new MapPlot(front, direction, normal, frontage, depth);
-                if (!Reaches(plot, center, radius))
+                if ((front - center).magnitude > radius)
                 {
                     continue;
                 }
 
-                var reason = Reject(context, plot, center, radius);
+                var (plot, reason) = Fit(context, front, direction, normal, frontage, depth);
                 if (reason == null)
                 {
                     found.Add(plot);
                 }
                 else
                 {
-                    rejections.Add(reason);
+                    rejections.Add(reason, plot.Center);
                 }
             }
+        }
+
+        /// <summary>
+        /// The plot at full depth, else cut shorter (to <see cref="Shortest"/> of it) until its corners and the land
+        /// under it are clear, the way real plots stop at a stream, a ravine or a pad. The reason is the shortest try's
+        /// when none fits.
+        /// </summary>
+        private static (MapPlot Plot, string Reason) Fit(MapPlanContext context, Vector2 front, Vector2 direction,
+            Vector2 normal, float frontage, float depth)
+        {
+            MapPlot plot = null;
+            string reason = null;
+            foreach (var share in Depths)
+            {
+                plot = new MapPlot(front, direction, normal, frontage, depth * share);
+                reason = Reject(context, plot) ?? MapPlotClaims.Blocked(context, plot);
+                if (reason == null)
+                {
+                    break;
+                }
+            }
+
+            return (plot, reason);
         }
 
         private static float Jitter(MapSettlementKit kit, System.Random random) =>
             1f + kit.plotJitter * ((float)random.NextDouble() * 2f - 1f);
 
-        /// <summary>Whether any part of the plot lies in the settlement's circle; plots wholly outside aren't candidates.</summary>
-        private static bool Reaches(MapPlot plot, Vector2 center, float radius)
-        {
-            foreach (var corner in plot.Corners())
-            {
-                if ((corner - center).magnitude <= radius)
-                {
-                    return true;
-                }
-            }
-
-            return (plot.Center - center).magnitude <= radius;
-        }
-
-        /// <summary>Why a plot can't be used whatever its neighbours do, or null.</summary>
-        private static string Reject(MapPlanContext context, MapPlot plot, Vector2 center, float radius)
+        /// <summary>
+        /// Why a plot can't be used whatever its neighbours do, or null. Only its street front must lie in the
+        /// settlement's radius: gardens run back past the houses as far as the plot is deep.
+        /// </summary>
+        private static string Reject(MapPlanContext context, MapPlot plot)
         {
             var corners = plot.Corners();
             var symmetry = context.Layout.Symmetry;
-            foreach (var corner in corners)
-            {
-                if ((corner - center).magnitude > radius)
-                {
-                    return "past the radius";
-                }
-            }
-
             foreach (var corner in corners)
             {
                 if (!symmetry.InSector(corner))
@@ -108,7 +116,7 @@ namespace HyperRTS.Editor.Maps.Planning
 
             foreach (var corner in corners)
             {
-                if (symmetry.SeamDistance(corner) < plot.Width * 0.5f)
+                if (symmetry.SeamDistance(corner) < SeamGap)
                 {
                     return "too close to the symmetry seam";
                 }

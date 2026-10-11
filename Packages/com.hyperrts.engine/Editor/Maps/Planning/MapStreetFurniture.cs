@@ -56,8 +56,46 @@ namespace HyperRTS.Editor.Maps.Planning
             for (var along = piece * 0.5f; along + piece * 0.5f <= road.Line.Length; along += piece)
             {
                 var position = Beside(road, along, -1f, out var direction);
-                TryAdd(context, pipe, position, direction, center, radius);
+                if (Clear(context, road, position, direction * (piece * 0.5f)))
+                {
+                    TryAdd(context, pipe, position, direction, center, radius);
+                }
             }
+        }
+
+        /// <summary>
+        /// A section stops short of a crossing road or a yard: both its ends stand on the verge, and neither end nor its
+        /// middle lies on another road (at a junction the crossing road's surface can be the street's verge).
+        /// </summary>
+        private static bool Clear(MapPlanContext context, MapRoad street, Vector2 middle, Vector2 half)
+        {
+            if (!OnVerge(context, middle - half) || !OnVerge(context, middle + half))
+            {
+                return false;
+            }
+
+            foreach (var point in new[] { middle - half, middle, middle + half })
+            {
+                if (OnOtherRoad(context, street, point))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool OnOtherRoad(MapPlanContext context, MapRoad street, Vector2 point)
+        {
+            foreach (var other in context.Shapes.Roads)
+            {
+                if (other != street && other.Line.Distance(point) < other.Width * 0.5f + EdgeOffset)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>The spot beside the road edge, to its left (side 1) or right (side -1), and the road's direction there.</summary>
