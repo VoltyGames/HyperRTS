@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
@@ -29,11 +28,11 @@ namespace HyperRTS.Presentation.HUD
             _resources = HUDElements.Box("hud-topbar__resources", Root);
 
             var population = HUDElements.Box("hud-resource", Root);
-            HUDElements.Text("POP", "hud-resource__name", population);
+            HUDElements.Text(HUDText.Text("hud.pop"), "hud-resource__name", population);
             _population = HUDElements.Text("", "hud-resource__amount", population);
 
             _powerEntry = HUDElements.Box("hud-resource", Root);
-            HUDElements.Text("PWR", "hud-resource__name", _powerEntry);
+            HUDElements.Text(HUDText.Text("hud.power"), "hud-resource__name", _powerEntry);
             _power = HUDElements.Text("", "hud-resource__amount", _powerEntry);
         }
 
@@ -73,9 +72,9 @@ namespace HyperRTS.Presentation.HUD
             foreach (var item in stock)
             {
                 var type = item.Type.Value;
-                var name = type != null ? type.displayName : "?";
+                var name = HUDText.ResourceName(type);
                 var entry = HUDElements.Box("hud-resource", _resources);
-                if (type != null && type.icon != null)
+                if (type.icon != null)
                 {
                     entry.Add(new HUDIcon(type.icon, name, "hud-resource__icon"));
                 }
@@ -85,7 +84,7 @@ namespace HyperRTS.Presentation.HUD
                 }
 
                 var amount = HUDElements.Text("", "hud-resource__amount", entry);
-                amount.style.color = type != null ? type.color : Color.white;
+                amount.style.color = type.color;
                 _amounts.Add(amount);
                 _shown.Add(int.MinValue);
             }

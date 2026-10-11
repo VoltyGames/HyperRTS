@@ -20,9 +20,7 @@ namespace HyperRTS.Presentation.HUD
             var button = new CommandButton("", onClick);
             button.Add(HUDIcon.Of(entityManager, prefab, "hud-command__icon"));
 
-            var name = entityManager.HasComponent<EntityInfo>(prefab)
-                ? entityManager.GetComponentData<EntityInfo>(prefab).Name.ToString()
-                : "?";
+            var name = HUDText.EntityName(entityManager.GetComponentData<EntityInfo>(prefab).Name.ToString());
             HUDElements.Text(name, "hud-command__name", button);
             if (entityManager.HasBuffer<ResourceCost>(prefab))
             {
