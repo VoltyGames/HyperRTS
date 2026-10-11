@@ -75,11 +75,6 @@ namespace HyperRTS.Simulation.Production
             DynamicBuffer<PlayerCommandSubject> listed, DynamicBuffer<ResourceStock> stock,
             DynamicBuffer<CompletedResearch> researched)
         {
-            if (!ResearchRules.CanQueue(state.EntityManager, _queues, researched, faction, command.Prefab))
-            {
-                return;
-            }
-
             var producer = FindProducer(ref state, faction, command, listed);
             if (producer == Entity.Null)
             {
@@ -93,14 +88,17 @@ namespace HyperRTS.Simulation.Production
                 return;
             }
 
-            var required = SystemAPI.GetBuffer<Prerequisite>(prefab);
-            if (!CompletedBuildings.MeetsPrerequisites(required, faction, researched, _completed))
+            var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
+            ResearchRules.CollectQueued(state.EntityManager, _queues, faction, queued);
+            var buyer = new Buyer
             {
-                return;
-            }
+                Faction = faction,
+                Buildings = new CompletedBuildings(_completed, Allocator.Temp),
+                Research = researched,
+                QueuedResearch = queued,
+            };
 
-            // Spent last, so a refused order costs nothing.
-            if (!ResourceMath.TrySpend(stock, SystemAPI.GetBuffer<ResourceCost>(prefab)))
+            if (!PurchaseRules.TryBuy(state.EntityManager, prefab, buyer, stock))
             {
                 return;
             }

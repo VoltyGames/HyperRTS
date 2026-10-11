@@ -37,18 +37,6 @@ namespace HyperRTS.Simulation.Production
                 .WithAll<BuildingTag, EntityInfo, Faction>()
                 .WithNone<ConstructionProgress, Dead>();
 
-        /// <summary>Only snapshots <paramref name="completed"/> when something is required.</summary>
-        public static bool MeetsPrerequisites(DynamicBuffer<Prerequisite> required, byte faction,
-            DynamicBuffer<CompletedResearch> research, EntityQuery completed)
-        {
-            if (required.IsEmpty)
-            {
-                return true;
-            }
-
-            return new CompletedBuildings(completed, Allocator.Temp).MeetsPrerequisites(required, faction, research);
-        }
-
         /// <summary>
         /// True when <paramref name="faction"/> has, for every required type, a completed building of it or finished
         /// research of it in <paramref name="research"/>.

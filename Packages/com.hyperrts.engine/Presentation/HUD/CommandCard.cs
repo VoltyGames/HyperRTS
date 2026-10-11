@@ -61,12 +61,10 @@ namespace HyperRTS.Presentation.HUD
                 return;
             }
 
-            var completed = context.SnapshotCompleted();
-            var queued = context.SnapshotQueued();
+            var buyer = context.SnapshotBuyer();
             foreach (var (button, prefab) in _costed)
             {
-                var available = context.CanAfford(prefab) && context.PrerequisitesMet(prefab, completed);
-                button.SetEnabled(available && context.CanQueueResearch(prefab, queued));
+                button.SetEnabled(context.CanBuy(prefab, buyer));
             }
         }
 

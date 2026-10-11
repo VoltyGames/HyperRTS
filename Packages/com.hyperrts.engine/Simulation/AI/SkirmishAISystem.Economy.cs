@@ -14,14 +14,11 @@ namespace HyperRTS.Simulation.AI
     {
         private struct Budget
         {
-            public byte Faction;
             public Population Room;
 
             /// <summary>The stockpile left after what this think already queued.</summary>
             public NativeArray<ResourceStock> Stock;
-            public DynamicBuffer<CompletedResearch> Researched;
-            public NativeHashSet<Entity> QueuedResearch;
-            public CompletedBuildings Completed;
+            public Buyer Buyer;
         }
 
         private static void SendHarvesters(in Turn turn, in Snapshot snapshot)
@@ -73,12 +70,15 @@ namespace HyperRTS.Simulation.AI
             ResearchRules.CollectQueued(state.EntityManager, _queues, turn.Faction, queued);
             var budget = new Budget
             {
-                Faction = turn.Faction,
                 Room = SystemAPI.GetComponent<Population>(turn.Player),
                 Stock = SystemAPI.GetBuffer<ResourceStock>(turn.Player).ToNativeArray(Allocator.Temp),
-                Researched = SystemAPI.GetBuffer<CompletedResearch>(turn.Player),
-                QueuedResearch = queued,
-                Completed = snapshot.Completed,
+                Buyer = new Buyer
+                {
+                    Faction = turn.Faction,
+                    Buildings = snapshot.Completed,
+                    Research = SystemAPI.GetBuffer<CompletedResearch>(turn.Player),
+                    QueuedResearch = queued,
+                },
             };
 
             foreach (var producer in snapshot.Producers)
@@ -131,23 +131,12 @@ namespace HyperRTS.Simulation.AI
 
         private bool CanTrain(ref SystemState state, Entity prefab, in Budget budget)
         {
-            if (!ResearchRules.CanQueue(state.EntityManager, budget.Researched, budget.QueuedResearch, prefab))
-            {
-                return false;
-            }
-
             if (!budget.Room.HasRoomFor(SystemAPI.GetComponent<Producible>(prefab).Population))
             {
                 return false;
             }
 
-            if (!ResourceMath.CanAfford(budget.Stock, SystemAPI.GetBuffer<ResourceCost>(prefab)))
-            {
-                return false;
-            }
-
-            return budget.Completed.MeetsPrerequisites(SystemAPI.GetBuffer<Prerequisite>(prefab), budget.Faction,
-                budget.Researched);
+            return PurchaseRules.CanBuy(state.EntityManager, prefab, budget.Buyer, budget.Stock);
         }
     }
 }

@@ -74,30 +74,21 @@ namespace HyperRTS.Presentation.HUD
 
         public DynamicBuffer<ResourceStock> Stock => EntityManager.GetBuffer<ResourceStock>(View.LocalPlayer, true);
 
-        public bool CanAfford(Entity prefab) =>
-            !EntityManager.HasBuffer<ResourceCost>(prefab)
-            || ResourceMath.CanAfford(Stock, EntityManager.GetBuffer<ResourceCost>(prefab, true));
-
-        /// <summary>This frame's completed buildings, shared by every button checking prerequisites.</summary>
-        public CompletedBuildings SnapshotCompleted() => new(_completed.In(EntityManager), Allocator.Temp);
-
-        public bool PrerequisitesMet(Entity prefab, in CompletedBuildings completed) =>
-            !EntityManager.HasBuffer<Prerequisite>(prefab)
-            || completed.MeetsPrerequisites(EntityManager.GetBuffer<Prerequisite>(prefab, true), View.Local.Faction,
-                EntityManager.GetBuffer<CompletedResearch>(View.LocalPlayer, true));
-
-        /// <summary>This frame's prefabs the local player has queued, shared by every research button.</summary>
-        public NativeHashSet<Entity> SnapshotQueued()
+        /// <summary>The local player as a buyer this frame, shared by every button that checks a purchase.</summary>
+        public Buyer SnapshotBuyer()
         {
             var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
             ResearchRules.CollectQueued(EntityManager, _queues.In(EntityManager), View.Local.Faction, queued);
-            return queued;
+            return new Buyer
+            {
+                Faction = View.Local.Faction,
+                Buildings = new CompletedBuildings(_completed.In(EntityManager), Allocator.Temp),
+                Research = EntityManager.GetBuffer<CompletedResearch>(View.LocalPlayer, true),
+                QueuedResearch = queued,
+            };
         }
 
-        /// <summary>False for an upgrade the local player has researched or already queued somewhere.</summary>
-        public bool CanQueueResearch(Entity prefab, NativeHashSet<Entity> queued) =>
-            ResearchRules.CanQueue(EntityManager, EntityManager.GetBuffer<CompletedResearch>(View.LocalPlayer, true),
-                queued, prefab);
+        public bool CanBuy(Entity prefab, in Buyer buyer) => PurchaseRules.CanBuy(EntityManager, prefab, buyer, Stock);
 
         /// <summary>Starts targeting a command; the input layer issues it on the next world click.</summary>
         public void BeginTargeting(CommandType type, int argument) =>

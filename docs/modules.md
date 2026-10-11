@@ -266,6 +266,7 @@ runs dry. `ResourceNodeSystem` regrows or removes nodes.
 | `Producible` | Build time and population cost |
 | `Prerequisite`, `CompletedBuildings` | Required `TypeId`s, met by a completed building or finished research; check shared by simulation, AI and HUD |
 | `ProducibleAuthoring` | Base of unit, building and research authoring: `DisplayName` and the `TypeId` prerequisites name |
+| `PurchaseRules`, `Buyer` | The one buy rule for orders, placement, AI and HUD: `IsUnlocked` (prerequisites, research once), `CanBuy`, `TryBuy` |
 | `Research`, `CompletedResearch`, `ResearchRules` | A producible that is researched once instead of spawned; the player's finished research (replicated by `TypeId`); queue-once checks |
 | `ProductionRules` | `HasOption`, `Refund`, `RefundQueue` |
 

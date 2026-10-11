@@ -129,15 +129,16 @@ namespace HyperRTS.Simulation.Buildings
                 return false;
             }
 
-            var required = SystemAPI.GetBuffer<Prerequisite>(prefab);
-            var research = SystemAPI.GetBuffer<CompletedResearch>(request.Player);
-            if (!CompletedBuildings.MeetsPrerequisites(required, request.Faction, research, _completed))
+            // Buildings are never research, so no queued research is needed.
+            var buyer = new Buyer
             {
-                return false;
-            }
+                Faction = request.Faction,
+                Buildings = new CompletedBuildings(_completed, Allocator.Temp),
+                Research = SystemAPI.GetBuffer<CompletedResearch>(request.Player),
+            };
 
             var stock = SystemAPI.GetBuffer<ResourceStock>(request.Player);
-            if (!ResourceMath.TrySpend(stock, SystemAPI.GetBuffer<ResourceCost>(prefab)))
+            if (!PurchaseRules.TryBuy(state.EntityManager, prefab, buyer, stock))
             {
                 return false;
             }
