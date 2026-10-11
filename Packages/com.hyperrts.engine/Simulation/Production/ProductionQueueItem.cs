@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.NetCode;
 
@@ -5,12 +6,20 @@ namespace HyperRTS.Simulation.Production
 {
     /// <summary>Paid-for units waiting to be trained; the first element is in progress.</summary>
     [InternalBufferCapacity(5)]
-    public struct ProductionQueueItem : IBufferElementData
+    public struct ProductionQueueItem : IPrefabReference
     {
         /// <summary>Not replicated; clients resolve it from <see cref="TypeId"/>.</summary>
         [GhostField(SendData = false)] public Entity Prefab;
 
         /// <summary>The prefab's <c>EntityInfo.TypeId</c>.</summary>
         [GhostField] public int TypeId;
+
+        int IPrefabReference.TypeId => TypeId;
+
+        Entity IPrefabReference.Prefab
+        {
+            get => Prefab;
+            set => Prefab = value;
+        }
     }
 }

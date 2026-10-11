@@ -106,7 +106,9 @@ back.
   stock, population, power, abilities, ammo, match state; `Stealthed`, `Inside` and `Docked` as enabled bits). Static data comes from the client's own copy of the prefab.
 - **References**: prefabs and assets can't cross the wire, so `ProductionQueueItem`, `CompletedResearch` and
   `ResourceStock` also carry a type id, and `ReferenceResolveSystem` (`Network/Replication/`) fills the reference
-  back in on the client, finding prefabs through the `PrefabRegistry` singleton.
+  back in on the client, finding prefabs through the `PrefabRegistry` singleton. A game buffer that names prefabs
+  implements `IPrefabReference` (`[GhostField] TypeId`, `[GhostField(SendData = false)] Prefab`) and resolves them
+  in its own client system with `PrefabReferences.Changed<T>` and `PrefabReferences.Resolve<T>`.
 
 A new component the HUD or overlays read needs `[GhostField]` on the fields that change, and
 `[GhostEnabledBit]` if it is enableable.

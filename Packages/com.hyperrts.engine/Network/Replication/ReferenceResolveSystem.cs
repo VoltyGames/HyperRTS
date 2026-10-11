@@ -10,35 +10,28 @@ namespace HyperRTS.Network.Replication
     /// <summary>
     /// Client: entity and asset references can't cross the network, so replicated buffers carry type ids and this
     /// fills the references back in from the client's own prefabs and assets whenever a snapshot changes them.
+    /// Games resolve their own <see cref="IPrefabReference"/> buffers the same way with <see cref="PrefabReferences"/>.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial class ReferenceResolveSystem : SystemBase
     {
         private readonly Dictionary<int, ResourceType> _resources = new();
+        private EntityQuery _queues;
+        private EntityQuery _research;
 
-        protected override void OnCreate() => RequireForUpdate<PrefabRegistry>();
+        protected override void OnCreate()
+        {
+            _queues = PrefabReferences.Changed<ProductionQueueItem>(ref CheckedStateRef);
+            _research = PrefabReferences.Changed<CompletedResearch>(ref CheckedStateRef);
+            RequireForUpdate<PrefabRegistry>();
+        }
 
         protected override void OnUpdate()
         {
             var prefabs = SystemAPI.GetSingleton<PrefabRegistry>();
-            foreach (var queue in SystemAPI.Query<DynamicBuffer<ProductionQueueItem>>()
-                         .WithChangeFilter<ProductionQueueItem>())
-            {
-                for (var i = 0; i < queue.Length; i++)
-                {
-                    queue.ElementAt(i).Prefab = prefabs.Find(queue[i].TypeId);
-                }
-            }
-
-            foreach (var researched in SystemAPI.Query<DynamicBuffer<CompletedResearch>>()
-                         .WithChangeFilter<CompletedResearch>())
-            {
-                for (var i = 0; i < researched.Length; i++)
-                {
-                    researched.ElementAt(i).Prefab = prefabs.Find(researched[i].TypeId);
-                }
-            }
+            PrefabReferences.Resolve<ProductionQueueItem>(EntityManager, _queues, prefabs);
+            PrefabReferences.Resolve<CompletedResearch>(EntityManager, _research, prefabs);
 
             foreach (var stock in SystemAPI.Query<DynamicBuffer<ResourceStock>>().WithChangeFilter<ResourceStock>())
             {
