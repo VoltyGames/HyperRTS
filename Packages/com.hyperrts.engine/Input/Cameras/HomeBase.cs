@@ -17,15 +17,18 @@ namespace HyperRTS.Input.Cameras
             ComponentType.ReadOnly<BuildingTag>(), ComponentType.ReadOnly<Faction>(),
             ComponentType.ReadOnly<LocalTransform>()));
 
-        /// <summary>False until the local player and at least one of their buildings exist.</summary>
-        public bool TryFind(EntityManager entityManager, out Vector3 centre)
+        /// <summary>False until the local player exists (the map is still streaming in, or a network join is pending).</summary>
+        public bool TryGetLocalFaction(EntityManager entityManager, out byte faction)
+        {
+            var found = _localPlayer.In(entityManager).TryGetSingleton(out Player local);
+            faction = local.Faction;
+            return found;
+        }
+
+        /// <summary>False when <paramref name="faction"/> owns no buildings.</summary>
+        public bool TryFind(EntityManager entityManager, byte faction, out Vector3 centre)
         {
             centre = default;
-            if (!_localPlayer.In(entityManager).TryGetSingleton(out Player local))
-            {
-                return false;
-            }
-
             var query = _buildings.In(entityManager);
             using var factions = query.ToComponentDataArray<Faction>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalTransform>(Allocator.Temp);
@@ -33,7 +36,7 @@ namespace HyperRTS.Input.Cameras
             var count = 0;
             for (var i = 0; i < factions.Length; i++)
             {
-                if (factions[i].Value == local.Faction)
+                if (factions[i].Value == faction)
                 {
                     sum += transforms[i].Position;
                     count++;
