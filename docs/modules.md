@@ -85,7 +85,7 @@ Shared identity for units and buildings, and the component set of a player entit
 | `MatchAuthoring` | One per map: map size, nav/fog cell sizes, fog toggle, player slots, AI tuning per difficulty, replay recording |
 | `PlayerSlot`, `PlayerControl` | One slot on the Match: name, team, colour, control (LocalHuman, AI, Remote), starting resources, AI difficulty and build order. Its list position + 1 is the faction number |
 | `MatchState` | Singleton: `Playing`/`Ended` and the winning team |
-| `MatchRules` | Match singleton: low-power production rate, sell refund, replay recording |
+| `MatchRules` | Match singleton: low-power production rate, sell refund, replay recording, networked join timeout |
 | `MatchSetup`, `SlotSetup`, `MatchSetupRequest` | Runtime match configuration from a game's lobby or skirmish screen: per slot open/closed, control, team, colour, name, AI difficulty and side, plus starting-resource scale and a `FogOverride`. Set the request before the map loads |
 | `LocalGameSpeed` | Pause and speed for single-player matches (`Time.timeScale`); camera and HUD use unscaled time |
 | `VictoryCritical`, `PopulationProvider`, `Population` | Flags and the per-player used/cap count read by the systems below |
@@ -442,8 +442,14 @@ once per presented world, so no layer depends on which starts first.
 counts map users and lets menus or rebinding `Suspend`/`Resume` every map), `SelectionInputSystem`, `CommandInputSystem` (right-click Smart, A/S/H, P patrol and E escort +
 click, targeted commands), `PlacementInputSystem` (ghost + PlaceBuilding), `WorldPointer` (Unity Physics raycast,
 then the baked terrain, then the ground plane), `CameraController` (pan, edge scroll, zoom, rotate, map clamp,
-`FocusOn`; it also centres on a pending `CameraFocusRequest`, and opens a match on the local player's buildings
-through `HomeBase` unless `startAtHome` is off).
+`FocusOn`; `speedMultiplier` scales the authored `moveSpeed` for a player setting; it also centres on a pending
+`CameraFocusRequest`, and opens a match on the local player's buildings through `HomeBase` unless `startAtHome` is
+off, looking for `homeSearchSeconds` after the local player appears, so a start with no buildings keeps the default view).
+
+Escape (`Commands/Cancel`) cancels placement and targeted commands. A game whose front end also reads Escape (to
+open a pause menu) sets `InputActionsProvider.FrontEndOwnsCancel`: the input systems then ignore it, and the front
+end calls `MatchView.CancelInteraction()`, which clears both and returns whether anything was pending, before
+opening its menu.
 
 ## Presentation (client)
 
@@ -451,7 +457,12 @@ through `HomeBase` unless `startAtHome` is off).
 card with research, abilities and support powers, return to base, unload and sell, minimap, game-over banner with a
 `MatchOutcome`). Each widget is an `IHUDPanel` (boxed ones derive from `HUDPanel`) refreshed every frame from a
 `HUDContext`; a game adds or replaces panels by subclassing `HUDController` and overriding `CreatePanels`.
-`HUDController` is a `PanelContent`, which rebuilds its tree whenever the `PanelRenderer` reloads. The prefab also
+`HUDController` is a `PanelContent`, which rebuilds its tree whenever the `PanelRenderer` reloads. Every visible
+string goes through `HUDText.Current` by a stable key: fixed text through `Get` (`hud.pop`, `hud.power`,
+`command.return|unload|sell`, `stance.<stance>`, `outcome.victory|defeat|draw`) and authored names through `Name`
+(`entity.<EntityInfo.Name>`, `resource.<asset name>`, `ability.<name>`, kebab-cased by `HUDText.Key`, so "War
+Factory" is `entity.war-factory`). The base class is the engine's English (authored names as written); a game
+subclasses it to translate and sets `Current` before the HUD builds. The prefab also
 carries `OverlayRenderer` (selection rings, health bars, placement ghost, rally markers via
 `Graphics.RenderMeshInstanced`), `FogOfWarRenderer` (overlay shader) and the drag-box marquee. `Rendering/` holds the
 shared draw helpers (`OverlayMeshes`, `InstanceBatch`, `RenderHierarchy`, `EntityExtent`). `TeamColorSystem`

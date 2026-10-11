@@ -71,7 +71,7 @@ namespace HyperRTS.Presentation.HUD
                 }
 
                 _iconSlot.Add(icon);
-                _name.text = entityManager.GetComponentData<EntityInfo>(entity).Name.ToString();
+                _name.text = HUDText.EntityName(entityManager.GetComponentData<EntityInfo>(entity).Name.ToString());
             }
             else if (selected.Count > 1)
             {

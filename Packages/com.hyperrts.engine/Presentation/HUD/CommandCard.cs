@@ -88,9 +88,9 @@ namespace HyperRTS.Presentation.HUD
             AddPrefabButtons(context, products, prefab => context.Issue(new PlayerCommand { Type = CommandType.Produce, Prefab = prefab }));
             _abilities.Build(context, Root, _casters);
             AddStanceButtons(context);
-            AddActionButton(context, _canReturn, "Return", CommandType.ReturnToBase, 0);
-            AddActionButton(context, _canUnload, "Unload", CommandType.Unload, -1);
-            AddActionButton(context, _canSell, "Sell", CommandType.Sell, 0);
+            AddActionButton(context, _canReturn, "command.return", CommandType.ReturnToBase, 0);
+            AddActionButton(context, _canUnload, "command.unload", CommandType.Unload, -1);
+            AddActionButton(context, _canSell, "command.sell", CommandType.Sell, 0);
             Root.SetShown(Root.childCount > 0);
         }
 
@@ -141,14 +141,14 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        private void AddActionButton(HUDContext context, bool shown, string caption, CommandType type, int argument)
+        private void AddActionButton(HUDContext context, bool shown, string key, CommandType type, int argument)
         {
             if (!shown)
             {
                 return;
             }
 
-            var button = new CommandButton(caption, () => context.Issue(new PlayerCommand { Type = type, Argument = argument }));
+            var button = new CommandButton(HUDText.Text(key), () => context.Issue(new PlayerCommand { Type = type, Argument = argument }));
             button.AddToClassList("hud-command--stance");
             Root.Add(button);
         }
@@ -172,7 +172,7 @@ namespace HyperRTS.Presentation.HUD
 
             foreach (var stance in Stances)
             {
-                var button = new CommandButton(Caption(stance), () => context.Issue(new PlayerCommand
+                var button = new CommandButton(HUDText.StanceName(stance), () => context.Issue(new PlayerCommand
                 {
                     Type = CommandType.SetStance,
                     Argument = (int)stance,
@@ -205,12 +205,6 @@ namespace HyperRTS.Presentation.HUD
 
             return common;
         }
-
-        private static string Caption(Stance stance) => stance switch
-        {
-            Stance.HoldPosition => "Hold",
-            _ => stance.ToString(),
-        };
 
         private static void AddDistinct(List<Entity> list, Entity entity)
         {

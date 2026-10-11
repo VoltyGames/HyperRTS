@@ -153,6 +153,9 @@ gameplay in a headless assembly, like the engine does.
 - **HUD panel**: implement `IHUDPanel` (or derive from `HUDPanel` for a boxed one), subclass `HUDController`,
   override `CreatePanels` to add yours with `Add(panel, parent)` alongside or instead of the built-in ones, and put
   the subclass on your HUD in place of `HUDController`.
+- **HUD language**: subclass `HUDText`, override `Get` (fixed keys such as `command.sell`) and `Name` (keys such
+  as `entity.war-factory`) to read your string tables, and set `HUDText.Current` at startup, e.g. from a
+  `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]` method. Key list: [`modules`](modules.md#presentation-client).
 - **Spawn from code**: `ecb.Instantiate(prefabEntity)`, then set `LocalTransform` and `Faction`. Prefab entities
   come from authoring references such as a producer's options. Tests and tools can build complete entities without
   baking through `GameEntitySetup` / `UnitSetup` / `BuildingSetup` with an `EntityManagerWriter`.

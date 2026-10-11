@@ -83,7 +83,7 @@ namespace HyperRTS.Presentation.HUD
                 return;
             }
 
-            var name = ability.Name.ToString();
+            var name = HUDText.AbilityName(ability.Name.ToString());
             var type = isPower ? CommandType.UsePower : CommandType.UseAbility;
             var target = ability.Target;
             var id = ability.Id;
