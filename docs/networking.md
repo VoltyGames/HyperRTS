@@ -24,6 +24,8 @@ so its SubScene streams into them:
 
 - `StartHost(port)`: server and client in one process (custom lobbies, LAN).
 - `StartServer(port)`: dedicated server, no local player.
+- Hosting opens the port before anything is torn down: if it can't, the start returns false and the running
+  worlds are untouched.
 - `StartClient(address, port)`: join a server.
 - `StartRelayHost(relayData)` / `StartRelayClient(relayData)`: the same over a relay (below).
 - `Stop()`: back to single player.
@@ -63,8 +65,8 @@ third-party SDK.
 
 ## Connection status
 
-`NetworkSession.Status` (`Idle`, `Connecting`, `Connected`, `Disconnected`) and the `StatusChanged` event drive
-lobby and connection UI. `NetworkStatusSystem` reads it from Netcode's connection events in the client world; a
+`NetworkSession.Status` (`Idle`, `Connecting`, `Connected`, `Disconnected`) drives lobby and connection UI; poll
+it from a `MonoBehaviour` update, outside any world update, so a reaction can stop the session. `NetworkStatusSystem` reads it from Netcode's connection events in the client world; a
 dedicated server is `Connected` once it listens. When a connection fails or closes, the status stays
 `Disconnected` with Netcode's `DisconnectReason` (timeout, closed by remote, max attempts...) until the game
 calls `Stop()` or starts a new session, so the UI can show why instead of an empty world.

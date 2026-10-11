@@ -89,7 +89,7 @@ A game shell (menus, lobby, loading) drives a match through these:
 | Load a single-player map | `NetworkSession.StartLocal(SessionScene.Load(path))` |
 | Host or join with the menu still up | `NetworkSession.StartHost(port, SessionScene.Keep)` / `StartClient(address, port, SessionScene.Keep)`, then every peer `NetworkSession.LoadScene(path)` |
 | Loading progress | `NetworkSession.SceneLoad`; networked matches also wait for `MatchState.Started` |
-| Connection state | `NetworkSession.Status`, `StatusChanged`, `DisconnectReason` |
+| Connection state | Poll `NetworkSession.Status` and `DisconnectReason` from a `MonoBehaviour` update |
 | Read the match from MonoBehaviours | `MatchView.TryGetDefault(out view)`: local player, relations, match state, colours |
 | Pause and speed (single player) | `LocalGameSpeed.SetScale`, `Reset` |
 | Escape for a pause menu | Set `InputActionsProvider.FrontEndOwnsCancel`; call `MatchView.CancelInteraction()` first |
