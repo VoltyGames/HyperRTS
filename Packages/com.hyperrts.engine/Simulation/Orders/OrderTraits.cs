@@ -1,52 +1,53 @@
 using Unity.Burst;
+using Unity.Collections;
 
 namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
-    /// What custom order types do while they run, so the engine treats them like its own: register a type once (from
-    /// a system's <c>OnCreate</c>) and the <see cref="OrderTypeExtensions"/> checks include it.
+    /// What each order type does while it runs: the built-in types' fixed traits, plus whatever games register for
+    /// their own types (once, from a system's <c>OnCreate</c>) so the engine treats them like its own.
     /// </summary>
     public static class OrderTraits
     {
-        private static readonly SharedStatic<Table> Custom = SharedStatic<Table>.GetOrCreate<Table, Key>();
+        private const int TypeCount = byte.MaxValue + 1;
+
+        private static readonly SharedStatic<Table> Registered = SharedStatic<Table>.GetOrCreate<Table, Key>();
 
         /// <summary>Adds <paramref name="traits"/> to <paramref name="type"/>; registering again is harmless.</summary>
         public static void Register(OrderType type, OrderTrait traits)
         {
-            ref var table = ref Custom.Data;
-            if ((traits & OrderTrait.EngagesWhileMoving) != 0)
+            ref var registered = ref Registered.Data.Traits;
+            if (registered.Length == 0)
             {
-                table.EngagesWhileMoving.Add((byte)type);
+                // The shared table starts zeroed, so this only exposes empty entries.
+                registered.Length = TypeCount;
             }
 
-            if ((traits & OrderTrait.AttackMove) != 0)
-            {
-                table.AttackMove.Add((byte)type);
-            }
-
-            if ((traits & OrderTrait.UsesFormation) != 0)
-            {
-                table.UsesFormation.Add((byte)type);
-            }
+            registered[(byte)type] |= (byte)traits;
         }
 
-        internal static bool Has(OrderType type, OrderTrait trait)
+        internal static bool Has(OrderType type, OrderTrait trait) => (Of(type) & trait) != 0;
+
+        private static OrderTrait Of(OrderType type)
         {
-            ref var table = ref Custom.Data;
-            return trait switch
-            {
-                OrderTrait.EngagesWhileMoving => table.EngagesWhileMoving.Contains(type),
-                OrderTrait.AttackMove => table.AttackMove.Contains(type),
-                OrderTrait.UsesFormation => table.UsesFormation.Contains(type),
-                _ => false,
-            };
+            ref var registered = ref Registered.Data.Traits;
+            var custom = registered.Length == 0 ? OrderTrait.None : (OrderTrait)registered[(byte)type];
+            return BuiltIn(type) | custom;
         }
+
+        private static OrderTrait BuiltIn(OrderType type) => type switch
+        {
+            OrderType.Move => OrderTrait.UsesFormation,
+            OrderType.AttackMove or OrderType.Patrol =>
+                OrderTrait.EngagesWhileMoving | OrderTrait.AttackMove | OrderTrait.UsesFormation,
+            OrderType.Escort => OrderTrait.EngagesWhileMoving,
+            _ => OrderTrait.None,
+        };
 
         private struct Table
         {
-            public TypeSet EngagesWhileMoving;
-            public TypeSet AttackMove;
-            public TypeSet UsesFormation;
+            /// <summary>Registered traits by order type value; empty until the first registration.</summary>
+            public FixedList512Bytes<byte> Traits;
         }
 
         private sealed class Key

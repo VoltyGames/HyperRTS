@@ -1,7 +1,7 @@
 namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
-    /// A set of byte-sized type values (<see cref="CommandType"/>, <see cref="OrderType"/>), custom ones included.
+    /// A set of <see cref="CommandType"/> values, custom ones included.
     /// A value type, so it copies into jobs and Burst code.
     /// </summary>
     public struct TypeSet
@@ -27,8 +27,6 @@ namespace HyperRTS.Simulation.Orders
 
         public readonly TypeSet With(CommandType type) => With((byte)type);
 
-        public readonly TypeSet With(OrderType type) => With((byte)type);
-
         public readonly TypeSet With(in TypeSet other)
         {
             var set = this;
@@ -52,8 +50,6 @@ namespace HyperRTS.Simulation.Orders
         }
 
         public readonly bool Contains(CommandType type) => Contains((byte)type);
-
-        public readonly bool Contains(OrderType type) => Contains((byte)type);
 
         public readonly bool Contains(byte value)
         {
