@@ -23,14 +23,8 @@ namespace HyperRTS.Editor.Maps.Layout
                 return;
             }
 
-            var length = MapGeometry.Length(authored);
-            var holds = new List<float> { 0f, length };
-            foreach (var crossing in river.crossings)
-            {
-                holds.Add(crossing.t * length);
-            }
-
             var curve = MapCurves.Spline(authored, Step);
+            var holds = Holds(river, authored, curve);
             var meandered = Meander(curve, river.meander, holds, seed, index);
             var refined = MapCurves.Smooth(meandered, 2);
             RemapCrossings(river, authored, refined);
@@ -58,6 +52,21 @@ namespace HyperRTS.Editor.Maps.Layout
             }
 
             return meandered;
+        }
+
+        /// <summary>Where the meander is held, as distances along the spline: both ends and every crossing.</summary>
+        private static List<float> Holds(MapRiverSpec river, List<Vector2> authored, List<Vector2> curve)
+        {
+            var length = MapGeometry.Length(authored);
+            var holds = new List<float> { 0f, MapGeometry.Length(curve) };
+            foreach (var crossing in river.crossings)
+            {
+                var place = MapGeometry.PointAlong(authored, crossing.t * length, out _);
+                MapGeometry.DistanceToPolyline(curve, place, out var along);
+                holds.Add(along);
+            }
+
+            return holds;
         }
 
         /// <summary>0 at the ends and crossings, easing to 1 away from them.</summary>
