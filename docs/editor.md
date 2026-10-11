@@ -10,7 +10,7 @@ Scene view `Handles`, which have no UI Toolkit equivalent.
 | **HyperRTS ▸ Create RTS Scene...** | Window: map size, player count (1 human, the rest AI), optional starting-base prefab. Builds light, ground, `RTSWorld` rig, `MatchState` ghost and a SubScene with the `Match` |
 | **HyperRTS ▸ Validate** | Setup problems in every authoring prefab and the open scenes, with quick fixes; click an object name to select it |
 | **HyperRTS ▸ Catalog** | Stats tab: every unit and building prefab in one table, edit HP, build time, vision, speed, damage, cooldown, range; DPS and cost update live. Tech Tree tab: requires, made by, makes, unlocks |
-| **HyperRTS ▸ Cheats** | Play mode: add resources, instant build, fog toggle, spawn any prefab at the view, control another player (single player), game speed. Acts on the authoritative world |
+| **HyperRTS ▸ Cheats** | Play mode: add resources, instant build, fog toggle, spawn any prefab at the view, control another player (single player), game speed. Acts on the authoritative world; instant build completes through the construction and production systems. Any cheat drops the running replay recording |
 | **HyperRTS ▸ Network** | Play mode: host, join localhost, dedicated server, stop |
 | **HyperRTS ▸ Replays** | Save the Play-mode recording, or play a replay file |
 | **HyperRTS ▸ Generate Component Icons** | Regenerates the per-module icons in `Editor/Icons/` |

@@ -1,4 +1,4 @@
-﻿using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
@@ -77,7 +77,10 @@ namespace HyperRTS.Editor.PlayMode
             query.SetSingleton(map);
         }
 
-        /// <summary>Finishes every construction site and the current production of one faction.</summary>
+        /// <summary>
+        /// Finishes every construction site and the current production of one faction, through the construction and
+        /// production systems next frame, so completion events, sounds and stats still happen.
+        /// </summary>
         public static void InstantBuild(EntityManager entityManager, byte faction)
         {
             using var sites = entityManager.CreateEntityQuery(typeof(ConstructionProgress), typeof(Faction));
@@ -86,7 +89,6 @@ namespace HyperRTS.Editor.PlayMode
                 if (entityManager.GetComponentData<Faction>(site).Value == faction)
                 {
                     entityManager.SetComponentData(site, new ConstructionProgress { Value = 1f });
-                    entityManager.SetComponentEnabled<ConstructionProgress>(site, false);
                 }
             }
 

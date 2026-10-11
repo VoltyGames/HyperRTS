@@ -1,4 +1,4 @@
-﻿using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
 using Unity.Entities;
@@ -52,7 +52,8 @@ namespace HyperRTS.Simulation.Replays
             return replay;
         }
 
-        private static void Discard(World world)
+        /// <summary>Drops the recording unsaved, as when cheats change the world outside its commands.</summary>
+        public static void Discard(World world)
         {
             var entityManager = world.EntityManager;
             using var query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<ReplayRecording>());

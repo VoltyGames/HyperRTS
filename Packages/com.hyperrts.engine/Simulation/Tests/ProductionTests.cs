@@ -111,6 +111,19 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(0, Events<BuildingCompleted>().Length, "cleared at the start of the next frame");
         }
 
+        [Test]
+        public void SiteSetToFullProgress_CompletesLikeABuiltOne()
+        {
+            var site = _world.SpawnBuilding(1, float3.zero, new float2(4f, 4f), complete: false);
+            _world.EntityManager.SetComponentData(site, new ConstructionProgress { Value = 1f });
+
+            _world.Tick();
+
+            Assert.IsFalse(_world.IsEnabled<ConstructionProgress>(site));
+            Assert.AreEqual(1, Events<BuildingCompleted>().Length);
+            Assert.AreEqual(1, _world.Get<PlayerStats>(_world.Player(1)).BuildingsBuilt);
+        }
+
         private DynamicBuffer<T> Events<T>() where T : unmanaged, IBufferElementData
         {
             var events = _world.EntityManager.CreateEntityQuery(typeof(GameEvents)).GetSingletonEntity();

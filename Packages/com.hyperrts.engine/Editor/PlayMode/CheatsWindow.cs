@@ -5,10 +5,12 @@ using HyperRTS.Network.Session;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Replays;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEditor;
 using UnityEditor.UIElements;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
@@ -129,6 +131,17 @@ namespace HyperRTS.Editor.PlayMode
 
             var player = players[System.Math.Min(_player.index, players.Length - 1)];
             cheat(manager, player, manager.GetComponentData<Player>(player).Faction);
+            StopRecording(manager.World);
+        }
+
+        // Cheats change the world outside the recorded commands, so the recording would no longer play back.
+        private static void StopRecording(World world)
+        {
+            if (ReplayRecorder.IsRecording(world))
+            {
+                ReplayRecorder.Discard(world);
+                Debug.LogWarning("[HyperRTS] Cheats used: this match's replay recording was dropped.");
+            }
         }
 
         private void SpawnAtView() => Act((manager, _, faction) =>

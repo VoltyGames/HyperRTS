@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Buildings
     /// <summary>
     /// Runs Build orders: builders walk to an allied site and add <c>Rate / BuildTime</c> progress per second while
     /// in reach. Completion disables <see cref="ConstructionProgress"/> and raises <see cref="BuildingCompleted"/>; sites
-    /// never progress on their own.
+    /// never progress on their own, but one set to full progress completes the same way.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
@@ -54,6 +54,12 @@ namespace HyperRTS.Simulation.Buildings
                 ProducibleLookup = _producibleLookup,
                 Reach = _reach,
                 FactionLookup = _factionLookup,
+                Completed = _completedLookup,
+                Events = SystemAPI.GetSingletonEntity<GameEvents>(),
+            }.Schedule();
+
+            new FinishJob
+            {
                 Completed = _completedLookup,
                 Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
@@ -125,6 +131,27 @@ namespace HyperRTS.Simulation.Buildings
                 progress.Value = 1f;
                 SiteLookup.SetComponentEnabled(site, false);
                 return true;
+            }
+        }
+
+        /// <summary>Completes sites raised to full some other way (an editor cheat, a game effect) like built ones.</summary>
+        [BurstCompile]
+        [WithNone(typeof(Dead))]
+        private partial struct FinishJob : IJobEntity
+        {
+            public BufferLookup<BuildingCompleted> Completed;
+            public Entity Events;
+
+            private void Execute(Entity site, ref ConstructionProgress progress,
+                EnabledRefRW<ConstructionProgress> underConstruction, in Faction faction)
+            {
+                if (progress.Value < 1f)
+                {
+                    return;
+                }
+
+                underConstruction.ValueRW = false;
+                Completed[Events].Add(new BuildingCompleted { Building = site, Faction = faction.Value });
             }
         }
     }

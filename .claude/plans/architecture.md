@@ -36,6 +36,8 @@ documentation: update or delete items as they land.
   - `IPrefabReference` + `PrefabReferences` for game buffers.
   - `PlayerRegistry` singleton; one `Faction.Max`.
 - Phase C: player `StatModifier`s with `Stat.Income` (E10); fog-honest AI option (E12).
+- E27: instant build completes through `ConstructionSystem` (full-progress sites finish like built ones); any cheat
+  drops the running replay recording.
 
 ## Declined
 
@@ -47,6 +49,8 @@ documentation: update or delete items as they land.
 | E12 (rewrite) | The AI is already split by concern across partial files; an AI group with a blackboard adds structure without a need |
 | E13 | No profile shows the single-threaded damage and sound writers matter; revisit with large-battle profiling |
 | E20 | Each interaction write is a different action in its natural owner |
+| E26 (deferred) | No game template, catalog column or cheat needs an extension point yet; add one per menu when the first does |
+| E27 (rest) | Turning every cheat into a recorded command is a lot of machinery for an editor-only tool |
 | Session phases | `NetworkStatus` covers what lobby and connection UI need |
 
 ## Open
@@ -55,8 +59,5 @@ documentation: update or delete items as they land.
 | --- | --- | --- |
 | E16 | `TestWorld` loads only engine systems | `TestWorld(params Assembly[] extra)`; test kits as an assembly |
 | E25 | CI validation never opens map scenes | `ProjectValidator.Scenes(paths)` opening each scene and SubScene |
-| E26 | Templates, catalog columns and cheats are hard-coded | Discovery like rules: `EntityTemplate`, `[CatalogColumn]`, `CheatSection` |
-| E27 | Cheats bypass systems; replays after cheats desync | Complete through the systems; flag cheated recordings |
 
-Phase D (CI with scene validation, `TestWorld` for game assemblies, determinism test, editor discovery) covers
-these.
+Phase D (CI with scene validation, `TestWorld` for game assemblies, a determinism test) covers these.
