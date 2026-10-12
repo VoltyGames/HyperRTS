@@ -37,7 +37,6 @@ namespace HyperRTS.Editor.Maps.Library
         public List<MapResourcePath> startingResources = new();
 
         [MapKey(typeof(MapClimateSurface))]
-
         public List<string> surfaces = new();
         [MapKey(typeof(MapRoadClass))]
         public List<string> roadClasses = new();
@@ -47,6 +46,16 @@ namespace HyperRTS.Editor.Maps.Library
         public List<string> beltKits = new();
         [MapKey(typeof(MapWoodlandKit))]
         public List<string> woodlandKits = new();
+
+        /// <summary>
+        /// The <see cref="Factories.IMapAssetFactory"/> that makes this item's assets (its <c>Kind</c>), or empty
+        /// when the item only points at assets made elsewhere.
+        /// </summary>
+        public string factory;
+
+        /// <summary>The raw <c>params</c> object the factory reads, kept as written so saves leave it untouched.</summary>
+        [NonSerialized]
+        public string factoryParams;
 
         /// <summary>The library file these were read from (project-relative), named in every error.</summary>
         [NonSerialized]

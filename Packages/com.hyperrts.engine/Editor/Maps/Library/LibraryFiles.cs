@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Library
     public static class LibraryFiles
     {
         /// <summary>The key a file at <paramref name="path"/> would define; throws when the name doesn't fit the type.</summary>
-        public static string KeyOf(Type type, string path)
+        public static string ParseKey(Type type, string path)
         {
             var suffix = $".{MapLibrary.TypeName(type)}.json";
             var name = Path.GetFileName(path);

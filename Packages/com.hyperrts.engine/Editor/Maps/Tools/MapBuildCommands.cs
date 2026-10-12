@@ -39,7 +39,7 @@ namespace HyperRTS.Editor.Maps.Tools
             {
                 for (var i = 0; i < specs.Length; i++)
                 {
-                    EditorUtility.DisplayProgressBar("HyperRTS", "Building " + MapPaths.NameOf(specs[i]), (float)i / specs.Length);
+                    EditorUtility.DisplayProgressBar("HyperRTS", "Building " + MapPaths.MapName(specs[i]), (float)i / specs.Length);
                     results.Add(MapBuilder.Build(specs[i]));
                 }
             }

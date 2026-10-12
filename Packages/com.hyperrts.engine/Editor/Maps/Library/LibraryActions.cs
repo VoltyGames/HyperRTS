@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Maps.Library
             }
 
             LibraryFiles.Create(type, path);
-            page.Created(type, LibraryFiles.KeyOf(type, path));
+            page.Created(type, LibraryFiles.ParseKey(type, path));
         }
 
         public static void Duplicate(LibraryPage page, MapLibrary library, LibraryItemForm form)
@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.Maps.Library
             }
 
             LibraryFiles.Copy(form.File, path);
-            page.Created(form.Type, LibraryFiles.KeyOf(form.Type, path));
+            page.Created(form.Type, LibraryFiles.ParseKey(form.Type, path));
         }
 
         /// <summary>Renames or moves the open item's file, after listing what names the old key and must change by hand.</summary>
@@ -59,7 +59,7 @@ namespace HyperRTS.Editor.Maps.Library
             var (type, source) = (form.Type, form.File);
             form.Close();
             LibraryFiles.Move(source, path);
-            page.Created(type, LibraryFiles.KeyOf(type, path));
+            page.Created(type, LibraryFiles.ParseKey(type, path));
         }
 
         private static bool ConfirmUsages(MapLibrary library, LibraryItemForm form)
@@ -96,10 +96,10 @@ namespace HyperRTS.Editor.Maps.Library
 
             try
             {
-                var key = LibraryFiles.KeyOf(type, path);
+                var key = LibraryFiles.ParseKey(type, path);
                 var taken = key != ownKey && library.Contains(type, key);
                 return taken
-                    ? Refuse($"There is already a {MapLibrary.TypeName(type)} '{key}': {library.FileOf(type, key)}.")
+                    ? Refuse($"There is already a {MapLibrary.TypeName(type)} '{key}': {library.FilePath(type, key)}.")
                     : path;
             }
             catch (ArgumentException e)

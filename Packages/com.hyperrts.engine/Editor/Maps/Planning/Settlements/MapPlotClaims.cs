@@ -79,12 +79,12 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                     }
 
                     plot.Local(sector, out _, out var v);
-                    Land.Claim(x, z, RegionOf(plot.ZoneAt(v), yard, garden, back));
+                    Land.Claim(x, z, ZoneRegion(plot.ZoneAt(v), yard, garden, back));
                 });
             }
         }
 
-        private static int RegionOf(MapPlotZone zone, int yard, int garden, int back)
+        private static int ZoneRegion(MapPlotZone zone, int yard, int garden, int back)
         {
             if (zone == MapPlotZone.Yard)
             {

@@ -17,6 +17,7 @@ namespace HyperRTS.Editor.Maps.Library
         private static readonly Dictionary<Type, string> TypeNames = new()
         {
             { typeof(MapClimateLayer), "layer" },
+            { typeof(MapMaterial), "material" },
             { typeof(MapClimateDetail), "plant" },
             { typeof(MapClimateTree), "tree" },
             { typeof(MapRoadClass), "road" },
@@ -70,6 +71,21 @@ namespace HyperRTS.Editor.Maps.Library
             ? name
             : throw new ArgumentException($"HyperRTS: {type.Name} is not a map library item class.", nameof(type));
 
+        /// <summary>The item type and key a file at <paramref name="file"/> defines, or a null type when it is no library file.</summary>
+        public static (Type Type, string Key) ParseFile(string file)
+        {
+            var stem = Path.GetFileNameWithoutExtension(file);
+            var dot = stem.LastIndexOf('.');
+            var isJson = file.EndsWith(".json", StringComparison.Ordinal);
+            if (!isJson || dot <= 0)
+            {
+                return (null, null);
+            }
+
+            var type = TypeNames.FirstOrDefault(pair => pair.Value == stem[(dot + 1)..]).Key;
+            return (type, type == null ? null : stem[..dot]);
+        }
+
         /// <summary>Every key of a type, in ordinal order.</summary>
         public IReadOnlyList<string> Keys<T>() => Keys(typeof(T));
 
@@ -79,9 +95,9 @@ namespace HyperRTS.Editor.Maps.Library
         public bool Contains(Type type, string key) => _files[TypeName(type)].ContainsKey(key ?? string.Empty);
 
         /// <summary>The project path of an item's file.</summary>
-        public string FileOf<T>(string key) => FileOf(typeof(T), key);
+        public string FilePath<T>(string key) => FilePath(typeof(T), key);
 
-        public string FileOf(Type type, string key) =>
+        public string FilePath(Type type, string key) =>
             _files[TypeName(type)].TryGetValue(key, out var file) ? file : throw Missing(type, key, null);
 
         /// <summary>The item <paramref name="key"/>; <paramref name="referrer"/> (a file or a spec) is named if it is missing.</summary>
@@ -125,7 +141,7 @@ namespace HyperRTS.Editor.Maps.Library
             var keys = Keys<T>();
             if (keys.Count != 1)
             {
-                var found = keys.Count == 0 ? "none" : string.Join(", ", keys.Select(FileOf<T>));
+                var found = keys.Count == 0 ? "none" : string.Join(", ", keys.Select(FilePath<T>));
                 throw new InvalidOperationException(
                     $"HyperRTS: map building needs exactly one *.{TypeName<T>()}.json under '{Root}'; found {found}.");
             }

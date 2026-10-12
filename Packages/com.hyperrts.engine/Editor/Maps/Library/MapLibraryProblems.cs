@@ -35,7 +35,7 @@ namespace HyperRTS.Editor.Maps.Library
             {
                 foreach (var key in library.Keys(type))
                 {
-                    Check(library, library.FileOf(type, key), type, problems);
+                    Check(library, library.FilePath(type, key), type, problems);
                 }
             }
 

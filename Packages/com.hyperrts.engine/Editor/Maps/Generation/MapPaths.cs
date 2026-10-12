@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Generation
         public string Minimap => $"{Folder}/{Name}_Minimap.png";
 
         /// <summary>The map name of a spec file path (<c>Kalyna.map.json</c> → <c>Kalyna</c>).</summary>
-        public static string NameOf(string specPath) =>
+        public static string MapName(string specPath) =>
             Path.GetFileName(specPath).Replace(SpecExtension, string.Empty);
 
         public static bool IsSpec(string path) => path.EndsWith(SpecExtension, StringComparison.Ordinal);

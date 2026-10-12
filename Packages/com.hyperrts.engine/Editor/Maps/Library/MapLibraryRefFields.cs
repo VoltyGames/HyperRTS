@@ -13,6 +13,7 @@ namespace HyperRTS.Editor.Maps.Library
         private static readonly Dictionary<Type, string[]> Fields = new()
         {
             { typeof(MapClimateLayer), new[] { "terrainLayer" } },
+            { typeof(MapMaterial), new[] { "material" } },
             { typeof(MapClimateDetail), new[] { "mesh", "texture" } },
             { typeof(MapClimateTree), new[] { "prefab", "destructible" } },
             { typeof(MapRoadClass), new[] { "material" } },

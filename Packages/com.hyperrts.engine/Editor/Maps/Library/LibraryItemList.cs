@@ -49,7 +49,7 @@ namespace HyperRTS.Editor.Maps.Library
         {
             _rows = library == null
                 ? new List<LibraryItemRow>()
-                : library.Keys(type).Select(key => Row(type, key, library.FileOf(type, key))).ToList();
+                : library.Keys(type).Select(key => Row(type, key, library.FilePath(type, key))).ToList();
             Filter();
         }
 
@@ -89,7 +89,7 @@ namespace HyperRTS.Editor.Maps.Library
             try
             {
                 var (item, refs) = MapLibraryItemFile.Read(type, file);
-                row.Asset = LibraryThumbnail.AssetOf(type, refs);
+                row.Asset = LibraryThumbnail.PreviewAsset(type, refs);
                 row.Swatch = item is MapClimateLayer layer ? layer.mapColor : null;
             }
             catch (InvalidOperationException)

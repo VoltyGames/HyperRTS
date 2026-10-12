@@ -73,7 +73,7 @@ namespace HyperRTS.Editor.Maps.Designer
             try
             {
                 var name = _name.value.Trim();
-                if (MapPaths.All().Any(path => MapPaths.NameOf(path) == name))
+                if (MapPaths.All().Any(path => MapPaths.MapName(path) == name))
                 {
                     throw new ArgumentException($"A map named '{name}' already exists.");
                 }

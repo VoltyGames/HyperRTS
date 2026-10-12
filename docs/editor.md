@@ -184,6 +184,15 @@ canvas with a live preview; **HyperRTS ▸ Tools ▸ Maps** lists, creates and b
 Library** edits the library. The spec format, the pipeline, the library and the batch entry points are in
 [maps](maps.md).
 
+A library item can also be the source of its own Unity assets: its file names a `factory` and a `params` object
+(`Maps/Factories/`). An `IMapAssetFactory` per kind reads the params into its own `[Serializable]` class through
+`MapAssetRequest.Params<T>()` (every field required, unknown keys rejected, the file named in the error) and writes
+where the item's asset fields point, updating assets in place so GUIDs hold. The engine ships `photoMaterial` (URP
+Lit from the `T_<Set>_BaseColor/Normal/MaskMap` set beside the file), `colorMaterial` and `terrainLayer`, for the
+`material` and `layer` item types; the game adds the rest. `MapLibraryAssets.Generate`/`GenerateAll` run them in
+item-type order (materials before the props that use them), and `MapAssetPostprocessor` regenerates an item once
+per import batch when its file imports. Library page saves keep the factory block as written.
+
 ## Play-mode debugging
 
 - **HyperRTS Debug** Scene view overlay: toggles for the nav grid (blocked, water, decks), fog (cells the local

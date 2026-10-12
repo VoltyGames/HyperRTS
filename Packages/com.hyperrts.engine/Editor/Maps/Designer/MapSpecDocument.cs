@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public string Path => path;
 
-        public string MapName => MapPaths.NameOf(path);
+        public string MapName => MapPaths.MapName(path);
 
         public SerializedObject Serialized => _serialized ??= new SerializedObject(this);
 
@@ -67,7 +67,7 @@ namespace HyperRTS.Editor.Maps.Designer
             var loaded = MapSpecJson.Read(File.ReadAllText(specPath));
             Undo.ClearUndo(this);
             path = specPath;
-            name = MapPaths.NameOf(specPath);
+            name = MapPaths.MapName(specPath);
             spec = loaded;
             savedJson = MapSpecJson.Write(spec);
             diskTicks = File.GetLastWriteTimeUtc(path).Ticks;

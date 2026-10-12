@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Maps.Library
             {
                 foreach (var itemKey in library.Keys(itemType))
                 {
-                    var file = library.FileOf(itemType, itemKey);
+                    var file = library.FilePath(itemType, itemKey);
                     var (item, refs) = MapLibraryItemFile.Read(itemType, file);
                     var fields = Naming(type, key, item).Concat(Naming(type, key, refs));
                     usages.AddRange(fields.Select(field => new MapLibraryUsage(file, itemType, itemKey, field)));

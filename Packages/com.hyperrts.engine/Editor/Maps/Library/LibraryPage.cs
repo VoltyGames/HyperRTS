@@ -203,7 +203,7 @@ namespace HyperRTS.Editor.Maps.Library
         {
             try
             {
-                _form.Open(type, key, _library.FileOf(type, key));
+                _form.Open(type, key, _library.FilePath(type, key));
             }
             catch (InvalidOperationException e)
             {

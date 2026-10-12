@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Tools
                     continue;
                 }
 
-                var name = MapPaths.NameOf(spec);
+                var name = MapPaths.MapName(spec);
                 var report = MapReport.Load(name);
                 if (report == null)
                 {

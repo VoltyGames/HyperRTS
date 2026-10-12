@@ -8,11 +8,11 @@ namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
     /// The asset a library item is pictured by in lists: a layer's diffuse texture, a plant's texture or mesh, a
-    /// tree's or prop's prefab, a road's material. Kits, climates, palettes and rules have none.
+    /// tree's or prop's prefab, a road's or material item's material. Kits, climates, palettes and rules have none.
     /// </summary>
     public static class LibraryThumbnail
     {
-        public static Object AssetOf(Type type, MapLibraryRefs refs)
+        public static Object PreviewAsset(Type type, MapLibraryRefs refs)
         {
             if (type == typeof(MapClimateLayer))
             {
@@ -30,7 +30,8 @@ namespace HyperRTS.Editor.Maps.Library
                 return Load<GameObject>(refs.prefab);
             }
 
-            return type == typeof(MapRoadClass) ? Load<Material>(refs.material) : null;
+            var hasMaterial = type == typeof(MapRoadClass) || type == typeof(MapMaterial);
+            return hasMaterial ? Load<Material>(refs.material) : null;
         }
 
         /// <summary>The rendered preview of <paramref name="asset"/>, or its icon while the preview is still loading.</summary>

@@ -71,7 +71,7 @@ namespace HyperRTS.Editor.Maps.Tools
         {
             var row = new VisualElement { tooltip = specPath };
             row.AddToClassList("hrts-row");
-            var map = MapPaths.NameOf(specPath);
+            var map = MapPaths.MapName(specPath);
             row.Add(Cell(map, "hrts-map__name"));
             row.Add(Cell(Summary(specPath), "hrts-map__info"));
             row.Add(Cell(ReportStatus(map), "hrts-map__status"));

@@ -86,9 +86,9 @@ namespace HyperRTS.Editor.Tests
         [Test]
         public void FileNames_MustBeKeyDotType()
         {
-            Assert.AreEqual("Meadow", LibraryFiles.KeyOf(typeof(MapClimateSurface), "Assets/X/Meadow.surface.json"));
-            Assert.Throws<ArgumentException>(() => LibraryFiles.KeyOf(typeof(MapClimateSurface), "Assets/Meadow.json"));
-            Assert.Throws<ArgumentException>(() => LibraryFiles.KeyOf(typeof(MapClimateSurface), "Assets/A.B.surface.json"));
+            Assert.AreEqual("Meadow", LibraryFiles.ParseKey(typeof(MapClimateSurface), "Assets/X/Meadow.surface.json"));
+            Assert.Throws<ArgumentException>(() => LibraryFiles.ParseKey(typeof(MapClimateSurface), "Assets/Meadow.json"));
+            Assert.Throws<ArgumentException>(() => LibraryFiles.ParseKey(typeof(MapClimateSurface), "Assets/A.B.surface.json"));
         }
 
         [Test]

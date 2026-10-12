@@ -4,14 +4,15 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using HyperRTS.Editor.Maps.Factories;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
     /// Reads and writes one library file as editors see it: the item and the <see cref="MapLibraryRefs"/> fields
-    /// its type reads. Written as JsonUtility's pretty output indented by two spaces, the refs first; the key is
-    /// the file name, never a field.
+    /// its type reads. Written as JsonUtility's pretty output indented by two spaces, the refs first, the factory and
+    /// its params block last and as read; the key is the file name, never a field.
     /// </summary>
     public static class MapLibraryItemFile
     {
@@ -32,8 +33,9 @@ namespace HyperRTS.Editor.Maps.Library
             {
                 JsonUtility.FromJsonOverwrite(json, item);
                 JsonUtility.FromJsonOverwrite(json, refs);
+                refs.factoryParams = MapJsonMembers.Find(json, "params");
             }
-            catch (ArgumentException e)
+            catch (Exception e) when (e is ArgumentException or FormatException)
             {
                 throw new InvalidOperationException($"HyperRTS: map library file '{file}' is not valid JSON: {e.Message}", e);
             }
@@ -60,7 +62,32 @@ namespace HyperRTS.Editor.Maps.Library
                 lines.ForEach(line => output.Append(Reindent(line)).Append('\n'));
             }
 
+            AppendFactory(output, refs, members.Count > 0);
             return output.Append("}\n").ToString();
+        }
+
+        /// <summary>The factory name and its params block, last and as read, when the item has a factory.</summary>
+        private static void AppendFactory(StringBuilder output, MapLibraryRefs refs, bool afterMembers)
+        {
+            if (string.IsNullOrEmpty(refs.factory))
+            {
+                return;
+            }
+
+            if (refs.factoryParams == null)
+            {
+                throw new InvalidOperationException(
+                    $"HyperRTS: map library file '{refs.file}' names factory '{refs.factory}' but has no \"params\" object.");
+            }
+
+            if (afterMembers)
+            {
+                output.Length -= 1;
+                output.Append(",\n");
+            }
+
+            output.Append("  \"factory\": \"").Append(refs.factory).Append("\",\n  \"params\": ")
+                .Append(refs.factoryParams.Replace("\r", string.Empty)).Append('\n');
         }
 
         /// <summary>The top-level members of JsonUtility pretty output, each with its lines.</summary>

@@ -96,6 +96,6 @@ namespace HyperRTS.Editor.Maps.Library
             items.Add(_library.Get<T>(key, referrer));
         }
 
-        private string File<T>(string key) => _library.FileOf<T>(key);
+        private string File<T>(string key) => _library.FilePath<T>(key);
     }
 }
