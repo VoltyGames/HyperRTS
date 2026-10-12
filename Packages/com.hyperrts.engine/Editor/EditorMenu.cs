@@ -3,9 +3,6 @@ namespace HyperRTS.Editor
     /// <summary>Paths and priorities of the HyperRTS menu, in the order the menu shows them.</summary>
     internal static class EditorMenu
     {
-        /// <summary>Unity draws a separator between items whose priorities differ by more than 10.</summary>
-        public const int SeparatorGap = 11;
-
         public const string Root = "HyperRTS/";
 
         public const string Tools = Root + "Tools";
