@@ -69,7 +69,7 @@ namespace HyperRTS.Editor.Authoring
             {
                 if (selected is Component component)
                 {
-                    issues.AddRange(AuthoringChecks.For(component));
+                    issues.AddRange(ProjectValidator.Check(component));
                 }
             }
 

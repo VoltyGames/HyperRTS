@@ -43,7 +43,7 @@ namespace HyperRTS.Editor.Tests
             var producer = Track(EntityTemplates.Producer()).GetComponent<ProducerAuthoring>();
             producer.productionOptions.Add(Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>());
 
-            Assert.IsTrue(AuthoringChecks.For(producer).Any(issue => issue.Message.Contains("scene object")));
+            Assert.IsTrue(ProjectValidator.Check(producer).Any(issue => issue.Message.Contains("scene object")));
         }
 
         [Test]
@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Tests
         {
             var node = Track(EntityTemplates.ResourceNode()).GetComponent<ResourceNodeAuthoring>();
 
-            Assert.IsTrue(AuthoringChecks.For(node).Any(issue => issue.Severity == MessageType.Error));
+            Assert.IsTrue(ProjectValidator.Check(node).Any(issue => issue.Severity == MessageType.Error));
         }
 
         [Test]
@@ -59,7 +59,7 @@ namespace HyperRTS.Editor.Tests
         {
             var harvester = Track(EntityTemplates.Building()).AddComponent<HarvesterAuthoring>();
 
-            Assert.IsTrue(AuthoringChecks.For(harvester).Any(issue => issue.Message.Contains("needs a Unit")));
+            Assert.IsTrue(ProjectValidator.Check(harvester).Any(issue => issue.Message.Contains("needs a Unit")));
         }
 
         [Test]
@@ -68,14 +68,14 @@ namespace HyperRTS.Editor.Tests
             var unit = Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
             unit.deathSpawn = Track(EntityTemplates.Unit("Wreck"));
 
-            Assert.IsTrue(AuthoringChecks.For(unit).Any(issue => issue.Message.StartsWith("Death spawn 'Wreck'")));
+            Assert.IsTrue(ProjectValidator.Check(unit).Any(issue => issue.Message.StartsWith("Death spawn 'Wreck'")));
         }
 
         [TestCaseSource(nameof(Templates))]
         public void TemplatesAreValidApartFromSceneLocation(Func<GameObject> build)
         {
             var go = Track(build());
-            var issues = go.GetComponents<MonoBehaviour>().SelectMany(AuthoringChecks.For)
+            var issues = go.GetComponents<MonoBehaviour>().SelectMany(ProjectValidator.Check)
                 .Where(issue => !issue.Message.Contains("SubScene"));
 
             Assert.IsEmpty(issues.Select(issue => issue.Message));

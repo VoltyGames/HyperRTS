@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.NetCode;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -9,7 +10,7 @@ namespace HyperRTS.Editor.Validation.Rules
     /// <summary>Base for rules about <typeparamref name="T"/> and its subclasses.</summary>
     public abstract class AuthoringRule<T> : IAuthoringRule where T : Component
     {
-        public bool AppliesTo(Component component) => component is T;
+        public virtual bool AppliesTo(Component component) => component is T;
 
         void IAuthoringRule.Check(Component component, ValidationIssues issues) => Check((T)component, issues);
 
@@ -68,5 +69,18 @@ namespace HyperRTS.Editor.Validation.Rules
                 issues.Warn(component, $"No collider: {consequence}", "Fit Collider", () => QuickFixes.FitCollider(component));
             }
         }
+
+        /// <summary>Warns on <paramref name="owner"/> unless <paramref name="target"/> is a ghost; the fix makes it one.</summary>
+        protected static void WarnIfNotGhost(Component owner, GameObject target, string message, ValidationIssues issues)
+        {
+            if (!IsGhost(target))
+            {
+                issues.Warn(owner, message, "Make Ghost", () => Undo.AddComponent<GhostAuthoringComponent>(target));
+            }
+        }
+
+        protected static bool IsGhost(Component component) => IsGhost(component.gameObject);
+
+        protected static bool IsGhost(GameObject go) => go.TryGetComponent<GhostAuthoringComponent>(out _);
     }
 }

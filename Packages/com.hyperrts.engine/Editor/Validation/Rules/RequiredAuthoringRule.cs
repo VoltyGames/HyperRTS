@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using HyperRTS.Simulation.Common;
 using UnityEditor;
 using UnityEngine;
@@ -9,16 +6,13 @@ using UnityEngine;
 namespace HyperRTS.Editor.Validation.Rules
 {
     /// <summary>Reports a missing <see cref="RequiresAuthoringAttribute"/> dependency, with an Add fix for a concrete type.</summary>
-    public sealed class RequiredAuthoringRule : IAuthoringRule
+    public sealed class RequiredAuthoringRule : AuthoringRule<Component>
     {
-        // Runs on every component each inspector Layout, so reflect once per type.
-        private static readonly Dictionary<Type, RequiresAuthoringAttribute[]> Cache = new();
+        public override bool AppliesTo(Component component) => Required(component).Length > 0;
 
-        public bool AppliesTo(Component component) => Required(component.GetType()).Length > 0;
-
-        public void Check(Component component, ValidationIssues issues)
+        protected override void Check(Component component, ValidationIssues issues)
         {
-            foreach (var required in Required(component.GetType()))
+            foreach (var required in Required(component))
             {
                 if (component.TryGetComponent(required.Type, out _))
                 {
@@ -37,16 +31,9 @@ namespace HyperRTS.Editor.Validation.Rules
             }
         }
 
+        private static RequiresAuthoringAttribute[] Required(Component component) =>
+            AttributeCache<RequiresAuthoringAttribute>.Of(component.GetType());
+
         private static string DisplayName(Type type) => ObjectNames.NicifyVariableName(type.Name);
-
-        private static RequiresAuthoringAttribute[] Required(Type type)
-        {
-            if (!Cache.TryGetValue(type, out var required))
-            {
-                Cache[type] = required = type.GetCustomAttributes<RequiresAuthoringAttribute>(true).ToArray();
-            }
-
-            return required;
-        }
     }
 }

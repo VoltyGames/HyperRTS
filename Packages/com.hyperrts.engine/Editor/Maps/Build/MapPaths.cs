@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Linq;
+using UnityEditor;
 
 namespace HyperRTS.Editor.Maps.Build
 {
@@ -55,5 +57,25 @@ namespace HyperRTS.Editor.Maps.Build
         /// <summary>The map name of a spec file path (<c>Kalyna.map.json</c> → <c>Kalyna</c>).</summary>
         public static string NameOf(string specPath) =>
             Path.GetFileName(specPath).Replace(SpecExtension, string.Empty);
+
+        public static bool IsSpec(string path) => path.EndsWith(SpecExtension, StringComparison.Ordinal);
+
+        /// <summary>Every map spec in the project.</summary>
+        public static string[] All() => AssetDatabase.FindAssets("t:TextAsset")
+            .Select(AssetDatabase.GUIDToAssetPath)
+            .Where(IsSpec)
+            .ToArray();
+
+        /// <summary>The spec saved next to a map scene, or null when the scene was not built from one.</summary>
+        public static string SpecBeside(string scenePath)
+        {
+            if (string.IsNullOrEmpty(scenePath))
+            {
+                return null;
+            }
+
+            var spec = Path.ChangeExtension(scenePath, null) + SpecExtension;
+            return File.Exists(spec) ? spec.Replace('\\', '/') : null;
+        }
     }
 }

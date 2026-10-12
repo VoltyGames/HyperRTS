@@ -97,6 +97,8 @@ Styles for engine editor UI live in `Editor/Common/HyperRTSEditor.uss` (classes 
 | `IPrefabRule` | The project's prefabs | Two prefabs sharing a display name (same `TypeId`) |
 
 - Rules are discovered in every editor assembly, so a game adds its own the same way.
+- One `AuthoringRule<T>` per authoring type. A rule about components marked some other way (an attribute) derives
+  from `AuthoringRule<Component>` and overrides `AppliesTo`, like `RequiresGhostRule`.
 - The same rules run in four places: the inspector, **HyperRTS ▸ Validate**, the console on entering Play mode
   (scene rules), and `ValidationTests.ProjectHasNoValidationErrors`.
 - Issues with an obvious fix carry a button (Fit Collider, Use Prefab, Remove Empty, Move Outside, Make Ghost,

@@ -1,8 +1,9 @@
-using System.IO;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Report;
+using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Rules;
 
-namespace HyperRTS.Editor.Validation.Rules
+namespace HyperRTS.Editor.Maps.Tools
 {
     /// <summary>A map scene built from a spec carries its last report's errors, and is flagged when it was never built.</summary>
     public sealed class MapSpecRule : ISceneRule
@@ -11,13 +12,8 @@ namespace HyperRTS.Editor.Validation.Rules
         {
             foreach (var scene in scenes.Scenes)
             {
-                if (string.IsNullOrEmpty(scene.path))
-                {
-                    continue;
-                }
-
-                var spec = Path.ChangeExtension(scene.path, null) + MapPaths.SpecExtension;
-                if (!File.Exists(spec))
+                var spec = MapPaths.SpecBeside(scene.path);
+                if (spec == null)
                 {
                     continue;
                 }

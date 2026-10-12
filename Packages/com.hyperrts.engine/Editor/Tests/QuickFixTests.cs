@@ -71,7 +71,7 @@ namespace HyperRTS.Editor.Tests
             Fix(unit, "Add Flight");
 
             Assert.IsTrue(unit.TryGetComponent<FlightAuthoring>(out _));
-            Assert.IsFalse(AuthoringChecks.For(unit).Any(issue => issue.FixLabel == "Add Flight"));
+            Assert.IsFalse(ProjectValidator.Check(unit).Any(issue => issue.FixLabel == "Add Flight"));
         }
 
         [Test]
@@ -104,6 +104,6 @@ namespace HyperRTS.Editor.Tests
         }
 
         private static void Fix(Component component, string label) =>
-            AuthoringChecks.For(component).First(issue => issue.FixLabel == label).Fix();
+            ProjectValidator.Check(component).First(issue => issue.FixLabel == label).Fix();
     }
 }

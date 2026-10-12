@@ -1,5 +1,4 @@
 using System.IO;
-using System.Linq;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Report;
 using UnityEditor;
@@ -27,12 +26,6 @@ namespace HyperRTS.Editor.Maps.Tools
             get => EditorPrefs.GetBool(AutoRebuildKey, false);
             private set => EditorPrefs.SetBool(AutoRebuildKey, value);
         }
-
-        /// <summary>Every map spec in the project.</summary>
-        public static string[] Specs() => AssetDatabase.FindAssets("t:TextAsset")
-            .Select(AssetDatabase.GUIDToAssetPath)
-            .Where(path => path.EndsWith(MapPaths.SpecExtension, System.StringComparison.Ordinal))
-            .ToArray();
 
         /// <summary>Builds after saving open scenes the user wants kept; does nothing if they cancel.</summary>
         public static void BuildSpec(string spec)
@@ -91,7 +84,7 @@ namespace HyperRTS.Editor.Maps.Tools
                 return;
             }
 
-            foreach (var spec in Specs())
+            foreach (var spec in MapPaths.All())
             {
                 MapBuilder.Build(spec);
             }
@@ -126,19 +119,7 @@ namespace HyperRTS.Editor.Maps.Tools
         private static string CurrentSpec()
         {
             var selected = AssetDatabase.GetAssetPath(Selection.activeObject);
-            if (selected.EndsWith(MapPaths.SpecExtension, System.StringComparison.Ordinal))
-            {
-                return selected;
-            }
-
-            var scene = EditorSceneManager.GetActiveScene().path;
-            if (string.IsNullOrEmpty(scene))
-            {
-                return null;
-            }
-
-            var sibling = Path.ChangeExtension(scene, null) + MapPaths.SpecExtension;
-            return File.Exists(sibling) ? sibling.Replace('\\', '/') : null;
+            return MapPaths.IsSpec(selected) ? selected : MapPaths.SpecBeside(EditorSceneManager.GetActiveScene().path);
         }
     }
 }

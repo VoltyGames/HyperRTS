@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.GameEntities;
-using Unity.NetCode;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
@@ -13,19 +12,19 @@ namespace HyperRTS.Editor.Validation.Rules
         protected override void Check(DestructibleAuthoring scenery, ValidationIssues issues)
         {
             var remains = scenery.remains;
-            if (remains == null || scenery.GetComponent<GameEntityAuthoring>() != null)
+            if (remains == null || scenery.TryGetComponent<GameEntityAuthoring>(out _))
             {
                 return;
             }
 
-            if (scenery.TryGetComponent<GhostAuthoringComponent>(out _))
+            if (IsGhost(scenery))
             {
-                RequiresGhostRule.WarnIfNotGhost(scenery, remains,
+                WarnIfNotGhost(scenery, remains,
                     $"Remains '{remains.name}' are not a ghost, so clients won't see what this ghost leaves.", issues);
                 return;
             }
 
-            if (remains.TryGetComponent<GhostAuthoringComponent>(out _))
+            if (IsGhost(remains))
             {
                 issues.Warn(scenery, $"Remains '{remains.name}' are a ghost: each client spawns map scenery's " +
                                      "remains itself, so they would show twice.");

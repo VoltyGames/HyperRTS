@@ -12,18 +12,14 @@ namespace HyperRTS.Editor.Validation.Rules
     /// </summary>
     public sealed class SceneryIdRule : ISceneRule
     {
-        public void Check(SceneSet scenes, ValidationIssues issues) =>
-            Check(scenes.Roots.Where(root => root.scene.isSubScene)
-                .SelectMany(root => root.GetComponentsInChildren<DestructibleAuthoring>(true)), issues);
-
-        public static void Check(IEnumerable<DestructibleAuthoring> scenery, ValidationIssues issues)
+        public void Check(SceneSet scenes, ValidationIssues issues)
         {
             var placed = new Dictionary<ulong, DestructibleAuthoring>();
+            var scenery = scenes.Roots.Where(root => root.scene.isSubScene)
+                .SelectMany(root => root.GetComponentsInChildren<DestructibleAuthoring>(true));
             foreach (var piece in scenery)
             {
-                // Units, buildings and ghosts replicate as ghosts, not by id.
-                var standalone = piece.GetComponent<GameEntityAuthoring>() == null;
-                if (!standalone || piece.TryGetComponent<GhostAuthoringComponent>(out _))
+                if (ReplicatesAsGhost(piece))
                 {
                     continue;
                 }
@@ -40,5 +36,9 @@ namespace HyperRTS.Editor.Validation.Rules
                 placed[id] = piece;
             }
         }
+
+        // Units, buildings and ghosts replicate as ghosts, not by id.
+        private static bool ReplicatesAsGhost(DestructibleAuthoring piece) =>
+            piece.TryGetComponent<GameEntityAuthoring>(out _) || piece.TryGetComponent<GhostAuthoringComponent>(out _);
     }
 }

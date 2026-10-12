@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Tests
             var field = Track(EntityTemplates.Building()).AddComponent<AreaFieldAuthoring>();
             field.affects = FieldTargets.Units;
 
-            Assert.IsTrue(AuthoringChecks.For(field).Any(issue => issue.Severity == MessageType.Error));
+            Assert.IsTrue(ProjectValidator.Check(field).Any(issue => issue.Severity == MessageType.Error));
         }
 
         [Test]
@@ -29,7 +29,7 @@ namespace HyperRTS.Editor.Tests
             veterancy.ranks.Add(new VeterancyAuthoring.Rank { experience = 200f });
             veterancy.ranks.Add(new VeterancyAuthoring.Rank { experience = 100f });
 
-            Assert.IsTrue(AuthoringChecks.For(veterancy).Any(issue => issue.Message.Contains("ascending")));
+            Assert.IsTrue(ProjectValidator.Check(veterancy).Any(issue => issue.Message.Contains("ascending")));
         }
 
         [Test]
@@ -39,7 +39,7 @@ namespace HyperRTS.Editor.Tests
             abilities.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", damage = 1f });
             abilities.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", damage = 1f });
 
-            Assert.IsTrue(AuthoringChecks.For(abilities).Any(issue => issue.Message.Contains("'Smoke'")));
+            Assert.IsTrue(ProjectValidator.Check(abilities).Any(issue => issue.Message.Contains("'Smoke'")));
         }
 
         [Test]
@@ -49,7 +49,7 @@ namespace HyperRTS.Editor.Tests
             container.capacity = 2;
             container.maxPassengerSize = 4;
 
-            var issue = AuthoringChecks.For(container).Single(found => found.Fix != null);
+            var issue = ProjectValidator.Check(container).Single(found => found.Fix != null);
             issue.Fix();
 
             Assert.AreEqual(2, container.maxPassengerSize);

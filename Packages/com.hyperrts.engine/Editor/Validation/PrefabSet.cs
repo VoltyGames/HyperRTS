@@ -3,7 +3,7 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.GameEntities;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Validation.Rules
+namespace HyperRTS.Editor.Validation
 {
     /// <summary>The project's authoring prefabs, gathered once for every <see cref="IPrefabRule"/>.</summary>
     public sealed class PrefabSet

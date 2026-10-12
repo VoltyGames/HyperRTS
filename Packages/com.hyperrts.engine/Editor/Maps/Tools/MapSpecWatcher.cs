@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Tools
                 return;
             }
 
-            foreach (var spec in imported.Where(p => p.EndsWith(MapPaths.SpecExtension, System.StringComparison.Ordinal)))
+            foreach (var spec in imported.Where(MapPaths.IsSpec))
             {
                 // Scenes can't be opened during an import; build once it has finished.
                 EditorApplication.delayCall += () => MapMenu.BuildSpec(spec);

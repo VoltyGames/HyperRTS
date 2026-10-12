@@ -5,11 +5,30 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Validation
 {
-    /// <summary>Runs every component, scene and prefab rule over the project's prefabs and the open scenes.</summary>
+    /// <summary>
+    /// Runs the discovered rules: component rules for one component (inspectors), and component, scene and prefab
+    /// rules over the project's prefabs and the open scenes (the validator window, entering Play mode).
+    /// </summary>
     public static class ProjectValidator
     {
+        private static readonly IAuthoringRule[] ComponentRules = TypeDiscovery.Instances<IAuthoringRule>();
         private static readonly ISceneRule[] SceneRules = TypeDiscovery.Instances<ISceneRule>();
         private static readonly IPrefabRule[] PrefabRules = TypeDiscovery.Instances<IPrefabRule>();
+
+        /// <summary>Every component rule that applies to one component.</summary>
+        public static List<ValidationIssue> Check(Component component)
+        {
+            var issues = new ValidationIssues();
+            foreach (var rule in ComponentRules)
+            {
+                if (rule.AppliesTo(component))
+                {
+                    rule.Check(component, issues);
+                }
+            }
+
+            return issues;
+        }
 
         public static List<ValidationIssue> Run()
         {
@@ -58,7 +77,7 @@ namespace HyperRTS.Editor.Validation
             {
                 if (component != null)
                 {
-                    issues.AddRange(AuthoringChecks.For(component));
+                    issues.AddRange(Check(component));
                 }
             }
         }

@@ -5,7 +5,7 @@ using HyperRTS.Simulation.Match;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace HyperRTS.Editor.Validation.Rules
+namespace HyperRTS.Editor.Validation
 {
     /// <summary>The loaded scenes and the HyperRTS objects in them, gathered once for every <see cref="ISceneRule"/>.</summary>
     public sealed class SceneSet
