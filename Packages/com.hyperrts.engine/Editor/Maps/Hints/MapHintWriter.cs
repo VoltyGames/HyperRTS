@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Geometry;
-using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Scenes;
@@ -25,23 +24,22 @@ namespace HyperRTS.Editor.Maps.Hints
 
         /// <summary>
         /// Call once the nav grid exists, after measuring and before the entities scene is saved. Errors go to
-        /// <paramref name="issues"/>; returns the written object, or null when no hints could be computed.
+        /// <paramref name="issues"/>; nothing is written when no hints could be computed.
         /// </summary>
-        public static AIMapHintsAuthoring Write(Scene entities, MapLayout layout, MapShapes shapes,
-            IEnumerable<MapPlacement> placements, MapNavGrid nav, MapPalette palette, MapRules rules, MapIssues issues)
+        public static void Write(MapScene scene, MapGeneration generation, MapNavGrid nav, MapIssues issues)
         {
-            var input = new MapHintInput(nav, layout.Spawns, Nodes(placements), Crossings(shapes), palette.baseRadius,
-                rules.corridorWidth);
-            var go = MapSceneWriter.CreateEntityObject(entities, "AI Hints");
+            var project = generation.Project;
+            var input = new MapHintInput(nav, generation.Layout.Spawns, Nodes(generation.Placements.All),
+                Crossings(generation.Shapes), project.Palette.baseRadius, project.Rules.corridorWidth);
+            var go = scene.CreateEntityObject("AI Hints");
             var authoring = go.AddComponent<AIMapHintsAuthoring>();
             if (MapHintBuilder.Fill(authoring, input, issues))
             {
                 EditorUtility.SetDirty(authoring);
-                return authoring;
+                return;
             }
 
             Object.DestroyImmediate(go);
-            return null;
         }
 
         private static List<(Vector2 Position, int Owner)> Nodes(IEnumerable<MapPlacement> placements) =>

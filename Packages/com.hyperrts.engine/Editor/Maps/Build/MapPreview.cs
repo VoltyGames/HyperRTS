@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Report;
 using UnityEngine;
 
@@ -15,16 +16,13 @@ namespace HyperRTS.Editor.Maps.Build
             var project = MapProject.Open(specPath);
             var spec = project.Spec;
             var issues = new MapIssues();
-            var generation = MapGeneration.Plan(spec, project, issues);
+            var generation = MapGeneration.Plan(project, issues);
             var report = MapReport.Create(spec, issues, new MapMetrics());
             Texture2D image = null;
             if (generation != null)
             {
-                var layout = generation.Layout;
-                report.land = MapLandFigures.Measure(generation.Land, layout.Bounds, generation.Trees.Count,
-                    generation.Placements.All);
-                image = MapOverviewImage.DrawLand(layout, generation.Heights, generation.Land, project.Climate,
-                    generation.Shapes, generation.Placements.All, generation.Trees);
+                report.land = MapLandFigures.Measure(generation);
+                image = MapOverviewImage.DrawLand(generation);
             }
 
             report.WritePreview(image);

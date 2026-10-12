@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
-using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Scenes;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -21,37 +21,34 @@ namespace HyperRTS.Editor.Maps.Meshes
     public static class MapRoadMeshWriter
     {
         /// <summary>
-        /// Writes the road meshes to <c>paths.Roads</c> and creates a "Roads" object under <paramref name="parent"/>
-        /// with one child per road class; returns it, or null when no road class has a material.
+        /// Writes the road meshes to the map's road asset and a "Roads" object under the scene's generated root with one
+        /// child per road class; nothing when no road class has a material.
         /// </summary>
-        public static Transform Write(MapPaths paths, MapLayout layout, MapShapes shapes, MapHeights heights,
-            Transform parent)
+        public static void Write(MapScene scene, MapGeneration generation)
         {
-            AssetDatabase.DeleteAsset(paths.Roads);
-            var meshes = Build(shapes, heights, layout.GroundLevel);
+            var path = generation.Project.Paths.Roads;
+            AssetDatabase.DeleteAsset(path);
+            var meshes = Build(generation.Shapes, generation.Heights, generation.Layout.GroundLevel);
             if (meshes.Count == 0)
             {
-                return null;
+                return;
             }
 
-            var root = new GameObject("Roads");
-            root.transform.SetParent(parent, false);
+            var root = scene.CreateChild("Roads");
             for (var i = 0; i < meshes.Count; i++)
             {
                 var (roadClass, mesh) = meshes[i];
                 if (i == 0)
                 {
-                    AssetDatabase.CreateAsset(mesh, paths.Roads);
+                    AssetDatabase.CreateAsset(mesh, path);
                 }
                 else
                 {
-                    AssetDatabase.AddObjectToAsset(mesh, paths.Roads);
+                    AssetDatabase.AddObjectToAsset(mesh, path);
                 }
 
-                CreateObject(root.transform, roadClass, mesh);
+                CreateObject(root, roadClass, mesh);
             }
-
-            return root.transform;
         }
 
         /// <summary>One ribbon mesh per road class that has a material, in the order the classes first appear.</summary>
@@ -65,7 +62,7 @@ namespace HyperRTS.Editor.Maps.Meshes
                 foreach (var road in group)
                 {
                     var (start, end) = MapRoadFades.For(road, roads);
-                    MapRoadRibbon.Add(data, road, start, end, heights, groundLevel, p => shapes.RiverEdgeDistance(p) < 0f);
+                    data.AddRibbon(road, start, end, heights, groundLevel, p => shapes.RiverEdgeDistance(p) < 0f);
                 }
 
                 if (data.Count > 0)

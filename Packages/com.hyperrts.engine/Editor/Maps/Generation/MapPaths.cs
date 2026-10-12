@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 
-namespace HyperRTS.Editor.Maps.Build
+namespace HyperRTS.Editor.Maps.Generation
 {
     /// <summary>Where a map's generated assets live: next to its spec, named after the map.</summary>
     public sealed class MapPaths

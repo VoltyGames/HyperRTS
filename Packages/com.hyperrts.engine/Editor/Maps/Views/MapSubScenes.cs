@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Views
             var world = World.DefaultGameObjectInjectionWorld
                 ?? throw new System.InvalidOperationException("HyperRTS: no editor world to stream the map's SubScene into.");
             var flags = SceneLoadFlags.BlockOnImport | SceneLoadFlags.BlockOnStreamIn;
-            foreach (var subScene in Object.FindObjectsByType<SubScene>(FindObjectsSortMode.None))
+            foreach (var subScene in Object.FindObjectsByType<SubScene>())
             {
                 var scene = SceneSystem.LoadSceneAsync(world.Unmanaged, subScene.SceneGUID,
                     new SceneSystem.LoadParameters { Flags = flags });

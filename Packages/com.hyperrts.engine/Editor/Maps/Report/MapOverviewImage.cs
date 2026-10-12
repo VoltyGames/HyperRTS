@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Land;
@@ -34,30 +35,30 @@ namespace HyperRTS.Editor.Maps.Report
         };
 
         /// <summary>The built map: painted ground, blocked cells and the measured attack paths.</summary>
-        public static Texture2D Draw(MapLayout layout, MapHeights heights, float[,,] splat, MapClimate climate,
-            MapNavGrid nav, MapShapes shapes, List<MapPlacement> placements, List<MapPath> paths)
+        public static Texture2D Draw(MapGeneration generation, MapNavGrid nav, List<MapPath> paths)
         {
-            var pixels = Shade(layout, heights, p => Blocked(nav, p, SplatColor(layout, splat, climate, p)));
+            var (layout, splat, climate) = (generation.Layout, generation.Splat, generation.Project.Climate);
+            var pixels = Shade(layout, generation.Heights, p => Blocked(nav, p, SplatColor(layout, splat, climate, p)));
             for (var i = 0; i < paths.Count; i++)
             {
                 DrawPath(pixels, layout, nav, paths[i], PathColors[i % PathColors.Length]);
             }
 
-            return Finish(pixels, layout, shapes, placements, false);
+            return Finish(pixels, layout, generation.Shapes, generation.Placements.All, false);
         }
 
         /// <summary>A preview: land-use colours, trees as dark dots, scenery and gameplay objects.</summary>
-        public static Texture2D DrawLand(MapLayout layout, MapHeights heights, MapLand land, MapClimate climate,
-            MapShapes shapes, List<MapPlacement> placements, List<MapTree> trees)
+        public static Texture2D DrawLand(MapGeneration generation)
         {
-            var colors = LandColors(land, climate);
-            var pixels = Shade(layout, heights, p => land.TryCell(p, out var x, out var z) ? colors[land.RegionIndex(x, z)] : Color.black);
-            foreach (var tree in trees)
+            var (layout, land) = (generation.Layout, generation.Land);
+            var colors = LandColors(land, generation.Project.Climate);
+            var pixels = Shade(layout, generation.Heights, p => land.TryCell(p, out var x, out var z) ? colors[land.RegionIndex(x, z)] : Color.black);
+            foreach (var tree in generation.Trees)
             {
                 Disc(pixels, layout, tree.Position, 1.4f * tree.Scale, TreeColor);
             }
 
-            return Finish(pixels, layout, shapes, placements, true);
+            return Finish(pixels, layout, generation.Shapes, generation.Placements.All, true);
         }
 
         private static Color[] Shade(MapLayout layout, MapHeights heights, System.Func<Vector2, Color> ground)

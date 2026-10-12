@@ -1,8 +1,6 @@
+using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Build;
-using HyperRTS.Editor.Maps.Geometry;
-using HyperRTS.Editor.Maps.Layout;
-using HyperRTS.Editor.Maps.Refine;
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Report;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -15,19 +13,19 @@ namespace HyperRTS.Editor.Maps.Views
         public static List<string> Capture(string specPath)
         {
             var project = MapProject.Open(specPath);
-            var spec = project.Spec;
             if (EditorSceneManager.GetActiveScene().path != project.Paths.Scene)
             {
                 EditorSceneManager.OpenScene(project.Paths.Scene, OpenSceneMode.Single);
             }
 
             var issues = new MapIssues();
-            MapRefiner.Refine(spec, project.Climate);
-            var layout = MapExpander.Expand(spec, issues);
-            var shapes = new MapShapes(layout, project.Palette, project.Climate);
-            var views = MapViews.For(layout, shapes, project.Rules);
-            var files = MapViews.Capture(spec.name, views, project.Rules);
-            Debug.Log($"HyperRTS: captured {files.Count} views of '{spec.name}' in {MapReport.ViewsFolder(spec.name)}");
+            var generation = MapGeneration.Lay(project, issues)
+                ?? throw new InvalidOperationException($"HyperRTS: map '{project.Spec.name}' has errors:\n{issues}");
+
+            var name = project.Spec.name;
+            var views = MapViews.For(generation.Layout, generation.Shapes, project.Rules);
+            var files = MapViews.Capture(name, views, project.Rules);
+            Debug.Log($"HyperRTS: captured {files.Count} views of '{name}' in {MapReport.ViewsFolder(name)}");
             return files;
         }
     }

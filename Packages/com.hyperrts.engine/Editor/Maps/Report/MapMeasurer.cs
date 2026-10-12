@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Editor.Maps.Placement;
@@ -39,11 +40,12 @@ namespace HyperRTS.Editor.Maps.Report
 
         public MapMetrics Metrics { get; } = new();
 
-        public static MapMeasurer Measure(MapLayout layout, MapNavGrid nav, MapPlacements placements, int trees,
-            MapPalette palette, MapRules rules, MapIssues issues)
+        public static MapMeasurer Measure(MapGeneration generation, MapNavGrid nav, MapIssues issues)
         {
-            var measurer = new MapMeasurer(layout, nav, palette, rules, issues);
-            measurer.Metrics.trees = trees;
+            var project = generation.Project;
+            var placements = generation.Placements;
+            var measurer = new MapMeasurer(generation.Layout, nav, project.Palette, project.Rules, issues);
+            measurer.Metrics.trees = generation.Trees.Count;
             measurer.Metrics.placements = placements.All.Count;
             if (measurer.FindSpawnCells())
             {

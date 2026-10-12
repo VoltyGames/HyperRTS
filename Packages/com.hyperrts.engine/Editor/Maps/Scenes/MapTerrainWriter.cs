@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Data;
-using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Layout;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,18 +12,10 @@ namespace HyperRTS.Editor.Maps.Scenes
     /// <summary>Writes the generated ground into the map's TerrainData asset: heights, layers, grass and trees.</summary>
     public static class MapTerrainWriter
     {
-        private const int DetailPatch = 32;
-
-        /// <summary>About three splat texels per metre keep road edges crisp.</summary>
-        public static int AlphamapResolution(MapLayout layout) =>
-            Mathf.Clamp(Mathf.NextPowerOfTwo(Mathf.CeilToInt(layout.TerrainBounds.width * 2.5f)), 512, 2048);
-
-        public static int DetailResolution(MapLayout layout) =>
-            Mathf.CeilToInt(layout.TerrainBounds.width * 1.25f / DetailPatch) * DetailPatch;
-
-        public static TerrainData Write(string path, MapLayout layout, MapHeights heights, float[,,] splat,
-            List<int[,]> details, List<MapTree> trees, MapClimate climate)
+        public static TerrainData Write(MapGeneration generation)
         {
+            var (path, layout, climate) = (generation.Project.Paths.Terrain, generation.Layout, generation.Project.Climate);
+            var (heights, splat, trees) = (generation.Heights, generation.Splat, generation.TerrainTrees);
             var data = AssetDatabase.LoadAssetAtPath<TerrainData>(path);
             if (data == null)
             {
@@ -37,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             data.terrainLayers = climate.layers.Select(l => l.terrainLayer).ToArray();
             data.alphamapResolution = splat.GetLength(0);
             data.SetAlphamaps(0, 0, splat);
-            WriteDetails(data, details, climate);
+            WriteDetails(data, generation.Details, climate);
             data.treePrototypes = climate.trees.Select(t => new TreePrototype { prefab = t.prefab }).ToArray();
             data.SetTreeInstances(trees.Select(t => Instance(t, layout)).ToArray(), true);
             data.wavingGrassAmount = 0.25f;
@@ -64,8 +57,8 @@ namespace HyperRTS.Editor.Maps.Scenes
 
         private static void WriteDetails(TerrainData data, List<int[,]> details, MapClimate climate)
         {
-            var resolution = details.Count > 0 ? details[0].GetLength(0) : DetailPatch;
-            data.SetDetailResolution(resolution, DetailPatch);
+            var resolution = details.Count > 0 ? details[0].GetLength(0) : MapLayout.DetailPatch;
+            data.SetDetailResolution(resolution, MapLayout.DetailPatch);
             data.SetDetailScatterMode(DetailScatterMode.CoverageMode);
             data.detailPrototypes = climate.details.Select(Prototype).ToArray();
             for (var i = 0; i < details.Count; i++)

@@ -1,19 +1,15 @@
 using System.IO;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Maps.Data;
-using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Hints;
 using HyperRTS.Editor.Maps.Meshes;
 using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Scenes;
-using HyperRTS.Editor.Maps.Spec;
-using HyperRTS.Editor.Maps.Texturing;
 using HyperRTS.Editor.Maps.Views;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Editor.Maps.Build
 {
@@ -27,37 +23,32 @@ namespace HyperRTS.Editor.Maps.Build
         public static MapReport Build(string specPath)
         {
             var project = MapProject.Open(specPath);
-            var (spec, paths) = (project.Spec, project.Paths);
             var issues = new MapIssues();
-            var generation = MapGeneration.Run(spec, project, issues);
+            var generation = MapGeneration.Run(project, issues);
             if (generation == null)
             {
-                var failed = MapReport.Create(spec, issues, new MapMetrics());
+                var failed = MapReport.Create(project.Spec, issues, new MapMetrics());
                 failed.Write(null);
                 return Log(failed);
             }
 
-            var layout = generation.Layout;
-            var climate = project.Climate;
-            var data = MapTerrainWriter.Write(paths.Terrain, layout, generation.Heights, generation.Splat,
-                generation.Details, generation.TerrainTrees, climate);
-            var ground = Ground(paths, generation, climate, data);
-            var (main, entities, root) = MapSceneWriter.Open(paths, layout, project);
-            MapEnvironmentWriter.Write(paths, layout, generation.Shapes, data, ground, climate, entities, root);
-            MapRoadMeshWriter.Write(paths, layout, generation.Shapes, generation.Heights, root);
-            MapPlacementWriter.Write(generation.Placements.All, generation.Heights, layout.GroundLevel, entities, root);
-            EditorSceneManager.SaveScene(main);
-            MapLightingBaker.Bake(paths);
-            var minimap = MapMinimapCapture.Capture(layout, paths.Minimap);
-            MapEnvironmentWriter.SetMinimap(root, minimap);
-            var report = Measure(spec, generation, project, data, entities, issues);
-            EditorSceneManager.SaveScene(entities);
-            EditorSceneManager.SaveScene(main);
-            EditorSceneManager.CloseScene(entities, true);
+            var data = MapTerrainWriter.Write(generation);
+            var ground = MapEnvironmentWriter.WriteGround(generation, data);
+            var scene = MapScene.Open(generation);
+            MapEnvironmentWriter.Write(scene, generation, data, ground);
+            MapRoadMeshWriter.Write(scene, generation);
+            MapPlacementWriter.Write(scene, generation);
+            scene.SaveMain();
+            MapLightingBaker.Bake(project.Paths);
+            var minimap = MapMinimapCapture.Capture(generation.Layout, project.Paths.Minimap);
+            MapEnvironmentWriter.SetMinimap(scene, minimap);
+            var report = Measure(generation, scene, data, issues);
+            scene.SaveAndCloseEntities();
             AssetDatabase.SaveAssets();
-            var overview = CaptureViews(spec, paths, generation, project);
+            var overview = CaptureViews(generation);
             Log(report);
-            var result = new MapBuildResult(spec, paths, report, layout.Spawns.Count, minimap, overview);
+            var result = new MapBuildResult(project.Spec, project.Paths, report, generation.Layout.Spawns.Count, minimap,
+                overview);
             foreach (var hook in TypeDiscovery.Instances<IMapBuildHook>())
             {
                 hook.OnBuilt(result);
@@ -66,29 +57,16 @@ namespace HyperRTS.Editor.Maps.Build
             return report;
         }
 
-        /// <summary>The terrain material with its macro map, and the ground colour picture foliage blends into.</summary>
-        private static MapGroundLook Ground(MapPaths paths, MapGeneration generation, MapClimate climate, TerrainData data)
-        {
-            var macro = MapMacroPainter.Write(paths.Macro, generation.Layout, generation.Land, generation.Shapes);
-            var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, macro, generation.RowAngle);
-            var picture = MapGroundColor.Write(paths.Ground, generation.Splat, climate, macro);
-            return new MapGroundLook(material, picture);
-        }
-
-        private static MapReport Measure(MapSpec spec, MapGeneration generation, MapProject project, TerrainData data,
-            Scene entities, MapIssues issues)
+        /// <summary>Measures the map on the nav grid the simulation will build, writes its bot hints and the report.</summary>
+        private static MapReport Measure(MapGeneration generation, MapScene scene, TerrainData data, MapIssues issues)
         {
             var layout = generation.Layout;
-            var origin = new Vector3(layout.TerrainBounds.xMin, -layout.GroundLevel, layout.TerrainBounds.yMin);
-            var water = layout.Terrain.waterLevel - layout.GroundLevel;
-            using var nav = MapNavGrid.Build(entities, data, origin, layout.Bounds, water, project.Rules);
-            var measurer = MapMeasurer.Measure(layout, nav, generation.Placements, generation.Trees.Count, project.Palette,
-                project.Rules, issues);
-            MapHintWriter.Write(entities, layout, generation.Shapes, generation.Placements.All, nav, project.Palette,
-                project.Rules, issues);
-            var report = MapReport.Create(spec, issues, measurer.Metrics);
-            report.Write(MapOverviewImage.Draw(layout, generation.Heights, generation.Splat, project.Climate, nav,
-                generation.Shapes, generation.Placements.All, measurer.Paths));
+            using var nav = MapNavGrid.Build(scene.Entities, data, layout.TerrainOrigin, layout.Bounds, layout.WaterHeight,
+                generation.Project.Rules);
+            var measurer = MapMeasurer.Measure(generation, nav, issues);
+            MapHintWriter.Write(scene, generation, nav, issues);
+            var report = MapReport.Create(generation.Project.Spec, issues, measurer.Metrics);
+            report.Write(MapOverviewImage.Draw(generation, nav, measurer.Paths));
             return report;
         }
 
@@ -96,16 +74,18 @@ namespace HyperRTS.Editor.Maps.Build
         /// Fresh screenshots with every build, the overview kept next to the map as its picture; none (null) when
         /// there's no graphics device (batch mode with -nographics).
         /// </summary>
-        private static Texture2D CaptureViews(MapSpec spec, MapPaths paths, MapGeneration generation, MapProject project)
+        private static Texture2D CaptureViews(MapGeneration generation)
         {
-            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
             {
                 return null;
             }
 
+            var project = generation.Project;
             var views = MapViews.For(generation.Layout, generation.Shapes, project.Rules);
-            var files = MapViews.Capture(spec.name, views, project.Rules);
-            return MapOverviewPicture.Keep(files.Find(f => Path.GetFileNameWithoutExtension(f) == MapViews.OverviewName), paths.Overview);
+            var files = MapViews.Capture(project.Spec.name, views, project.Rules);
+            var overview = files.Find(f => Path.GetFileNameWithoutExtension(f) == MapViews.OverviewName);
+            return MapOverviewPicture.Save(overview, project.Paths.Overview);
         }
 
         private static MapReport Log(MapReport report)

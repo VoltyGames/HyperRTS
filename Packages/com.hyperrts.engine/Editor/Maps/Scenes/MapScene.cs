@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using HyperRTS.Editor.Maps.Build;
-using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
 using UnityEditor;
@@ -13,18 +12,35 @@ using UnityEngine.SceneManagement;
 namespace HyperRTS.Editor.Maps.Scenes
 {
     /// <summary>
-    /// Opens a map's scene and SubScene (creating them the first time), clears what the last build generated and
-    /// sets up the match. Generated content lives under the main scene's <c>[Generated]</c> root and in SubScene
-    /// roots named <c>[Generated] …</c>; <c>[Dressing]</c> is never touched.
+    /// A map's scene and SubScene open for a build, cleared of what the last build generated and with the match set
+    /// up. Generated content lives under the main scene's <c>[Generated]</c> root and in SubScene roots named
+    /// <c>[Generated] …</c>; <c>[Dressing]</c> is never touched.
     /// </summary>
-    public static class MapSceneWriter
+    public sealed class MapScene
     {
         public const string Generated = "[Generated]";
         public const string Dressing = "[Dressing]";
 
-        /// <summary>The main scene (active) and the SubScene (open additively), both cleared of generated content.</summary>
-        public static (Scene Main, Scene Entities, Transform Root) Open(MapPaths paths, MapLayout layout, MapProject project)
+        private MapScene(Scene main, Scene entities, Transform root)
         {
+            Main = main;
+            Entities = entities;
+            Root = root;
+        }
+
+        /// <summary>The scene with the terrain and scenery, active.</summary>
+        public Scene Main { get; }
+
+        /// <summary>The SubScene the gameplay entities bake from, open additively.</summary>
+        public Scene Entities { get; }
+
+        /// <summary>The main scene's generated root.</summary>
+        public Transform Root { get; }
+
+        /// <summary>Opens the map's scenes, creating them the first time.</summary>
+        public static MapScene Open(MapGeneration generation)
+        {
+            var (paths, layout) = (generation.Project.Paths, generation.Layout);
             if (!File.Exists(paths.Scene))
             {
                 RTSSceneBuilder.Build(new RTSSceneSpec
@@ -32,7 +48,7 @@ namespace HyperRTS.Editor.Maps.Scenes
                     ScenePath = paths.Scene,
                     MapSize = layout.Size,
                     Players = layout.Spawns.Count,
-                    Rig = project.Palette.rig,
+                    Rig = generation.Project.Palette.rig,
                     Environment = false,
                 });
             }
@@ -45,19 +61,38 @@ namespace HyperRTS.Editor.Maps.Scenes
             SceneManager.MoveGameObjectToScene(root.gameObject, main);
             EnsureDressing(main);
             EnsureDressing(entities);
-            ConfigureMatch(entities, layout, project);
-            return (main, entities, root);
+            ConfigureMatch(entities, generation);
+            return new MapScene(main, entities, root);
         }
 
         /// <summary>A SubScene object the build owns, at the scene root (entities must not have a parent).</summary>
-        public static GameObject CreateEntityObject(Scene entities, string name)
+        public GameObject CreateEntityObject(string name)
         {
             var go = new GameObject($"{Generated} {name}");
-            SceneManager.MoveGameObjectToScene(go, entities);
+            SceneManager.MoveGameObjectToScene(go, Entities);
             return go;
         }
 
-        public static void Rename(GameObject entity, string name) => entity.name = $"{Generated} {name}";
+        /// <summary>An empty object under the main scene's generated root.</summary>
+        public Transform CreateChild(string name)
+        {
+            var child = new GameObject(name).transform;
+            child.SetParent(Root, false);
+            return child;
+        }
+
+        /// <summary>Names a generated SubScene object so the next build clears it.</summary>
+        public static void NameGenerated(GameObject entity, string name) => entity.name = $"{Generated} {name}";
+
+        public void SaveMain() => EditorSceneManager.SaveScene(Main);
+
+        /// <summary>Saves both scenes and closes the SubScene, leaving the map's scene open.</summary>
+        public void SaveAndCloseEntities()
+        {
+            EditorSceneManager.SaveScene(Entities);
+            EditorSceneManager.SaveScene(Main);
+            EditorSceneManager.CloseScene(Entities, true);
+        }
 
         private static void Clear(Scene main, Scene entities)
         {
@@ -76,14 +111,15 @@ namespace HyperRTS.Editor.Maps.Scenes
             }
         }
 
-        private static void ConfigureMatch(Scene entities, MapLayout layout, MapProject project)
+        private static void ConfigureMatch(Scene entities, MapGeneration generation)
         {
+            var (layout, project) = (generation.Layout, generation.Project);
             var match = entities.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<MatchAuthoring>(true))
                 .Single();
             match.mapSize = layout.Size;
             match.navCellSize = project.Rules.navCellSize;
             match.maxSlope = project.Rules.maxSlope;
-            match.waterLevel = layout.Terrain.waterLevel - layout.GroundLevel;
+            match.waterLevel = layout.WaterHeight;
             match.floodBelowWaterLevel = true;
             match.players = layout.Spawns.Select(spawn => new PlayerSlot
             {

@@ -1,48 +1,60 @@
-using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Geometry;
-using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Meshes;
+using HyperRTS.Editor.Maps.Texturing;
 using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Navigation;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Editor.Maps.Scenes
 {
     /// <summary>
-    /// The map's world around the gameplay: terrain and its baked heights, river surfaces, the climate's atmosphere
-    /// and sky, walkable decks over the crossings, and the minimap picture.
+    /// The map's world around the gameplay: the terrain with its material and baked heights, the ground colour
+    /// foliage blends into, river surfaces, the climate's atmosphere and sky, walkable decks over the fords, and the
+    /// minimap picture.
     /// </summary>
     public static class MapEnvironmentWriter
     {
-        public static Terrain Write(MapPaths paths, MapLayout layout, MapShapes shapes, TerrainData data,
-            MapGroundLook ground, MapClimate climate, Scene entities, Transform root)
+        /// <summary>
+        /// The terrain material with its macro map, and the ground colour picture foliage blends into. Written before
+        /// the map's scene opens: opening it unloads the climate the textures are made from.
+        /// </summary>
+        public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation, TerrainData data)
         {
-            var origin = new Vector3(layout.TerrainBounds.xMin, -layout.GroundLevel, layout.TerrainBounds.yMin);
-            var terrain = CreateTerrain(data, ground.Material, climate, origin, root);
-            CreateGroundColor(ground.Picture, layout.TerrainBounds, root);
-            var height = MapSceneWriter.CreateEntityObject(entities, "Terrain Height");
-            height.transform.position = origin;
+            var (climate, paths) = (generation.Project.Climate, generation.Project.Paths);
+            var macro = MapMacroPainter.Write(paths.Macro, generation.Layout, generation.Land, generation.Shapes);
+            var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, macro, generation.RowAngle);
+            var picture = MapGroundColor.Write(paths.Ground, generation.Splat, climate, macro);
+            return (material, picture);
+        }
+
+        public static void Write(MapScene scene, MapGeneration generation, TerrainData data,
+            (Material Material, Texture2D Picture) ground)
+        {
+            var (layout, climate) = (generation.Layout, generation.Project.Climate);
+            CreateTerrain(scene, data, ground.Material, climate, layout.TerrainOrigin);
+            CreateGroundColor(scene, ground.Picture, layout.TerrainBounds);
+            var height = scene.CreateEntityObject("Terrain Height");
+            height.transform.position = layout.TerrainOrigin;
             height.AddComponent<TerrainHeightAuthoring>().terrainData = data;
-            CreateWater(paths, layout, shapes, climate, root);
-            PrefabUtility.InstantiatePrefab(climate.atmosphere, root);
+            CreateWater(scene, generation);
+            PrefabUtility.InstantiatePrefab(climate.atmosphere, scene.Root);
             ApplySky(climate);
-            CreateDecks(shapes, entities, layout.GroundLevel);
-            return terrain;
+            CreateDecks(scene, generation.Shapes, layout.GroundLevel);
         }
 
         /// <summary>Points the scene's minimap at a picture of the map, adding the component the first time.</summary>
-        public static void SetMinimap(Transform root, Texture2D image)
+        public static void SetMinimap(MapScene scene, Texture2D image)
         {
-            var minimap = root.GetComponentInChildren<MinimapImage>();
+            var minimap = scene.Root.GetComponentInChildren<MinimapImage>();
             if (minimap == null)
             {
-                minimap = new GameObject("Minimap Image").AddComponent<MinimapImage>();
-                minimap.transform.SetParent(root, false);
+                minimap = scene.CreateChild("Minimap Image").gameObject.AddComponent<MinimapImage>();
             }
 
             minimap.image = image;
@@ -50,23 +62,23 @@ namespace HyperRTS.Editor.Maps.Scenes
         }
 
         /// <summary>Publishes the ground picture to the foliage shaders while the scene is open.</summary>
-        private static void CreateGroundColor(Texture2D picture, Rect area, Transform root)
+        private static void CreateGroundColor(MapScene scene, Texture2D picture, Rect area)
         {
             var go = new GameObject("Ground Color");
             go.SetActive(false);
-            go.transform.SetParent(root, false);
+            go.transform.SetParent(scene.Root, false);
             var ground = go.AddComponent<GroundColor>();
             ground.picture = picture;
             ground.area = area;
             go.SetActive(true);
         }
 
-        private static Terrain CreateTerrain(TerrainData data, Material material, MapClimate climate, Vector3 origin,
-            Transform root)
+        private static void CreateTerrain(MapScene scene, TerrainData data, Material material, MapClimate climate,
+            Vector3 origin)
         {
             var go = Terrain.CreateTerrainGameObject(data);
             go.name = "Terrain";
-            go.transform.SetParent(root, false);
+            go.transform.SetParent(scene.Root, false);
             go.transform.position = origin;
             var terrain = go.GetComponent<Terrain>();
             terrain.materialTemplate = material;
@@ -78,25 +90,24 @@ namespace HyperRTS.Editor.Maps.Scenes
             terrain.treeDistance = climate.treeDistance;
             terrain.treeBillboardDistance = climate.treeDistance;
             terrain.allowAutoConnect = false;
-            return terrain;
         }
 
-        private static void CreateWater(MapPaths paths, MapLayout layout, MapShapes shapes, MapClimate climate,
-            Transform root)
+        private static void CreateWater(MapScene scene, MapGeneration generation)
         {
+            var (layout, shapes) = (generation.Layout, generation.Shapes);
             if (shapes.Rivers.Count == 0)
             {
                 return;
             }
 
-            var mesh = MapWaterMesh.Build(shapes, layout.Terrain.waterLevel - layout.GroundLevel, layout.TerrainBounds);
-            AssetDatabase.DeleteAsset(paths.Water);
-            AssetDatabase.CreateAsset(mesh, paths.Water);
-            var water = new GameObject("Water");
-            water.transform.SetParent(root, false);
+            var path = generation.Project.Paths.Water;
+            var mesh = MapWaterMesh.Build(shapes, layout.WaterHeight, layout.TerrainBounds);
+            AssetDatabase.DeleteAsset(path);
+            AssetDatabase.CreateAsset(mesh, path);
+            var water = scene.CreateChild("Water").gameObject;
             water.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = water.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = climate.water;
+            renderer.sharedMaterial = generation.Project.Climate.water;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
         }
 
@@ -113,7 +124,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         }
 
         /// <summary>A deck nav area over each ford, turned to span it, at the height units wade; bridges carry their own.</summary>
-        private static void CreateDecks(MapShapes shapes, Scene entities, float groundLevel)
+        private static void CreateDecks(MapScene scene, MapShapes shapes, float groundLevel)
         {
             for (var i = 0; i < shapes.Crossings.Count; i++)
             {
@@ -123,7 +134,7 @@ namespace HyperRTS.Editor.Maps.Scenes
                     continue;
                 }
 
-                var deck = MapSceneWriter.CreateEntityObject(entities, $"{crossing.Kind} {i + 1}");
+                var deck = scene.CreateEntityObject($"{crossing.Kind} {i + 1}");
                 deck.transform.SetPositionAndRotation(
                     new Vector3(crossing.Position.x, crossing.Height - groundLevel, crossing.Position.y),
                     Quaternion.Euler(0f, crossing.Yaw, 0f));

@@ -11,16 +11,27 @@ namespace HyperRTS.Editor.Maps.Layout
     /// Copies a checked spec's sector by the symmetry: features outside the sector, shared features off the axis
     /// and anything outside the map are errors.
     /// </summary>
-    public static class MapExpander
+    public sealed class MapExpander
     {
         public const int MaxPlayers = 8;
         public const string FreeForAll = "ffa";
 
+        private readonly MapLayout _layout;
+        private readonly MapIssues _issues;
+
+        private MapExpander(MapLayout layout, MapIssues issues)
+        {
+            _layout = layout;
+            _issues = issues;
+        }
+
+        private MapSymmetry Symmetry => _layout.Symmetry;
+
         public static MapLayout Expand(MapSpec spec, MapIssues issues)
         {
             var layout = new MapLayout(spec, MapSymmetry.Parse(spec.symmetry));
-            AddSpawns(layout, issues);
-            var expander = new Expansion(layout, issues);
+            var expander = new MapExpander(layout, issues);
+            expander.AddSpawns();
             layout.Resources = expander.Points(spec.resources, "resource", r => r.shared, r => r.pos,
                 (r, t) => r.pos = t.Apply(r.pos));
             layout.Props = expander.Points(spec.props, "prop", p => p.shared, p => p.pos, (p, t) =>
@@ -55,35 +66,116 @@ namespace HyperRTS.Editor.Maps.Layout
             _ => false,
         };
 
-        private static void AddSpawns(MapLayout layout, MapIssues issues)
+        private void AddSpawns()
         {
-            var symmetry = layout.Symmetry;
-            var spawns = layout.Spec.spawns;
-            var players = spawns.Count * symmetry.Copies.Count;
-            if (!PlayersFit(layout.Spec.mode, players))
+            var spec = _layout.Spec;
+            var copies = Symmetry.Copies;
+            var players = spec.spawns.Count * copies.Count;
+            if (!PlayersFit(spec.mode, players))
             {
-                issues.Error($"Mode '{layout.Spec.mode}' doesn't fit {players} players ({spawns.Count} spawns × {symmetry.Copies.Count} copies).");
+                _issues.Error($"Mode '{spec.mode}' doesn't fit {players} players ({spec.spawns.Count} spawns × {copies.Count} copies).");
             }
 
-            var freeForAll = layout.Spec.mode == FreeForAll;
-            for (var i = 0; i < spawns.Count; i++)
+            var freeForAll = spec.mode == FreeForAll;
+            for (var i = 0; i < spec.spawns.Count; i++)
             {
-                var spawn = spawns[i];
-                if (!symmetry.InSector(spawn.pos.ToVector2()))
+                var spawn = spec.spawns[i];
+                if (!Symmetry.InSector(spawn.pos.ToVector2()))
                 {
-                    issues.Error($"Spawn {i + 1} at {spawn.pos} lies outside the authored sector.");
+                    _issues.Error($"Spawn {i + 1} at {spawn.pos} lies outside the authored sector.");
                 }
 
-                for (var copy = 0; copy < symmetry.Copies.Count; copy++)
+                for (var copy = 0; copy < copies.Count; copy++)
                 {
-                    var transform = symmetry.Copies[copy];
-                    var slot = symmetry.Slot(i, copy);
-                    layout.Spawns.Add(new MapSpawn(transform.Apply(spawn.pos.ToVector2()), transform.ApplyYaw(spawn.yaw),
+                    var transform = copies[copy];
+                    var slot = Symmetry.Slot(i, copy);
+                    _layout.Spawns.Add(new MapSpawn(transform.Apply(spawn.pos.ToVector2()), transform.ApplyYaw(spawn.yaw),
                         slot, MapSymmetry.Team(freeForAll, slot, copy), copy));
                 }
             }
 
-            layout.Spawns.Sort((a, b) => a.Slot.CompareTo(b.Slot));
+            _layout.Spawns.Sort((a, b) => a.Slot.CompareTo(b.Slot));
+        }
+
+        /// <summary>Point features: they must lie in the playable area.</summary>
+        private List<MapCopy<T>> Points<T>(List<T> authored, string label, Func<T, bool> shared,
+            Func<T, MapPoint> anchor, Action<T, MapTransform> transform) where T : class =>
+            Copy(authored, label, _layout.Bounds, shared, f => new[] { anchor(f).ToVector2() }, transform);
+
+        /// <summary>
+        /// Lines and areas: they may reach into the margin. <paramref name="mayBeEmpty"/>: no points is allowed
+        /// (farmland that fills the free land).
+        /// </summary>
+        private List<MapCopy<T>> Lines<T>(List<T> authored, string label, Func<T, bool> shared,
+            Func<T, List<MapPoint>> points, bool mayBeEmpty = false) where T : class =>
+            Copy(authored, label, _layout.TerrainBounds, shared, f => points(f).Select(p => p.ToVector2()).ToList(), (f, t) =>
+            {
+                var list = points(f);
+                for (var i = 0; i < list.Count; i++)
+                {
+                    list[i] = t.Apply(list[i]);
+                }
+            }, mayBeEmpty);
+
+        private List<MapCopy<T>> Copy<T>(List<T> authored, string label, Rect bounds, Func<T, bool> shared,
+            Func<T, IReadOnlyList<Vector2>> anchors, Action<T, MapTransform> transform, bool mayBeEmpty = false)
+            where T : class
+        {
+            var copies = new List<MapCopy<T>>();
+            for (var index = 0; index < authored.Count; index++)
+            {
+                var feature = authored[index];
+                var points = anchors(feature);
+                var unbounded = mayBeEmpty && points.Count == 0;
+                if (!unbounded && !Check($"{label} {index + 1}", points, bounds, shared(feature)))
+                {
+                    continue;
+                }
+
+                var count = shared(feature) ? 1 : Symmetry.Copies.Count;
+                for (var copy = 0; copy < count; copy++)
+                {
+                    var placed = JsonUtility.FromJson<T>(JsonUtility.ToJson(feature));
+                    transform(placed, Symmetry.Copies[copy]);
+                    copies.Add(new MapCopy<T>(feature, placed, Symmetry.Copies[copy], index, copy));
+                }
+            }
+
+            return copies;
+        }
+
+        /// <summary>Reports where a feature lies wrong; false when it has no points to copy.</summary>
+        private bool Check(string name, IReadOnlyList<Vector2> points, Rect bounds, bool shared)
+        {
+            if (points.Count == 0)
+            {
+                _issues.Error($"{name} has no points.");
+                return false;
+            }
+
+            if (points.Any(p => Outside(bounds, p)))
+            {
+                _issues.Error($"{name} has points outside {(bounds == _layout.Bounds ? "the playable area" : "the terrain")}.");
+            }
+
+            if (shared && !Symmetry.IsFixed(points))
+            {
+                _issues.Error($"{name} is shared but not symmetric: it must sit on the axis or at the centre.");
+            }
+
+            if (!shared && !points.All(Symmetry.InSector))
+            {
+                _issues.Error($"{name} reaches outside the authored sector; mark it shared or keep it in the sector.");
+            }
+
+            return true;
+        }
+
+        /// <summary>Outside a rectangle, its edges counting as inside.</summary>
+        private static bool Outside(Rect bounds, Vector2 point)
+        {
+            var acrossX = point.x < bounds.xMin || point.x > bounds.xMax;
+            return acrossX || point.y < bounds.yMin || point.y > bounds.yMax;
         }
 
         /// <summary>A river copy that ends where the authored river ends is turned around, so the water keeps flowing.</summary>
@@ -103,95 +195,6 @@ namespace HyperRTS.Editor.Maps.Layout
                 {
                     crossing.t = 1f - crossing.t;
                 }
-            }
-        }
-
-        private sealed class Expansion
-        {
-            private readonly MapLayout _layout;
-            private readonly MapIssues _issues;
-
-            public Expansion(MapLayout layout, MapIssues issues)
-            {
-                _layout = layout;
-                _issues = issues;
-            }
-
-            public List<MapCopy<T>> Points<T>(List<T> authored, string label, Func<T, bool> shared,
-                Func<T, MapPoint> anchor, Action<T, MapTransform> transform) where T : class =>
-                Expand(authored, label, _layout.Bounds, shared, f => new[] { anchor(f).ToVector2() }, transform);
-
-            /// <summary><paramref name="mayBeEmpty"/>: no points is allowed (farmland that fills the free land).</summary>
-            public List<MapCopy<T>> Lines<T>(List<T> authored, string label, Func<T, bool> shared,
-                Func<T, List<MapPoint>> points, bool mayBeEmpty = false) where T : class =>
-                Expand(authored, label, _layout.TerrainBounds, shared, f => points(f).Select(p => p.ToVector2()).ToList(), (f, t) =>
-                {
-                    var list = points(f);
-                    for (var i = 0; i < list.Count; i++)
-                    {
-                        list[i] = t.Apply(list[i]);
-                    }
-                }, mayBeEmpty);
-
-            /// <summary>Gameplay points must lie in the playable area; lines and areas may reach into the margin.</summary>
-            private List<MapCopy<T>> Expand<T>(List<T> authored, string label, Rect bounds, Func<T, bool> shared,
-                Func<T, IReadOnlyList<Vector2>> anchors, Action<T, MapTransform> transform, bool mayBeEmpty = false)
-                where T : class
-            {
-                var copies = new List<MapCopy<T>>();
-                var symmetry = _layout.Symmetry;
-                for (var index = 0; index < authored.Count; index++)
-                {
-                    var feature = authored[index];
-                    var points = anchors(feature);
-                    var unbounded = mayBeEmpty && points.Count == 0;
-                    if (!unbounded && !Check(label, index, points, bounds, shared(feature)))
-                    {
-                        continue;
-                    }
-
-                    var count = shared(feature) ? 1 : symmetry.Copies.Count;
-                    for (var copy = 0; copy < count; copy++)
-                    {
-                        var placed = JsonUtility.FromJson<T>(JsonUtility.ToJson(feature));
-                        transform(placed, symmetry.Copies[copy]);
-                        copies.Add(new MapCopy<T>(feature, placed, symmetry.Copies[copy], index, copy));
-                    }
-                }
-
-                return copies;
-            }
-
-            private bool Check(string label, int index, IReadOnlyList<Vector2> points, Rect bounds, bool shared)
-            {
-                var name = $"{label} {index + 1}";
-                if (points.Count == 0)
-                {
-                    _issues.Error($"{name} has no points.");
-                    return false;
-                }
-
-                if (points.Any(p => p.x < bounds.xMin || p.x > bounds.xMax || p.y < bounds.yMin || p.y > bounds.yMax))
-                {
-                    _issues.Error($"{name} has points outside {(bounds == _layout.Bounds ? "the playable area" : "the terrain")}.");
-                }
-
-                if (shared)
-                {
-                    if (!_layout.Symmetry.IsFixed(points))
-                    {
-                        _issues.Error($"{name} is shared but not symmetric: it must sit on the axis or at the centre.");
-                    }
-
-                    return true;
-                }
-
-                if (points.Any(p => !_layout.Symmetry.InSector(p)))
-                {
-                    _issues.Error($"{name} reaches outside the authored sector; mark it shared or keep it in the sector.");
-                }
-
-                return true;
             }
         }
     }

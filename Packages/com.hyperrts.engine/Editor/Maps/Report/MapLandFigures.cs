@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Land;
 
 namespace HyperRTS.Editor.Maps.Report
@@ -19,13 +20,13 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>Placements that become entities (gameplay objects and destructible scenery): the simulation's load.</summary>
         public int entities;
 
-        public static MapLandFigures Measure(MapLand land, UnityEngine.Rect playable, int trees,
-            IReadOnlyCollection<Placement.MapPlacement> placements)
+        public static MapLandFigures Measure(MapGeneration generation)
         {
+            var (land, placements) = (generation.Land, generation.Placements.All);
             var counts = new Dictionary<MapLandKind, int>();
             var fields = new HashSet<int>();
             var total = 0;
-            land.ForEachIn(playable, (x, z, _) =>
+            land.ForEachIn(generation.Layout.Bounds, (x, z, _) =>
             {
                 var region = land.Region(x, z);
                 var kind = region?.Kind ?? MapLandKind.Open;
@@ -42,7 +43,7 @@ namespace HyperRTS.Editor.Maps.Report
                 shares = counts.OrderByDescending(c => c.Value)
                     .Select(c => new MapLandShare { kind = c.Key.ToString(), share = (float)c.Value / total }).ToList(),
                 fields = fields.Count,
-                trees = trees,
+                trees = generation.Trees.Count,
                 placements = placements.Count,
                 entities = placements.Count(p => p.IsEntity),
             };

@@ -6,7 +6,7 @@ using HyperRTS.Editor.Maps.Spec;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Build
+namespace HyperRTS.Editor.Maps.Generation
 {
     /// <summary>The game's map assets: its one palette and one rules asset, and the climate a spec names.</summary>
     public sealed class MapProject

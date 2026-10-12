@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Placement;
-using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
@@ -16,24 +16,22 @@ namespace HyperRTS.Editor.Maps.Scenes
     /// </summary>
     public static class MapPlacementWriter
     {
-        /// <summary>Heights are terrain heights; <paramref name="groundLevel"/> is the terrain height of world y = 0.</summary>
-        public static void Write(List<MapPlacement> placements, MapHeights heights, float groundLevel, Scene entities,
-            Transform root)
+        public static void Write(MapScene scene, MapGeneration generation)
         {
-            var scenery = new GameObject("Scenery").transform;
-            scenery.SetParent(root, false);
+            var (heights, groundLevel) = (generation.Heights, generation.Layout.GroundLevel);
+            var scenery = scene.CreateChild("Scenery");
             var counts = new Dictionary<string, int>();
-            foreach (var placement in placements)
+            foreach (var placement in generation.Placements.All)
             {
                 var key = placement.Entry.key;
                 counts[key] = counts.TryGetValue(key, out var count) ? count + 1 : 1;
                 var name = $"{key} {counts[key]}";
                 var instance = placement.IsEntity
-                    ? (GameObject)PrefabUtility.InstantiatePrefab(placement.Entry.prefab, entities)
+                    ? (GameObject)PrefabUtility.InstantiatePrefab(placement.Entry.prefab, scene.Entities)
                     : (GameObject)PrefabUtility.InstantiatePrefab(placement.Entry.prefab, scenery);
                 if (placement.IsEntity)
                 {
-                    MapSceneWriter.Rename(instance, name);
+                    MapScene.NameGenerated(instance, name);
                     Configure(instance, placement);
                 }
                 else

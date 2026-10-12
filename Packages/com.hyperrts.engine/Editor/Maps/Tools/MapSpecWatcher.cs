@@ -1,5 +1,5 @@
 using System.Linq;
-using HyperRTS.Editor.Maps.Build;
+using HyperRTS.Editor.Maps.Generation;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Maps.Tools
