@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Data
 {
@@ -8,6 +9,7 @@ namespace HyperRTS.Editor.Maps.Data
     public sealed class MapPropDensity
     {
         [Tooltip("Palette key.")]
+        [MapKey(typeof(MapPaletteEntry))]
         public string kind;
 
         [Min(0f)]

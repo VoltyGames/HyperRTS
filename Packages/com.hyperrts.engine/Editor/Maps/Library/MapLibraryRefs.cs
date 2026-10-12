@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
 using UnityEditor;
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Maps.Library
@@ -12,22 +14,38 @@ namespace HyperRTS.Editor.Maps.Library
     [Serializable]
     public sealed class MapLibraryRefs
     {
+        [MapAsset(typeof(TerrainLayer))]
         public string terrainLayer;
+        [MapAsset(typeof(GameObject))]
         public string mesh;
+        [MapAsset(typeof(Texture2D))]
         public string texture;
+        [MapAsset(typeof(GameObject))]
         public string prefab;
+        [MapAsset(typeof(GameObject))]
         public string destructible;
+        [MapAsset(typeof(Material))]
         public string material;
+        [MapAsset(typeof(Material))]
         public string water;
+        [MapAsset(typeof(GameObject))]
         public string atmosphere;
+        [MapAsset(typeof(Material))]
         public string skybox;
+        [MapAsset(typeof(GameObject))]
         public string rig;
         public List<MapResourcePath> startingResources = new();
 
+        [MapKey(typeof(MapClimateSurface))]
+
         public List<string> surfaces = new();
+        [MapKey(typeof(MapRoadClass))]
         public List<string> roadClasses = new();
+        [MapKey(typeof(MapFarmlandKit))]
         public List<string> farmlandKits = new();
+        [MapKey(typeof(MapBeltKit))]
         public List<string> beltKits = new();
+        [MapKey(typeof(MapWoodlandKit))]
         public List<string> woodlandKits = new();
 
         /// <summary>The library file these were read from (project-relative), named in every error.</summary>

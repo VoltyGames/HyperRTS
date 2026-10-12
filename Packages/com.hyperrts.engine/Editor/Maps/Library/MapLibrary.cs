@@ -60,15 +60,29 @@ namespace HyperRTS.Editor.Maps.Library
             return library;
         }
 
+        /// <summary>Every library item class (<c>MapClimateLayer</c>, <c>MapClimateSurface</c>...), in listing order.</summary>
+        public static IReadOnlyList<Type> ItemTypes { get; } = TypeNames.Keys.ToList();
+
         /// <summary>The library's type name for <typeparamref name="T"/> (<c>surface</c>, <c>prop</c>...).</summary>
-        public static string TypeName<T>() => TypeNames[typeof(T)];
+        public static string TypeName<T>() => TypeName(typeof(T));
+
+        public static string TypeName(Type type) => TypeNames.TryGetValue(type, out var name)
+            ? name
+            : throw new ArgumentException($"HyperRTS: {type.Name} is not a map library item class.", nameof(type));
 
         /// <summary>Every key of a type, in ordinal order.</summary>
-        public IReadOnlyList<string> Keys<T>() => _files[TypeName<T>()].Keys.ToList();
+        public IReadOnlyList<string> Keys<T>() => Keys(typeof(T));
+
+        public IReadOnlyList<string> Keys(Type type) => _files[TypeName(type)].Keys.ToList();
+
+        /// <summary>Whether the library holds an item of <paramref name="type"/> called <paramref name="key"/>.</summary>
+        public bool Contains(Type type, string key) => _files[TypeName(type)].ContainsKey(key ?? string.Empty);
 
         /// <summary>The project path of an item's file.</summary>
-        public string FileOf<T>(string key) =>
-            _files[TypeName<T>()].TryGetValue(key, out var file) ? file : throw Missing<T>(key, null);
+        public string FileOf<T>(string key) => FileOf(typeof(T), key);
+
+        public string FileOf(Type type, string key) =>
+            _files[TypeName(type)].TryGetValue(key, out var file) ? file : throw Missing(type, key, null);
 
         /// <summary>The item <paramref name="key"/>; <paramref name="referrer"/> (a file or a spec) is named if it is missing.</summary>
         public T Get<T>(string key, string referrer) where T : class, IMapLibraryItem, new() => Get<T>(key, referrer, out _);
@@ -170,11 +184,13 @@ namespace HyperRTS.Editor.Maps.Library
             }
         }
 
-        private Exception Missing<T>(string key, string referrer)
+        private Exception Missing<T>(string key, string referrer) => Missing(typeof(T), key, referrer);
+
+        private Exception Missing(Type type, string key, string referrer)
         {
             var by = string.IsNullOrEmpty(referrer) ? string.Empty : $"'{referrer}' names it, but ";
             return new KeyNotFoundException(
-                $"HyperRTS: no map library {TypeName<T>()} '{key}': {by}there is no {key}.{TypeName<T>()}.json under '{Root}'.");
+                $"HyperRTS: no map library {TypeName(type)} '{key}': {by}there is no {key}.{TypeName(type)}.json under '{Root}'.");
         }
     }
 }

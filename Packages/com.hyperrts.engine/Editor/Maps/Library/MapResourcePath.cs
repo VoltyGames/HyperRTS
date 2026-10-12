@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Simulation.Resources;
 
 namespace HyperRTS.Editor.Maps.Library
 {
@@ -6,6 +7,7 @@ namespace HyperRTS.Editor.Maps.Library
     [Serializable]
     public sealed class MapResourcePath
     {
+        [MapAsset(typeof(ResourceType))]
         public string type;
         public int amount;
     }

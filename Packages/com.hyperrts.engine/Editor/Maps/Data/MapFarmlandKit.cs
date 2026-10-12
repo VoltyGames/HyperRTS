@@ -23,9 +23,12 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Weedy strip round each field (metres).")]
         public float marginWidth = 2.5f;
 
+        [MapKey(typeof(MapClimateSurface))]
+
         public string marginSurface;
 
         [Tooltip("Belt kit planted across the field ends; empty for none.")]
+        [MapKey(typeof(MapBeltKit))]
         public string beltKit;
 
         [Tooltip("A belt on every Nth line of field ends.")]
@@ -33,6 +36,7 @@ namespace HyperRTS.Editor.Maps.Data
         public int beltEvery = 1;
 
         [Tooltip("Road class of the tracks along the field ends; empty for none.")]
+        [MapKey(typeof(MapRoadClass))]
         public string trackClass;
 
         [Tooltip("Field fragments smaller than this (m²) become leftover ground.")]

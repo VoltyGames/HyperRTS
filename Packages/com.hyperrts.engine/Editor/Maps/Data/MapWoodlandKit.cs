@@ -13,6 +13,7 @@ namespace HyperRTS.Editor.Maps.Data
         public string key;
 
         [Tooltip("Forest floor.")]
+        [MapKey(typeof(MapClimateSurface))]
         public string surface;
 
         [Tooltip("Canopy trees per hectare.")]
@@ -23,6 +24,8 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Band inside the wood's outline where shrubs and young trees grow (metres).")]
         public float edgeWidth = 6f;
+
+        [MapKey(typeof(MapClimateSurface))]
 
         public string edgeSurface;
 

@@ -30,24 +30,34 @@ namespace HyperRTS.Editor.Maps.Data
         public float frontYard = 5f;
 
         [Tooltip("Palette keys of the houses, picked in turn with some shuffling.")]
+        [MapKey(typeof(MapPaletteEntry))]
         public List<string> houses = new();
 
         [Tooltip("Palette keys of outbuildings (summer kitchens, sheds, barns) placed behind the house.")]
+        [MapKey(typeof(MapPaletteEntry))]
         public List<string> outbuildings = new();
 
         [Min(0)]
         public int maxOutbuildings = 2;
 
         [Tooltip("Palette keys of the fence sections along the street, between plots, and the gate.")]
+        [MapKey(typeof(MapPaletteEntry))]
         public string frontFence;
 
+        [MapKey(typeof(MapPaletteEntry))]
+
         public string sideFence;
+        [MapKey(typeof(MapPaletteEntry))]
         public string gate;
 
         [Tooltip("Climate surfaces of the yard, the vegetable garden and the back of the plot.")]
+        [MapKey(typeof(MapClimateSurface))]
         public string yardSurface;
 
+        [MapKey(typeof(MapClimateSurface))]
+
         public string gardenSurface;
+        [MapKey(typeof(MapClimateSurface))]
         public string backSurface;
 
         [Tooltip("Share of the depth behind the yard that is vegetable garden; the rest is the back.")]
@@ -55,6 +65,7 @@ namespace HyperRTS.Editor.Maps.Data
         public float gardenShare = 0.55f;
 
         [Tooltip("Climate tree of the orchard at the back of the plot; empty leaves it meadow.")]
+        [MapKey(typeof(MapClimateTree))]
         public string orchardTree;
 
         public float orchardSpacing = 6f;
@@ -62,9 +73,11 @@ namespace HyperRTS.Editor.Maps.Data
         public List<MapPlotProp> extras = new();
 
         [Tooltip("Palette key of a pipe section run along the plot fronts (gas pipe); empty for none.")]
+        [MapKey(typeof(MapPaletteEntry))]
         public string streetPipe;
 
         [Tooltip("Palette key of the poles along the street; empty for none.")]
+        [MapKey(typeof(MapPaletteEntry))]
         public string streetPole;
 
         public float poleSpacing = 35f;

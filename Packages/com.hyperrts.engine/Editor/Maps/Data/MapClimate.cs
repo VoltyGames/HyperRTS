@@ -51,18 +51,22 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Header("Ground")]
         [Tooltip("Surface of open ground nothing else claims.")]
+        [MapKey(typeof(MapClimateSurface))]
         public string groundSurface;
 
         [Tooltip("Surface patched into open ground by noise, so it never reads as one flat texture.")]
+        [MapKey(typeof(MapClimateSurface))]
         public string groundVariation;
 
         [Range(0f, 1f)]
         public float variationCoverage = 0.35f;
 
         [Tooltip("Surface of the ground around each base.")]
+        [MapKey(typeof(MapClimateSurface))]
         public string baseSurface;
 
         [Tooltip("Surface on steep ground; it fades in from Slope Start to Slope Full degrees.")]
+        [MapKey(typeof(MapClimateSurface))]
         public string slopeSurface;
 
         public float slopeStart = 22f;
@@ -70,26 +74,31 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Header("Rivers and ravines")]
         [Tooltip("Surface of river banks just above the water.")]
+        [MapKey(typeof(MapClimateSurface))]
         public string shoreSurface;
 
         [Tooltip("Width of the bank band above the water line (metres).")]
         public float shoreWidth = 6f;
 
         [Tooltip("Surface of the floodplain meadows beyond the banks.")]
+        [MapKey(typeof(MapClimateSurface))]
         public string floodplainSurface;
 
         public float floodplainWidth = 18f;
 
         [Tooltip("Plants of the shallows along the banks (reeds); empty for none.")]
+        [MapKey(typeof(MapClimateDetail))]
         public string reedDetail;
 
         [Tooltip("Width of the reed band reaching out from the water's edge (metres).")]
         public float reedWidth = 3f;
 
         [Tooltip("Surface inside ravines (floor and walls).")]
+        [MapKey(typeof(MapClimateSurface))]
         public string ravineSurface;
 
         [Tooltip("Surface of the gentle rim slopes outside ravine cuts.")]
+        [MapKey(typeof(MapClimateSurface))]
         public string ravineRimSurface;
 
         [Header("Water and sky")]

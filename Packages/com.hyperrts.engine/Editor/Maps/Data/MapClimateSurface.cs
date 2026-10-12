@@ -13,6 +13,7 @@ namespace HyperRTS.Editor.Maps.Data
         public string key;
 
         [Tooltip("Key of the terrain layer this surface paints.")]
+        [MapKey(typeof(MapClimateLayer))]
         public string layer;
 
         public List<MapTreeDensity> trees = new();

@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Data
 {
@@ -6,6 +7,7 @@ namespace HyperRTS.Editor.Maps.Data
     [Serializable]
     public sealed class MapTreeDensity
     {
+        [MapKey(typeof(MapClimateTree))]
         public string tree;
         public float perHectare = 100f;
     }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using HyperRTS.Editor.Maps.Library;
 using UnityEngine;
 
@@ -15,6 +15,7 @@ namespace HyperRTS.Editor.Maps.Data
         public float width = 6f;
 
         [Tooltip("Surface painted under the road and its soft edges.")]
+        [MapKey(typeof(MapClimateSurface))]
         public string surface;
 
         [Tooltip("Material of the road mesh laid over the terrain (HyperRTS/Road); empty paints the terrain only.")]
@@ -27,6 +28,7 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Strip of grass and weeds either side of the road (metres).")]
         public float vergeWidth = 3f;
 
+        [MapKey(typeof(MapClimateSurface))]
         public string vergeSurface;
 
         [Tooltip("At a junction the lower-ranked road ends under the higher-ranked one.")]

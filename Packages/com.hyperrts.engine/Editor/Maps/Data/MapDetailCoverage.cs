@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Data
 {
@@ -7,6 +8,7 @@ namespace HyperRTS.Editor.Maps.Data
     [Serializable]
     public sealed class MapDetailCoverage
     {
+        [MapKey(typeof(MapClimateDetail))]
         public string detail;
 
         [Range(0f, 1f)]

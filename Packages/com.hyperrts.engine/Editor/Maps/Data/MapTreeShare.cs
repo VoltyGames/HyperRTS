@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Data
 {
@@ -7,6 +8,7 @@ namespace HyperRTS.Editor.Maps.Data
     [Serializable]
     public sealed class MapTreeShare
     {
+        [MapKey(typeof(MapClimateTree))]
         public string tree;
 
         [Min(0f)]

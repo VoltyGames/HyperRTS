@@ -24,12 +24,14 @@ namespace HyperRTS.Editor.Maps.Data
         public List<MapTreeShare> trees = new();
 
         [Tooltip("Climate tree (shrub) filling the gaps and edges; empty for none.")]
+        [MapKey(typeof(MapClimateTree))]
         public string shrub;
 
         [Range(0f, 1f)]
         public float shrubShare = 0.3f;
 
         [Tooltip("Ground under the belt.")]
+        [MapKey(typeof(MapClimateSurface))]
         public string surface;
 
         [Tooltip("A gap every this many metres along the belt (0 for none), as farm tracks cut through belts.")]
