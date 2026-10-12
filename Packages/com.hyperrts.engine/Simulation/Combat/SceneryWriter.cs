@@ -65,10 +65,9 @@ namespace HyperRTS.Simulation.Combat
             {
                 var remains = ecb.Instantiate(spawn.Prefab);
                 ecb.SetComponent(remains, _transforms[scenery]);
-                if (!witnessed && _effects.TryGetComponent(spawn.Prefab, out var effect))
+                if (!witnessed && _effects.HasComponent(spawn.Prefab))
                 {
-                    effect.Played = true;
-                    ecb.SetComponent(remains, effect);
+                    ecb.SetComponentEnabled<SpawnEffect>(remains, false);
                 }
             }
 

@@ -45,7 +45,7 @@ namespace HyperRTS.Network.Combat
             foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>().WithAll<NetworkStreamInGame>()
                          .WithEntityAccess())
             {
-                var viewer = GetViewer(ref state, connection);
+                var viewer = ConnectionPlayers.Faction(ref state, connection);
                 var sent = 0;
                 for (var i = 0; i < impacts.Length && sent < MaxPerTick; i++)
                 {
@@ -60,17 +60,6 @@ namespace HyperRTS.Network.Combat
                     sent++;
                 }
             }
-        }
-
-        /// <summary>The connection's faction; observers (no slot) see every impact.</summary>
-        private byte GetViewer(ref SystemState state, Entity connection)
-        {
-            if (!SystemAPI.HasComponent<ConnectionPlayer>(connection))
-            {
-                return Faction.Neutral;
-            }
-
-            return SystemAPI.GetComponent<Player>(SystemAPI.GetComponent<ConnectionPlayer>(connection).Player).Faction;
         }
 
         private static ImpactRpc ToRpc(in ImpactEvent impact) => new()

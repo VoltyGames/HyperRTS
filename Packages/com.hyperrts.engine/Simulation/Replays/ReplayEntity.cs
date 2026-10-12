@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Replays
         /// <summary>Construction progress in 0..254, or <see cref="Finished"/>.</summary>
         public byte Progress;
 
-        public readonly float3 Position => new float3(X, Y, Z) * PositionStep;
+        public readonly float3 Position => Dequantize(X, Y, Z);
         public readonly float HealthFraction => Health / 255f;
         public readonly bool UnderConstruction => Progress != Finished;
         public readonly float ConstructionValue => Progress / 254f;
@@ -35,22 +35,27 @@ namespace HyperRTS.Simulation.Replays
         public static ReplayEntity Capture(int key, int typeId, byte faction, in LocalTransform transform,
             float healthFraction, float constructionProgress, bool underConstruction)
         {
-            var cell = (int3)math.round(transform.Position / PositionStep);
             var forward = math.mul(transform.Rotation, math.forward());
             var yaw = math.atan2(forward.x, forward.z);
             return new ReplayEntity
             {
                 Key = key,
                 TypeId = typeId,
-                X = (short)math.clamp(cell.x, short.MinValue, short.MaxValue),
-                Y = (short)math.clamp(cell.y, short.MinValue, short.MaxValue),
-                Z = (short)math.clamp(cell.z, short.MinValue, short.MaxValue),
+                X = Quantize(transform.Position.x),
+                Y = Quantize(transform.Position.y),
+                Z = Quantize(transform.Position.z),
                 Yaw = (ushort)((int)math.round(yaw / YawStep) & 0xFFFF),
                 Faction = faction,
                 Health = (byte)math.round(math.saturate(healthFraction) * 255f),
                 Progress = underConstruction ? (byte)math.round(math.saturate(constructionProgress) * 254f) : Finished,
             };
         }
+
+        /// <summary>One world coordinate in <see cref="PositionStep"/>s, clamped to 16 bits.</summary>
+        public static short Quantize(float metres) =>
+            (short)math.clamp((int)math.round(metres / PositionStep), short.MinValue, short.MaxValue);
+
+        public static float3 Dequantize(short x, short y, short z) => new float3(x, y, z) * PositionStep;
 
         /// <summary>Transform between this sample and <paramref name="next"/>, turning the short way round.</summary>
         public readonly LocalTransform Interpolate(in ReplayEntity next, float t, float scale)

@@ -121,7 +121,7 @@ namespace HyperRTS.Network.Scenery
             foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>().WithAll<NetworkStreamInGame>()
                          .WithEntityAccess())
             {
-                var team = relations.GetTeam(Viewer(ref state, connection));
+                var team = relations.GetTeam(ConnectionPlayers.Faction(ref state, connection));
                 if (SystemAPI.HasComponent<ScenerySynced>(connection))
                 {
                     PostNews(ecb, connection, news, team, true, changes);
@@ -135,17 +135,6 @@ namespace HyperRTS.Network.Scenery
                 Post(ecb, connection, false, changes);
                 ecb.AddComponent<ScenerySynced>(connection);
             }
-        }
-
-        /// <summary>The connection's faction; observers (no slot) view as neutral, whose team 0 sees everything.</summary>
-        private byte Viewer(ref SystemState state, Entity connection)
-        {
-            if (!SystemAPI.HasComponent<ConnectionPlayer>(connection))
-            {
-                return Faction.Neutral;
-            }
-
-            return SystemAPI.GetComponent<Player>(SystemAPI.GetComponent<ConnectionPlayer>(connection).Player).Faction;
         }
 
         private static void PostNews(EntityCommandBuffer ecb, Entity connection, NativeList<SceneryNews> news,

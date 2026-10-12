@@ -45,7 +45,7 @@ namespace HyperRTS.Network.Audio
             foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>().WithAll<NetworkStreamInGame>()
                          .WithEntityAccess())
             {
-                var listener = GetListener(ref state, connection);
+                var listener = ConnectionPlayers.Faction(ref state, connection);
                 var sent = 0;
                 for (var i = 0; i < sounds.Length && sent < MaxPerTick; i++)
                 {
@@ -60,17 +60,6 @@ namespace HyperRTS.Network.Audio
                     sent++;
                 }
             }
-        }
-
-        /// <summary>The connection's faction; observers (no slot) hear every world sound.</summary>
-        private byte GetListener(ref SystemState state, Entity connection)
-        {
-            if (!SystemAPI.HasComponent<ConnectionPlayer>(connection))
-            {
-                return Faction.Neutral;
-            }
-
-            return SystemAPI.GetComponent<Player>(SystemAPI.GetComponent<ConnectionPlayer>(connection).Player).Faction;
         }
 
         private static SoundRpc ToRpc(in SoundEvent sound) => new()

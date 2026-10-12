@@ -16,14 +16,10 @@ namespace HyperRTS.Presentation.Destruction
         protected override void OnUpdate()
         {
             CompleteDependency();
-            foreach (var (effect, place) in SystemAPI.Query<RefRW<SpawnEffect>, RefRO<LocalToWorld>>())
+            foreach (var (effect, pending, place) in SystemAPI
+                         .Query<RefRO<SpawnEffect>, EnabledRefRW<SpawnEffect>, RefRO<LocalToWorld>>())
             {
-                if (effect.ValueRO.Played)
-                {
-                    continue;
-                }
-
-                effect.ValueRW.Played = true;
+                pending.ValueRW = false;
                 if (effect.ValueRO.Prefab.IsValid())
                 {
                     Object.Instantiate(effect.ValueRO.Prefab.Value, place.ValueRO.Position, place.ValueRO.Rotation);

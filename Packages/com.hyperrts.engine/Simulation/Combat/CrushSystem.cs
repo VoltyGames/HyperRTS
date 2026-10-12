@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Spatial;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
@@ -68,33 +69,47 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                var underfoot = new Underfoot { Victims = new NativeList<Entity>(8, Allocator.Temp) };
-                Index.Query(transform.Position, agent.Radius + Reach, ref underfoot);
-                foreach (var victim in underfoot.Victims)
+                var underfoot = new Underfoot
                 {
-                    var crushable = Destructibles.TryGetComponent(victim, out var destructible) && destructible.Crush > 0;
-                    if (!crushable || destructible.Crush > crusher.Size || !Common.Health.IsAlive(Health, victim))
-                    {
-                        continue;
-                    }
-
-                    Damage.Add(new DamageEvent
-                    {
-                        Target = victim,
-                        Position = transform.Position,
-                        Origin = transform.Position,
-                        Source = entity,
-                        Amount = Lethal,
-                    });
-                }
+                    Damage = Damage,
+                    Destructibles = Destructibles,
+                    Health = Health,
+                    Crusher = entity,
+                    Size = crusher.Size,
+                    Position = transform.Position,
+                };
+                Index.Query(transform.Position, agent.Radius + Reach, ref underfoot);
             }
         }
 
+        /// <summary>Hits each crushable victim as the index finds it, so hits queue in the index's stable order.</summary>
         private struct Underfoot : ISpatialVisitor
         {
-            public NativeList<Entity> Victims;
+            public DamageWriter Damage;
+            [ReadOnly] public ComponentLookup<Destructible> Destructibles;
+            [ReadOnly] public ComponentLookup<Health> Health;
+            public Entity Crusher;
+            public int Size;
+            public float3 Position;
 
-            public void Visit(in SpatialEntry entry) => Victims.Add(entry.Entity);
+            public void Visit(in SpatialEntry entry)
+            {
+                var victim = entry.Entity;
+                var crushable = Destructibles.TryGetComponent(victim, out var destructible) && destructible.Crush > 0;
+                if (!crushable || destructible.Crush > Size || !Common.Health.IsAlive(Health, victim))
+                {
+                    return;
+                }
+
+                Damage.Add(new DamageEvent
+                {
+                    Target = victim,
+                    Position = Position,
+                    Origin = Position,
+                    Source = Crusher,
+                    Amount = Lethal,
+                });
+            }
         }
     }
 }

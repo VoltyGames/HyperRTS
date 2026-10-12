@@ -19,13 +19,12 @@ namespace HyperRTS.Simulation.Replays
 
         public static ReplayImpact Capture(in ImpactEvent impact)
         {
-            var cell = (int3)math.round(impact.Position / ReplayEntity.PositionStep);
             return new ReplayImpact
             {
                 TypeId = impact.TypeId,
-                X = (short)math.clamp(cell.x, short.MinValue, short.MaxValue),
-                Y = (short)math.clamp(cell.y, short.MinValue, short.MaxValue),
-                Z = (short)math.clamp(cell.z, short.MinValue, short.MaxValue),
+                X = ReplayEntity.Quantize(impact.Position.x),
+                Y = ReplayEntity.Quantize(impact.Position.y),
+                Z = ReplayEntity.Quantize(impact.Position.z),
                 Radius = (ushort)math.clamp(math.round(impact.Radius / ReplayEntity.PositionStep), 0, ushort.MaxValue),
                 Faction = impact.Faction,
                 Surface = impact.Surface,
@@ -35,7 +34,7 @@ namespace HyperRTS.Simulation.Replays
         public readonly ImpactEvent ToEvent() => new()
         {
             TypeId = TypeId,
-            Position = new float3(X, Y, Z) * ReplayEntity.PositionStep,
+            Position = ReplayEntity.Dequantize(X, Y, Z),
             Radius = Radius * ReplayEntity.PositionStep,
             Faction = Faction,
             Surface = Surface,

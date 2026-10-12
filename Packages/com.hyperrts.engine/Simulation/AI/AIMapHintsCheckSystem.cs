@@ -33,27 +33,15 @@ namespace HyperRTS.Simulation.AI
             }
 
             var hints = SystemAPI.GetSingletonEntity<AIMapHints>();
-            var slots = SystemAPI.GetBuffer<AISlotHint>(hints);
+            var view = new AIMapHintsView(SystemAPI.GetBuffer<AISlotHint>(hints),
+                SystemAPI.GetBuffer<AILaneHint>(hints), SystemAPI.GetBuffer<AIHintPoint>(hints));
             foreach (var player in SystemAPI.Query<RefRO<Player>>().WithAll<AIPlayer>())
             {
-                if (!HasSlot(slots, player.ValueRO.Faction))
+                if (!view.TryGetSlot(player.ValueRO.Faction, out _))
                 {
                     Debug.LogError($"Map '{map}' has no AI map hints for slot {player.ValueRO.Faction}, so that AI player stays idle.");
                 }
             }
-        }
-
-        private static bool HasSlot(DynamicBuffer<AISlotHint> slots, byte faction)
-        {
-            for (var i = 0; i < slots.Length; i++)
-            {
-                if (slots[i].Slot == faction)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }

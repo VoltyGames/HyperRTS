@@ -23,7 +23,8 @@ namespace HyperRTS.Presentation.Destruction
             CompleteDependency();
             var transforms = SystemAPI.GetComponentLookup<LocalTransform>();
             foreach (var (health, stages, shown, place) in SystemAPI
-                         .Query<RefRO<Health>, DynamicBuffer<DamageStage>, RefRW<ShownDamageStage>, RefRO<LocalToWorld>>())
+                         .Query<RefRO<Health>, DynamicBuffer<DamageStage>, RefRW<ShownDamageStage>, RefRO<LocalToWorld>>()
+                         .WithChangeFilter<Health>())
             {
                 var index = Current(stages, health.ValueRO.Fraction);
                 var previous = shown.ValueRO.Index;
