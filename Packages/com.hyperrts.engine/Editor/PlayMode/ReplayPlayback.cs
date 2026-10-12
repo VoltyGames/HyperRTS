@@ -7,25 +7,26 @@ using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>HyperRTS ▸ Replays: save the Play-mode recording, or open a replay's scene and play it back.</summary>
+    /// <summary>Saves the Play-mode recording, or opens a replay's scene and plays it back once Play mode starts.</summary>
     [InitializeOnLoad]
-    internal static class ReplayMenu
+    internal static class ReplayPlayback
     {
-        private const string Save = EditorMenu.Replays + "Save Recording...";
-        private const string Play = EditorMenu.Replays + "Play Replay...";
         private const string Extension = "hrreplay";
 
         // SessionState survives the domain reload that entering Play mode may bring; a static would not.
-        private const string PendingKey = "HyperRTS.ReplayMenu.Pending";
+        private const string PendingKey = "HyperRTS.ReplayPlayback.Pending";
 
-        static ReplayMenu()
+        static ReplayPlayback()
         {
             EditorApplication.playModeStateChanged += BeginPending;
             DropPendingUnlessEnteringPlay();
         }
 
-        [MenuItem(Save, false, EditorMenu.ReplaysPriority)]
-        private static void SaveRecording()
+        public static bool CanSave => TryGetRecordingWorld(out _);
+
+        public static bool CanPlay => !Application.isPlaying;
+
+        public static void SaveRecording()
         {
             if (!TryGetRecordingWorld(out var world))
             {
@@ -42,11 +43,7 @@ namespace HyperRTS.Editor.PlayMode
             }
         }
 
-        [MenuItem(Save, true)]
-        private static bool CanSave() => TryGetRecordingWorld(out _);
-
-        [MenuItem(Play, false, EditorMenu.ReplaysPriority + 1)]
-        private static void PlayReplay()
+        public static void PlayReplay()
         {
             var path = EditorUtility.OpenFilePanel("Play Replay", "", Extension);
             if (string.IsNullOrEmpty(path) || !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
@@ -64,9 +61,6 @@ namespace HyperRTS.Editor.PlayMode
             EditorApplication.EnterPlaymode();
             EditorApplication.update += DropPendingUnlessEnteringPlay;
         }
-
-        [MenuItem(Play, true)]
-        private static bool CanPlay() => !Application.isPlaying;
 
         private static void BeginPending(PlayModeStateChange change)
         {

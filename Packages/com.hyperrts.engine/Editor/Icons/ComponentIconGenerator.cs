@@ -1,4 +1,6 @@
 using HyperRTS.Core;
+using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Generators;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -6,7 +8,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Icons
 {
     /// <summary>Generates the module icons listed in <see cref="HyperRTSIcons"/>.</summary>
-    public static class ComponentIconGenerator
+    public sealed class ComponentIconGenerator : Generator
     {
         private const int Size = 64;
 
@@ -25,8 +27,17 @@ namespace HyperRTS.Editor.Icons
             (HyperRTSIcons.Vision, new Color(0.60f, 0.60f, 0.25f)),
         };
 
-        [MenuItem(EditorMenu.GenerateIcons, false, EditorMenu.GenerateIconsPriority)]
-        public static void Generate()
+        public override string Name => "Component icons";
+
+        public override string Group => "HyperRTS";
+
+        public override int Order => 10;
+
+        public override string Description => "Module icons for the engine's authoring components.";
+
+        public override bool Available => EnginePackage.Writable;
+
+        public override void Run()
         {
             foreach (var (iconPath, color) in Modules)
             {

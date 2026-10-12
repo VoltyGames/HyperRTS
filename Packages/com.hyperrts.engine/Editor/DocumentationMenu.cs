@@ -11,5 +11,11 @@ namespace HyperRTS.Editor
 
         [MenuItem(EditorMenu.Documentation + "Module Reference", false, EditorMenu.DocumentationPriority + 1)]
         private static void OpenModules() => Help.BrowseURL(HyperRTSDocs.Modules);
+
+        [MenuItem(EditorMenu.Documentation + "Editor", false, EditorMenu.DocumentationPriority + 2)]
+        private static void OpenEditor() => Help.BrowseURL(HyperRTSDocs.Editor);
+
+        [MenuItem(EditorMenu.Documentation + "Networking", false, EditorMenu.DocumentationPriority + 3)]
+        private static void OpenNetworking() => Help.BrowseURL(HyperRTSDocs.Networking);
     }
 }

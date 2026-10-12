@@ -1,4 +1,5 @@
 using System.Text;
+using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.PlayMode.DebugDraw;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
@@ -25,7 +26,7 @@ namespace HyperRTS.Editor.PlayMode
             root.Add(ai);
             root.schedule.Execute(() => ai.text = AIStatus()).Every(500);
 
-            root.Add(new Button(CheatsWindow.Open) { text = "Cheats..." });
+            root.Add(new Button(ToolsWindow.Show<PlayPage>) { text = "Cheats..." });
             return root;
         }
 

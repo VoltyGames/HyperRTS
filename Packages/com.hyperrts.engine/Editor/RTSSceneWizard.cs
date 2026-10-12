@@ -10,17 +10,18 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor
 {
-    /// <summary>HyperRTS ▸ Create RTS Scene: the window over <see cref="RTSSceneBuilder"/>.</summary>
+    /// <summary>The New Blank Scene dialog over <see cref="RTSSceneBuilder"/>, opened from Tools ▸ Maps.</summary>
     public class RTSSceneWizard : EditorWindow
     {
+        private const string DialogTitle = "New Blank Scene";
+
         private Vector2Field _mapSize;
         private SliderInt _players;
         private ObjectField _startingBase;
 
-        [MenuItem(EditorMenu.CreateScene, false, EditorMenu.CreateScenePriority)]
-        private static void Open()
+        public static void Open()
         {
-            var window = GetWindow<RTSSceneWizard>(true, "Create RTS Scene");
+            var window = GetWindow<RTSSceneWizard>(true, DialogTitle);
             window.minSize = new Vector2(360f, 140f);
         }
 
@@ -52,7 +53,7 @@ namespace HyperRTS.Editor
 
         private void Create()
         {
-            var path = EditorUtility.SaveFilePanelInProject("Create RTS Scene", "NewRTSScene", "unity",
+            var path = EditorUtility.SaveFilePanelInProject(DialogTitle, "NewRTSScene", "unity",
                 "Choose where to save the scene. Its SubScene is saved next to it.");
             if (string.IsNullOrEmpty(path) || !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             {

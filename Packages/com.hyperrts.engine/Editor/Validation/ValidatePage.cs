@@ -1,27 +1,36 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Hub;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Validation
 {
-    /// <summary>HyperRTS ▸ Validate: lists setup problems in prefabs and open scenes; click one to select it.</summary>
-    public class ValidatorWindow : EditorWindow
+    /// <summary>Tools ▸ Validate: lists setup problems in prefabs and open scenes; click one to select it.</summary>
+    public class ValidatePage : HubPage
     {
         private List<ValidationIssue> _issues = new();
         private Label _counts;
         private HelpBox _empty;
         private IssueList _list;
 
-        [MenuItem(EditorMenu.Validate, false, EditorMenu.ValidatePriority)]
-        public static void Open() => GetWindow<ValidatorWindow>("HyperRTS Validator").Refresh();
+        public override string Title => "Validate";
 
-        public void CreateGUI()
+        public override int Order => 30;
+
+        /// <summary>Errors found by the last validation, or null when there were none.</summary>
+        public override string Badge
         {
-            var root = rootVisualElement;
-            EditorAssets.AddStyles(root);
+            get
+            {
+                var errors = Count(MessageType.Error);
+                return errors > 0 ? errors.ToString() : null;
+            }
+        }
 
+        public override VisualElement Build()
+        {
+            var root = new VisualElement();
             var toolbar = new Toolbar();
             toolbar.Add(new ToolbarButton(Refresh) { text = "Validate" });
             toolbar.Add(new ToolbarSpacer { flex = true });
@@ -41,6 +50,14 @@ namespace HyperRTS.Editor.Validation
             scroll.Add(_list);
             root.Add(scroll);
             Refresh();
+            return root;
+        }
+
+        public override void Release()
+        {
+            _list = null;
+            _counts = null;
+            _empty = null;
         }
 
         private void Refresh()

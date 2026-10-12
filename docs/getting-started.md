@@ -14,7 +14,7 @@ From an empty project to a playable skirmish against the AI, in the editor, with
 
 ## 1. Create the scene
 
-**HyperRTS ▸ Create RTS Scene...**: pick map size, player count and an optional starting-base prefab. You get:
+**HyperRTS ▸ Tools ▸ Maps ▸ New blank scene...**: pick map size, player count and an optional starting-base prefab. You get:
 
 | Object | What it is |
 | --- | --- |
@@ -77,7 +77,7 @@ Inside the SubScene:
   renewable).
 - **GameObject ▸ HyperRTS ▸ Map ▸ Nav Obstacle** for rocks and cliffs.
 
-Run **HyperRTS ▸ Validate** to list setup problems; most have a one-click fix.
+Run **HyperRTS ▸ Tools ▸ Validate** to list setup problems; most have a one-click fix.
 
 ## 6. Players and AI
 

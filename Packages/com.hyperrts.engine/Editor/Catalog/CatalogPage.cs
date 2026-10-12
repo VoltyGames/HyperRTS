@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Hub;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.GameEntities;
 using UnityEditor;
@@ -9,8 +10,8 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Catalog
 {
-    /// <summary>HyperRTS ▸ Catalog: every unit and building prefab in one editable stats table, plus the tech tree.</summary>
-    public class CatalogWindow : EditorWindow
+    /// <summary>Tools ▸ Catalog: every unit and building prefab in one editable stats table, plus the tech tree.</summary>
+    public class CatalogPage : HubPage
     {
         // Asset changes arrive in bursts; one project walk after they settle is enough.
         private const long ReloadDelayMilliseconds = 500;
@@ -19,29 +20,20 @@ namespace HyperRTS.Editor.Catalog
         private string _filter = "";
         private bool _reloadPending;
         private bool _treePending;
+        private VisualElement _root;
         private StatsTable _stats;
         private TechTreeView _techTree;
         private TabView _tabs;
         private Tab _treeTab;
 
-        [MenuItem(EditorMenu.Catalog, false, EditorMenu.CatalogPriority)]
-        public static void Open() => GetWindow<CatalogWindow>("HyperRTS Catalog");
+        public override string Title => "Catalog";
 
-        public void CreateGUI()
+        public override int Order => 20;
+
+        public override VisualElement Build()
         {
-            var root = rootVisualElement;
-            EditorAssets.AddStyles(root);
-
-            var toolbar = new Toolbar();
-            toolbar.Add(new ToolbarSpacer { flex = true });
-            var search = new ToolbarSearchField();
-            search.RegisterValueChangedCallback(change =>
-            {
-                _filter = change.newValue;
-                ShowPrefabs();
-            });
-            toolbar.Add(search);
-            root.Add(toolbar);
+            _root = new VisualElement();
+            _root.Add(Toolbar());
 
             _stats = new StatsTable();
             _techTree = new TechTreeView();
@@ -55,16 +47,38 @@ namespace HyperRTS.Editor.Catalog
             _treeTab = Tab("Tech Tree", treeScroll);
             _tabs.Add(_treeTab);
             _tabs.activeTabChanged += (_, _) => ShowPrefabs();
-            root.Add(_tabs);
+            _root.Add(_tabs);
+
+            EditorApplication.projectChanged += OnProjectChange;
+            ObjectChangeEvents.changesPublished += OnObjectsChanged;
             Reload();
+            return _root;
         }
 
-        private void OnEnable() => ObjectChangeEvents.changesPublished += OnObjectsChanged;
-
-        private void OnDisable()
+        public override void Release()
         {
+            EditorApplication.projectChanged -= OnProjectChange;
             ObjectChangeEvents.changesPublished -= OnObjectsChanged;
             _stats?.Release();
+            _root = null;
+            _tabs = null;
+            _reloadPending = false;
+            _treePending = false;
+        }
+
+        private Toolbar Toolbar()
+        {
+            var toolbar = new Toolbar();
+            toolbar.Add(new ToolbarSpacer { flex = true });
+            var search = new ToolbarSearchField();
+            search.SetValueWithoutNotify(_filter);
+            search.RegisterValueChangedCallback(change =>
+            {
+                _filter = change.newValue;
+                ShowPrefabs();
+            });
+            toolbar.Add(search);
+            return toolbar;
         }
 
         private void OnProjectChange()
@@ -75,7 +89,7 @@ namespace HyperRTS.Editor.Catalog
             }
 
             _reloadPending = true;
-            rootVisualElement.schedule.Execute(Reload).ExecuteLater(ReloadDelayMilliseconds);
+            _root.schedule.Execute(Reload).ExecuteLater(ReloadDelayMilliseconds);
         }
 
         // Inspector edits to options or prerequisites show up in the open tree, once a burst of edits (a drag) settles.
@@ -87,7 +101,7 @@ namespace HyperRTS.Editor.Catalog
             }
 
             _treePending = true;
-            rootVisualElement.schedule.Execute(RefreshTree).ExecuteLater(ReloadDelayMilliseconds);
+            _root.schedule.Execute(RefreshTree).ExecuteLater(ReloadDelayMilliseconds);
         }
 
         private void RefreshTree()

@@ -106,7 +106,7 @@ A game shell (menus, lobby, loading) drives a match through these:
 ## Editor
 
 - Validation rules: `AuthoringRule<T>`, `ISceneRule` or `IPrefabRule` in an editor assembly. They are discovered
-  and show up in the inspector, **HyperRTS ▸ Validate**, Play mode and the CI test.
+  and show up in the inspector, **HyperRTS ▸ Tools ▸ Validate**, Play mode and the CI test.
 - Debug layers: subclass `DebugLayer` or `CellDebugLayer`.
 - Scenes from code: `RTSSceneBuilder.Build(RTSSceneSpec)`, the API behind the scene wizard.
 

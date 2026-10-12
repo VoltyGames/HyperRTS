@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Common;
 using HyperRTS.Network.Session;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
@@ -8,20 +7,16 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Replays;
 using Unity.Collections;
 using Unity.Entities;
-using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>HyperRTS ▸ Cheats: resources, fog, instant build, spawning, player switching and game speed.</summary>
-    public class CheatsWindow : EditorWindow
+    /// <summary>The Play page's cheats: resources, fog, instant build, spawning, player switching and game speed.</summary>
+    internal class CheatsSection
     {
-        private const long PollMilliseconds = 250;
-
-        private HelpBox _status;
-        private VisualElement _controls;
+        private readonly HelpBox _status;
+        private readonly VisualElement _controls;
         private PopupField<string> _player;
         private PopupField<string> _prefab;
         private IntegerField _amount;
@@ -29,25 +24,38 @@ namespace HyperRTS.Editor.PlayMode
         private Toggle _fog;
         private Slider _speed;
 
-        [MenuItem(EditorMenu.Cheats, false, EditorMenu.CheatsPriority)]
-        public static void Open() => GetWindow<CheatsWindow>("HyperRTS Cheats");
-
-        public void CreateGUI()
+        public CheatsSection()
         {
-            var root = rootVisualElement;
-            EditorAssets.AddStyles(root);
+            Root = PlaySections.Section("Cheats");
             _status = new HelpBox("", HelpBoxMessageType.Info);
             _status.AddToClassList("hrts-note");
-            root.Add(_status);
+            Root.Add(_status);
 
             _controls = new VisualElement();
-            _controls.AddToClassList("hrts-note");
             BuildPlayerControls(_controls);
             BuildWorldControls(_controls);
-            root.Add(_controls);
+            Root.Add(_controls);
+        }
 
-            root.schedule.Execute(Poll).Every(PollMilliseconds);
-            Poll();
+        public VisualElement Root { get; }
+
+        // Cheats change game state, so they go to the server when hosting, not to the client the HUD shows.
+        public void Poll()
+        {
+            var ready = TryGetPlayers(out var manager, out var players, out var message);
+            _status.text = message;
+            _status.style.display = string.IsNullOrEmpty(message) ? DisplayStyle.None : DisplayStyle.Flex;
+            _controls.SetEnabled(ready);
+            if (!ready)
+            {
+                return;
+            }
+
+            SetChoices(_player, PlayerLabels(manager, players));
+            SetChoices(_prefab, PrefabNames(manager, Cheats.Prefabs(manager)));
+            _control.SetEnabled(CanControl(manager, SelectedPlayer(players)));
+            _fog.SetValueWithoutNotify(Cheats.FogEnabled(manager));
+            _speed.SetValueWithoutNotify(LocalGameSpeed.Scale);
         }
 
         private void BuildPlayerControls(VisualElement parent)
@@ -67,11 +75,7 @@ namespace HyperRTS.Editor.PlayMode
             {
                 text = "Instant build",
             };
-            var buttons = new VisualElement();
-            buttons.AddToClassList("hrts-buttons");
-            buttons.Add(instantBuild);
-            buttons.Add(_control);
-            parent.Add(buttons);
+            parent.Add(PlaySections.Buttons(instantBuild, _control));
         }
 
         private void BuildWorldControls(VisualElement parent)
@@ -88,31 +92,13 @@ namespace HyperRTS.Editor.PlayMode
             parent.Add(_speed);
         }
 
-        // Cheats change game state, so they go to the server when hosting, not to the client the HUD shows.
-        private void Poll()
-        {
-            var ready = TryGetPlayers(out var manager, out var players, out var message);
-            _status.text = message;
-            _status.style.display = ready ? DisplayStyle.None : DisplayStyle.Flex;
-            _controls.style.display = ready ? DisplayStyle.Flex : DisplayStyle.None;
-            if (!ready)
-            {
-                return;
-            }
-
-            SetChoices(_player, PlayerLabels(manager, players));
-            SetChoices(_prefab, PrefabNames(manager, Cheats.Prefabs(manager)));
-            _control.SetEnabled(CanControl(manager, SelectedPlayer(players)));
-            _fog.SetValueWithoutNotify(Cheats.FogEnabled(manager));
-            _speed.SetValueWithoutNotify(LocalGameSpeed.Scale);
-        }
-
+        // Outside Play mode the page's hint explains; inside, only a still-loading SubScene needs a message.
         private static bool TryGetPlayers(out EntityManager manager, out NativeArray<Entity> players, out string message)
         {
             players = default;
+            message = "";
             if (!PlayWorld.TryGetAuthoritative(out manager))
             {
-                message = "Cheats work in Play mode.";
                 return false;
             }
 
@@ -135,7 +121,7 @@ namespace HyperRTS.Editor.PlayMode
         }
 
         private Entity SelectedPlayer(NativeArray<Entity> players) =>
-            players[System.Math.Min(_player.index, players.Length - 1)];
+            players[System.Math.Clamp(_player.index, 0, players.Length - 1)];
 
         // Cheats change the world outside the recorded commands, so the recording would no longer play back.
         private static void StopRecording(World world)

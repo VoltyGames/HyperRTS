@@ -8,29 +8,11 @@ namespace HyperRTS.Editor
 
         public const string Root = "HyperRTS/";
 
-        public const string CreateScene = Root + "Create RTS Scene...";
-        public const int CreateScenePriority = 0;
-
-        public const string GenerateIcons = Root + "Generate Component Icons";
-        public const int GenerateIconsPriority = 19;
-
-        public const string Validate = Root + "Validate";
-        public const int ValidatePriority = 20;
-
-        public const string Catalog = Root + "Catalog";
-        public const int CatalogPriority = 21;
-
-        public const string Cheats = Root + "Cheats";
-        public const int CheatsPriority = 22;
-
-        public const string Network = Root + "Network/";
-        public const int NetworkPriority = 30;
+        public const string Tools = Root + "Tools";
+        public const int ToolsPriority = 0;
 
         public const string Maps = Root + "Maps/";
         public const int MapsPriority = 40;
-
-        public const string Replays = Root + "Replays/";
-        public const int ReplaysPriority = 50;
 
         public const string Documentation = Root + "Documentation/";
         public const int DocumentationPriority = 100;

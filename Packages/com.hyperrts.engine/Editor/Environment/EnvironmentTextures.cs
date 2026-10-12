@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Generators;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -8,10 +9,10 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Environment
 {
     /// <summary>
-    /// HyperRTS ▸ Generate Environment Textures: bakes the tileable cloud cookie the sun casts as cloud shadows and the
+    /// Bakes the tileable cloud cookie the sun casts as cloud shadows and the
     /// tileable noise that breaks up road edges into Presentation/Environment.
     /// </summary>
-    public static class EnvironmentTextures
+    public sealed class EnvironmentTextures : Generator
     {
         private const string Folder = "Packages/com.hyperrts.engine/Presentation/Environment/";
         public const string CloudCookiePath = Folder + "CloudCookie.png";
@@ -25,8 +26,17 @@ namespace HyperRTS.Editor.Environment
         private const int NoiseSize = 256;
         private const int NoisePeriod = 8;
 
-        [MenuItem(EditorMenu.Root + "Generate Environment Textures", false, EditorMenu.GenerateIconsPriority)]
-        public static void Generate()
+        public override string Name => "Environment textures";
+
+        public override string Group => "HyperRTS";
+
+        public override int Order => 20;
+
+        public override string Description => "Cloud shadow cookie and road edge noise in Presentation/Environment.";
+
+        public override bool Available => EnginePackage.Writable;
+
+        public override void Run()
         {
             Write(CloudCookiePath, Clouds(), CloudSize);
             Write(EdgeNoisePath, EdgeNoise(), NoiseSize);

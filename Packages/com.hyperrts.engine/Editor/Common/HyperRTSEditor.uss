@@ -105,3 +105,159 @@
 .hrts-tabs .unity-tab__content-container {
     flex-grow: 1;
 }
+
+.hrts-generate__run-all {
+    height: 24px;
+    margin: 4px 3px 4px 3px;
+}
+
+.hrts-generate__row {
+    flex-direction: row;
+    align-items: center;
+    margin: 1px 0;
+    padding: 3px;
+    border-bottom-width: 1px;
+    border-color: rgba(128, 128, 128, 0.25);
+}
+
+.hrts-generate__name {
+    -unity-font-style: bold;
+}
+
+.hrts-generate__description {
+    white-space: normal;
+    opacity: 0.75;
+}
+
+.hrts-generate__run {
+    width: 60px;
+    flex-shrink: 0;
+}
+
+.hrts-tools {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.hrts-sidebar {
+    width: 160px;
+    flex-shrink: 0;
+    border-right-width: 1px;
+    border-color: rgba(128, 128, 128, 0.4);
+}
+
+.hrts-sidebar__item {
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+    padding: 0 6px;
+}
+
+.hrts-sidebar__title {
+    flex-grow: 1;
+    flex-shrink: 1;
+    -unity-text-align: middle-left;
+}
+
+.hrts-badge {
+    min-width: 16px;
+    height: 16px;
+    padding: 0 5px;
+    border-radius: 8px;
+    background-color: rgb(196, 64, 56);
+    color: rgb(255, 255, 255);
+    font-size: 10px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.hrts-page-host {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.hrts-page {
+    flex-grow: 1;
+}
+
+.hrts-page__body {
+    padding: 4px;
+}
+
+.hrts-hint {
+    margin: 4px;
+}
+
+.hrts-map__name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-left: 3px;
+}
+
+.hrts-map__build {
+    width: 60px;
+    flex-shrink: 0;
+}
+
+.hrts-issue-badge {
+    margin: 0 0 4px 0;
+}
+
+.hrts-issue-badge__button {
+    flex-direction: row;
+    align-self: flex-start;
+    margin: 0;
+    padding: 1px 6px;
+    border-radius: 8px;
+}
+
+.hrts-issue-badge__button--open {
+    border-color: rgb(120, 120, 120);
+}
+
+.hrts-issue-badge__count {
+    -unity-font-style: bold;
+    margin: 0 3px;
+    padding: 0;
+}
+
+.hrts-issue-badge__errors {
+    color: rgb(255, 90, 80);
+}
+
+.hrts-issue-badge__warnings {
+    color: rgb(255, 200, 60);
+}
+
+.hrts-issue-badge__notes {
+    color: rgb(150, 190, 255);
+}
+
+.hrts-option {
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.hrts-option__field {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 80px;
+}
+
+.hrts-option__icon {
+    width: 18px;
+    height: 18px;
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+.hrts-option__summary {
+    width: 45%;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -unity-text-align: middle-left;
+    color: rgb(160, 160, 160);
+    font-size: 10px;
+}

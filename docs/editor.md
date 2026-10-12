@@ -7,15 +7,14 @@ Scene view `Handles`, which have no UI Toolkit equivalent.
 
 | Menu | Does |
 | --- | --- |
-| **HyperRTS ▸ Create RTS Scene...** | Window: map size, player count (1 human, the rest AI), optional starting-base prefab. Builds light, ground, `RTSWorld` rig, `MatchState` ghost and a SubScene with the `Match` |
-| **HyperRTS ▸ Validate** | Setup problems in every authoring prefab and the open scenes, with quick fixes; click an object name to select it |
-| **HyperRTS ▸ Catalog** | Stats tab: every unit and building prefab in one table, edit HP, build time, vision, speed, damage, cooldown, range; DPS and cost update live. Tech Tree tab: requires, made by, makes, unlocks |
-| **HyperRTS ▸ Cheats** | Play mode: add resources, instant build, fog toggle, spawn any prefab at the view, control another player (single player), game speed. Acts on the authoritative world; instant build completes through the construction and production systems. Any cheat drops the running replay recording |
-| **HyperRTS ▸ Network** | Play mode: host, join localhost, dedicated server, stop |
-| **HyperRTS ▸ Replays** | Save the Play-mode recording, or play a replay file |
+| **HyperRTS ▸ Tools** | One dockable window with a sidebar of pages (below); games add pages by subclassing `HubPage`. A page's badge (Validate's error count) shows in the sidebar |
+| **Tools ▸ Maps** | Every `.map.json` spec with a Build button, Build all, and **New blank scene...**: a dialog with map size, player count (1 human, the rest AI), optional starting-base prefab. Builds light, ground, `RTSWorld` rig, `MatchState` ghost and a SubScene with the `Match` |
+| **Tools ▸ Validate** | Setup problems in every authoring prefab and the open scenes, with quick fixes; click an object name to select it |
+| **Tools ▸ Catalog** | Stats tab: every unit and building prefab in one table, edit HP, build time, vision, speed, damage, cooldown, range; DPS and cost update live. Tech Tree tab: requires, made by, makes, unlocks |
+| **Tools ▸ Play** | Cheats (Play mode): add resources, instant build, fog toggle, spawn any prefab at the view, control another player (single player), game speed. Acts on the authoritative world; instant build completes through the construction and production systems. Any cheat drops the running replay recording. Network: host, join localhost, dedicated server, stop. Replays: save the Play-mode recording, or play a replay file |
 | **HyperRTS ▸ Maps** | Build or Preview the selected `.map.json` (or the open map's), Capture Views, Build All, Auto-rebuild on spec change, Open Report |
 | **HyperRTS ▸ Generate Component Icons** | Regenerates the per-module icons in `Editor/Icons/` |
-| **HyperRTS ▸ Documentation** | Opens getting started or the module reference |
+| **HyperRTS ▸ Documentation** | Opens getting started, the module reference, the editor guide or networking |
 | **GameObject ▸ HyperRTS ▸ RTS World**, **Match** | The rig prefab; a Match |
 | **GameObject ▸ HyperRTS ▸ Units ▸** | Unit, Combat Unit, Worker, Harvester |
 | **GameObject ▸ HyperRTS ▸ Buildings ▸** | Building, Producer, Resource Drop-Off, Defense Tower |
@@ -99,7 +98,7 @@ Styles for engine editor UI live in `Editor/Common/HyperRTSEditor.uss` (classes 
 - Rules are discovered in every editor assembly, so a game adds its own the same way.
 - One `AuthoringRule<T>` per authoring type. A rule about components marked some other way (an attribute) derives
   from `AuthoringRule<Component>` and overrides `AppliesTo`, like `RequiresGhostRule`.
-- The same rules run in four places: the inspector, **HyperRTS ▸ Validate**, the console on entering Play mode
+- The same rules run in four places: the inspector, **HyperRTS ▸ Tools ▸ Validate**, the console on entering Play mode
   (scene rules), and `ValidationTests.ProjectHasNoValidationErrors`.
 - Issues with an obvious fix carry a button (Fit Collider, Use Prefab, Remove Empty, Move Outside, Make Ghost,
   Add ...). Each fix is one undo step.
@@ -241,7 +240,7 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 Menu: **HyperRTS ▸ Maps** (Build, Preview, Capture Views, Build All, Auto-rebuild, Open Report). Batch mode:
 `-executeMethod HyperRTS.Editor.Maps.Tools.MapCommandLine.Build` (or `.Preview`) `-map <spec>` exits 0, 1 on report
 errors, 2 on a crash; `-nographics` skips the screenshots. `MapSpecRule` shows a map's report errors in
-**HyperRTS ▸ Validate**.
+**HyperRTS ▸ Tools ▸ Validate**.
 
 ### What the game supplies
 
@@ -266,7 +265,7 @@ trees and props), trees, plants, road classes, farmland, belt and woodland kits,
   paths and attack targets, each AI player's next think. Each toggle is a `DebugLayer`; subclass it (or
   `CellDebugLayer`) to add one. Layers read the authoritative world unless they override `Source` with
   `SimulationWorlds.Presented`.
-- **HyperRTS ▸ Cheats** and **Network** as above. Cheats write to the server when hosting.
+- **HyperRTS ▸ Tools ▸ Play**: cheats, network and replays as above. Cheats write to the server when hosting.
 
 ## Prefabs
 

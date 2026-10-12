@@ -96,7 +96,7 @@ back.
 ## Replication
 
 - **Ghosts**: units, buildings, resource nodes and projectiles need a `GhostAuthoringComponent` on the prefab root.
-  **HyperRTS ▸ Validate** flags missing ones with a *Make Ghost* fix, and the templates add it. The Match object stays
+  **HyperRTS ▸ Tools ▸ Validate** flags missing ones with a *Make Ghost* fix, and the templates add it. The Match object stays
   a plain scene object, because the players it bakes become ghosts of their own; its replicated state (`MatchState`)
   is the engine's `MatchState` ghost prefab, which the scene wizard places in every map. In single player,
   `LocalGhostActivationSystem` enables such prespawned ghosts, which Netcode would otherwise leave disabled.
