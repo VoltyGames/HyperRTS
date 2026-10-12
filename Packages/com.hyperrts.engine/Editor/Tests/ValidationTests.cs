@@ -71,6 +71,17 @@ namespace HyperRTS.Editor.Tests
             Assert.IsTrue(ProjectValidator.Check(unit).Any(issue => issue.Message.StartsWith("Death spawn 'Wreck'")));
         }
 
+        [Test]
+        public void ArmedDeliveryCarrierIsAnError()
+        {
+            var source = Track(EntityTemplates.Building()).AddComponent<DeliverySourceAuthoring>();
+            source.carrier = Track(EntityTemplates.CombatUnit()).GetComponent<UnitAuthoring>();
+
+            var issues = ProjectValidator.Check(source);
+
+            Assert.IsTrue(issues.Any(issue => issue.Severity == MessageType.Error && issue.Message.Contains("unarmed")));
+        }
+
         [TestCaseSource(nameof(Templates))]
         public void TemplatesAreValidApartFromSceneLocation(Func<GameObject> build)
         {

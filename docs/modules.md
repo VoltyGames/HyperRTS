@@ -76,7 +76,7 @@ Systems:
 - `MatchSetupSystem` (first in the order phase) applies `MatchSetup` the same way on server and clients: removes
   closed slots and what they own, sets names, colours, teams and `PlayerSide`, adds or removes `AIPlayer`, scales
   starting stock, overrides fog.
-- `PopulationSystem` recounts used and cap each frame.
+- `PopulationSystem` recounts used and cap each frame; delivery carriers use no population.
 - `VictorySystem` defeats players who lost every `VictoryCritical` entity they had; ends the match when one team
   is left. A player who never owned anything is not defeated.
 - `SurrenderSystem` defeats a player who sends `CommandType.Surrender`.
@@ -276,7 +276,8 @@ centre through the building, so the entry point is deterministic, spread `Spacin
 `LocalTransform`, `Faction` and an enabled `MoveDestination` on the building (aircraft fly there the same way). A
 `DeliveryCarrier` within `ArrivalRange` of its source pays its owner `Amount`, scaled by `Stat.Income` and counted in
 `PlayerStats.ResourcesGathered`, and is destroyed. A killed (`Dead`) carrier pays nothing; when the source is
-destroyed or dies, its carriers are destroyed too. Give carriers no weapons, or combat takes over their movement.
+destroyed or dies, its carriers are destroyed too. Carriers use no population. They must be unarmed (combat would take
+over their movement): `DeliverySourceRule` and the baker reject a carrier prefab with a `WeaponAuthoring`.
 
 ## Buildings
 

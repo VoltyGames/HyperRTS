@@ -1,6 +1,7 @@
 using System;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Units;
 using Unity.Entities;
@@ -50,6 +51,13 @@ namespace HyperRTS.Simulation.Resources
                 {
                     throw new InvalidOperationException(
                         $"Delivery Source on '{authoring.name}' needs a carrier and a resource type.");
+                }
+
+                // An armed carrier would let combat take over its movement and never deliver.
+                if (GetComponentInChildren<WeaponAuthoring>(authoring.carrier) != null)
+                {
+                    throw new InvalidOperationException(
+                        $"Delivery Source on '{authoring.name}': carrier '{authoring.carrier.name}' has a weapon.");
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));

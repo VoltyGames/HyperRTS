@@ -1,13 +1,17 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Resources;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Production
 {
-    /// <summary>Recounts each player's <see cref="Population"/> from living units and completed providers.</summary>
+    /// <summary>
+    /// Recounts each player's <see cref="Population"/> from living units and completed providers. Delivery
+    /// carriers are sent by a building, not built, so they use none.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup), OrderFirst = true)]
     public partial struct PopulationSystem : ISystem
@@ -25,7 +29,7 @@ namespace HyperRTS.Simulation.Production
 
         [BurstCompile]
         [WithAll(typeof(UnitTag))]
-        [WithNone(typeof(Dead))]
+        [WithNone(typeof(Dead), typeof(DeliveryCarrier))]
         private partial struct CountUsedJob : IJobEntity
         {
             public NativeArray<int> Used;
