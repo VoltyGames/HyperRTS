@@ -99,6 +99,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var replay = Record(out _);
             replay.ScenePath = "Assets/Maps/Test.unity";
+            replay.Seed = 0xC0FFEEu;
             replay.Result = new MatchState { Phase = MatchPhase.Ended, WinningTeam = 2 };
 
             using var memory = new MemoryStream();
@@ -107,6 +108,8 @@ namespace HyperRTS.Simulation.Tests
             var read = ReplaySerializer.Read(memory);
 
             Assert.AreEqual(replay.ScenePath, read.ScenePath);
+            Assert.AreEqual(0xC0FFEEu, read.Seed);
+            Assert.AreEqual(0xC0FFEEu, ReplaySetup.ToMatchSetup(read).Seed, "playback rebuilds the setup with its seed");
             Assert.AreEqual(replay.SampleRate, read.SampleRate);
             Assert.AreEqual(replay.Duration, read.Duration);
             Assert.AreEqual(MatchPhase.Ended, read.Result.Phase);

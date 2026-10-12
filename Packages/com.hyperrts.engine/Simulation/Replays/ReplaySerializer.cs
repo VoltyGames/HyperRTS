@@ -11,8 +11,6 @@ namespace HyperRTS.Simulation.Replays
     /// <summary>Reads and writes <see cref="Replay"/> files: a GZip stream of a small header and the samples.</summary>
     public static class ReplaySerializer
     {
-        /// <summary>2 added game metadata and player sides, 3 the impacts of each sample.</summary>
-        public const int FormatVersion = 3;
         private const int Magic = 0x4C505248; // "HRPL"
 
         /// <summary>Most elements reserved before any are read; larger lists grow as data arrives.</summary>
@@ -161,8 +159,8 @@ namespace HyperRTS.Simulation.Replays
         private static void WriteHeader(BinaryWriter writer, Replay replay)
         {
             writer.Write(Magic);
-            writer.Write(FormatVersion);
             writer.Write(replay.ScenePath ?? "");
+            writer.Write(replay.Seed);
             writer.Write(replay.SampleRate);
             writer.Write(replay.Duration);
             writer.Write((byte)replay.Result.Phase);
@@ -189,15 +187,10 @@ namespace HyperRTS.Simulation.Replays
                 throw new InvalidDataException("Not a HyperRTS replay.");
             }
 
-            var version = reader.ReadInt32();
-            if (version != FormatVersion)
-            {
-                throw new InvalidDataException($"Unsupported replay version {version} (expected {FormatVersion}).");
-            }
-
             var replay = new Replay
             {
                 ScenePath = reader.ReadString(),
+                Seed = reader.ReadUInt32(),
                 SampleRate = reader.ReadSingle(),
                 Duration = reader.ReadSingle(),
                 Result = new MatchState { Phase = (MatchPhase)reader.ReadByte(), WinningTeam = reader.ReadByte() },

@@ -41,6 +41,12 @@ namespace HyperRTS.Simulation.Replays
             AddPlayers(entityManager, replay);
             using var match = entityManager.CreateEntityQuery(ComponentType.ReadOnly<MatchState>());
             match.TryGetSingleton(out replay.Result);
+            using var setupQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<MatchSetup>());
+            if (setupQuery.TryGetSingleton(out MatchSetup setup))
+            {
+                replay.Seed = setup.Seed;
+            }
+
             return replay;
         }
 

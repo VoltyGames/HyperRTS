@@ -401,7 +401,7 @@ Presentation's `MachineSystem` poses the parts from the clock, so parts of one m
 5. Once enough idle combat units exist, pick the nearest hostile building (else unit) among the enemies the map has
    lanes to, and attack-move them along one lane to that enemy: shift-queued attack-moves through the lane's
    waypoints from the one nearest the wave, then the target. The lane is a seeded choice (`AIPlayer.RouteSeed`,
-   the faction, the enemy, `AIPlayer.Attacks`), so bots and successive attacks vary their route. With
+   the faction, the enemy, `AIPlayer.Attacks`), so bots and successive attacks vary their route. `MatchSetupSystem` sets `RouteSeed` from `MatchSetup.Seed` and the faction (`AIRoutes.SeedFor`); replays record the seed. With
    `LimitedByFog` it only targets units its team sees and buildings it has explored, and sweeps the map centre when
    it knows of none.
 

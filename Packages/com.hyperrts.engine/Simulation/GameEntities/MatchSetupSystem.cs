@@ -102,7 +102,7 @@ namespace HyperRTS.Simulation.GameEntities
 
                 var slot = setup.Slots[faction - 1];
                 relations.SetTeam(faction, slot.Team);
-                ApplySlot(entityManager, player, slot, tunings);
+                ApplySlot(entityManager, player, slot, tunings, setup.Seed);
                 ScaleStock(entityManager.GetBuffer<ResourceStock>(player), setup.StartingResourceScale);
             }
 
@@ -111,7 +111,7 @@ namespace HyperRTS.Simulation.GameEntities
         }
 
         private static void ApplySlot(EntityManager entityManager, Entity player, in SlotSetup slot,
-            NativeArray<AIDifficultyTuning> tunings)
+            NativeArray<AIDifficultyTuning> tunings, uint seed)
         {
             var identity = entityManager.GetComponentData<Player>(player);
             identity.Name = slot.Name;
@@ -121,7 +121,7 @@ namespace HyperRTS.Simulation.GameEntities
 
             if (slot.Control == PlayerControl.AI)
             {
-                MakeAI(entityManager, player, TuningFor(tunings, slot.Difficulty));
+                MakeAI(entityManager, player, TuningFor(tunings, slot.Difficulty), AIRoutes.SeedFor(seed, identity.Faction));
                 return;
             }
 
@@ -137,10 +137,13 @@ namespace HyperRTS.Simulation.GameEntities
             }
         }
 
-        private static void MakeAI(EntityManager entityManager, Entity player, in AIDifficultyTuning tuning)
+        private static void MakeAI(EntityManager entityManager, Entity player, in AIDifficultyTuning tuning,
+            uint routeSeed)
         {
             entityManager.RemoveComponent<LocalPlayer>(player);
-            entityManager.AddComponentData(player, tuning.Tuning);
+            var ai = tuning.Tuning;
+            ai.RouteSeed = routeSeed;
+            entityManager.AddComponentData(player, ai);
             if (!entityManager.HasBuffer<AIBuildStep>(player))
             {
                 entityManager.AddBuffer<AIBuildStep>(player);

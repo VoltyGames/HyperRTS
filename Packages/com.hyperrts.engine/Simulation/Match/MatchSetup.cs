@@ -20,6 +20,12 @@ namespace HyperRTS.Simulation.Match
         /// <summary>Bit per closed faction, filled in when the setup is applied.</summary>
         public uint ClosedFactions;
 
+        /// <summary>
+        /// Match seed shared by every peer and recorded in replays; the AI module derives each bot's attack lane choice
+        /// from it and the bot's faction.
+        /// </summary>
+        public uint Seed;
+
         public bool Applied;
 
         public static MatchSetup Create() => new() { StartingResourceScale = 1f };

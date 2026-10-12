@@ -13,6 +13,9 @@ namespace HyperRTS.Simulation.Replays
         /// <summary>Game data the engine stores but never reads (a JSON of map id, settings...).</summary>
         public string Metadata = "";
         public float SampleRate;
+
+        /// <summary>The <see cref="MatchSetup.Seed"/> the match ran with.</summary>
+        public uint Seed;
         public float Duration;
         public List<ReplayPlayerInfo> Players = new();
 

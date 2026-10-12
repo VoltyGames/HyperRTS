@@ -13,6 +13,7 @@ namespace HyperRTS.Simulation.Replays
         public static MatchSetup ToMatchSetup(Replay replay)
         {
             var setup = MatchSetup.Create();
+            setup.Seed = replay.Seed;
             var last = 0;
             foreach (var player in replay.Players)
             {
