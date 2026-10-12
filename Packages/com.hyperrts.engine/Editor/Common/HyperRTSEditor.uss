@@ -79,6 +79,11 @@
     margin: 0 2px;
 }
 
+/* A field's [Header] and [Space] would draw inside its table cell. */
+.hrts-table__cell .unity-decorator-drawers-container {
+    display: none;
+}
+
 .hrts-table__number {
     -unity-text-align: middle-right;
 }

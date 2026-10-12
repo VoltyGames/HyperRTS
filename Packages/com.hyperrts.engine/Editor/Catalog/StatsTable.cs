@@ -16,7 +16,7 @@ namespace HyperRTS.Editor.Catalog
     internal sealed class StatsTable : MultiColumnListView
     {
         private const float NameWidth = 140f;
-        private const float Narrow = 64f;
+        private const float Narrow = 76f;
 
         private static readonly (string Header, Type Component, string Field)[] Fields =
         {
