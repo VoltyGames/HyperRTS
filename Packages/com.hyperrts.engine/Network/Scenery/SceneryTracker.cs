@@ -7,10 +7,10 @@ using Unity.Mathematics;
 namespace HyperRTS.Network.Scenery
 {
     /// <summary>
-    /// Server bookkeeping behind scenery replication: each piece's state and the state each team last saw of it. A
+    /// What the server tracks to replicate scenery: each piece's state and the state each team last saw of it. A
     /// team gets news of a change only once it sees the spot, so fog hides destruction until someone looks.
     /// </summary>
-    public struct SceneryLedger : IDisposable
+    public struct SceneryTracker : IDisposable
     {
         /// <summary>One slot per fog team; team 0, which observers view as, sees everything.</summary>
         public const int Teams = FactionRelations.MaxTeams;
@@ -24,7 +24,7 @@ namespace HyperRTS.Network.Scenery
         /// <summary>Slots some team hasn't caught up with.</summary>
         private NativeList<int> _stale;
 
-        public SceneryLedger(Allocator allocator)
+        public SceneryTracker(Allocator allocator)
         {
             _slots = new NativeHashMap<ulong, int>(1024, allocator);
             _records = new NativeList<SceneryRecord>(1024, allocator);

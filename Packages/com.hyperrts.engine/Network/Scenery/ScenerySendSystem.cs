@@ -14,7 +14,7 @@ namespace HyperRTS.Network.Scenery
 {
     /// <summary>
     /// Server: replicates map scenery, which isn't made of ghosts, by <see cref="SceneryId"/>. Each team's clients
-    /// hear of a change once the team sees the spot (<see cref="SceneryLedger"/>), and a joining client first gets
+    /// hear of a change once the team sees the spot (<see cref="SceneryTracker"/>), and a joining client first gets
     /// what its team knows. Runs last in the lifecycle phase: health is final and the dead are still there.
     /// </summary>
     [BurstCompile]
@@ -23,7 +23,7 @@ namespace HyperRTS.Network.Scenery
     public partial struct ScenerySendSystem : ISystem
     {
         private EntityQuery _scenery;
-        private SceneryLedger _ledger;
+        private SceneryTracker _tracker;
 
         /// <summary>Scenery that should exist now: tracked pieces minus those destroyed. More means some streamed in.</summary>
         private int _expected;
@@ -35,20 +35,20 @@ namespace HyperRTS.Network.Scenery
         {
             _scenery = SystemAPI.QueryBuilder().WithAll<SceneryId, Health, LocalTransform>().WithNone<GhostInstance>()
                 .Build();
-            _ledger = new SceneryLedger(Allocator.Persistent);
+            _tracker = new SceneryTracker(Allocator.Persistent);
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
-        public void OnDestroy(ref SystemState state) => _ledger.Dispose();
+        public void OnDestroy(ref SystemState state) => _tracker.Dispose();
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _frame++;
             Register(ref state);
-            if (_ledger.Count == 0)
+            if (_tracker.Count == 0)
             {
                 return;
             }
@@ -56,7 +56,7 @@ namespace HyperRTS.Network.Scenery
             Track(ref state, Teams(ref state));
             SystemAPI.TryGetSingleton(out FogOfWar fog);
             var news = new NativeList<SceneryNews>(Allocator.Temp);
-            _ledger.Reveal(fog, SystemAPI.GetSingleton<MapSettings>().FogOfWar, _frame, news);
+            _tracker.Reveal(fog, SystemAPI.GetSingleton<MapSettings>().FogOfWar, _frame, news);
             Send(ref state, news);
         }
 
@@ -76,7 +76,7 @@ namespace HyperRTS.Network.Scenery
                         ReportShared(position);
                     }
 
-                    _ledger.Register(id.ValueRO.Value, position);
+                    _tracker.Register(id.ValueRO.Value, position);
                 }
             }
 
@@ -92,7 +92,7 @@ namespace HyperRTS.Network.Scenery
                          .WithAll<LocalTransform>().WithNone<GhostInstance>().WithChangeFilter<Health>())
             {
                 var now = SceneryChange.Encode(health.ValueRO);
-                if (_ledger.Set(id.ValueRO.Value, now, teams, _frame) && now == SceneryChange.Destroyed)
+                if (_tracker.Set(id.ValueRO.Value, now, teams, _frame) && now == SceneryChange.Destroyed)
                 {
                     _expected--;
                 }
@@ -131,7 +131,7 @@ namespace HyperRTS.Network.Scenery
 
                 // A joining client starts from what its team knows, this frame's news included.
                 changes.Clear();
-                _ledger.Known(team, changes);
+                _tracker.Known(team, changes);
                 Post(ecb, connection, false, changes);
                 ecb.AddComponent<ScenerySynced>(connection);
             }
