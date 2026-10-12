@@ -67,7 +67,6 @@ namespace HyperRTS.Simulation.Resources
 
         /// <summary>Single-threaded: many deaths can pay one player.</summary>
         [BurstCompile]
-        [WithAll(typeof(Dead), typeof(UnitTag))]
         private partial struct CasualtyJob : IJobEntity
         {
             public PlayerRegistry Players;

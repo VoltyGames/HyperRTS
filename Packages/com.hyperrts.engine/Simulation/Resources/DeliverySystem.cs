@@ -103,13 +103,12 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
-                source.Elapsed += DeltaTime;
-                if (source.Elapsed < source.Interval)
+                // One wave even if a long frame covered several intervals: carriers spawned together would overlap.
+                if (IntervalTimer.Advance(ref source.Elapsed, source.Interval, DeltaTime) == 0)
                 {
                     return;
                 }
 
-                source.Elapsed -= source.Interval;
                 var transform = TransformLookup[entity];
                 var outward = DeliveryMath.Outward(Map, transform.Position, transform.Rotation);
                 var edge = DeliveryMath.EdgePoint(Map, outward);
