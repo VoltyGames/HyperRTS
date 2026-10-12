@@ -1,7 +1,7 @@
-using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Meshes;
 using NUnit.Framework;
 using UnityEngine;
 

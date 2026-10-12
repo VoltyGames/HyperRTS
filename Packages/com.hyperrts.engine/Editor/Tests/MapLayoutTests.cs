@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Spec;
 using HyperRTS.Editor.Maps.Symmetry;

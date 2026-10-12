@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Planning;
+using HyperRTS.Editor.Maps.Planning.Settlements;
 using HyperRTS.Editor.Maps.Spec;
 using HyperRTS.Editor.Maps.Symmetry;
 using UnityEngine;

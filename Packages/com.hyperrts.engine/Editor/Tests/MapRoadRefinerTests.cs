@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Geometry;
-using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Refine;
 using HyperRTS.Editor.Maps.Spec;
 using HyperRTS.Editor.Maps.Symmetry;
 using NUnit.Framework;

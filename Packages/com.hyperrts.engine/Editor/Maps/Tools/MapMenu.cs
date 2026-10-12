@@ -1,6 +1,7 @@
 using System.IO;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Report;
+using HyperRTS.Editor.Maps.Views;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;

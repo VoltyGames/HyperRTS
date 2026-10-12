@@ -4,7 +4,7 @@ using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
-using HyperRTS.Editor.Maps.Metrics;
+using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;

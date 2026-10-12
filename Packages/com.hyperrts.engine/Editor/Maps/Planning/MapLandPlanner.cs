@@ -1,4 +1,6 @@
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Planning.Farmland;
+using HyperRTS.Editor.Maps.Planning.Settlements;
 
 namespace HyperRTS.Editor.Maps.Planning
 {

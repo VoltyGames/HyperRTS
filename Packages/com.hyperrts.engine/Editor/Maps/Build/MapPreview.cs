@@ -1,7 +1,4 @@
-using HyperRTS.Editor.Maps.Layout;
-using HyperRTS.Editor.Maps.Metrics;
 using HyperRTS.Editor.Maps.Report;
-using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Build

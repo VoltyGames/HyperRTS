@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;

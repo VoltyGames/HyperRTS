@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Layout;
-using HyperRTS.Editor.Maps.Metrics;
+using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Simulation.AI;
 using UnityEngine;
 

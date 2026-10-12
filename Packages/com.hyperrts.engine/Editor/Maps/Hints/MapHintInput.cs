@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Layout;
-using HyperRTS.Editor.Maps.Metrics;
+using HyperRTS.Editor.Maps.Nav;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Hints

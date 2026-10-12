@@ -1,0 +1,69 @@
+using HyperRTS.Editor.Maps.Build;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Texturing;
+using HyperRTS.Simulation.GameEntities;
+
+namespace HyperRTS.Editor.Maps.Checks
+{
+    /// <summary>
+    /// Checks the palette and climate before a build, so every key a pass looks up resolves and nothing is skipped
+    /// quietly.
+    /// </summary>
+    public static class MapAssetCheck
+    {
+        public static void Check(MapProject project, MapIssues issues)
+        {
+            CheckClimate(project.Climate, issues);
+            CheckPalette(project.Palette, issues);
+        }
+
+        private static void CheckClimate(MapClimate climate, MapIssues issues)
+        {
+            var name = $"Climate '{climate.name}'";
+            foreach (var problem in MapTerrainTextures.Problems(climate))
+            {
+                issues.Error($"{name}: {problem}");
+            }
+
+            foreach (var tree in climate.trees)
+            {
+                Require(tree.prefab != null, $"{name}: tree '{tree.key}' has no prefab.", issues);
+            }
+
+            foreach (var detail in climate.details)
+            {
+                Require(detail.mesh != null || detail.texture != null, $"{name}: detail '{detail.key}' has neither mesh nor texture.", issues);
+            }
+
+            Require(climate.water != null, $"{name} has no water material.", issues);
+            Require(climate.atmosphere != null, $"{name} has no atmosphere prefab.", issues);
+        }
+
+        private static void CheckPalette(MapPalette palette, MapIssues issues)
+        {
+            Require(palette.rig != null, "The map palette has no camera and HUD rig.", issues);
+            foreach (var entry in palette.entries)
+            {
+                if (entry.prefab == null)
+                {
+                    issues.Error($"Palette entry '{entry.key}' has no prefab.");
+                    continue;
+                }
+
+                foreach (var entity in entry.prefab.GetComponentsInChildren<GameEntityAuthoring>(true))
+                {
+                    Require(!string.IsNullOrEmpty(entity.displayName),
+                        $"Palette prefab '{entry.prefab.name}' needs a Display Name: generated objects are renamed.", issues);
+                }
+            }
+        }
+
+        private static void Require(bool condition, string message, MapIssues issues)
+        {
+            if (!condition)
+            {
+                issues.Error(message);
+            }
+        }
+    }
+}
