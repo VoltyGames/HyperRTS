@@ -121,8 +121,7 @@ namespace HyperRTS.Editor.Maps.Planning
             }
 
             var clearance = context.Placer.Clearance;
-            var standable = clearance.IsDry(position, reach) && !context.Shapes.InRavine(position);
-            if (!standable || !OnVerge(context, position) || !clearance.IsFree(position, SpotClearance))
+            if (!clearance.IsDry(position, reach) || !OnVerge(context, position) || !clearance.IsFree(position, SpotClearance))
             {
                 return;
             }

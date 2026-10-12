@@ -7,6 +7,7 @@ using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Metrics;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Navigation;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Report
@@ -147,7 +148,7 @@ namespace HyperRTS.Editor.Maps.Report
         private static Color Blocked(MapNavGrid nav, Vector2 p, Color color)
         {
             var cell = nav.Cell(p);
-            var blocked = nav.Grid.InBounds(cell) && nav.Grid.Cells[nav.Grid.Index(cell)] == 0;
+            var blocked = nav.Grid.InBounds(cell) && nav.Grid.Cells[nav.Grid.Index(cell)] == (byte)NavSurface.Blocked;
             return blocked ? Color.Lerp(color, BlockedColor, 0.45f) : color;
         }
 
