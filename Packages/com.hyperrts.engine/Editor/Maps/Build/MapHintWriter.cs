@@ -7,7 +7,6 @@ using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Metrics;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Resources;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -46,17 +45,7 @@ namespace HyperRTS.Editor.Maps.Build
         }
 
         private static List<(Vector2 Position, int Owner)> Nodes(IEnumerable<MapPlacement> placements) =>
-            placements.Where(IsResourceNode).Select(p => (p.Position, p.Owner)).ToList();
-
-        private static bool IsResourceNode(MapPlacement placement)
-        {
-            if (!placement.IsEntity)
-            {
-                return false;
-            }
-
-            return placement.Entry.prefab.GetComponentInChildren<ResourceNodeAuthoring>() != null;
-        }
+            placements.Where(p => p.Entry.IsResource).Select(p => (p.Position, p.Owner)).ToList();
 
         private static List<(Vector2 Position, float Radius)> Crossings(MapShapes shapes) =>
             shapes.Crossings.Select(c => (c.Position, Mathf.Max(c.Span, c.Width) * 0.5f + CrossingMargin)).ToList();

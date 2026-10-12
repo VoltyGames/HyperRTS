@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
@@ -15,14 +14,13 @@ namespace HyperRTS.Editor.Maps.Tools
     {
         public static List<string> Capture(string specPath)
         {
-            var spec = JsonUtility.FromJson<MapSpec>(File.ReadAllText(specPath));
-            var paths = new MapPaths(specPath, spec.name);
-            if (EditorSceneManager.GetActiveScene().path != paths.Scene)
+            var project = MapProject.Open(specPath);
+            var spec = project.Spec;
+            if (EditorSceneManager.GetActiveScene().path != project.Paths.Scene)
             {
-                EditorSceneManager.OpenScene(paths.Scene, OpenSceneMode.Single);
+                EditorSceneManager.OpenScene(project.Paths.Scene, OpenSceneMode.Single);
             }
 
-            var project = MapProject.Load(spec.climate);
             var issues = new MapIssues();
             MapRefiner.Refine(spec, project.Climate, issues);
             var layout = MapExpander.Expand(spec, issues);

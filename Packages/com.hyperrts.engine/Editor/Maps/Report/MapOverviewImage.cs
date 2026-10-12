@@ -7,7 +7,6 @@ using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Metrics;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Resources;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Report
@@ -85,13 +84,14 @@ namespace HyperRTS.Editor.Maps.Report
 
             foreach (var placement in placements)
             {
-                var resource = placement.Entry.prefab.GetComponentInChildren<ResourceNodeAuthoring>() != null;
-                var color = placement.Owner > 0 ? PlayerSlot.Palette[(placement.Owner - 1) % PlayerSlot.Palette.Length]
-                    : resource ? Resource : placement.Entry.IsGameplay ? Color.white : SceneryColor;
-                if (placement.IsEntity || scenery)
+                if (!placement.IsEntity && !scenery)
                 {
-                    Disc(pixels, layout, placement.Position, Mathf.Max(0.8f, placement.Radius * 0.6f), color);
+                    continue;
                 }
+
+                var color = placement.Owner > 0 ? PlayerSlot.Palette[(placement.Owner - 1) % PlayerSlot.Palette.Length]
+                    : placement.Entry.IsResource ? Resource : placement.Entry.IsGameplay ? Color.white : SceneryColor;
+                Disc(pixels, layout, placement.Position, Mathf.Max(0.8f, placement.Radius * 0.6f), color);
             }
 
             var image = new Texture2D(Size, Size, TextureFormat.RGB24, false);

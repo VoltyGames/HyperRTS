@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
@@ -68,7 +69,6 @@ namespace HyperRTS.Editor.Maps.Report
             var folder = MapReport.ViewsFolder(map);
             Directory.CreateDirectory(folder);
             var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
-            var image = new Texture2D(Width, Height, TextureFormat.RGB24, false);
             var paths = new List<string>();
             var transform = camera.transform;
             var (position, rotation, fieldOfView) = (transform.position, transform.rotation, camera.fieldOfView);
@@ -83,7 +83,7 @@ namespace HyperRTS.Editor.Maps.Report
                     Aim(camera, view, rules);
                     RenderPipeline.SubmitRenderRequest(camera, new RenderPipeline.StandardRequest { destination = target });
                     var path = Path.Combine(folder, view.Name + ".png");
-                    Save(target, image, path);
+                    EditorTextures.SavePng(target, path);
                     paths.Add(path);
                 }
             }
@@ -93,7 +93,6 @@ namespace HyperRTS.Editor.Maps.Report
                 camera.fieldOfView = fieldOfView;
                 camera.overrideSceneCullingMask = mask;
                 Object.DestroyImmediate(target);
-                Object.DestroyImmediate(image);
             }
 
             return paths;
@@ -106,16 +105,6 @@ namespace HyperRTS.Editor.Maps.Report
             var distance = view.Height / Mathf.Sin(rules.viewPitch * Mathf.Deg2Rad);
             var focus = new Vector3(view.Focus.x, 0f, view.Focus.y);
             camera.transform.SetPositionAndRotation(focus - rotation * Vector3.forward * distance, rotation);
-        }
-
-        private static void Save(RenderTexture target, Texture2D image, string path)
-        {
-            var active = RenderTexture.active;
-            RenderTexture.active = target;
-            image.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
-            image.Apply();
-            RenderTexture.active = active;
-            File.WriteAllBytes(path, image.EncodeToPNG());
         }
     }
 }

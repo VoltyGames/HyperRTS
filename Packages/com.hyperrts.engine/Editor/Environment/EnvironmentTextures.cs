@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using HyperRTS.Editor.Common;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -94,8 +95,7 @@ namespace HyperRTS.Editor.Environment
             texture.Apply(false);
             File.WriteAllBytes(Path.GetFullPath(path), texture.EncodeToPNG());
             Object.DestroyImmediate(texture);
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-            Configure((TextureImporter)AssetImporter.GetAtPath(path));
+            EditorTextures.Import(path, Configure);
         }
 
         /// <summary>One linear channel in red (the light cookie reads it as a red-format cookie), tiling, with mips.</summary>
@@ -109,7 +109,6 @@ namespace HyperRTS.Editor.Environment
             importer.sRGBTexture = false;
             importer.wrapMode = TextureWrapMode.Repeat;
             importer.mipmapEnabled = true;
-            importer.SaveAndReimport();
         }
     }
 }

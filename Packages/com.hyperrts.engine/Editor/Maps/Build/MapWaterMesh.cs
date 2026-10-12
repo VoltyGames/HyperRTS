@@ -41,13 +41,14 @@ namespace HyperRTS.Editor.Maps.Build
         {
             var length = MapGeometry.Length(line);
             var count = Mathf.Max(2, Mathf.CeilToInt(length / Step) + 1);
+            var walker = new MapPathWalker(line);
             var first = vertices.Count;
             for (var i = 0; i < count; i++)
             {
                 var along = Mathf.Min(length, i * Step);
-                var point = MapGeometry.PointAlong(line, along, out _);
-                var ahead = MapGeometry.PointAlong(line, Mathf.Min(length, along + Step), out _);
-                var behind = MapGeometry.PointAlong(line, Mathf.Max(0f, along - Step), out _);
+                var point = walker.PointAt(along, out _);
+                var ahead = walker.PointAt(Mathf.Min(length, along + Step), out _);
+                var behind = walker.PointAt(Mathf.Max(0f, along - Step), out _);
                 var direction = (ahead - behind).normalized;
                 var left = new Vector2(-direction.y, direction.x) * half;
                 vertices.Add(new Vector3(point.x + left.x, height, point.y + left.y));

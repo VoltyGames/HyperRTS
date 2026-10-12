@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>Placements that become entities (gameplay objects and destructible scenery): the simulation's load.</summary>
         public int entities;
 
-        public static MapLandFigures Of(MapLand land, UnityEngine.Rect playable, int trees,
+        public static MapLandFigures Measure(MapLand land, UnityEngine.Rect playable, int trees,
             IReadOnlyCollection<Placement.MapPlacement> placements)
         {
             var counts = new Dictionary<MapLandKind, int>();

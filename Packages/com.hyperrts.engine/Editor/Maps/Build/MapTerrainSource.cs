@@ -1,4 +1,5 @@
 using System.IO;
+using HyperRTS.Editor.Common;
 using UnityEditor;
 using UnityEngine;
 
@@ -88,16 +89,7 @@ namespace HyperRTS.Editor.Maps.Build
             };
             source.SetPixels32(image.GetPixels32());
             source.Apply(true);
-            var target = RenderTexture.GetTemporary(size, size, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
-            Graphics.Blit(source, target);
-
-            var previous = RenderTexture.active;
-            RenderTexture.active = target;
-            var result = new Texture2D(size, size, TextureFormat.RGBA32, false, true);
-            result.ReadPixels(new Rect(0, 0, size, size), 0, 0, false);
-            RenderTexture.active = previous;
-            RenderTexture.ReleaseTemporary(target);
-
+            var result = EditorTextures.Resample(source, size, RenderTextureFormat.ARGB32, TextureFormat.RGBA32);
             var pixels = result.GetPixels32();
             Object.DestroyImmediate(source);
             Object.DestroyImmediate(result);

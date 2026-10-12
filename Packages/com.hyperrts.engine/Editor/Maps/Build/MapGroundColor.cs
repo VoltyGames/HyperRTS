@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Data;
 using UnityEditor;
 using UnityEngine;
@@ -82,21 +83,13 @@ namespace HyperRTS.Editor.Maps.Build
         /// </summary>
         private static Color[] Read(Texture texture, int size)
         {
-            var target = RenderTexture.GetTemporary(size, size, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-            var copy = new Texture2D(size, size, TextureFormat.RGBAFloat, false, true);
-            var active = RenderTexture.active;
+            var copy = EditorTextures.Resample(texture, size, RenderTextureFormat.ARGBFloat, TextureFormat.RGBAFloat);
             try
             {
-                Graphics.Blit(texture, target);
-                RenderTexture.active = target;
-                copy.ReadPixels(new Rect(0, 0, size, size), 0, 0);
-                copy.Apply(false);
                 return copy.GetPixels();
             }
             finally
             {
-                RenderTexture.active = active;
-                RenderTexture.ReleaseTemporary(target);
                 Object.DestroyImmediate(copy);
             }
         }
@@ -112,15 +105,14 @@ namespace HyperRTS.Editor.Maps.Build
 
         private static Texture2D Import(string path, int size)
         {
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-            importer.sRGBTexture = true;
-            importer.mipmapEnabled = false;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.maxTextureSize = Mathf.NextPowerOfTwo(size);
-            importer.textureCompression = TextureImporterCompression.CompressedHQ;
-            importer.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            return EditorTextures.Import(path, importer =>
+            {
+                importer.sRGBTexture = true;
+                importer.mipmapEnabled = false;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.maxTextureSize = Mathf.NextPowerOfTwo(size);
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            });
         }
     }
 }

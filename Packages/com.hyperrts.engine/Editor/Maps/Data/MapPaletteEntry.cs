@@ -39,6 +39,9 @@ namespace HyperRTS.Editor.Maps.Data
         /// <summary>Prefabs with HyperRTS authoring bake into the SubScene; the rest are scenery in the main scene.</summary>
         public bool IsEntity => prefab.GetComponentInChildren<AuthoringBehaviour>(true) != null;
 
+        /// <summary>A resource node. Looked up on the live prefab each time, so edits to it show on the next build.</summary>
+        public bool IsResource => prefab.GetComponentInChildren<ResourceNodeAuthoring>() != null;
+
         /// <summary>Something players use (a building, unit or resource node), as opposed to scenery.</summary>
         public bool IsGameplay =>
             prefab.GetComponentInChildren<GameEntityAuthoring>(true) != null

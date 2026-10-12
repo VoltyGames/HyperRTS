@@ -22,10 +22,9 @@ namespace HyperRTS.Editor.Maps.Build
     {
         public static MapReport Build(string specPath)
         {
-            var spec = JsonUtility.FromJson<MapSpec>(File.ReadAllText(specPath));
-            var paths = new MapPaths(specPath, spec.name);
+            var project = MapProject.Open(specPath);
+            var (spec, paths) = (project.Spec, project.Paths);
             var issues = new MapIssues();
-            var project = MapProject.Load(spec.climate);
             var generation = MapGeneration.Run(spec, project, issues);
             if (generation == null)
             {
@@ -89,7 +88,6 @@ namespace HyperRTS.Editor.Maps.Build
             return report;
         }
 
-        /// <summary>Fresh screenshots with every build, unless there's no graphics device (batch mode with -nographics).</summary>
         /// <summary>
         /// Fresh screenshots with every build, the overview kept next to the map as its picture; none (null) when
         /// there's no graphics device (batch mode with -nographics).

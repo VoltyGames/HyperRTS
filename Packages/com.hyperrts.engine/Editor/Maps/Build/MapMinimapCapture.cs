@@ -1,4 +1,4 @@
-using System.IO;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Layout;
 using UnityEditor;
 using UnityEngine;
@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Maps.Build
                 RenderSettings.fog = false;
                 var request = new RenderPipeline.StandardRequest { destination = target };
                 RenderPipeline.SubmitRenderRequest(camera, request);
-                Save(target, path);
+                EditorTextures.SavePng(target, path);
             }
             finally
             {
@@ -43,28 +43,15 @@ namespace HyperRTS.Editor.Maps.Build
             return Import(path);
         }
 
-        private static void Save(RenderTexture target, string path)
-        {
-            var active = RenderTexture.active;
-            RenderTexture.active = target;
-            var image = new Texture2D(Size, Size, TextureFormat.RGB24, false);
-            image.ReadPixels(new Rect(0, 0, Size, Size), 0, 0);
-            image.Apply();
-            RenderTexture.active = active;
-            File.WriteAllBytes(path, image.EncodeToPNG());
-            Object.DestroyImmediate(image);
-        }
-
         private static Texture2D Import(string path)
         {
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-            importer.mipmapEnabled = false;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.maxTextureSize = Size;
-            importer.textureCompression = TextureImporterCompression.CompressedHQ;
-            importer.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            return EditorTextures.Import(path, importer =>
+            {
+                importer.mipmapEnabled = false;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.maxTextureSize = Size;
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            });
         }
     }
 }

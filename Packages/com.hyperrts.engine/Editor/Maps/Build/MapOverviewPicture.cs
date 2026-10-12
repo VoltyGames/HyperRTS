@@ -1,4 +1,5 @@
 using System.IO;
+using HyperRTS.Editor.Common;
 using UnityEditor;
 using UnityEngine;
 
@@ -17,14 +18,13 @@ namespace HyperRTS.Editor.Maps.Build
             }
 
             File.Copy(captured, assetPath, true);
-            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
-            var importer = (TextureImporter)AssetImporter.GetAtPath(assetPath);
-            importer.textureType = TextureImporterType.Default;
-            importer.sRGBTexture = true;
-            importer.mipmapEnabled = false;
-            importer.maxTextureSize = MaxSize;
-            importer.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+            return EditorTextures.Import(assetPath, importer =>
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.sRGBTexture = true;
+                importer.mipmapEnabled = false;
+                importer.maxTextureSize = MaxSize;
+            });
         }
     }
 }

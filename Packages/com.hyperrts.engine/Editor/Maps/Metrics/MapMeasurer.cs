@@ -4,7 +4,6 @@ using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Simulation.Navigation;
-using HyperRTS.Simulation.Resources;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -179,8 +178,7 @@ namespace HyperRTS.Editor.Maps.Metrics
 
                 foreach (var node in placements.Where(p => (p.Position - spawn.Position).magnitude < radius * FieldReach))
                 {
-                    var resource = node.Entry.prefab.GetComponentInChildren<ResourceNodeAuthoring>();
-                    if (resource != null)
+                    if (node.Entry.IsResource)
                     {
                         metrics.fields++;
                         metrics.supply += node.Amount;

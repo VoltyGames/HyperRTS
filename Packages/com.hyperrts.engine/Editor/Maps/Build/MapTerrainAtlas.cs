@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using HyperRTS.Editor.Common;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -74,31 +75,27 @@ namespace HyperRTS.Editor.Maps.Build
 
         private static void Import(string path, int columns, int rows, bool normalMap, bool sRGB, string hash)
         {
-            if (AssetImporter.GetAtPath(path) == null)
+            EditorTextures.Import(path, importer =>
             {
-                AssetDatabase.ImportAsset(path);
-            }
-
-            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-            var settings = new TextureImporterSettings();
-            importer.ReadTextureSettings(settings);
-            settings.textureType = normalMap ? TextureImporterType.NormalMap : TextureImporterType.Default;
-            settings.textureShape = TextureImporterShape.Texture2DArray;
-            settings.flipbookColumns = columns;
-            settings.flipbookRows = rows;
-            settings.sRGBTexture = sRGB;
-            settings.alphaSource = TextureImporterAlphaSource.FromInput;
-            settings.alphaIsTransparency = false;
-            settings.npotScale = TextureImporterNPOTScale.None;
-            settings.mipmapEnabled = true;
-            settings.wrapMode = TextureWrapMode.Repeat;
-            settings.filterMode = FilterMode.Trilinear;
-            settings.aniso = AnisoLevel;
-            importer.SetTextureSettings(settings);
-            importer.maxTextureSize = 16384;
-            importer.textureCompression = TextureImporterCompression.CompressedHQ;
-            importer.userData = hash;
-            importer.SaveAndReimport();
+                var settings = new TextureImporterSettings();
+                importer.ReadTextureSettings(settings);
+                settings.textureType = normalMap ? TextureImporterType.NormalMap : TextureImporterType.Default;
+                settings.textureShape = TextureImporterShape.Texture2DArray;
+                settings.flipbookColumns = columns;
+                settings.flipbookRows = rows;
+                settings.sRGBTexture = sRGB;
+                settings.alphaSource = TextureImporterAlphaSource.FromInput;
+                settings.alphaIsTransparency = false;
+                settings.npotScale = TextureImporterNPOTScale.None;
+                settings.mipmapEnabled = true;
+                settings.wrapMode = TextureWrapMode.Repeat;
+                settings.filterMode = FilterMode.Trilinear;
+                settings.aniso = AnisoLevel;
+                importer.SetTextureSettings(settings);
+                importer.maxTextureSize = 16384;
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
+                importer.userData = hash;
+            });
         }
     }
 }
