@@ -1,4 +1,6 @@
 using System;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Spec
 {
@@ -11,6 +13,7 @@ namespace HyperRTS.Editor.Maps.Spec
     {
         public MapPoint center;
         public float radius = 60f;
+        [MapKey(typeof(MapSettlementKit))]
         public string kind;
         public int count = 8;
     }

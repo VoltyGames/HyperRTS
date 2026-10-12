@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Spec
 {
@@ -8,6 +10,7 @@ namespace HyperRTS.Editor.Maps.Spec
     public sealed class MapScatterSpec
     {
         public List<MapPoint> points = new();
+        [MapKey(typeof(MapPaletteEntry))]
         public string kind;
         public int count;
         public bool shared;

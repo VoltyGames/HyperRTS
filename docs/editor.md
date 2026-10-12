@@ -8,11 +8,11 @@ Scene view `Handles`, which have no UI Toolkit equivalent.
 | Menu | Does |
 | --- | --- |
 | **HyperRTS ▸ Tools** | One dockable window with a sidebar of pages (below); games add pages by subclassing `HubPage`. A page's badge (Validate's error count) shows in the sidebar |
-| **Tools ▸ Maps** | Every `.map.json` spec with a Build button, Build all, and **New blank scene...**: a dialog with map size, player count (1 human, the rest AI), optional starting-base prefab. Builds light, ground, `RTSWorld` rig, `MatchState` ghost and a SubScene with the `Match` |
+| **Tools ▸ Maps** | Every `.map.json` spec with its mode, size and last report (errors, warnings), Open (Map Editor) and Build buttons; **New map...** (name, mode, size, symmetry, climate, seed: writes a starting spec and opens it), Build all, and **New blank scene...**: a dialog with map size, player count (1 human, the rest AI), optional starting-base prefab. Builds light, ground, `RTSWorld` rig, `MatchState` ghost and a SubScene with the `Match` |
 | **Tools ▸ Validate** | Setup problems in every authoring prefab and the open scenes, with quick fixes; click an object name to select it |
 | **Tools ▸ Catalog** | Stats tab: every unit and building prefab in one table, edit HP, build time, vision, speed, damage, cooldown, range; DPS and cost update live. Tech Tree tab: requires, made by, makes, unlocks |
 | **Tools ▸ Play** | Cheats (Play mode): add resources, instant build, fog toggle, spawn any prefab at the view, control another player (single player), game speed. Acts on the authoritative world; instant build completes through the construction and production systems. Any cheat drops the running replay recording. Network: host, join localhost, dedicated server, stop. Replays: save the Play-mode recording, or play a replay file |
-| **HyperRTS ▸ Maps** | Build or Preview the selected `.map.json` (or the open map's), Capture Views, Build All, Auto-rebuild on spec change, Open Report |
+| **HyperRTS ▸ Map Editor** | Edits a `.map.json` (double-click one to open it): tools Select (V), Point (P), Line (L) and Area (A), Escape back to Select; Alt+click a selected line's edge adds a vertex, Ctrl+click a vertex removes it; shared points snap to the symmetry axis or centre; points outside the authored sector get an orange ring |
 | **HyperRTS ▸ Generate Component Icons** | Regenerates the per-module icons in `Editor/Icons/` |
 | **HyperRTS ▸ Documentation** | Opens getting started, the module reference, the editor guide or networking |
 | **GameObject ▸ HyperRTS ▸ RTS World**, **Match** | The rig prefab; a Match with its MatchState ghost |
@@ -251,10 +251,19 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 | Capture Views (`MapViewCapture`) | `Logs/MapReports/<Map>/*.png` from the scene's own match camera: `centre`, `base-N`, `crossing-N`, `settlement-N` (wide and `-close`), `overview` |
 | Key reference (`MapKeyReference`) | A Markdown list of every `kind` a spec may name, for the game to write beside its map tooling |
 
-Menu: **HyperRTS ▸ Maps** (Build, Preview, Capture Views, Build All, Auto-rebuild, Open Report). Batch mode:
+Editor: **HyperRTS ▸ Map Editor** and **Tools ▸ Maps** (Build, Build all, New map). Batch mode:
 `-executeMethod HyperRTS.Editor.Maps.Tools.MapCommandLine.Build` (or `.Preview`) `-map <spec>` exits 0, 1 on report
 errors, 2 on a crash; `-nographics` skips the screenshots. `MapSpecRule` shows a map's report errors in
 **HyperRTS ▸ Tools ▸ Validate**.
+
+The Map Editor previews the open spec as it is in memory: with **Auto preview** on, 0.75 s after an edit is
+committed (pointer up, field changed) it checks the spec on the main thread, plans it on a worker thread
+(`MapPreview.RunAsync`, `MapGeneration.PlanChecked`) and swaps the canvas background; **Preview** runs one now and
+nothing is written to `Logs/MapReports/`. **Build** saves the spec and builds it. The report panel under the
+inspector shows the newest preview's or build's issues, the land figures and the last build's metrics (rush,
+paths, buildable share), with **Open scene** and **Recapture views**; an issue that names a feature (the report's
+`errorFeatures` / `warningFeatures`, index for index with `errors` / `warnings`) has **Show**, which selects and
+frames it. Spec key fields carry `[MapKey]`, drawn as a dropdown of the map library's keys.
 
 ### What the game supplies
 
@@ -267,10 +276,20 @@ surfaces, road classes and kits its file lists, then the terrain layers (at most
 the order they are first named. Its terrain arrays are generated beside the climate file. A missing, duplicate or
 unresolvable item throws naming the file. The game can implement `IMapBuildHook` to list built maps in its menus.
 
+**Tools ▸ Library** (`Library/LibraryPage`) edits the library: types with counts, a searchable item list with
+thumbnails, and a form over the item loaded into a hidden `MapLibraryItemWrapper` so property fields and Undo work.
+String fields naming another item carry `[MapKey(typeof(...))]` and asset path fields `[MapAsset(typeof(...))]` (an
+object field that writes the path); `MapLibraryRefFields` lists the refs each type reads. Saves go through
+`MapLibraryItemFile` (refs first, two-space indent, the key only in the file name). New, Duplicate and Rename work on
+files; **Used by** (`MapLibraryUsages`) lists items and specs whose `[MapKey]` fields name the item, and the problems
+panel (`MapLibraryProblems`, the page's badge) lists files that don't parse, keys that don't resolve and paths that
+don't load. Nothing caches `MapLibrary`; the page reloads when `MapLibraryChanges` sees the project change.
+
 ### Adding a kind of land use
 
 1. A kit in `Data/` (like `MapFarmlandKit`, keyed through `IMapKeyed`, loaded through `IMapLibraryItem`) held by
-   `MapClimate`, its library type in `MapLibrary`, its keys checked in `MapAssetCheck` and listed in `MapKeyReference`.
+   `MapClimate`, its library type in `MapLibrary` and `MapLibraryRefFields`, `[MapKey]` on its key fields, its keys
+   checked in `MapAssetCheck` and listed in `MapKeyReference`.
 2. A `MapLandKind` if no existing one fits, and the surfaces it paints.
 3. A `MapLandPass` in `Planning/` that claims land and places things through `MapPlanContext`, symmetric as above.
 4. Its slot in `MapLandPlanner.Plan`, where its priority puts it.

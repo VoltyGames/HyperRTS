@@ -20,6 +20,11 @@ namespace HyperRTS.Editor.Maps.Report
         public string built;
         public List<string> errors = new();
         public List<string> warnings = new();
+
+        /// <summary>The spec feature of each error and warning, index for index (empty array name: the whole map).</summary>
+        public List<MapIssueFeature> errorFeatures = new();
+        public List<MapIssueFeature> warningFeatures = new();
+
         public MapMetrics metrics;
         public MapLandFigures land;
 
@@ -41,13 +46,19 @@ namespace HyperRTS.Editor.Maps.Report
             built = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
             errors = new List<string>(issues.Errors),
             warnings = new List<string>(issues.Warnings),
+            errorFeatures = new List<MapIssueFeature>(issues.ErrorFeatures),
+            warningFeatures = new List<MapIssueFeature>(issues.WarningFeatures),
             metrics = metrics,
         };
 
         /// <summary>The last report written for a map, or null if it was never built.</summary>
-        public static MapReport Load(string map)
+        public static MapReport Load(string map) => LoadFile(JsonPath(map));
+
+        /// <summary>The last preview written for a map, or null if it was never previewed.</summary>
+        public static MapReport LoadPreview(string map) => LoadFile(JsonPath(map + PreviewSuffix));
+
+        private static MapReport LoadFile(string path)
         {
-            var path = JsonPath(map);
             return File.Exists(path) ? JsonUtility.FromJson<MapReport>(File.ReadAllText(path)) : null;
         }
 

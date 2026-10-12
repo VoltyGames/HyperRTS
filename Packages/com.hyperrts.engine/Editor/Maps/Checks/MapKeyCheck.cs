@@ -22,11 +22,14 @@ namespace HyperRTS.Editor.Maps.Checks
 
         protected MapIssues Issues { get; }
 
+        /// <summary>The spec feature being checked; errors are reported against it.</summary>
+        protected MapIssueFeature Feature { get; set; }
+
         protected void Require(bool condition, string message)
         {
             if (!condition)
             {
-                Issues.Error(message);
+                Issues.Error(message, Feature);
             }
         }
 

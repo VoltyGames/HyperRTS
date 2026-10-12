@@ -1,6 +1,4 @@
-using System;
-using System.IO;
-using HyperRTS.Editor.Maps.Report;
+﻿using System;
 using HyperRTS.Editor.Maps.Symmetry;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -10,7 +8,8 @@ namespace HyperRTS.Editor.Maps.Designer
     /// <summary>
     /// The Map Editor's map view: the latest preview image under a metre grid, the bounds and sector edges, every
     /// feature with its symmetry ghosts, and the selection's handles. Middle-drag or Space+drag pans, the wheel
-    /// zooms to the cursor, F fits the map.
+    /// zooms to the cursor, F fits the map. The left button and other keys go to the active tool
+    /// (<see cref="MapCanvasTools"/>).
     /// </summary>
     public sealed class MapCanvas : VisualElement
     {
@@ -21,37 +20,39 @@ namespace HyperRTS.Editor.Maps.Designer
         private readonly MapSpecDocument _document;
         private readonly MapFeatureSelection _selection;
         private readonly MapCanvasView _view = new();
-        private readonly MapSelectTool _tool;
-        private readonly VisualElement _image;
+        private readonly MapToolContext _context;
+        private readonly MapCanvasTools _tools;
+        private readonly MapCanvasBackdrop _image;
         private readonly VisualElement _overlay;
         private readonly Label _scale;
         private readonly Label _error;
 
         private MapSymmetry _symmetry;
-        private Texture2D _preview;
-        private long _previewTicks;
         private bool _fitted;
         private bool _spaceHeld;
         private bool _panning;
         private Vector2 _lastPointer;
         private bool _ghosts = true;
 
-        public MapCanvas(MapSpecDocument document, MapFeatureSelection selection)
+        public MapCanvas(MapSpecDocument document, MapFeatureSelection selection, MapToolbox toolbox)
         {
             _document = document;
             _selection = selection;
-            _tool = new MapSelectTool(document, selection, _view);
+            _context = new MapToolContext(document, selection, _view);
             AddToClassList("hrts-map-canvas");
             focusable = true;
 
-            _image = AddChild("hrts-map-canvas__image");
+            _image = new MapCanvasBackdrop();
+            Add(_image);
             _overlay = AddChild("hrts-map-canvas__overlay");
             _overlay.generateVisualContent = Paint;
             _scale = AddLabel("hrts-map-canvas__scale");
             _error = AddLabel("hrts-map-canvas__error");
+            _tools = new MapCanvasTools(_context, toolbox, _overlay.MarkDirtyRepaint);
+            RegisterCallback<AttachToPanelEvent>(_ => _tools.Attach());
+            RegisterCallback<DetachFromPanelEvent>(_ => _tools.Detach());
 
             RegisterCallback<GeometryChangedEvent>(_ => OnResized());
-            RegisterCallback<DetachFromPanelEvent>(_ => DestroyPreview());
             RegisterCallback<WheelEvent>(OnWheel);
             RegisterCallback<PointerDownEvent>(OnPointerDown);
             RegisterCallback<PointerMoveEvent>(OnPointerMove);
@@ -105,7 +106,19 @@ namespace HyperRTS.Editor.Maps.Designer
                 _error.text = exception.Message;
             }
 
+            _context.Symmetry = _symmetry;
+
             LoadPreview();
+            OnViewChanged();
+        }
+
+        /// <summary>Shows a preview image drawn in memory (the live preview's); the canvas owns it from now on.</summary>
+        public void ShowPreview(Texture2D image) => _image.Show(image);
+
+        /// <summary>Zooms and pans to show <paramref name="feature"/>.</summary>
+        public void Frame(MapFeatureRef feature)
+        {
+            _view.Fit(MapFeatureBounds.Of(_document.spec, feature));
             OnViewChanged();
         }
 
@@ -141,6 +154,7 @@ namespace HyperRTS.Editor.Maps.Designer
             if (_symmetry != null)
             {
                 MapCanvasPainter.DrawSector(painter, _view, _symmetry, PlayableBounds);
+                MapSectorWarnings.Draw(painter, spec, _view, _symmetry);
             }
 
             if (_symmetry != null && _ghosts)
@@ -150,6 +164,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
             MapFeaturePainter.DrawFeatures(painter, spec, _view);
             MapFeaturePainter.DrawSelection(painter, spec, _view, _selection.Current);
+            _tools.Active.Paint(painter);
         }
 
         private void OnResized()
@@ -175,40 +190,7 @@ namespace HyperRTS.Editor.Maps.Designer
             _overlay.MarkDirtyRepaint();
         }
 
-        /// <summary>
-        /// Shows the image the map's last preview wrote, reloading it when it changes. Like the report's overview it
-        /// covers the playable bounds, north up.
-        /// </summary>
-        private void LoadPreview()
-        {
-            var path = MapReport.ImagePath(_document.MapName + MapReport.PreviewSuffix);
-            var ticks = File.Exists(path) ? File.GetLastWriteTimeUtc(path).Ticks : 0L;
-            if (ticks == _previewTicks)
-            {
-                return;
-            }
-
-            DestroyPreview();
-            _previewTicks = ticks;
-            if (ticks != 0L)
-            {
-                _preview = new Texture2D(2, 2) { hideFlags = HideFlags.HideAndDontSave };
-                _preview.LoadImage(File.ReadAllBytes(path));
-            }
-
-            _image.style.backgroundImage = _preview;
-        }
-
-        private void DestroyPreview()
-        {
-            if (_preview != null)
-            {
-                UnityEngine.Object.DestroyImmediate(_preview);
-            }
-
-            _preview = null;
-            _previewTicks = 0L;
-        }
+        private void LoadPreview() => _image.Poll(_document.MapName);
 
         private void OnWheel(WheelEvent evt)
         {
@@ -225,7 +207,7 @@ namespace HyperRTS.Editor.Maps.Designer
             _panning = evt.button == MiddleButton || _spaceHeld;
             if (!_panning && evt.button == 0)
             {
-                _tool.Down(evt.localPosition);
+                _tools.Active.Down(evt.localPosition, evt.modifiers, evt.clickCount);
                 _overlay.MarkDirtyRepaint();
             }
 
@@ -242,7 +224,8 @@ namespace HyperRTS.Editor.Maps.Designer
             }
             else
             {
-                _tool.Move(position);
+                _tools.Active.Move(position);
+                _overlay.MarkDirtyRepaint();
             }
 
             _lastPointer = position;
@@ -252,7 +235,7 @@ namespace HyperRTS.Editor.Maps.Designer
         {
             this.ReleasePointer(evt.pointerId);
             _panning = false;
-            _tool.Up();
+            _tools.Active.Up();
         }
 
         private void OnKeyDown(KeyDownEvent evt)
@@ -262,15 +245,15 @@ namespace HyperRTS.Editor.Maps.Designer
                 case KeyCode.Space:
                     _spaceHeld = true;
                     break;
-                case KeyCode.Delete:
-                case KeyCode.Backspace:
-                    _tool.DeleteSelected();
-                    break;
                 case KeyCode.F:
                     Fit();
                     break;
                 default:
-                    return;
+                    if (!_tools.Key(evt.keyCode, evt.modifiers))
+                    {
+                        return;
+                    }
+                    break;
             }
 
             evt.StopPropagation();

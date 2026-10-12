@@ -29,9 +29,18 @@ namespace HyperRTS.Editor.Maps.Generation
         public MapClimate Climate { get; }
 
         /// <summary>Reads the spec at <paramref name="specPath"/> and loads what it needs from the map library.</summary>
-        public static MapProject Open(string specPath)
+        public static MapProject Open(string specPath) =>
+            Create(JsonUtility.FromJson<MapSpec>(File.ReadAllText(specPath)), specPath);
+
+        /// <summary>
+        /// A project for a spec held in memory (an editor's unsaved document) that lives at <paramref name="specPath"/>.
+        /// The spec is copied first, since generation refines it in place.
+        /// </summary>
+        public static MapProject FromSpec(MapSpec spec, string specPath) =>
+            Create(JsonUtility.FromJson<MapSpec>(JsonUtility.ToJson(spec)), specPath);
+
+        private static MapProject Create(MapSpec spec, string specPath)
         {
-            var spec = JsonUtility.FromJson<MapSpec>(File.ReadAllText(specPath));
             var paths = new MapPaths(specPath, spec.name);
             var library = MapLibrary.Load();
             return new MapProject(spec, paths, library.Palette(), library.Rules(), library.Climate(spec.climate, specPath));

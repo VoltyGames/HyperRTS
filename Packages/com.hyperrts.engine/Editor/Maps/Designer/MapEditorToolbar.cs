@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Maps.Designer
         public MapEditorToolbar(Action<string> pick, Action save, Action revert, Action<bool> ghosts)
         {
             var specs = MapPaths.All().OrderBy(MapPaths.NameOf).ToList();
-            _picker = new PopupField<string>(specs, -1, MapPaths.NameOf, MapPaths.NameOf);
+            _picker = new PopupField<string>(specs, -1, Label, Label);
             _picker.AddToClassList("hrts-map-toolbar__picker");
             _picker.RegisterValueChangedCallback(evt => pick(evt.newValue));
             Add(_picker);
@@ -50,6 +50,9 @@ namespace HyperRTS.Editor.Maps.Designer
 
             _picker.SetValueWithoutNotify(document.Path);
         }
+
+        // The picker formats its empty value too, before any spec is open.
+        private static string Label(string spec) => spec == null ? "Open a map…" : MapPaths.NameOf(spec);
 
         /// <summary>No spec open yet: nothing to save or revert.</summary>
         public void ShowNone()

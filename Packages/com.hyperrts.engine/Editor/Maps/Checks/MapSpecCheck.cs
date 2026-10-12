@@ -29,21 +29,25 @@ namespace HyperRTS.Editor.Maps.Checks
         {
             Header();
             Require(MapKeys.Contains(_rules.modes, _spec.mode), $"The map rules have no thresholds for mode '{_spec.mode}'.");
-            Each(_spec.resources, "Resource", (resource, name) =>
+            Each(_spec.resources, nameof(MapSpec.resources), "Resource", (resource, name) =>
             {
                 Entry(resource.kind, name);
                 Require(resource.amount > 0, $"{name} ('{resource.kind}') needs an amount above 0.");
             });
-            Each(_spec.props, "Prop", (prop, name) => Entry(prop.kind, name));
-            Each(_spec.scatters, "Scatter", (scatter, name) => Entry(scatter.kind, name));
-            Each(_spec.lines, "Line", Line);
-            Each(_spec.roads, "Road", Road);
-            Each(_spec.rivers, "River", (river, name) => river.crossings.ForEach(crossing => Crossing(river, crossing, name)));
-            Each(_spec.woods, "Wood", (wood, name) => InClimate(Climate.woodlandKits, wood.kind, "woodland kit", name));
-            Each(_spec.belts, "Belt", (belt, name) => InClimate(Climate.beltKits, belt.kind, "belt kit", name));
-            Each(_spec.farmland, "Farmland", (farmland, name) => InClimate(Climate.farmlandKits, farmland.kind, "farmland kit", name));
-            Each(_spec.areas, "Area", (area, name) => Surface(area.kind, name));
-            Each(_spec.settlements, "Settlement", (settlement, name) =>
+            Each(_spec.props, nameof(MapSpec.props), "Prop", (prop, name) => Entry(prop.kind, name));
+            Each(_spec.scatters, nameof(MapSpec.scatters), "Scatter", (scatter, name) => Entry(scatter.kind, name));
+            Each(_spec.lines, nameof(MapSpec.lines), "Line", Line);
+            Each(_spec.roads, nameof(MapSpec.roads), "Road", Road);
+            Each(_spec.rivers, nameof(MapSpec.rivers), "River", (river, name) =>
+                river.crossings.ForEach(crossing => Crossing(river, crossing, name)));
+            Each(_spec.woods, nameof(MapSpec.woods), "Wood", (wood, name) =>
+                InClimate(Climate.woodlandKits, wood.kind, "woodland kit", name));
+            Each(_spec.belts, nameof(MapSpec.belts), "Belt", (belt, name) =>
+                InClimate(Climate.beltKits, belt.kind, "belt kit", name));
+            Each(_spec.farmland, nameof(MapSpec.farmland), "Farmland", (farmland, name) =>
+                InClimate(Climate.farmlandKits, farmland.kind, "farmland kit", name));
+            Each(_spec.areas, nameof(MapSpec.areas), "Area", (area, name) => Surface(area.kind, name));
+            Each(_spec.settlements, nameof(MapSpec.settlements), "Settlement", (settlement, name) =>
                 Require(MapKeys.Contains(Palette.settlementKits, settlement.kind),
                     $"{name}: settlement kit '{settlement.kind}' is not in the palette."));
         }
@@ -79,13 +83,15 @@ namespace HyperRTS.Editor.Maps.Checks
 
             if (crossing.kind != MapCrossingSpec.Bridge)
             {
-                Issues.Error($"{name}: crossing kind '{crossing.kind}' is neither '{MapCrossingSpec.Bridge}' nor '{MapCrossingSpec.Ford}'.");
+                Issues.Error(
+                    $"{name}: crossing kind '{crossing.kind}' is neither '{MapCrossingSpec.Bridge}' nor '{MapCrossingSpec.Ford}'.",
+                    Feature);
                 return;
             }
 
             if (!MapKeys.Contains(Palette.entries, crossing.prop))
             {
-                Issues.Error($"{name}: bridge '{crossing.prop}' is not in the palette.");
+                Issues.Error($"{name}: bridge '{crossing.prop}' is not in the palette.", Feature);
                 return;
             }
 
@@ -96,13 +102,19 @@ namespace HyperRTS.Editor.Maps.Checks
                 $"{name}: bridge '{crossing.prop}' needs HyperRTS authoring (Destructible) to carry its deck.");
         }
 
-        /// <summary>Checks every feature of one spec array, named the way issues name it ("Road 2").</summary>
-        private static void Each<T>(List<T> features, string label, System.Action<T, string> check)
+        /// <summary>
+        /// Checks every feature of the spec array <paramref name="array"/>, named the way issues name it ("Road 2")
+        /// and reported against it.
+        /// </summary>
+        private void Each<T>(List<T> features, string array, string label, System.Action<T, string> check)
         {
             for (var i = 0; i < features.Count; i++)
             {
+                Feature = new MapIssueFeature(array, i);
                 check(features[i], $"{label} {i + 1}");
             }
+
+            Feature = MapIssueFeature.None;
         }
     }
 }

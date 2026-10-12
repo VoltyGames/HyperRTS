@@ -1,22 +1,25 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// The Map Editor's Select/Move tool: click selects, dragging a feature moves it, dragging a handle moves that
-    /// vertex (or a circle's radius), Delete removes the selection. Each drag is one undo step.
+    /// The Map Editor's Select tool: click selects, dragging a feature moves it, dragging a handle moves that vertex
+    /// (or a circle's radius), Alt+click on the selected line or area's edge adds a vertex there (and drags it),
+    /// Ctrl+click on a vertex removes it while the feature keeps its minimum, Delete removes the selection. Shared
+    /// points and circles stay on the symmetry axis or centre. Each gesture is one undo step.
     /// </summary>
-    public sealed class MapSelectTool
+    public sealed class MapSelectTool : IMapTool
     {
-        private const float Snap = 0.5f;
+        public const string Help = "Select (V): click selects, drag moves, drag a handle to reshape. Alt+click the " +
+            "selected line or area's edge adds a vertex; Ctrl+click a vertex removes it; Delete removes the feature.";
+
         private const float MinRadius = 1f;
         private const int WholeFeature = -1;
 
-        private readonly MapSpecDocument _document;
-        private readonly MapFeatureSelection _selection;
-        private readonly MapCanvasView _view;
+        private readonly MapToolContext _context;
         private readonly List<Vector2> _start = new();
         private readonly List<Vector2> _moved = new();
 
@@ -25,36 +28,45 @@ namespace HyperRTS.Editor.Maps.Designer
         private Vector2 _grab;
         private int _undoGroup;
 
-        public MapSelectTool(MapSpecDocument document, MapFeatureSelection selection, MapCanvasView view)
+        public MapSelectTool(MapToolContext context)
         {
-            _document = document;
-            _selection = selection;
-            _view = view;
+            _context = context;
         }
 
-        public bool Dragging => _dragging;
+        private MapSpecDocument Document => _context.Document;
 
-        public void Down(Vector2 local)
+        private MapFeatureRef Current => _context.Selection.Current;
+
+        public void Down(Vector2 local, EventModifiers modifiers, int clickCount)
         {
-            var spec = _document.spec;
-            var current = _selection.Current;
-            _handle = current.IsNone ? -1 : MapHitTest.HandleAt(spec, _view, current, local);
-            if (_handle < 0)
-            {
-                _selection.Set(MapHitTest.FeatureAt(spec, _view, local));
-                _handle = WholeFeature;
-            }
-
-            if (_selection.Current.IsNone)
+            var current = Current;
+            var adding = (modifiers & EventModifiers.Alt) != 0;
+            if (adding && !current.IsNone && InsertVertex(current, local))
             {
                 return;
             }
 
-            MapHitTest.Handles(spec, _selection.Current, _start);
-            _grab = _view.ToWorld(local);
-            _dragging = true;
-            Undo.IncrementCurrentGroup();
-            _undoGroup = Undo.GetCurrentGroup();
+            _handle = current.IsNone ? -1 : MapHitTest.HandleAt(Document.spec, _context.View, current, local);
+            var removing = (modifiers & (EventModifiers.Control | EventModifiers.Command)) != 0;
+            if (removing && _handle >= 0)
+            {
+                RemoveVertex(current, _handle);
+                return;
+            }
+
+            if (_handle < 0)
+            {
+                _context.Selection.Set(MapHitTest.FeatureAt(Document.spec, _context.View, local));
+                _handle = WholeFeature;
+            }
+
+            if (Current.IsNone)
+            {
+                return;
+            }
+
+            StartUndoGroup();
+            BeginDrag(local);
         }
 
         public void Move(Vector2 local)
@@ -64,14 +76,14 @@ namespace HyperRTS.Editor.Maps.Designer
                 return;
             }
 
-            var world = _view.ToWorld(local);
+            var world = _context.View.ToWorld(local);
             if (_handle == WholeFeature)
             {
-                MoveFeature(Round(world - _grab));
+                MoveFeature(MapSnap.Grid(world - _grab));
                 return;
             }
 
-            MoveHandle(Round(world));
+            MoveHandle(world);
         }
 
         public void Up()
@@ -85,54 +97,118 @@ namespace HyperRTS.Editor.Maps.Designer
             Undo.CollapseUndoOperations(_undoGroup);
         }
 
-        public void DeleteSelected()
+        public bool Key(KeyCode key)
         {
-            var current = _selection.Current;
+            var delete = key == KeyCode.Delete || key == KeyCode.Backspace;
+            if (!delete)
+            {
+                return false;
+            }
+
+            DeleteSelected();
+            return true;
+        }
+
+        public void Cancel() => Up();
+
+        public void Paint(Painter2D painter)
+        {
+        }
+
+        private void DeleteSelected()
+        {
+            var current = Current;
             if (current.IsNone || _dragging)
             {
                 return;
             }
 
-            _selection.Clear();
-            MapFeatureEdits.Delete(_document, current);
+            _context.Selection.Clear();
+            MapFeatureEdits.Delete(Document, current);
+        }
+
+        /// <summary>Adds a vertex where the cursor is on the selected feature's edge and starts dragging it.</summary>
+        private bool InsertVertex(MapFeatureRef feature, Vector2 local)
+        {
+            var segment = MapHitTest.SegmentAt(Document.spec, _context.View, feature, local);
+            if (segment < 0)
+            {
+                return false;
+            }
+
+            StartUndoGroup();
+            _handle = MapVertexRules.InsertIndex(segment);
+            MapFeatureEdits.InsertPoint(Document, feature, _handle, _context.Place(local, false));
+            BeginDrag(local);
+            return true;
+        }
+
+        private void RemoveVertex(MapFeatureRef feature, int handle)
+        {
+            feature.Kind.ReadPoints(Document.spec, feature.Index, _start);
+            if (!MapVertexRules.CanRemove(feature.Kind.Geometry, _start.Count))
+            {
+                return;
+            }
+
+            MapFeatureEdits.RemovePoint(Document, feature, handle);
+        }
+
+        private void StartUndoGroup()
+        {
+            Undo.IncrementCurrentGroup();
+            _undoGroup = Undo.GetCurrentGroup();
+        }
+
+        private void BeginDrag(Vector2 local)
+        {
+            MapHitTest.Handles(Document.spec, Current, _start);
+            _grab = _context.View.ToWorld(local);
+            _dragging = true;
         }
 
         private void MoveFeature(Vector2 delta)
         {
-            var feature = _selection.Current;
-            var points = feature.Kind.HasPoints ? _start.Count : 1;
-            _moved.Clear();
-            for (var i = 0; i < points; i++)
+            var feature = Current;
+            if (!feature.Kind.HasPoints)
             {
-                _moved.Add(_start[i] + delta);
+                _moved.Clear();
+                _moved.Add(MapSnap.Position(_start[0] + delta, IsShared(feature), _context.Symmetry));
+                MapFeatureEdits.SetPoints(Document, feature, _moved);
+                return;
             }
 
-            MapFeatureEdits.SetPoints(_document, feature, _moved);
+            _moved.Clear();
+            foreach (var point in _start)
+            {
+                _moved.Add(point + delta);
+            }
+
+            MapFeatureEdits.SetPoints(Document, feature, _moved);
         }
 
         private void MoveHandle(Vector2 world)
         {
-            var feature = _selection.Current;
+            var feature = Current;
             var radiusHandle = feature.Kind.Geometry == MapFeatureGeometry.Circle && _handle == 1;
             if (radiusHandle)
             {
-                var radius = Mathf.Max(MinRadius, Round(Vector2.Distance(world, _start[0])));
-                MapFeatureEdits.SetRadius(_document, feature, radius);
+                var radius = Mathf.Max(MinRadius, MapSnap.Grid(Vector2.Distance(world, _start[0])));
+                MapFeatureEdits.SetRadius(Document, feature, radius);
                 return;
             }
 
+            var placed = MapSnap.Position(world, IsShared(feature) && !feature.Kind.HasPoints, _context.Symmetry);
             var points = feature.Kind.HasPoints ? _start.Count : 1;
             _moved.Clear();
             for (var i = 0; i < points; i++)
             {
-                _moved.Add(i == _handle ? world : _start[i]);
+                _moved.Add(i == _handle ? placed : _start[i]);
             }
 
-            MapFeatureEdits.SetPoints(_document, feature, _moved);
+            MapFeatureEdits.SetPoints(Document, feature, _moved);
         }
 
-        private static Vector2 Round(Vector2 value) => new(Round(value.x), Round(value.y));
-
-        private static float Round(float value) => Mathf.Round(value / Snap) * Snap;
+        private bool IsShared(MapFeatureRef feature) => feature.Kind.IsShared(Document.spec, feature.Index);
     }
 }

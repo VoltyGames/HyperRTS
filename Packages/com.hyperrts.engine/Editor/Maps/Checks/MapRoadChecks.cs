@@ -57,7 +57,8 @@ namespace HyperRTS.Editor.Maps.Checks
 
             if (reported.Add($"end {sector.x:0},{sector.y:0}"))
             {
-                issues.Warn($"Road '{road.Class.key}' dead-ends at {At(sector)}: join it to a road, run it to the map edge or the seam, or end it in a settlement.");
+                issues.Warn($"Road '{road.Class.key}' dead-ends at {At(sector)}: join it to a road, run it to the map edge or the seam, or end it in a settlement.",
+                    road.Feature);
             }
         }
 
@@ -85,7 +86,8 @@ namespace HyperRTS.Editor.Maps.Checks
             var sector = layout.Symmetry.ToSector(where, out _);
             if (reported.Add($"bend {sector.x:0},{sector.y:0}"))
             {
-                issues.Warn($"Road '{road.Class.key}' bends with a {tightest:0.#} m radius at {At(sector)}, under half its class radius ({road.Class.curve:0.#} m).");
+                issues.Warn($"Road '{road.Class.key}' bends with a {tightest:0.#} m radius at {At(sector)}, under half its class radius ({road.Class.curve:0.#} m).",
+                    road.Feature);
             }
         }
 

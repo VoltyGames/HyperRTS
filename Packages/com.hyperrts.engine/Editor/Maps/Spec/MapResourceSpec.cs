@@ -1,4 +1,6 @@
 using System;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Spec
 {
@@ -7,6 +9,7 @@ namespace HyperRTS.Editor.Maps.Spec
     public sealed class MapResourceSpec
     {
         public MapPoint pos;
+        [MapKey(typeof(MapPaletteEntry))]
         public string kind;
         public int amount;
         public bool shared;

@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Report;
 using UnityEngine;
@@ -11,13 +12,42 @@ namespace HyperRTS.Editor.Maps.Build
     /// </summary>
     public static class MapPreview
     {
+        /// <summary>Previews the spec on disk and writes the preview report and image.</summary>
         public static MapReport Run(string specPath)
         {
-            var project = MapProject.Open(specPath);
-            var spec = project.Spec;
+            var result = Run(MapProject.Open(specPath));
+            var report = result.Report;
+            report.WritePreview(result.Image);
+            Debug.Log($"HyperRTS: map '{report.map}' previewed with {report.errors.Count} errors and {report.warnings.Count} warnings. Report: {MapReport.JsonPath(report.map + MapReport.PreviewSuffix)}");
+            return report;
+        }
+
+        /// <summary>Previews a project (an editor's in-memory spec) without writing anything.</summary>
+        public static MapPreviewResult Run(MapProject project)
+        {
             var issues = new MapIssues();
-            var generation = MapGeneration.Plan(project, issues);
-            var report = MapReport.Create(spec, issues, new MapMetrics());
+            return Finish(project, issues, MapGeneration.Plan(project, issues));
+        }
+
+        /// <summary>
+        /// <see cref="Run(MapProject)"/> with the planning on a worker thread. Call it on the main thread: the checks
+        /// before and the measuring and drawing after need Unity objects and run there.
+        /// </summary>
+        public static async Task<MapPreviewResult> RunAsync(MapProject project)
+        {
+            var issues = new MapIssues();
+            MapGeneration generation = null;
+            if (MapGeneration.Check(project, issues))
+            {
+                generation = await Task.Run(() => MapGeneration.PlanChecked(project, issues));
+            }
+
+            return Finish(project, issues, generation);
+        }
+
+        private static MapPreviewResult Finish(MapProject project, MapIssues issues, MapGeneration generation)
+        {
+            var report = MapReport.Create(project.Spec, issues, new MapMetrics());
             Texture2D image = null;
             if (generation != null)
             {
@@ -25,9 +55,7 @@ namespace HyperRTS.Editor.Maps.Build
                 image = MapOverviewImage.DrawLand(generation);
             }
 
-            report.WritePreview(image);
-            Debug.Log($"HyperRTS: map '{spec.name}' previewed with {report.errors.Count} errors and {report.warnings.Count} warnings. Report: {MapReport.JsonPath(spec.name + MapReport.PreviewSuffix)}");
-            return report;
+            return new MapPreviewResult(report, image);
         }
     }
 }

@@ -22,11 +22,14 @@ namespace HyperRTS.Editor.Maps.Designer
         [SerializeField] private string _specPath;
 
         private readonly MapFeatureSelection _selection = new();
+        private readonly MapToolbox _toolbox = new();
         private MapEditorToolbar _toolbar;
         private VisualElement _body;
         private MapFeatureList _list;
         private MapCanvas _canvas;
         private MapFeatureInspector _inspector;
+        private MapPreviewStrip _previewStrip;
+        private MapEditorPreview _preview;
 
         [MenuItem(EditorMenu.MapEditor, false, EditorMenu.MapEditorPriority)]
         public static void Open() => GetWindow<MapEditorWindow>(WindowTitle);
@@ -53,6 +56,9 @@ namespace HyperRTS.Editor.Maps.Designer
             root.AddToClassList("hrts-map-editor");
             _toolbar = new MapEditorToolbar(path => Load(path), Save, Revert, OnGhostsToggled);
             root.Add(_toolbar);
+            _toolbar.Insert(1, new MapToolStrip(_toolbox));
+            _previewStrip = new MapPreviewStrip(() => _preview?.Preview(), () => _preview?.Build());
+            _toolbar.Add(_previewStrip);
             _body = new VisualElement();
             _body.AddToClassList("hrts-map-editor__body");
             root.Add(_body);
@@ -81,6 +87,8 @@ namespace HyperRTS.Editor.Maps.Designer
         private void OnDisable()
         {
             _selection.Changed -= OnSelectionChanged;
+            _preview?.Dispose();
+            _preview = null;
             if (_document != null)
             {
                 _document.Changed -= OnDocumentChanged;
@@ -150,6 +158,8 @@ namespace HyperRTS.Editor.Maps.Designer
             }
 
             _body.Clear();
+            _preview?.Dispose();
+            _preview = null;
             if (_document == null)
             {
                 _toolbar.ShowNone();
@@ -160,17 +170,28 @@ namespace HyperRTS.Editor.Maps.Designer
             }
 
             _list = new MapFeatureList(_selection);
-            _canvas = new MapCanvas(_document, _selection) { ShowGhosts = _toolbar.Ghosts };
+            _canvas = new MapCanvas(_document, _selection, _toolbox) { ShowGhosts = _toolbar.Ghosts };
             _inspector = new MapFeatureInspector(_document);
             _body.Add(_list);
             _body.Add(_canvas);
-            _body.Add(_inspector);
+            _body.Add(SidePanel());
             _body.TrackSerializedObjectValue(_document.Serialized, _ => _document.NotifyChanged());
 
             _document.Changed -= OnDocumentChanged;
             _document.Changed += OnDocumentChanged;
             OnDocumentChanged();
             OnSelectionChanged();
+        }
+
+        /// <summary>The inspector over the report panel, whose previews and builds follow the document.</summary>
+        private VisualElement SidePanel()
+        {
+            _preview = new MapEditorPreview(_document, _canvas, _selection, _previewStrip);
+            var side = new VisualElement();
+            side.AddToClassList("hrts-map-editor__side");
+            side.Add(_inspector);
+            side.Add(_preview.Panel);
+            return side;
         }
 
         private void OnDocumentChanged()

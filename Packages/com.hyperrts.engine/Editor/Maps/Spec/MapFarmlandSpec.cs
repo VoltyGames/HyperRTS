@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Spec
 {
@@ -11,6 +13,7 @@ namespace HyperRTS.Editor.Maps.Spec
     public sealed class MapFarmlandSpec
     {
         public List<MapPoint> points = new();
+        [MapKey(typeof(MapFarmlandKit))]
         public string kind;
 
         /// <summary>Direction the crop rows and the long sides of fields run, in degrees clockwise from north.</summary>

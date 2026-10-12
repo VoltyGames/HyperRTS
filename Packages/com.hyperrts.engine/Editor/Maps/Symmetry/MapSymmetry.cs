@@ -19,14 +19,16 @@ namespace HyperRTS.Editor.Maps.Symmetry
 
         private readonly Func<Vector2, bool> _inSector;
         private readonly Func<Vector2, float> _seamDistance;
+        private readonly Func<Vector2, Vector2> _toFixed;
 
         private MapSymmetry(string name, IReadOnlyList<MapTransform> copies, Func<Vector2, bool> inSector,
-            Func<Vector2, float> seamDistance)
+            Func<Vector2, float> seamDistance, Func<Vector2, Vector2> toFixed)
         {
             Name = name;
             Copies = copies;
             _inSector = inSector;
             _seamDistance = seamDistance;
+            _toFixed = toFixed;
         }
 
         public string Name { get; }
@@ -41,13 +43,13 @@ namespace HyperRTS.Editor.Maps.Symmetry
             {
                 case MirrorXName:
                     return new MapSymmetry(name, new[] { MapTransform.Identity, MapTransform.MirrorX },
-                        p => p.x <= Tolerance, p => Mathf.Abs(p.x));
+                        p => p.x <= Tolerance, p => Mathf.Abs(p.x), p => new Vector2(0f, p.y));
                 case MirrorZName:
                     return new MapSymmetry(name, new[] { MapTransform.Identity, MapTransform.MirrorZ },
-                        p => p.y <= Tolerance, p => Mathf.Abs(p.y));
+                        p => p.y <= Tolerance, p => Mathf.Abs(p.y), p => new Vector2(p.x, 0f));
                 case Rotate180:
                     return new MapSymmetry(name, new[] { MapTransform.Identity, MapTransform.Rotation(180f) },
-                        p => p.y <= Tolerance, p => Mathf.Abs(p.y));
+                        p => p.y <= Tolerance, p => Mathf.Abs(p.y), _ => Vector2.zero);
             }
 
             if (name != null && name.StartsWith(RotatePrefix, StringComparison.Ordinal)
@@ -110,6 +112,12 @@ namespace HyperRTS.Editor.Maps.Symmetry
             return true;
         }
 
+        /// <summary>
+        /// The nearest point every copy leaves in place: on the mirror axis, else the centre. A shared single-point
+        /// feature placed there stays symmetric (see <see cref="IsFixed"/>).
+        /// </summary>
+        public Vector2 ToFixed(Vector2 point) => _toFixed(point);
+
         private static MapSymmetry Rotations(string name, int count)
         {
             var copies = new MapTransform[count];
@@ -121,7 +129,7 @@ namespace HyperRTS.Editor.Maps.Symmetry
 
             var far = MapTransform.Rotation(wedge).Apply(Vector2.right);
             return new MapSymmetry(name, copies, p => InWedge(p, wedge),
-                p => Mathf.Min(RayDistance(p, Vector2.right), RayDistance(p, far)));
+                p => Mathf.Min(RayDistance(p, Vector2.right), RayDistance(p, far)), _ => Vector2.zero);
         }
 
         private static float RayDistance(Vector2 point, Vector2 direction)

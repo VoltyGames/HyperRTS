@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Spec
 {
@@ -14,6 +16,7 @@ namespace HyperRTS.Editor.Maps.Spec
         public string displayName;
         public string mode;
         public string mapType;
+        [MapKey(typeof(MapClimate))]
         public string climate;
         public MapPoint size;
         public string symmetry;

@@ -1,4 +1,6 @@
 using System;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Spec
 {
@@ -8,6 +10,7 @@ namespace HyperRTS.Editor.Maps.Spec
     {
         public MapPoint pos;
         public float yaw;
+        [MapKey(typeof(MapPaletteEntry))]
         public string kind;
         public bool shared;
     }

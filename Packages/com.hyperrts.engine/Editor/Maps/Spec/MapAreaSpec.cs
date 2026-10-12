@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Spec
 {
@@ -8,6 +10,7 @@ namespace HyperRTS.Editor.Maps.Spec
     public sealed class MapAreaSpec
     {
         public List<MapPoint> points = new();
+        [MapKey(typeof(MapClimateSurface))]
         public string kind;
         public bool shared;
     }

@@ -1,4 +1,6 @@
 using System;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Spec
 {
@@ -14,6 +16,7 @@ namespace HyperRTS.Editor.Maps.Spec
         public float width = 10f;
 
         /// <summary>Bridges: the palette key of the bridge prefab.</summary>
+        [MapKey(typeof(MapPaletteEntry))]
         public string prop;
     }
 }

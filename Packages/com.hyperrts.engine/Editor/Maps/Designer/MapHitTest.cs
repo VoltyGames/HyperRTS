@@ -40,6 +40,24 @@ namespace HyperRTS.Editor.Maps.Designer
             return -1;
         }
 
+        /// <summary>The segment of a line or area under the cursor, or -1 (always -1 for points and circles).</summary>
+        public static int SegmentAt(MapSpec spec, MapCanvasView view, MapFeatureRef feature, Vector2 local)
+        {
+            if (!feature.Kind.HasPoints)
+            {
+                return -1;
+            }
+
+            feature.Kind.ReadPoints(spec, feature.Index, Points);
+            for (var i = 0; i < Points.Count; i++)
+            {
+                Points[i] = view.ToLocal(Points[i]);
+            }
+
+            var closed = feature.Kind.Geometry == MapFeatureGeometry.Polygon;
+            return MapVertexRules.SegmentAt(Points, closed, local, LinePixels);
+        }
+
         public static MapFeatureRef FeatureAt(MapSpec spec, MapCanvasView view, Vector2 local)
         {
             var edge = Find(spec, view, local, false);

@@ -27,6 +27,11 @@ namespace HyperRTS.Editor.Maps.Designer
             var title = new Label(feature.ToString());
             title.AddToClassList("hrts-section__title");
             Add(title);
+            if (feature.Index < feature.Kind.Count(_document.spec) - 1)
+            {
+                Add(Note($"Deleting this renumbers the later {feature.Kind.Label.ToLowerInvariant()} and reshuffles " +
+                    "their random detail (seeds follow list order)."));
+            }
 
             var serialized = _document.Serialized;
             serialized.Update();

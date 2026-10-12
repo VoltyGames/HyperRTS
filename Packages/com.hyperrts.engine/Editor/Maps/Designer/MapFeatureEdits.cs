@@ -36,6 +36,44 @@ namespace HyperRTS.Editor.Maps.Designer
             document.Apply($"Resize {feature}");
         }
 
+        /// <summary>
+        /// Appends a feature of <paramref name="kind"/> at <paramref name="points"/> as one undo step and returns it.
+        /// See <see cref="MapFeatureKind.Add"/> for the fields it starts with.
+        /// </summary>
+        public static MapFeatureRef Add(MapSpecDocument document, MapFeatureKind kind, IReadOnlyList<Vector2> points)
+        {
+            Undo.IncrementCurrentGroup();
+            Undo.RecordObject(document, $"Add {kind.Label}");
+            var index = kind.Add(document.spec, points);
+            document.Serialized.Update();
+            document.NotifyChanged();
+            return new MapFeatureRef(kind, index);
+        }
+
+        /// <summary>Inserts a vertex into a line or area at <paramref name="index"/> (up to its point count).</summary>
+        public static void InsertPoint(MapSpecDocument document, MapFeatureRef feature, int index, Vector2 point)
+        {
+            var list = Element(document, feature).FindPropertyRelative(feature.Kind.PointsField);
+            if (index == list.arraySize)
+            {
+                list.arraySize++;
+            }
+            else
+            {
+                list.InsertArrayElementAtIndex(index);
+            }
+
+            Write(list.GetArrayElementAtIndex(index), point);
+            document.Apply($"Add vertex to {feature}");
+        }
+
+        public static void RemovePoint(MapSpecDocument document, MapFeatureRef feature, int index)
+        {
+            var list = Element(document, feature).FindPropertyRelative(feature.Kind.PointsField);
+            list.DeleteArrayElementAtIndex(index);
+            document.Apply($"Remove vertex from {feature}");
+        }
+
         public static void Delete(MapSpecDocument document, MapFeatureRef feature)
         {
             var list = document.Serialized.FindProperty($"{MapSpecDocument.SpecField}.{feature.Kind.Field}");

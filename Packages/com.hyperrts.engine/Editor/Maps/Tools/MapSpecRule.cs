@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Tools
                 var report = MapReport.Load(name);
                 if (report == null)
                 {
-                    issues.Error(null, $"Map '{name}' has a spec but no report; build it with HyperRTS ▸ Maps ▸ Build.");
+                    issues.Error(null, $"Map '{name}' has a spec but no report; build it from the Map Editor or Tools ▸ Maps.");
                     continue;
                 }
 

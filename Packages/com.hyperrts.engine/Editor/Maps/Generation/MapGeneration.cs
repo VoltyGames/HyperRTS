@@ -50,27 +50,41 @@ namespace HyperRTS.Editor.Maps.Generation
         /// <summary>Trees left to the terrain (the scenery margin, and species without an entity version).</summary>
         public List<MapTree> TerrainTrees { get; } = new();
 
-        /// <summary>The checked layout and its shapes, all a map's views need; null when the spec or assets have errors.</summary>
-        public static MapGeneration Lay(MapProject project, MapIssues issues)
+        /// <summary>
+        /// The asset and spec checks that open <see cref="Lay"/>: they read prefabs, so they run on the main thread.
+        /// False when they found errors.
+        /// </summary>
+        public static bool Check(MapProject project, MapIssues issues)
         {
             MapAssetCheck.Check(project.Climate, project.Palette, issues);
             MapSpecCheck.Check(project.Spec, project.Climate, project.Palette, project.Rules, issues);
-            if (issues.HasErrors)
-            {
-                return null;
-            }
+            return !issues.HasErrors;
+        }
 
+        /// <summary>The checked layout and its shapes, all a map's views need; null when the spec or assets have errors.</summary>
+        public static MapGeneration Lay(MapProject project, MapIssues issues) =>
+            Check(project, issues) ? LayChecked(project, issues) : null;
+
+        /// <summary>The land planned but not painted: what a preview needs, in seconds. Null on errors.</summary>
+        public static MapGeneration Plan(MapProject project, MapIssues issues) =>
+            Check(project, issues) ? PlanChecked(project, issues) : null;
+
+        /// <summary>
+        /// <see cref="Plan"/> after <see cref="Check"/> passed. It touches no Unity object (only plain data, maths and
+        /// <c>JsonUtility</c>), so it may run on a worker thread while nothing else uses the project. Null on errors.
+        /// </summary>
+        public static MapGeneration PlanChecked(MapProject project, MapIssues issues)
+        {
+            var generation = LayChecked(project, issues);
+            generation?.PlanLand();
+            return issues.HasErrors ? null : generation;
+        }
+
+        private static MapGeneration LayChecked(MapProject project, MapIssues issues)
+        {
             MapRefiner.Refine(project.Spec, project.Climate);
             var layout = MapExpander.Expand(project.Spec, issues);
             return issues.HasErrors ? null : new MapGeneration(project, layout, issues);
-        }
-
-        /// <summary>The land planned but not painted: what a preview needs, in seconds. Null on errors.</summary>
-        public static MapGeneration Plan(MapProject project, MapIssues issues)
-        {
-            var generation = Lay(project, issues);
-            generation?.PlanLand();
-            return issues.HasErrors ? null : generation;
         }
 
         /// <summary>Everything a build writes into the scene. Null on errors.</summary>

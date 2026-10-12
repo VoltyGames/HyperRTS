@@ -32,25 +32,28 @@ namespace HyperRTS.Editor.Maps.Layout
             var layout = new MapLayout(spec, MapSymmetry.Parse(spec.symmetry));
             var expander = new MapExpander(layout, issues);
             expander.AddSpawns();
-            layout.Resources = expander.Points(spec.resources, "resource", r => r.shared, r => r.pos,
-                (r, t) => r.pos = t.Apply(r.pos));
-            layout.Props = expander.Points(spec.props, "prop", p => p.shared, p => p.pos, (p, t) =>
+            layout.Resources = expander.Points(spec.resources, nameof(MapSpec.resources), "resource", r => r.shared,
+                r => r.pos, (r, t) => r.pos = t.Apply(r.pos));
+            layout.Props = expander.Points(spec.props, nameof(MapSpec.props), "prop", p => p.shared, p => p.pos, (p, t) =>
             {
                 p.pos = t.Apply(p.pos);
                 p.yaw = t.ApplyYaw(p.yaw);
             });
-            layout.Hills = expander.Points(spec.hills, "hill", h => h.shared, h => h.pos, (h, t) => h.pos = t.Apply(h.pos));
-            layout.Settlements = expander.Points(spec.settlements, "settlement", _ => false, w => w.center,
-                (w, t) => w.center = t.Apply(w.center));
-            layout.Rivers = expander.Lines(spec.rivers, "river", r => r.shared, r => r.points);
-            layout.Ravines = expander.Lines(spec.ravines, "ravine", r => r.shared, r => r.points);
-            layout.Roads = expander.Lines(spec.roads, "road", r => r.shared, r => r.points);
-            layout.Woods = expander.Lines(spec.woods, "wood", w => w.shared, w => w.points);
-            layout.Belts = expander.Lines(spec.belts, "belt", b => b.shared, b => b.points);
-            layout.Farmland = expander.Lines(spec.farmland, "farmland", f => f.shared, f => f.points, true);
-            layout.Areas = expander.Lines(spec.areas, "area", a => a.shared, a => a.points);
-            layout.Lines = expander.Lines(spec.lines, "line", l => l.shared, l => l.points);
-            layout.Scatters = expander.Lines(spec.scatters, "scatter", s => s.shared, s => s.points);
+            layout.Hills = expander.Points(spec.hills, nameof(MapSpec.hills), "hill", h => h.shared, h => h.pos,
+                (h, t) => h.pos = t.Apply(h.pos));
+            layout.Settlements = expander.Points(spec.settlements, nameof(MapSpec.settlements), "settlement", _ => false,
+                w => w.center, (w, t) => w.center = t.Apply(w.center));
+            layout.Rivers = expander.Lines(spec.rivers, nameof(MapSpec.rivers), "river", r => r.shared, r => r.points);
+            layout.Ravines = expander.Lines(spec.ravines, nameof(MapSpec.ravines), "ravine", r => r.shared, r => r.points);
+            layout.Roads = expander.Lines(spec.roads, nameof(MapSpec.roads), "road", r => r.shared, r => r.points);
+            layout.Woods = expander.Lines(spec.woods, nameof(MapSpec.woods), "wood", w => w.shared, w => w.points);
+            layout.Belts = expander.Lines(spec.belts, nameof(MapSpec.belts), "belt", b => b.shared, b => b.points);
+            layout.Farmland = expander.Lines(spec.farmland, nameof(MapSpec.farmland), "farmland", f => f.shared,
+                f => f.points, true);
+            layout.Areas = expander.Lines(spec.areas, nameof(MapSpec.areas), "area", a => a.shared, a => a.points);
+            layout.Lines = expander.Lines(spec.lines, nameof(MapSpec.lines), "line", l => l.shared, l => l.points);
+            layout.Scatters = expander.Lines(spec.scatters, nameof(MapSpec.scatters), "scatter", s => s.shared,
+                s => s.points);
             ContinueRivers(layout.Rivers);
             return layout;
         }
@@ -82,7 +85,8 @@ namespace HyperRTS.Editor.Maps.Layout
                 var spawn = spec.spawns[i];
                 if (!Symmetry.InSector(spawn.pos.ToVector2()))
                 {
-                    _issues.Error($"Spawn {i + 1} at {spawn.pos} lies outside the authored sector.");
+                    _issues.Error($"Spawn {i + 1} at {spawn.pos} lies outside the authored sector.",
+                        new MapIssueFeature(nameof(MapSpec.spawns), i));
                 }
 
                 for (var copy = 0; copy < copies.Count; copy++)
@@ -98,17 +102,17 @@ namespace HyperRTS.Editor.Maps.Layout
         }
 
         /// <summary>Point features: they must lie in the playable area.</summary>
-        private List<MapCopy<T>> Points<T>(List<T> authored, string label, Func<T, bool> shared,
+        private List<MapCopy<T>> Points<T>(List<T> authored, string array, string label, Func<T, bool> shared,
             Func<T, MapPoint> anchor, Action<T, MapTransform> transform) where T : class =>
-            Copy(authored, label, _layout.Bounds, shared, f => new[] { anchor(f).ToVector2() }, transform);
+            Copy(authored, array, label, _layout.Bounds, shared, f => new[] { anchor(f).ToVector2() }, transform);
 
         /// <summary>
         /// Lines and areas: they may reach into the margin. <paramref name="mayBeEmpty"/>: no points is allowed
         /// (farmland that fills the free land).
         /// </summary>
-        private List<MapCopy<T>> Lines<T>(List<T> authored, string label, Func<T, bool> shared,
+        private List<MapCopy<T>> Lines<T>(List<T> authored, string array, string label, Func<T, bool> shared,
             Func<T, List<MapPoint>> points, bool mayBeEmpty = false) where T : class =>
-            Copy(authored, label, _layout.TerrainBounds, shared, f => points(f).Select(p => p.ToVector2()).ToList(), (f, t) =>
+            Copy(authored, array, label, _layout.TerrainBounds, shared, f => points(f).Select(p => p.ToVector2()).ToList(), (f, t) =>
             {
                 var list = points(f);
                 for (var i = 0; i < list.Count; i++)
@@ -117,7 +121,7 @@ namespace HyperRTS.Editor.Maps.Layout
                 }
             }, mayBeEmpty);
 
-        private List<MapCopy<T>> Copy<T>(List<T> authored, string label, Rect bounds, Func<T, bool> shared,
+        private List<MapCopy<T>> Copy<T>(List<T> authored, string array, string label, Rect bounds, Func<T, bool> shared,
             Func<T, IReadOnlyList<Vector2>> anchors, Action<T, MapTransform> transform, bool mayBeEmpty = false)
             where T : class
         {
@@ -127,7 +131,8 @@ namespace HyperRTS.Editor.Maps.Layout
                 var feature = authored[index];
                 var points = anchors(feature);
                 var unbounded = mayBeEmpty && points.Count == 0;
-                if (!unbounded && !Check($"{label} {index + 1}", points, bounds, shared(feature)))
+                var name = $"{label} {index + 1}";
+                if (!unbounded && !Check(name, new MapIssueFeature(array, index), points, bounds, shared(feature)))
                 {
                     continue;
                 }
@@ -145,27 +150,28 @@ namespace HyperRTS.Editor.Maps.Layout
         }
 
         /// <summary>Reports where a feature lies wrong; false when it has no points to copy.</summary>
-        private bool Check(string name, IReadOnlyList<Vector2> points, Rect bounds, bool shared)
+        private bool Check(string name, MapIssueFeature feature, IReadOnlyList<Vector2> points, Rect bounds, bool shared)
         {
             if (points.Count == 0)
             {
-                _issues.Error($"{name} has no points.");
+                _issues.Error($"{name} has no points.", feature);
                 return false;
             }
 
             if (points.Any(p => Outside(bounds, p)))
             {
-                _issues.Error($"{name} has points outside {(bounds == _layout.Bounds ? "the playable area" : "the terrain")}.");
+                var where = bounds == _layout.Bounds ? "the playable area" : "the terrain";
+                _issues.Error($"{name} has points outside {where}.", feature);
             }
 
             if (shared && !Symmetry.IsFixed(points))
             {
-                _issues.Error($"{name} is shared but not symmetric: it must sit on the axis or at the centre.");
+                _issues.Error($"{name} is shared but not symmetric: it must sit on the axis or at the centre.", feature);
             }
 
             if (!shared && !points.All(Symmetry.InSector))
             {
-                _issues.Error($"{name} reaches outside the authored sector; mark it shared or keep it in the sector.");
+                _issues.Error($"{name} reaches outside the authored sector; mark it shared or keep it in the sector.", feature);
             }
 
             return true;

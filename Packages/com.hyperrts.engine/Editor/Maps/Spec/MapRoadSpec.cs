@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Spec
 {
@@ -13,6 +15,7 @@ namespace HyperRTS.Editor.Maps.Spec
         public List<MapPoint> points = new();
 
         /// <summary>Road class key in the climate (its width, surface, mesh material, verge and junction rank).</summary>
+        [MapKey(typeof(MapRoadClass))]
         public string kind;
 
         public bool shared;

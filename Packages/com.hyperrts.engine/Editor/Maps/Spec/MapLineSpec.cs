@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Spec
 {
@@ -11,6 +13,7 @@ namespace HyperRTS.Editor.Maps.Spec
     public sealed class MapLineSpec
     {
         public List<MapPoint> points = new();
+        [MapKey(typeof(MapClimateTree), typeof(MapPaletteEntry))]
         public string kind;
         public float spacing = 8f;
         public bool shared;

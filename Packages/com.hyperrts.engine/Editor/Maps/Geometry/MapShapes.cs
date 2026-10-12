@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Maps.Geometry
 
             foreach (var road in layout.Roads)
             {
-                AddAuthoredRoad(road.Placed, layout, climate, overhang);
+                AddAuthoredRoad(road.Placed, road.Index, layout, climate, overhang);
             }
 
             foreach (var ravine in layout.Ravines)
@@ -109,12 +109,12 @@ namespace HyperRTS.Editor.Maps.Geometry
             return false;
         }
 
-        private void AddAuthoredRoad(MapRoadSpec spec, MapLayout layout, MapClimate climate, float overhang)
+        private void AddAuthoredRoad(MapRoadSpec spec, int index, MapLayout layout, MapClimate climate, float overhang)
         {
             var roadClass = climate.RoadClass(spec.kind);
             var width = roadClass.width;
             var points = MapGeometry.ExtendAtEdge(MapGeometry.ToVectors(spec.points), layout.Bounds, overhang);
-            Roads.Add(new MapRoad(new MapLine(points, width, width * 0.5f + RoadShoulder), roadClass, false));
+            Roads.Add(new MapRoad(new MapLine(points, width, width * 0.5f + RoadShoulder), roadClass, false, index));
         }
 
         /// <summary>Crossing positions are fractions of the authored river, before it was run on past the edge.</summary>
