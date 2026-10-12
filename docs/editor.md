@@ -13,7 +13,7 @@ Scene view `Handles`, which have no UI Toolkit equivalent.
 | **HyperRTS ▸ Cheats** | Play mode: add resources, instant build, fog toggle, spawn any prefab at the view, control another player (single player), game speed. Acts on the authoritative world; instant build completes through the construction and production systems. Any cheat drops the running replay recording |
 | **HyperRTS ▸ Network** | Play mode: host, join localhost, dedicated server, stop |
 | **HyperRTS ▸ Replays** | Save the Play-mode recording, or play a replay file |
-| **HyperRTS ▸ Maps** | Build the selected `.map.json` (or the open map's), Build All, Auto-rebuild on spec change, Open Report |
+| **HyperRTS ▸ Maps** | Build or Preview the selected `.map.json` (or the open map's), Capture Views, Build All, Auto-rebuild on spec change, Open Report |
 | **HyperRTS ▸ Generate Component Icons** | Regenerates the per-module icons in `Editor/Icons/` |
 | **HyperRTS ▸ Documentation** | Opens getting started or the module reference |
 | **GameObject ▸ HyperRTS ▸ RTS World**, **Match** | The rig prefab; a Match |
@@ -123,27 +123,123 @@ position before saving it. It returns the `SubScene` component in the new scene.
 
 ## Maps from specs
 
-A map is a JSON spec (`<Map>.map.json`) that `MapBuilder.Build(specPath)` turns into a scene, a SubScene and a
-report. The spec authors one symmetry sector; the builder copies it (`rotate-180`, `mirror-x`, `mirror-z`,
-`rotate-3` to `rotate-8`; slots interleave so slots 1 and 2 always face each other) and:
+A map is a JSON spec (`<Map>.map.json`) that describes land use: farmland, settlements, woods, belts, rivers, ravines,
+roads. `MapBuilder.Build(specPath)` lays the land out by rule, then turns it into a scene, a SubScene and a report.
+Source: `Editor/Maps/`; rendering: `Presentation/Environment/`.
 
-1. shapes the terrain (relief, hills, river valleys and fords, ravines, roads levelled onto embankments, ramps to
-   bridge decks), lowering it so open ground is at y = 0;
-2. places start kits, resources, props, bridges (each carries its walkable deck, so destroying it opens the river
-   again), towns along the roads, prop rows and scatters;
-3. paints the terrain layers, plants trees (entity versions inside the playable area when the climate has them,
-   terrain trees in the scenery margin) and grass;
-4. writes the scene: Terrain, river mesh, the climate's atmosphere and sky, baked environment lighting, the
-   minimap picture; gameplay prefabs go into the SubScene as `[Generated] …` roots, scenery under `[Generated]`
-   in the main scene. `[Dressing]` roots are never touched;
-5. measures it on a nav grid built like `NavGridSystem`'s (rush times, attack paths by corridor closing, reach,
-   buildable ground, resources per base) and writes `Logs/MapReports/<Map>.json` and `.png`.
+```text
+spec ─▶ Preview (seconds, no scene) ─▶ Build (minutes) ─▶ Capture Views
+         .preview.png / .json          scene, SubScene, report, minimap     views/*.png
+```
 
-The game provides one `MapPalette` (kinds → prefabs, start kit, town kits, rig), one `MapRules` (thresholds per
-mode) and a `MapClimate` per climate key (layers, surfaces, trees, grass, water, atmosphere), and can implement
-`IMapBuildHook` to list built maps in its menus. Batch mode:
-`-executeMethod HyperRTS.Editor.Maps.Tools.MapCommandLine.Build -map <spec>` exits 0, 1 on report errors, 2 on a
-crash. `MapSpecRule` shows a map's report errors in **HyperRTS ▸ Validate**.
+### Spec format
+
+Unity's `JsonUtility` reads it, so it is flat: one array per feature, points as `{ "x", "z" }` objects. Metres,
+origin at the map centre, X east, Z north, angles clockwise from north. The spec authors **one symmetry sector**;
+the builder copies it (`rotate-180`, `mirror-x`, `mirror-z`, `rotate-3` to `rotate-8`; slots interleave so slots 1
+and 2 always face each other). `"shared": true` places a feature once, on the axis or centre. Random choices are made
+in the sector and copied, so copies match.
+
+| Feature | Fields | Builds |
+| --- | --- | --- |
+| `spawns`, `resources`, `props` | `pos`, `yaw`, `kind` | The palette's start kit (base levelled and kept clear), resource nodes, palette prefabs; a prop with a pad gets ground round it, one with access gets a track to the nearest road |
+| `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings` | Meandering channel of varying width, banks, floodplain, reeds, water mesh; each crossing is a bridge or ford at `t` along the river |
+| `ravines` | `points`, `width`, `depth`, `rim`, `branches`, `wooded` | Steep-walled cut with a gentle rim, side gullies and woods in patches |
+| `hills` | `pos`, `radius`, `height`, `flatTop` | Smooth rise |
+| `roads` | `points`, `kind` | A road class: width, surface, verge, rank, levelled or not |
+| `settlements` | `center`, `radius`, `kind`, `count` | Up to `count` plots along the roads within `radius`, from a settlement kit |
+| `woods` | `points` (polygon), `kind` | Woodland kit: canopy, glades, shrubby edge, floor |
+| `belts` | `points` (polyline), `kind` | Belt kit: rows of trees and shrubs with gaps |
+| `farmland` | `points` (polygon; empty = all free land), `kind`, `angle` | Fields on a grid along `angle`, a crop each, margins, belts and tracks across the field ends |
+| `areas`, `lines`, `scatters` | `points`, `kind`, `spacing` / `count` | Exceptions: one surface by hand, a row of trees or props, props at random in a polygon |
+
+`terrain`: `height` (open ground, lowered to world y = 0), `relief` and `reliefScale` (swell), `waterLevel`,
+`maxHeight`, `resolution`, `margin` (scenery ground past the playable edge).
+
+### Land use and planners
+
+`MapLand` is a 1 m grid. Each cell is claimed once by a `MapLandRegion` (a `MapLandKind`, a climate surface, a seed
+and a row angle). `MapLandPlanner` runs the planners in priority order, each taking only what earlier ones left:
+
+1. water, roads, river banks and floodplain
+2. bases and prop pads, access tracks
+3. ravines, settlements and spec tree rows, spec areas
+4. woods, belts, farmland
+5. meadow on everything left, then `MapSurfacePlanter`: each surface's own lone trees and props
+
+Planners choose at authored-sector points (`Symmetry.InSector`), place in every copy (`MapPlanContext.PlantCopies`,
+`MapPlacer.AddEverywhere`) and claim land for every copy; raster decisions key on the sector point (`ToSector`).
+
+Farmland splits the free land on a grid along `angle` into fields (slivers become margin), picks each crop by the
+kit's weights and lays belts and tracks along the field ends. A settlement fits plots along the streets: house on the
+street, yard, outbuildings, garden, orchard, fences, gate, street furniture. The report says why a plot didn't fit.
+
+### Refiners
+
+`MapRefiner` reshapes the authored sector in memory before the copies are made (the file keeps the coarse lines):
+rivers meander (held straight at their ends and crossings), roads become curves, ravines smooth and fork. A road end
+that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or more, highest rank first.
+
+### Ground and rendering
+
+- **Heights**: relief, hills, river valleys, ravines. Roads of a levelling class are cut onto embankments; ramps lead
+  to bridge decks.
+- **Splat** (`MapSplatPainter`): each texel averages the surfaces at a few noise-jittered points, so borders come out
+  ragged and the shader's height blend sharpens them; steep ground takes the slope surface.
+- **Details** (`MapDetailPainter`): each surface's plants cover their share, clumped by noise at two scales (crops
+  grow evenly); reeds in the shallows. Nothing grows on roads or placed objects.
+- **Macro map** (`MapMacroPainter`): a colour shift per field and per wood, broad noise, wetness near water. RGB 0.5
+  is neutral, A is wetness.
+- **Terrain material** (`MapTerrainMaterial`): `HyperRTS/Terrain`, one pass, up to 16 height-blended layers from the
+  climate's texture arrays, the macro map, and per-layer rotation to the crop rows.
+- **Ground colour** (`MapGroundColor`): a top-down picture of the layers' mean albedo by splat weight, tinted by the
+  macro map. Foliage blends into it at its roots.
+- **Road ribbons** (`MapRoadRibbon`, `MapRoadMeshWriter`): a mesh lifted a few centimetres over the ground, UV Y in
+  metres along the road. Vertex alpha fades free ends and the lower-ranked end of a junction (`MapRoadFades`); rows
+  over water or under a bridge are left out. Drawn by `HyperRTS/Road`.
+
+### Checks and measures
+
+- `MapAssetCheck` and `MapKitCheck` run before planning: every layer, tree, plant, surface, road class, kit and
+  palette key resolves, and generated prefabs have display names. A bad key is an error that names it.
+- Road checks warn about dead ends and bends tighter than half the class's curve radius.
+- The nav grid (classified like `NavGridSystem`) gives rush times, attack paths (close a corridor along the shortest
+  path, search again; the paths found before none remains are the count), reach, buildable ground and resources per
+  base.
+- `MapHintWriter` computes bot hints from that grid and the layout (expansion order per slot, attack lanes between
+  enemy slots, defence points) and bakes them as an `AIMapHintsAuthoring` object in the SubScene. The skirmish AI
+  needs it to play the map.
+
+### Outputs
+
+| Tool | Writes |
+| --- | --- |
+| Preview (`MapPreview.Run`) | `Logs/MapReports/<Map>.preview.png` (land, trees, props, crossings, bases) and `.preview.json` (issues, land shares, counts). No rush times or paths |
+| Build (`MapBuilder.Build`) | Scene and `_Entities` SubScene (gameplay prefabs under `[Generated] …` roots, scenery under `[Generated]`; `[Dressing]` roots are never touched), terrain and its material, water, road meshes, macro and ground-colour pictures, baked lighting, minimap, `Logs/MapReports/<Map>.json` and `.png` |
+| Capture Views (`MapViewCapture`) | `Logs/MapReports/<Map>/*.png` from the scene's own match camera: `centre`, `base-N`, `crossing-N`, `settlement-N` (wide and `-close`), `overview` |
+| Key reference (`MapKeyReference`) | A Markdown list of every `kind` a spec may name, for the game to write beside its map tooling |
+
+Menu: **HyperRTS ▸ Maps** (Build, Preview, Capture Views, Build All, Auto-rebuild, Open Report). Batch mode:
+`-executeMethod HyperRTS.Editor.Maps.Tools.MapCommandLine.Build` (or `.Preview`) `-map <spec>` exits 0, 1 on report
+errors, 2 on a crash; `-nographics` skips the screenshots. `MapSpecRule` shows a map's report errors in
+**HyperRTS ▸ Validate**.
+
+### What the game supplies
+
+One `MapPalette` (kinds to prefabs, start kit, settlement kits, rig), one `MapRules` (thresholds per mode, the view
+camera) and a `MapClimate` per climate key: terrain layers and their texture arrays, surfaces (layer, plants, lone
+trees and props), trees, plants, road classes, farmland, belt and woodland kits, water, atmosphere. It can implement
+`IMapBuildHook` to list built maps in its menus.
+
+### Adding a kind of land use
+
+1. A kit in `Data/` (like `MapFarmlandKit`) held by `MapClimate`, its keys checked in `MapKitCheck` and listed in
+   `MapKeyReference`.
+2. A `MapLandKind` if no existing one fits, and the surfaces it paints.
+3. A planner in `Planning/` that claims land and places things through `MapPlanContext`, symmetric as above.
+4. Its slot in `MapLandPlanner.Plan`, where its priority puts it.
+5. A spec class in `Spec/` and an array on `MapSpec`.
+6. EditMode tests: the planner's output on a small layout, and a bad key failing loudly.
 
 ## Play-mode debugging
 
