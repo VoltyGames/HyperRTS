@@ -15,31 +15,39 @@ Scene view `Handles`, which have no UI Toolkit equivalent.
 | **HyperRTS ▸ Maps** | Build or Preview the selected `.map.json` (or the open map's), Capture Views, Build All, Auto-rebuild on spec change, Open Report |
 | **HyperRTS ▸ Generate Component Icons** | Regenerates the per-module icons in `Editor/Icons/` |
 | **HyperRTS ▸ Documentation** | Opens getting started, the module reference, the editor guide or networking |
-| **GameObject ▸ HyperRTS ▸ RTS World**, **Match** | The rig prefab; a Match |
-| **GameObject ▸ HyperRTS ▸ Units ▸** | Unit, Combat Unit, Worker, Harvester |
-| **GameObject ▸ HyperRTS ▸ Buildings ▸** | Building, Producer, Resource Drop-Off, Defense Tower |
-| **GameObject ▸ HyperRTS ▸ Map ▸** | Resource Node, Nav Obstacle |
-| **Assets ▸ Create ▸ HyperRTS ▸ Prefabs ▸** | Combat Unit, Worker, Harvester, Producer Building, Resource Drop-Off, Defense Tower, Resource Node as prefab assets |
+| **GameObject ▸ HyperRTS ▸ RTS World**, **Match** | The rig prefab; a Match with its MatchState ghost |
+| **GameObject ▸ HyperRTS ▸ Units ▸** | Unit, Combat Unit, Worker, Harvester, Transport, Aircraft |
+| **GameObject ▸ HyperRTS ▸ Buildings ▸** | Building, Producer, Research Building, Resource Drop-Off, Defense Tower, Airfield, Capturable Building |
+| **GameObject ▸ HyperRTS ▸ Research ▸** | Upgrade (a research prefab for a producer's research options) |
+| **GameObject ▸ HyperRTS ▸ Map ▸** | Resource Node, Nav Obstacle, Nav Area |
+| **Assets ▸ Create ▸ HyperRTS ▸ Prefabs ▸** | The same templates as prefab assets, named inline in the Project window |
 | **Assets ▸ Create ▸ HyperRTS ▸** | Resources ▸ Resource Type, Combat ▸ Damage Type, Audio ▸ Sound Cue, Match ▸ AI Build Order |
 
 Templates are a root with collider and authoring components plus a scaled primitive `Model` child to replace.
+`Editor/Templates/TemplateRegistry.cs` lists every template once and both menus use its paths, so they offer the
+same set under the same names; a created object is named after its menu label. New scene objects go into the
+SubScene open for editing, when there is one.
 Menu paths and priorities live in `Editor/EditorMenu.cs`.
 
 ## Add Component
 
 | Category | Components |
 | --- | --- |
-| Units | Unit, Flight, Container, Passenger, Capturer |
-| Buildings | Building, Builder, Producer, Airfield, Capturable, Upgrade |
-| Combat | Weapon, Armor, Ammo, Abilities, Area Field, Veterancy |
-| Resources | Resource Node, Resource Drop-Off, Harvester |
+| Units | Unit, Flight, Container, Passenger, Capturer, Crusher |
+| Buildings | Building, Builder, Producer, Airfield, Capturable |
+| Research | Upgrade |
+| Combat | Weapon, Armor, Ammo, Ability, Area Field, Veterancy, Destructible, Damage Stages, Impact Marks, Spawn Effect |
+| Resources | Resource Node, Resource Drop-Off, Resource Income, Harvester |
 | Navigation | Nav Obstacle, Nav Area, Terrain Height |
-| Vision | Stealth, Detector, Fog Of War Renderer |
-| Match | Match, Match State |
-| Audio | Entity Sounds, Sound Listener |
-| Cameras | Camera Controller |
-| Selection | Selection Drag Box UI |
-| UI | HUD, Overlay Renderer |
+| Vision | Stealth, Detector |
+| Match | Match |
+| Audio | Entity Sounds |
+| Animation | Machine, Machine Part |
+| Environment | Cloud Shadows |
+| Rig | HUD, Overlay Renderer, Selection Drag Box UI, Fog of War Renderer, Camera Controller, Sound Listener |
+
+Components that builders add (AI Map Hints, Match State, Ground Color, Minimap Image) are hidden from the menu.
+Each component's help button opens its section of the module reference (`HyperRTSDocs`).
 
 ## Authoring conventions
 
@@ -71,8 +79,12 @@ public class WeaponAuthoring : AuthoringBehaviour
 
 `AuthoringEditor` is the inspector of every `AuthoringBehaviour`, engine or game:
 
-- Default fields plus the validation issues of every selected object, refreshed on edits, undo and hierarchy
-  changes.
+- Default fields under a header badge counting the validation issues of every selected object (red errors, yellow
+  warnings); click it to expand the list with its quick fixes. Refreshed on edits, undo and hierarchy changes.
+- `[ShowIf(nameof(field))]` (HyperRTS.Core) hides a field while a bool is false, a number is 0 or an object
+  reference is empty, e.g. the Weapon's projectile and splash settings.
+- Producer options are compact rows: the prefab plus its icon, cost and build time. Each Match AI difficulty is
+  one collapsed line with its key numbers.
 - Unit and building inspectors start with a summary ("Unit · Weapon, Builder · 12 DPS · 150 Supplies").
 - The Match inspector counts entities per player in the open scenes, frames the map and toggles nav and fog grid
   previews.
@@ -82,7 +94,9 @@ A component needs its own editor only for extra UI or scene handles. Subclass `A
 `EditRadius`, which record one undo step.
 
 Scene handles: vision and radius (Unit), footprint (Building, Nav Obstacle, Nav Area), weapon reach (range plus
-the owner's radius), spawn point (Producer), map bounds (Match), coloured by owner.
+the owner's radius), spawn point (Producer, dragged across the ground), map bounds (Match), coloured by owner. The
+radius, vision and reach dots sit at different angles so they don't stack. Unselected buildings, nav areas and
+obstacles show a faint footprint.
 
 Styles for engine editor UI live in `Editor/Common/HyperRTSEditor.uss` (classes prefixed `hrts-`), added with
 `EditorAssets.AddStyles(root)`.
@@ -137,11 +151,11 @@ The code is layered, each row using only the rows above it:
 
 | Folders | Hold |
 | --- | --- |
-| `Spec/`, `Data/`, `Symmetry/` | The spec as authored; the game's palette, rules and climates; sector copies |
+| `Spec/`, `Data/`, `Library/`, `Symmetry/` | The spec as authored; the game's palette, rules and climates and the JSON map library they are read from; sector copies |
 | `Checks/` | Asset and spec checks, run before anything is generated |
 | `Refine/`, `Layout/` | Sector lines smoothed, then copied into the whole-map layout |
 | `Geometry/`, `Land/`, `Placement/`, `Ground/`, `Planning/` | Shapes and noise, the land grid, placements, heights and painters, land passes |
-| `Generation/` | `MapProject` (spec and assets), `MapPaths`, `MapGeneration` in stages: `Lay`, `Plan`, `Run` |
+| `Generation/` | `MapProject` (spec and library), `MapPaths`, `MapGeneration` in stages: `Lay`, `Plan`, `Run` |
 | `Scenes/`, `Meshes/`, `Texturing/`, `Nav/`, `Hints/`, `Report/`, `Views/` | What a build writes, measures and captures |
 | `Build/`, `Tools/` | `MapBuilder`, `MapPreview`, `IMapBuildHook`; menu, command line, spec watcher |
 
@@ -244,15 +258,19 @@ errors, 2 on a crash; `-nographics` skips the screenshots. `MapSpecRule` shows a
 
 ### What the game supplies
 
-One `MapPalette` (kinds to prefabs, start kit, settlement kits, rig), one `MapRules` (thresholds per mode, the view
-camera) and a `MapClimate` per climate key: terrain layers and their texture arrays, surfaces (layer, plants, lone
-trees and props), trees, plants, road classes, farmland, belt and woodland kits, water, atmosphere. It can implement
-`IMapBuildHook` to list built maps in its menus.
+A map library: JSON files named `<Key>.<type>.json` anywhere under `Assets/`, the key unique per type, Unity assets
+named by project path. Types: `layer`, `plant`, `tree`, `road`, `surface`, `farmland`, `belt`, `woodland`,
+`settlement`, `prop`, `climate`, `palette`, `rules`. `MapLibrary` indexes them and builds one `MapPalette` (every
+prop and settlement, plus the palette file's start kit, starting resources and rig), one `MapRules` (thresholds per
+mode, nav cell size and max slope for the built match, the view camera) and the `MapClimate` a spec names: the
+surfaces, road classes and kits its file lists, then the terrain layers (at most 16), trees and plants those use, in
+the order they are first named. Its terrain arrays are generated beside the climate file. A missing, duplicate or
+unresolvable item throws naming the file. The game can implement `IMapBuildHook` to list built maps in its menus.
 
 ### Adding a kind of land use
 
-1. A kit in `Data/` (like `MapFarmlandKit`, keyed through `IMapKeyed`) held by `MapClimate`, its keys checked in
-   `MapAssetCheck` and listed in `MapKeyReference`.
+1. A kit in `Data/` (like `MapFarmlandKit`, keyed through `IMapKeyed`, loaded through `IMapLibraryItem`) held by
+   `MapClimate`, its library type in `MapLibrary`, its keys checked in `MapAssetCheck` and listed in `MapKeyReference`.
 2. A `MapLandKind` if no existing one fits, and the surfaces it paints.
 3. A `MapLandPass` in `Planning/` that claims land and places things through `MapPlanContext`, symmetric as above.
 4. Its slot in `MapLandPlanner.Plan`, where its priority puts it.
@@ -264,7 +282,7 @@ trees and props), trees, plants, road classes, farmland, belt and woodland kits,
 - **HyperRTS Debug** Scene view overlay: blocked nav cells, cells the local team sees, spatial-index cells, unit
   paths and attack targets, each AI player's next think. Each toggle is a `DebugLayer`; subclass it (or
   `CellDebugLayer`) to add one. Layers read the authoritative world unless they override `Source` with
-  `SimulationWorlds.Presented`.
+  `SimulationWorlds.Presented`. Toggles are remembered in EditorPrefs and greyed out in Edit mode.
 - **HyperRTS ▸ Tools ▸ Play**: cheats, network and replays as above. Cheats write to the server when hosting.
 
 ## Prefabs

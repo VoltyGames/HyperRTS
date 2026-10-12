@@ -14,9 +14,9 @@ namespace HyperRTS.Simulation.Abilities
     /// Cooldown abilities used from the command card (grenades, smoke, airstrikes, superweapons). On a building with
     /// unlimited range an ability works as a support power.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Abilities")]
+    [AddComponentMenu(HyperRTSMenu.Combat + "Ability")]
     [Icon(HyperRTSIcons.Combat)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Abilities)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class AbilityAuthoring : AuthoringBehaviour

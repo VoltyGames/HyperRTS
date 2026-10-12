@@ -14,10 +14,15 @@ namespace HyperRTS.Simulation.Units
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Units + "Unit")]
     [Icon(HyperRTSIcons.Units)]
-    [HelpURL(HyperRTSDocs.GettingStarted)]
+    [HelpURL(HyperRTSDocs.Units)]
     [DisallowMultipleComponent]
     public class UnitAuthoring : GameEntityAuthoring
     {
+        // No header: it continues the base class's Production group.
+        [Tooltip("Population this unit uses while alive.")]
+        [Min(0)]
+        public int population = 1;
+
         [Header("Movement")]
         [Tooltip("Top speed in world units per second.")]
         [Min(0f)]
@@ -29,10 +34,6 @@ namespace HyperRTS.Simulation.Units
 
         [Tooltip("Surface the unit moves on: Ground (land and decks), Naval (water) or Amphibious (both). A Flight component makes it Air.")]
         public NavLayer navLayer;
-
-        [Tooltip("Population this unit uses while alive.")]
-        [Min(0)]
-        public int population = 1;
 
         public override float Radius => radius;
 

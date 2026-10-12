@@ -14,9 +14,9 @@ namespace HyperRTS.Presentation.Fog
     /// Draws the fog-of-war grid over everything in view (terrain, trees, buildings) as a box around the map that
     /// the shader projects onto the depth buffer, re-uploading the grid only when it changes.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Vision + "Fog Of War Renderer")]
+    [AddComponentMenu(HyperRTSMenu.Rig + "Fog of War Renderer")]
     [Icon(HyperRTSIcons.Vision)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Vision)]
     [DisallowMultipleComponent]
     public class FogOfWarRenderer : MonoBehaviour
     {

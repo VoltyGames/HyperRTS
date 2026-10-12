@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Combat
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Armor")]
     [Icon(HyperRTSIcons.Combat)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class ArmorAuthoring : AuthoringBehaviour
     {

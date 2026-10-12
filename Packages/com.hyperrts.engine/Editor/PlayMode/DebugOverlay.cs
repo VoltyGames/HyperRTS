@@ -10,17 +10,25 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>Scene view overlay: debug-draw toggles, live AI state and a shortcut to the cheats window.</summary>
+    /// <summary>Scene view overlay: remembered debug-draw toggles, live AI state and a shortcut to the cheats window.</summary>
     [Overlay(typeof(SceneView), "HyperRTS Debug")]
     public class DebugOverlay : Overlay
     {
         public override VisualElement CreatePanelContent()
         {
             var root = new VisualElement { style = { minWidth = 180 } };
+            var layers = new VisualElement();
             foreach (var layer in DebugLayerHost.Layers)
             {
-                root.Add(Toggle(layer));
+                layers.Add(Toggle(layer));
             }
+
+            // Every layer draws live simulation state, so outside Play mode they stay set but greyed out.
+            void ShowMode(PlayModeStateChange _) => layers.SetEnabled(EditorApplication.isPlaying);
+            ShowMode(default);
+            root.RegisterCallback<AttachToPanelEvent>(_ => EditorApplication.playModeStateChanged += ShowMode);
+            root.RegisterCallback<DetachFromPanelEvent>(_ => EditorApplication.playModeStateChanged -= ShowMode);
+            root.Add(layers);
 
             var ai = new Label { style = { marginTop = 4, whiteSpace = WhiteSpace.Normal } };
             root.Add(ai);

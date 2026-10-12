@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Transport
     /// <summary>Lets a unit board transports and garrison buildings.</summary>
     [AddComponentMenu(HyperRTSMenu.Units + "Passenger")]
     [Icon(HyperRTSIcons.Units)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Transport)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
     public class PassengerAuthoring : AuthoringBehaviour

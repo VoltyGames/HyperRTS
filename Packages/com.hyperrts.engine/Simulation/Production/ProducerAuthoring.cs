@@ -12,15 +12,17 @@ namespace HyperRTS.Simulation.Production
     /// <summary>Lets a building train the listed units and research upgrades through one queue (barracks, lab).</summary>
     [AddComponentMenu(HyperRTSMenu.Buildings + "Producer")]
     [Icon(HyperRTSIcons.Buildings)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Production)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
     public class ProducerAuthoring : AuthoringBehaviour
     {
         [Tooltip("Unit prefabs this building can train.")]
+        [ProducibleOption]
         public List<UnitAuthoring> productionOptions = new();
 
         [Tooltip("Research prefabs (upgrades) this building can research, each once per player.")]
+        [ProducibleOption]
         public List<UpgradeAuthoring> researchOptions = new();
 
         [Tooltip("Local offset where finished units appear.")]

@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Combat
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Damage Stages")]
     [Icon(HyperRTSIcons.Combat)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class DamageStagesAuthoring : AuthoringBehaviour
     {

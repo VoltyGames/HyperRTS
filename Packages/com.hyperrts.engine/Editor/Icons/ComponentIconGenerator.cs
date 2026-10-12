@@ -14,12 +14,15 @@ namespace HyperRTS.Editor.Icons
 
         private static readonly (string IconPath, Color Color)[] Modules =
         {
+            (HyperRTSIcons.Animation, new Color(0.55f, 0.85f, 0.45f)),
             (HyperRTSIcons.Audio, new Color(0.90f, 0.55f, 0.25f)),
             (HyperRTSIcons.Buildings, new Color(0.45f, 0.50f, 0.58f)),
             (HyperRTSIcons.Cameras, new Color(0.55f, 0.40f, 0.85f)),
             (HyperRTSIcons.Combat, new Color(0.85f, 0.25f, 0.22f)),
+            (HyperRTSIcons.Environment, new Color(0.62f, 0.45f, 0.28f)),
             (HyperRTSIcons.Match, new Color(0.30f, 0.75f, 0.35f)),
             (HyperRTSIcons.Navigation, new Color(0.20f, 0.75f, 0.70f)),
+            (HyperRTSIcons.Research, new Color(0.90f, 0.90f, 0.90f)),
             (HyperRTSIcons.Resources, new Color(0.95f, 0.70f, 0.20f)),
             (HyperRTSIcons.Selection, new Color(0.30f, 0.70f, 1.00f)),
             (HyperRTSIcons.UI, new Color(0.85f, 0.45f, 0.75f)),

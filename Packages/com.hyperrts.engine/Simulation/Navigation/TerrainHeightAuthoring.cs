@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Navigation
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Navigation + "Terrain Height")]
     [Icon(HyperRTSIcons.Navigation)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Navigation)]
     [DisallowMultipleComponent]
     public class TerrainHeightAuthoring : AuthoringBehaviour
     {

@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Vision
     /// <summary>Hides this unit or building from hostile teams unless one of their detectors covers it.</summary>
     [AddComponentMenu(HyperRTSMenu.Vision + "Stealth")]
     [Icon(HyperRTSIcons.Vision)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Vision)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class StealthAuthoring : AuthoringBehaviour

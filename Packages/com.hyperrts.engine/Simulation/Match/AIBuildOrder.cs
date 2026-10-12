@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Match
 {
     /// <summary>An AI opening, usually one per faction: what to build, train and research, in order.</summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Match + "AI Build Order", fileName = "AIBuildOrder")]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.AI)]
     public class AIBuildOrder : ScriptableObject
     {
         [Serializable]

@@ -6,9 +6,9 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>Draws selection rings, health bars, the placement ghost and rally points with instanced meshes.</summary>
-    [AddComponentMenu(HyperRTSMenu.UI + "Overlay Renderer")]
+    [AddComponentMenu(HyperRTSMenu.Rig + "Overlay Renderer")]
     [Icon(HyperRTSIcons.UI)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public class OverlayRenderer : MonoBehaviour
     {

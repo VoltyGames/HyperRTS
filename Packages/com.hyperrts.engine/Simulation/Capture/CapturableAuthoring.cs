@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Capture
     /// <summary>Lets capturer units take this building over (neutral oil derricks, enemy outposts).</summary>
     [AddComponentMenu(HyperRTSMenu.Buildings + "Capturable")]
     [Icon(HyperRTSIcons.Buildings)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Capture)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
     public class CapturableAuthoring : AuthoringBehaviour

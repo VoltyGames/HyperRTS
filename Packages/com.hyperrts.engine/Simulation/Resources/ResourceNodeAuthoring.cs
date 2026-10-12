@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Resources
     /// <summary>A neutral, harvestable deposit (supply pile, gold mine). Needs a collider to be right-clicked.</summary>
     [AddComponentMenu(HyperRTSMenu.Resources + "Resource Node")]
     [Icon(HyperRTSIcons.Resources)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Resources)]
     [DisallowMultipleComponent]
     [RequiresGhost]
     public class ResourceNodeAuthoring : AuthoringBehaviour

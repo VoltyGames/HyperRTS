@@ -1,9 +1,13 @@
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Capture;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Upgrades;
 using Unity.NetCode;
 using UnityEngine;
 
@@ -25,9 +29,11 @@ namespace HyperRTS.Editor.Templates
             return go;
         }
 
-        public static GameObject CombatUnit() => Unit("Soldier").AddComponent<WeaponAuthoring>().gameObject;
+        public static GameObject CombatUnit() => Unit("Combat Unit").AddComponent<WeaponAuthoring>().gameObject;
         public static GameObject Worker() => Unit("Worker").AddComponent<BuilderAuthoring>().gameObject;
         public static GameObject Harvester() => Unit("Harvester").AddComponent<HarvesterAuthoring>().gameObject;
+        public static GameObject Transport() => Unit("Transport").AddComponent<ContainerAuthoring>().gameObject;
+        public static GameObject Aircraft() => Unit("Aircraft").AddComponent<FlightAuthoring>().gameObject;
 
         public static GameObject Building(string name = "Building", float width = 4f, float height = 2.5f)
         {
@@ -39,12 +45,36 @@ namespace HyperRTS.Editor.Templates
             return go;
         }
 
-        public static GameObject Producer() => Building("Barracks").AddComponent<ProducerAuthoring>().gameObject;
-        public static GameObject DropOff() => Building("Depot").AddComponent<ResourceDropOffAuthoring>().gameObject;
+        public static GameObject Producer() => Building("Producer").AddComponent<ProducerAuthoring>().gameObject;
+        public static GameObject DropOff() => Building("Resource Drop-Off").AddComponent<ResourceDropOffAuthoring>().gameObject;
+
+        /// <summary>A producer meant for research: list Upgrade prefabs in its research options.</summary>
+        public static GameObject ResearchBuilding() =>
+            Building("Research Building").AddComponent<ProducerAuthoring>().gameObject;
+
+        public static GameObject Airfield() =>
+            Building("Airfield", 8f, 0.5f).AddComponent<AirfieldAuthoring>().gameObject;
+
+        /// <summary>A neutral building that units with a Capturer can take over.</summary>
+        public static GameObject CapturableBuilding()
+        {
+            var go = Building("Capturable Building");
+            go.GetComponent<BuildingAuthoring>().owner = 0;
+            go.AddComponent<CapturableAuthoring>();
+            return go;
+        }
+
+        /// <summary>A research prefab (no model) for a producer's research options.</summary>
+        public static GameObject Upgrade()
+        {
+            var go = new GameObject("Upgrade");
+            go.AddComponent<UpgradeAuthoring>().displayName = go.name;
+            return go;
+        }
 
         public static GameObject DefenseTower()
         {
-            var go = Building("Tower", 2f, 4f);
+            var go = Building("Defense Tower", 2f, 4f);
             go.AddComponent<WeaponAuthoring>().range = 8f;
             return go;
         }
@@ -60,9 +90,16 @@ namespace HyperRTS.Editor.Templates
 
         public static GameObject NavObstacle()
         {
-            var go = Template("Obstacle", PrimitiveType.Cube, new Vector3(4f, 2f, 4f), 1f);
+            var go = Template("Nav Obstacle", PrimitiveType.Cube, new Vector3(4f, 2f, 4f), 1f);
             Object.DestroyImmediate(go.GetComponent<Collider>());
             go.AddComponent<NavObstacleAuthoring>().size = new Vector2(4f, 4f);
+            return go;
+        }
+
+        public static GameObject NavArea()
+        {
+            var go = new GameObject("Nav Area");
+            go.AddComponent<NavAreaAuthoring>();
             return go;
         }
 

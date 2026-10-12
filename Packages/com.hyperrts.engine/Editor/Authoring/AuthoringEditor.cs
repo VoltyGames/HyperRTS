@@ -9,21 +9,22 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Authoring
 {
-    /// <summary>Default inspector plus validation issues, for every authoring component (engine or game).</summary>
+    /// <summary>Default inspector with a validation badge on top, for every authoring component (engine or game).</summary>
     [CustomEditor(typeof(AuthoringBehaviour), true)]
     [CanEditMultipleObjects]
     public class AuthoringEditor : UnityEditor.Editor
     {
-        private IssueList _issues;
+        private IssueBadge _issues;
 
         public override VisualElement CreateInspectorGUI()
         {
             var root = new VisualElement();
             EditorAssets.AddStyles(root);
+            _issues = new IssueBadge(OnChanged);
+            root.Add(_issues);
             BuildHeader(root);
             InspectorElement.FillDefaultInspector(root, serializedObject, this);
-            _issues = new IssueList(OnChanged, showContext: false);
-            root.Add(_issues);
+            ConditionalFields.Bind(root, serializedObject);
             BuildFooter(root);
 
             // Rules also read sibling components and the hierarchy, so field edits alone don't cover every change.
@@ -39,7 +40,7 @@ namespace HyperRTS.Editor.Authoring
         {
         }
 
-        /// <summary>Adds elements below the validation issues.</summary>
+        /// <summary>Adds elements below the fields.</summary>
         protected virtual void BuildFooter(VisualElement root)
         {
         }

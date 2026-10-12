@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Buildings
     /// <summary>Lets a unit place and construct the listed buildings (worker, dozer).</summary>
     [AddComponentMenu(HyperRTSMenu.Buildings + "Builder")]
     [Icon(HyperRTSIcons.Buildings)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Buildings)]
     [DisallowMultipleComponent]
     public class BuilderAuthoring : AuthoringBehaviour
     {

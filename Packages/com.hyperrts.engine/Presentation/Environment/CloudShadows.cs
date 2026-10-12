@@ -10,9 +10,9 @@ namespace HyperRTS.Presentation.Environment
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(Light), typeof(UniversalAdditionalLightData))]
-    [AddComponentMenu(HyperRTSMenu.Root + "Environment/Cloud Shadows")]
-    [Icon(HyperRTSIcons.Cameras)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [AddComponentMenu(HyperRTSMenu.Environment + "Cloud Shadows")]
+    [Icon(HyperRTSIcons.Environment)]
+    [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class CloudShadows : MonoBehaviour
     {

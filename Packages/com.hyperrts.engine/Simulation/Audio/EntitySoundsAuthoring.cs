@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Audio
     /// <summary>Sound cues a unit or building plays when it fires, dies, is produced or answers its owner.</summary>
     [AddComponentMenu(HyperRTSMenu.Audio + "Entity Sounds")]
     [Icon(HyperRTSIcons.Audio)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Audio)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class EntitySoundsAuthoring : AuthoringBehaviour

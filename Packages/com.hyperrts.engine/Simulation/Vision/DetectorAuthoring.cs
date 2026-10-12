@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Vision
     /// <summary>Reveals hostile stealthed entities within a radius to this entity's team.</summary>
     [AddComponentMenu(HyperRTSMenu.Vision + "Detector")]
     [Icon(HyperRTSIcons.Vision)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Vision)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class DetectorAuthoring : AuthoringBehaviour

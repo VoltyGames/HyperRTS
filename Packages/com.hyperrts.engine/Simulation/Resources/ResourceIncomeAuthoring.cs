@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Resources
     /// <summary>Passive income for whoever owns this entity (capturable oil derricks, supply outposts).</summary>
     [AddComponentMenu(HyperRTSMenu.Resources + "Resource Income")]
     [Icon(HyperRTSIcons.Resources)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Resources)]
     [DisallowMultipleComponent]
     public class ResourceIncomeAuthoring : AuthoringBehaviour
     {

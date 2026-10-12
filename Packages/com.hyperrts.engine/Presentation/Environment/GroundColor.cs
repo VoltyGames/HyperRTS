@@ -8,9 +8,9 @@ namespace HyperRTS.Presentation.Environment
     /// from at its roots. Map tools bake the picture; one per map scene.
     /// </summary>
     [ExecuteAlways]
-    [AddComponentMenu(HyperRTSMenu.Root + "Environment/Ground Color")]
-    [Icon(HyperRTSIcons.Cameras)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [AddComponentMenu("")]
+    [Icon(HyperRTSIcons.Environment)]
+    [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class GroundColor : MonoBehaviour
     {

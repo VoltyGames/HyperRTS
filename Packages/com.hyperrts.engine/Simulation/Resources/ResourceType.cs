@@ -6,7 +6,7 @@ namespace HyperRTS.Simulation.Resources
 {
     /// <summary>A kind of resource (supplies, gold, oil). Components reference it through <c>UnityObjectRef</c>.</summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Resources + "Resource Type", fileName = "ResourceType")]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Resources)]
     public class ResourceType : ScriptableObject
     {
         [Tooltip("Name shown in the HUD.")]

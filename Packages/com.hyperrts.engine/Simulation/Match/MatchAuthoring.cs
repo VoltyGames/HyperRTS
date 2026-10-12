@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.Match
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Match + "Match")]
     [Icon(HyperRTSIcons.Match)]
-    [HelpURL(HyperRTSDocs.GettingStarted)]
+    [HelpURL(HyperRTSDocs.Match)]
     [DisallowMultipleComponent]
     public class MatchAuthoring : AuthoringBehaviour
     {

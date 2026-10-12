@@ -15,27 +15,52 @@ namespace HyperRTS.Editor.Authoring
             axes = PrimitiveBoundsHandle.Axes.X | PrimitiveBoundsHandle.Axes.Z,
         };
 
-        /// <summary>Ground disc with a drag dot on its +X edge; returns the edited radius.</summary>
-        public static float Radius(Vector3 center, float radius, Color color, string label)
+        /// <summary>Dot angles (degrees from +X towards +Z) that keep overlapping discs' handles apart.</summary>
+        public const float RadiusAngle = 0f;
+        public const float VisionAngle = 45f;
+        public const float ReachAngle = -45f;
+
+        /// <summary>Ground disc with a drag dot on its edge at <paramref name="angle"/>; returns the edited radius.</summary>
+        public static float Radius(Vector3 center, float radius, Color color, string label, float angle)
         {
             Handles.color = color;
             Handles.DrawWireDisc(center, Vector3.up, radius);
-            var dot = center + Vector3.right * radius;
+            var direction = Direction(angle);
+            var dot = center + direction * radius;
             Handles.Label(dot + Vector3.forward * 0.3f, $"{label} {radius:0.##}");
-            var moved = Handles.Slider(dot, Vector3.right, HandleUtility.GetHandleSize(dot) * 0.08f, Handles.DotHandleCap, 0f);
-            return Mathf.Max(0f, moved.x - center.x);
+            var moved = Handles.Slider(dot, direction, HandleUtility.GetHandleSize(dot) * 0.08f, Handles.DotHandleCap, 0f);
+            return Mathf.Max(0f, Vector3.Dot(moved - center, direction));
         }
 
         /// <summary><see cref="Radius"/> that applies a drag to <paramref name="owner"/> as one undo step.</summary>
         public static void EditRadius(Object owner, Vector3 center, float radius, Color color, string label,
-            string undoLabel, Action<float> apply)
+            float angle, string undoLabel, Action<float> apply)
         {
             EditorGUI.BeginChangeCheck();
-            var edited = Radius(center, radius, color, label);
+            var edited = Radius(center, radius, color, label, angle);
             if (EditorGUI.EndChangeCheck())
             {
                 EditorUndo.Record(owner, undoLabel, () => apply(edited));
             }
+        }
+
+        /// <summary>Flat ground direction <paramref name="angle"/> degrees from +X towards +Z.</summary>
+        public static Vector3 Direction(float angle)
+        {
+            var radians = angle * Mathf.Deg2Rad;
+            return new Vector3(Mathf.Cos(radians), 0f, Mathf.Sin(radians));
+        }
+
+        /// <summary>Disc handle that drags a point across the ground plane, keeping its height.</summary>
+        public static Vector3 Point(Vector3 position, Color color, string label)
+        {
+            Handles.color = color;
+            var size = HandleUtility.GetHandleSize(position) * 0.15f;
+            Handles.DrawWireDisc(position, Vector3.up, size);
+            Handles.Label(position + Vector3.forward * size * 1.5f, label);
+            var moved = Handles.Slider2D(position, Vector3.up, Vector3.right, Vector3.forward, size,
+                Handles.CircleHandleCap, Vector2.zero);
+            return new Vector3(moved.x, position.y, moved.z);
         }
 
         /// <summary>Centred X by Z box; dragging an edge resizes both sides so the footprint stays centred.</summary>

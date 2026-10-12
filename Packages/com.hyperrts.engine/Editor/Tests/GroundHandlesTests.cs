@@ -19,5 +19,22 @@ namespace HyperRTS.Editor.Tests
 
         [Test]
         public void UntouchedBoxKeepsItsSize() => Assert.AreEqual(4f, GroundHandles.MirroredSize(4f, 0f, 4f), 1e-4f);
+
+        [Test]
+        public void DirectionLiesFlatAtTheGivenAngle()
+        {
+            var direction = GroundHandles.Direction(90f);
+            Assert.AreEqual(0f, direction.x, 1e-4f);
+            Assert.AreEqual(0f, direction.y, 1e-4f);
+            Assert.AreEqual(1f, direction.z, 1e-4f);
+        }
+
+        // Unit radius, vision and weapon reach discs overlap, so their drag dots must not stack.
+        [Test]
+        public void RadiusDotsSitAtDifferentAngles()
+        {
+            var angles = new[] { GroundHandles.RadiusAngle, GroundHandles.VisionAngle, GroundHandles.ReachAngle };
+            CollectionAssert.AllItemsAreUnique(angles);
+        }
     }
 }

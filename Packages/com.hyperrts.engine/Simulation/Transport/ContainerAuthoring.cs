@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Transport
     /// <summary>Lets allied passengers board this unit (transport) or garrison this building (bunker).</summary>
     [AddComponentMenu(HyperRTSMenu.Units + "Container")]
     [Icon(HyperRTSIcons.Units)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Transport)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class ContainerAuthoring : AuthoringBehaviour

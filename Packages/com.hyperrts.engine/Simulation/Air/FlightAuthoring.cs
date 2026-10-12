@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Air
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Units + "Flight")]
     [Icon(HyperRTSIcons.Units)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Air)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
     public class FlightAuthoring : AuthoringBehaviour

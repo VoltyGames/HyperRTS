@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Match
     /// The match's replicated state (<see cref="MatchState"/>): its own small ghost, because the Match object bakes
     /// the players, which must become ghosts of their own. Every map holds one; the scene wizard places it.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Match + "Match State")]
+    [AddComponentMenu("")]
     [Icon(HyperRTSIcons.Match)]
     [HelpURL(HyperRTSDocs.Networking)]
     [DisallowMultipleComponent]

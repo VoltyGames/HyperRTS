@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Fields
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Area Field")]
     [Icon(HyperRTSIcons.Combat)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Fields)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class AreaFieldAuthoring : AuthoringBehaviour

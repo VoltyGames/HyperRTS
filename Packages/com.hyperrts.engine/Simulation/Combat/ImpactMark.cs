@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Combat
     /// Presentation draws it; the simulation only reports where shots landed.
     /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Combat + "Impact Mark", fileName = "ImpactMark")]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Combat)]
     public class ImpactMark : ScriptableObject
     {
         [Tooltip("Decal materials (URP decal shader); each impact picks one at random.")]

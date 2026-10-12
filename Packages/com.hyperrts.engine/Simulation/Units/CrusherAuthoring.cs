@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Units
     /// <summary>Lets a vehicle flatten destructible scenery (fences, hay bales, small trees) it drives over.</summary>
     [AddComponentMenu(HyperRTSMenu.Units + "Crusher")]
     [Icon(HyperRTSIcons.Units)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Units)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
     public class CrusherAuthoring : AuthoringBehaviour

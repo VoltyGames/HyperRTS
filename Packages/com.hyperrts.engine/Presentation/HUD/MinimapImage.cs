@@ -7,9 +7,9 @@ namespace HyperRTS.Presentation.HUD
     /// A top-down picture of the whole playable area that the minimap draws under its blips. Map tools bake it; one
     /// per scene.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.UI + "Minimap Image")]
+    [AddComponentMenu("")]
     [Icon(HyperRTSIcons.UI)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class MinimapImage : MonoBehaviour
     {

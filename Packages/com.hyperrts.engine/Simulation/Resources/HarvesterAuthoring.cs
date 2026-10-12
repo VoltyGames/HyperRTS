@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Resources
     /// <summary>Lets a unit gather from resource nodes and carry cargo to a drop-off.</summary>
     [AddComponentMenu(HyperRTSMenu.Resources + "Harvester")]
     [Icon(HyperRTSIcons.Resources)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Resources)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
     public class HarvesterAuthoring : AuthoringBehaviour

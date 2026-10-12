@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Buildings
     /// <summary>A static structure that blocks pathing. Add Producer, Resource Drop-Off etc. for its role.</summary>
     [AddComponentMenu(HyperRTSMenu.Buildings + "Building")]
     [Icon(HyperRTSIcons.Buildings)]
-    [HelpURL(HyperRTSDocs.GettingStarted)]
+    [HelpURL(HyperRTSDocs.Buildings)]
     [DisallowMultipleComponent]
     public class BuildingAuthoring : GameEntityAuthoring
     {

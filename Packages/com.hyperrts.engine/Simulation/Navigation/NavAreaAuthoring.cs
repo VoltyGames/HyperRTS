@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Navigation
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Navigation + "Nav Area")]
     [Icon(HyperRTSIcons.Navigation)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Navigation)]
     [DisallowMultipleComponent]
     public class NavAreaAuthoring : AuthoringBehaviour
     {

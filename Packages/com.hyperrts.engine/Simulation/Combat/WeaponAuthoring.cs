@@ -9,15 +9,12 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>Lets a unit or building attack. Without a projectile prefab hits land instantly (melee, hitscan).</summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Weapon")]
     [Icon(HyperRTSIcons.Combat)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class WeaponAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Firing range in world units, measured edge to edge.")]
-        [Min(0.1f)]
-        public float range = 6f;
-
+        [Header("Damage")]
         [Tooltip("Damage per hit before armor.")]
         [Min(0f)]
         public float damage = 10f;
@@ -26,30 +23,41 @@ namespace HyperRTS.Simulation.Combat
         [Min(0.05f)]
         public float cooldown = 1f;
 
+        [Tooltip("Optional damage category that armor can scale.")]
+        public DamageType damageType;
+
+        [Header("Splash")]
         [Tooltip("Radius around the impact that also takes damage; 0 hits only the target.")]
         [Min(0f)]
         public float splashRadius;
 
         [Tooltip("Fraction of the damage dealt at the splash edge (1 = no falloff).")]
         [Range(0f, 1f)]
+        [ShowIf(nameof(splashRadius))]
         public float splashEdgeDamage = 0.5f;
 
         [Tooltip("Splash also hurts the shooter's own and allied units.")]
+        [ShowIf(nameof(splashRadius))]
         public bool friendlyFire;
 
-        [Tooltip("Optional damage category that armor can scale.")]
-        public DamageType damageType;
-
+        [Header("Projectile")]
         [Tooltip("Optional projectile prefab; leave empty for instant hits.")]
         public GameObject projectilePrefab;
 
         [Tooltip("Projectile speed in world units per second.")]
         [Min(0.1f)]
+        [ShowIf(nameof(projectilePrefab))]
         public float projectileSpeed = 25f;
 
         [Tooltip("Height above the shooter's and target's pivots that projectiles fly at.")]
         [Min(0f)]
+        [ShowIf(nameof(projectilePrefab))]
         public float projectileHeight = 1f;
+
+        [Header("Targeting")]
+        [Tooltip("Firing range in world units, measured edge to edge.")]
+        [Min(0.1f)]
+        public float range = 6f;
 
         [Tooltip("What the weapon can hit: Surface (ground and naval units, buildings), Air (aircraft), or both.")]
         public WeaponTargets targets;

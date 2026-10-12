@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>Plays a particle effect once where this appears: put it on ruins, rubble and other remains.</summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Spawn Effect")]
     [Icon(HyperRTSIcons.Combat)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class SpawnEffectAuthoring : AuthoringBehaviour
     {

@@ -10,9 +10,9 @@ namespace HyperRTS.Presentation.HUD
     /// Builds the in-game HUD (resources, minimap, selection, command card, banner) and keeps it in sync with ECS.
     /// Games add or replace panels by overriding <see cref="CreatePanels"/>.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.UI + "HUD")]
+    [AddComponentMenu(HyperRTSMenu.Rig + "HUD")]
     [Icon(HyperRTSIcons.UI)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public class HUDController : PanelContent
     {

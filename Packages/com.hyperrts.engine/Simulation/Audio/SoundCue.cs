@@ -6,7 +6,7 @@ namespace HyperRTS.Simulation.Audio
 {
     /// <summary>A playable sound: random clip, volume and pitch, with an instance limit and a priority for mixing.</summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Audio + "Sound Cue", fileName = "SoundCue")]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Audio)]
     public class SoundCue : ScriptableObject
     {
         [Tooltip("Variations; one is picked at random each time the cue plays.")]

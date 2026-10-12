@@ -12,9 +12,9 @@ namespace HyperRTS.Simulation.AI
     /// slots. A map builder writes it (never by hand); one per match, as a plain object in the SubScene. The AI
     /// needs it: a match with AI players on a map without it logs an error and the bots stay idle.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Match + "AI Map Hints")]
+    [AddComponentMenu("")]
     [Icon(HyperRTSIcons.Match)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.AI)]
     [DisallowMultipleComponent]
     public class AIMapHintsAuthoring : AuthoringBehaviour
     {

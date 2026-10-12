@@ -16,9 +16,9 @@ namespace HyperRTS.Simulation.Upgrades
     /// A one-time research a producer can queue. Once done, its stat bonuses apply to the owner's matching units and
     /// buildings, including ones built later. Put it on its own prefab and list it in a Producer's research options.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "Upgrade")]
-    [Icon(HyperRTSIcons.Buildings)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [AddComponentMenu(HyperRTSMenu.Research + "Upgrade")]
+    [Icon(HyperRTSIcons.Research)]
+    [HelpURL(HyperRTSDocs.Upgrades)]
     [DisallowMultipleComponent]
     public class UpgradeAuthoring : ProducibleAuthoring
     {

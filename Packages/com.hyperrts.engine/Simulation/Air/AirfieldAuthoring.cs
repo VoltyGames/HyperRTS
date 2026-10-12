@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Air
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Buildings + "Airfield")]
     [Icon(HyperRTSIcons.Buildings)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Air)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
     public class AirfieldAuthoring : AuthoringBehaviour

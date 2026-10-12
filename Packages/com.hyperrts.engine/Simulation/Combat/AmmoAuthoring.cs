@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Combat
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Ammo")]
     [Icon(HyperRTSIcons.Combat)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(WeaponAuthoring), "a Weapon")]
     public class AmmoAuthoring : AuthoringBehaviour

@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Navigation
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Navigation + "Nav Obstacle")]
     [Icon(HyperRTSIcons.Navigation)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [HelpURL(HyperRTSDocs.Navigation)]
     [DisallowMultipleComponent]
     public class NavObstacleAuthoring : AuthoringBehaviour
     {

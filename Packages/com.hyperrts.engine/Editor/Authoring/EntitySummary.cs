@@ -3,6 +3,9 @@ using System.Linq;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Production;
+using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Upgrades;
 using UnityEditor;
 using UnityEngine;
 
@@ -33,9 +36,34 @@ namespace HyperRTS.Editor.Authoring
 
         public static float Dps(WeaponAuthoring weapon) => weapon.damage / Mathf.Max(weapon.cooldown, 0.05f);
 
-        public static string CostText(GameEntityAuthoring entity) =>
-            string.Join(", ", entity.cost.Where(quantity => quantity.type != null)
+        public static string CostText(GameEntityAuthoring entity) => CostText(entity.cost);
+
+        public static string CostText(IEnumerable<ResourceQuantity> cost) =>
+            string.Join(", ", cost.Where(quantity => quantity.type != null)
                 .Select(quantity => $"{quantity.amount} {quantity.type.displayName}"));
+
+        /// <summary>For example "150 Supplies · 12s", for a unit, building or upgrade; empty when unassigned.</summary>
+        public static string ProducibleText(ProducibleAuthoring producible) => producible switch
+        {
+            null => "",
+            GameEntityAuthoring entity => CostAndTime(entity.cost, entity.buildTime),
+            UpgradeAuthoring upgrade => CostAndTime(upgrade.cost, upgrade.researchTime),
+            _ => throw new System.ArgumentException(
+                $"{producible.GetType().Name} is not a unit, building or upgrade."),
+        };
+
+        public static Texture2D ProducibleIcon(ProducibleAuthoring producible) => producible switch
+        {
+            GameEntityAuthoring entity => entity.icon,
+            UpgradeAuthoring upgrade => upgrade.icon,
+            _ => null,
+        };
+
+        private static string CostAndTime(IEnumerable<ResourceQuantity> cost, float seconds)
+        {
+            var costText = CostText(cost);
+            return $"{(costText.Length > 0 ? costText : "free")} · {seconds:0.#}s";
+        }
 
         // Other authoring components on the object (engine or game), named as in the Add Component menu.
         private static string Modules(GameEntityAuthoring entity) =>

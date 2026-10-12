@@ -6,9 +6,9 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Animation
 {
     /// <summary>The root of an animated machine (pumpjack, wind turbine); its children carry Machine Parts.</summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "Machine")]
-    [Icon(HyperRTSIcons.Buildings)]
-    [HelpURL(HyperRTSDocs.Modules)]
+    [AddComponentMenu(HyperRTSMenu.Animation + "Machine")]
+    [Icon(HyperRTSIcons.Animation)]
+    [HelpURL(HyperRTSDocs.Animation)]
     [DisallowMultipleComponent]
     public class MachineAuthoring : AuthoringBehaviour
     {
