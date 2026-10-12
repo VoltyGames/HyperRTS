@@ -4,11 +4,12 @@ using HyperRTS.Simulation.Resources;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Harvest loop, node depletion and regrowth.</summary>
+    /// <summary>Harvest loop, drop-off choice, node depletion and regrowth.</summary>
     public class EconomyTests
     {
         private TestWorld _world;
@@ -88,6 +89,40 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsFalse(_world.EntityManager.Exists(first));
             Assert.Less(_world.Get<ResourceNode>(second).Amount, 100);
             Assert.AreEqual(second, _world.Get<ActiveOrder>(harvester).Value.Target);
+        }
+
+        [Test]
+        public void Harvester_DeliversToNearerDropOff_OnceItIsBuilt()
+        {
+            SpawnDropOff(new float3(-30f, 0f, 0f));
+            var site = _world.SpawnBuilding(1, new float3(6f, 0f, 4f), new float2(4f, 4f), complete: false);
+            var writer = new EntityManagerWriter(_world.EntityManager, site);
+            ResourceDropOffSetup.Add(ref writer);
+            var node = _world.SpawnNode(new float3(10f, 0f, 0f), _supplies, 1000);
+            var harvester = SpawnHarvester(new float3(8f, 0f, 0f));
+
+            _world.Order(harvester, OrderType.Gather, node);
+            Assert.Less(FarthestWest(harvester, 15f), -20f, "an unfinished site takes no cargo");
+
+            _world.EntityManager.SetComponentEnabled<ConstructionProgress>(site, false);
+            _world.Run(10f);
+            var before = _world.ResourcesOf(1, _supplies);
+
+            Assert.Greater(FarthestWest(harvester, 20f), 0f, "every later trip ends at the finished drop-off");
+            Assert.Greater(_world.ResourcesOf(1, _supplies), before + 20, "it keeps delivering there");
+        }
+
+        /// <summary>Runs for the given time and returns the lowest x the harvester reached.</summary>
+        private float FarthestWest(Entity harvester, float seconds)
+        {
+            var west = float.MaxValue;
+            for (var t = 0f; t < seconds; t += TestWorld.FrameTime)
+            {
+                _world.Tick();
+                west = math.min(west, _world.Get<LocalTransform>(harvester).Position.x);
+            }
+
+            return west;
         }
 
         [Test]
