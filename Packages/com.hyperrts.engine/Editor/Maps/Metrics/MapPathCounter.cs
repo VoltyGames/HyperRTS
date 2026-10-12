@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.Maps.Metrics
             return paths;
         }
 
-        /// <summary>Every cell reachable by ground from <paramref name="start"/>.</summary>
+        /// <summary>Every cell reachable by ground from <paramref name="start"/>, by the pathfinders' step rules.</summary>
         public static bool[] Flood(MapNavGrid nav, int2 start)
         {
             var grid = nav.Grid;
@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Maps.Metrics
                     for (var dx = -1; dx <= 1; dx++)
                     {
                         var next = cell + new int2(dx, dy);
-                        if (!grid.InBounds(next) || reached[grid.Index(next)] || !nav.IsWalkable(next))
+                        if (!grid.InBounds(next) || reached[grid.Index(next)] || !MapStep.CanStep(nav, cell, next, null))
                         {
                             continue;
                         }
