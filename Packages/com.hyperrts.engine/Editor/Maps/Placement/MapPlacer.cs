@@ -3,7 +3,6 @@ using System.Linq;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
-using HyperRTS.Editor.Maps.Ground;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Placement
@@ -22,15 +21,13 @@ namespace HyperRTS.Editor.Maps.Placement
         private readonly MapClimate _climate;
         private readonly MapIssues _issues;
 
-        private MapPlacer(MapLayout layout, MapShapes shapes, MapHeights heights, MapPalette palette,
-            MapClimate climate, MapIssues issues)
+        private MapPlacer(MapLayout layout, MapShapes shapes, MapPalette palette, MapClimate climate, MapIssues issues)
         {
             _layout = layout;
             _shapes = shapes;
             _palette = palette;
             _climate = climate;
             _issues = issues;
-            Heights = heights;
             Clearance = new MapClearance(layout, shapes, palette.baseRadius);
         }
 
@@ -38,12 +35,10 @@ namespace HyperRTS.Editor.Maps.Placement
 
         public MapClearance Clearance { get; }
 
-        internal MapHeights Heights { get; }
-
-        public static MapPlacer Place(MapLayout layout, MapShapes shapes, MapHeights heights, MapPalette palette,
-            MapClimate climate, MapIssues issues)
+        public static MapPlacer Place(MapLayout layout, MapShapes shapes, MapPalette palette, MapClimate climate,
+            MapIssues issues)
         {
-            var placer = new MapPlacer(layout, shapes, heights, palette, climate, issues);
+            var placer = new MapPlacer(layout, shapes, palette, climate, issues);
             placer.PlaceStartKits();
             placer.PlaceResources();
             placer.PlaceProps();
@@ -56,18 +51,6 @@ namespace HyperRTS.Editor.Maps.Placement
         /// <summary>A seeded random stream for one authored feature, the same on every build.</summary>
         public static System.Random Random(int seed, int channel, int index) =>
             new(unchecked(seed * 486187739 + channel * 7919 + index * 104729));
-
-        internal MapPaletteEntry Entry(string key, string source)
-        {
-            var entry = _palette.Entry(key);
-            if (entry == null || entry.prefab == null)
-            {
-                _issues.Error($"{source}: kind '{key}' has no prefab in the palette.");
-                return null;
-            }
-
-            return entry;
-        }
 
         /// <summary>Places an authored-space choice in every copy of the feature it belongs to.</summary>
         internal void AddCopies<T>(List<MapCopy<T>> copies, int index, MapPaletteEntry entry, Vector2 position,
@@ -102,12 +85,7 @@ namespace HyperRTS.Editor.Maps.Placement
                 var right = new Vector2(forward.y, -forward.x);
                 foreach (var item in _palette.startKit)
                 {
-                    var entry = Entry(item.key, "start kit");
-                    if (entry == null)
-                    {
-                        continue;
-                    }
-
+                    var entry = _palette.Entry(item.key);
                     var position = spawn.Position + right * item.offset.x + forward * item.offset.y;
                     Add(new MapPlacement(entry, position, spawn.Yaw + item.yaw) { Owner = spawn.Slot });
                 }
@@ -118,12 +96,9 @@ namespace HyperRTS.Editor.Maps.Placement
         {
             foreach (var resource in _layout.Resources)
             {
-                var entry = Entry(resource.Placed.kind, $"resource {resource.Index + 1}");
-                if (entry != null)
-                {
-                    var yaw = resource.Transform.ApplyYaw(Jitter(entry, 1, resource.Index));
-                    Add(new MapPlacement(entry, resource.Placed.pos.ToVector2(), yaw) { Amount = resource.Placed.amount });
-                }
+                var entry = _palette.Entry(resource.Placed.kind);
+                var yaw = resource.Transform.ApplyYaw(Jitter(entry, 1, resource.Index));
+                Add(new MapPlacement(entry, resource.Placed.pos.ToVector2(), yaw) { Amount = resource.Placed.amount });
             }
         }
 
@@ -131,12 +106,9 @@ namespace HyperRTS.Editor.Maps.Placement
         {
             foreach (var prop in _layout.Props)
             {
-                var entry = Entry(prop.Placed.kind, $"prop {prop.Index + 1}");
-                if (entry != null)
-                {
-                    var yaw = prop.Transform.ApplyYaw(prop.Authored.yaw + Jitter(entry, 2, prop.Index));
-                    Add(new MapPlacement(entry, prop.Placed.pos.ToVector2(), yaw));
-                }
+                var entry = _palette.Entry(prop.Placed.kind);
+                var yaw = prop.Transform.ApplyYaw(prop.Authored.yaw + Jitter(entry, 2, prop.Index));
+                Add(new MapPlacement(entry, prop.Placed.pos.ToVector2(), yaw));
             }
         }
 
@@ -144,21 +116,11 @@ namespace HyperRTS.Editor.Maps.Placement
         {
             foreach (var crossing in _shapes.Crossings.Where(c => c.IsBridge))
             {
-                var entry = Entry(crossing.Prop, "bridge");
-                if (entry != null)
+                Add(new MapPlacement(_palette.Entry(crossing.Prop), crossing.Position, crossing.Yaw)
                 {
-                    if (!entry.IsEntity)
-                    {
-                        _issues.Error($"Bridge '{entry.key}' needs HyperRTS authoring (Destructible) to carry its deck.");
-                        continue;
-                    }
-
-                    Add(new MapPlacement(entry, crossing.Position, crossing.Yaw)
-                    {
-                        Height = crossing.Height,
-                        Deck = new Vector2(crossing.Width, crossing.Span + 2f),
-                    });
-                }
+                    Height = crossing.Height,
+                    Deck = new Vector2(crossing.Width, crossing.Span + 2f),
+                });
             }
         }
 
@@ -167,16 +129,12 @@ namespace HyperRTS.Editor.Maps.Placement
             foreach (var line in _layout.Lines.Where(l => l.Copy == 0))
             {
                 var kind = line.Authored.kind;
-                if (_climate.TreeIndex(kind) >= 0)
+                if (_climate.HasTree(kind))
                 {
                     continue;
                 }
 
-                var entry = Entry(kind, $"line {line.Index + 1}");
-                if (entry == null)
-                {
-                    continue;
-                }
+                var entry = _palette.Entry(kind);
 
                 var points = MapGeometry.ToVectors(line.Authored.points);
                 var length = MapGeometry.Length(points);
@@ -198,11 +156,7 @@ namespace HyperRTS.Editor.Maps.Placement
         {
             foreach (var scatter in _layout.Scatters.Where(s => s.Copy == 0))
             {
-                var entry = Entry(scatter.Authored.kind, $"scatter {scatter.Index + 1}");
-                if (entry == null)
-                {
-                    continue;
-                }
+                var entry = _palette.Entry(scatter.Authored.kind);
 
                 var polygon = MapGeometry.ToVectors(scatter.Authored.points);
                 var bounds = MapGeometry.Bounds(polygon);

@@ -27,7 +27,6 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             var symmetry = context.Layout.Symmetry;
             var routes = new MapAccessRoutes(context.Shapes, symmetry);
-            var unknown = new HashSet<string>();
             foreach (var placement in context.Placer.Placements)
             {
                 var key = placement.Entry.access;
@@ -37,16 +36,6 @@ namespace HyperRTS.Editor.Maps.Planning
                 }
 
                 var track = context.Climate.RoadClass(key);
-                if (track == null)
-                {
-                    if (unknown.Add(key))
-                    {
-                        context.Issues.Error($"Prop '{placement.Entry.key}': access road class '{key}' is not in climate '{context.Climate.name}'.");
-                    }
-
-                    continue;
-                }
-
                 if (!Connect(context, routes, placement, track))
                 {
                     var at = new MapPoint(placement.Position.x, placement.Position.y);

@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A named ground type: the layer it paints, and the trees, plants and props that grow or lie on it.</summary>
     [Serializable]
-    public sealed class MapClimateSurface
+    public sealed class MapClimateSurface : IMapKeyed
     {
         public string key;
 
@@ -22,5 +22,7 @@ namespace HyperRTS.Editor.Maps.Data
         public List<MapDetailCoverage> details = new();
 
         public List<MapPropDensity> props = new();
+
+        string IMapKeyed.Key => key;
     }
 }

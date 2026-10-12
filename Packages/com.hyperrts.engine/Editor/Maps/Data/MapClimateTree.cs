@@ -5,7 +5,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A tree the climate grows: a terrain tree, and optionally an entity version for the playable area.</summary>
     [Serializable]
-    public sealed class MapClimateTree
+    public sealed class MapClimateTree : IMapKeyed
     {
         public string key;
 
@@ -18,5 +18,7 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Random uniform scale range.")]
         public Vector2 scale = new(0.85f, 1.15f);
+
+        string IMapKeyed.Key => key;
     }
 }

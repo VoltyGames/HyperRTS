@@ -158,9 +158,9 @@ namespace HyperRTS.Editor.Tests
             var palette = ScriptableObject.CreateInstance<MapPalette>();
             palette.baseRadius = 15f;
             var climate = Climate();
-            var shapes = new MapShapes(layout, palette, climate, issues);
+            var shapes = new MapShapes(layout, palette, climate);
             var heights = MapHeightShaper.Shape(layout, shapes);
-            var placer = MapPlacer.Place(layout, shapes, heights, palette, climate, issues);
+            var placer = MapPlacer.Place(layout, shapes, palette, climate, issues);
             Assert.IsFalse(issues.HasErrors, issues.ToString());
             return new MapPlanContext(layout, shapes, heights, palette, climate, placer, issues);
         }

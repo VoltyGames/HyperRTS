@@ -16,7 +16,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 return;
             }
 
-            var bed = context.Region(MapLandKind.Water, context.Climate.shoreSurface, "river bed");
+            var bed = context.Region(MapLandKind.Water, context.Climate.shoreSurface);
             foreach (var river in context.Shapes.Rivers)
             {
                 context.Land.ClaimWhere(river.Line.Bounds, bed, p => river.EdgeDistance(p) < 0f);
@@ -31,8 +31,8 @@ namespace HyperRTS.Editor.Maps.Planning
             }
 
             var climate = context.Climate;
-            var bank = context.Region(MapLandKind.Bank, climate.shoreSurface, "river bank");
-            var floodplain = context.Region(MapLandKind.Floodplain, climate.floodplainSurface, "floodplain");
+            var bank = context.Region(MapLandKind.Bank, climate.shoreSurface);
+            var floodplain = context.Region(MapLandKind.Floodplain, climate.floodplainSurface);
             var noise = new MapNoise(context.Layout.Symmetry, context.Seed, 21);
             foreach (var river in context.Shapes.Rivers)
             {

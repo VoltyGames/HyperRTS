@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Data
     /// field ends and the dirt tracks beside them.
     /// </summary>
     [Serializable]
-    public sealed class MapFarmlandKit
+    public sealed class MapFarmlandKit : IMapKeyed
     {
         public string key;
 
@@ -41,5 +41,7 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Surfaces for the pieces too small or narrow to farm (fallow, pasture), one picked per field; empty leaves them margin.")]
         public List<MapCropShare> leftovers = new();
+
+        string IMapKeyed.Key => key;
     }
 }

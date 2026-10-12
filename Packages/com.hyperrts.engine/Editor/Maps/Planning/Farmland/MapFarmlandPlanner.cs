@@ -24,12 +24,6 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             {
                 var spec = authored[i].Authored;
                 var kit = context.Climate.FarmlandKit(spec.kind);
-                if (kit == null)
-                {
-                    context.Issues.Error($"Farmland {i + 1}: farmland kit '{spec.kind}' is not in climate '{context.Climate.name}'.");
-                    continue;
-                }
-
                 if (i == 0)
                 {
                     context.RowAngle = spec.angle;
@@ -62,8 +56,8 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         private static void LayEnds(MapPlanContext context, MapFarmlandKit kit, MapFieldGrid grid,
             Func<Vector2, bool> farmland, int index)
         {
-            var belt = string.IsNullOrEmpty(kit.beltKit) ? null : MapBeltPlanner.Kit(context, kit.beltKit, $"farmland kit '{kit.key}'");
-            var track = string.IsNullOrEmpty(kit.trackClass) ? null : TrackClass(context, kit);
+            var belt = string.IsNullOrEmpty(kit.beltKit) ? null : context.Climate.BeltKit(kit.beltKit);
+            var track = string.IsNullOrEmpty(kit.trackClass) ? null : context.Climate.RoadClass(kit.trackClass);
             var area = context.Land.Bounds;
             var across = grid.Across(area);
             var (first, last) = grid.EndLines(area);
@@ -94,17 +88,6 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             {
                 MapBeltPlanner.PlanLine(context, belt, run, index * 1000 + line);
             }
-        }
-
-        private static MapRoadClass TrackClass(MapPlanContext context, MapFarmlandKit kit)
-        {
-            var track = context.Climate.RoadClass(kit.trackClass);
-            if (track == null)
-            {
-                context.Issues.Error($"Farmland kit '{kit.key}': track class '{kit.trackClass}' is not in climate '{context.Climate.name}'.");
-            }
-
-            return track;
         }
 
         /// <summary>Stretches of the line u = const where the farmland is free, as sector polylines.</summary>

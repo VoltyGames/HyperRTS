@@ -8,7 +8,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Layout
 {
     /// <summary>
-    /// Checks a spec and copies its sector by the symmetry: features outside the sector, shared features off the axis
+    /// Copies a checked spec's sector by the symmetry: features outside the sector, shared features off the axis
     /// and anything outside the map are errors.
     /// </summary>
     public static class MapExpander
@@ -18,8 +18,6 @@ namespace HyperRTS.Editor.Maps.Layout
 
         public static MapLayout Expand(MapSpec spec, MapIssues issues)
         {
-            CheckHeader(spec, issues);
-            CheckAmounts(spec, issues);
             var layout = new MapLayout(spec, MapSymmetry.Parse(spec.symmetry));
             AddSpawns(layout, issues);
             var expander = new Expansion(layout, issues);
@@ -46,17 +44,6 @@ namespace HyperRTS.Editor.Maps.Layout
             return layout;
         }
 
-        private static void CheckAmounts(MapSpec spec, MapIssues issues)
-        {
-            for (var i = 0; i < spec.resources.Count; i++)
-            {
-                if (spec.resources[i].amount <= 0)
-                {
-                    issues.Error($"Resource {i + 1} ('{spec.resources[i].kind}') needs an amount above 0.");
-                }
-            }
-        }
-
         /// <summary>Players a mode needs; FFA takes 3 to 8.</summary>
         public static bool PlayersFit(string mode, int players) => mode switch
         {
@@ -67,30 +54,6 @@ namespace HyperRTS.Editor.Maps.Layout
             FreeForAll => players >= 3 && players <= MaxPlayers,
             _ => false,
         };
-
-        private static void CheckHeader(MapSpec spec, MapIssues issues)
-        {
-            if (string.IsNullOrEmpty(spec.name) || string.IsNullOrEmpty(spec.climate))
-            {
-                throw new ArgumentException("A spec needs a name and a climate.");
-            }
-
-            if (spec.size.x <= 0f || spec.size.z <= 0f)
-            {
-                throw new ArgumentException($"Map size {spec.size} must be positive.");
-            }
-
-            var terrain = spec.terrain;
-            if (terrain.waterLevel >= terrain.height || terrain.height >= terrain.maxHeight)
-            {
-                issues.Error("Terrain heights must rise: waterLevel < height < maxHeight.");
-            }
-
-            if (!Mathf.IsPowerOfTwo(terrain.resolution - 1))
-            {
-                issues.Error($"Terrain resolution {terrain.resolution} must be 2^n + 1.");
-            }
-        }
 
         private static void AddSpawns(MapLayout layout, MapIssues issues)
         {

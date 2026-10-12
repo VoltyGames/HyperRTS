@@ -14,12 +14,12 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             foreach (var line in context.Layout.Lines.Where(l => l.Copy == 0))
             {
-                var tree = context.Climate.TreeIndex(line.Authored.kind);
-                if (tree < 0)
+                if (!context.Climate.HasTree(line.Authored.kind))
                 {
                     continue;
                 }
 
+                var tree = context.Climate.TreeIndex(line.Authored.kind);
                 var points = MapGeometry.ToVectors(line.Authored.points);
                 var length = MapGeometry.Length(points);
                 var path = new MapPathWalker(points);

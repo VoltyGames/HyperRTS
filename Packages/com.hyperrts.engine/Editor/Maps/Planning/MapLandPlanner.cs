@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Maps.Planning
 
         private static void FillMeadow(MapPlanContext context)
         {
-            var meadow = context.Region(MapLandKind.Meadow, context.Climate.groundSurface, "open ground");
+            var meadow = context.Region(MapLandKind.Meadow, context.Climate.groundSurface);
             context.Land.ClaimWhere(context.Land.Bounds, meadow, _ => true);
         }
     }

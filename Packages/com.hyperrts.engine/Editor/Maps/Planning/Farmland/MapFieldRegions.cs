@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             _kit = kit;
             _index = index;
             _angle = angle;
-            Margin = context.Region(MapLandKind.Margin, kit.marginSurface, $"farmland {index + 1} margin", index);
+            Margin = context.Region(MapLandKind.Margin, kit.marginSurface, index);
         }
 
         /// <summary>The weedy band round every field.</summary>
@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             {
                 var seed = Seed(field, 0);
                 var crop = MapPlanContext.Pick(_kit.crops, c => c.weight, new System.Random(seed));
-                _fields[field] = region = _context.Region(MapLandKind.Field, crop.surface, $"farmland kit '{_kit.key}'", seed, _angle);
+                _fields[field] = region = _context.Region(MapLandKind.Field, crop.surface, seed, _angle);
             }
 
             return region;
@@ -56,7 +56,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             {
                 var seed = Seed(field, LeftoverChannel);
                 var surface = MapPlanContext.Pick(_kit.leftovers, c => c.weight, new System.Random(seed)).surface;
-                _leftovers[field] = region = _context.Region(MapLandKind.Margin, surface, $"farmland kit '{_kit.key}' leftovers", seed);
+                _leftovers[field] = region = _context.Region(MapLandKind.Margin, surface, seed);
             }
 
             return region;

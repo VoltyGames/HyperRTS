@@ -5,7 +5,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A terrain texture layer, how the terrain shader lays it on the ground, and the grass that grows wherever it is painted.</summary>
     [Serializable]
-    public sealed class MapClimateLayer
+    public sealed class MapClimateLayer : IMapKeyed
     {
         public string key;
 
@@ -32,5 +32,7 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("How far (in tiles) anti-tiling shifts copies of the texture so it never visibly repeats; 0 is off. Copies of row layers shift only along the rows.")]
         [Range(0f, 1f)]
         public float antiTiling = 1f;
+
+        string IMapKeyed.Key => key;
     }
 }

@@ -62,22 +62,17 @@ namespace HyperRTS.Editor.Tests
             return layout;
         }
 
-        public static MapShapes Shapes(MapLayout layout, MapClimate climate)
-        {
-            var issues = new MapIssues();
-            var shapes = new MapShapes(layout, ScriptableObject.CreateInstance<MapPalette>(), climate, issues);
-            Assert.IsFalse(issues.HasErrors, issues.ToString());
-            return shapes;
-        }
+        public static MapShapes Shapes(MapLayout layout, MapClimate climate) =>
+            new(layout, ScriptableObject.CreateInstance<MapPalette>(), climate);
 
         public static MapPlanContext Context(MapSpec spec, MapClimate climate, MapIssues issues)
         {
             var layout = Layout(spec);
             var palette = ScriptableObject.CreateInstance<MapPalette>();
             palette.baseRadius = 15f;
-            var shapes = new MapShapes(layout, palette, climate, issues);
+            var shapes = new MapShapes(layout, palette, climate);
             var heights = MapHeightShaper.Shape(layout, shapes);
-            var placer = MapPlacer.Place(layout, shapes, heights, palette, climate, issues);
+            var placer = MapPlacer.Place(layout, shapes, palette, climate, issues);
             Assert.IsFalse(issues.HasErrors, issues.ToString());
             return new MapPlanContext(layout, shapes, heights, palette, climate, placer, issues);
         }

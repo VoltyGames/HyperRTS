@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         private const float FordBanks = 8f;
         private const int WidthNoiseChannel = 20;
 
-        public MapShapes(MapLayout layout, MapPalette palette, MapClimate climate, MapIssues issues)
+        public MapShapes(MapLayout layout, MapPalette palette, MapClimate climate)
         {
             var water = layout.Terrain.waterLevel;
             var overhang = layout.Terrain.margin + 10f;
@@ -37,13 +37,13 @@ namespace HyperRTS.Editor.Maps.Geometry
                 Rivers.Add(new MapRiverShape(new MapLine(points, spec.width, spec.valleyWidth * 0.5f), spec, width));
                 foreach (var crossing in spec.crossings)
                 {
-                    AddCrossing(MapGeometry.ToVectors(spec.points), crossing, water, palette, issues);
+                    AddCrossing(MapGeometry.ToVectors(spec.points), crossing, water, palette);
                 }
             }
 
             foreach (var road in layout.Roads)
             {
-                AddAuthoredRoad(road, layout, climate, overhang, issues);
+                AddAuthoredRoad(road.Placed, layout, climate, overhang);
             }
 
             foreach (var ravine in layout.Ravines)
@@ -102,25 +102,16 @@ namespace HyperRTS.Editor.Maps.Geometry
             return false;
         }
 
-        private void AddAuthoredRoad(MapCopy<MapRoadSpec> road, MapLayout layout, MapClimate climate, float overhang,
-            MapIssues issues)
+        private void AddAuthoredRoad(MapRoadSpec spec, MapLayout layout, MapClimate climate, float overhang)
         {
-            var spec = road.Placed;
             var roadClass = climate.RoadClass(spec.kind);
-            if (roadClass == null)
-            {
-                issues.Error($"Road {road.Index + 1}: road class '{spec.kind}' is not in climate '{climate.name}'.");
-                return;
-            }
-
             var width = roadClass.width;
             var points = MapGeometry.ExtendAtEdge(MapGeometry.ToVectors(spec.points), layout.Bounds, overhang);
             Roads.Add(new MapRoad(new MapLine(points, width, width * 0.5f + RoadShoulder), roadClass, false));
         }
 
         /// <summary>Crossing positions are fractions of the authored river, before it was run on past the edge.</summary>
-        private void AddCrossing(List<Vector2> river, MapCrossingSpec spec, float water, MapPalette palette,
-            MapIssues issues)
+        private void AddCrossing(List<Vector2> river, MapCrossingSpec spec, float water, MapPalette palette)
         {
             var width = Rivers[^1].Spec.width;
             var position = MapGeometry.PointAlong(river, spec.t * MapGeometry.Length(river), out var direction);
@@ -140,24 +131,7 @@ namespace HyperRTS.Editor.Maps.Geometry
                 return;
             }
 
-            if (spec.kind != MapCrossingSpec.Bridge)
-            {
-                issues.Error($"Crossing kind '{spec.kind}' is neither '{MapCrossingSpec.Bridge}' nor '{MapCrossingSpec.Ford}'.");
-                return;
-            }
-
             var entry = palette.Entry(spec.prop);
-            if (entry == null)
-            {
-                issues.Error($"Bridge prop '{spec.prop}' is not in the palette.");
-                return;
-            }
-
-            if (entry.size.y < width + 4f)
-            {
-                issues.Error($"Bridge '{spec.prop}' ({entry.size.y} m) is too short for a {width} m river.");
-            }
-
             Crossings.Add(new MapCrossing(spec.kind, spec.prop, position, across, entry.size.x, entry.size.y,
                 water + DeckClearance));
         }

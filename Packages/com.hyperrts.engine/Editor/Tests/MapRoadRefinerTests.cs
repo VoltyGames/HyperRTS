@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Refine;
 using HyperRTS.Editor.Maps.Spec;
@@ -13,10 +12,10 @@ namespace HyperRTS.Editor.Tests
     /// <summary>Road refining: corner arcs, kept ends, joins at a good angle, and ends left alone on the seam and edge.</summary>
     public class MapRoadRefinerTests
     {
-        private static List<Vector2> Refine(MapSpec spec, int road, MapIssues issues = null)
+        private static List<Vector2> Refine(MapSpec spec, int road)
         {
             var symmetry = MapSymmetry.Parse(spec.symmetry);
-            MapRoadRefiner.Refine(spec, MapRoadFixture.Climate(), symmetry, issues ?? new MapIssues());
+            MapRoadRefiner.Refine(spec, MapRoadFixture.Climate(), symmetry);
             return MapGeometry.ToVectors(spec.roads[road].points);
         }
 
@@ -114,17 +113,6 @@ namespace HyperRTS.Editor.Tests
 
             Assert.AreEqual(-119f, dirt[^1].x, 1e-3f, "the margin continues it");
             Assert.AreEqual(-100f, dirt[^1].y, 1e-3f);
-        }
-
-        [Test]
-        public void AnUnknownRoadClass_IsAnErrorNamingIt()
-        {
-            var spec = SpecWith(MapRoadFixture.Road("Cobbles", new Vector2(-50f, -100f), new Vector2(-50f, -50f)));
-            var issues = new MapIssues();
-
-            Refine(spec, 0, issues);
-
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Cobbles")));
         }
 
         /// <summary>Acute angle (degrees) between the road's last 3 m and the horizontal asphalt it joins.</summary>

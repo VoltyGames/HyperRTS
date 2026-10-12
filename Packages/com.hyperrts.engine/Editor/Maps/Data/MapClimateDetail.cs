@@ -5,7 +5,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A terrain detail prototype: an instanced mesh prefab, or a grass texture drawn as billboards.</summary>
     [Serializable]
-    public sealed class MapClimateDetail
+    public sealed class MapClimateDetail : IMapKeyed
     {
         public string key;
 
@@ -20,5 +20,7 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Instances per square metre at full coverage.")]
         public float density = 2f;
+
+        string IMapKeyed.Key => key;
     }
 }

@@ -20,12 +20,7 @@ namespace HyperRTS.Editor.Maps.Planning
         public static void Place(MapPlanContext context, MapLandRegion region, MapPropDensity props, List<int> cells,
             float hectares, System.Random random)
         {
-            var entry = context.Placer.Entry(props.kind, $"surface '{region.Surface}'");
-            if (entry == null)
-            {
-                return;
-            }
-
+            var entry = context.Palette.Entry(props.kind);
             var wanted = Mathf.RoundToInt(props.perHectare * hectares);
             if (props.alongRows)
             {

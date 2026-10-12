@@ -30,18 +30,13 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         private static void Plan(MapPlanContext context, MapSettlementSpec spec, int index)
         {
             var label = $"Settlement {index + 1} ('{spec.kind}' at {spec.center})";
-            var kit = context.Palette.SettlementKit(spec.kind);
-            if (kit == null)
+            if (spec.count <= 0)
             {
-                context.Issues.Error($"{label}: settlement kit '{spec.kind}' is not in the palette.");
                 return;
             }
 
-            var entries = MapSettlementEntries.Resolve(context, kit);
-            if (entries == null || spec.count <= 0)
-            {
-                return;
-            }
+            var kit = context.Palette.SettlementKit(spec.kind);
+            var entries = new MapSettlementEntries(context.Palette, context.Climate, kit);
 
             var center = spec.center.ToVector2();
             var streets = MapStreets.Near(context, center, spec.radius);

@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A shelterbelt or hedgerow: rows of trees with shrubs in the gaps and on the edges.</summary>
     [Serializable]
-    public sealed class MapBeltKit
+    public sealed class MapBeltKit : IMapKeyed
     {
         public string key;
 
@@ -34,5 +34,7 @@ namespace HyperRTS.Editor.Maps.Data
         public float gapEvery = 140f;
 
         public float gapWidth = 9f;
+
+        string IMapKeyed.Key => key;
     }
 }

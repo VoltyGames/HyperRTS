@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Tests
             var climate = MapRoadFixture.Climate();
             if (refine)
             {
-                MapRoadRefiner.Refine(spec, climate, MapSymmetry.Parse(spec.symmetry), new MapIssues());
+                MapRoadRefiner.Refine(spec, climate, MapSymmetry.Parse(spec.symmetry));
             }
 
             var layout = MapRoadFixture.Layout(spec);

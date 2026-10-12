@@ -5,7 +5,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A kind of road spec roads and generated tracks name: its width, ground, mesh and verge.</summary>
     [Serializable]
-    public sealed class MapRoadClass
+    public sealed class MapRoadClass : IMapKeyed
     {
         public string key;
 
@@ -34,5 +34,7 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Corner radius the builder rounds the authored polyline to (metres).")]
         public float curve = 25f;
+
+        string IMapKeyed.Key => key;
     }
 }

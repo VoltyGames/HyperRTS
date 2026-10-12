@@ -39,6 +39,6 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Vertical field of view of the match camera (degrees).")]
         public float viewFieldOfView = 45f;
 
-        public MapModeRules Mode(string mode) => modes.Find(m => m.mode == mode);
+        public MapModeRules Mode(string mode) => MapKeys.Get(modes, mode, this, "mode");
     }
 }

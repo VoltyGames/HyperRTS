@@ -18,17 +18,12 @@ namespace HyperRTS.Editor.Maps.Planning
         /// there (in the area and in the sector).
         /// </summary>
         public static int Scatter(MapPlanContext context, IReadOnlyList<MapTreeDensity> mix, float hectares,
-            float spacing, System.Random random, Func<Vector2> candidate, Func<Vector2, bool> inside, string source)
+            float spacing, System.Random random, Func<Vector2> candidate, Func<Vector2, bool> inside)
         {
             var planted = 0;
             foreach (var density in mix)
             {
-                var tree = context.Tree(density.tree, source);
-                if (tree < 0)
-                {
-                    continue;
-                }
-
+                var tree = context.Climate.TreeIndex(density.tree);
                 var wanted = Mathf.RoundToInt(density.perHectare * hectares);
                 planted += Plant(context, tree, wanted, spacing, random, candidate, inside);
             }

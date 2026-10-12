@@ -87,20 +87,25 @@ namespace HyperRTS.Editor.Maps.Data
         public float detailDistance = 120f;
         public float treeDistance = 600f;
 
-        public MapClimateSurface Surface(string key) => surfaces.Find(s => s.key == key);
+        public MapClimateSurface Surface(string key) => MapKeys.Get(surfaces, key, this, "surface");
 
-        public MapRoadClass RoadClass(string key) => roadClasses.Find(r => r.key == key);
+        public MapRoadClass RoadClass(string key) => MapKeys.Get(roadClasses, key, this, "road class");
 
-        public MapFarmlandKit FarmlandKit(string key) => farmlandKits.Find(k => k.key == key);
+        public MapFarmlandKit FarmlandKit(string key) => MapKeys.Get(farmlandKits, key, this, "farmland kit");
 
-        public MapBeltKit BeltKit(string key) => beltKits.Find(k => k.key == key);
+        public MapBeltKit BeltKit(string key) => MapKeys.Get(beltKits, key, this, "belt kit");
 
-        public MapWoodlandKit WoodlandKit(string key) => woodlandKits.Find(k => k.key == key);
+        public MapWoodlandKit WoodlandKit(string key) => MapKeys.Get(woodlandKits, key, this, "woodland kit");
 
-        public int LayerIndex(string key) => layers.FindIndex(l => l.key == key);
+        /// <summary>The terrain layer a surface paints.</summary>
+        public int SurfaceLayer(string surface) => LayerIndex(Surface(surface).layer);
 
-        public int TreeIndex(string key) => trees.FindIndex(t => t.key == key);
+        public int LayerIndex(string key) => MapKeys.IndexOf(layers, key, this, "layer");
 
-        public int DetailIndex(string key) => details.FindIndex(d => d.key == key);
+        public int TreeIndex(string key) => MapKeys.IndexOf(trees, key, this, "tree");
+
+        public int DetailIndex(string key) => MapKeys.IndexOf(details, key, this, "detail");
+
+        public bool HasTree(string key) => MapKeys.Contains(trees, key);
     }
 }

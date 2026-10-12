@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Data
     /// Building and fence keys are palette entries; surfaces and trees are climate keys.
     /// </summary>
     [Serializable]
-    public sealed class MapSettlementKit
+    public sealed class MapSettlementKit : IMapKeyed
     {
         public string key;
 
@@ -66,5 +66,7 @@ namespace HyperRTS.Editor.Maps.Data
         public string streetPole;
 
         public float poleSpacing = 35f;
+
+        string IMapKeyed.Key => key;
     }
 }

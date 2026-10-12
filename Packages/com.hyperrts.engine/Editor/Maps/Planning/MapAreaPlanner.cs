@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Planning
             foreach (var area in context.Layout.Areas)
             {
                 var polygon = MapGeometry.ToVectors(area.Placed.points);
-                var region = context.Region(MapLandKind.Area, area.Placed.kind, $"area {area.Index + 1}", area.Index);
+                var region = context.Region(MapLandKind.Area, area.Placed.kind, area.Index);
                 context.Land.ClaimWhere(MapGeometry.Bounds(polygon), region, p => MapGeometry.Contains(polygon, p));
             }
         }

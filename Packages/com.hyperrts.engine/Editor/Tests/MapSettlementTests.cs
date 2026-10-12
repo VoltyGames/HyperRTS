@@ -189,25 +189,6 @@ namespace HyperRTS.Editor.Tests
             Assert.AreEqual(0, _fixture.Context.Trees.Count);
         }
 
-        [Test]
-        public void AKeyThatDoesNotResolve_IsAnErrorNamingTheKitAndKey()
-        {
-            _fixture = MapSettlementFixture.Plan(edit: kit => kit.houses[0] = "Nope");
-
-            var errors = _fixture.Context.Issues.Errors;
-            Assert.IsTrue(errors.Any(e => e.Contains("Village") && e.Contains("Nope")), string.Join("\n", errors));
-            Assert.AreEqual(0, _fixture.Placements.Count(p => p.Entry.key == "House"));
-        }
-
-        [Test]
-        public void AnUnknownSurface_IsAnErrorNamingTheKitAndSurface()
-        {
-            _fixture = MapSettlementFixture.Plan(edit: kit => kit.gardenSurface = "Mud");
-
-            var errors = _fixture.Context.Issues.Errors;
-            Assert.IsTrue(errors.Any(e => e.Contains("Village") && e.Contains("Mud")), string.Join("\n", errors));
-        }
-
         private bool Warned(string text) => _fixture.Context.Issues.Warnings.Any(w => w.Contains(text));
 
         private static bool IsRotatedCopy(MapPlacement placement, MapPlacement other)

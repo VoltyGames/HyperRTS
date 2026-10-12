@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly int _slope;
         private readonly int _ground;
 
-        private MapSplatPainter(MapLayout layout, MapLand land, MapHeights heights, MapClimate climate, MapIssues issues)
+        private MapSplatPainter(MapLayout layout, MapLand land, MapHeights heights, MapClimate climate)
         {
             _layout = layout;
             _land = land;
@@ -39,26 +39,20 @@ namespace HyperRTS.Editor.Maps.Ground
             _regionLayer = new int[land.Regions.Count];
             for (var i = 1; i < land.Regions.Count; i++)
             {
-                _regionLayer[i] = Layer(land.Regions[i].Surface, issues);
+                _regionLayer[i] = climate.SurfaceLayer(land.Regions[i].Surface);
             }
 
-            _variation = Layer(climate.groundVariation, issues);
-            _slope = Layer(climate.slopeSurface, issues);
-            _ground = Layer(climate.groundSurface, issues);
+            _variation = climate.SurfaceLayer(climate.groundVariation);
+            _slope = climate.SurfaceLayer(climate.slopeSurface);
+            _ground = climate.SurfaceLayer(climate.groundSurface);
         }
 
         /// <summary>Layer weights as Unity's alphamaps want them: [z, x, layer], summing to 1 per texel.</summary>
         public static float[,,] Paint(MapLayout layout, MapLand land, MapHeights heights, MapClimate climate,
-            int resolution, MapIssues issues)
+            int resolution)
         {
-            var painter = new MapSplatPainter(layout, land, heights, climate, issues);
             var splat = new float[resolution, resolution, climate.layers.Count];
-            if (issues.HasErrors)
-            {
-                return splat;
-            }
-
-            painter.Paint(splat, resolution);
+            new MapSplatPainter(layout, land, heights, climate).Paint(splat, resolution);
             return splat;
         }
 
@@ -111,19 +105,6 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var threshold = 1f - 2f * _climate.variationCoverage;
             return MapGeometry.Smooth((_patches.Sample(p, 40f) - threshold + 0.15f) / 0.3f);
-        }
-
-        private int Layer(string surface, MapIssues issues)
-        {
-            var entry = _climate.Surface(surface);
-            var index = entry != null ? _climate.LayerIndex(entry.layer) : -1;
-            if (index < 0)
-            {
-                issues.Error($"Surface '{surface}' has no layer in climate '{_climate.name}'.");
-                return 0;
-            }
-
-            return index;
         }
 
         private static void Over(float[] weights, int layer, float alpha)

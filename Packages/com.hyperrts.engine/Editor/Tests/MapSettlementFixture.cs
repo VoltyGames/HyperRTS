@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps;
+using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
@@ -59,6 +60,15 @@ namespace HyperRTS.Editor.Tests
             return fixture;
         }
 
+        /// <summary>The asset check's issues for the fixture's climate and palette, the village kit edited first.</summary>
+        public static MapIssues CheckAssets(Action<MapSettlementKit> edit)
+        {
+            using var fixture = new MapSettlementFixture();
+            var issues = new MapIssues();
+            MapAssetCheck.Check(fixture.MakeClimate(), fixture.MakePalette(edit), issues);
+            return issues;
+        }
+
         public void Dispose()
         {
             foreach (var made in _made)
@@ -100,9 +110,9 @@ namespace HyperRTS.Editor.Tests
             var layout = MapExpander.Expand(spec, issues);
             Palette = MakePalette(edit);
             var climate = MakeClimate();
-            var shapes = new MapShapes(layout, Palette, climate, issues);
+            var shapes = new MapShapes(layout, Palette, climate);
             var heights = MapHeightShaper.Shape(layout, shapes);
-            var placer = MapPlacer.Place(layout, shapes, heights, Palette, climate, issues);
+            var placer = MapPlacer.Place(layout, shapes, Palette, climate, issues);
             Context = new MapPlanContext(layout, shapes, heights, Palette, climate, placer, issues);
         }
 

@@ -54,12 +54,7 @@ namespace HyperRTS.Editor.Maps.Build
             var layout = generation.Layout;
             generation.Level(project.Palette, issues);
             generation.Splat = MapSplatPainter.Paint(layout, generation.Land, generation.Heights, climate,
-                MapTerrainWriter.AlphamapResolution(layout), issues);
-            if (issues.HasErrors)
-            {
-                return null;
-            }
-
+                MapTerrainWriter.AlphamapResolution(layout));
             generation.Details = MapDetailPainter.Paint(layout, generation.Land, generation.Shapes, generation.Heights,
                 climate, generation.Placer.Clearance, MapTerrainWriter.DetailResolution(layout));
             generation.SplitTrees(climate);
@@ -72,14 +67,14 @@ namespace HyperRTS.Editor.Maps.Build
         /// </summary>
         public static MapGeneration Plan(MapSpec spec, MapProject project, MapIssues issues)
         {
-            MapAssetCheck.Check(project, issues);
-            MapKitCheck.Check(project, issues);
+            MapAssetCheck.Check(project.Climate, project.Palette, issues);
+            MapSpecCheck.Check(spec, project.Climate, project.Palette, project.Rules, issues);
             if (issues.HasErrors)
             {
                 return null;
             }
 
-            MapRefiner.Refine(spec, project.Climate, issues);
+            MapRefiner.Refine(spec, project.Climate);
             var layout = MapExpander.Expand(spec, issues);
             if (issues.HasErrors)
             {
@@ -88,9 +83,9 @@ namespace HyperRTS.Editor.Maps.Build
 
             var climate = project.Climate;
             var generation = new MapGeneration { Layout = layout };
-            generation.Shapes = new MapShapes(layout, project.Palette, climate, issues);
+            generation.Shapes = new MapShapes(layout, project.Palette, climate);
             generation.Heights = MapHeightShaper.Shape(layout, generation.Shapes);
-            generation.Placer = MapPlacer.Place(layout, generation.Shapes, generation.Heights, project.Palette, climate, issues);
+            generation.Placer = MapPlacer.Place(layout, generation.Shapes, project.Palette, climate, issues);
             var context = new MapPlanContext(layout, generation.Shapes, generation.Heights, project.Palette, climate,
                 generation.Placer, issues);
             MapLandPlanner.Plan(context);

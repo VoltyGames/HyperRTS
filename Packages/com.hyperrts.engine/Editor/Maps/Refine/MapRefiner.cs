@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Refine
     /// </summary>
     public static class MapRefiner
     {
-        public static void Refine(MapSpec spec, MapClimate climate, MapIssues issues)
+        public static void Refine(MapSpec spec, MapClimate climate)
         {
             var symmetry = MapSymmetry.Parse(spec.symmetry);
             for (var i = 0; i < spec.rivers.Count; i++)
@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Maps.Refine
             }
 
             MapRavineRefiner.Refine(spec, symmetry);
-            MapRoadRefiner.Refine(spec, climate, symmetry, issues);
+            MapRoadRefiner.Refine(spec, climate, symmetry);
         }
     }
 }

@@ -24,8 +24,8 @@ namespace HyperRTS.Editor.Maps.Planning
             }
 
             var climate = context.Climate;
-            var cut = context.Region(MapLandKind.Ravine, climate.ravineSurface, "ravine");
-            var rim = context.Region(MapLandKind.RavineRim, climate.ravineRimSurface, "ravine rim");
+            var cut = context.Region(MapLandKind.Ravine, climate.ravineSurface);
+            var rim = context.Region(MapLandKind.RavineRim, climate.ravineRimSurface);
             var wobble = new MapNoise(context.Layout.Symmetry, context.Seed, MapRavineWall.WobbleChannel);
             foreach (var (line, spec) in context.Shapes.Ravines)
             {
@@ -80,7 +80,7 @@ namespace HyperRTS.Editor.Maps.Planning
         private static void PlantWoods(MapPlanContext context, MapNoise wobble)
         {
             var surface = context.Climate.Surface(context.Climate.ravineSurface);
-            if (surface == null || surface.trees.Count == 0)
+            if (surface.trees.Count == 0)
             {
                 return;
             }
@@ -105,7 +105,7 @@ namespace HyperRTS.Editor.Maps.Planning
                         var inSector = context.Layout.Symmetry.InSector(p);
                         var onFloor = MapRavineWall.Distance(line, wobble, p) < reach;
                         return inSector && onFloor && patches.Sample(p, PatchSize) > threshold;
-                    }, $"ravine {ravine.Index + 1}");
+                    });
             }
         }
     }

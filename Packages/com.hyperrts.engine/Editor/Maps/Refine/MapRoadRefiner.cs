@@ -17,25 +17,12 @@ namespace HyperRTS.Editor.Maps.Refine
         /// <summary>Metres between the points of a refined road.</summary>
         public const float Step = 3f;
 
-        public static void Refine(MapSpec spec, MapClimate climate, MapSymmetry symmetry, MapIssues issues)
+        public static void Refine(MapSpec spec, MapClimate climate, MapSymmetry symmetry)
         {
             var roads = new List<MapRefinedRoad>();
-            for (var i = 0; i < spec.roads.Count; i++)
+            foreach (var road in spec.roads)
             {
-                var road = spec.roads[i];
                 var roadClass = climate.RoadClass(road.kind);
-                if (roadClass == null)
-                {
-                    issues.Error($"Road {i + 1}: road class '{road.kind}' is not in climate '{climate.name}'.");
-                    continue;
-                }
-
-                if (road.points.Count < 2)
-                {
-                    issues.Error($"Road {i + 1} needs at least two points.");
-                    continue;
-                }
-
                 var rounded = MapFillet.Round(MapGeometry.ToVectors(road.points), roadClass.curve, Step);
                 roads.Add(new MapRefinedRoad(road, roadClass, rounded));
             }

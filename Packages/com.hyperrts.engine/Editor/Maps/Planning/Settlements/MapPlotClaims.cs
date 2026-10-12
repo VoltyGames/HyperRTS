@@ -54,13 +54,12 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         /// <summary>Claims the plot's free cells for its yard, garden and back, in every copy.</summary>
         public static void Claim(MapPlanContext context, MapPlot plot, MapSettlementKit kit, int seed)
         {
-            var source = $"settlement kit '{kit.key}'";
             var land = context.Land;
-            var yard = context.Region(MapLandKind.Yard, kit.yardSurface, source, seed);
-            var back = context.Region(MapLandKind.Back, kit.backSurface, source, seed);
+            var yard = context.Region(MapLandKind.Yard, kit.yardSurface, seed);
+            var back = context.Region(MapLandKind.Back, kit.backSurface, seed);
             foreach (var copy in context.Layout.Symmetry.Copies)
             {
-                var garden = context.Region(MapLandKind.Garden, kit.gardenSurface, source, seed, copy.ApplyYaw(plot.RunYaw));
+                var garden = context.Region(MapLandKind.Garden, kit.gardenSurface, seed, copy.ApplyYaw(plot.RunYaw));
                 var transform = copy;
                 land.ForEachIn(plot.Bounds(copy), (x, z, center) =>
                 {

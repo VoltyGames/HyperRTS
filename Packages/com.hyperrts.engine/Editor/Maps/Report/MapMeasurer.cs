@@ -107,12 +107,6 @@ namespace HyperRTS.Editor.Maps.Report
         private void CheckRushes()
         {
             var mode = _rules.Mode(_layout.Spec.mode);
-            if (mode == null)
-            {
-                _issues.Error($"The map rules have no thresholds for mode '{_layout.Spec.mode}'.");
-                return;
-            }
-
             foreach (var spawn in Metrics.spawns.Where(s => s.rush < mode.rushMin || s.rush > mode.rushMax))
             {
                 _issues.Error($"Slot {spawn.slot} reaches its nearest enemy in {spawn.rush:0} s; {_layout.Spec.mode} wants {mode.rushMin:0} to {mode.rushMax:0} s.");
@@ -136,11 +130,12 @@ namespace HyperRTS.Editor.Maps.Report
 
         private void CountPaths()
         {
-            var mode = _rules.Mode(_layout.Spec.mode);
-            if (_spawnCells.Count < 2 || mode == null)
+            if (_spawnCells.Count < 2)
             {
                 return;
             }
+
+            var mode = _rules.Mode(_layout.Spec.mode);
 
             Paths = MapPathCounter.Count(_nav, _spawnCells[0], _spawnCells[1], _rules.corridorWidth,
                 _palette.baseRadius, mode.minPaths + 3);

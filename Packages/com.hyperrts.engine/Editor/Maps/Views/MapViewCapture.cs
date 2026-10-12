@@ -22,9 +22,9 @@ namespace HyperRTS.Editor.Maps.Views
             }
 
             var issues = new MapIssues();
-            MapRefiner.Refine(spec, project.Climate, issues);
+            MapRefiner.Refine(spec, project.Climate);
             var layout = MapExpander.Expand(spec, issues);
-            var shapes = new MapShapes(layout, project.Palette, project.Climate, issues);
+            var shapes = new MapShapes(layout, project.Palette, project.Climate);
             var views = MapViews.For(layout, shapes, project.Rules);
             var files = MapViews.Capture(spec.name, views, project.Rules);
             Debug.Log($"HyperRTS: captured {files.Count} views of '{spec.name}' in {MapReport.ViewsFolder(spec.name)}");

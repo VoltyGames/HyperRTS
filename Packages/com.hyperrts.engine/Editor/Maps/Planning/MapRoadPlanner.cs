@@ -18,16 +18,15 @@ namespace HyperRTS.Editor.Maps.Planning
         public static void Claim(MapPlanContext context, MapRoad road)
         {
             var roadClass = road.Class;
-            var source = $"road class '{roadClass.key}'";
             var half = road.Width * 0.5f;
-            var surface = context.Region(MapLandKind.Road, roadClass.surface, source);
+            var surface = context.Region(MapLandKind.Road, roadClass.surface);
             if (roadClass.vergeWidth <= 0f)
             {
                 context.Land.ClaimWhere(road.Line.Bounds, surface, p => road.Line.Distance(p) < half);
                 return;
             }
 
-            var verge = context.Region(MapLandKind.Verge, roadClass.vergeSurface, source);
+            var verge = context.Region(MapLandKind.Verge, roadClass.vergeSurface);
             var reach = half + roadClass.vergeWidth;
             context.Land.ClaimEach(road.Line.Bounds, p =>
             {

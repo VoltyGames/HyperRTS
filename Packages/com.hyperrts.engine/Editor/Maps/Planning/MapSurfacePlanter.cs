@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 if (surface.trees.Count > 0 && !PlantsItself(region.Kind))
                 {
                     MapTreeScatter.Scatter(context, surface.trees, hectares, surface.treeSpacing, random,
-                        () => RandomSpot(context.Land, list, random), _ => true, $"surface '{surface.key}'");
+                        () => RandomSpot(context.Land, list, random), _ => true);
                 }
 
                 foreach (var props in surface.props)
@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Maps.Planning
             for (var i = 1; i < land.Regions.Count; i++)
             {
                 var surface = context.Climate.Surface(land.Regions[i].Surface);
-                wanted[i] = surface != null && (surface.trees.Count > 0 || surface.props.Count > 0);
+                wanted[i] = surface.trees.Count > 0 || surface.props.Count > 0;
             }
 
             land.ForEach((x, z, p) =>

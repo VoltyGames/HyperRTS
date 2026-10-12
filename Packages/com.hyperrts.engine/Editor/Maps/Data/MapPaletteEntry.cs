@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>One placeable prefab.</summary>
     [Serializable]
-    public sealed class MapPaletteEntry
+    public sealed class MapPaletteEntry : IMapKeyed
     {
         public string key;
         public GameObject prefab;
@@ -46,5 +46,7 @@ namespace HyperRTS.Editor.Maps.Data
         public bool IsGameplay =>
             prefab.GetComponentInChildren<GameEntityAuthoring>(true) != null
             || prefab.GetComponentInChildren<ResourceNodeAuthoring>(true) != null;
+
+        string IMapKeyed.Key => key;
     }
 }

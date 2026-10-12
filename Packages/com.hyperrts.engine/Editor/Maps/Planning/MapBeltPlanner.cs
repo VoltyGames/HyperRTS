@@ -19,12 +19,7 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             foreach (var belt in context.Layout.Belts)
             {
-                var kit = Kit(context, belt.Placed.kind, $"belt {belt.Index + 1}");
-                if (kit == null)
-                {
-                    continue;
-                }
-
+                var kit = context.Climate.BeltKit(belt.Placed.kind);
                 var line = MapGeometry.ToVectors(belt.Placed.points);
                 var gaps = Gaps(kit, MapGeometry.Length(line), context.Seed, belt.Index);
                 Claim(context, kit, line, gaps, belt.Index);
@@ -47,20 +42,9 @@ namespace HyperRTS.Editor.Maps.Planning
             Plant(context, kit, sectorLine, gaps, seed);
         }
 
-        public static MapBeltKit Kit(MapPlanContext context, string key, string source)
-        {
-            var kit = context.Climate.BeltKit(key);
-            if (kit == null)
-            {
-                context.Issues.Error($"{source}: belt kit '{key}' is not in climate '{context.Climate.name}'.");
-            }
-
-            return kit;
-        }
-
         private static void Claim(MapPlanContext context, MapBeltKit kit, List<Vector2> line, List<Vector2> gaps, int seed)
         {
-            var region = context.Region(MapLandKind.Belt, kit.surface, $"belt kit '{kit.key}'", seed);
+            var region = context.Region(MapLandKind.Belt, kit.surface, seed);
             var half = kit.width * 0.5f;
             context.Land.ClaimWhere(MapGeometry.Bounds(line, half + 1f), region, p =>
             {
@@ -103,11 +87,8 @@ namespace HyperRTS.Editor.Maps.Planning
                 return;
             }
 
-            var tree = context.Tree(key, $"belt kit '{kit.key}'");
-            if (tree >= 0)
-            {
-                context.PlantCopies(tree, spot, context.TreeScale(tree, random), (float)random.NextDouble() * 360f);
-            }
+            var tree = context.Climate.TreeIndex(key);
+            context.PlantCopies(tree, spot, context.TreeScale(tree, random), (float)random.NextDouble() * 360f);
         }
 
         /// <summary>Gap centres along the belt (x) and their half widths (y).</summary>

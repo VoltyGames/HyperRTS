@@ -122,9 +122,7 @@ namespace HyperRTS.Editor.Maps.Report
             var colors = new Color[land.Regions.Count];
             for (var i = 1; i < colors.Length; i++)
             {
-                var surface = climate.Surface(land.Regions[i].Surface);
-                var layer = surface != null ? climate.LayerIndex(surface.layer) : -1;
-                colors[i] = layer >= 0 ? climate.layers[layer].mapColor : Color.magenta;
+                colors[i] = climate.layers[climate.SurfaceLayer(land.Regions[i].Surface)].mapColor;
             }
 
             return colors;

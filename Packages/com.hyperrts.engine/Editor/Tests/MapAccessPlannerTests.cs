@@ -88,17 +88,6 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void AnUnknownAccessClass_IsAnErrorNamingIt()
-        {
-            var issues = new MapIssues();
-            var context = Context(issues, "Cobbles", new[] { MainRoad(-60f) });
-
-            MapAccessPlanner.Plan(context);
-
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Cobbles")), issues.ToString());
-        }
-
-        [Test]
         public void APadBesideTheRoad_NeedsNoTrack()
         {
             var issues = new MapIssues();

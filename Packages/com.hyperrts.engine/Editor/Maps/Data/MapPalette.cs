@@ -29,8 +29,8 @@ namespace HyperRTS.Editor.Maps.Data
 
         public List<MapSettlementKit> settlementKits = new();
 
-        public MapPaletteEntry Entry(string key) => entries.Find(e => e.key == key);
+        public MapPaletteEntry Entry(string key) => MapKeys.Get(entries, key, this, "entry");
 
-        public MapSettlementKit SettlementKit(string key) => settlementKits.Find(k => k.key == key);
+        public MapSettlementKit SettlementKit(string key) => MapKeys.Get(settlementKits, key, this, "settlement kit");
     }
 }

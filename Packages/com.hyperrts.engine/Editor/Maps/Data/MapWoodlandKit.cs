@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A kind of wood: canopy trees, a shrubby edge, clearings and the forest floor.</summary>
     [Serializable]
-    public sealed class MapWoodlandKit
+    public sealed class MapWoodlandKit : IMapKeyed
     {
         public string key;
 
@@ -30,5 +30,7 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Share of the wood left as open glades.")]
         [Range(0f, 0.6f)]
         public float clearings = 0.12f;
+
+        string IMapKeyed.Key => key;
     }
 }

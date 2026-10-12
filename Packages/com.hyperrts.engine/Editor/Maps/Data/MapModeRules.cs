@@ -5,7 +5,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>Distance and path thresholds for one mode (1v1, 2v2, 3v3, 4v4, ffa).</summary>
     [Serializable]
-    public sealed class MapModeRules
+    public sealed class MapModeRules : IMapKeyed
     {
         public string mode;
 
@@ -18,5 +18,7 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Fewest separate attack paths between opposing bases.")]
         [Min(1)]
         public int minPaths = 3;
+
+        string IMapKeyed.Key => mode;
     }
 }

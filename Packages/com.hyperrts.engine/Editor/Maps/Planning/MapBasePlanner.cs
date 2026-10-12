@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Planning
             if (context.Layout.Spawns.Count > 0)
             {
                 var radius = context.Palette.baseRadius;
-                var ground = context.Region(MapLandKind.Base, context.Climate.baseSurface, "base ground");
+                var ground = context.Region(MapLandKind.Base, context.Climate.baseSurface);
                 foreach (var spawn in context.Layout.Spawns)
                 {
                     Base(context, ground, spawn.Position, radius, noise);
@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.Maps.Planning
                     continue;
                 }
 
-                var region = context.Region(MapLandKind.Pad, pad, $"pad of '{placement.Entry.key}'");
+                var region = context.Region(MapLandKind.Pad, pad);
                 Pad(context, region, placement, noise);
             }
         }

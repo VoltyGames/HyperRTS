@@ -49,28 +49,9 @@ namespace HyperRTS.Editor.Maps.Planning
 
         public int Seed => Layout.Spec.seed;
 
-        /// <summary>A land region painting a climate surface; an unknown surface is an error.</summary>
-        public int Region(MapLandKind kind, string surface, string source, int seed = 0, float rowAngle = 0f)
-        {
-            if (Climate.Surface(surface) == null)
-            {
-                Issues.Error($"{source}: surface '{surface}' is not in climate '{Climate.name}'.");
-            }
-
-            return Land.Add(new MapLandRegion(kind, surface, seed, rowAngle));
-        }
-
-        /// <summary>A climate tree's index; an unknown key is an error and returns -1.</summary>
-        public int Tree(string key, string source)
-        {
-            var index = Climate.TreeIndex(key);
-            if (index < 0)
-            {
-                Issues.Error($"{source}: tree '{key}' is not in climate '{Climate.name}'.");
-            }
-
-            return index;
-        }
+        /// <summary>A new land region painting a climate surface.</summary>
+        public int Region(MapLandKind kind, string surface, int seed = 0, float rowAngle = 0f) =>
+            Land.Add(new MapLandRegion(kind, surface, seed, rowAngle));
 
         /// <summary>Plants a tree chosen at an authored-sector point in every copy of the sector.</summary>
         public void PlantCopies(int tree, Vector2 sectorPoint, float scale, float yaw)
