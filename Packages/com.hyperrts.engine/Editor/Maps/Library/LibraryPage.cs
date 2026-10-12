@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Library
         private readonly List<Type> _typeList = MapLibrary.ItemTypes.ToList();
         private MapLibrary _library;
         private List<MapLibraryProblem> _problems;
-        private int _problemsVersion = -1;
+        private int _scanVersion = -1;
         private int _version = -1;
         private Type _type = MapLibrary.ItemTypes[0];
         private ListView _types;
@@ -41,7 +41,7 @@ namespace HyperRTS.Editor.Maps.Library
         {
             get
             {
-                ScanProblems();
+                Scan(false);
                 return _problems.Count > 0 ? _problems.Count.ToString() : null;
             }
         }
@@ -113,33 +113,20 @@ namespace HyperRTS.Editor.Maps.Library
         {
             if (_version != MapLibraryChanges.Version)
             {
-                Reload();
+                Refresh(false);
             }
         }
 
-        private void Reload()
+        private void Reload() => Refresh(true);
+
+        private void Refresh(bool rescan)
         {
             _version = MapLibraryChanges.Version;
-            _problemsVersion = -1;
-            ScanProblems();
-            _library = LoadLibrary();
+            Scan(rescan);
             _types.RefreshItems();
             _items.Show(_library, _type);
             ReopenForm();
             _problemView.Show(_problems);
-        }
-
-        /// <summary>The library, or null when its files don't index (the problems list says why).</summary>
-        private static MapLibrary LoadLibrary()
-        {
-            try
-            {
-                return MapLibrary.Load(Root);
-            }
-            catch (InvalidOperationException)
-            {
-                return null;
-            }
         }
 
         /// <summary>Re-reads the open item after an outside change, unless it has unsaved edits.</summary>
@@ -262,15 +249,28 @@ namespace HyperRTS.Editor.Maps.Library
             _items.Highlight(_form.Key);
         }
 
-        private void ScanProblems()
+        /// <summary>
+        /// Loads the library and its problems once per project change, or again when <paramref name="force"/>d. The
+        /// library is null when its files don't index; the problems list says why.
+        /// </summary>
+        private void Scan(bool force)
         {
-            if (_problemsVersion == MapLibraryChanges.Version)
+            if (!force && _scanVersion == MapLibraryChanges.Version)
             {
                 return;
             }
 
-            _problems = MapLibraryProblems.Find(Root);
-            _problemsVersion = MapLibraryChanges.Version;
+            _scanVersion = MapLibraryChanges.Version;
+            try
+            {
+                _library = MapLibrary.Load(Root);
+                _problems = MapLibraryProblems.Find(_library);
+            }
+            catch (InvalidOperationException e)
+            {
+                _library = null;
+                _problems = new List<MapLibraryProblem> { new(null, e.Message) };
+            }
         }
 
         private void Rename()

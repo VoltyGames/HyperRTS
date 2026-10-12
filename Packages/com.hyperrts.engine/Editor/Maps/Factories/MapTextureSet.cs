@@ -10,6 +10,10 @@ namespace HyperRTS.Editor.Maps.Factories
     /// </summary>
     public static class MapTextureSet
     {
+        /// <summary>The base colour, normal and mask map of set <paramref name="name"/> in <paramref name="folder"/>.</summary>
+        public static (Texture2D BaseColor, Texture2D Normal, Texture2D Mask) Read(string folder, string name, int maxSize) =>
+            (BaseColor(folder, name, maxSize), Normal(folder, name, maxSize), Mask(folder, name, maxSize));
+
         public static Texture2D BaseColor(string folder, string name, int maxSize) =>
             Load($"{folder}/T_{name}_BaseColor.png", false, true, maxSize);
 

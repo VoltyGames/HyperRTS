@@ -21,10 +21,7 @@ namespace HyperRTS.Editor.Maps.Factories
         {
             var settings = request.Params<PhotoMaterialParams>();
             var path = request.Output(request.Refs.material, "material");
-            var (folder, set, size) = (request.Folder, settings.textureSet, settings.textureSize);
-            var baseColor = MapTextureSet.BaseColor(folder, set, size);
-            var normal = MapTextureSet.Normal(folder, set, size);
-            var mask = MapTextureSet.Mask(folder, set, size);
+            var (baseColor, normal, mask) = MapTextureSet.Read(request.Folder, settings.textureSet, settings.textureSize);
             var material = MapAssetFiles.Material(path, "Universal Render Pipeline/Lit");
             material.SetTexture(BaseMap, baseColor);
             material.SetTexture(BumpMap, normal);

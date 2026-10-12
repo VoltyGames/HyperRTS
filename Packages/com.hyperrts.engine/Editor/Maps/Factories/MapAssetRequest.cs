@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using HyperRTS.Editor.Maps.Library;
+using UnityEditor;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Factories
@@ -50,12 +51,8 @@ namespace HyperRTS.Editor.Maps.Factories
             }
 
             var given = MapJsonMembers.Of(Refs.factoryParams).Select(member => member.Name).ToList();
-            var fields = typeof(T).GetFields(BindingFlags.Public | BindingFlags.Instance)
-                .Where(field => !field.IsNotSerialized)
-                .Select(field => field.Name)
-                .ToList();
-            var missing = fields.Except(given).ToList();
-            var unknown = given.Except(fields).ToList();
+            var missing = ParamFields<T>.Names.Except(given).ToList();
+            var unknown = given.Except(ParamFields<T>.Names).ToList();
             if (missing.Count > 0 || unknown.Count > 0)
             {
                 throw Error($"params for factory '{Refs.factory}' miss [{string.Join(", ", missing)}] " +
@@ -71,8 +68,22 @@ namespace HyperRTS.Editor.Maps.Factories
         public string Output(string path, string field) =>
             string.IsNullOrEmpty(path) ? throw Error($"leaves '{field}' empty, so factory '{Refs.factory}' has nowhere to write") : path;
 
+        /// <summary>The asset at a params path; a missing or wrong-typed asset is an error naming <paramref name="field"/>.</summary>
+        public T Asset<T>(string path, string field) where T : UnityEngine.Object =>
+            AssetDatabase.LoadAssetAtPath<T>(path)
+            ?? throw Error($"has params.{field} '{path}', which is not a {typeof(T).Name} asset");
+
         /// <summary>An error naming the item's file.</summary>
         public InvalidOperationException Error(string problem) =>
             new($"HyperRTS: map library file '{File}' {problem}.");
+
+        /// <summary>The serialized field names of a params class, read once per class.</summary>
+        private static class ParamFields<T>
+        {
+            public static readonly string[] Names = typeof(T).GetFields(BindingFlags.Public | BindingFlags.Instance)
+                .Where(field => !field.IsNotSerialized)
+                .Select(field => field.Name)
+                .ToArray();
+        }
     }
 }

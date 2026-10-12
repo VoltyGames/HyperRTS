@@ -48,10 +48,10 @@ namespace HyperRTS.Editor.Maps.Library
 
         public static string ToJson(Type type, object item, MapLibraryRefs refs)
         {
-            var wanted = MapLibraryRefFields.Of(type);
+            var wanted = MapLibraryRefFields.Of(type).ToList();
             var members = Members(JsonUtility.ToJson(refs, true))
                 .Where(member => wanted.Contains(member.Name))
-                .OrderBy(member => wanted.ToList().IndexOf(member.Name))
+                .OrderBy(member => wanted.IndexOf(member.Name))
                 .Concat(Members(JsonUtility.ToJson(item, true)))
                 .ToList();
             var output = new StringBuilder("{\n");

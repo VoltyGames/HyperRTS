@@ -33,9 +33,10 @@ namespace HyperRTS.Editor.Maps.Factories
         public static IReadOnlyList<string> GenerateFiles(MapLibrary library, IEnumerable<string> files)
         {
             var factories = Factories();
+            var order = MapLibrary.ItemTypes.ToList();
             return files.Select(MapLibrary.ParseFile)
                 .Where(item => item.Type != null && library.Contains(item.Type, item.Key))
-                .OrderBy(item => MapLibrary.ItemTypes.ToList().IndexOf(item.Type))
+                .OrderBy(item => order.IndexOf(item.Type))
                 .ThenBy(item => item.Key, StringComparer.Ordinal)
                 .SelectMany(item => Run(library, item.Type, item.Key, factories))
                 .ToList();

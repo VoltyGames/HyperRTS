@@ -18,11 +18,12 @@ namespace HyperRTS.Editor.Maps.Factories
             return asset;
         }
 
-        /// <summary>A material at <paramref name="path"/> on <paramref name="shader"/>, instanced, marked dirty.</summary>
+        /// <summary>A material at <paramref name="path"/> on <paramref name="shader"/> (set again on an existing one), instanced, marked dirty.</summary>
         public static Material Material(string path, string shader)
         {
             var found = Shader.Find(shader) ?? throw new System.InvalidOperationException($"HyperRTS: shader '{shader}' is missing.");
             var material = LoadOrCreate(path, () => new Material(found));
+            material.shader = found;
             material.enableInstancing = true;
             EditorUtility.SetDirty(material);
             return material;

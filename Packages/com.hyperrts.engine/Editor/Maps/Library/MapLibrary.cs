@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Maps.Data;
-using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Library
 {
@@ -77,7 +76,7 @@ namespace HyperRTS.Editor.Maps.Library
             var stem = Path.GetFileNameWithoutExtension(file);
             var dot = stem.LastIndexOf('.');
             var isJson = file.EndsWith(".json", StringComparison.Ordinal);
-            if (!isJson || dot <= 0)
+            if (!isJson || dot < 0)
             {
                 return (null, null);
             }
@@ -112,7 +111,7 @@ namespace HyperRTS.Editor.Maps.Library
 
             if (!_loaded.TryGetValue(file, out var loaded))
             {
-                loaded = (Read<T>(file), ReadRefs(file));
+                loaded = MapLibraryItemFile.Read(typeof(T), file);
                 ((T)loaded.Item).Load(key, loaded.Refs);
                 _loaded[file] = loaded;
             }
@@ -151,53 +150,27 @@ namespace HyperRTS.Editor.Maps.Library
 
         private void Index(string file)
         {
-            var stem = Path.GetFileNameWithoutExtension(file);
-            var dot = stem.LastIndexOf('.');
-            if (dot < 0 || !_files.TryGetValue(stem[(dot + 1)..], out var files))
+            var (type, key) = ParseFile(file);
+            if (type == null)
             {
                 return;
             }
 
-            var key = stem[..dot];
+            var typeName = TypeName(type);
             if (key.Length == 0 || key.Contains('.'))
             {
                 throw new InvalidOperationException(
-                    $"HyperRTS: map library file '{file}' has no usable key; name it <Key>.{stem[(dot + 1)..]}.json.");
+                    $"HyperRTS: map library file '{file}' has no usable key; name it <Key>.{typeName}.json.");
             }
 
+            var files = _files[typeName];
             if (files.ContainsKey(key))
             {
                 throw new InvalidOperationException(
-                    $"HyperRTS: map library files '{files[key]}' and '{file}' both define {stem[(dot + 1)..]} '{key}'.");
+                    $"HyperRTS: map library files '{files[key]}' and '{file}' both define {typeName} '{key}'.");
             }
 
             files.Add(key, file);
-        }
-
-        private static T Read<T>(string file) where T : new()
-        {
-            var item = new T();
-            Parse(file, item);
-            return item;
-        }
-
-        private static MapLibraryRefs ReadRefs(string file)
-        {
-            var refs = new MapLibraryRefs { file = file };
-            Parse(file, refs);
-            return refs;
-        }
-
-        private static void Parse(string file, object target)
-        {
-            try
-            {
-                JsonUtility.FromJsonOverwrite(File.ReadAllText(file), target);
-            }
-            catch (ArgumentException e)
-            {
-                throw new InvalidOperationException($"HyperRTS: map library file '{file}' is not valid JSON: {e.Message}", e);
-            }
         }
 
         private Exception Missing<T>(string key, string referrer) => Missing(typeof(T), key, referrer);

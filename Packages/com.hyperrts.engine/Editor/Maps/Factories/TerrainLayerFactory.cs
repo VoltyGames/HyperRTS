@@ -16,10 +16,7 @@ namespace HyperRTS.Editor.Maps.Factories
         {
             var settings = request.Params<TerrainLayerParams>();
             var path = request.Output(request.Refs.terrainLayer, "terrainLayer");
-            var (folder, set, size) = (request.Folder, settings.textureSet, settings.textureSize);
-            var baseColor = MapTextureSet.BaseColor(folder, set, size);
-            var normal = MapTextureSet.Normal(folder, set, size);
-            var mask = MapTextureSet.Mask(folder, set, size);
+            var (baseColor, normal, mask) = MapTextureSet.Read(request.Folder, settings.textureSet, settings.textureSize);
             var layer = MapAssetFiles.LoadOrCreate(path, () => new TerrainLayer());
             layer.diffuseTexture = baseColor;
             layer.normalMapTexture = normal;
