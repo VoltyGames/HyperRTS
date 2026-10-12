@@ -58,6 +58,22 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnProvider(this TestWorld world, byte faction, float3 position, int population) =>
             world.SpawnBuilding(faction, position, new float2(2f, 2f), populationProvided: population);
 
+        public static Entity AddIncome(this TestWorld world, Entity entity, ResourceType type, int amount,
+            float interval)
+        {
+            var writer = new EntityManagerWriter(world.EntityManager, entity);
+            ResourceIncomeSetup.Add(ref writer, type, amount, interval, 0);
+            return entity;
+        }
+
+        /// <summary>Takes <paramref name="entity"/> offline for a game reason, or clears it.</summary>
+        public static void SetOffline(this TestWorld world, Entity entity, bool offline)
+        {
+            var state = world.Get<Offline>(entity);
+            state.Set(OfflineReason.Custom, offline);
+            world.EntityManager.SetComponentData(entity, state);
+        }
+
         public static void SetCost(this TestWorld world, Entity prefab, ResourceType type, int amount) =>
             world.EntityManager.GetBuffer<ResourceCost>(prefab).Add(new ResourceCost { Type = type, Amount = amount });
 

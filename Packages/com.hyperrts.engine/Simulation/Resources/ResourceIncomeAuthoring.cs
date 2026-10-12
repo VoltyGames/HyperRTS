@@ -27,6 +27,13 @@ namespace HyperRTS.Simulation.Resources
         [Min(0)]
         public int firstOwnerBonus;
 
+        [Tooltip("Pay the amount once per passenger aboard (needs a Container); nothing while empty.")]
+        public bool perOccupant;
+
+        [Tooltip("Total it can pay out before running dry (a refill tops it up); 0 for endless.")]
+        [Min(0)]
+        public int reserve;
+
         public class Baker : Baker<ResourceIncomeAuthoring>
         {
             public override void Bake(ResourceIncomeAuthoring authoring)
@@ -34,6 +41,15 @@ namespace HyperRTS.Simulation.Resources
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 ResourceIncomeSetup.Add(ref writer, authoring.type, authoring.amount, authoring.interval,
                     authoring.firstOwnerBonus);
+                if (authoring.perOccupant)
+                {
+                    ResourceIncomeSetup.AddPerOccupant(ref writer);
+                }
+
+                if (authoring.reserve > 0)
+                {
+                    ResourceIncomeSetup.AddReserve(ref writer, authoring.reserve);
+                }
             }
         }
     }
