@@ -72,6 +72,7 @@ namespace HyperRTS.Simulation.AI
         private EntityQuery _owned;
         private EntityQuery _completed;
         private EntityQuery _queues;
+        private EntityQuery _limited;
         private TargetLookup _targetLookup;
         private EntityQuery _fogQuery;
         private ComponentLookup<Faction> _factions;
@@ -96,6 +97,7 @@ namespace HyperRTS.Simulation.AI
             _owned = SystemAPI.QueryBuilder().WithAll<EntityInfo, Faction, LocalTransform>().WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
+            _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
             _targetLookup = new TargetLookup(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
@@ -178,7 +180,7 @@ namespace HyperRTS.Simulation.AI
                 Home = Home(faction, snapshot),
                 Commands = SystemAPI.GetBuffer<PlayerCommand>(player),
                 Busy = new NativeList<Entity>(Allocator.Temp),
-                Buyer = Buyer.Snapshot(state.EntityManager, _queues, faction, snapshot.Completed,
+                Buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, faction, snapshot.Completed,
                     SystemAPI.GetBuffer<CompletedResearch>(player)),
             };
 

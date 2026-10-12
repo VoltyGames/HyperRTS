@@ -6,13 +6,19 @@ namespace HyperRTS.Simulation.Production
 {
     /// <summary>
     /// The one rule for buying a unit, building or research, shared by player orders, placement, the AI and the HUD:
-    /// its prerequisites are met, research is neither done nor queued, and the player can pay.
+    /// its prerequisites are met, research is neither done nor queued, its build limit is not reached, and the player
+    /// can pay.
     /// </summary>
     public static class PurchaseRules
     {
         public static bool IsUnlocked(EntityManager entityManager, Entity prefab, in Buyer buyer)
         {
             if (!ResearchRules.CanQueue(entityManager, buyer.Research, buyer.QueuedResearch, prefab))
+            {
+                return false;
+            }
+
+            if (buyer.Counts.AtLimit(entityManager, prefab))
             {
                 return false;
             }

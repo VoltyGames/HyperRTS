@@ -34,6 +34,9 @@ namespace HyperRTS.Presentation.HUD
         private readonly LiveQuery _queues = new(entityManager =>
             ResearchRules.QueueQuery(Allocator.Temp).Build(entityManager));
 
+        private readonly LiveQuery _limited = new(entityManager =>
+            BuildCounts.Query(Allocator.Temp).Build(entityManager));
+
         public MatchView View { get; private set; }
 
         /// <summary>Selected, visible entities this frame.</summary>
@@ -78,7 +81,7 @@ namespace HyperRTS.Presentation.HUD
 
         /// <summary>The local player as a buyer this frame, shared by every button that checks a purchase.</summary>
         public Buyer SnapshotBuyer() =>
-            Buyer.Snapshot(EntityManager, _queues.In(EntityManager), View.Local.Faction,
+            Buyer.Snapshot(EntityManager, _queues.In(EntityManager), _limited.In(EntityManager), View.Local.Faction,
                 new CompletedBuildings(_completed.In(EntityManager), Allocator.Temp),
                 EntityManager.GetBuffer<CompletedResearch>(View.LocalPlayer, true));
 

@@ -39,11 +39,15 @@ namespace HyperRTS.Simulation.Buildings
         {
             public float3 Center;
             public float2 Footprint;
+            public byte Faction;
+            public Entity Prefab;
         }
 
         private EntityQuery _selectedBuilders;
         private EntityQuery _obstacles;
         private EntityQuery _completed;
+        private EntityQuery _queues;
+        private EntityQuery _limited;
         private OrderWriter _orders;
 
         [BurstCompile]
@@ -53,6 +57,8 @@ namespace HyperRTS.Simulation.Buildings
                 .WithNone<Dead>().Build();
             _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
+            _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
+            _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
             _orders = new OrderWriter(ref state);
             state.RequireForUpdate<MapSettings>();
         }
@@ -129,14 +135,10 @@ namespace HyperRTS.Simulation.Buildings
                 return false;
             }
 
-            // Buildings are never research, so no queued research is needed.
-            var buyer = new Buyer
-            {
-                Faction = request.Faction,
-                Buildings = new CompletedBuildings(_completed, Allocator.Temp),
-                Research = SystemAPI.GetBuffer<CompletedResearch>(request.Player),
-            };
-
+            var buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, request.Faction,
+                new CompletedBuildings(_completed, Allocator.Temp),
+                SystemAPI.GetBuffer<CompletedResearch>(request.Player));
+            CountSites(ref state, buyer, sites);
             var stock = SystemAPI.GetBuffer<ResourceStock>(request.Player);
             if (!PurchaseRules.TryBuy(state.EntityManager, prefab, buyer, stock))
             {
@@ -144,9 +146,21 @@ namespace HyperRTS.Simulation.Buildings
             }
 
             var building = SpawnSite(ref state, prefab, center, request.Faction, ecb);
-            sites.Add(new Site { Center = center, Footprint = footprint });
+            sites.Add(new Site { Center = center, Footprint = footprint, Faction = request.Faction, Prefab = prefab });
             order = new Order { Type = OrderType.Build, Target = building, Position = center };
             return true;
+        }
+
+        /// <summary>Sites placed earlier this frame are still in the command buffer; count them against build limits.</summary>
+        private static void CountSites(ref SystemState state, in Buyer buyer, NativeList<Site> sites)
+        {
+            foreach (var site in sites)
+            {
+                if (site.Faction == buyer.Faction)
+                {
+                    buyer.Counts.Add(state.EntityManager, site.Prefab);
+                }
+            }
         }
 
         /// <summary>An unbuilt instance of <paramref name="prefab"/>; builders raise it through Build orders.</summary>

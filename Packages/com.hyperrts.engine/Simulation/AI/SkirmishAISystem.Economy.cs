@@ -118,6 +118,7 @@ namespace HyperRTS.Simulation.AI
                     turn.Commands.Add(new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });
                     // As the server does, so a second idle producer doesn't pick the same research this think.
                     budget.Buyer.QueuedResearch.Add(prefab);
+                    budget.Buyer.Counts.Add(state.EntityManager, prefab);
                 }
             }
 

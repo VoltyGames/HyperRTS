@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Production
         private EntityQuery _commanders;
         private EntityQuery _completed;
         private EntityQuery _queues;
+        private EntityQuery _limited;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -31,6 +32,7 @@ namespace HyperRTS.Simulation.Production
                 .WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
+            _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
         }
 
         [BurstCompile]
@@ -49,7 +51,8 @@ namespace HyperRTS.Simulation.Production
                          .WithNone<Defeated>())
             {
                 var faction = player.ValueRO.Faction;
-                var buyer = Buyer.Snapshot(state.EntityManager, _queues, faction, buildings, researched);
+                var buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, faction, buildings,
+                    researched);
                 foreach (var command in commands)
                 {
                     switch (command.Type)
@@ -96,6 +99,7 @@ namespace HyperRTS.Simulation.Production
             var typeId = EntityInfo.GetTypeId(state.EntityManager, prefab);
             queue.Add(new ProductionQueueItem { Prefab = prefab, TypeId = typeId });
             buyer.QueuedResearch.Add(prefab);
+            buyer.Counts.Add(state.EntityManager, prefab);
         }
 
         private void Cancel(ref SystemState state, byte faction, in PlayerCommand command,
@@ -118,6 +122,7 @@ namespace HyperRTS.Simulation.Production
             queue.RemoveAt(index);
             // Research is queued once per player, so the cancelled one is free to queue again this frame.
             buyer.QueuedResearch.Remove(prefab);
+            buyer.Counts.Remove(state.EntityManager, prefab);
             if (index == 0)
             {
                 SystemAPI.GetComponentRW<Producer>(producer).ValueRW.Elapsed = 0f;

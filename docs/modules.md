@@ -255,12 +255,28 @@ Unpowered weapons hold fire; unpowered producers run at `MatchRules.LowPowerProd
 | `ResourceNodeAuthoring` / `ResourceNode` | Neutral deposit, finite or regrowing |
 | `ResourceDropOffAuthoring` | Where harvesters deposit |
 | `HarvesterAuthoring` / `Harvester`, `HarvestState` | Capacity, gather rate, trip state |
-| `ResourceIncomeAuthoring` / `ResourceIncome` | Passive income for the owner (an oil derrick) plus a one-time bonus to its first owner; neutral pays nothing |
+| `ResourceIncomeAuthoring` / `ResourceIncome` | Passive income for the owner (an oil derrick) plus a one-time bonus to its first owner; neutral pays nothing, `Offline` pauses it |
+| `OccupantIncome` | Opt-in (Per Occupant): the income pays its amount once per `Cargo` passenger, nothing while empty |
+| `ResourceReserve` | Opt-in (Reserve): finite stock the income pays out of; at 0 it pays nothing but stays to be refilled |
+| `ReserveRefillAuthoring` / `ReserveRefill` | While owned and online, adds an amount every interval to each same-owner reserve of its type, up to capacity |
+| `CasualtyIncomeAuthoring` / `CasualtyIncome` | While owned and online, pays the owner a share (rounded down) of the `ResourceCost` of each own or hostile unit that dies; several earners each pay |
 | Player `Stat.Income` | Delivered resources are scaled by the owner's `StatModifier`s on `Stat.Income` (an AI difficulty bonus, a game's faction perk) |
 
 `GatherSystem` runs node → fill → nearest drop-off → deposit, switching to a nearby node of the same type when one
-runs dry. `ResourceNodeSystem` regrows or removes nodes. `ResourceIncomeSystem` pays incomes (counted in
-`PlayerStats.ResourcesGathered`).
+runs dry. `ResourceNodeSystem` regrows or removes nodes. `ReserveRefillSystem` tops up reserves just before
+`ResourceIncomeSystem` pays incomes; `CasualtyIncomeSystem` pays casualty income after
+`DeathSystem`. All three count their payments in `PlayerStats.ResourcesGathered`.
+
+### Delivery
+
+`DeliverySourceAuthoring` / `DeliverySource` on a building sends `Count` carriers (a baked unit prefab: a supply
+truck, a cargo plane) every `Interval` while the building is owned and not `Offline`; a neutral source restarts its
+timer. `DeliverySystem` spawns each wave on the playable-bounds point (`MapSettings`) of the ray from the map
+centre through the building, so the entry point is deterministic, spread `Spacing` apart across the ray, then sets
+`LocalTransform`, `Faction` and an enabled `MoveDestination` on the building (aircraft fly there the same way). A
+`DeliveryCarrier` within `ArrivalRange` of its source pays its owner `Amount`, scaled by `Stat.Income` and counted in
+`PlayerStats.ResourcesGathered`, and is destroyed. A killed (`Dead`) carrier pays nothing; when the source is
+destroyed or dies, its carriers are destroyed too. Give carriers no weapons, or combat takes over their movement.
 
 ## Buildings
 
@@ -284,9 +300,10 @@ runs dry. `ResourceNodeSystem` regrows or removes nodes. `ResourceIncomeSystem` 
 | `Producible` | Build time and population cost |
 | `Prerequisite`, `CompletedBuildings` | Required `TypeId`s, met by a completed building or finished research; check shared by simulation, AI and HUD |
 | `ProducibleAuthoring` | Base of unit, building and research authoring: `DisplayName` and the `TypeId` prerequisites name |
-| `PurchaseRules`, `Buyer` | The one buy rule for orders, placement, AI and HUD: `IsUnlocked` (prerequisites, research once), `CanBuy`, `TryBuy` |
+| `PurchaseRules`, `Buyer` | The one buy rule for orders, placement, AI and HUD: `IsUnlocked` (prerequisites, research once, build limit), `CanBuy`, `TryBuy` |
 | `Research`, `CompletedResearch`, `ResearchRules` | A producible that is researched once instead of spawned; the player's finished research (replicated by `TypeId`); queue-once checks |
 | `ProductionRules` | `HasOption`, `Refund`, `RefundQueue` |
+| `BuildLimitAuthoring` / `BuildLimit`, `BuildCounts` | Optional cap per player on a unit or building type: standing (sites too) plus queued may not exceed `Max`; `PurchaseRules.IsUnlocked` refuses past it, so orders, placement, the AI and the HUD buttons all honour it |
 
 `ProductionCommandSystem` handles Produce, Cancel (refund) and rally points. `BuildStatsSystem` counts
 `UnitProduced` and `BuildingCompleted` into `PlayerStats`; `OwnerChangeSystem` refunds a transferred entity's

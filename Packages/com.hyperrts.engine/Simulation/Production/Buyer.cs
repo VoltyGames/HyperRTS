@@ -13,12 +13,16 @@ namespace HyperRTS.Simulation.Production
         /// <summary>Research the player has queued anywhere; only read when the prefab is research.</summary>
         public NativeHashSet<Entity> QueuedResearch;
 
+        /// <summary>How many of each build-limited type the player has; add to it after each purchase.</summary>
+        public BuildCounts Counts;
+
         /// <summary>
         /// Snapshots <paramref name="faction"/> as a buyer for this frame, collecting what it has queued at every
-        /// producer in <paramref name="queues"/> (<see cref="ResearchRules.QueueQuery"/>).
+        /// producer in <paramref name="queues"/> (<see cref="ResearchRules.QueueQuery"/>) and its build-limited
+        /// entities in <paramref name="limited"/> (<see cref="BuildCounts.Query"/>).
         /// </summary>
-        public static Buyer Snapshot(EntityManager entityManager, EntityQuery queues, byte faction,
-            CompletedBuildings buildings, DynamicBuffer<CompletedResearch> research)
+        public static Buyer Snapshot(EntityManager entityManager, EntityQuery queues, EntityQuery limited,
+            byte faction, CompletedBuildings buildings, DynamicBuffer<CompletedResearch> research)
         {
             var queued = new NativeHashSet<Entity>(8, Allocator.Temp);
             ResearchRules.CollectQueued(entityManager, queues, faction, queued);
@@ -28,6 +32,7 @@ namespace HyperRTS.Simulation.Production
                 Buildings = buildings,
                 Research = research,
                 QueuedResearch = queued,
+                Counts = BuildCounts.Snapshot(entityManager, limited, queues, faction),
             };
         }
     }

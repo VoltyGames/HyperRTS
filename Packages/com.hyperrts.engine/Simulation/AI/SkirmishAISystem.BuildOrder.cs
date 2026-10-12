@@ -41,6 +41,7 @@ namespace HyperRTS.Simulation.AI
                 done = false;
                 if (TryStart(ref state, turn, snapshot, step.Prefab))
                 {
+                    turn.Buyer.Counts.Add(state.EntityManager, step.Prefab);
                     break;
                 }
             }
