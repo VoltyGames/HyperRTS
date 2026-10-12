@@ -11,6 +11,9 @@ namespace HyperRTS.Editor
         public const string Tools = Root + "Tools";
         public const int ToolsPriority = 0;
 
+        public const string MapEditor = Root + "Map Editor";
+        public const int MapEditorPriority = 1;
+
         public const string Maps = Root + "Maps/";
         public const int MapsPriority = 40;
 

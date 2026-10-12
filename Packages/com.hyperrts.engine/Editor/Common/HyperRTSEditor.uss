@@ -261,3 +261,77 @@
     color: rgb(160, 160, 160);
     font-size: 10px;
 }
+
+.hrts-map-editor {
+    flex-grow: 1;
+}
+
+.hrts-map-toolbar__picker {
+    min-width: 160px;
+}
+
+.hrts-map-editor__body {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.hrts-map-list {
+    width: 200px;
+    flex-shrink: 0;
+    border-right-width: 1px;
+    border-color: rgba(128, 128, 128, 0.4);
+}
+
+.hrts-map-list__item {
+    padding: 1px 4px 1px 16px;
+}
+
+.hrts-map-list__item:hover {
+    background-color: rgba(128, 128, 128, 0.2);
+}
+
+.hrts-map-list__item--selected {
+    background-color: rgba(62, 125, 231, 0.6);
+}
+
+.hrts-map-canvas {
+    flex-grow: 1;
+    overflow: hidden;
+    background-color: rgb(32, 34, 36);
+}
+
+.hrts-map-canvas__image {
+    position: absolute;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.hrts-map-canvas__overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.hrts-map-canvas__scale {
+    position: absolute;
+    left: 6px;
+    bottom: 4px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.hrts-map-canvas__error {
+    position: absolute;
+    left: 6px;
+    top: 4px;
+    color: rgb(255, 110, 100);
+    white-space: normal;
+}
+
+.hrts-map-inspector {
+    width: 280px;
+    flex-shrink: 0;
+    padding: 4px;
+    border-left-width: 1px;
+    border-color: rgba(128, 128, 128, 0.4);
+}
