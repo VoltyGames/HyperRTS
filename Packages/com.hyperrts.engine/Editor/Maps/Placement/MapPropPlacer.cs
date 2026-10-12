@@ -8,11 +8,10 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Placement
 {
     /// <summary>
-    /// Places the spec's palette prefabs: start kits, resources, props, bridges, prop rows and scatters; the land
-    /// planners add settlements and surface props through it. Random choices are made once in the authored sector
-    /// and copied, so every copy matches.
+    /// Places the spec's palette prefabs: start kits, resources, props, bridges, prop rows and scatters. Random choices
+    /// are made once in the authored sector and copied, so every copy matches.
     /// </summary>
-    public sealed class MapPlacer
+    public sealed class MapPropPlacer
     {
         private const int ScatterAttempts = 40;
         private readonly MapLayout _layout;
@@ -20,57 +19,33 @@ namespace HyperRTS.Editor.Maps.Placement
         private readonly MapPalette _palette;
         private readonly MapClimate _climate;
         private readonly MapIssues _issues;
+        private readonly MapPlacements _placements;
 
-        private MapPlacer(MapLayout layout, MapShapes shapes, MapPalette palette, MapClimate climate, MapIssues issues)
+        private MapPropPlacer(MapLayout layout, MapShapes shapes, MapPalette palette, MapClimate climate,
+            MapIssues issues)
         {
             _layout = layout;
             _shapes = shapes;
             _palette = palette;
             _climate = climate;
             _issues = issues;
-            Clearance = new MapClearance(layout, shapes, palette.baseRadius);
+            _placements = new MapPlacements(layout, shapes, palette.baseRadius);
         }
 
-        public List<MapPlacement> Placements { get; } = new();
+        private MapClearance Clearance => _placements.Clearance;
 
-        public MapClearance Clearance { get; }
-
-        public static MapPlacer Place(MapLayout layout, MapShapes shapes, MapPalette palette, MapClimate climate,
+        /// <summary>The spec's placements, which the land planners then add to.</summary>
+        public static MapPlacements Place(MapLayout layout, MapShapes shapes, MapPalette palette, MapClimate climate,
             MapIssues issues)
         {
-            var placer = new MapPlacer(layout, shapes, palette, climate, issues);
+            var placer = new MapPropPlacer(layout, shapes, palette, climate, issues);
             placer.PlaceStartKits();
             placer.PlaceResources();
             placer.PlaceProps();
             placer.PlaceBridges();
             placer.PlaceLines();
             placer.PlaceScatters();
-            return placer;
-        }
-
-        /// <summary>Places an authored-space choice in every copy of the feature it belongs to.</summary>
-        internal void AddCopies<T>(List<MapCopy<T>> copies, int index, MapPaletteEntry entry, Vector2 position,
-            float yaw, float scale) where T : class
-        {
-            foreach (var copy in copies.Where(c => c.Index == index))
-            {
-                Add(new MapPlacement(entry, copy.Transform.Apply(position), copy.Transform.ApplyYaw(yaw)) { Scale = scale });
-            }
-        }
-
-        /// <summary>Places a choice made at an authored-sector point in every copy of the sector.</summary>
-        internal void AddEverywhere(MapPaletteEntry entry, Vector2 sectorPoint, float yaw, float scale)
-        {
-            foreach (var copy in _layout.Symmetry.Copies)
-            {
-                Add(new MapPlacement(entry, copy.Apply(sectorPoint), copy.ApplyYaw(yaw)) { Scale = scale });
-            }
-        }
-
-        internal void Add(MapPlacement placement)
-        {
-            Placements.Add(placement);
-            Clearance.Reserve(placement.Position, placement.Radius);
+            return placer._placements;
         }
 
         private void PlaceStartKits()
@@ -83,7 +58,7 @@ namespace HyperRTS.Editor.Maps.Placement
                 {
                     var entry = _palette.Entry(item.key);
                     var position = spawn.Position + right * item.offset.x + forward * item.offset.y;
-                    Add(new MapPlacement(entry, position, spawn.Yaw + item.yaw) { Owner = spawn.Slot });
+                    _placements.Add(new MapPlacement(entry, position, spawn.Yaw + item.yaw) { Owner = spawn.Slot });
                 }
             }
         }
@@ -94,7 +69,7 @@ namespace HyperRTS.Editor.Maps.Placement
             {
                 var entry = _palette.Entry(resource.Placed.kind);
                 var yaw = resource.Transform.ApplyYaw(Jitter(entry, MapRandomChannel.ResourceYaw, resource.Index));
-                Add(new MapPlacement(entry, resource.Placed.pos.ToVector2(), yaw) { Amount = resource.Placed.amount });
+                _placements.Add(new MapPlacement(entry, resource.Placed.pos.ToVector2(), yaw) { Amount = resource.Placed.amount });
             }
         }
 
@@ -104,7 +79,7 @@ namespace HyperRTS.Editor.Maps.Placement
             {
                 var entry = _palette.Entry(prop.Placed.kind);
                 var yaw = prop.Transform.ApplyYaw(prop.Authored.yaw + Jitter(entry, MapRandomChannel.PropYaw, prop.Index));
-                Add(new MapPlacement(entry, prop.Placed.pos.ToVector2(), yaw));
+                _placements.Add(new MapPlacement(entry, prop.Placed.pos.ToVector2(), yaw));
             }
         }
 
@@ -112,7 +87,7 @@ namespace HyperRTS.Editor.Maps.Placement
         {
             foreach (var crossing in _shapes.Crossings.Where(c => c.IsBridge))
             {
-                Add(new MapPlacement(_palette.Entry(crossing.Prop), crossing.Position, crossing.Yaw)
+                _placements.Add(new MapPlacement(_palette.Entry(crossing.Prop), crossing.Position, crossing.Yaw)
                 {
                     Height = crossing.Height,
                     Deck = new Vector2(crossing.Width, crossing.Span + 2f),
@@ -120,18 +95,12 @@ namespace HyperRTS.Editor.Maps.Placement
             }
         }
 
+        /// <summary>Prop rows; rows of trees are the land planners'.</summary>
         private void PlaceLines()
         {
-            foreach (var line in _layout.Lines.Where(l => l.Copy == 0))
+            foreach (var line in _layout.Lines.Where(l => l.Copy == 0 && !_climate.HasTree(l.Authored.kind)))
             {
-                var kind = line.Authored.kind;
-                if (_climate.HasTree(kind))
-                {
-                    continue;
-                }
-
-                var entry = _palette.Entry(kind);
-
+                var entry = _palette.Entry(line.Authored.kind);
                 var points = MapGeometry.ToVectors(line.Authored.points);
                 var length = MapGeometry.Length(points);
                 var path = new MapPathWalker(points);
@@ -142,7 +111,7 @@ namespace HyperRTS.Editor.Maps.Placement
                     if (Clearance.IsDry(position, entry.Radius))
                     {
                         var yaw = MapGeometry.Yaw(direction) + Jitter(entry, MapRandomChannel.LineYaw, line.Index * 1000 + (int)along);
-                        AddCopies(_layout.Lines, line.Index, entry, position, yaw, 1f);
+                        _placements.AddCopies(_layout.Lines, line.Index, entry, position, yaw, 1f);
                     }
                 }
             }
@@ -152,33 +121,39 @@ namespace HyperRTS.Editor.Maps.Placement
         {
             foreach (var scatter in _layout.Scatters.Where(s => s.Copy == 0))
             {
-                var entry = _palette.Entry(scatter.Authored.kind);
-
-                var polygon = MapGeometry.ToVectors(scatter.Authored.points);
+                var spec = scatter.Authored;
+                var entry = _palette.Entry(spec.kind);
+                var polygon = MapGeometry.ToVectors(spec.points);
                 var bounds = MapGeometry.Bounds(polygon);
                 var random = MapRandom.Stream(_layout.Spec.seed, MapRandomChannel.Scatters, scatter.Index);
                 var placed = 0;
-                for (var attempt = 0; attempt < scatter.Authored.count * ScatterAttempts && placed < scatter.Authored.count; attempt++)
+                for (var attempt = 0; attempt < spec.count * ScatterAttempts && placed < spec.count; attempt++)
                 {
                     var position = MapGeometry.RandomIn(bounds, random);
                     var scale = random.Range(entry.scale.x, entry.scale.y);
-                    var radius = entry.Radius * scale;
                     var yaw = random.Yaw();
-                    if (!MapGeometry.Contains(polygon, position) || !Clearance.IsOffRoad(position, radius)
-                        || !Clearance.IsFree(position, radius))
+                    if (Fits(polygon, position, entry.Radius * scale))
                     {
-                        continue;
+                        _placements.AddCopies(_layout.Scatters, scatter.Index, entry, position, yaw, scale);
+                        placed++;
                     }
-
-                    AddCopies(_layout.Scatters, scatter.Index, entry, position, yaw, scale);
-                    placed++;
                 }
 
-                if (placed < scatter.Authored.count)
+                if (placed < spec.count)
                 {
-                    _issues.Warn($"Scatter {scatter.Index + 1} fit {placed} of {scatter.Authored.count} '{entry.key}'.");
+                    _issues.Warn($"Scatter {scatter.Index + 1} fit {placed} of {spec.count} '{entry.key}'.");
                 }
             }
+        }
+
+        private bool Fits(List<Vector2> polygon, Vector2 position, float radius)
+        {
+            if (!MapGeometry.Contains(polygon, position))
+            {
+                return false;
+            }
+
+            return Clearance.IsOffRoad(position, radius) && Clearance.IsFree(position, radius);
         }
 
         private float Jitter(MapPaletteEntry entry, MapRandomChannel channel, int index)
@@ -188,8 +163,7 @@ namespace HyperRTS.Editor.Maps.Placement
                 return 0f;
             }
 
-            var random = MapRandom.Stream(_layout.Spec.seed, channel, index);
-            return random.Signed() * entry.yawJitter;
+            return MapRandom.Stream(_layout.Spec.seed, channel, index).Signed() * entry.yawJitter;
         }
     }
 }

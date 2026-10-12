@@ -1,38 +1,38 @@
-using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Planning.Farmland;
 using HyperRTS.Editor.Maps.Planning.Settlements;
 
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// Lays out the land in priority order, each planner claiming only what earlier ones left: water, roads, banks,
-    /// bases and pads, access tracks, ravines, settlements (and spec tree rows), spec areas, woods, belts, farmland,
-    /// then meadow everywhere else. Finally the surfaces grow their own trees and props.
+    /// Lays out the land in priority order, each pass claiming only what earlier ones left: water, roads, banks, bases
+    /// and pads, access tracks, ravines, settlements (and spec tree rows), spec areas, woods, belts, farmland, then
+    /// meadow everywhere else. Finally the surfaces grow their own trees and props.
     /// </summary>
     public static class MapLandPlanner
     {
         public static void Plan(MapPlanContext context)
         {
-            MapWaterPlanner.ClaimWater(context);
-            MapRoadPlanner.Plan(context);
-            MapWaterPlanner.ClaimBanks(context);
-            MapBasePlanner.Plan(context);
-            MapAccessPlanner.Plan(context);
-            MapRavinePlanner.Plan(context);
-            MapSettlementPlanner.Plan(context);
-            MapRowPlanter.Plan(context);
-            MapAreaPlanner.Plan(context);
-            MapWoodPlanner.Plan(context);
-            MapBeltPlanner.PlanSpecBelts(context);
-            MapFarmlandPlanner.Plan(context);
-            FillMeadow(context);
-            MapSurfacePlanter.Plant(context);
-        }
-
-        private static void FillMeadow(MapPlanContext context)
-        {
-            var meadow = context.Region(MapLandKind.Meadow, context.Climate.groundSurface);
-            context.Land.ClaimWhere(context.Land.Bounds, meadow, _ => true);
+            MapLandPass[] passes =
+            {
+                new MapWaterPlanner(context),
+                new MapRoadPlanner(context),
+                new MapBankPlanner(context),
+                new MapBasePlanner(context),
+                new MapAccessPlanner(context),
+                new MapRavinePlanner(context),
+                new MapSettlementPlanner(context),
+                new MapRowPlanter(context),
+                new MapAreaPlanner(context),
+                new MapWoodPlanner(context),
+                new MapBeltPlanner(context),
+                new MapFarmlandPlanner(context),
+                new MapMeadowPlanner(context),
+                new MapSurfacePlanter(context),
+            };
+            foreach (var pass in passes)
+            {
+                pass.Plan();
+            }
         }
     }
 }

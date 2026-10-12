@@ -3,43 +3,50 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
+using HyperRTS.Editor.Maps.Land;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning.Farmland
 {
     /// <summary>
     /// Farmland: land nothing else took, split into fields on a grid. Field ends get a shelterbelt with a dirt track
-    /// beside it; each field gets a crop from the kit's mix and a weedy margin. Everything is decided in the authored
-    /// sector, so every copy of a field grows the same crop.
+    /// beside it; each field gets a crop from the kit's mix and a weedy margin, and pieces too small or too narrow to
+    /// farm become the kit's leftover ground. Everything is decided in the authored sector, so every copy of a field
+    /// grows the same crop.
     /// </summary>
-    public static class MapFarmlandPlanner
+    public sealed class MapFarmlandPlanner : MapLandPass
     {
         private const float SampleStep = 1f;
         private const float MinRun = 15f;
+        private const int NoField = -1;
 
-        public static void Plan(MapPlanContext context)
+        public MapFarmlandPlanner(MapPlanContext context) : base(context)
         {
-            var authored = context.Layout.Farmland.Where(f => f.Copy == 0).ToList();
+        }
+
+        public override void Plan()
+        {
+            var authored = Context.Layout.Farmland.Where(f => f.Copy == 0).ToList();
             for (var i = 0; i < authored.Count; i++)
             {
                 var spec = authored[i].Authored;
-                var kit = context.Climate.FarmlandKit(spec.kind);
+                var kit = Climate.FarmlandKit(spec.kind);
                 if (i == 0)
                 {
-                    context.RowAngle = spec.angle;
+                    Context.RowAngle = spec.angle;
                 }
 
                 var grid = new MapFieldGrid(kit, spec.angle);
                 var polygon = spec.points.Count > 0 ? MapGeometry.ToVectors(spec.points) : null;
-                LayEnds(context, kit, grid, s => IsFarmland(context, polygon, s), i);
-                MapFieldClaims.Claim(context, kit, grid, polygon, i, spec.angle);
+                LayEnds(kit, grid, s => IsFree(polygon, s), i);
+                ClaimFields(kit, grid, polygon, i, spec.angle);
             }
         }
 
-        /// <summary>A sector point the farmland may still use.</summary>
-        public static bool IsFarmland(MapPlanContext context, List<Vector2> polygon, Vector2 sectorPoint)
+        /// <summary>A sector point this farmland may still use.</summary>
+        private bool IsFree(List<Vector2> polygon, Vector2 sectorPoint)
         {
-            if (!context.Layout.Symmetry.InSector(sectorPoint))
+            if (!Symmetry.InSector(sectorPoint))
             {
                 return false;
             }
@@ -49,18 +56,16 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
                 return false;
             }
 
-            var land = context.Land;
-            return land.TryCell(sectorPoint, out var x, out var z) && land.IsFree(x, z);
+            return Land.TryCell(sectorPoint, out var x, out var z) && Land.IsFree(x, z);
         }
 
-        private static void LayEnds(MapPlanContext context, MapFarmlandKit kit, MapFieldGrid grid,
-            Func<Vector2, bool> farmland, int index)
+        /// <summary>Tracks along the field ends, then the belts beside them.</summary>
+        private void LayEnds(MapFarmlandKit kit, MapFieldGrid grid, Func<Vector2, bool> free, int index)
         {
-            var belt = string.IsNullOrEmpty(kit.beltKit) ? null : context.Climate.BeltKit(kit.beltKit);
-            var track = string.IsNullOrEmpty(kit.trackClass) ? null : context.Climate.RoadClass(kit.trackClass);
-            var area = context.Land.Bounds;
-            var across = grid.Across(area);
-            var (first, last) = grid.EndLines(area);
+            var belt = string.IsNullOrEmpty(kit.beltKit) ? null : Climate.BeltKit(kit.beltKit);
+            var track = string.IsNullOrEmpty(kit.trackClass) ? null : Climate.RoadClass(kit.trackClass);
+            var across = grid.Across(Land.Bounds);
+            var (first, last) = grid.EndLines(Land.Bounds);
             var beltRuns = new List<(List<Vector2> Run, int Line)>();
             var trackRuns = new List<List<Vector2>>();
             for (var line = first; line <= last; line++)
@@ -69,35 +74,87 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
                 var u = grid.EndLine(line);
                 if (hasBelt)
                 {
-                    beltRuns.AddRange(Runs(grid, u, across, farmland).Select(r => (r, line)));
+                    beltRuns.AddRange(Runs(grid, u, across, free).Select(r => (r, line)));
                 }
 
                 if (track != null)
                 {
                     var offset = hasBelt ? belt.width * 0.5f + track.width * 0.5f + 0.5f : 0f;
-                    trackRuns.AddRange(Runs(grid, u + offset, across, farmland));
+                    trackRuns.AddRange(Runs(grid, u + offset, across, free));
                 }
             }
 
-            foreach (var run in trackRuns)
-            {
-                MapTrackLayer.Lay(context, track, run);
-            }
+            var roads = new MapRoadPlanner(Context);
+            trackRuns.ForEach(run => roads.LayTrack(track, run));
+            var belts = new MapBeltPlanner(Context);
+            beltRuns.ForEach(run => belts.PlanLine(belt, run.Run, index * 1000 + run.Line));
+        }
 
-            foreach (var (run, line) in beltRuns)
+        /// <summary>
+        /// Gives every free farmland cell to the field its sector point falls in: cells near a field's edge (or the
+        /// symmetry seam) become its margin, and cells of slivers its leftover ground.
+        /// </summary>
+        private void ClaimFields(MapFarmlandKit kit, MapFieldGrid grid, List<Vector2> polygon, int index, float angle)
+        {
+            var fields = Assign(grid, polygon);
+            var edge = MapLandDistance.ToRegionEdge(Land.Width, Land.Height, (x, z) => fields[z * Land.Width + x]);
+            var (sizes, reach) = MapFieldFragments.Measure(fields, edge, Land.Width, Land.Height);
+            var regions = new MapFieldRegions(Context, kit, index, angle);
+            var noise = Context.Noise(MapNoiseChannel.FieldMargins);
+            var minCells = kit.minField / (MapLand.CellSize * MapLand.CellSize);
+            Land.ForEach((x, z, p) =>
             {
-                MapBeltPlanner.PlanLine(context, belt, run, index * 1000 + line);
-            }
+                var i = z * Land.Width + x;
+                var field = fields[i];
+                if (field == NoField)
+                {
+                    return;
+                }
+
+                var sector = Symmetry.ToSector(p, out _);
+                var width = kit.marginWidth * (1f + 0.45f * noise.Sample(p, 14f));
+                var seam = Symmetry.SeamDistance(sector) < kit.marginWidth;
+                if (edge[i] * MapLand.CellSize < width || seam)
+                {
+                    Land.Claim(x, z, regions.Margin);
+                    return;
+                }
+
+                var sliver = sizes[i] < minCells || reach[i] * MapLand.CellSize < kit.minFieldWidth * 0.5f;
+                Land.Claim(x, z, sliver ? regions.Leftover(field) : regions.Field(field));
+            });
+        }
+
+        /// <summary>The field key of every free farmland cell, <see cref="NoField"/> elsewhere.</summary>
+        private int[] Assign(MapFieldGrid grid, List<Vector2> polygon)
+        {
+            var fields = new int[Land.Width * Land.Height];
+            Land.ForEach((x, z, p) =>
+            {
+                var i = z * Land.Width + x;
+                fields[i] = NoField;
+                if (!Land.IsFree(x, z))
+                {
+                    return;
+                }
+
+                var sector = Symmetry.ToSector(p, out _);
+                if (polygon == null || MapGeometry.Contains(polygon, sector))
+                {
+                    fields[i] = grid.Field(sector);
+                }
+            });
+            return fields;
         }
 
         /// <summary>Stretches of the line u = const where the farmland is free, as sector polylines.</summary>
-        private static IEnumerable<List<Vector2>> Runs(MapFieldGrid grid, float u, Vector2 across, Func<Vector2, bool> farmland)
+        private static IEnumerable<List<Vector2>> Runs(MapFieldGrid grid, float u, Vector2 across, Func<Vector2, bool> free)
         {
             var run = new List<Vector2>();
             for (var v = across.x; v <= across.y; v += SampleStep)
             {
                 var point = grid.FromGrid(u, v);
-                if (farmland(point))
+                if (free(point))
                 {
                     run.Add(point);
                     continue;

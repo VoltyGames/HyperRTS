@@ -13,21 +13,24 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
     {
         private const int Tries = 10;
         private const float EdgeMargin = 0.5f;
+        private readonly MapSettlement _settlement;
         private readonly MapPlanContext _context;
         private readonly MapSettlementKit _kit;
         private readonly MapSettlementEntries _entries;
+        private readonly MapPlotFences _fences;
         private readonly System.Random _random;
 
-        public MapPlotBuilder(MapPlanContext context, MapSettlementKit kit, MapSettlementEntries entries,
-            System.Random random)
+        public MapPlotBuilder(MapSettlement settlement, System.Random random)
         {
-            _context = context;
-            _kit = kit;
-            _entries = entries;
+            _settlement = settlement;
+            _context = settlement.Context;
+            _kit = settlement.Kit;
+            _entries = settlement.Entries;
+            _fences = new MapPlotFences(settlement);
             _random = random;
         }
 
-        private MapClearance Clearance => _context.Placer.Clearance;
+        private MapClearance Clearance => _context.Placements.Clearance;
 
         /// <summary>
         /// Picks the plot's house and fixes its zones, or returns null with the reason the plot is unusable. Nothing
@@ -54,7 +57,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 return null;
             }
 
-            plot.YardEnd = Mathf.Min(plot.Depth, _kit.frontYard + depth + _entries.Strip);
+            plot.YardEnd = Mathf.Min(plot.Depth, _kit.frontYard + depth + _entries.OutbuildingDepth);
             plot.GardenEnd = plot.YardEnd + _kit.gardenShare * (plot.Depth - plot.YardEnd);
             problem = null;
             return new MapPlacement(entry, position, plot.FacingYaw + Jitter(entry)) { Scale = scale };
@@ -68,7 +71,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             Orchard(plot);
             Extras(plot);
             plot.Local(house.Position, out var houseU, out _);
-            MapPlotFences.Build(_context, _entries, plot, houseU);
+            _fences.Build(plot, houseU);
         }
 
         private void Outbuildings(MapPlot plot)
@@ -125,20 +128,21 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 return;
             }
 
+            var trees = _context.Trees;
             var spacing = _kit.orchardSpacing;
             var half = plot.Width * 0.5f;
             for (var v = plot.GardenEnd + spacing * 0.5f; v < plot.Depth; v += spacing)
             {
                 for (var u = -half + spacing * 0.5f; u < half; u += spacing)
                 {
-                    var along = u + Jitter01() * spacing * 0.25f;
-                    var back = v + Jitter01() * spacing * 0.25f;
+                    var along = u + _random.Signed() * spacing * 0.25f;
+                    var back = v + _random.Signed() * spacing * 0.25f;
                     var point = plot.Point(along, back);
-                    var scale = _context.TreeScale(tree, _random);
+                    var scale = trees.Scale(tree, _random);
                     var yaw = _random.Yaw();
-                    if (plot.Contains(point, 1f) && _context.Spacing.Fits(point, spacing * 0.4f))
+                    if (plot.Contains(point, 1f) && trees.Fits(point, spacing * 0.4f))
                     {
-                        _context.PlantCopies(tree, point, scale, yaw);
+                        trees.PlantCopies(tree, point, scale, yaw);
                     }
                 }
             }
@@ -218,17 +222,14 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         }
 
         private bool StreetsideFree(Vector2 position, float radius) =>
-            Clearance.IsDry(position, radius) && MapStreetFurniture.OnVerge(_context, position);
+            Clearance.IsDry(position, radius) && _settlement.OnVerge(position);
 
         private void Add(MapPaletteEntry entry, Vector2 position, float yaw, float scale) =>
-            _context.Placer.AddEverywhere(entry, position, yaw, scale);
+            _context.Placements.AddEverywhere(entry, position, yaw, scale);
 
-        private float Scale(MapPaletteEntry entry) =>
-            _random.Range(entry.scale.x, entry.scale.y);
+        private float Scale(MapPaletteEntry entry) => _random.Range(entry.scale.x, entry.scale.y);
 
-        private float Jitter(MapPaletteEntry entry) => entry.yawJitter * Jitter01();
-
-        private float Jitter01() => _random.Signed();
+        private float Jitter(MapPaletteEntry entry) => entry.yawJitter * _random.Signed();
 
         /// <summary>A random value in a range; false when the range is empty.</summary>
         private bool Between(float min, float max, out float value)

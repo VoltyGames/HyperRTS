@@ -1,34 +1,66 @@
+using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
+using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning
 {
-    /// <summary>Claims the land of every road: the carriageway, then the grass and weed verge either side.</summary>
-    public static class MapRoadPlanner
+    /// <summary>
+    /// The land of every road: the carriageway, then the grass and weed verge either side. Passes that lay tracks
+    /// (field ends, access to a pad) lay them through <see cref="LayTrack"/>.
+    /// </summary>
+    public sealed class MapRoadPlanner : MapLandPass
     {
-        public static void Plan(MapPlanContext context)
+        /// <summary>Track ends this close (metres) are the same end: on a symmetry axis a copy lands on the track itself.</summary>
+        private const float SameEnd = 0.5f;
+
+        public MapRoadPlanner(MapPlanContext context) : base(context)
         {
-            foreach (var road in context.Shapes.Roads)
+        }
+
+        public override void Plan()
+        {
+            foreach (var road in Context.Shapes.Roads)
             {
-                Claim(context, road);
+                Claim(road);
             }
         }
 
-        /// <summary>Claims one road's land; planners call it for the tracks they lay.</summary>
-        public static void Claim(MapPlanContext context, MapRoad road)
+        /// <summary>Lays a track chosen in the authored sector: the road in every copy (once on an axis), and its land.</summary>
+        public void LayTrack(MapRoadClass track, List<Vector2> sectorLine)
+        {
+            var laid = new List<List<Vector2>>();
+            foreach (var copy in Symmetry.Copies)
+            {
+                var points = sectorLine.ConvertAll(copy.Apply);
+                if (laid.Exists(other => Same(other, points)))
+                {
+                    continue;
+                }
+
+                laid.Add(points);
+                var line = new MapLine(points, track.width, track.width * 0.5f + track.vergeWidth + MapShapes.RoadShoulder);
+                var road = new MapRoad(line, track, true);
+                Context.Shapes.AddRoad(road);
+                Claim(road);
+            }
+        }
+
+        private void Claim(MapRoad road)
         {
             var roadClass = road.Class;
             var half = road.Width * 0.5f;
-            var surface = context.Region(MapLandKind.Road, roadClass.surface);
+            var surface = Context.Region(MapLandKind.Road, roadClass.surface);
             if (roadClass.vergeWidth <= 0f)
             {
-                context.Land.ClaimWhere(road.Line.Bounds, surface, p => road.Line.Distance(p) < half);
+                Land.ClaimWhere(road.Line.Bounds, surface, p => road.Line.Distance(p) < half);
                 return;
             }
 
-            var verge = context.Region(MapLandKind.Verge, roadClass.vergeSurface);
+            var verge = Context.Region(MapLandKind.Verge, roadClass.vergeSurface);
             var reach = half + roadClass.vergeWidth;
-            context.Land.ClaimEach(road.Line.Bounds, p =>
+            Land.ClaimEach(road.Line.Bounds, p =>
             {
                 var distance = road.Line.Distance(p);
                 if (distance < half)
@@ -39,5 +71,20 @@ namespace HyperRTS.Editor.Maps.Planning
                 return distance < reach ? verge : MapLand.Unclaimed;
             });
         }
+
+        /// <summary>Lines with the same ends either way round.</summary>
+        private static bool Same(List<Vector2> a, List<Vector2> b)
+        {
+            if (a.Count != b.Count)
+            {
+                return false;
+            }
+
+            var forward = Near(a[0], b[0]) && Near(a[^1], b[^1]);
+            var backward = Near(a[0], b[^1]) && Near(a[^1], b[0]);
+            return forward || backward;
+        }
+
+        private static bool Near(Vector2 a, Vector2 b) => (a - b).sqrMagnitude < SameEnd * SameEnd;
     }
 }

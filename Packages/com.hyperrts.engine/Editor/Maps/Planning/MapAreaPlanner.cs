@@ -3,16 +3,20 @@ using HyperRTS.Editor.Maps.Land;
 
 namespace HyperRTS.Editor.Maps.Planning
 {
-    /// <summary>Spec areas: hand-drawn polygons of one surface, for the odd patch the planners don't make.</summary>
-    public static class MapAreaPlanner
+    /// <summary>Spec areas: hand-drawn polygons of one surface, for the odd patch the other passes don't make.</summary>
+    public sealed class MapAreaPlanner : MapLandPass
     {
-        public static void Plan(MapPlanContext context)
+        public MapAreaPlanner(MapPlanContext context) : base(context)
         {
-            foreach (var area in context.Layout.Areas)
+        }
+
+        public override void Plan()
+        {
+            foreach (var area in Context.Layout.Areas)
             {
                 var polygon = MapGeometry.ToVectors(area.Placed.points);
-                var region = context.Region(MapLandKind.Area, area.Placed.kind, area.Index);
-                context.Land.ClaimWhere(MapGeometry.Bounds(polygon), region, p => MapGeometry.Contains(polygon, p));
+                var region = Context.Region(MapLandKind.Area, area.Placed.kind, area.Index);
+                Land.ClaimWhere(MapGeometry.Bounds(polygon), region, p => MapGeometry.Contains(polygon, p));
             }
         }
     }

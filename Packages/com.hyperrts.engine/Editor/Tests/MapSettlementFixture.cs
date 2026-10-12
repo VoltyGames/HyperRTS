@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Tests
 
         public MapPalette Palette { get; private set; }
 
-        public IReadOnlyList<MapPlacement> Placements => Context.Placer.Placements;
+        public IReadOnlyList<MapPlacement> Placements => Context.Placements.All;
 
         /// <summary>The placements of one palette key in the authored half (z at or below 0).</summary>
         public List<MapPlacement> InSector(string key) =>
@@ -52,11 +52,11 @@ namespace HyperRTS.Editor.Tests
             var fixture = new MapSettlementFixture();
             fixture.Build(river, road, spawn ?? new Vector2(0f, -100f), count, edit);
             var context = fixture.Context;
-            MapWaterPlanner.ClaimWater(context);
-            MapRoadPlanner.Plan(context);
-            MapWaterPlanner.ClaimBanks(context);
-            MapBasePlanner.Plan(context);
-            MapSettlementPlanner.Plan(context);
+            new MapWaterPlanner(context).Plan();
+            new MapRoadPlanner(context).Plan();
+            new MapBankPlanner(context).Plan();
+            new MapBasePlanner(context).Plan();
+            new MapSettlementPlanner(context).Plan();
             return fixture;
         }
 
@@ -112,8 +112,8 @@ namespace HyperRTS.Editor.Tests
             var climate = MakeClimate();
             var shapes = new MapShapes(layout, Palette, climate);
             var heights = MapHeightShaper.Shape(layout, shapes);
-            var placer = MapPlacer.Place(layout, shapes, Palette, climate, issues);
-            Context = new MapPlanContext(layout, shapes, heights, Palette, climate, placer, issues);
+            var placements = MapPropPlacer.Place(layout, shapes, Palette, climate, issues);
+            Context = new MapPlanContext(layout, shapes, heights, Palette, climate, placements, issues);
         }
 
         private MapPalette MakePalette(Action<MapSettlementKit> edit)

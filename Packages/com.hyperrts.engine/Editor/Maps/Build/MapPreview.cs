@@ -22,9 +22,9 @@ namespace HyperRTS.Editor.Maps.Build
             {
                 var layout = generation.Layout;
                 report.land = MapLandFigures.Measure(generation.Land, layout.Bounds, generation.Trees.Count,
-                    generation.Placer.Placements);
+                    generation.Placements.All);
                 image = MapOverviewImage.DrawLand(layout, generation.Heights, generation.Land, project.Climate,
-                    generation.Shapes, generation.Placer.Placements, generation.Trees);
+                    generation.Shapes, generation.Placements.All, generation.Trees);
             }
 
             report.WritePreview(image);

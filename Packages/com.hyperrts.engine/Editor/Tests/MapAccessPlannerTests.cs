@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Tests
             {
                 key = "Shed", size = new Vector2(6f, 6f), pad = "Dirt", padMargin = 3f, access = access,
             };
-            context.Placer.Placements.Add(new MapPlacement(entry, Prop, 0f));
+            context.Placements.All.Add(new MapPlacement(entry, Prop, 0f));
             return context;
         }
 
@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Tests
             var issues = new MapIssues();
             var context = Context(issues, "Dirt", new[] { MainRoad(-60f) });
 
-            MapAccessPlanner.Plan(context);
+            new MapAccessPlanner(context).Plan();
 
             var tracks = context.Shapes.Roads.Where(r => r.Generated).ToList();
             Assert.AreEqual(2, tracks.Count, "one track, and its copy");
@@ -68,7 +68,7 @@ namespace HyperRTS.Editor.Tests
             var far = MapRoadFixture.Road("Dirt", new Vector2(-90f, -118f), new Vector2(-90f, -85f));
             var context = Context(issues, "Dirt", new[] { MainRoad(-60f), far }, Ravine(-80f, -5f, 60f));
 
-            MapAccessPlanner.Plan(context);
+            new MapAccessPlanner(context).Plan();
 
             var track = context.Shapes.Roads.First(r => r.Generated);
             Assert.AreEqual(-90f, track.Line.Points[^1].x, 1.5f, "the dirt road beyond the ravine");
@@ -81,7 +81,7 @@ namespace HyperRTS.Editor.Tests
             var issues = new MapIssues();
             var context = Context(issues, "Dirt", new[] { MainRoad(-60f) }, Ravine(-80f, -130f, 130f));
 
-            MapAccessPlanner.Plan(context);
+            new MapAccessPlanner(context).Plan();
 
             Assert.IsFalse(context.Shapes.Roads.Any(r => r.Generated));
             Assert.IsTrue(issues.Warnings.Any(w => w.Contains("Shed")), issues.ToString());
@@ -93,7 +93,7 @@ namespace HyperRTS.Editor.Tests
             var issues = new MapIssues();
             var context = Context(issues, "Dirt", new[] { MainRoad(-108f) });
 
-            MapAccessPlanner.Plan(context);
+            new MapAccessPlanner(context).Plan();
 
             Assert.IsFalse(context.Shapes.Roads.Any(r => r.Generated));
             Assert.IsEmpty(issues.Warnings);

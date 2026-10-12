@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
 
@@ -11,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
     /// and keeping the ones the settlement can hold, nearest the centre first. Everything is decided in the authored
     /// sector; land claims and neighbouring plots are checked later, as plots are accepted.
     /// </summary>
-    internal static class MapPlotFinder
+    internal sealed class MapPlotFinder
     {
         private const float Shortest = 0.5f;
 
@@ -19,31 +18,40 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         private const float SeamGap = 2f;
         private static readonly float[] Depths = { 1f, 0.8f, 0.65f, Shortest };
 
-        public static List<MapPlot> Find(MapPlanContext context, MapSettlementKit kit, IReadOnlyList<MapRoad> streets,
-            Vector2 center, float radius, int settlement, MapPlotRejections rejections)
+        private readonly MapSettlement _settlement;
+        private readonly MapPlanContext _context;
+        private readonly List<MapPlot> _found = new();
+
+        public MapPlotFinder(MapSettlement settlement)
         {
-            var found = new List<MapPlot>();
+            _settlement = settlement;
+            _context = settlement.Context;
+        }
+
+        public List<MapPlot> Find()
+        {
+            var streets = _settlement.Streets;
             for (var i = 0; i < streets.Count; i++)
             {
                 foreach (var side in new[] { 1f, -1f })
                 {
-                    var random = context.Random(MapRandomChannel.Plots, settlement * 1000 + i * 2 + (side > 0f ? 0 : 1));
-                    March(context, kit, streets[i], side, center, radius, random, found, rejections);
+                    var index = _settlement.Index * 1000 + i * 2 + (side > 0f ? 0 : 1);
+                    March(streets[i], side, _context.Random(MapRandomChannel.Plots, index));
                 }
             }
 
-            return found.OrderBy(p => (p.Center - center).sqrMagnitude).ToList();
+            return _found.OrderBy(p => (p.Center - _settlement.Center).sqrMagnitude).ToList();
         }
 
-        private static void March(MapPlanContext context, MapSettlementKit kit, MapRoad road, float side, Vector2 center,
-            float radius, System.Random random, List<MapPlot> found, MapPlotRejections rejections)
+        private void March(MapRoad road, float side, System.Random random)
         {
+            var kit = _settlement.Kit;
             var length = road.Line.Length;
             var along = 0f;
             while (along < length)
             {
-                var frontage = Mathf.Max(1f, kit.plot.x * Jitter(kit, random));
-                var depth = Mathf.Max(1f, kit.plot.y * Jitter(kit, random));
+                var frontage = Mathf.Max(1f, kit.plot.x * Jitter(random));
+                var depth = Mathf.Max(1f, kit.plot.y * Jitter(random));
                 if (along + frontage > length)
                 {
                     return;
@@ -53,19 +61,19 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 along += frontage;
                 var normal = MapGeometry.Left(direction) * side;
                 var front = middle + normal * (road.Width * 0.5f + kit.frontGap);
-                if ((front - center).magnitude > radius)
+                if (!_settlement.Reaches(front))
                 {
                     continue;
                 }
 
-                var (plot, reason) = Fit(context, front, direction, normal, frontage, depth);
+                var (plot, reason) = Fit(front, direction, normal, frontage, depth);
                 if (reason == null)
                 {
-                    found.Add(plot);
+                    _found.Add(plot);
                 }
                 else
                 {
-                    rejections.Add(reason, plot.Center);
+                    _settlement.Rejections.Add(reason, plot.Center);
                 }
             }
         }
@@ -75,15 +83,15 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         /// under it are clear, the way real plots stop at a stream, a ravine or a pad. The reason is the shortest try's
         /// when none fits.
         /// </summary>
-        private static (MapPlot Plot, string Reason) Fit(MapPlanContext context, Vector2 front, Vector2 direction,
-            Vector2 normal, float frontage, float depth)
+        private (MapPlot Plot, string Reason) Fit(Vector2 front, Vector2 direction, Vector2 normal, float frontage,
+            float depth)
         {
             MapPlot plot = null;
             string reason = null;
             foreach (var share in Depths)
             {
                 plot = new MapPlot(front, direction, normal, frontage, depth * share);
-                reason = Reject(context, plot) ?? MapPlotClaims.Blocked(context, plot);
+                reason = Reject(plot) ?? _settlement.Claims.Blocked(plot);
                 if (reason == null)
                 {
                     break;
@@ -93,59 +101,43 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             return (plot, reason);
         }
 
-        private static float Jitter(MapSettlementKit kit, System.Random random) =>
-            1f + kit.plotJitter * random.Signed();
+        private float Jitter(System.Random random) => 1f + _settlement.Kit.plotJitter * random.Signed();
 
         /// <summary>
         /// Why a plot can't be used whatever its neighbours do, or null. Only its street front must lie in the
         /// settlement's radius: gardens run back past the houses as far as the plot is deep.
         /// </summary>
-        private static string Reject(MapPlanContext context, MapPlot plot)
+        private string Reject(MapPlot plot)
         {
             var corners = plot.Corners();
-            var symmetry = context.Layout.Symmetry;
-            foreach (var corner in corners)
+            var symmetry = _context.Layout.Symmetry;
+            if (!corners.All(symmetry.InSector))
             {
-                if (!symmetry.InSector(corner))
-                {
-                    return "outside the authored sector";
-                }
+                return "outside the authored sector";
             }
 
-            foreach (var corner in corners)
+            if (corners.Any(corner => symmetry.SeamDistance(corner) < SeamGap))
             {
-                if (symmetry.SeamDistance(corner) < SeamGap)
-                {
-                    return "too close to the symmetry seam";
-                }
+                return "too close to the symmetry seam";
             }
 
-            foreach (var corner in corners)
-            {
-                var ground = Ground(context, corner);
-                if (ground != null)
-                {
-                    return ground;
-                }
-            }
-
-            return null;
+            return corners.Select(Ground).FirstOrDefault(ground => ground != null);
         }
 
-        private static string Ground(MapPlanContext context, Vector2 point)
+        private string Ground(Vector2 point)
         {
-            var clearance = context.Placer.Clearance;
+            var clearance = _context.Placements.Clearance;
             if (clearance.InBase(point, 0f))
             {
                 return "in a base";
             }
 
-            if (context.Shapes.RiverEdgeDistance(point) <= 2f)
+            if (_context.Shapes.RiverEdgeDistance(point) <= 2f)
             {
                 return "touching water";
             }
 
-            if (context.Shapes.InRavine(point))
+            if (_context.Shapes.InRavine(point))
             {
                 return "in a ravine";
             }

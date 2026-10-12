@@ -6,10 +6,11 @@ using HyperRTS.Editor.Maps.Symmetry;
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
     /// <summary>
-    /// A plot and the land: whether anything but open ground and road verge lies under it, and claiming its yard,
-    /// garden and back in every copy of the sector. Cells are decided from the authored-sector point, so copies match.
+    /// A settlement's plots and the land: whether anything but open ground and road verge lies under a plot, and
+    /// claiming its yard, garden and back in every copy of the sector. Cells are decided from the authored-sector point,
+    /// so copies match.
     /// </summary>
-    internal static class MapPlotClaims
+    internal sealed class MapPlotClaims
     {
         /// <summary>Plots may overlap a neighbour's edge by this much (metres) before it counts as overlap.</summary>
         private const float Inset = 0.6f;
@@ -21,20 +22,30 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             MapLandKind.Pad, MapLandKind.Road, MapLandKind.Yard, MapLandKind.Garden, MapLandKind.Back,
         };
 
-        /// <summary>Why the land under a plot is taken (the most telling use found), or null when it is free.</summary>
-        public static string Blocked(MapPlanContext context, MapPlot plot)
+        private readonly MapPlanContext _context;
+        private readonly MapSettlementKit _kit;
+
+        public MapPlotClaims(MapPlanContext context, MapSettlementKit kit)
         {
-            var land = context.Land;
+            _context = context;
+            _kit = kit;
+        }
+
+        private MapLand Land => _context.Land;
+
+        /// <summary>Why the land under a plot is taken (the most telling use found), or null when it is free.</summary>
+        public string Blocked(MapPlot plot)
+        {
             var worst = MapLandKind.Open;
             var worstRank = int.MaxValue;
-            land.ForEachIn(plot.Bounds(MapTransform.Identity), (x, z, center) =>
+            Land.ForEachIn(plot.Bounds(MapTransform.Identity), (x, z, center) =>
             {
                 if (!plot.Contains(center, Inset))
                 {
                     return;
                 }
 
-                var kind = land.Region(x, z)?.Kind ?? MapLandKind.Open;
+                var kind = Land.Region(x, z)?.Kind ?? MapLandKind.Open;
                 if (kind == MapLandKind.Open || kind == MapLandKind.Verge)
                 {
                     return;
@@ -52,25 +63,23 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         }
 
         /// <summary>Claims the plot's free cells for its yard, garden and back, in every copy.</summary>
-        public static void Claim(MapPlanContext context, MapPlot plot, MapSettlementKit kit, int seed)
+        public void Claim(MapPlot plot, int seed)
         {
-            var land = context.Land;
-            var yard = context.Region(MapLandKind.Yard, kit.yardSurface, seed);
-            var back = context.Region(MapLandKind.Back, kit.backSurface, seed);
-            foreach (var copy in context.Layout.Symmetry.Copies)
+            var yard = _context.Region(MapLandKind.Yard, _kit.yardSurface, seed);
+            var back = _context.Region(MapLandKind.Back, _kit.backSurface, seed);
+            foreach (var copy in _context.Layout.Symmetry.Copies)
             {
-                var garden = context.Region(MapLandKind.Garden, kit.gardenSurface, seed, copy.ApplyYaw(plot.RunYaw));
-                var transform = copy;
-                land.ForEachIn(plot.Bounds(copy), (x, z, center) =>
+                var garden = _context.Region(MapLandKind.Garden, _kit.gardenSurface, seed, copy.ApplyYaw(plot.RunYaw));
+                Land.ForEachIn(plot.Bounds(copy), (x, z, center) =>
                 {
-                    var sector = transform.ApplyInverse(center);
+                    var sector = copy.ApplyInverse(center);
                     if (!plot.Contains(sector))
                     {
                         return;
                     }
 
                     plot.Local(sector, out _, out var v);
-                    land.Claim(x, z, RegionOf(plot.ZoneAt(v), yard, garden, back));
+                    Land.Claim(x, z, RegionOf(plot.ZoneAt(v), yard, garden, back));
                 });
             }
         }
@@ -85,29 +94,15 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             return zone == MapPlotZone.Garden ? garden : back;
         }
 
-        private static string Describe(MapLandKind kind)
+        private static string Describe(MapLandKind kind) => kind switch
         {
-            switch (kind)
-            {
-                case MapLandKind.Water:
-                case MapLandKind.Bank:
-                    return "touching water";
-                case MapLandKind.Ravine:
-                case MapLandKind.RavineRim:
-                    return "in a ravine";
-                case MapLandKind.Base:
-                    return "in a base";
-                case MapLandKind.Pad:
-                    return "on a pad";
-                case MapLandKind.Road:
-                    return "on a road";
-                case MapLandKind.Yard:
-                case MapLandKind.Garden:
-                case MapLandKind.Back:
-                    return "overlapping another plot";
-                default:
-                    return $"on {kind} land";
-            }
-        }
+            MapLandKind.Water or MapLandKind.Bank => "touching water",
+            MapLandKind.Ravine or MapLandKind.RavineRim => "in a ravine",
+            MapLandKind.Base => "in a base",
+            MapLandKind.Pad => "on a pad",
+            MapLandKind.Road => "on a road",
+            MapLandKind.Yard or MapLandKind.Garden or MapLandKind.Back => "overlapping another plot",
+            _ => $"on {kind} land",
+        };
     }
 }

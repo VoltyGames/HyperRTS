@@ -1,7 +1,5 @@
-using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
-using HyperRTS.Editor.Maps.Land;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning.Settlements
@@ -11,54 +9,54 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
     /// to end on the right, a little off the road edge, wherever the verge is clear. Chosen in the authored sector
     /// and copied.
     /// </summary>
-    internal static class MapStreetFurniture
+    internal sealed class MapStreetFurniture
     {
         private const float EdgeOffset = 1.5f;
         private const float SpotClearance = 0.3f;
+        private readonly MapSettlement _settlement;
+        private readonly MapPlanContext _context;
 
-        public static void Place(MapPlanContext context, MapSettlementKit kit, MapSettlementEntries entries,
-            IReadOnlyList<MapRoad> streets, Vector2 center, float radius)
+        public MapStreetFurniture(MapSettlement settlement)
         {
-            foreach (var road in streets)
+            _settlement = settlement;
+            _context = settlement.Context;
+        }
+
+        public void Place()
+        {
+            var entries = _settlement.Entries;
+            foreach (var road in _settlement.Streets)
             {
                 if (entries.Pole != null)
                 {
-                    Poles(context, entries.Pole, kit.poleSpacing, road, center, radius);
+                    Poles(entries.Pole, _settlement.Kit.poleSpacing, road);
                 }
 
                 if (entries.Pipe != null)
                 {
-                    Pipes(context, entries.Pipe, road, center, radius);
+                    Pipes(entries.Pipe, road);
                 }
             }
         }
 
-        /// <summary>True on open ground or road verge, where roadside objects may stand.</summary>
-        public static bool OnVerge(MapPlanContext context, Vector2 point)
-        {
-            var kind = context.Land.KindAt(point);
-            return kind == MapLandKind.Open || kind == MapLandKind.Verge;
-        }
-
-        private static void Poles(MapPlanContext context, MapPaletteEntry pole, float spacing, MapRoad road,
-            Vector2 center, float radius)
+        private void Poles(MapPaletteEntry pole, float spacing, MapRoad road)
         {
             for (var along = spacing * 0.5f; along < road.Line.Length; along += spacing)
             {
                 var position = Beside(road, along, 1f, out var direction);
-                TryAdd(context, pole, position, direction, center, radius);
+                TryAdd(pole, position, direction);
             }
         }
 
-        private static void Pipes(MapPlanContext context, MapPaletteEntry pipe, MapRoad road, Vector2 center, float radius)
+        private void Pipes(MapPaletteEntry pipe, MapRoad road)
         {
-            var piece = MapPieceRun.Length(pipe);
-            for (var along = piece * 0.5f; along + piece * 0.5f <= road.Line.Length; along += piece)
+            var section = MapSections.Length(pipe);
+            for (var along = section * 0.5f; along + section * 0.5f <= road.Line.Length; along += section)
             {
                 var position = Beside(road, along, -1f, out var direction);
-                if (Clear(context, road, position, direction * (piece * 0.5f)))
+                if (Clear(road, position, direction * (section * 0.5f)))
                 {
-                    TryAdd(context, pipe, position, direction, center, radius);
+                    TryAdd(pipe, position, direction);
                 }
             }
         }
@@ -67,16 +65,16 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         /// A section stops short of a crossing road or a yard: both its ends stand on the verge, and neither end nor its
         /// middle lies on another road (at a junction the crossing road's surface can be the street's verge).
         /// </summary>
-        private static bool Clear(MapPlanContext context, MapRoad street, Vector2 middle, Vector2 half)
+        private bool Clear(MapRoad street, Vector2 middle, Vector2 half)
         {
-            if (!OnVerge(context, middle - half) || !OnVerge(context, middle + half))
+            if (!_settlement.OnVerge(middle - half) || !_settlement.OnVerge(middle + half))
             {
                 return false;
             }
 
             foreach (var point in new[] { middle - half, middle, middle + half })
             {
-                if (OnOtherRoad(context, street, point))
+                if (OnOtherRoad(street, point))
                 {
                     return false;
                 }
@@ -85,9 +83,9 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             return true;
         }
 
-        private static bool OnOtherRoad(MapPlanContext context, MapRoad street, Vector2 point)
+        private bool OnOtherRoad(MapRoad street, Vector2 point)
         {
-            foreach (var other in context.Shapes.Roads)
+            foreach (var other in _context.Shapes.Roads)
             {
                 if (other != street && other.Line.Distance(point) < other.Width * 0.5f + EdgeOffset)
                 {
@@ -105,28 +103,28 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             return point + MapGeometry.Left(direction) * (side * (road.Width * 0.5f + EdgeOffset));
         }
 
-        private static void TryAdd(MapPlanContext context, MapPaletteEntry entry, Vector2 position, Vector2 direction,
-            Vector2 center, float radius)
+        private void TryAdd(MapPaletteEntry entry, Vector2 position, Vector2 direction)
         {
-            if ((position - center).magnitude > radius)
+            if (!_settlement.Reaches(position))
             {
                 return;
             }
 
             var reach = entry.Radius;
-            var symmetry = context.Layout.Symmetry;
+            var symmetry = _context.Layout.Symmetry;
             if (!symmetry.InSector(position) || symmetry.SeamDistance(position) < reach)
             {
                 return;
             }
 
-            var clearance = context.Placer.Clearance;
-            if (!clearance.IsDry(position, reach) || !OnVerge(context, position) || !clearance.IsFree(position, SpotClearance))
+            var clearance = _context.Placements.Clearance;
+            var standing = clearance.IsDry(position, reach) && _settlement.OnVerge(position);
+            if (!standing || !clearance.IsFree(position, SpotClearance))
             {
                 return;
             }
 
-            context.Placer.AddEverywhere(entry, position, MapPieceRun.YawAlong(entry, direction), 1f);
+            _context.Placements.AddEverywhere(entry, position, MapSections.YawAlong(entry, direction), 1f);
         }
     }
 }

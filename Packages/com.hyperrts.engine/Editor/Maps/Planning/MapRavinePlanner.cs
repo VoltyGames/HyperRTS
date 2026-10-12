@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning
@@ -10,27 +12,30 @@ namespace HyperRTS.Editor.Maps.Planning
     /// Ravines (balkas): the steep cut and the grassy rim slope round it, and woods in patches on the floor and lower
     /// walls, as much of it as the spec's <c>wooded</c> share says — never filled to the brim.
     /// </summary>
-    public static class MapRavinePlanner
+    public sealed class MapRavinePlanner : MapLandPass
     {
         private const float WoodedReach = 0.75f;
         private const float PatchSize = 28f;
         private const float ThresholdStep = 2f;
 
-        public static void Plan(MapPlanContext context)
+        public MapRavinePlanner(MapPlanContext context) : base(context)
         {
-            if (context.Shapes.Ravines.Count == 0)
+        }
+
+        public override void Plan()
+        {
+            if (Context.Shapes.Ravines.Count == 0)
             {
                 return;
             }
 
-            var climate = context.Climate;
-            var cut = context.Region(MapLandKind.Ravine, climate.ravineSurface);
-            var rim = context.Region(MapLandKind.RavineRim, climate.ravineRimSurface);
-            foreach (var ravine in context.Shapes.Ravines)
+            var cut = Context.Region(MapLandKind.Ravine, Climate.ravineSurface);
+            var rim = Context.Region(MapLandKind.RavineRim, Climate.ravineRimSurface);
+            foreach (var ravine in Context.Shapes.Ravines)
             {
                 var half = ravine.Spec.width * 0.5f;
                 var outer = half + ravine.Spec.rim;
-                context.Land.ClaimEach(ravine.Line.Bounds, p =>
+                Land.ClaimEach(ravine.Line.Bounds, p =>
                 {
                     var distance = ravine.WallDistance(p);
                     if (distance < half)
@@ -42,7 +47,39 @@ namespace HyperRTS.Editor.Maps.Planning
                 });
             }
 
-            PlantWoods(context);
+            PlantWoods();
+        }
+
+        private void PlantWoods()
+        {
+            var surface = Climate.Surface(Climate.ravineSurface);
+            if (surface.trees.Count == 0)
+            {
+                return;
+            }
+
+            var patches = Context.Noise(MapNoiseChannel.RavineWoods);
+            foreach (var ravine in Context.Layout.Ravines.Where(r => r.Copy == 0 && r.Authored.wooded > 0f))
+            {
+                PlantWood(ravine.Authored, ravine.Index, surface, patches);
+            }
+        }
+
+        private void PlantWood(MapRavineSpec spec, int index, MapClimateSurface surface, MapNoise patches)
+        {
+            var line = new MapLine(MapGeometry.ToVectors(spec.points), spec.width, spec.width * 0.5f);
+            var floor = new MapRavine(line, spec, Context.Shapes.Wobble);
+            var reach = spec.width * 0.5f * WoodedReach;
+            var hectares = line.Length * reach * 2f * spec.wooded / 10000f;
+            var threshold = Threshold(line, patches, reach, spec.wooded);
+            var random = Context.Random(MapRandomChannel.RavineTrees, index);
+            Context.Trees.Scatter(surface.trees, hectares, surface.treeSpacing, random,
+                () => OnFloor(line, reach, random), p =>
+                {
+                    var inSector = Symmetry.InSector(p);
+                    var onFloor = floor.WallDistance(p) < reach;
+                    return inSector && onFloor && patches.Sample(p, PatchSize) > threshold;
+                });
         }
 
         /// <summary>
@@ -74,39 +111,6 @@ namespace HyperRTS.Editor.Maps.Planning
             var point = line.Path.PointAt(along, out var direction);
             var across = MapGeometry.Left(direction);
             return point + across * (reach * random.Signed());
-        }
-
-        private static void PlantWoods(MapPlanContext context)
-        {
-            var surface = context.Climate.Surface(context.Climate.ravineSurface);
-            if (surface.trees.Count == 0)
-            {
-                return;
-            }
-
-            var patches = context.Noise(MapNoiseChannel.RavineWoods);
-            foreach (var ravine in context.Layout.Ravines.Where(r => r.Copy == 0))
-            {
-                var spec = ravine.Authored;
-                if (spec.wooded <= 0f)
-                {
-                    continue;
-                }
-
-                var line = new MapLine(MapGeometry.ToVectors(spec.points), spec.width, spec.width * 0.5f);
-                var floor = new MapRavine(line, spec, context.Shapes.Wobble);
-                var reach = spec.width * 0.5f * WoodedReach;
-                var hectares = line.Length * reach * 2f * spec.wooded / 10000f;
-                var threshold = Threshold(line, patches, reach, spec.wooded);
-                var random = context.Random(MapRandomChannel.RavineTrees, ravine.Index);
-                MapTreeScatter.Scatter(context, surface.trees, hectares, surface.treeSpacing, random,
-                    () => OnFloor(line, reach, random), p =>
-                    {
-                        var inSector = context.Layout.Symmetry.InSector(p);
-                        var onFloor = floor.WallDistance(p) < reach;
-                        return inSector && onFloor && patches.Sample(p, PatchSize) > threshold;
-                    });
-            }
         }
     }
 }

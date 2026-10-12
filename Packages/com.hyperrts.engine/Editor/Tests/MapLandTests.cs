@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Tests
         public void Farmland_GrowsTheSameCropInEveryCopyOfAField()
         {
             var context = Context(MapSymmetry.Rotate180);
-            MapFarmlandPlanner.Plan(context);
+            new MapFarmlandPlanner(context).Plan();
 
             var land = context.Land;
             var rotation = context.Layout.Symmetry.Copies[1];
@@ -83,7 +83,7 @@ namespace HyperRTS.Editor.Tests
         public void Farmland_LeavesAWeedyMarginRoundEachField()
         {
             var context = Context(MapSymmetry.Rotate180);
-            MapFarmlandPlanner.Plan(context);
+            new MapFarmlandPlanner(context).Plan();
 
             var margins = 0;
             var fields = 0;
@@ -160,9 +160,9 @@ namespace HyperRTS.Editor.Tests
             var climate = Climate();
             var shapes = new MapShapes(layout, palette, climate);
             var heights = MapHeightShaper.Shape(layout, shapes);
-            var placer = MapPlacer.Place(layout, shapes, palette, climate, issues);
+            var placements = MapPropPlacer.Place(layout, shapes, palette, climate, issues);
             Assert.IsFalse(issues.HasErrors, issues.ToString());
-            return new MapPlanContext(layout, shapes, heights, palette, climate, placer, issues);
+            return new MapPlanContext(layout, shapes, heights, palette, climate, placements, issues);
         }
 
         private static MapClimate Climate()

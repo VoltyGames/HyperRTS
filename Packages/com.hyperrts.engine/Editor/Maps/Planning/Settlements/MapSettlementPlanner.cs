@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
-using HyperRTS.Editor.Maps.Spec;
 
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
@@ -11,71 +9,63 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
     /// the authored sector and placed and claimed in every copy. Runs after roads, banks, bases, pads and ravines and
     /// before woods, belts and farmland, so it takes only land they left free.
     /// </summary>
-    public static class MapSettlementPlanner
+    public sealed class MapSettlementPlanner : MapLandPass
     {
-
-        public static void Plan(MapPlanContext context)
+        public MapSettlementPlanner(MapPlanContext context) : base(context)
         {
-            foreach (var settlement in context.Layout.Settlements)
+        }
+
+        public override void Plan()
+        {
+            foreach (var settlement in Context.Layout.Settlements)
             {
-                if (settlement.Copy == 0)
+                if (settlement.Copy == 0 && settlement.Authored.count > 0)
                 {
-                    Plan(context, settlement.Authored, settlement.Index);
+                    Plan(new MapSettlement(Context, settlement.Authored, settlement.Index));
                 }
             }
         }
 
-        private static void Plan(MapPlanContext context, MapSettlementSpec spec, int index)
+        private void Plan(MapSettlement settlement)
         {
-            var label = $"Settlement {index + 1} ('{spec.kind}' at {spec.center})";
-            if (spec.count <= 0)
+            var spec = settlement.Spec;
+            if (settlement.Streets.Count == 0)
             {
+                Context.Issues.Warn($"{settlement.Label} fit 0 of {spec.count} plots: no road within {spec.radius:0.#} m.");
                 return;
             }
 
-            var kit = context.Palette.SettlementKit(spec.kind);
-            var entries = new MapSettlementEntries(context.Palette, context.Climate, kit);
-
-            var center = spec.center.ToVector2();
-            var streets = MapStreets.Near(context, center, spec.radius);
-            if (streets.Count == 0)
-            {
-                context.Issues.Warn($"{label} fit 0 of {spec.count} plots: no road within {spec.radius:0.#} m.");
-                return;
-            }
-
-            MapStreetFurniture.Place(context, kit, entries, streets, center, spec.radius);
-            var rejections = new MapPlotRejections();
-            var plots = MapPlotFinder.Find(context, kit, streets, center, spec.radius, index, rejections);
-            var built = Build(context, kit, entries, plots, spec.count, index, rejections);
+            new MapStreetFurniture(settlement).Place();
+            var plots = new MapPlotFinder(settlement).Find();
+            var built = Build(settlement, plots);
             if (built < spec.count)
             {
+                var rejections = settlement.Rejections;
                 var why = rejections.Total > 0 ? $"rejected {rejections}" : "no plot fits along the roads";
-                context.Issues.Warn($"{label} fit {built} of {spec.count} plots: {why}.");
+                Context.Issues.Warn($"{settlement.Label} fit {built} of {spec.count} plots: {why}.");
             }
         }
 
-        private static int Build(MapPlanContext context, MapSettlementKit kit, MapSettlementEntries entries,
-            List<MapPlot> plots, int count, int index, MapPlotRejections rejections)
+        private int Build(MapSettlement settlement, List<MapPlot> plots)
         {
-            var builder = new MapPlotBuilder(context, kit, entries, context.Random(MapRandomChannel.Settlements, index));
+            var builder = new MapPlotBuilder(settlement, Context.Random(MapRandomChannel.Settlements, settlement.Index));
             var built = 0;
             foreach (var plot in plots)
             {
-                if (built >= count)
+                if (built >= settlement.Spec.count)
                 {
                     break;
                 }
 
-                var seed = unchecked(context.Seed * 31 + index * 7919 + built * 104729);
-                var problem = TryBuild(context, builder, kit, plot, seed);
+                var seed = unchecked(Context.Seed * 31 + settlement.Index * 7919 + built * 104729);
+                var problem = TryBuild(settlement, builder, plot, seed);
                 if (problem == null)
                 {
                     built++;
                 }
                 else
                 {
-                    rejections.Add(problem, plot.Center);
+                    settlement.Rejections.Add(problem, plot.Center);
                 }
             }
 
@@ -83,10 +73,9 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         }
 
         /// <summary>Builds the plot if its land is free and its house fits; otherwise returns why not.</summary>
-        private static string TryBuild(MapPlanContext context, MapPlotBuilder builder, MapSettlementKit kit,
-            MapPlot plot, int seed)
+        private static string TryBuild(MapSettlement settlement, MapPlotBuilder builder, MapPlot plot, int seed)
         {
-            var blocked = MapPlotClaims.Blocked(context, plot);
+            var blocked = settlement.Claims.Blocked(plot);
             if (blocked != null)
             {
                 return blocked;
@@ -98,7 +87,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 return problem;
             }
 
-            MapPlotClaims.Claim(context, plot, kit, seed);
+            settlement.Claims.Claim(plot, seed);
             builder.Build(plot, house);
             return null;
         }

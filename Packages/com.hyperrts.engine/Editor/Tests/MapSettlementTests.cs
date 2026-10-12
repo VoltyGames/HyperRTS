@@ -138,7 +138,7 @@ namespace HyperRTS.Editor.Tests
             var claimed = KindsClaimed(context.Land, MapLandKind.Garden, MapLandKind.Back).ToList();
             CollectionAssert.Contains(claimed, MapLandKind.Garden);
             CollectionAssert.Contains(claimed, MapLandKind.Back);
-            var orchard = context.Trees.Where(t => t.Position.y <= 0f).ToList();
+            var orchard = context.Trees.Planted.Where(t => t.Position.y <= 0f).ToList();
             Assert.Greater(orchard.Count, 0, "the orchard is planted");
             Assert.IsTrue(orchard.All(t => context.Land.KindAt(t.Position) == MapLandKind.Back), "trees grow on the back land");
         }
@@ -155,7 +155,7 @@ namespace HyperRTS.Editor.Tests
             Assert.Greater(_fixture.InSector("Well").Count, 0, "a well with chance 1 is placed");
             foreach (var house in _fixture.Placements.Where(p => p.Entry.key == "House"))
             {
-                Assert.IsFalse(_fixture.Context.Placer.Clearance.IsFree(house.Position, 0.5f), "the house reserves its ground");
+                Assert.IsFalse(_fixture.Context.Placements.Clearance.IsFree(house.Position, 0.5f), "the house reserves its ground");
             }
         }
 
@@ -186,7 +186,7 @@ namespace HyperRTS.Editor.Tests
             Assert.IsFalse(_fixture.Context.Issues.HasErrors, _fixture.Context.Issues.ToString());
             Assert.AreEqual(6, _fixture.InSector("House").Count);
             Assert.AreEqual(_fixture.Placements.Count(p => p.Entry.key == "House"), _fixture.Placements.Count, "only houses");
-            Assert.AreEqual(0, _fixture.Context.Trees.Count);
+            Assert.AreEqual(0, _fixture.Context.Trees.Planted.Count);
         }
 
         private bool Warned(string text) => _fixture.Context.Issues.Warnings.Any(w => w.Contains(text));

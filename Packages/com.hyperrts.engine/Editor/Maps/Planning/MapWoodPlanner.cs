@@ -12,67 +12,70 @@ namespace HyperRTS.Editor.Maps.Planning
     /// Spec woods: forest floor under the canopy, a shrubby band round the edge and in glades, canopy trees inside
     /// and shrubs with young trees at the edge, so a wood fades into the open instead of stopping at a wall.
     /// </summary>
-    public static class MapWoodPlanner
+    public sealed class MapWoodPlanner : MapLandPass
     {
         private const float EdgeWobble = 2.5f;
         private const float ClearingWavelength = 35f;
+        private MapNoise _clearings;
 
-        public static void Plan(MapPlanContext context)
+        public MapWoodPlanner(MapPlanContext context) : base(context)
         {
-            var clearings = context.Noise(MapNoiseChannel.WoodClearings);
-            var wobble = context.Noise(MapNoiseChannel.WoodEdges);
-            foreach (var wood in context.Layout.Woods)
+        }
+
+        public override void Plan()
+        {
+            _clearings = Context.Noise(MapNoiseChannel.WoodClearings);
+            var edges = Context.Noise(MapNoiseChannel.WoodEdges);
+            foreach (var wood in Context.Layout.Woods)
             {
-                var kit = context.Climate.WoodlandKit(wood.Placed.kind);
-                Claim(context, wood, kit, clearings, wobble);
+                var kit = Climate.WoodlandKit(wood.Placed.kind);
+                Claim(wood, kit, edges);
                 if (wood.Copy == 0)
                 {
-                    Plant(context, wood, kit, clearings);
+                    Plant(wood, kit);
                 }
             }
         }
 
-        private static void Claim(MapPlanContext context, MapCopy<MapWoodSpec> wood, MapWoodlandKit kit,
-            MapNoise clearings, MapNoise wobble)
+        private void Claim(MapCopy<MapWoodSpec> wood, MapWoodlandKit kit, MapNoise edges)
         {
             var polygon = MapGeometry.ToVectors(wood.Placed.points);
-            var floor = context.Region(MapLandKind.Wood, kit.surface, wood.Index);
-            var edge = context.Region(MapLandKind.WoodEdge, kit.edgeSurface, wood.Index);
+            var floor = Context.Region(MapLandKind.Wood, kit.surface, wood.Index);
+            var edge = Context.Region(MapLandKind.WoodEdge, kit.edgeSurface, wood.Index);
             var threshold = Threshold(kit);
-            context.Land.ForEachIn(MapGeometry.Bounds(polygon), (x, z, p) =>
+            Land.ForEachIn(MapGeometry.Bounds(polygon), (x, z, p) =>
             {
-                var inside = MapGeometry.SignedDistance(polygon, p) + wobble.Sample(p, 10f) * EdgeWobble;
-                if (inside <= 0f || !context.Land.IsFree(x, z))
+                var inside = MapGeometry.SignedDistance(polygon, p) + edges.Sample(p, 10f) * EdgeWobble;
+                if (inside <= 0f || !Land.IsFree(x, z))
                 {
                     return;
                 }
 
-                var open = inside < kit.edgeWidth || clearings.Sample(p, ClearingWavelength) > threshold;
-                context.Land.Claim(x, z, open ? edge : floor);
+                var open = inside < kit.edgeWidth || _clearings.Sample(p, ClearingWavelength) > threshold;
+                Land.Claim(x, z, open ? edge : floor);
             });
         }
 
-        private static void Plant(MapPlanContext context, MapCopy<MapWoodSpec> wood, MapWoodlandKit kit,
-            MapNoise clearings)
+        private void Plant(MapCopy<MapWoodSpec> wood, MapWoodlandKit kit)
         {
             var polygon = MapGeometry.ToVectors(wood.Authored.points);
             var bounds = MapGeometry.Bounds(polygon);
             var area = MapGeometry.Area(polygon) / 10000f;
             var edgeArea = Perimeter(polygon) * kit.edgeWidth / 10000f;
             var threshold = Threshold(kit);
-            var random = context.Random(MapRandomChannel.WoodTrees, wood.Index);
-            MapTreeScatter.Scatter(context, kit.trees, Mathf.Max(0f, area - edgeArea) * (1f - kit.clearings),
-                kit.spacing, random, () => MapGeometry.RandomIn(bounds, random), p =>
-                {
-                    var depth = MapGeometry.SignedDistance(polygon, p);
-                    var canopy = depth > kit.edgeWidth * 0.5f && clearings.Sample(p, ClearingWavelength) <= threshold;
-                    return canopy && context.Layout.Symmetry.InSector(p);
-                });
-            MapTreeScatter.Scatter(context, kit.edgeTrees, edgeArea, kit.spacing * 0.6f, random,
+            var random = Context.Random(MapRandomChannel.WoodTrees, wood.Index);
+            Context.Trees.Scatter(kit.trees, Mathf.Max(0f, area - edgeArea) * (1f - kit.clearings), kit.spacing, random,
                 () => MapGeometry.RandomIn(bounds, random), p =>
                 {
                     var depth = MapGeometry.SignedDistance(polygon, p);
-                    return depth > 0f && depth < kit.edgeWidth && context.Layout.Symmetry.InSector(p);
+                    var canopy = depth > kit.edgeWidth * 0.5f && _clearings.Sample(p, ClearingWavelength) <= threshold;
+                    return canopy && Symmetry.InSector(p);
+                });
+            Context.Trees.Scatter(kit.edgeTrees, edgeArea, kit.spacing * 0.6f, random,
+                () => MapGeometry.RandomIn(bounds, random), p =>
+                {
+                    var depth = MapGeometry.SignedDistance(polygon, p);
+                    return depth > 0f && depth < kit.edgeWidth && Symmetry.InSector(p);
                 });
         }
 

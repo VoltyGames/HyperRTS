@@ -6,37 +6,34 @@ namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
     /// Spec lines of a climate tree (a row of poplars along a road, an avenue of oaks): one tree every spacing
-    /// metres with a little jitter. Prop lines (poles, fences) are the placer's.
+    /// metres with a little jitter. Prop lines (poles, fences) are the prop placer's.
     /// </summary>
-    public static class MapRowPlanter
+    public sealed class MapRowPlanter : MapLandPass
     {
-        public static void Plan(MapPlanContext context)
+        public MapRowPlanter(MapPlanContext context) : base(context)
         {
-            foreach (var line in context.Layout.Lines.Where(l => l.Copy == 0))
-            {
-                if (!context.Climate.HasTree(line.Authored.kind))
-                {
-                    continue;
-                }
+        }
 
-                var tree = context.Climate.TreeIndex(line.Authored.kind);
+        public override void Plan()
+        {
+            foreach (var line in Context.Layout.Lines.Where(l => l.Copy == 0 && Climate.HasTree(l.Authored.kind)))
+            {
+                var tree = Climate.TreeIndex(line.Authored.kind);
                 var points = MapGeometry.ToVectors(line.Authored.points);
                 var length = MapGeometry.Length(points);
                 var path = new MapPathWalker(points);
                 var step = Mathf.Max(2f, line.Authored.spacing);
-                var random = context.Random(MapRandomChannel.TreeRows, line.Index);
+                var random = Context.Random(MapRandomChannel.TreeRows, line.Index);
                 for (var along = step * 0.5f; along < length; along += step)
                 {
-                    var p = path.PointAt(along + Jitter(random, step * 0.2f), out var direction);
-                    p += MapGeometry.Right(direction) * Jitter(random, 0.6f);
-                    if (context.Layout.Symmetry.InSector(p) && context.Spacing.Fits(p, step * 0.5f))
+                    var p = path.PointAt(along + random.Signed() * (step * 0.2f), out var direction);
+                    p += MapGeometry.Right(direction) * (random.Signed() * 0.6f);
+                    if (Symmetry.InSector(p) && Context.Trees.Fits(p, step * 0.5f))
                     {
-                        context.PlantCopies(tree, p, context.TreeScale(tree, random), random.Yaw());
+                        Context.Trees.Plant(tree, p, random);
                     }
                 }
             }
         }
-
-        private static float Jitter(System.Random random, float amplitude) => random.Signed() * amplitude;
     }
 }

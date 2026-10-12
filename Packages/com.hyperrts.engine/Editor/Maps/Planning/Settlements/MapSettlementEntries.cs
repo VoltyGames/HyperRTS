@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             Pipe = Optional(palette, kit.streetPipe);
             Pole = Optional(palette, kit.streetPole);
             OrchardTree = string.IsNullOrEmpty(kit.orchardTree) ? -1 : climate.TreeIndex(kit.orchardTree);
-            Strip = OutbuildingStrip(kit, Outbuildings);
+            OutbuildingDepth = DeepestOutbuilding(kit, Outbuildings);
         }
 
         public List<MapPaletteEntry> Houses { get; }
@@ -41,12 +41,12 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         public int OrchardTree { get; }
 
         /// <summary>Extra yard behind the house that outbuildings stand in.</summary>
-        public float Strip { get; }
+        public float OutbuildingDepth { get; }
 
         private static MapPaletteEntry Optional(MapPalette palette, string key) =>
             string.IsNullOrEmpty(key) ? null : palette.Entry(key);
 
-        private static float OutbuildingStrip(MapSettlementKit kit, List<MapPaletteEntry> outbuildings)
+        private static float DeepestOutbuilding(MapSettlementKit kit, List<MapPaletteEntry> outbuildings)
         {
             if (kit.maxOutbuildings <= 0)
             {

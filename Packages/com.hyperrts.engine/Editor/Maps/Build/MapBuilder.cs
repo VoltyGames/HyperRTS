@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Maps.Build
             var (main, entities, root) = MapSceneWriter.Open(paths, layout, project);
             MapEnvironmentWriter.Write(paths, layout, generation.Shapes, data, ground, climate, entities, root);
             MapRoadMeshWriter.Write(paths, layout, generation.Shapes, generation.Heights, root);
-            MapPlacementWriter.Write(generation.Placer.Placements, generation.Heights, layout.GroundLevel, entities, root);
+            MapPlacementWriter.Write(generation.Placements.All, generation.Heights, layout.GroundLevel, entities, root);
             EditorSceneManager.SaveScene(main);
             MapLightingBaker.Bake(paths);
             var minimap = MapMinimapCapture.Capture(layout, paths.Minimap);
@@ -82,13 +82,13 @@ namespace HyperRTS.Editor.Maps.Build
             var origin = new Vector3(layout.TerrainBounds.xMin, -layout.GroundLevel, layout.TerrainBounds.yMin);
             var water = layout.Terrain.waterLevel - layout.GroundLevel;
             using var nav = MapNavGrid.Build(entities, data, origin, layout.Bounds, water, project.Rules);
-            var measurer = MapMeasurer.Measure(layout, nav, generation.Placer, generation.Trees.Count, project.Palette,
+            var measurer = MapMeasurer.Measure(layout, nav, generation.Placements, generation.Trees.Count, project.Palette,
                 project.Rules, issues);
-            MapHintWriter.Write(entities, layout, generation.Shapes, generation.Placer.Placements, nav, project.Palette,
+            MapHintWriter.Write(entities, layout, generation.Shapes, generation.Placements.All, nav, project.Palette,
                 project.Rules, issues);
             var report = MapReport.Create(spec, issues, measurer.Metrics);
             report.Write(MapOverviewImage.Draw(layout, generation.Heights, generation.Splat, project.Climate, nav,
-                generation.Shapes, generation.Placer.Placements, measurer.Paths));
+                generation.Shapes, generation.Placements.All, measurer.Paths));
             return report;
         }
 

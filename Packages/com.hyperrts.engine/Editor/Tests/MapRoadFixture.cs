@@ -72,9 +72,9 @@ namespace HyperRTS.Editor.Tests
             palette.baseRadius = 15f;
             var shapes = new MapShapes(layout, palette, climate);
             var heights = MapHeightShaper.Shape(layout, shapes);
-            var placer = MapPlacer.Place(layout, shapes, palette, climate, issues);
+            var placements = MapPropPlacer.Place(layout, shapes, palette, climate, issues);
             Assert.IsFalse(issues.HasErrors, issues.ToString());
-            return new MapPlanContext(layout, shapes, heights, palette, climate, placer, issues);
+            return new MapPlanContext(layout, shapes, heights, palette, climate, placements, issues);
         }
 
         public static MapRoad RoadShape(MapRoadClass roadClass, bool generated, params Vector2[] points) =>

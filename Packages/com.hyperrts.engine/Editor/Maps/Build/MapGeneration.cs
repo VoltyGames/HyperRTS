@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Maps.Build
         public MapLayout Layout { get; private set; }
         public MapShapes Shapes { get; private set; }
         public MapHeights Heights { get; private set; }
-        public MapPlacer Placer { get; private set; }
+        public MapPlacements Placements { get; private set; }
         public MapLand Land { get; private set; }
 
         /// <summary>Direction of the crop rows (degrees clockwise from north) the terrain material turns row layers to.</summary>
@@ -56,7 +56,7 @@ namespace HyperRTS.Editor.Maps.Build
             generation.Splat = MapSplatPainter.Paint(layout, generation.Land, generation.Heights, climate,
                 MapTerrainWriter.AlphamapResolution(layout));
             generation.Details = MapDetailPainter.Paint(layout, generation.Land, generation.Shapes, generation.Heights,
-                climate, generation.Placer.Clearance, MapTerrainWriter.DetailResolution(layout));
+                climate, generation.Placements.Clearance, MapTerrainWriter.DetailResolution(layout));
             generation.SplitTrees(climate);
             return generation;
         }
@@ -85,14 +85,14 @@ namespace HyperRTS.Editor.Maps.Build
             var generation = new MapGeneration { Layout = layout };
             generation.Shapes = new MapShapes(layout, project.Palette, climate);
             generation.Heights = MapHeightShaper.Shape(layout, generation.Shapes);
-            generation.Placer = MapPlacer.Place(layout, generation.Shapes, project.Palette, climate, issues);
+            generation.Placements = MapPropPlacer.Place(layout, generation.Shapes, project.Palette, climate, issues);
             var context = new MapPlanContext(layout, generation.Shapes, generation.Heights, project.Palette, climate,
-                generation.Placer, issues);
+                generation.Placements, issues);
             MapLandPlanner.Plan(context);
             MapRoadChecks.Check(layout, generation.Shapes, project.Palette.baseRadius, issues);
             generation.Land = context.Land;
             generation.RowAngle = context.RowAngle;
-            generation.Trees = context.Trees;
+            generation.Trees = context.Trees.Planted;
             return issues.HasErrors ? null : generation;
         }
 
@@ -104,7 +104,7 @@ namespace HyperRTS.Editor.Maps.Build
                 Heights.Flatten(spawn.Position, palette.baseRadius, BaseBlend);
             }
 
-            foreach (var placement in Placer.Placements)
+            foreach (var placement in Placements.All)
             {
                 if (placement.Entry.flatten && placement.Height == null)
                 {
@@ -139,7 +139,7 @@ namespace HyperRTS.Editor.Maps.Build
                     };
                 }
 
-                Placer.Placements.Add(new MapPlacement(entry, tree.Position, tree.Yaw) { Scale = tree.Scale });
+                Placements.All.Add(new MapPlacement(entry, tree.Position, tree.Yaw) { Scale = tree.Scale });
             }
         }
     }

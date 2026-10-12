@@ -39,18 +39,18 @@ namespace HyperRTS.Editor.Maps.Report
 
         public MapMetrics Metrics { get; } = new();
 
-        public static MapMeasurer Measure(MapLayout layout, MapNavGrid nav, MapPlacer placer, int trees,
+        public static MapMeasurer Measure(MapLayout layout, MapNavGrid nav, MapPlacements placements, int trees,
             MapPalette palette, MapRules rules, MapIssues issues)
         {
             var measurer = new MapMeasurer(layout, nav, palette, rules, issues);
             measurer.Metrics.trees = trees;
-            measurer.Metrics.placements = placer.Placements.Count;
+            measurer.Metrics.placements = placements.All.Count;
             if (measurer.FindSpawnCells())
             {
                 measurer.MeasureRushes();
                 measurer.CountPaths();
-                measurer.CheckReach(placer.Placements);
-                measurer.MeasureBases(placer.Placements);
+                measurer.CheckReach(placements.All);
+                measurer.MeasureBases(placements.All);
             }
 
             return measurer;

@@ -10,49 +10,49 @@ namespace HyperRTS.Editor.Maps.Planning
     /// concrete) under the props whose palette entry asks for one: a rectangle turned with the prop, its edge broken a
     /// little, the way a yard is laid out.
     /// </summary>
-    public static class MapBasePlanner
+    public sealed class MapBasePlanner : MapLandPass
     {
         /// <summary>How far a base's edge wanders in and out, as a share of its radius.</summary>
         private const float BaseWander = 0.18f;
         private const float BaseWavelength = 22f;
         private const float PadNoise = 0.8f;
 
-        public static void Plan(MapPlanContext context)
+        public MapBasePlanner(MapPlanContext context) : base(context)
         {
-            var noise = context.Noise(MapNoiseChannel.BaseEdges);
-            if (context.Layout.Spawns.Count > 0)
+        }
+
+        public override void Plan()
+        {
+            var noise = Context.Noise(MapNoiseChannel.BaseEdges);
+            var spawns = Context.Layout.Spawns;
+            if (spawns.Count > 0)
             {
-                var radius = context.Palette.baseRadius;
-                var ground = context.Region(MapLandKind.Base, context.Climate.baseSurface);
-                foreach (var spawn in context.Layout.Spawns)
+                var ground = Context.Region(MapLandKind.Base, Climate.baseSurface);
+                foreach (var spawn in spawns)
                 {
-                    Base(context, ground, spawn.Position, radius, noise);
+                    Base(ground, spawn.Position, Context.Palette.baseRadius, noise);
                 }
             }
 
-            foreach (var placement in context.Placer.Placements)
+            foreach (var placement in Context.Placements.All)
             {
                 var pad = placement.Entry.pad;
-                if (string.IsNullOrEmpty(pad))
+                if (!string.IsNullOrEmpty(pad))
                 {
-                    continue;
+                    Pad(Context.Region(MapLandKind.Pad, pad), placement, noise);
                 }
-
-                var region = context.Region(MapLandKind.Pad, pad);
-                Pad(context, region, placement, noise);
             }
         }
 
-        private static void Base(MapPlanContext context, int region, Vector2 center, float radius, MapNoise noise)
+        private void Base(int region, Vector2 center, float radius, MapNoise noise)
         {
             var wander = radius * BaseWander;
             var reach = radius + wander;
             var area = new Rect(center - Vector2.one * reach, Vector2.one * (reach * 2f));
-            context.Land.ClaimWhere(area, region,
-                p => (p - center).magnitude + noise.Sample(p, BaseWavelength) * wander < radius);
+            Land.ClaimWhere(area, region, p => (p - center).magnitude + noise.Sample(p, BaseWavelength) * wander < radius);
         }
 
-        private static void Pad(MapPlanContext context, int region, MapPlacement placement, MapNoise noise)
+        private void Pad(int region, MapPlacement placement, MapNoise noise)
         {
             var half = placement.Entry.size * 0.5f + Vector2.one * placement.Entry.padMargin;
             var forward = MapGeometry.Forward(placement.Yaw);
@@ -60,7 +60,7 @@ namespace HyperRTS.Editor.Maps.Planning
             var reach = half.magnitude + PadNoise;
             var center = placement.Position;
             var area = new Rect(center - Vector2.one * reach, Vector2.one * (reach * 2f));
-            context.Land.ClaimWhere(area, region, p =>
+            Land.ClaimWhere(area, region, p =>
             {
                 var offset = p - center;
                 var edge = noise.Sample(p, 6f) * PadNoise;
