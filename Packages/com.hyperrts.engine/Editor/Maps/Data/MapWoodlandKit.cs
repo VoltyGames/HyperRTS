@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Editor.Maps.Library;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,8 +7,9 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A kind of wood: canopy trees, a shrubby edge, clearings and the forest floor.</summary>
     [Serializable]
-    public sealed class MapWoodlandKit : IMapKeyed
+    public sealed class MapWoodlandKit : IMapKeyed, IMapLibraryItem
     {
+        [NonSerialized]
         public string key;
 
         [Tooltip("Forest floor.")]
@@ -32,5 +34,7 @@ namespace HyperRTS.Editor.Maps.Data
         public float clearings = 0.12f;
 
         string IMapKeyed.Key => key;
+
+        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;
     }
 }

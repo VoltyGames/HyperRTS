@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Editor.Maps.Library;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,8 +7,9 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A named ground type: the layer it paints, and the trees, plants and props that grow or lie on it.</summary>
     [Serializable]
-    public sealed class MapClimateSurface : IMapKeyed
+    public sealed class MapClimateSurface : IMapKeyed, IMapLibraryItem
     {
+        [NonSerialized]
         public string key;
 
         [Tooltip("Key of the terrain layer this surface paints.")]
@@ -24,5 +26,7 @@ namespace HyperRTS.Editor.Maps.Data
         public List<MapPropDensity> props = new();
 
         string IMapKeyed.Key => key;
+
+        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;
     }
 }

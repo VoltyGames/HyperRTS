@@ -155,7 +155,7 @@ namespace HyperRTS.Editor.Tests
             };
             var issues = new MapIssues();
             var layout = MapExpander.Expand(spec, issues);
-            var palette = ScriptableObject.CreateInstance<MapPalette>();
+            var palette = new MapPalette();
             palette.baseRadius = 15f;
             var climate = Climate();
             var shapes = new MapShapes(layout, palette, climate);
@@ -167,7 +167,7 @@ namespace HyperRTS.Editor.Tests
 
         private static MapClimate Climate()
         {
-            var climate = ScriptableObject.CreateInstance<MapClimate>();
+            var climate = new MapClimate();
             climate.name = "Test";
             foreach (var key in new[] { "Wheat", "Sunflower", "Plowed", "Margin", "Meadow" })
             {

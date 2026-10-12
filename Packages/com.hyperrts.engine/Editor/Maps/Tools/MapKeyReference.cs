@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Tools
 {
@@ -12,6 +13,13 @@ namespace HyperRTS.Editor.Maps.Tools
     /// </summary>
     public static class MapKeyReference
     {
+        /// <summary>Writes the keys of every climate in <paramref name="library"/> and of its palette.</summary>
+        public static void Write(string path, MapLibrary library)
+        {
+            var climates = library.Keys<MapClimate>().Select(key => library.Climate(key, null)).ToArray();
+            Write(path, library.Palette(), climates);
+        }
+
         public static void Write(string path, MapPalette palette, params MapClimate[] climates)
         {
             var text = new StringBuilder();

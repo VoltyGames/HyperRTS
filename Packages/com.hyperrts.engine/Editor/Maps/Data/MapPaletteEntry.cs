@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Resources;
@@ -8,9 +9,12 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>One placeable prefab.</summary>
     [Serializable]
-    public sealed class MapPaletteEntry : IMapKeyed
+    public sealed class MapPaletteEntry : IMapKeyed, IMapLibraryItem
     {
+        [NonSerialized]
         public string key;
+
+        [NonSerialized]
         public GameObject prefab;
 
         [Tooltip("Footprint (width across, depth along the prefab's forward) in metres; spacing and levelling use it.")]
@@ -48,5 +52,11 @@ namespace HyperRTS.Editor.Maps.Data
             || prefab.GetComponentInChildren<ResourceNodeAuthoring>(true) != null;
 
         string IMapKeyed.Key => key;
+
+        void IMapLibraryItem.Load(string key, MapLibraryRefs refs)
+        {
+            this.key = key;
+            prefab = refs.Asset<GameObject>(refs.prefab, "prefab");
+        }
     }
 }

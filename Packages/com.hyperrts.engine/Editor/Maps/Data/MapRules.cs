@@ -1,12 +1,20 @@
+using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Library;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
-    /// <summary>The thresholds a map is measured against and the match settings it is built with. One per project.</summary>
-    [CreateAssetMenu(menuName = "HyperRTS/Maps/Map Rules", fileName = "MapRules")]
-    public sealed class MapRules : ScriptableObject
+    /// <summary>
+    /// The thresholds a map is measured against and the match settings it is built with (the built scene's match
+    /// takes its nav cell size and max slope from here). Exactly one <c>*.rules.json</c> per project.
+    /// </summary>
+    [Serializable]
+    public sealed class MapRules : IMapLibraryItem
     {
+        [NonSerialized]
+        public string name;
+
         [Tooltip("Pathfinding cell size the built match uses (metres).")]
         public float navCellSize = 1f;
 
@@ -39,6 +47,8 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Vertical field of view of the match camera (degrees).")]
         public float viewFieldOfView = 45f;
 
-        public MapModeRules Mode(string mode) => MapKeys.Get(modes, mode, this, "mode");
+        public MapModeRules Mode(string mode) => MapKeys.Get(modes, mode, name, "mode");
+
+        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => name = key;
     }
 }

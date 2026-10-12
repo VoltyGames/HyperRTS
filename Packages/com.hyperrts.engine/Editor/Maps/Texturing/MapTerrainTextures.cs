@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Texturing
 {
     /// <summary>
     /// The texture arrays HyperRTS/Terrain samples for a climate's layers, kept in a Generated folder next to the
-    /// climate: albedo with the mask's height in alpha, normal maps, and occlusion (R) with smoothness (G). Each is
+    /// climate's library file and named after it: albedo with the mask's height in alpha, normal maps, and occlusion (R) with smoothness (G). Each is
     /// rebuilt only when its source textures or the layers change.
     /// </summary>
     public static class MapTerrainTextures
@@ -100,13 +100,12 @@ namespace HyperRTS.Editor.Maps.Texturing
 
         private static string GeneratedFolder(MapClimate climate)
         {
-            var path = AssetDatabase.GetAssetPath(climate);
-            if (string.IsNullOrEmpty(path))
+            if (string.IsNullOrEmpty(climate.file))
             {
-                throw new ArgumentException($"HyperRTS: climate '{climate.name}' must be saved as an asset first.");
+                throw new ArgumentException($"HyperRTS: climate '{climate.name}' must come from a map library file.");
             }
 
-            var parent = Path.GetDirectoryName(path)?.Replace('\\', '/');
+            var parent = Path.GetDirectoryName(climate.file)?.Replace('\\', '/');
             var folder = $"{parent}/Generated";
             if (!AssetDatabase.IsValidFolder(folder))
             {

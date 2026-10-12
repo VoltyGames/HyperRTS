@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Editor.Maps.Library;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,8 +10,9 @@ namespace HyperRTS.Editor.Maps.Data
     /// field ends and the dirt tracks beside them.
     /// </summary>
     [Serializable]
-    public sealed class MapFarmlandKit : IMapKeyed
+    public sealed class MapFarmlandKit : IMapKeyed, IMapLibraryItem
     {
+        [NonSerialized]
         public string key;
 
         [Tooltip("Field length along the rows (x) and width across them (y), in metres.")]
@@ -43,5 +45,7 @@ namespace HyperRTS.Editor.Maps.Data
         public List<MapCropShare> leftovers = new();
 
         string IMapKeyed.Key => key;
+
+        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;
     }
 }

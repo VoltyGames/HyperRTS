@@ -1,12 +1,14 @@
 using System;
+using HyperRTS.Editor.Maps.Library;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A kind of road spec roads and generated tracks name: its width, ground, mesh and verge.</summary>
     [Serializable]
-    public sealed class MapRoadClass : IMapKeyed
+    public sealed class MapRoadClass : IMapKeyed, IMapLibraryItem
     {
+        [NonSerialized]
         public string key;
 
         [Tooltip("Default width (metres); a spec road can override it.")]
@@ -16,6 +18,7 @@ namespace HyperRTS.Editor.Maps.Data
         public string surface;
 
         [Tooltip("Material of the road mesh laid over the terrain (HyperRTS/Road); empty paints the terrain only.")]
+        [NonSerialized]
         public Material material;
 
         [Tooltip("Metres of road per texture repeat along the mesh.")]
@@ -36,5 +39,11 @@ namespace HyperRTS.Editor.Maps.Data
         public float curve = 25f;
 
         string IMapKeyed.Key => key;
+
+        void IMapLibraryItem.Load(string key, MapLibraryRefs refs)
+        {
+            this.key = key;
+            material = refs.Asset<Material>(refs.material, "material");
+        }
     }
 }

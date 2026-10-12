@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
@@ -11,15 +10,15 @@ namespace HyperRTS.Editor.Maps.Data
     {
         public static bool Contains<T>(IReadOnlyList<T> items, string key) where T : IMapKeyed => Find(items, key) >= 0;
 
-        public static T Get<T>(IReadOnlyList<T> items, string key, Object owner, string what) where T : IMapKeyed =>
+        public static T Get<T>(IReadOnlyList<T> items, string key, string owner, string what) where T : IMapKeyed =>
             items[IndexOf(items, key, owner, what)];
 
-        public static int IndexOf<T>(IReadOnlyList<T> items, string key, Object owner, string what) where T : IMapKeyed
+        public static int IndexOf<T>(IReadOnlyList<T> items, string key, string owner, string what) where T : IMapKeyed
         {
             var index = Find(items, key);
             return index >= 0
                 ? index
-                : throw new KeyNotFoundException($"HyperRTS: '{owner.name}' has no {what} '{key}'; the map checks should have caught it.");
+                : throw new KeyNotFoundException($"HyperRTS: '{owner}' has no {what} '{key}'; the map checks should have caught it.");
         }
 
         private static int Find<T>(IReadOnlyList<T> items, string key) where T : IMapKeyed

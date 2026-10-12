@@ -118,7 +118,7 @@ namespace HyperRTS.Editor.Tests
 
         private MapPalette MakePalette(Action<MapSettlementKit> edit)
         {
-            var palette = Make<MapPalette>();
+            var palette = new MapPalette();
             palette.baseRadius = BaseRadius;
             palette.entries.Add(Entry("House", 10f, 8f));
             palette.entries.Add(Entry("Barn", 6f, 5f));
@@ -144,7 +144,7 @@ namespace HyperRTS.Editor.Tests
 
         private MapClimate MakeClimate()
         {
-            var climate = Make<MapClimate>();
+            var climate = new MapClimate();
             climate.name = "Test";
             foreach (var key in new[] { "Meadow", "Road", "Verge", "Yard", "Garden", "Orchard" })
             {
@@ -166,8 +166,6 @@ namespace HyperRTS.Editor.Tests
 
         private MapPaletteEntry Entry(string key, float width, float depth) =>
             new() { key = key, prefab = Make(new GameObject(key)), size = new Vector2(width, depth) };
-
-        private T Make<T>() where T : ScriptableObject => Make(ScriptableObject.CreateInstance<T>());
 
         private T Make<T>(T made) where T : Object
         {

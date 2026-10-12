@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Editor.Maps.Library;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,8 +11,9 @@ namespace HyperRTS.Editor.Maps.Data
     /// Building and fence keys are palette entries; surfaces and trees are climate keys.
     /// </summary>
     [Serializable]
-    public sealed class MapSettlementKit : IMapKeyed
+    public sealed class MapSettlementKit : IMapKeyed, IMapLibraryItem
     {
+        [NonSerialized]
         public string key;
 
         [Tooltip("Plot width along the street (x) and depth away from it (y), in metres.")]
@@ -68,5 +70,7 @@ namespace HyperRTS.Editor.Maps.Data
         public float poleSpacing = 35f;
 
         string IMapKeyed.Key => key;
+
+        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;
     }
 }

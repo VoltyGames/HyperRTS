@@ -34,7 +34,7 @@ namespace HyperRTS.Editor.Tests
         /// <summary>Asphalt (8 m, rank 2, 25 m curves) and Dirt (4 m, rank 0, 10 m curves) with their surfaces.</summary>
         public static MapClimate Climate()
         {
-            var climate = ScriptableObject.CreateInstance<MapClimate>();
+            var climate = new MapClimate();
             climate.name = "Test";
             foreach (var key in new[] { "Asphalt", "Dirt", "Verge", "Meadow" })
             {
@@ -63,12 +63,12 @@ namespace HyperRTS.Editor.Tests
         }
 
         public static MapShapes Shapes(MapLayout layout, MapClimate climate) =>
-            new(layout, ScriptableObject.CreateInstance<MapPalette>(), climate);
+            new(layout, new MapPalette(), climate);
 
         public static MapPlanContext Context(MapSpec spec, MapClimate climate, MapIssues issues)
         {
             var layout = Layout(spec);
-            var palette = ScriptableObject.CreateInstance<MapPalette>();
+            var palette = new MapPalette();
             palette.baseRadius = 15f;
             var shapes = new MapShapes(layout, palette, climate);
             var heights = MapHeightShaper.Shape(layout, shapes);
