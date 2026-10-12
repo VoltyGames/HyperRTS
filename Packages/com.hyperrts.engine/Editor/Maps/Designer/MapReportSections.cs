@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.Maps.Report;
 using UnityEngine.UIElements;
 
@@ -12,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>Errors then warnings; issues that name a feature get a Show button that calls <paramref name="show"/>.</summary>
         public static VisualElement Issues(MapReport report, Action<MapIssueFeature> show)
         {
-            var section = Section($"Issues ({report.errors.Count} errors, {report.warnings.Count} warnings)");
+            var section = HubSections.Section($"Issues ({report.errors.Count} errors, {report.warnings.Count} warnings)");
             AddIssues(section, report.errors, report.errorFeatures, HelpBoxMessageType.Error, show);
             AddIssues(section, report.warnings, report.warningFeatures, HelpBoxMessageType.Warning, show);
             if (report.errors.Count + report.warnings.Count == 0)
@@ -26,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>Land use shares and what stands on the land, from a preview or a build.</summary>
         public static VisualElement Land(MapLandFigures land)
         {
-            var section = Section("Land");
+            var section = HubSections.Section("Land");
             foreach (var share in land.shares)
             {
                 section.Add(Figure(share.kind, Percent(share.share)));
@@ -42,7 +43,7 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>What a build measured: rush times, attack paths and each base's buildable ground and resources.</summary>
         public static VisualElement Metrics(MapMetrics metrics)
         {
-            var section = Section("Metrics (last build)");
+            var section = HubSections.Section("Metrics (last build)");
             section.Add(Figure("Rush", $"{Seconds(metrics.minRush)} to {Seconds(metrics.maxRush)}"));
             section.Add(Figure("Attack paths", metrics.paths.ToString(CultureInfo.InvariantCulture)));
             section.Add(Figure("Path search", $"{metrics.maxExpansions:N0} cells"));
@@ -88,16 +89,6 @@ namespace HyperRTS.Editor.Maps.Designer
             }
 
             return row;
-        }
-
-        private static VisualElement Section(string title)
-        {
-            var section = new VisualElement();
-            section.AddToClassList("hrts-section");
-            var label = new Label(title);
-            label.AddToClassList("hrts-section__title");
-            section.Add(label);
-            return section;
         }
 
         private static VisualElement Figure(string name, string value)

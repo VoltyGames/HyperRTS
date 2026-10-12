@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Hub;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
 using UnityEditor;
@@ -23,20 +24,14 @@ namespace HyperRTS.Editor.Authoring
 
         protected override void BuildFooter(VisualElement root)
         {
-            var section = new VisualElement();
-            section.AddToClassList("hrts-section");
-            var title = new Label("Open scenes");
-            title.AddToClassList("hrts-section__title");
-            section.Add(title);
+            var section = HubSections.Section("Open scenes");
             _owners = new VisualElement();
             section.Add(_owners);
 
-            var buttons = new VisualElement();
-            buttons.AddToClassList("hrts-buttons");
-            buttons.Add(GridToggle("Nav Grid", _showNavGrid, value => _showNavGrid = value));
-            buttons.Add(GridToggle("Fog Grid", _showFogGrid, value => _showFogGrid = value));
-            buttons.Add(new Button(FrameMap) { text = "Frame Map" });
-            section.Add(buttons);
+            section.Add(HubSections.Buttons(
+                GridToggle("Nav Grid", _showNavGrid, value => _showNavGrid = value),
+                GridToggle("Fog Grid", _showFogGrid, value => _showFogGrid = value),
+                new Button(FrameMap) { text = "Frame Map" }));
             root.Add(section);
         }
 

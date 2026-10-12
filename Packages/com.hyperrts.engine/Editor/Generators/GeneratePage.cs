@@ -30,11 +30,7 @@ namespace HyperRTS.Editor.Generators
 
         private static VisualElement Section(string title, IGrouping<string, Generator> generators)
         {
-            var section = new VisualElement();
-            section.AddToClassList("hrts-section");
-            var heading = new Label(title);
-            heading.AddToClassList("hrts-section__title");
-            section.Add(heading);
+            var section = HubSections.Section(title);
             foreach (var generator in generators)
             {
                 section.Add(Row(generator));

@@ -51,21 +51,21 @@ namespace HyperRTS.Editor.PlayMode
 
         private VisualElement NetworkSection()
         {
-            var section = PlaySections.Section("Network");
+            var section = HubSections.Section("Network");
             _host = new Button(() => NetworkSession.StartHost()) { text = "Host" };
             _join = new Button(() => NetworkSession.StartClient("127.0.0.1")) { text = "Join Localhost" };
             _server = new Button(() => NetworkSession.StartServer()) { text = "Dedicated Server" };
             _stop = new Button(NetworkSession.Stop) { text = "Stop" };
-            section.Add(PlaySections.Buttons(_host, _join, _server, _stop));
+            section.Add(HubSections.Buttons(_host, _join, _server, _stop));
             return section;
         }
 
         private VisualElement ReplaySection()
         {
-            var section = PlaySections.Section("Replays");
+            var section = HubSections.Section("Replays");
             _save = new Button(ReplayPlayback.SaveRecording) { text = "Save Recording..." };
             _play = new Button(ReplayPlayback.PlayReplay) { text = "Play Replay..." };
-            section.Add(PlaySections.Buttons(_save, _play));
+            section.Add(HubSections.Buttons(_save, _play));
             return section;
         }
 

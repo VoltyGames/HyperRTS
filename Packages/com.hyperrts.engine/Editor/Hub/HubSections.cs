@@ -1,9 +1,9 @@
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.PlayMode
+namespace HyperRTS.Editor.Hub
 {
-    /// <summary>Shared layout for the Play page's sections: a titled block and rows of equal buttons.</summary>
-    internal static class PlaySections
+    /// <summary>Shared layout for Tools pages and inspectors: a titled section and rows of equal buttons.</summary>
+    internal static class HubSections
     {
         public static VisualElement Section(string title)
         {
@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.PlayMode
             return section;
         }
 
-        public static VisualElement Buttons(params Button[] buttons)
+        public static VisualElement Buttons(params VisualElement[] buttons)
         {
             var row = new VisualElement();
             row.AddToClassList("hrts-buttons");

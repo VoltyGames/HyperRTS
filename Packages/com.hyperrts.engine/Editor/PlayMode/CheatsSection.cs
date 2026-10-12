@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Hub;
 using HyperRTS.Network.Session;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
@@ -26,7 +27,7 @@ namespace HyperRTS.Editor.PlayMode
 
         public CheatsSection()
         {
-            Root = PlaySections.Section("Cheats");
+            Root = HubSections.Section("Cheats");
             _status = new HelpBox("", HelpBoxMessageType.Info);
             _status.AddToClassList("hrts-note");
             Root.Add(_status);
@@ -75,7 +76,7 @@ namespace HyperRTS.Editor.PlayMode
             {
                 text = "Instant build",
             };
-            parent.Add(PlaySections.Buttons(instantBuild, _control));
+            parent.Add(HubSections.Buttons(instantBuild, _control));
         }
 
         private void BuildWorldControls(VisualElement parent)
