@@ -49,6 +49,16 @@ namespace HyperRTS.Editor.Maps.Data
         /// <summary>A resource node. Looked up on the live prefab each time, so edits to it show on the next build.</summary>
         public bool IsResource => prefab.GetComponentInChildren<ResourceNodeAuthoring>() != null;
 
+        /// <summary>A resource node that regrows once tapped (its authoring has a regrowth rate above 0).</summary>
+        public bool IsRenewable
+        {
+            get
+            {
+                var node = prefab.GetComponentInChildren<ResourceNodeAuthoring>();
+                return node != null && node.regrowthPerSecond > 0f;
+            }
+        }
+
         /// <summary>Something players use (a building, unit or resource node), as opposed to scenery.</summary>
         public bool IsGameplay =>
             prefab.GetComponentInChildren<GameEntityAuthoring>(true) != null

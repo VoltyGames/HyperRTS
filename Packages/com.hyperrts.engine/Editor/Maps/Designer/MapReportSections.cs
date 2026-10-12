@@ -47,10 +47,12 @@ namespace HyperRTS.Editor.Maps.Designer
             section.Add(Figure("Rush", $"{Seconds(metrics.minRush)} to {Seconds(metrics.maxRush)}"));
             section.Add(Figure("Attack paths", metrics.paths.ToString(CultureInfo.InvariantCulture)));
             section.Add(Figure("Path search", $"{metrics.maxExpansions:N0} cells"));
+            section.Add(Figure("Renewable fields", $"{metrics.renewableFieldsPerPlayer:0.#} per player"));
             foreach (var spawn in metrics.spawns)
             {
                 var text = $"team {spawn.team}, rush {Seconds(spawn.rush)}, buildable {Percent(spawn.buildable)}, "
-                    + $"{spawn.fields} fields ({spawn.supply:N0})";
+                    + $"{spawn.finiteFields} finite fields ({spawn.finiteSupply:N0}), "
+                    + $"{spawn.renewableFields} renewable ({spawn.renewableSupply:N0})";
                 section.Add(Figure($"Slot {spawn.slot}", text));
             }
 

@@ -19,6 +19,10 @@ namespace HyperRTS.Editor.Maps.Data
         [Min(1)]
         public int minPaths = 3;
 
+        [Tooltip("Fewest renewable (regrowing) fields per player, counted over the whole map; stacks within 20 m of each other are one field.")]
+        [Min(0)]
+        public int minRenewableFields;
+
         string IMapKeyed.Key => mode;
     }
 }

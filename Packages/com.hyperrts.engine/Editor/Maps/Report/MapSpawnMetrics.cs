@@ -15,8 +15,12 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>Share of the base radius units can drive and build on.</summary>
         public float buildable;
 
-        /// <summary>Resource nodes within reach of the base and their total amount.</summary>
-        public int fields;
-        public int supply;
+        /// <summary>Finite resource nodes within reach of the base and their total amount.</summary>
+        public int finiteFields;
+        public int finiteSupply;
+
+        /// <summary>Regrowing resource nodes within reach of the base (an error: main and natural fields are finite).</summary>
+        public int renewableFields;
+        public int renewableSupply;
     }
 }

@@ -174,14 +174,40 @@ namespace HyperRTS.Editor.Maps.Report
                     _issues.Error($"Only {metrics.buildable:P0} of slot {spawn.Slot}'s base can be built on; the rules want {_rules.minBuildableShare:P0}.");
                 }
 
-                foreach (var node in placements.Where(p => (p.Position - spawn.Position).magnitude < radius * FieldReach))
+                var reach = radius * FieldReach;
+                foreach (var node in placements.Where(p => p.Entry.IsResource && (p.Position - spawn.Position).magnitude < reach))
                 {
-                    if (node.Entry.IsResource)
-                    {
-                        metrics.fields++;
-                        metrics.supply += node.Amount;
-                    }
+                    CountNode(spawn.Slot, metrics, node, reach);
                 }
+            }
+
+            CheckRenewableFields(placements);
+        }
+
+        private void CountNode(int slot, MapSpawnMetrics metrics, MapPlacement node, float reach)
+        {
+            if (!node.Entry.IsRenewable)
+            {
+                metrics.finiteFields++;
+                metrics.finiteSupply += node.Amount;
+                return;
+            }
+
+            metrics.renewableFields++;
+            metrics.renewableSupply += node.Amount;
+            _issues.Error($"Renewable '{node.Entry.key}' at {node.Position} is within {reach:0} m of slot {slot}'s base; main and natural fields must be finite.");
+        }
+
+        private void CheckRenewableFields(List<MapPlacement> placements)
+        {
+            var stacks = placements.Where(p => p.Entry.IsRenewable).Select(p => p.Position).ToList();
+            var fields = MapFieldClusters.Count(stacks, MapFieldClusters.Link);
+            var players = _layout.Spawns.Count;
+            Metrics.renewableFieldsPerPlayer = (float)fields / players;
+            var mode = _rules.Mode(_layout.Spec.mode);
+            if (fields < mode.minRenewableFields * players)
+            {
+                _issues.Error($"The map has {fields} renewable fields for {players} players ({Metrics.renewableFieldsPerPlayer:0.#} each); {_layout.Spec.mode} wants {mode.minRenewableFields} each.");
             }
         }
 

@@ -209,6 +209,11 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 - The nav grid (classified like `NavGridSystem`) gives rush times, attack paths (close a corridor along the shortest
   path, search again; the paths found before none remains are the count), reach, buildable ground and resources per
   base.
+- Resources within 2.5 base radii of a base count as its own, finite and renewable apart. A renewable node (its
+  `ResourceNodeAuthoring.regrowthPerSecond` is above 0; `MapPaletteEntry.IsRenewable`) there is an error: main and
+  natural fields run dry. Renewable stacks across the whole map are grouped into fields (`MapFieldClusters`: stacks
+  within 20 m of each other, directly or through a chain, are one field); fewer than the mode's
+  `minRenewableFields` × players is an error. The report stores the fields per player.
 - `MapHintWriter` computes bot hints from that grid and the layout (expansion order per slot, attack lanes between
   enemy slots, defence points) and bakes them as an `AIMapHintsAuthoring` object in the SubScene. The skirmish AI
   needs it to play the map.
@@ -246,7 +251,7 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 | `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, the pad surface and access road it gets | `prefab`; surface and road keys |
 | `climate` | `MapClimate` | Ground, slope, shore, floodplain and ravine surfaces, reeds, fog and draw distances | `surfaces`, `roadClasses`, `farmlandKits`, `beltKits`, `woodlandKits`, `water`, `atmosphere`, `skybox`; surface and plant keys |
 | `palette` | `MapPalette` | Start kit, base radius (exactly one per project) | `rig`, `startingResources`; prop keys |
-| `rules` | `MapRules` | Rush thresholds per mode, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |
+| `rules` | `MapRules` | Rush thresholds, attack paths and renewable fields per player per mode, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |
 
 "Names" lists the asset paths and key lists a file holds beside the item's own fields (the ref fields its
 `[MapLibraryItem]` attribute lists, written first in the file), then the kinds of key the item's own fields name.

@@ -17,6 +17,9 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>Most cells a base-to-base path search expanded.</summary>
         public int maxExpansions;
 
+        /// <summary>Renewable fields (clusters of regrowing stacks, see <see cref="MapFieldClusters"/>) per player.</summary>
+        public float renewableFieldsPerPlayer;
+
         public int trees;
         public int placements;
         public List<MapSpawnMetrics> spawns = new();
