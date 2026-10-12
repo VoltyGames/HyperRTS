@@ -14,7 +14,10 @@ namespace HyperRTS.Simulation.AI
 {
     public partial struct SkirmishAISystem
     {
-        /// <summary>Starts the first unmet step it can; true once every step is met (or there is no build order).</summary>
+        /// <summary>
+        /// Starts the first unmet step it can; true once every step is met or capped by its build limit (or there is
+        /// no build order).
+        /// </summary>
         private bool FollowBuildOrder(ref SystemState state, in Turn turn, in Snapshot snapshot)
         {
             if (!SystemAPI.HasBuffer<AIBuildStep>(turn.Player))
@@ -34,6 +37,12 @@ namespace HyperRTS.Simulation.AI
                 counts.TryGetValue(SystemAPI.GetComponent<EntityInfo>(step.Prefab).TypeId, out var owned);
                 var wanted = SystemAPI.HasComponent<Research>(step.Prefab) ? math.min(step.Count, 1) : step.Count;
                 if (owned >= wanted)
+                {
+                    continue;
+                }
+
+                // A build limit never lifts by waiting, unlike cost or prerequisites, so the step counts as met.
+                if (turn.Buyer.Counts.AtLimit(state.EntityManager, step.Prefab))
                 {
                     continue;
                 }

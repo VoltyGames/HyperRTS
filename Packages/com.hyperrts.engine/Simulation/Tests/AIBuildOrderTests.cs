@@ -124,5 +124,26 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(1, Owned("Barracks").Count, "too poor for the second barracks");
             Assert.AreEqual(1, Owned("Soldier").Count, "so it trained the affordable next step");
         }
+
+        [Test]
+        public void BuildOrder_SkipsStepAtItsBuildLimit_AndTrainsFreely()
+        {
+            SpawnBuilder(new float3(0f, 0f, -6f));
+            var existing = _world.SpawnBuilding(2, new float3(20f, 0f, 20f), new float2(4f, 4f), name: "Barracks");
+            _world.MakeProducer(existing, new float3(0f, 0f, -3f), _soldier);
+            foreach (var barracks in new[] { _barracks, existing })
+            {
+                var writer = new EntityManagerWriter(_world.EntityManager, barracks);
+                BuildLimitSetup.Add(ref writer, 1);
+            }
+
+            SetBuildOrder((_barracks, 2), (_soldier, 1));
+            _world.AddResources(2, _supplies, 1000);
+
+            _world.Run(6f);
+
+            Assert.AreEqual(1, Owned("Barracks").Count, "the limit holds");
+            Assert.Greater(Owned("Soldier").Count, 1, "the capped step counts as met, so the AI trains past the order");
+        }
     }
 }

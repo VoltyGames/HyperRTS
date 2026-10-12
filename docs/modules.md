@@ -411,7 +411,8 @@ Presentation's `MachineSystem` poses the parts from the clock, so parts of one m
 `SkirmishAISystem` drives each `AIPlayer` through `PlayerCommand`s only, and only on a map that carries
 `AIMapHints`. Each think:
 
-1. Start the first unmet build-order step it can afford.
+1. Start the first unmet build-order step it can afford. A step waiting on cost or prerequisites holds the order;
+   one at its build limit counts as met.
 2. Finish abandoned sites with idle builders; send idle harvesters to the first field of the slot's expansion order
    that still has resources.
 3. After the build order: train and research round-robin at idle producers.
