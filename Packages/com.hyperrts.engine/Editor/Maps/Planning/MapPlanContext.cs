@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
@@ -49,6 +48,12 @@ namespace HyperRTS.Editor.Maps.Planning
 
         public int Seed => Layout.Spec.seed;
 
+        /// <summary>The map's noise on one channel, symmetric across the sector copies.</summary>
+        public MapNoise Noise(MapNoiseChannel channel) => new(Layout.Symmetry, Seed, channel);
+
+        /// <summary>The random stream of one authored feature.</summary>
+        public System.Random Random(MapRandomChannel channel, int index) => MapRandom.Stream(Seed, channel, index);
+
         /// <summary>A new land region painting a climate surface.</summary>
         public int Region(MapLandKind kind, string surface, int seed = 0, float rowAngle = 0f) =>
             Land.Add(new MapLandRegion(kind, surface, seed, rowAngle));
@@ -68,24 +73,7 @@ namespace HyperRTS.Editor.Maps.Planning
         public float TreeScale(int tree, System.Random random)
         {
             var range = Climate.trees[tree].scale;
-            return Mathf.Lerp(range.x, range.y, (float)random.NextDouble());
-        }
-
-        /// <summary>Picks one entry of a weighted mix.</summary>
-        public static T Pick<T>(IReadOnlyList<T> items, System.Func<T, float> weight, System.Random random)
-        {
-            var total = items.Sum(weight);
-            var roll = (float)random.NextDouble() * total;
-            foreach (var item in items)
-            {
-                roll -= weight(item);
-                if (roll <= 0f)
-                {
-                    return item;
-                }
-            }
-
-            return items[items.Count - 1];
+            return random.Range(range.x, range.y);
         }
     }
 }

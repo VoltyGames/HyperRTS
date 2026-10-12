@@ -50,7 +50,7 @@ namespace HyperRTS.Editor.Maps.Meshes
                 var ahead = walker.PointAt(Mathf.Min(length, along + Step), out _);
                 var behind = walker.PointAt(Mathf.Max(0f, along - Step), out _);
                 var direction = (ahead - behind).normalized;
-                var left = new Vector2(-direction.y, direction.x) * half;
+                var left = MapGeometry.Left(direction) * half;
                 vertices.Add(new Vector3(point.x + left.x, height, point.y + left.y));
                 vertices.Add(new Vector3(point.x - left.x, height, point.y - left.y));
                 uvs.Add(new Vector2(-half, along));

@@ -42,11 +42,11 @@ namespace HyperRTS.Editor.Maps.Refine
             MapSymmetry symmetry)
         {
             var length = MapGeometry.Length(curve);
-            var start = MapGeometry.PointAlong(curve, length * Mathf.Lerp(0.2f, 0.8f, (float)random.NextDouble()), out var direction);
+            var start = MapGeometry.PointAlong(curve, length * random.Range(0.2f, 0.8f), out var direction);
             var side = random.NextDouble() < 0.5 ? -1f : 1f;
-            var angle = Mathf.Lerp(35f, 65f, (float)random.NextDouble()) * side;
+            var angle = random.Range(35f, 65f) * side;
             var heading = MapGeometry.Rotate(direction, angle);
-            var reach = Mathf.Max(MinBranch, length * Mathf.Lerp(0.3f, 0.55f, (float)random.NextDouble()));
+            var reach = Mathf.Max(MinBranch, length * random.Range(0.3f, 0.55f));
             var bend = MapGeometry.Rotate(heading, -angle * 0.35f);
             var middle = start + heading * (reach * 0.5f);
             var end = middle + bend * (reach * 0.5f);

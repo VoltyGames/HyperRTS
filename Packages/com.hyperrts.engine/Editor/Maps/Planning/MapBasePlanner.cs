@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Maps.Planning
 
         public static void Plan(MapPlanContext context)
         {
-            var noise = new MapNoise(context.Layout.Symmetry, context.Seed, 22);
+            var noise = context.Noise(MapNoiseChannel.BaseEdges);
             if (context.Layout.Spawns.Count > 0)
             {
                 var radius = context.Palette.baseRadius;
@@ -56,7 +56,7 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             var half = placement.Entry.size * 0.5f + Vector2.one * placement.Entry.padMargin;
             var forward = MapGeometry.Forward(placement.Yaw);
-            var right = new Vector2(forward.y, -forward.x);
+            var right = MapGeometry.Right(forward);
             var reach = half.magnitude + PadNoise;
             var center = placement.Position;
             var area = new Rect(center - Vector2.one * reach, Vector2.one * (reach * 2f));

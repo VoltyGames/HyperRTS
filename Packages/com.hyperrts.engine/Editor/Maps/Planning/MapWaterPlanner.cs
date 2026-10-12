@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Maps.Planning
             var climate = context.Climate;
             var bank = context.Region(MapLandKind.Bank, climate.shoreSurface);
             var floodplain = context.Region(MapLandKind.Floodplain, climate.floodplainSurface);
-            var noise = new MapNoise(context.Layout.Symmetry, context.Seed, 21);
+            var noise = context.Noise(MapNoiseChannel.Banks);
             foreach (var river in context.Shapes.Rivers)
             {
                 var valley = river.Spec.valleyWidth * 0.5f;

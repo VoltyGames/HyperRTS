@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             if (!_fields.TryGetValue(field, out var region))
             {
                 var seed = Seed(field, 0);
-                var crop = MapPlanContext.Pick(_kit.crops, c => c.weight, new System.Random(seed));
+                var crop = new System.Random(seed).Pick(_kit.crops, c => c.weight);
                 _fields[field] = region = _context.Region(MapLandKind.Field, crop.surface, seed, _angle);
             }
 
@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             if (!_leftovers.TryGetValue(field, out var region))
             {
                 var seed = Seed(field, LeftoverChannel);
-                var surface = MapPlanContext.Pick(_kit.leftovers, c => c.weight, new System.Random(seed)).surface;
+                var surface = new System.Random(seed).Pick(_kit.leftovers, c => c.weight).surface;
                 _leftovers[field] = region = _context.Region(MapLandKind.Margin, surface, seed);
             }
 

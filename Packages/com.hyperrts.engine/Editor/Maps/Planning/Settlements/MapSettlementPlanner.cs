@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
-using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Spec;
 
 namespace HyperRTS.Editor.Maps.Planning.Settlements
@@ -14,7 +13,6 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
     /// </summary>
     public static class MapSettlementPlanner
     {
-        private const int Channel = 32;
 
         public static void Plan(MapPlanContext context)
         {
@@ -60,7 +58,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         private static int Build(MapPlanContext context, MapSettlementKit kit, MapSettlementEntries entries,
             List<MapPlot> plots, int count, int index, MapPlotRejections rejections)
         {
-            var builder = new MapPlotBuilder(context, kit, entries, MapPlacer.Random(context.Seed, Channel, index));
+            var builder = new MapPlotBuilder(context, kit, entries, context.Random(MapRandomChannel.Settlements, index));
             var built = 0;
             foreach (var plot in plots)
             {

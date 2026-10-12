@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
-using HyperRTS.Editor.Maps.Placement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning.Settlements
@@ -14,7 +13,6 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
     /// </summary>
     internal static class MapPlotFinder
     {
-        private const int Channel = 33;
         private const float Shortest = 0.5f;
 
         // A plot's copy lies across the seam at the mirrored spot, so a small gap keeps the two apart.
@@ -29,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             {
                 foreach (var side in new[] { 1f, -1f })
                 {
-                    var random = MapPlacer.Random(context.Seed, Channel, settlement * 1000 + i * 2 + (side > 0f ? 0 : 1));
+                    var random = context.Random(MapRandomChannel.Plots, settlement * 1000 + i * 2 + (side > 0f ? 0 : 1));
                     March(context, kit, streets[i], side, center, radius, random, found, rejections);
                 }
             }
@@ -53,7 +51,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
 
                 var middle = road.Line.Path.PointAt(along + frontage * 0.5f, out var direction);
                 along += frontage;
-                var normal = MapStreets.Left(direction) * side;
+                var normal = MapGeometry.Left(direction) * side;
                 var front = middle + normal * (road.Width * 0.5f + kit.frontGap);
                 if ((front - center).magnitude > radius)
                 {
@@ -96,7 +94,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         }
 
         private static float Jitter(MapSettlementKit kit, System.Random random) =>
-            1f + kit.plotJitter * ((float)random.NextDouble() * 2f - 1f);
+            1f + kit.plotJitter * random.Signed();
 
         /// <summary>
         /// Why a plot can't be used whatever its neighbours do, or null. Only its street front must lie in the

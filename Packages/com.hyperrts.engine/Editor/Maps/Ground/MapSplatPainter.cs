@@ -34,8 +34,8 @@ namespace HyperRTS.Editor.Maps.Ground
             _land = land;
             _heights = heights;
             _climate = climate;
-            _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, 2);
-            _edges = new MapNoise(layout.Symmetry, layout.Spec.seed, 3);
+            _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SplatPatches);
+            _edges = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SplatEdges);
             _regionLayer = new int[land.Regions.Count];
             for (var i = 1; i < land.Regions.Count; i++)
             {

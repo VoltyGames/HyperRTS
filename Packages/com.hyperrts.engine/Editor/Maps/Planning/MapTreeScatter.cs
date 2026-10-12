@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Maps.Planning
                     continue;
                 }
 
-                context.PlantCopies(tree, point, context.TreeScale(tree, random), (float)random.NextDouble() * 360f);
+                context.PlantCopies(tree, point, context.TreeScale(tree, random), random.Yaw());
                 planted++;
             }
 

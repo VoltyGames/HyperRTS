@@ -24,19 +24,19 @@ namespace HyperRTS.Editor.Maps.Planning
                 var length = MapGeometry.Length(points);
                 var path = new MapPathWalker(points);
                 var step = Mathf.Max(2f, line.Authored.spacing);
-                var random = Placement.MapPlacer.Random(context.Seed, 11, line.Index);
+                var random = context.Random(MapRandomChannel.TreeRows, line.Index);
                 for (var along = step * 0.5f; along < length; along += step)
                 {
                     var p = path.PointAt(along + Jitter(random, step * 0.2f), out var direction);
-                    p += new Vector2(direction.y, -direction.x) * Jitter(random, 0.6f);
+                    p += MapGeometry.Right(direction) * Jitter(random, 0.6f);
                     if (context.Layout.Symmetry.InSector(p) && context.Spacing.Fits(p, step * 0.5f))
                     {
-                        context.PlantCopies(tree, p, context.TreeScale(tree, random), (float)random.NextDouble() * 360f);
+                        context.PlantCopies(tree, p, context.TreeScale(tree, random), random.Yaw());
                     }
                 }
             }
         }
 
-        private static float Jitter(System.Random random, float amplitude) => ((float)random.NextDouble() * 2f - 1f) * amplitude;
+        private static float Jitter(System.Random random, float amplitude) => random.Signed() * amplitude;
     }
 }

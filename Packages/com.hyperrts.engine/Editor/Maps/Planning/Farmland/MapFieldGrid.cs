@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         public MapFieldGrid(MapFarmlandKit kit, float angle)
         {
             Forward = MapGeometry.Forward(angle);
-            Right = new Vector2(Forward.y, -Forward.x);
+            Right = MapGeometry.Right(Forward);
             Length = Mathf.Max(20f, kit.fieldSize.x);
             Width = Mathf.Max(10f, kit.fieldSize.y);
         }

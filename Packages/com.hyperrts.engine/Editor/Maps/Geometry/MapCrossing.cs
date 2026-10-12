@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         public Vector2 Local(Vector2 point)
         {
             var offset = point - Position;
-            var along = new Vector2(Across.y, -Across.x);
+            var along = MapGeometry.Right(Across);
             return new Vector2(Vector2.Dot(offset, along), Vector2.Dot(offset, Across));
         }
     }

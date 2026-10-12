@@ -48,10 +48,6 @@ namespace HyperRTS.Editor.Maps.Placement
             return placer;
         }
 
-        /// <summary>A seeded random stream for one authored feature, the same on every build.</summary>
-        public static System.Random Random(int seed, int channel, int index) =>
-            new(unchecked(seed * 486187739 + channel * 7919 + index * 104729));
-
         /// <summary>Places an authored-space choice in every copy of the feature it belongs to.</summary>
         internal void AddCopies<T>(List<MapCopy<T>> copies, int index, MapPaletteEntry entry, Vector2 position,
             float yaw, float scale) where T : class
@@ -82,7 +78,7 @@ namespace HyperRTS.Editor.Maps.Placement
             foreach (var spawn in _layout.Spawns)
             {
                 var forward = MapGeometry.Forward(spawn.Yaw);
-                var right = new Vector2(forward.y, -forward.x);
+                var right = MapGeometry.Right(forward);
                 foreach (var item in _palette.startKit)
                 {
                     var entry = _palette.Entry(item.key);
@@ -97,7 +93,7 @@ namespace HyperRTS.Editor.Maps.Placement
             foreach (var resource in _layout.Resources)
             {
                 var entry = _palette.Entry(resource.Placed.kind);
-                var yaw = resource.Transform.ApplyYaw(Jitter(entry, 1, resource.Index));
+                var yaw = resource.Transform.ApplyYaw(Jitter(entry, MapRandomChannel.ResourceYaw, resource.Index));
                 Add(new MapPlacement(entry, resource.Placed.pos.ToVector2(), yaw) { Amount = resource.Placed.amount });
             }
         }
@@ -107,7 +103,7 @@ namespace HyperRTS.Editor.Maps.Placement
             foreach (var prop in _layout.Props)
             {
                 var entry = _palette.Entry(prop.Placed.kind);
-                var yaw = prop.Transform.ApplyYaw(prop.Authored.yaw + Jitter(entry, 2, prop.Index));
+                var yaw = prop.Transform.ApplyYaw(prop.Authored.yaw + Jitter(entry, MapRandomChannel.PropYaw, prop.Index));
                 Add(new MapPlacement(entry, prop.Placed.pos.ToVector2(), yaw));
             }
         }
@@ -145,7 +141,7 @@ namespace HyperRTS.Editor.Maps.Placement
                     var position = path.PointAt(along, out var direction);
                     if (Clearance.IsDry(position, entry.Radius))
                     {
-                        var yaw = MapGeometry.Yaw(direction) + Jitter(entry, 3, line.Index * 1000 + (int)along);
+                        var yaw = MapGeometry.Yaw(direction) + Jitter(entry, MapRandomChannel.LineYaw, line.Index * 1000 + (int)along);
                         AddCopies(_layout.Lines, line.Index, entry, position, yaw, 1f);
                     }
                 }
@@ -160,14 +156,14 @@ namespace HyperRTS.Editor.Maps.Placement
 
                 var polygon = MapGeometry.ToVectors(scatter.Authored.points);
                 var bounds = MapGeometry.Bounds(polygon);
-                var random = Random(_layout.Spec.seed, 4, scatter.Index);
+                var random = MapRandom.Stream(_layout.Spec.seed, MapRandomChannel.Scatters, scatter.Index);
                 var placed = 0;
                 for (var attempt = 0; attempt < scatter.Authored.count * ScatterAttempts && placed < scatter.Authored.count; attempt++)
                 {
                     var position = MapGeometry.RandomIn(bounds, random);
-                    var scale = Mathf.Lerp(entry.scale.x, entry.scale.y, (float)random.NextDouble());
+                    var scale = random.Range(entry.scale.x, entry.scale.y);
                     var radius = entry.Radius * scale;
-                    var yaw = (float)random.NextDouble() * 360f;
+                    var yaw = random.Yaw();
                     if (!MapGeometry.Contains(polygon, position) || !Clearance.IsOffRoad(position, radius)
                         || !Clearance.IsFree(position, radius))
                     {
@@ -185,15 +181,15 @@ namespace HyperRTS.Editor.Maps.Placement
             }
         }
 
-        private float Jitter(MapPaletteEntry entry, int channel, int index)
+        private float Jitter(MapPaletteEntry entry, MapRandomChannel channel, int index)
         {
             if (entry.yawJitter <= 0f)
             {
                 return 0f;
             }
 
-            var random = Random(_layout.Spec.seed, channel, index);
-            return ((float)random.NextDouble() * 2f - 1f) * entry.yawJitter;
+            var random = MapRandom.Stream(_layout.Spec.seed, channel, index);
+            return random.Signed() * entry.yawJitter;
         }
     }
 }

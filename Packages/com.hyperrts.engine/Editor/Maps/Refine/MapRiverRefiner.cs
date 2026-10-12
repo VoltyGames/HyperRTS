@@ -39,14 +39,14 @@ namespace HyperRTS.Editor.Maps.Refine
             }
 
             var random = new System.Random(unchecked(seed * 92821 + index * 68903));
-            var phase = (float)random.NextDouble() * 1000f;
+            var phase = random.Value() * 1000f;
             var meandered = new List<Vector2>(curve.Count);
             var along = 0f;
             for (var i = 0; i < curve.Count; i++)
             {
                 along += i > 0 ? (curve[i] - curve[i - 1]).magnitude : 0f;
                 var ahead = curve[Mathf.Min(i + 1, curve.Count - 1)] - curve[Mathf.Max(i - 1, 0)];
-                var normal = new Vector2(-ahead.y, ahead.x).normalized;
+                var normal = MapGeometry.Left(ahead).normalized;
                 var wave = Mathf.PerlinNoise(phase + along / MeanderWavelength, 0.37f) * 2f - 1f;
                 meandered.Add(curve[i] + normal * (wave * amplitude * Hold(along, holds)));
             }

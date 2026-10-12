@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Planning
 
         private static void Plant(MapPlanContext context, MapBeltKit kit, List<Vector2> line, List<Vector2> gaps, int seed)
         {
-            var random = Placement.MapPlacer.Random(context.Seed, 28, seed);
+            var random = context.Random(MapRandomChannel.BeltTrees, seed);
             var length = MapGeometry.Length(line);
             var path = new MapPathWalker(line);
             var rowGap = kit.rows > 1 ? (kit.width - 2f) / kit.rows : 0f;
@@ -63,7 +63,7 @@ namespace HyperRTS.Editor.Maps.Planning
             {
                 var offset = (row - (kit.rows - 1) * 0.5f) * rowGap;
                 var start = random.NextDouble() * kit.spacing;
-                for (var along = (float)start; along < length; along += kit.spacing * (1f + Jitter * ((float)random.NextDouble() - 0.5f)))
+                for (var along = (float)start; along < length; along += kit.spacing * (1f + Jitter * (random.Value() - 0.5f)))
                 {
                     if (!InGap(gaps, along))
                     {
@@ -77,10 +77,10 @@ namespace HyperRTS.Editor.Maps.Planning
             float offset, System.Random random)
         {
             var point = path.PointAt(along, out var direction);
-            var side = new Vector2(direction.y, -direction.x);
+            var side = MapGeometry.Right(direction);
             var shrub = !string.IsNullOrEmpty(kit.shrub) && random.NextDouble() < kit.shrubShare;
-            var key = shrub ? kit.shrub : MapPlanContext.Pick(kit.trees, t => t.weight, random).tree;
-            var jitter = ((float)random.NextDouble() - 0.5f) * 1.2f;
+            var key = shrub ? kit.shrub : random.Pick(kit.trees, t => t.weight).tree;
+            var jitter = (random.Value() - 0.5f) * 1.2f;
             var spot = point + side * (offset + jitter);
             if (!context.Layout.Symmetry.InSector(spot) || !context.Spacing.Fits(spot, MinSpacing))
             {
@@ -88,7 +88,7 @@ namespace HyperRTS.Editor.Maps.Planning
             }
 
             var tree = context.Climate.TreeIndex(key);
-            context.PlantCopies(tree, spot, context.TreeScale(tree, random), (float)random.NextDouble() * 360f);
+            context.PlantCopies(tree, spot, context.TreeScale(tree, random), random.Yaw());
         }
 
         /// <summary>Gap centres along the belt (x) and their half widths (y).</summary>
@@ -100,8 +100,8 @@ namespace HyperRTS.Editor.Maps.Planning
                 return gaps;
             }
 
-            var random = Placement.MapPlacer.Random(seed, 29, index);
-            for (var at = kit.gapEvery * (0.4f + 0.4f * (float)random.NextDouble()); at < length; at += kit.gapEvery * (0.7f + 0.6f * (float)random.NextDouble()))
+            var random = MapRandom.Stream(seed, MapRandomChannel.BeltGaps, index);
+            for (var at = kit.gapEvery * (0.4f + 0.4f * random.Value()); at < length; at += kit.gapEvery * (0.7f + 0.6f * random.Value()))
             {
                 gaps.Add(new Vector2(at, kit.gapWidth * 0.5f));
             }

@@ -56,7 +56,7 @@ namespace HyperRTS.Editor.Maps.Meshes
         private static void AddRow(MapRoadMesh mesh, Vector2 center, Vector2 forward, float width, int columns,
             float along, float alpha, MapHeights heights, float datum)
         {
-            var right = new Vector2(forward.y, -forward.x);
+            var right = MapGeometry.Right(forward);
             var fade = (byte)Mathf.RoundToInt(alpha * 255f);
             for (var c = 0; c < columns; c++)
             {

@@ -5,14 +5,14 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Geometry
 {
     /// <summary>A river in map space: its channel line and a width that swells and narrows along it.</summary>
-    public sealed class MapRiverShape
+    public sealed class MapRiver
     {
         private const float WidthWavelength = 70f;
         private const float PinReach = 30f;
         private readonly MapNoise _width;
         private readonly List<Vector2> _pins = new();
 
-        public MapRiverShape(MapLine line, MapRiverSpec spec, MapNoise width)
+        public MapRiver(MapLine line, MapRiverSpec spec, MapNoise width)
         {
             Line = line;
             Spec = spec;

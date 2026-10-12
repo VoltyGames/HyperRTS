@@ -32,7 +32,7 @@ namespace HyperRTS.Editor.Maps.Planning
             for (var attempt = 0; attempt < wanted * Attempts && placed < wanted; attempt++)
             {
                 var spot = MapSurfacePlanter.RandomSpot(context.Land, cells, random);
-                placed += TryPlace(context, entry, spot, (float)random.NextDouble() * 360f, random) ? 1 : 0;
+                placed += TryPlace(context, entry, spot, random.Yaw(), random) ? 1 : 0;
             }
         }
 
@@ -41,15 +41,15 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             var land = context.Land;
             var forward = MapGeometry.Forward(region.RowAngle);
-            var right = new Vector2(forward.y, -forward.x);
+            var right = MapGeometry.Right(forward);
             var bounds = Bounds(land, cells);
             var reach = bounds.size.magnitude * 0.5f;
             var center = bounds.center;
-            var phase = (float)random.NextDouble() * RowSpacing;
+            var phase = random.Value() * RowSpacing;
             var placed = 0;
             for (var across = -reach + phase; across < reach && placed < wanted; across += RowSpacing)
             {
-                for (var along = -reach + (float)random.NextDouble() * AlongSpacing; along < reach && placed < wanted; along += AlongSpacing)
+                for (var along = -reach + random.Value() * AlongSpacing; along < reach && placed < wanted; along += AlongSpacing)
                 {
                     var spot = center + right * across + forward * along + right * Jitter(random) + forward * Jitter(random);
                     var inRegion = land.At(spot) == region;
@@ -65,7 +65,7 @@ namespace HyperRTS.Editor.Maps.Planning
         private static bool TryPlace(MapPlanContext context, MapPaletteEntry entry, Vector2 spot, float yaw,
             System.Random random)
         {
-            var scale = Mathf.Lerp(entry.scale.x, entry.scale.y, (float)random.NextDouble());
+            var scale = random.Range(entry.scale.x, entry.scale.y);
             var radius = entry.Radius * scale;
             var clearance = context.Placer.Clearance;
             if (!clearance.IsOffRoad(spot, radius) || !clearance.IsFree(spot, radius))
@@ -96,6 +96,6 @@ namespace HyperRTS.Editor.Maps.Planning
             return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
         }
 
-        private static float Jitter(System.Random random) => ((float)random.NextDouble() * 2f - 1f) * RowJitter;
+        private static float Jitter(System.Random random) => random.Signed() * RowJitter;
     }
 }

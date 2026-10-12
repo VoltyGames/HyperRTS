@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 var region = context.Land.Regions[index];
                 var surface = context.Climate.Surface(region.Surface);
                 var hectares = list.Count * MapLand.CellSize * MapLand.CellSize / 10000f;
-                var random = Placement.MapPlacer.Random(context.Seed, 31, index);
+                var random = context.Random(MapRandomChannel.SurfaceGrowth, index);
                 if (surface.trees.Count > 0 && !PlantsItself(region.Kind))
                 {
                     MapTreeScatter.Scatter(context, surface.trees, hectares, surface.treeSpacing, random,
@@ -67,7 +67,7 @@ namespace HyperRTS.Editor.Maps.Planning
         public static Vector2 RandomSpot(MapLand land, List<int> cells, System.Random random)
         {
             var cell = cells[random.Next(cells.Count)];
-            var jitter = new Vector2((float)random.NextDouble() - 0.5f, (float)random.NextDouble() - 0.5f);
+            var jitter = new Vector2(random.Value() - 0.5f, random.Value() - 0.5f);
             return land.Center(cell % land.Width, cell / land.Width) + jitter * MapLand.CellSize;
         }
 

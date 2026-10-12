@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             var edge = MapLandDistance.ToRegionEdge(land.Width, land.Height, (x, z) => fields[z * land.Width + x]);
             var (sizes, reach) = MapFieldFragments.Measure(fields, edge, land.Width, land.Height);
             var regions = new MapFieldRegions(context, kit, index, angle);
-            var noise = new MapNoise(context.Layout.Symmetry, context.Seed, 30);
+            var noise = context.Noise(MapNoiseChannel.FieldMargins);
             var minCells = kit.minField / (MapLand.CellSize * MapLand.CellSize);
             land.ForEach((x, z, p) =>
             {

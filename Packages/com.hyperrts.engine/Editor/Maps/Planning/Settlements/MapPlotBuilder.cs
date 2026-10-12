@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             }
 
             var slack = (plot.Width - width) * 0.5f - 1f;
-            var u = ((float)_random.NextDouble() * 2f - 1f) * slack * 0.3f;
+            var u = _random.Signed() * slack * 0.3f;
             var position = plot.Point(u, _kit.frontYard + depth * 0.5f);
             if (!Clearance.IsFree(position, entry.Radius * scale))
             {
@@ -135,7 +135,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                     var back = v + Jitter01() * spacing * 0.25f;
                     var point = plot.Point(along, back);
                     var scale = _context.TreeScale(tree, _random);
-                    var yaw = (float)_random.NextDouble() * 360f;
+                    var yaw = _random.Yaw();
                     if (plot.Contains(point, 1f) && _context.Spacing.Fits(point, spacing * 0.4f))
                     {
                         _context.PlantCopies(tree, point, scale, yaw);
@@ -224,11 +224,11 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             _context.Placer.AddEverywhere(entry, position, yaw, scale);
 
         private float Scale(MapPaletteEntry entry) =>
-            Mathf.Lerp(entry.scale.x, entry.scale.y, (float)_random.NextDouble());
+            _random.Range(entry.scale.x, entry.scale.y);
 
         private float Jitter(MapPaletteEntry entry) => entry.yawJitter * Jitter01();
 
-        private float Jitter01() => (float)_random.NextDouble() * 2f - 1f;
+        private float Jitter01() => _random.Signed();
 
         /// <summary>A random value in a range; false when the range is empty.</summary>
         private bool Between(float min, float max, out float value)
@@ -239,7 +239,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 return false;
             }
 
-            value = Mathf.Lerp(min, max, (float)_random.NextDouble());
+            value = _random.Range(min, max);
             return true;
         }
     }

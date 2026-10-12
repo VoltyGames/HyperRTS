@@ -26,8 +26,8 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var terrain = layout.Terrain;
             var heights = new MapHeights(terrain.resolution, layout.TerrainBounds);
-            var relief = new MapNoise(layout.Symmetry, layout.Spec.seed, 0);
-            var wobble = new MapNoise(layout.Symmetry, layout.Spec.seed, MapRavineWall.WobbleChannel);
+            var relief = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.Relief);
+            var wobble = shapes.Wobble;
             for (var z = 0; z < heights.Resolution; z++)
             {
                 for (var x = 0; x < heights.Resolution; x++)
@@ -40,7 +40,7 @@ namespace HyperRTS.Editor.Maps.Ground
             }
 
             var open = heights.Copy();
-            CutRavines(heights, shapes, wobble, terrain.waterLevel);
+            CutRavines(heights, shapes, terrain.waterLevel);
             MapRoadLeveller.Level(heights, open, shapes, terrain.waterLevel);
             RaiseBridges(heights, shapes);
             return heights;
@@ -141,14 +141,15 @@ namespace HyperRTS.Editor.Maps.Ground
         /// Flat floor, steep walls and a gentle rim slope easing into them; ravines open out gently at their ends and
         /// never cut down to the water. Where branches meet the main cut the deeper cut wins.
         /// </summary>
-        private static void CutRavines(MapHeights heights, MapShapes shapes, MapNoise wobble, float water)
+        private static void CutRavines(MapHeights heights, MapShapes shapes, float water)
         {
             var open = heights.Copy();
-            foreach (var (line, spec) in shapes.Ravines)
+            foreach (var ravine in shapes.Ravines)
             {
+                var (line, spec) = (ravine.Line, ravine.Spec);
                 heights.ForEachIn(line.Bounds, (x, z, p) =>
                 {
-                    var distance = MapRavineWall.Distance(line, wobble, p, out var along);
+                    var distance = ravine.WallDistance(p, out var along);
                     var half = spec.width * 0.5f;
                     var outer = half + spec.rim;
                     if (distance >= outer)

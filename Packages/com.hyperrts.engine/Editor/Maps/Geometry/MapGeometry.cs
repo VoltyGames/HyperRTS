@@ -148,6 +148,12 @@ namespace HyperRTS.Editor.Maps.Geometry
             return new Vector2(Mathf.Sin(radians), Mathf.Cos(radians));
         }
 
+        /// <summary>A quarter turn counter-clockwise: the direction to the left when facing along it.</summary>
+        public static Vector2 Left(Vector2 direction) => new(-direction.y, direction.x);
+
+        /// <summary>A quarter turn clockwise: the direction to the right when facing along it.</summary>
+        public static Vector2 Right(Vector2 direction) => new(direction.y, -direction.x);
+
         /// <summary>A direction turned by <paramref name="degrees"/> (counter-clockwise on the XZ plane).</summary>
         public static Vector2 Rotate(Vector2 direction, float degrees)
         {
@@ -159,8 +165,8 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         /// <summary>A uniform random point in a rectangle (two draws from <paramref name="random"/>: x, then y).</summary>
         public static Vector2 RandomIn(Rect bounds, System.Random random) =>
-            new(Mathf.Lerp(bounds.xMin, bounds.xMax, (float)random.NextDouble()),
-                Mathf.Lerp(bounds.yMin, bounds.yMax, (float)random.NextDouble()));
+            new(random.Range(bounds.xMin, bounds.xMax),
+                random.Range(bounds.yMin, bounds.yMax));
 
         /// <summary>Smooth 0-to-1 ramp (Hermite), the falloff every terrain feature uses.</summary>
         public static float Smooth(float t)

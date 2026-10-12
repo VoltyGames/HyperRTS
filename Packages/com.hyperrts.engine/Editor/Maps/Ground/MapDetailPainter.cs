@@ -30,8 +30,8 @@ namespace HyperRTS.Editor.Maps.Ground
 
             var plants = Plants(land, climate);
             var reed = string.IsNullOrEmpty(climate.reedDetail) ? -1 : climate.DetailIndex(climate.reedDetail);
-            var clumps = new MapNoise(layout.Symmetry, layout.Spec.seed, 4);
-            var jitter = new MapNoise(layout.Symmetry, layout.Spec.seed, 5);
+            var clumps = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.PlantClumps);
+            var jitter = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.PlantJitter);
             var area = layout.TerrainBounds;
             var cell = area.size / resolution;
             var water = layout.Terrain.waterLevel;

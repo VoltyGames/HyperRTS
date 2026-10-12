@@ -14,11 +14,11 @@ namespace HyperRTS.Editor.Maps.Geometry
         private readonly Vector2 _offset;
         private readonly float _gain;
 
-        public MapNoise(MapSymmetry symmetry, int seed, int channel)
+        public MapNoise(MapSymmetry symmetry, int seed, MapNoiseChannel channel)
         {
             _symmetry = symmetry;
-            var random = new System.Random(seed * 7919 + channel * 104729);
-            _offset = new Vector2((float)random.NextDouble() * 10000f, (float)random.NextDouble() * 10000f);
+            var random = new System.Random(seed * 7919 + (int)channel * 104729);
+            _offset = new Vector2(random.Value() * 10000f, random.Value() * 10000f);
 
             // Averaging n uncorrelated copies shrinks the spread by sqrt(n); scale it back.
             _gain = Mathf.Sqrt(symmetry.Copies.Count);

@@ -26,14 +26,13 @@ namespace HyperRTS.Editor.Maps.Planning
             var climate = context.Climate;
             var cut = context.Region(MapLandKind.Ravine, climate.ravineSurface);
             var rim = context.Region(MapLandKind.RavineRim, climate.ravineRimSurface);
-            var wobble = new MapNoise(context.Layout.Symmetry, context.Seed, MapRavineWall.WobbleChannel);
-            foreach (var (line, spec) in context.Shapes.Ravines)
+            foreach (var ravine in context.Shapes.Ravines)
             {
-                var half = spec.width * 0.5f;
-                var outer = half + spec.rim;
-                context.Land.ClaimEach(line.Bounds, p =>
+                var half = ravine.Spec.width * 0.5f;
+                var outer = half + ravine.Spec.rim;
+                context.Land.ClaimEach(ravine.Line.Bounds, p =>
                 {
-                    var distance = MapRavineWall.Distance(line, wobble, p);
+                    var distance = ravine.WallDistance(p);
                     if (distance < half)
                     {
                         return cut;
@@ -43,7 +42,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 });
             }
 
-            PlantWoods(context, wobble);
+            PlantWoods(context);
         }
 
         /// <summary>
@@ -56,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Planning
             for (var along = 0f; along <= line.Length; along += ThresholdStep)
             {
                 var point = line.Path.PointAt(along, out var direction);
-                var across = new Vector2(-direction.y, direction.x);
+                var across = MapGeometry.Left(direction);
                 for (var side = -1f; side <= 1f; side += 0.5f)
                 {
                     samples.Add(patches.Sample(point + across * (reach * side), PatchSize));
@@ -71,13 +70,13 @@ namespace HyperRTS.Editor.Maps.Planning
         /// <summary>A random point on the ravine's floor and lower walls, up to <paramref name="reach"/> off its line.</summary>
         private static Vector2 OnFloor(MapLine line, float reach, System.Random random)
         {
-            var along = (float)random.NextDouble() * line.Length;
+            var along = random.Value() * line.Length;
             var point = line.Path.PointAt(along, out var direction);
-            var across = new Vector2(-direction.y, direction.x);
-            return point + across * (reach * ((float)random.NextDouble() * 2f - 1f));
+            var across = MapGeometry.Left(direction);
+            return point + across * (reach * random.Signed());
         }
 
-        private static void PlantWoods(MapPlanContext context, MapNoise wobble)
+        private static void PlantWoods(MapPlanContext context)
         {
             var surface = context.Climate.Surface(context.Climate.ravineSurface);
             if (surface.trees.Count == 0)
@@ -85,7 +84,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 return;
             }
 
-            var patches = new MapNoise(context.Layout.Symmetry, context.Seed, 23);
+            var patches = context.Noise(MapNoiseChannel.RavineWoods);
             foreach (var ravine in context.Layout.Ravines.Where(r => r.Copy == 0))
             {
                 var spec = ravine.Authored;
@@ -95,15 +94,16 @@ namespace HyperRTS.Editor.Maps.Planning
                 }
 
                 var line = new MapLine(MapGeometry.ToVectors(spec.points), spec.width, spec.width * 0.5f);
+                var floor = new MapRavine(line, spec, context.Shapes.Wobble);
                 var reach = spec.width * 0.5f * WoodedReach;
                 var hectares = line.Length * reach * 2f * spec.wooded / 10000f;
                 var threshold = Threshold(line, patches, reach, spec.wooded);
-                var random = Placement.MapPlacer.Random(context.Seed, 24, ravine.Index);
+                var random = context.Random(MapRandomChannel.RavineTrees, ravine.Index);
                 MapTreeScatter.Scatter(context, surface.trees, hectares, surface.treeSpacing, random,
                     () => OnFloor(line, reach, random), p =>
                     {
                         var inSector = context.Layout.Symmetry.InSector(p);
-                        var onFloor = MapRavineWall.Distance(line, wobble, p) < reach;
+                        var onFloor = floor.WallDistance(p) < reach;
                         return inSector && onFloor && patches.Sample(p, PatchSize) > threshold;
                     });
             }

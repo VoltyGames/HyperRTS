@@ -19,8 +19,8 @@ namespace HyperRTS.Editor.Maps.Planning
 
         public static void Plan(MapPlanContext context)
         {
-            var clearings = new MapNoise(context.Layout.Symmetry, context.Seed, 25);
-            var wobble = new MapNoise(context.Layout.Symmetry, context.Seed, 26);
+            var clearings = context.Noise(MapNoiseChannel.WoodClearings);
+            var wobble = context.Noise(MapNoiseChannel.WoodEdges);
             foreach (var wood in context.Layout.Woods)
             {
                 var kit = context.Climate.WoodlandKit(wood.Placed.kind);
@@ -60,7 +60,7 @@ namespace HyperRTS.Editor.Maps.Planning
             var area = MapGeometry.Area(polygon) / 10000f;
             var edgeArea = Perimeter(polygon) * kit.edgeWidth / 10000f;
             var threshold = Threshold(kit);
-            var random = Placement.MapPlacer.Random(context.Seed, 27, wood.Index);
+            var random = context.Random(MapRandomChannel.WoodTrees, wood.Index);
             MapTreeScatter.Scatter(context, kit.trees, Mathf.Max(0f, area - edgeArea) * (1f - kit.clearings),
                 kit.spacing, random, () => MapGeometry.RandomIn(bounds, random), p =>
                 {

@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var area = layout.TerrainBounds;
             var size = Mathf.NextPowerOfTwo(Mathf.CeilToInt(area.width * PixelsPerMetre));
-            var broad = new MapNoise(layout.Symmetry, layout.Spec.seed, 6);
+            var broad = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.MacroTint);
             var pixels = new Color[size * size];
             for (var y = 0; y < size; y++)
             {
@@ -47,8 +47,8 @@ namespace HyperRTS.Editor.Maps.Ground
             if (region != null && Varies(region.Kind))
             {
                 var random = new System.Random(region.Seed);
-                light += ((float)random.NextDouble() - 0.5f) * 0.09f;
-                warmth = ((float)random.NextDouble() - 0.5f) * 0.06f;
+                light += (random.Value() - 0.5f) * 0.09f;
+                warmth = (random.Value() - 0.5f) * 0.06f;
             }
 
             var wet = Wetness(region, shapes, p);

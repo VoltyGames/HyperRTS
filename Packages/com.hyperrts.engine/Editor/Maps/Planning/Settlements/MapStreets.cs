@@ -29,8 +29,5 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
 
             return streets;
         }
-
-        /// <summary>The direction to the left of a direction on the map plane.</summary>
-        public static Vector2 Left(Vector2 direction) => new(-direction.y, direction.x);
     }
 }

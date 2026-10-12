@@ -102,7 +102,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         private static Vector2 Beside(MapRoad road, float along, float side, out Vector2 direction)
         {
             var point = road.Line.Path.PointAt(along, out direction);
-            return point + MapStreets.Left(direction) * (side * (road.Width * 0.5f + EdgeOffset));
+            return point + MapGeometry.Left(direction) * (side * (road.Width * 0.5f + EdgeOffset));
         }
 
         private static void TryAdd(MapPlanContext context, MapPaletteEntry entry, Vector2 position, Vector2 direction,
