@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Maps.Layout
             var meandered = Meander(curve, river.meander, holds, seed, index);
             var refined = MapCurves.Smooth(meandered, 2);
             RemapCrossings(river, authored, refined);
-            river.points = refined.ConvertAll(p => new MapPoint(p.x, p.y));
+            river.points = MapGeometry.ToPoints(refined);
         }
 
         private static List<Vector2> Meander(List<Vector2> curve, float amplitude, List<float> holds, int seed, int index)

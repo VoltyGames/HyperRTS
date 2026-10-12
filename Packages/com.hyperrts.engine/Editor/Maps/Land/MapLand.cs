@@ -12,6 +12,10 @@ namespace HyperRTS.Editor.Maps.Land
     public sealed class MapLand
     {
         public const float CellSize = 1f;
+
+        /// <summary>The region index of a cell nothing has claimed.</summary>
+        public const int Unclaimed = 0;
+
         private readonly ushort[] _cells;
         private readonly List<MapLandRegion> _regions = new() { null };
 
@@ -83,6 +87,29 @@ namespace HyperRTS.Editor.Maps.Land
             ForEachIn(area, (x, z, center) =>
             {
                 if (IsFree(x, z) && inside(center) && Claim(x, z, region))
+                {
+                    claimed++;
+                }
+            });
+            return claimed;
+        }
+
+        /// <summary>
+        /// Claims every free cell in an area for the region the pick returns for its centre; <see cref="Unclaimed"/>
+        /// leaves the cell free. The pick runs only for cells that are still free, so one pass can lay nested bands.
+        /// </summary>
+        public int ClaimEach(Rect area, Func<Vector2, int> pick)
+        {
+            var claimed = 0;
+            ForEachIn(area, (x, z, center) =>
+            {
+                if (!IsFree(x, z))
+                {
+                    return;
+                }
+
+                var region = pick(center);
+                if (region != Unclaimed && Claim(x, z, region))
                 {
                     claimed++;
                 }

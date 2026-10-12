@@ -56,10 +56,5 @@ namespace HyperRTS.Editor.Maps.Planning
 
             return planted;
         }
-
-        /// <summary>A uniform random point in a rectangle.</summary>
-        public static Vector2 In(Rect bounds, System.Random random) =>
-            new(Mathf.Lerp(bounds.xMin, bounds.xMax, (float)random.NextDouble()),
-                Mathf.Lerp(bounds.yMin, bounds.yMax, (float)random.NextDouble()));
     }
 }

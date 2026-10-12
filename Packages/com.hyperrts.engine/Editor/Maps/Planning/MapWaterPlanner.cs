@@ -37,15 +37,18 @@ namespace HyperRTS.Editor.Maps.Planning
             foreach (var river in context.Shapes.Rivers)
             {
                 var valley = river.Spec.valleyWidth * 0.5f;
-                context.Land.ClaimWhere(river.Line.Bounds, bank, p =>
+                context.Land.ClaimEach(river.Line.Bounds, p =>
                 {
-                    var edge = river.EdgeDistance(p) + noise.Sample(p, 9f) * 1.5f;
-                    return edge < climate.shoreWidth;
-                });
-                context.Land.ClaimWhere(river.Line.Bounds, floodplain, p =>
-                {
+                    var edgeDistance = river.EdgeDistance(p);
+                    var edge = edgeDistance + noise.Sample(p, 9f) * 1.5f;
+                    if (edge < climate.shoreWidth)
+                    {
+                        return bank;
+                    }
+
                     var reach = climate.shoreWidth + climate.floodplainWidth * (1f + 0.4f * noise.Sample(p, 30f));
-                    return river.EdgeDistance(p) < reach && river.Line.Distance(p) < valley;
+                    var onFloodplain = edgeDistance < reach && river.Line.Distance(p) < valley;
+                    return onFloodplain ? floodplain : MapLand.Unclaimed;
                 });
             }
         }

@@ -73,6 +73,7 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             var random = Placement.MapPlacer.Random(context.Seed, 28, seed);
             var length = MapGeometry.Length(line);
+            var path = new MapPathWalker(line);
             var rowGap = kit.rows > 1 ? (kit.width - 2f) / kit.rows : 0f;
             for (var row = 0; row < kit.rows; row++)
             {
@@ -82,16 +83,16 @@ namespace HyperRTS.Editor.Maps.Planning
                 {
                     if (!InGap(gaps, along))
                     {
-                        PlantAt(context, kit, line, along, offset, random);
+                        PlantAt(context, kit, path, along, offset, random);
                     }
                 }
             }
         }
 
-        private static void PlantAt(MapPlanContext context, MapBeltKit kit, List<Vector2> line, float along,
+        private static void PlantAt(MapPlanContext context, MapBeltKit kit, MapPathWalker path, float along,
             float offset, System.Random random)
         {
-            var point = MapGeometry.PointAlong(line, along, out var direction);
+            var point = path.PointAt(along, out var direction);
             var side = new Vector2(direction.y, -direction.x);
             var shrub = !string.IsNullOrEmpty(kit.shrub) && random.NextDouble() < kit.shrubShare;
             var key = shrub ? kit.shrub : MapPlanContext.Pick(kit.trees, t => t.weight, random).tree;

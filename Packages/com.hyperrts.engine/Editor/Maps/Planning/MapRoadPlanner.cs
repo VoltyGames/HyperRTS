@@ -21,15 +21,24 @@ namespace HyperRTS.Editor.Maps.Planning
             var source = $"road class '{roadClass.key}'";
             var half = road.Width * 0.5f;
             var surface = context.Region(MapLandKind.Road, roadClass.surface, source);
-            context.Land.ClaimWhere(road.Line.Bounds, surface, p => road.Line.Distance(p) < half);
             if (roadClass.vergeWidth <= 0f)
             {
+                context.Land.ClaimWhere(road.Line.Bounds, surface, p => road.Line.Distance(p) < half);
                 return;
             }
 
             var verge = context.Region(MapLandKind.Verge, roadClass.vergeSurface, source);
             var reach = half + roadClass.vergeWidth;
-            context.Land.ClaimWhere(road.Line.Bounds, verge, p => road.Line.Distance(p) < reach);
+            context.Land.ClaimEach(road.Line.Bounds, p =>
+            {
+                var distance = road.Line.Distance(p);
+                if (distance < half)
+                {
+                    return surface;
+                }
+
+                return distance < reach ? verge : MapLand.Unclaimed;
+            });
         }
     }
 }

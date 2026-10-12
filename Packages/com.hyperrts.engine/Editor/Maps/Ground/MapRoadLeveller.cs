@@ -50,7 +50,7 @@ namespace HyperRTS.Editor.Maps.Ground
             var profile = new float[count];
             for (var i = 0; i < count; i++)
             {
-                profile[i] = open.Height(MapGeometry.PointAlong(road.Points, i * Step, out _));
+                profile[i] = open.Height(road.Path.PointAt(i * Step, out _));
             }
 
             for (var pass = 0; pass < SmoothingPasses; pass++)

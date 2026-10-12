@@ -14,7 +14,6 @@ namespace HyperRTS.Editor.Maps.Ground
         private const float BankLift = 0.6f;
         private const float BankDrop = 4f;
         private const float BankWobble = 1.2f;
-        private const float RavineWobble = 1.5f;
         private const float RavineFloor = 0.45f;
         private const float RimDrop = 0.12f;
         private const float SwellScale = 0.3f;
@@ -28,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Ground
             var terrain = layout.Terrain;
             var heights = new MapHeights(terrain.resolution, layout.TerrainBounds);
             var relief = new MapNoise(layout.Symmetry, layout.Spec.seed, 0);
-            var wobble = new MapNoise(layout.Symmetry, layout.Spec.seed, 1);
+            var wobble = new MapNoise(layout.Symmetry, layout.Spec.seed, MapRavineWall.WobbleChannel);
             for (var z = 0; z < heights.Resolution; z++)
             {
                 for (var x = 0; x < heights.Resolution; x++)
@@ -149,7 +148,7 @@ namespace HyperRTS.Editor.Maps.Ground
             {
                 heights.ForEachIn(line.Bounds, (x, z, p) =>
                 {
-                    var distance = line.Distance(p, out var along) + wobble.Sample(p, 15f) * RavineWobble;
+                    var distance = MapRavineWall.Distance(line, wobble, p, out var along);
                     var half = spec.width * 0.5f;
                     var outer = half + spec.rim;
                     if (distance >= outer)

@@ -12,6 +12,7 @@ namespace HyperRTS.Editor.Maps.Geometry
             Width = width;
             Bounds = MapGeometry.Bounds(points, reach);
             Length = MapGeometry.Length(points);
+            Path = new MapPathWalker(points);
         }
 
         public List<Vector2> Points { get; }
@@ -19,6 +20,9 @@ namespace HyperRTS.Editor.Maps.Geometry
         public float Width { get; }
 
         public float Length { get; }
+
+        /// <summary>The line measured once for repeated lookups of points along it.</summary>
+        public MapPathWalker Path { get; }
 
         /// <summary>The points' box grown by the line's reach: nothing outside it is affected by the line.</summary>
         public Rect Bounds { get; }

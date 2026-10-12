@@ -44,7 +44,7 @@ namespace HyperRTS.Editor.Maps.Layout
             MapRoadJoiner.Join(roads, symmetry, playable);
             foreach (var road in roads)
             {
-                road.Spec.points = road.Points.ConvertAll(p => new MapPoint(p.x, p.y));
+                road.Spec.points = MapGeometry.ToPoints(road.Points);
             }
         }
     }

@@ -88,12 +88,12 @@ namespace HyperRTS.Editor.Maps.Geometry
             return best;
         }
 
-        /// <summary>True inside a ravine's cut, where nothing is built.</summary>
-        public bool InRavine(Vector2 point)
+        /// <summary>True inside a ravine's cut, grown by <paramref name="margin"/> metres, where nothing is built.</summary>
+        public bool InRavine(Vector2 point, float margin = 0f)
         {
             foreach (var (line, _) in Ravines)
             {
-                if (line.Distance(point) < line.Width * 0.5f)
+                if (line.Distance(point) < line.Width * 0.5f + margin)
                 {
                     return true;
                 }

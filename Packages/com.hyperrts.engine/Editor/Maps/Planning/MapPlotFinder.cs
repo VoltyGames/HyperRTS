@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Maps.Planning
                     return;
                 }
 
-                var middle = MapGeometry.PointAlong(road.Line.Points, along + frontage * 0.5f, out var direction);
+                var middle = road.Line.Path.PointAt(along + frontage * 0.5f, out var direction);
                 along += frontage;
                 var normal = MapStreets.Left(direction) * side;
                 var front = middle + normal * (road.Width * 0.5f + kit.frontGap);

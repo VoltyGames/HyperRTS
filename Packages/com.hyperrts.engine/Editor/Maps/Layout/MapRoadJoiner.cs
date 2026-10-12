@@ -145,10 +145,7 @@ namespace HyperRTS.Editor.Maps.Layout
         {
             var along = Vector2.Dot(natural, tangent) >= 0f ? tangent : -tangent;
             var side = along.x * natural.y - along.y * natural.x >= 0f ? 1f : -1f;
-            var radians = side * ForcedApproach * Mathf.Deg2Rad;
-            var cos = Mathf.Cos(radians);
-            var sin = Mathf.Sin(radians);
-            return new Vector2(along.x * cos - along.y * sin, along.x * sin + along.y * cos);
+            return MapGeometry.Rotate(along, side * ForcedApproach);
         }
 
         /// <summary>Acute angle between two directions treated as lines (0 to 90°).</summary>

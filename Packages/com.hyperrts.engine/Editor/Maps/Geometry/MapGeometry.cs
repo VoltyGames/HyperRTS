@@ -9,6 +9,8 @@ namespace HyperRTS.Editor.Maps.Geometry
     {
         public static List<Vector2> ToVectors(List<MapPoint> points) => points.ConvertAll(p => p.ToVector2());
 
+        public static List<MapPoint> ToPoints(List<Vector2> points) => points.ConvertAll(p => new MapPoint(p.x, p.y));
+
         /// <summary>Distance from a point to a polyline, with the closest point's distance along the line from its start.</summary>
         public static float DistanceToPolyline(IReadOnlyList<Vector2> line, Vector2 point, out float along)
         {
@@ -48,30 +50,12 @@ namespace HyperRTS.Editor.Maps.Geometry
             return length;
         }
 
-        /// <summary>The point <paramref name="distance"/> metres along a polyline and the line's direction there.</summary>
-        public static Vector2 PointAlong(IReadOnlyList<Vector2> line, float distance, out Vector2 direction)
-        {
-            direction = Vector2.up;
-            for (var i = 0; i + 1 < line.Count; i++)
-            {
-                var segment = line[i + 1] - line[i];
-                var length = segment.magnitude;
-                if (length <= 0f)
-                {
-                    continue;
-                }
-
-                direction = segment / length;
-                if (distance <= length || i + 2 == line.Count)
-                {
-                    return line[i] + direction * Mathf.Min(distance, length);
-                }
-
-                distance -= length;
-            }
-
-            return line[line.Count - 1];
-        }
+        /// <summary>
+        /// The point <paramref name="distance"/> metres along a polyline and the line's direction there. Loops that ask
+        /// for many points on one line should build a <see cref="MapPathWalker"/> once instead.
+        /// </summary>
+        public static Vector2 PointAlong(IReadOnlyList<Vector2> line, float distance, out Vector2 direction) =>
+            new MapPathWalker(line).PointAt(distance, out direction);
 
         public static bool Contains(IReadOnlyList<Vector2> polygon, Vector2 point)
         {
@@ -163,6 +147,20 @@ namespace HyperRTS.Editor.Maps.Geometry
             var radians = yaw * Mathf.Deg2Rad;
             return new Vector2(Mathf.Sin(radians), Mathf.Cos(radians));
         }
+
+        /// <summary>A direction turned by <paramref name="degrees"/> (counter-clockwise on the XZ plane).</summary>
+        public static Vector2 Rotate(Vector2 direction, float degrees)
+        {
+            var radians = degrees * Mathf.Deg2Rad;
+            var cos = Mathf.Cos(radians);
+            var sin = Mathf.Sin(radians);
+            return new Vector2(direction.x * cos - direction.y * sin, direction.x * sin + direction.y * cos);
+        }
+
+        /// <summary>A uniform random point in a rectangle (two draws from <paramref name="random"/>: x, then y).</summary>
+        public static Vector2 RandomIn(Rect bounds, System.Random random) =>
+            new(Mathf.Lerp(bounds.xMin, bounds.xMax, (float)random.NextDouble()),
+                Mathf.Lerp(bounds.yMin, bounds.yMax, (float)random.NextDouble()));
 
         /// <summary>Smooth 0-to-1 ramp (Hermite), the falloff every terrain feature uses.</summary>
         public static float Smooth(float t)

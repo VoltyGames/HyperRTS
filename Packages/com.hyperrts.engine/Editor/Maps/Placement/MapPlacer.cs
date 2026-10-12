@@ -180,10 +180,11 @@ namespace HyperRTS.Editor.Maps.Placement
 
                 var points = MapGeometry.ToVectors(line.Authored.points);
                 var length = MapGeometry.Length(points);
+                var path = new MapPathWalker(points);
                 var step = Mathf.Max(1f, line.Authored.spacing);
                 for (var along = step * 0.5f; along < length; along += step)
                 {
-                    var position = MapGeometry.PointAlong(points, along, out var direction);
+                    var position = path.PointAt(along, out var direction);
                     if (Clearance.IsDry(position, entry.Radius))
                     {
                         var yaw = MapGeometry.Yaw(direction) + Jitter(entry, 3, line.Index * 1000 + (int)along);
@@ -209,8 +210,7 @@ namespace HyperRTS.Editor.Maps.Placement
                 var placed = 0;
                 for (var attempt = 0; attempt < scatter.Authored.count * ScatterAttempts && placed < scatter.Authored.count; attempt++)
                 {
-                    var position = new Vector2(Mathf.Lerp(bounds.xMin, bounds.xMax, (float)random.NextDouble()),
-                        Mathf.Lerp(bounds.yMin, bounds.yMax, (float)random.NextDouble()));
+                    var position = MapGeometry.RandomIn(bounds, random);
                     var scale = Mathf.Lerp(entry.scale.x, entry.scale.y, (float)random.NextDouble());
                     var radius = entry.Radius * scale;
                     var yaw = (float)random.NextDouble() * 360f;

@@ -12,10 +12,6 @@ namespace HyperRTS.Editor.Maps.Planning
     /// </summary>
     public static class MapRavinePlanner
     {
-        /// <summary>The height shaper's wall wobble, so land use follows the carved shape.</summary>
-        private const float Wobble = 1.5f;
-
-        private const int WobbleChannel = 1;
         private const float WoodedReach = 0.75f;
         private const float PatchSize = 28f;
         private const float ThresholdStep = 2f;
@@ -30,19 +26,25 @@ namespace HyperRTS.Editor.Maps.Planning
             var climate = context.Climate;
             var cut = context.Region(MapLandKind.Ravine, climate.ravineSurface, "ravine");
             var rim = context.Region(MapLandKind.RavineRim, climate.ravineRimSurface, "ravine rim");
-            var wobble = new MapNoise(context.Layout.Symmetry, context.Seed, WobbleChannel);
+            var wobble = new MapNoise(context.Layout.Symmetry, context.Seed, MapRavineWall.WobbleChannel);
             foreach (var (line, spec) in context.Shapes.Ravines)
             {
                 var half = spec.width * 0.5f;
-                context.Land.ClaimWhere(line.Bounds, cut, p => Distance(line, wobble, p) < half);
-                context.Land.ClaimWhere(line.Bounds, rim, p => Distance(line, wobble, p) < half + spec.rim);
+                var outer = half + spec.rim;
+                context.Land.ClaimEach(line.Bounds, p =>
+                {
+                    var distance = MapRavineWall.Distance(line, wobble, p);
+                    if (distance < half)
+                    {
+                        return cut;
+                    }
+
+                    return distance < outer ? rim : MapLand.Unclaimed;
+                });
             }
 
             PlantWoods(context, wobble);
         }
-
-        private static float Distance(MapLine line, MapNoise wobble, Vector2 p) =>
-            line.Distance(p) + wobble.Sample(p, 15f) * Wobble;
 
         /// <summary>
         /// The patch noise level that leaves <paramref name="wooded"/> of this ravine's floor above it: noise averaged
@@ -53,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Planning
             var samples = new List<float>();
             for (var along = 0f; along <= line.Length; along += ThresholdStep)
             {
-                var point = MapGeometry.PointAlong(line.Points, along, out var direction);
+                var point = line.Path.PointAt(along, out var direction);
                 var across = new Vector2(-direction.y, direction.x);
                 for (var side = -1f; side <= 1f; side += 0.5f)
                 {
@@ -70,7 +72,7 @@ namespace HyperRTS.Editor.Maps.Planning
         private static Vector2 OnFloor(MapLine line, float reach, System.Random random)
         {
             var along = (float)random.NextDouble() * line.Length;
-            var point = MapGeometry.PointAlong(line.Points, along, out var direction);
+            var point = line.Path.PointAt(along, out var direction);
             var across = new Vector2(-direction.y, direction.x);
             return point + across * (reach * ((float)random.NextDouble() * 2f - 1f));
         }
@@ -101,7 +103,7 @@ namespace HyperRTS.Editor.Maps.Planning
                     () => OnFloor(line, reach, random), p =>
                     {
                         var inSector = context.Layout.Symmetry.InSector(p);
-                        var onFloor = Distance(line, wobble, p) < reach;
+                        var onFloor = MapRavineWall.Distance(line, wobble, p) < reach;
                         return inSector && onFloor && patches.Sample(p, PatchSize) > threshold;
                     }, $"ravine {ravine.Index + 1}");
             }

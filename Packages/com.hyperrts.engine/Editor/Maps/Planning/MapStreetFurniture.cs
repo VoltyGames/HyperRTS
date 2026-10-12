@@ -101,7 +101,7 @@ namespace HyperRTS.Editor.Maps.Planning
         /// <summary>The spot beside the road edge, to its left (side 1) or right (side -1), and the road's direction there.</summary>
         private static Vector2 Beside(MapRoad road, float along, float side, out Vector2 direction)
         {
-            var point = MapGeometry.PointAlong(road.Line.Points, along, out direction);
+            var point = road.Line.Path.PointAt(along, out direction);
             return point + MapStreets.Left(direction) * (side * (road.Width * 0.5f + EdgeOffset));
         }
 

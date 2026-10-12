@@ -38,26 +38,13 @@ namespace HyperRTS.Editor.Maps.Planning
             for (var i = 0; i <= count; i++)
             {
                 var point = Vector2.Lerp(from, to, (float)i / count);
-                if (_shapes.RiverEdgeDistance(point) < WaterMargin || InRavine(point))
+                if (_shapes.RiverEdgeDistance(point) < WaterMargin || _shapes.InRavine(point, RavineMargin))
                 {
                     return false;
                 }
             }
 
             return true;
-        }
-
-        private bool InRavine(Vector2 point)
-        {
-            foreach (var (line, spec) in _shapes.Ravines)
-            {
-                if (line.Distance(point) < spec.width * 0.5f + RavineMargin)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static (MapRoad Road, Vector2 Point, float Distance) Closest(MapRoad road, List<Vector2> samples,

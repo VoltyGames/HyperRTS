@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Layout
             {
                 var ravine = spec.ravines[i];
                 var curve = MapCurves.Spline(MapGeometry.ToVectors(ravine.points), Step);
-                ravine.points = curve.ConvertAll(p => new MapPoint(p.x, p.y));
+                ravine.points = MapGeometry.ToPoints(curve);
                 var random = new System.Random(unchecked(spec.seed * 31337 + i * 7907));
                 for (var b = 0; b < ravine.branches; b++)
                 {
@@ -45,9 +45,9 @@ namespace HyperRTS.Editor.Maps.Layout
             var start = MapGeometry.PointAlong(curve, length * Mathf.Lerp(0.2f, 0.8f, (float)random.NextDouble()), out var direction);
             var side = random.NextDouble() < 0.5 ? -1f : 1f;
             var angle = Mathf.Lerp(35f, 65f, (float)random.NextDouble()) * side;
-            var heading = Rotate(direction, angle);
+            var heading = MapGeometry.Rotate(direction, angle);
             var reach = Mathf.Max(MinBranch, length * Mathf.Lerp(0.3f, 0.55f, (float)random.NextDouble()));
-            var bend = Rotate(heading, -angle * 0.35f);
+            var bend = MapGeometry.Rotate(heading, -angle * 0.35f);
             var middle = start + heading * (reach * 0.5f);
             var end = middle + bend * (reach * 0.5f);
             var points = MapCurves.Spline(new List<Vector2> { start, middle, end }, Step);
@@ -58,20 +58,12 @@ namespace HyperRTS.Editor.Maps.Layout
 
             return new MapRavineSpec
             {
-                points = points.ConvertAll(p => new MapPoint(p.x, p.y)),
+                points = MapGeometry.ToPoints(points),
                 width = main.width * 0.6f,
                 depth = main.depth * 0.65f,
                 rim = main.rim * 0.7f,
                 wooded = main.wooded,
             };
-        }
-
-        private static Vector2 Rotate(Vector2 direction, float degrees)
-        {
-            var radians = degrees * Mathf.Deg2Rad;
-            var cos = Mathf.Cos(radians);
-            var sin = Mathf.Sin(radians);
-            return new Vector2(direction.x * cos - direction.y * sin, direction.x * sin + direction.y * cos);
         }
     }
 }

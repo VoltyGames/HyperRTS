@@ -70,14 +70,14 @@ namespace HyperRTS.Editor.Maps.Planning
             var random = Placement.MapPlacer.Random(context.Seed, 27, wood.Index);
             var source = $"wood {wood.Index + 1}";
             MapTreeScatter.Scatter(context, kit.trees, Mathf.Max(0f, area - edgeArea) * (1f - kit.clearings),
-                kit.spacing, random, () => MapTreeScatter.In(bounds, random), p =>
+                kit.spacing, random, () => MapGeometry.RandomIn(bounds, random), p =>
                 {
                     var depth = MapGeometry.SignedDistance(polygon, p);
                     var canopy = depth > kit.edgeWidth * 0.5f && clearings.Sample(p, ClearingWavelength) <= threshold;
                     return canopy && context.Layout.Symmetry.InSector(p);
                 }, source);
             MapTreeScatter.Scatter(context, kit.edgeTrees, edgeArea, kit.spacing * 0.6f, random,
-                () => MapTreeScatter.In(bounds, random), p =>
+                () => MapGeometry.RandomIn(bounds, random), p =>
                 {
                     var depth = MapGeometry.SignedDistance(polygon, p);
                     return depth > 0f && depth < kit.edgeWidth && context.Layout.Symmetry.InSector(p);
