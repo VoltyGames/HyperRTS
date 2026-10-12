@@ -19,6 +19,7 @@ namespace HyperRTS.Editor.Maps.Layout
         public static MapLayout Expand(MapSpec spec, MapIssues issues)
         {
             CheckHeader(spec, issues);
+            CheckAmounts(spec, issues);
             var layout = new MapLayout(spec, MapSymmetry.Parse(spec.symmetry));
             AddSpawns(layout, issues);
             var expander = new Expansion(layout, issues);
@@ -43,6 +44,17 @@ namespace HyperRTS.Editor.Maps.Layout
             layout.Scatters = expander.Lines(spec.scatters, "scatter", s => s.shared, s => s.points);
             ContinueRivers(layout.Rivers);
             return layout;
+        }
+
+        private static void CheckAmounts(MapSpec spec, MapIssues issues)
+        {
+            for (var i = 0; i < spec.resources.Count; i++)
+            {
+                if (spec.resources[i].amount <= 0)
+                {
+                    issues.Error($"Resource {i + 1} ('{spec.resources[i].kind}') needs an amount above 0.");
+                }
+            }
         }
 
         /// <summary>Players a mode needs; FFA takes 3 to 8.</summary>

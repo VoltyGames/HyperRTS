@@ -183,7 +183,7 @@ namespace HyperRTS.Editor.Maps.Metrics
                     if (resource != null)
                     {
                         metrics.fields++;
-                        metrics.supply += node.Amount > 0 ? node.Amount : resource.amount;
+                        metrics.supply += node.Amount;
                     }
                 }
             }

@@ -69,13 +69,14 @@ namespace HyperRTS.Editor.Maps.Build
                 area.size = deck;
             }
 
-            if (placement.Amount <= 0)
-            {
-                return;
-            }
-
             foreach (var node in instance.GetComponentsInChildren<ResourceNodeAuthoring>(true))
             {
+                if (placement.Amount <= 0)
+                {
+                    throw new System.InvalidOperationException(
+                        $"HyperRTS: '{placement.Entry.key}' is a resource node placed without an amount; place it through the spec's resources.");
+                }
+
                 node.amount = placement.Amount;
                 PrefabUtility.RecordPrefabInstancePropertyModifications(node);
             }
