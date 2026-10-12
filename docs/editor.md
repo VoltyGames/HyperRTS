@@ -134,13 +134,27 @@ spec ─▶ Preview (seconds, no scene) ─▶ Build (minutes) ─▶ Capture Vi
          .preview.png / .json          scene, SubScene, report, minimap     views/*.png
 ```
 
+The code is layered, each row using only the rows above it:
+
+| Folders | Hold |
+| --- | --- |
+| `Spec/`, `Data/`, `Symmetry/` | The spec as authored; the game's palette, rules and climates; sector copies |
+| `Checks/` | Asset and spec checks, run before anything is generated |
+| `Refine/`, `Layout/` | Sector lines smoothed, then copied into the whole-map layout |
+| `Geometry/`, `Land/`, `Placement/`, `Ground/`, `Planning/` | Shapes and noise, the land grid, placements, heights and painters, land passes |
+| `Generation/` | `MapProject` (spec and assets), `MapPaths`, `MapGeneration` in stages: `Lay`, `Plan`, `Run` |
+| `Scenes/`, `Meshes/`, `Texturing/`, `Nav/`, `Hints/`, `Report/`, `Views/` | What a build writes, measures and captures |
+| `Build/`, `Tools/` | `MapBuilder`, `MapPreview`, `IMapBuildHook`; menu, command line, spec watcher |
+
 ### Spec format
 
 Unity's `JsonUtility` reads it, so it is flat: one array per feature, points as `{ "x", "z" }` objects. Metres,
 origin at the map centre, X east, Z north, angles clockwise from north. The spec authors **one symmetry sector**;
 the builder copies it (`rotate-180`, `mirror-x`, `mirror-z`, `rotate-3` to `rotate-8`; slots interleave so slots 1
 and 2 always face each other). `"shared": true` places a feature once, on the axis or centre. Random choices are made
-in the sector and copied, so copies match.
+in the sector and copied, so copies match. Each kind of choice draws from its own seeded stream
+(`MapRandomChannel`) and noise field (`MapNoiseChannel`): a new feature takes a new channel, since changing a
+channel's value changes every map.
 
 | Feature | Fields | Builds |
 | --- | --- | --- |
@@ -161,7 +175,8 @@ in the sector and copied, so copies match.
 ### Land use and planners
 
 `MapLand` is a 1 m grid. Each cell is claimed once by a `MapLandRegion` (a `MapLandKind`, a climate surface, a seed
-and a row angle). `MapLandPlanner` runs the planners in priority order, each taking only what earlier ones left:
+and a row angle). `MapLandPlanner` runs the land passes (`MapLandPass`) in priority order, each taking only what
+earlier ones left:
 
 1. water, roads, river banks and floodplain
 2. bases and prop pads, access tracks
@@ -169,11 +184,11 @@ and a row angle). `MapLandPlanner` runs the planners in priority order, each tak
 4. woods, belts, farmland
 5. meadow on everything left, then `MapSurfacePlanter`: each surface's own lone trees and props
 
-Planners choose at authored-sector points (`Symmetry.InSector`), place in every copy (`MapPlanContext.PlantCopies`,
-`MapPlacer.AddEverywhere`) and claim land for every copy; raster decisions key on the sector point (`ToSector`).
+Passes choose at authored-sector points (`Symmetry.InSector`), place in every copy (`MapTreePlanting.Plant`,
+`MapPlacements.AddEverywhere`) and claim land for every copy; raster decisions key on the sector point (`ToSector`).
 
 Farmland splits the free land on a grid along `angle` into fields (slivers become margin), picks each crop by the
-kit's weights and lays belts and tracks along the field ends. A settlement fits plots along the streets: house on the
+kit's weights and lays belts and tracks along the field ends. A settlement (`MapSettlement`, one per spec settlement) fits plots along the streets: house on the
 street, yard, outbuildings, garden, orchard, fences, gate, street furniture. The report says why a plot didn't fit.
 
 ### Refiners
@@ -196,14 +211,16 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
   climate's texture arrays, the macro map, and per-layer rotation to the crop rows.
 - **Ground colour** (`MapGroundColor`): a top-down picture of the layers' mean albedo by splat weight, tinted by the
   macro map. Foliage blends into it at its roots.
-- **Road ribbons** (`MapRoadRibbon`, `MapRoadMeshWriter`): a mesh lifted a few centimetres over the ground, UV Y in
+- **Road ribbons** (`MapRoadMesh`, `MapRoadMeshWriter`): a mesh lifted a few centimetres over the ground, UV Y in
   metres along the road. Vertex alpha fades free ends and the lower-ranked end of a junction (`MapRoadFades`); rows
   over water or under a bridge are left out. Drawn by `HyperRTS/Road`.
 
 ### Checks and measures
 
-- `MapAssetCheck` and `MapKitCheck` run before planning: every layer, tree, plant, surface, road class, kit and
-  palette key resolves, and generated prefabs have display names. A bad key is an error that names it.
+- `MapAssetCheck` (climate and palette) and `MapSpecCheck` (every kind the spec names, its size and terrain) run
+  before anything is refined: every layer, tree, plant, surface, road class, kit and palette key resolves, and
+  generated prefabs have display names. A bad key is an error that names it. After them, lookups throw
+  (`MapKeys`): a key the checks missed fails loudly instead of being skipped.
 - Road checks warn about dead ends and bends tighter than half the class's curve radius.
 - The nav grid (classified like `NavGridSystem`) gives rush times, attack paths (close a corridor along the shortest
   path, search again; the paths found before none remains are the count), reach, buildable ground and resources per
@@ -235,12 +252,12 @@ trees and props), trees, plants, road classes, farmland, belt and woodland kits,
 
 ### Adding a kind of land use
 
-1. A kit in `Data/` (like `MapFarmlandKit`) held by `MapClimate`, its keys checked in `MapKitCheck` and listed in
-   `MapKeyReference`.
+1. A kit in `Data/` (like `MapFarmlandKit`, keyed through `IMapKeyed`) held by `MapClimate`, its keys checked in
+   `MapAssetCheck` and listed in `MapKeyReference`.
 2. A `MapLandKind` if no existing one fits, and the surfaces it paints.
-3. A planner in `Planning/` that claims land and places things through `MapPlanContext`, symmetric as above.
+3. A `MapLandPass` in `Planning/` that claims land and places things through `MapPlanContext`, symmetric as above.
 4. Its slot in `MapLandPlanner.Plan`, where its priority puts it.
-5. A spec class in `Spec/` and an array on `MapSpec`.
+5. A spec class in `Spec/`, an array on `MapSpec`, and its keys checked in `MapSpecCheck`.
 6. EditMode tests: the planner's output on a small layout, and a bad key failing loudly.
 
 ## Play-mode debugging

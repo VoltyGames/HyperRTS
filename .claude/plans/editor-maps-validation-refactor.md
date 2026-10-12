@@ -73,3 +73,21 @@ Keys are checked in `MapAssetCheck`, `MapKitCheck`, then again where they are us
 6. **Build.** `MapGeneration` is a staged pipeline that preview, build and view capture share; `MapScene` replaces the
    static scene writer and its tuple; the road ribbon becomes a `MapRoadMesh` method.
 7. **Docs.** `docs/editor.md`; the game's map skill references.
+
+## Status
+
+Done. Every phase kept the five map previews byte-identical and a full build's report, overview, terrain, macro,
+ground, water and (file ids aside) scene and road assets identical; minimap and overview captures are GPU renders and
+differ between any two builds.
+
+Changes from the plan:
+
+- `MapGeneration`, `MapProject` and `MapPaths` moved to `Generation/`, below the writers, so `Build/` holds only the
+  tools and nothing depends on it.
+- The ground look (macro map, terrain material, ground colour) still has to be written before the map's scene opens;
+  opening it unloads the climate.
+- Jargon renames: `SceneryLedger` → `SceneryTracker`, `Datum` → `GroundLevel`, `MapHintBase` → `MapHintSlot`,
+  `MapPieceRun` → `MapSections`, `Strip` → `OutbuildingDepth`.
+
+Left as they are: the stateless static helpers (geometry, curves, path searches, writers that take one generation),
+`ValidationIssues` deriving from `List`, and the obsolete `LightingSettings.autoGenerate` in `MapLightingBaker`.
