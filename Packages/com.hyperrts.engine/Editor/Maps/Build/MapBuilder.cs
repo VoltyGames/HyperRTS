@@ -52,9 +52,9 @@ namespace HyperRTS.Editor.Maps.Build
             EditorSceneManager.SaveScene(main);
             EditorSceneManager.CloseScene(entities, true);
             AssetDatabase.SaveAssets();
-            CaptureViews(spec, generation, project);
+            var overview = CaptureViews(spec, paths, generation, project);
             Log(report);
-            var result = new MapBuildResult(spec, paths, report, layout.Spawns.Count, minimap);
+            var result = new MapBuildResult(spec, paths, report, layout.Spawns.Count, minimap, overview);
             foreach (var hook in TypeDiscovery.Instances<IMapBuildHook>())
             {
                 hook.OnBuilt(result);
@@ -90,15 +90,20 @@ namespace HyperRTS.Editor.Maps.Build
         }
 
         /// <summary>Fresh screenshots with every build, unless there's no graphics device (batch mode with -nographics).</summary>
-        private static void CaptureViews(MapSpec spec, MapGeneration generation, MapProject project)
+        /// <summary>
+        /// Fresh screenshots with every build, the overview kept next to the map as its picture; none (null) when
+        /// there's no graphics device (batch mode with -nographics).
+        /// </summary>
+        private static Texture2D CaptureViews(MapSpec spec, MapPaths paths, MapGeneration generation, MapProject project)
         {
             if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
             {
-                return;
+                return null;
             }
 
             var views = MapViews.For(generation.Layout, generation.Shapes, project.Rules);
-            MapViews.Capture(spec.name, views, project.Rules);
+            var files = MapViews.Capture(spec.name, views, project.Rules);
+            return MapOverviewPicture.Keep(files.Find(f => Path.GetFileNameWithoutExtension(f) == MapViews.OverviewName), paths.Overview);
         }
 
         private static MapReport Log(MapReport report)

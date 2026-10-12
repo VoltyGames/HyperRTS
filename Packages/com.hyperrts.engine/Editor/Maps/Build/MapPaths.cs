@@ -45,6 +45,9 @@ namespace HyperRTS.Editor.Maps.Build
         /// <summary>The top-down ground colour foliage blends into at its roots.</summary>
         public string Ground => $"{Folder}/{Name}_Ground.png";
 
+        /// <summary>The overview view from the match camera, kept with the map for loading screens.</summary>
+        public string Overview => $"{Folder}/{Name}_Overview.png";
+
         public string Roads => $"{Folder}/{Name}_Roads.asset";
 
         public string Minimap => $"{Folder}/{Name}_Minimap.png";

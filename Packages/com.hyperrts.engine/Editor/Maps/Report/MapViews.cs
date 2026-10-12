@@ -15,6 +15,9 @@ namespace HyperRTS.Editor.Maps.Report
     /// </summary>
     public static class MapViews
     {
+        /// <summary>The view that shows the whole map; the build keeps it as the map's picture.</summary>
+        public const string OverviewName = "overview";
+
         private const int Width = 1600;
         private const int Height = 900;
         private const int Bases = 2;
@@ -45,7 +48,7 @@ namespace HyperRTS.Editor.Maps.Report
                 }
             }
 
-            views.Add(new MapView("overview", Vector2.zero, layout.Size.x * 0.45f));
+            views.Add(new MapView(OverviewName, Vector2.zero, layout.Size.x * 0.45f));
             return views;
         }
 
