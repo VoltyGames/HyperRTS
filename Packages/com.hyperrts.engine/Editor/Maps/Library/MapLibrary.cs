@@ -13,23 +13,27 @@ namespace HyperRTS.Editor.Maps.Library
     /// </summary>
     public sealed class MapLibrary
     {
-        private static readonly Dictionary<Type, string> TypeNames = new()
+        /// <summary>Every item class in listing and generation order: materials before the props whose models use them.</summary>
+        private static readonly Type[] Types =
         {
-            { typeof(MapClimateLayer), "layer" },
-            { typeof(MapMaterial), "material" },
-            { typeof(MapClimateDetail), "plant" },
-            { typeof(MapClimateTree), "tree" },
-            { typeof(MapRoadClass), "road" },
-            { typeof(MapClimateSurface), "surface" },
-            { typeof(MapFarmlandKit), "farmland" },
-            { typeof(MapBeltKit), "belt" },
-            { typeof(MapWoodlandKit), "woodland" },
-            { typeof(MapSettlementKit), "settlement" },
-            { typeof(MapPaletteEntry), "prop" },
-            { typeof(MapClimate), "climate" },
-            { typeof(MapPalette), "palette" },
-            { typeof(MapRules), "rules" },
+            typeof(MapClimateLayer),
+            typeof(MapMaterial),
+            typeof(MapClimateDetail),
+            typeof(MapClimateTree),
+            typeof(MapRoadClass),
+            typeof(MapClimateSurface),
+            typeof(MapFarmlandKit),
+            typeof(MapBeltKit),
+            typeof(MapWoodlandKit),
+            typeof(MapSettlementKit),
+            typeof(MapPaletteEntry),
+            typeof(MapClimate),
+            typeof(MapPalette),
+            typeof(MapRules),
         };
+
+        private static readonly Dictionary<Type, string> TypeNames =
+            Types.ToDictionary(type => type, type => MapLibraryItemAttribute.Of(type).Name);
 
         private readonly Dictionary<string, SortedDictionary<string, string>> _files = new();
         private readonly Dictionary<string, (object Item, MapLibraryRefs Refs)> _loaded = new();
@@ -61,7 +65,7 @@ namespace HyperRTS.Editor.Maps.Library
         }
 
         /// <summary>Every library item class (<c>MapClimateLayer</c>, <c>MapClimateSurface</c>...), in listing order.</summary>
-        public static IReadOnlyList<Type> ItemTypes { get; } = TypeNames.Keys.ToList();
+        public static IReadOnlyList<Type> ItemTypes => Types;
 
         /// <summary>The library's type name for <typeparamref name="T"/> (<c>surface</c>, <c>prop</c>...).</summary>
         public static string TypeName<T>() => TypeName(typeof(T));

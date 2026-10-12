@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using HyperRTS.Editor.Maps.Spec;
-using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Library
 {
@@ -30,7 +29,7 @@ namespace HyperRTS.Editor.Maps.Library
 
             foreach (var file in Specs(library.Root))
             {
-                var spec = JsonUtility.FromJson<MapSpec>(File.ReadAllText(file));
+                var spec = MapSpecJson.Read(File.ReadAllText(file));
                 usages.AddRange(Naming(type, key, spec).Select(field => new MapLibraryUsage(file, null, null, field)));
             }
 

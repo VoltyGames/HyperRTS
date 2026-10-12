@@ -7,6 +7,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A kind of wood: canopy trees, a shrubby edge, clearings and the forest floor.</summary>
     [Serializable]
+    [MapLibraryItem("woodland")]
     public sealed class MapWoodlandKit : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

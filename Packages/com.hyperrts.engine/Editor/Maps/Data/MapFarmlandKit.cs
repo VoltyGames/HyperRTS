@@ -10,6 +10,7 @@ namespace HyperRTS.Editor.Maps.Data
     /// field ends and the dirt tracks beside them.
     /// </summary>
     [Serializable]
+    [MapLibraryItem("farmland")]
     public sealed class MapFarmlandKit : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

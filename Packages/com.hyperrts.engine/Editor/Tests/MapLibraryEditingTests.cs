@@ -78,7 +78,7 @@ namespace HyperRTS.Editor.Tests
             var json = MapLibraryItemFile.ToJson(typeof(MapClimateLayer), layer, refs);
 
             StringAssert.StartsWith("{\n  \"terrainLayer\": \"Assets/Meadow.terrainlayer\",\n  \"mapColor\": {\n    \"r\":", json);
-            StringAssert.Contains("\n  \"rotation\": 90.0,\n", json);
+            StringAssert.Contains("\n  \"rotation\": 90,\n", json);
             StringAssert.EndsWith("\n}\n", json);
             Assert.IsFalse(json.Contains("prefab"));
         }

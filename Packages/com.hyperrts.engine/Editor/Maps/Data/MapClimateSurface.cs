@@ -7,6 +7,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A named ground type: the layer it paints, and the trees, plants and props that grow or lie on it.</summary>
     [Serializable]
+    [MapLibraryItem("surface")]
     public sealed class MapClimateSurface : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

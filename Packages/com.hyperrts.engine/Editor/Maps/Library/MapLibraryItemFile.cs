@@ -1,23 +1,18 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using HyperRTS.Editor.Maps.Factories;
+using HyperRTS.Editor.Maps.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
     /// Reads and writes one library file as editors see it: the item and the <see cref="MapLibraryRefs"/> fields
-    /// its type reads. Written as JsonUtility's pretty output indented by two spaces, the refs first, the factory and
-    /// its params block last and as read; the key is the file name, never a field.
+    /// its type reads. Written in the <see cref="MapJsonFormat"/> layout specs use, the refs first, the factory and
+    /// its params object last; the key is the file name, never a field.
     /// </summary>
     public static class MapLibraryItemFile
     {
-        private static readonly Regex TopMember = new(@"^    ""(\w+)"":", RegexOptions.Compiled);
-
         /// <summary>A new item of <paramref name="type"/> with its class defaults.</summary>
         public static (object Item, MapLibraryRefs Refs) Create(Type type) =>
             (Activator.CreateInstance(type), new MapLibraryRefs());
@@ -31,11 +26,12 @@ namespace HyperRTS.Editor.Maps.Library
             refs.file = file;
             try
             {
+                var root = MapJsonFormat.Parse(json);
                 JsonUtility.FromJsonOverwrite(json, item);
                 JsonUtility.FromJsonOverwrite(json, refs);
-                refs.factoryParams = MapJsonMembers.Find(json, "params");
+                refs.factoryParams = root["params"];
             }
-            catch (Exception e) when (e is ArgumentException or FormatException)
+            catch (Exception e) when (e is ArgumentException or FormatException or InvalidOperationException)
             {
                 throw new InvalidOperationException($"HyperRTS: map library file '{file}' is not valid JSON: {e.Message}", e);
             }
@@ -48,26 +44,24 @@ namespace HyperRTS.Editor.Maps.Library
 
         public static string ToJson(Type type, object item, MapLibraryRefs refs)
         {
-            var wanted = MapLibraryRefFields.Of(type).ToList();
-            var members = Members(JsonUtility.ToJson(refs, true))
-                .Where(member => wanted.Contains(member.Name))
-                .OrderBy(member => wanted.IndexOf(member.Name))
-                .Concat(Members(JsonUtility.ToJson(item, true)))
-                .ToList();
-            var output = new StringBuilder("{\n");
-            for (var i = 0; i < members.Count; i++)
+            var refsJson = (JObject)MapJsonFormat.Parse(JsonUtility.ToJson(refs));
+            var root = new JObject();
+            foreach (var name in MapLibraryItemAttribute.Of(type).Refs)
             {
-                var lines = members[i].Lines;
-                lines[^1] = lines[^1].TrimEnd(',') + (i < members.Count - 1 ? "," : string.Empty);
-                lines.ForEach(line => output.Append(Reindent(line)).Append('\n'));
+                root.Add(name, refsJson[name]);
             }
 
-            AppendFactory(output, refs, members.Count > 0);
-            return output.Append("}\n").ToString();
+            foreach (var property in ((JObject)MapJsonFormat.Parse(JsonUtility.ToJson(item))).Properties())
+            {
+                root.Add(property.Name, property.Value);
+            }
+
+            AddFactory(root, refs);
+            return MapJsonFormat.Write(root);
         }
 
-        /// <summary>The factory name and its params block, last and as read, when the item has a factory.</summary>
-        private static void AppendFactory(StringBuilder output, MapLibraryRefs refs, bool afterMembers)
+        /// <summary>The factory name and its params object, last, when the item has a factory.</summary>
+        private static void AddFactory(JObject root, MapLibraryRefs refs)
         {
             if (string.IsNullOrEmpty(refs.factory))
             {
@@ -80,39 +74,8 @@ namespace HyperRTS.Editor.Maps.Library
                     $"HyperRTS: map library file '{refs.file}' names factory '{refs.factory}' but has no \"params\" object.");
             }
 
-            if (afterMembers)
-            {
-                output.Length -= 1;
-                output.Append(",\n");
-            }
-
-            output.Append("  \"factory\": \"").Append(refs.factory).Append("\",\n  \"params\": ")
-                .Append(refs.factoryParams.Replace("\r", string.Empty)).Append('\n');
-        }
-
-        /// <summary>The top-level members of JsonUtility pretty output, each with its lines.</summary>
-        private static List<(string Name, List<string> Lines)> Members(string json)
-        {
-            var members = new List<(string Name, List<string> Lines)>();
-            var lines = json.Replace("\r", string.Empty).Split('\n');
-            foreach (var line in lines.Skip(1).Take(lines.Length - 2))
-            {
-                var match = TopMember.Match(line);
-                if (match.Success)
-                {
-                    members.Add((match.Groups[1].Value, new List<string>()));
-                }
-
-                members[^1].Lines.Add(line);
-            }
-
-            return members;
-        }
-
-        private static string Reindent(string line)
-        {
-            var spaces = line.Length - line.TrimStart(' ').Length;
-            return new string(' ', spaces / 2) + line.TrimStart(' ');
+            root.Add("factory", refs.factory);
+            root.Add("params", refs.factoryParams.DeepClone());
         }
     }
 }

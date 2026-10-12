@@ -230,7 +230,7 @@ namespace HyperRTS.Editor.Maps.Library
             {
                 _usedBy.Show(MapLibraryUsages.Find(_library, _form.Type, _form.Key));
             }
-            catch (Exception e) when (e is InvalidOperationException or ArgumentException)
+            catch (Exception e) when (e is InvalidOperationException or ArgumentException or FormatException)
             {
                 _usedBy.Fail(e.Message);
             }

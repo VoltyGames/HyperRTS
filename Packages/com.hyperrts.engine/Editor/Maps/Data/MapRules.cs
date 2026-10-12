@@ -10,6 +10,7 @@ namespace HyperRTS.Editor.Maps.Data
     /// takes its nav cell size and max slope from here). Exactly one <c>*.rules.json</c> per project.
     /// </summary>
     [Serializable]
+    [MapLibraryItem("rules")]
     public sealed class MapRules : IMapLibraryItem
     {
         [NonSerialized]

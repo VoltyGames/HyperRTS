@@ -11,6 +11,7 @@ namespace HyperRTS.Editor.Maps.Data
     /// Building and fence keys are palette entries; surfaces and trees are climate keys.
     /// </summary>
     [Serializable]
+    [MapLibraryItem("settlement")]
     public sealed class MapSettlementKit : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

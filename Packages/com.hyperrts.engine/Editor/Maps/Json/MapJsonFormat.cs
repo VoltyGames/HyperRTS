@@ -1,0 +1,182 @@
+using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace HyperRTS.Editor.Maps.Json
+{
+    /// <summary>
+    /// The one layout map specs and library files are written in: indented by two spaces, point objects and short
+    /// scalar arrays on one line, floats in their shortest form, so saves diff cleanly. Parses with Newtonsoft,
+    /// keeping member order and strings as strings (no date guessing).
+    /// </summary>
+    public static class MapJsonFormat
+    {
+        private const string Indent = "  ";
+        private const int MaxInlineArray = 100;
+        private const int MaxInlinePoint = 3;
+
+        /// <summary>Parses one JSON value; malformed or trailing text throws a <see cref="FormatException"/>.</summary>
+        public static JToken Parse(string json)
+        {
+            using var reader = new JsonTextReader(new StringReader(json))
+            {
+                DateParseHandling = DateParseHandling.None,
+                FloatParseHandling = FloatParseHandling.Double,
+            };
+            try
+            {
+                var token = JToken.ReadFrom(reader);
+                if (reader.Read())
+                {
+                    throw new FormatException($"JSON: trailing text at line {reader.LineNumber}, position {reader.LinePosition}.");
+                }
+
+                return token;
+            }
+            catch (JsonException e)
+            {
+                throw new FormatException($"JSON: {e.Message}", e);
+            }
+        }
+
+        /// <summary>Lays out any JSON text.</summary>
+        public static string Format(string json) => Write(Parse(json));
+
+        /// <summary>Lays out a value as a file, ending in a newline.</summary>
+        public static string Write(JToken token)
+        {
+            var output = new StringBuilder();
+            Append(output, token, 0);
+            return output.Append('\n').ToString();
+        }
+
+        private static void Append(StringBuilder output, JToken token, int depth)
+        {
+            var inline = Inline(token);
+            if (inline != null && Fits(output, token, inline))
+            {
+                output.Append(inline);
+                return;
+            }
+
+            if (token is JObject obj)
+            {
+                AppendObject(output, obj, depth);
+                return;
+            }
+
+            AppendArray(output, (JArray)token, depth);
+        }
+
+        private static void AppendObject(StringBuilder output, JObject obj, int depth)
+        {
+            output.Append('{');
+            var properties = obj.Properties().ToList();
+            for (var i = 0; i < properties.Count; i++)
+            {
+                NewLine(output, depth + 1);
+                output.Append(JsonConvert.ToString(properties[i].Name)).Append(": ");
+                Append(output, properties[i].Value, depth + 1);
+                output.Append(i < properties.Count - 1 ? "," : string.Empty);
+            }
+
+            NewLine(output, depth);
+            output.Append('}');
+        }
+
+        private static void AppendArray(StringBuilder output, JArray array, int depth)
+        {
+            output.Append('[');
+            for (var i = 0; i < array.Count; i++)
+            {
+                NewLine(output, depth + 1);
+                Append(output, array[i], depth + 1);
+                output.Append(i < array.Count - 1 ? "," : string.Empty);
+            }
+
+            NewLine(output, depth);
+            output.Append(']');
+        }
+
+        /// <summary>The value on one line when it is a scalar, empty, a point or a scalar array; otherwise null.</summary>
+        private static string Inline(JToken token)
+        {
+            if (token is JObject obj)
+            {
+                return obj.Count == 0 ? "{}" : InlinePoint(obj);
+            }
+
+            if (token is not JArray array)
+            {
+                return Scalar(token);
+            }
+
+            if (array.Count == 0)
+            {
+                return "[]";
+            }
+
+            var scalars = array.All(item => item is JValue);
+            return scalars ? "[" + string.Join(", ", array.Select(Scalar)) + "]" : null;
+        }
+
+        private static string InlinePoint(JObject obj)
+        {
+            var numeric = obj.Properties().All(property => IsNumber(property.Value));
+            if (!numeric || obj.Count > MaxInlinePoint)
+            {
+                return null;
+            }
+
+            var members = obj.Properties().Select(property => JsonConvert.ToString(property.Name) + ": " + Scalar(property.Value));
+            return "{ " + string.Join(", ", members) + " }";
+        }
+
+        /// <summary>
+        /// A scalar's JSON text. Map data is single precision, so a float is written in the shortest form that reads
+        /// back as the same float: 20.0 → 20, and JsonUtility's 0.34999999403953552 → 0.35.
+        /// </summary>
+        private static string Scalar(JToken token) => token.Type == JTokenType.Float
+            ? token.Value<float>().ToString("R", CultureInfo.InvariantCulture)
+            : token.ToString(Formatting.None);
+
+        private static bool IsNumber(JToken token) => token.Type is JTokenType.Integer or JTokenType.Float;
+
+        /// <summary>Scalars, points and empty containers always stay inline; scalar arrays only while the line is short.</summary>
+        private static bool Fits(StringBuilder output, JToken token, string inline)
+        {
+            if (token is not JArray)
+            {
+                return true;
+            }
+
+            return output.Length - LineStart(output) + inline.Length <= MaxInlineArray;
+        }
+
+        private static void NewLine(StringBuilder output, int depth)
+        {
+            output.Append('\n');
+            for (var i = 0; i < depth; i++)
+            {
+                output.Append(Indent);
+            }
+        }
+
+        private static int LineStart(StringBuilder output)
+        {
+            for (var i = output.Length - 1; i >= 0; i--)
+            {
+                if (output[i] == '\n')
+                {
+                    return i + 1;
+                }
+            }
+
+            return 0;
+        }
+    }
+}

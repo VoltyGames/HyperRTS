@@ -24,7 +24,7 @@ The code is layered, each row using only the rows above it:
 
 | Folders | Hold |
 | --- | --- |
-| `Spec/`, `Data/`, `Library/`, `Symmetry/` | The spec as authored; the library item classes (layers, surfaces, kits, climate, palette, rules) and the JSON map library they are read from; sector copies |
+| `Spec/`, `Json/`, `Data/`, `Library/`, `Symmetry/` | The spec as authored and `MapSpecJson`; `MapJsonFormat`, the one JSON layout specs and library files are saved in; the library item classes (layers, surfaces, kits, climate, palette, rules) and the JSON map library they are read from; sector copies |
 | `Factories/` | Asset factories that make Unity assets from library items |
 | `Checks/` | Asset and spec checks, run before anything is generated |
 | `Refine/`, `Layout/` | Sector lines smoothed, then copied into the whole-map layout |
@@ -111,9 +111,10 @@ the size, and the spawns of one sector facing the centre. Team modes need a two-
 ### Saving and files changed on disk
 
 Edits go through a hidden `MapSpecDocument` and its `SerializedObject`, so Undo and Redo work. **Save** writes the
-spec with `MapSpecJson`: JsonUtility's output re-indented by two spaces, points and short scalar arrays on one
-line, whole floats without `.0`, so saves diff cleanly. The document is dirty while the spec writes differently
-from the file; the window asks to save on close or when another spec is picked.
+spec with `MapSpecJson` in the `MapJsonFormat` layout (Newtonsoft-parsed): indented by two spaces, points and short
+scalar arrays on one line, floats in their shortest form (`0.35`, `20`), so saves diff cleanly. The document is
+dirty while the spec writes differently from the file; the window asks to save on close or when another spec is
+picked.
 
 Once a second the editor checks the file's write time. When the file changed on disk (an agent or a text editor
 wrote it) and the editor has no unsaved edits, it reloads the spec and drops the undo history. With unsaved edits
@@ -247,8 +248,8 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 | `palette` | `MapPalette` | Start kit, base radius (exactly one per project) | `rig`, `startingResources`; prop keys |
 | `rules` | `MapRules` | Rush thresholds per mode, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |
 
-"Names" lists the asset paths and key lists a file holds beside the item's own fields (`MapLibraryRefFields`,
-written first in the file), then the kinds of key the item's own fields name.
+"Names" lists the asset paths and key lists a file holds beside the item's own fields (the ref fields its
+`[MapLibraryItem]` attribute lists, written first in the file), then the kinds of key the item's own fields name.
 
 What a build gets:
 
@@ -279,8 +280,8 @@ an asset path carry `[MapAsset(typeof(...))]`, drawn as an object field that wri
 | Used by | Items and specs whose `[MapKey]` fields name the open item (`MapLibraryUsages`); click an item to open it, a spec to select its file |
 | Problems | Files that don't index or parse, keys that don't resolve, asset paths that don't load (`MapLibraryProblems`); the count is the page's badge |
 
-Saves go through `MapLibraryItemFile`: JsonUtility's pretty output indented by two spaces, the ref fields first, the
-`factory` and its `params` last and as read, no key field. New, Duplicate and Rename ask for a `<Key>.<type>.json`
+Saves go through `MapLibraryItemFile` in the same `MapJsonFormat` layout as specs: the ref fields first, the
+`factory` and its `params` last, no key field. New, Duplicate and Rename ask for a `<Key>.<type>.json`
 path in any folder and refuse a taken key. Nothing caches `MapLibrary`; the page, the key dropdowns and the problems reload when `MapLibraryChanges` sees the
 project change.
 
@@ -304,8 +305,9 @@ slice size; mask heights are stretched so every layer blends alike (`MapTerrainS
 
 1. A class in `Data/` implementing `IMapLibraryItem` (and `IMapKeyed` if things name it), with `[MapKey]` on its
    key fields.
-2. Its type name in `MapLibrary.TypeNames`, its ref fields in `MapLibraryRefFields` (new asset paths or key lists go
-   on `MapLibraryRefs` with `[MapAsset]` or `[MapKey]`), and its picture in `LibraryThumbnail` if it has one.
+2. A `[MapLibraryItem("<type>", "<ref field>"...)]` attribute naming its type and ref fields (new asset paths or key
+   lists go on `MapLibraryRefs` with `[MapAsset]` or `[MapKey]`), its place in `MapLibrary`'s ordered type list, and
+   its picture in `LibraryThumbnail` if it has one.
 3. Where builds get it: `MapClimateAssembly` for climate content, `MapLibrary.Palette` for palette content.
 4. Its keys checked in `MapAssetCheck` and listed in `MapKeyReference`.
 

@@ -13,6 +13,7 @@ namespace HyperRTS.Editor.Maps.Data
     /// go into the SubScene; the rest are scenery.
     /// </summary>
     [Serializable]
+    [MapLibraryItem("palette", "rig", "startingResources")]
     public sealed class MapPalette : IMapLibraryItem
     {
         [NonSerialized]

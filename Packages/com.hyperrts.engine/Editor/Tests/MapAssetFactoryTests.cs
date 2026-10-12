@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Factories;
+using HyperRTS.Editor.Maps.Json;
 using HyperRTS.Editor.Maps.Library;
 using NUnit.Framework;
 
@@ -16,9 +17,9 @@ namespace HyperRTS.Editor.Tests
         private const string LayerJson =
             "{\n" +
             "  \"terrainLayer\": \"Assets/Never/TL_Meadow.terrainlayer\",\n" +
-            "  \"mapColor\": {\n    \"r\": 0.5,\n    \"g\": 0.5,\n    \"b\": 0.5,\n    \"a\": 1.0\n  },\n" +
-            "  \"rotation\": 0.0,\n  \"followsRows\": false,\n  \"heightBlend\": 1.0,\n" +
-            "  \"macroStrength\": 1.0,\n  \"antiTiling\": 1.0,\n" +
+            "  \"mapColor\": {\n    \"r\": 0.5,\n    \"g\": 0.5,\n    \"b\": 0.5,\n    \"a\": 1\n  },\n" +
+            "  \"rotation\": 0,\n  \"followsRows\": false,\n  \"heightBlend\": 1,\n" +
+            "  \"macroStrength\": 1,\n  \"antiTiling\": 1,\n" +
             "  \"factory\": \"terrainLayer\",\n" +
             "  \"params\": {\n    \"textureSet\": \"TerrainMeadow\",\n    \"textureSize\": 1024,\n    \"tileSize\": 4.5\n  }\n" +
             "}\n";
@@ -121,14 +122,13 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void JsonMembers_KeepNestedValuesAsWritten()
+        public void JsonFormat_KeepsMemberOrderAndStringsAsWritten()
         {
-            var members = MapJsonMembers.Of("{ \"a\": \"x,}\", \"b\": { \"c\": [1, {\"d\": 2}] }, \"e\": 3.5 }");
+            var json = MapJsonFormat.Format("{\"b\": \"2024-01-01\", \"a\": {\"c\": [1, {\"d\": 2.0}]}, \"e\": 3.5}");
 
-            Assert.AreEqual(3, members.Count);
-            Assert.AreEqual("\"x,}\"", members[0].Value);
-            Assert.AreEqual("{ \"c\": [1, {\"d\": 2}] }", members[1].Value);
-            Assert.AreEqual("3.5", members[2].Value);
+            Assert.AreEqual(
+                "{\n  \"b\": \"2024-01-01\",\n  \"a\": {\n    \"c\": [\n      1,\n      { \"d\": 2 }\n    ]\n  },\n  \"e\": 3.5\n}\n",
+                json);
         }
 
         private MapAssetRequest Request(Type type, string key, string file) =>

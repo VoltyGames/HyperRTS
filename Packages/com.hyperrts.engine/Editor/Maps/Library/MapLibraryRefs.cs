@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
+using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -53,9 +54,9 @@ namespace HyperRTS.Editor.Maps.Library
         /// </summary>
         public string factory;
 
-        /// <summary>The raw <c>params</c> object the factory reads, kept as written so saves leave it untouched.</summary>
+        /// <summary>The <c>params</c> object the factory reads, kept whole so saves write back every key.</summary>
         [NonSerialized]
-        public string factoryParams;
+        public JToken factoryParams;
 
         /// <summary>The library file these were read from (project-relative), named in every error.</summary>
         [NonSerialized]

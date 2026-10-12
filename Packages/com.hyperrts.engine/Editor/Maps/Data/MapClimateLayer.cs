@@ -6,6 +6,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A terrain texture layer, how the terrain shader lays it on the ground, and the grass that grows wherever it is painted.</summary>
     [Serializable]
+    [MapLibraryItem("layer", "terrainLayer")]
     public sealed class MapClimateLayer : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

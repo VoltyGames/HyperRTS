@@ -4,6 +4,7 @@ using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.Maps.Designer;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Report;
+using HyperRTS.Editor.Maps.Spec;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;

@@ -7,6 +7,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A shelterbelt or hedgerow: rows of trees with shrubs in the gaps and on the edges.</summary>
     [Serializable]
+    [MapLibraryItem("belt")]
     public sealed class MapBeltKit : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

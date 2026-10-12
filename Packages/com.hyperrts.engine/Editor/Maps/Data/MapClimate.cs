@@ -12,6 +12,7 @@ namespace HyperRTS.Editor.Maps.Data
     /// plants are the ones those use (see <see cref="MapLibrary.Climate"/>).
     /// </summary>
     [Serializable]
+    [MapLibraryItem("climate", "surfaces", "roadClasses", "farmlandKits", "beltKits", "woodlandKits", "water", "atmosphere", "skybox")]
     public sealed class MapClimate : IMapLibraryItem
     {
         [NonSerialized]

@@ -3,6 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using HyperRTS.Editor.Maps.Library;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -17,8 +19,7 @@ namespace HyperRTS.Editor.Maps.Factories
             Type = type;
             Key = key;
             File = file;
-            Json = System.IO.File.ReadAllText(file);
-            (_, Refs) = MapLibraryItemFile.Parse(type, Json, file);
+            (_, Refs) = MapLibraryItemFile.Read(type, file);
         }
 
         /// <summary>The library the item belongs to, for factories that use other items (a prop's materials).</summary>
@@ -34,8 +35,6 @@ namespace HyperRTS.Editor.Maps.Factories
         /// <summary>The folder holding the item's file, where texture sets beside it are found.</summary>
         public string Folder => Path.GetDirectoryName(File).Replace('\\', '/');
 
-        public string Json { get; }
-
         /// <summary>The asset paths the item names, which are where its factory writes.</summary>
         public MapLibraryRefs Refs { get; }
 
@@ -45,12 +44,12 @@ namespace HyperRTS.Editor.Maps.Factories
         /// </summary>
         public T Params<T>() where T : new()
         {
-            if (Refs.factoryParams == null)
+            if (Refs.factoryParams is not JObject parameters)
             {
                 throw Error($"has no \"params\" object for factory '{Refs.factory}'");
             }
 
-            var given = MapJsonMembers.Of(Refs.factoryParams).Select(member => member.Name).ToList();
+            var given = parameters.Properties().Select(property => property.Name).ToList();
             var missing = ParamFields<T>.Names.Except(given).ToList();
             var unknown = given.Except(ParamFields<T>.Names).ToList();
             if (missing.Count > 0 || unknown.Count > 0)
@@ -60,7 +59,7 @@ namespace HyperRTS.Editor.Maps.Factories
             }
 
             var values = new T();
-            JsonUtility.FromJsonOverwrite(Refs.factoryParams, values);
+            JsonUtility.FromJsonOverwrite(parameters.ToString(Formatting.None), values);
             return values;
         }
 
