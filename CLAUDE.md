@@ -28,8 +28,8 @@ Packages/com.hyperrts.engine/
 ├── Presentation/  team colours, overlays, rendering helpers, fog, UI Toolkit HUD, audio playback, Tests/
 ├── Input/         camera, shared input actions, input → PlayerCommand bridge
 ├── Network/       Session, Players (join), Commands (RPCs), Replication, Relevancy, Audio (docs/networking.md)
-├── Editor/        Authoring (inspectors, handles), Validation, Templates, Catalog, PlayMode (debug draw, cheats),
-│                  Common, scene wizard, Tests/
+├── Editor/        Hub (Tools window), Generators, Authoring (inspectors, handles), Validation, Templates, Catalog,
+│                  PlayMode (debug draw, cheats), Maps (Map Editor, map library, builder), Common, scene wizard, Tests/
 └── Prefabs/       RTSWorld rig (camera + HUD), MatchState ghost, UI/HUD
 ```
 
@@ -119,6 +119,7 @@ In Play mode, the Scene view's **HyperRTS Debug** overlay and **HyperRTS ▸ Too
 - [`modules`](docs/modules.md) - components and systems per module
 - [`extending`](docs/extending.md) - game code, HUD, AI, front-end integration
 - [`networking`](docs/networking.md) - sessions, join, commands, replication, fog relevancy
-- [`editor`](docs/editor.md) - menus, authoring conventions, validation, debug tools
+- [`editor`](docs/editor.md) - Tools window, generators, menus, authoring conventions, validation, debug tools
+- [`maps`](docs/maps.md) - Map Editor, spec format, build pipeline, map library, batch tools
 - [`testing`](docs/testing.md) - `TestWorld`, test kits, CI validation
 - [`roadmap`](docs/roadmap.md) - status and open work; check before new work

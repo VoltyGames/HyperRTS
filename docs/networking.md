@@ -39,7 +39,7 @@ To configure the match itself (open and closed slots, teams, colours, AI, starti
 the same `MatchSetupRequest` before the map loads; see [modules](modules.md#match).
 
 The `Start*` calls return `false` when the session can't start (bad address, port in use) and stay in single
-player. In Play mode use **HyperRTS ▸ Network**. Builds accept `-server`, `-host`, `-connect <address>` and
+player. In Play mode use **HyperRTS ▸ Tools ▸ Play**. Builds accept `-server`, `-host`, `-connect <address>` and
 `-port <n>`, plus `-scene <path>` to pick the map; a dedicated server runs with
 `-batchmode -nographics -server -scene <map>`. Relay needs runtime data from the
 game, so it has no menu item or flag.

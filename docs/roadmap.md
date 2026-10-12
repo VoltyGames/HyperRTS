@@ -20,7 +20,7 @@ Status of the engine and the work still open. Update it when a feature lands or 
 | Audio | ✅ | Cues, network forwarding, pooled playback, voices |
 | Replays | ✅ | State recording, playback, seek |
 | Multiplayer | 🟡 | Works end to end; not measured at scale |
-| Editor tooling | ✅ | Wizard, templates, validator, catalog, debug overlay, cheats, maps from specs (terrain, towns, trees, metrics, report) |
+| Editor tooling | ✅ | Tools window, generators, wizard, templates, validator, catalog, debug overlay, cheats, Map Editor with live preview, JSON map library, maps from specs (terrain, towns, trees, metrics, report) |
 | Destruction | ✅ | Destructible scenery, crushing, damage stages, remains effects, neutral garrisons, bridges that take their deck with them |
 | Hardening | 🟡 | No CI, no stress scene, no performance budgets |
 

@@ -19,7 +19,8 @@ and the simulation runs headless for tests and dedicated servers.
 | Multiplayer | Server-authoritative Netcode: host, dedicated server, relay, join and rejoin, per-client fog relevancy |
 | Presentation | UI Toolkit HUD, team colours, overlays, fog rendering, pooled audio with unit voices |
 | Replays | State recording, playback, seek |
-| Editor | Scene wizard, role templates, validator with quick fixes, stats catalog and tech tree, Play-mode debug overlay and cheats |
+| Maps | JSON map specs of land use (farmland, settlements, woods, belts, rivers, ravines, roads) built into terrain, scenes, bot hints and a report with rush times and attack paths; symmetric by sector; a JSON map library for the look of the land |
+| Editor | Tools window (maps, map library, stats catalog and tech tree, validator with quick fixes, Play-mode cheats, network and replays, generators), Map Editor with live preview, role templates, inspectors with issue badges, Play-mode debug overlay |
 
 ## Try it
 
@@ -46,7 +47,8 @@ Then follow [getting started](docs/getting-started.md).
 | [Modules](docs/modules.md) | Components and systems of every module |
 | [Extending](docs/extending.md) | Game code: new mechanics, HUD, AI, front-end integration |
 | [Networking](docs/networking.md) | Sessions, join, replication, relay, fog relevancy |
-| [Editor](docs/editor.md) | Menus, authoring conventions, validation, debug tools |
+| [Editor](docs/editor.md) | Tools window, generators, menus, authoring conventions, inspectors, validation, debug tools |
+| [Maps](docs/maps.md) | Map Editor, spec format, build pipeline, map library, batch tools |
 | [Testing](docs/testing.md) | `TestWorld`, test kits, validation in CI |
 | [Roadmap](docs/roadmap.md) | Status and open work |
 

@@ -13,7 +13,7 @@ or UI.
 | `HyperRTS.Network` | `Network/` | Session, join, command RPCs, replication, fog relevancy, sound forwarding |
 | `HyperRTS.Presentation` | `Presentation/` | HUD, overlays, fog rendering, team colours, audio playback |
 | `HyperRTS.Input` | `Input/` | Camera, input actions, input → `PlayerCommand` |
-| `HyperRTS.Editor` | `Editor/` | Inspectors, validation, templates, catalog, debug draw, cheats, scene wizard |
+| `HyperRTS.Editor` | `Editor/` | Tools window, generators, inspectors, validation, templates, catalog, debug draw, cheats, scene wizard, Map Editor, map library and builder |
 | `HyperRTS.*.Tests` | `*/Tests/` | EditMode tests |
 
 ```text
