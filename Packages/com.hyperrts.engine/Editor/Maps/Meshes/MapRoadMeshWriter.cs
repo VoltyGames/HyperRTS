@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Maps.Meshes
             Transform parent)
         {
             AssetDatabase.DeleteAsset(paths.Roads);
-            var meshes = Build(shapes, heights, layout.Datum);
+            var meshes = Build(shapes, heights, layout.GroundLevel);
             if (meshes.Count == 0)
             {
                 return null;
@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Meshes
         }
 
         /// <summary>One ribbon mesh per road class that has a material, in the order the classes first appear.</summary>
-        public static List<(MapRoadClass Class, Mesh Mesh)> Build(MapShapes shapes, MapHeights heights, float datum)
+        public static List<(MapRoadClass Class, Mesh Mesh)> Build(MapShapes shapes, MapHeights heights, float groundLevel)
         {
             var meshes = new List<(MapRoadClass, Mesh)>();
             var roads = shapes.Roads;
@@ -65,7 +65,7 @@ namespace HyperRTS.Editor.Maps.Meshes
                 foreach (var road in group)
                 {
                     var (start, end) = MapRoadFades.For(road, roads);
-                    MapRoadRibbon.Add(data, road, start, end, heights, datum, p => shapes.RiverEdgeDistance(p) < 0f);
+                    MapRoadRibbon.Add(data, road, start, end, heights, groundLevel, p => shapes.RiverEdgeDistance(p) < 0f);
                 }
 
                 if (data.Count > 0)

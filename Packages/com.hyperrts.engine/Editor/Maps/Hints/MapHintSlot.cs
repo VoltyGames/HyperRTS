@@ -6,9 +6,9 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Hints
 {
     /// <summary>One slot's base while the hints are computed: where it is on the nav grid and how far everything is to walk.</summary>
-    public sealed class MapHintBase
+    public sealed class MapHintSlot
     {
-        public MapHintBase(MapSpawn spawn, int2 cell, int cellIndex, float[] walk)
+        public MapHintSlot(MapSpawn spawn, int2 cell, int cellIndex, float[] walk)
         {
             Slot = spawn.Slot;
             Team = spawn.Team;

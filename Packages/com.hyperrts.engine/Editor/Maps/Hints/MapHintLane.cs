@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Hints
     /// <summary>One attack path between two bases, from <see cref="From"/> to <see cref="To"/>, with its waypoints.</summary>
     public sealed class MapHintLane
     {
-        public MapHintLane(MapHintBase from, MapHintBase to, MapPath path, List<Vector2> waypoints)
+        public MapHintLane(MapHintSlot from, MapHintSlot to, MapPath path, List<Vector2> waypoints)
         {
             From = from;
             To = to;
@@ -17,9 +17,9 @@ namespace HyperRTS.Editor.Maps.Hints
             Waypoints = waypoints;
         }
 
-        public MapHintBase From { get; }
+        public MapHintSlot From { get; }
 
-        public MapHintBase To { get; }
+        public MapHintSlot To { get; }
 
         public MapPath Path { get; }
 
@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Hints
         public List<Vector2> Waypoints { get; }
 
         /// <summary>The path's cells leaving <paramref name="origin"/>'s base; null if the lane doesn't touch that base.</summary>
-        public List<int2> CellsLeaving(MapHintBase origin)
+        public List<int2> CellsLeaving(MapHintSlot origin)
         {
             if (origin == From)
             {

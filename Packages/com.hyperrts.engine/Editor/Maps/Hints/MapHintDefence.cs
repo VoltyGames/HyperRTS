@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.Maps.Hints
         /// <summary>Directions (spread over half a turn) a spot's open width is measured along.</summary>
         private const int ChordDirections = 8;
 
-        public static List<Vector2> Find(MapHintInput input, MapHintBase target, IEnumerable<MapHintLane> lanes)
+        public static List<Vector2> Find(MapHintInput input, MapHintSlot target, IEnumerable<MapHintLane> lanes)
         {
             var points = new List<Vector2>();
             foreach (var lane in lanes)
@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Maps.Hints
         }
 
         /// <summary>First crossing or narrow spot walking out of the base along the lane, else where the lane leaves it.</summary>
-        private static Vector2? Choke(MapHintInput input, MapHintBase target, List<int2> outward)
+        private static Vector2? Choke(MapHintInput input, MapHintSlot target, List<int2> outward)
         {
             Vector2? entry = null;
             for (var i = 0; i < outward.Count; i++)

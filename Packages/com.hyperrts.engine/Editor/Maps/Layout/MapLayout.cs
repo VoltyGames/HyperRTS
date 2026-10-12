@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Layout
         /// Terrain height of world y = 0. The terrain is lowered by it so open ground sits at y = 0, where the
         /// camera and the rest of the engine expect the ground.
         /// </summary>
-        public float Datum => Terrain.height;
+        public float GroundLevel => Terrain.height;
 
         public MapTerrainSpec Terrain => Spec.terrain;
 

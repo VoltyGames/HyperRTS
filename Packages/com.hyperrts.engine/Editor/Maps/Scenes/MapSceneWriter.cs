@@ -83,7 +83,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             match.mapSize = layout.Size;
             match.navCellSize = project.Rules.navCellSize;
             match.maxSlope = project.Rules.maxSlope;
-            match.waterLevel = layout.Terrain.waterLevel - layout.Datum;
+            match.waterLevel = layout.Terrain.waterLevel - layout.GroundLevel;
             match.floodBelowWaterLevel = true;
             match.players = layout.Spawns.Select(spawn => new PlayerSlot
             {

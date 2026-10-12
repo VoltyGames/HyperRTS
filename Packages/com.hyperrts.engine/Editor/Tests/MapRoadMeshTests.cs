@@ -19,11 +19,11 @@ namespace HyperRTS.Editor.Tests
 
         private static MapHeights Flat() => new(129, new Rect(-64f, -64f, 128f, 128f));
 
-        private static MapRoadMesh Ribbon(MapRoad road, bool fadeStart, bool fadeEnd, MapHeights heights, float datum = 0f,
+        private static MapRoadMesh Ribbon(MapRoad road, bool fadeStart, bool fadeEnd, MapHeights heights, float groundLevel = 0f,
             System.Func<Vector2, bool> hidden = null)
         {
             var mesh = new MapRoadMesh();
-            MapRoadRibbon.Add(mesh, road, fadeStart, fadeEnd, heights, datum, hidden ?? (_ => false));
+            MapRoadRibbon.Add(mesh, road, fadeStart, fadeEnd, heights, groundLevel, hidden ?? (_ => false));
             return mesh;
         }
 
@@ -99,7 +99,7 @@ namespace HyperRTS.Editor.Tests
 
             var mesh = Ribbon(North(), false, false, heights, 10f);
 
-            Assert.AreEqual(-0.6f + MapRoadRibbon.Lift, mesh.Vertices[0].y, 0.01f, "3 m west on a 0.2 slope, datum removed");
+            Assert.AreEqual(-0.6f + MapRoadRibbon.Lift, mesh.Vertices[0].y, 0.01f, "3 m west on a 0.2 slope, groundLevel removed");
             Assert.AreEqual(0.6f + MapRoadRibbon.Lift, mesh.Vertices[Columns - 1].y, 0.01f);
             Assert.Less(mesh.Normals[0].x, -0.1f, "the normal leans away from the rising side");
         }

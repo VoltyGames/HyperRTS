@@ -43,9 +43,9 @@ namespace HyperRTS.Editor.Maps.Hints
         }
 
         /// <summary>The bases in slot order with their walking distances, or null if one has no walkable ground.</summary>
-        private static List<MapHintBase> FindBases(MapHintInput input, MapIssues issues)
+        private static List<MapHintSlot> FindBases(MapHintInput input, MapIssues issues)
         {
-            var bases = new List<MapHintBase>();
+            var bases = new List<MapHintSlot>();
             foreach (var spawn in input.Spawns.OrderBy(s => s.Slot))
             {
                 if (!input.Nav.TryFindWalkable(spawn.Position, input.BaseRadius, out var cell))
@@ -54,14 +54,14 @@ namespace HyperRTS.Editor.Maps.Hints
                     return null;
                 }
 
-                bases.Add(new MapHintBase(spawn, cell, input.Nav.Grid.Index(cell), MapWalkField.From(input.Nav, cell)));
+                bases.Add(new MapHintSlot(spawn, cell, input.Nav.Grid.Index(cell), MapWalkField.From(input.Nav, cell)));
             }
 
             return bases;
         }
 
         /// <summary>The base's reachable nodes, its own first, then nearest to walk to first.</summary>
-        private static void FillExpansions(MapHintInput input, MapHintBase origin, HashSet<int> reached,
+        private static void FillExpansions(MapHintInput input, MapHintSlot origin, HashSet<int> reached,
             MapIssues issues)
         {
             var ranked = new List<(int Rank, float Walk, Vector2 Position)>();
@@ -102,7 +102,7 @@ namespace HyperRTS.Editor.Maps.Hints
             }
         }
 
-        private static void CheckLanes(List<MapHintBase> bases, List<MapHintLane> lanes, MapIssues issues)
+        private static void CheckLanes(List<MapHintSlot> bases, List<MapHintLane> lanes, MapIssues issues)
         {
             foreach (var origin in bases)
             {
@@ -116,7 +116,7 @@ namespace HyperRTS.Editor.Maps.Hints
         }
 
         /// <summary>Each lane in both directions, the reverse one's waypoints reversed, so index k is the same path both ways.</summary>
-        private static void Write(AIMapHintsAuthoring target, List<MapHintBase> bases, List<MapHintLane> lanes)
+        private static void Write(AIMapHintsAuthoring target, List<MapHintSlot> bases, List<MapHintLane> lanes)
         {
             target.slots.Clear();
             target.lanes.Clear();

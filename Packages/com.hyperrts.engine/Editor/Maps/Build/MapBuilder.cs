@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Maps.Build
             var (main, entities, root) = MapSceneWriter.Open(paths, layout, project);
             MapEnvironmentWriter.Write(paths, layout, generation.Shapes, data, ground, climate, entities, root);
             MapRoadMeshWriter.Write(paths, layout, generation.Shapes, generation.Heights, root);
-            MapPlacementWriter.Write(generation.Placer.Placements, generation.Heights, layout.Datum, entities, root);
+            MapPlacementWriter.Write(generation.Placer.Placements, generation.Heights, layout.GroundLevel, entities, root);
             EditorSceneManager.SaveScene(main);
             MapLightingBaker.Bake(paths);
             var minimap = MapMinimapCapture.Capture(layout, paths.Minimap);
@@ -79,8 +79,8 @@ namespace HyperRTS.Editor.Maps.Build
             Scene entities, MapIssues issues)
         {
             var layout = generation.Layout;
-            var origin = new Vector3(layout.TerrainBounds.xMin, -layout.Datum, layout.TerrainBounds.yMin);
-            var water = layout.Terrain.waterLevel - layout.Datum;
+            var origin = new Vector3(layout.TerrainBounds.xMin, -layout.GroundLevel, layout.TerrainBounds.yMin);
+            var water = layout.Terrain.waterLevel - layout.GroundLevel;
             using var nav = MapNavGrid.Build(entities, data, origin, layout.Bounds, water, project.Rules);
             var measurer = MapMeasurer.Measure(layout, nav, generation.Placer, generation.Trees.Count, project.Palette,
                 project.Rules, issues);

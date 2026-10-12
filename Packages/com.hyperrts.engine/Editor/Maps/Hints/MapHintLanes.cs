@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Maps.Hints
         /// <summary>Metres of path between waypoints.</summary>
         public const float Spacing = 50f;
 
-        public static List<MapHintLane> Find(MapHintInput input, IReadOnlyList<MapHintBase> bases, MapIssues issues)
+        public static List<MapHintLane> Find(MapHintInput input, IReadOnlyList<MapHintSlot> bases, MapIssues issues)
         {
             var lanes = new List<MapHintLane>();
             foreach (var (first, second) in Pairs(bases))
@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Maps.Hints
         }
 
         /// <summary>Index pairs (lower first) of bases that get lanes: each base with its nearest enemies, in order.</summary>
-        private static SortedSet<(int, int)> Pairs(IReadOnlyList<MapHintBase> bases)
+        private static SortedSet<(int, int)> Pairs(IReadOnlyList<MapHintSlot> bases)
         {
             var pairs = new SortedSet<(int, int)>();
             for (var i = 0; i < bases.Count; i++)

@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         public static Terrain Write(MapPaths paths, MapLayout layout, MapShapes shapes, TerrainData data,
             MapGroundLook ground, MapClimate climate, Scene entities, Transform root)
         {
-            var origin = new Vector3(layout.TerrainBounds.xMin, -layout.Datum, layout.TerrainBounds.yMin);
+            var origin = new Vector3(layout.TerrainBounds.xMin, -layout.GroundLevel, layout.TerrainBounds.yMin);
             var terrain = CreateTerrain(data, ground.Material, climate, origin, root);
             CreateGroundColor(ground.Picture, layout.TerrainBounds, root);
             var height = MapSceneWriter.CreateEntityObject(entities, "Terrain Height");
@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             CreateWater(paths, layout, shapes, climate, root);
             PrefabUtility.InstantiatePrefab(climate.atmosphere, root);
             ApplySky(climate);
-            CreateDecks(shapes, entities, layout.Datum);
+            CreateDecks(shapes, entities, layout.GroundLevel);
             return terrain;
         }
 
@@ -89,7 +89,7 @@ namespace HyperRTS.Editor.Maps.Scenes
                 return;
             }
 
-            var mesh = MapWaterMesh.Build(shapes, layout.Terrain.waterLevel - layout.Datum, layout.TerrainBounds);
+            var mesh = MapWaterMesh.Build(shapes, layout.Terrain.waterLevel - layout.GroundLevel, layout.TerrainBounds);
             AssetDatabase.DeleteAsset(paths.Water);
             AssetDatabase.CreateAsset(mesh, paths.Water);
             var water = new GameObject("Water");
@@ -113,7 +113,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         }
 
         /// <summary>A deck nav area over each ford, turned to span it, at the height units wade; bridges carry their own.</summary>
-        private static void CreateDecks(MapShapes shapes, Scene entities, float datum)
+        private static void CreateDecks(MapShapes shapes, Scene entities, float groundLevel)
         {
             for (var i = 0; i < shapes.Crossings.Count; i++)
             {
@@ -125,7 +125,7 @@ namespace HyperRTS.Editor.Maps.Scenes
 
                 var deck = MapSceneWriter.CreateEntityObject(entities, $"{crossing.Kind} {i + 1}");
                 deck.transform.SetPositionAndRotation(
-                    new Vector3(crossing.Position.x, crossing.Height - datum, crossing.Position.y),
+                    new Vector3(crossing.Position.x, crossing.Height - groundLevel, crossing.Position.y),
                     Quaternion.Euler(0f, crossing.Yaw, 0f));
                 var area = deck.AddComponent<NavAreaAuthoring>();
                 area.kind = NavAreaKind.Deck;

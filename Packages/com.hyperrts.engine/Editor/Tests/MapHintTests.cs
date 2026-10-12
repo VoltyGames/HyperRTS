@@ -169,8 +169,8 @@ namespace HyperRTS.Editor.Tests
         {
             _nav = Field(_ => false);
             var cells = Enumerable.Range(40, 121).Select(x => new int2(x, 40)).ToList();
-            var west = new MapHintBase(Spawn(1, 1, -60f, 0.5f), new int2(40, 40), 40 * 200 + 40, Array.Empty<float>());
-            var east = new MapHintBase(Spawn(2, 2, 60f, 0.5f), new int2(160, 40), 40 * 200 + 160, Array.Empty<float>());
+            var west = new MapHintSlot(Spawn(1, 1, -60f, 0.5f), new int2(40, 40), 40 * 200 + 40, Array.Empty<float>());
+            var east = new MapHintSlot(Spawn(2, 2, 60f, 0.5f), new int2(160, 40), 40 * 200 + 160, Array.Empty<float>());
             var lane = new MapHintLane(west, east, new MapPath(cells, 120f, 0), new List<Vector2>());
             var crossings = new List<(Vector2, float)> { (new Vector2(30f, 0.5f), 5f) };
 

@@ -20,11 +20,11 @@ namespace HyperRTS.Editor.Maps.Meshes
         private const float NormalSpan = 1f;
 
         /// <summary>
-        /// Adds the road's ribbon. <paramref name="datum"/> is the terrain height of world y = 0; rows whose centre is
+        /// Adds the road's ribbon. <paramref name="groundLevel"/> is the terrain height of world y = 0; rows whose centre is
         /// <paramref name="hidden"/> (over water, under a bridge) are left out and break the ribbon there.
         /// </summary>
         public static void Add(MapRoadMesh mesh, MapRoad road, bool fadeStart, bool fadeEnd, MapHeights heights,
-            float datum, Func<Vector2, bool> hidden)
+            float groundLevel, Func<Vector2, bool> hidden)
         {
             var points = MapCurves.Resample(road.Line.Points, Step);
             var length = MapGeometry.Length(points);
@@ -43,7 +43,7 @@ namespace HyperRTS.Editor.Maps.Meshes
                 var ahead = points[Mathf.Min(i + 1, points.Count - 1)] - points[Mathf.Max(i - 1, 0)];
                 var alpha = Mathf.Min(fadeStart ? along / FadeLength : 1f, fadeEnd ? (length - along) / FadeLength : 1f);
                 var row = mesh.Count;
-                AddRow(mesh, points[i], ahead.normalized, road.Width, columns, along, Mathf.Clamp01(alpha), heights, datum);
+                AddRow(mesh, points[i], ahead.normalized, road.Width, columns, along, Mathf.Clamp01(alpha), heights, groundLevel);
                 if (previous >= 0)
                 {
                     AddQuads(mesh, previous, row, columns);
@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Maps.Meshes
         }
 
         private static void AddRow(MapRoadMesh mesh, Vector2 center, Vector2 forward, float width, int columns,
-            float along, float alpha, MapHeights heights, float datum)
+            float along, float alpha, MapHeights heights, float groundLevel)
         {
             var right = MapGeometry.Right(forward);
             var fade = (byte)Mathf.RoundToInt(alpha * 255f);
@@ -65,7 +65,7 @@ namespace HyperRTS.Editor.Maps.Meshes
                 var normal = Normal(heights, point);
                 var side = new Vector3(right.x, 0f, right.y);
                 var tangent = (side - normal * Vector3.Dot(side, normal)).normalized;
-                mesh.Vertices.Add(new Vector3(point.x, heights.Height(point) - datum + Lift, point.y));
+                mesh.Vertices.Add(new Vector3(point.x, heights.Height(point) - groundLevel + Lift, point.y));
                 mesh.Normals.Add(normal);
                 mesh.Tangents.Add(new Vector4(tangent.x, tangent.y, tangent.z, -1f));
                 mesh.Uvs.Add(new Vector2(across, along));

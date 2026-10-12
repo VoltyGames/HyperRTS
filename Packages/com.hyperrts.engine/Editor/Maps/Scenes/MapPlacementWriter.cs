@@ -16,8 +16,8 @@ namespace HyperRTS.Editor.Maps.Scenes
     /// </summary>
     public static class MapPlacementWriter
     {
-        /// <summary>Heights are terrain heights; <paramref name="datum"/> is the terrain height of world y = 0.</summary>
-        public static void Write(List<MapPlacement> placements, MapHeights heights, float datum, Scene entities,
+        /// <summary>Heights are terrain heights; <paramref name="groundLevel"/> is the terrain height of world y = 0.</summary>
+        public static void Write(List<MapPlacement> placements, MapHeights heights, float groundLevel, Scene entities,
             Transform root)
         {
             var scenery = new GameObject("Scenery").transform;
@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Maps.Scenes
                 }
 
                 var position = placement.Position;
-                var y = (placement.Height ?? heights.Height(position)) - datum;
+                var y = (placement.Height ?? heights.Height(position)) - groundLevel;
                 instance.transform.SetPositionAndRotation(new Vector3(position.x, y, position.y),
                     Quaternion.Euler(0f, placement.Yaw, 0f));
                 instance.transform.localScale = Vector3.one * placement.Scale;
