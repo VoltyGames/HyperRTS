@@ -66,6 +66,13 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
+        public static Entity AddBuildLimit(this TestWorld world, Entity entity, int max)
+        {
+            var writer = new EntityManagerWriter(world.EntityManager, entity);
+            BuildLimitSetup.Add(ref writer, max);
+            return entity;
+        }
+
         /// <summary>Takes <paramref name="entity"/> offline for a game reason, or clears it.</summary>
         public static void SetOffline(this TestWorld world, Entity entity, bool offline)
         {

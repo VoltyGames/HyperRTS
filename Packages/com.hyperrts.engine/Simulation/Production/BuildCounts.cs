@@ -1,4 +1,3 @@
-using System;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
@@ -14,9 +13,11 @@ namespace HyperRTS.Simulation.Production
         public static EntityQueryBuilder Query(Allocator allocator) =>
             new EntityQueryBuilder(allocator).WithAll<BuildLimit, EntityInfo, Faction>().WithNone<Dead>();
 
-        /// <summary>Counts <paramref name="faction"/>'s instances in <paramref name="limited"/> and its queued items.</summary>
-        public static BuildCounts Snapshot(EntityManager entityManager, EntityQuery limited, EntityQuery queues,
-            byte faction)
+        /// <summary>
+        /// Counts <paramref name="faction"/>'s instances in <paramref name="limited"/>; <see cref="Buyer.Snapshot"/> adds
+        /// its queued items.
+        /// </summary>
+        public static BuildCounts Snapshot(EntityQuery limited, byte faction)
         {
             var counts = new BuildCounts { _counts = new NativeHashMap<int, int>(4, Allocator.Temp) };
             var infos = limited.ToComponentDataArray<EntityInfo>(Allocator.Temp);
@@ -29,19 +30,6 @@ namespace HyperRTS.Simulation.Production
                 }
             }
 
-            foreach (var producer in queues.ToEntityArray(Allocator.Temp))
-            {
-                if (entityManager.GetComponentData<Faction>(producer).Value != faction)
-                {
-                    continue;
-                }
-
-                foreach (var item in entityManager.GetBuffer<ProductionQueueItem>(producer, true))
-                {
-                    counts.Add(entityManager, item.Prefab);
-                }
-            }
-
             return counts;
         }
 
@@ -51,11 +39,6 @@ namespace HyperRTS.Simulation.Production
             if (!entityManager.HasComponent<BuildLimit>(prefab))
             {
                 return false;
-            }
-
-            if (!_counts.IsCreated)
-            {
-                throw new InvalidOperationException("Buyer has no BuildCounts snapshot to check a BuildLimit against");
             }
 
             var max = entityManager.GetComponentData<BuildLimit>(prefab).Max;

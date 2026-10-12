@@ -7,29 +7,11 @@ namespace HyperRTS.Simulation.Production
     /// <summary>Whether a player may still queue a <see cref="Research"/>: each is researched once. Shared by orders, AI and HUD.</summary>
     public static class ResearchRules
     {
-        /// <summary>Every production queue with its owner, for <see cref="CollectQueued"/>.</summary>
+        /// <summary>Every production queue with its owner, for <see cref="Buyer.Snapshot"/>.</summary>
         public static EntityQueryBuilder QueueQuery(Allocator allocator) =>
             new EntityQueryBuilder(allocator).WithAll<ProductionQueueItem, Faction>();
 
-        /// <summary>Adds every prefab <paramref name="faction"/> has queued at any producer to <paramref name="queued"/>.</summary>
-        public static void CollectQueued(EntityManager entityManager, EntityQuery queues, byte faction,
-            NativeHashSet<Entity> queued)
-        {
-            foreach (var producer in queues.ToEntityArray(Allocator.Temp))
-            {
-                if (entityManager.GetComponentData<Faction>(producer).Value != faction)
-                {
-                    continue;
-                }
-
-                foreach (var item in entityManager.GetBuffer<ProductionQueueItem>(producer, true))
-                {
-                    queued.Add(item.Prefab);
-                }
-            }
-        }
-
-        /// <summary>False for research already in <paramref name="completed"/> or in <paramref name="queued"/>, a <see cref="CollectQueued"/> snapshot.</summary>
+        /// <summary>False for research already in <paramref name="completed"/> or in <paramref name="queued"/>, as snapshotted by <see cref="Buyer.Snapshot"/>.</summary>
         public static bool CanQueue(EntityManager entityManager, DynamicBuffer<CompletedResearch> completed,
             NativeHashSet<Entity> queued, Entity prefab)
         {

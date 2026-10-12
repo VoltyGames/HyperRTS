@@ -86,8 +86,9 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
-                var paid = TakeBonus(ref income) + Draw(entity, DueIntervals(ref income) * PerInterval(entity, income));
-                ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, income.Type, paid);
+                var due = IntervalTimer.Advance(ref income.Elapsed, income.Interval, DeltaTime);
+                var earned = due > 0 ? Draw(entity, due * PerInterval(entity, income)) : 0;
+                ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, income.Type, TakeBonus(ref income) + earned);
             }
 
             private static int TakeBonus(ref ResourceIncome income)
@@ -99,19 +100,6 @@ namespace HyperRTS.Simulation.Resources
 
                 income.BonusPaid = true;
                 return income.FirstOwnerBonus;
-            }
-
-            private int DueIntervals(ref ResourceIncome income)
-            {
-                income.Elapsed += DeltaTime;
-                var due = 0;
-                while (income.Elapsed >= income.Interval)
-                {
-                    income.Elapsed -= income.Interval;
-                    due++;
-                }
-
-                return due;
             }
 
             /// <summary>An occupant-paid income without a cargo hold is bad data, so the lookup throws.</summary>

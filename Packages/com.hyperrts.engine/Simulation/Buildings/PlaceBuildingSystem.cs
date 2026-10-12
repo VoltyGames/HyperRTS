@@ -39,8 +39,6 @@ namespace HyperRTS.Simulation.Buildings
         {
             public float3 Center;
             public float2 Footprint;
-            public byte Faction;
-            public Entity Prefab;
         }
 
         private EntityQuery _selectedBuilders;
@@ -91,11 +89,26 @@ namespace HyperRTS.Simulation.Buildings
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var sites = new NativeList<Site>(Allocator.Temp);
             var assignments = new NativeList<Assignment>(Allocator.Temp);
+            // One buyer per player for the frame: each site placed counts against the next request's build limits.
+            var buyers = new NativeHashMap<byte, Buyer>(4, Allocator.Temp);
+            var buildings = new CompletedBuildings(_completed, Allocator.Temp);
 
             foreach (var request in requests)
             {
                 var builders = Builders(ref state, request);
-                if (builders.Length == 0 || !TryPlace(ref state, request, ecb, sites, out var order))
+                if (builders.Length == 0)
+                {
+                    continue;
+                }
+
+                if (!buyers.TryGetValue(request.Faction, out var buyer))
+                {
+                    buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, request.Faction, buildings,
+                        SystemAPI.GetBuffer<CompletedResearch>(request.Player));
+                    buyers.Add(request.Faction, buyer);
+                }
+
+                if (!TryPlace(ref state, request, buyer, ecb, sites, out var order))
                 {
                     continue;
                 }
@@ -116,7 +129,7 @@ namespace HyperRTS.Simulation.Buildings
             }
         }
 
-        private bool TryPlace(ref SystemState state, in Request request, EntityCommandBuffer ecb,
+        private bool TryPlace(ref SystemState state, in Request request, in Buyer buyer, EntityCommandBuffer ecb,
             NativeList<Site> sites, out Order order)
         {
             order = default;
@@ -135,32 +148,17 @@ namespace HyperRTS.Simulation.Buildings
                 return false;
             }
 
-            var buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, request.Faction,
-                new CompletedBuildings(_completed, Allocator.Temp),
-                SystemAPI.GetBuffer<CompletedResearch>(request.Player));
-            CountSites(ref state, buyer, sites);
             var stock = SystemAPI.GetBuffer<ResourceStock>(request.Player);
             if (!PurchaseRules.TryBuy(state.EntityManager, prefab, buyer, stock))
             {
                 return false;
             }
 
+            buyer.AddPurchase(state.EntityManager, prefab);
             var building = SpawnSite(ref state, prefab, center, request.Faction, ecb);
-            sites.Add(new Site { Center = center, Footprint = footprint, Faction = request.Faction, Prefab = prefab });
+            sites.Add(new Site { Center = center, Footprint = footprint });
             order = new Order { Type = OrderType.Build, Target = building, Position = center };
             return true;
-        }
-
-        /// <summary>Sites placed earlier this frame are still in the command buffer; count them against build limits.</summary>
-        private static void CountSites(ref SystemState state, in Buyer buyer, NativeList<Site> sites)
-        {
-            foreach (var site in sites)
-            {
-                if (site.Faction == buyer.Faction)
-                {
-                    buyer.Counts.Add(state.EntityManager, site.Prefab);
-                }
-            }
         }
 
         /// <summary>An unbuilt instance of <paramref name="prefab"/>; builders raise it through Build orders.</summary>

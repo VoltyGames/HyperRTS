@@ -179,31 +179,10 @@ namespace HyperRTS.Simulation.Resources
                 }
 
                 var player = Players[faction];
-                if (StockLookup.TryGetBuffer(player, out var stock))
-                {
-                    var delivered = Delivered(player, harvester.CargoAmount);
-                    ResourceMath.Add(stock, harvester.CargoType, delivered);
-                    CountGathered(player, delivered);
-                }
-
+                var delivered = ResourcePayout.Scaled(ModifierLookup, player, harvester.CargoAmount);
+                ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, harvester.CargoType, delivered);
                 harvester.CargoAmount = 0;
                 harvest.Phase = HarvestPhase.Gathering;
-            }
-
-            private void CountGathered(Entity player, int amount)
-            {
-                if (StatsLookup.TryGetRefRW(player, out var stats))
-                {
-                    stats.ValueRW.ResourcesGathered += amount;
-                }
-            }
-
-            private int Delivered(Entity player, int cargo)
-            {
-                var income = ModifierLookup.TryGetBuffer(player, out var modifiers)
-                    ? StatMath.Evaluate(modifiers, Stat.Income, 1f)
-                    : 1f;
-                return (int)math.round(cargo * income);
             }
 
             private bool IsHarvestable(Entity node) =>

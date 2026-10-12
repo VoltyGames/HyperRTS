@@ -175,7 +175,7 @@ namespace HyperRTS.Editor.Maps.Report
                 }
 
                 var reach = radius * FieldReach;
-                foreach (var node in placements.Where(p => p.Entry.IsResource && (p.Position - spawn.Position).magnitude < reach))
+                foreach (var node in placements.Where(p => (p.Position - spawn.Position).magnitude < reach && p.Entry.IsResource))
                 {
                     CountNode(spawn.Slot, metrics, node, reach);
                 }
@@ -201,7 +201,7 @@ namespace HyperRTS.Editor.Maps.Report
         private void CheckRenewableFields(List<MapPlacement> placements)
         {
             var stacks = placements.Where(p => p.Entry.IsRenewable).Select(p => p.Position).ToList();
-            var fields = MapFieldClusters.Count(stacks, MapFieldClusters.Link);
+            var fields = MapFieldClusters.Count(stacks);
             var players = _layout.Spawns.Count;
             Metrics.renewableFieldsPerPlayer = (float)fields / players;
             var mode = _rules.Mode(_layout.Spec.mode);

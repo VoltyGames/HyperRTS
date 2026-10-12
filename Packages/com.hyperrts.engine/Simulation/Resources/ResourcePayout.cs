@@ -1,5 +1,7 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Stats;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Resources
 {
@@ -19,6 +21,15 @@ namespace HyperRTS.Simulation.Resources
             {
                 stats.ValueRW.ResourcesGathered += amount;
             }
+        }
+
+        /// <summary><paramref name="amount"/> scaled by the player's <c>Stat.Income</c>, rounded.</summary>
+        public static int Scaled(in BufferLookup<StatModifier> modifierLookup, Entity player, int amount)
+        {
+            var income = modifierLookup.TryGetBuffer(player, out var modifiers)
+                ? StatMath.Evaluate(modifiers, Stat.Income, 1f)
+                : 1f;
+            return (int)math.round(amount * income);
         }
     }
 }

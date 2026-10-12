@@ -34,16 +34,9 @@ namespace HyperRTS.Simulation.Tests
             Object.DestroyImmediate(_supplies);
         }
 
-        private Entity Limit(Entity entity, int max)
-        {
-            var writer = new EntityManagerWriter(_world.EntityManager, entity);
-            BuildLimitSetup.Add(ref writer, max);
-            return entity;
-        }
-
         private Entity UnitPrefab(int max)
         {
-            var prefab = Limit(_world.MakePrefab(_world.SpawnUnit(0, Far, name: "Hero")), max);
+            var prefab = _world.AddBuildLimit(_world.MakePrefab(_world.SpawnUnit(0, Far, name: "Hero")), max);
             _world.SetBuildTime(prefab, 30f);
             _world.SetCost(prefab, _supplies, 100);
             return prefab;
@@ -53,8 +46,11 @@ namespace HyperRTS.Simulation.Tests
             _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), new float3(0f, 0f, -4f),
                 prefab);
 
-        private Entity LiveHero(byte faction, Entity prefab) =>
-            Limit(_world.SpawnUnit(faction, new float3(-20f, 0f, 0f), name: "Hero"), _world.Get<BuildLimit>(prefab).Max);
+        private Entity LiveHero(byte faction, Entity prefab)
+        {
+            var hero = _world.SpawnUnit(faction, new float3(-20f, 0f, 0f), name: "Hero");
+            return _world.AddBuildLimit(hero, _world.Get<BuildLimit>(prefab).Max);
+        }
 
         private int QueueLength(Entity producer) => _world.EntityManager.GetBuffer<ProductionQueueItem>(producer).Length;
 
@@ -108,7 +104,8 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void PlaceBuilding_SecondSiteInTheSameFrameIsRefused()
         {
-            var prefab = Limit(_world.MakePrefab(_world.SpawnBuilding(0, Far, new float2(4f, 4f), name: "Silo")), 1);
+            var silo = _world.SpawnBuilding(0, Far, new float2(4f, 4f), name: "Silo");
+            var prefab = _world.AddBuildLimit(_world.MakePrefab(silo), 1);
             _world.SetCost(prefab, _supplies, 100);
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero), prefab);
 

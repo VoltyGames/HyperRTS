@@ -133,8 +133,7 @@ namespace HyperRTS.Simulation.Tests
             _world.MakeProducer(existing, new float3(0f, 0f, -3f), _soldier);
             foreach (var barracks in new[] { _barracks, existing })
             {
-                var writer = new EntityManagerWriter(_world.EntityManager, barracks);
-                BuildLimitSetup.Add(ref writer, 1);
+                _world.AddBuildLimit(barracks, 1);
             }
 
             SetBuildOrder((_barracks, 2), (_soldier, 1));

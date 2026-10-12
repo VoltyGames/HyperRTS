@@ -76,14 +76,7 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
-                refill.Elapsed += DeltaTime;
-                var due = 0;
-                while (refill.Elapsed >= refill.Interval)
-                {
-                    refill.Elapsed -= refill.Interval;
-                    due++;
-                }
-
+                var due = IntervalTimer.Advance(ref refill.Elapsed, refill.Interval, DeltaTime);
                 if (due > 0)
                 {
                     TopUp(owner, refill.Type, due * refill.Amount);

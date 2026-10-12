@@ -98,8 +98,7 @@ namespace HyperRTS.Simulation.Production
 
             var typeId = EntityInfo.GetTypeId(state.EntityManager, prefab);
             queue.Add(new ProductionQueueItem { Prefab = prefab, TypeId = typeId });
-            buyer.QueuedResearch.Add(prefab);
-            buyer.Counts.Add(state.EntityManager, prefab);
+            buyer.AddPurchase(state.EntityManager, prefab);
         }
 
         private void Cancel(ref SystemState state, byte faction, in PlayerCommand command,
@@ -121,8 +120,7 @@ namespace HyperRTS.Simulation.Production
             var prefab = queue[index].Prefab;
             queue.RemoveAt(index);
             // Research is queued once per player, so the cancelled one is free to queue again this frame.
-            buyer.QueuedResearch.Remove(prefab);
-            buyer.Counts.Remove(state.EntityManager, prefab);
+            buyer.RemovePurchase(state.EntityManager, prefab);
             if (index == 0)
             {
                 SystemAPI.GetComponentRW<Producer>(producer).ValueRW.Elapsed = 0f;

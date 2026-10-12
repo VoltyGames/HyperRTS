@@ -33,6 +33,8 @@ namespace HyperRTS.Simulation.Resources
             state.RequireForUpdate<PlayerRegistry>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            // Carriers still arrive after their source dies, so either keeps the system running.
+            state.RequireForUpdate(SystemAPI.QueryBuilder().WithAny<DeliverySource, DeliveryCarrier>().Build());
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _offlineLookup = state.GetComponentLookup<Offline>(true);
             _sourceLookup = state.GetComponentLookup<DeliverySource>(true);
@@ -175,20 +177,8 @@ namespace HyperRTS.Simulation.Resources
             private void Pay(in DeliveryCarrier carrier, in Faction faction)
             {
                 var player = faction.Value == Faction.Neutral ? Entity.Null : Players[faction.Value];
-                if (!StockLookup.TryGetBuffer(player, out var stock))
-                {
-                    return;
-                }
-
-                var income = ModifierLookup.TryGetBuffer(player, out var modifiers)
-                    ? StatMath.Evaluate(modifiers, Stat.Income, 1f)
-                    : 1f;
-                var paid = (int)math.round(carrier.Amount * income);
-                ResourceMath.Add(stock, carrier.Type, paid);
-                if (StatsLookup.TryGetRefRW(player, out var stats))
-                {
-                    stats.ValueRW.ResourcesGathered += paid;
-                }
+                var paid = ResourcePayout.Scaled(ModifierLookup, player, carrier.Amount);
+                ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, carrier.Type, paid);
             }
         }
     }
