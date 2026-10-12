@@ -8,7 +8,6 @@ using HyperRTS.Editor.Maps.Scenes;
 using HyperRTS.Simulation.AI;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Editor.Maps.Hints
 {

@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Editor.Maps.Scenes
 {
