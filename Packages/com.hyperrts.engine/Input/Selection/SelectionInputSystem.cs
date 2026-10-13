@@ -141,6 +141,7 @@ namespace HyperRTS.Input.Selection
             input.RayOrigin = ray.origin;
             input.RayDirection = math.normalizesafe((float3)ray.direction);
             input.RayDistance = camera.farClipPlane;
+            input.Pointer = pointer;
 
             _lastClickTime = now;
             _lastClickPosition = pointer;

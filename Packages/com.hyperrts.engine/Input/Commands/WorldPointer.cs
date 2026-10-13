@@ -1,7 +1,9 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
@@ -14,17 +16,22 @@ namespace HyperRTS.Input.Commands
     {
         private readonly EntityQuery _physics;
         private readonly EntityQuery _terrain;
+        private readonly EntityQuery _units;
+        private PickRanking _ranking;
         private Camera _camera;
 
         public WorldPointer(ref SystemState state)
         {
             _physics = state.GetEntityQuery(ComponentType.ReadOnly<PhysicsWorldSingleton>());
             _terrain = state.GetEntityQuery(ComponentType.ReadOnly<TerrainHeight>());
+            _units = state.GetEntityQuery(ComponentType.ReadOnly<Selectable>(), ComponentType.ReadOnly<UnitTag>());
+            _ranking = new PickRanking(ref state);
         }
 
         /// <summary>
-        /// Raycasts physics when available. Only ownable entities and resource nodes count as targets; anything
-        /// else hit (terrain) supplies the ground point, otherwise the ray meets the baked terrain or the y = 0 plane.
+        /// Picks through <see cref="PickRanking"/> when physics is available. Only ownable entities and resource nodes
+        /// count as targets; anything else picked (terrain) supplies the ground point, otherwise the ray meets the
+        /// baked terrain or the y = 0 plane.
         /// </summary>
         public bool TryPick(ref SystemState state, float2 screen, out Entity target, out float3 ground)
         {
@@ -42,21 +49,21 @@ namespace HyperRTS.Input.Commands
             var ray = _camera.ScreenPointToRay(new Vector3(screen.x, screen.y, 0f));
             var origin = (float3)ray.origin;
             var direction = math.normalizesafe((float3)ray.direction);
-            if (!TryCast(ref state, origin, direction * _camera.farClipPlane, out var hit))
+            if (!TryRank(ref state, screen, origin, direction, out var picked, out var point))
             {
                 return TryGround(origin, direction, out ground);
             }
 
-            if (!IsTarget(state.EntityManager, hit.Entity))
+            if (!IsTarget(state.EntityManager, picked))
             {
-                ground = hit.Position;
+                ground = point;
                 return true;
             }
 
-            target = hit.Entity;
+            target = picked;
             if (!TryGround(origin, direction, out ground))
             {
-                ground = hit.Position;
+                ground = point;
             }
 
             return true;
@@ -69,17 +76,35 @@ namespace HyperRTS.Input.Commands
             return terrain.Raycast(origin, direction, _camera.farClipPlane, out ground);
         }
 
-        private bool TryCast(ref SystemState state, float3 origin, float3 delta, out Unity.Physics.RaycastHit hit)
+        private bool TryRank(ref SystemState state, float2 screen, float3 origin, float3 direction, out Entity picked,
+            out float3 point)
         {
-            hit = default;
+            picked = Entity.Null;
+            point = default;
             if (!_physics.TryGetSingleton(out PhysicsWorldSingleton physics))
             {
                 return false;
             }
 
             state.CompleteDependency();
-            var input = new RaycastInput { Start = origin, End = origin + delta, Filter = CollisionFilter.Default };
-            return physics.CastRay(input, out hit);
+            _ranking.Update(ref state);
+            var input = new RaycastInput
+            {
+                Start = origin,
+                End = origin + direction * _camera.farClipPlane,
+                Filter = CollisionFilter.Default,
+            };
+            var hits = new NativeList<Unity.Physics.RaycastHit>(Allocator.Temp);
+            physics.CastRay(input, ref hits);
+            using var units = _units.ToEntityArray(Allocator.Temp);
+            var screenSize = new float2(Screen.width, Screen.height);
+            return _ranking.TryPick(hits.AsArray(), units, screen, ViewProjection(), screenSize, out picked, out point);
+        }
+
+        private float4x4 ViewProjection()
+        {
+            var vp = _camera.projectionMatrix * _camera.worldToCameraMatrix;
+            return new float4x4(vp.GetColumn(0), vp.GetColumn(1), vp.GetColumn(2), vp.GetColumn(3));
         }
 
         private bool IsTarget(EntityManager entityManager, Entity entity)

@@ -24,6 +24,7 @@ namespace HyperRTS.Simulation.Selection
         private ComponentLookup<ControlGroup> _groupLookup;
         private ComponentLookup<FogHidden> _hiddenLookup;
         private ComponentLookup<Inside> _insideLookup;
+        private PickRanking _ranking;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -35,6 +36,7 @@ namespace HyperRTS.Simulation.Selection
             _groupLookup = state.GetComponentLookup<ControlGroup>(true);
             _hiddenLookup = state.GetComponentLookup<FogHidden>(true);
             _insideLookup = state.GetComponentLookup<Inside>(true);
+            _ranking = new PickRanking(ref state);
             // Input writes it, so it must exist before either system runs.
             state.EntityManager.CreateSingleton<SelectionInput>();
         }
@@ -129,9 +131,14 @@ namespace HyperRTS.Simulation.Selection
                 Filter = CollisionFilter.Default,
             };
 
-            return physicsWorld.CastRay(rayInput, out var hit) && SystemAPI.HasComponent<Selectable>(hit.Entity)
-                ? hit.Entity
-                : Entity.Null;
+            state.CompleteDependency();
+            _ranking.Update(ref state);
+            var hits = new NativeList<RaycastHit>(Allocator.Temp);
+            physicsWorld.CastRay(rayInput, ref hits);
+            var units = SystemAPI.QueryBuilder().WithAll<Selectable, UnitTag>().Build().ToEntityArray(Allocator.Temp);
+            var picked = _ranking.TryPick(hits.AsArray(), units, input.Pointer, input.ViewProjection, input.ScreenSize,
+                out var entity, out _);
+            return picked && SystemAPI.HasComponent<Selectable>(entity) ? entity : Entity.Null;
         }
 
         // An enemy that walks into fog must not stay selected out of sight.

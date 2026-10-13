@@ -30,6 +30,9 @@ namespace HyperRTS.Simulation.Selection
         public float3 RayDirection;
         public float RayDistance;
 
+        // Screen pixels, bottom-left; the click point, for picking units near it.
+        public float2 Pointer;
+
         // Screen pixels, bottom-left; valid for DragRelease.
         public float2 DragMin;
         public float2 DragMax;

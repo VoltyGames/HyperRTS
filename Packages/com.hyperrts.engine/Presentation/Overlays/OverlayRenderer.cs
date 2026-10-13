@@ -13,14 +13,14 @@ namespace HyperRTS.Presentation.Overlays
     public class OverlayRenderer : MonoBehaviour
     {
         [SerializeField]
-        [Tooltip("Transparent, instancing-enabled unlit material; tinted per overlay through _BaseColor.")]
+        [Tooltip("HyperRTS/Overlay material; tinted per overlay through _BaseColor.")]
         private Material material;
 
         [SerializeField]
         [Tooltip("Overlay colours and sizes.")]
         private OverlayStyle style = new();
 
-        private Material _front;
+        private OverlayMaterials _materials;
         private Mesh[] _meshes;
         private UnitOverlays _units;
         private CommandOverlays _commands;
@@ -44,15 +44,11 @@ namespace HyperRTS.Presentation.Overlays
                 return;
             }
 
-            // A later queue keeps bar fills drawn over their backgrounds regardless of depth sorting.
-            if (_front == null)
-            {
-                _front = new Material(material) { renderQueue = material.renderQueue + 1, hideFlags = HideFlags.DontSave };
-            }
+            _materials ??= new OverlayMaterials(material);
 
             _units.Gather(view, style, camera.transform);
             _commands.Gather(view, style);
-            _units.Draw(material, _front, style, gameObject.layer);
+            _units.Draw(_materials, style, gameObject.layer);
             _commands.Draw(material, style, gameObject.layer);
         }
 
@@ -63,10 +59,7 @@ namespace HyperRTS.Presentation.Overlays
                 Destroy(mesh);
             }
 
-            if (_front != null)
-            {
-                Destroy(_front);
-            }
+            _materials?.Dispose();
         }
     }
 }
