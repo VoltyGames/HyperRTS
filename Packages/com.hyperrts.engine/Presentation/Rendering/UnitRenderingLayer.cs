@@ -9,19 +9,19 @@ namespace HyperRTS.Presentation.Rendering
         public const int Index = 8;
         public const string Name = "Units";
 
-        public static uint Mask(int index) => 1u << index;
+        public const uint Mask = 1u << Index;
 
-        /// <summary>Renderers under <paramref name="root"/> that lack rendering layer <paramref name="index"/>.</summary>
-        public static Renderer[] Missing(GameObject root, int index) =>
+        /// <summary>Renderers under <paramref name="root"/> that lack the units layer.</summary>
+        public static Renderer[] Missing(GameObject root) =>
             root.GetComponentsInChildren<Renderer>(true)
-                .Where(renderer => (renderer.renderingLayerMask & Mask(index)) == 0)
+                .Where(renderer => (renderer.renderingLayerMask & Mask) == 0)
                 .ToArray();
 
-        public static void Assign(GameObject root, int index)
+        public static void Assign(GameObject root)
         {
-            foreach (var renderer in Missing(root, index))
+            foreach (var renderer in Missing(root))
             {
-                renderer.renderingLayerMask |= Mask(index);
+                renderer.renderingLayerMask |= Mask;
             }
         }
     }

@@ -15,15 +15,12 @@ namespace HyperRTS.Editor.Tests
         {
             var unit = Track(EntityTemplates.Unit());
 
-            Assert.IsEmpty(UnitRenderingLayer.Missing(unit, UnitRenderingLayer.Index));
+            Assert.IsEmpty(UnitRenderingLayer.Missing(unit));
         }
 
         [Test]
-        public void UnitWithoutTheSilhouetteLayerIsReportedAndFixed()
+        public void UnitWithoutTheUnitsLayerIsReportedAndFixed()
         {
-            var feature = UnitSilhouettes.Find();
-            Assume.That(feature, Is.Not.Null, "The active renderer has no UnitSilhouetteFeature.");
-            var layer = feature.RenderingLayer;
             var unit = Track(EntityTemplates.Unit());
             unit.GetComponentInChildren<Renderer>().renderingLayerMask = 1u;
 
@@ -31,7 +28,7 @@ namespace HyperRTS.Editor.Tests
                 .Single(found => found.FixLabel == "Add Layer");
             issue.Fix();
 
-            Assert.IsEmpty(UnitRenderingLayer.Missing(unit, layer));
+            Assert.IsEmpty(UnitRenderingLayer.Missing(unit));
         }
     }
 }

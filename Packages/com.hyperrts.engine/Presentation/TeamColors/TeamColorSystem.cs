@@ -10,12 +10,8 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.TeamColors
 {
-    /// <summary>
-    /// Gives owned meshes their faction's <see cref="TeamColor"/> (and the root's <see cref="TeamStripBand"/> as
-    /// <see cref="TeamStrip"/>) for HyperRTS/LitTeam's mask, only for new entities, when the owner changes or when the
-    /// override does. An entity that turns neutral loses them, so it looks as authored. An entity whose player hasn't arrived yet (ghosts stream in any order) stays uncoloured and is retried
-    /// every frame.
-    /// </summary>
+    /// <summary>Gives owned meshes their faction's <see cref="TeamColor"/> and the root's <see cref="TeamStrip"/> band for
+    /// LitTeam's mask; neutral entities lose them and ones whose player hasn't arrived yet are retried.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial struct TeamColorSystem : ISystem
@@ -116,6 +112,9 @@ namespace HyperRTS.Presentation.TeamColors
             [ReadOnly] public ComponentLookup<TeamStripBand> Strips;
             public EntityCommandBuffer Commands;
 
+            private static ComponentTypeSet TeamTypes =>
+                new(ComponentType.ReadWrite<TeamColor>(), ComponentType.ReadWrite<TeamStrip>());
+
             /// <summary>False while the faction has no player yet; neutral entities keep their authored materials.</summary>
             public bool Paint(Entity root, byte faction)
             {
@@ -131,7 +130,6 @@ namespace HyperRTS.Presentation.TeamColors
                 }
 
                 var hasStrip = Strips.TryGetComponent(root, out var band);
-                var strip = new TeamStrip { Value = new float4(band.Bottom, band.Top, 0f, 0f) };
                 var targets = new FixedList512Bytes<Entity>();
                 RenderHierarchy.Collect(root, Linked, Children, ref targets);
                 foreach (var target in targets)
@@ -141,11 +139,16 @@ namespace HyperRTS.Presentation.TeamColors
                         continue;
                     }
 
-                    Commands.AddComponent(target, new TeamColor { Value = color });
-                    if (hasStrip)
+                    if (!hasStrip)
                     {
-                        Commands.AddComponent(target, strip);
+                        Commands.AddComponent(target, new TeamColor { Value = color });
+                        continue;
                     }
+
+                    // One structural change for both, then fill them in.
+                    Commands.AddComponent(target, TeamTypes);
+                    Commands.SetComponent(target, new TeamColor { Value = color });
+                    Commands.SetComponent(target, new TeamStrip { Value = new float4(band.Bottom, band.Top, 0f, 0f) });
                 }
 
                 return true;
@@ -160,8 +163,7 @@ namespace HyperRTS.Presentation.TeamColors
                 {
                     if (Meshes.HasComponent(target))
                     {
-                        Commands.RemoveComponent<TeamColor>(target);
-                        Commands.RemoveComponent<TeamStrip>(target);
+                        Commands.RemoveComponent(target, TeamTypes);
                     }
                 }
             }

@@ -26,7 +26,7 @@ namespace HyperRTS.Presentation.Environment
         {
             var forward = transform.forward;
             var downwind = new Vector3(forward.x, 0f, forward.z).normalized;
-            Shader.SetGlobalVector(DirectionId, new Vector4(downwind.x, 0f, downwind.z, 0f));
+            Shader.SetGlobalVector(DirectionId, downwind);
             Shader.SetGlobalFloat(StrengthId, _zone.windMain);
         }
 

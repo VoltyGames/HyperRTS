@@ -47,10 +47,10 @@ namespace HyperRTS.Editor.Validation
         public static void RemoveEmpty<T>(Object owner, List<T> list, Predicate<T> isEmpty) =>
             EditorUndo.Record(owner, "Remove Empty Entries", () => list.RemoveAll(isEmpty));
 
-        public static void AddRenderingLayer(GameObject root, int layer)
+        public static void AddRenderingLayer(GameObject root)
         {
-            Undo.RecordObjects(UnitRenderingLayer.Missing(root, layer), "Add Rendering Layer");
-            UnitRenderingLayer.Assign(root, layer);
+            Undo.RecordObjects(UnitRenderingLayer.Missing(root), "Add Rendering Layer");
+            UnitRenderingLayer.Assign(root);
         }
     }
 }
