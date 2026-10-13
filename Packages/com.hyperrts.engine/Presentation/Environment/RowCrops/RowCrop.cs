@@ -43,7 +43,11 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         [Tooltip("Random uniform scale range.")]
         public Vector2 scale = new(0.9f, 1.1f);
 
-        [Tooltip("Degrees a plant turns either way from facing along its row.")]
+        [Tooltip("Plants face along their row; off, every plant keeps the model's own heading (+Z to the north), " +
+                 "as crops that turn to the sun do.")]
+        public bool facesRow = true;
+
+        [Tooltip("Degrees a plant turns either way from its heading.")]
         [Range(0f, 180f)]
         public float yawJitter = 20f;
 

@@ -12,6 +12,8 @@
 #define CHANNEL_YAW 4u
 #define CHANNEL_DROP 5u
 #define CHANNEL_SHADE 6u
+#define CHANNEL_EDGE 7u
+#define EDGE_DITHER 1.5 // metres a plant's field lookup strays, so field edges on the 1 m land grid read ragged, not stepped
 #define FADE_SHARE 0.15 // share of the draw distance over which plants shrink away
 
 struct RowCropField // RowCropField.cs, 32 bytes
@@ -62,6 +64,7 @@ float4 _Sowing;      // row spacing, plant spacing, jitter, yaw jitter (radians)
 float4 _Size;        // min scale, max scale, lod0 distance, lod1 distance
 float4 _Capacity;    // full, simple, card buffer sizes
 float _TileSize;
+float _FacesRow;     // 1: plants face along their row; 0: they keep the model's heading (+Z north)
 float _Density;
 
 uint Pcg(uint value)
@@ -177,12 +180,18 @@ void Plant(uint3 id : SV_DispatchThreadID)
     }
 
     float2 spot = field.origin + field.across * (row * _Sowing.x) + field.along * (plant * _Sowing.y);
-    if (!Owns(job.tileMin, spot) || FieldAt(spot) != job.field + 1u)
+    if (!Owns(job.tileMin, spot))
     {
         return;
     }
 
     uint hash = Hash(field.seed, row, plant);
+    float2 stray = float2(Channel(hash, CHANNEL_EDGE), Channel(hash, CHANNEL_EDGE + 1u)) - 0.5;
+    if (FieldAt(spot + stray * EDGE_DITHER) != job.field + 1u)
+    {
+        return;
+    }
+
     if (Channel(hash, CHANNEL_DENSITY) >= _Density)
     {
         return;
@@ -209,7 +218,9 @@ void Plant(uint3 id : SV_DispatchThreadID)
     RowCropInstance grown;
     grown.position = position;
     grown.scale = lerp(_Size.x, _Size.y, Channel(hash, CHANNEL_SCALE)) * fade;
-    grown.facing = field.along * cos(turn) + field.across * sin(turn);
+    float2 forward = _FacesRow > 0.5 ? field.along : float2(0.0, 1.0);
+    float2 side = _FacesRow > 0.5 ? field.across : float2(1.0, 0.0);
+    grown.facing = forward * cos(turn) + side * sin(turn);
     grown.trampleDirection = trample.rg * 2.0 - 1.0;
     grown.bend = trample.a;
     grown.shade = Channel(hash, CHANNEL_SHADE);

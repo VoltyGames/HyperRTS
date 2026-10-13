@@ -51,6 +51,9 @@ half4 RootGround(float3 origin)
     return half4(ground / max(mean, 0.02), weight);
 }
 
+// How far leaf normals bend toward the sky, so a field reads lit from above like a real canopy.
+static const half CanopyUp = 0.5;
+
 ForwardVaryings ForwardVert(Attributes input)
 {
     ForwardVaryings output;
@@ -69,7 +72,7 @@ ForwardVaryings ForwardVert(Attributes input)
     return output;
 }
 
-half4 ForwardFrag(ForwardVaryings input) : SV_Target
+half4 ForwardFrag(ForwardVaryings input, bool front : SV_IsFrontFace) : SV_Target
 {
     half4 texel = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv.xy);
     half4 albedo = texel * _BaseColor;
@@ -80,7 +83,9 @@ half4 ForwardFrag(ForwardVaryings input) : SV_Target
     half root = input.ground.a * (1.0 - smoothstep(0.0, _GroundBlendHeight, input.uv.z));
     albedo.rgb = lerp(albedo.rgb, input.ground.rgb * Luminance(texel.rgb), root);
 
-    half3 normal = normalize(lerp(input.normalWS, half3(0.0, 1.0, 0.0), root));
+    // Leaves are lit on the side in view, and a crop canopy as a whole from above: normals bend toward the sky.
+    half3 normal = normalize(input.normalWS) * (front ? 1.0 : -1.0);
+    normal = normalize(lerp(normal, half3(0.0, 1.0, 0.0), max(root, CanopyUp)));
     half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
     Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
     half wrapping = 0.5 * (1.0 - root);

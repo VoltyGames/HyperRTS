@@ -76,11 +76,14 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             return Spot(field, row, plant, crop.rowSpacing, crop.plantSpacing) + field.across * across + field.along * along;
         }
 
-        /// <summary>The XZ direction a plant faces: along its row, turned up to the crop's yaw jitter.</summary>
+        /// <summary>The XZ direction a plant faces: along its row (or north for crops that keep their heading), turned up
+        /// to the crop's yaw jitter.</summary>
         public static Vector2 Facing(RowCropField field, int row, int plant, RowCrop crop)
         {
             var turn = (Unit(Channel(Hash(field.seed, row, plant), YawChannel)) * 2f - 1f) * crop.yawJitter * Mathf.Deg2Rad;
-            return field.along * Mathf.Cos(turn) + field.across * Mathf.Sin(turn);
+            var along = crop.facesRow ? field.along : Vector2.up;
+            var across = crop.facesRow ? field.across : Vector2.right;
+            return along * Mathf.Cos(turn) + across * Mathf.Sin(turn);
         }
 
         public static uint Hash(int seed, int row, int plant) =>

@@ -14,14 +14,14 @@ namespace HyperRTS.Editor.Maps.Ground
     /// </summary>
     public static class MapCropWriter
     {
-        /// <summary>The written fields, or null when the map sows no row crops.</summary>
-        public static RowCropFields Write(string assetPath, string picturePath, MapCropBake bake)
+        /// <summary>Writes the fields, or deletes them when the map sows no row crops.</summary>
+        public static void Write(string assetPath, string picturePath, MapCropBake bake)
         {
             if (bake.IsEmpty)
             {
                 AssetDatabase.DeleteAsset(assetPath);
                 AssetDatabase.DeleteAsset(picturePath);
-                return null;
+                return;
             }
 
             var picture = WritePicture(picturePath, bake);
@@ -34,7 +34,6 @@ namespace HyperRTS.Editor.Maps.Ground
             fields.tileFields = new(bake.TileFields);
             EditorUtility.SetDirty(fields);
             AssetDatabase.SaveAssetIfDirty(fields);
-            return fields;
         }
 
         private static Texture2D WritePicture(string path, MapCropBake bake)

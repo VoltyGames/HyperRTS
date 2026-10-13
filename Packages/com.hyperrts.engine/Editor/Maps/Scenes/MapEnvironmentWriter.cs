@@ -28,24 +28,24 @@ namespace HyperRTS.Editor.Maps.Scenes
         /// The terrain material with its macro map, and the ground colour picture foliage blends into. Written before
         /// the map's scene opens: opening it unloads the climate the textures are made from.
         /// </summary>
-        public static (Material Material, Texture2D Picture, RowCropFields Crops) WriteGround(MapGeneration generation,
+        public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation,
             TerrainData data)
         {
             var (climate, paths) = (generation.Project.Climate, generation.Project.Paths);
             var macro = MapMacroPainter.Write(paths.Macro, generation.Layout, generation.Land, generation.Shapes);
             var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, macro, generation.RowAngle);
             var picture = MapGroundColor.Write(paths.Ground, generation.Splat, climate, macro);
-            var crops = MapCropWriter.Write(paths.RowCrops, paths.RowCropIds, generation.Crops);
-            return (material, picture, crops);
+            MapCropWriter.Write(paths.RowCrops, paths.RowCropIds, generation.Crops);
+            return (material, picture);
         }
 
         public static void Write(MapScene scene, MapGeneration generation, TerrainData data,
-            (Material Material, Texture2D Picture, RowCropFields Crops) ground)
+            (Material Material, Texture2D Picture) ground)
         {
             var (layout, climate) = (generation.Layout, generation.Project.Climate);
             var terrain = CreateTerrain(scene, data, ground.Material, climate, layout.TerrainOrigin);
             CreateGroundColor(scene, ground.Picture, layout.TerrainBounds);
-            CreateRowCrops(scene, ground.Crops, terrain);
+            CreateRowCrops(scene, generation.Project.Paths.RowCrops, terrain);
             var height = scene.CreateEntityObject("Terrain Height");
             height.transform.position = layout.TerrainOrigin;
             height.AddComponent<TerrainHeightAuthoring>().terrainData = data;
@@ -81,8 +81,10 @@ namespace HyperRTS.Editor.Maps.Scenes
         }
 
         /// <summary>The renderer that grows the map's row crops on the GPU; none when the map sows none.</summary>
-        private static void CreateRowCrops(MapScene scene, RowCropFields fields, Terrain terrain)
+        // Loaded by path: opening the map's scene unloads the fields WriteGround saved. None when the map sows no row crops.
+        private static void CreateRowCrops(MapScene scene, string fieldsPath, Terrain terrain)
         {
+            var fields = AssetDatabase.LoadAssetAtPath<RowCropFields>(fieldsPath);
             if (fields == null)
             {
                 return;

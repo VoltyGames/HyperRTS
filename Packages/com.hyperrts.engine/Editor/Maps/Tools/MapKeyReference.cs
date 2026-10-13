@@ -63,12 +63,13 @@ namespace HyperRTS.Editor.Maps.Tools
                 text.AppendLine($"| `{kit.key}` | {kit.surface} | {string.Join(", ", kit.trees.Select(t => $"{t.tree} {t.perHectare}"))} |");
             }
 
-            text.AppendLine().AppendLine("| Surface (`areas[].kind`) | Layer | Plants | Trees per ha |").AppendLine("| --- | --- | --- | --- |");
+            text.AppendLine().AppendLine("| Surface (`areas[].kind`) | Layer | Plants | Row crop | Trees per ha |")
+                .AppendLine("| --- | --- | --- | --- | --- |");
             foreach (var surface in climate.surfaces)
             {
                 var plants = string.Join(", ", surface.details.Select(d => d.detail));
                 var trees = string.Join(", ", surface.trees.Select(t => $"{t.tree} {t.perHectare}"));
-                text.AppendLine($"| `{surface.key}` | {surface.layer} | {plants} | {trees} |");
+                text.AppendLine($"| `{surface.key}` | {surface.layer} | {plants} | {surface.rowCrop} | {trees} |");
             }
 
             text.AppendLine().AppendLine($"Trees (`lines[].kind` plants a row): {string.Join(", ", climate.trees.Select(t => $"`{t.key}`"))}.");

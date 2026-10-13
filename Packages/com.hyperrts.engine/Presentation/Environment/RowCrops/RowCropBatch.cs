@@ -20,6 +20,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private static readonly int JobsId = Shader.PropertyToID("_Jobs");
         private static readonly int CountersId = Shader.PropertyToID("_Counters");
         private static readonly int SowingId = Shader.PropertyToID("_Sowing");
+        private static readonly int FacesRowId = Shader.PropertyToID("_FacesRow");
         private static readonly int SizeId = Shader.PropertyToID("_Size");
         private static readonly int CapacityId = Shader.PropertyToID("_Capacity");
         private static readonly int InstancesId = Shader.PropertyToID("_Instances");
@@ -106,6 +107,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             _compute.SetBuffer(_kernel, CountersId, _counters);
             _compute.SetVector(SowingId, new Vector4(_crop.rowSpacing, _crop.plantSpacing, _crop.jitter,
                 _crop.yawJitter * Mathf.Deg2Rad));
+            _compute.SetFloat(FacesRowId, _crop.facesRow ? 1f : 0f);
             _compute.SetVector(SizeId, new Vector4(_crop.scale.x, _crop.scale.y, _crop.lod0Distance, _crop.lod1Distance));
             _compute.SetVector(CapacityId, new Vector4(_instances[0].count, _instances[1].count, _instances[2].count, 0f));
             _compute.Dispatch(_kernel, _groups.x, _groups.y, _pending.Count);
