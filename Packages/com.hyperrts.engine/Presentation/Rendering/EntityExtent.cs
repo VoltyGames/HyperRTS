@@ -1,6 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;
+using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Rendering
 {
@@ -23,10 +24,27 @@ namespace HyperRTS.Presentation.Rendering
             }
             else
             {
-                top = BoundsTop(entityManager, entity);
+                top = TreeTop(entityManager, entity);
             }
 
             return top > float.MinValue ? top : position.y + radius * 2f;
+        }
+
+        // SubScene objects (map buildings) have no LinkedEntityGroup, so walk their transform children like RenderHierarchy.
+        private static float TreeTop(EntityManager entityManager, Entity entity)
+        {
+            var top = BoundsTop(entityManager, entity);
+            if (!entityManager.HasBuffer<Child>(entity))
+            {
+                return top;
+            }
+
+            foreach (var child in entityManager.GetBuffer<Child>(entity, true))
+            {
+                top = math.max(top, TreeTop(entityManager, child.Value));
+            }
+
+            return top;
         }
 
         private static float BoundsTop(EntityManager entityManager, Entity entity) =>
