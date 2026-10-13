@@ -25,8 +25,6 @@ Shader "HyperRTS/Foliage"
         _GroundBlend ("Ground Colour At Roots", Range(0, 1)) = 0
         _GroundBlendHeight ("Ground Colour Height (UV)", Range(0.01, 1)) = 0.4
         _VertexOcclusion ("Crown Occlusion (vertex R)", Range(0, 1)) = 0
-        _FadeStart ("Shrink Start (m from camera)", Float) = 10000
-        _FadeEnd ("Shrink End (m from camera)", Float) = 10001
         [Enum(Off, 0, Grass, 1, Crop, 2)] _Trample ("Trample (Tree Wind off)", Float) = 1
     }
 

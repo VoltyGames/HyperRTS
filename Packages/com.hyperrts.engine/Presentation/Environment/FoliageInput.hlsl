@@ -29,22 +29,19 @@ CBUFFER_START(UnityPerMaterial)
     half _GroundBlend;
     half _GroundBlendHeight;
     half _VertexOcclusion;
-    float _FadeStart;
-    float _FadeEnd;
     float _Trample; // 0 off, 1 grass (flatten), 2 crop (damage)
 CBUFFER_END
+
+// Where plants shrink to their roots (x start, y end, metres from the camera), so terrain details are gone before the
+// terrain culls them; published by DetailFade, zero (no shrinking) until something does.
+float4 _HyperRTSDetailFade;
 
 // Leans a plant flat where it was trampled: grass by the flatten that recovers, crops by the damage that doesn't.
 float3 PlantTrample(float3 world, float3 origin)
 {
-    UNITY_BRANCH
-    if (_Trample < 0.5)
-    {
-        return world;
-    }
-
     TrampleSample trample = SampleTrample(origin.xz);
     half amount = _Trample > 1.5 ? trample.crop : trample.flatten;
+    amount = _Trample < 0.5 ? 0.0 : amount;
     return TrampleBend(world, origin, trample.direction, amount);
 }
 
@@ -62,13 +59,11 @@ struct Attributes
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-// World position of a vertex under the given frame's wind. The plant shrinks to its root between the fade distances
-// (so terrain details are gone before the terrain culls them). Motion vectors reuse the current object matrix for
-// last frame: vegetation doesn't move.
+// World position of a vertex under the given frame's wind; plants (not trees) shrink to the root with distance. Motion
+// vectors reuse the current object matrix for last frame: vegetation doesn't move.
 float3 FoliagePosition(Attributes input, WindFrame frame, out float3 origin)
 {
     origin = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
-    float fade = saturate((_FadeEnd - distance(origin, _WorldSpaceCameraPos)) / max(_FadeEnd - _FadeStart, 1e-3));
 
 #if defined(_TREE_WIND)
     TreeWindSettings settings;
@@ -79,9 +74,10 @@ float3 FoliagePosition(Attributes input, WindFrame frame, out float3 origin)
     settings.height = _TreeHeight;
     settings.scale = _WindScale;
     TreeWindVertex v = TreeWindData(input.positionOS.xyz, input.uv2, input.uv3, input.uv4, input.color);
-    float3 world = TransformObjectToWorld(TreeWindPosition(v, settings, frame));
-    return origin + (world - origin) * fade;
+    return TransformObjectToWorld(TreeWindPosition(v, settings, frame));
 #else
+    float range = _HyperRTSDetailFade.y - _HyperRTSDetailFade.x;
+    float fade = range > 0.0 ? saturate((_HyperRTSDetailFade.y - distance(origin, _WorldSpaceCameraPos)) / range) : 1.0;
     float3 world = TransformObjectToWorld(input.positionOS.xyz);
     world = PlantTrample(origin + (world - origin) * fade, origin);
     return PlantWindPosition(world, origin, _WindStrength, _WindSpeed, _Flutter, _WindScale, frame);

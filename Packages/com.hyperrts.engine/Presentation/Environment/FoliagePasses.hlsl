@@ -13,6 +13,9 @@ TEXTURE2D(_HyperRTSGroundColor);
 SAMPLER(sampler_HyperRTSGroundColor);
 float4 _HyperRTSGroundRect;
 
+// One tile of the noise per 40 m: patches of drier and greener plants.
+static const float PatchTilesPerMetre = 1.0 / 40.0;
+
 float3 _LightDirection;
 float3 _LightPosition;
 
@@ -67,9 +70,12 @@ ForwardVaryings ForwardVert(Attributes input)
     output.uv = float3(TRANSFORM_TEX(input.uv, _BaseMap), input.uv.y);
     output.normalWS = TransformObjectToWorldNormal(input.normalOS);
 
-    // Each plant gets its own slightly warmer or cooler, lighter or darker shade.
+    // Plants dry out in patches tens of metres across (the gust noise, held still) and each plant gets its own slightly
+    // warmer or cooler, lighter or darker shade on top.
     float random = frac(sin(dot(origin.xz, float2(12.9898, 78.233))) * 43758.5453);
-    half3 shade = lerp(half3(1.0, 1.0, 1.0), half3(1.12, 1.02, 0.72), random * _HueVariation * 4.0)
+    half patch = SAMPLE_TEXTURE2D_LOD(_HyperRTSWindGustMap, sampler_HyperRTSWindGustMap, origin.xz * PatchTilesPerMetre, 0).r;
+    half dry = saturate(patch * 0.65 + random * 0.35);
+    half3 shade = lerp(half3(1.0, 1.0, 1.0), half3(1.12, 1.02, 0.72), dry * _HueVariation * 4.0)
         * (1.0 - _HueVariation + random * _HueVariation * 2.0);
     output.tint = half4(shade, lerp(1.0, input.color.r, _VertexOcclusion));
     output.ground = RootGround(origin);
