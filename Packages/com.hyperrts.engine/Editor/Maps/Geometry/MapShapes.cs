@@ -97,7 +97,24 @@ namespace HyperRTS.Editor.Maps.Geometry
         /// <summary>A spot set back from the nearest road's edge on the point's side, and the road's yaw there.</summary>
         public bool RoadsideSpot(Vector2 point, float setback, out Vector2 spot, out float yaw)
         {
-            MapRoad nearest = null;
+            spot = point;
+            yaw = 0f;
+            if (!NearestRoad(point, out var nearest, out var center, out var direction))
+            {
+                return false;
+            }
+
+            var right = MapGeometry.Right(direction);
+            var side = Vector2.Dot(point - center, right) >= 0f ? 1f : -1f;
+            spot = center + right * side * (nearest.Width * 0.5f + setback);
+            yaw = MapGeometry.Yaw(direction);
+            return true;
+        }
+
+        /// <summary>The road whose edge is nearest the point, the closest point on its centre line and its heading there.</summary>
+        public bool NearestRoad(Vector2 point, out MapRoad nearest, out Vector2 center, out Vector2 direction)
+        {
+            nearest = null;
             var along = 0f;
             var best = float.PositiveInfinity;
             foreach (var road in Roads)
@@ -111,18 +128,14 @@ namespace HyperRTS.Editor.Maps.Geometry
                 }
             }
 
-            spot = point;
-            yaw = 0f;
+            center = point;
+            direction = Vector2.up;
             if (nearest == null)
             {
                 return false;
             }
 
-            var center = nearest.Line.Path.PointAt(along, out var direction);
-            var right = MapGeometry.Right(direction);
-            var side = Vector2.Dot(point - center, right) >= 0f ? 1f : -1f;
-            spot = center + right * side * (nearest.Width * 0.5f + setback);
-            yaw = MapGeometry.Yaw(direction);
+            center = nearest.Line.Path.PointAt(along, out direction);
             return true;
         }
 

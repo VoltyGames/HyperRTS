@@ -37,35 +37,32 @@ namespace HyperRTS.Editor.Maps.Meshes
 
         /// <summary>
         /// Adds a road's ribbon. <paramref name="groundLevel"/> is the terrain height of world y = 0; rows whose centre
-        /// is <paramref name="hidden"/> (over water, under a bridge) are left out and break the ribbon there.
+        /// is <paramref name="hidden"/> (over water, under a bridge) are left out and break the ribbon there, and every
+        /// visible run fades in and out at a break as at a fading end.
         /// </summary>
         public void AddRibbon(MapRoad road, bool fadeStart, bool fadeEnd, MapHeights heights, float groundLevel,
             Func<Vector2, bool> hidden)
         {
             var points = MapCurves.Resample(road.Line.Points, Step);
-            var length = MapGeometry.Length(points);
-            var columns = Mathf.Max(3, Mathf.CeilToInt(road.Width / AcrossStep) + 1);
-            var previous = -1;
-            var along = 0f;
-            for (var i = 0; i < points.Count; i++)
+            var along = Distances(points);
+            var shown = points.ConvertAll(p => !hidden(p));
+            var last = points.Count - 1;
+            for (var first = 0; first <= last; first++)
             {
-                along += i > 0 ? (points[i] - points[i - 1]).magnitude : 0f;
-                if (hidden(points[i]))
+                if (!shown[first])
                 {
-                    previous = -1;
                     continue;
                 }
 
-                var ahead = points[Mathf.Min(i + 1, points.Count - 1)] - points[Mathf.Max(i - 1, 0)];
-                var alpha = Mathf.Min(fadeStart ? along / FadeLength : 1f, fadeEnd ? (length - along) / FadeLength : 1f);
-                var row = Count;
-                AddRow(points[i], ahead.normalized, road.Width, columns, along, Mathf.Clamp01(alpha), heights, groundLevel);
-                if (previous >= 0)
+                var end = first;
+                while (end < last && shown[end + 1])
                 {
-                    AddQuads(previous, row, columns);
+                    end++;
                 }
 
-                previous = row;
+                var run = new MapRoadRun(along, first, end, first > 0 || fadeStart, end < last || fadeEnd);
+                AddRun(points, run, road.Width, heights, groundLevel);
+                first = end;
             }
         }
 
@@ -80,6 +77,35 @@ namespace HyperRTS.Editor.Maps.Meshes
             mesh.SetTriangles(Triangles, 0);
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        private void AddRun(List<Vector2> points, MapRoadRun run, float width, MapHeights heights, float groundLevel)
+        {
+            var columns = Mathf.Max(3, Mathf.CeilToInt(width / AcrossStep) + 1);
+            var previous = -1;
+            for (var i = run.First; i <= run.Last; i++)
+            {
+                var ahead = points[Mathf.Min(i + 1, points.Count - 1)] - points[Mathf.Max(i - 1, 0)];
+                var row = Count;
+                AddRow(points[i], ahead.normalized, width, columns, run.Along[i], run.Alpha(i), heights, groundLevel);
+                if (previous >= 0)
+                {
+                    AddQuads(previous, row, columns);
+                }
+
+                previous = row;
+            }
+        }
+
+        private static List<float> Distances(List<Vector2> points)
+        {
+            var along = new List<float>(points.Count) { 0f };
+            for (var i = 1; i < points.Count; i++)
+            {
+                along.Add(along[i - 1] + (points[i] - points[i - 1]).magnitude);
+            }
+
+            return along;
         }
 
         private void AddRow(Vector2 center, Vector2 forward, float width, int columns, float along, float alpha,

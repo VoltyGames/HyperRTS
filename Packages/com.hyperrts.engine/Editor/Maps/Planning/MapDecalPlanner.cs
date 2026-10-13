@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Geometry;
+using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Placement;
 using UnityEngine;
 
@@ -9,6 +11,9 @@ namespace HyperRTS.Editor.Maps.Planning
     public sealed class MapDecalPlanner : MapLandPass
     {
         private const int Attempts = 10;
+
+        /// <summary>How far an along-road decal's yaw strays from the road's heading (degrees either way).</summary>
+        private const float RoadJitter = 6f;
 
         public MapDecalPlanner(MapPlanContext context) : base(context)
         {
@@ -42,6 +47,11 @@ namespace HyperRTS.Editor.Maps.Planning
                 var spot = RandomSpot(cells, random);
                 var diameter = random.Range(decal.size.x, decal.size.y);
                 var yaw = decal.randomRotation ? random.Yaw() : 0f;
+                if (decal.alongRoad && !OnRoad(ref spot, ref yaw, random))
+                {
+                    continue;
+                }
+
                 if (!Context.Placements.Clearance.IsFree(spot, diameter * 0.25f))
                 {
                     continue;
@@ -50,6 +60,20 @@ namespace HyperRTS.Editor.Maps.Planning
                 LayCopies(decal, spot, diameter, yaw);
                 laid++;
             }
+        }
+
+        /// <summary>Moves the spot onto the centre line of the road it lies on and turns it along; false off any road.</summary>
+        private bool OnRoad(ref Vector2 spot, ref float yaw, System.Random random)
+        {
+            var jitter = random.Signed() * RoadJitter;
+            if (Context.Shapes.RoadEdgeDistance(spot) > MapLand.CellSize)
+            {
+                return false;
+            }
+
+            Context.Shapes.NearestRoad(spot, out _, out spot, out var direction);
+            yaw = MapGeometry.Yaw(direction) + jitter;
+            return true;
         }
 
         private void LayCopies(MapClimateDecal decal, Vector2 sectorPoint, float diameter, float yaw)

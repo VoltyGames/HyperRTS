@@ -114,6 +114,18 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
+        public void HiddenRows_FadeTheRibbonOutAtTheBreak_EvenOnASolidRoad()
+        {
+            var mesh = Ribbon(North(), false, false, Flat(), 0f, p => Mathf.Abs(p.y) < 5f);
+
+            Assert.AreEqual(255, mesh.Colors[0].a, "the road's own end stays solid");
+            Assert.AreEqual(0, mesh.Colors[12 * Columns].a, "clear at -6 m, the last row before the water");
+            Assert.That(mesh.Colors[11 * Columns].a, Is.InRange(126, 129), "half way 2 m back");
+            Assert.AreEqual(0, mesh.Colors[13 * Columns].a, "clear at 6 m, the first row after it");
+            Assert.AreEqual(255, mesh.Colors[^1].a);
+        }
+
+        [Test]
         public void FreeEnds_AndEndsUnderAHigherOrEqualRoad_Fade()
         {
             var main = MapRoadFixture.RoadShape(Asphalt, false, new Vector2(-50f, 0f), new Vector2(50f, 0f));

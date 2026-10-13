@@ -22,6 +22,9 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Turn each surface decal to a random yaw; off faces north. Decals under props turn with the prop.")]
         public bool randomRotation = true;
 
+        [Tooltip("Centre each surface decal on the nearest road or track, its long axis along it (texture V); needs randomRotation off.")]
+        public bool alongRoad;
+
         [Tooltip("How far the decal reaches above and below the ground (metres); shallow keeps units standing in it clean.")]
         public float depth = 0.5f;
 

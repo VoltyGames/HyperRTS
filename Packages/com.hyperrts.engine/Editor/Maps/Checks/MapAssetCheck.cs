@@ -78,6 +78,8 @@ namespace HyperRTS.Editor.Maps.Checks
             var sized = decal.size.x > 0f && decal.size.y >= decal.size.x;
             Require(sized, $"{what}: size {decal.size} must be above 0 with y at least x.");
             Require(decal.depth > 0f, $"{what}: depth {decal.depth} must be above 0.");
+            var twoTurns = decal.alongRoad && decal.randomRotation;
+            Require(!twoTurns, $"{what} sets both alongRoad and randomRotation; turn randomRotation off.");
         }
 
         private void Decal(string key, string source) => InClimate(Climate.decals, key, "decal", source);
