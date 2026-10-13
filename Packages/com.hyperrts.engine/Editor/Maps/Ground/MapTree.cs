@@ -2,19 +2,19 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground
 {
-    /// <summary>One planted tree: climate tree index, position, scale, yaw in degrees and variant seed.</summary>
+    /// <summary>One planted tree: climate tree index, position, scale, yaw in degrees and prefab variant.</summary>
     public readonly struct MapTree
     {
         /// <summary>Seeds are hashed from centimetre steps, so float noise below that can't change a variant.</summary>
         private const float SeedStep = 100f;
 
-        public MapTree(int species, Vector2 position, float scale, float yaw, uint seed)
+        public MapTree(int species, Vector2 position, float scale, float yaw, int variant)
         {
             Species = species;
             Position = position;
             Scale = scale;
             Yaw = yaw;
-            Seed = seed;
+            Variant = variant;
         }
 
         /// <summary>Index into the climate's trees.</summary>
@@ -26,10 +26,10 @@ namespace HyperRTS.Editor.Maps.Ground
 
         public float Yaw { get; }
 
-        /// <summary>Hashed from the authored-sector point so every symmetry copy gets the same variant.</summary>
-        public uint Seed { get; }
+        /// <summary>Index into the climate tree's prefabs, hashed from the authored-sector point.</summary>
+        public int Variant { get; }
 
-        /// <summary>A stable hash of a sector point.</summary>
+        /// <summary>A stable hash of a sector point, so every symmetry copy gets the same variant.</summary>
         public static uint SeedAt(Vector2 sectorPoint)
         {
             var x = (uint)Mathf.RoundToInt(sectorPoint.x * SeedStep);

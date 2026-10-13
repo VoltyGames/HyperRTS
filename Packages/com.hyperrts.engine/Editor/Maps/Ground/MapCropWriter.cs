@@ -1,4 +1,3 @@
-using System.IO;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Factories;
 using HyperRTS.Presentation.Environment.RowCrops;
@@ -39,12 +38,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 pixels[i] = RowCropFields.Encode(bake.Ids[i]);
             }
 
-            var image = new Texture2D(bake.Width, bake.Height, TextureFormat.RGBA32, false, true);
-            image.SetPixels32(pixels);
-            image.Apply();
-            File.WriteAllBytes(path, image.EncodeToPNG());
-            Object.DestroyImmediate(image);
-            return EditorTextures.Import(path, importer =>
+            return EditorTextures.WritePng(path, bake.Width, bake.Height, TextureFormat.RGBA32, pixels, importer =>
             {
                 importer.textureType = TextureImporterType.Default;
                 importer.sRGBTexture = false;

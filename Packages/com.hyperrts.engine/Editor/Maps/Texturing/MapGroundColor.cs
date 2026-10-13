@@ -34,8 +34,14 @@ namespace HyperRTS.Editor.Maps.Texturing
                 }
             }
 
-            Save(path, pixels, size);
-            return Import(path, size);
+            return EditorTextures.WritePng(path, size, size, TextureFormat.RGB24, pixels, importer =>
+            {
+                importer.sRGBTexture = true;
+                importer.mipmapEnabled = false;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.maxTextureSize = Mathf.NextPowerOfTwo(size);
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            });
         }
 
         /// <summary>The linear mean albedo of each layer's base map, tinted the way the terrain tints it.</summary>
@@ -92,27 +98,6 @@ namespace HyperRTS.Editor.Maps.Texturing
             {
                 Object.DestroyImmediate(copy);
             }
-        }
-
-        private static void Save(string path, Color32[] pixels, int size)
-        {
-            var image = new Texture2D(size, size, TextureFormat.RGB24, false);
-            image.SetPixels32(pixels);
-            image.Apply(false);
-            System.IO.File.WriteAllBytes(path, image.EncodeToPNG());
-            Object.DestroyImmediate(image);
-        }
-
-        private static Texture2D Import(string path, int size)
-        {
-            return EditorTextures.Import(path, importer =>
-            {
-                importer.sRGBTexture = true;
-                importer.mipmapEnabled = false;
-                importer.wrapMode = TextureWrapMode.Clamp;
-                importer.maxTextureSize = Mathf.NextPowerOfTwo(size);
-                importer.textureCompression = TextureImporterCompression.CompressedHQ;
-            });
         }
     }
 }

@@ -1,4 +1,3 @@
-using System.IO;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
@@ -32,12 +31,13 @@ namespace HyperRTS.Editor.Maps.Ground
                 }
             }
 
-            var image = new Texture2D(size, size, TextureFormat.RGBA32, false, true);
-            image.SetPixels(pixels);
-            image.Apply();
-            File.WriteAllBytes(path, image.EncodeToPNG());
-            Object.DestroyImmediate(image);
-            return Import(path);
+            return EditorTextures.WritePng(path, size, size, TextureFormat.RGBA32, pixels, importer =>
+            {
+                importer.sRGBTexture = false;
+                importer.mipmapEnabled = true;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+            });
         }
 
         private static Color Macro(MapLandRegion region, MapShapes shapes, MapNoise broad, Vector2 p)
@@ -65,15 +65,5 @@ namespace HyperRTS.Editor.Maps.Ground
         private static bool Varies(MapLandKind kind) =>
             kind is MapLandKind.Field or MapLandKind.Garden or MapLandKind.Wood or MapLandKind.Back;
 
-        private static Texture2D Import(string path)
-        {
-            return EditorTextures.Import(path, importer =>
-            {
-                importer.sRGBTexture = false;
-                importer.mipmapEnabled = true;
-                importer.wrapMode = TextureWrapMode.Clamp;
-                importer.textureCompression = TextureImporterCompression.Uncompressed;
-            });
-        }
     }
 }

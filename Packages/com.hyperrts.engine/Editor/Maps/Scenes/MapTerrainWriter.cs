@@ -100,8 +100,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             }
 
             data.treePrototypes = prototypes.ToArray();
-            var instances = trees.Select(tree =>
-                Instance(tree, first[tree.Species] + climate.trees[tree.Species].Variant(tree.Seed), layout));
+            var instances = trees.Select(tree => Instance(tree, first[tree.Species] + tree.Variant, layout));
             data.SetTreeInstances(instances.ToArray(), true);
         }
 

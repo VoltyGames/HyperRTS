@@ -60,8 +60,8 @@ namespace HyperRTS.Editor.Maps.Meshes
                     end++;
                 }
 
-                var run = new MapRoadRun(along, first, end, first > 0 || fadeStart, end < last || fadeEnd);
-                AddRun(points, run, road.Width, heights, groundLevel);
+                var run = (first, end, first > 0 || fadeStart, end < last || fadeEnd);
+                AddRun(points, along, run, road.Width, heights, groundLevel);
                 first = end;
             }
         }
@@ -79,7 +79,9 @@ namespace HyperRTS.Editor.Maps.Meshes
             return mesh;
         }
 
-        private void AddRun(List<Vector2> points, MapRoadRun run, float width, MapHeights heights, float groundLevel)
+        /// <summary>One unbroken stretch; <paramref name="along"/> is metres along the road per row.</summary>
+        private void AddRun(List<Vector2> points, List<float> along, (int First, int Last, bool In, bool Out) run,
+            float width, MapHeights heights, float groundLevel)
         {
             var columns = Mathf.Max(3, Mathf.CeilToInt(width / AcrossStep) + 1);
             var previous = -1;
@@ -87,7 +89,8 @@ namespace HyperRTS.Editor.Maps.Meshes
             {
                 var ahead = points[Mathf.Min(i + 1, points.Count - 1)] - points[Mathf.Max(i - 1, 0)];
                 var row = Count;
-                AddRow(points[i], ahead.normalized, width, columns, run.Along[i], run.Alpha(i), heights, groundLevel);
+                var alpha = Alpha(along, run, i);
+                AddRow(points[i], ahead.normalized, width, columns, along[i], alpha, heights, groundLevel);
                 if (previous >= 0)
                 {
                     AddQuads(previous, row, columns);
@@ -95,6 +98,14 @@ namespace HyperRTS.Editor.Maps.Meshes
 
                 previous = row;
             }
+        }
+
+        /// <summary>Vertex alpha at a row: clear at a fading end, solid from <see cref="FadeLength"/> in.</summary>
+        private static float Alpha(List<float> along, (int First, int Last, bool In, bool Out) run, int row)
+        {
+            var fromStart = run.In ? (along[row] - along[run.First]) / FadeLength : 1f;
+            var fromEnd = run.Out ? (along[run.Last] - along[row]) / FadeLength : 1f;
+            return Mathf.Clamp01(Mathf.Min(fromStart, fromEnd));
         }
 
         private static List<float> Distances(List<Vector2> points)

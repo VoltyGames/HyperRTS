@@ -155,12 +155,11 @@ namespace HyperRTS.Editor.Maps.Generation
                     continue;
                 }
 
-                var variant = species.Variant(tree.Seed);
-                if (!entries.TryGetValue((tree.Species, variant), out var entry))
+                if (!entries.TryGetValue((tree.Species, tree.Variant), out var entry))
                 {
-                    entries[(tree.Species, variant)] = entry = new MapPaletteEntry
+                    entries[(tree.Species, tree.Variant)] = entry = new MapPaletteEntry
                     {
-                        key = species.key, prefab = species.destructibles[variant], size = Vector2.one * TreeFootprint,
+                        key = species.key, prefab = species.destructibles[tree.Variant], size = Vector2.one * TreeFootprint,
                     };
                 }
 

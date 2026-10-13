@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Tests
             var copies = MapSymmetry.Parse(symmetry).Copies.Count;
             for (var i = 0; i < planting.Planted.Count; i += copies)
             {
-                var variants = planting.Planted.Skip(i).Take(copies).Select(tree => species.Variant(tree.Seed));
+                var variants = planting.Planted.Skip(i).Take(copies).Select(tree => tree.Variant);
                 Assert.AreEqual(1, variants.Distinct().Count(), $"copies of tree {i / copies}");
             }
         }

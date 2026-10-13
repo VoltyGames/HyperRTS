@@ -66,12 +66,17 @@ namespace HyperRTS.Editor.Maps.Planning
         private bool OnRoad(ref Vector2 spot, ref float yaw, System.Random random)
         {
             var jitter = random.Signed() * RoadJitter;
-            if (Context.Shapes.RoadEdgeDistance(spot) > MapLand.CellSize)
+            if (!Context.Shapes.NearestRoad(spot, out _, out var center, out var direction, out var edge))
             {
                 return false;
             }
 
-            Context.Shapes.NearestRoad(spot, out _, out spot, out var direction);
+            if (edge > MapLand.CellSize)
+            {
+                return false;
+            }
+
+            spot = center;
             yaw = MapGeometry.Yaw(direction) + jitter;
             return true;
         }

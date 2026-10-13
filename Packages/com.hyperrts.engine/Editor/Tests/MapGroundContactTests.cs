@@ -90,7 +90,8 @@ namespace HyperRTS.Editor.Tests
         public void SurfaceTrees_WithMaxEdgeDistance_GrowOnlyNearTheEdge()
         {
             var climate = MapRoadFixture.Climate();
-            climate.trees.Add(new MapClimateTree { key = "Shrub" });
+            var shrub = new GameObject("Shrub");
+            climate.trees.Add(new MapClimateTree { key = "Shrub", prefabs = { shrub } });
             var rough = new MapClimateSurface { key = "Rough", layer = "Meadow", treeSpacing = 1.5f };
             rough.trees.Add(new MapTreeDensity { tree = "Shrub", perHectare = 400f, maxEdgeDistance = 4f });
             climate.surfaces.Add(rough);
@@ -100,6 +101,7 @@ namespace HyperRTS.Editor.Tests
             context.Land.ClaimWhere(area, context.Region(MapLandKind.Margin, "Rough"), _ => true);
 
             new MapSurfacePlanter(context).Plan();
+            Object.DestroyImmediate(shrub);
 
             var inArea = context.Trees.Planted.Where(t => area.Contains(t.Position)).ToList();
             Assert.Greater(inArea.Count, 20);

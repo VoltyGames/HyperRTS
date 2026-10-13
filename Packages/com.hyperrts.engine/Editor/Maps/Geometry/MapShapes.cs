@@ -99,7 +99,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         {
             spot = point;
             yaw = 0f;
-            if (!NearestRoad(point, out var nearest, out var center, out var direction))
+            if (!NearestRoad(point, out var nearest, out var center, out var direction, out _))
             {
                 return false;
             }
@@ -111,20 +111,24 @@ namespace HyperRTS.Editor.Maps.Geometry
             return true;
         }
 
-        /// <summary>The road whose edge is nearest the point, the closest point on its centre line and its heading there.</summary>
-        public bool NearestRoad(Vector2 point, out MapRoad nearest, out Vector2 center, out Vector2 direction)
+        /// <summary>
+        /// The road whose edge is nearest the point, the closest point on its centre line, its heading there and the
+        /// <see cref="RoadEdgeDistance"/>.
+        /// </summary>
+        public bool NearestRoad(Vector2 point, out MapRoad nearest, out Vector2 center, out Vector2 direction,
+            out float edgeDistance)
         {
             nearest = null;
             var along = 0f;
-            var best = float.PositiveInfinity;
+            edgeDistance = float.PositiveInfinity;
             foreach (var road in Roads)
             {
                 var distance = road.Line.Distance(point, out var at) - road.Width * 0.5f;
-                if (distance < best)
+                if (distance < edgeDistance)
                 {
                     nearest = road;
                     along = at;
-                    best = distance;
+                    edgeDistance = distance;
                 }
             }
 

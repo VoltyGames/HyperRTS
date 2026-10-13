@@ -31,6 +31,16 @@ namespace HyperRTS.Editor.Common
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
+        /// <summary>Writes the pixels as a PNG in <paramref name="format"/>, then <see cref="Import"/>s it.</summary>
+        public static Texture2D WritePng(string path, int width, int height, TextureFormat format, Color32[] pixels,
+            Action<TextureImporter> configure) =>
+            WritePng(path, width, height, format, image => image.SetPixels32(pixels), configure);
+
+        /// <inheritdoc cref="WritePng(string, int, int, TextureFormat, Color32[], Action{TextureImporter})"/>
+        public static Texture2D WritePng(string path, int width, int height, TextureFormat format, Color[] pixels,
+            Action<TextureImporter> configure) =>
+            WritePng(path, width, height, format, image => image.SetPixels(pixels), configure);
+
         /// <summary>Writes a render texture to a PNG file as RGB.</summary>
         public static void SavePng(RenderTexture source, string path)
         {
@@ -47,6 +57,24 @@ namespace HyperRTS.Editor.Common
                 RenderTexture.active = previous;
                 Object.DestroyImmediate(image);
             }
+        }
+
+        private static Texture2D WritePng(string path, int width, int height, TextureFormat format,
+            Action<Texture2D> fill, Action<TextureImporter> configure)
+        {
+            var image = new Texture2D(width, height, format, false, true);
+            try
+            {
+                fill(image);
+                image.Apply(false);
+                File.WriteAllBytes(path, image.EncodeToPNG());
+            }
+            finally
+            {
+                Object.DestroyImmediate(image);
+            }
+
+            return Import(path, configure);
         }
 
         /// <summary>

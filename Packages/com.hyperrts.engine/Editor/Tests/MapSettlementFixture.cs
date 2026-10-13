@@ -159,7 +159,7 @@ namespace HyperRTS.Editor.Tests
             climate.baseSurface = "Meadow";
             climate.shoreSurface = "Meadow";
             climate.floodplainSurface = "Meadow";
-            climate.trees.Add(new MapClimateTree { key = "Apple" });
+            climate.trees.Add(new MapClimateTree { key = "Apple", prefabs = { Make(new GameObject("Apple")) } });
             climate.roadClasses.Add(new MapRoadClass
             {
                 key = "Street", width = 6f, surface = "Road", vergeWidth = 3f, vergeSurface = "Verge",
