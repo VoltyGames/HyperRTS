@@ -21,7 +21,7 @@ namespace HyperRTS.Network.Scenery
         private EntityQuery _scenery;
         private SceneryWriter _writer;
         private NativeHashMap<ulong, Entity> _index;
-        private NativeHashMap<ulong, byte> _waiting;
+        private NativeHashMap<ulong, SceneryChange> _waiting;
 
         /// <summary>Scenery that should exist now: indexed pieces minus those destroyed. More means some streamed in.</summary>
         private int _indexed;
@@ -33,7 +33,7 @@ namespace HyperRTS.Network.Scenery
             _scenery = SystemAPI.QueryBuilder().WithAll<SceneryId>().WithNone<GhostInstance>().Build();
             _writer = new SceneryWriter(ref state);
             _index = new NativeHashMap<ulong, Entity>(1024, Allocator.Persistent);
-            _waiting = new NativeHashMap<ulong, byte>(16, Allocator.Persistent);
+            _waiting = new NativeHashMap<ulong, SceneryChange>(16, Allocator.Persistent);
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -99,7 +99,7 @@ namespace HyperRTS.Network.Scenery
             {
                 if (_index.ContainsKey(waiting.Key))
                 {
-                    ready.Add(new SceneryChange { Id = waiting.Key, State = waiting.Value });
+                    ready.Add(waiting.Value);
                 }
             }
 
@@ -114,7 +114,7 @@ namespace HyperRTS.Network.Scenery
         {
             if (!_index.TryGetValue(change.Id, out var scenery) || !_writer.Exists(scenery))
             {
-                _waiting[change.Id] = change.State;
+                _waiting[change.Id] = change;
                 return;
             }
 
@@ -124,7 +124,7 @@ namespace HyperRTS.Network.Scenery
                 return;
             }
 
-            _writer.Destroy(scenery, witnessed, ecb);
+            _writer.Destroy(scenery, witnessed, change.Fall, ecb);
             _index.Remove(change.Id);
             _indexed--;
         }

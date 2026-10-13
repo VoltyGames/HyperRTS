@@ -9,8 +9,8 @@ namespace HyperRTS.Network.Scenery
     /// </summary>
     public struct SceneryRpc : IRpcCommand
     {
-        /// <summary>Most changes one message carries, so it fits a packet.</summary>
-        public const int Capacity = 112;
+        /// <summary>Most changes one message carries, so it fits a packet: 10 bytes each on the wire, 1000 in all.</summary>
+        public const int Capacity = 100;
 
         public bool Witnessed;
 

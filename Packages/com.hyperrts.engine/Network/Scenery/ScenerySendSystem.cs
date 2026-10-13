@@ -88,16 +88,24 @@ namespace HyperRTS.Network.Scenery
 
         private void Track(ref SystemState state, ushort teams)
         {
-            foreach (var (health, id) in SystemAPI.Query<RefRO<Health>, RefRO<SceneryId>>()
-                         .WithAll<LocalTransform>().WithNone<GhostInstance>().WithChangeFilter<Health>())
+            foreach (var (health, id, transform, entity) in SystemAPI
+                         .Query<RefRO<Health>, RefRO<SceneryId>, RefRO<LocalTransform>>().WithNone<GhostInstance>()
+                         .WithChangeFilter<Health>().WithEntityAccess())
             {
                 var now = SceneryChange.Encode(health.ValueRO);
-                if (_tracker.Set(id.ValueRO.Value, now, teams, _frame) && now == SceneryChange.Destroyed)
+                var fall = Fall(ref state, entity, transform.ValueRO.Position);
+                if (_tracker.Set(id.ValueRO.Value, now, fall, teams, _frame) && now == SceneryChange.Destroyed)
                 {
                     _expected--;
                 }
             }
         }
+
+        /// <summary>Where a toppling piece falls; 0 for scenery that doesn't topple, which clients ignore.</summary>
+        private byte Fall(ref SystemState state, Entity entity, float3 position) =>
+            SystemAPI.HasComponent<FellFrom>(entity)
+                ? ToppleMath.Quantize(SystemAPI.GetComponent<FellFrom>(entity).Position, position)
+                : (byte)0;
 
         /// <summary>The teams in the match (a bit each), with team 0, which observers view as.</summary>
         private ushort Teams(ref SystemState state)

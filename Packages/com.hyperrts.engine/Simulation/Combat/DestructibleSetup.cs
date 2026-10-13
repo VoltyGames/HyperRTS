@@ -29,5 +29,13 @@ namespace HyperRTS.Simulation.Combat
                 NavSetup.AddObstacle(ref writer, block);
             }
         }
+
+        /// <summary>Makes the piece fall away from its lethal hit; <paramref name="trunk"/> is a unit vector.</summary>
+        public static void AddTopple<TWriter>(ref TWriter writer, float3 trunk, float lie)
+            where TWriter : struct, IEntityWriter
+        {
+            writer.Add(new Topple { Trunk = trunk, Lie = lie });
+            writer.Add<FellFrom>();
+        }
     }
 }

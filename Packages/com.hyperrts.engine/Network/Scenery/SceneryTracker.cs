@@ -61,9 +61,10 @@ namespace HyperRTS.Network.Scenery
 
         /// <summary>
         /// Records the piece's state at <paramref name="frame"/>; each team in <paramref name="teams"/> (a bit each)
-        /// that last saw another state has news. Returns whether the state changed.
+        /// that last saw another state has news. <paramref name="fall"/> goes with a destruction. Returns whether the
+        /// state changed.
         /// </summary>
-        public bool Set(ulong id, byte state, ushort teams, uint frame)
+        public bool Set(ulong id, byte state, byte fall, ushort teams, uint frame)
         {
             if (!_slots.TryGetValue(id, out var slot) || _records[slot].State == state)
             {
@@ -72,6 +73,7 @@ namespace HyperRTS.Network.Scenery
 
             var record = _records[slot];
             record.State = state;
+            record.Fall = fall;
             record.Changed = frame;
             record.Stale = StaleTeams(slot, state, teams);
             if (record.Stale != 0 && !record.Listed)
@@ -125,7 +127,8 @@ namespace HyperRTS.Network.Scenery
                 var known = _known[slot * Teams + team];
                 if (known != SceneryChange.Intact)
                 {
-                    changes.Add(new SceneryChange { Id = _records[slot].Id, State = known });
+                    var record = _records[slot];
+                    changes.Add(new SceneryChange { Id = record.Id, State = known, Fall = record.Fall });
                 }
             }
         }

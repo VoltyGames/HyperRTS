@@ -104,7 +104,10 @@ back.
   placed in the SubScene, so Netcode prespawns them on both sides and replicates owner, health, capture
   (`CaptureProgress`), garrison (`Cargo`) and death. Give them Static optimization: they send only when they change.
   Their ruins are ghosts the server spawns. Other scenery (trees, fences, bridges, wrecks) is no ghost: the server
-  sends its changes by `SceneryId` and every client spawns its remains itself.
+  sends its changes by `SceneryId` (`SceneryChange`: id, state byte and, for toppling scenery, a `Fall` heading
+  byte from `ToppleMath`) and every client spawns its remains itself, in the same pose the server derives from that
+  byte. `SceneryRpc` carries up to 100 changes (10 bytes each); a change for scenery not yet streamed in waits whole.
+  A fall the client saw happen is shown tipping over; one found later (fog, a late join) shows lying down.
 - **Late sight**: `LateSpawnEffectSystem` disables the `SpawnEffect` of a ghost first shown more than a second after
   its spawn tick (a late join, a ruin found in fog), so only witnessed collapses throw dust.
 - **Players** are baked by `MatchAuthoring`, so `PlayerGhostSystem` turns each baked player into a ghost prefab

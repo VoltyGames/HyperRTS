@@ -18,6 +18,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<SpawnEffect> _effects;
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<PostTransformMatrix> _stretches;
+        private ComponentLookup<Topple> _topples;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
 
@@ -29,6 +30,7 @@ namespace HyperRTS.Simulation.Combat
             _effects = state.GetComponentLookup<SpawnEffect>(true);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
+            _topples = state.GetComponentLookup<Topple>(true);
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
         }
@@ -41,6 +43,7 @@ namespace HyperRTS.Simulation.Combat
             _effects.Update(ref state);
             _transforms.Update(ref state);
             _stretches.Update(ref state);
+            _topples.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
         }
@@ -61,27 +64,42 @@ namespace HyperRTS.Simulation.Combat
             }
         }
 
-        /// <summary>Removes the piece with its parts and spawns its remains where it stood, through <paramref name="ecb"/>.</summary>
-        public void Destroy(Entity scenery, bool witnessed, EntityCommandBuffer ecb)
+        /// <summary>
+        /// Removes the piece with its parts and spawns its remains where it stood, through <paramref name="ecb"/>; a
+        /// <see cref="Topple"/> piece's remains lie toward <paramref name="fall"/>.
+        /// </summary>
+        public void Destroy(Entity scenery, bool witnessed, byte fall, EntityCommandBuffer ecb)
         {
             if (_remains.TryGetComponent(scenery, out var spawn))
             {
-                var remains = ecb.Instantiate(spawn.Prefab);
-                ecb.SetComponent(remains, _transforms[scenery]);
-                if (_stretches.TryGetComponent(scenery, out var stretch))
-                {
-                    ecb.AddComponent(remains, stretch);
-                }
-
-                if (!witnessed && _effects.HasComponent(spawn.Prefab))
-                {
-                    ecb.SetComponentEnabled<SpawnEffect>(remains, false);
-                }
+                SpawnRemains(scenery, spawn.Prefab, witnessed, fall, ecb);
             }
 
             var parts = new NativeList<Entity>(4, Allocator.Temp);
             EntityParts.Collect(scenery, _groups, _children, parts);
             ecb.DestroyEntity(parts.AsArray());
+        }
+
+        private void SpawnRemains(Entity scenery, Entity prefab, bool witnessed, byte fall, EntityCommandBuffer ecb)
+        {
+            var remains = ecb.Instantiate(prefab);
+            var standing = _transforms[scenery];
+            ecb.SetComponent(remains, standing);
+            if (_stretches.TryGetComponent(scenery, out var stretch))
+            {
+                ecb.AddComponent(remains, stretch);
+            }
+
+            if (!witnessed && _effects.HasComponent(prefab))
+            {
+                ecb.SetComponentEnabled<SpawnEffect>(remains, false);
+            }
+
+            if (_topples.TryGetComponent(scenery, out var topple))
+            {
+                ecb.AddComponent(remains, ToppleMath.Fell(standing, topple, fall, witnessed, out var pose));
+                ecb.SetComponent(remains, pose);
+            }
         }
     }
 }

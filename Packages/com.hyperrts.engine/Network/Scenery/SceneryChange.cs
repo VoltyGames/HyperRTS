@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 
@@ -13,6 +14,9 @@ namespace HyperRTS.Network.Scenery
 
         /// <summary><see cref="Destroyed"/>, else health as a fraction of 255, never below 1 while it stands.</summary>
         public byte State;
+
+        /// <summary>Heading a toppling piece fell toward (<see cref="ToppleMath"/>); read once it is destroyed.</summary>
+        public byte Fall;
 
         public readonly float Fraction => State / (float)Intact;
 

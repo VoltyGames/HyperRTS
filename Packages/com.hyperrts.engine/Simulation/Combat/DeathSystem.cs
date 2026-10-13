@@ -20,6 +20,8 @@ namespace HyperRTS.Simulation.Combat
     {
         private ComponentLookup<SpawnOnDeath> _spawnLookup;
         private ComponentLookup<PostTransformMatrix> _stretches;
+        private ComponentLookup<Topple> _topples;
+        private ComponentLookup<FellFrom> _fellFrom;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
 
@@ -28,6 +30,8 @@ namespace HyperRTS.Simulation.Combat
         {
             _spawnLookup = state.GetComponentLookup<SpawnOnDeath>(true);
             _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
+            _topples = state.GetComponentLookup<Topple>(true);
+            _fellFrom = state.GetComponentLookup<FellFrom>(true);
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -38,6 +42,8 @@ namespace HyperRTS.Simulation.Combat
         {
             _spawnLookup.Update(ref state);
             _stretches.Update(ref state);
+            _topples.Update(ref state);
+            _fellFrom.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
@@ -45,8 +51,8 @@ namespace HyperRTS.Simulation.Combat
 
             new DeathJob
             {
-                Ecb = ecb.AsParallelWriter(), SpawnLookup = _spawnLookup, Stretches = _stretches, Groups = _groups,
-                Children = _children,
+                Ecb = ecb.AsParallelWriter(), SpawnLookup = _spawnLookup, Stretches = _stretches, Topples = _topples,
+                FallSources = _fellFrom, Groups = _groups, Children = _children,
             }.ScheduleParallel();
         }
 
@@ -58,6 +64,8 @@ namespace HyperRTS.Simulation.Combat
             public EntityCommandBuffer.ParallelWriter Ecb;
             [ReadOnly] public ComponentLookup<SpawnOnDeath> SpawnLookup;
             [ReadOnly] public ComponentLookup<PostTransformMatrix> Stretches;
+            [ReadOnly] public ComponentLookup<Topple> Topples;
+            [ReadOnly] public ComponentLookup<FellFrom> FallSources;
             [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
             [ReadOnly] public BufferLookup<Child> Children;
 
@@ -73,16 +81,31 @@ namespace HyperRTS.Simulation.Combat
                 var parts = new NativeList<Entity>(4, Allocator.Temp);
                 EntityParts.Collect(entity, Groups, Children, parts);
                 Ecb.DestroyEntity(sortKey, parts.AsArray());
-
-                // Remains stand, turn and scale like what died (stretch included), so a big tree leaves a big trunk.
                 if (SpawnLookup.TryGetComponent(entity, out var spawn))
                 {
-                    var remains = Ecb.Instantiate(sortKey, spawn.Prefab);
-                    Ecb.SetComponent(sortKey, remains, transform);
-                    if (Stretches.TryGetComponent(entity, out var stretch))
-                    {
-                        Ecb.AddComponent(sortKey, remains, stretch);
-                    }
+                    SpawnRemains(sortKey, entity, spawn.Prefab, transform);
+                }
+            }
+
+            /// <summary>
+            /// Remains stand, turn and scale like what died (stretch included), so a big tree leaves a big trunk; a
+            /// toppling piece's remains lie away from its lethal hit instead.
+            /// </summary>
+            private void SpawnRemains(int sortKey, Entity entity, Entity prefab, in LocalTransform transform)
+            {
+                var remains = Ecb.Instantiate(sortKey, prefab);
+                Ecb.SetComponent(sortKey, remains, transform);
+                if (Stretches.TryGetComponent(entity, out var stretch))
+                {
+                    Ecb.AddComponent(sortKey, remains, stretch);
+                }
+
+                if (Topples.TryGetComponent(entity, out var topple))
+                {
+                    var fall = ToppleMath.Quantize(FallSources[entity].Position, transform.Position);
+                    var felling = ToppleMath.Fell(transform, topple, fall, true, out var pose);
+                    Ecb.SetComponent(sortKey, remains, pose);
+                    Ecb.AddComponent(sortKey, remains, felling);
                 }
             }
         }

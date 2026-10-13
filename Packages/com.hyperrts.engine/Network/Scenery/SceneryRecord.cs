@@ -8,6 +8,7 @@ namespace HyperRTS.Network.Scenery
         public ulong Id;
         public float3 Position;
         public byte State;
+        public byte Fall;
 
         /// <summary>Teams (a bit each) that last saw another state.</summary>
         public ushort Stale;
@@ -18,6 +19,6 @@ namespace HyperRTS.Network.Scenery
         /// <summary>On the tracker's list of records some team hasn't caught up with.</summary>
         public bool Listed;
 
-        public readonly SceneryChange Change => new() { Id = Id, State = State };
+        public readonly SceneryChange Change => new() { Id = Id, State = State, Fall = Fall };
     }
 }

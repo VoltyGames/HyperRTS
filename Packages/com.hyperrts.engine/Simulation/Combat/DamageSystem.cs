@@ -26,6 +26,7 @@ namespace HyperRTS.Simulation.Combat
         private BufferLookup<ArmorModifier> _armor;
         private BufferLookup<StatModifier> _modifiers;
         private ComponentLookup<Destructible> _destructibles;
+        private ComponentLookup<FellFrom> _fellFrom;
 
         public void OnCreate(ref SystemState state)
         {
@@ -36,6 +37,7 @@ namespace HyperRTS.Simulation.Combat
             _armor = state.GetBufferLookup<ArmorModifier>(true);
             _modifiers = state.GetBufferLookup<StatModifier>(true);
             _destructibles = state.GetComponentLookup<Destructible>(true);
+            _fellFrom = state.GetComponentLookup<FellFrom>();
 
             var queue = state.EntityManager.CreateEntity(typeof(DamageQueue), typeof(DamageEvent));
             state.EntityManager.SetName(queue, "DamageQueue");
@@ -53,6 +55,7 @@ namespace HyperRTS.Simulation.Combat
             _armor.Update(ref state);
             _modifiers.Update(ref state);
             _destructibles.Update(ref state);
+            _fellFrom.Update(ref state);
 
             new ResolveJob
             {
@@ -65,6 +68,7 @@ namespace HyperRTS.Simulation.Combat
                 Armor = _armor,
                 Modifiers = _modifiers,
                 Destructibles = _destructibles,
+                FallSources = _fellFrom,
             }.Schedule();
         }
 
@@ -81,13 +85,14 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public BufferLookup<ArmorModifier> Armor;
             [ReadOnly] public BufferLookup<StatModifier> Modifiers;
             [ReadOnly] public ComponentLookup<Destructible> Destructibles;
+            public ComponentLookup<FellFrom> FallSources;
 
             private void Execute(DynamicBuffer<DamageEvent> events)
             {
                 var victims = new NativeList<SpatialEntry>(16, Allocator.Temp);
                 foreach (var hit in events)
                 {
-                    Apply(hit.Target, hit.Amount, hit);
+                    Apply(hit.Target, hit.Amount, hit, hit.Origin);
                     if (hit.Radius > 0f)
                     {
                         Splash(hit, victims);
@@ -111,7 +116,8 @@ namespace HyperRTS.Simulation.Combat
                     }
 
                     var gap = EntityRadius.EdgeDistance(victim.Position, victim.Radius, hit.Position, 0f);
-                    Apply(victim.Entity, hit.Amount * CombatMath.SplashFactor(gap, hit.Radius, hit.EdgeFactor), hit);
+                    var amount = hit.Amount * CombatMath.SplashFactor(gap, hit.Radius, hit.EdgeFactor);
+                    Apply(victim.Entity, amount, hit, hit.Position);
                 }
             }
 
@@ -135,7 +141,8 @@ namespace HyperRTS.Simulation.Combat
                     || Destructibles.HasComponent(victim.Entity);
             }
 
-            private void Apply(Entity target, float amount, in DamageEvent hit)
+            /// <summary>A lethal hit fells a <see cref="Topple"/> target away from <paramref name="from"/>.</summary>
+            private void Apply(Entity target, float amount, in DamageEvent hit, float3 from)
             {
                 if (!Health.TryGetComponent(target, out var health) || health.Current <= 0f)
                 {
@@ -153,6 +160,10 @@ namespace HyperRTS.Simulation.Combat
                           StatMath.DamageTaken(Modifiers, target);
                 health.Current = math.max(0f, health.Current - amount);
                 Health[target] = health;
+                if (health.Current <= 0f && FallSources.HasComponent(target))
+                {
+                    FallSources[target] = new FellFrom { Position = from };
+                }
 
                 if (Attackers.HasComponent(target) && hit.SourceFaction != 0)
                 {
