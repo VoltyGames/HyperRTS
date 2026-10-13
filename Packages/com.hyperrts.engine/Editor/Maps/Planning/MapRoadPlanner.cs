@@ -15,6 +15,10 @@ namespace HyperRTS.Editor.Maps.Planning
         /// <summary>Track ends this close (metres) are the same end: on a symmetry axis a copy lands on the track itself.</summary>
         private const float SameEnd = 0.5f;
 
+        /// <summary>How far a verge's outer edge wanders, as a share of its width, and over how many metres.</summary>
+        private const float VergeWear = 0.6f;
+        private const float VergeWearWavelength = 9f;
+
         public MapRoadPlanner(MapPlanContext context) : base(context)
         {
         }
@@ -59,7 +63,7 @@ namespace HyperRTS.Editor.Maps.Planning
             }
 
             var verge = Context.Region(MapLandKind.Verge, roadClass.vergeSurface);
-            var reach = half + roadClass.vergeWidth;
+            var wear = Context.Noise(MapNoiseChannel.Verges);
             Land.ClaimEach(road.Line.Bounds, p =>
             {
                 var distance = road.Line.Distance(p);
@@ -68,7 +72,8 @@ namespace HyperRTS.Editor.Maps.Planning
                     return surface;
                 }
 
-                return distance < reach ? verge : MapLand.Unclaimed;
+                var width = roadClass.vergeWidth * (1f + VergeWear * wear.Sample(p, VergeWearWavelength));
+                return distance < half + width ? verge : MapLand.Unclaimed;
             });
         }
 

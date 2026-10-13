@@ -49,6 +49,9 @@ namespace HyperRTS.Editor.Maps.Generation
         public float[,,] Splat { get; private set; }
         public List<int[,]> Details { get; private set; }
 
+        /// <summary>Props in the backdrop, drawn on the terrain from their scenery models.</summary>
+        public List<MapScenery> Scenery { get; private set; }
+
         /// <summary>Trees left to the terrain: the backdrop and species without an entity version.</summary>
         public List<MapTree> TerrainTrees { get; } = new();
 
@@ -102,6 +105,7 @@ namespace HyperRTS.Editor.Maps.Generation
             Land = context.Land;
             Trees = context.Trees.Planted;
             Decals = context.Decals;
+            Scenery = context.Scenery;
             Crops = MapCropPainter.Paint(this);
             var maxDecals = Project.Rules.maxDecals;
             if (Decals.Count > maxDecals)

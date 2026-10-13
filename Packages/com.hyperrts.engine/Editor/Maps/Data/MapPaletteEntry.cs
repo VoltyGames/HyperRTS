@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>One placeable prefab.</summary>
     [Serializable]
-    [MapLibraryItem("prop", "prefab", PreviewRefs = new[] { "prefab" })]
+    [MapLibraryItem("prop", "prefab", "scenery", PreviewRefs = new[] { "prefab" })]
     public sealed class MapPaletteEntry : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]
@@ -17,6 +17,10 @@ namespace HyperRTS.Editor.Maps.Data
 
         [NonSerialized]
         public GameObject prefab;
+
+        /// <summary>Visual-only model drawn on the terrain where the prop falls in the backdrop; null leaves it out there.</summary>
+        [NonSerialized]
+        public GameObject scenery;
 
         [Tooltip("Footprint (width across, depth along the prefab's forward) in metres; spacing and levelling use it.")]
         public Vector2 size = new(4f, 4f);
@@ -89,6 +93,7 @@ namespace HyperRTS.Editor.Maps.Data
         {
             this.key = key;
             prefab = refs.Asset<GameObject>(refs.prefab, "prefab");
+            scenery = refs.Asset<GameObject>(refs.scenery, "scenery");
         }
     }
 }

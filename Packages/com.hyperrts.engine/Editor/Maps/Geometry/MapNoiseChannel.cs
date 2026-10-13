@@ -24,5 +24,6 @@ namespace HyperRTS.Editor.Maps.Geometry
         WoodClearings = 25,
         WoodEdges = 26,
         FieldMargins = 30,
+        Verges = 31,
     }
 }

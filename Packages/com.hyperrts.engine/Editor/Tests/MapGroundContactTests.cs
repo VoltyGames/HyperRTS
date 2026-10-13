@@ -113,6 +113,31 @@ namespace HyperRTS.Editor.Tests
             }
         }
 
+        [Test]
+        public void SurfaceProps_InTheBackdrop_AreSceneryAndInThePlayAreaPlacements()
+        {
+            var climate = MapRoadFixture.Climate();
+            var rough = new MapClimateSurface { key = "Rough", layer = "Meadow", edgeWidth = 1f, edgeJitter = 1f };
+            rough.props.Add(new MapPropDensity { kind = "Stone", perHectare = 60f });
+            climate.surfaces.Add(rough);
+            var (prefab, model) = (new GameObject("Stone"), new GameObject("StoneModel"));
+            var issues = new MapIssues();
+            var context = MapRoadFixture.Context(MapRoadFixture.Spec(), climate, issues);
+            context.Palette.entries.Add(new MapPaletteEntry { key = "Stone", prefab = prefab, scenery = model, size = Vector2.one });
+            context.Land.ClaimWhere(context.Land.Bounds, context.Region(MapLandKind.Margin, "Rough"), _ => true);
+
+            new MapSurfacePlanter(context).Plan();
+            Object.DestroyImmediate(prefab);
+            Object.DestroyImmediate(model);
+
+            var playArea = context.Layout.Bounds;
+            Assert.Greater(context.Scenery.Count, 0);
+            Assert.IsTrue(context.Scenery.All(s => !playArea.Contains(s.Position) && s.Model == model));
+            var stones = context.Placements.All.Where(p => p.Entry.key == "Stone").ToList();
+            Assert.Greater(stones.Count, 0);
+            Assert.IsTrue(stones.All(p => playArea.Contains(p.Position)));
+        }
+
         private static MapHeights Heights(System.Func<Vector2, float> height)
         {
             var heights = new MapHeights(129, new Rect(-64f, -64f, 128f, 128f));

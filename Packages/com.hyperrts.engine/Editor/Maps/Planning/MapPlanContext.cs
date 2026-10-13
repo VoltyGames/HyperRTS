@@ -39,6 +39,9 @@ namespace HyperRTS.Editor.Maps.Planning
         /// <summary>Every ground decal laid so far, in map space (copies included).</summary>
         public List<MapDecal> Decals { get; } = new();
 
+        /// <summary>Props laid in the backdrop as terrain scenery, in map space (copies included).</summary>
+        public List<MapScenery> Scenery { get; } = new();
+
         public int Seed => Layout.Spec.seed;
 
         /// <summary>The map's noise on one channel, symmetric across the sector copies.</summary>

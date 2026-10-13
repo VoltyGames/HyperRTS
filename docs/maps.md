@@ -136,7 +136,7 @@ field (`MapNoiseChannel`): a new feature takes a new channel, since changing a c
 | `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings`, `shared` | Meandering channel of varying width, banks, floodplain, reeds, water mesh; each crossing (`t`, `kind` bridge or ford, `width`, `prop`) sits at `t` along the river; fords thin the water and streak it with foam (vertex A carries how shallow the bed is, the water material's `_FordAlpha` is the alpha mid-ford; the climate's `fordShallowsWidth` and `fordRapidsLength` set how far the shallows and the foam reach) |
 | `ravines` | `points`, `width`, `depth`, `rim`, `branches`, `wooded`, `shared` | Steep-walled cut with a gentle rim, side gullies and woods in patches |
 | `hills` | `pos`, `radius`, `height`, `flatTop`, `shared` | Smooth rise |
-| `roads` | `points`, `kind`, `shared` | A road class: width, surface, verge, rank, levelled or not |
+| `roads` | `points`, `kind`, `shared` | A road class: width, surface, verge (its outer edge wanders ±60 % of its width over about 9 m, so it reads worn), rank, levelled or not |
 | `settlements` | `center`, `radius`, `kind`, `count` | Up to `count` plots along the roads within `radius`, from a settlement kit |
 | `woods` | `points` (polygon), `kind`, `shared` | Woodland kit: canopy, glades, shrubby edge, floor |
 | `belts` | `points` (polyline), `kind`, `shared` | Belt kit: rows of trees and shrubs with gaps |
@@ -153,7 +153,8 @@ each taking only what earlier ones left:
 2. bases and prop pads, access tracks
 3. ravines, settlements and spec tree rows, spec areas
 4. woods, belts, farmland
-5. meadow on everything left, then `MapSurfacePlanter`: each surface's own lone trees and props
+5. meadow on everything left, then `MapSurfacePlanter`: each surface's own lone trees and props (a prop landing in the
+   backdrop goes on the terrain as its `scenery` model, like a backdrop tree, or is left out without one)
 6. `MapDecalPlanner`: each surface's ground decals per hectare of the playable area (kept off props), then one under
    every placement whose prop names a `groundDecal`, turned with it. They go in `MapGeneration.Decals`
 
@@ -273,7 +274,7 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 | `belt` | `MapBeltKit` | Rows of trees with shrubs in the gaps | tree and surface keys |
 | `woodland` | `MapWoodlandKit` | Canopy, shrubby edge, clearings, floor | tree and surface keys |
 | `settlement` | `MapSettlementKit` | Plot layout along a street, street poles and pipe (`streetPipeMinSections` sections, arches over gaps up to `streetPipeMaxGap` m) | prop, surface and tree keys |
-| `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `besideRoad` (scatters only: puts it on the nearest road's verge, facing along it), `maxTilt` (max tilt with the slope, 0 upright), `buriedDepth` (metres below the ground), the pad surface and access road it gets, `sharedAccessDistance` (metres within which props with the same access share its track; 0 for its own, required 0 without access), a `groundDecal` (with its required `groundDecalSize`) under it | `prefab`; surface, road and decal keys |
+| `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `besideRoad` (scatters only: puts it on the nearest road's verge, facing along it), `maxTilt` (max tilt with the slope, 0 upright), `buriedDepth` (metres below the ground), the pad surface and access road it gets, `sharedAccessDistance` (metres within which props with the same access share its track; 0 for its own, required 0 without access), a `groundDecal` (with its required `groundDecalSize`) under it | `prefab`, `scenery` (a plain model drawn on the terrain where a surface's prop falls in the backdrop; empty leaves the backdrop bare); surface, road and decal keys |
 | `climate` | `MapClimate` | Ground, slope, shore, floodplain and ravine surfaces, reeds, ford shallows (`fordShallowsWidth`) and fast water (`fordRapidsLength`), fog and draw distances | `surfaces`, `roadClasses`, `farmlandKits`, `beltKits`, `woodlandKits`, `water`, `atmosphere`, `skybox`; surface and plant keys |
 | `palette` | `MapPalette` | Start kit, base radius (exactly one per project) | `rig`, `startingResources`; prop keys |
 | `rules` | `MapRules` | Rush thresholds, attack paths and renewable fields per player per mode, `maxDecals`, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |

@@ -1,6 +1,7 @@
 using System.Linq;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Texturing;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 
 namespace HyperRTS.Editor.Maps.Checks
@@ -116,6 +117,9 @@ namespace HyperRTS.Editor.Maps.Checks
                     Require(!string.IsNullOrEmpty(entity.displayName),
                         $"Palette prefab '{entry.prefab.name}' needs a Display Name: generated objects are renamed.");
                 }
+
+                var sceneryEntity = entry.scenery != null && entry.scenery.GetComponentInChildren<AuthoringBehaviour>(true) != null;
+                Require(!sceneryEntity, $"Palette entry '{entry.key}': scenery '{entry.scenery?.name}' must be a plain model, not an entity prefab.");
             }
         }
 

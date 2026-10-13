@@ -4,6 +4,7 @@ using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Placement;
 using UnityEditor;
 using UnityEngine;
 
@@ -31,7 +32,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             data.alphamapResolution = splat.GetLength(0);
             data.SetAlphamaps(0, 0, splat);
             WriteDetails(data, generation.Details, climate);
-            WriteTrees(data, trees, climate, layout);
+            WriteTrees(data, trees, generation.Scenery, climate, layout);
             data.wavingGrassAmount = 0.25f;
             data.wavingGrassSpeed = 0.4f;
             data.wavingGrassStrength = 0.35f;
@@ -88,8 +89,11 @@ namespace HyperRTS.Editor.Maps.Scenes
             };
         }
 
-        /// <summary>One terrain prototype per species and variant, each species' variants in a run.</summary>
-        private static void WriteTrees(TerrainData data, List<MapTree> trees, MapClimate climate, MapLayout layout)
+        /// <summary>
+        /// One terrain prototype per species and variant, each species' variants in a run, then one per scenery model.
+        /// </summary>
+        private static void WriteTrees(TerrainData data, List<MapTree> trees, List<MapScenery> scenery,
+            MapClimate climate, MapLayout layout)
         {
             var first = new int[climate.trees.Count];
             var prototypes = new List<TreePrototype>();
@@ -99,21 +103,30 @@ namespace HyperRTS.Editor.Maps.Scenes
                 prototypes.AddRange(climate.trees[i].prefabs.Select(prefab => new TreePrototype { prefab = prefab }));
             }
 
+            var models = new Dictionary<GameObject, int>();
+            foreach (var model in scenery.Select(s => s.Model).Distinct())
+            {
+                models[model] = prototypes.Count;
+                prototypes.Add(new TreePrototype { prefab = model });
+            }
+
             data.treePrototypes = prototypes.ToArray();
-            var instances = trees.Select(tree => Instance(tree, first[tree.Species] + tree.Variant, layout));
-            data.SetTreeInstances(instances.ToArray(), true);
+            var instances = trees.Select(tree =>
+                Instance(first[tree.Species] + tree.Variant, tree.Position, tree.Yaw, tree.Scale, layout));
+            var props = scenery.Select(s => Instance(models[s.Model], s.Position, s.Yaw, s.Scale, layout));
+            data.SetTreeInstances(instances.Concat(props).ToArray(), true);
         }
 
-        private static TreeInstance Instance(MapTree tree, int prototype, MapLayout layout)
+        private static TreeInstance Instance(int prototype, Vector2 position, float yaw, float scale, MapLayout layout)
         {
-            var local = (tree.Position - layout.TerrainBounds.min) / layout.TerrainBounds.size;
+            var local = (position - layout.TerrainBounds.min) / layout.TerrainBounds.size;
             return new TreeInstance
             {
                 prototypeIndex = prototype,
                 position = new Vector3(local.x, 0f, local.y),
-                widthScale = tree.Scale,
-                heightScale = tree.Scale,
-                rotation = tree.Yaw * Mathf.Deg2Rad,
+                widthScale = scale,
+                heightScale = scale,
+                rotation = yaw * Mathf.Deg2Rad,
                 color = Color.white,
                 lightmapColor = Color.white,
             };

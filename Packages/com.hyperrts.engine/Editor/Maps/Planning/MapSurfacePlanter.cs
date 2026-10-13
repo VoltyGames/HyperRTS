@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Placement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
     /// What grows or lies on each surface by itself (lone trees, bank willows, rim rocks, bales in rows, scrub);
-    /// lands that plant their own trees are skipped. Spots are chosen in the authored sector and copied.
+    /// lands that plant their own trees are skipped. Spots are chosen in the authored sector and copied. Props falling
+    /// in the backdrop become scenery when they have a scenery model.
     /// </summary>
     public sealed class MapSurfacePlanter : MapLandPass
     {
@@ -121,6 +123,11 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             var scale = random.Range(entry.scale.x, entry.scale.y);
             var radius = entry.Radius * scale;
+            if (!Context.Layout.Bounds.Contains(spot))
+            {
+                return entry.scenery != null && TryPlaceScenery(entry.scenery, spot, yaw, scale, radius);
+            }
+
             var clearance = Context.Placements.Clearance;
             if (!clearance.IsOffRoad(spot, radius) || !clearance.IsFree(spot, radius))
             {
@@ -133,6 +140,36 @@ namespace HyperRTS.Editor.Maps.Planning
             }
 
             Context.Placements.AddEverywhere(entry, spot, yaw, scale, 1f);
+            return true;
+        }
+
+        /// <summary>Scenery is no obstacle, so it only keeps off roads, rivers, trees and other scenery.</summary>
+        private bool TryPlaceScenery(GameObject model, Vector2 spot, float yaw, float scale, float radius)
+        {
+            var shapes = Context.Shapes;
+            if (shapes.RoadEdgeDistance(spot) < radius || shapes.RiverEdgeDistance(spot) < radius)
+            {
+                return false;
+            }
+
+            if (!Context.Trees.Fits(spot, radius + TreeClearance))
+            {
+                return false;
+            }
+
+            foreach (var other in Context.Scenery)
+            {
+                if (Vector2.Distance(other.Position, spot) < other.Radius + radius)
+                {
+                    return false;
+                }
+            }
+
+            foreach (var copy in Symmetry.Copies)
+            {
+                Context.Scenery.Add(new MapScenery(model, copy.Apply(spot), copy.ApplyYaw(yaw), scale, radius));
+            }
+
             return true;
         }
 
