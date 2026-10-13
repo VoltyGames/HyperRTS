@@ -10,6 +10,7 @@ Shader "HyperRTS/Foliage"
         _Smoothness ("Smoothness", Range(0, 1)) = 0.12
         _Translucency ("Translucency", Range(0, 1)) = 0.45
         _HueVariation ("Hue Variation", Range(0, 0.5)) = 0.12
+        [Toggle] _TwoSidedLeaves ("Two-Sided Leaves (modelled plants)", Float) = 0
         [Toggle(_TREE_WIND)] _TreeWind ("Tree Wind (mesh has wind data)", Float) = 0
         _WindScale ("Wind Scale (0 = still)", Range(0, 1)) = 1
         _WindStrength ("Wind Sway (m per m of height)", Range(0, 0.2)) = 0.03

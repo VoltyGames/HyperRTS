@@ -29,7 +29,8 @@ CBUFFER_START(UnityPerMaterial)
     half _GroundBlend;
     half _GroundBlendHeight;
     half _VertexOcclusion;
-    float _Trample; // 0 off, 1 grass (flatten), 2 crop (damage)
+    float _Trample;
+    half _TwoSidedLeaves; // 0 off, 1 grass (flatten), 2 crop (damage)
 CBUFFER_END
 
 // x start, y end of plant shrinking (m from camera). Set by DetailFade, zero disables it.

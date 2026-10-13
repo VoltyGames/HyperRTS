@@ -79,7 +79,7 @@ ForwardVaryings ForwardVert(Attributes input)
     return output;
 }
 
-half4 ForwardFrag(ForwardVaryings input) : SV_Target
+half4 ForwardFrag(ForwardVaryings input, bool front : SV_IsFrontFace) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
     half4 texel = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv.xy);
@@ -92,8 +92,10 @@ half4 ForwardFrag(ForwardVaryings input) : SV_Target
     half root = input.ground.a * (1.0 - smoothstep(0.0, _GroundBlendHeight, input.uv.z));
     albedo.rgb = lerp(albedo.rgb, input.ground.rgb * Luminance(texel.rgb), root);
 
-    // Not flipped on back faces: both sides of a card light like the whole plant.
-    half3 normal = normalize(lerp(input.normalWS, half3(0.0, 1.0, 0.0), root));
+    // Cards and crowns light both sides like the whole plant; modelled leaves light the side in view, bent skyward.
+    half side = front || _TwoSidedLeaves < 0.5 ? 1.0 : -1.0;
+    half skyward = max(root, _TwoSidedLeaves * 0.5);
+    half3 normal = normalize(lerp(normalize(input.normalWS) * side, half3(0.0, 1.0, 0.0), skyward));
     half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
     Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
     // Shadow and cookie only: culling attenuation isn't set for instanced terrain detail draws.
