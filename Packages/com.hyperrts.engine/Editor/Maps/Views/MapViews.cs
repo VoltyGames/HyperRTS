@@ -5,6 +5,7 @@ using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Report;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -74,8 +75,11 @@ namespace HyperRTS.Editor.Maps.Views
             var transform = camera.transform;
             var (position, rotation, fieldOfView) = (transform.position, transform.rotation, camera.fieldOfView);
             var mask = camera.overrideSceneCullingMask;
+            var asyncCompilation = ShaderUtil.allowAsyncCompilation;
             try
             {
+                // Right after a build, variants not yet compiled would render as nothing (trees as bare bark).
+                ShaderUtil.allowAsyncCompilation = false;
                 // Entities streamed into the editor world carry the editor's scene mask, which a game camera skips.
                 camera.overrideSceneCullingMask = ulong.MaxValue;
                 camera.fieldOfView = rules.viewFieldOfView;
@@ -93,6 +97,7 @@ namespace HyperRTS.Editor.Maps.Views
                 transform.SetPositionAndRotation(position, rotation);
                 camera.fieldOfView = fieldOfView;
                 camera.overrideSceneCullingMask = mask;
+                ShaderUtil.allowAsyncCompilation = asyncCompilation;
                 Object.DestroyImmediate(target);
             }
 
