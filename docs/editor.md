@@ -145,7 +145,7 @@ Styles for engine editor UI live in `Editor/Common/HyperRTSEditor.uss` (classes 
 | Rule type | Checks | Example |
 | --- | --- | --- |
 | `AuthoringRule<T>` | One authoring component | Producer with empty options, unit without a collider |
-| `ISceneRule` | The open scenes | No or several Matches, owners without a slot, missing Netcode bootstrap, a map scene whose last build report has errors |
+| `ISceneRule` | The open scenes | No or several Matches, owners without a slot, missing Netcode bootstrap, a match scene without the Unit Silhouette renderer feature or the named Units rendering layer (with fixes), a map scene whose last build report has errors |
 | `IPrefabRule` | The project's prefabs | Two prefabs sharing a display name (same `TypeId`) |
 
 - Rules are discovered in every editor assembly, so a game adds its own the same way.
