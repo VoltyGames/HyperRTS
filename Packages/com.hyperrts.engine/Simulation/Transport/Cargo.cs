@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.NetCode;
 
 namespace HyperRTS.Simulation.Transport
 {
@@ -6,7 +7,7 @@ namespace HyperRTS.Simulation.Transport
     [InternalBufferCapacity(0)]
     public struct Cargo : IBufferElementData
     {
-        public Entity Unit;
-        public int Size;
+        [GhostField] public Entity Unit;
+        [GhostField] public int Size;
     }
 }

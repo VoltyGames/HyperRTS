@@ -100,10 +100,17 @@ back.
   a plain scene object, because the players it bakes become ghosts of their own; its replicated state (`MatchState`)
   is the engine's `MatchState` ghost prefab, which the scene wizard places in every map. In single player,
   `LocalGhostActivationSystem` enables such prespawned ghosts, which Netcode would otherwise leave disabled.
+- **Map objects**: a map's own buildings (neutral houses, capture posts, derricks) and resource stacks are ghosts
+  placed in the SubScene, so Netcode prespawns them on both sides and replicates owner, health, capture
+  (`CaptureProgress`), garrison (`Cargo`) and death. Give them Static optimization: they send only when they change.
+  Their ruins are ghosts the server spawns. Other scenery (trees, fences, bridges, wrecks) is no ghost: the server
+  sends its changes by `SceneryId` and every client spawns its remains itself.
+- **Late sight**: `LateSpawnEffectSystem` disables the `SpawnEffect` of a ghost first shown more than a second after
+  its spawn tick (a late join, a ruin found in fog), so only witnessed collapses throw dust.
 - **Players** are baked by `MatchAuthoring`, so `PlayerGhostSystem` turns each baked player into a ghost prefab
   at runtime (the same way on both sides) and the server spawns one ghost per slot.
 - **Fields**: components the client reads carry `[GhostField]` (health, faction, construction, production queue,
-  stock, population, power, abilities, ammo, match state; `Stealthed`, `Inside` and `Docked` as enabled bits). Static data comes from the client's own copy of the prefab.
+  stock, population, power, abilities, ammo, capture progress, cargo, match state; `Stealthed`, `Inside` and `Docked` as enabled bits). Static data comes from the client's own copy of the prefab.
 - **References**: prefabs and assets can't cross the wire, so `ProductionQueueItem`, `CompletedResearch` and
   `ResourceStock` also carry a type id, and `ReferenceResolveSystem` (`Network/Replication/`) fills the reference
   back in on the client, finding prefabs through the `PrefabRegistry` singleton. A game buffer that names prefabs
