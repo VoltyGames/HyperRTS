@@ -26,31 +26,20 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         // Slack in lattice units so rounding never loses a spot.
         private const float Slack = 1e-4f;
 
-        // Just above sqrt(2): the widest a turned square projects per unit of side.
-        private const float Diagonal = 1.4143f;
-
         /// <summary>The first lattice indices (row, plant) whose spot can fall in <paramref name="rect"/>, and how many of each.</summary>
         public static (Vector2Int Min, Vector2Int Count) Range(Rect rect, RowCropField field, float rowSpacing,
             float plantSpacing)
         {
-            var low = new Vector2(float.MaxValue, float.MaxValue);
-            var high = new Vector2(float.MinValue, float.MinValue);
-            foreach (var corner in new[] { rect.min, new Vector2(rect.xMax, rect.yMin), new Vector2(rect.xMin, rect.yMax), rect.max })
-            {
-                var offset = corner - field.origin;
-                var lattice = new Vector2(Vector2.Dot(offset, field.across) / rowSpacing, Vector2.Dot(offset, field.along) / plantSpacing);
-                low = Vector2.Min(low, lattice);
-                high = Vector2.Max(high, lattice);
-            }
-
+            var a = ToLattice(rect.min, field, rowSpacing, plantSpacing);
+            var b = ToLattice(new Vector2(rect.xMax, rect.yMin), field, rowSpacing, plantSpacing);
+            var c = ToLattice(new Vector2(rect.xMin, rect.yMax), field, rowSpacing, plantSpacing);
+            var d = ToLattice(rect.max, field, rowSpacing, plantSpacing);
+            var low = Vector2.Min(Vector2.Min(a, b), Vector2.Min(c, d));
+            var high = Vector2.Max(Vector2.Max(a, b), Vector2.Max(c, d));
             var min = new Vector2Int(Mathf.CeilToInt(low.x - Slack), Mathf.CeilToInt(low.y - Slack));
             var max = new Vector2Int(Mathf.FloorToInt(high.x + Slack), Mathf.FloorToInt(high.y + Slack));
             return (min, Vector2Int.Max(Vector2Int.zero, max - min + Vector2Int.one));
         }
-
-        /// <summary>The most (rows, plants) <see cref="Range"/> gives for a square tile at any angle: the kernel's thread grid.</summary>
-        public static Vector2Int MaxCount(float tileSize, float rowSpacing, float plantSpacing) =>
-            new(Mathf.CeilToInt(tileSize * Diagonal / rowSpacing) + 1, Mathf.CeilToInt(tileSize * Diagonal / plantSpacing) + 1);
 
         /// <summary>The most plants one field can grow in a square tile (area plus a perimeter row), for buffer sizes.</summary>
         public static int PlantBound(float tileSize, float rowSpacing, float plantSpacing)
@@ -140,6 +129,12 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
         /// <summary>A hash as a value from 0 up to (not including) 1.</summary>
         public static float Unit(uint value) => (value >> 8) * (1f / 16777216f);
+
+        private static Vector2 ToLattice(Vector2 point, RowCropField field, float rowSpacing, float plantSpacing)
+        {
+            var offset = point - field.origin;
+            return new Vector2(Vector2.Dot(offset, field.across) / rowSpacing, Vector2.Dot(offset, field.along) / plantSpacing);
+        }
 
         // Lattice coordinates in metres, so the noise keeps its size whatever the spacing.
         private static Vector2 Metres(int row, int plant, RowCrop crop) => new(row * crop.rowSpacing, plant * crop.plantSpacing);

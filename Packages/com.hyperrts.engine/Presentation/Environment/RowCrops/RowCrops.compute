@@ -1,8 +1,15 @@
-// Grows row crop plants for RowCropBatch: one thread per lattice spot, dispatched as (rows / 8, plants / 8, tiles)
-// once per model variant. Lattice maths, hashes and noise match RowCropLattice.cs.
+// Grows row crop plants for RowCropBatch: Plant runs one thread per lattice spot of a job, dispatched as
+// (spots / 64, 1, jobs) once per model variant; Count then writes the draw args and clears the counters.
+// Lattice maths, hashes and noise match RowCropLattice.cs.
 #pragma kernel Plant
+#pragma kernel Count
 
-#define SLACK 1e-4
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+
+SamplerState sampler_LinearClamp;
+
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
+
 #define CHANNEL_DENSITY 0u
 #define CHANNEL_ACROSS 1u
 #define CHANNEL_ALONG 2u
@@ -29,11 +36,12 @@ struct RowCropField // RowCropField.cs, 32 bytes
     int seed;
 };
 
-struct RowCropJob // RowCropJob.cs, 16 bytes
+struct RowCropJob // RowCropJob.cs, 28 bytes
 {
     float2 tileMin;
     uint field;
-    uint padding;
+    int2 first; // first (row, plant) whose spot can fall in the tile
+    int2 count; // rows and plants from first
 };
 
 struct RowCropInstance // RowCropInput.hlsl, 48 bytes
@@ -47,32 +55,41 @@ struct RowCropInstance // RowCropInput.hlsl, 48 bytes
     float2 lean;
 };
 
+struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes
+{
+    uint indexCount;
+    uint instanceCount;
+    uint startIndex;
+    int baseVertex;
+    uint startInstance;
+};
+
 StructuredBuffer<RowCropField> _Fields;
 StructuredBuffer<RowCropJob> _Jobs;
+StructuredBuffer<uint> _Capacities; // instances each slot's buffer holds
 Texture2D<float4> _FieldIds;
 Texture2D<float> _Height;
-Texture2D<float4> _Trample;
-SamplerState sampler_LinearClamp;
 
-RWStructuredBuffer<uint> _Counters;
-AppendStructuredBuffer<RowCropInstance> _Full;
-AppendStructuredBuffer<RowCropInstance> _Simple;
-AppendStructuredBuffer<RowCropInstance> _Card;
+RWStructuredBuffer<uint> _Counters; // plants grown per slot this run
+RWStructuredBuffer<DrawArgs> _Args;
+RWStructuredBuffer<RowCropInstance> _Full;
+RWStructuredBuffer<RowCropInstance> _Simple;
+RWStructuredBuffer<RowCropInstance> _Card;
 
 float4 _FieldArea;   // x min, z min, texels per metre in x and z
-float4 _HeightArea;  // terrain x min, z min, 1 / size x, 1 / size z
+float4 _FieldTexels; // field id texels across and deep
+float4 _HeightArea;  // terrain rect: x min, z min, 1 / size x, 1 / size z
 float4 _HeightScale; // terrain base height, metres per unit sample, heightmap texels across
-float4 _TrampleRect; // x min, z min, 1 / width, 1 / depth; zero = no trample map
 float4 _Camera;      // xyz position, w draw distance
 float4 _Sowing;      // row spacing, plant spacing, jitter, yaw jitter (radians)
 float4 _Size;        // min scale, max scale, lod0 distance, lod1 distance
-float4 _Capacity;    // full, simple, card buffer sizes of this variant
 float4 _Variety;     // lean, edge lean (radians), wander metres, 1 / wander length
 float4 _Patch;       // min and max patch scale, 1 / patch size
-float4 _Variant;     // variant grown this dispatch, variant count, its first counter
+float4 _Variant;     // variant grown this dispatch, variant count, its first slot
 float _TileSize;
 float _FacesRow;     // 1: plants face along their row; 0: they keep the model's heading (+Z north)
 float _Density;
+uint _Slots;
 
 uint Pcg(uint value)
 {
@@ -108,25 +125,6 @@ float Noise(int seed, uint salt, float2 p)
     return lerp(low, high, u.y);
 }
 
-float2 ToLattice(float2 corner, RowCropField field)
-{
-    float2 offset = corner - field.origin;
-    return float2(dot(offset, field.across) / _Sowing.x, dot(offset, field.along) / _Sowing.y);
-}
-
-// The first (row, plant) whose spot can fall in the tile; last is the final one.
-void LatticeRange(float2 tileMin, RowCropField field, out int2 first, out int2 last)
-{
-    float2 a = ToLattice(tileMin, field);
-    float2 b = ToLattice(tileMin + float2(_TileSize, 0.0), field);
-    float2 c = ToLattice(tileMin + float2(0.0, _TileSize), field);
-    float2 d = ToLattice(tileMin + float2(_TileSize, _TileSize), field);
-    float2 low = min(min(a, b), min(c, d));
-    float2 high = max(max(a, b), max(c, d));
-    first = (int2)ceil(low - SLACK);
-    last = (int2)floor(high + SLACK);
-}
-
 bool Owns(float2 tileMin, float2 spot)
 {
     float2 tileMax = tileMin + _TileSize;
@@ -135,10 +133,8 @@ bool Owns(float2 tileMin, float2 spot)
 
 uint FieldAt(float2 spot)
 {
-    uint width, height;
-    _FieldIds.GetDimensions(width, height);
     int2 texel = (int2)floor((spot - _FieldArea.xy) * _FieldArea.zw);
-    if (any(texel < 0) || texel.x >= (int)width || texel.y >= (int)height)
+    if (any(texel < 0) || any(texel >= (int2)_FieldTexels.xy))
     {
         return 0u;
     }
@@ -150,20 +146,9 @@ uint FieldAt(float2 spot)
 float GroundHeight(float2 xz)
 {
     float texels = _HeightScale.z;
-    float2 uv = (xz - _HeightArea.xy) * _HeightArea.zw;
+    float2 uv = RectUV(_HeightArea, xz);
     uv = uv * ((texels - 1.0) / texels) + 0.5 / texels;
     return _HeightScale.x + _Height.SampleLevel(sampler_LinearClamp, uv, 0) * _HeightScale.y;
-}
-
-// RG direction * 0.5 + 0.5, A crop damage. Neutral without a trample map.
-float4 TrampleAt(float2 xz)
-{
-    if (_TrampleRect.z <= 0.0)
-    {
-        return float4(0.5, 0.5, 0.0, 0.0);
-    }
-
-    return _Trample.SampleLevel(sampler_LinearClamp, (xz - _TrampleRect.xy) * _TrampleRect.zw, 0);
 }
 
 // Share of four probes round the spot that fall outside its field.
@@ -185,43 +170,43 @@ float2 Lean(uint hash, float2 spot, RowCropField field, uint id)
     return (field.across * cos(heading) + field.along * sin(heading)) * sin(tilt);
 }
 
-void Append(uint lod, RowCropInstance grown)
+// Writes at the slot's next index; plants past its capacity are dropped and Count clamps the draw to it.
+void Store(uint lod, RowCropInstance grown)
 {
-    uint slot;
-    InterlockedAdd(_Counters[(uint)_Variant.z + lod], 1u, slot);
-    if (slot >= (uint)_Capacity[lod])
+    uint slot = (uint)_Variant.z + lod;
+    uint index;
+    InterlockedAdd(_Counters[slot], 1u, index);
+    if (index >= _Capacities[slot])
     {
         return;
     }
 
     if (lod == 0u)
     {
-        _Full.Append(grown);
+        _Full[index] = grown;
     }
     else if (lod == 1u)
     {
-        _Simple.Append(grown);
+        _Simple[index] = grown;
     }
     else
     {
-        _Card.Append(grown);
+        _Card[index] = grown;
     }
 }
 
-[numthreads(8, 8, 1)]
+[numthreads(64, 1, 1)]
 void Plant(uint3 id : SV_DispatchThreadID)
 {
     RowCropJob job = _Jobs[id.z];
-    RowCropField field = _Fields[job.field];
-    int2 first, last;
-    LatticeRange(job.tileMin, field, first, last);
-    int row = first.x + (int)id.x;
-    int plant = first.y + (int)id.y;
-    if (row > last.x || plant > last.y)
+    if (id.x >= (uint)(job.count.x * job.count.y))
     {
         return;
     }
 
+    int row = job.first.x + (int)(id.x % (uint)job.count.x);
+    int plant = job.first.y + (int)(id.x / (uint)job.count.x);
+    RowCropField field = _Fields[job.field];
     float2 spot = field.origin + field.across * (row * _Sowing.x) + field.along * (plant * _Sowing.y);
     if (!Owns(job.tileMin, spot))
     {
@@ -235,13 +220,13 @@ void Plant(uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    float2 stray = float2(Channel(hash, CHANNEL_EDGE), Channel(hash, CHANNEL_EDGE + 1u)) - 0.5;
-    if (FieldAt(spot + stray * EDGE_DITHER) != job.field + 1u)
+    if (Channel(hash, CHANNEL_DENSITY) >= _Density)
     {
         return;
     }
 
-    if (Channel(hash, CHANNEL_DENSITY) >= _Density)
+    float2 stray = float2(Channel(hash, CHANNEL_EDGE), Channel(hash, CHANNEL_EDGE + 1u)) - 0.5;
+    if (FieldAt(spot + stray * EDGE_DITHER) != job.field + 1u)
     {
         return;
     }
@@ -258,8 +243,8 @@ void Plant(uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    float4 trample = TrampleAt(xz);
-    if (trample.a > 0.5 + 0.5 * Channel(hash, CHANNEL_DROP))
+    TrampleSample trample = SampleTrample(xz);
+    if (trample.crop > 0.5 + 0.5 * Channel(hash, CHANNEL_DROP))
     {
         return;
     }
@@ -273,10 +258,21 @@ void Plant(uint3 id : SV_DispatchThreadID)
     float2 forward = _FacesRow > 0.5 ? field.along : float2(0.0, 1.0);
     float2 side = _FacesRow > 0.5 ? field.across : float2(1.0, 0.0);
     grown.facing = forward * cos(turn) + side * sin(turn);
-    grown.trampleDirection = trample.rg * 2.0 - 1.0;
-    grown.bend = trample.a;
+    grown.trampleDirection = trample.direction;
+    grown.bend = trample.crop;
     grown.shade = Channel(hash, CHANNEL_SHADE);
     grown.lean = Lean(hash, spot, field, job.field + 1u);
     uint lod = range < _Size.z ? 0u : (range < _Size.w ? 1u : 2u);
-    Append(lod, grown);
+    Store(lod, grown);
+}
+
+// Draws each slot's grown plants up to its capacity, then zeroes the counters for the next run.
+[numthreads(1, 1, 1)]
+void Count(uint3 id : SV_DispatchThreadID)
+{
+    for (uint slot = 0u; slot < _Slots; slot++)
+    {
+        _Args[slot].instanceCount = min(_Counters[slot], _Capacities[slot]);
+        _Counters[slot] = 0u;
+    }
 }

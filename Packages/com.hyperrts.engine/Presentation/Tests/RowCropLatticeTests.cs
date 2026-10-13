@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests
 {
-    /// <summary>The row lattice split into tiles: every spot grows in exactly one tile, within the kernel's thread grid.</summary>
+    /// <summary>The row lattice split into tiles: every spot grows in exactly one tile, from the threads its job dispatches.</summary>
     public class RowCropLatticeTests
     {
         private const float RowSpacing = 0.75f;
@@ -54,14 +54,16 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
-        public void Range_StaysInsideTheKernelGrid()
+        public void Job_SpotsStayWithinATurnedTile()
         {
-            var max = RowCropLattice.MaxCount(Tile, RowSpacing, PlantSpacing);
+            var rows = Mathf.CeilToInt(Tile * Mathf.Sqrt(2f) / RowSpacing) + 1;
+            var plants = Mathf.CeilToInt(Tile * Mathf.Sqrt(2f) / PlantSpacing) + 1;
             for (var angle = 0f; angle < 360f; angle += 7.5f)
             {
-                var (_, count) = RowCropLattice.Range(new Rect(Tile, -Tile, Tile, Tile), Field(angle), RowSpacing, PlantSpacing);
-                Assert.LessOrEqual(count.x, max.x, $"rows at {angle}°");
-                Assert.LessOrEqual(count.y, max.y, $"plants at {angle}°");
+                var job = new RowCropJob(new Rect(Tile, -Tile, Tile, Tile), 0, Field(angle), RowSpacing, PlantSpacing);
+                Assert.LessOrEqual(job.count.x, rows, $"rows at {angle}°");
+                Assert.LessOrEqual(job.count.y, plants, $"plants at {angle}°");
+                Assert.AreEqual(job.count.x * job.count.y, job.Spots);
             }
         }
 
@@ -85,18 +87,18 @@ namespace HyperRTS.Presentation.Tests
             }
         }
 
+        // The spots RowCrops.compute's Plant keeps, one thread per spot of the job.
         private static List<(int, int)> Grown(Rect tile, RowCropField field)
         {
             var grown = new List<(int, int)>();
-            var (min, count) = RowCropLattice.Range(tile, field, RowSpacing, PlantSpacing);
-            for (var row = min.x; row < min.x + count.x; row++)
+            var job = new RowCropJob(tile, 0, field, RowSpacing, PlantSpacing);
+            for (var thread = 0; thread < job.Spots; thread++)
             {
-                for (var plant = min.y; plant < min.y + count.y; plant++)
+                var row = job.first.x + thread % job.count.x;
+                var plant = job.first.y + thread / job.count.x;
+                if (RowCropLattice.Owns(tile, RowCropLattice.Spot(field, row, plant, RowSpacing, PlantSpacing)))
                 {
-                    if (RowCropLattice.Owns(tile, RowCropLattice.Spot(field, row, plant, RowSpacing, PlantSpacing)))
-                    {
-                        grown.Add((row, plant));
-                    }
+                    grown.Add((row, plant));
                 }
             }
 

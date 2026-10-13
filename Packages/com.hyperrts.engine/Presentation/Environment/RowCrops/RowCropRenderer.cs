@@ -8,7 +8,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 {
     /// <summary>
     /// Grows a map's row crops on the GPU from <see cref="RowCropFields"/> for each camera about to render, in edit
-    /// mode too, and draws them per distance band. Regrowing every visible tile per camera needs no cache invalidation.
+    /// mode too, and draws them per distance band. Each camera keeps its own buffers and regrows only when its view,
+    /// the quality settings or the trample map change.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu("")]
@@ -17,8 +18,6 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     [DisallowMultipleComponent]
     public sealed class RowCropRenderer : MonoBehaviour
     {
-        public const string KernelName = "Plant";
-
         private static float _density = 1f;
         private static float _distance = 300f;
 
@@ -31,13 +30,16 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         [Tooltip("The terrain the crops stand on.")]
         public Terrain terrain;
 
-        private readonly List<RowCropBatch> _batches = new();
+        private readonly Dictionary<Camera, RowCropCameraState> _cameras = new();
+        private readonly List<int> _visible = new();
         private readonly Plane[] _planes = new Plane[6];
+        private RowCropKernels _kernels;
         private RowCropKernelInputs _inputs;
         private Bounds[] _tileBounds;
-        private Bounds _worldBounds;
         private bool _ready;
+#if UNITY_EDITOR
         private bool _dirty;
+#endif
 
         /// <summary>Share of plants grown, 0 to 1. Set by the game from its vegetation quality.</summary>
         public static float Density
@@ -69,12 +71,16 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             Release();
         }
 
+#if UNITY_EDITOR
         // Rebuilt on the next camera, not here: OnValidate runs mid-import, too early to make GPU buffers.
         private void OnValidate() => _dirty = true;
+#endif
 
         private void Build()
         {
+#if UNITY_EDITOR
             _dirty = false;
+#endif
             var problems = Problems();
             if (problems.Count > 0)
             {
@@ -82,41 +88,51 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                 return;
             }
 
-            var kernel = compute.FindKernel(KernelName);
-            _inputs = new RowCropKernelInputs(compute, kernel, fields, terrain);
-            fields.crops.ForEach(crop => _batches.Add(new RowCropBatch(crop, compute, kernel)));
-            MeasureTiles();
+            _kernels = new RowCropKernels(compute);
+            _inputs = new RowCropKernelInputs(_kernels, fields, terrain);
+            _tileBounds = RowCropTileBounds.Measure(fields, terrain);
             _ready = true;
         }
 
         private void Release()
         {
             _ready = false;
-            _batches.ForEach(batch => batch.Dispose());
-            _batches.Clear();
+            foreach (var state in _cameras.Values)
+            {
+                state.Dispose();
+            }
+
+            _cameras.Clear();
             _inputs?.Dispose();
             _inputs = null;
         }
 
         private void Render(ScriptableRenderContext context, Camera camera)
         {
+#if UNITY_EDITOR
             if (_dirty || (_ready && Stale()))
             {
                 Release();
                 Build();
             }
+#endif
 
             if (!_ready || !Draws(camera))
             {
                 return;
             }
 
-            Queue(camera);
-            _inputs.Set(camera.transform.position, Density, Distance);
-            foreach (var batch in _batches)
+            var state = State(camera);
+            var position = camera.transform.position;
+            FindVisible(camera, position);
+            if (!state.Holds(position, Density, Distance, _visible))
             {
-                batch.Generate();
-                batch.Draw(_worldBounds, gameObject.layer, camera);
+                Grow(state, position);
+            }
+
+            foreach (var batch in state.Batches)
+            {
+                batch.Draw(gameObject.layer, camera);
             }
         }
 
@@ -132,24 +148,63 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             return kind && seesLayer && ownScene;
         }
 
+        private void Grow(RowCropCameraState state, Vector3 position)
+        {
+            Queue(state.Batches, position);
+            _inputs.SetCamera(position, Density, Distance);
+            foreach (var batch in state.Batches)
+            {
+                batch.Generate();
+            }
+
+            state.Remember(position, Density, Distance, _visible);
+        }
+
+        private RowCropCameraState State(Camera camera)
+        {
+            if (_cameras.TryGetValue(camera, out var state))
+            {
+                return state;
+            }
+
+            ForgetClosedCameras();
+            state = new RowCropCameraState(fields, _kernels);
+            _cameras.Add(camera, state);
+            return state;
+        }
+
+        // Frees the buffers of cameras destroyed since, such as a closed Scene view.
+        private void ForgetClosedCameras()
+        {
+            var closed = new List<Camera>();
+            foreach (var camera in _cameras.Keys)
+            {
+                if (camera == null)
+                {
+                    closed.Add(camera);
+                }
+            }
+
+            foreach (var camera in closed)
+            {
+                _cameras[camera].Dispose();
+                _cameras.Remove(camera);
+            }
+        }
+
+#if UNITY_EDITOR
         // Catches a map rebuild that reshaped the fields or the crops while the scene stayed open.
         private bool Stale()
         {
             var lost = fields == null || terrain == null || compute == null;
-            if (lost || _inputs.Stale)
+            if (lost || _inputs.Stale || _tileBounds.Length != fields.tiles.Count)
             {
                 return true;
             }
 
-            var reshaped = _tileBounds.Length != fields.tiles.Count || _batches.Count != fields.crops.Count;
-            if (reshaped)
+            foreach (var state in _cameras.Values)
             {
-                return true;
-            }
-
-            for (var i = 0; i < _batches.Count; i++)
-            {
-                if (_batches[i].Stale(fields.crops[i]))
+                if (state.Stale(fields))
                 {
                     return true;
                 }
@@ -157,70 +212,44 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
             return false;
         }
+#endif
 
-        /// <summary>Hands every tile in a camera's view to the batches of the crops growing on it.</summary>
-        private void Queue(Camera camera)
+        /// <summary>Indices of the tiles in a camera's view and draw distance, in tile order.</summary>
+        private void FindVisible(Camera camera, Vector3 position)
         {
-            _batches.ForEach(batch => batch.Begin());
+            _visible.Clear();
             GeometryUtility.CalculateFrustumPlanes(camera, _planes);
-            var position = camera.transform.position;
-            for (var t = 0; t < fields.tiles.Count; t++)
+            for (var t = 0; t < _tileBounds.Length; t++)
+            {
+                var bounds = _tileBounds[t];
+                var near = RowCropView.Distances(bounds, position).Near;
+                var inView = near < Distance && GeometryUtility.TestPlanesAABB(_planes, bounds);
+                if (inView)
+                {
+                    _visible.Add(t);
+                }
+            }
+        }
+
+        /// <summary>Hands every visible tile to the batches of the crops growing on it.</summary>
+        private void Queue(List<RowCropBatch> batches, Vector3 position)
+        {
+            batches.ForEach(batch => batch.Begin());
+            foreach (var t in _visible)
             {
                 var bounds = _tileBounds[t];
                 var (near, far) = RowCropView.Distances(bounds, position);
-                var inView = near < Distance && GeometryUtility.TestPlanesAABB(_planes, bounds);
-                if (!inView)
-                {
-                    continue;
-                }
-
                 var tile = fields.tiles[t];
-                var min = fields.TileRect(tile).min;
+                var rect = fields.TileRect(tile);
                 for (var f = tile.firstField; f < tile.firstField + tile.fieldCount; f++)
                 {
-                    var field = fields.tileFields[f];
-                    _batches[fields.fields[field].crop].Add(new RowCropJob(min, field), Distance, near, far);
+                    var index = fields.tileFields[f];
+                    var field = fields.fields[index];
+                    var crop = fields.crops[field.crop];
+                    var job = new RowCropJob(rect, index, field, crop.rowSpacing, crop.plantSpacing);
+                    batches[field.crop].Add(job, bounds, Distance, near, far);
                 }
             }
-        }
-
-        /// <summary>Each tile's box from the ground under it, and the box round them all that the draws are culled by.</summary>
-        private void MeasureTiles()
-        {
-            var height = 0f;
-            fields.crops.ForEach(crop => height = Mathf.Max(height, crop.height * Mathf.Max(1f, crop.patchScale.y)));
-            _tileBounds = new Bounds[fields.tiles.Count];
-            for (var t = 0; t < _tileBounds.Length; t++)
-            {
-                var rect = fields.TileRect(fields.tiles[t]);
-                var (low, high) = GroundRange(rect);
-                _tileBounds[t] = RowCropView.TileBounds(rect, low, high, height);
-                if (t == 0)
-                {
-                    _worldBounds = _tileBounds[t];
-                }
-
-                _worldBounds.Encapsulate(_tileBounds[t]);
-            }
-        }
-
-        /// <summary>Lowest and highest ground over a tile, from a 3 by 3 grid of samples.</summary>
-        private (float Low, float High) GroundRange(Rect rect)
-        {
-            var (low, high) = (float.MaxValue, float.MinValue);
-            var baseHeight = terrain.GetPosition().y;
-            for (var i = 0; i <= 2; i++)
-            {
-                for (var j = 0; j <= 2; j++)
-                {
-                    var point = new Vector3(rect.xMin + rect.width * i * 0.5f, 0f, rect.yMin + rect.height * j * 0.5f);
-                    var ground = baseHeight + terrain.SampleHeight(point);
-                    low = Mathf.Min(low, ground);
-                    high = Mathf.Max(high, ground);
-                }
-            }
-
-            return (low - 0.5f, high + 0.5f);
         }
 
         private List<string> Problems()
