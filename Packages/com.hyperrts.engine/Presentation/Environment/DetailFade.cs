@@ -2,10 +2,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>
-    /// Publishes where foliage plants shrink to their roots (<c>_HyperRTSDetailFade</c>), ending at the terrain's detail
-    /// distance so grass and crops are gone before the terrain culls them instead of popping out.
-    /// </summary>
+    /// <summary>Publishes <c>_HyperRTSDetailFade</c> so plants shrink away before the terrain culls them.</summary>
     public static class DetailFade
     {
         /// <summary>The share of the detail distance over which plants shrink away.</summary>

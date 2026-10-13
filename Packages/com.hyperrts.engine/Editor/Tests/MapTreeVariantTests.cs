@@ -10,7 +10,6 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>Tree model variants: picked by a seed hashed from the sector point, so runs and copies agree.</summary>
     public class MapTreeVariantTests
     {
         [TestCase(MapSymmetry.Rotate180)]

@@ -1,5 +1,4 @@
-// HyperRTS/RowCrop inputs shared by every pass: material properties, the plants RowCrops.compute grew (read by
-// SV_InstanceID from _Instances, which RowCropBatch binds per draw) and the windblown, trampled vertex position.
+// HyperRTS/RowCrop inputs shared by every pass. Plants come from _Instances by SV_InstanceID.
 #ifndef HYPERRTS_ROW_CROP_INPUT_INCLUDED
 #define HYPERRTS_ROW_CROP_INPUT_INCLUDED
 
@@ -54,8 +53,7 @@ float3 PlantToWorld(float3 v, float2 facing)
     return right * v.x + float3(0.0, v.y, 0.0) + forward * v.z;
 }
 
-// World position of a vertex under the given frame's wind: placed and scaled by its plant, leant over where vehicles
-// crushed it, then swayed about its root with height (Wind.hlsl plant mode).
+// Placed by its plant, trampled, then swayed (Wind.hlsl plant mode).
 float3 RowCropPosition(Attributes input, RowCropInstance plant, WindFrame frame)
 {
     float3 origin = plant.position;

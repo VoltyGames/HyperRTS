@@ -10,21 +10,16 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground
 {
-    /// <summary>
-    /// Bakes where row crops grow: every land cell whose region's surface names a row crop joins the field of its
-    /// region and symmetry copy, then cells within the crop's edge margin of the field's edge (roads, tracks, water
-    /// and other land are other regions), of a road, of a placed object or under water are cleared. Each copy's
-    /// lattice is the authored one moved by the copy's turn or mirror, with the same seed, so both sides match.
-    /// </summary>
+    /// <summary>Bakes where row crops grow. Symmetry copies share the authored lattice and seed so both sides match.</summary>
     public static class MapCropPainter
     {
         private const float WaterClearance = 0.15f;
         private const int MaxFields = ushort.MaxValue - 1;
 
-        // Past this many metres from a field's edge no road can be within a crop's margin: roads claim their cells.
+        // Roads claim their own cells, so none lies within a crop's margin past this distance.
         private const float RoadReach = 1.5f;
 
-        /// <summary>The generation's crop fields; it reads only plain data, so it may run on a worker thread.</summary>
+        /// <summary>Reads only plain data, so it may run on a worker thread.</summary>
         public static MapCropBake Paint(MapGeneration generation)
         {
             var (layout, shapes, heights) = (generation.Layout, generation.Shapes, generation.Heights);
@@ -42,10 +37,7 @@ namespace HyperRTS.Editor.Maps.Ground
             });
         }
 
-        /// <summary>
-        /// The crop fields of <paramref name="land"/>. <paramref name="blocked"/> takes a cell centre, its distance
-        /// to the field's edge and the crop's margin (metres), and says whether the cell must stay bare.
-        /// </summary>
+        /// <summary><paramref name="blocked"/> gets a cell centre, its distance to the field edge and the crop margin, and returns true to keep it bare.</summary>
         public static MapCropBake Paint(MapLand land, MapSymmetry symmetry, MapClimate climate,
             Func<Vector2, float, float, bool> blocked)
         {
@@ -133,7 +125,7 @@ namespace HyperRTS.Editor.Maps.Ground
             });
         }
 
-        /// <summary>Clears cells in their crop's edge margin or that <paramref name="blocked"/> keeps bare; counts the rest.</summary>
+        /// <summary>Clears cells in their crop's edge margin or kept bare by <paramref name="blocked"/>, and counts the rest.</summary>
         private static void Clear(MapLand land, MapCropBake bake, Func<Vector2, float, float, bool> blocked)
         {
             var ids = bake.Ids;
@@ -161,7 +153,6 @@ namespace HyperRTS.Editor.Maps.Ground
             bake.Plants = (long)Math.Round(plants);
         }
 
-        /// <summary>Lists every tile holding a crop cell, with the fields it holds in id order.</summary>
         private static void Tile(MapCropBake bake)
         {
             var cellsPerTile = Mathf.RoundToInt(RowCropFields.TileSize / MapLand.CellSize);

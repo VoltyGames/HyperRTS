@@ -7,14 +7,9 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground
 {
-    /// <summary>
-    /// Saves a <see cref="MapCropBake"/> beside the map: the field ids as a lossless picture (R low byte, G high
-    /// byte, point-sampled) and a <see cref="RowCropFields"/> asset pointing at it, updated in place so its GUID
-    /// stays. A map without row crops gets neither, and stale ones are deleted.
-    /// </summary>
+    /// <summary>Saves field ids as a lossless picture (R low byte, G high byte) and a <see cref="RowCropFields"/> asset updated in place to keep its GUID.</summary>
     public static class MapCropWriter
     {
-        /// <summary>Writes the fields, or deletes them when the map sows no row crops.</summary>
         public static void Write(string assetPath, string picturePath, MapCropBake bake)
         {
             if (bake.IsEmpty)

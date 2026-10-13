@@ -6,13 +6,10 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Network.Scenery
 {
-    /// <summary>
-    /// What the server tracks to replicate scenery: each piece's state and the state each team last saw of it. A
-    /// team gets news of a change only once it sees the spot, so fog hides destruction until someone looks.
-    /// </summary>
+    /// <summary>Server state for scenery replication. A team hears of a change only once it sees the spot.</summary>
     public struct SceneryTracker : IDisposable
     {
-        /// <summary>One slot per fog team; team 0, which observers view as, sees everything.</summary>
+        /// <summary>One slot per fog team. Team 0 is for observers and sees everything.</summary>
         public const int Teams = FactionRelations.MaxTeams;
 
         private NativeHashMap<ulong, int> _slots;
@@ -42,7 +39,7 @@ namespace HyperRTS.Network.Scenery
             _stale.Dispose();
         }
 
-        /// <summary>Tracks a piece as the map loaded it, intact for every team; false when the id is already tracked.</summary>
+        /// <summary>False when the id is already tracked.</summary>
         public bool Register(ulong id, float3 position)
         {
             if (!_slots.TryAdd(id, _records.Length))
@@ -59,11 +56,7 @@ namespace HyperRTS.Network.Scenery
             return true;
         }
 
-        /// <summary>
-        /// Records the piece's state at <paramref name="frame"/>; each team in <paramref name="teams"/> (a bit each)
-        /// that last saw another state has news. <paramref name="fall"/> goes with a destruction. Returns whether the
-        /// state changed.
-        /// </summary>
+        /// <summary>Records a state change. Teams in <paramref name="teams"/> that saw another state get news.</summary>
         public bool Set(ulong id, byte state, byte fall, ushort teams, uint frame)
         {
             if (!_slots.TryGetValue(id, out var slot) || _records[slot].State == state)
@@ -86,10 +79,7 @@ namespace HyperRTS.Network.Scenery
             return true;
         }
 
-        /// <summary>
-        /// Hands each team the news it can see now into <paramref name="news"/>. With fog off or no fog grid every
-        /// team sees everything; news of a change made this <paramref name="frame"/> was witnessed.
-        /// </summary>
+        /// <summary>With fog off every team sees everything. Changes made this <paramref name="frame"/> count as witnessed.</summary>
         public void Reveal(in FogOfWar fog, bool fogOn, uint frame, NativeList<SceneryNews> news)
         {
             var everything = !fogOn || !fog.IsCreated;
@@ -119,7 +109,7 @@ namespace HyperRTS.Network.Scenery
             }
         }
 
-        /// <summary>What <paramref name="team"/> knows that differs from the map as loaded: a joining client's catch-up.</summary>
+        /// <summary>What <paramref name="team"/> knows that differs from the loaded map, for a joining client.</summary>
         public readonly void Known(int team, NativeList<SceneryChange> changes)
         {
             for (var slot = 0; slot < _records.Length; slot++)
@@ -157,7 +147,7 @@ namespace HyperRTS.Network.Scenery
                 return true;
             }
 
-            // Scenery past the edge of the fog grid shows what the edge cell does.
+            // Scenery past the fog grid's edge uses the edge cell.
             var cell = math.clamp(fog.WorldToCell(position), 0, fog.Size - 1);
             return FogOfWar.HasTeam(fog.Visible[fog.Index(cell)], (byte)team);
         }

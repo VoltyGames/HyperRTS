@@ -1,6 +1,5 @@
-// Tree bark: opaque URP 17.6 Lit (base map, normal map, optional HDRP-style mask map; Forward or Forward+) that bends
-// with the same tree wind as the tree's HyperRTS/Foliage leaves (Wind.hlsl), so trunk, branches and cards move as one.
-// Give bark and leaves the same wind settings. Not lightmapped: the wind data sits where Lit keeps lightmap UVs.
+// Tree bark: URP Lit that bends with the same tree wind as HyperRTS/Foliage leaves (Wind.hlsl).
+// Not lightmapped: the wind data sits in Lit's lightmap UV channels.
 Shader "HyperRTS/Bark"
 {
     Properties

@@ -5,12 +5,7 @@ using HyperRTS.Editor.Maps.Texturing;
 
 namespace HyperRTS.Editor.Maps.Library
 {
-    /// <summary>
-    /// Builds a climate from its library file: the surfaces, road classes and kits it lists, then the terrain layers,
-    /// trees, plants and decals those use, each added the first time it is named. The walk goes surfaces, belt kits,
-    /// woodland kits, the reeds, settlement orchards, then props' ground decals, so the order (and every layer, tree
-    /// and plant index) only changes when the data does.
-    /// </summary>
+    /// <summary>Builds a climate from its library file in a fixed walk order, so layer, tree and plant indices only change with the data.</summary>
     internal sealed class MapClimateAssembly
     {
         private readonly MapLibrary _library;

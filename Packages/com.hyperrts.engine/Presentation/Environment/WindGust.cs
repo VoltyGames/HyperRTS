@@ -2,9 +2,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>
-    /// The rolling gust field: a tileable greyscale noise map (white = gust) and the downwind scroll of its offset.
-    /// </summary>
+    /// <summary>The rolling gust field: tileable noise (white = gust) and its downwind scroll.</summary>
     public static class WindGust
     {
         /// <summary>Lattice cells across one tile for the coarse and the fine octave.</summary>
@@ -12,10 +10,7 @@ namespace HyperRTS.Presentation.Environment
         private const int FineCells = 9;
         private const float FineWeight = 0.35f;
 
-        /// <summary>
-        /// Moves the offset (in tiles) <paramref name="tilesPerSecond"/> along <paramref name="downwind"/>, wrapped to
-        /// [0, 1) so it never loses precision; the map repeats, so the wrap is invisible.
-        /// </summary>
+        /// <summary>Scrolls the offset downwind, wrapped to [0, 1) tiles to keep precision.</summary>
         public static Vector2 Scroll(Vector2 offset, Vector2 downwind, float tilesPerSecond, float deltaTime)
         {
             var moved = offset + downwind * (tilesPerSecond * deltaTime);

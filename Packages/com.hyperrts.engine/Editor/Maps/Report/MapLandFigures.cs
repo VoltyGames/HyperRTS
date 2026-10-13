@@ -6,7 +6,7 @@ using HyperRTS.Editor.Maps.Land;
 
 namespace HyperRTS.Editor.Maps.Report
 {
-    /// <summary>How a map's land is used and what stands on it, as the report stores it: a quick check of balance and budget.</summary>
+    /// <summary>How a map's land is used and what stands on it, as the report stores it.</summary>
     [Serializable]
     public sealed class MapLandFigures
     {
@@ -17,16 +17,16 @@ namespace HyperRTS.Editor.Maps.Report
         public int trees;
         public int placements;
 
-        /// <summary>Ground decals (the rules cap them at maxDecals).</summary>
+        /// <summary>Ground decals, capped by the rules' maxDecals.</summary>
         public int decals;
 
-        /// <summary>Placements that become entities (gameplay objects and destructible scenery): the simulation's load.</summary>
+        /// <summary>Placements that become entities, the simulation's load.</summary>
         public int entities;
 
-        /// <summary>16 m tiles holding row crops, which the crop renderer culls and grows one by one.</summary>
+        /// <summary>16 m tiles holding row crops, which the crop renderer culls one by one.</summary>
         public int cropTiles;
 
-        /// <summary>Row crop plants at full density, estimated from the sown area and the crops' spacing.</summary>
+        /// <summary>Row crop plants at full density, estimated from sown area and spacing.</summary>
         public long cropPlants;
 
         public static MapLandFigures Measure(MapGeneration generation)

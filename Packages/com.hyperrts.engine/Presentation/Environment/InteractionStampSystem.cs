@@ -13,11 +13,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>
-    /// Gathers this frame's <see cref="InteractionStamps"/> for <see cref="InteractionMap"/>: vehicles with
-    /// <see cref="TrackMarks"/> on the ground, building footprints and big craters, each only where the local player
-    /// sees it. Undrawn stamps are dropped on the next update.
-    /// </summary>
+    /// <summary>Gathers this frame's stamps from vehicles, building footprints and big craters the local player sees.</summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class InteractionStampSystem : SystemBase
@@ -101,7 +97,7 @@ namespace HyperRTS.Presentation.Environment
             return math.length(step) > InteractionMath.MaxStep ? 0f : math.dot(step, forward);
         }
 
-        // Stamped every frame they're seen: max blending makes it idempotent, and it holds grass down under them.
+            // Stamped every frame: max blending is idempotent and holds grass down.
         private void AddBuildings()
         {
             using var footprints = _buildings.ToComponentDataArray<NavObstacle>(Allocator.Temp);

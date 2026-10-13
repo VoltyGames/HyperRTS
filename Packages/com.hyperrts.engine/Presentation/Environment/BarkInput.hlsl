@@ -1,8 +1,7 @@
-// HyperRTS/Bark inputs: a cut-down URP Lit material (base, normal, optional mask map) plus the tree wind settings that
-// the tree's Foliage leaves share. Every Bark pass includes this, so the SRP Batcher sees one UnityPerMaterial layout.
+// HyperRTS/Bark inputs, shared by every pass so the SRP Batcher sees one UnityPerMaterial layout.
 #ifndef HYPERRTS_BARK_INPUT_INCLUDED
 #define HYPERRTS_BARK_INPUT_INCLUDED
-// URP's pass files include "LitInput.hlsl" themselves; its guard keeps this file's declarations the only ones.
+// LitInput.hlsl's include guard keeps these declarations the only ones.
 #define UNIVERSAL_LIT_INPUT_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -30,11 +29,11 @@ float _WindScale;
 UNITY_TEXTURE_STREAMING_DEBUG_VARS;
 CBUFFER_END
 
-// HDRP layout: R metallic, G occlusion, A smoothness.
+// HDRP mask layout: R metallic, G occlusion, A smoothness.
 TEXTURE2D(_MaskMap);
 SAMPLER(sampler_MaskMap);
 
-// Tree mesh vertex with its wind data (Wind.hlsl); URP Lit's own Attributes would read TEXCOORD1/2 as lightmap UVs.
+// Own vertex struct: URP Lit's Attributes would read TEXCOORD1/2 as lightmap UVs.
 struct BarkAttributes
 {
     float4 positionOS : POSITION;
@@ -48,7 +47,6 @@ struct BarkAttributes
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-// Object-space position under the given frame's wind; bark has no cards, so only the trunk and branches move it.
 float3 BarkWindPosition(BarkAttributes input, WindFrame frame)
 {
     TreeWindSettings settings;
@@ -62,7 +60,7 @@ float3 BarkWindPosition(BarkAttributes input, WindFrame frame)
     return TreeWindPosition(v, settings, frame);
 }
 
-// URP's pass files call this by name; bark fills it from its own maps.
+// URP's pass files call this by name.
 inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfaceData)
 {
     outSurfaceData = (SurfaceData)0;

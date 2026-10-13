@@ -2,12 +2,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
-    /// <summary>
-    /// The CPU side of drawing crops: a tile's bounds, how near and far it is from the camera, and which distance
-    /// bands (full mesh, simple mesh, card) it can hold, so buffers are sized only for the bands in view. The kernel
-    /// picks each plant's band by the same rule: full below lod0Distance, simple below lod1Distance, card up to the
-    /// draw distance.
-    /// </summary>
+    /// <summary>CPU crop tile culling: bounds, camera distance and the bands a tile can hold, by the kernel's rule.</summary>
     public static class RowCropView
     {
         public const int Lods = 3;
@@ -36,7 +31,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             return (near, reach.magnitude);
         }
 
-        /// <summary>The camera distances (from, to) a band draws over at a draw distance; empty when it starts past it.</summary>
+        /// <summary>Camera distances (from, to) a band draws over. Empty when it starts past the draw distance.</summary>
         public static (float From, float To) Band(int lod, RowCrop crop, float drawDistance) => lod switch
         {
             Full => (0f, Mathf.Min(crop.lod0Distance, drawDistance)),

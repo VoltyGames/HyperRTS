@@ -6,14 +6,9 @@ using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Tools
 {
-    /// <summary>
-    /// Writes every key a map spec can name — road classes, farmland, belt and woodland kits, surfaces, trees, plants,
-    /// palette entries and settlement kits — as a Markdown reference, so spec authors (people and agents) never guess.
-    /// The game regenerates it whenever it rebuilds its map content.
-    /// </summary>
+    /// <summary>Writes every key a map spec can name as a Markdown reference for spec authors.</summary>
     public static class MapKeyReference
     {
-        /// <summary>Writes the keys of every climate in <paramref name="library"/> and of its palette.</summary>
         public static void Write(string path, MapLibrary library)
         {
             var climates = library.Keys<MapClimate>().Select(key => library.Climate(key, null)).ToArray();

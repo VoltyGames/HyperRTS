@@ -10,13 +10,13 @@ namespace HyperRTS.Network.Scenery
         public byte State;
         public byte Fall;
 
-        /// <summary>Teams (a bit each) that last saw another state.</summary>
+        /// <summary>Teams, a bit each, that last saw another state.</summary>
         public ushort Stale;
 
-        /// <summary>Send frame of the last change; a team seeing it that frame witnessed it.</summary>
+        /// <summary>Send frame of the last change. A team seeing it that frame witnessed it.</summary>
         public uint Changed;
 
-        /// <summary>On the tracker's list of records some team hasn't caught up with.</summary>
+        /// <summary>Whether some team hasn't caught up with it yet.</summary>
         public bool Listed;
 
         public readonly SceneryChange Change => new() { Id = Id, State = State, Fall = Fall };

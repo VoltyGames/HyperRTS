@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Units
 {
-    /// <summary>Lets a vehicle leave ruts and flatten grass where the local player can see it drive.</summary>
+    /// <summary>Lets a vehicle leave ruts and flatten grass where the local player sees it drive.</summary>
     [AddComponentMenu(HyperRTSMenu.Units + "Track Marks")]
     [Icon(HyperRTSIcons.Units)]
     [HelpURL(HyperRTSDocs.Units)]

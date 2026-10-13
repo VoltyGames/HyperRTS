@@ -6,13 +6,7 @@ using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>
-    /// The two interaction render textures over one map rect, and the globals that publish them:
-    /// <c>_HyperRTSTrample</c> (RG travel direction * 0.5 + 0.5, B grass flatten, A crop damage),
-    /// <c>_HyperRTSTracks</c> (R rut depth, G churned soil), <c>_HyperRTSInteractionRect</c> (x min, z min, 1 / width,
-    /// 1 / depth; zero means no maps) and <c>_HyperRTSTracksTexel</c> (1 / texels across, 1 / texels deep, metres per
-    /// texel in x and z).
-    /// </summary>
+    /// <summary>The two interaction render textures and the globals that publish them (layout in Trample.hlsl).</summary>
     public sealed class InteractionSurfaces : IDisposable
     {
         public static readonly int TrampleId = Shader.PropertyToID("_HyperRTSTrample");
@@ -60,7 +54,7 @@ namespace HyperRTS.Presentation.Environment
             Shader.SetGlobalVector(TracksTexelId, new float4(1f / texels, _size / texels));
         }
 
-        /// <summary>The no-maps state: shaders read a zero rect as "nothing trampled" and skip the maps.</summary>
+        /// <summary>No maps: shaders read a zero rect as nothing trampled.</summary>
         public static void Clear()
         {
             Shader.SetGlobalTexture(TrampleId, Texture2D.blackTexture);

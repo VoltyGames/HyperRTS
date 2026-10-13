@@ -5,10 +5,10 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>Adds the components of destructible map scenery: neutral, with health, death and remains.</summary>
+    /// <summary>Adds the components of destructible map scenery.</summary>
     public static class DestructibleSetup
     {
-        /// <summary>A standalone piece of scenery; <paramref name="block"/> of zero leaves pathing open.</summary>
+        /// <summary>A <paramref name="block"/> of zero leaves pathing open.</summary>
         public static void AddScenery<TWriter>(ref TWriter writer, float maxHealth, int crush, Entity remains,
             float2 block, SceneryId id) where TWriter : struct, IEntityWriter
         {
@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Combat
             }
         }
 
-        /// <summary>Makes the piece fall away from its lethal hit; <paramref name="trunk"/> is a unit vector.</summary>
+        /// <summary><paramref name="trunk"/> is a unit vector.</summary>
         public static void AddTopple<TWriter>(ref TWriter writer, float3 trunk, float lie)
             where TWriter : struct, IEntityWriter
         {

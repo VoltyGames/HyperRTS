@@ -3,11 +3,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
-    /// <summary>
-    /// One sown field as the GPU reads it (32 bytes, the layout RowCrops.compute declares): its row lattice in world
-    /// XZ and the crop. Symmetric copies of a field get the copy's turned or mirrored lattice and the same seed, so
-    /// both sides grow the same plants.
-    /// </summary>
+    /// <summary>One sown field as the GPU reads it (32 bytes, matches RowCrops.compute).</summary>
     [Serializable]
     public struct RowCropField
     {
@@ -25,7 +21,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         [Tooltip("Index into the field asset's crops.")]
         public int crop;
 
-        [Tooltip("Picks each plant's jitter, size and turn; the same in every symmetric copy.")]
+        [Tooltip("Seeds each plant's jitter, size and turn. Same in every symmetric copy.")]
         public int seed;
     }
 }

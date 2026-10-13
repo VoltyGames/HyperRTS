@@ -1,6 +1,4 @@
-// HyperRTS/RowCrop passes, lit like HyperRTS/Foliage (wrap light, light shining through from behind, the ground's
-// colour at the roots). Every pass places vertices with RowCropPosition, so lit, shadow, depth, normals and motion
-// vectors all see the same plant.
+// HyperRTS/RowCrop passes, lit like HyperRTS/Foliage. All place vertices with RowCropPosition.
 #ifndef HYPERRTS_ROW_CROP_PASSES_INCLUDED
 #define HYPERRTS_ROW_CROP_PASSES_INCLUDED
 
@@ -8,7 +6,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
 
-// Published by the scene's GroundColor (x min, z min, 1 / width, 1 / depth); a zero rect turns root blending off.
+// From GroundColor: x min, z min, 1 / width, 1 / depth. A zero rect turns root blending off.
 TEXTURE2D(_HyperRTSGroundColor);
 SAMPLER(sampler_HyperRTSGroundColor);
 float4 _HyperRTSGroundRect;
@@ -23,7 +21,7 @@ struct ForwardVaryings
     float3 positionWS : TEXCOORD1;
     half3 normalWS : TEXCOORD2;
     half3 tint : TEXCOORD3;
-    half4 ground : TEXCOORD4; // rgb ground colour over the texture's mean brightness, a root blend
+    half4 ground : TEXCOORD4; // rgb ground colour over texture mean brightness, a root blend
     half fogFactor : TEXCOORD5;
 };
 
@@ -51,7 +49,7 @@ half4 RootGround(float3 origin)
     return half4(ground / max(mean, 0.02), weight);
 }
 
-// How far leaf normals bend toward the sky, so a field reads lit from above like a real canopy.
+// Leaf normal bend toward the sky, so a field reads lit from above.
 static const half CanopyUp = 0.5;
 
 ForwardVaryings ForwardVert(Attributes input)
@@ -63,7 +61,6 @@ ForwardVaryings ForwardVert(Attributes input)
     output.uv = float3(TRANSFORM_TEX(input.uv, _BaseMap), input.positionOS.y * plant.scale);
     output.normalWS = RowCropNormal(input, plant);
 
-    // Each plant gets its own slightly warmer or cooler, lighter or darker shade.
     half random = plant.shade;
     output.tint = lerp(half3(1.0, 1.0, 1.0), half3(1.12, 1.02, 0.72), random * _HueVariation * 4.0)
         * (1.0 - _HueVariation + random * _HueVariation * 2.0);
@@ -79,11 +76,10 @@ half4 ForwardFrag(ForwardVaryings input, bool front : SV_IsFrontFace) : SV_Targe
     clip(albedo.a - _Cutoff);
     albedo.rgb *= input.tint;
 
-    // Toward the root the stem turns into the ground it grows from, in colour and in light.
+    // The stem base fades into the ground's colour and light.
     half root = input.ground.a * (1.0 - smoothstep(0.0, _GroundBlendHeight, input.uv.z));
     albedo.rgb = lerp(albedo.rgb, input.ground.rgb * Luminance(texel.rgb), root);
 
-    // Leaves are lit on the side in view, and a crop canopy as a whole from above: normals bend toward the sky.
     half3 normal = normalize(input.normalWS) * (front ? 1.0 : -1.0);
     normal = normalize(lerp(normal, half3(0.0, 1.0, 0.0), max(root, CanopyUp)));
     half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
@@ -162,7 +158,7 @@ half4 DepthNormalsFrag(CutoutVaryings input) : SV_Target
     #endif
 }
 
-// Plants don't move, so last frame's position only rebuilds last frame's wind.
+// Last frame's position uses last frame's wind.
 MotionVaryings MotionVert(Attributes input)
 {
     MotionVaryings output;

@@ -4,11 +4,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
-    /// <summary>
-    /// Where a map's row crops grow, baked by the map tools: a field-id picture over the map (each texel names the
-    /// field sown there, 0 for bare ground), every field's row lattice, the crops, and the tiles that hold any crop.
-    /// <see cref="RowCropRenderer"/> grows the plants from it on the GPU.
-    /// </summary>
+    /// <summary>A map's baked row crops: field-id picture, row lattices, crops and the tiles that hold any.</summary>
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     public sealed class RowCropFields : ScriptableObject
@@ -19,10 +15,10 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         /// <summary>Field id 0: no crop here.</summary>
         public const int None = 0;
 
-        [Tooltip("Field id per texel, north up: R the low byte, G the high byte; point-sampled, linear.")]
+        [Tooltip("Field id per texel, north up: R low byte, G high byte. Point-sampled, linear.")]
         public Texture2D fieldIds;
 
-        [Tooltip("World XZ rectangle the picture and the tile grid cover: x and y its minimum x and z.")]
+        [Tooltip("World XZ rectangle the picture and tile grid cover. x and y are its minimum x and z.")]
         public Rect area;
 
         public List<RowCrop> crops = new();
@@ -45,7 +41,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         public Rect TileRect(RowCropTile tile) =>
             new(area.xMin + tile.x * TileSize, area.yMin + tile.z * TileSize, TileSize, TileSize);
 
-        /// <summary>What keeps the fields from being drawn, one line per problem; empty when they are ready.</summary>
+        /// <summary>Problems that keep the fields from drawing, one per line. Empty when ready.</summary>
         public IReadOnlyList<string> Problems()
         {
             var problems = new List<string>();

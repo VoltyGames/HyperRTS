@@ -12,12 +12,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Generation
 {
-    /// <summary>
-    /// A map generated from its project before anything touches a scene, in three stages that each tool takes as far
-    /// as it needs: <see cref="Lay"/> (checked, refined and expanded layout and its shapes), <see cref="Plan"/> (ground
-    /// shape, placements, land use and trees) and <see cref="Run"/> (levelled and painted ground). Trees inside the
-    /// playable area become entity placements when the climate has a destructible version of them.
-    /// </summary>
+    /// <summary>A map generated from its project in three stages: <see cref="Lay"/>, <see cref="Plan"/> and <see cref="Run"/>.</summary>
     public sealed class MapGeneration
     {
         private const float BaseBlend = 20f;
@@ -40,7 +35,7 @@ namespace HyperRTS.Editor.Maps.Generation
         public MapPlacements Placements { get; private set; }
         public MapLand Land { get; private set; }
 
-        /// <summary>Direction of the crop rows (degrees clockwise from north) the terrain material turns row layers to.</summary>
+        /// <summary>Crop row direction in degrees clockwise from north.</summary>
         public float RowAngle { get; private set; }
 
         public List<MapTree> Trees { get; private set; }
@@ -54,13 +49,10 @@ namespace HyperRTS.Editor.Maps.Generation
         public float[,,] Splat { get; private set; }
         public List<int[,]> Details { get; private set; }
 
-        /// <summary>Trees left to the terrain (the scenery margin, and species without an entity version).</summary>
+        /// <summary>Trees left to the terrain: the scenery margin and species without an entity version.</summary>
         public List<MapTree> TerrainTrees { get; } = new();
 
-        /// <summary>
-        /// The asset and spec checks that open <see cref="Lay"/>: they read prefabs, so they run on the main thread.
-        /// False when they found errors.
-        /// </summary>
+        /// <summary>Asset and spec checks. They read prefabs, so they run on the main thread.</summary>
         public static bool Check(MapProject project, MapIssues issues)
         {
             MapAssetCheck.Check(project.Climate, project.Palette, issues);
@@ -68,18 +60,15 @@ namespace HyperRTS.Editor.Maps.Generation
             return !issues.HasErrors;
         }
 
-        /// <summary>The checked layout and its shapes, all a map's views need; null when the spec or assets have errors.</summary>
+        /// <summary>The checked layout and its shapes, or null on errors.</summary>
         public static MapGeneration Lay(MapProject project, MapIssues issues) =>
             Check(project, issues) ? LayChecked(project, issues) : null;
 
-        /// <summary>The land planned but not painted: what a preview needs, in seconds. Null on errors.</summary>
+        /// <summary>The land planned but not painted, for previews. Null on errors.</summary>
         public static MapGeneration Plan(MapProject project, MapIssues issues) =>
             Check(project, issues) ? PlanChecked(project, issues) : null;
 
-        /// <summary>
-        /// <see cref="Plan"/> after <see cref="Check"/> passed. It touches no Unity object (only plain data, maths and
-        /// <c>JsonUtility</c>), so it may run on a worker thread while nothing else uses the project. Null on errors.
-        /// </summary>
+        /// <summary><see cref="Plan"/> after <see cref="Check"/>. Touches no Unity object, so it may run on a worker thread.</summary>
         public static MapGeneration PlanChecked(MapProject project, MapIssues issues)
         {
             var generation = LayChecked(project, issues);
@@ -132,7 +121,6 @@ namespace HyperRTS.Editor.Maps.Generation
             SplitTrees(climate);
         }
 
-        /// <summary>Levels every base and every footprint that asks for it, then keeps heights in the terrain's range.</summary>
         private void Level()
         {
             foreach (var spawn in Layout.Spawns)
@@ -176,7 +164,7 @@ namespace HyperRTS.Editor.Maps.Generation
                     };
                 }
 
-                // Straight into the list: trees were spaced when planted and reserve no clearance now.
+                // Trees were spaced when planted, so they skip the clearance check.
                 Placements.All.Add(new MapPlacement(entry, tree.Position, tree.Yaw, 1f) { Scale = tree.Scale });
             }
         }

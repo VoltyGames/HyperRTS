@@ -5,10 +5,7 @@ using HyperRTS.Simulation.GameEntities;
 
 namespace HyperRTS.Editor.Maps.Checks
 {
-    /// <summary>
-    /// Checks the climate and palette before a build: every asset a pass needs is assigned, and every surface, tree,
-    /// plant, decal, road class, kit and palette key their kits name exists.
-    /// </summary>
+    /// <summary>Checks before a build that every asset and key the climate and palette name exists.</summary>
     public sealed class MapAssetCheck : MapKeyCheck
     {
         private MapAssetCheck(MapClimate climate, MapPalette palette, MapIssues issues) : base(climate, palette, issues)
@@ -204,7 +201,7 @@ namespace HyperRTS.Editor.Maps.Checks
             });
         }
 
-        /// <summary>Only props with an access track share one, so a shared access distance without access would do nothing.</summary>
+        /// <summary>A shared access distance only matters for props with an access track.</summary>
         private void SharedAccessDistance(MapPaletteEntry entry, string name)
         {
             var distance = entry.sharedAccessDistance;
@@ -213,7 +210,7 @@ namespace HyperRTS.Editor.Maps.Checks
             Require(hasAccess || distance <= 0f, $"{name}: sharedAccessDistance {distance} needs access set; use 0 without an access track.");
         }
 
-        /// <summary>A palette entry a surface or kit places: it must exist and not ask for besideRoad (scatters only).</summary>
+        /// <summary>A surface or kit entry must exist and must not ask for besideRoad, which only scatters use.</summary>
         private void EntryNotBesideRoad(string key, string source)
         {
             Entry(key, source);

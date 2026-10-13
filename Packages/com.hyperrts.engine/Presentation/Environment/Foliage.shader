@@ -1,9 +1,5 @@
-// Grass, leaves and other alpha-cut vegetation: two-sided, soft wrap lighting with light shining through from
-// behind, per-plant hue variation and wind from the scene's Wind (Wind.hlsl). Tree Wind on: the mesh carries the tree
-// wind data (trunk bend, branch sway, card flutter); off: plants sway about their origin with height. Grass takes the
-// ground's colour at its roots, crowns darken inside by vertex colour R, and plants can shrink away before the
-// terrain's detail distance. Without Tree Wind, plants lean flat where vehicles
-// trampled them (Trample.hlsl): grass by the recovering flatten, crops by the permanent damage. Instanced for terrain details and trees, and for Entities Graphics (DOTS instancing).
+// Alpha-cut vegetation: two-sided wrap lighting with translucency and wind (Wind.hlsl).
+// Tree Wind reads the mesh's tree wind data. Without it plants sway with height and lean where trampled.
 Shader "HyperRTS/Foliage"
 {
     Properties

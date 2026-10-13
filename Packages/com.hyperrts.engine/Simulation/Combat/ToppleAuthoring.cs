@@ -7,10 +7,7 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>
-    /// Destructible scenery that falls over away from what killed it (a tree): its remains lie along the fall, and
-    /// presentation shows the fall when someone sees it.
-    /// </summary>
+    /// <summary>Destructible scenery that falls away from what killed it, such as a tree.</summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Topple")]
     [Icon(HyperRTSIcons.Combat)]
     [HelpURL(HyperRTSDocs.Combat)]
@@ -18,10 +15,10 @@ namespace HyperRTS.Simulation.Combat
     [RequiresAuthoring(typeof(DestructibleAuthoring), "a Destructible")]
     public class ToppleAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Trunk direction in the standing model, from its base at the origin to the top of the trunk.")]
+        [Tooltip("Trunk direction in the standing model, from its base at the origin to the top.")]
         public Vector3 trunk = Vector3.up;
 
-        [Tooltip("Heading in degrees (from +Z toward +X) the crown points in the remains model.")]
+        [Tooltip("Heading in degrees from +Z toward +X that the crown points in the remains model.")]
         public float lie;
 
         public class Baker : Baker<ToppleAuthoring>

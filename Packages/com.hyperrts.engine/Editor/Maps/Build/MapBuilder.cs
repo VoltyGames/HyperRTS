@@ -13,11 +13,7 @@ using UnityEngine.Rendering;
 
 namespace HyperRTS.Editor.Maps.Build
 {
-    /// <summary>
-    /// Builds a map from its spec: generates the ground and everything on it, writes the scene and SubScene, measures
-    /// the result and writes the report. Errors before the scene stage stop the build with a report and leave the
-    /// last good scene alone.
-    /// </summary>
+    /// <summary>Builds a map's scene, SubScene and report from its spec. Errors before the scene stage keep the last good scene.</summary>
     public static class MapBuilder
     {
         public static MapReport Build(string specPath)
@@ -58,7 +54,7 @@ namespace HyperRTS.Editor.Maps.Build
             return report;
         }
 
-        /// <summary>Measures the map on the nav grid the simulation will build, writes its bot hints and the report.</summary>
+        /// <summary>Measures the map on the simulation's nav grid and writes its bot hints and report.</summary>
         private static MapReport Measure(MapGeneration generation, MapScene scene, TerrainData data, MapIssues issues)
         {
             var layout = generation.Layout;
@@ -72,10 +68,7 @@ namespace HyperRTS.Editor.Maps.Build
             return report;
         }
 
-        /// <summary>
-        /// Fresh screenshots with every build, the overview kept next to the map as its picture; none (null) when
-        /// there's no graphics device (batch mode with -nographics).
-        /// </summary>
+        /// <summary>Screenshots of the map, or null without a graphics device (batch mode with -nographics).</summary>
         private static Texture2D CaptureViews(MapGeneration generation)
         {
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)

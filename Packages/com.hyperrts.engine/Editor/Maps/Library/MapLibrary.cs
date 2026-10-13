@@ -6,14 +6,10 @@ using HyperRTS.Editor.Maps.Data;
 
 namespace HyperRTS.Editor.Maps.Library
 {
-    /// <summary>
-    /// The game's map library: one JSON file per item, named <c>&lt;Key&gt;.&lt;type&gt;.json</c> and kept anywhere
-    /// under the root (layers and trees beside their art, the rest in a library folder). Keys are unique per type.
-    /// Items are read when first asked for; a missing, duplicate or unreadable file throws naming the file.
-    /// </summary>
+    /// <summary>The map library: one <c>&lt;Key&gt;.&lt;type&gt;.json</c> per item anywhere under the root, read on first use.</summary>
     public sealed class MapLibrary
     {
-        /// <summary>Every item class in listing and generation order: materials before the props whose models use them.</summary>
+        /// <summary>Listing and generation order: materials before the props whose models use them.</summary>
         private static readonly Type[] Types =
         {
             typeof(MapClimateLayer),
@@ -51,7 +47,7 @@ namespace HyperRTS.Editor.Maps.Library
 
         public string Root { get; }
 
-        /// <summary>Indexes every library file under <paramref name="root"/> (the project's Assets folder by default).</summary>
+        /// <summary>Indexes every library file under <paramref name="root"/>.</summary>
         public static MapLibrary Load(string root = "Assets")
         {
             var library = new MapLibrary(root);
@@ -66,7 +62,7 @@ namespace HyperRTS.Editor.Maps.Library
             return library;
         }
 
-        /// <summary>Every library item class (<c>MapClimateLayer</c>, <c>MapClimateSurface</c>...), in listing order.</summary>
+        /// <summary>Every library item class, in listing order.</summary>
         public static IReadOnlyList<Type> ItemTypes => Types;
 
         /// <summary>The library's type name for <typeparamref name="T"/> (<c>surface</c>, <c>prop</c>...).</summary>
@@ -91,21 +87,18 @@ namespace HyperRTS.Editor.Maps.Library
             return (type, type == null ? null : stem[..dot]);
         }
 
-        /// <summary>Every key of a type, in ordinal order.</summary>
         public IReadOnlyList<string> Keys<T>() => Keys(typeof(T));
 
         public IReadOnlyList<string> Keys(Type type) => _files[TypeName(type)].Keys.ToList();
 
-        /// <summary>Whether the library holds an item of <paramref name="type"/> called <paramref name="key"/>.</summary>
         public bool Contains(Type type, string key) => _files[TypeName(type)].ContainsKey(key ?? string.Empty);
 
-        /// <summary>The project path of an item's file.</summary>
         public string FilePath<T>(string key) => FilePath(typeof(T), key);
 
         public string FilePath(Type type, string key) =>
             _files[TypeName(type)].TryGetValue(key, out var file) ? file : throw Missing(type, key, null);
 
-        /// <summary>The item <paramref name="key"/>; <paramref name="referrer"/> (a file or a spec) is named if it is missing.</summary>
+        /// <summary>A missing item names <paramref name="referrer"/>, a file or a spec.</summary>
         public T Get<T>(string key, string referrer) where T : class, IMapLibraryItem, new() => Get<T>(key, referrer, out _);
 
         public T Get<T>(string key, string referrer, out MapLibraryRefs refs) where T : class, IMapLibraryItem, new()
@@ -138,7 +131,6 @@ namespace HyperRTS.Editor.Maps.Library
             return palette;
         }
 
-        /// <summary>The project's one set of map rules.</summary>
         public MapRules Rules() => Get<MapRules>(Single<MapRules>(), null);
 
         private string Single<T>()

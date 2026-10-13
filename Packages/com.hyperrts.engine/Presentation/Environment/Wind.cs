@@ -4,9 +4,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment
 {
     /// <summary>
-    /// Publishes the scene's directional wind for flags and vegetation (Wind.hlsl): direction, strength, a gust field
-    /// that rolls downwind and how much vegetation moves in it. Its <see cref="WindZone"/> gives windMain (strength), windTurbulence,
-    /// windPulseMagnitude (gust amount) and windPulseFrequency (gust field tiles travelled per second).
+    /// Publishes the scene's wind for flags and vegetation (Wind.hlsl). The <see cref="WindZone"/> gives strength,
+    /// turbulence, gust amount (windPulseMagnitude) and gust tiles per second (windPulseFrequency).
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(WindZone))]
@@ -29,8 +28,7 @@ namespace HyperRTS.Presentation.Environment
         [Min(1f)]
         public float gustSize = 120f;
 
-        [Tooltip("How much trees, grass and crops move in this wind. None keeps them standing (flags still fly); a " +
-                 "steady breeze reads as an idle loop, so keep motion for weather that calls for it.")]
+        [Tooltip("How much trees, grass and crops move in this wind. None keeps them still. Flags still fly.")]
         public WindDetail vegetation = WindDetail.Flutter;
 
         private WindZone _zone;

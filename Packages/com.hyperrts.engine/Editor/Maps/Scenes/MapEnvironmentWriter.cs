@@ -14,20 +14,13 @@ using UnityEngine.Rendering;
 
 namespace HyperRTS.Editor.Maps.Scenes
 {
-    /// <summary>
-    /// The map's world around the gameplay: the terrain with its material and baked heights, the ground colour
-    /// foliage blends into, the row crop renderer, river surfaces, the climate's atmosphere and sky, walkable decks
-    /// over the fords, and the minimap picture.
-    /// </summary>
+    /// <summary>Writes the map's world around the gameplay: terrain, ground colour, row crops, rivers, sky, ford decks and minimap.</summary>
     public static class MapEnvironmentWriter
     {
         private const string RowCropsCompute =
             "Packages/com.hyperrts.engine/Presentation/Environment/RowCrops/RowCrops.compute";
 
-        /// <summary>
-        /// The terrain material with its macro map, and the ground colour picture foliage blends into. Written before
-        /// the map's scene opens: opening it unloads the climate the textures are made from.
-        /// </summary>
+        /// <summary>Written before the map's scene opens, since opening it unloads the climate the textures come from.</summary>
         public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation,
             TerrainData data)
         {
@@ -55,7 +48,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             CreateDecks(scene, generation.Shapes, layout.GroundLevel);
         }
 
-        /// <summary>Points the scene's minimap at a picture of the map, adding the component the first time.</summary>
+        /// <summary>Points the scene's minimap at a picture of the map.</summary>
         public static void SetMinimap(MapScene scene, Texture2D image)
         {
             var minimap = scene.Root.GetComponentInChildren<MinimapImage>();
@@ -68,7 +61,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             EditorUtility.SetDirty(minimap);
         }
 
-        /// <summary>Publishes the ground picture to the foliage shaders while the scene is open.</summary>
+        /// <summary>Publishes the ground picture to the foliage shaders.</summary>
         private static void CreateGroundColor(MapScene scene, Texture2D picture, Rect area)
         {
             var go = new GameObject("Ground Color");
@@ -80,8 +73,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             go.SetActive(true);
         }
 
-        /// <summary>The renderer that grows the map's row crops on the GPU; none when the map sows none.</summary>
-        // Loaded by path: opening the map's scene unloads the fields WriteGround saved. None when the map sows no row crops.
+        // Loaded by path because opening the scene unloads the fields WriteGround saved.
         private static void CreateRowCrops(MapScene scene, string fieldsPath, Terrain terrain)
         {
             var fields = AssetDatabase.LoadAssetAtPath<RowCropFields>(fieldsPath);
@@ -153,7 +145,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             DynamicGI.UpdateEnvironment();
         }
 
-        /// <summary>A deck nav area over each ford, turned to span it, at the height units wade; bridges carry their own.</summary>
+        /// <summary>A deck nav area over each ford at the height units wade. Bridges carry their own.</summary>
         private static void CreateDecks(MapScene scene, MapShapes shapes, float groundLevel)
         {
             for (var i = 0; i < shapes.Crossings.Count; i++)

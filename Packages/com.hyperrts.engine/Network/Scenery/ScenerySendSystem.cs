@@ -12,11 +12,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Network.Scenery
 {
-    /// <summary>
-    /// Server: replicates map scenery, which isn't made of ghosts, by <see cref="SceneryId"/>. Each team's clients
-    /// hear of a change once the team sees the spot (<see cref="SceneryTracker"/>), and a joining client first gets
-    /// what its team knows. Runs last in the lifecycle phase: health is final and the dead are still there.
-    /// </summary>
+    /// <summary>Server: replicates map scenery by <see cref="SceneryId"/> to teams that see it. Runs last in the lifecycle phase, while the dead still exist.</summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
@@ -25,7 +21,7 @@ namespace HyperRTS.Network.Scenery
         private EntityQuery _scenery;
         private SceneryTracker _tracker;
 
-        /// <summary>Scenery that should exist now: tracked pieces minus those destroyed. More means some streamed in.</summary>
+        /// <summary>Tracked pieces minus destroyed ones. A higher count means more scenery streamed in.</summary>
         private int _expected;
 
         private uint _frame;
@@ -60,7 +56,7 @@ namespace HyperRTS.Network.Scenery
             Send(ref state, news);
         }
 
-        /// <summary>Tracks scenery that streamed in; scenery only leaves by dying, which <see cref="Track"/> counts.</summary>
+        /// <summary>Scenery only leaves by dying, which <see cref="Track"/> counts.</summary>
         private void Register(ref SystemState state)
         {
             var count = _scenery.CalculateEntityCount();
@@ -101,13 +97,13 @@ namespace HyperRTS.Network.Scenery
             }
         }
 
-        /// <summary>Where a toppling piece falls; 0 for scenery that doesn't topple, which clients ignore.</summary>
+        /// <summary>0 for scenery that doesn't topple, which clients ignore.</summary>
         private byte Fall(ref SystemState state, Entity entity, float3 position) =>
             SystemAPI.HasComponent<FellFrom>(entity)
                 ? ToppleMath.Quantize(SystemAPI.GetComponent<FellFrom>(entity).Position, position)
                 : (byte)0;
 
-        /// <summary>The teams in the match (a bit each), with team 0, which observers view as.</summary>
+        /// <summary>Match teams as bits, with team 0 for observers.</summary>
         private ushort Teams(ref SystemState state)
         {
             var relations = SystemAPI.GetSingleton<FactionRelations>();
@@ -160,7 +156,6 @@ namespace HyperRTS.Network.Scenery
             Post(ecb, connection, witnessed, changes);
         }
 
-        /// <summary>Sends <paramref name="changes"/> to one connection in as many messages as they need.</summary>
         private static void Post(EntityCommandBuffer ecb, Entity connection, bool witnessed,
             NativeList<SceneryChange> changes)
         {

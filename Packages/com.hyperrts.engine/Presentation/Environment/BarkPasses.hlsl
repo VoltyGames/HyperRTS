@@ -1,5 +1,4 @@
-// HyperRTS/Bark passes: URP Lit's own passes behind vertex entries that move the vertex with the tree wind in object
-// space first, so every pass sees the same windblown tree. Each pass defines one BARK_PASS_* before including this.
+// HyperRTS/Bark passes: URP Lit's passes with windblown vertices. Each pass defines one BARK_PASS_* first.
 #ifndef HYPERRTS_BARK_PASSES_INCLUDED
 #define HYPERRTS_BARK_PASSES_INCLUDED
 
@@ -80,7 +79,7 @@ struct BarkMotionVaryings
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-// Last frame's position rebuilds the wind from last frame's time and gust scroll.
+// Last frame's position uses last frame's wind.
 BarkMotionVaryings BarkMotionVertex(BarkAttributes input)
 {
     BarkMotionVaryings output;

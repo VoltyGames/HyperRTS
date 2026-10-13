@@ -8,10 +8,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Destruction
 {
-    /// <summary>
-    /// Shows a felled piece's remains (<see cref="Felling"/>) tipping from where it stood down to their final pose.
-    /// A fall nobody here saw (in fog, or news that came late) shows lying down at once.
-    /// </summary>
+    /// <summary>Tips a felled piece's remains down to their final pose. Unseen falls show lying down at once.</summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -51,7 +48,7 @@ namespace HyperRTS.Presentation.Destruction
             }
         }
 
-        /// <summary>Whether the local player sees the spot: fog never hides the scenery, but does hide its fall.</summary>
+        /// <summary>Fog never hides scenery, but it does hide the fall.</summary>
         private static bool Seen(in LocalFogView view, in FogOfWar fog, float3 position)
         {
             if (!view.Active || view.RevealAll || !fog.IsCreated)

@@ -8,7 +8,6 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Trees falling away from what felled them, and the remains pose servers and clients share.</summary>
     public class ToppleTests
     {
         private const float Tolerance = 1e-3f;

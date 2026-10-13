@@ -3,11 +3,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
     /// <summary>
-    /// The row lattice maths RowCrops.compute runs, kept here in C# for the CPU and the tests. A plant's spot is
-    /// <c>origin + across * row * rowSpacing + along * plant * plantSpacing</c>; it belongs to the one tile its spot
-    /// falls in (half-open), so neighbouring tiles never both grow it or both skip it. Everything else about a plant
-    /// (jitter, size, turn, whether it grows at all) comes from a hash of the field seed and its lattice indices, so a
-    /// symmetric copy's plants match the original's.
+    /// RowCrops.compute's row lattice maths in C# for the CPU and tests. A plant belongs to the one tile its spot falls
+    /// in (half-open), and hashing seed and indices makes symmetric copies match.
     /// </summary>
     public static class RowCropLattice
     {
@@ -19,10 +16,10 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         public const uint DropChannel = 5;
         public const uint ShadeChannel = 6;
 
-        // Lattice units a spot may sit outside the projected tile and still be tried, so rounding never loses one.
+        // Slack in lattice units so rounding never loses a spot.
         private const float Slack = 1e-4f;
 
-        // Just above the square root of two: the widest a turned square projects onto any axis, per unit of side.
+        // Just above sqrt(2): the widest a turned square projects per unit of side.
         private const float Diagonal = 1.4143f;
 
         /// <summary>The first lattice indices (row, plant) whose spot can fall in <paramref name="rect"/>, and how many of each.</summary>
@@ -76,8 +73,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             return Spot(field, row, plant, crop.rowSpacing, crop.plantSpacing) + field.across * across + field.along * along;
         }
 
-        /// <summary>The XZ direction a plant faces: along its row (or north for crops that keep their heading), turned up
-        /// to the crop's yaw jitter.</summary>
+        /// <summary>The XZ direction a plant faces, turned up to the crop's yaw jitter.</summary>
         public static Vector2 Facing(RowCropField field, int row, int plant, RowCrop crop)
         {
             var turn = (Unit(Channel(Hash(field.seed, row, plant), YawChannel)) * 2f - 1f) * crop.yawJitter * Mathf.Deg2Rad;

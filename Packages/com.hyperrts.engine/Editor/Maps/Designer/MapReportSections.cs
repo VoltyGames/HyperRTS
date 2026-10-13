@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Designer
     /// <summary>The Map Editor report panel's sections: issues with links to their features, land figures and metrics.</summary>
     public static class MapReportSections
     {
-        /// <summary>Errors then warnings; issues that name a feature get a Show button that calls <paramref name="show"/>.</summary>
+        /// <summary>Errors then warnings. Issues that name a feature get a Show button.</summary>
         public static VisualElement Issues(MapReport report, Action<MapIssueFeature> show)
         {
             var section = HubSections.Section($"Issues ({report.errors.Count} errors, {report.warnings.Count} warnings)");

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
-    /// <summary>A named ground type: the layer it paints, and the trees, plants, props and decals that grow or lie on it.</summary>
+    /// <summary>A named ground type: its terrain layer and what grows or lies on it.</summary>
     [Serializable]
     [MapLibraryItem("surface")]
     public sealed class MapClimateSurface : IMapKeyed, IMapLibraryItem
@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Grass and small plants and the share of the ground each covers.")]
         public List<MapDetailCoverage> details = new();
 
-        [Tooltip("Crop grown in 3D rows on the fields this surface paints; empty for none.")]
+        [Tooltip("Crop grown in 3D rows on this surface's fields. Empty for none.")]
         [MapKey(typeof(MapClimateRowCrop))]
         public string rowCrop;
 

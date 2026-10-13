@@ -4,11 +4,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground
 {
-    /// <summary>
-    /// Where a map's row crops grow, before it is written to assets: a field id per land cell (0 for none), the
-    /// fields' lattices, the crops and the tiles that hold any crop. <see cref="MapCropWriter"/> saves it as a
-    /// <see cref="RowCropFields"/>.
-    /// </summary>
+    /// <summary>Where a map's row crops grow, before <see cref="MapCropWriter"/> saves it.</summary>
     public sealed class MapCropBake
     {
         public MapCropBake(Rect area, int width, int height)
@@ -26,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Ground
 
         public int Height { get; }
 
-        /// <summary>Field id per cell, row by row from the minimum corner: field index plus one, 0 for no crop.</summary>
+        /// <summary>Field index plus one per cell, row by row from the minimum corner. 0 means no crop.</summary>
         public int[] Ids { get; }
 
         public List<RowCrop> Crops { get; } = new();
@@ -37,7 +33,7 @@ namespace HyperRTS.Editor.Maps.Ground
 
         public List<int> TileFields { get; } = new();
 
-        /// <summary>Plants the fields grow at full density, from their sown area and spacing.</summary>
+        /// <summary>Plants the fields grow at full density.</summary>
         public long Plants { get; set; }
 
         public bool IsEmpty => Fields.Count == 0;

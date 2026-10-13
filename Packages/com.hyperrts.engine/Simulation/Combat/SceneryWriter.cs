@@ -5,11 +5,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>
-    /// Shows scenery states another world decided (a multiplayer server) on this world's own copy of the map:
-    /// health, so damage stages follow, or destruction, which removes the piece whole and spawns its remains here.
-    /// A change nobody saw happen shows its result without the effects of getting there.
-    /// </summary>
+    /// <summary>Applies scenery states another world decided, such as a multiplayer server, to this world's map.</summary>
     public struct SceneryWriter
     {
         private ComponentLookup<Health> _health;
@@ -48,7 +44,7 @@ namespace HyperRTS.Simulation.Combat
             _children.Update(ref state);
         }
 
-        /// <summary>False once the piece is gone (destroyed here, or its SubScene unloaded).</summary>
+        /// <summary>False once the piece is destroyed here or its SubScene unloaded.</summary>
         public bool Exists(Entity scenery) => _health.HasComponent(scenery);
 
         public void SetHealth(Entity scenery, float fraction, bool witnessed)
@@ -57,17 +53,14 @@ namespace HyperRTS.Simulation.Combat
             health.Current = health.Max * fraction;
             _health[scenery] = health;
 
-            // Like a freshly loaded wreck: the stage model changes without replaying its damage effect.
+            // Like a freshly loaded wreck, the stage model changes without its damage effect.
             if (!witnessed && _shownStages.HasComponent(scenery))
             {
                 _shownStages[scenery] = new ShownDamageStage { Index = -1 };
             }
         }
 
-        /// <summary>
-        /// Removes the piece with its parts and spawns its remains where it stood, through <paramref name="ecb"/>; a
-        /// <see cref="Topple"/> piece's remains lie toward <paramref name="fall"/>.
-        /// </summary>
+        /// <summary>A <see cref="Topple"/> piece's remains lie toward <paramref name="fall"/>.</summary>
         public void Destroy(Entity scenery, bool witnessed, byte fall, EntityCommandBuffer ecb)
         {
             if (_remains.TryGetComponent(scenery, out var spawn))

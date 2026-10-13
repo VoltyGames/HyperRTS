@@ -6,12 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
     /// <summary>
-    /// Grows a map's row crops on the GPU every frame: the CPU culls <see cref="RowCropFields"/> tiles against the
-    /// main camera's frustum and draw distance, RowCrops.compute grows each visible tile's plants from the fields'
-    /// row lattices (dropping or flattening the ones vehicles crushed, read from the trample map) and the plants are
-    /// drawn per distance band with <c>Graphics.RenderMeshIndirect</c>. Regrowing every visible tile every frame costs a
-    /// few hundred thousand cheap threads and needs no cache to invalidate when the camera moves or crops get
-    /// trampled. Map tools add one per map scene.
+    /// Grows a map's row crops on the GPU each frame from <see cref="RowCropFields"/> and draws them per distance band.
+    /// Regrowing every visible tile each frame is cheap and needs no cache invalidation.
     /// </summary>
     [AddComponentMenu("")]
     [Icon(HyperRTSIcons.Environment)]
@@ -39,7 +35,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private Bounds[] _tileBounds;
         private Bounds _worldBounds;
 
-        /// <summary>Share of the plants grown, 0 to 1; the game sets it from its vegetation quality.</summary>
+        /// <summary>Share of plants grown, 0 to 1. Set by the game from its vegetation quality.</summary>
         public static float Density
         {
             get => _density;
@@ -48,7 +44,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                 : throw new ArgumentOutOfRangeException(nameof(value), value, "Row crop density must be 0 to 1.");
         }
 
-        /// <summary>Metres from the camera crops are drawn to; the game sets it from its vegetation quality.</summary>
+        /// <summary>Metres from the camera crops are drawn to. Set by the game from its vegetation quality.</summary>
         public static float Distance
         {
             get => _distance;

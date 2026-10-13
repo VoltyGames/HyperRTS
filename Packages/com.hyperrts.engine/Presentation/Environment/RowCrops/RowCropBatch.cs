@@ -5,14 +5,10 @@ using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
-    /// <summary>
-    /// One crop's GPU side: the visible tiles of its fields this frame, an append buffer per distance band that
-    /// RowCrops.compute fills with plants, and the indirect draws that read them back through HyperRTS/RowCrop.
-    /// Buffers grow to the bands in view and are kept between frames.
-    /// </summary>
+    /// <summary>One crop's GPU side: visible tiles, the band buffers RowCrops.compute fills, and the indirect draws.</summary>
     internal sealed class RowCropBatch : IDisposable
     {
-        // RowCropInstance in RowCrops.compute and RowCropInput.hlsl.
+        // Matches RowCropInstance in RowCrops.compute and RowCropInput.hlsl.
         private const int InstanceStride = 48;
         private const int ThreadGroup = 8;
         private const int MinCapacity = 1024;
@@ -83,7 +79,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             }
         }
 
-        /// <summary>Grows this frame's plants into the band buffers; the renderer has set the shared kernel inputs.</summary>
+        /// <summary>Grows this frame's plants into the band buffers. The renderer binds the shared kernel inputs first.</summary>
         public void Generate()
         {
             if (_pending.Count == 0)

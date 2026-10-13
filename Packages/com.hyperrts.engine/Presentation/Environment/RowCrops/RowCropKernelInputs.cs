@@ -3,11 +3,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
-    /// <summary>
-    /// What RowCrops.compute reads for every crop: the fields and their id picture, the terrain heights plants stand
-    /// on, the camera, quality and the trample map. Compute shaders don't see global shader properties, so the
-    /// trample map is copied over from the globals InteractionMap publishes each frame.
-    /// </summary>
+    /// <summary>What RowCrops.compute reads. The trample map is copied from the globals: compute shaders don't see them.</summary>
     internal sealed class RowCropKernelInputs : IDisposable
     {
         // Unity heightmaps store 32766 as full height in a 16-bit unorm texture.

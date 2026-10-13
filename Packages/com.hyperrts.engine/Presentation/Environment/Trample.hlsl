@@ -1,7 +1,7 @@
-// Interaction maps published by InteractionMap (InteractionSurfaces.cs). Include after URP's Core.hlsl.
-//   _HyperRTSTrample  RG travel direction * 0.5 + 0.5, B grass flatten (recovers), A crop damage (permanent)
-//   _HyperRTSTracks   R rut depth, G churned soil (both fade)
-// Outside a map, or with the maps off, the rect is zero and every read here is neutral.
+// Interaction maps published by InteractionSurfaces. Include after URP's Core.hlsl.
+//   _HyperRTSTrample  RG travel direction * 0.5 + 0.5, B grass flatten, A crop damage
+//   _HyperRTSTracks   R rut depth, G churned soil
+// A zero rect (no map, or maps off) makes every read neutral.
 #ifndef HYPERRTS_TRAMPLE_INCLUDED
 #define HYPERRTS_TRAMPLE_INCLUDED
 
@@ -67,8 +67,7 @@ float2 TrackSlope(float2 positionXZ)
     return float2(east - west, north - south) / max(2.0 * step, 1e-4);
 }
 
-// Leans a plant vertex flat about its root along the travel direction by amount (0 standing, 1 flat). Plants with
-// no direction under them just sink. Row crops and grass share it.
+// Leans a plant vertex about its root along the travel direction (0 standing, 1 flat). No direction just sinks.
 float3 TrampleBend(float3 world, float3 origin, float2 direction, half amount)
 {
     float lean = amount * TRAMPLE_MAX_BEND;

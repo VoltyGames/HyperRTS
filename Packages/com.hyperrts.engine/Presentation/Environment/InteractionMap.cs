@@ -5,13 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>
-    /// Owns the match's interaction maps (<see cref="InteractionSurfaces"/>): each frame it fades them (flattened grass
-    /// stands up over <see cref="InteractionMath.TrampleRecoverySeconds"/>, ruts fade over
-    /// <see cref="InteractionMath.TrackFadeSeconds"/>, crushed crops stay) and draws the stamps
-    /// <see cref="InteractionStampSystem"/> gathered. Terrain and foliage read them through Trample.hlsl. Presentation
-    /// only, so clients may differ.
-    /// </summary>
+    /// <summary>Fades the match's interaction maps and draws their stamps. Presentation only, so clients may differ.</summary>
     [AddComponentMenu(HyperRTSMenu.Rig + "Interaction Map")]
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
@@ -27,7 +21,7 @@ namespace HyperRTS.Presentation.Environment
         private float _recoveryCarry;
         private float _fadeCarry;
 
-        /// <summary>How finely the maps resolve the ground, or Off; the game sets it from its vegetation quality.</summary>
+        /// <summary>Map resolution, or Off. Set by the game from its vegetation quality.</summary>
         public static InteractionQuality Quality { get; set; } = InteractionQuality.Full;
 
         private void Awake() => _brush = new InteractionBrush(brush);

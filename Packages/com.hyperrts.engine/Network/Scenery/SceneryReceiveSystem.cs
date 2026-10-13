@@ -7,11 +7,7 @@ using Unity.NetCode;
 
 namespace HyperRTS.Network.Scenery
 {
-    /// <summary>
-    /// Client: shows the server's scenery changes on the client's own copy of the map (<see cref="SceneryWriter"/>),
-    /// so damage stages, collapses, remains and the nav grid follow. Changes for scenery that hasn't streamed in yet
-    /// wait, and then show without their effects.
-    /// </summary>
+    /// <summary>Client: applies the server's scenery changes to the local map. Changes for scenery not yet streamed in wait.</summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
@@ -23,7 +19,7 @@ namespace HyperRTS.Network.Scenery
         private NativeHashMap<ulong, Entity> _index;
         private NativeHashMap<ulong, SceneryChange> _waiting;
 
-        /// <summary>Scenery that should exist now: indexed pieces minus those destroyed. More means some streamed in.</summary>
+        /// <summary>Indexed pieces minus destroyed ones. A higher count means more scenery streamed in.</summary>
         private int _indexed;
 
         [BurstCompile]
@@ -73,7 +69,7 @@ namespace HyperRTS.Network.Scenery
             state.EntityManager.DestroyEntity(_rpcs);
         }
 
-        /// <summary>Indexes scenery that streamed in since the last update; true when some did.</summary>
+        /// <summary>True when scenery streamed in since the last update.</summary>
         private bool Index(ref SystemState state)
         {
             var count = _scenery.CalculateEntityCount();

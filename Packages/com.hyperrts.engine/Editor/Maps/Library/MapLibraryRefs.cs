@@ -9,10 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Maps.Library
 {
-    /// <summary>
-    /// The project asset paths and key lists a library file names, read from the same JSON as the item itself
-    /// (JsonUtility skips the keys a type doesn't have). Items resolve their asset fields through <see cref="Asset{T}"/>.
-    /// </summary>
+    /// <summary>The asset paths and key lists a library file names, read from the same JSON as the item.</summary>
     [Serializable]
     public sealed class MapLibraryRefs
     {
@@ -53,24 +50,18 @@ namespace HyperRTS.Editor.Maps.Library
         [MapKey(typeof(MapWoodlandKit))]
         public List<string> woodlandKits = new();
 
-        /// <summary>
-        /// The <see cref="Factories.IMapAssetFactory"/> that makes this item's assets (its <c>Kind</c>), or empty
-        /// when the item only points at assets made elsewhere.
-        /// </summary>
+        /// <summary>The <see cref="Factories.IMapAssetFactory"/> kind that makes this item's assets, or empty when they are made elsewhere.</summary>
         public string factory;
 
-        /// <summary>The <c>params</c> object the factory reads, kept whole so saves write back every key.</summary>
+        /// <summary>The factory's <c>params</c> object, kept whole so saves write back every key.</summary>
         [NonSerialized]
         public JToken factoryParams;
 
-        /// <summary>The library file these were read from (project-relative), named in every error.</summary>
+        /// <summary>The project-relative library file, named in every error.</summary>
         [NonSerialized]
         public string file;
 
-        /// <summary>
-        /// The asset at <paramref name="path"/>, or null when the file leaves the field empty (the map checks report
-        /// a required asset that is missing). A path that doesn't load as a <typeparamref name="T"/> throws.
-        /// </summary>
+        /// <summary>Null for an empty path, which the map checks report. A path of the wrong type throws.</summary>
         public T Asset<T>(string path, string field) where T : Object
         {
             if (string.IsNullOrEmpty(path))
@@ -85,7 +76,7 @@ namespace HyperRTS.Editor.Maps.Library
                     $"HyperRTS: map library file '{file}': {field} '{path}' is not a {typeof(T).Name} asset.");
         }
 
-        /// <summary>The assets a path list names, in order; an empty or wrong-typed path throws naming its index.</summary>
+        /// <summary>An empty or wrong-typed path throws naming its index.</summary>
         public List<T> Assets<T>(List<string> paths, string field) where T : Object
         {
             var assets = new List<T>();

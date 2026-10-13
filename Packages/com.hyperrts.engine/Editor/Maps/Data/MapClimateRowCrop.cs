@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
-    /// <summary>
-    /// A crop grown in 3D rows on the fields of the surfaces that name it: the <see cref="RowCrop"/> asset (meshes,
-    /// materials, spacing) its factory makes. The map build bakes where it grows into the map's row crop fields.
-    /// </summary>
+    /// <summary>A crop grown in 3D rows on the fields of the surfaces that name it.</summary>
     [Serializable]
     [MapLibraryItem("rowCrop", "crop")]
     public sealed class MapClimateRowCrop : IMapKeyed, IMapLibraryItem

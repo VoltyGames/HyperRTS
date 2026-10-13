@@ -1,4 +1,4 @@
-// HyperRTS/Foliage inputs shared by every pass: material properties, vertex attributes and the windblown position.
+// HyperRTS/Foliage inputs shared by every pass.
 #ifndef HYPERRTS_FOLIAGE_INPUT_INCLUDED
 #define HYPERRTS_FOLIAGE_INPUT_INCLUDED
 
@@ -32,11 +32,9 @@ CBUFFER_START(UnityPerMaterial)
     float _Trample; // 0 off, 1 grass (flatten), 2 crop (damage)
 CBUFFER_END
 
-// Where plants shrink to their roots (x start, y end, metres from the camera), so terrain details are gone before the
-// terrain culls them; published by DetailFade, zero (no shrinking) until something does.
+// x start, y end of plant shrinking (m from camera). Set by DetailFade, zero disables it.
 float4 _HyperRTSDetailFade;
 
-// Leans a plant flat where it was trampled: grass by the flatten that recovers, crops by the damage that doesn't.
 float3 PlantTrample(float3 world, float3 origin)
 {
     TrampleSample trample = SampleTrample(origin.xz);
@@ -59,8 +57,7 @@ struct Attributes
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-// World position of a vertex under the given frame's wind; plants (not trees) shrink to the root with distance. Motion
-// vectors reuse the current object matrix for last frame: vegetation doesn't move.
+// Motion vectors reuse the current object matrix: vegetation never moves.
 float3 FoliagePosition(Attributes input, WindFrame frame, out float3 origin)
 {
     origin = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
@@ -91,7 +88,7 @@ half Coverage(float2 uv)
     return alpha;
 }
 
-// Dithers between LOD levels while a LOD group crossfades; positionCS is the fragment's SV_POSITION.
+// LOD crossfade dither. positionCS is the fragment's SV_POSITION.
 void FoliageCrossFade(float4 positionCS)
 {
 #if defined(LOD_FADE_CROSSFADE)

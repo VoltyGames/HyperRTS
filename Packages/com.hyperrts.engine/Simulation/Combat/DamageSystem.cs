@@ -11,10 +11,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>
-    /// Resolves the frame's <see cref="DamageEvent"/>s in order: armor per damage type, directional armor, the
-    /// DamageTaken stat, splash falloff and kill credit (<see cref="LastAttacker"/>). Heals skip every multiplier.
-    /// </summary>
+    /// <summary>Resolves the frame's <see cref="DamageEvent"/>s in order. Heals skip every multiplier.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup), OrderLast = true)]
     public partial struct DamageSystem : ISystem
@@ -121,10 +118,7 @@ namespace HyperRTS.Simulation.Combat
                 }
             }
 
-            /// <summary>
-            /// Damage splashes onto enemies (and allies with friendly fire) and onto destructible scenery, and heals
-            /// onto allies only, on the layers the hit reaches: a shell bursting on the ground spares the aircraft above.
-            /// </summary>
+            /// <summary>Splash stays on the layers the hit reaches, so a ground burst spares aircraft above. Heals reach allies only.</summary>
             private bool SplashReaches(in DamageEvent hit, in SpatialEntry victim)
             {
                 if (!CombatMath.CanHit(hit.Reach, victim.Layer))

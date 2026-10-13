@@ -11,7 +11,7 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>Largest side of either map; bigger maps get coarser texels.</summary>
         public const int MaxTextureSize = 8192;
 
-        /// <summary>Steps an 8-bit channel fades through; each fade tick takes one.</summary>
+        /// <summary>Steps an 8-bit channel fades through.</summary>
         public const int Levels = 255;
 
         public const float TrampleRecoverySeconds = 60f;
@@ -49,10 +49,7 @@ namespace HyperRTS.Presentation.Environment
 
         public static float2 WorldToUV(float4 rect, float2 positionXZ) => (positionXZ - rect.xy) * rect.zw;
 
-        /// <summary>
-        /// Whole 1/255 fade steps due after <paramref name="deltaTime"/>, so a channel goes from full to empty in
-        /// <paramref name="duration"/> seconds; <paramref name="carry"/> keeps the fraction for the next frame.
-        /// </summary>
+        /// <summary>Whole 1/255 fade steps due for a full fade over <paramref name="duration"/>. <paramref name="carry"/> keeps the remainder.</summary>
         public static int FadeSteps(ref float carry, float deltaTime, float duration)
         {
             carry += deltaTime * Levels / duration;
@@ -61,11 +58,7 @@ namespace HyperRTS.Presentation.Environment
             return steps;
         }
 
-        /// <summary>
-        /// A vehicle's marks this frame: a rut under each track and flattened, crushed plants under its width. They
-        /// reach back over <paramref name="advance"/> metres driven along <paramref name="forward"/> (negative when
-        /// reversing), so fast vehicles leave no gaps between frames.
-        /// </summary>
+        /// <summary>A vehicle's marks this frame, stretched back over <paramref name="advance"/> metres so fast vehicles leave no gaps.</summary>
         public static void AddVehicle(in TrackMarks marks, float2 position, float2 forward, float advance,
             List<InteractionStamp> trample, List<InteractionStamp> tracks)
         {

@@ -6,10 +6,7 @@ using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>
-    /// Draws a frame of stamps into the interaction maps as procedural instanced quads (InteractionBrush.shader), after
-    /// fading them on the GPU by whole 8-bit steps.
-    /// </summary>
+    /// <summary>Fades the interaction maps and draws a frame of stamps into them as instanced quads.</summary>
     public sealed class InteractionBrush : IDisposable
     {
         public const string ShaderName = "Hidden/HyperRTS/Interaction Brush";
@@ -38,7 +35,7 @@ namespace HyperRTS.Presentation.Environment
             _material = new Material(shader) { hideFlags = HideFlags.DontSave };
         }
 
-        /// <summary>Wipes both maps: no direction, standing plants, clean ground.</summary>
+        /// <summary>Clears both maps to no direction, standing plants and clean ground.</summary>
         public void Clear(InteractionSurfaces surfaces)
         {
             _commands.Clear();
@@ -81,7 +78,7 @@ namespace HyperRTS.Presentation.Environment
             }
         }
 
-        // Both lists go up in one buffer: tracks start after the trample stamps.
+        // One buffer: tracks start after the trample stamps.
         private void Upload(InteractionStamps stamps)
         {
             _all.Clear();

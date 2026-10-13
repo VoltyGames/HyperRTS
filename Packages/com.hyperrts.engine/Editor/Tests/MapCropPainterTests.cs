@@ -9,7 +9,6 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>Row crop baking: symmetric copies sow the same plants, roads and blocked spots stay bare, tiles list every crop.</summary>
     public class MapCropPainterTests
     {
         private const int Half = 32;

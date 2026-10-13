@@ -1,5 +1,4 @@
-// HyperRTS/Foliage passes. Every pass places vertices with FoliagePosition, so lit, shadow, depth, normals and motion
-// vectors all see the same windblown plant.
+// HyperRTS/Foliage passes. All place vertices with FoliagePosition so every pass sees the same plant.
 #ifndef HYPERRTS_FOLIAGE_PASSES_INCLUDED
 #define HYPERRTS_FOLIAGE_PASSES_INCLUDED
 
@@ -7,13 +6,12 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
 
-// The map's top-down ground colour and the world rectangle it covers (x min, z min, 1 / width, 1 / depth), published
-// by the scene's GroundColor. Outside a map the rect stays zero, which turns root blending off.
+// Top-down ground colour from GroundColor. Rect: x min, z min, 1 / width, 1 / depth, zero outside a map.
 TEXTURE2D(_HyperRTSGroundColor);
 SAMPLER(sampler_HyperRTSGroundColor);
 float4 _HyperRTSGroundRect;
 
-// One tile of the noise per 40 m: patches of drier and greener plants.
+// One noise tile per 40 m: drier and greener patches.
 static const float PatchTilesPerMetre = 1.0 / 40.0;
 
 float3 _LightDirection;
@@ -22,11 +20,11 @@ float3 _LightPosition;
 struct ForwardVaryings
 {
     float4 positionCS : SV_POSITION;
-    float3 uv : TEXCOORD0; // xy albedo, z height up the card (the root is 0)
+    float3 uv : TEXCOORD0; // xy albedo, z height up the card (root 0)
     float3 positionWS : TEXCOORD1;
     half3 normalWS : TEXCOORD2;
     half4 tint : TEXCOORD3; // rgb per-plant shade, a crown occlusion
-    half4 ground : TEXCOORD4; // rgb ground colour over the card's mean brightness, a root blend
+    half4 ground : TEXCOORD4; // rgb ground colour over card mean brightness, a root blend
     half fogFactor : TEXCOORD5;
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
@@ -48,8 +46,7 @@ struct MotionVaryings
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-// The ground under the plant's root, divided by the card's mean brightness so the root keeps the card's own light and
-// dark detail; the blend weight is zero outside a map.
+// Ground colour over the card's mean brightness, so the root keeps the card's detail.
 half4 RootGround(float3 origin)
 {
     float2 uv = (origin.xz - _HyperRTSGroundRect.xy) * _HyperRTSGroundRect.zw;
@@ -70,8 +67,7 @@ ForwardVaryings ForwardVert(Attributes input)
     output.uv = float3(TRANSFORM_TEX(input.uv, _BaseMap), input.uv.y);
     output.normalWS = TransformObjectToWorldNormal(input.normalOS);
 
-    // Plants dry out in patches tens of metres across (the gust noise, held still) and each plant gets its own slightly
-    // warmer or cooler, lighter or darker shade on top.
+    // Dry patches from the gust noise held still, plus a per-plant shade.
     float random = frac(sin(dot(origin.xz, float2(12.9898, 78.233))) * 43758.5453);
     half patch = SAMPLE_TEXTURE2D_LOD(_HyperRTSWindGustMap, sampler_HyperRTSWindGustMap, origin.xz * PatchTilesPerMetre, 0).r;
     half dry = saturate(patch * 0.65 + random * 0.35);
@@ -92,17 +88,15 @@ half4 ForwardFrag(ForwardVaryings input) : SV_Target
     FoliageCrossFade(input.positionCS);
     albedo.rgb *= input.tint.rgb;
 
-    // Toward the root the card turns into the ground it grows from, in colour and in light (plain Lambert on the
-    // ground's up normal, nothing shining through), so grass rises out of the ground.
+    // The root fades into the ground's colour and plain up-facing light.
     half root = input.ground.a * (1.0 - smoothstep(0.0, _GroundBlendHeight, input.uv.z));
     albedo.rgb = lerp(albedo.rgb, input.ground.rgb * Luminance(texel.rgb), root);
 
-    // Not flipped on back faces: foliage normals point up and out of the plant, so both sides of a card light like
-    // the plant as a whole.
+    // Not flipped on back faces: both sides of a card light like the whole plant.
     half3 normal = normalize(lerp(input.normalWS, half3(0.0, 1.0, 0.0), root));
     half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
     Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
-    // Shadow and cookie only: the sun's culling attenuation isn't set for the terrain's instanced detail draws.
+    // Shadow and cookie only: culling attenuation isn't set for instanced terrain detail draws.
     half shadow = sun.shadowAttenuation;
     half wrapping = 0.5 * (1.0 - root);
     half wrap = saturate((dot(normal, sun.direction) + wrapping) / (1.0 + wrapping));
@@ -189,7 +183,7 @@ half4 DepthNormalsFrag(CutoutVaryings input) : SV_Target
     #endif
 }
 
-// Last frame's position rebuilds the wind from last frame's time and gust scroll.
+// Last frame's position uses last frame's wind.
 MotionVaryings MotionVert(Attributes input)
 {
     MotionVaryings output;

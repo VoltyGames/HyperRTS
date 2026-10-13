@@ -5,12 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
-    /// <summary>
-    /// A landscape kit named by a spec's <c>climate</c>: terrain layers, the surfaces land is painted with, trees,
-    /// plants, how roads, farmland, belts and woods look, water and the sky. Read from the map library's
-    /// <c>&lt;Key&gt;.climate.json</c>, which lists its surfaces, road classes and kits by key; the layers, trees,
-    /// plants and decals are the ones those (and the props) use (see <see cref="MapLibrary.Climate"/>).
-    /// </summary>
+    /// <summary>A landscape kit named by a spec's <c>climate</c>, read from the library's <c>&lt;Key&gt;.climate.json</c>.</summary>
     [Serializable]
     [MapLibraryItem("climate", "surfaces", "roadClasses", "farmlandKits", "beltKits", "woodlandKits", "water", "atmosphere", "skybox")]
     public sealed class MapClimate : IMapLibraryItem
@@ -18,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Data
         [NonSerialized]
         public string name;
 
-        /// <summary>The library file it was read from; generated terrain textures go in a folder beside it.</summary>
+        /// <summary>The library file it was read from. Generated terrain textures go beside it.</summary>
         [NonSerialized]
         public string file;
 
@@ -26,22 +21,22 @@ namespace HyperRTS.Editor.Maps.Data
         [NonSerialized]
         public List<MapClimateLayer> layers = new();
 
-        [Tooltip("Named ground types (Meadow, Wheat, ForestFloor); land use and spec areas paint these.")]
+        [Tooltip("Named ground types (Meadow, Wheat, ForestFloor) that land use and spec areas paint.")]
         [NonSerialized]
         public List<MapClimateSurface> surfaces = new();
 
         [NonSerialized]
         public List<MapClimateTree> trees = new();
 
-        [Tooltip("Grass and small plants; surfaces say where they grow.")]
+        [Tooltip("Grass and small plants. Surfaces say where they grow.")]
         [NonSerialized]
         public List<MapClimateDetail> details = new();
 
-        [Tooltip("Crops grown in 3D rows; surfaces say where they grow.")]
+        [Tooltip("Crops grown in 3D rows. Surfaces say where they grow.")]
         [NonSerialized]
         public List<MapClimateRowCrop> rowCrops = new();
 
-        [Tooltip("Ground decals; surfaces and props say where they lie.")]
+        [Tooltip("Ground decals. Surfaces and props say where they lie.")]
         [NonSerialized]
         public List<MapClimateDecal> decals = new();
 
@@ -63,7 +58,7 @@ namespace HyperRTS.Editor.Maps.Data
         [MapKey(typeof(MapClimateSurface))]
         public string groundSurface;
 
-        [Tooltip("Surface patched into open ground by noise, so it never reads as one flat texture.")]
+        [Tooltip("Surface patched into open ground by noise to break up the texture.")]
         [MapKey(typeof(MapClimateSurface))]
         public string groundVariation;
 
@@ -74,7 +69,7 @@ namespace HyperRTS.Editor.Maps.Data
         [MapKey(typeof(MapClimateSurface))]
         public string baseSurface;
 
-        [Tooltip("Surface on steep ground; it fades in from Slope Start to Slope Full degrees.")]
+        [Tooltip("Surface on steep ground, fading in from Slope Start to Slope Full degrees.")]
         [MapKey(typeof(MapClimateSurface))]
         public string slopeSurface;
 
@@ -95,14 +90,14 @@ namespace HyperRTS.Editor.Maps.Data
 
         public float floodplainWidth = 18f;
 
-        [Tooltip("Plants of the shallows along the banks (reeds); empty for none.")]
+        [Tooltip("Plants of the shallows along the banks, such as reeds. Empty for none.")]
         [MapKey(typeof(MapClimateDetail))]
         public string reedDetail;
 
         [Tooltip("Width of the reed band reaching out from the water's edge (metres).")]
         public float reedWidth = 3f;
 
-        [Tooltip("Metres past a ford's edge over which the river deepens again (water thins and foams over this band).")]
+        [Tooltip("Metres past a ford's edge over which the river deepens again.")]
         public float fordShallowsWidth;
 
         [Tooltip("Metres of fast, foaming water downstream of a ford.")]
@@ -117,11 +112,11 @@ namespace HyperRTS.Editor.Maps.Data
         public string ravineRimSurface;
 
         [Header("Water and sky")]
-        [Tooltip("Material of river surfaces; the mesh's V coordinate runs downstream in metres.")]
+        [Tooltip("Material of river surfaces. The mesh's V coordinate runs downstream in metres.")]
         [NonSerialized]
         public Material water;
 
-        [Tooltip("Sun, post-processing volume and other lighting, instantiated into every map of this climate.")]
+        [Tooltip("Sun, post-processing and lighting placed in every map of this climate.")]
         [NonSerialized]
         public GameObject atmosphere;
 

@@ -1,5 +1,4 @@
-// Draws InteractionBrush.cs stamps into the interaction maps: each stamp is a quad over the map rect, one instance per
-// stamp from _InteractionStamps. Fade subtracts whole 8-bit steps from the whole map. Not for materials.
+// Draws InteractionBrush.cs stamps into the interaction maps, one instanced quad each. Not for materials.
 Shader "Hidden/HyperRTS/Interaction Brush"
 {
     SubShader
@@ -20,7 +19,7 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             float2 center;   // world XZ
             float2 forward;  // world XZ unit direction of travel
             float2 halfSize; // x across, y along forward, metres
-            float4 value;    // trample: flatten, crop, direction weight, round; tracks: rut, soil, -, round
+            float4 value;    // trample: flatten, crop, direction weight, round. tracks: rut, soil, -, round
         };
 
         StructuredBuffer<InteractionStamp> _InteractionStamps;
@@ -36,7 +35,7 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             nointerpolation float2 forward : TEXCOORD2;
         };
 
-        // Map UV to clip space; on top-origin APIs the texture's first row is clip y = +1.
+        // On top-origin APIs the texture's first row is clip y = +1.
         float4 MapClip(float2 uv)
         {
             float2 clip = uv * 2.0 - 1.0;
@@ -66,7 +65,6 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             return output;
         }
 
-        // 1 inside, falling off over the outer quarter (a disc when the stamp is round).
         float Footprint(StampVaryings input, float inner)
         {
             float2 reach = abs(input.local);
@@ -105,7 +103,7 @@ Shader "Hidden/HyperRTS/Interaction Brush"
         }
         ENDHLSL
 
-        // Steers the travel direction (RG) towards the stamp's, by its direction weight.
+        // RG: travel direction, steered by the stamp's direction weight.
         Pass
         {
             Name "TrampleDirection"
@@ -117,7 +115,7 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             ENDHLSL
         }
 
-        // Flatten (B) and crop damage (A) only ever grow while stamped.
+        // Flatten (B) and crop damage (A) only grow while stamped.
         Pass
         {
             Name "TrampleAmount"

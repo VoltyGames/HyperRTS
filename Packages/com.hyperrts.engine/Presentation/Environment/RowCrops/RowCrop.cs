@@ -4,23 +4,19 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
-    /// <summary>
-    /// A crop sown in rows that <see cref="RowCropRenderer"/> grows on the GPU: a full and a simple mesh near the
-    /// camera and a card further out, their HyperRTS/RowCrop materials, and how the crop is sown. Map tools make one
-    /// per crop and bake where it grows into <see cref="RowCropFields"/>.
-    /// </summary>
+    /// <summary>A crop sown in rows that <see cref="RowCropRenderer"/> grows on the GPU: its meshes, materials and sowing.</summary>
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     public sealed class RowCrop : ScriptableObject
     {
         [Header("Meshes")]
-        [Tooltip("Full plant, origin at its root; one submesh.")]
+        [Tooltip("Full plant mesh, origin at the root, one submesh.")]
         public Mesh lod0;
 
-        [Tooltip("Simpler plant past lod0Distance; one submesh.")]
+        [Tooltip("Simpler plant mesh past lod0Distance, one submesh.")]
         public Mesh lod1;
 
-        [Tooltip("Impostor card past lod1Distance; one submesh.")]
+        [Tooltip("Impostor card past lod1Distance, one submesh.")]
         public Mesh card;
 
         [Tooltip("HyperRTS/RowCrop material of both plant meshes.")]
@@ -36,41 +32,40 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         [Tooltip("Metres between plants along a row.")]
         public float plantSpacing = 0.3f;
 
-        [Tooltip("Share of the spacing a plant strays from its row spot, each way.")]
+        [Tooltip("Share of the spacing a plant strays from its row spot.")]
         [Range(0f, 0.5f)]
         public float jitter = 0.15f;
 
         [Tooltip("Random uniform scale range.")]
         public Vector2 scale = new(0.9f, 1.1f);
 
-        [Tooltip("Plants face along their row; off, every plant keeps the model's own heading (+Z to the north), " +
-                 "as crops that turn to the sun do.")]
+        [Tooltip("Plants face along their row. Off keeps the model's heading (+Z north), for crops that turn to the sun.")]
         public bool facesRow = true;
 
         [Tooltip("Degrees a plant turns either way from its heading.")]
         [Range(0f, 180f)]
         public float yawJitter = 20f;
 
-        [Tooltip("Bare metres kept round a field's edge, roads and placed objects.")]
+        [Tooltip("Bare margin in metres round field edges, roads and placed objects.")]
         public float edgeMargin = 0.6f;
 
-        [Tooltip("Height of the tallest plant (metres), for culling.")]
+        [Tooltip("Tallest plant height in metres, for culling.")]
         public float height = 2f;
 
         [Header("Distances")]
         [Tooltip("Metres from the camera the full mesh is drawn to.")]
         public float lod0Distance = 40f;
 
-        [Tooltip("Metres from the camera the simple mesh is drawn to; the card takes over past it.")]
+        [Tooltip("Metres from the camera the simple mesh is drawn to. Cards draw past it.")]
         public float lod1Distance = 120f;
 
         [Tooltip("Whether the far cards cast shadows.")]
         public bool cardShadows;
 
-        /// <summary>Area each plant takes (square metres), which sets how many grow on a field.</summary>
+        /// <summary>Square metres each plant takes.</summary>
         public float PlantArea => rowSpacing * plantSpacing;
 
-        /// <summary>What keeps the crop from being drawn, one line per problem; empty when it is ready.</summary>
+        /// <summary>Problems that keep the crop from drawing, one per line. Empty when ready.</summary>
         public IReadOnlyList<string> Problems()
         {
             var problems = new List<string>();

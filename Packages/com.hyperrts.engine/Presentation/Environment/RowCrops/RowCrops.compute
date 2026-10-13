@@ -1,7 +1,5 @@
-// Grows row crop plants for RowCropRenderer (RowCropBatch.cs): one thread per lattice spot of one visible tile of one
-// field, dispatched as (rows / 8, plants / 8, tiles). The lattice maths and hashes match RowCropLattice.cs: a plant
-// belongs to the tile its unjittered spot falls in and to the field the id picture names there, so tiles never
-// double or drop a row. Plants vehicles crushed (trample map A) bend over or, the harder they were hit, go.
+// Grows row crop plants for RowCropBatch: one thread per lattice spot, dispatched as (rows / 8, plants / 8, tiles).
+// Lattice maths and hashes match RowCropLattice.cs.
 #pragma kernel Plant
 
 #define SLACK 1e-4
@@ -13,7 +11,7 @@
 #define CHANNEL_DROP 5u
 #define CHANNEL_SHADE 6u
 #define CHANNEL_EDGE 7u
-#define EDGE_DITHER 1.5 // metres a plant's field lookup strays, so field edges on the 1 m land grid read ragged, not stepped
+#define EDGE_DITHER 1.5 // metres the field lookup strays, so edges on the 1 m grid look ragged
 #define FADE_SHARE 0.15 // share of the draw distance over which plants shrink away
 
 struct RowCropField // RowCropField.cs, 32 bytes
@@ -131,7 +129,7 @@ float GroundHeight(float2 xz)
     return _HeightScale.x + _Height.SampleLevel(sampler_LinearClamp, uv, 0) * _HeightScale.y;
 }
 
-// RG travel direction * 0.5 + 0.5, A permanent crop damage; neutral without a trample map.
+// RG direction * 0.5 + 0.5, A crop damage. Neutral without a trample map.
 float4 TrampleAt(float2 xz)
 {
     if (_TrampleRect.z <= 0.0)

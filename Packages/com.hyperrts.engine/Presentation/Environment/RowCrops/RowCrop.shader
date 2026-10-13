@@ -1,7 +1,5 @@
-// Row crops grown on the GPU by RowCropRenderer and drawn with Graphics.RenderMeshIndirect: each instance is one plant
-// RowCrops.compute wrote to _Instances. Lit like HyperRTS/Foliage (two-sided wrap light, translucency, per-plant
-// shade, the ground's colour at the roots), swayed by the scene's Wind in plant mode and leant over where vehicles
-// crushed it (Trample.hlsl). Not for ordinary renderers: without _Instances there is nothing to draw.
+// Row crops grown by RowCrops.compute, drawn with Graphics.RenderMeshIndirect from _Instances.
+// Lit like HyperRTS/Foliage. Not for ordinary renderers: without _Instances there is nothing to draw.
 Shader "HyperRTS/RowCrop"
 {
     Properties

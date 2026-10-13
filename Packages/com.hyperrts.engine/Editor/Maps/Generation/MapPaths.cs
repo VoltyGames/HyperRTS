@@ -41,7 +41,6 @@ namespace HyperRTS.Editor.Maps.Generation
         /// <summary>The terrain shader's per-map tint and wetness picture.</summary>
         public string Macro => $"{Folder}/{Name}_Macro.png";
 
-        /// <summary>The terrain's HyperRTS/Terrain material.</summary>
         public string TerrainMaterial => $"{Folder}/{Name}_Terrain.mat";
 
         /// <summary>The top-down ground colour foliage blends into at its roots.</summary>
@@ -52,7 +51,7 @@ namespace HyperRTS.Editor.Maps.Generation
 
         public string Roads => $"{Folder}/{Name}_Roads.asset";
 
-        /// <summary>Where the row crops grow (<c>RowCropFields</c>), when the map sows any.</summary>
+        /// <summary>Where the row crops grow, when the map sows any.</summary>
         public string RowCrops => $"{Folder}/{Name}_RowCrops.asset";
 
         /// <summary>The row crop field id picture the <see cref="RowCrops"/> asset points at.</summary>
@@ -66,7 +65,6 @@ namespace HyperRTS.Editor.Maps.Generation
 
         public static bool IsSpec(string path) => path.EndsWith(SpecExtension, StringComparison.Ordinal);
 
-        /// <summary>Every map spec in the project.</summary>
         public static string[] All() => AssetDatabase.FindAssets("t:TextAsset")
             .Select(AssetDatabase.GUIDToAssetPath)
             .Where(IsSpec)

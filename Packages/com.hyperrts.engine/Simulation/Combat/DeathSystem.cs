@@ -8,11 +8,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>
-    /// Marks zero-health entities <see cref="Dead"/>, spawns their <see cref="SpawnOnDeath"/> prefab in their place and
-    /// destroys them whole (<see cref="EntityParts"/>) at the end of the frame. Systems after this one in the lifecycle
-    /// phase can react to <see cref="Dead"/>.
-    /// </summary>
+    /// <summary>Marks zero-health entities <see cref="Dead"/>, spawns their remains and destroys them at the end of the frame.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     [UpdateBefore(typeof(DeathSoundSystem))]
@@ -87,10 +83,7 @@ namespace HyperRTS.Simulation.Combat
                 }
             }
 
-            /// <summary>
-            /// Remains stand, turn and scale like what died (stretch included), so a big tree leaves a big trunk; a
-            /// toppling piece's remains lie away from its lethal hit instead.
-            /// </summary>
+            /// <summary>Remains copy the dead piece's transform and scale, except toppling ones, which lie away from the lethal hit.</summary>
             private void SpawnRemains(int sortKey, Entity entity, Entity prefab, in LocalTransform transform)
             {
                 var remains = Ecb.Instantiate(sortKey, prefab);

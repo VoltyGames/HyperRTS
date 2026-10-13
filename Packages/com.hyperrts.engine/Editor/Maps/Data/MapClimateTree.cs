@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
-    /// <summary>
-    /// A tree the climate grows, in one or more model variants: a terrain tree per variant, and optionally an entity
-    /// version of each for the playable area.
-    /// </summary>
+    /// <summary>A climate tree in one or more model variants, each with an optional entity version for the playable area.</summary>
     [Serializable]
     [MapLibraryItem("tree", "prefabs", "destructibles", PreviewRefs = new[] { "prefabs" })]
     public sealed class MapClimateTree : IMapKeyed, IMapLibraryItem
@@ -16,12 +13,11 @@ namespace HyperRTS.Editor.Maps.Data
         [NonSerialized]
         public string key;
 
-        [Tooltip("Mesh prefab per variant, ideally with an LOD Group; origin at the base of the trunk.")]
+        [Tooltip("Mesh prefab per variant, ideally with an LOD Group, origin at the base of the trunk.")]
         [NonSerialized]
         public List<GameObject> prefabs = new();
 
-        [Tooltip("Entity version of each variant, in the same order, used inside the playable area so trees there " +
-                 "can be shot down and crushed (Destructible authoring); empty keeps terrain trees everywhere.")]
+        [Tooltip("Destructible entity version of each variant, in the same order, used inside the playable area. Empty keeps terrain trees everywhere.")]
         [NonSerialized]
         public List<GameObject> destructibles = new();
 

@@ -12,15 +12,15 @@ namespace HyperRTS.Network.Scenery
 
         public ulong Id;
 
-        /// <summary><see cref="Destroyed"/>, else health as a fraction of 255, never below 1 while it stands.</summary>
+        /// <summary><see cref="Destroyed"/>, else health in 255ths, never below 1 while it stands.</summary>
         public byte State;
 
-        /// <summary>Heading a toppling piece fell toward (<see cref="ToppleMath"/>); read once it is destroyed.</summary>
+        /// <summary>Fall heading (<see cref="ToppleMath"/>), read once it is destroyed.</summary>
         public byte Fall;
 
         public readonly float Fraction => State / (float)Intact;
 
-        /// <summary>Rounded up, so a sliver of health doesn't read as destroyed.</summary>
+        /// <summary>Rounded up so a sliver of health doesn't read as destroyed.</summary>
         public static byte Encode(in Health health)
         {
             if (health.Current <= 0f)

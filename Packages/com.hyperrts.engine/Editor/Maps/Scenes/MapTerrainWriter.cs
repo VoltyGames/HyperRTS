@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Scenes
 {
-    /// <summary>Writes the generated ground into the map's TerrainData asset: heights, layers, grass and trees.</summary>
+    /// <summary>Writes the generated ground into the map's TerrainData: heights, layers, grass and trees.</summary>
     public static class MapTerrainWriter
     {
         public static TerrainData Write(MapGeneration generation)
@@ -88,7 +88,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             };
         }
 
-        /// <summary>One terrain prototype per (species, variant), each species' variants in a run from its first.</summary>
+        /// <summary>One terrain prototype per species and variant, each species' variants in a run.</summary>
         private static void WriteTrees(TerrainData data, List<MapTree> trees, MapClimate climate, MapLayout layout)
         {
             var first = new int[climate.trees.Count];

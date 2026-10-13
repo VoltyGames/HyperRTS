@@ -1,5 +1,4 @@
-// HyperRTS/Terrain forward pass: the blended layers lit by URP's PBR model, with decals, SSAO, fog and the ruts and
-// trampled grass of the interaction maps (Trample.hlsl).
+// HyperRTS/Terrain forward pass: URP PBR on the blended layers, plus ruts and trampled grass (Trample.hlsl).
 #ifndef HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 #define HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 
@@ -10,8 +9,8 @@
 
 #define RUT_DEPTH 0.12          // metres a full rut dents the shading normal
 #define RUT_DARKENING 0.4
-#define SOIL_TINT 0.65          // churned soil along and around the ruts turns to bare earth
-#define FLATTEN_DARKENING 0.06  // flattened grass shades the ground under it a touch
+#define SOIL_TINT 0.65          // churned soil's blend toward bare earth
+#define FLATTEN_DARKENING 0.06  // darkening under flattened grass
 
 struct TerrainForwardVaryings
 {
@@ -54,7 +53,6 @@ TerrainForwardVaryings TerrainForwardVertex(TerrainAttributes input)
     return output;
 }
 
-// Ruts and churned soil darken the ground and dent its normal; flattened grass darkens it a touch.
 void ApplyInteraction(inout TerrainSurface surface, float2 positionXZ)
 {
     UNITY_BRANCH
