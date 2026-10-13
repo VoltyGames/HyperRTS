@@ -17,12 +17,6 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private MatchState Match()
-        {
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(MatchState));
-            return query.GetSingleton<MatchState>();
-        }
-
         private void Kill(Entity entity) =>
             _world.EntityManager.SetComponentData(entity, new Health { Current = 0f, Max = 100f });
 
@@ -51,7 +45,7 @@ namespace HyperRTS.Simulation.Tests
             _world.SpawnBuilding(1, float3.zero, new float2(4f, 4f));
             _world.Tick(frames: 10);
 
-            Assert.AreEqual(MatchPhase.Playing, Match().Phase);
+            Assert.AreEqual(MatchPhase.Playing, _world.Singleton<MatchState>().Phase);
             Assert.IsFalse(_world.IsEnabled<Defeated>(_world.Player(1)));
             Assert.IsFalse(_world.IsEnabled<Defeated>(_world.Player(2)), "player 2 hasn't streamed in yet");
         }
@@ -70,7 +64,7 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.IsTrue(_world.IsEnabled<Defeated>(_world.Player(3)));
             Assert.IsFalse(_world.IsEnabled<Defeated>(_world.Player(1)));
-            Assert.AreEqual(new MatchState { Phase = MatchPhase.Ended, WinningTeam = 1, Contenders = 0b1110 }, Match());
+            Assert.AreEqual(new MatchState { Phase = MatchPhase.Ended, WinningTeam = 1, Contenders = 0b1110 }, _world.Singleton<MatchState>());
         }
 
         [Test]
@@ -85,8 +79,8 @@ namespace HyperRTS.Simulation.Tests
             Kill(second);
             _world.Tick(frames: 2);
 
-            Assert.AreEqual(MatchPhase.Ended, Match().Phase);
-            Assert.AreEqual(0, Match().WinningTeam);
+            Assert.AreEqual(MatchPhase.Ended, _world.Singleton<MatchState>().Phase);
+            Assert.AreEqual(0, _world.Singleton<MatchState>().WinningTeam);
         }
     }
 }

@@ -91,6 +91,12 @@ namespace HyperRTS.Simulation.Tests
 
         public T Get<T>(Entity entity) where T : unmanaged, IComponentData => EntityManager.GetComponentData<T>(entity);
 
+        public T Singleton<T>() where T : unmanaged, IComponentData
+        {
+            using var query = EntityManager.CreateEntityQuery(typeof(T));
+            return query.GetSingleton<T>();
+        }
+
         public bool IsEnabled<T>(Entity entity) where T : unmanaged, IComponentData, IEnableableComponent =>
             EntityManager.IsComponentEnabled<T>(entity);
 

@@ -38,8 +38,6 @@ namespace HyperRTS.Simulation.Tests
         private void Command(CommandType type, float3 position, Entity target = default, bool queue = false) =>
             _world.Command(1, new PlayerCommand { Type = type, Position = position, Target = target, Queue = queue });
 
-        private float3 PositionOf(Entity entity) => _world.Get<LocalTransform>(entity).Position;
-
         /// <summary>Runs only the command system, so other behaviours can't act on the new order yet.</summary>
         private void RunCommands() =>
             _world.World.GetExistingSystem<UnitCommandSystem>().Update(_world.World.Unmanaged);
@@ -92,8 +90,8 @@ namespace HyperRTS.Simulation.Tests
             Command(CommandType.Smart, goal);
             _world.Run(4f);
 
-            Assert.Less(math.distance(PositionOf(unit).xz, goal.xz), 0.2f);
-            Assert.AreEqual(0f, PositionOf(unit).y, "movement settles the unit on the flat ground");
+            Assert.Less(math.distance(_world.PositionOf(unit).xz, goal.xz), 0.2f);
+            Assert.AreEqual(0f, _world.PositionOf(unit).y, "movement settles the unit on the flat ground");
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(unit));
             Assert.IsFalse(_world.IsEnabled<MoveDestination>(unit));
         }
@@ -114,13 +112,13 @@ namespace HyperRTS.Simulation.Tests
             for (var t = 0f; t < 6f; t += TestWorld.FrameTime)
             {
                 _world.Tick();
-                var position = PositionOf(unit);
+                var position = _world.PositionOf(unit);
                 reachedFirst |= math.distance(position.xz, first.xz) < 0.3f;
                 Assert.IsTrue(reachedFirst || math.distance(position.xz, second.xz) > 1f, "second goal reached first");
             }
 
             Assert.IsTrue(reachedFirst);
-            Assert.Less(math.distance(PositionOf(unit).xz, second.xz), 0.2f);
+            Assert.Less(math.distance(_world.PositionOf(unit).xz, second.xz), 0.2f);
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(unit));
         }
 
@@ -134,10 +132,10 @@ namespace HyperRTS.Simulation.Tests
 
             Command(CommandType.Stop, float3.zero);
             _world.Tick();
-            var stopped = PositionOf(unit);
+            var stopped = _world.PositionOf(unit);
             _world.Run(1f);
 
-            Assert.Less(math.distance(PositionOf(unit), stopped), 0.01f);
+            Assert.Less(math.distance(_world.PositionOf(unit), stopped), 0.01f);
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(unit));
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<QueuedOrder>(unit).Length);
         }
@@ -256,11 +254,11 @@ namespace HyperRTS.Simulation.Tests
             var enemy = _world.SpawnUnit(2, new float3(10f, 0f, 0f));
             var friend = _world.SpawnUnit(1, new float3(-10f, 0f, 0f));
 
-            Command(CommandType.Smart, PositionOf(enemy), enemy);
+            Command(CommandType.Smart, _world.PositionOf(enemy), enemy);
             RunCommands();
             Assert.AreEqual(jam, _world.Get<ActiveOrder>(unit).Value.Type);
 
-            Command(CommandType.Smart, PositionOf(friend), friend);
+            Command(CommandType.Smart, _world.PositionOf(friend), friend);
             RunCommands();
             Assert.AreEqual(OrderType.Move, _world.Get<ActiveOrder>(unit).Value.Type, "the rule is for enemies only");
         }

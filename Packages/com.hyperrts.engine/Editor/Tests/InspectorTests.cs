@@ -1,13 +1,14 @@
 using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Upgrades;
 using NUnit.Framework;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>Inspector helpers: issue badge text, [ShowIf] conditions and production option summaries.</summary>
+    /// <summary>Inspector helpers: issue badge text, [ShowIf] conditions, and entity and production option summaries.</summary>
     public class InspectorTests : TemplateFixture
     {
         [TestCase(0, "")]
@@ -47,6 +48,14 @@ namespace HyperRTS.Editor.Tests
             upgrade.researchTime = 30f;
             Assert.AreEqual("free · 30s", EntitySummary.ProducibleText(upgrade));
             Assert.AreEqual("", EntitySummary.ProducibleText(null));
+        }
+
+        [Test]
+        public void SummaryListsRoleModulesDamageAndCost()
+        {
+            var soldier = Track(EntityTemplates.CombatUnit()).GetComponent<GameEntityAuthoring>();
+
+            Assert.AreEqual("Unit · Weapon · 10 DPS · free", EntitySummary.Line(soldier));
         }
     }
 }

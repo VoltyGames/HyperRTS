@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
-using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -159,21 +158,15 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.AddComponentData(prefab, new BuildingPlacement { Surface = PlacementSurface.Shoreline });
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, new float3(-6f, 0f, 6f)), prefab);
 
-            Place(builder, prefab, new float3(-10f, 0f, 0f));
+            _world.PlaceBuilding(builder, prefab, new float3(-10f, 0f, 0f));
             _world.Tick();
             Assert.AreEqual(0, _world.All<BuildingTag>().Length, "inland is rejected");
 
-            Place(builder, prefab, new float3(0.2f, 0f, 0.3f));
+            _world.PlaceBuilding(builder, prefab, new float3(0.2f, 0f, 0.3f));
             _world.Tick();
             var sites = _world.All<BuildingTag>();
             Assert.AreEqual(1, sites.Length);
             Assert.AreEqual(new float2(0f, 0f), _world.Get<LocalTransform>(sites[0]).Position.xz);
         }
-
-        private void Place(Entity builder, Entity prefab, float3 position) =>
-            _world.Command(1, new PlayerCommand
-            {
-                Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position,
-            });
     }
 }

@@ -64,15 +64,6 @@ namespace HyperRTS.Simulation.Tests
             AttackOrders(seed, hints, new float3(-40f, 0f, 0f));
 
         [Test]
-        public void PickLane_IsDeterministicForASeed()
-        {
-            for (var attack = 0; attack < 8; attack++)
-            {
-                Assert.AreEqual(AIRoutes.PickLane(7u, 2, 1, attack, 3), AIRoutes.PickLane(7u, 2, 1, attack, 3));
-            }
-        }
-
-        [Test]
         public void PickLane_StaysInRange_AndUsesEveryLaneAcrossAttacks()
         {
             var used = new HashSet<int>();

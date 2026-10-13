@@ -55,12 +55,6 @@ namespace HyperRTS.Simulation.Tests
             _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f), complete),
                 new float3(0f, 0f, -4f), unitPrefab);
 
-        private void Place(Entity builder, Entity prefab, float3 position) =>
-            _world.Command(1, new PlayerCommand
-            {
-                Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position,
-            });
-
         private int QueueLength(Entity producer) => _world.EntityManager.GetBuffer<ProductionQueueItem>(producer).Length;
 
         [Test]
@@ -70,7 +64,7 @@ namespace HyperRTS.Simulation.Tests
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero), prefab);
             _world.AddResources(1, _supplies, 100);
 
-            Place(builder, prefab, new float3(6.3f, 0f, 0.2f));
+            _world.PlaceBuilding(builder, prefab, new float3(6.3f, 0f, 0.2f));
             _world.Tick();
 
             Assert.AreEqual(50, _world.ResourcesOf(1, _supplies));
@@ -149,7 +143,7 @@ namespace HyperRTS.Simulation.Tests
             _world.SpawnBuilding(1, new float3(6f, 0f, 0f), new float2(4f, 4f));
             _world.AddResources(1, _supplies, 100);
 
-            Place(builder, prefab, new float3(7f, 0f, 1f));
+            _world.PlaceBuilding(builder, prefab, new float3(7f, 0f, 1f));
             _world.Tick();
 
             Assert.AreEqual(100, _world.ResourcesOf(1, _supplies));
@@ -164,7 +158,7 @@ namespace HyperRTS.Simulation.Tests
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero), prefab);
             _world.AddResources(1, _supplies, 40);
 
-            Place(builder, prefab, new float3(6f, 0f, 0f));
+            _world.PlaceBuilding(builder, prefab, new float3(6f, 0f, 0f));
             _world.Tick();
 
             Assert.AreEqual(40, _world.ResourcesOf(1, _supplies));

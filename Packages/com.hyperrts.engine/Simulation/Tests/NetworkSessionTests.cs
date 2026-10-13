@@ -17,31 +17,21 @@ namespace HyperRTS.Simulation.Tests
         public void ConnectionStateMapsToStatus(ConnectionState.State state, NetworkStatus expected) =>
             Assert.AreEqual(expected, NetworkStatusSystem.ToStatus(state));
 
-        [Test]
-        public void RelayServerListensOverIPCAndRelay()
+        [TestCase(WorldFlags.GameServer, true, new[] { TransportType.IPC, TransportType.Socket },
+            TestName = "RelayServerListensOverIPCAndRelay")]
+        [TestCase(WorldFlags.GameClient, true, new[] { TransportType.Socket },
+            TestName = "RelayClientJoinsThroughTheRelay")]
+        [TestCase(WorldFlags.GameClient, false, new[] { TransportType.IPC },
+            TestName = "HostClientWithoutRelayDataUsesIPC")]
+        public void DriverStore_UsesTheExpectedTransports(WorldFlags flags, bool relay, TransportType[] expected)
         {
-            var store = Build(WorldFlags.GameServer, FakeRelay());
-            Assert.AreEqual(2, store.DriversCount);
-            Assert.AreEqual(TransportType.IPC, store.GetDriverType(store.FirstDriver));
-            Assert.AreEqual(TransportType.Socket, store.GetDriverType(store.FirstDriver + 1));
-            store.Dispose();
-        }
+            var store = Build(flags, relay ? FakeRelay() : default);
+            Assert.AreEqual(expected.Length, store.DriversCount);
+            for (var i = 0; i < expected.Length; i++)
+            {
+                Assert.AreEqual(expected[i], store.GetDriverType(store.FirstDriver + i));
+            }
 
-        [Test]
-        public void RelayClientJoinsThroughTheRelay()
-        {
-            var store = Build(WorldFlags.GameClient, FakeRelay());
-            Assert.AreEqual(1, store.DriversCount);
-            Assert.AreEqual(TransportType.Socket, store.GetDriverType(store.FirstDriver));
-            store.Dispose();
-        }
-
-        [Test]
-        public void HostClientWithoutRelayDataUsesIPC()
-        {
-            var store = Build(WorldFlags.GameClient, default);
-            Assert.AreEqual(1, store.DriversCount);
-            Assert.AreEqual(TransportType.IPC, store.GetDriverType(store.FirstDriver));
             store.Dispose();
         }
 

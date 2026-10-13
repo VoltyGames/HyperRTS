@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using NUnit.Framework;
@@ -109,10 +108,10 @@ namespace HyperRTS.Simulation.Tests
             _world.SetCost(prefab, _supplies, 100);
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero), prefab);
 
-            Place(builder, prefab, new float3(10f, 0f, 0f));
-            Place(builder, prefab, new float3(-10f, 0f, 0f));
+            _world.PlaceBuilding(builder, prefab, new float3(10f, 0f, 0f));
+            _world.PlaceBuilding(builder, prefab, new float3(-10f, 0f, 0f));
             _world.Tick();
-            Place(builder, prefab, new float3(0f, 0f, 10f));
+            _world.PlaceBuilding(builder, prefab, new float3(0f, 0f, 10f));
             _world.Tick();
 
             Assert.AreEqual(1, _world.All<BuildLimit>().Length);
@@ -128,12 +127,6 @@ namespace HyperRTS.Simulation.Tests
             LiveHero(1, prefab);
             Assert.IsFalse(CanBuy(prefab), "the one allowed is standing");
         }
-
-        private void Place(Entity builder, Entity prefab, float3 position) =>
-            _world.Command(1, new PlayerCommand
-            {
-                Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position,
-            });
 
         private bool CanBuy(Entity prefab)
         {

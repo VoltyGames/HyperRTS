@@ -95,14 +95,6 @@ namespace HyperRTS.Editor.Tests
             Assert.IsEmpty(armor.modifiers);
         }
 
-        [Test]
-        public void SummaryListsRoleModulesDamageAndCost()
-        {
-            var soldier = Track(EntityTemplates.CombatUnit()).GetComponent<GameEntityAuthoring>();
-
-            Assert.AreEqual("Unit · Weapon · 10 DPS · free", EntitySummary.Line(soldier));
-        }
-
         private static void Fix(Component component, string label) =>
             ProjectValidator.Check(component).First(issue => issue.FixLabel == label).Fix();
     }

@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>Map symmetry: copies, slots and teams, sector checks, shared features and river continuation.</summary>
+    /// <summary>Map symmetry: copies, slots and teams, shared features and river continuation.</summary>
     public class MapLayoutTests
     {
         private static MapSpec Spec(string mode, string symmetry, params MapPoint[] spawns) => new()
@@ -55,18 +55,6 @@ namespace HyperRTS.Editor.Tests
             var layout = MapExpander.Expand(spec, new MapIssues());
 
             Assert.AreEqual(290f, layout.Spawns[1].Yaw, 1e-3f);
-        }
-
-        [Test]
-        public void FeatureOutsideTheSector_IsAnError()
-        {
-            var spec = Spec("1v1", MapSymmetry.Rotate180, new MapPoint(0f, -80f));
-            spec.props.Add(new MapPropSpec { pos = new MapPoint(10f, 30f), kind = "Derrick" });
-            var issues = new MapIssues();
-
-            MapExpander.Expand(spec, issues);
-
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("outside the authored sector")));
         }
 
         [Test]

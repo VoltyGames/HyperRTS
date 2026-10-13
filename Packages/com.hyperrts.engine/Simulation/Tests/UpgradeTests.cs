@@ -119,8 +119,9 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(lab).Length);
         }
 
-        [Test]
-        public void CapturedEntity_SwapsToNewOwnersUpgrades()
+        [TestCase(false, TestName = "CapturedEntity_SwapsToNewOwnersUpgrades")]
+        [TestCase(true, TestName = "CapturedEntity_LosesUpgradesWhenTheOldOwnerIsGone")]
+        public void CapturedEntity_DropsTheOldOwnersUpgrades(bool oldOwnerGone)
         {
             var upgrade = UpgradePrefab("Sensors", 0);
             var lab = _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), float3.zero, upgrade);
@@ -130,23 +131,11 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(3f);
             Assert.AreEqual(150f, _world.Get<Health>(unit).Max);
 
-            _world.EntityManager.SetComponentData(unit, new Faction { Value = 2 });
-            _world.Tick(frames: 2);
+            if (oldOwnerGone)
+            {
+                _world.EntityManager.DestroyEntity(_world.Player(1));
+            }
 
-            Assert.AreEqual(100f, _world.Get<Health>(unit).Max);
-        }
-
-        [Test]
-        public void CapturedEntity_LosesUpgradesWhenTheOldOwnerIsGone()
-        {
-            var upgrade = UpgradePrefab("Sensors", 0);
-            var lab = _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), float3.zero, upgrade);
-            var unit = _world.SpawnUnit(1, new float3(10f, 0f, 0f));
-            _world.AddResources(1, _supplies, 100);
-            _world.Produce(1, lab, upgrade);
-            _world.Run(3f);
-
-            _world.EntityManager.DestroyEntity(_world.Player(1));
             _world.EntityManager.SetComponentData(unit, new Faction { Value = 2 });
             _world.Tick(frames: 2);
 

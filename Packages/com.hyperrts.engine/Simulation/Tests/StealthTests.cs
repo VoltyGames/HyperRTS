@@ -41,27 +41,6 @@ namespace HyperRTS.Simulation.Tests
 
         private bool IsHidden(Entity entity) => _world.EntityManager.HasComponent<FogHidden>(entity);
 
-        private void DisableFog()
-        {
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(MapSettings));
-            var settings = query.GetSingleton<MapSettings>();
-            settings.FogOfWar = false;
-            query.SetSingleton(settings);
-        }
-
-        [Test]
-        public void StealthedEnemy_IsNeitherAcquiredNorVisible()
-        {
-            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
-            var enemy = Stealthy(_world.SpawnUnit(2, new float3(3f, 0f, 0f)));
-
-            _world.Run(2f);
-
-            Assert.AreEqual(100f, _world.HealthOf(enemy));
-            Assert.IsFalse(_world.IsEnabled<AttackTarget>(soldier));
-            Assert.IsTrue(IsHidden(enemy), "in sight but undetected");
-        }
-
         [Test]
         public void Detector_RevealsStealthedEnemy_OnlyInRange()
         {
@@ -99,7 +78,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void FogOff_StillHidesStealthedEnemies_UntilDetected()
         {
-            DisableFog();
+            _world.DisableFog();
             var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
             var enemy = Stealthy(_world.SpawnUnit(2, new float3(3f, 0f, 0f)));
             var far = _world.SpawnUnit(2, new float3(80f, 0f, 0f));

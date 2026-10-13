@@ -29,5 +29,11 @@ namespace HyperRTS.Simulation.Tests
         }
 
         public static float HealthOf(this TestWorld world, Entity entity) => world.Get<Health>(entity).Current;
+
+        public static void QueueDamage(this TestWorld world, DamageEvent hit)
+        {
+            using var query = world.EntityManager.CreateEntityQuery(typeof(DamageQueue));
+            world.EntityManager.GetBuffer<DamageEvent>(query.GetSingletonEntity()).Add(hit);
+        }
     }
 }

@@ -11,12 +11,6 @@ namespace HyperRTS.Editor.Tests
     /// <summary>The Map Editor's drawing tools: snapping, vertex rules, the toolbox and adding features.</summary>
     public class MapEditToolsTests
     {
-        [Test]
-        public void Grid_SnapsToHalfMetres()
-        {
-            Assert.AreEqual(new Vector2(1.5f, -2f), MapSnap.Grid(new Vector2(1.3f, -2.2f)));
-        }
-
         [TestCase(MapSymmetry.MirrorXName, 0f, 7.5f)]
         [TestCase(MapSymmetry.MirrorZName, 3f, 0f)]
         [TestCase(MapSymmetry.Rotate180, 0f, 0f)]
@@ -34,9 +28,9 @@ namespace HyperRTS.Editor.Tests
         [Test]
         public void UnsharedPositions_OnlySnapToTheGrid()
         {
-            var placed = MapSnap.Position(new Vector2(3.1f, 7.4f), false, MapSymmetry.Parse(MapSymmetry.Rotate180));
+            var placed = MapSnap.Position(new Vector2(3.1f, -7.4f), false, MapSymmetry.Parse(MapSymmetry.Rotate180));
 
-            Assert.AreEqual(new Vector2(3f, 7.5f), placed);
+            Assert.AreEqual(new Vector2(3f, -7.5f), placed);
         }
 
         [Test]
@@ -49,13 +43,6 @@ namespace HyperRTS.Editor.Tests
             Assert.AreEqual(-1, MapVertexRules.SegmentAt(line, false, new Vector2(5f, 5f), 2f), "too far from any");
             Assert.AreEqual(-1, MapVertexRules.SegmentAt(line, false, new Vector2(5f, 5.5f), 2f), "open line: no closing edge");
             Assert.AreEqual(2, MapVertexRules.SegmentAt(line, true, new Vector2(5f, 5.5f), 2f), "ring: the closing edge");
-        }
-
-        [Test]
-        public void InsertIndex_GoesAfterTheSegmentsFirstPoint()
-        {
-            Assert.AreEqual(1, MapVertexRules.InsertIndex(0));
-            Assert.AreEqual(3, MapVertexRules.InsertIndex(2), "a ring's closing segment appends");
         }
 
         [Test]

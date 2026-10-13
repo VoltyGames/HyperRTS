@@ -22,12 +22,6 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private void Queue(DamageEvent hit)
-        {
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(DamageQueue));
-            _world.EntityManager.GetBuffer<DamageEvent>(query.GetSingletonEntity()).Add(hit);
-        }
-
         private static DamageEvent Blast(float3 position, float radius, bool friendlyFire = false) => new()
         {
             Position = position,
@@ -48,7 +42,7 @@ namespace HyperRTS.Simulation.Tests
             var friend = _world.SpawnUnit(1, new float3(1f, 0f, 0f), radius: 0f);
             _world.Tick();
 
-            Queue(Blast(float3.zero, 4f));
+            _world.QueueDamage(Blast(float3.zero, 4f));
             _world.Tick();
 
             Assert.AreEqual(60f, _world.HealthOf(centre), 1e-3f, "full damage at the centre");
@@ -63,7 +57,7 @@ namespace HyperRTS.Simulation.Tests
             var friend = _world.SpawnUnit(1, float3.zero, radius: 0f);
             _world.Tick();
 
-            Queue(Blast(float3.zero, 2f, friendlyFire: true));
+            _world.QueueDamage(Blast(float3.zero, 2f, friendlyFire: true));
             _world.Tick();
 
             Assert.AreEqual(60f, _world.HealthOf(friend), 1e-3f);
@@ -78,7 +72,7 @@ namespace HyperRTS.Simulation.Tests
             var writer = new EntityManagerWriter(_world.EntityManager, tank);
             ArmorSetup.AddFacing(ref writer, new ArmorFacing { Front = 0.5f, Side = 1f, Rear = 2f });
 
-            Queue(new DamageEvent { Target = tank, Origin = new float3(x, y, z), SourceFaction = 1, Amount = 20f });
+            _world.QueueDamage(new DamageEvent { Target = tank, Origin = new float3(x, y, z), SourceFaction = 1, Amount = 20f });
             _world.Tick();
 
             Assert.AreEqual(100f - 20f * multiplier, _world.HealthOf(tank), 1e-3f);
@@ -93,7 +87,7 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.GetBuffer<StatModifier>(target)
                 .Add(new StatModifier { Stat = Stat.DamageTaken, Percent = -0.25f, Source = source });
 
-            Queue(new DamageEvent { Target = target, Source = shooter, SourceFaction = 1, Amount = 40f });
+            _world.QueueDamage(new DamageEvent { Target = target, Source = shooter, SourceFaction = 1, Amount = 40f });
             _world.Tick();
 
             Assert.AreEqual(70f, _world.HealthOf(target), 1e-3f);
@@ -106,7 +100,7 @@ namespace HyperRTS.Simulation.Tests
             var unit = _world.SpawnUnit(1, float3.zero);
             _world.EntityManager.SetComponentData(unit, new Health { Current = 50f, Max = 100f });
 
-            Queue(new DamageEvent { Target = unit, Amount = -80f });
+            _world.QueueDamage(new DamageEvent { Target = unit, Amount = -80f });
             _world.Tick();
 
             Assert.AreEqual(100f, _world.HealthOf(unit));
@@ -123,11 +117,13 @@ namespace HyperRTS.Simulation.Tests
             }, Stance.Aggressive, float3.zero);
             var target = _world.SpawnUnit(2, new float3(6f, 0f, 0f));
             var neighbour = _world.SpawnUnit(2, new float3(6f, 0f, 1.5f));
+            var aircraft = _world.SpawnAircraft(2, new float3(6f, 0f, -1f));
 
             _world.Run(1f);
 
             Assert.AreEqual(70f, _world.HealthOf(target), 1e-3f);
             Assert.AreEqual(70f, _world.HealthOf(neighbour), 1e-3f);
+            Assert.AreEqual(100f, _world.HealthOf(aircraft), "splash stays on the surface");
             Assert.AreEqual(0f, math.length(_world.Get<LocalTransform>(gun).Position.xz), 1e-3f);
         }
     }

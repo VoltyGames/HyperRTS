@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Checks;
@@ -55,70 +56,37 @@ namespace HyperRTS.Editor.Tests
             Assert.IsFalse(issues.HasErrors, issues.ToString());
         }
 
-        [Test]
-        public void AnUnknownAccessClass_IsAnErrorNamingIt()
+        [TestCase("Cobbles", 0f, "Cobbles", TestName = "AnUnknownAccessClass_IsAnErrorNamingIt")]
+        [TestCase(null, 20f, "sharedAccessDistance", TestName = "ASharedAccessDistanceWithoutAccess_IsAnErrorNamingIt")]
+        [TestCase("Dirt", -1f, "sharedAccessDistance", TestName = "ANegativeSharedAccessDistance_IsAnErrorNamingIt")]
+        public void ABadAccessEntry_IsAnErrorNamingIt(string access, float distance, string named)
         {
             var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Shed", access = "Cobbles" });
-            var issues = new MapIssues();
-
-            MapAssetCheck.Check(MapRoadFixture.Climate(), palette, issues);
-
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains("Cobbles")), issues.ToString());
-        }
-
-        [Test]
-        public void ASettlementKeyThatDoesNotResolve_IsAnErrorNamingTheKitAndKey()
-        {
-            var issues = MapSettlementFixture.CheckAssets(kit => kit.houses[0] = "Nope");
-
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Village") && e.Contains("Nope")), issues.ToString());
-        }
-
-        [Test]
-        public void AStreetPipeWithoutItsArch_IsAnErrorNamingTheKit()
-        {
-            var issues = MapSettlementFixture.CheckAssets(kit => kit.streetPipeArch = string.Empty);
-
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Village") && e.Contains("streetPipeArch")), issues.ToString());
-        }
-
-        [Test]
-        public void AStreetPipeWithoutMinSections_IsAnErrorNamingTheKit()
-        {
-            var issues = MapSettlementFixture.CheckAssets(kit => kit.streetPipeMinSections = 0);
-
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Village") && e.Contains("streetPipeMinSections")), issues.ToString());
-        }
-
-        [Test]
-        public void AnUnknownSettlementSurface_IsAnErrorNamingTheKitAndSurface()
-        {
-            var issues = MapSettlementFixture.CheckAssets(kit => kit.gardenSurface = "Mud");
-
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Village") && e.Contains("Mud")), issues.ToString());
-        }
-
-        [Test]
-        public void ASharedAccessDistanceWithoutAccess_IsAnErrorNamingIt()
-        {
-            var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Shed", sharedAccessDistance = 20f });
+            palette.entries.Add(new MapPaletteEntry { key = "Shed", access = access, sharedAccessDistance = distance });
 
             var issues = CheckAssets(MapRoadFixture.Climate(), palette);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains("sharedAccessDistance")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains(named)), issues.ToString());
         }
 
-        [Test]
-        public void ANegativeSharedAccessDistance_IsAnErrorNamingIt()
+        private static readonly TestCaseData[] BrokenSettlementKits =
         {
-            var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Shed", access = "Dirt", sharedAccessDistance = -1f });
+            new TestCaseData((Action<MapSettlementKit>)(kit => kit.houses[0] = "Nope"), "Nope")
+                .SetName("ASettlementKeyThatDoesNotResolve_IsAnErrorNamingTheKitAndKey"),
+            new TestCaseData((Action<MapSettlementKit>)(kit => kit.streetPipeArch = string.Empty), "streetPipeArch")
+                .SetName("AStreetPipeWithoutItsArch_IsAnErrorNamingTheKit"),
+            new TestCaseData((Action<MapSettlementKit>)(kit => kit.streetPipeMinSections = 0), "streetPipeMinSections")
+                .SetName("AStreetPipeWithoutMinSections_IsAnErrorNamingTheKit"),
+            new TestCaseData((Action<MapSettlementKit>)(kit => kit.gardenSurface = "Mud"), "Mud")
+                .SetName("AnUnknownSettlementSurface_IsAnErrorNamingTheKitAndSurface"),
+        };
 
-            var issues = CheckAssets(MapRoadFixture.Climate(), palette);
+        [TestCaseSource(nameof(BrokenSettlementKits))]
+        public void ABrokenSettlementKit_IsAnErrorNamingTheKit(Action<MapSettlementKit> edit, string named)
+        {
+            var issues = MapSettlementFixture.CheckAssets(edit);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains("sharedAccessDistance")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Village") && e.Contains(named)), issues.ToString());
         }
 
         [Test]

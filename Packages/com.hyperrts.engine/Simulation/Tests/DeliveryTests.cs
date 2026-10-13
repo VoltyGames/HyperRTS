@@ -54,6 +54,7 @@ namespace HyperRTS.Simulation.Tests
             var second = _world.Get<LocalTransform>(carriers[1]).Position;
             Assert.Greater(first.x, 95f, "entered on the east edge");
             Assert.AreEqual(4f, math.abs(first.z - second.z), 0.1f, "spread sideways, not stacked");
+            Assert.AreEqual(0, _world.Get<Population>(_world.Player(1)).Used, "carriers use no population");
             foreach (var carrier in carriers)
             {
                 Assert.AreEqual(1, _world.Get<Faction>(carrier).Value);
@@ -70,15 +71,6 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(2 * Amount, _world.ResourcesOf(1, _supplies));
             Assert.AreEqual(2 * Amount, _world.Get<PlayerStats>(_world.Player(1)).ResourcesGathered);
             Assert.AreEqual(0, Carriers().Length);
-        }
-
-        [Test]
-        public void LiveCarriers_UseNoPopulation()
-        {
-            _world.Run(Interval + 0.1f);
-
-            Assert.AreEqual(2, Carriers().Length);
-            Assert.AreEqual(0, _world.Get<Population>(_world.Player(1)).Used);
         }
 
         [Test]

@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -10,7 +9,7 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Destructible scenery, crushing, remains, neutral garrisons changing hands and passive income.</summary>
+    /// <summary>Destructible scenery, crushing, remains and passive income.</summary>
     public class DestructionTests
     {
         private TestWorld _world;
@@ -33,12 +32,6 @@ namespace HyperRTS.Simulation.Tests
             DestructibleSetup.AddScenery(ref writer, 50f, crush, remains, float2.zero,
                 SceneryId.At(position, quaternion.identity));
             return entity;
-        }
-
-        private void Queue(DamageEvent hit)
-        {
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(DamageQueue));
-            _world.EntityManager.GetBuffer<DamageEvent>(query.GetSingletonEntity()).Add(hit);
         }
 
         [Test]
@@ -76,7 +69,7 @@ namespace HyperRTS.Simulation.Tests
             var tree = SpawnScenery(new float3(2f, 0f, 0f), 0);
             var house = _world.SpawnBuilding(0, new float3(-2f, 0f, 0f), new float2(2f, 2f));
 
-            Queue(new DamageEvent { Position = float3.zero, SourceFaction = 1, Amount = 20f, Radius = 6f, EdgeFactor = 1f });
+            _world.QueueDamage(new DamageEvent { Position = float3.zero, SourceFaction = 1, Amount = 20f, Radius = 6f, EdgeFactor = 1f });
             _world.Tick();
 
             Assert.Less(_world.HealthOf(tree), 50f, "destructible scenery takes the blast");
@@ -98,24 +91,6 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(11f);
             Assert.AreEqual(120, _world.ResourcesOf(1, supplies), "the bonus plus two payments");
             Object.DestroyImmediate(supplies);
-        }
-
-        [Test]
-        public void NeutralGarrison_BelongsToItsPassengers_AndIsNeutralWhenEmpty()
-        {
-            var house = _world.SpawnBuilding(0, float3.zero, new float2(6f, 6f));
-            var writer = new EntityManagerWriter(_world.EntityManager, house);
-            TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
-            _world.EntityManager.AddComponent<NeutralGarrison>(house);
-            var rifleman = _world.SpawnUnit(2, new float3(8f, 0f, 0f));
-
-            _world.EntityManager.GetBuffer<Cargo>(house).Add(new Cargo { Unit = rifleman, Size = 1 });
-            _world.Tick();
-            Assert.AreEqual(2, _world.Get<Faction>(house).Value, "occupied, it is the garrison's");
-
-            _world.EntityManager.GetBuffer<Cargo>(house).Clear();
-            _world.Tick();
-            Assert.AreEqual(Faction.Neutral, _world.Get<Faction>(house).Value, "empty, it is neutral again");
         }
 
         private float3 FindNear(EntityQuery query, float3 point)

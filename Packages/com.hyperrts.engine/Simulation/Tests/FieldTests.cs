@@ -87,24 +87,9 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(60f, _world.Get<Health>(enemy).Current, 1f);
         }
 
-        [Test]
-        public void LeavingField_RemovesBonus()
-        {
-            var armor = new StatModifier { Stat = Stat.DamageTaken, Percent = -0.5f };
-            Field(1, float3.zero, "Shield", FieldTargets.Friendly | FieldTargets.Units, bonuses: armor);
-            var unit = _world.SpawnUnit(1, new float3(3f, 0f, 0f), speed: 0f);
-            _world.Run(0.5f);
-            Assert.AreEqual(1, _world.EntityManager.GetBuffer<StatModifier>(unit).Length);
-
-            _world.EntityManager.SetComponentData(unit, LocalTransform.FromPosition(new float3(50f, 0f, 0f)));
-            _world.Run(0.5f);
-
-            Assert.AreEqual(0, _world.EntityManager.GetBuffer<StatModifier>(unit).Length);
-            Assert.AreEqual(0, _world.EntityManager.GetBuffer<FieldPresence>(unit).Length);
-        }
-
-        [Test]
-        public void DestroyedLastField_RemovesBonus()
+        [TestCase(false, TestName = "LeavingField_RemovesBonus")]
+        [TestCase(true, TestName = "DestroyedLastField_RemovesBonus")]
+        public void EndingField_RemovesBonus(bool destroySource)
         {
             var armor = new StatModifier { Stat = Stat.DamageTaken, Percent = -0.5f };
             var source = Field(1, float3.zero, "Shield", FieldTargets.Friendly | FieldTargets.Units, bonuses: armor);
@@ -112,7 +97,15 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(0.5f);
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<StatModifier>(unit).Length);
 
-            _world.EntityManager.DestroyEntity(source);
+            if (destroySource)
+            {
+                _world.EntityManager.DestroyEntity(source);
+            }
+            else
+            {
+                _world.EntityManager.SetComponentData(unit, LocalTransform.FromPosition(new float3(50f, 0f, 0f)));
+            }
+
             _world.Run(0.5f);
 
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<StatModifier>(unit).Length);

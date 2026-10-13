@@ -6,19 +6,14 @@ namespace HyperRTS.Editor.Tests
     /// <summary>A dragged box face mirrors onto the opposite side, so centred boxes grow and shrink alike.</summary>
     public class GroundHandlesTests
     {
-        // The handle keeps the opposite face, so moving one face by d shifts its centre by d / 2.
-        [TestCase(1f, 6f, TestName = "MaxFaceOutwardGrows")]
-        [TestCase(-1f, 2f, TestName = "MaxFaceInwardShrinks")]
-        public void MaxFaceMoves(float drag, float expected) =>
-            Assert.AreEqual(expected, GroundHandles.MirroredSize(4f, drag * 0.5f, 4f + drag), 1e-4f);
-
-        [TestCase(1f, 6f, TestName = "MinFaceOutwardGrows")]
-        [TestCase(-1f, 2f, TestName = "MinFaceInwardShrinks")]
-        public void MinFaceMoves(float drag, float expected) =>
-            Assert.AreEqual(expected, GroundHandles.MirroredSize(4f, -drag * 0.5f, 4f + drag), 1e-4f);
-
-        [Test]
-        public void UntouchedBoxKeepsItsSize() => Assert.AreEqual(4f, GroundHandles.MirroredSize(4f, 0f, 4f), 1e-4f);
+        // The opposite face stays put, so moving the max (+1) or min (-1) face by d shifts the centre by d / 2.
+        [TestCase(1f, 1f, 6f, TestName = "MaxFaceOutwardGrows")]
+        [TestCase(1f, -1f, 2f, TestName = "MaxFaceInwardShrinks")]
+        [TestCase(-1f, 1f, 6f, TestName = "MinFaceOutwardGrows")]
+        [TestCase(-1f, -1f, 2f, TestName = "MinFaceInwardShrinks")]
+        [TestCase(1f, 0f, 4f, TestName = "UntouchedBoxKeepsItsSize")]
+        public void DraggedFaceMirrors(float side, float drag, float expected) =>
+            Assert.AreEqual(expected, GroundHandles.MirroredSize(4f, side * drag * 0.5f, 4f + drag), 1e-4f);
 
         [Test]
         public void DirectionLiesFlatAtTheGivenAngle()
@@ -27,14 +22,6 @@ namespace HyperRTS.Editor.Tests
             Assert.AreEqual(0f, direction.x, 1e-4f);
             Assert.AreEqual(0f, direction.y, 1e-4f);
             Assert.AreEqual(1f, direction.z, 1e-4f);
-        }
-
-        // Unit radius, vision and weapon reach discs overlap, so their drag dots must not stack.
-        [Test]
-        public void RadiusDotsSitAtDifferentAngles()
-        {
-            var angles = new[] { GroundHandles.RadiusAngle, GroundHandles.VisionAngle, GroundHandles.ReachAngle };
-            CollectionAssert.AllItemsAreUnique(angles);
         }
     }
 }

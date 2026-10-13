@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(_world.EntityManager.Exists(kept));
             Assert.IsFalse(_world.EntityManager.Exists(closedUnit));
             Assert.IsFalse(_world.EntityManager.Exists(closedBase));
-            Assert.AreEqual(MatchPhase.Playing, MatchState().Phase, "closed slots are not defeated players");
+            Assert.AreEqual(MatchPhase.Playing, _world.Singleton<MatchState>().Phase, "closed slots are not defeated players");
         }
 
         [Test]
@@ -171,20 +171,14 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick(frames: 2);
 
             Assert.IsTrue(_world.IsEnabled<Defeated>(_world.Player(1)));
-            Assert.AreEqual(MatchPhase.Ended, MatchState().Phase);
-            Assert.AreEqual(2, MatchState().WinningTeam);
+            Assert.AreEqual(MatchPhase.Ended, _world.Singleton<MatchState>().Phase);
+            Assert.AreEqual(2, _world.Singleton<MatchState>().WinningTeam);
         }
 
         private Entity MatchEntity()
         {
             using var query = _world.EntityManager.CreateEntityQuery(typeof(MapSettings));
             return query.GetSingletonEntity();
-        }
-
-        private MatchState MatchState()
-        {
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(MatchState));
-            return query.GetSingleton<MatchState>();
         }
 
         private FactionRelations Relations()

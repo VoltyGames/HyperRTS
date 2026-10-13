@@ -1,3 +1,4 @@
+using System.Linq;
 using HyperRTS.Editor.Maps.Report;
 using NUnit.Framework;
 using UnityEngine;
@@ -7,34 +8,16 @@ namespace HyperRTS.Editor.Tests
     /// <summary>How the map report groups resource stacks into fields.</summary>
     public class MapFieldClustersTests
     {
-        [Test]
-        public void NoStacksAreNoFields()
+        // Stacks are flattened x, z pairs.
+        [TestCase(0, TestName = "NoStacksAreNoFields")]
+        [TestCase(1, 0f, 0f, 8f, 6f, TestName = "ClosePairIsOneField")]
+        [TestCase(2, 0f, 0f, 8f, 6f, 100f, 0f, 106f, 8f, TestName = "DistantPairsAreSeparateFields")]
+        [TestCase(1, 0f, 0f, 36f, 0f, 18f, 0f, TestName = "ChainOfStacksIsOneField")]
+        public void StacksGroupIntoFields(int expected, params float[] xz)
         {
-            Assert.AreEqual(0, MapFieldClusters.Count(new Vector2[0]));
-        }
+            var stacks = Enumerable.Range(0, xz.Length / 2).Select(i => new Vector2(xz[i * 2], xz[i * 2 + 1])).ToList();
 
-        [Test]
-        public void ClosePairIsOneField()
-        {
-            var stacks = new[] { new Vector2(0f, 0f), new Vector2(8f, 6f) };
-
-            Assert.AreEqual(1, MapFieldClusters.Count(stacks));
-        }
-
-        [Test]
-        public void DistantPairsAreSeparateFields()
-        {
-            var stacks = new[] { new Vector2(0f, 0f), new Vector2(8f, 6f), new Vector2(100f, 0f), new Vector2(106f, 8f) };
-
-            Assert.AreEqual(2, MapFieldClusters.Count(stacks));
-        }
-
-        [Test]
-        public void ChainOfStacksIsOneField()
-        {
-            var stacks = new[] { new Vector2(0f, 0f), new Vector2(36f, 0f), new Vector2(18f, 0f) };
-
-            Assert.AreEqual(1, MapFieldClusters.Count(stacks));
+            Assert.AreEqual(expected, MapFieldClusters.Count(stacks));
         }
     }
 }

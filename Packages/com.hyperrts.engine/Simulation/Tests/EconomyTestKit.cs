@@ -99,6 +99,12 @@ namespace HyperRTS.Simulation.Tests
         public static void Produce(this TestWorld world, byte faction, Entity producer, Entity prefab) =>
             world.Command(faction, new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });
 
+        public static void PlaceBuilding(this TestWorld world, Entity builder, Entity prefab, float3 position) =>
+            world.Command(world.Get<Faction>(builder).Value, new PlayerCommand
+            {
+                Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position,
+            });
+
         public static void SetBuildTime(this TestWorld world, Entity entity, float seconds, int population = 1) =>
             world.EntityManager.SetComponentData(entity, new Producible { BuildTime = seconds, Population = population });
 

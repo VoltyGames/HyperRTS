@@ -29,13 +29,6 @@ namespace HyperRTS.Simulation.Tests
 
         private void CreateHills() => _world.CreateTerrain(Rolling);
 
-        private static FogOfWar Fog(TestWorld world)
-        {
-            world.EntityManager.CompleteAllTrackedJobs();
-            using var query = world.EntityManager.CreateEntityQuery(typeof(FogOfWar));
-            return query.GetSingleton<FogOfWar>();
-        }
-
         [Test]
         public void Units_FollowTheTerrain_WhileMoving()
         {
@@ -102,7 +95,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(!flood, grid.IsWalkable(basin, NavLayer.Ground), "basin floor is land");
             Assert.AreEqual(flood, grid.IsWalkable(basin, NavLayer.Naval), "basin is water");
             // The near shore hides the deep floor; only a water surface rises into view.
-            Assert.AreEqual(flood, Fog(_world).IsVisible(new float3(9f, 0f, 0f), Team1), "fog sees the water surface");
+            Assert.AreEqual(flood, _world.Fog().IsVisible(new float3(9f, 0f, 0f), Team1), "fog sees the water surface");
         }
 
         [Test]
@@ -134,7 +127,7 @@ namespace HyperRTS.Simulation.Tests
             _world.SpawnUnit(1, float3.zero);
             _world.Tick();
 
-            var fog = Fog(_world);
+            var fog = _world.Fog();
             Assert.IsTrue(fog.IsVisible(new float3(3f, 0f, 0f), Team1), "in front of the ridge");
             Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), Team1), "the ridge top");
             Assert.IsFalse(fog.IsVisible(new float3(9f, 0f, 0f), Team1), "behind the ridge");
@@ -153,8 +146,8 @@ namespace HyperRTS.Simulation.Tests
             flat.Tick();
             _world.Tick();
 
-            var occluded = Fog(flat);
-            var plain = Fog(_world);
+            var occluded = flat.Fog();
+            var plain = _world.Fog();
             for (var i = 0; i < plain.Visible.Length; i++)
             {
                 Assert.AreEqual(plain.Visible[i], occluded.Visible[i], $"cell {plain.Cell(i)}");

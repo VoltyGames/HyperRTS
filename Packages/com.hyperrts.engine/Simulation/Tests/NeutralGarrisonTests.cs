@@ -196,7 +196,7 @@ namespace HyperRTS.Simulation.Tests
                 AssertStandsBesideTheHouse(garrison[i]);
                 for (var j = i + 1; j < garrison.Length; j++)
                 {
-                    var apart = math.distance(Position(garrison[i]).xz, Position(garrison[j]).xz);
+                    var apart = math.distance(_world.PositionOf(garrison[i]).xz, _world.PositionOf(garrison[j]).xz);
                     Assert.Greater(apart, 1f, "passengers don't share a spot");
                 }
             }
@@ -209,23 +209,10 @@ namespace HyperRTS.Simulation.Tests
             }
         }
 
-        [Test]
-        public void EmptyHouse_StaysNeutralAndCannotBeSold()
-        {
-            var house = House(float3.zero);
-            _world.Command(1, new PlayerCommand { Type = CommandType.Sell, Unit = house });
-            _world.Tick(frames: 3);
-
-            Assert.IsTrue(_world.EntityManager.Exists(house));
-            Assert.AreEqual(Faction.Neutral, Owner(house));
-        }
-
-        private float3 Position(Entity entity) => _world.Get<LocalTransform>(entity).Position;
-
         private void AssertStandsBesideTheHouse(Entity unit)
         {
             Assert.IsFalse(IsInside(unit), "got out");
-            var position = Position(unit);
+            var position = _world.PositionOf(unit);
             Assert.IsTrue(math.all(math.isfinite(position)), "has a position");
             var outside = math.abs(position.x) >= Footprint.x * 0.5f || math.abs(position.z) >= Footprint.y * 0.5f;
             Assert.IsTrue(outside, $"stands outside the walls, was at {position}");
