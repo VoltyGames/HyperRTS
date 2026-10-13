@@ -75,23 +75,22 @@ namespace HyperRTS.Simulation.Combat
 
         private void SpawnRemains(Entity scenery, Entity prefab, bool witnessed, byte fall, EntityCommandBuffer ecb)
         {
-            var remains = ecb.Instantiate(prefab);
-            var standing = _transforms[scenery];
-            ecb.SetComponent(remains, standing);
-            if (_stretches.TryGetComponent(scenery, out var stretch))
+            var remains = Remains.Of(scenery, _transforms[scenery], fall, witnessed, _stretches, _topples);
+            var spawned = ecb.Instantiate(prefab);
+            ecb.SetComponent(spawned, remains.Transform);
+            if (remains.Stretched)
             {
-                ecb.AddComponent(remains, stretch);
+                ecb.AddComponent(spawned, remains.Stretch);
+            }
+
+            if (remains.Felled)
+            {
+                ecb.AddComponent(spawned, remains.Felling);
             }
 
             if (!witnessed && _effects.HasComponent(prefab))
             {
-                ecb.SetComponentEnabled<SpawnEffect>(remains, false);
-            }
-
-            if (_topples.TryGetComponent(scenery, out var topple))
-            {
-                ecb.AddComponent(remains, ToppleMath.Fell(standing, topple, fall, witnessed, out var pose));
-                ecb.SetComponent(remains, pose);
+                ecb.SetComponentEnabled<SpawnEffect>(spawned, false);
             }
         }
     }

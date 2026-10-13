@@ -14,7 +14,7 @@
 | `LastAttacker`, `Projectile`, `SpawnOnDeath` | Kill credit; a shot in flight; the wreck spawned on death |
 | `TargetLookup` | `IsValidTarget` (hostile, alive, hittable layer, not stealthed); `IsAttackable` adds `Destructible` scenery for explicit orders |
 | `DestructibleAuthoring` | Marks a building or unit `Destructible`, or makes standalone scenery with health, crush rating, remains and a blocked box |
-| `ToppleAuthoring` / `Topple`, `FellFrom`, `Felling`, `ToppleMath` | Scenery that falls away from its lethal hit (`DamageSystem` records the shooter, crusher or blast centre); `DeathSystem` lays the remains along the fall, and `ToppleSystem` (Presentation) shows a seen fall over 1.5 s |
+| `ToppleAuthoring` / `Topple`, `FellFrom`, `Felling`, `ToppleMath` | Scenery that falls away from its lethal hit (`DamageSystem` records the fall heading away from the shooter, crusher or blast centre); `DeathSystem` lays the remains along the fall, and `ToppleSystem` (Presentation) shows a seen fall over 1.5 s |
 | `DamageStagesAuthoring` / `DamageStage` | Child models shown by health fraction, each step with an effect |
 | `SpawnEffectAuthoring` / `SpawnEffect` | Effect played once where an entity appears (a ruin's dust) |
 

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 using Unity.Transforms;
 
@@ -43,11 +44,12 @@ namespace HyperRTS.Simulation.Combat
         {
             pose = RemainsPose(standing, fall, topple.Lie);
             var trunk = math.rotate(standing.Rotation, topple.Trunk);
-            return new Felling { Final = pose.Rotation, Tilt = FromTo(Direction(fall), trunk), Witnessed = witnessed };
+            return new Felling { Tilt = Rotations.FromTo(Direction(fall), trunk), Witnessed = witnessed };
         }
 
-        public static quaternion Pose(in Felling felling, float time) =>
-            math.mul(math.slerp(felling.Tilt, quaternion.identity, Progress(time)), felling.Final);
+        /// <summary>The remains' rotation <paramref name="time"/> seconds into the fall to <paramref name="final"/>.</summary>
+        public static quaternion Pose(in Felling felling, quaternion final, float time) =>
+            math.mul(math.slerp(felling.Tilt, quaternion.identity, Progress(time)), final);
 
         /// <summary>0 upright, 1 down, easing in then bouncing slightly.</summary>
         public static float Progress(float time)
@@ -66,19 +68,6 @@ namespace HyperRTS.Simulation.Combat
             var settle = time - FallTime;
             var lift = Bounce * math.exp(-Damping * settle) * math.abs(math.sin(settle / SettleTime * 2f * math.PI));
             return 1f - lift;
-        }
-
-        private static quaternion FromTo(float3 from, float3 to)
-        {
-            var axis = math.cross(from, to);
-            var length = math.length(axis);
-            if (length < 1e-6f)
-            {
-                return quaternion.identity;
-            }
-
-            var angle = math.atan2(length, math.dot(from, to));
-            return quaternion.AxisAngle(axis / length, angle);
         }
     }
 }

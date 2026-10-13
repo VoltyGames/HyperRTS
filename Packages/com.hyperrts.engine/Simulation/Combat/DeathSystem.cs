@@ -83,22 +83,22 @@ namespace HyperRTS.Simulation.Combat
                 }
             }
 
-            /// <summary>Remains copy the dead piece's transform and scale, except toppling ones, which lie away from the lethal hit.</summary>
+            /// <summary>Remains copy the dead piece's transform and stretch, except toppling ones, which lie away from the lethal hit.</summary>
             private void SpawnRemains(int sortKey, Entity entity, Entity prefab, in LocalTransform transform)
             {
-                var remains = Ecb.Instantiate(sortKey, prefab);
-                Ecb.SetComponent(sortKey, remains, transform);
-                if (Stretches.TryGetComponent(entity, out var stretch))
+                // Only Topple pieces carry FellFrom, and only they read the heading.
+                FallSources.TryGetComponent(entity, out var fell);
+                var remains = Remains.Of(entity, transform, fell.Heading, true, Stretches, Topples);
+                var spawned = Ecb.Instantiate(sortKey, prefab);
+                Ecb.SetComponent(sortKey, spawned, remains.Transform);
+                if (remains.Stretched)
                 {
-                    Ecb.AddComponent(sortKey, remains, stretch);
+                    Ecb.AddComponent(sortKey, spawned, remains.Stretch);
                 }
 
-                if (Topples.TryGetComponent(entity, out var topple))
+                if (remains.Felled)
                 {
-                    var fall = ToppleMath.Quantize(FallSources[entity].Position, transform.Position);
-                    var felling = ToppleMath.Fell(transform, topple, fall, true, out var pose);
-                    Ecb.SetComponent(sortKey, remains, pose);
-                    Ecb.AddComponent(sortKey, remains, felling);
+                    Ecb.AddComponent(sortKey, spawned, remains.Felling);
                 }
             }
         }

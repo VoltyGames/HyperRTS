@@ -68,8 +68,10 @@ namespace HyperRTS.Simulation.Tests
             var felling = ToppleMath.Fell(standing, topple, 200, true, out var pose);
 
             var crown = new float3(math.sin(topple.Lie), 0f, math.cos(topple.Lie));
-            AssertNear(math.rotate(standing.Rotation, topple.Trunk), math.rotate(ToppleMath.Pose(felling, 0f), crown));
-            AssertNear(ToppleMath.Direction(200), math.rotate(ToppleMath.Pose(felling, ToppleMath.Duration), crown));
+            var upright = ToppleMath.Pose(felling, pose.Rotation, 0f);
+            AssertNear(math.rotate(standing.Rotation, topple.Trunk), math.rotate(upright, crown));
+            var down = ToppleMath.Pose(felling, pose.Rotation, ToppleMath.Duration);
+            AssertNear(ToppleMath.Direction(200), math.rotate(down, crown));
             AssertNear(math.rotate(pose.Rotation, crown), ToppleMath.Direction(200));
         }
 

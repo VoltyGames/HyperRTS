@@ -156,7 +156,8 @@ namespace HyperRTS.Simulation.Combat
                 Health[target] = health;
                 if (health.Current <= 0f && FallSources.HasComponent(target))
                 {
-                    FallSources[target] = new FellFrom { Position = from };
+                    var fall = ToppleMath.Quantize(from, Transforms[target].Position);
+                    FallSources[target] = new FellFrom { Heading = fall };
                 }
 
                 if (Attackers.HasComponent(target) && hit.SourceFaction != 0)

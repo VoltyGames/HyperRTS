@@ -84,24 +84,20 @@ namespace HyperRTS.Network.Scenery
 
         private void Track(ref SystemState state, ushort teams)
         {
-            foreach (var (health, id, transform, entity) in SystemAPI
-                         .Query<RefRO<Health>, RefRO<SceneryId>, RefRO<LocalTransform>>().WithNone<GhostInstance>()
-                         .WithChangeFilter<Health>().WithEntityAccess())
+            var fallen = SystemAPI.GetComponentLookup<FellFrom>(true);
+            foreach (var (health, id, entity) in SystemAPI.Query<RefRO<Health>, RefRO<SceneryId>>()
+                         .WithAll<LocalTransform>().WithNone<GhostInstance>().WithChangeFilter<Health>().WithEntityAccess())
             {
                 var now = SceneryChange.Encode(health.ValueRO);
-                var fall = Fall(ref state, entity, transform.ValueRO.Position);
-                if (_tracker.Set(id.ValueRO.Value, now, fall, teams, _frame) && now == SceneryChange.Destroyed)
+
+                // Scenery that doesn't topple sends heading 0, which clients ignore.
+                fallen.TryGetComponent(entity, out var fell);
+                if (_tracker.Set(id.ValueRO.Value, now, fell.Heading, teams, _frame) && now == SceneryChange.Destroyed)
                 {
                     _expected--;
                 }
             }
         }
-
-        /// <summary>0 for scenery that doesn't topple, which clients ignore.</summary>
-        private byte Fall(ref SystemState state, Entity entity, float3 position) =>
-            SystemAPI.HasComponent<FellFrom>(entity)
-                ? ToppleMath.Quantize(SystemAPI.GetComponent<FellFrom>(entity).Position, position)
-                : (byte)0;
 
         /// <summary>Match teams as bits, with team 0 for observers.</summary>
         private ushort Teams(ref SystemState state)

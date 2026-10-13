@@ -1,11 +1,10 @@
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>Where a <see cref="Topple"/> piece's lethal hit came from.</summary>
+    /// <summary>The fall heading (<see cref="ToppleMath"/>) a <see cref="Topple"/> piece's lethal hit gave it.</summary>
     public struct FellFrom : IComponentData
     {
-        public float3 Position;
+        public byte Heading;
     }
 }

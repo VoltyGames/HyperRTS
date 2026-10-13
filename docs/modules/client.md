@@ -65,7 +65,9 @@ Rendering and effects:
   band). `HyperRTS/Flag` samples the game's flag `Texture2DArray` and waves the `FlagMesh` cloth downwind.
 - **Destruction**: `DamageStageSystem` shows the stage model for the health and plays its effect;
   `SpawnEffectSystem` plays spawn effects once; `ToppleSystem` tips felled remains (`Felling`) over with ease-in
-  and a damped bounce, or lays them down at once when the fall was out of sight. `Animation/MachineSystem` poses
+  and a damped bounce, or lays them down at once when the fall was out of sight. It writes only their
+  `LocalToWorld` (and their children's) after the transform systems, timed by its own `FallClock`, so the
+  simulation keeps the final pose. `Animation/MachineSystem` poses
   machine parts.
 - **Environment**: `HyperRTS/Water` (depth colour, refraction, ripples, sky reflection, capped glint; vertex A thins
   fords, G streaks foam; needs Depth and Opaque Textures), `HyperRTS/Foliage` (alpha-cut, wind sway,
@@ -90,7 +92,8 @@ Rendering and effects:
   procedural quads; fades go in whole 8-bit steps). `_HyperRTSTrample` (RGBA8, 0.5 m texels on Full): RG travel
   direction * 0.5 + 0.5, B grass flatten (recovers over 60 s), A crop damage (never recovers). `_HyperRTSTracks`
   (RG8, 0.2 m texels): R rut depth, G churned soil (fade over 4 min). `_HyperRTSInteractionRect` (x min, z min,
-  1 / width, 1 / depth; zero = no maps, every read neutral) and `_HyperRTSTracksTexel`. `InteractionStampSystem`
+  1 / width, 1 / depth; zero = no maps, callers skip the reads) and `_HyperRTSTracksTexel` (xy texel counts, zw metres
+  per texel). `InteractionStampSystem`
   stamps vehicles with `TrackMarks` that are on the ground and not hidden from the local player, seen building
   footprints (`NavObstacle`) and ground impacts of 3 m splash or more. `InteractionMap.Quality` (Off, Low = half
   resolution, Full) is set by the game; Off frees the textures. Presentation only, so clients may differ.

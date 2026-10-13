@@ -94,19 +94,7 @@ namespace HyperRTS.Presentation.Animation
                 var start = math.transform(toLocal, follow.Position);
                 var direction = math.normalizesafe(math.transform(toLocal, aim.Position) - start, math.up());
                 transform.Position = start;
-                transform.Rotation = FromTo(math.up(), direction);
-            }
-
-            /// <summary>The shortest rotation turning one unit vector onto another.</summary>
-            private static quaternion FromTo(float3 from, float3 to)
-            {
-                var dot = math.dot(from, to);
-                if (dot < -0.9999f)
-                {
-                    return quaternion.AxisAngle(math.right(), math.PI);
-                }
-
-                return math.normalize(new quaternion(new float4(math.cross(from, to), 1f + dot)));
+                transform.Rotation = Rotations.FromTo(math.up(), direction);
             }
         }
     }
