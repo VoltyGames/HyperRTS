@@ -74,7 +74,8 @@ Rendering and effects:
   `_HyperRTSWindStrength` (windMain), `_HyperRTSWindGust` (x windPulseMagnitude, y windTurbulence, z gust tiles per
   metre), `_HyperRTSWindGustMap` (procedural tileable noise), `_HyperRTSWindGustOffset` (xy this frame's scroll in
   tiles, zw last frame's; it moves downwind windPulseFrequency tiles a second) and `_HyperRTSWindDetail`
-  (`Wind.Detail`: 0 trunk, 1 + branches, 2 + flutter). `Wind.hlsl` turns them into motion; every pass of Foliage and
+  (the component's `vegetation` `WindDetail`: 0 `None` keeps vegetation still, 1 `Sway`, 2 + `Branches`, 3 +
+  `Flutter`; a climate picks it, flags fly regardless). `Wind.hlsl` turns them into motion; every pass of Foliage and
   Bark (forward, shadow, depth, depth-normals, motion vectors) uses the same position, and both crossfade LODs.
   - Foliage with `_TREE_WIND` off (grass, crops, details): sway about the origin with height (`_WindStrength` m per m,
     `_WindSpeed`) and `_Flutter` m of leaf flutter. On, and always on Bark: tree meshes carry wind data in Unity object

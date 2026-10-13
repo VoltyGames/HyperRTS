@@ -5,7 +5,7 @@ namespace HyperRTS.Presentation.Environment
 {
     /// <summary>
     /// Publishes the scene's directional wind for flags and vegetation (Wind.hlsl): direction, strength, a gust field
-    /// that rolls downwind and the detail level. Its <see cref="WindZone"/> gives windMain (strength), windTurbulence,
+    /// that rolls downwind and how much vegetation moves in it. Its <see cref="WindZone"/> gives windMain (strength), windTurbulence,
     /// windPulseMagnitude (gust amount) and windPulseFrequency (gust field tiles travelled per second).
     /// </summary>
     [ExecuteAlways]
@@ -29,12 +29,13 @@ namespace HyperRTS.Presentation.Environment
         [Min(1f)]
         public float gustSize = 120f;
 
+        [Tooltip("How much trees, grass and crops move in this wind. None keeps them standing (flags still fly); a " +
+                 "steady breeze reads as an idle loop, so keep motion for weather that calls for it.")]
+        public WindDetail vegetation = WindDetail.Flutter;
+
         private WindZone _zone;
         private Texture2D _gustMap;
         private Vector2 _gustOffset;
-
-        /// <summary>How much tree motion vegetation draws; the game sets it from its vegetation quality.</summary>
-        public static WindDetail Detail { get; set; } = WindDetail.Flutter;
 
         private void OnEnable()
         {
@@ -54,12 +55,13 @@ namespace HyperRTS.Presentation.Environment
             Shader.SetGlobalFloat(StrengthId, _zone.windMain);
             Shader.SetGlobalVector(GustId, new Vector4(_zone.windPulseMagnitude, _zone.windTurbulence, 1f / gustSize, 0f));
             Shader.SetGlobalVector(GustOffsetId, new Vector4(_gustOffset.x, _gustOffset.y, last.x, last.y));
-            Shader.SetGlobalFloat(DetailId, (float)Detail);
+            Shader.SetGlobalFloat(DetailId, (float)vegetation);
         }
 
         private void OnDisable()
         {
             Shader.SetGlobalFloat(StrengthId, 0f);
+            Shader.SetGlobalFloat(DetailId, (float)WindDetail.None);
             if (Application.isPlaying)
             {
                 Destroy(_gustMap);

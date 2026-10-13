@@ -13,7 +13,7 @@ float4 _HyperRTSWindDirection;  // xz unit downwind
 float _HyperRTSWindStrength;
 float4 _HyperRTSWindGust;       // x gust amount, y turbulence, z gust tiles per metre
 float4 _HyperRTSWindGustOffset; // xy this frame's gust scroll (tiles), zw last frame's
-float _HyperRTSWindDetail;      // 0 trunk, 1 + branches, 2 + flutter
+float _HyperRTSWindDetail;      // 0 none, 1 sway, 2 + branches, 3 + flutter
 TEXTURE2D(_HyperRTSWindGustMap);
 SAMPLER(sampler_HyperRTSWindGustMap);
 
@@ -147,12 +147,17 @@ float3 TreeWindPosition(TreeWindVertex v, TreeWindSettings s, WindFrame frame)
 
     float3 p = v.positionOS;
     UNITY_BRANCH
-    if (_HyperRTSWindDetail >= 2.0)
+    if (_HyperRTSWindDetail < 0.5)
+    {
+        return p;
+    }
+    UNITY_BRANCH
+    if (_HyperRTSWindDetail >= 3.0)
     {
         p = CardFlutter(p, v, s, push, frame, origin);
     }
     UNITY_BRANCH
-    if (_HyperRTSWindDetail >= 1.0)
+    if (_HyperRTSWindDetail >= 2.0)
     {
         p = BranchSway(p, v, s, downwind, frame);
     }
@@ -162,6 +167,12 @@ float3 TreeWindPosition(TreeWindVertex v, TreeWindSettings s, WindFrame frame)
 // World position of a plant vertex (no wind data): sways about the origin with height, leaves flutter on top.
 float3 PlantWindPosition(float3 world, float3 origin, float sway, float speed, float flutter, float scale, WindFrame frame)
 {
+    UNITY_BRANCH
+    if (_HyperRTSWindDetail < 0.5)
+    {
+        return world;
+    }
+
     float height = max(0.0, world.y - origin.y);
     float push = WindPush(origin.xz, frame) * scale;
     float swing = WindSwing(frame.time * speed, dot(origin.xz, float2(0.11, 0.07))) * scale;
@@ -169,7 +180,7 @@ float3 PlantWindPosition(float3 world, float3 origin, float sway, float speed, f
     moved.xz += _HyperRTSWindDirection.xz * ((push + swing) * sway * height);
 
     UNITY_BRANCH
-    if (_HyperRTSWindDetail >= 2.0)
+    if (_HyperRTSWindDetail >= 3.0)
     {
         float wave = sin(frame.time * 7.0 + dot(world, float3(1.9, 2.3, 1.7)));
         moved += float3(wave, wave * 0.5, -wave) * (flutter * saturate(height * 0.5) * saturate(push * 2.0));
