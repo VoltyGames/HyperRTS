@@ -58,7 +58,7 @@ namespace HyperRTS.Presentation.Overlays
             _commands.Gather(view, style);
             _units.Draw(_materials, style, gameObject.layer);
             _buildings.Draw(_materials, view, style, gameObject.layer);
-            _commands.Draw(material, style, gameObject.layer);
+            _commands.Draw(_materials.DepthTested, style, gameObject.layer);
         }
 
         private void OnDestroy()

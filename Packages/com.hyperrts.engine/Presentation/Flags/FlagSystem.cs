@@ -29,24 +29,11 @@ namespace HyperRTS.Presentation.Flags
             _palette = FactionPalette.Create(ref state);
             _sides = SystemAPI.QueryBuilder().WithAll<Player, PlayerSide>().Build();
             state.RequireForUpdate<FlagMount>();
-            state.RequireForUpdate<BeginPresentationEntityCommandBufferSystem.Singleton>();
-        }
-
-        [BurstCompile]
-        public void OnUpdate(ref SystemState state)
-        {
-            new AttachJob
-            {
-                States = SystemAPI.GetComponentLookup<FlagState>(true),
-                Commands = SystemAPI.GetSingleton<BeginPresentationEntityCommandBufferSystem.Singleton>()
-                    .CreateCommandBuffer(state.WorldUnmanaged),
-            }.Run();
-
-            Show(ref state);
         }
 
         // A main-thread loop, not a job: a job may not hold the fog grid's arrays while a world has no grid.
-        private void Show(ref SystemState state)
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
         {
             SystemAPI.TryGetSingleton(out LocalFogView view);
             var hasFog = SystemAPI.TryGetSingleton(out FogOfWar fog);
@@ -61,14 +48,9 @@ namespace HyperRTS.Presentation.Flags
                          .Query<RefRO<FlagMount>, RefRO<Faction>, RefRO<LocalToWorld>>().WithEntityAccess())
             {
                 var flag = mount.ValueRO.Flag;
-                if (!states.HasComponent(flag))
-                {
-                    continue;
-                }
-
                 progress.TryGetComponent(entity, out var capture);
                 var owner = faction.ValueRO.Value;
-                var shown = FlagDisplay.Resolve(owner, capture.Faction, capture.Value, out var hoist);
+                var shown = FlagDisplay.Resolve(owner, capture, out var hoist);
                 var position = place.ValueRO.Position;
                 var fogged = hasFog && BuildingFog.IsHidden(in view, in fog, in relations, owner, position);
                 var visible = shown != Faction.Neutral && !fogged;
@@ -98,22 +80,6 @@ namespace HyperRTS.Presentation.Flags
             }
 
             return layers;
-        }
-
-        [BurstCompile]
-        private partial struct AttachJob : IJobEntity
-        {
-            [ReadOnly] public ComponentLookup<FlagState> States;
-            public EntityCommandBuffer Commands;
-
-            private void Execute(in FlagMount mount)
-            {
-                if (!States.HasComponent(mount.Flag))
-                {
-                    Commands.AddComponent<FlagState>(mount.Flag);
-                    Commands.AddComponent<FlagColor>(mount.Flag);
-                }
-            }
         }
     }
 }

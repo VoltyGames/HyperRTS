@@ -8,5 +8,16 @@ namespace HyperRTS.Simulation.Capture
     {
         [GhostField] public byte Faction;
         [GhostField(Quantization = 1000)] public float Value;
+
+        /// <summary>Someone other than <paramref name="owner"/> has started taking the building.</summary>
+        public readonly bool IsUnderWay(byte owner)
+        {
+            if (Faction == Common.Faction.Neutral || Faction == owner)
+            {
+                return false;
+            }
+
+            return Value > 0f;
+        }
     }
 }

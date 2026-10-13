@@ -26,30 +26,20 @@ namespace HyperRTS.Presentation.TeamColors
         public NativeArray<float4> Build(AllocatorManager.AllocatorHandle allocator)
         {
             var colors = CollectionHelper.CreateNativeArray<float4>(Size, allocator);
+            var hasOverride = _override.TryGetSingleton(out TeamColorOverride colorOverride);
             var players = _players.ToComponentDataArray<Player>(Allocator.Temp);
             foreach (var player in players)
             {
-                colors[player.Faction] = new float4(player.Color.xyz, 1f);
-            }
+                var color = player.Color;
+                if (hasOverride && colorOverride.TryGet(player.Faction, out var overridden))
+                {
+                    color = overridden;
+                }
 
-            if (_override.TryGetSingleton(out TeamColorOverride colorOverride))
-            {
-                ApplyOverride(colors, colorOverride);
+                colors[player.Faction] = new float4(color.xyz, 1f);
             }
 
             return colors;
-        }
-
-        /// <summary>Swaps in the override's colour for every listed faction that has a player.</summary>
-        private static void ApplyOverride(NativeArray<float4> colors, in TeamColorOverride colorOverride)
-        {
-            foreach (var entry in colorOverride.Colors)
-            {
-                if (colors[entry.Faction].w != 0f)
-                {
-                    colors[entry.Faction] = new float4(entry.Color.xyz, 1f);
-                }
-            }
         }
     }
 }

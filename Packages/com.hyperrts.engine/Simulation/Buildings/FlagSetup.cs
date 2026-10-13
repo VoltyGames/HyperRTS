@@ -16,7 +16,13 @@ namespace HyperRTS.Simulation.Buildings
                 throw new ArgumentOutOfRangeException(nameof(flagHeight), flagHeight, "Flag height must be positive.");
             }
 
-            var drop = Math.Max(0f, poleHeight / flagHeight - 2f);
+            var drop = poleHeight / flagHeight - 2f;
+            if (drop < 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(poleHeight), poleHeight,
+                    $"A {poleHeight} m pole is too short for a {flagHeight} m flag (at least 2 flag heights).");
+            }
+
             if (drop > FlagMount.MaxDrop)
             {
                 throw new ArgumentOutOfRangeException(nameof(poleHeight), poleHeight,

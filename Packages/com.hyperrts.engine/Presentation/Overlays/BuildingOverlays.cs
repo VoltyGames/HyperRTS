@@ -31,6 +31,8 @@ namespace HyperRTS.Presentation.Overlays
         // Marker sizes are pixels at this screen height, so they keep their share of the screen at any resolution.
         private const float ReferenceHeight = 1080f;
 
+        private static readonly Quaternion[] DialRotations = BuildDialRotations();
+
         private readonly LiveQuery _captures = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<CaptureProgress>(),
             ComponentType.ReadOnly<Faction>(),
@@ -59,6 +61,14 @@ namespace HyperRTS.Presentation.Overlays
         private readonly FactionBatches _pipFills;
         private LocalFogView _view;
         private FogOfWar _fog;
+        private bool _fogRead;
+        private Vector3 _cameraPosition;
+        private Vector3 _cameraForward;
+        private Vector3 _cameraRight;
+        private Quaternion _cameraRotation;
+        private bool _orthographic;
+        private float _orthographicPixel;
+        private float _pixelPerDepth;
 
         public BuildingOverlays(Mesh dialSegment, Mesh disc, Mesh billboard)
         {
@@ -74,9 +84,10 @@ namespace HyperRTS.Presentation.Overlays
 
         public void Gather(MatchView view, OverlayStyle style, Camera camera)
         {
-            ReadFog(view.EntityManager);
-            GatherDials(view, style, camera);
-            GatherPips(view, style, camera);
+            _fogRead = false;
+            ReadCamera(camera);
+            GatherDials(view, style);
+            GatherPips(view, style);
         }
 
         // Backings first, then rings and pips over them; neither tests depth, so buildings never cut through them.
@@ -90,7 +101,7 @@ namespace HyperRTS.Presentation.Overlays
             _pipFills.Draw(materials.OnTopFront, view, layer);
         }
 
-        private void GatherDials(MatchView view, OverlayStyle style, Camera camera)
+        private void GatherDials(MatchView view, OverlayStyle style)
         {
             var entityManager = view.EntityManager;
             var query = _captures.In(entityManager);
@@ -103,29 +114,27 @@ namespace HyperRTS.Presentation.Overlays
                 var capture = captures[i];
                 var owner = owners[i].Value;
                 var position = transforms[i].Position;
-                var underWay = capture.Faction != Faction.Neutral && capture.Faction != owner && capture.Value > 0f;
-                if (!underWay || IsHidden(view, owner, position))
+                if (!capture.IsUnderWay(owner) || IsHidden(view, owner, position))
                 {
                     continue;
                 }
 
                 var top = Top(entityManager, entities[i], position);
-                var pixel = PixelSize(camera, top);
+                var pixel = PixelSize(top);
                 var center = top + Vector3.up * (pixel * (style.markerOffset + style.dialRadius * BackRim));
-                AddDial(center, capture.Faction, capture.Value, pixel * style.dialRadius, camera.transform.rotation);
+                AddDial(center, capture.Faction, capture.Value, pixel * style.dialRadius);
             }
         }
 
-        private void AddDial(Vector3 center, byte capturer, float progress, float radius, Quaternion facing)
+        private void AddDial(Vector3 center, byte capturer, float progress, float radius)
         {
             var back = radius * BackRim;
-            _dialBacks.Add(Matrix4x4.TRS(center, facing, new Vector3(back, back, 1f)));
+            _dialBacks.Add(Matrix4x4.TRS(center, _cameraRotation, new Vector3(back, back, 1f)));
             var filled = Mathf.RoundToInt(Mathf.Clamp01(progress) * DialSteps);
             var scale = new Vector3(radius, radius, 1f);
             for (var step = 0; step < DialSteps; step++)
             {
-                var rotation = facing * Quaternion.AngleAxis(-step * DialStepDegrees, Vector3.forward);
-                var matrix = Matrix4x4.TRS(center, rotation, scale);
+                var matrix = Matrix4x4.TRS(center, _cameraRotation * DialRotations[step], scale);
                 if (step < filled)
                 {
                     _dialFills.Add(capturer, matrix);
@@ -137,7 +146,7 @@ namespace HyperRTS.Presentation.Overlays
             }
         }
 
-        private void GatherPips(MatchView view, OverlayStyle style, Camera camera)
+        private void GatherPips(MatchView view, OverlayStyle style)
         {
             var entityManager = view.EntityManager;
             var query = _garrisons.In(entityManager);
@@ -147,7 +156,7 @@ namespace HyperRTS.Presentation.Overlays
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < entities.Length; i++)
             {
-                var used = Occupied(entityManager.GetBuffer<Cargo>(entities[i], true));
+                var used = Container.Used(entityManager.GetBuffer<Cargo>(entities[i], true));
                 var owner = owners[i].Value;
                 var position = transforms[i].Position;
                 if (used == 0 || IsHidden(view, owner, position))
@@ -156,22 +165,22 @@ namespace HyperRTS.Presentation.Overlays
                 }
 
                 var top = Top(entityManager, entities[i], position);
-                var pixel = PixelSize(camera, top);
+                var pixel = PixelSize(top);
                 var center = top + Vector3.up * (pixel * (style.markerOffset + style.pipSize));
-                AddPips(center, owner, used, containers[i].Capacity, pixel * style.pipSize, camera.transform);
+                AddPips(center, owner, used, containers[i].Capacity, pixel * style.pipSize);
             }
         }
 
-        private void AddPips(Vector3 center, byte owner, int used, int capacity, float size, Transform camera)
+        private void AddPips(Vector3 center, byte owner, int used, int capacity, float size)
         {
             var pitch = size * PipPitch;
             var backSize = new Vector3(pitch * capacity + size * 0.5f, size * 2f, 1f);
-            _pipBacks.Add(Matrix4x4.TRS(center, camera.rotation, backSize));
-            var first = center - camera.right * (pitch * (capacity - 1) * 0.5f);
+            _pipBacks.Add(Matrix4x4.TRS(center, _cameraRotation, backSize));
+            var first = center - _cameraRight * (pitch * (capacity - 1) * 0.5f);
             var scale = new Vector3(size, size, 1f);
             for (var slot = 0; slot < capacity; slot++)
             {
-                var matrix = Matrix4x4.TRS(first + camera.right * (pitch * slot), camera.rotation, scale);
+                var matrix = Matrix4x4.TRS(first + _cameraRight * (pitch * slot), _cameraRotation, scale);
                 if (slot < used)
                 {
                     _pipFills.Add(owner, matrix);
@@ -183,16 +192,38 @@ namespace HyperRTS.Presentation.Overlays
             }
         }
 
-        /// <summary>World units one reference pixel covers at <paramref name="point"/>.</summary>
-        private static float PixelSize(Camera camera, Vector3 point)
+        private void ReadCamera(Camera camera)
         {
-            if (camera.orthographic)
+            var transform = camera.transform;
+            _cameraPosition = transform.position;
+            _cameraForward = transform.forward;
+            _cameraRight = transform.right;
+            _cameraRotation = transform.rotation;
+            _orthographic = camera.orthographic;
+            _orthographicPixel = camera.orthographicSize * 2f / ReferenceHeight;
+            _pixelPerDepth = Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad) * 2f / ReferenceHeight;
+        }
+
+        /// <summary>World units one reference pixel covers at <paramref name="point"/>.</summary>
+        private float PixelSize(Vector3 point)
+        {
+            if (_orthographic)
             {
-                return camera.orthographicSize * 2f / ReferenceHeight;
+                return _orthographicPixel;
             }
 
-            var depth = Vector3.Dot(point - camera.transform.position, camera.transform.forward);
-            return depth * Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad) * 2f / ReferenceHeight;
+            return Vector3.Dot(point - _cameraPosition, _cameraForward) * _pixelPerDepth;
+        }
+
+        private static Quaternion[] BuildDialRotations()
+        {
+            var rotations = new Quaternion[DialSteps];
+            for (var step = 0; step < DialSteps; step++)
+            {
+                rotations[step] = Quaternion.AngleAxis(-step * DialStepDegrees, Vector3.forward);
+            }
+
+            return rotations;
         }
 
         private static Vector3 Top(EntityManager entityManager, Entity entity, float3 position)
@@ -201,27 +232,24 @@ namespace HyperRTS.Presentation.Overlays
             return new Vector3(position.x, EntityExtent.Top(entityManager, entity, position, radius), position.z);
         }
 
-        private static int Occupied(DynamicBuffer<Cargo> cargo)
+        private bool IsHidden(MatchView view, byte owner, float3 position)
         {
-            var used = 0;
-            foreach (var item in cargo)
+            if (!_fogRead)
             {
-                used += item.Size;
+                ReadFog(view.EntityManager);
             }
 
-            return used;
+            return BuildingFog.IsHidden(in _view, in _fog, view.Relations, owner, position);
         }
 
-        // The grid is written by simulation jobs; complete them before reading it here on the main thread.
+        // Only once a building needs it: simulation jobs write the grid, so reading it completes them.
         private void ReadFog(EntityManager entityManager)
         {
             _fogView.In(entityManager).TryGetSingleton(out _view);
             var grid = _fogGrid.In(entityManager);
             grid.CompleteDependency();
             grid.TryGetSingleton(out _fog);
+            _fogRead = true;
         }
-
-        private bool IsHidden(MatchView view, byte owner, float3 position) =>
-            BuildingFog.IsHidden(in _view, in _fog, view.Relations, owner, position);
     }
 }

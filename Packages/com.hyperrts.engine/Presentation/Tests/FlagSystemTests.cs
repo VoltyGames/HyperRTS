@@ -21,14 +21,12 @@ namespace HyperRTS.Presentation.Tests
         private World _world;
         private EntityManager _em;
         private SystemHandle _flags;
-        private EntityCommandBufferSystem _commands;
 
         [SetUp]
         public void SetUp()
         {
             _world = new World("Flag Tests");
             _em = _world.EntityManager;
-            _commands = _world.GetOrCreateSystemManaged<BeginPresentationEntityCommandBufferSystem>();
             _flags = _world.CreateSystem<FlagSystem>();
             AddPlayer(1, Blue, LocalSide, true);
             AddPlayer(2, Red, EnemySide, false);
@@ -86,7 +84,7 @@ namespace HyperRTS.Presentation.Tests
 
         private Entity Building(byte owner, out Entity building)
         {
-            var flag = _em.CreateEntity();
+            var flag = _em.CreateEntity(typeof(FlagState), typeof(FlagColor));
             building = _em.CreateEntity();
             _em.AddComponentData(building, new Faction { Value = owner });
             _em.AddComponentData(building, new LocalToWorld { Value = float4x4.Translate(new float3(0.5f, 0f, 0.5f)) });
@@ -118,15 +116,6 @@ namespace HyperRTS.Presentation.Tests
             _em.CreateSingleton(new FogOfWar { Visible = visible, Size = new int2(1, 1), CellSize = 1f });
         }
 
-        // The first pass attaches the material properties, the second fills them.
-        private void Run()
-        {
-            for (var pass = 0; pass < 2; pass++)
-            {
-                _flags.Update(_world.Unmanaged);
-                _commands.Update();
-                _em.CompleteAllTrackedJobs();
-            }
-        }
+        private void Run() => _flags.Update(_world.Unmanaged);
     }
 }

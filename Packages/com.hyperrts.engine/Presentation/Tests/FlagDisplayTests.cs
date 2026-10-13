@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Flags;
+using HyperRTS.Simulation.Capture;
 using NUnit.Framework;
 
 namespace HyperRTS.Presentation.Tests
@@ -14,7 +15,8 @@ namespace HyperRTS.Presentation.Tests
         [TestCase(1, 1, 0.5f, 1, 1f, TestName = "Owner's own progress: owner stays up")]
         public void Resolve(int owner, int capturer, float progress, int shown, float hoist)
         {
-            var faction = FlagDisplay.Resolve((byte)owner, (byte)capturer, progress, out var height);
+            var capture = new CaptureProgress { Faction = (byte)capturer, Value = progress };
+            var faction = FlagDisplay.Resolve((byte)owner, capture, out var height);
 
             Assert.AreEqual(shown, faction);
             Assert.AreEqual(hoist, height, 1e-5f);

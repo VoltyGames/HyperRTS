@@ -10,7 +10,11 @@ namespace HyperRTS.Simulation.Transport
         public bool PassengersFire;
         public bool PassengersSurvive;
 
-        public readonly bool Fits(DynamicBuffer<Cargo> cargo, int size)
+        public readonly bool Fits(DynamicBuffer<Cargo> cargo, int size) =>
+            size <= MaxPassengerSize && Used(cargo) + size <= Capacity;
+
+        /// <summary>Capacity the passengers in <paramref name="cargo"/> take up.</summary>
+        public static int Used(DynamicBuffer<Cargo> cargo)
         {
             var used = 0;
             foreach (var item in cargo)
@@ -18,7 +22,7 @@ namespace HyperRTS.Simulation.Transport
                 used += item.Size;
             }
 
-            return size <= MaxPassengerSize && used + size <= Capacity;
+            return used;
         }
     }
 }
