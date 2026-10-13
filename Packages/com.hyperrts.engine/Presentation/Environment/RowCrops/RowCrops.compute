@@ -1,5 +1,5 @@
-// Grows row crop plants for RowCropBatch: one thread per lattice spot, dispatched as (rows / 8, plants / 8, tiles).
-// Lattice maths and hashes match RowCropLattice.cs.
+// Grows row crop plants for RowCropBatch: one thread per lattice spot, dispatched as (rows / 8, plants / 8, tiles)
+// once per model variant. Lattice maths, hashes and noise match RowCropLattice.cs.
 #pragma kernel Plant
 
 #define SLACK 1e-4
@@ -10,7 +10,13 @@
 #define CHANNEL_YAW 4u
 #define CHANNEL_DROP 5u
 #define CHANNEL_SHADE 6u
-#define CHANNEL_EDGE 7u
+#define CHANNEL_EDGE 7u // and 8
+#define CHANNEL_VARIANT 9u
+#define CHANNEL_LEAN 10u
+#define CHANNEL_LEAN_TURN 11u
+#define WANDER_SALT 0x5BD1E995u
+#define PATCH_SALT 0x27D4EB2Fu
+#define EDGE_REACH 1.5 // metres probed round a plant; a plant this near the field's edge leans the most
 #define EDGE_DITHER 1.5 // metres the field lookup strays, so edges on the 1 m grid look ragged
 #define FADE_SHARE 0.15 // share of the draw distance over which plants shrink away
 
@@ -38,7 +44,7 @@ struct RowCropInstance // RowCropInput.hlsl, 48 bytes
     float2 trampleDirection;
     float bend;
     float shade;
-    float2 padding;
+    float2 lean;
 };
 
 StructuredBuffer<RowCropField> _Fields;
@@ -60,7 +66,10 @@ float4 _TrampleRect; // x min, z min, 1 / width, 1 / depth; zero = no trample ma
 float4 _Camera;      // xyz position, w draw distance
 float4 _Sowing;      // row spacing, plant spacing, jitter, yaw jitter (radians)
 float4 _Size;        // min scale, max scale, lod0 distance, lod1 distance
-float4 _Capacity;    // full, simple, card buffer sizes
+float4 _Capacity;    // full, simple, card buffer sizes of this variant
+float4 _Variety;     // lean, edge lean (radians), wander metres, 1 / wander length
+float4 _Patch;       // min and max patch scale, 1 / patch size
+float4 _Variant;     // variant grown this dispatch, variant count, its first counter
 float _TileSize;
 float _FacesRow;     // 1: plants face along their row; 0: they keep the model's heading (+Z north)
 float _Density;
@@ -77,9 +86,26 @@ uint Hash(int seed, int row, int plant)
     return Pcg(asuint(seed) ^ Pcg(asuint(row) ^ Pcg(asuint(plant))));
 }
 
+float Unit(uint value)
+{
+    return (value >> 8) * (1.0 / 16777216.0);
+}
+
 float Channel(uint hash, uint channel)
 {
-    return (Pcg(hash + channel * 0x9E3779B9u) >> 8) * (1.0 / 16777216.0);
+    return Unit(Pcg(hash + channel * 0x9E3779B9u));
+}
+
+// Smooth value noise from 0 to 1 on an integer grid.
+float Noise(int seed, uint salt, float2 p)
+{
+    int salted = asint(asuint(seed) ^ salt);
+    int2 cell = (int2)floor(p);
+    float2 f = p - floor(p);
+    float2 u = f * f * (3.0 - 2.0 * f);
+    float low = lerp(Unit(Hash(salted, cell.x, cell.y)), Unit(Hash(salted, cell.x + 1, cell.y)), u.x);
+    float high = lerp(Unit(Hash(salted, cell.x, cell.y + 1)), Unit(Hash(salted, cell.x + 1, cell.y + 1)), u.x);
+    return lerp(low, high, u.y);
 }
 
 float2 ToLattice(float2 corner, RowCropField field)
@@ -140,10 +166,29 @@ float4 TrampleAt(float2 xz)
     return _Trample.SampleLevel(sampler_LinearClamp, (xz - _TrampleRect.xy) * _TrampleRect.zw, 0);
 }
 
+// Share of four probes round the spot that fall outside its field.
+float Edge(float2 spot, RowCropField field, uint id)
+{
+    float outside = 0.0;
+    outside += FieldAt(spot + field.across * EDGE_REACH) != id ? 1.0 : 0.0;
+    outside += FieldAt(spot - field.across * EDGE_REACH) != id ? 1.0 : 0.0;
+    outside += FieldAt(spot + field.along * EDGE_REACH) != id ? 1.0 : 0.0;
+    outside += FieldAt(spot - field.along * EDGE_REACH) != id ? 1.0 : 0.0;
+    return outside * 0.25;
+}
+
+float2 Lean(uint hash, float2 spot, RowCropField field, uint id)
+{
+    float edge = _Variety.y > _Variety.x ? Edge(spot, field, id) : 0.0;
+    float tilt = lerp(_Variety.x, _Variety.y, edge) * Channel(hash, CHANNEL_LEAN);
+    float heading = Channel(hash, CHANNEL_LEAN_TURN) * 6.2831853;
+    return (field.across * cos(heading) + field.along * sin(heading)) * sin(tilt);
+}
+
 void Append(uint lod, RowCropInstance grown)
 {
     uint slot;
-    InterlockedAdd(_Counters[lod], 1u, slot);
+    InterlockedAdd(_Counters[(uint)_Variant.z + lod], 1u, slot);
     if (slot >= (uint)_Capacity[lod])
     {
         return;
@@ -184,6 +229,12 @@ void Plant(uint3 id : SV_DispatchThreadID)
     }
 
     uint hash = Hash(field.seed, row, plant);
+    uint count = (uint)_Variant.y;
+    if (min((uint)(Channel(hash, CHANNEL_VARIANT) * count), count - 1u) != (uint)_Variant.x)
+    {
+        return;
+    }
+
     float2 stray = float2(Channel(hash, CHANNEL_EDGE), Channel(hash, CHANNEL_EDGE + 1u)) - 0.5;
     if (FieldAt(spot + stray * EDGE_DITHER) != job.field + 1u)
     {
@@ -195,7 +246,9 @@ void Plant(uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    float across = (Channel(hash, CHANNEL_ACROSS) * 2.0 - 1.0) * _Sowing.z * _Sowing.x;
+    float2 metres = float2(row * _Sowing.x, plant * _Sowing.y);
+    float wander = (Noise(field.seed, WANDER_SALT, metres * _Variety.w) * 2.0 - 1.0) * _Variety.z;
+    float across = (Channel(hash, CHANNEL_ACROSS) * 2.0 - 1.0) * _Sowing.z * _Sowing.x + wander;
     float along = (Channel(hash, CHANNEL_ALONG) * 2.0 - 1.0) * _Sowing.z * _Sowing.y;
     float2 xz = spot + field.across * across + field.along * along;
     float3 position = float3(xz.x, GroundHeight(xz), xz.y);
@@ -215,14 +268,15 @@ void Plant(uint3 id : SV_DispatchThreadID)
     float fade = saturate((_Camera.w - range) / (FADE_SHARE * _Camera.w));
     RowCropInstance grown;
     grown.position = position;
-    grown.scale = lerp(_Size.x, _Size.y, Channel(hash, CHANNEL_SCALE)) * fade;
+    float patch = lerp(_Patch.x, _Patch.y, Noise(field.seed, PATCH_SALT, metres * _Patch.z));
+    grown.scale = lerp(_Size.x, _Size.y, Channel(hash, CHANNEL_SCALE)) * patch * fade;
     float2 forward = _FacesRow > 0.5 ? field.along : float2(0.0, 1.0);
     float2 side = _FacesRow > 0.5 ? field.across : float2(1.0, 0.0);
     grown.facing = forward * cos(turn) + side * sin(turn);
     grown.trampleDirection = trample.rg * 2.0 - 1.0;
     grown.bend = trample.a;
     grown.shade = Channel(hash, CHANNEL_SHADE);
-    grown.padding = float2(0.0, 0.0);
+    grown.lean = Lean(hash, spot, field, job.field + 1u);
     uint lod = range < _Size.z ? 0u : (range < _Size.w ? 1u : 2u);
     Append(lod, grown);
 }

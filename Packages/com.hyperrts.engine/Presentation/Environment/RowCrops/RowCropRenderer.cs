@@ -2,13 +2,15 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
     /// <summary>
-    /// Grows a map's row crops on the GPU each frame from <see cref="RowCropFields"/> and draws them per distance band.
-    /// Regrowing every visible tile each frame is cheap and needs no cache invalidation.
+    /// Grows a map's row crops on the GPU from <see cref="RowCropFields"/> for each camera about to render, in edit
+    /// mode too, and draws them per distance band. Regrowing every visible tile per camera needs no cache invalidation.
     /// </summary>
+    [ExecuteAlways]
     [AddComponentMenu("")]
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
@@ -34,6 +36,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private RowCropKernelInputs _inputs;
         private Bounds[] _tileBounds;
         private Bounds _worldBounds;
+        private bool _ready;
+        private bool _dirty;
 
         /// <summary>Share of plants grown, 0 to 1. Set by the game from its vegetation quality.</summary>
         public static float Density
@@ -55,11 +59,26 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
         private void OnEnable()
         {
+            Build();
+            RenderPipelineManager.beginCameraRendering += Render;
+        }
+
+        private void OnDisable()
+        {
+            RenderPipelineManager.beginCameraRendering -= Render;
+            Release();
+        }
+
+        // Rebuilt on the next camera, not here: OnValidate runs mid-import, too early to make GPU buffers.
+        private void OnValidate() => _dirty = true;
+
+        private void Build()
+        {
+            _dirty = false;
             var problems = Problems();
             if (problems.Count > 0)
             {
                 Debug.LogError($"HyperRTS: Row Crop Renderer can't draw: {string.Join("; ", problems)}.", this);
-                enabled = false;
                 return;
             }
 
@@ -67,20 +86,27 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             _inputs = new RowCropKernelInputs(compute, kernel, fields, terrain);
             fields.crops.ForEach(crop => _batches.Add(new RowCropBatch(crop, compute, kernel)));
             MeasureTiles();
+            _ready = true;
         }
 
-        private void OnDisable()
+        private void Release()
         {
+            _ready = false;
             _batches.ForEach(batch => batch.Dispose());
             _batches.Clear();
             _inputs?.Dispose();
             _inputs = null;
         }
 
-        private void LateUpdate()
+        private void Render(ScriptableRenderContext context, Camera camera)
         {
-            var camera = Camera.main;
-            if (camera == null)
+            if (_dirty || (_ready && Stale()))
+            {
+                Release();
+                Build();
+            }
+
+            if (!_ready || !Draws(camera))
             {
                 return;
             }
@@ -90,11 +116,49 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             foreach (var batch in _batches)
             {
                 batch.Generate();
-                batch.Draw(_worldBounds, gameObject.layer);
+                batch.Draw(_worldBounds, gameObject.layer, camera);
             }
         }
 
-        /// <summary>Hands every tile in view to the batches of the crops growing on it.</summary>
+        /// <summary>
+        /// Game and Scene view cameras that see this layer and this scene. Reflection probes and asset preview cameras
+        /// are skipped: they render other scenes or bake once, and would regrow every crop for nothing.
+        /// </summary>
+        private bool Draws(Camera camera)
+        {
+            var kind = camera.cameraType is CameraType.Game or CameraType.SceneView;
+            var seesLayer = (camera.cullingMask & (1 << gameObject.layer)) != 0;
+            var ownScene = !camera.scene.IsValid() || camera.scene == gameObject.scene;
+            return kind && seesLayer && ownScene;
+        }
+
+        // Catches a map rebuild that reshaped the fields or the crops while the scene stayed open.
+        private bool Stale()
+        {
+            var lost = fields == null || terrain == null || compute == null;
+            if (lost || _inputs.Stale)
+            {
+                return true;
+            }
+
+            var reshaped = _tileBounds.Length != fields.tiles.Count || _batches.Count != fields.crops.Count;
+            if (reshaped)
+            {
+                return true;
+            }
+
+            for (var i = 0; i < _batches.Count; i++)
+            {
+                if (_batches[i].Stale(fields.crops[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Hands every tile in a camera's view to the batches of the crops growing on it.</summary>
         private void Queue(Camera camera)
         {
             _batches.ForEach(batch => batch.Begin());
@@ -124,7 +188,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private void MeasureTiles()
         {
             var height = 0f;
-            fields.crops.ForEach(crop => height = Mathf.Max(height, crop.height));
+            fields.crops.ForEach(crop => height = Mathf.Max(height, crop.height * Mathf.Max(1f, crop.patchScale.y)));
             _tileBounds = new Bounds[fields.tiles.Count];
             for (var t = 0; t < _tileBounds.Length; t++)
             {

@@ -32,7 +32,7 @@ struct RowCropInstance // RowCrops.compute, 48 bytes
     float2 trampleDirection;
     float bend;
     float shade;
-    float2 padding;
+    float2 lean; // XZ direction times the sine of the tilt
 };
 
 StructuredBuffer<RowCropInstance> _Instances;
@@ -53,11 +53,18 @@ float3 PlantToWorld(float3 v, float2 facing)
     return right * v.x + float3(0.0, v.y, 0.0) + forward * v.z;
 }
 
-// Placed by its plant, trampled, then swayed (Wind.hlsl plant mode).
+// Shears height over by a few degrees: close enough to a turn and keeps the root in place.
+float3 Lean(float3 offset, float2 lean)
+{
+    float upright = sqrt(saturate(1.0 - dot(lean, lean)));
+    return float3(offset.x + lean.x * offset.y, offset.y * upright, offset.z + lean.y * offset.y);
+}
+
+// Placed by its plant, leaned, trampled, then swayed (Wind.hlsl plant mode).
 float3 RowCropPosition(Attributes input, RowCropInstance plant, WindFrame frame)
 {
     float3 origin = plant.position;
-    float3 world = origin + PlantToWorld(input.positionOS.xyz * plant.scale, plant.facing);
+    float3 world = origin + Lean(PlantToWorld(input.positionOS.xyz * plant.scale, plant.facing), plant.lean);
     world = TrampleBend(world, origin, plant.trampleDirection, plant.bend);
     return PlantWindPosition(world, origin, _WindStrength, _WindSpeed, _Flutter, _WindScale, frame);
 }

@@ -98,18 +98,23 @@ Rendering and effects:
   Foliage without Tree Wind leans plants flat along the travel direction (`_Trample`: Off, Grass by B, Crop by A),
   and `TrampleBend` serves any plant shader.
 - **Row crops** (`Environment/RowCrops/`, `RowCropRenderer` added to map scenes by the map tools): a `RowCrop` asset
-  holds a crop's full, simple and card meshes (one submesh each, origin at the root, facing +Z), its
-  `HyperRTS/RowCrop` materials, row and plant spacing, jitter, scale and turn ranges, edge margin and the two LOD
-  distances. `RowCropFields` (baked per map) holds a field-id picture (R low byte, G high byte, 1 m texels), each
+  holds a crop's model variants (`RowCropVariant`: full, simple and card meshes, one submesh each, origin at the root,
+  facing +Z), its `HyperRTS/RowCrop` materials, row and plant spacing, jitter, scale and turn ranges, lean (inside and
+  at the field edge), row wander, patch scale, edge margin and the two LOD distances. `RowCropFields` (baked per map) holds a field-id picture (R low byte, G high byte, 1 m texels), each
   field's lattice (`RowCropField`: origin, along and across axes, crop, seed), the crops and the 16 m tiles holding
-  any. Every frame the renderer culls tiles against the main camera's frustum and `RowCropRenderer.Distance`, and
+  any. The renderer runs in edit mode too: on `RenderPipelineManager.beginCameraRendering` it culls tiles against that
+  camera's frustum and `RowCropRenderer.Distance` (Game and Scene view cameras of its scene that see its layer;
+  reflection and preview cameras are skipped), and
   `RowCrops.compute` (`Plant` kernel, one thread per lattice spot of one tile of one field) grows the plants: a spot
   belongs to the tile it falls in and the field the picture names there (`RowCropLattice` is the same maths in C#),
-  `RowCropRenderer.Density` thins by hash, the trample map's A channel bends crushed plants or drops them, and each
-  plant goes into the full, simple or card buffer by camera distance, shrinking away over the last 15 % of the draw
-  distance. The bands are drawn with `Graphics.RenderMeshIndirect`; `RowCrop.shader` reads the plants by
+  `RowCropRenderer.Density` thins by hash, the trample map's A channel bends crushed plants or drops them, the hash
+  picks the plant's variant (one dispatch per variant), slow value noise makes rows wander together and scale vary in
+  patches, plants lean a few degrees (more where probes 1.5 m out leave the field), and each
+  plant goes into its variant's full, simple or card buffer by camera distance, shrinking away over the last 15 % of the draw
+  distance. The bands are drawn with `Graphics.RenderMeshIndirect` for that camera only (GPU buffers are per renderer, reused by
+  each camera in turn); `RowCrop.shader` reads the plants by
   `SV_InstanceID` and has forward, shadow, depth, depth-normals and motion-vector passes, lit like Foliage with plant
-  wind. Regrowing every visible tile every frame needs no cache when the camera moves or crops get trampled. The
+  wind. Regrowing every visible tile per camera needs no cache when the camera moves or crops get trampled. The
   game sets density and distance from its vegetation quality.
 - **Audio**: `SoundPlaybackSystem` plays the `SoundQueue` through 32 pooled sources; `SoundListener` follows the
   camera's ground focus.

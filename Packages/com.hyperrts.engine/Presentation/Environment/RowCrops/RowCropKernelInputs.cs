@@ -38,6 +38,9 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             _fieldBuffer.SetData(fields.fields);
         }
 
+        /// <summary>Whether the field asset's fields no longer fit the uploaded buffer.</summary>
+        public bool Stale => _fieldBuffer.count != Mathf.Max(1, _fields.fields.Count);
+
         /// <summary>Binds everything for this frame's dispatches.</summary>
         public void Set(Vector3 camera, float density, float distance)
         {
