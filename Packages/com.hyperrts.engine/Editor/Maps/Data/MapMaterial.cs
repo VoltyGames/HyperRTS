@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Data
     /// by its factory from the photo texture set beside its file.
     /// </summary>
     [Serializable]
-    [MapLibraryItem("material", "material")]
+    [MapLibraryItem("material", "material", Preview = new[] { "material" })]
     public sealed class MapMaterial : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

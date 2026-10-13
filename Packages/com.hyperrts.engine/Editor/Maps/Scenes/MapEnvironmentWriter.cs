@@ -101,7 +101,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             }
 
             var path = generation.Project.Paths.Water;
-            var mesh = MapWaterMesh.Build(shapes, layout.WaterHeight, layout.TerrainBounds);
+            var mesh = MapWaterMesh.Build(shapes, generation.Project.Climate, layout.WaterHeight, layout.TerrainBounds);
             AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(mesh, path);
             var water = scene.CreateChild("Water").gameObject;

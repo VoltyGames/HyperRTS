@@ -32,8 +32,8 @@ namespace HyperRTS.Editor.Tests
         {
             var heights = Heights(p => 0.4f * Mathf.Abs(p.x) + 0.1f * p.y);
             var entry = new MapPaletteEntry { key = "Rock", size = new Vector2(2f, 2f), alignToGround = 10f, buriedDepth = 0.3f };
-            var left = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(-20f, 5f), 30f), heights, 0f);
-            var right = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(20f, 5f), -30f), heights, 0f);
+            var left = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(-20f, 5f), 30f, 1f), heights, 0f);
+            var right = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(20f, 5f), -30f, 1f), heights, 0f);
 
             Assert.AreEqual(10f, Vector3.Angle(Vector3.up, left.rotation * Vector3.up), 0.1f, "steeper ground clamps to the limit");
             Assert.AreEqual(heights.Height(new Vector2(-20f, 5f)) - 0.3f, left.position.y, 1e-4f);
@@ -50,7 +50,7 @@ namespace HyperRTS.Editor.Tests
         {
             var heights = Heights(p => 0.5f * p.x);
             var entry = new MapPaletteEntry { key = "House", size = new Vector2(8f, 8f) };
-            var pose = MapPlacementPose.OnGround(new MapPlacement(entry, Vector2.zero, 0f), heights, 0f);
+            var pose = MapPlacementPose.OnGround(new MapPlacement(entry, Vector2.zero, 0f, 1f), heights, 0f);
 
             Assert.That(Vector3.Angle(Vector3.up, pose.rotation * Vector3.up), Is.LessThan(0.01f));
         }

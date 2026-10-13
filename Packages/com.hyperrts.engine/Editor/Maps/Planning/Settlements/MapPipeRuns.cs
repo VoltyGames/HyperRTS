@@ -75,5 +75,8 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 }
             }
         }
+
+        /// <summary>The stretch along its length that makes an arch span a gap of <paramref name="gap"/> sections end to end.</summary>
+        public static float ArchStretch(int gap, float section, float archLength) => gap * section / archLength;
     }
 }

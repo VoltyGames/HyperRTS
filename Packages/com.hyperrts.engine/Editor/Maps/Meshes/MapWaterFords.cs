@@ -1,23 +1,18 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Meshes
 {
-    /// <summary>River vertex colour at fords: A thins the water over the shallow bed, G marks fast water for foam.</summary>
+    /// <summary>
+    /// River vertex colour at fords: A is how shallow the bed is (the water material thins it), G marks fast water
+    /// for foam. Distances come from the climate's <see cref="MapClimate.fordFade"/> and <see cref="MapClimate.fordFastRun"/>.
+    /// </summary>
     public static class MapWaterFords
     {
-        /// <summary>Water alpha mid-ford, where the bed is barely submerged.</summary>
-        public const float FordAlpha = 0.25f;
-
-        /// <summary>Metres past a ford's edge over which the water deepens again.</summary>
-        private const float Fade = 6f;
-
-        /// <summary>Metres of fast water downstream of a ford.</summary>
-        private const float FastRun = 10f;
-
         /// <summary>Colour at a river centre-line <paramref name="point"/> flowing towards <paramref name="downstream"/>.</summary>
-        public static Color At(IReadOnlyList<MapCrossing> crossings, Vector2 point, Vector2 downstream)
+        public static Color At(IReadOnlyList<MapCrossing> crossings, MapClimate climate, Vector2 point, Vector2 downstream)
         {
             var shallow = 0f;
             var fast = 0f;
@@ -36,11 +31,12 @@ namespace HyperRTS.Editor.Maps.Meshes
 
                 var edge = Mathf.Abs(local.x) - crossing.Width * 0.5f;
                 var below = Vector2.Dot(point - crossing.Position, downstream) > 0f;
-                shallow = Mathf.Max(shallow, 1f - MapGeometry.Smooth(edge / Fade));
-                fast = Mathf.Max(fast, 1f - MapGeometry.Smooth(edge / (below ? FastRun : Fade)));
+                var run = below ? climate.fordFastRun : climate.fordFade;
+                shallow = Mathf.Max(shallow, 1f - MapGeometry.Smooth(edge / climate.fordFade));
+                fast = Mathf.Max(fast, 1f - MapGeometry.Smooth(edge / run));
             }
 
-            return new Color(0f, fast, 0f, Mathf.Lerp(1f, FordAlpha, shallow));
+            return new Color(0f, fast, 0f, shallow);
         }
     }
 }

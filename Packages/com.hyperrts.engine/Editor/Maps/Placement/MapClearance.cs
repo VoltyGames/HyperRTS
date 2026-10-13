@@ -11,6 +11,9 @@ namespace HyperRTS.Editor.Maps.Placement
     /// </summary>
     public sealed class MapClearance
     {
+        /// <summary>Metres an off-road object keeps clear of a road's edge.</summary>
+        public const float RoadMargin = 1f;
+
         private const float EdgeMargin = 4f;
         private const float Cell = 8f;
         private readonly MapLayout _layout;
@@ -30,7 +33,7 @@ namespace HyperRTS.Editor.Maps.Placement
 
         /// <summary>Clear of bases, roads, rivers and the map edge; ravine floors are fine (boulders, wrecks).</summary>
         public bool IsOffRoad(Vector2 point, float radius) =>
-            IsDry(point, radius) && _shapes.RoadEdgeDistance(point) > radius + 1f;
+            IsDry(point, radius) && _shapes.RoadEdgeDistance(point) > radius + RoadMargin;
 
         /// <summary>Clear of bases, rivers and the map edge; roadsides and ravines are fine (pylons, fences).</summary>
         public bool IsDry(Vector2 point, float radius)

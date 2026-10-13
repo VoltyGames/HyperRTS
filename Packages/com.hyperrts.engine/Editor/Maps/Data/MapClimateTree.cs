@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A tree the climate grows: a terrain tree, and optionally an entity version for the playable area.</summary>
     [Serializable]
-    [MapLibraryItem("tree", "prefab", "destructible")]
+    [MapLibraryItem("tree", "prefab", "destructible", Preview = new[] { "prefab" })]
     public sealed class MapClimateTree : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

@@ -172,7 +172,7 @@ namespace HyperRTS.Editor.Maps.Generation
                 }
 
                 // Straight into the list: trees were spaced when planted and reserve no clearance now.
-                Placements.All.Add(new MapPlacement(entry, tree.Position, tree.Yaw) { Scale = tree.Scale });
+                Placements.All.Add(new MapPlacement(entry, tree.Position, tree.Yaw, 1f) { Scale = tree.Scale });
             }
         }
     }

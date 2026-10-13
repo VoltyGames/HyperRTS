@@ -84,15 +84,15 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
                 }
             }
 
-            LayTracks(track, trackRuns);
+            LayTracks(track, kit.trackSnapReach, trackRuns);
             var belts = new MapBeltPlanner(Context);
             beltRuns.ForEach(run => belts.PlanLine(belt, run.Run, index * 1000 + run.Line));
         }
 
         /// <summary>Links every run before laying any, so no run snaps onto another's fresh track.</summary>
-        private void LayTracks(MapRoadClass track, List<List<Vector2>> runs)
+        private void LayTracks(MapRoadClass track, float snapReach, List<List<Vector2>> runs)
         {
-            var links = new MapFieldTrackLinks(Context);
+            var links = new MapFieldTrackLinks(Context, snapReach);
             var linked = new List<List<Vector2>>();
             foreach (var run in runs)
             {

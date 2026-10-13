@@ -6,11 +6,12 @@ namespace HyperRTS.Editor.Maps.Placement
     /// <summary>One palette prefab to instantiate: where, which way, how big and for whom.</summary>
     public sealed class MapPlacement
     {
-        public MapPlacement(MapPaletteEntry entry, Vector2 position, float yaw)
+        public MapPlacement(MapPaletteEntry entry, Vector2 position, float yaw, float lengthScale)
         {
             Entry = entry;
             Position = position;
             Yaw = yaw;
+            LengthScale = lengthScale;
         }
 
         public MapPaletteEntry Entry { get; }
@@ -20,6 +21,12 @@ namespace HyperRTS.Editor.Maps.Placement
         public float Yaw { get; }
 
         public float Scale { get; set; } = 1f;
+
+        /// <summary>Extra stretch along the entry's long side (an arch spanning its gap), on top of <see cref="Scale"/>.</summary>
+        public float LengthScale { get; }
+
+        /// <summary>The long side is local Z when the entry's size is deeper than wide, else local X.</summary>
+        private bool LengthAlongZ => Entry.size.y >= Entry.size.x;
 
         /// <summary>Owning slot; 0 is neutral.</summary>
         public int Owner { get; set; }
@@ -36,7 +43,20 @@ namespace HyperRTS.Editor.Maps.Placement
         /// </summary>
         public Vector2? Deck { get; set; }
 
-        public float Radius => Entry.Radius * Scale;
+        public float Radius
+        {
+            get
+            {
+                var size = Entry.size;
+                var length = Mathf.Max(size.x, size.y) * LengthScale;
+                return Mathf.Max(length, Mathf.Min(size.x, size.y)) * 0.5f * Scale;
+            }
+        }
+
+        /// <summary>The instance's local scale: uniform, with the long side stretched by <see cref="LengthScale"/>.</summary>
+        public Vector3 LocalScale => LengthAlongZ
+            ? new Vector3(Scale, Scale, Scale * LengthScale)
+            : new Vector3(Scale * LengthScale, Scale, Scale);
 
         public bool IsEntity => Entry.IsEntity;
     }

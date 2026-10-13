@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             var yaw = YawAlong(entry, direction);
             foreach (var center in centers)
             {
-                placements.AddEverywhere(entry, center, yaw, 1f);
+                placements.AddEverywhere(entry, center, yaw, 1f, 1f);
             }
         }
     }

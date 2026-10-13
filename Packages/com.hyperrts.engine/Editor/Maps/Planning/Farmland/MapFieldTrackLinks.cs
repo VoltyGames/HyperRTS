@@ -1,25 +1,26 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning.Farmland
 {
     /// <summary>
-    /// Ties field-end tracks into the road net: ends within reach snap onto the nearest road, and runs that still lead
-    /// nowhere are dropped. The symmetry seam doesn't count, since its mirror copy leads nowhere either.
+    /// Ties field-end tracks into the road net: ends within the kit's <see cref="MapFarmlandKit.trackSnapReach"/> snap
+    /// onto the nearest road, and runs that still lead nowhere are dropped. The symmetry seam doesn't count, since its
+    /// mirror copy leads nowhere either.
     /// </summary>
     public sealed class MapFieldTrackLinks
     {
-        /// <summary>A run end this close to a road's edge (metres) is carried onto the road.</summary>
-        public const float Reach = 8f;
-
         private readonly MapPlanContext _context;
+        private readonly float _reach;
         private readonly MapAccessRoutes _routes;
 
-        /// <summary>Links to the roads laid so far.</summary>
-        public MapFieldTrackLinks(MapPlanContext context)
+        /// <summary>Links to the roads laid so far; a run end within <paramref name="reach"/> of a road's edge is carried onto it.</summary>
+        public MapFieldTrackLinks(MapPlanContext context, float reach)
         {
             _context = context;
+            _reach = reach;
             _routes = new MapAccessRoutes(context.Shapes, context.Layout.Symmetry);
         }
 
@@ -49,7 +50,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             }
 
             var gap = nearest.Distance - nearest.Road.Width * 0.5f;
-            if (gap > Reach || !_routes.Clear(end, nearest.Point))
+            if (gap > _reach || !_routes.Clear(end, nearest.Point))
             {
                 return false;
             }

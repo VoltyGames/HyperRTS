@@ -34,7 +34,11 @@ namespace HyperRTS.Editor.Maps.Checks
                 Entry(resource.kind, name);
                 Require(resource.amount > 0, $"{name} ('{resource.kind}') needs an amount above 0.");
             });
-            Each(_spec.props, nameof(MapSpec.props), "Prop", (prop, name) => Entry(prop.kind, name));
+            Each(_spec.props, nameof(MapSpec.props), "Prop", (prop, name) =>
+            {
+                Entry(prop.kind, name);
+                Unaligned(prop.kind, name);
+            });
             Each(_spec.scatters, nameof(MapSpec.scatters), "Scatter", (scatter, name) => Entry(scatter.kind, name));
             Each(_spec.lines, nameof(MapSpec.lines), "Line", Line);
             Each(_spec.roads, nameof(MapSpec.roads), "Road", Road);

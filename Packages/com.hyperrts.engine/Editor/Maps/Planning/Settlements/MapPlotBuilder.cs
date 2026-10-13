@@ -60,7 +60,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             plot.YardEnd = Mathf.Min(plot.Depth, _kit.frontYard + depth + _entries.OutbuildingDepth);
             plot.GardenEnd = plot.YardEnd + _kit.gardenShare * (plot.Depth - plot.YardEnd);
             problem = null;
-            return new MapPlacement(entry, position, plot.FacingYaw + Jitter(entry)) { Scale = scale };
+            return new MapPlacement(entry, position, plot.FacingYaw + Jitter(entry), 1f) { Scale = scale };
         }
 
         /// <summary>Places the house and everything else on a plot whose land has been claimed.</summary>
@@ -225,7 +225,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             Clearance.IsDry(position, radius) && _settlement.OnVerge(position);
 
         private void Add(MapPaletteEntry entry, Vector2 position, float yaw, float scale) =>
-            _context.Placements.AddEverywhere(entry, position, yaw, scale);
+            _context.Placements.AddEverywhere(entry, position, yaw, scale, 1f);
 
         private float Scale(MapPaletteEntry entry) => _random.Range(entry.scale.x, entry.scale.y);
 

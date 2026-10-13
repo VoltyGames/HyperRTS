@@ -98,6 +98,12 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Width of the reed band reaching out from the water's edge (metres).")]
         public float reedWidth = 3f;
 
+        [Tooltip("Metres past a ford's edge over which the river deepens again (water thins and foams over this band).")]
+        public float fordFade;
+
+        [Tooltip("Metres of fast, foaming water downstream of a ford.")]
+        public float fordFastRun;
+
         [Tooltip("Surface inside ravines (floor and walls).")]
         [MapKey(typeof(MapClimateSurface))]
         public string ravineSurface;

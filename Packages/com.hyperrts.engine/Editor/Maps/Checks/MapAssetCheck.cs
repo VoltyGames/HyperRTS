@@ -1,3 +1,4 @@
+using System.Linq;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Texturing;
 using HyperRTS.Simulation.GameEntities;
@@ -53,6 +54,8 @@ namespace HyperRTS.Editor.Maps.Checks
             Climate.decals.ForEach(decal => DecalAssets(decal, name));
             Require(Climate.water != null, $"{name} has no water material.");
             Require(Climate.atmosphere != null, $"{name} has no atmosphere prefab.");
+            Require(Climate.fordFade > 0f, $"{name}: fordFade {Climate.fordFade} must be above 0.");
+            Require(Climate.fordFastRun > 0f, $"{name}: fordFastRun {Climate.fordFastRun} must be above 0.");
         }
 
         private void DecalAssets(MapClimateDecal decal, string name)
@@ -97,7 +100,25 @@ namespace HyperRTS.Editor.Maps.Checks
             Surface(Climate.ravineSurface, $"{name} ravine");
             Surface(Climate.ravineRimSurface, $"{name} ravine rim");
             Optional(Climate.reedDetail, key => InClimate(Climate.details, key, "detail", $"{name} reeds"));
+            RavineTrees(name);
         }
+
+        /// <summary>Ravine woods scatter the ravine surface's trees along the floor, ignoring maxEdgeDistance.</summary>
+        private void RavineTrees(string name)
+        {
+            if (!MapKeys.Contains(Climate.surfaces, Climate.ravineSurface))
+            {
+                return;
+            }
+
+            var source = $"{name} ravine surface '{Climate.ravineSurface}'";
+            Climate.Surface(Climate.ravineSurface).trees.ForEach(tree => NoEdgeLimit(tree, source));
+        }
+
+        /// <summary>maxEdgeDistance is honoured only by a climate surface's own trees, not by kits that scatter a mix.</summary>
+        private void NoEdgeLimit(MapTreeDensity density, string source) =>
+            Require(density.maxEdgeDistance <= 0f,
+                $"{source}: tree '{density.tree}' sets maxEdgeDistance {density.maxEdgeDistance}, which only a climate surface's trees honour.");
 
         private void SurfaceContents(MapClimateSurface surface)
         {
@@ -105,7 +126,7 @@ namespace HyperRTS.Editor.Maps.Checks
             InClimate(Climate.layers, surface.layer, "layer", name);
             surface.trees.ForEach(tree => Tree(tree.tree, name));
             surface.details.ForEach(detail => InClimate(Climate.details, detail.detail, "detail", name));
-            surface.props.ForEach(prop => Entry(prop.kind, name));
+            surface.props.ForEach(prop => UnalignedEntry(prop.kind, name));
             surface.decals.ForEach(decal => Decal(decal.decal, name));
         }
 
@@ -128,6 +149,7 @@ namespace HyperRTS.Editor.Maps.Checks
             Surface(kit.marginSurface, name);
             Optional(kit.beltKit, key => InClimate(Climate.beltKits, key, "belt kit", name));
             Optional(kit.trackClass, key => InClimate(Climate.roadClasses, key, "road class", $"{name} tracks"));
+            Require(kit.trackSnapReach > 0f, $"{name}: trackSnapReach {kit.trackSnapReach} must be above 0.");
         }
 
         private void BeltKit(MapBeltKit kit)
@@ -142,8 +164,12 @@ namespace HyperRTS.Editor.Maps.Checks
         private void WoodlandKit(MapWoodlandKit kit)
         {
             var name = $"woodland kit '{kit.key}'";
-            kit.trees.ForEach(tree => Tree(tree.tree, name));
-            kit.edgeTrees.ForEach(tree => Tree(tree.tree, name));
+            foreach (var tree in kit.trees.Concat(kit.edgeTrees))
+            {
+                Tree(tree.tree, name);
+                NoEdgeLimit(tree, name);
+            }
+
             Surface(kit.surface, name);
             Surface(kit.edgeSurface, name);
         }
@@ -153,6 +179,7 @@ namespace HyperRTS.Editor.Maps.Checks
             var name = $"palette entry '{entry.key}'";
             Optional(entry.pad, key => Surface(key, $"{name} pad"));
             Optional(entry.access, key => InClimate(Climate.roadClasses, key, "road class", $"{name} access"));
+            AccessGroupReach(entry, name);
             Optional(entry.groundDecal, key =>
             {
                 Decal(key, $"{name} ground decal");
@@ -161,24 +188,40 @@ namespace HyperRTS.Editor.Maps.Checks
             });
         }
 
+        /// <summary>Only props with an access track share one, so a reach without access would do nothing.</summary>
+        private void AccessGroupReach(MapPaletteEntry entry, string name)
+        {
+            var reach = entry.accessGroupReach;
+            Require(reach >= 0f, $"{name}: accessGroupReach {reach} must be at least 0.");
+            var hasAccess = !string.IsNullOrEmpty(entry.access);
+            Require(hasAccess || reach <= 0f, $"{name}: accessGroupReach {reach} needs access set; use 0 without an access track.");
+        }
+
+        /// <summary>A palette entry a surface or kit places: it must exist and not ask for alignToRoad (scatters only).</summary>
+        private void UnalignedEntry(string key, string source)
+        {
+            Entry(key, source);
+            Unaligned(key, source);
+        }
+
         private void SettlementKit(MapSettlementKit kit)
         {
             var name = $"settlement kit '{kit.key}'";
             Require(kit.houses.Count > 0, $"{name} has no houses.");
             Require(kit.plot.x >= 1f && kit.plot.y >= 1f, $"{name}: plot {kit.plot} must be at least 1 m each way.");
-            kit.houses.ForEach(key => Entry(key, name));
-            kit.outbuildings.ForEach(key => Entry(key, name));
-            kit.extras.ForEach(extra => Entry(extra.kind, name));
+            kit.houses.ForEach(key => UnalignedEntry(key, name));
+            kit.outbuildings.ForEach(key => UnalignedEntry(key, name));
+            kit.extras.ForEach(extra => UnalignedEntry(extra.kind, name));
             foreach (var key in new[] { kit.frontFence, kit.sideFence, kit.gate })
             {
-                Optional(key, entry => Entry(entry, name));
+                Optional(key, entry => UnalignedEntry(entry, name));
             }
 
             Optional(kit.streetPipe, key => StreetPipe(kit, key, name));
 
             Optional(kit.streetPole, key =>
             {
-                Entry(key, name);
+                UnalignedEntry(key, name);
                 Require(kit.poleSpacing >= 1f, $"{name}: poleSpacing {kit.poleSpacing} must be at least 1 m.");
             });
             Optional(kit.orchardTree, key =>
@@ -191,19 +234,20 @@ namespace HyperRTS.Editor.Maps.Checks
             Surface(kit.backSurface, name);
         }
 
-        /// <summary>A street pipe needs its arch and a shortest run.</summary>
+        /// <summary>A street pipe needs its arch, a shortest run and the widest gap an arch bridges.</summary>
         private void StreetPipe(MapSettlementKit kit, string pipe, string name)
         {
-            Entry(pipe, name);
+            UnalignedEntry(pipe, name);
             var hasArch = !string.IsNullOrEmpty(kit.streetPipeArch);
             Require(hasArch,
                 $"{name}: streetPipe '{pipe}' needs streetPipeArch, the arch that carries it over driveways and roads.");
             if (hasArch)
             {
-                Entry(kit.streetPipeArch, name);
+                UnalignedEntry(kit.streetPipeArch, name);
             }
 
             Require(kit.streetPipeMinRun >= 1, $"{name}: streetPipeMinRun {kit.streetPipeMinRun} must be at least 1 section.");
+            Require(kit.streetPipeMaxGap > 0f, $"{name}: streetPipeMaxGap {kit.streetPipeMaxGap} must be above 0.");
         }
     }
 }

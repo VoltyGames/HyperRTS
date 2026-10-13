@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.Tests
         {
             var spec = MapRoadFixture.Spec();
             spec.roads.Add(MapRoadFixture.Road("Asphalt", new Vector2(-110f, -60f), new Vector2(110f, -60f)));
-            return new MapFieldTrackLinks(MapRoadFixture.Context(spec, MapRoadFixture.Climate(), new MapIssues()));
+            return new MapFieldTrackLinks(MapRoadFixture.Context(spec, MapRoadFixture.Climate(), new MapIssues()), 8f);
         }
 
         [Test]

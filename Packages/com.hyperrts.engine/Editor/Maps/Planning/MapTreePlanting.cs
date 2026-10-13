@@ -59,14 +59,9 @@ namespace HyperRTS.Editor.Maps.Planning
         public void Scatter(IReadOnlyList<MapTreeDensity> mix, float hectares, float spacing, System.Random random,
             Func<Vector2> candidate, Func<Vector2, bool> inside)
         {
+            // MapAssetCheck rejects maxEdgeDistance on every mix scattered here.
             foreach (var density in mix)
             {
-                if (density.maxEdgeDistance > 0f)
-                {
-                    throw new InvalidOperationException(
-                        $"HyperRTS: tree '{density.tree}' sets maxEdgeDistance, which only a climate surface's trees support.");
-                }
-
                 Scatter(density, hectares, spacing, random, candidate, inside);
             }
         }

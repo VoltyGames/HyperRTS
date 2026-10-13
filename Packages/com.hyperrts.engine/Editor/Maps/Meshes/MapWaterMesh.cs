@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
 
@@ -15,17 +16,22 @@ namespace HyperRTS.Editor.Maps.Meshes
         private const float EdgeOverhang = 12f;
 
         private readonly IReadOnlyList<MapCrossing> _crossings;
+        private readonly MapClimate _climate;
         private readonly List<Vector3> _vertices = new();
         private readonly List<Vector2> _uvs = new();
         private readonly List<Color> _colors = new();
         private readonly List<int> _triangles = new();
 
-        private MapWaterMesh(IReadOnlyList<MapCrossing> crossings) => _crossings = crossings;
+        private MapWaterMesh(IReadOnlyList<MapCrossing> crossings, MapClimate climate)
+        {
+            _crossings = crossings;
+            _climate = climate;
+        }
 
         /// <summary>River ribbons at <paramref name="height"/>, run on past the terrain's edge (<paramref name="bounds"/>).</summary>
-        public static Mesh Build(MapShapes shapes, float height, Rect bounds)
+        public static Mesh Build(MapShapes shapes, MapClimate climate, float height, Rect bounds)
         {
-            var water = new MapWaterMesh(shapes.Crossings);
+            var water = new MapWaterMesh(shapes.Crossings, climate);
             foreach (var river in shapes.Rivers)
             {
                 var half = river.Spec.width * 0.5f * (1f + river.Spec.widthVariation) + BankMargin;
@@ -53,7 +59,7 @@ namespace HyperRTS.Editor.Maps.Meshes
                 _vertices.Add(new Vector3(point.x - left.x, height, point.y - left.y));
                 _uvs.Add(new Vector2(-half, along));
                 _uvs.Add(new Vector2(half, along));
-                var color = MapWaterFords.At(_crossings, point, direction);
+                var color = MapWaterFords.At(_crossings, _climate, point, direction);
                 _colors.Add(color);
                 _colors.Add(color);
                 if (i == 0)

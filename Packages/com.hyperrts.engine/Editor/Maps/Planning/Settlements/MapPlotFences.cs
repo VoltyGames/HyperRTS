@@ -48,7 +48,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 var gap = centers.OrderBy(c => Mathf.Abs(Along(plot, c) - gateU)).First();
                 var clear = (MapSections.Length(gate) + MapSections.Length(fence)) * 0.5f - 0.05f;
                 centers.RemoveAll(c => (c - gap).magnitude < clear);
-                _placements.AddEverywhere(gate, gap, MapSections.YawAlong(gate, plot.Run), 1f);
+                _placements.AddEverywhere(gate, gap, MapSections.YawAlong(gate, plot.Run), 1f, 1f);
             }
 
             MapSections.Place(_placements, fence, centers, plot.Run);

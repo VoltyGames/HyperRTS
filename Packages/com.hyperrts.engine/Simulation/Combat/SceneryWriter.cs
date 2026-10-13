@@ -17,6 +17,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<SpawnOnDeath> _remains;
         private ComponentLookup<SpawnEffect> _effects;
         private ComponentLookup<LocalTransform> _transforms;
+        private ComponentLookup<PostTransformMatrix> _stretches;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
 
@@ -27,6 +28,7 @@ namespace HyperRTS.Simulation.Combat
             _remains = state.GetComponentLookup<SpawnOnDeath>(true);
             _effects = state.GetComponentLookup<SpawnEffect>(true);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
+            _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
         }
@@ -38,6 +40,7 @@ namespace HyperRTS.Simulation.Combat
             _remains.Update(ref state);
             _effects.Update(ref state);
             _transforms.Update(ref state);
+            _stretches.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
         }
@@ -65,6 +68,11 @@ namespace HyperRTS.Simulation.Combat
             {
                 var remains = ecb.Instantiate(spawn.Prefab);
                 ecb.SetComponent(remains, _transforms[scenery]);
+                if (_stretches.TryGetComponent(scenery, out var stretch))
+                {
+                    ecb.AddComponent(remains, stretch);
+                }
+
                 if (!witnessed && _effects.HasComponent(spawn.Prefab))
                 {
                     ecb.SetComponentEnabled<SpawnEffect>(remains, false);

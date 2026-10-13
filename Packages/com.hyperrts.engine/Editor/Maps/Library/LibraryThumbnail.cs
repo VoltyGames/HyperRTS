@@ -1,5 +1,4 @@
 using System;
-using HyperRTS.Editor.Maps.Data;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -7,31 +6,23 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
-    /// The asset a library item is pictured by in lists: a layer's diffuse texture, a plant's texture or mesh, a
-    /// tree's or prop's prefab, a road's, material item's or decal's material. Kits, climates, palettes and rules have none.
+    /// The asset a library item is pictured by in lists: the first set ref its <see cref="MapLibraryItemAttribute.Preview"/>
+    /// names (a terrain layer shows its diffuse texture). Items naming none have no picture.
     /// </summary>
     public static class LibraryThumbnail
     {
         public static Object PreviewAsset(Type type, MapLibraryRefs refs)
         {
-            if (type == typeof(MapClimateLayer))
+            foreach (var name in MapLibraryItemAttribute.Require(type).Preview)
             {
-                var layer = Load<TerrainLayer>(refs.terrainLayer);
-                return layer == null ? null : layer.diffuseTexture;
+                var path = RefPath(refs, name, type);
+                if (!string.IsNullOrEmpty(path))
+                {
+                    return Unwrap(AssetDatabase.LoadMainAssetAtPath(path));
+                }
             }
 
-            if (type == typeof(MapClimateDetail))
-            {
-                return string.IsNullOrEmpty(refs.texture) ? Load<GameObject>(refs.mesh) : Load<Texture2D>(refs.texture);
-            }
-
-            if (type == typeof(MapClimateTree) || type == typeof(MapPaletteEntry))
-            {
-                return Load<GameObject>(refs.prefab);
-            }
-
-            var hasMaterial = type == typeof(MapRoadClass) || type == typeof(MapMaterial) || type == typeof(MapClimateDecal);
-            return hasMaterial ? Load<Material>(refs.material) : null;
+            return null;
         }
 
         /// <summary>The rendered preview of <paramref name="asset"/>, or its icon while the preview is still loading.</summary>
@@ -46,7 +37,18 @@ namespace HyperRTS.Editor.Maps.Library
             return preview != null ? preview : AssetPreview.GetMiniThumbnail(asset);
         }
 
-        private static T Load<T>(string path) where T : Object =>
-            string.IsNullOrEmpty(path) ? null : AssetDatabase.LoadAssetAtPath<T>(path);
+        private static string RefPath(MapLibraryRefs refs, string name, Type type)
+        {
+            var field = typeof(MapLibraryRefs).GetField(name);
+            if (field == null || field.FieldType != typeof(string))
+            {
+                throw new ArgumentException($"HyperRTS: {type.Name} previews by '{name}', which is no asset path ref.");
+            }
+
+            return (string)field.GetValue(refs);
+        }
+
+        /// <summary>A terrain layer previews as a sphere; its diffuse texture shows the ground better.</summary>
+        private static Object Unwrap(Object asset) => asset is TerrainLayer layer ? layer.diffuseTexture : asset;
     }
 }

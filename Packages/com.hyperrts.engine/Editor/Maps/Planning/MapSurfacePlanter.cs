@@ -129,7 +129,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 return false;
             }
 
-            Context.Placements.AddEverywhere(entry, spot, yaw, scale);
+            Context.Placements.AddEverywhere(entry, spot, yaw, scale, 1f);
             return true;
         }
 

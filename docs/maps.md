@@ -145,7 +145,7 @@ field (`MapNoiseChannel`): a new feature takes a new channel, since changing a c
 | `spawns` | `pos`, `yaw` | The palette's start kit; the base is levelled and kept clear |
 | `resources` | `pos`, `kind`, `amount`, `shared` | The palette prefab `kind` (a resource node) holding `amount`; random facing |
 | `props` | `pos`, `yaw`, `kind`, `shared` | A palette prefab; one with a pad gets ground round it, one with access a track to the nearest road |
-| `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings`, `shared` | Meandering channel of varying width, banks, floodplain, reeds, water mesh; each crossing (`t`, `kind` bridge or ford, `width`, `prop`) sits at `t` along the river; fords thin the water and streak it with foam |
+| `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings`, `shared` | Meandering channel of varying width, banks, floodplain, reeds, water mesh; each crossing (`t`, `kind` bridge or ford, `width`, `prop`) sits at `t` along the river; fords thin the water and streak it with foam (vertex A carries how shallow the bed is, the water material's `_FordAlpha` is the alpha mid-ford; the climate's `fordFade` and `fordFastRun` set how far the shallows and the foam reach) |
 | `ravines` | `points`, `width`, `depth`, `rim`, `branches`, `wooded`, `shared` | Steep-walled cut with a gentle rim, side gullies and woods in patches |
 | `hills` | `pos`, `radius`, `height`, `flatTop`, `shared` | Smooth rise |
 | `roads` | `points`, `kind`, `shared` | A road class: width, surface, verge, rank, levelled or not |
@@ -173,14 +173,15 @@ Passes choose at authored-sector points (`Symmetry.InSector`), place in every co
 `MapPlacements.AddEverywhere`) and claim land for every copy; raster decisions key on the sector point (`ToSector`).
 
 Farmland splits the free land on a grid along `angle` into fields (slivers become margin), picks each crop by the
-kit's weights and lays belts and tracks along the field ends. A track end within 8 m of a road's edge is carried
-onto the road (`MapFieldTrackLinks`), and a track whose ends still lead nowhere (no road, map edge, base or
+kit's weights and lays belts and tracks along the field ends. A track end within the kit's `trackSnapReach` of a road's edge is
+carried onto the road (`MapFieldTrackLinks`), and a track whose ends still lead nowhere (no road, map edge, base or
 settlement, the same test as the dead-end check in `MapRoadEnds`) is dropped. A settlement (`MapSettlement`, one per
 spec settlement) fits plots along the streets: house on the street, yard, outbuildings, garden, orchard, fences, gate,
 street furniture. The street pipe decides every section first, then keeps only runs of at least `streetPipeMinRun`
-sections, with a `streetPipeArch` over each gap of up to 12 m (a driveway, a crossing road) inside a run
-(`MapPipeRuns`). Access tracks: props asking for the same road class within 20 m of each other share one track, from
-the one nearest a road (`MapAccessGroups`). The report says why a plot didn't fit.
+sections, with a `streetPipeArch` over each gap of up to `streetPipeMaxGap` metres (a driveway, a crossing road) inside a
+run (`MapPipeRuns`), stretched along its long side so its ends meet the runs (a placement's `LengthScale`, written
+as a non-uniform local scale; remains of a stretched piece keep the stretch). Access tracks: props asking for the same road class within the smaller `accessGroupReach` of the two
+share one track, from the one nearest a road (`MapAccessGroups`). The report says why a plot didn't fit.
 
 ### Refiners
 
@@ -214,7 +215,8 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 
 - `MapAssetCheck` (climate and palette) and `MapSpecCheck` (size, terrain, amounts and every kind the spec names)
   run before anything is refined: every layer, tree, plant, decal, surface, road class, kit and palette key resolves, and
-  generated prefabs have display names. A bad key is an error that names it and the feature (`MapKeyCheck`). After
+  generated prefabs have display names. Settings honoured only in some places are rejected elsewhere: `maxEdgeDistance`
+  on a kit's or the ravine surface's trees, `alignToRoad` on a prop a surface, settlement kit or spec prop places. A bad key is an error that names it and the feature (`MapKeyCheck`). After
   them, lookups throw (`MapKeys`): a key the checks missed fails loudly instead of being skipped.
 - Road checks warn about dead ends and bends tighter than half the class's curve radius.
 - The nav grid (classified like `NavGridSystem`) gives rush times, attack paths (close a corridor along the shortest
@@ -255,13 +257,13 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 | `tree` | `MapClimateTree` | A terrain tree, optionally an entity version for the playable area | `prefab`, `destructible` |
 | `decal` | `MapClimateDecal` | A ground decal: size range (metres), `randomRotation`, `depth` | `material` |
 | `road` | `MapRoadClass` | Width, surface, verge, rank, levelling and curve radius of a road class | `material`; surface keys |
-| `surface` | `MapClimateSurface` | A ground type: its layer, the trees, plants and props on it and its `decals` per hectare (a tree with `maxEdgeDistance` grows only that close to the surface's edge, per hectare of that band) | layer, tree, plant, prop, decal keys |
-| `farmland` | `MapFarmlandKit` | Field sizes, crop mix, margins, belts and tracks | surface, belt and road keys |
+| `surface` | `MapClimateSurface` | A ground type: its layer, the trees, plants and props on it and its `decals` per hectare (a tree with `maxEdgeDistance` grows only that close to the surface's edge, per hectare of that band; not on the ravine surface) | layer, tree, plant, prop, decal keys |
+| `farmland` | `MapFarmlandKit` | Field sizes, crop mix, margins, belts and tracks (`trackSnapReach`: metres from a road's edge within which a track end joins it) | surface, belt and road keys |
 | `belt` | `MapBeltKit` | Rows of trees with shrubs in the gaps | tree and surface keys |
 | `woodland` | `MapWoodlandKit` | Canopy, shrubby edge, clearings, floor | tree and surface keys |
-| `settlement` | `MapSettlementKit` | Plot layout along a street | prop, surface and tree keys |
-| `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `alignToRoad` (scatters put it on the nearest road's verge, facing along it), `alignToGround` (max tilt with the slope, 0 upright), `buriedDepth` (metres below the ground), the pad surface and access road it gets, a `groundDecal` (with its required `groundDecalSize`) under it | `prefab`; surface, road and decal keys |
-| `climate` | `MapClimate` | Ground, slope, shore, floodplain and ravine surfaces, reeds, fog and draw distances | `surfaces`, `roadClasses`, `farmlandKits`, `beltKits`, `woodlandKits`, `water`, `atmosphere`, `skybox`; surface and plant keys |
+| `settlement` | `MapSettlementKit` | Plot layout along a street, street poles and pipe (`streetPipeMinRun` sections, arches over gaps up to `streetPipeMaxGap` m) | prop, surface and tree keys |
+| `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `alignToRoad` (scatters only: puts it on the nearest road's verge, facing along it), `alignToGround` (max tilt with the slope, 0 upright), `buriedDepth` (metres below the ground), the pad surface and access road it gets, `accessGroupReach` (metres within which props with the same access share its track; 0 for its own, required 0 without access), a `groundDecal` (with its required `groundDecalSize`) under it | `prefab`; surface, road and decal keys |
+| `climate` | `MapClimate` | Ground, slope, shore, floodplain and ravine surfaces, reeds, ford shallows (`fordFade`) and fast water (`fordFastRun`), fog and draw distances | `surfaces`, `roadClasses`, `farmlandKits`, `beltKits`, `woodlandKits`, `water`, `atmosphere`, `skybox`; surface and plant keys |
 | `palette` | `MapPalette` | Start kit, base radius (exactly one per project) | `rig`, `startingResources`; prop keys |
 | `rules` | `MapRules` | Rush thresholds, attack paths and renewable fields per player per mode, `maxDecals`, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |
 
@@ -324,7 +326,7 @@ slice size; mask heights are stretched so every layer blends alike (`MapTerrainS
    key fields.
 2. A `[MapLibraryItem("<type>", "<ref field>"...)]` attribute naming its type and ref fields (new asset paths or key
    lists go on `MapLibraryRefs` with `[MapAsset]` or `[MapKey]`), its place in `MapLibrary`'s ordered type list, and
-   its picture in `LibraryThumbnail` if it has one.
+   the refs that picture it in lists as the attribute's `Preview`, if it has one.
 3. Where builds get it: `MapClimateAssembly` for climate content, `MapLibrary.Palette` for palette content.
 4. Its keys checked in `MapAssetCheck` and listed in `MapKeyReference`.
 

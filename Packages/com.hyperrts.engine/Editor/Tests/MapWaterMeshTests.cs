@@ -17,19 +17,19 @@ namespace HyperRTS.Editor.Tests
         private const float RiverZ = -60f;
 
         [Test]
-        public void Ribbon_FadesTheWaterAndMarksFastWaterOverAFord()
+        public void Ribbon_MarksShallowAndFastWaterOverAFord()
         {
             var (mesh, shapes) = Build();
             var colors = mesh.colors;
             var nearest = NearestRow(mesh.vertices, shapes.Crossings[0].Position);
 
-            Assert.Less(colors[nearest].a, 1f, "the water fades out over the ford");
+            Assert.Greater(colors[nearest].a, 0f, "the bed is shallow over the ford");
             Assert.Greater(colors[nearest].g, 0f, "the ford runs fast");
             Assert.AreEqual(colors[nearest], colors[nearest + 1], "both banks of a row match");
         }
 
         [Test]
-        public void Ribbon_KeepsFullCalmWaterAwayFromFords()
+        public void Ribbon_KeepsDeepCalmWaterAwayFromFords()
         {
             var (mesh, shapes) = Build();
             var (vertices, colors) = (mesh.vertices, mesh.colors);
@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Tests
                     continue;
                 }
 
-                Assert.AreEqual(1f, colors[i].a, $"full water at {centre}");
+                Assert.AreEqual(0f, colors[i].a, $"deep water at {centre}");
                 Assert.AreEqual(0f, colors[i].g, $"calm water at {centre}");
                 far++;
             }
@@ -65,9 +65,10 @@ namespace HyperRTS.Editor.Tests
                 crossings = new List<MapCrossingSpec> { new() { t = 0.5f, kind = MapCrossingSpec.Ford } },
             });
             var layout = MapExpander.Expand(spec, new MapIssues());
-            var shapes = new MapShapes(layout, new MapPalette(), new MapClimate());
+            var climate = new MapClimate { fordFade = 6f, fordFastRun = 10f };
+            var shapes = new MapShapes(layout, new MapPalette(), climate);
             Assert.IsNotEmpty(shapes.Crossings);
-            return (MapWaterMesh.Build(shapes, layout.WaterHeight, layout.TerrainBounds), shapes);
+            return (MapWaterMesh.Build(shapes, climate, layout.WaterHeight, layout.TerrainBounds), shapes);
         }
 
         private static int NearestRow(Vector3[] vertices, Vector2 point)

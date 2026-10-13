@@ -1,13 +1,18 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Placement;
+using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning
 {
-    /// <summary>Props sharing one access track: same road class, each within reach of another in the group.</summary>
+    /// <summary>
+    /// Props sharing one access track: same road class, each within the smaller <see cref="MapPaletteEntry.accessGroupReach"/>
+    /// of itself and another in the group.
+    /// </summary>
     public static class MapAccessGroups
     {
         /// <summary>The groups, in the order their first prop comes in <paramref name="props"/>.</summary>
-        public static List<List<MapPlacement>> Group(IReadOnlyList<MapPlacement> props, float reach)
+        public static List<List<MapPlacement>> Group(IReadOnlyList<MapPlacement> props)
         {
             var groups = new List<List<MapPlacement>>();
             var grouped = new bool[props.Count];
@@ -22,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 var group = new List<MapPlacement> { props[i] };
                 for (var next = 0; next < group.Count; next++)
                 {
-                    Gather(props, group, grouped, group[next], reach);
+                    Gather(props, group, grouped, group[next]);
                 }
 
                 groups.Add(group);
@@ -33,7 +38,7 @@ namespace HyperRTS.Editor.Maps.Planning
 
         /// <summary>Adds the ungrouped props within reach of <paramref name="from"/> that ask for its road class.</summary>
         private static void Gather(IReadOnlyList<MapPlacement> props, List<MapPlacement> group, bool[] grouped,
-            MapPlacement from, float reach)
+            MapPlacement from)
         {
             for (var j = 0; j < props.Count; j++)
             {
@@ -42,7 +47,8 @@ namespace HyperRTS.Editor.Maps.Planning
                     continue;
                 }
 
-                if ((props[j].Position - from.Position).magnitude <= reach)
+                var reach = Mathf.Min(from.Entry.accessGroupReach, props[j].Entry.accessGroupReach);
+                if (reach > 0f && (props[j].Position - from.Position).magnitude <= reach)
                 {
                     grouped[j] = true;
                     group.Add(props[j]);

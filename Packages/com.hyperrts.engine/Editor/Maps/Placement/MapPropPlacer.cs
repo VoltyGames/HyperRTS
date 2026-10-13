@@ -15,9 +15,8 @@ namespace HyperRTS.Editor.Maps.Placement
     public sealed class MapPropPlacer
     {
         private const int ScatterAttempts = 40;
+        private const float VergeGap = MapClearance.RoadMargin + 0.5f;
 
-        /// <summary>Clears the off-road check's 1 m.</summary>
-        private const float VergeGap = 1.5f;
         private readonly MapLayout _layout;
         private readonly MapShapes _shapes;
         private readonly MapPalette _palette;
@@ -62,7 +61,7 @@ namespace HyperRTS.Editor.Maps.Placement
                 {
                     var entry = _palette.Entry(item.key);
                     var position = spawn.Position + right * item.offset.x + forward * item.offset.y;
-                    _placements.Add(new MapPlacement(entry, position, spawn.Yaw + item.yaw) { Owner = spawn.Slot });
+                    _placements.Add(new MapPlacement(entry, position, spawn.Yaw + item.yaw, 1f) { Owner = spawn.Slot });
                 }
             }
         }
@@ -73,7 +72,7 @@ namespace HyperRTS.Editor.Maps.Placement
             {
                 var entry = _palette.Entry(resource.Placed.kind);
                 var yaw = resource.Transform.ApplyYaw(Jitter(entry, MapRandomChannel.ResourceYaw, resource.Index));
-                _placements.Add(new MapPlacement(entry, resource.Placed.pos.ToVector2(), yaw) { Amount = resource.Placed.amount });
+                _placements.Add(new MapPlacement(entry, resource.Placed.pos.ToVector2(), yaw, 1f) { Amount = resource.Placed.amount });
             }
         }
 
@@ -89,7 +88,7 @@ namespace HyperRTS.Editor.Maps.Placement
                     CheckOffRoad(entry, position, new MapIssueFeature(nameof(MapSpec.props), prop.Index));
                 }
 
-                _placements.Add(new MapPlacement(entry, position, yaw));
+                _placements.Add(new MapPlacement(entry, position, yaw, 1f));
             }
         }
 
@@ -108,7 +107,7 @@ namespace HyperRTS.Editor.Maps.Placement
         {
             foreach (var crossing in _shapes.Crossings.Where(c => c.IsBridge))
             {
-                _placements.Add(new MapPlacement(_palette.Entry(crossing.Prop), crossing.Position, crossing.Yaw)
+                _placements.Add(new MapPlacement(_palette.Entry(crossing.Prop), crossing.Position, crossing.Yaw, 1f)
                 {
                     Height = crossing.Height,
                     Deck = new Vector2(crossing.Width, crossing.Span + 2f),
@@ -132,7 +131,7 @@ namespace HyperRTS.Editor.Maps.Placement
                     if (Clearance.IsDry(position, entry.Radius))
                     {
                         var yaw = MapGeometry.Yaw(direction) + Jitter(entry, MapRandomChannel.LineYaw, line.Index * 1000 + (int)along);
-                        _placements.AddCopies(_layout.Lines, line.Index, entry, position, yaw, 1f);
+                        _placements.AddCopies(_layout.Lines, line.Index, entry, position, yaw, 1f, 1f);
                     }
                 }
             }
@@ -160,7 +159,7 @@ namespace HyperRTS.Editor.Maps.Placement
 
                     if (Fits(polygon, position, entry.Radius * scale))
                     {
-                        _placements.AddCopies(_layout.Scatters, scatter.Index, entry, position, yaw, scale);
+                        _placements.AddCopies(_layout.Scatters, scatter.Index, entry, position, yaw, scale, 1f);
                         placed++;
                     }
                 }

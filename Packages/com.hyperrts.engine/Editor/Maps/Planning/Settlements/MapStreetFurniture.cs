@@ -15,9 +15,6 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         private const float EdgeOffset = 1.5f;
         private const float SpotClearance = 0.3f;
 
-        /// <summary>The widest gap (metres) between two pipe runs that an arch bridges.</summary>
-        private const float MaxArchGap = 12f;
-
         private readonly MapSettlement _settlement;
         private readonly MapPlanContext _context;
 
@@ -71,13 +68,13 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             }
 
             var arches = new List<(int First, int Count)>();
-            var maxGap = Mathf.FloorToInt(MaxArchGap / section);
+            var maxGap = Mathf.FloorToInt(_settlement.Kit.streetPipeMaxGap / section);
             var kept = MapPipeRuns.Keep(pass, _settlement.Kit.streetPipeMinRun, maxGap, arches);
             for (var i = 0; i < kept.Length; i++)
             {
                 if (kept[i])
                 {
-                    Add(pipe, sections[i].Position, sections[i].Direction);
+                    Add(pipe, sections[i].Position, sections[i].Direction, 1f);
                 }
             }
 
@@ -86,7 +83,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 var middle = Beside(road, sections[first].Along + (count - 1) * section * 0.5f, -1f, out var direction);
                 if (InSettlementSector(arch, middle))
                 {
-                    Add(arch, middle, direction);
+                    Add(arch, middle, direction, MapPipeRuns.ArchStretch(count, section, MapSections.Length(arch)));
                 }
             }
         }
@@ -137,7 +134,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         {
             if (CanStand(entry, position))
             {
-                Add(entry, position, direction);
+                Add(entry, position, direction, 1f);
             }
         }
 
@@ -166,7 +163,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             return symmetry.InSector(position) && symmetry.SeamDistance(position) >= entry.Radius;
         }
 
-        private void Add(MapPaletteEntry entry, Vector2 position, Vector2 direction) =>
-            _context.Placements.AddEverywhere(entry, position, MapSections.YawAlong(entry, direction), 1f);
+        private void Add(MapPaletteEntry entry, Vector2 position, Vector2 direction, float lengthScale) =>
+            _context.Placements.AddEverywhere(entry, position, MapSections.YawAlong(entry, direction), 1f, lengthScale);
     }
 }

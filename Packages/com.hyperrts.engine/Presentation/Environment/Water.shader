@@ -1,5 +1,6 @@
 // River and lake surface: depth-tinted colour, refracted bottom, ripples drifting along V (metres), fresnel sky and
-// sun glint kept under bloom, cloud shadows. Vertex colour A thins the water at fords; G streaks foam on fast water.
+// sun glint kept under bloom, cloud shadows. Vertex colour A is how shallow a ford is (thinned to _FordAlpha); G streaks
+// foam on fast water.
 // Needs the URP asset's Depth and Opaque Textures.
 Shader "HyperRTS/Water"
 {
@@ -23,6 +24,7 @@ Shader "HyperRTS/Water"
         _GlintFadeStart ("Glint Fade Start (m)", Float) = 80
         _GlintFadeEnd ("Glint Fade End (m)", Float) = 300
         _EdgeFade ("Edge Fade Depth (m)", Float) = 0.15
+        _FordAlpha ("Water Alpha Mid-Ford", Range(0, 1)) = 0.25
         _FoamColor ("Foam Color", Color) = (0.82, 0.82, 0.76, 1)
         _StreakWidth ("Fast Water Streak Width (m)", Float) = 1.5
         _StreakLength ("Fast Water Streak Length (m)", Float) = 10
@@ -83,6 +85,7 @@ Shader "HyperRTS/Water"
                 float _GlintFadeEnd;
                 float _EdgeFade;
                 half4 _FoamColor;
+                half _FordAlpha;
                 float _StreakWidth;
                 float _StreakLength;
             CBUFFER_END
@@ -240,7 +243,7 @@ Shader "HyperRTS/Water"
 
                 half foam = Streaks(input.uv, input.color.g) * 0.5;
                 color = lerp(color, _FoamColor.rgb * (sun.color * sun.shadowAttenuation * 0.6 + 0.4), foam);
-                half alpha = max(input.color.a * saturate(depth / _EdgeFade), foam);
+                half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(depth / _EdgeFade), foam);
                 color = MixFog(color, input.fogFactor);
                 return half4(color, alpha);
             }

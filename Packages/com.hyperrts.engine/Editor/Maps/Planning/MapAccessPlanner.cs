@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
     /// Runs a straight access track from each prop's pad to the nearest road it can reach without crossing water or a
-    /// ravine; props within <see cref="GroupReach"/> of each other share one track.
+    /// ravine; nearby props share one track (<see cref="MapAccessGroups"/>).
     /// </summary>
     public sealed class MapAccessPlanner : MapLandPass
     {
@@ -21,9 +21,6 @@ namespace HyperRTS.Editor.Maps.Planning
         private const float Beside = 1.5f;
 
         private const float TrackStep = 3f;
-
-        /// <summary>Props this close (metres) to another of their group share its track.</summary>
-        public const float GroupReach = 20f;
 
         public MapAccessPlanner(MapPlanContext context) : base(context)
         {
@@ -36,7 +33,7 @@ namespace HyperRTS.Editor.Maps.Planning
             var props = Context.Placements.All
                 .Where(p => !string.IsNullOrEmpty(p.Entry.access) && Symmetry.InSector(p.Position))
                 .ToList();
-            foreach (var group in MapAccessGroups.Group(props, GroupReach))
+            foreach (var group in MapAccessGroups.Group(props))
             {
                 if (!ConnectGroup(routes, roads, group))
                 {

@@ -44,5 +44,22 @@ namespace HyperRTS.Editor.Tests
             Assert.AreEqual("###...###", Pattern(kept));
             Assert.IsEmpty(arches);
         }
+
+        [Test]
+        public void AnArchOverATwoSectionGap_IsStretched_SoItsEndsMeetTheRuns()
+        {
+            const float section = 6f;
+            const float archLength = 4.6f;
+            var arches = new List<(int First, int Count)>();
+            MapPipeRuns.Keep(Spots("###..###"), 3, 2, arches);
+            var (first, count) = arches.Single();
+
+            var half = archLength * MapPipeRuns.ArchStretch(count, section, archLength) * 0.5f;
+            var middle = (first + count * 0.5f) * section;
+
+            Assert.AreEqual(2, count);
+            Assert.AreEqual(first * section, middle - half, 1e-4f, "meets the run before the gap");
+            Assert.AreEqual((first + count) * section, middle + half, 1e-4f, "meets the run after it");
+        }
     }
 }

@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>One placeable prefab.</summary>
     [Serializable]
-    [MapLibraryItem("prop", "prefab")]
+    [MapLibraryItem("prop", "prefab", Preview = new[] { "prefab" })]
     public sealed class MapPaletteEntry : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]
@@ -49,6 +49,9 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Road class of an access track run from the pad to the nearest road; empty for none.")]
         [MapKey(typeof(MapRoadClass))]
         public string access;
+
+        [Tooltip("Props this close (metres) to another asking for the same access road share its track; 0 for a track of their own.")]
+        public float accessGroupReach;
 
         [Tooltip("Decal laid on the ground under the prop, turned with it (oil under a derrick, mud at a gate); empty for none.")]
         [MapKey(typeof(MapClimateDecal))]

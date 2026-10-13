@@ -35,8 +35,9 @@ namespace HyperRTS.Editor.Tests
             var entry = new MapPaletteEntry
             {
                 key = "Shed", size = new Vector2(6f, 6f), pad = "Dirt", padMargin = 3f, access = access,
+                accessGroupReach = 20f,
             };
-            context.Placements.All.Add(new MapPlacement(entry, Prop, 0f));
+            context.Placements.All.Add(new MapPlacement(entry, Prop, 0f, 1f));
             return context;
         }
 
@@ -62,14 +63,14 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void PropsWithin20MetresOfEachOther_ShareOneTrack()
+        public void PropsWithinTheirGroupReachOfEachOther_ShareOneTrack()
         {
             var issues = new MapIssues();
             var context = Context(issues, "Dirt", new[] { MainRoad(-60f) });
             var shed = context.Placements.All[^1].Entry;
             foreach (var x in new[] { 35f, 50f, 90f })
             {
-                context.Placements.All.Add(new MapPlacement(shed, new Vector2(x, -100f), 0f));
+                context.Placements.All.Add(new MapPlacement(shed, new Vector2(x, -100f), 0f, 1f));
             }
 
             new MapAccessPlanner(context).Plan();

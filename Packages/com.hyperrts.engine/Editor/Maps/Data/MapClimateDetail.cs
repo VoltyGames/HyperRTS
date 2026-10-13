@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A terrain detail prototype: an instanced mesh prefab, or a grass texture drawn as billboards.</summary>
     [Serializable]
-    [MapLibraryItem("plant", "mesh", "texture")]
+    [MapLibraryItem("plant", "mesh", "texture", Preview = new[] { "texture", "mesh" })]
     public sealed class MapClimateDetail : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

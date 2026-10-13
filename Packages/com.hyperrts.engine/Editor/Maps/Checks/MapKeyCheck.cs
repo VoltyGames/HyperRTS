@@ -43,6 +43,17 @@ namespace HyperRTS.Editor.Maps.Checks
         protected void Entry(string key, string source) =>
             Require(MapKeys.Contains(Palette.entries, key), $"{source}: '{key}' is not in the palette.");
 
+        /// <summary>A palette entry placed where alignToRoad would be ignored: only scatters turn props onto a verge.</summary>
+        protected void Unaligned(string key, string source)
+        {
+            if (!MapKeys.Contains(Palette.entries, key))
+            {
+                return;
+            }
+
+            Require(!Palette.Entry(key).alignToRoad, $"{source}: '{key}' sets alignToRoad, which only scatters honour.");
+        }
+
         /// <summary>Checks a key a kit may leave empty for "none".</summary>
         protected static void Optional(string key, System.Action<string> check)
         {
