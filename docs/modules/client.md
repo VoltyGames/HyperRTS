@@ -55,8 +55,8 @@ Rendering and effects:
   `TeamColorOverride` swaps them (colour-blind, own / ally / enemy). `TeamColorRule` flags units without it.
 - **Silhouettes**: `UnitSilhouetteFeature` (Render Graph, after the skybox, game cameras) draws renderers on
   `UnitRenderingLayer` (8) through cover: LitTeam's `HyperRTSUnitMask` marks visible pixels in stencil, then
-  `HyperRTSSilhouette` paints a team-colour fill and rim where the unit is hidden. `UnitRenderingLayerRule` flags
-  unit renderers off the layer.
+  `HyperRTSSilhouette` paints a team-colour fill and rim where the unit is hidden. `UnitRenderingLayerBakingSystem`
+  puts every rendered part of a `UnitTag` entity on the layer at bake time.
 - **Fog**: `FogVisibilitySystem` turns `FogHidden` and `Inside` into `DisableRendering`. Map buildings never get
   `FogHidden`, so `BuildingFog.IsHidden` hides their flags, dials and pips under the local fog.
 - **Flags** (`Flags/`): `FlagDisplay.Resolve` picks the shown flag and hoist (an owned building's flag lowers over
