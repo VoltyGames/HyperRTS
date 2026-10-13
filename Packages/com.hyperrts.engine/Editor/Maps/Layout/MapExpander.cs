@@ -107,7 +107,7 @@ namespace HyperRTS.Editor.Maps.Layout
             Copy(authored, array, label, _layout.Bounds, shared, f => new[] { anchor(f).ToVector2() }, transform);
 
         /// <summary>
-        /// Lines and areas: they may reach into the margin. <paramref name="mayBeEmpty"/>: no points is allowed
+        /// Lines and areas: they may reach into the backdrop. <paramref name="mayBeEmpty"/>: no points is allowed
         /// (farmland that fills the free land).
         /// </summary>
         private List<MapCopy<T>> Lines<T>(List<T> authored, string array, string label, Func<T, bool> shared,

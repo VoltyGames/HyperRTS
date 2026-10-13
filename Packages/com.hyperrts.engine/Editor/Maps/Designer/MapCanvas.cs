@@ -86,9 +86,9 @@ namespace HyperRTS.Editor.Maps.Designer
         {
             get
             {
-                var margin = _document.spec.terrain.margin;
+                var backdrop = _document.spec.terrain.backdropWidth;
                 var playable = PlayableBounds;
-                return new Rect(playable.min - Vector2.one * margin, playable.size + Vector2.one * (margin * 2f));
+                return new Rect(playable.min - Vector2.one * backdrop, playable.size + Vector2.one * (backdrop * 2f));
             }
         }
 

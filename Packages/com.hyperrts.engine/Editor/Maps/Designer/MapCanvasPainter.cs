@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Maps.Designer
 {
-    /// <summary>The Map Editor canvas's backdrop lines: metre grid, playable bounds, terrain margin and sector edges.</summary>
+    /// <summary>The Map Editor canvas's background lines: metre grid, playable bounds, backdrop edge and sector edges.</summary>
     public static class MapCanvasPainter
     {
         private const float MinGridPixels = 40f;

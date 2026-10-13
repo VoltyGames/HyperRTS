@@ -111,7 +111,7 @@ namespace HyperRTS.Editor.Tests
 
             var dirt = Refine(spec, 1);
 
-            Assert.AreEqual(-119f, dirt[^1].x, 1e-3f, "the margin continues it");
+            Assert.AreEqual(-119f, dirt[^1].x, 1e-3f, "the backdrop continues it");
             Assert.AreEqual(-100f, dirt[^1].y, 1e-3f);
         }
 

@@ -23,8 +23,8 @@ namespace HyperRTS.Editor.Maps.Layout
         /// <summary>The playable area.</summary>
         public Rect Bounds => new(-Size * 0.5f, Size);
 
-        /// <summary>The whole terrain: the playable area plus the scenery margin.</summary>
-        public Rect TerrainBounds => new(-Size * 0.5f - Vector2.one * Terrain.margin, Size + Vector2.one * (Terrain.margin * 2f));
+        /// <summary>The whole terrain: the playable area plus the backdrop.</summary>
+        public Rect TerrainBounds => new(-Size * 0.5f - Vector2.one * Terrain.backdropWidth, Size + Vector2.one * (Terrain.backdropWidth * 2f));
 
         /// <summary>
         /// Terrain height of world y = 0. The terrain is lowered by it so open ground sits at y = 0, where the

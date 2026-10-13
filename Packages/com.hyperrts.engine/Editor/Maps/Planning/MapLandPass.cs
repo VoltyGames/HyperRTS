@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Planning
 
         /// <summary>
         /// Cells of the authored sector per region whose surface is <paramref name="wanted"/>; with
-        /// <paramref name="playableOnly"/> the scenery margin outside the play area is left out.
+        /// <paramref name="playableOnly"/> the backdrop outside the play area is left out.
         /// </summary>
         protected Dictionary<int, List<int>> SectorCells(Func<MapClimateSurface, bool> wanted, bool playableOnly)
         {

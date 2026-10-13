@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         {
             Wobble = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.Wobble);
             var water = layout.Terrain.waterLevel;
-            var overhang = layout.Terrain.margin + 10f;
+            var overhang = layout.Terrain.backdropWidth + 10f;
             var width = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.RiverWidth);
             foreach (var copy in layout.Rivers)
             {

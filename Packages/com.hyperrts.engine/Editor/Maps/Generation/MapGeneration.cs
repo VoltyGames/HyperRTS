@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Maps.Generation
         public float[,,] Splat { get; private set; }
         public List<int[,]> Details { get; private set; }
 
-        /// <summary>Trees left to the terrain: the scenery margin and species without an entity version.</summary>
+        /// <summary>Trees left to the terrain: the backdrop and species without an entity version.</summary>
         public List<MapTree> TerrainTrees { get; } = new();
 
         /// <summary>Asset and spec checks. They read prefabs, so they run on the main thread.</summary>

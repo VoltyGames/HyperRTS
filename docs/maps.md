@@ -31,7 +31,7 @@ the Project window, **Open** on **HyperRTS ▸ Tools ▸ Maps** and **New map...
 | --- | --- |
 | Toolbar | Spec picker, the tools (Select, Point, Line, Area) and the feature kind the drawing tool adds, Save, Revert, **Ghosts**, **Auto preview**, **Preview**, **Build** |
 | Feature list (left) | Every feature grouped by kind with counts; click one to select it |
-| Canvas (centre) | The newest preview image under a metre grid, the playable bounds and terrain margin, the sector edges, every feature, the symmetry ghosts and the selection's handles |
+| Canvas (centre) | The newest preview image under a metre grid, the playable bounds and backdrop edge, the sector edges, every feature, the symmetry ghosts and the selection's handles |
 | Inspector (right) | The selected feature's fields, bound to the spec. Key fields are dropdowns of the library's keys |
 | Report panel (under the inspector) | The newest preview's or build's issues, the land figures, the last build's metrics, **Open scene** and **Recapture views** |
 
@@ -121,7 +121,7 @@ origin at the map centre, X east, Z north, angles clockwise from north.
 | `size` | Playable width (X) and depth (Z) |
 | `symmetry` | `rotate-180`, `mirror-x`, `mirror-z`, `rotate-3` to `rotate-8` |
 | `seed` | Seeds every random stream and noise field |
-| `terrain` | `height` (open ground, lowered to world y = 0), `relief` and `reliefScale` (swell), `waterLevel`, `maxHeight`, `resolution`, `margin` (scenery ground past the playable edge) |
+| `terrain` | `height` (open ground, lowered to world y = 0), `relief` and `reliefScale` (swell), `waterLevel`, `maxHeight`, `resolution`, `backdropWidth` (the backdrop: unplayable land past the playable edge) |
 
 The spec authors **one symmetry sector**; the builder copies it (slots interleave so slots 1 and 2 always face
 each other). `"shared": true` places a feature once, on the axis or centre. Random choices are made in the sector

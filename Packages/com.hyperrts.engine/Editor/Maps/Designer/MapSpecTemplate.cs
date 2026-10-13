@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private const float SpawnDepth = 0.35f;
         private const float SpawnSpread = 0.6f;
-        private const float MarginShare = 0.3f;
+        private const float BackdropShare = 0.3f;
         private const float TexelsPerMetre = 1.5f;
         private const int MinResolution = 513;
         private const int MaxRotations = 8;
@@ -75,11 +75,11 @@ namespace HyperRTS.Editor.Maps.Designer
             }
         }
 
-        /// <summary>Gentle relief with water below the base height and a margin beyond the playable bounds.</summary>
+        /// <summary>Gentle relief with water below the base height and a backdrop beyond the playable bounds.</summary>
         public static MapTerrainSpec Terrain(Vector2Int size)
         {
-            var margin = MapSnap.Grid(Mathf.Max(size.x, size.y) * MarginShare);
-            var extent = Mathf.Max(size.x, size.y) + margin * 2f;
+            var backdrop = MapSnap.Grid(Mathf.Max(size.x, size.y) * BackdropShare);
+            var extent = Mathf.Max(size.x, size.y) + backdrop * 2f;
             var resolution = Mathf.Max(MinResolution - 1, Mathf.NextPowerOfTwo(Mathf.CeilToInt(extent * TexelsPerMetre)));
             return new MapTerrainSpec
             {
@@ -89,7 +89,7 @@ namespace HyperRTS.Editor.Maps.Designer
                 waterLevel = 12f,
                 maxHeight = 50f,
                 resolution = resolution + 1,
-                margin = margin,
+                backdropWidth = backdrop,
             };
         }
 

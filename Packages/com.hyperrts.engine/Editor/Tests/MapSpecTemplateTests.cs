@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Tests
         {
             var terrain = MapSpecTemplate.Terrain(Size);
 
-            Assert.AreEqual(120f, terrain.margin);
+            Assert.AreEqual(120f, terrain.backdropWidth);
             Assert.AreEqual(1025, terrain.resolution);
             Assert.IsTrue(Mathf.IsPowerOfTwo(MapSpecTemplate.Terrain(new Vector2Int(150, 100)).resolution - 1));
         }

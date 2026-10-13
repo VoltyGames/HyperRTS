@@ -25,9 +25,9 @@ namespace HyperRTS.Editor.Maps.Spec
         public int resolution = 513;
 
         /// <summary>
-        /// Scenery ground beyond the playable edge on every side (metres), so the camera never looks off the
-        /// world. Rivers and roads that reach the edge run on into it; areas and rows may be drawn there.
+        /// Width of the backdrop: unplayable land beyond the playable edge on every side (metres), so the camera never
+        /// looks off the world. Rivers and roads that reach the edge run on into it; areas and rows may be drawn there.
         /// </summary>
-        public float margin;
+        public float backdropWidth;
     }
 }

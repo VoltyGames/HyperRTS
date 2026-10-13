@@ -56,7 +56,7 @@ namespace HyperRTS.Editor.Tests
             {
                 name = "Test", climate = "Test", mode = "1v1", seed = 5,
                 size = new MapPoint(240f, 240f), symmetry = MapSymmetry.Rotate180,
-                terrain = new MapTerrainSpec { resolution = 257, margin = 20f, relief = 0f },
+                terrain = new MapTerrainSpec { resolution = 257, backdropWidth = 20f, relief = 0f },
                 spawns = new List<MapSpawnSpec> { new() { pos = new MapPoint(0f, -100f) } },
             };
             spec.rivers.Add(new MapRiverSpec

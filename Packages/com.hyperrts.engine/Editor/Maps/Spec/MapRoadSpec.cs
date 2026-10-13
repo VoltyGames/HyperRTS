@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Spec
 {
     /// <summary>
     /// A road of a climate road class along a polyline the builder smooths into curves. Ends near another road join
-    /// it; ends on the playable edge run on into the margin.
+    /// it; ends on the playable edge run on into the backdrop.
     /// </summary>
     [Serializable]
     public sealed class MapRoadSpec
