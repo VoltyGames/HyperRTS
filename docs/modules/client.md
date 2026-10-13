@@ -64,11 +64,38 @@ Rendering and effects:
   `FlagSystem` writes `FlagState` (flag layer = the shown player's `PlayerSide`, hoist, shown) and `FlagColor` (hoist
   band). `HyperRTS/Flag` samples the game's flag `Texture2DArray` and waves the `FlagMesh` cloth downwind.
 - **Destruction**: `DamageStageSystem` shows the stage model for the health and plays its effect;
-  `SpawnEffectSystem` plays spawn effects once. `Animation/MachineSystem` poses machine parts.
+  `SpawnEffectSystem` plays spawn effects once; `ToppleSystem` tips felled remains (`Felling`) over with ease-in
+  and a damped bounce, or lays them down at once when the fall was out of sight. `Animation/MachineSystem` poses
+  machine parts.
 - **Environment**: `HyperRTS/Water` (depth colour, refraction, ripples, sky reflection, capped glint; vertex A thins
   fords, G streaks foam; needs Depth and Opaque Textures), `HyperRTS/Foliage` (alpha-cut, wind sway,
-  translucency), and `Wind`, which publishes `_HyperRTSWindDirection` and `_HyperRTSWindStrength` from the scene's
-  `WindZone`.
+  translucency) and `HyperRTS/Bark` (opaque URP Lit: base, normal, optional mask map R metallic G AO A smoothness).
+- **Wind**: `Wind` (on the scene's directional `WindZone`) publishes `_HyperRTSWindDirection` (xz downwind),
+  `_HyperRTSWindStrength` (windMain), `_HyperRTSWindGust` (x windPulseMagnitude, y windTurbulence, z gust tiles per
+  metre), `_HyperRTSWindGustMap` (procedural tileable noise), `_HyperRTSWindGustOffset` (xy this frame's scroll in
+  tiles, zw last frame's; it moves downwind windPulseFrequency tiles a second) and `_HyperRTSWindDetail`
+  (`Wind.Detail`: 0 trunk, 1 + branches, 2 + flutter). `Wind.hlsl` turns them into motion; every pass of Foliage and
+  Bark (forward, shadow, depth, depth-normals, motion vectors) uses the same position, and both crossfade LODs.
+  - Foliage with `_TREE_WIND` off (grass, crops, details): sway about the origin with height (`_WindStrength` m per m,
+    `_WindSpeed`) and `_Flutter` m of leaf flutter. On, and always on Bark: tree meshes carry wind data in Unity object
+    space, metres: TEXCOORD2.xy branch pivot xy, TEXCOORD3.x branch pivot z, TEXCOORD3.y card pivot x, TEXCOORD4.xy
+    card pivot yz (TEXCOORD1 unused); COLOR r crown AO, g branch flex (0 at the level-1 branch pivot, 1 at its tip, 0
+    on the trunk), b stiffness (0 limb, 1 twig), a flutter weight (1 on leaf cards). Cards flutter about their pivot
+    (`_CardFlutter` rad), branches turn about theirs (`_BranchSway` rad), and the trunk bends on an (h / `_TreeHeight`)²
+    curve keeping its length (`_WindStrength` m per m). Bark and leaves of one tree need the same `_WindStrength`,
+    `_WindSpeed`, `_BranchSway`, `_TreeHeight` and `_WindScale` (0 = still, for fallen trees).
+- **Interaction maps** (`InteractionMap` on the rig, needs the `Hidden/HyperRTS/Interaction Brush` shader): two
+  render textures over the map rect, faded and stamped on the GPU each frame (`InteractionBrush`: instanced
+  procedural quads; fades go in whole 8-bit steps). `_HyperRTSTrample` (RGBA8, 0.5 m texels on Full): RG travel
+  direction * 0.5 + 0.5, B grass flatten (recovers over 60 s), A crop damage (never recovers). `_HyperRTSTracks`
+  (RG8, 0.2 m texels): R rut depth, G churned soil (fade over 4 min). `_HyperRTSInteractionRect` (x min, z min,
+  1 / width, 1 / depth; zero = no maps, every read neutral) and `_HyperRTSTracksTexel`. `InteractionStampSystem`
+  stamps vehicles with `TrackMarks` that are on the ground and not hidden from the local player, seen building
+  footprints (`NavObstacle`) and ground impacts of 3 m splash or more. `InteractionMap.Quality` (Off, Low = half
+  resolution, Full) is set by the game; Off frees the textures. Presentation only, so clients may differ.
+  `Trample.hlsl` reads them: the terrain darkens ruts, soil and flattened grass and dents its normal along the ruts;
+  Foliage without Tree Wind leans plants flat along the travel direction (`_Trample`: Off, Grass by B, Crop by A),
+  and `TrampleBend` serves any plant shader.
 - **Audio**: `SoundPlaybackSystem` plays the `SoundQueue` through 32 pooled sources; `SoundListener` follows the
   camera's ground focus.
 - **Minimap**: the baked `MinimapImage`, local fog, blips and the camera view.

@@ -1,0 +1,123 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+using Object = UnityEngine.Object;
+
+namespace HyperRTS.Presentation.Environment
+{
+    /// <summary>
+    /// Draws a frame of stamps into the interaction maps as procedural instanced quads (InteractionBrush.shader), after
+    /// fading them on the GPU by whole 8-bit steps.
+    /// </summary>
+    public sealed class InteractionBrush : IDisposable
+    {
+        public const string ShaderName = "Hidden/HyperRTS/Interaction Brush";
+
+        private const int TrampleDirectionPass = 0;
+        private const int TrampleAmountPass = 1;
+        private const int TracksPass = 2;
+        private const int FadePass = 3;
+
+        private static readonly int StampsId = Shader.PropertyToID("_InteractionStamps");
+        private static readonly int OffsetId = Shader.PropertyToID("_InteractionStampOffset");
+        private static readonly int FadeId = Shader.PropertyToID("_InteractionFade");
+
+        private readonly Material _material;
+        private readonly CommandBuffer _commands = new() { name = "HyperRTS Interaction Maps" };
+        private readonly List<InteractionStamp> _all = new();
+        private GraphicsBuffer _buffer;
+
+        public InteractionBrush(Shader shader)
+        {
+            if (shader == null || shader.name != ShaderName)
+            {
+                throw new ArgumentException($"HyperRTS: the interaction brush needs the '{ShaderName}' shader.");
+            }
+
+            _material = new Material(shader) { hideFlags = HideFlags.DontSave };
+        }
+
+        /// <summary>Wipes both maps: no direction, standing plants, clean ground.</summary>
+        public void Clear(InteractionSurfaces surfaces)
+        {
+            _commands.Clear();
+            _commands.SetRenderTarget(surfaces.Trample);
+            _commands.ClearRenderTarget(false, true, InteractionSurfaces.TrampleClear);
+            _commands.SetRenderTarget(surfaces.Tracks);
+            _commands.ClearRenderTarget(false, true, Color.clear);
+            Graphics.ExecuteCommandBuffer(_commands);
+        }
+
+        public void Draw(InteractionSurfaces surfaces, int recoverySteps, int fadeSteps, InteractionStamps stamps)
+        {
+            Upload(stamps);
+            _commands.Clear();
+            _commands.SetGlobalVector(InteractionSurfaces.RectId, surfaces.Rect);
+            _commands.SetGlobalBuffer(StampsId, _buffer);
+
+            _commands.SetRenderTarget(surfaces.Trample);
+            Fade(new Vector4(0f, 0f, recoverySteps, 0f) / InteractionMath.Levels);
+            DrawStamps(TrampleDirectionPass, 0, stamps.Trample.Count);
+            DrawStamps(TrampleAmountPass, 0, stamps.Trample.Count);
+
+            _commands.SetRenderTarget(surfaces.Tracks);
+            Fade(new Vector4(fadeSteps, fadeSteps, 0f, 0f) / InteractionMath.Levels);
+            DrawStamps(TracksPass, stamps.Trample.Count, stamps.Tracks.Count);
+            Graphics.ExecuteCommandBuffer(_commands);
+        }
+
+        public void Dispose()
+        {
+            _commands.Release();
+            _buffer?.Release();
+            if (Application.isPlaying)
+            {
+                Object.Destroy(_material);
+            }
+            else
+            {
+                Object.DestroyImmediate(_material);
+            }
+        }
+
+        // Both lists go up in one buffer: tracks start after the trample stamps.
+        private void Upload(InteractionStamps stamps)
+        {
+            _all.Clear();
+            _all.AddRange(stamps.Trample);
+            _all.AddRange(stamps.Tracks);
+            var needed = Mathf.Max(_all.Count, 1);
+            if (_buffer == null || _buffer.count < needed)
+            {
+                _buffer?.Release();
+                _buffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.NextPowerOfTwo(Mathf.Max(needed, 256)),
+                    InteractionStamp.Stride);
+            }
+
+            _buffer.SetData(_all);
+        }
+
+        private void Fade(Vector4 amount)
+        {
+            if (amount == Vector4.zero)
+            {
+                return;
+            }
+
+            _commands.SetGlobalVector(FadeId, amount);
+            _commands.DrawProcedural(Matrix4x4.identity, _material, FadePass, MeshTopology.Triangles, 3);
+        }
+
+        private void DrawStamps(int pass, int offset, int count)
+        {
+            if (count == 0)
+            {
+                return;
+            }
+
+            _commands.SetGlobalInt(OffsetId, offset);
+            _commands.DrawProcedural(Matrix4x4.identity, _material, pass, MeshTopology.Triangles, 6, count);
+        }
+    }
+}

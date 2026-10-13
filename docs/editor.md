@@ -72,7 +72,7 @@ SubScene open for editing, when there is one.
 
 | Category | Components |
 | --- | --- |
-| Units | Unit, Flight, Container, Passenger, Capturer, Crusher |
+| Units | Unit, Flight, Container, Passenger, Capturer, Crusher, Track Marks |
 | Buildings | Building, Builder, Producer, Airfield, Capturable |
 | Research | Upgrade |
 | Combat | Weapon, Armor, Ammo, Ability, Area Field, Veterancy, Destructible, Damage Stages, Impact Marks, Spawn Effect |

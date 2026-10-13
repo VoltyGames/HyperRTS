@@ -4,8 +4,9 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment
 {
     /// <summary>
-    /// Publishes the scene's directional wind as shader globals: <c>_HyperRTSWindDirection</c> (unit XZ, downwind) and
-    /// <c>_HyperRTSWindStrength</c>, which flags read. Vegetation wind will extend this with rolling gusts.
+    /// Publishes the scene's directional wind for flags and vegetation (Wind.hlsl): direction, strength, a gust field
+    /// that rolls downwind and the detail level. Its <see cref="WindZone"/> gives windMain (strength), windTurbulence,
+    /// windPulseMagnitude (gust amount) and windPulseFrequency (gust field tiles travelled per second).
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(WindZone))]
@@ -15,21 +16,58 @@ namespace HyperRTS.Presentation.Environment
     [DisallowMultipleComponent]
     public sealed class Wind : MonoBehaviour
     {
+        private const int GustMapSize = 128;
+
         private static readonly int DirectionId = Shader.PropertyToID("_HyperRTSWindDirection");
         private static readonly int StrengthId = Shader.PropertyToID("_HyperRTSWindStrength");
+        private static readonly int GustId = Shader.PropertyToID("_HyperRTSWindGust");
+        private static readonly int GustOffsetId = Shader.PropertyToID("_HyperRTSWindGustOffset");
+        private static readonly int GustMapId = Shader.PropertyToID("_HyperRTSWindGustMap");
+        private static readonly int DetailId = Shader.PropertyToID("_HyperRTSWindDetail");
+
+        [Tooltip("Metres of ground one repeat of the gust field covers.")]
+        [Min(1f)]
+        public float gustSize = 120f;
 
         private WindZone _zone;
+        private Texture2D _gustMap;
+        private Vector2 _gustOffset;
 
-        private void OnEnable() => _zone = GetComponent<WindZone>();
+        /// <summary>How much tree motion vegetation draws; the game sets it from its vegetation quality.</summary>
+        public static WindDetail Detail { get; set; } = WindDetail.Flutter;
+
+        private void OnEnable()
+        {
+            _zone = GetComponent<WindZone>();
+            _gustMap = WindGust.CreateMap(GustMapSize);
+            Shader.SetGlobalTexture(GustMapId, _gustMap);
+        }
 
         private void Update()
         {
             var forward = transform.forward;
             var downwind = new Vector3(forward.x, 0f, forward.z).normalized;
+            var last = _gustOffset;
+            _gustOffset = WindGust.Scroll(_gustOffset, new Vector2(downwind.x, downwind.z), _zone.windPulseFrequency, Time.deltaTime);
+
             Shader.SetGlobalVector(DirectionId, downwind);
             Shader.SetGlobalFloat(StrengthId, _zone.windMain);
+            Shader.SetGlobalVector(GustId, new Vector4(_zone.windPulseMagnitude, _zone.windTurbulence, 1f / gustSize, 0f));
+            Shader.SetGlobalVector(GustOffsetId, new Vector4(_gustOffset.x, _gustOffset.y, last.x, last.y));
+            Shader.SetGlobalFloat(DetailId, (float)Detail);
         }
 
-        private void OnDisable() => Shader.SetGlobalFloat(StrengthId, 0f);
+        private void OnDisable()
+        {
+            Shader.SetGlobalFloat(StrengthId, 0f);
+            if (Application.isPlaying)
+            {
+                Destroy(_gustMap);
+            }
+            else
+            {
+                DestroyImmediate(_gustMap);
+            }
+        }
     }
 }

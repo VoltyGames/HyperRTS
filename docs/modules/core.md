@@ -20,6 +20,7 @@ The base: ownership, identity, health and shared helpers.
 | `Inside` | Enabled while a passenger is aboard |
 | `Destructible` | Scenery anyone can wreck (fences, trees, houses, bridges): splash hits it, attack orders may target it, fog never hides it. `Crush` = smallest `Crusher` size that flattens it |
 | `Crusher` | A vehicle that flattens destructible scenery it drives over |
+| `TrackMarks` | Track or tyre width, gauge and rut depth of a vehicle, for the ruts and trampling presentation draws; nothing in the simulation reads it |
 | `ConstructionProgress` | Enableable 0..1; an unfinished building doesn't produce, fire, house population or meet prerequisites |
 | `Offline`, `OfflineReason` | "Out of action" with a reason mask (`UnderConstruction`, `Unpowered`, games from `Custom`); set and cleared per reason with `Offline.Set`. Offline entities don't fire, cast, run fields or produce |
 | `GameEvents` | This frame's `UnitProduced`, `BuildingCompleted`, `OwnerChanged`; cleared first in the order phase |

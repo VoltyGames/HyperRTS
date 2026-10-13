@@ -1,10 +1,17 @@
-// HyperRTS/Terrain forward pass: the blended layers lit by URP's PBR model, with decals, SSAO and fog.
+// HyperRTS/Terrain forward pass: the blended layers lit by URP's PBR model, with decals, SSAO, fog and the ruts and
+// trampled grass of the interaction maps (Trample.hlsl).
 #ifndef HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 #define HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainInput.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainLayers.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
+
+#define RUT_DEPTH 0.06          // metres a full rut dents the shading normal
+#define RUT_DARKENING 0.15
+#define SOIL_DARKENING 0.18     // churned soil along and around the ruts
+#define FLATTEN_DARKENING 0.06  // flattened grass shades the ground under it a touch
 
 struct TerrainForwardVaryings
 {
@@ -45,6 +52,23 @@ TerrainForwardVaryings TerrainForwardVertex(TerrainAttributes input)
         output.shadowCoord = GetShadowCoord(position);
     #endif
     return output;
+}
+
+// Ruts and churned soil darken the ground and dent its normal; flattened grass darkens it a touch.
+void ApplyInteraction(inout TerrainSurface surface, float2 positionXZ)
+{
+    UNITY_BRANCH
+    if (!InteractionMapsOn())
+    {
+        return;
+    }
+
+    half2 tracks = SampleTracks(positionXZ);
+    half flatten = SampleTrample(positionXZ).flatten;
+    surface.albedo *= (1.0 - RUT_DARKENING * tracks.r) * (1.0 - SOIL_DARKENING * tracks.g)
+        * (1.0 - FLATTEN_DARKENING * flatten);
+    half2 slope = (half2)(TrackSlope(positionXZ) * RUT_DEPTH);
+    surface.normalTS = normalize(half3(surface.normalTS.xy + slope, surface.normalTS.z));
 }
 
 InputData TerrainInputData(TerrainForwardVaryings input, half3 normalTS)
@@ -97,6 +121,7 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
     ClipHoles(input.uv);
     TerrainSurface surface = BlendLayers(input.uv, input.positionWS);
     ApplyMacro(surface, input.uv, input.positionWS.xz);
+    ApplyInteraction(surface, input.positionWS.xz);
     InputData inputData = TerrainInputData(input, surface.normalTS);
     SurfaceData surfaceData = TerrainSurfaceData(surface);
     #ifdef _DBUFFER
