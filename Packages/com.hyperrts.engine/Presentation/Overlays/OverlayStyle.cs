@@ -41,6 +41,28 @@ namespace HyperRTS.Presentation.Overlays
         [Tooltip("Gap between the top of the mesh and the bar.")]
         public float barOffset = 0.5f;
 
+        [Header("Capture & Garrison")]
+        [Tooltip("Backing behind the capture dial and the garrison pips.")]
+        public Color markerBack = new(0.03f, 0.03f, 0.03f, 0.7f);
+
+        [Tooltip("Unfilled part of the capture dial's ring; the filled part takes the capturer's colour.")]
+        public Color dialTrack = new(1f, 1f, 1f, 0.22f);
+
+        [Tooltip("Capture dial radius in pixels at 1080p, the same at every zoom.")]
+        [Min(4f)]
+        public float dialRadius = 18f;
+
+        [Tooltip("Empty garrison slot; filled slots take the holder's colour.")]
+        public Color pipEmpty = new(1f, 1f, 1f, 0.22f);
+
+        [Tooltip("Garrison pip size in pixels at 1080p.")]
+        [Min(2f)]
+        public float pipSize = 7f;
+
+        [Tooltip("Gap in pixels at 1080p between the top of a building and its markers.")]
+        [Min(0f)]
+        public float markerOffset = 14f;
+
         [Header("Placement & Rally")]
         [Tooltip("Ghost box where the building can be placed.")]
         public Color placementValid = new(0.25f, 1f, 0.35f, 0.35f);

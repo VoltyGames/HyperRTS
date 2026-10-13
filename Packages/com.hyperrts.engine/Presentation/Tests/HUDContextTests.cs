@@ -18,10 +18,14 @@ namespace HyperRTS.Presentation.Tests
         private EntityManager _em;
         private MatchView _view;
         private HUDContext _context;
+        private HUDText _text;
 
         [SetUp]
         public void SetUp()
         {
+            // A game's translated HUDText outlives Play mode (no domain reload); these tests read the engine's keys.
+            _text = HUDText.Current;
+            HUDText.Current = new HUDText();
             _world = new World("HUD Tests");
             _em = _world.EntityManager;
             _world.CreateSystem<ClientSingletonSystem>();
@@ -32,7 +36,11 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [TearDown]
-        public void TearDown() => _world.Dispose();
+        public void TearDown()
+        {
+            HUDText.Current = _text;
+            _world.Dispose();
+        }
 
         [Test]
         public void SelectionHash_ChangesWhenASelectedBuildingIsCapturedOrFinished()

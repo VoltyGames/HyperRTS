@@ -5,7 +5,10 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Overlays
 {
-    /// <summary>Draws selection rings, health bars, the placement ghost and rally points with instanced meshes.</summary>
+    /// <summary>
+    /// Draws selection rings, health bars, capture dials, garrison pips, the placement ghost and rally points with
+    /// instanced meshes.
+    /// </summary>
     [AddComponentMenu(HyperRTSMenu.Rig + "Overlay Renderer")]
     [Icon(HyperRTSIcons.UI)]
     [HelpURL(HyperRTSDocs.Presentation)]
@@ -23,6 +26,7 @@ namespace HyperRTS.Presentation.Overlays
         private OverlayMaterials _materials;
         private Mesh[] _meshes;
         private UnitOverlays _units;
+        private BuildingOverlays _buildings;
         private CommandOverlays _commands;
 
         private void Awake()
@@ -31,8 +35,11 @@ namespace HyperRTS.Presentation.Overlays
             var billboard = OverlayMeshes.Billboard();
             var box = OverlayMeshes.Box();
             var flat = OverlayMeshes.FlatQuad();
-            _meshes = new[] { ring, billboard, box, flat };
+            var dial = BuildingOverlays.DialSegment();
+            var disc = OverlayMeshes.Disc(48);
+            _meshes = new[] { ring, billboard, box, flat, dial, disc };
             _units = new UnitOverlays(ring, billboard);
+            _buildings = new BuildingOverlays(dial, disc, billboard);
             _commands = new CommandOverlays(box, ring, flat);
         }
 
@@ -47,8 +54,10 @@ namespace HyperRTS.Presentation.Overlays
             _materials ??= new OverlayMaterials(material);
 
             _units.Gather(view, style, camera.transform);
+            _buildings.Gather(view, style, camera);
             _commands.Gather(view, style);
             _units.Draw(_materials, style, gameObject.layer);
+            _buildings.Draw(_materials, view, style, gameObject.layer);
             _commands.Draw(material, style, gameObject.layer);
         }
 

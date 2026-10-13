@@ -18,8 +18,9 @@ namespace HyperRTS.Presentation.TeamColors
 
         public static FactionPalette Create(ref SystemState state) => new()
         {
-            _players = state.GetEntityQuery(ComponentType.ReadOnly<Player>()),
-            _override = state.GetEntityQuery(ComponentType.ReadOnly<TeamColorOverride>()),
+            // The builder, not GetEntityQuery's params array: Burst-compiled OnCreates call this.
+            _players = new EntityQueryBuilder(Allocator.Temp).WithAll<Player>().Build(ref state),
+            _override = new EntityQueryBuilder(Allocator.Temp).WithAll<TeamColorOverride>().Build(ref state),
         };
 
         public NativeArray<float4> Build(AllocatorManager.AllocatorHandle allocator)

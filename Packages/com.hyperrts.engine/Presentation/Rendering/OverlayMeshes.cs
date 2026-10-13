@@ -36,6 +36,36 @@ namespace HyperRTS.Presentation.Rendering
             return Build("Ring", vertices, triangles);
         }
 
+        /// <summary>
+        /// One of <paramref name="segments"/> pieces of a ring of outer radius 1 on the XY plane, from 12 o'clock
+        /// clockwise; dials draw a piece per filled step, turned about Z.
+        /// </summary>
+        public static Mesh DialSegment(int segments, float innerRadius)
+        {
+            var angle = Mathf.PI * 2f / segments;
+            var start = new Vector3(0f, 1f, 0f);
+            var end = new Vector3(Mathf.Sin(angle), Mathf.Cos(angle), 0f);
+            var vertices = new[] { start * innerRadius, start, end * innerRadius, end };
+            return Build("Dial Segment", vertices, new[] { 0, 1, 3, 0, 3, 2 });
+        }
+
+        /// <summary>Disc of radius 1 on the XY plane; rotate by the camera rotation to face it.</summary>
+        public static Mesh Disc(int segments)
+        {
+            var vertices = new Vector3[segments + 1];
+            var triangles = new int[segments * 3];
+            for (var i = 0; i < segments; i++)
+            {
+                var angle = i * Mathf.PI * 2f / segments;
+                vertices[i + 1] = new Vector3(Mathf.Sin(angle), Mathf.Cos(angle), 0f);
+                triangles[i * 3] = 0;
+                triangles[i * 3 + 1] = i + 1;
+                triangles[i * 3 + 2] = (i + 1) % segments + 1;
+            }
+
+            return Build("Disc", vertices, triangles);
+        }
+
         /// <summary>Unit cube resting on the XZ plane (y from 0 to 1).</summary>
         public static Mesh Box()
         {
