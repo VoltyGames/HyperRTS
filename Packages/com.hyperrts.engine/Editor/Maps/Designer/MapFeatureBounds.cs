@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Designer
     {
         private const float Padding = 40f;
 
-        public static Rect Of(MapSpec spec, MapFeatureRef feature)
+        public static Rect Measure(MapSpec spec, MapFeatureRef feature)
         {
             var points = new List<Vector2>();
             feature.Kind.ReadPoints(spec, feature.Index, points);

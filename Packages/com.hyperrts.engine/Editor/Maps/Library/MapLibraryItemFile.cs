@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Maps.Library
         {
             var refsJson = (JObject)MapJsonFormat.Parse(JsonUtility.ToJson(refs));
             var root = new JObject();
-            foreach (var name in MapLibraryItemAttribute.Of(type).Refs)
+            foreach (var name in MapLibraryItemAttribute.Require(type).Refs)
             {
                 root.Add(name, refsJson[name]);
             }

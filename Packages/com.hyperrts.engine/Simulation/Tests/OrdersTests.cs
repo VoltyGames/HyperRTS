@@ -227,7 +227,7 @@ namespace HyperRTS.Simulation.Tests
         public void TypeSet_HoldsCustomTypes()
         {
             var custom = (CommandType)200;
-            var set = TypeSet.Of(CommandType.Move).With(custom);
+            var set = TypeSet.Single(CommandType.Move).With(custom);
 
             Assert.IsTrue(set.Contains(custom));
             Assert.IsTrue(set.Contains(CommandType.Move));

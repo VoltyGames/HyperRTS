@@ -32,7 +32,7 @@ namespace HyperRTS.Editor.Validation.Rules
         }
 
         private static RequiresAuthoringAttribute[] Required(Component component) =>
-            AttributeCache<RequiresAuthoringAttribute>.Of(component.GetType());
+            AttributeCache<RequiresAuthoringAttribute>.Get(component.GetType());
 
         private static string DisplayName(Type type) => ObjectNames.NicifyVariableName(type.Name);
     }

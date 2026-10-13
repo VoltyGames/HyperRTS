@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Match
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!PlayerCommands.Any(ref state, _commanders, TypeSet.Of(CommandType.Surrender)))
+            if (!PlayerCommands.Any(ref state, _commanders, TypeSet.Single(CommandType.Surrender)))
             {
                 return;
             }

@@ -27,7 +27,7 @@ Mirror the engine's layering:
 | --- | --- |
 | A new behaviour | Component + authoring + Burst `ISystem` in a phase group |
 | A new order (lay mines) | `OrderType` value from `OrderType.Custom` up. `OrderTraits.Register` it if it should fight on the way, attack-move or use formations. Issue with `OrderWriter.Issue`. A system runs units whose `ActiveOrder` has your type, walks them up with `TargetReach.Approach` (or sets `MoveDestination`), and disables `ActiveOrder` when done |
-| A new command (call reinforcements) | `CommandType` value from `CommandType.Custom` up. Append to the player's `PlayerCommand` buffer; consume in `OrderSystemGroup`, skipping quiet frames with `PlayerCommands.Any(ref state, players, TypeSet.Of(type))` |
+| A new command (call reinforcements) | `CommandType` value from `CommandType.Custom` up. Append to the player's `PlayerCommand` buffer; consume in `OrderSystemGroup`, skipping quiet frames with `PlayerCommands.Any(ref state, players, TypeSet.Single(type))` |
 | Right-click behaviour (jam a radar) | Add `SmartOrderRule.For<TargetComponent>(order, RelationMask.Enemy)` to the unit's `SmartOrderRule` buffer in its baker |
 | React to production, construction or capture | Read `UnitProduced`, `BuildingCompleted` or `OwnerChanged` on the `GameEvents` singleton later in the frame (after `ProductionSystemGroup`) |
 | Change an owner (mind control) | `Ownership.Transfer(ecb, events, entity, from, to)`; queues, targets and upgrades follow |

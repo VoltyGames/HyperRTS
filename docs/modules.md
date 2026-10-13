@@ -92,7 +92,7 @@ Systems:
 | `OrderWriter` | `Issue(unit, order, queue)`, `Stop(unit)` |
 | `PlayerCommandSubject` | Player buffer: the units a group command lists, each command owning a range |
 | `PlayerCommands` | `Any(types)` skips frames without a system's command types; `Collect` lists who a command addresses (listed group, else `Unit`, else the selection) |
-| `TypeSet` | Set of command types, custom ones included: `TypeSet.Of(...)`, `Range`, `With`, `Contains` |
+| `TypeSet` | Set of command types, custom ones included: `TypeSet.Single(...)`, `Range`, `With`, `Contains` |
 | `OrderTraits`, `OrderTrait` | `Register(type, traits)` lets a custom order engage while moving, attack-move or use formations, like the built-in ones |
 
 Systems:

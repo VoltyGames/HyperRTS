@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Orders
         private ulong _bits2;
         private ulong _bits3;
 
-        public static TypeSet Of(CommandType type) => default(TypeSet).With(type);
+        public static TypeSet Single(CommandType type) => default(TypeSet).With(type);
 
         /// <summary>Every command type from <paramref name="first"/> to <paramref name="last"/>, both included.</summary>
         public static TypeSet Range(CommandType first, CommandType last)

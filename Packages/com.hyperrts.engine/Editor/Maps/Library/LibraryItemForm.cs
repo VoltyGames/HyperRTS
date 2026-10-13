@@ -114,7 +114,7 @@ namespace HyperRTS.Editor.Maps.Library
 
         private void AddFields()
         {
-            foreach (var name in MapLibraryItemAttribute.Of(Type).Refs)
+            foreach (var name in MapLibraryItemAttribute.Require(Type).Refs)
             {
                 AddField(_serialized.FindProperty($"{nameof(MapLibraryItemWrapper.refs)}.{name}"));
             }

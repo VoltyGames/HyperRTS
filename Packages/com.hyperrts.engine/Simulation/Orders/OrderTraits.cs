@@ -26,9 +26,9 @@ namespace HyperRTS.Simulation.Orders
             registered[(byte)type] |= (byte)traits;
         }
 
-        internal static bool Has(OrderType type, OrderTrait trait) => (Of(type) & trait) != 0;
+        internal static bool Has(OrderType type, OrderTrait trait) => (Traits(type) & trait) != 0;
 
-        private static OrderTrait Of(OrderType type)
+        private static OrderTrait Traits(OrderType type)
         {
             ref var registered = ref Registered.Data.Traits;
             var custom = registered.Length == 0 ? OrderTrait.None : (OrderTrait)registered[(byte)type];

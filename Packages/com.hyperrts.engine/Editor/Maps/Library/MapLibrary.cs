@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Maps.Library
         };
 
         private static readonly Dictionary<Type, string> TypeNames =
-            Types.ToDictionary(type => type, type => MapLibraryItemAttribute.Of(type).Name);
+            Types.ToDictionary(type => type, type => MapLibraryItemAttribute.Require(type).Name);
 
         private readonly Dictionary<string, SortedDictionary<string, string>> _files = new();
         private readonly Dictionary<string, (object Item, MapLibraryRefs Refs)> _loaded = new();

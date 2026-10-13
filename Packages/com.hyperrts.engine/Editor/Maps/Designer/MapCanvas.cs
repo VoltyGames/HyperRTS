@@ -118,7 +118,7 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>Zooms and pans to show <paramref name="feature"/>.</summary>
         public void Frame(MapFeatureRef feature)
         {
-            _view.Fit(MapFeatureBounds.Of(_document.spec, feature));
+            _view.Fit(MapFeatureBounds.Measure(_document.spec, feature));
             OnViewChanged();
         }
 

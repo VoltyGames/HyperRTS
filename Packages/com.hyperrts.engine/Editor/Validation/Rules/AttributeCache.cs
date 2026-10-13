@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Validation.Rules
     {
         private static readonly Dictionary<Type, TAttribute[]> Cache = new();
 
-        public static TAttribute[] Of(Type type)
+        public static TAttribute[] Get(Type type)
         {
             if (!Cache.TryGetValue(type, out var attributes))
             {

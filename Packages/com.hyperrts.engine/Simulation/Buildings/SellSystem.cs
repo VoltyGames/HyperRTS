@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Buildings
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!PlayerCommands.Any(ref state, _commanders, TypeSet.Of(CommandType.Sell)))
+            if (!PlayerCommands.Any(ref state, _commanders, TypeSet.Single(CommandType.Sell)))
             {
                 return;
             }

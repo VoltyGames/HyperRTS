@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Maps.Library
 
         public IReadOnlyList<string> Refs { get; }
 
-        public static MapLibraryItemAttribute Of(Type type) => type.GetCustomAttribute<MapLibraryItemAttribute>()
+        public static MapLibraryItemAttribute Require(Type type) => type.GetCustomAttribute<MapLibraryItemAttribute>()
             ?? throw new ArgumentException($"HyperRTS: {type.Name} is not a map library item class.", nameof(type));
     }
 }

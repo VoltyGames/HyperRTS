@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Transport
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!PlayerCommands.Any(ref state, _commanders, TypeSet.Of(CommandType.Unload)))
+            if (!PlayerCommands.Any(ref state, _commanders, TypeSet.Single(CommandType.Unload)))
             {
                 return;
             }

@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Validation.Rules
     public sealed class RequiresGhostRule : AuthoringRule<Component>
     {
         public override bool AppliesTo(Component component) =>
-            AttributeCache<RequiresGhostAttribute>.Of(component.GetType()).Length > 0;
+            AttributeCache<RequiresGhostAttribute>.Get(component.GetType()).Length > 0;
 
         protected override void Check(Component component, ValidationIssues issues) =>
             WarnIfNotGhost(component, component.gameObject, "Not a ghost: multiplayer clients won't receive it.", issues);
