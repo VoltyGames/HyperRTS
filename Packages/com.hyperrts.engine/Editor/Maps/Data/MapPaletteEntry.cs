@@ -33,8 +33,8 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Tilt with the ground slope up to this many degrees; 0 stands upright.")]
         public float alignToGround;
 
-        [Tooltip("How far the prop sinks into the ground (metres), so it sits in it rather than on it.")]
-        public float sink;
+        [Tooltip("Metres of the prop buried below the ground, so it sits in it rather than on it.")]
+        public float buriedDepth;
 
         [Tooltip("Random uniform scale range.")]
         public Vector2 scale = Vector2.one;

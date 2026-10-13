@@ -28,10 +28,10 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void Pose_ClampsTheTiltSinksAndMirrorsAcrossX()
+        public void Pose_ClampsTheTiltBuriesAndMirrorsAcrossX()
         {
             var heights = Heights(p => 0.4f * Mathf.Abs(p.x) + 0.1f * p.y);
-            var entry = new MapPaletteEntry { key = "Rock", size = new Vector2(2f, 2f), alignToGround = 10f, sink = 0.3f };
+            var entry = new MapPaletteEntry { key = "Rock", size = new Vector2(2f, 2f), alignToGround = 10f, buriedDepth = 0.3f };
             var left = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(-20f, 5f), 30f), heights, 0f);
             var right = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(20f, 5f), -30f), heights, 0f);
 
