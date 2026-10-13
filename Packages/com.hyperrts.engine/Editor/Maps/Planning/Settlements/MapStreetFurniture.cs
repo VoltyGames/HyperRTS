@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
     /// <summary>
     /// What lines a settlement's streets: poles every pole spacing on the left of each road and pipe sections end
     /// to end on the right, a little off the road edge, wherever the verge is clear, in runs of at least the kit's
-    /// shortest run with arches over driveways and crossing roads. Chosen in the authored sector and copied.
+    /// minimum section count with arches over driveways and crossing roads. Chosen in the authored sector and copied.
     /// </summary>
     internal sealed class MapStreetFurniture
     {
@@ -68,8 +68,8 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             }
 
             var arches = new List<(int First, int Count)>();
-            var maxGap = Mathf.FloorToInt(_settlement.Kit.streetPipeMaxGap / section);
-            var kept = MapPipeRuns.Keep(pass, _settlement.Kit.streetPipeMinRun, maxGap, arches);
+            var maxGapSections = Mathf.FloorToInt(_settlement.Kit.streetPipeMaxGap / section);
+            var kept = MapPipeRuns.SectionsToLay(pass, _settlement.Kit.streetPipeMinSections, maxGapSections, arches);
             for (var i = 0; i < kept.Length; i++)
             {
                 if (kept[i])
@@ -163,7 +163,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             return symmetry.InSector(position) && symmetry.SeamDistance(position) >= entry.Radius;
         }
 
-        private void Add(MapPaletteEntry entry, Vector2 position, Vector2 direction, float lengthScale) =>
-            _context.Placements.AddEverywhere(entry, position, MapSections.YawAlong(entry, direction), 1f, lengthScale);
+        private void Add(MapPaletteEntry entry, Vector2 position, Vector2 direction, float stretch) =>
+            _context.Placements.AddEverywhere(entry, position, MapSections.YawAlong(entry, direction), 1f, stretch);
     }
 }

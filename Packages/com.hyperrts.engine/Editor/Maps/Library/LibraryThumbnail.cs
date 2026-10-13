@@ -6,19 +6,19 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
-    /// The asset a library item is pictured by in lists: the first set ref its <see cref="MapLibraryItemAttribute.Preview"/>
+    /// The asset a library item is pictured by in lists: the first set ref its <see cref="MapLibraryItemAttribute.PreviewRefs"/>
     /// names (a terrain layer shows its diffuse texture). Items naming none have no picture.
     /// </summary>
     public static class LibraryThumbnail
     {
         public static Object PreviewAsset(Type type, MapLibraryRefs refs)
         {
-            foreach (var name in MapLibraryItemAttribute.Require(type).Preview)
+            foreach (var name in MapLibraryItemAttribute.Require(type).PreviewRefs)
             {
                 var path = RefPath(refs, name, type);
                 if (!string.IsNullOrEmpty(path))
                 {
-                    return Unwrap(AssetDatabase.LoadMainAssetAtPath(path));
+                    return PreviewAsset(AssetDatabase.LoadMainAssetAtPath(path));
                 }
             }
 
@@ -49,6 +49,6 @@ namespace HyperRTS.Editor.Maps.Library
         }
 
         /// <summary>A terrain layer previews as a sphere; its diffuse texture shows the ground better.</summary>
-        private static Object Unwrap(Object asset) => asset is TerrainLayer layer ? layer.diffuseTexture : asset;
+        private static Object PreviewAsset(Object asset) => asset is TerrainLayer layer ? layer.diffuseTexture : asset;
     }
 }

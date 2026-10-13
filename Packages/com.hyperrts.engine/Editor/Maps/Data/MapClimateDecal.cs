@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A ground decal maps lay at build time (a puddle, leaf litter, an oil stain): its material and size.</summary>
     [Serializable]
-    [MapLibraryItem("decal", "material", Preview = new[] { "material" })]
+    [MapLibraryItem("decal", "material", PreviewRefs = new[] { "material" })]
     public sealed class MapClimateDecal : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

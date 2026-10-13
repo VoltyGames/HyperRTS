@@ -32,7 +32,7 @@ namespace HyperRTS.Editor.Maps.Planning
             _roads.Select(r => Closest(r.Road, r.Samples, from)).OrderBy(c => c.Distance).ToList();
 
         /// <summary>The nearest sector point of the nearest road, without sorting the rest; false with no roads.</summary>
-        public bool TryNearestOne(Vector2 from, out (MapRoad Road, Vector2 Point, float Distance) nearest)
+        public bool TryNearestRoad(Vector2 from, out (MapRoad Road, Vector2 Point, float Distance) nearest)
         {
             nearest = (null, default, float.PositiveInfinity);
             foreach (var (road, samples) in _roads)

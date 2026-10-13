@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Ground
         private const float ReedDepth = 0.6f;
         private const float ReedReachIntoWater = 1.5f;
 
-        public const float PropFalloff = 1.5f;
+        public const float PropGrassFalloff = 1.5f;
 
         /// <summary>Coverage per detail prototype as Unity's detail layers want it: [z, x] in 0 to 255.</summary>
         public static List<int[,]> Paint(MapLayout layout, MapLand land, MapShapes shapes, MapHeights heights,
@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Maps.Ground
             {
                 var (x, z) = (i % resolution, i / resolution);
                 var p = area.min + Vector2.Scale(new Vector2(x + 0.5f, z + 0.5f), cell);
-                var open = NearProps(clearance, p);
+                var open = GrassNearProps(clearance, p);
                 if (open <= 0f || shapes.RoadEdgeDistance(p) < 0.3f)
                 {
                     continue;
@@ -75,11 +75,11 @@ namespace HyperRTS.Editor.Maps.Ground
             return layers;
         }
 
-        /// <summary>Grass share near placed objects: none on a footprint, full past <see cref="PropFalloff"/>.</summary>
-        public static float NearProps(MapClearance clearance, Vector2 point)
+        /// <summary>Grass share near placed objects: none on a footprint, full past <see cref="PropGrassFalloff"/>.</summary>
+        public static float GrassNearProps(MapClearance clearance, Vector2 point)
         {
-            var edge = clearance.ReservedEdgeDistance(point, PropFalloff);
-            return float.IsPositiveInfinity(edge) ? 1f : MapGeometry.Smooth(edge / PropFalloff);
+            var edge = clearance.ReservedEdgeDistance(point, PropGrassFalloff);
+            return float.IsPositiveInfinity(edge) ? 1f : MapGeometry.Smooth(edge / PropGrassFalloff);
         }
 
         /// <summary>Wild grass clumps at two scales; crops are sown evenly and keep their cover.</summary>

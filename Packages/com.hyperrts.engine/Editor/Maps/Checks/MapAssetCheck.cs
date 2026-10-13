@@ -54,8 +54,8 @@ namespace HyperRTS.Editor.Maps.Checks
             Climate.decals.ForEach(decal => DecalAssets(decal, name));
             Require(Climate.water != null, $"{name} has no water material.");
             Require(Climate.atmosphere != null, $"{name} has no atmosphere prefab.");
-            Require(Climate.fordFade > 0f, $"{name}: fordFade {Climate.fordFade} must be above 0.");
-            Require(Climate.fordFastRun > 0f, $"{name}: fordFastRun {Climate.fordFastRun} must be above 0.");
+            Require(Climate.fordShallowsWidth > 0f, $"{name}: fordShallowsWidth {Climate.fordShallowsWidth} must be above 0.");
+            Require(Climate.fordRapidsLength > 0f, $"{name}: fordRapidsLength {Climate.fordRapidsLength} must be above 0.");
         }
 
         private void DecalAssets(MapClimateDecal decal, string name)
@@ -112,11 +112,11 @@ namespace HyperRTS.Editor.Maps.Checks
             }
 
             var source = $"{name} ravine surface '{Climate.ravineSurface}'";
-            Climate.Surface(Climate.ravineSurface).trees.ForEach(tree => NoEdgeLimit(tree, source));
+            Climate.Surface(Climate.ravineSurface).trees.ForEach(tree => NoMaxEdgeDistance(tree, source));
         }
 
         /// <summary>maxEdgeDistance is honoured only by a climate surface's own trees, not by kits that scatter a mix.</summary>
-        private void NoEdgeLimit(MapTreeDensity density, string source) =>
+        private void NoMaxEdgeDistance(MapTreeDensity density, string source) =>
             Require(density.maxEdgeDistance <= 0f,
                 $"{source}: tree '{density.tree}' sets maxEdgeDistance {density.maxEdgeDistance}, which only a climate surface's trees honour.");
 
@@ -126,7 +126,7 @@ namespace HyperRTS.Editor.Maps.Checks
             InClimate(Climate.layers, surface.layer, "layer", name);
             surface.trees.ForEach(tree => Tree(tree.tree, name));
             surface.details.ForEach(detail => InClimate(Climate.details, detail.detail, "detail", name));
-            surface.props.ForEach(prop => UnalignedEntry(prop.kind, name));
+            surface.props.ForEach(prop => EntryNotBesideRoad(prop.kind, name));
             surface.decals.ForEach(decal => Decal(decal.decal, name));
         }
 
@@ -149,7 +149,7 @@ namespace HyperRTS.Editor.Maps.Checks
             Surface(kit.marginSurface, name);
             Optional(kit.beltKit, key => InClimate(Climate.beltKits, key, "belt kit", name));
             Optional(kit.trackClass, key => InClimate(Climate.roadClasses, key, "road class", $"{name} tracks"));
-            Require(kit.trackSnapReach > 0f, $"{name}: trackSnapReach {kit.trackSnapReach} must be above 0.");
+            Require(kit.trackJoinDistance > 0f, $"{name}: trackJoinDistance {kit.trackJoinDistance} must be above 0.");
         }
 
         private void BeltKit(MapBeltKit kit)
@@ -167,7 +167,7 @@ namespace HyperRTS.Editor.Maps.Checks
             foreach (var tree in kit.trees.Concat(kit.edgeTrees))
             {
                 Tree(tree.tree, name);
-                NoEdgeLimit(tree, name);
+                NoMaxEdgeDistance(tree, name);
             }
 
             Surface(kit.surface, name);
@@ -179,7 +179,7 @@ namespace HyperRTS.Editor.Maps.Checks
             var name = $"palette entry '{entry.key}'";
             Optional(entry.pad, key => Surface(key, $"{name} pad"));
             Optional(entry.access, key => InClimate(Climate.roadClasses, key, "road class", $"{name} access"));
-            AccessGroupReach(entry, name);
+            SharedAccessDistance(entry, name);
             Optional(entry.groundDecal, key =>
             {
                 Decal(key, $"{name} ground decal");
@@ -188,20 +188,20 @@ namespace HyperRTS.Editor.Maps.Checks
             });
         }
 
-        /// <summary>Only props with an access track share one, so a reach without access would do nothing.</summary>
-        private void AccessGroupReach(MapPaletteEntry entry, string name)
+        /// <summary>Only props with an access track share one, so a shared access distance without access would do nothing.</summary>
+        private void SharedAccessDistance(MapPaletteEntry entry, string name)
         {
-            var reach = entry.accessGroupReach;
-            Require(reach >= 0f, $"{name}: accessGroupReach {reach} must be at least 0.");
+            var distance = entry.sharedAccessDistance;
+            Require(distance >= 0f, $"{name}: sharedAccessDistance {distance} must be at least 0.");
             var hasAccess = !string.IsNullOrEmpty(entry.access);
-            Require(hasAccess || reach <= 0f, $"{name}: accessGroupReach {reach} needs access set; use 0 without an access track.");
+            Require(hasAccess || distance <= 0f, $"{name}: sharedAccessDistance {distance} needs access set; use 0 without an access track.");
         }
 
-        /// <summary>A palette entry a surface or kit places: it must exist and not ask for alignToRoad (scatters only).</summary>
-        private void UnalignedEntry(string key, string source)
+        /// <summary>A palette entry a surface or kit places: it must exist and not ask for besideRoad (scatters only).</summary>
+        private void EntryNotBesideRoad(string key, string source)
         {
             Entry(key, source);
-            Unaligned(key, source);
+            NotBesideRoad(key, source);
         }
 
         private void SettlementKit(MapSettlementKit kit)
@@ -209,19 +209,19 @@ namespace HyperRTS.Editor.Maps.Checks
             var name = $"settlement kit '{kit.key}'";
             Require(kit.houses.Count > 0, $"{name} has no houses.");
             Require(kit.plot.x >= 1f && kit.plot.y >= 1f, $"{name}: plot {kit.plot} must be at least 1 m each way.");
-            kit.houses.ForEach(key => UnalignedEntry(key, name));
-            kit.outbuildings.ForEach(key => UnalignedEntry(key, name));
-            kit.extras.ForEach(extra => UnalignedEntry(extra.kind, name));
+            kit.houses.ForEach(key => EntryNotBesideRoad(key, name));
+            kit.outbuildings.ForEach(key => EntryNotBesideRoad(key, name));
+            kit.extras.ForEach(extra => EntryNotBesideRoad(extra.kind, name));
             foreach (var key in new[] { kit.frontFence, kit.sideFence, kit.gate })
             {
-                Optional(key, entry => UnalignedEntry(entry, name));
+                Optional(key, entry => EntryNotBesideRoad(entry, name));
             }
 
             Optional(kit.streetPipe, key => StreetPipe(kit, key, name));
 
             Optional(kit.streetPole, key =>
             {
-                UnalignedEntry(key, name);
+                EntryNotBesideRoad(key, name);
                 Require(kit.poleSpacing >= 1f, $"{name}: poleSpacing {kit.poleSpacing} must be at least 1 m.");
             });
             Optional(kit.orchardTree, key =>
@@ -234,19 +234,19 @@ namespace HyperRTS.Editor.Maps.Checks
             Surface(kit.backSurface, name);
         }
 
-        /// <summary>A street pipe needs its arch, a shortest run and the widest gap an arch bridges.</summary>
+        /// <summary>A street pipe needs its arch, a minimum section count and the widest gap an arch bridges.</summary>
         private void StreetPipe(MapSettlementKit kit, string pipe, string name)
         {
-            UnalignedEntry(pipe, name);
+            EntryNotBesideRoad(pipe, name);
             var hasArch = !string.IsNullOrEmpty(kit.streetPipeArch);
             Require(hasArch,
                 $"{name}: streetPipe '{pipe}' needs streetPipeArch, the arch that carries it over driveways and roads.");
             if (hasArch)
             {
-                UnalignedEntry(kit.streetPipeArch, name);
+                EntryNotBesideRoad(kit.streetPipeArch, name);
             }
 
-            Require(kit.streetPipeMinRun >= 1, $"{name}: streetPipeMinRun {kit.streetPipeMinRun} must be at least 1 section.");
+            Require(kit.streetPipeMinSections >= 1, $"{name}: streetPipeMinSections {kit.streetPipeMinSections} must be at least 1 section.");
             Require(kit.streetPipeMaxGap > 0f, $"{name}: streetPipeMaxGap {kit.streetPipeMaxGap} must be above 0.");
         }
     }

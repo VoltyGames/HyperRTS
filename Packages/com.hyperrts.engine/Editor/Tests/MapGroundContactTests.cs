@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Tests
         public void Pose_ClampsTheTiltBuriesAndMirrorsAcrossX()
         {
             var heights = Heights(p => 0.4f * Mathf.Abs(p.x) + 0.1f * p.y);
-            var entry = new MapPaletteEntry { key = "Rock", size = new Vector2(2f, 2f), alignToGround = 10f, buriedDepth = 0.3f };
+            var entry = new MapPaletteEntry { key = "Rock", size = new Vector2(2f, 2f), maxTilt = 10f, buriedDepth = 0.3f };
             var left = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(-20f, 5f), 30f, 1f), heights, 0f);
             var right = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(20f, 5f), -30f, 1f), heights, 0f);
 
@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void Pose_StaysUprightWithoutAlignToGround()
+        public void Pose_StaysUprightWithoutMaxTilt()
         {
             var heights = Heights(p => 0.5f * p.x);
             var entry = new MapPaletteEntry { key = "House", size = new Vector2(8f, 8f) };
@@ -63,14 +63,14 @@ namespace HyperRTS.Editor.Tests
             var clearance = new MapClearance(layout, MapRoadFixture.Shapes(layout, climate), 15f);
             clearance.Reserve(new Vector2(10f, 10f), 2f);
 
-            Assert.AreEqual(0f, MapDetailPainter.NearProps(clearance, new Vector2(11.9f, 10f)));
-            Assert.AreEqual(1f, MapDetailPainter.NearProps(clearance, new Vector2(10f, 12f + MapDetailPainter.PropFalloff + 0.01f)));
-            var halfway = MapDetailPainter.NearProps(clearance, new Vector2(12f + MapDetailPainter.PropFalloff * 0.5f, 10f));
+            Assert.AreEqual(0f, MapDetailPainter.GrassNearProps(clearance, new Vector2(11.9f, 10f)));
+            Assert.AreEqual(1f, MapDetailPainter.GrassNearProps(clearance, new Vector2(10f, 12f + MapDetailPainter.PropGrassFalloff + 0.01f)));
+            var halfway = MapDetailPainter.GrassNearProps(clearance, new Vector2(12f + MapDetailPainter.PropGrassFalloff * 0.5f, 10f));
             Assert.AreEqual(0.5f, halfway, 0.01f);
         }
 
         [Test]
-        public void Verge_SitsOffTheNearestRoadOnTheSpotsSideFacingAlongIt()
+        public void RoadsideSpot_SitsOffTheNearestRoadOnTheSpotsSideFacingAlongIt()
         {
             var climate = MapRoadFixture.Climate();
             var layout = MapRoadFixture.Layout(MapRoadFixture.Spec());
@@ -78,12 +78,12 @@ namespace HyperRTS.Editor.Tests
             shapes.AddRoad(MapRoadFixture.RoadShape(climate.RoadClass("Asphalt"), false,
                 new Vector2(-100f, -50f), new Vector2(100f, -50f)));
 
-            Assert.IsTrue(shapes.Verge(new Vector2(10f, -45f), 2f, out var north, out var yaw));
+            Assert.IsTrue(shapes.RoadsideSpot(new Vector2(10f, -45f), 2f, out var north, out var yaw));
             Assert.AreEqual(new Vector2(10f, -44f), north);
             Assert.AreEqual(90f, Mathf.Abs(Mathf.DeltaAngle(0f, yaw)), 0.01f);
-            Assert.IsTrue(shapes.Verge(new Vector2(10f, -53f), 2f, out var south, out _));
+            Assert.IsTrue(shapes.RoadsideSpot(new Vector2(10f, -53f), 2f, out var south, out _));
             Assert.AreEqual(new Vector2(10f, -56f), south);
-            Assert.IsFalse(shapes.Verge(new Vector2(10f, 40f), 2f, out _, out _), "no road reaches it");
+            Assert.IsFalse(shapes.RoadsideSpot(new Vector2(10f, 40f), 2f, out _, out _), "no road reaches it");
         }
 
         [Test]

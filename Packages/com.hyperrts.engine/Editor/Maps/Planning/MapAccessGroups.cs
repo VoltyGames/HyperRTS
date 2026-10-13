@@ -6,7 +6,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// Props sharing one access track: same road class, each within the smaller <see cref="MapPaletteEntry.accessGroupReach"/>
+    /// Props sharing one access track: same road class, each within the smaller <see cref="MapPaletteEntry.sharedAccessDistance"/>
     /// of itself and another in the group.
     /// </summary>
     public static class MapAccessGroups
@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Maps.Planning
             return groups;
         }
 
-        /// <summary>Adds the ungrouped props within reach of <paramref name="from"/> that ask for its road class.</summary>
+        /// <summary>Adds the ungrouped props within shared access distance of <paramref name="from"/> that ask for its road class.</summary>
         private static void Gather(IReadOnlyList<MapPlacement> props, List<MapPlacement> group, bool[] grouped,
             MapPlacement from)
         {
@@ -47,8 +47,8 @@ namespace HyperRTS.Editor.Maps.Planning
                     continue;
                 }
 
-                var reach = Mathf.Min(from.Entry.accessGroupReach, props[j].Entry.accessGroupReach);
-                if (reach > 0f && (props[j].Position - from.Position).magnitude <= reach)
+                var distance = Mathf.Min(from.Entry.sharedAccessDistance, props[j].Entry.sharedAccessDistance);
+                if (distance > 0f && (props[j].Position - from.Position).magnitude <= distance)
                 {
                     grouped[j] = true;
                     group.Add(props[j]);

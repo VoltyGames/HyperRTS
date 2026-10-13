@@ -134,7 +134,7 @@ namespace HyperRTS.Editor.Tests
                 maxOutbuildings = 1, frontFence = "Fence", sideFence = "Fence", gate = "Gate",
                 yardSurface = "Yard", gardenSurface = "Garden", backSurface = "Orchard", gardenShare = 0.5f,
                 orchardTree = "Apple", orchardSpacing = 3f, streetPipe = "Pipe",
-                streetPipeArch = "PipeArch", streetPipeMinRun = 3, streetPipeMaxGap = 6f,
+                streetPipeArch = "PipeArch", streetPipeMinSections = 3, streetPipeMaxGap = 6f,
                 streetPole = "Pole", poleSpacing = 30f,
             };
             kit.houses.Add("House");

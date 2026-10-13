@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Maps.Planning
         public override void Plan()
         {
             LaySurfaceDecals();
-            LayGroundDecals();
+            LayPropDecals();
         }
 
         private void LaySurfaceDecals()
@@ -61,7 +61,7 @@ namespace HyperRTS.Editor.Maps.Planning
         }
 
         /// <summary>Placements are already copied, so each gets its decal turned with it.</summary>
-        private void LayGroundDecals()
+        private void LayPropDecals()
         {
             foreach (var placement in Context.Placements.All)
             {

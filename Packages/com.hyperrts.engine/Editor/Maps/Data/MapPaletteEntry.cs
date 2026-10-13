@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>One placeable prefab.</summary>
     [Serializable]
-    [MapLibraryItem("prop", "prefab", Preview = new[] { "prefab" })]
+    [MapLibraryItem("prop", "prefab", PreviewRefs = new[] { "prefab" })]
     public sealed class MapPaletteEntry : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]
@@ -28,10 +28,10 @@ namespace HyperRTS.Editor.Maps.Data
         public float yawJitter;
 
         [Tooltip("In scatters, stand on the nearest road's verge facing along it (yaw jitter on top), like a wreck pushed aside.")]
-        public bool alignToRoad;
+        public bool besideRoad;
 
         [Tooltip("Tilt with the ground slope up to this many degrees; 0 stands upright.")]
-        public float alignToGround;
+        public float maxTilt;
 
         [Tooltip("Metres of the prop buried below the ground, so it sits in it rather than on it.")]
         public float buriedDepth;
@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Maps.Data
         public string access;
 
         [Tooltip("Props this close (metres) to another asking for the same access road share its track; 0 for a track of their own.")]
-        public float accessGroupReach;
+        public float sharedAccessDistance;
 
         [Tooltip("Decal laid on the ground under the prop, turned with it (oil under a derrick, mud at a gate); empty for none.")]
         [MapKey(typeof(MapClimateDecal))]

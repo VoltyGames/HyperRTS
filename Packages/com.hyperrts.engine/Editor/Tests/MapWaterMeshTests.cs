@@ -65,7 +65,7 @@ namespace HyperRTS.Editor.Tests
                 crossings = new List<MapCrossingSpec> { new() { t = 0.5f, kind = MapCrossingSpec.Ford } },
             });
             var layout = MapExpander.Expand(spec, new MapIssues());
-            var climate = new MapClimate { fordFade = 6f, fordFastRun = 10f };
+            var climate = new MapClimate { fordShallowsWidth = 6f, fordRapidsLength = 10f };
             var shapes = new MapShapes(layout, new MapPalette(), climate);
             Assert.IsNotEmpty(shapes.Crossings);
             return (MapWaterMesh.Build(shapes, climate, layout.WaterHeight, layout.TerrainBounds), shapes);

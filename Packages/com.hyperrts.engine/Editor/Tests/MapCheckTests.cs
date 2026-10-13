@@ -84,11 +84,11 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void AStreetPipeWithoutAShortestRun_IsAnErrorNamingTheKit()
+        public void AStreetPipeWithoutMinSections_IsAnErrorNamingTheKit()
         {
-            var issues = MapSettlementFixture.CheckAssets(kit => kit.streetPipeMinRun = 0);
+            var issues = MapSettlementFixture.CheckAssets(kit => kit.streetPipeMinSections = 0);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Village") && e.Contains("streetPipeMinRun")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Village") && e.Contains("streetPipeMinSections")), issues.ToString());
         }
 
         [Test]
@@ -100,25 +100,25 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void AnAccessGroupReachWithoutAccess_IsAnErrorNamingIt()
+        public void ASharedAccessDistanceWithoutAccess_IsAnErrorNamingIt()
         {
             var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Shed", accessGroupReach = 20f });
+            palette.entries.Add(new MapPaletteEntry { key = "Shed", sharedAccessDistance = 20f });
 
             var issues = CheckAssets(MapRoadFixture.Climate(), palette);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains("accessGroupReach")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains("sharedAccessDistance")), issues.ToString());
         }
 
         [Test]
-        public void ANegativeAccessGroupReach_IsAnErrorNamingIt()
+        public void ANegativeSharedAccessDistance_IsAnErrorNamingIt()
         {
             var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Shed", access = "Dirt", accessGroupReach = -1f });
+            palette.entries.Add(new MapPaletteEntry { key = "Shed", access = "Dirt", sharedAccessDistance = -1f });
 
             var issues = CheckAssets(MapRoadFixture.Climate(), palette);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains("accessGroupReach")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains("sharedAccessDistance")), issues.ToString());
         }
 
         [Test]
@@ -129,7 +129,7 @@ namespace HyperRTS.Editor.Tests
 
             var issues = CheckAssets(climate, new MapPalette());
 
-            foreach (var field in new[] { "fordFade", "fordFastRun", "trackSnapReach" })
+            foreach (var field in new[] { "fordShallowsWidth", "fordRapidsLength", "trackJoinDistance" })
             {
                 Assert.IsTrue(issues.Errors.Any(e => e.Contains(field)), $"{field}: {issues}");
             }
@@ -150,32 +150,32 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void AnAlignToRoadPropOnASurface_IsAnErrorNamingIt()
+        public void ABesideRoadPropOnASurface_IsAnErrorNamingIt()
         {
             var climate = MapRoadFixture.Climate();
             climate.surfaces.Single(s => s.key == "Meadow").props.Add(new MapPropDensity { kind = "Milestone" });
             var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Milestone", alignToRoad = true });
+            palette.entries.Add(new MapPaletteEntry { key = "Milestone", besideRoad = true });
 
             var issues = CheckAssets(climate, palette);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Milestone") && e.Contains("alignToRoad")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Milestone") && e.Contains("besideRoad")), issues.ToString());
         }
 
         [Test]
-        public void AnAlignToRoadSpecProp_IsAnErrorNamingIt()
+        public void ABesideRoadSpecProp_IsAnErrorNamingIt()
         {
             var spec = MapRoadFixture.Spec();
             spec.props.Add(new MapPropSpec { kind = "Milestone" });
             var rules = new MapRules();
             rules.modes.Add(new MapModeRules { mode = spec.mode });
             var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Milestone", alignToRoad = true });
+            palette.entries.Add(new MapPaletteEntry { key = "Milestone", besideRoad = true });
             var issues = new MapIssues();
 
             MapSpecCheck.Check(spec, MapRoadFixture.Climate(), palette, rules, issues);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Prop 1") && e.Contains("alignToRoad")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Prop 1") && e.Contains("besideRoad")), issues.ToString());
         }
 
         private static MapIssues CheckAssets(MapClimate climate, MapPalette palette)

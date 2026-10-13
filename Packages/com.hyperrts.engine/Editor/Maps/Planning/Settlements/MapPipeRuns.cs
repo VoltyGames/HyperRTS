@@ -10,32 +10,33 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
     public static class MapPipeRuns
     {
         /// <summary>The sections to lay; gaps to arch over (first index, count) go into <paramref name="arches"/>.</summary>
-        public static bool[] Keep(IReadOnlyList<bool> pass, int minRun, int maxGap, List<(int First, int Count)> arches)
+        public static bool[] SectionsToLay(IReadOnlyList<bool> clear, int minSections, int maxGapSections,
+            List<(int First, int Count)> arches)
         {
-            var kept = new bool[pass.Count];
+            var kept = new bool[clear.Count];
             var chain = new List<(int First, int Count)>();
-            foreach (var run in Runs(pass))
+            foreach (var run in Runs(clear))
             {
                 var end = chain.Count == 0 ? 0 : chain[^1].First + chain[^1].Count;
-                if (chain.Count > 0 && run.First - end > maxGap)
+                if (chain.Count > 0 && run.First - end > maxGapSections)
                 {
-                    Close(chain, minRun, kept, arches);
+                    LayChain(chain, minSections, kept, arches);
                     chain.Clear();
                 }
 
                 chain.Add(run);
             }
 
-            Close(chain, minRun, kept, arches);
+            LayChain(chain, minSections, kept, arches);
             return kept;
         }
 
         /// <summary>Keeps a chain long enough, with an arch over each gap inside it.</summary>
-        private static void Close(List<(int First, int Count)> chain, int minRun, bool[] kept,
+        private static void LayChain(List<(int First, int Count)> chain, int minSections, bool[] kept,
             List<(int First, int Count)> arches)
         {
             var total = chain.Sum(run => run.Count);
-            if (total < minRun)
+            if (total < minSections)
             {
                 return;
             }
@@ -57,12 +58,12 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         }
 
         /// <summary>The stretches of passing sections, as first index and count.</summary>
-        private static IEnumerable<(int First, int Count)> Runs(IReadOnlyList<bool> pass)
+        private static IEnumerable<(int First, int Count)> Runs(IReadOnlyList<bool> clear)
         {
             var first = -1;
-            for (var i = 0; i <= pass.Count; i++)
+            for (var i = 0; i <= clear.Count; i++)
             {
-                var passes = i < pass.Count && pass[i];
+                var passes = i < clear.Count && clear[i];
                 if (passes && first < 0)
                 {
                     first = i;

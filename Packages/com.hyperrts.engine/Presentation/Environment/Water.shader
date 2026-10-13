@@ -15,19 +15,19 @@ Shader "HyperRTS/Water"
         _RippleStrength ("Ripple Strength", Range(0, 2)) = 0.55
         _RippleFadeStart ("Ripple Fade Start (m)", Float) = 60
         _RippleFadeEnd ("Ripple Fade End (m)", Float) = 250
-        _RippleFar ("Ripple Strength Far (fraction)", Range(0, 1)) = 0.4
+        _RippleStrengthFar ("Ripple Strength Far (fraction)", Range(0, 1)) = 0.4
         _FlowSpeed ("Current (m/s)", Float) = 0.35
         _Smoothness ("Smoothness", Range(0, 1)) = 0.93
         _Refraction ("Refraction", Range(0, 0.1)) = 0.025
         _GlintStrength ("Glint Strength", Float) = 12
-        _GlintMax ("Glint Peak (HDR, under bloom threshold)", Range(0, 1)) = 0.85
+        _GlintPeak ("Glint Peak (HDR, under bloom threshold)", Range(0, 1)) = 0.85
         _GlintFadeStart ("Glint Fade Start (m)", Float) = 80
         _GlintFadeEnd ("Glint Fade End (m)", Float) = 300
-        _EdgeFade ("Edge Fade Depth (m)", Float) = 0.15
+        _ShoreFadeDepth ("Shore Fade Depth (m)", Float) = 0.15
         _FordAlpha ("Water Alpha Mid-Ford", Range(0, 1)) = 0.25
         _FoamColor ("Foam Color", Color) = (0.82, 0.82, 0.76, 1)
-        _StreakWidth ("Fast Water Streak Width (m)", Float) = 1.5
-        _StreakLength ("Fast Water Streak Length (m)", Float) = 10
+        _RapidsFoamWidth ("Rapids Foam Width (m)", Float) = 1.5
+        _RapidsFoamLength ("Rapids Foam Length (m)", Float) = 10
     }
 
     SubShader
@@ -75,19 +75,19 @@ Shader "HyperRTS/Water"
                 half _RippleStrength;
                 float _RippleFadeStart;
                 float _RippleFadeEnd;
-                half _RippleFar;
+                half _RippleStrengthFar;
                 float _FlowSpeed;
                 half _Smoothness;
                 half _Refraction;
                 half _GlintStrength;
-                half _GlintMax;
+                half _GlintPeak;
                 float _GlintFadeStart;
                 float _GlintFadeEnd;
-                float _EdgeFade;
+                float _ShoreFadeDepth;
                 half4 _FoamColor;
                 half _FordAlpha;
-                float _StreakWidth;
-                float _StreakLength;
+                float _RapidsFoamWidth;
+                float _RapidsFoamLength;
             CBUFFER_END
 
             struct Attributes
@@ -159,7 +159,7 @@ Shader "HyperRTS/Water"
                 return normalize(half3(first.xy + second.xy, first.z * second.z));
             }
 
-            // Fills only the headroom under _GlintMax, so the glint never sets off bloom.
+            // Fills only the headroom under _GlintPeak, so the glint never sets off bloom.
             half3 Glint(Light sun, half3 normalWS, half3 view, half3 base, float cameraDistance)
             {
                 half fade = Fade(cameraDistance, _GlintFadeStart, _GlintFadeEnd);
@@ -172,14 +172,14 @@ Shader "HyperRTS/Water"
                 half highlight = pow(saturate(dot(normalWS, halfway)), exp2(_Smoothness * 11.0));
                 half fresnel = 0.02 + 0.98 * pow(1.0 - saturate(dot(view, halfway)), 5.0);
                 half3 glint = sun.color * (highlight * fresnel * _GlintStrength * sun.shadowAttenuation * fade);
-                half headroom = max(0.0, _GlintMax - Brightest(base));
+                half headroom = max(0.0, _GlintPeak - Brightest(base));
                 return glint * min(1.0, headroom / max(Brightest(glint), 0.0001));
             }
 
             // Foam only on fast water (vertex G), stretched along the current and broken into patches so the ford
             // doesn't read as a striped block. Slow water skips the fetches; gradients taken before the branch keep
             // them valid inside it.
-            half Streaks(float2 uv, half fast)
+            half RapidsFoam(float2 uv, half fast)
             {
                 float2 dx = ddx(uv);
                 float2 dy = ddy(uv);
@@ -189,15 +189,15 @@ Shader "HyperRTS/Water"
                 }
 
                 float drift = _Time.y * _FlowSpeed * 2.5;
-                float2 streakScale = 1.0 / float2(_StreakWidth, _StreakLength);
+                float2 streakScale = 1.0 / float2(_RapidsFoamWidth, _RapidsFoamLength);
                 float2 streakUV = float2(uv.x, uv.y - drift) * streakScale;
                 half3 streak = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, streakUV,
                     dx * streakScale, dy * streakScale));
-                float2 patchScale = float2(0.37, 1.0) / (_StreakLength * 1.7);
-                float2 patchUV = float2(uv.x * 0.37 + 0.21, uv.y - drift * 0.6) / (_StreakLength * 1.7);
-                half3 patches = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, patchUV,
-                    dx * patchScale, dy * patchScale));
-                return fast * smoothstep(0.1, 0.45, streak.x) * smoothstep(-0.1, 0.35, patches.y);
+                float2 breakupScale = float2(0.37, 1.0) / (_RapidsFoamLength * 1.7);
+                float2 breakupUV = float2(uv.x * 0.37 + 0.21, uv.y - drift * 0.6) / (_RapidsFoamLength * 1.7);
+                half3 breakup = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, breakupUV,
+                    dx * breakupScale, dy * breakupScale));
+                return fast * smoothstep(0.1, 0.45, streak.x) * smoothstep(-0.1, 0.35, breakup.y);
             }
 
             // Clouds dim the sunlight the water scatters back up, about two thirds of it; the sky's share stays. The
@@ -214,8 +214,8 @@ Shader "HyperRTS/Water"
             half4 Frag(Varyings input) : SV_Target
             {
                 float cameraDistance = length(_WorldSpaceCameraPos - input.positionWS);
-                half calm = lerp(_RippleFar, 1.0, Fade(cameraDistance, _RippleFadeStart, _RippleFadeEnd));
-                half3 ripple = Ripples(input.uv, _RippleStrength * calm);
+                half rippleScale = lerp(_RippleStrengthFar, 1.0, Fade(cameraDistance, _RippleFadeStart, _RippleFadeEnd));
+                half3 ripple = Ripples(input.uv, _RippleStrength * rippleScale);
                 half3 bitangent = input.tangentWS.w * cross(input.normalWS, input.tangentWS.xyz);
                 half3 normalWS = normalize(TransformTangentToWorld(ripple, half3x3(input.tangentWS.xyz, bitangent, input.normalWS)));
 
@@ -241,9 +241,9 @@ Shader "HyperRTS/Water"
                 half3 color = lerp(body, sky, fresnel);
                 color += Glint(sun, normalWS, view, color, cameraDistance);
 
-                half foam = Streaks(input.uv, input.color.g) * 0.5;
+                half foam = RapidsFoam(input.uv, input.color.g) * 0.5;
                 color = lerp(color, _FoamColor.rgb * (sun.color * sun.shadowAttenuation * 0.6 + 0.4), foam);
-                half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(depth / _EdgeFade), foam);
+                half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(depth / _ShoreFadeDepth), foam);
                 color = MixFog(color, input.fogFactor);
                 return half4(color, alpha);
             }

@@ -35,7 +35,7 @@ namespace HyperRTS.Editor.Tests
             var entry = new MapPaletteEntry
             {
                 key = "Shed", size = new Vector2(6f, 6f), pad = "Dirt", padMargin = 3f, access = access,
-                accessGroupReach = 20f,
+                sharedAccessDistance = 20f,
             };
             context.Placements.All.Add(new MapPlacement(entry, Prop, 0f, 1f));
             return context;
@@ -63,7 +63,7 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void PropsWithinTheirGroupReachOfEachOther_ShareOneTrack()
+        public void PropsWithinSharedAccessDistanceOfEachOther_ShareOneTrack()
         {
             var issues = new MapIssues();
             var context = Context(issues, "Dirt", new[] { MainRoad(-60f) });

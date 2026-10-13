@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Maps.Checks
             Each(_spec.props, nameof(MapSpec.props), "Prop", (prop, name) =>
             {
                 Entry(prop.kind, name);
-                Unaligned(prop.kind, name);
+                NotBesideRoad(prop.kind, name);
             });
             Each(_spec.scatters, nameof(MapSpec.scatters), "Scatter", (scatter, name) => Entry(scatter.kind, name));
             Each(_spec.lines, nameof(MapSpec.lines), "Line", Line);

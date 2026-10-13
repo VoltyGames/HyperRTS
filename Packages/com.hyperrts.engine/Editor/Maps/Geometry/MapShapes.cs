@@ -95,7 +95,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         }
 
         /// <summary>A spot set back from the nearest road's edge on the point's side, and the road's yaw there.</summary>
-        public bool Verge(Vector2 point, float setback, out Vector2 spot, out float yaw)
+        public bool RoadsideSpot(Vector2 point, float setback, out Vector2 spot, out float yaw)
         {
             MapRoad nearest = null;
             var along = 0f;

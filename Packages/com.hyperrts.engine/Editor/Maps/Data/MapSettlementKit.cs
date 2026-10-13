@@ -82,7 +82,7 @@ namespace HyperRTS.Editor.Maps.Data
         public string streetPipeArch;
 
         [Tooltip("Fewest pipe sections in a run; shorter runs are left out. Required (at least 1) with a pipe.")]
-        public int streetPipeMinRun;
+        public int streetPipeMinSections;
 
         [Tooltip("Widest gap (metres) inside a pipe run an arch bridges, stretched to fit; wider gaps end the run. Required (above 0) with a pipe.")]
         public float streetPipeMaxGap;

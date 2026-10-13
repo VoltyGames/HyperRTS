@@ -11,8 +11,8 @@ namespace HyperRTS.Editor.Maps.Scenes
         {
             var point = placement.Position;
             var y = (placement.Height ?? heights.Height(point)) - groundLevel - placement.Entry.buriedDepth;
-            var align = placement.Entry.alignToGround;
-            var tilt = align > 0f ? Tilt(heights.Normal(point, placement.Radius * 2f), align) : Quaternion.identity;
+            var maxTilt = placement.Entry.maxTilt;
+            var tilt = maxTilt > 0f ? Tilt(heights.Normal(point, placement.Radius * 2f), maxTilt) : Quaternion.identity;
             var rotation = tilt * Quaternion.Euler(0f, placement.Yaw, 0f);
             return new Pose(new Vector3(point.x, y, point.y), rotation);
         }

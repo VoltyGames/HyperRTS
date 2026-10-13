@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A kind of road spec roads and generated tracks name: its width, ground, mesh and verge.</summary>
     [Serializable]
-    [MapLibraryItem("road", "material", Preview = new[] { "material" })]
+    [MapLibraryItem("road", "material", PreviewRefs = new[] { "material" })]
     public sealed class MapRoadClass : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

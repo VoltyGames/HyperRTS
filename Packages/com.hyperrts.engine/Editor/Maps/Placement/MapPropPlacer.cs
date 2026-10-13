@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Placement
     public sealed class MapPropPlacer
     {
         private const int ScatterAttempts = 40;
-        private const float VergeGap = MapClearance.RoadMargin + 0.5f;
+        private const float RoadsideSetback = MapClearance.RoadMargin + 0.5f;
 
         private readonly MapLayout _layout;
         private readonly MapShapes _shapes;
@@ -152,7 +152,7 @@ namespace HyperRTS.Editor.Maps.Placement
                     var position = MapGeometry.RandomIn(bounds, random);
                     var scale = random.Range(entry.scale.x, entry.scale.y);
                     var yaw = random.Signed() * entry.yawJitter;
-                    if (entry.alignToRoad && !OnVerge(ref position, ref yaw, entry.Radius * scale))
+                    if (entry.besideRoad && !MoveToRoadside(ref position, ref yaw, entry.Radius * scale))
                     {
                         continue;
                     }
@@ -171,9 +171,9 @@ namespace HyperRTS.Editor.Maps.Placement
             }
         }
 
-        private bool OnVerge(ref Vector2 position, ref float yaw, float radius)
+        private bool MoveToRoadside(ref Vector2 position, ref float yaw, float radius)
         {
-            if (!_shapes.Verge(position, radius + VergeGap, out position, out var roadYaw))
+            if (!_shapes.RoadsideSpot(position, radius + RoadsideSetback, out position, out var roadYaw))
             {
                 return false;
             }

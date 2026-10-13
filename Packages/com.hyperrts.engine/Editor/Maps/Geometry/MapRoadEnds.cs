@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Geometry
     public static class MapRoadEnds
     {
         /// <summary>An end this close to another road's edge (metres) meets it.</summary>
-        public const float Touch = 1f;
+        public const float MeetDistance = 1f;
 
         /// <summary>Whether the end reaches the map edge, a settlement, a base or a road other than <paramref name="road"/> (null if unlaid).</summary>
         public static bool LeadsSomewhere(MapLayout layout, MapShapes shapes, MapRoad road, Vector2 end,
@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         {
             foreach (var other in shapes.Roads)
             {
-                if (other != road && other.Line.Distance(end) <= other.Width * 0.5f + Touch)
+                if (other != road && other.Line.Distance(end) <= other.Width * 0.5f + MeetDistance)
                 {
                     return true;
                 }
@@ -44,7 +44,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         {
             foreach (var spawn in layout.Spawns)
             {
-                if ((spawn.Position - point).magnitude <= baseRadius + Touch)
+                if ((spawn.Position - point).magnitude <= baseRadius + MeetDistance)
                 {
                     return true;
                 }

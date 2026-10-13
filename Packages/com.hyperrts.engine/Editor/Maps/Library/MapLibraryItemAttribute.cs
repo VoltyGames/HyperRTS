@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Library
         public IReadOnlyList<string> Refs { get; }
 
         /// <summary>The asset refs that picture the item in lists, first set one wins; empty for no picture.</summary>
-        public string[] Preview { get; set; } = Array.Empty<string>();
+        public string[] PreviewRefs { get; set; } = Array.Empty<string>();
 
         public static MapLibraryItemAttribute Require(Type type) => type.GetCustomAttribute<MapLibraryItemAttribute>()
             ?? throw new ArgumentException($"HyperRTS: {type.Name} is not a map library item class.", nameof(type));

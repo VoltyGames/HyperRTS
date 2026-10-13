@@ -13,11 +13,11 @@ namespace HyperRTS.Editor.Tests
         private static string Pattern(bool[] kept) => new(kept.Select(k => k ? '#' : '.').ToArray());
 
         [Test]
-        public void RunsShorterThanTheShortestRun_AreLeftOut()
+        public void RunsShorterThanMinSections_AreLeftOut()
         {
             var arches = new List<(int First, int Count)>();
 
-            var kept = MapPipeRuns.Keep(Spots("##....#....####"), 3, 1, arches);
+            var kept = MapPipeRuns.SectionsToLay(Spots("##....#....####"), 3, 1, arches);
 
             Assert.AreEqual("...........####", Pattern(kept));
             Assert.IsEmpty(arches);
@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Tests
         {
             var arches = new List<(int First, int Count)>();
 
-            var kept = MapPipeRuns.Keep(Spots("##..##......#"), 3, 2, arches);
+            var kept = MapPipeRuns.SectionsToLay(Spots("##..##......#"), 3, 2, arches);
 
             Assert.AreEqual("##..##.......", Pattern(kept), "two runs of 2 across the gap make 4; the lone section goes");
             Assert.AreEqual(new List<(int, int)> { (2, 2) }, arches);
@@ -39,7 +39,7 @@ namespace HyperRTS.Editor.Tests
         {
             var arches = new List<(int First, int Count)>();
 
-            var kept = MapPipeRuns.Keep(Spots("###...###"), 3, 2, arches);
+            var kept = MapPipeRuns.SectionsToLay(Spots("###...###"), 3, 2, arches);
 
             Assert.AreEqual("###...###", Pattern(kept));
             Assert.IsEmpty(arches);
@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Tests
             const float section = 6f;
             const float archLength = 4.6f;
             var arches = new List<(int First, int Count)>();
-            MapPipeRuns.Keep(Spots("###..###"), 3, 2, arches);
+            MapPipeRuns.SectionsToLay(Spots("###..###"), 3, 2, arches);
             var (first, count) = arches.Single();
 
             var half = archLength * MapPipeRuns.ArchStretch(count, section, archLength) * 0.5f;

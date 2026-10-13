@@ -59,7 +59,7 @@ namespace HyperRTS.Editor.Maps.Meshes
                 _vertices.Add(new Vector3(point.x - left.x, height, point.y - left.y));
                 _uvs.Add(new Vector2(-half, along));
                 _uvs.Add(new Vector2(half, along));
-                var color = MapWaterFords.At(_crossings, _climate, point, direction);
+                var color = MapWaterFords.VertexColor(_crossings, _climate, point, direction);
                 _colors.Add(color);
                 _colors.Add(color);
                 if (i == 0)

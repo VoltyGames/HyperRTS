@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Ground
     {
         private const float Wavelength = 6f;
         private const float Amplitude = 1.4f;
-        private static readonly Vector2 SecondAxis = new(311f, 173f);
+        private static readonly Vector2 SecondSampleOffset = new(311f, 173f);
         private readonly MapNoise _noise;
 
         public MapEdgeJitter(MapLayout layout)
@@ -18,6 +18,6 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         public Vector2 Offset(Vector2 point) =>
-            new Vector2(_noise.Sample(point, Wavelength), _noise.Sample(point + SecondAxis, Wavelength)) * Amplitude;
+            new Vector2(_noise.Sample(point, Wavelength), _noise.Sample(point + SecondSampleOffset, Wavelength)) * Amplitude;
     }
 }

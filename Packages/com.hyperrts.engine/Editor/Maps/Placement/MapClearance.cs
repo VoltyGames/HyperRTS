@@ -89,13 +89,13 @@ namespace HyperRTS.Editor.Maps.Placement
             return true;
         }
 
-        /// <summary>Distance to the nearest reserved circle's edge, or infinity beyond <paramref name="reach"/>.</summary>
-        public float ReservedEdgeDistance(Vector2 point, float reach)
+        /// <summary>Distance to the nearest reserved circle's edge, or infinity beyond <paramref name="maxDistance"/>.</summary>
+        public float ReservedEdgeDistance(Vector2 point, float maxDistance)
         {
             // Inline cell loop: this runs per detail cell, so an iterator would allocate millions of enumerators.
             var best = float.PositiveInfinity;
-            var min = Key(point - Vector2.one * reach);
-            var max = Key(point + Vector2.one * reach);
+            var min = Key(point - Vector2.one * maxDistance);
+            var max = Key(point + Vector2.one * maxDistance);
             for (var z = min.y; z <= max.y; z++)
             {
                 for (var x = min.x; x <= max.x; x++)
@@ -112,7 +112,7 @@ namespace HyperRTS.Editor.Maps.Placement
                 }
             }
 
-            return best <= reach ? best : float.PositiveInfinity;
+            return best <= maxDistance ? best : float.PositiveInfinity;
         }
 
         /// <summary>Reserves a circle in every hash cell it overlaps, so a query only looks at its own cells.</summary>

@@ -41,7 +41,7 @@ namespace HyperRTS.Editor.Maps.Data
         public string trackClass;
 
         [Tooltip("A field-end track ending this close to a road's edge (metres) is carried onto the road.")]
-        public float trackSnapReach;
+        public float trackJoinDistance;
 
         [Tooltip("Field fragments smaller than this (m²) become leftover ground.")]
         public float minField = 1500f;
