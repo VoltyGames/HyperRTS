@@ -1,9 +1,6 @@
-// Vegetation wind from the globals the scene's Wind publishes. Include after URP's Core.hlsl.
-// Trees (TreeWindPosition) carry wind data per vertex, Unity object space in metres:
-//   TEXCOORD2.xy branch pivot xy, TEXCOORD3.x branch pivot z, TEXCOORD3.y card pivot x, TEXCOORD4.xy card pivot yz
-//   COLOR g branch flex (0 at the pivot, 1 at the tip), b stiffness (0 limb, 1 twig), a flutter weight (1 on cards)
-// Plants without wind data (PlantWindPosition) sway about their origin with height.
-// Every function takes a WindFrame, so motion vectors can rebuild last frame's position.
+// Vegetation wind from the scene's Wind globals. Include after URP's Core.hlsl.
+// Tree wind data (object space, m): branch pivot TEXCOORD2.xy + TEXCOORD3.x, card pivot TEXCOORD3.y + TEXCOORD4.xy;
+// COLOR g flex, b stiffness, a flutter.
 #ifndef HYPERRTS_WIND_INCLUDED
 #define HYPERRTS_WIND_INCLUDED
 
@@ -82,7 +79,7 @@ float3 WindSafeNormalize(float3 v)
     return v * rsqrt(max(dot(v, v), 1e-8));
 }
 
-// The steady strength at a world point, swelled or eased by the gust rolling over it.
+// Steady strength at a world point, scaled by the passing gust.
 float WindPush(float2 positionXZ, WindFrame frame)
 {
     float2 uv = positionXZ * _HyperRTSWindGust.z - frame.gustOffset;
@@ -126,8 +123,7 @@ float3 BranchSway(float3 p, TreeWindVertex v, TreeWindSettings s, float3 downwin
     return WindRotate(p, v.branchPivot, axis, v.flex * amplitude * (push + swing));
 }
 
-// Leans the tree downwind on an (h / H)^2 curve, then pulls each point back to its distance from the root so the
-// trunk keeps its length.
+// Pulls each point back to its distance from the root so the trunk keeps its length.
 float3 TrunkBend(float3 p, TreeWindSettings s, float3 downwind, float push, WindFrame frame, float3 origin)
 {
     float swing = WindSwing(frame.time * s.speed * 0.6, WindHash(origin) * WIND_TAU) * s.scale;
@@ -137,53 +133,49 @@ float3 TrunkBend(float3 p, TreeWindSettings s, float3 downwind, float push, Wind
     return WindSafeNormalize(bent) * reach;
 }
 
-// Object-space position of a tree vertex under this frame's wind: card flutter, branch sway, then trunk bend.
+// Card flutter, branch sway, then trunk bend.
 float3 TreeWindPosition(TreeWindVertex v, TreeWindSettings s, WindFrame frame)
 {
-    float3 origin = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
-    float3 downwindWS = float3(_HyperRTSWindDirection.x, 0.0, _HyperRTSWindDirection.z);
-    float3 downwind = WindSafeNormalize(TransformWorldToObjectDir(downwindWS, false));
-    float push = WindPush(origin.xz, frame) * s.scale;
-
     float3 p = v.positionOS;
     UNITY_BRANCH
-    if (_HyperRTSWindDetail < 0.5)
+    if (_HyperRTSWindDetail >= 0.5)
     {
-        return p;
+        float3 origin = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
+        float3 downwindWS = float3(_HyperRTSWindDirection.x, 0.0, _HyperRTSWindDirection.z);
+        float3 downwind = WindSafeNormalize(TransformWorldToObjectDir(downwindWS, false));
+        float push = WindPush(origin.xz, frame) * s.scale;
+        UNITY_BRANCH
+        if (_HyperRTSWindDetail >= 3.0)
+        {
+            p = CardFlutter(p, v, s, push, frame, origin);
+        }
+        UNITY_BRANCH
+        if (_HyperRTSWindDetail >= 2.0)
+        {
+            p = BranchSway(p, v, s, downwind, frame);
+        }
+        p = TrunkBend(p, s, downwind, push, frame, origin);
     }
-    UNITY_BRANCH
-    if (_HyperRTSWindDetail >= 3.0)
-    {
-        p = CardFlutter(p, v, s, push, frame, origin);
-    }
-    UNITY_BRANCH
-    if (_HyperRTSWindDetail >= 2.0)
-    {
-        p = BranchSway(p, v, s, downwind, frame);
-    }
-    return TrunkBend(p, s, downwind, push, frame, origin);
+    return p;
 }
 
-// World position of a plant vertex (no wind data): sways about the origin with height, leaves flutter on top.
+// Plants without wind data sway about their origin with height.
 float3 PlantWindPosition(float3 world, float3 origin, float sway, float speed, float flutter, float scale, WindFrame frame)
 {
-    UNITY_BRANCH
-    if (_HyperRTSWindDetail < 0.5)
-    {
-        return world;
-    }
-
-    float height = max(0.0, world.y - origin.y);
-    float push = WindPush(origin.xz, frame) * scale;
-    float swing = WindSwing(frame.time * speed, dot(origin.xz, float2(0.11, 0.07))) * scale;
     float3 moved = world;
-    moved.xz += _HyperRTSWindDirection.xz * ((push + swing) * sway * height);
-
     UNITY_BRANCH
-    if (_HyperRTSWindDetail >= 3.0)
+    if (_HyperRTSWindDetail >= 0.5)
     {
-        float wave = sin(frame.time * 7.0 + dot(world, float3(1.9, 2.3, 1.7)));
-        moved += float3(wave, wave * 0.5, -wave) * (flutter * saturate(height * 0.5) * saturate(push * 2.0));
+        float height = max(0.0, world.y - origin.y);
+        float push = WindPush(origin.xz, frame) * scale;
+        float swing = WindSwing(frame.time * speed, dot(origin.xz, float2(0.11, 0.07))) * scale;
+        moved.xz += _HyperRTSWindDirection.xz * ((push + swing) * sway * height);
+        UNITY_BRANCH
+        if (_HyperRTSWindDetail >= 3.0)
+        {
+            float wave = sin(frame.time * 7.0 + dot(world, float3(1.9, 2.3, 1.7)));
+            moved += float3(wave, wave * 0.5, -wave) * (flutter * saturate(height * 0.5) * saturate(push * 2.0));
+        }
     }
     return moved;
 }
