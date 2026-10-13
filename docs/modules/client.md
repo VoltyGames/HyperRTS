@@ -23,7 +23,7 @@ UI state that input, HUD and overlays share (`HyperRTS.Client`), created once pe
 | `SelectionInputSystem` | Mouse gestures → `SelectionInput` |
 | `CommandInputSystem` | Right-click Smart, hotkeys, targeted commands → `PlayerCommand` |
 | `PlacementInputSystem` | Moves the ghost, confirms with `PlaceBuilding` |
-| `WorldPointer` | Cursor → target through `PickRanking`, and the ground point |
+| `WorldPointer` | Cursor → target through `PickRanking`, and the ground point; placement casts for ground only |
 | `CameraController` | Pan, edge scroll, zoom, rotate, map clamp, `FocusOn`, starts at the home base |
 
 Clicks over the HUD, while placing or while a command is pending never reach selection. A front end that handles

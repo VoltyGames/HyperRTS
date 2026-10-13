@@ -26,6 +26,9 @@ namespace HyperRTS.Simulation.Selection
         public ComponentLookup<NavAgent> Agents;
         public ComponentLookup<NavObstacle> Obstacles;
 
+        private EntityQuery _physics;
+        private EntityQuery _units;
+
         public PickRanking(ref SystemState state)
         {
             Selectables = state.GetComponentLookup<Selectable>(true);
@@ -35,6 +38,8 @@ namespace HyperRTS.Simulation.Selection
             Transforms = state.GetComponentLookup<LocalTransform>(true);
             Agents = state.GetComponentLookup<NavAgent>(true);
             Obstacles = state.GetComponentLookup<NavObstacle>(true);
+            _physics = new EntityQueryBuilder(Allocator.Temp).WithAll<PhysicsWorldSingleton>().Build(ref state);
+            _units = new EntityQueryBuilder(Allocator.Temp).WithAll<Selectable, UnitTag>().Build(ref state);
         }
 
         public void Update(ref SystemState state)
@@ -48,12 +53,40 @@ namespace HyperRTS.Simulation.Selection
             Obstacles.Update(ref state);
         }
 
+        /// <summary>A ray along <paramref name="direction"/> from <paramref name="origin"/>, hitting every collider.</summary>
+        public static RaycastInput Ray(float3 origin, float3 direction, float distance) => new()
+        {
+            Start = origin,
+            End = origin + direction * distance,
+            Filter = CollisionFilter.Default,
+        };
+
+        /// <summary>Casts <paramref name="ray"/> through the physics world and ranks what it hits; false without physics.</summary>
+        public bool TryPick(ref SystemState state, RaycastInput ray, float2 pointer, float4x4 viewProjection,
+            float2 screenSize, out Entity entity, out float3 point)
+        {
+            entity = Entity.Null;
+            point = default;
+            if (!_physics.TryGetSingleton(out PhysicsWorldSingleton physics))
+            {
+                return false;
+            }
+
+            state.CompleteDependency();
+            Update(ref state);
+            var hits = new NativeList<RaycastHit>(Allocator.Temp);
+            physics.CastRay(ray, ref hits);
+            var picked = TryRank(hits.AsArray(), pointer, viewProjection, screenSize, out entity, out point);
+            hits.Dispose();
+            return picked;
+        }
+
         /// <summary>
-        /// Picks among <paramref name="hits"/> (any order) and the on-screen <paramref name="units"/>; the point is
-        /// the hit position, or the unit's position when it was picked on screen.
+        /// Picks among <paramref name="hits"/> (any order) and the on-screen units; the point is the hit position, or
+        /// the unit's position when it was picked on screen.
         /// </summary>
-        public bool TryPick(NativeArray<RaycastHit> hits, NativeArray<Entity> units, float2 pointer,
-            float4x4 viewProjection, float2 screenSize, out Entity entity, out float3 point)
+        public bool TryRank(NativeArray<RaycastHit> hits, float2 pointer, float4x4 viewProjection, float2 screenSize,
+            out Entity entity, out float3 point)
         {
             if (TryClosestHit(hits, true, out var hit))
             {
@@ -62,6 +95,8 @@ namespace HyperRTS.Simulation.Selection
                 return true;
             }
 
+            // Units are gathered only now: a unit on the ray already won without them.
+            using var units = _units.ToEntityArray(Allocator.Temp);
             if (TryNearestOnScreen(units, pointer, viewProjection, screenSize, out entity))
             {
                 point = Transforms[entity].Position;
@@ -75,7 +110,7 @@ namespace HyperRTS.Simulation.Selection
         }
 
         /// <summary>A selectable unit not hidden by fog and not inside a container.</summary>
-        public bool IsVisibleUnit(Entity entity)
+        private bool IsVisibleUnit(Entity entity)
         {
             if (!Units.HasComponent(entity) || !Selectables.HasComponent(entity))
             {

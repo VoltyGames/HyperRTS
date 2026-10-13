@@ -1,5 +1,6 @@
 using HyperRTS.Client.Interaction;
 using HyperRTS.Core;
+using HyperRTS.Input.Cameras;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Entities;
@@ -121,8 +122,7 @@ namespace HyperRTS.Input.Selection
             input.Subtract = _actions.Selection.Subtract.IsPressed();
             input.ScreenSize = new float2(Screen.width, Screen.height);
 
-            var vp = camera.projectionMatrix * camera.worldToCameraMatrix;
-            input.ViewProjection = new float4x4(vp.GetColumn(0), vp.GetColumn(1), vp.GetColumn(2), vp.GetColumn(3));
+            input.ViewProjection = CameraMatrices.ViewProjection(camera);
 
             if (_drag.IsDragging)
             {

@@ -98,7 +98,7 @@ namespace HyperRTS.Input.Commands
             }
         }
 
-        private bool TryGetGround(out float3 ground) => _pointer.TryPick(ref CheckedStateRef,
-            _actions.Commands.Point.ReadValue<Vector2>(), out _, out ground);
+        private bool TryGetGround(out float3 ground) =>
+            _pointer.TryGround(_actions.Commands.Point.ReadValue<Vector2>(), out ground);
     }
 }

@@ -5,7 +5,6 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Physics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Selection
@@ -19,11 +18,8 @@ namespace HyperRTS.Simulation.Selection
     {
         private ComponentLookup<EntityInfo> _infoLookup;
         private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<UnitTag> _unitLookup;
         private ComponentLookup<BuildingTag> _buildingLookup;
         private ComponentLookup<ControlGroup> _groupLookup;
-        private ComponentLookup<FogHidden> _hiddenLookup;
-        private ComponentLookup<Inside> _insideLookup;
         private PickRanking _ranking;
 
         [BurstCompile]
@@ -31,11 +27,8 @@ namespace HyperRTS.Simulation.Selection
         {
             _infoLookup = state.GetComponentLookup<EntityInfo>(true);
             _factionLookup = state.GetComponentLookup<Faction>(true);
-            _unitLookup = state.GetComponentLookup<UnitTag>(true);
             _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
             _groupLookup = state.GetComponentLookup<ControlGroup>(true);
-            _hiddenLookup = state.GetComponentLookup<FogHidden>(true);
-            _insideLookup = state.GetComponentLookup<Inside>(true);
             _ranking = new PickRanking(ref state);
             // Input writes it, so it must exist before either system runs.
             state.EntityManager.CreateSingleton<SelectionInput>();
@@ -77,11 +70,9 @@ namespace HyperRTS.Simulation.Selection
 
         private SelectionHitTest CreateHitTest(ref SystemState state, in SelectionInput input)
         {
-            _hiddenLookup.Update(ref state);
-            _insideLookup.Update(ref state);
+            _ranking.Update(ref state);
             _infoLookup.Update(ref state);
             _factionLookup.Update(ref state);
-            _unitLookup.Update(ref state);
             _buildingLookup.Update(ref state);
             _groupLookup.Update(ref state);
 
@@ -91,11 +82,11 @@ namespace HyperRTS.Simulation.Selection
                 Clicked = Raycast(ref state, in input),
                 LocalFaction = LocalFaction(ref state),
                 PreferredRank = -1,
-                Hidden = _hiddenLookup,
-                Inside = _insideLookup,
+                Hidden = _ranking.Hidden,
+                Inside = _ranking.Inside,
                 Info = _infoLookup,
                 Factions = _factionLookup,
-                Units = _unitLookup,
+                Units = _ranking.Units,
                 Buildings = _buildingLookup,
                 Groups = _groupLookup,
             };
@@ -118,27 +109,15 @@ namespace HyperRTS.Simulation.Selection
 
         private Entity Raycast(ref SystemState state, in SelectionInput input)
         {
-            var needsRaycast = input.Command is SelectionCommand.Click or SelectionCommand.DoubleClick;
-            if (!needsRaycast || !SystemAPI.TryGetSingleton<PhysicsWorldSingleton>(out var physicsWorld))
+            if (input.Command is not (SelectionCommand.Click or SelectionCommand.DoubleClick))
             {
                 return Entity.Null;
             }
 
-            var rayInput = new RaycastInput
-            {
-                Start = input.RayOrigin,
-                End = input.RayOrigin + input.RayDirection * input.RayDistance,
-                Filter = CollisionFilter.Default,
-            };
-
-            state.CompleteDependency();
-            _ranking.Update(ref state);
-            var hits = new NativeList<RaycastHit>(Allocator.Temp);
-            physicsWorld.CastRay(rayInput, ref hits);
-            var units = SystemAPI.QueryBuilder().WithAll<Selectable, UnitTag>().Build().ToEntityArray(Allocator.Temp);
-            var picked = _ranking.TryPick(hits.AsArray(), units, input.Pointer, input.ViewProjection, input.ScreenSize,
+            var ray = PickRanking.Ray(input.RayOrigin, input.RayDirection, input.RayDistance);
+            var picked = _ranking.TryPick(ref state, ray, input.Pointer, input.ViewProjection, input.ScreenSize,
                 out var entity, out _);
-            return picked && SystemAPI.HasComponent<Selectable>(entity) ? entity : Entity.Null;
+            return picked && _ranking.Selectables.HasComponent(entity) ? entity : Entity.Null;
         }
 
         // An enemy that walks into fog must not stay selected out of sight.
