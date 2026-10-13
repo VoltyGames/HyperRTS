@@ -529,6 +529,7 @@ Other client pieces:
 - `Destruction/`: `DamageStageSystem` shows the stage model matching health (others scaled to zero, so fog's
   rendering toggles stay untouched) and plays the step's effect; `SpawnEffectSystem` plays spawn effects once.
 - `Animation/MachineSystem` poses machine parts.
-- `Environment/`: `HyperRTS/Water` (depth-based colour and clarity, refraction, downstream ripples along the mesh's
-  V, sun glint, sky reflection, shore foam; needs the Depth and Opaque Textures) and `HyperRTS/Foliage` (alpha-cut,
+- `Environment/`: `HyperRTS/Water` (alpha-blended; depth colour and edge fade, refraction, ripples along V that calm
+  with distance, sky reflection, a sun glint capped under bloom; vertex A thins the water at fords, G streaks foam;
+  needs the Depth and Opaque Textures) and `HyperRTS/Foliage` (alpha-cut,
   two-sided, wind sway, translucency, hue variation; instanced and DOTS-instanced), with `WaterRipples.png`.
