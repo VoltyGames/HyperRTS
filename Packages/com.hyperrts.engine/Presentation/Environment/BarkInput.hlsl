@@ -49,13 +49,7 @@ struct BarkAttributes
 
 float3 BarkWindPosition(BarkAttributes input, WindFrame frame)
 {
-    TreeWindSettings settings;
-    settings.trunkSway = _WindStrength;
-    settings.speed = _WindSpeed;
-    settings.branchSway = _BranchSway;
-    settings.cardFlutter = 0.0;
-    settings.height = _TreeHeight;
-    settings.scale = _WindScale;
+    TreeWindSettings settings = TreeWind(_WindStrength, _WindSpeed, _BranchSway, 0.0, _TreeHeight, _WindScale);
     TreeWindVertex v = TreeWindData(input.positionOS.xyz, input.uv2, input.uv3, input.uv4, input.color);
     return TreeWindPosition(v, settings, frame);
 }

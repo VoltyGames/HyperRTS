@@ -39,7 +39,6 @@ namespace HyperRTS.Presentation.Environment
             var recovery = InteractionMath.FadeSteps(ref _recoveryCarry, deltaTime, InteractionMath.TrampleRecoverySeconds);
             var fade = InteractionMath.FadeSteps(ref _fadeCarry, deltaTime, InteractionMath.TrackFadeSeconds);
             _brush.Draw(_surfaces, recovery, fade, stamps);
-            _surfaces.Publish();
         }
 
         private void OnDisable() => Release();
@@ -74,6 +73,7 @@ namespace HyperRTS.Presentation.Environment
 
             Release();
             _surfaces = new InteractionSurfaces(min, size, Quality);
+            _surfaces.Publish();
             _brush.Clear(_surfaces);
         }
 

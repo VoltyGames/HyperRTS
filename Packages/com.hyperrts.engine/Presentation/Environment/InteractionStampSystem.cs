@@ -52,6 +52,7 @@ namespace HyperRTS.Presentation.Environment
 
         private void AddVehicles()
         {
+            // No terrain is a flat world at height 0 (TerrainHeight's default).
             SystemAPI.TryGetSingleton(out TerrainHeight terrain);
             using var entities = _vehicles.ToEntityArray(Allocator.Temp);
             using var marks = _vehicles.ToComponentDataArray<TrackMarks>(Allocator.Temp);
@@ -75,15 +76,8 @@ namespace HyperRTS.Presentation.Environment
             (_last, _current) = (_current, _last);
         }
 
-        private static bool OnGround(in TerrainHeight terrain, float3 position)
-        {
-            if (!terrain.IsCreated)
-            {
-                return true;
-            }
-
-            return position.y - terrain.Height(position.xz) <= InteractionMath.MaxGroundGap;
-        }
+        private static bool OnGround(in TerrainHeight terrain, float3 position) =>
+            position.y - terrain.Height(position.xz) <= InteractionMath.MaxGroundGap;
 
         /// <summary>Metres driven along <paramref name="forward"/> since last frame; 0 when new in sight or teleported.</summary>
         private float Advance(Entity vehicle, float2 position, float2 forward)
@@ -97,7 +91,7 @@ namespace HyperRTS.Presentation.Environment
             return math.length(step) > InteractionMath.MaxStep ? 0f : math.dot(step, forward);
         }
 
-            // Stamped every frame: max blending is idempotent and holds grass down.
+        // Stamped every frame: max blending is idempotent and holds grass down.
         private void AddBuildings()
         {
             using var footprints = _buildings.ToComponentDataArray<NavObstacle>(Allocator.Temp);
@@ -115,14 +109,14 @@ namespace HyperRTS.Presentation.Environment
                 return;
             }
 
-            var view = SystemAPI.TryGetSingleton(out LocalFogView local) ? local : default;
+            SystemAPI.TryGetSingleton(out LocalFogView view);
             SystemAPI.TryGetSingleton(out FactionRelations relations);
             _fog.CompleteDependency();
             _fog.TryGetSingleton(out FogOfWar fog);
             foreach (var impact in impacts)
             {
                 var big = impact.Surface == ImpactSurface.Ground && impact.Radius >= InteractionMath.BigCraterRadius;
-                var seen = !view.Active || ImpactRules.IsVisible(impact, view.Viewer, fog, relations);
+                var seen = ImpactRules.IsSeenLocally(impact, view, fog, relations);
                 if (big && seen)
                 {
                     InteractionMath.AddCrater(impact.Position.xz, impact.Radius, Stamps.Trample, Stamps.Tracks);

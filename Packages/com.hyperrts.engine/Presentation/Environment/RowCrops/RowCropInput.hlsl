@@ -19,7 +19,6 @@ CBUFFER_START(UnityPerMaterial)
     float _WindStrength;
     float _WindSpeed;
     float _Flutter;
-    float _WindScale;
     half _GroundBlend;
     half _GroundBlendHeight;
 CBUFFER_END
@@ -36,6 +35,9 @@ struct RowCropInstance // RowCrops.compute, 48 bytes
 };
 
 StructuredBuffer<RowCropInstance> _Instances;
+
+// PlantShading.hlsl: the side in view is lit, bent skyward so a field reads lit from above.
+#define PLANT_TWO_SIDED 1.0
 
 struct Attributes
 {
@@ -60,25 +62,28 @@ float3 Lean(float3 offset, float2 lean)
     return float3(offset.x + lean.x * offset.y, offset.y * upright, offset.z + lean.y * offset.y);
 }
 
-// Placed by its plant, leaned, trampled, then swayed (Wind.hlsl plant mode).
-float3 RowCropPosition(Attributes input, RowCropInstance plant, WindFrame frame)
+// Placed by its plant, leaned and trampled, before wind.
+float3 PlaceRowCrop(Attributes input, RowCropInstance plant)
 {
     float3 origin = plant.position;
     float3 world = origin + Lean(PlantToWorld(input.positionOS.xyz * plant.scale, plant.facing), plant.lean);
-    world = TrampleBend(world, origin, plant.trampleDirection, plant.bend);
-    return PlantWindPosition(world, origin, _WindStrength, _WindSpeed, _Flutter, _WindScale, frame);
+    return TrampleBend(world, origin, plant.trampleDirection, plant.bend);
+}
+
+// Wind.hlsl plant mode, always at full scale.
+float3 SwayRowCrop(float3 placed, RowCropInstance plant, WindFrame frame)
+{
+    return PlantWindPosition(placed, plant.position, _WindStrength, _WindSpeed, _Flutter, 1.0, frame);
+}
+
+float3 RowCropPosition(Attributes input, RowCropInstance plant, WindFrame frame)
+{
+    return SwayRowCrop(PlaceRowCrop(input, plant), plant, frame);
 }
 
 half3 RowCropNormal(Attributes input, RowCropInstance plant)
 {
     return normalize(PlantToWorld(input.normalOS, plant.facing));
-}
-
-half Coverage(float2 uv)
-{
-    half alpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).a * _BaseColor.a;
-    clip(alpha - _Cutoff);
-    return alpha;
 }
 
 #endif

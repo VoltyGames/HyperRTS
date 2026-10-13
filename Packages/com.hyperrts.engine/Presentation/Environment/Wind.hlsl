@@ -4,6 +4,8 @@
 #ifndef HYPERRTS_WIND_INCLUDED
 #define HYPERRTS_WIND_INCLUDED
 
+#include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
+
 #define WIND_TAU 6.2831853
 
 float4 _HyperRTSWindDirection;  // xz unit downwind
@@ -57,6 +59,18 @@ WindFrame WindLastFrame()
     return frame;
 }
 
+TreeWindSettings TreeWind(float trunkSway, float speed, float branchSway, float cardFlutter, float height, float scale)
+{
+    TreeWindSettings s;
+    s.trunkSway = trunkSway;
+    s.speed = speed;
+    s.branchSway = branchSway;
+    s.cardFlutter = cardFlutter;
+    s.height = height;
+    s.scale = scale;
+    return s;
+}
+
 TreeWindVertex TreeWindData(float3 positionOS, float2 uv2, float2 uv3, float2 uv4, half4 color)
 {
     TreeWindVertex v;
@@ -67,16 +81,6 @@ TreeWindVertex TreeWindData(float3 positionOS, float2 uv2, float2 uv3, float2 uv
     v.stiffness = color.b;
     v.flutter = color.a;
     return v;
-}
-
-float WindHash(float3 p)
-{
-    return frac(sin(dot(p, float3(12.9898, 78.233, 37.719))) * 43758.5453);
-}
-
-float3 WindSafeNormalize(float3 v)
-{
-    return v * rsqrt(max(dot(v, v), 1e-8));
 }
 
 // Steady strength at a world point, scaled by the passing gust.
@@ -92,14 +96,6 @@ float WindSwing(float time, float phase)
 {
     float wave = sin(time + phase) * 0.6 + sin(time * 2.3 + phase + 1.7) * 0.4;
     return wave * _HyperRTSWindGust.y * _HyperRTSWindStrength;
-}
-
-float3 WindRotate(float3 p, float3 pivot, float3 axis, float angle)
-{
-    float3 v = p - pivot;
-    float s, c;
-    sincos(angle, s, c);
-    return pivot + v * c + cross(axis, v) * s + axis * dot(axis, v) * (1.0 - c);
 }
 
 float3 CardFlutter(float3 p, TreeWindVertex v, TreeWindSettings s, float push, WindFrame frame, float3 origin)

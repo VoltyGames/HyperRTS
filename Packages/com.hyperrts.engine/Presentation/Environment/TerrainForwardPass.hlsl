@@ -61,12 +61,12 @@ void ApplyInteraction(inout TerrainSurface surface, float2 positionXZ)
         return;
     }
 
-    half2 tracks = SampleTracks(positionXZ);
-    half flatten = SampleTrample(positionXZ).flatten;
+    TrackSample tracks = ReadTracks(positionXZ);
+    half flatten = ReadTrample(positionXZ).flatten;
     half3 earth = surface.albedo * half3(0.62, 0.5, 0.4);
-    surface.albedo = lerp(surface.albedo, earth, SOIL_TINT * tracks.g);
-    surface.albedo *= (1.0 - RUT_DARKENING * tracks.r) * (1.0 - FLATTEN_DARKENING * flatten);
-    half2 slope = (half2)(TrackSlope(positionXZ) * RUT_DEPTH);
+    surface.albedo = lerp(surface.albedo, earth, SOIL_TINT * tracks.churn);
+    surface.albedo *= (1.0 - RUT_DARKENING * tracks.depth) * (1.0 - FLATTEN_DARKENING * flatten);
+    half2 slope = (half2)(tracks.slope * RUT_DEPTH);
     surface.normalTS = normalize(half3(surface.normalTS.xy + slope, surface.normalTS.z));
 }
 

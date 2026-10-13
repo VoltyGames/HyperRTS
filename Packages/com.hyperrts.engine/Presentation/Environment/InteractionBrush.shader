@@ -12,6 +12,7 @@ Shader "Hidden/HyperRTS/Interaction Brush"
         HLSLINCLUDE
         #pragma target 4.5
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
 
         // Matches InteractionStamp.cs.
         struct InteractionStamp
@@ -58,7 +59,7 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             float2 world = stamp.center + right * (corner.x * stamp.halfSize.x) + stamp.forward * (corner.y * stamp.halfSize.y);
 
             StampVaryings output;
-            output.positionCS = MapClip((world - _HyperRTSInteractionRect.xy) * _HyperRTSInteractionRect.zw);
+            output.positionCS = MapClip(RectUV(_HyperRTSInteractionRect, world));
             output.local = corner;
             output.value = stamp.value;
             output.forward = stamp.forward;

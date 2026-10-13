@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment
 {
@@ -60,14 +61,7 @@ namespace HyperRTS.Presentation.Environment
         {
             Shader.SetGlobalFloat(StrengthId, 0f);
             Shader.SetGlobalFloat(DetailId, (float)WindDetail.None);
-            if (Application.isPlaying)
-            {
-                Destroy(_gustMap);
-            }
-            else
-            {
-                DestroyImmediate(_gustMap);
-            }
+            CoreUtils.Destroy(_gustMap);
         }
     }
 }

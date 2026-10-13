@@ -2,7 +2,7 @@ using System;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
-using Object = UnityEngine.Object;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment
 {
@@ -51,7 +51,7 @@ namespace HyperRTS.Presentation.Environment
             Shader.SetGlobalTexture(TracksId, Tracks);
             Shader.SetGlobalVector(RectId, Rect);
             var texels = new float2(Tracks.width, Tracks.height);
-            Shader.SetGlobalVector(TracksTexelId, new float4(1f / texels, _size / texels));
+            Shader.SetGlobalVector(TracksTexelId, new float4(texels, _size / texels));
         }
 
         /// <summary>No maps: shaders read a zero rect as nothing trampled.</summary>
@@ -85,14 +85,7 @@ namespace HyperRTS.Presentation.Environment
         private static void Release(RenderTexture texture)
         {
             texture.Release();
-            if (Application.isPlaying)
-            {
-                Object.Destroy(texture);
-            }
-            else
-            {
-                Object.DestroyImmediate(texture);
-            }
+            CoreUtils.Destroy(texture);
         }
     }
 }

@@ -84,7 +84,7 @@ namespace HyperRTS.Presentation.Impacts
                 return;
             }
 
-            var view = SystemAPI.TryGetSingleton(out LocalFogView local) ? local : default;
+            SystemAPI.TryGetSingleton(out LocalFogView view);
             SystemAPI.TryGetSingleton(out FactionRelations relations);
             _fog.CompleteDependency();
             _fog.TryGetSingleton(out FogOfWar fog);
@@ -92,7 +92,7 @@ namespace HyperRTS.Presentation.Impacts
             var registry = SystemAPI.GetSingleton<PrefabRegistry>();
             foreach (var impact in impacts)
             {
-                var seen = !view.Active || ImpactRules.IsVisible(impact, view.Viewer, fog, relations);
+                var seen = ImpactRules.IsSeenLocally(impact, view, fog, relations);
                 if (impact.Surface != ImpactSurface.Ground || !seen)
                 {
                     continue;

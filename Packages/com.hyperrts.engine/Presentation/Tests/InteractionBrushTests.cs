@@ -23,7 +23,9 @@ namespace HyperRTS.Presentation.Tests
             {
                 Center = new float2(50f, 120f), Forward = new float2(0f, 1f), HalfSize = new float2(3f), Value = new float4(1f, 1f, 0f, 0f),
             });
+            surfaces.Publish();
             brush.Draw(surfaces, 0, 0, stamps);
+            InteractionSurfaces.Clear();
 
             var samples = Sample(probe, surfaces, new float4(50f, 120f, 50f, -120f));
 

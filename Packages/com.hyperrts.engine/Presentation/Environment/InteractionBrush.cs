@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
-using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Environment
 {
@@ -22,7 +20,6 @@ namespace HyperRTS.Presentation.Environment
 
         private readonly Material _material;
         private readonly CommandBuffer _commands = new() { name = "HyperRTS Interaction Maps" };
-        private readonly List<InteractionStamp> _all = new();
         private GraphicsBuffer _buffer;
 
         public InteractionBrush(Shader shader)
@@ -50,7 +47,6 @@ namespace HyperRTS.Presentation.Environment
         {
             Upload(stamps);
             _commands.Clear();
-            _commands.SetGlobalVector(InteractionSurfaces.RectId, surfaces.Rect);
             _commands.SetGlobalBuffer(StampsId, _buffer);
 
             _commands.SetRenderTarget(surfaces.Trample);
@@ -68,23 +64,14 @@ namespace HyperRTS.Presentation.Environment
         {
             _commands.Release();
             _buffer?.Release();
-            if (Application.isPlaying)
-            {
-                Object.Destroy(_material);
-            }
-            else
-            {
-                Object.DestroyImmediate(_material);
-            }
+            CoreUtils.Destroy(_material);
         }
 
         // One buffer: tracks start after the trample stamps.
         private void Upload(InteractionStamps stamps)
         {
-            _all.Clear();
-            _all.AddRange(stamps.Trample);
-            _all.AddRange(stamps.Tracks);
-            var needed = Mathf.Max(_all.Count, 1);
+            var trample = stamps.Trample.Count;
+            var needed = Mathf.Max(trample + stamps.Tracks.Count, 1);
             if (_buffer == null || _buffer.count < needed)
             {
                 _buffer?.Release();
@@ -92,7 +79,8 @@ namespace HyperRTS.Presentation.Environment
                     InteractionStamp.Stride);
             }
 
-            _buffer.SetData(_all);
+            _buffer.SetData(stamps.Trample, 0, 0, trample);
+            _buffer.SetData(stamps.Tracks, 0, trample, stamps.Tracks.Count);
         }
 
         private void Fade(Vector4 amount)
