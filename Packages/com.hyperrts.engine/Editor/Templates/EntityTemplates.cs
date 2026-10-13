@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
@@ -25,6 +26,7 @@ namespace HyperRTS.Editor.Templates
         public static GameObject Unit(string name = "Unit")
         {
             var go = Template(name, PrimitiveType.Capsule, new Vector3(0.8f, 0.9f, 0.8f), 0.9f);
+            UnitRenderingLayer.Assign(go, UnitRenderingLayer.Index);
             go.AddComponent<GhostAuthoringComponent>();
             var unit = go.AddComponent<UnitAuthoring>();
             unit.displayName = name;

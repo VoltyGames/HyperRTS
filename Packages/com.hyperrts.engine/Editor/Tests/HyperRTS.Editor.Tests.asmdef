@@ -4,6 +4,8 @@
     "references": [
         "HyperRTS.Core",
         "HyperRTS.Simulation",
+        "HyperRTS.Presentation",
+        "Unity.RenderPipelines.Universal.Runtime",
         "HyperRTS.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

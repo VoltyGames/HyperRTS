@@ -245,6 +245,63 @@ Shader "HyperRTS/LitTeam"
             ENDHLSL
         }
 
+        // UnitSilhouetteFeature: marks stencil bit 128 where the unit itself is visible.
+        Pass
+        {
+            Name "UnitMask"
+            Tags { "LightMode" = "HyperRTSUnitMask" }
+
+            ZTest Equal
+            ZWrite Off
+            ColorMask 0
+            Cull[_Cull]
+            Stencil
+            {
+                Ref 128
+                WriteMask 128
+                Comp Always
+                Pass Replace
+            }
+
+            HLSLPROGRAM
+            #pragma target 2.0
+            #pragma vertex SilhouetteVertex
+            #pragma fragment UnitMaskFragment
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamSilhouettePass.hlsl"
+            ENDHLSL
+        }
+
+        // UnitSilhouetteFeature: team colour where something hides the unit; it sets bit 128 too so each pixel blends once.
+        Pass
+        {
+            Name "UnitSilhouette"
+            Tags { "LightMode" = "HyperRTSSilhouette" }
+
+            Blend SrcAlpha OneMinusSrcAlpha
+            ZTest Greater
+            ZWrite Off
+            Cull[_Cull]
+            Stencil
+            {
+                Ref 128
+                ReadMask 128
+                WriteMask 128
+                Comp NotEqual
+                Pass Replace
+            }
+
+            HLSLPROGRAM
+            #pragma target 2.0
+            #pragma vertex SilhouetteVertex
+            #pragma fragment SilhouetteFragment
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamSilhouettePass.hlsl"
+            ENDHLSL
+        }
+
         // Lightmap baking only.
         Pass
         {
