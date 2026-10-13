@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
     /// What grows or lies on each surface by itself: lone trees in meadows and fields, willows on banks, rocks on
-    /// ravine rims, bales in rows on stubble the way a baler leaves them. Lands that plant their own trees (woods,
+    /// ravine rims, bales in rows on stubble the way a baler leaves them, scrub along a margin's edges. Lands that plant their own trees (woods,
     /// belts, ravine floors) are skipped. Spots are chosen in the authored sector and copied.
     /// </summary>
     public sealed class MapSurfacePlanter : MapLandPass
@@ -17,6 +17,7 @@ namespace HyperRTS.Editor.Maps.Planning
         private const float RowSpacing = 16f;
         private const float AlongSpacing = 24f;
         private const float RowJitter = 2f;
+        private float[] _edges;
 
         public MapSurfacePlanter(MapPlanContext context) : base(context)
         {
@@ -28,12 +29,11 @@ namespace HyperRTS.Editor.Maps.Planning
             {
                 var region = Land.Regions[index];
                 var surface = Climate.Surface(region.Surface);
-                var hectares = cells.Count * MapLand.CellSize * MapLand.CellSize / 10000f;
+                var hectares = Hectares(cells.Count);
                 var random = Context.Random(MapRandomChannel.SurfaceGrowth, index);
-                if (surface.trees.Count > 0 && !PlantsItself(region.Kind))
+                if (!PlantsItself(region.Kind))
                 {
-                    Context.Trees.Scatter(surface.trees, hectares, surface.treeSpacing, random,
-                        () => RandomSpot(cells, random), _ => true);
+                    PlantTrees(surface, cells, random);
                 }
 
                 foreach (var props in surface.props)
@@ -72,6 +72,39 @@ namespace HyperRTS.Editor.Maps.Planning
             return cells;
         }
 
+        /// <summary>Edge-limited trees count per hectare of their band, so narrow bands still get their share.</summary>
+        private void PlantTrees(MapClimateSurface surface, List<int> cells, System.Random random)
+        {
+            foreach (var density in surface.trees)
+            {
+                if (density.maxEdgeDistance <= 0f)
+                {
+                    Context.Trees.Scatter(density, Hectares(cells.Count), surface.treeSpacing, random,
+                        () => RandomSpot(cells, random), _ => true);
+                    continue;
+                }
+
+                var reach = density.maxEdgeDistance;
+                var band = cells.FindAll(cell => EdgeDistance(cell) <= reach);
+                if (band.Count > 0)
+                {
+                    Context.Trees.Scatter(density, Hectares(band.Count), surface.treeSpacing, random,
+                        () => RandomSpot(band, random), p => EdgeDistance(p) <= reach);
+                }
+            }
+        }
+
+        private float EdgeDistance(int cell)
+        {
+            _edges ??= MapLandDistance.ToRegionEdge(Land.Width, Land.Height, Land.RegionIndex);
+            return _edges[cell] * MapLand.CellSize;
+        }
+
+        private float EdgeDistance(Vector2 point) =>
+            Land.TryCell(point, out var x, out var z) ? EdgeDistance(z * Land.Width + x) : float.PositiveInfinity;
+
+        private static float Hectares(int cells) => cells * MapLand.CellSize * MapLand.CellSize / 10000f;
+
         private void PlaceProps(MapLandRegion region, MapPropDensity props, List<int> cells, float hectares,
             System.Random random)
         {
@@ -87,7 +120,7 @@ namespace HyperRTS.Editor.Maps.Planning
             for (var attempt = 0; attempt < wanted * PropAttempts && placed < wanted; attempt++)
             {
                 var spot = RandomSpot(cells, random);
-                placed += TryPlace(entry, spot, random.Yaw(), random) ? 1 : 0;
+                placed += TryPlace(entry, spot, random.Signed() * entry.yawJitter, random) ? 1 : 0;
             }
         }
 

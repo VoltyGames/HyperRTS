@@ -11,9 +11,8 @@ namespace HyperRTS.Editor.Maps.Geometry
         /// <summary>Ravine walls and river banks, so the carved ground and the land claims follow one edge.</summary>
         Wobble = 1,
         SplatPatches = 2,
-        SplatEdges = 3,
+        LandEdges = 3,
         PlantClumps = 4,
-        PlantJitter = 5,
         MacroTint = 6,
         RiverWidth = 20,
         Banks = 21,

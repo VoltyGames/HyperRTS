@@ -13,7 +13,6 @@ namespace HyperRTS.Editor.Maps.Ground
     /// </summary>
     public sealed class MapSplatPainter
     {
-        private const float Jitter = 1.4f;
         private const float Spread = 0.55f;
         private static readonly Vector2[] Taps = { Vector2.zero, new(1f, 0.3f), new(-0.3f, 1f), new(-1f, -0.3f), new(0.3f, -1f) };
 
@@ -22,7 +21,7 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly MapHeights _heights;
         private readonly MapClimate _climate;
         private readonly MapNoise _patches;
-        private readonly MapNoise _edges;
+        private readonly MapEdgeJitter _edges;
         private readonly int[] _regionLayer;
         private readonly int _variation;
         private readonly int _slope;
@@ -35,7 +34,7 @@ namespace HyperRTS.Editor.Maps.Ground
             _heights = heights;
             _climate = climate;
             _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SplatPatches);
-            _edges = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SplatEdges);
+            _edges = new MapEdgeJitter(layout);
             _regionLayer = new int[land.Regions.Count];
             for (var i = 1; i < land.Regions.Count; i++)
             {
@@ -82,7 +81,7 @@ namespace HyperRTS.Editor.Maps.Ground
         /// <summary>Averages the layers at jittered taps round the texel; meadow taps may turn to its variation.</summary>
         private void Surfaces(float[] weights, Vector2 p)
         {
-            var offset = new Vector2(_edges.Sample(p, 6f), _edges.Sample(p + new Vector2(311f, 173f), 6f)) * Jitter;
+            var offset = _edges.Offset(p);
             var share = 1f / Taps.Length;
             foreach (var tap in Taps)
             {

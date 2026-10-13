@@ -94,6 +94,33 @@ namespace HyperRTS.Editor.Maps.Geometry
             return best;
         }
 
+        /// <summary>A spot set back from the nearest road's edge on the point's side, and the road's yaw there.</summary>
+        public bool Verge(Vector2 point, float setback, out Vector2 spot, out float yaw)
+        {
+            var (nearest, along, best) = ((MapRoad)null, 0f, float.PositiveInfinity);
+            foreach (var road in Roads)
+            {
+                var distance = road.Line.Distance(point, out var at) - road.Width * 0.5f;
+                if (distance < best)
+                {
+                    (nearest, along, best) = (road, at, distance);
+                }
+            }
+
+            (spot, yaw) = (point, 0f);
+            if (nearest == null)
+            {
+                return false;
+            }
+
+            var center = MapGeometry.PointAlong(nearest.Line.Points, along, out var direction);
+            var right = MapGeometry.Right(direction);
+            var side = Vector2.Dot(point - center, right) >= 0f ? 1f : -1f;
+            spot = center + right * side * (nearest.Width * 0.5f + setback);
+            yaw = MapGeometry.Yaw(direction);
+            return true;
+        }
+
         /// <summary>True inside a ravine's cut, grown by <paramref name="margin"/> metres, where nothing is built.</summary>
         public bool InRavine(Vector2 point, float margin = 0f)
         {

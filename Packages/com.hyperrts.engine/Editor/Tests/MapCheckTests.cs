@@ -76,6 +76,22 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
+        public void AStreetPipeWithoutItsArch_IsAnErrorNamingTheKit()
+        {
+            var issues = MapSettlementFixture.CheckAssets(kit => kit.streetPipeArch = string.Empty);
+
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Village") && e.Contains("streetPipeArch")), issues.ToString());
+        }
+
+        [Test]
+        public void AStreetPipeWithoutAShortestRun_IsAnErrorNamingTheKit()
+        {
+            var issues = MapSettlementFixture.CheckAssets(kit => kit.streetPipeMinRun = 0);
+
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Village") && e.Contains("streetPipeMinRun")), issues.ToString());
+        }
+
+        [Test]
         public void AnUnknownSettlementSurface_IsAnErrorNamingTheKitAndSurface()
         {
             var issues = MapSettlementFixture.CheckAssets(kit => kit.gardenSurface = "Mud");

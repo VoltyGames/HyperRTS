@@ -145,7 +145,7 @@ field (`MapNoiseChannel`): a new feature takes a new channel, since changing a c
 | `spawns` | `pos`, `yaw` | The palette's start kit; the base is levelled and kept clear |
 | `resources` | `pos`, `kind`, `amount`, `shared` | The palette prefab `kind` (a resource node) holding `amount`; random facing |
 | `props` | `pos`, `yaw`, `kind`, `shared` | A palette prefab; one with a pad gets ground round it, one with access a track to the nearest road |
-| `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings`, `shared` | Meandering channel of varying width, banks, floodplain, reeds, water mesh; each crossing (`t`, `kind` bridge or ford, `width`, `prop`) sits at `t` along the river |
+| `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings`, `shared` | Meandering channel of varying width, banks, floodplain, reeds, water mesh; each crossing (`t`, `kind` bridge or ford, `width`, `prop`) sits at `t` along the river; fords thin the water and streak it with foam |
 | `ravines` | `points`, `width`, `depth`, `rim`, `branches`, `wooded`, `shared` | Steep-walled cut with a gentle rim, side gullies and woods in patches |
 | `hills` | `pos`, `radius`, `height`, `flatTop`, `shared` | Smooth rise |
 | `roads` | `points`, `kind`, `shared` | A road class: width, surface, verge, rank, levelled or not |
@@ -171,9 +171,14 @@ Passes choose at authored-sector points (`Symmetry.InSector`), place in every co
 `MapPlacements.AddEverywhere`) and claim land for every copy; raster decisions key on the sector point (`ToSector`).
 
 Farmland splits the free land on a grid along `angle` into fields (slivers become margin), picks each crop by the
-kit's weights and lays belts and tracks along the field ends. A settlement (`MapSettlement`, one per spec
-settlement) fits plots along the streets: house on the street, yard, outbuildings, garden, orchard, fences, gate,
-street furniture. The report says why a plot didn't fit.
+kit's weights and lays belts and tracks along the field ends. A track end within 8 m of a road's edge is carried
+onto the road (`MapFieldTrackLinks`), and a track whose ends still lead nowhere (no road, map edge, base or
+settlement, the same test as the dead-end check in `MapRoadEnds`) is dropped. A settlement (`MapSettlement`, one per
+spec settlement) fits plots along the streets: house on the street, yard, outbuildings, garden, orchard, fences, gate,
+street furniture. The street pipe decides every section first, then keeps only runs of at least `streetPipeMinRun`
+sections, with a `streetPipeArch` over each gap of up to 12 m (a driveway, a crossing road) inside a run
+(`MapPipeRuns`). Access tracks: props asking for the same road class within 20 m of each other share one track, from
+the one nearest a road (`MapAccessGroups`). The report says why a plot didn't fit.
 
 ### Refiners
 
@@ -243,12 +248,12 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 | `plant` | `MapClimateDetail` | A terrain detail: instanced mesh prefab or billboard grass texture | `mesh`, `texture` |
 | `tree` | `MapClimateTree` | A terrain tree, optionally an entity version for the playable area | `prefab`, `destructible` |
 | `road` | `MapRoadClass` | Width, surface, verge, rank, levelling and curve radius of a road class | `material`; surface keys |
-| `surface` | `MapClimateSurface` | A ground type: its layer and the trees, plants and props on it | layer, tree, plant, prop keys |
+| `surface` | `MapClimateSurface` | A ground type: its layer and the trees, plants and props on it (a tree with `maxEdgeDistance` grows only that close to the surface's edge, per hectare of that band) | layer, tree, plant, prop keys |
 | `farmland` | `MapFarmlandKit` | Field sizes, crop mix, margins, belts and tracks | surface, belt and road keys |
 | `belt` | `MapBeltKit` | Rows of trees with shrubs in the gaps | tree and surface keys |
 | `woodland` | `MapWoodlandKit` | Canopy, shrubby edge, clearings, floor | tree and surface keys |
 | `settlement` | `MapSettlementKit` | Plot layout along a street | prop, surface and tree keys |
-| `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, the pad surface and access road it gets | `prefab`; surface and road keys |
+| `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `alignToRoad` (scatters put it on the nearest road's verge, facing along it), `alignToGround` (max tilt with the slope, 0 upright), `sink` (metres into the ground), the pad surface and access road it gets | `prefab`; surface and road keys |
 | `climate` | `MapClimate` | Ground, slope, shore, floodplain and ravine surfaces, reeds, fog and draw distances | `surfaces`, `roadClasses`, `farmlandKits`, `beltKits`, `woodlandKits`, `water`, `atmosphere`, `skybox`; surface and plant keys |
 | `palette` | `MapPalette` | Start kit, base radius (exactly one per project) | `rig`, `startingResources`; prop keys |
 | `rules` | `MapRules` | Rush thresholds, attack paths and renewable fields per player per mode, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |

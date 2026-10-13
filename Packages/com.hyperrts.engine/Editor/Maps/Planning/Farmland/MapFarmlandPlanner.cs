@@ -59,7 +59,10 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             return Land.TryCell(sectorPoint, out var x, out var z) && Land.IsFree(x, z);
         }
 
-        /// <summary>Tracks along the field ends, then the belts beside them.</summary>
+        /// <summary>
+        /// Tracks along the field ends (carried onto the roads they reach, dropped where they lead nowhere), then the
+        /// belts beside them.
+        /// </summary>
         private void LayEnds(MapFarmlandKit kit, MapFieldGrid grid, Func<Vector2, bool> free, int index)
         {
             var belt = string.IsNullOrEmpty(kit.beltKit) ? null : Climate.BeltKit(kit.beltKit);
@@ -85,7 +88,8 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             }
 
             var roads = new MapRoadPlanner(Context);
-            trackRuns.ForEach(run => roads.LayTrack(track, run));
+            var links = new MapFieldTrackLinks(Context);
+            trackRuns.Where(links.Link).ToList().ForEach(run => roads.LayTrack(track, run));
             var belts = new MapBeltPlanner(Context);
             beltRuns.ForEach(run => belts.PlanLine(belt, run.Run, index * 1000 + run.Line));
         }

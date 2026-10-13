@@ -77,6 +77,13 @@ namespace HyperRTS.Editor.Maps.Data
         [MapKey(typeof(MapPaletteEntry))]
         public string streetPipe;
 
+        [Tooltip("Palette key of the arch that carries the pipe over a driveway or a crossing road; required with a pipe.")]
+        [MapKey(typeof(MapPaletteEntry))]
+        public string streetPipeArch;
+
+        [Tooltip("Fewest pipe sections in a run; shorter runs are left out. Required (at least 1) with a pipe.")]
+        public int streetPipeMinRun;
+
         [Tooltip("Palette key of the poles along the street; empty for none.")]
         [MapKey(typeof(MapPaletteEntry))]
         public string streetPole;

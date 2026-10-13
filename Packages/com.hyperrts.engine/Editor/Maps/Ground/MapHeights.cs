@@ -54,6 +54,15 @@ namespace HyperRTS.Editor.Maps.Ground
             return Mathf.Atan(new Vector2(dx, dz).magnitude / span) * Mathf.Rad2Deg;
         }
 
+        /// <summary>Unit ground normal (world space, y up) from central differences across <paramref name="span"/> metres.</summary>
+        public Vector3 Normal(Vector2 point, float span = 2f)
+        {
+            var half = span * 0.5f;
+            var dx = Height(point + new Vector2(half, 0f)) - Height(point - new Vector2(half, 0f));
+            var dz = Height(point + new Vector2(0f, half)) - Height(point - new Vector2(0f, half));
+            return new Vector3(-dx, span, -dz).normalized;
+        }
+
         public MapHeights Copy()
         {
             var copy = new MapHeights(Resolution, Bounds);

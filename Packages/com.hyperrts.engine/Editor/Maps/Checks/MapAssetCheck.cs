@@ -150,10 +150,12 @@ namespace HyperRTS.Editor.Maps.Checks
             kit.houses.ForEach(key => Entry(key, name));
             kit.outbuildings.ForEach(key => Entry(key, name));
             kit.extras.ForEach(extra => Entry(extra.kind, name));
-            foreach (var key in new[] { kit.frontFence, kit.sideFence, kit.gate, kit.streetPipe })
+            foreach (var key in new[] { kit.frontFence, kit.sideFence, kit.gate })
             {
                 Optional(key, entry => Entry(entry, name));
             }
+
+            Optional(kit.streetPipe, key => StreetPipe(kit, key, name));
 
             Optional(kit.streetPole, key =>
             {
@@ -168,6 +170,16 @@ namespace HyperRTS.Editor.Maps.Checks
             Surface(kit.yardSurface, name);
             Surface(kit.gardenSurface, name);
             Surface(kit.backSurface, name);
+        }
+
+        /// <summary>A street pipe needs its arch and a shortest run.</summary>
+        private void StreetPipe(MapSettlementKit kit, string pipe, string name)
+        {
+            Entry(pipe, name);
+            Require(!string.IsNullOrEmpty(kit.streetPipeArch),
+                $"{name}: streetPipe '{pipe}' needs streetPipeArch, the arch that carries it over driveways and roads.");
+            Optional(kit.streetPipeArch, key => Entry(key, name));
+            Require(kit.streetPipeMinRun >= 1, $"{name}: streetPipeMinRun {kit.streetPipeMinRun} must be at least 1 section.");
         }
     }
 }

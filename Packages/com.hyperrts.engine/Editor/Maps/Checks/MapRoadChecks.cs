@@ -14,7 +14,6 @@ namespace HyperRTS.Editor.Maps.Checks
     public static class MapRoadChecks
     {
         private const float SeamTolerance = 1f;
-        private const float Touch = 1f;
         private const float BendStep = 3f;
         private const float BendShare = 0.5f;
 
@@ -38,19 +37,9 @@ namespace HyperRTS.Editor.Maps.Checks
         private static void CheckEnd(MapLayout layout, MapShapes shapes, MapRoad road, Vector2 end, float baseRadius,
             HashSet<string> reported, MapIssues issues)
         {
-            if (!layout.Bounds.Contains(end) || MapGeometry.OnEdge(end, layout.Bounds))
-            {
-                return;
-            }
-
             var sector = layout.Symmetry.ToSector(end, out _);
             var onSeam = layout.Symmetry.SeamDistance(sector) < SeamTolerance;
-            if (onSeam || InSettlement(layout, end) || AtBase(layout, end, baseRadius))
-            {
-                return;
-            }
-
-            if (MeetsRoad(shapes, road, end))
+            if (onSeam || MapRoadEnds.LeadsSomewhere(layout, shapes, road, end, baseRadius))
             {
                 return;
             }
@@ -89,47 +78,6 @@ namespace HyperRTS.Editor.Maps.Checks
                 issues.Warn($"Road '{road.Class.key}' bends with a {tightest:0.#} m radius at {At(sector)}, under half its class radius ({road.Class.curve:0.#} m).",
                     road.Feature);
             }
-        }
-
-        private static bool MeetsRoad(MapShapes shapes, MapRoad road, Vector2 end)
-        {
-            foreach (var other in shapes.Roads)
-            {
-                if (other != road && other.Line.Distance(end) <= other.Width * 0.5f + Touch)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>A road ending at a base leads somewhere: it's the base's way out.</summary>
-        private static bool AtBase(MapLayout layout, Vector2 point, float baseRadius)
-        {
-            foreach (var spawn in layout.Spawns)
-            {
-                if ((spawn.Position - point).magnitude <= baseRadius + Touch)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool InSettlement(MapLayout layout, Vector2 point)
-        {
-            foreach (var settlement in layout.Settlements)
-            {
-                var spec = settlement.Placed;
-                if ((spec.center.ToVector2() - point).magnitude <= spec.radius)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static string At(Vector2 point) => string.Format(CultureInfo.InvariantCulture, "({0:0}, {1:0})", point.x, point.y);

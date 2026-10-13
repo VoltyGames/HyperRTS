@@ -126,13 +126,15 @@ namespace HyperRTS.Editor.Tests
             palette.entries.Add(Entry("Gate", 1.2f, 3f));
             palette.entries.Add(Entry("Pole", 1.5f, 1.5f));
             palette.entries.Add(Entry("Pipe", 0.5f, 3f));
+            palette.entries.Add(Entry("PipeArch", 1f, 2.5f));
             palette.entries.Add(Entry("Well", 1.5f, 1.5f));
             var kit = new MapSettlementKit
             {
                 key = "Village", plot = new Vector2(24f, 36f), plotJitter = 0f, frontGap = 2f, frontYard = 5f,
                 maxOutbuildings = 1, frontFence = "Fence", sideFence = "Fence", gate = "Gate",
                 yardSurface = "Yard", gardenSurface = "Garden", backSurface = "Orchard", gardenShare = 0.5f,
-                orchardTree = "Apple", orchardSpacing = 3f, streetPipe = "Pipe", streetPole = "Pole", poleSpacing = 30f,
+                orchardTree = "Apple", orchardSpacing = 3f, streetPipe = "Pipe",
+                streetPipeArch = "PipeArch", streetPipeMinRun = 3, streetPole = "Pole", poleSpacing = 30f,
             };
             kit.houses.Add("House");
             kit.outbuildings.Add("Barn");

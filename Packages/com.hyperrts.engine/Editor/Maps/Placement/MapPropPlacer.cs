@@ -14,6 +14,9 @@ namespace HyperRTS.Editor.Maps.Placement
     public sealed class MapPropPlacer
     {
         private const int ScatterAttempts = 40;
+
+        /// <summary>Clears the off-road check's 1 m.</summary>
+        private const float VergeGap = 1.5f;
         private readonly MapLayout _layout;
         private readonly MapShapes _shapes;
         private readonly MapPalette _palette;
@@ -131,7 +134,12 @@ namespace HyperRTS.Editor.Maps.Placement
                 {
                     var position = MapGeometry.RandomIn(bounds, random);
                     var scale = random.Range(entry.scale.x, entry.scale.y);
-                    var yaw = random.Yaw();
+                    var yaw = random.Signed() * entry.yawJitter;
+                    if (entry.alignToRoad && !OnVerge(ref position, ref yaw, entry.Radius * scale))
+                    {
+                        continue;
+                    }
+
                     if (Fits(polygon, position, entry.Radius * scale))
                     {
                         _placements.AddCopies(_layout.Scatters, scatter.Index, entry, position, yaw, scale);
@@ -144,6 +152,17 @@ namespace HyperRTS.Editor.Maps.Placement
                     _issues.Warn($"Scatter {scatter.Index + 1} fit {placed} of {spec.count} '{entry.key}'.");
                 }
             }
+        }
+
+        private bool OnVerge(ref Vector2 position, ref float yaw, float radius)
+        {
+            if (!_shapes.Verge(position, radius + VergeGap, out position, out var roadYaw))
+            {
+                return false;
+            }
+
+            yaw += roadYaw;
+            return true;
         }
 
         private bool Fits(List<Vector2> polygon, Vector2 position, float radius)

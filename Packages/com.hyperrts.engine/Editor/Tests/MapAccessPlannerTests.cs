@@ -62,6 +62,26 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
+        public void PropsWithin20MetresOfEachOther_ShareOneTrack()
+        {
+            var issues = new MapIssues();
+            var context = Context(issues, "Dirt", new[] { MainRoad(-60f) });
+            var shed = context.Placements.All[^1].Entry;
+            foreach (var x in new[] { 35f, 50f, 90f })
+            {
+                context.Placements.All.Add(new MapPlacement(shed, new Vector2(x, -100f), 0f));
+            }
+
+            new MapAccessPlanner(context).Plan();
+
+            var tracks = context.Shapes.Roads.Where(r => r.Generated).ToList();
+            Assert.AreEqual(4, tracks.Count, "one track for the chain at 20, 35 and 50, one for the shed at 90, and copies");
+            Assert.AreEqual(20f, tracks[0].Line.Points[0].x, 0.5f, "the chain's track leaves its first shed");
+            Assert.AreEqual(90f, tracks[2].Line.Points[0].x, 0.5f);
+            Assert.IsEmpty(issues.Warnings);
+        }
+
+        [Test]
         public void ARavineInTheWay_SendsTheTrackToTheNextRoad()
         {
             var issues = new MapIssues();

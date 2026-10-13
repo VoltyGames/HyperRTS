@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
@@ -6,13 +8,17 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
     /// <summary>
     /// What lines a settlement's streets: poles every pole spacing on the left of each road and pipe sections end
-    /// to end on the right, a little off the road edge, wherever the verge is clear. Chosen in the authored sector
-    /// and copied.
+    /// to end on the right, a little off the road edge, wherever the verge is clear, in runs of at least the kit's
+    /// shortest run with arches over driveways and crossing roads. Chosen in the authored sector and copied.
     /// </summary>
     internal sealed class MapStreetFurniture
     {
         private const float EdgeOffset = 1.5f;
         private const float SpotClearance = 0.3f;
+
+        /// <summary>The widest gap (metres) between two pipe runs that an arch bridges.</summary>
+        private const float MaxArchGap = 12f;
+
         private readonly MapSettlement _settlement;
         private readonly MapPlanContext _context;
 
@@ -48,15 +54,41 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             }
         }
 
+        /// <summary>
+        /// Decides every section along the street first, then lays the runs long enough (see <see cref="MapPipeRuns"/>)
+        /// and an arch over each short gap inside a run.
+        /// </summary>
         private void Pipes(MapPaletteEntry pipe, MapRoad road)
         {
+            var arch = _settlement.Entries.PipeArch ?? throw new InvalidOperationException(
+                $"Settlement kit '{_settlement.Kit.key}' lays streetPipe '{pipe.key}' but names no streetPipeArch.");
             var section = MapSections.Length(pipe);
+            var spots = new List<float>();
+            var pass = new List<bool>();
             for (var along = section * 0.5f; along + section * 0.5f <= road.Line.Length; along += section)
             {
                 var position = Beside(road, along, -1f, out var direction);
-                if (Clear(road, position, direction * (section * 0.5f)))
+                spots.Add(along);
+                pass.Add(Clear(road, position, direction * (section * 0.5f)) && CanStand(pipe, position));
+            }
+
+            var arches = new List<(int First, int Count)>();
+            var maxGap = Mathf.FloorToInt(MaxArchGap / section);
+            var kept = MapPipeRuns.Keep(pass, _settlement.Kit.streetPipeMinRun, maxGap, arches);
+            for (var i = 0; i < kept.Length; i++)
+            {
+                if (kept[i])
                 {
-                    TryAdd(pipe, position, direction);
+                    Add(pipe, Beside(road, spots[i], -1f, out var direction), direction);
+                }
+            }
+
+            foreach (var (first, count) in arches)
+            {
+                var middle = Beside(road, spots[first] + (count - 1) * section * 0.5f, -1f, out var direction);
+                if (InSettlementSector(arch, middle))
+                {
+                    Add(arch, middle, direction);
                 }
             }
         }
@@ -105,26 +137,38 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
 
         private void TryAdd(MapPaletteEntry entry, Vector2 position, Vector2 direction)
         {
-            if (!_settlement.Reaches(position))
+            if (CanStand(entry, position))
             {
-                return;
+                Add(entry, position, direction);
             }
+        }
 
-            var reach = entry.Radius;
-            var symmetry = _context.Layout.Symmetry;
-            if (!symmetry.InSector(position) || symmetry.SeamDistance(position) < reach)
+        /// <summary>The spot is in the settlement and the authored sector, clear of the seam, dry, on the verge and free.</summary>
+        private bool CanStand(MapPaletteEntry entry, Vector2 position)
+        {
+            if (!InSettlementSector(entry, position))
             {
-                return;
+                return false;
             }
 
             var clearance = _context.Placements.Clearance;
-            var standing = clearance.IsDry(position, reach) && _settlement.OnVerge(position);
-            if (!standing || !clearance.IsFree(position, SpotClearance))
+            var standing = clearance.IsDry(position, entry.Radius) && _settlement.OnVerge(position);
+            return standing && clearance.IsFree(position, SpotClearance);
+        }
+
+        /// <summary>The spot is in the settlement and the authored sector, at least the entry's reach off the seam.</summary>
+        private bool InSettlementSector(MapPaletteEntry entry, Vector2 position)
+        {
+            if (!_settlement.Reaches(position))
             {
-                return;
+                return false;
             }
 
-            _context.Placements.AddEverywhere(entry, position, MapSections.YawAlong(entry, direction), 1f);
+            var symmetry = _context.Layout.Symmetry;
+            return symmetry.InSector(position) && symmetry.SeamDistance(position) >= entry.Radius;
         }
+
+        private void Add(MapPaletteEntry entry, Vector2 position, Vector2 direction) =>
+            _context.Placements.AddEverywhere(entry, position, MapSections.YawAlong(entry, direction), 1f);
     }
 }

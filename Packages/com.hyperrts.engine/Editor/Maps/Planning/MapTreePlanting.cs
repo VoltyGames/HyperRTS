@@ -61,10 +61,22 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             foreach (var density in mix)
             {
-                var tree = _climate.TreeIndex(density.tree);
-                var wanted = Mathf.RoundToInt(density.perHectare * hectares);
-                Scatter(tree, wanted, spacing, random, candidate, inside);
+                if (density.maxEdgeDistance > 0f)
+                {
+                    throw new InvalidOperationException(
+                        $"HyperRTS: tree '{density.tree}' sets maxEdgeDistance, which only a climate surface's trees support.");
+                }
+
+                Scatter(density, hectares, spacing, random, candidate, inside);
             }
+        }
+
+        /// <summary>One tree of a mix; the caller keeps <paramref name="inside"/> to its edge band.</summary>
+        public void Scatter(MapTreeDensity density, float hectares, float spacing, System.Random random,
+            Func<Vector2> candidate, Func<Vector2, bool> inside)
+        {
+            var wanted = Mathf.RoundToInt(density.perHectare * hectares);
+            Scatter(_climate.TreeIndex(density.tree), wanted, spacing, random, candidate, inside);
         }
 
         private void Scatter(int tree, int wanted, float spacing, System.Random random, Func<Vector2> candidate,

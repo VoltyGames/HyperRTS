@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Scenes
 {
     /// <summary>
     /// Instantiates every placement: gameplay prefabs at the SubScene root with their owner and resource amount,
-    /// scenery under the main scene's generated root. Everything stands on the finished ground.
+    /// scenery under the main scene's generated root. Everything stands on the finished ground (<see cref="MapPlacementPose"/>).
     /// </summary>
     public static class MapPlacementWriter
     {
@@ -38,10 +38,8 @@ namespace HyperRTS.Editor.Maps.Scenes
                     instance.name = name;
                 }
 
-                var position = placement.Position;
-                var y = (placement.Height ?? heights.Height(position)) - groundLevel;
-                instance.transform.SetPositionAndRotation(new Vector3(position.x, y, position.y),
-                    Quaternion.Euler(0f, placement.Yaw, 0f));
+                var pose = MapPlacementPose.OnGround(placement, heights, groundLevel);
+                instance.transform.SetPositionAndRotation(pose.position, pose.rotation);
                 instance.transform.localScale = Vector3.one * placement.Scale;
             }
         }

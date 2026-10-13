@@ -27,6 +27,15 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Random yaw added on top of the spec's (degrees, either way).")]
         public float yawJitter;
 
+        [Tooltip("In scatters, stand on the nearest road's verge facing along it (yaw jitter on top), like a wreck pushed aside.")]
+        public bool alignToRoad;
+
+        [Tooltip("Tilt with the ground slope up to this many degrees; 0 stands upright.")]
+        public float alignToGround;
+
+        [Tooltip("How far the prop sinks into the ground (metres), so it sits in it rather than on it.")]
+        public float sink;
+
         [Tooltip("Random uniform scale range.")]
         public Vector2 scale = Vector2.one;
 
