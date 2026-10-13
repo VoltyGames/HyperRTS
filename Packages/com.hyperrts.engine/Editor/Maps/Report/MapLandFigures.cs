@@ -23,6 +23,12 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>Placements that become entities (gameplay objects and destructible scenery): the simulation's load.</summary>
         public int entities;
 
+        /// <summary>16 m tiles holding row crops, which the crop renderer culls and grows one by one.</summary>
+        public int cropTiles;
+
+        /// <summary>Row crop plants at full density, estimated from the sown area and the crops' spacing.</summary>
+        public long cropPlants;
+
         public static MapLandFigures Measure(MapGeneration generation)
         {
             var (land, placements) = (generation.Land, generation.Placements.All);
@@ -50,6 +56,8 @@ namespace HyperRTS.Editor.Maps.Report
                 placements = placements.Count,
                 decals = generation.Decals.Count,
                 entities = placements.Count(p => p.IsEntity),
+                cropTiles = generation.Crops.Tiles.Count,
+                cropPlants = generation.Crops.Plants,
             };
         }
     }

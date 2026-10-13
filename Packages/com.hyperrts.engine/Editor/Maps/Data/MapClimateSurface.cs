@@ -25,6 +25,10 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Grass and small plants and the share of the ground each covers.")]
         public List<MapDetailCoverage> details = new();
 
+        [Tooltip("Crop grown in 3D rows on the fields this surface paints; empty for none.")]
+        [MapKey(typeof(MapClimateRowCrop))]
+        public string rowCrop;
+
         public List<MapPropDensity> props = new();
 
         [Tooltip("Ground decals laid on this surface at build time, per hectare.")]

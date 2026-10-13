@@ -51,11 +51,27 @@ namespace HyperRTS.Editor.Maps.Checks
                 Require(detail.mesh != null || detail.texture != null, $"{name}: detail '{detail.key}' has neither mesh nor texture.");
             }
 
+            Climate.rowCrops.ForEach(crop => RowCropAssets(crop, name));
             Climate.decals.ForEach(decal => DecalAssets(decal, name));
             Require(Climate.water != null, $"{name} has no water material.");
             Require(Climate.atmosphere != null, $"{name} has no atmosphere prefab.");
             Require(Climate.fordShallowsWidth > 0f, $"{name}: fordShallowsWidth {Climate.fordShallowsWidth} must be above 0.");
             Require(Climate.fordRapidsLength > 0f, $"{name}: fordRapidsLength {Climate.fordRapidsLength} must be above 0.");
+        }
+
+        private void RowCropAssets(MapClimateRowCrop rowCrop, string name)
+        {
+            var what = $"{name}: row crop '{rowCrop.key}'";
+            if (rowCrop.crop == null)
+            {
+                Issues.Error($"{what} has no crop asset.");
+                return;
+            }
+
+            foreach (var problem in rowCrop.crop.Problems())
+            {
+                Issues.Error($"{what}: {problem}.");
+            }
         }
 
         private void DecalAssets(MapClimateDecal decal, string name)

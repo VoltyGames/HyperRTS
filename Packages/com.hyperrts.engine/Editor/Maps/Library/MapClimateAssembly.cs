@@ -33,6 +33,7 @@ namespace HyperRTS.Editor.Maps.Library
             climate.layers = new List<MapClimateLayer>();
             climate.trees = new List<MapClimateTree>();
             climate.details = new List<MapClimateDetail>();
+            climate.rowCrops = new List<MapClimateRowCrop>();
             climate.decals = new List<MapClimateDecal>();
             new MapClimateAssembly(library, climate).Collect(refs.file);
             if (climate.layers.Count > MapTerrainTextures.MaxLayers)
@@ -73,6 +74,7 @@ namespace HyperRTS.Editor.Maps.Library
             Add(_climate.layers, surface.layer, file);
             surface.trees.ForEach(tree => Tree(tree.tree, file));
             surface.details.ForEach(detail => Detail(detail.detail, file));
+            Add(_climate.rowCrops, surface.rowCrop, file);
             surface.decals.ForEach(decal => Add(_climate.decals, decal.decal, file));
         }
 

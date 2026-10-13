@@ -96,6 +96,20 @@ Rendering and effects:
   `Trample.hlsl` reads them: the terrain darkens ruts, soil and flattened grass and dents its normal along the ruts;
   Foliage without Tree Wind leans plants flat along the travel direction (`_Trample`: Off, Grass by B, Crop by A),
   and `TrampleBend` serves any plant shader.
+- **Row crops** (`Environment/RowCrops/`, `RowCropRenderer` added to map scenes by the map tools): a `RowCrop` asset
+  holds a crop's full, simple and card meshes (one submesh each, origin at the root, facing +Z), its
+  `HyperRTS/RowCrop` materials, row and plant spacing, jitter, scale and turn ranges, edge margin and the two LOD
+  distances. `RowCropFields` (baked per map) holds a field-id picture (R low byte, G high byte, 1 m texels), each
+  field's lattice (`RowCropField`: origin, along and across axes, crop, seed), the crops and the 16 m tiles holding
+  any. Every frame the renderer culls tiles against the main camera's frustum and `RowCropRenderer.Distance`, and
+  `RowCrops.compute` (`Plant` kernel, one thread per lattice spot of one tile of one field) grows the plants: a spot
+  belongs to the tile it falls in and the field the picture names there (`RowCropLattice` is the same maths in C#),
+  `RowCropRenderer.Density` thins by hash, the trample map's A channel bends crushed plants or drops them, and each
+  plant goes into the full, simple or card buffer by camera distance, shrinking away over the last 15 % of the draw
+  distance. The bands are drawn with `Graphics.RenderMeshIndirect`; `RowCrop.shader` reads the plants by
+  `SV_InstanceID` and has forward, shadow, depth, depth-normals and motion-vector passes, lit like Foliage with plant
+  wind. Regrowing every visible tile every frame needs no cache when the camera moves or crops get trampled. The
+  game sets density and distance from its vegetation quality.
 - **Audio**: `SoundPlaybackSystem` plays the `SoundQueue` through 32 pooled sources; `SoundListener` follows the
   camera's ground focus.
 - **Minimap**: the baked `MinimapImage`, local fog, blips and the camera view.

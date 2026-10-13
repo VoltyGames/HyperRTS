@@ -38,6 +38,8 @@ namespace HyperRTS.Editor.Maps.Designer
             section.Add(Figure("Placements", land.placements.ToString(CultureInfo.InvariantCulture)));
             section.Add(Figure("Decals", land.decals.ToString(CultureInfo.InvariantCulture)));
             section.Add(Figure("Entities", land.entities.ToString(CultureInfo.InvariantCulture)));
+            section.Add(Figure("Crop tiles", land.cropTiles.ToString(CultureInfo.InvariantCulture)));
+            section.Add(Figure("Crop plants", land.cropPlants.ToString("N0", CultureInfo.InvariantCulture)));
             return section;
         }
 

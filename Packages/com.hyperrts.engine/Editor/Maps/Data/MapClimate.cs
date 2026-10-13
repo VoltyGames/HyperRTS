@@ -37,6 +37,10 @@ namespace HyperRTS.Editor.Maps.Data
         [NonSerialized]
         public List<MapClimateDetail> details = new();
 
+        [Tooltip("Crops grown in 3D rows; surfaces say where they grow.")]
+        [NonSerialized]
+        public List<MapClimateRowCrop> rowCrops = new();
+
         [Tooltip("Ground decals; surfaces and props say where they lie.")]
         [NonSerialized]
         public List<MapClimateDecal> decals = new();
@@ -151,6 +155,8 @@ namespace HyperRTS.Editor.Maps.Data
         public int TreeIndex(string key) => MapKeys.IndexOf(trees, key, name, "tree");
 
         public int DetailIndex(string key) => MapKeys.IndexOf(details, key, name, "detail");
+
+        public int RowCropIndex(string key) => MapKeys.IndexOf(rowCrops, key, name, "row crop");
 
         public bool HasTree(string key) => MapKeys.Contains(trees, key);
 

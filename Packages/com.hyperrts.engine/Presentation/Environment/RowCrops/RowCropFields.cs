@@ -1,0 +1,79 @@
+using System.Collections.Generic;
+using HyperRTS.Core;
+using UnityEngine;
+
+namespace HyperRTS.Presentation.Environment.RowCrops
+{
+    /// <summary>
+    /// Where a map's row crops grow, baked by the map tools: a field-id picture over the map (each texel names the
+    /// field sown there, 0 for bare ground), every field's row lattice, the crops, and the tiles that hold any crop.
+    /// <see cref="RowCropRenderer"/> grows the plants from it on the GPU.
+    /// </summary>
+    [Icon(HyperRTSIcons.Environment)]
+    [HelpURL(HyperRTSDocs.Presentation)]
+    public sealed class RowCropFields : ScriptableObject
+    {
+        /// <summary>Side of a crop tile in metres: the unit the renderer culls and generates.</summary>
+        public const float TileSize = 16f;
+
+        /// <summary>Field id 0: no crop here.</summary>
+        public const int None = 0;
+
+        [Tooltip("Field id per texel, north up: R the low byte, G the high byte; point-sampled, linear.")]
+        public Texture2D fieldIds;
+
+        [Tooltip("World XZ rectangle the picture and the tile grid cover: x and y its minimum x and z.")]
+        public Rect area;
+
+        public List<RowCrop> crops = new();
+
+        public List<RowCropField> fields = new();
+
+        public List<RowCropTile> tiles = new();
+
+        [Tooltip("Field indices per tile, each tile's run in turn.")]
+        public List<int> tileFields = new();
+
+        /// <summary>The id the picture holds for a field: its index plus one.</summary>
+        public static int FieldId(int field) => field + 1;
+
+        /// <summary>A field id as the picture stores it.</summary>
+        public static Color32 Encode(int id) => new((byte)(id & 0xFF), (byte)(id >> 8), 0, 255);
+
+        public static int Decode(Color32 texel) => texel.r | (texel.g << 8);
+
+        public Rect TileRect(RowCropTile tile) =>
+            new(area.xMin + tile.x * TileSize, area.yMin + tile.z * TileSize, TileSize, TileSize);
+
+        /// <summary>What keeps the fields from being drawn, one line per problem; empty when they are ready.</summary>
+        public IReadOnlyList<string> Problems()
+        {
+            var problems = new List<string>();
+            if (fieldIds == null)
+            {
+                problems.Add($"{nameof(fieldIds)} is missing");
+            }
+
+            if (area.width <= 0f || area.height <= 0f)
+            {
+                problems.Add($"{nameof(area)} {area} has no size");
+            }
+
+            for (var i = 0; i < crops.Count; i++)
+            {
+                if (crops[i] == null)
+                {
+                    problems.Add($"{nameof(crops)}[{i}] is missing");
+                    continue;
+                }
+
+                foreach (var problem in crops[i].Problems())
+                {
+                    problems.Add($"crop '{crops[i].name}': {problem}");
+                }
+            }
+
+            return problems;
+        }
+    }
+}

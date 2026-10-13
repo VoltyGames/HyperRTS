@@ -52,6 +52,12 @@ namespace HyperRTS.Editor.Maps.Generation
 
         public string Roads => $"{Folder}/{Name}_Roads.asset";
 
+        /// <summary>Where the row crops grow (<c>RowCropFields</c>), when the map sows any.</summary>
+        public string RowCrops => $"{Folder}/{Name}_RowCrops.asset";
+
+        /// <summary>The row crop field id picture the <see cref="RowCrops"/> asset points at.</summary>
+        public string RowCropIds => $"{Folder}/{Name}_RowCropIds.png";
+
         public string Minimap => $"{Folder}/{Name}_Minimap.png";
 
         /// <summary>The map name of a spec file path (<c>Kalyna.map.json</c> → <c>Kalyna</c>).</summary>

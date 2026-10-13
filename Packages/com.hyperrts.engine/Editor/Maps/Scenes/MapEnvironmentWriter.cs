@@ -5,6 +5,7 @@ using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Meshes;
 using HyperRTS.Editor.Maps.Texturing;
 using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Navigation;
 using UnityEditor;
@@ -15,30 +16,36 @@ namespace HyperRTS.Editor.Maps.Scenes
 {
     /// <summary>
     /// The map's world around the gameplay: the terrain with its material and baked heights, the ground colour
-    /// foliage blends into, river surfaces, the climate's atmosphere and sky, walkable decks over the fords, and the
-    /// minimap picture.
+    /// foliage blends into, the row crop renderer, river surfaces, the climate's atmosphere and sky, walkable decks
+    /// over the fords, and the minimap picture.
     /// </summary>
     public static class MapEnvironmentWriter
     {
+        private const string RowCropsCompute =
+            "Packages/com.hyperrts.engine/Presentation/Environment/RowCrops/RowCrops.compute";
+
         /// <summary>
         /// The terrain material with its macro map, and the ground colour picture foliage blends into. Written before
         /// the map's scene opens: opening it unloads the climate the textures are made from.
         /// </summary>
-        public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation, TerrainData data)
+        public static (Material Material, Texture2D Picture, RowCropFields Crops) WriteGround(MapGeneration generation,
+            TerrainData data)
         {
             var (climate, paths) = (generation.Project.Climate, generation.Project.Paths);
             var macro = MapMacroPainter.Write(paths.Macro, generation.Layout, generation.Land, generation.Shapes);
             var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, macro, generation.RowAngle);
             var picture = MapGroundColor.Write(paths.Ground, generation.Splat, climate, macro);
-            return (material, picture);
+            var crops = MapCropWriter.Write(paths.RowCrops, paths.RowCropIds, generation.Crops);
+            return (material, picture, crops);
         }
 
         public static void Write(MapScene scene, MapGeneration generation, TerrainData data,
-            (Material Material, Texture2D Picture) ground)
+            (Material Material, Texture2D Picture, RowCropFields Crops) ground)
         {
             var (layout, climate) = (generation.Layout, generation.Project.Climate);
-            CreateTerrain(scene, data, ground.Material, climate, layout.TerrainOrigin);
+            var terrain = CreateTerrain(scene, data, ground.Material, climate, layout.TerrainOrigin);
             CreateGroundColor(scene, ground.Picture, layout.TerrainBounds);
+            CreateRowCrops(scene, ground.Crops, terrain);
             var height = scene.CreateEntityObject("Terrain Height");
             height.transform.position = layout.TerrainOrigin;
             height.AddComponent<TerrainHeightAuthoring>().terrainData = data;
@@ -73,7 +80,27 @@ namespace HyperRTS.Editor.Maps.Scenes
             go.SetActive(true);
         }
 
-        private static void CreateTerrain(MapScene scene, TerrainData data, Material material, MapClimate climate,
+        /// <summary>The renderer that grows the map's row crops on the GPU; none when the map sows none.</summary>
+        private static void CreateRowCrops(MapScene scene, RowCropFields fields, Terrain terrain)
+        {
+            if (fields == null)
+            {
+                return;
+            }
+
+            var compute = AssetDatabase.LoadAssetAtPath<ComputeShader>(RowCropsCompute)
+                ?? throw new System.InvalidOperationException($"HyperRTS: the row crop compute shader '{RowCropsCompute}' is missing.");
+            var go = new GameObject("Row Crops");
+            go.SetActive(false);
+            go.transform.SetParent(scene.Root, false);
+            var renderer = go.AddComponent<RowCropRenderer>();
+            renderer.fields = fields;
+            renderer.compute = compute;
+            renderer.terrain = terrain;
+            go.SetActive(true);
+        }
+
+        private static Terrain CreateTerrain(MapScene scene, TerrainData data, Material material, MapClimate climate,
             Vector3 origin)
         {
             var go = Terrain.CreateTerrainGameObject(data);
@@ -90,6 +117,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             terrain.treeDistance = climate.treeDistance;
             terrain.treeBillboardDistance = climate.treeDistance;
             terrain.allowAutoConnect = false;
+            return terrain;
         }
 
         private static void CreateWater(MapScene scene, MapGeneration generation)

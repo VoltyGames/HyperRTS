@@ -48,6 +48,9 @@ namespace HyperRTS.Editor.Maps.Generation
         /// <summary>Ground decals laid on surfaces and under props, copies included.</summary>
         public List<MapDecal> Decals { get; private set; }
 
+        /// <summary>Where row crops grow, baked once the land is planned.</summary>
+        public MapCropBake Crops { get; private set; }
+
         public float[,,] Splat { get; private set; }
         public List<int[,]> Details { get; private set; }
 
@@ -111,6 +114,7 @@ namespace HyperRTS.Editor.Maps.Generation
             RowAngle = context.RowAngle;
             Trees = context.Trees.Planted;
             Decals = context.Decals;
+            Crops = MapCropPainter.Paint(this);
             var maxDecals = Project.Rules.maxDecals;
             if (Decals.Count > maxDecals)
             {

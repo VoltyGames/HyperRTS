@@ -19,6 +19,7 @@ namespace HyperRTS.Editor.Maps.Library
             typeof(MapClimateLayer),
             typeof(MapMaterial),
             typeof(MapClimateDetail),
+            typeof(MapClimateRowCrop),
             typeof(MapClimateTree),
             typeof(MapClimateDecal),
             typeof(MapRoadClass),

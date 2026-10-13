@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Presentation.Environment.RowCrops;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -37,6 +38,8 @@ namespace HyperRTS.Editor.Maps.Library
         public string skybox;
         [MapAsset(typeof(GameObject))]
         public string rig;
+        [MapAsset(typeof(RowCrop))]
+        public string crop;
         public List<MapResourcePath> startingResources = new();
 
         [MapKey(typeof(MapClimateSurface))]
