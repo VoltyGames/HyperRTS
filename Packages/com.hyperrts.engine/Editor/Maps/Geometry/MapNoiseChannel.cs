@@ -14,6 +14,9 @@ namespace HyperRTS.Editor.Maps.Geometry
         LandEdges = 3,
         PlantClumps = 4,
         MacroTint = 6,
+
+        /// <summary>The macro map's 10–40 m light and warmth, finer than <see cref="MacroTint"/>.</summary>
+        MacroDetail = 7,
         RiverWidth = 20,
         Banks = 21,
         BaseEdges = 22,

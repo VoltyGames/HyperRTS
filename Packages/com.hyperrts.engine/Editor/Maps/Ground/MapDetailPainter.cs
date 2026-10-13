@@ -25,10 +25,10 @@ namespace HyperRTS.Editor.Maps.Ground
             MapClimate climate, MapClearance clearance, int resolution)
         {
             var layers = Layers(climate.details.Count, resolution);
-            var plants = Plants(land, climate);
+            var edges = new MapEdgeField(layout, land, climate);
+            var plants = Plants(land, climate, edges);
             var reed = string.IsNullOrEmpty(climate.reedDetail) ? -1 : climate.DetailIndex(climate.reedDetail);
             var clumps = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.PlantClumps);
-            var edges = new MapEdgeJitter(layout);
             var area = layout.TerrainBounds;
             var cell = area.size / resolution;
             var water = layout.Terrain.waterLevel;
@@ -53,9 +53,9 @@ namespace HyperRTS.Editor.Maps.Ground
                     continue;
                 }
 
-                var region = land.TryCell(p + edges.Offset(p), out var cx, out var cz) ? land.RegionIndex(cx, cz) : 0;
-                var cover = Cover(land, region, clumps, p) * open;
-                foreach (var (detail, coverage) in plants[region])
+                var growth = Growth(land, edges, plants, edges.Sample(p), out var sown);
+                var cover = Cover(sown, clumps, p) * open;
+                foreach (var (detail, coverage) in growth)
                 {
                     layers[detail][z, x] = ToLayer(coverage * cover);
                 }
@@ -83,9 +83,9 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         /// <summary>Wild grass clumps at two scales; crops are sown evenly and keep their cover.</summary>
-        private static float Cover(MapLand land, int region, MapNoise clumps, Vector2 p)
+        private static float Cover(bool sown, MapNoise clumps, Vector2 p)
         {
-            if (Sown(land, region))
+            if (sown)
             {
                 return 0.92f + 0.08f * clumps.Sample(p, 9f);
             }
@@ -111,18 +111,42 @@ namespace HyperRTS.Editor.Maps.Ground
             return MapGeometry.Smooth((clumps.Sample(p + new Vector2(733f, 211f), 14f) + 0.1f) / 0.4f);
         }
 
-        /// <summary>Per region, the detail prototypes its surface grows and the share of ground each covers.</summary>
-        private static List<(int Detail, float Coverage)>[] Plants(MapLand land, MapClimate climate)
+        /// <summary>
+        /// The plants where the ground texture puts them: the region the border's middle assigns the point to, or that
+        /// region's edge strip just inside it, which grows wild.
+        /// </summary>
+        private static List<(int Detail, float Coverage)> Growth(MapLand land, MapEdgeField edges,
+            (List<(int, float)>[] Own, List<(int, float)>[] Strip) plants, MapEdgeSample edge, out bool sown)
         {
-            var plants = new List<(int, float)>[land.Regions.Count];
-            plants[0] = new List<(int, float)>();
+            var region = edge.Region;
+            var strip = plants.Strip[region];
+            var inStrip = strip != null && edge.Depth(region) < edges.Surface(region).edgeSurfaceWidth;
+            sown = !inStrip && Sown(land, region);
+            return inStrip ? strip : plants.Own[region];
+        }
+
+        /// <summary>
+        /// Per region, the detail prototypes its surface grows and the share of ground each covers, and those of its
+        /// edge strip (null without one). Unclaimed land grows nothing.
+        /// </summary>
+        private static (List<(int, float)>[] Own, List<(int, float)>[] Strip) Plants(MapLand land, MapClimate climate,
+            MapEdgeField edges)
+        {
+            var own = new List<(int, float)>[land.Regions.Count];
+            var strip = new List<(int, float)>[land.Regions.Count];
+            own[0] = new List<(int, float)>();
             for (var i = 1; i < land.Regions.Count; i++)
             {
-                var surface = climate.Surface(land.Regions[i].Surface);
-                plants[i] = surface.details.ConvertAll(entry => (climate.DetailIndex(entry.detail), entry.coverage));
+                var surface = edges.Surface(i);
+                own[i] = Details(climate, surface);
+                var hasStrip = !string.IsNullOrEmpty(surface.edgeSurface);
+                strip[i] = hasStrip ? Details(climate, climate.Surface(surface.edgeSurface)) : null;
             }
 
-            return plants;
+            return (own, strip);
         }
+
+        private static List<(int, float)> Details(MapClimate climate, MapClimateSurface surface) =>
+            surface.details.ConvertAll(entry => (climate.DetailIndex(entry.detail), entry.coverage));
     }
 }

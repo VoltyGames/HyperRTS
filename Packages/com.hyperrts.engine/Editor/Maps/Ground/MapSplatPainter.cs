@@ -7,22 +7,21 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
-    /// Paints the terrain layers from the land use: each texel averages the surfaces found at a few noise-jittered
-    /// points round it, so borders come out soft and ragged (the terrain shader's height blend sharpens them
-    /// naturally); open meadow gets patches of its variation, and steep ground its slope surface.
+    /// Paints the terrain layers from the land use: each texel blends the two surfaces of its nearest border across
+    /// that border's band (<see cref="MapEdgeField"/>), with a surface's edge strip just inside its border (the terrain
+    /// shader's height blend sharpens them naturally); open meadow gets patches of its variation, and steep ground its
+    /// slope surface.
     /// </summary>
     public sealed class MapSplatPainter
     {
-        private const float Spread = 0.55f;
-        private static readonly Vector2[] Taps = { Vector2.zero, new(1f, 0.3f), new(-0.3f, 1f), new(-1f, -0.3f), new(0.3f, -1f) };
-
         private readonly MapLayout _layout;
-        private readonly MapLand _land;
         private readonly MapHeights _heights;
         private readonly MapClimate _climate;
         private readonly MapNoise _patches;
-        private readonly MapEdgeJitter _edges;
+        private readonly MapEdgeField _edges;
         private readonly int[] _regionLayer;
+        private readonly int[] _stripLayer;
+        private readonly float[] _stripWidth;
         private readonly int _variation;
         private readonly int _slope;
         private readonly int _ground;
@@ -30,15 +29,19 @@ namespace HyperRTS.Editor.Maps.Ground
         private MapSplatPainter(MapLayout layout, MapLand land, MapHeights heights, MapClimate climate)
         {
             _layout = layout;
-            _land = land;
             _heights = heights;
             _climate = climate;
             _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SplatPatches);
-            _edges = new MapEdgeJitter(layout);
-            _regionLayer = new int[land.Regions.Count];
-            for (var i = 1; i < land.Regions.Count; i++)
+            _edges = new MapEdgeField(layout, land, climate);
+            var regions = land.Regions.Count;
+            (_regionLayer, _stripLayer, _stripWidth) = (new int[regions], new int[regions], new float[regions]);
+            for (var i = 0; i < regions; i++)
             {
-                _regionLayer[i] = climate.SurfaceLayer(land.Regions[i].Surface);
+                var surface = _edges.Surface(i);
+                _regionLayer[i] = climate.LayerIndex(surface.layer);
+                var hasStrip = !string.IsNullOrEmpty(surface.edgeSurface);
+                _stripLayer[i] = hasStrip ? climate.SurfaceLayer(surface.edgeSurface) : -1;
+                _stripWidth[i] = surface.edgeSurfaceWidth;
             }
 
             _variation = climate.SurfaceLayer(climate.groundVariation);
@@ -78,25 +81,44 @@ namespace HyperRTS.Editor.Maps.Ground
             }
         }
 
-        /// <summary>Averages the layers at jittered taps round the texel; meadow taps may turn to its variation.</summary>
+        /// <summary>Splits the texel between the two sides of its nearest border.</summary>
         private void Surfaces(float[] weights, Vector2 p)
         {
-            var offset = _edges.Offset(p);
-            var share = 1f / Taps.Length;
-            foreach (var tap in Taps)
+            var edge = _edges.Sample(p);
+            var share = edge.OwnShare;
+            Side(weights, edge, edge.Own, share);
+            if (share < 1f)
             {
-                var point = p + offset + tap * Spread;
-                var layer = _land.TryCell(point, out var cx, out var cz) ? _regionLayer[_land.RegionIndex(cx, cz)] : _ground;
-                if (layer == _ground)
-                {
-                    var patch = Patch(point);
-                    weights[_variation] += share * patch;
-                    weights[layer] += share * (1f - patch);
-                    continue;
-                }
-
-                weights[layer] += share;
+                Side(weights, edge, edge.Other, 1f - share);
             }
+        }
+
+        /// <summary>One side's share, with its edge strip taking the part next to the border.</summary>
+        private void Side(float[] weights, MapEdgeSample edge, int region, float amount)
+        {
+            var strip = _stripLayer[region];
+            if (strip >= 0)
+            {
+                var stripShare = amount * edge.StripShare(region, _stripWidth[region]);
+                Layer(weights, strip, stripShare, edge.Point);
+                amount -= stripShare;
+            }
+
+            Layer(weights, _regionLayer[region], amount, edge.Point);
+        }
+
+        /// <summary>Open ground may turn to its variation.</summary>
+        private void Layer(float[] weights, int layer, float amount, Vector2 p)
+        {
+            if (layer != _ground)
+            {
+                weights[layer] += amount;
+                return;
+            }
+
+            var patch = Patch(p);
+            weights[_variation] += amount * patch;
+            weights[layer] += amount * (1f - patch);
         }
 
         /// <summary>Noise patches covering about <see cref="MapClimate.variationCoverage"/> of open ground.</summary>

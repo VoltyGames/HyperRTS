@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Turns the texture clockwise on the ground (degrees); at 0 the image's top faces north.")]
         public float rotation;
 
-        [Tooltip("Lays the texture's rows, which run left to right in the image, along the map's crop rows (Rotation turns them further).")]
+        [Tooltip("Turns the texture per pixel to its own field's or garden's rows; Rotation must lay the image's lines along them (0 for lines running left to right, 90 for top to bottom).")]
         public bool followsRows;
 
         [Tooltip("How far the texture's tallest texels push through neighbouring layers where they meet; 0 blends by weight alone.")]

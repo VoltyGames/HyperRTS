@@ -39,9 +39,6 @@ namespace HyperRTS.Editor.Maps.Planning
         /// <summary>Every ground decal laid so far, in map space (copies included).</summary>
         public List<MapDecal> Decals { get; } = new();
 
-        /// <summary>Direction of the crop rows the terrain shader turns row layers to (degrees clockwise from north).</summary>
-        public float RowAngle { get; set; }
-
         public int Seed => Layout.Spec.seed;
 
         /// <summary>The map's noise on one channel, symmetric across the sector copies.</summary>
@@ -50,8 +47,8 @@ namespace HyperRTS.Editor.Maps.Planning
         /// <summary>The random stream of one authored feature.</summary>
         public System.Random Random(MapRandomChannel channel, int index) => MapRandom.Stream(Seed, channel, index);
 
-        /// <summary>A new land region painting a climate surface.</summary>
-        public int Region(MapLandKind kind, string surface, int seed = 0, float rowAngle = 0f) =>
+        /// <summary>A new land region painting a climate surface; land sown in rows gives their authored angle.</summary>
+        public int Region(MapLandKind kind, string surface, int seed = 0, float? rowAngle = null) =>
             Land.Add(new MapLandRegion(kind, surface, seed, rowAngle));
     }
 }

@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Texturing
 {
     /// <summary>
     /// Writes a map's HyperRTS/Terrain material for <c>Terrain.materialTemplate</c>: the climate's layer arrays, the
-    /// per-layer parameters, the terrain's alphamaps and the map's macro map.
+    /// per-layer parameters, the terrain's alphamaps and the map's macro and row maps.
     /// </summary>
     public static class MapTerrainMaterial
     {
@@ -20,6 +20,7 @@ namespace HyperRTS.Editor.Maps.Texturing
         private static readonly int LayerParams = Shader.PropertyToID("_LayerParams");
         private static readonly int LayerCount = Shader.PropertyToID("_LayerCount");
         private static readonly int MacroMap = Shader.PropertyToID("_MacroMap");
+        private static readonly int RowMap = Shader.PropertyToID("_RowMap");
         private static readonly int NoiseMap = Shader.PropertyToID("_NoiseMap");
 
         private static readonly int[] Controls =
@@ -30,18 +31,18 @@ namespace HyperRTS.Editor.Maps.Texturing
 
         /// <summary>
         /// <paramref name="macro"/> is linear over the whole terrain: RGB tint (0.5 neutral), A wetness.
-        /// <paramref name="rowAngle"/> is the crop rows' direction (degrees clockwise from north) that layers following
-        /// rows turn to.
+        /// <paramref name="rows"/> is linear too: RG the row direction remapped to 0..1, (0.5, 0.5) for none.
         /// </summary>
-        public static Material Write(string path, MapClimate climate, TerrainData data, Texture2D macro, float rowAngle)
+        public static Material Write(string path, MapClimate climate, TerrainData data, Texture2D macro, Texture2D rows)
         {
             Require(climate, data, macro);
+            RequireLinear(rows, "row map");
             var (albedo, normal, mask) = MapTerrainTextures.Ensure(climate);
             var material = LoadOrCreate(path);
             material.SetTexture(AlbedoArray, albedo);
             material.SetTexture(NormalArray, normal);
             material.SetTexture(MaskArray, mask);
-            material.SetTexture(LayerParams, MapTerrainParams.Write(material, climate, rowAngle));
+            material.SetTexture(LayerParams, MapTerrainParams.Write(material, climate));
             material.SetFloat(LayerCount, climate.layers.Count);
             var alphamaps = data.alphamapTextures;
             for (var i = 0; i < Controls.Length; i++)
@@ -50,6 +51,7 @@ namespace HyperRTS.Editor.Maps.Texturing
             }
 
             material.SetTexture(MacroMap, macro);
+            material.SetTexture(RowMap, rows);
             material.SetTexture(NoiseMap, AssetDatabase.LoadAssetAtPath<Texture2D>(NoisePath)
                 ?? throw new InvalidOperationException($"HyperRTS: the terrain noise '{NoisePath}' is missing."));
             EditorUtility.SetDirty(material);
@@ -64,14 +66,19 @@ namespace HyperRTS.Editor.Maps.Texturing
                     $"HyperRTS: '{data.name}' paints {data.alphamapLayers} layers but climate '{climate.name}' has {climate.layers.Count}.");
             }
 
-            if (macro == null)
+            RequireLinear(macro, "macro map");
+        }
+
+        private static void RequireLinear(Texture2D texture, string role)
+        {
+            if (texture == null)
             {
-                throw new ArgumentNullException(nameof(macro), "HyperRTS: the terrain material needs a macro map.");
+                throw new ArgumentNullException(nameof(texture), $"HyperRTS: the terrain material needs a {role}.");
             }
 
-            if (macro.isDataSRGB)
+            if (texture.isDataSRGB)
             {
-                throw new ArgumentException($"HyperRTS: macro map '{macro.name}' must be imported linear (sRGB off), so 0.5 is neutral.");
+                throw new ArgumentException($"HyperRTS: {role} '{texture.name}' must be imported linear (sRGB off), so 0.5 is neutral.");
             }
         }
 

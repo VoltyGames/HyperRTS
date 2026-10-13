@@ -92,7 +92,7 @@ namespace HyperRTS.Editor.Tests
             var climate = MapRoadFixture.Climate();
             var shrub = new GameObject("Shrub");
             climate.trees.Add(new MapClimateTree { key = "Shrub", prefabs = { shrub } });
-            var rough = new MapClimateSurface { key = "Rough", layer = "Meadow", treeSpacing = 1.5f };
+            var rough = new MapClimateSurface { key = "Rough", layer = "Meadow", treeSpacing = 1.5f, edgeWidth = 1f, edgeJitter = 1f };
             rough.trees.Add(new MapTreeDensity { tree = "Shrub", perHectare = 400f, maxEdgeDistance = 4f });
             climate.surfaces.Add(rough);
             var issues = new MapIssues();

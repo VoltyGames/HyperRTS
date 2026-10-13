@@ -10,9 +10,11 @@
 //                 row 1  tint RGB; macro strength
 //                 row 2  smoothness scale, offset; occlusion scale, offset
 //                 row 3  height-blend weight; normal strength; hex rotation strength (0..1 of a full turn);
-//                        1 if hex offsets may move across rows (v), 0 for layers that follow rows
+//                        0 for layers that follow rows (turned on by _RowMap, hex cells slide only along their lines), else 1
 //   _Control0..3  the terrain's alphamaps, four layers each, for _LayerCount layers
 //   _MacroMap     over the whole terrain, linear: RGB tint (0.5 neutral, doubled), A wetness
+//   _RowMap       over the whole terrain, linear, bilinear, no mips: RG the crop rows' direction (x east, y north)
+//                 remapped to 0..1, (0.5, 0.5) off the fields; row layers lay u along it
 // Every layer is bound in this one pass, so the terrain needs no add-pass or basemap shaders. TerrainDetail sets
 // _TERRAIN_SIMPLE (one sample per texture) or _TERRAIN_NO_FAR (hex, no far sample); neither is the full ground.
 Shader "HyperRTS/Terrain"
@@ -29,6 +31,7 @@ Shader "HyperRTS/Terrain"
         [NoScaleOffset] _Control2 ("Alphamap 2", 2D) = "black" {}
         [NoScaleOffset] _Control3 ("Alphamap 3", 2D) = "black" {}
         [NoScaleOffset] _MacroMap ("Macro Tint (RGB) Wetness (A)", 2D) = "grey" {}
+        [NoScaleOffset] _RowMap ("Row Direction (RG)", 2D) = "grey" {}
         [NoScaleOffset] _NoiseMap ("Noise", 2D) = "grey" {}
         _HeightBlendDepth ("Height Blend Depth", Range(0.02, 0.5)) = 0.12
         _FarTiling ("Far Tiling (x layer tiling)", Range(0.05, 1)) = 0.25

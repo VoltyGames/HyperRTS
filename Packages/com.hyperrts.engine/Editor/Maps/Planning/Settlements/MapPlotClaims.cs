@@ -67,9 +67,9 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         {
             var yard = _context.Region(MapLandKind.Yard, _kit.yardSurface, seed);
             var back = _context.Region(MapLandKind.Back, _kit.backSurface, seed);
+            var garden = _context.Region(MapLandKind.Garden, _kit.gardenSurface, seed, plot.RunYaw);
             foreach (var copy in _context.Layout.Symmetry.Copies)
             {
-                var garden = _context.Region(MapLandKind.Garden, _kit.gardenSurface, seed, copy.ApplyYaw(plot.RunYaw));
                 Land.ForEachIn(plot.Bounds(copy), (x, z, center) =>
                 {
                     var sector = copy.ApplyInverse(center);

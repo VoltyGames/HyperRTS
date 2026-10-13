@@ -35,9 +35,6 @@ namespace HyperRTS.Editor.Maps.Generation
         public MapPlacements Placements { get; private set; }
         public MapLand Land { get; private set; }
 
-        /// <summary>Crop row direction in degrees clockwise from north.</summary>
-        public float RowAngle { get; private set; }
-
         public List<MapTree> Trees { get; private set; }
 
         /// <summary>Ground decals laid on surfaces and under props, copies included.</summary>
@@ -100,7 +97,6 @@ namespace HyperRTS.Editor.Maps.Generation
             MapLandPlanner.Plan(context);
             MapRoadChecks.Check(Layout, Shapes, palette.baseRadius, _issues);
             Land = context.Land;
-            RowAngle = context.RowAngle;
             Trees = context.Trees.Planted;
             Decals = context.Decals;
             Crops = MapCropPainter.Paint(this);

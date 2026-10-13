@@ -41,7 +41,10 @@ namespace HyperRTS.Editor.Maps.Generation
         /// <summary>The terrain shader's per-map tint and wetness picture.</summary>
         public string Macro => $"{Folder}/{Name}_Macro.png";
 
-        public string TerrainMaterial => $"{Folder}/{Name}_Terrain.mat";
+        /// <summary>The terrain shader's per-cell crop row direction picture.</summary>
+        public string RowMap => $"{Folder}/{Name}_Rows.png";
+
+        public string TerrainMaterial =>$"{Folder}/{Name}_Terrain.mat";
 
         /// <summary>The top-down ground colour foliage blends into at its roots.</summary>
         public string Ground => $"{Folder}/{Name}_Ground.png";

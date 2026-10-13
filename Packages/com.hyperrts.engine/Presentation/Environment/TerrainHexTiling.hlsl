@@ -70,8 +70,9 @@ TerrainHexGrid GetHexGrid(float2 st)
     return hexGrid;
 }
 
-// hexParams: x rotation strength (fraction of a full turn), y 1 if the offset may cross rows (v).
-TerrainHexCell GetHexCell(float2 st, float2 dx, float2 dy, float2 vertex, float2 hexParams)
+// hexParams: x rotation strength (fraction of a full turn), y 1 if the offset may go any way, else it slides only
+// along zw (the layer's lines in UV, unit length).
+TerrainHexCell GetHexCell(float2 st, float2 dx, float2 dy, float2 vertex, float4 hexParams)
 {
     float3 random = HexHash(vertex);
     float angle = (random.z - 0.5) * TWO_PI * hexParams.x;
@@ -79,7 +80,7 @@ TerrainHexCell GetHexCell(float2 st, float2 dx, float2 dy, float2 vertex, float2
     sincos(angle, cell.rotation.y, cell.rotation.x);
     float2 centre = float2(vertex.x + 0.5 * vertex.y, 0.8660254 * vertex.y) / HEX_GRID_SCALE;
     float2 inverse = float2(cell.rotation.x, -cell.rotation.y);
-    float2 offset = float2(random.x, random.y * hexParams.y);
+    float2 offset = lerp(random.x * hexParams.zw, random.xy, hexParams.y);
     cell.uv = RotateUV(st - centre, inverse) + centre + offset;
     cell.dx = RotateUV(dx, inverse);
     cell.dy = RotateUV(dy, inverse);
@@ -98,7 +99,7 @@ TerrainHex GetSimpleHex(float2 st, float2 dx, float2 dy, float slice)
     return hex;
 }
 
-TerrainHex GetHex(float2 st, float2 dx, float2 dy, float slice, float2 hexParams)
+TerrainHex GetHex(float2 st, float2 dx, float2 dy, float slice, float4 hexParams)
 {
     #ifdef _TERRAIN_SIMPLE
         return GetSimpleHex(st, dx, dy, slice);

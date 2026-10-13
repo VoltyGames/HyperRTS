@@ -5,13 +5,13 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>Terrain parameter row 3: hex rotation strength and whether hex offsets may cross rows.</summary>
+    /// <summary>Terrain parameter rows 0 and 3: the layer turn, hex rotation strength and the follows-rows flag.</summary>
     public class MapTerrainParamsTests
     {
         private TerrainLayer _terrainLayer;
 
         [SetUp]
-        public void SetUp() => _terrainLayer = new TerrainLayer { normalScale = 0.8f };
+        public void SetUp() => _terrainLayer = new TerrainLayer { normalScale = 0.8f, tileSize = new Vector2(4f, 2f) };
 
         [TearDown]
         public void TearDown() => Object.DestroyImmediate(_terrainLayer);
@@ -22,6 +22,7 @@ namespace HyperRTS.Editor.Tests
             followsRows = followsRows,
             heightBlend = 1.5f,
             antiTiling = 0.6f,
+            rotation = 90f,
         };
 
         [Test]
@@ -41,7 +42,18 @@ namespace HyperRTS.Editor.Tests
             var surface = MapTerrainParams.Surface(Layer(true));
 
             Assert.AreEqual(0f, surface.b, "rotation strength");
-            Assert.AreEqual(0f, surface.a, "offsets may cross rows");
+            Assert.AreEqual(0f, surface.a, "flagged as following rows");
+        }
+
+        [Test]
+        public void RowLayer_MapsByItsOwnTurnOnly_TheRowMapAddsTheRest()
+        {
+            var mapping = MapTerrainParams.Mapping(Layer(true));
+
+            Assert.AreEqual(0f, mapping.r, 1e-5f, "cos 90°");
+            Assert.AreEqual(1f, mapping.g, 1e-5f, "sin 90°");
+            Assert.AreEqual(0.25f, mapping.b, 1e-5f);
+            Assert.AreEqual(0.5f, mapping.a, 1e-5f);
         }
     }
 }

@@ -143,6 +143,24 @@ namespace HyperRTS.Editor.Maps.Checks
             surface.details.ForEach(detail => InClimate(Climate.details, detail.detail, "detail", name));
             surface.props.ForEach(prop => EntryNotBesideRoad(prop.kind, name));
             surface.decals.ForEach(decal => Decal(decal.decal, name));
+            SurfaceEdge(surface, name);
+        }
+
+        /// <summary>Every surface states its edge; a strip needs both its surface and a width.</summary>
+        private void SurfaceEdge(MapClimateSurface surface, string name)
+        {
+            Require(surface.edgeWidth > 0f, $"{name}: edgeWidth {surface.edgeWidth} must be above 0 metres.");
+            Require(surface.edgeJitter > 0f, $"{name}: edgeJitter {surface.edgeJitter} must be above 0 metres.");
+            var hasStrip = !string.IsNullOrEmpty(surface.edgeSurface);
+            if (!hasStrip)
+            {
+                Require(surface.edgeSurfaceWidth <= 0f, $"{name}: edgeSurfaceWidth {surface.edgeSurfaceWidth} needs edgeSurface set; use 0 without one.");
+                return;
+            }
+
+            Surface(surface.edgeSurface, $"{name} edgeSurface");
+            Require(surface.edgeSurface != surface.key, $"{name}: edgeSurface '{surface.edgeSurface}' must be another surface.");
+            Require(surface.edgeSurfaceWidth > 0f, $"{name}: edgeSurfaceWidth {surface.edgeSurfaceWidth} must be above 0 metres for edgeSurface '{surface.edgeSurface}'.");
         }
 
         private void RoadClass(MapRoadClass road)

@@ -20,7 +20,8 @@ struct TerrainLayerParams
     half4 mask;        // smoothness scale, offset; occlusion scale, offset
     half heightWeight;
     half normalStrength;
-    float2 hex;        // hex rotation strength (fraction of a full turn); 1 if offsets may cross rows
+    float4 hex;        // hex rotation strength (fraction of a full turn); 0 if the layer follows rows, else 1;
+                       // a row layer's line direction in UV
 };
 
 struct TerrainPixel
@@ -29,6 +30,7 @@ struct TerrainPixel
     float2 dx;
     float2 dy;
     half far;          // the far sample's share of albedo
+    float2 rowTurn;    // (cos, sin) that lays u along this pixel's crop rows
 };
 
 struct TerrainBlend
@@ -53,7 +55,7 @@ struct TerrainSurface
     half macro;
 };
 
-TerrainLayerParams LoadLayerParams(uint layer)
+TerrainLayerParams LoadLayerParams(uint layer, float2 rowTurn)
 {
     float4 mapping = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 0));
     float4 colour = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 1));
@@ -66,7 +68,15 @@ TerrainLayerParams LoadLayerParams(uint layer)
     params.mask = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 2));
     params.heightWeight = surface.x;
     params.normalStrength = surface.y;
-    params.hex = surface.zw;
+    params.hex = float4(surface.zw, 1.0, 0.0);
+    // Row layers add the field's turn to their own, so their lines run along each field's rows. Their own turn
+    // of u, tiled, is where the lines lie in UV, and the only way hex cells may slide.
+    [flatten] if (params.hex.y == 0.0)
+    {
+        params.hex.zw = normalize(params.rotation * params.tiling);
+        params.rotation = RotateUV(params.rotation, rowTurn);
+    }
+
     return params;
 }
 
@@ -113,7 +123,7 @@ void FadeBlend(inout TerrainBlend blend, float keep)
 
 void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pixel)
 {
-    TerrainLayerParams params = LoadLayerParams(layer);
+    TerrainLayerParams params = LoadLayerParams(layer, pixel.rowTurn);
     // Explicit gradients: hex cells jump at their edges and layers are sampled inside branches.
     TerrainHex hex = GetHex(RotateAndTile(pixel.xz, params), RotateAndTile(pixel.dx, params),
         RotateAndTile(pixel.dy, params), layer, params.hex);
@@ -163,7 +173,16 @@ TerrainSurface ResolveBlend(TerrainBlend blend)
     return surface;
 }
 
-TerrainPixel GetTerrainPixel(float3 positionWS)
+// The row map holds the rows' direction (x east, y north); u then runs along it. Unturned off the fields.
+float2 RowTurn(float2 uv)
+{
+    float2 along = SAMPLE_TEXTURE2D_LOD(_RowMap, sampler_LinearClamp, uv, 0).rg * 2.0 - 1.0;
+    float lengthSq = dot(along, along);
+    along = lengthSq < 0.01 ? float2(1.0, 0.0) : along * rsqrt(max(lengthSq, 1e-6));
+    return float2(along.x, -along.y);
+}
+
+TerrainPixel GetTerrainPixel(float2 uv, float3 positionWS)
 {
     TerrainPixel pixel;
     pixel.xz = positionWS.xz;
@@ -171,6 +190,7 @@ TerrainPixel GetTerrainPixel(float3 positionWS)
     pixel.dy = ddy(pixel.xz);
     float cameraDistance = length(positionWS - GetCameraPositionWS());
     pixel.far = saturate((cameraDistance - _FarStart) / (_FarEnd - _FarStart)) * _FarBlend;
+    pixel.rowTurn = RowTurn(uv);
     return pixel;
 }
 
@@ -182,7 +202,7 @@ TerrainSurface BlendLayers(float2 uv, float3 positionWS)
     half4 control2 = SAMPLE_TEXTURE2D(_Control2, sampler_LinearClamp, controlUV);
     half4 control3 = SAMPLE_TEXTURE2D(_Control3, sampler_LinearClamp, controlUV);
 
-    TerrainPixel pixel = GetTerrainPixel(positionWS);
+    TerrainPixel pixel = GetTerrainPixel(uv, positionWS);
     TerrainBlend blend = (TerrainBlend)0;
     blend.maxScore = -1e8;
     uint count = min((uint)_LayerCount, TERRAIN_MAX_LAYERS);

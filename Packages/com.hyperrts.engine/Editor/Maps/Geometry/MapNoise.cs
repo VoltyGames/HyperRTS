@@ -10,6 +10,7 @@ namespace HyperRTS.Editor.Maps.Geometry
     public sealed class MapNoise
     {
         private const int Octaves = 4;
+        private static readonly Vector2 SecondComponentOffset = new(311f, 173f);
         private readonly MapSymmetry _symmetry;
         private readonly Vector2 _offset;
         private readonly float _gain;
@@ -34,6 +35,23 @@ namespace HyperRTS.Editor.Maps.Geometry
             }
 
             return Mathf.Clamp(sum / _symmetry.Copies.Count * _gain, -1f, 1f);
+        }
+
+        /// <summary>
+        /// A noise vector up to 1 long that turns with the symmetry (each copy's sample is turned back), so offsets
+        /// built from it move mirrored points to mirrored places.
+        /// </summary>
+        public Vector2 SampleVector(Vector2 point, float wavelength)
+        {
+            var sum = Vector2.zero;
+            for (var c = 0; c < _symmetry.Copies.Count; c++)
+            {
+                var copy = _symmetry.Copies[c];
+                var p = copy.Apply(point) / wavelength;
+                sum += copy.ApplyInverse(new Vector2(Fractal(p), Fractal(p + SecondComponentOffset)));
+            }
+
+            return Vector2.ClampMagnitude(sum / _symmetry.Copies.Count * _gain, 1f);
         }
 
         private float Fractal(Vector2 point)

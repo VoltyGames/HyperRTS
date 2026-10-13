@@ -181,17 +181,32 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 
 - **Heights**: relief, hills, river valleys, ravines. Roads of a levelling class are cut onto embankments; ramps lead
   to bridge decks.
-- **Splat** (`MapSplatPainter`): each texel averages the surfaces at a few noise-jittered points, so borders come out
-  ragged and the shader's height blend sharpens them; steep ground takes the slope surface.
+- **Edges** (`MapEdgeField`): every surface states its edge style: `edgeWidth` (the blend band, m), `edgeJitter` (how
+  far the line wanders, m; larger jitter also waves more slowly, 6 m to 22 m) and an optional `edgeSurface` strip
+  `edgeSurfaceWidth` m wide just inside its border (a weedy margin inside a field). A border takes the crisper side's
+  width and jitter, so a ploughed edge stays sharp against a meadow while two meadows blend wide; the style is
+  smoothed over 3 m so it changes without a step where three regions meet. Each land cell knows its distance to the
+  nearest other region and which region that is (`MapEdgeNeighbours`); the jitter is a noise vector that turns with
+  the symmetry, so mirrored borders wander alike. Splat, details and macro all read the border through it.
+- **Splat** (`MapSplatPainter`): each texel blends its border's two surfaces across the band, with each side's edge
+  strip next to the border; the shader's height blend sharpens them; steep ground takes the slope surface.
 - **Details** (`MapDetailPainter`): each surface's plants cover their share, clumped by noise at two scales (crops
-  grow evenly); reeds in the shallows. Nothing grows on roads or placed objects.
-- **Macro map** (`MapMacroPainter`): a colour shift per field and per wood, broad noise, wetness near water. RGB 0.5
-  is neutral, A is wetness.
+  grow evenly), switching to the other region at the band's middle and to the edge strip's plants inside it; reeds in
+  the shallows. Nothing grows on roads or placed objects.
+- **Macro map** (`MapMacro`, written by `MapMacroPainter`): a light and warmth shift per field and per wood plus a
+  slow gradient across each (averaged over the symmetry copies), blended over the same border band as the splat;
+  noise at 14, 24, 36 and 90 m; hollows (height curvature over 8 m) a little darker and damper; wetness near water
+  and on ravine floors. Shifts stay a few percent. RGB 0.5 is neutral, A is wetness.
+- **Row map** (`MapRowPainter`, `_Rows.png`): one texel per land cell, RG8 linear, bilinear, no mips. RG is the
+  direction of the cell's crop or garden rows (x east, y north) remapped to 0..1, moved through the cell's symmetry
+  copy so mirrored and rotated fields turn too; (0.5, 0.5) where nothing grows in rows. Regions carry rows when the
+  planner gives them an angle (fields, gardens: `MapLandRegion.HasRows`).
 - **Terrain material** (`MapTerrainMaterial`): `HyperRTS/Terrain`, one pass, up to 16 height-blended layers from the
-  climate's texture arrays, the macro map, and per-layer rotation to the crop rows. Each layer is hex-tiled
+  climate's texture arrays, the macro and row maps, and per-layer rotation. Each layer is hex-tiled
   (Mikkelsen 2022): three cells per pixel, each randomly offset and turned by the layer's `antiTiling` (the fraction
-  of a full turn), blended by texel height. `followsRows` layers never turn and shift only along u, so furrows stay
-  continuous. A far albedo sample at `_FarTiling` × the layer tiling fades in between `_FarStart` and `_FarEnd`
+  of a full turn), blended by texel height. `followsRows` layers (param row 3 w = 0) add the row map's turn to their
+  own `rotation` per pixel, so each field's furrows follow its rows; their hex cells never turn and slide only along
+  the texture's lines, so furrows stay continuous. Normals turn back by the combined rotation. A far albedo sample at `_FarTiling` × the layer tiling fades in between `_FarStart` and `_FarEnd`
   (camera distance) up to `_FarBlend`. `TerrainDetail.Level` (Presentation) sets the global keywords
   `_TERRAIN_SIMPLE` (Low: one sample) or `_TERRAIN_NO_FAR` (Medium: hex only); with neither (High, edit mode, map
   views) the shader does both.
@@ -232,7 +247,7 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 | Tool | Writes |
 | --- | --- |
 | Preview (`MapPreview.Run`) | `Logs/MapReports/<Map>.preview.png` (land, trees, props, crossings, bases) and `.preview.json` (issues, land figures). The Map Editor's live preview writes nothing |
-| Build (`MapBuilder.Build`) | Beside the spec: scene and `_Entities` SubScene (gameplay prefabs at `[Generated] …` roots, scenery under `[Generated]`; the build also clears every library prefab instance at the SubScene root, since a prefab whose internal IDs changed drops the instance's name; hand-placed objects go under `[Dressing]`, which is never touched), `_Terrain.asset` and `.mat`, `_Water.asset`, `_Roads.asset`, `_Macro.png`, `_Ground.png`, `_Minimap.png`, `_Overview.png`, baked lighting. In `Logs/MapReports/`: `<Map>.json` and `.png`. Errors before the scene stage stop the build with a report and leave the last good scene alone |
+| Build (`MapBuilder.Build`) | Beside the spec: scene and `_Entities` SubScene (gameplay prefabs at `[Generated] …` roots, scenery under `[Generated]`; the build also clears every library prefab instance at the SubScene root, since a prefab whose internal IDs changed drops the instance's name; hand-placed objects go under `[Dressing]`, which is never touched), `_Terrain.asset` and `.mat`, `_Water.asset`, `_Roads.asset`, `_Macro.png`, `_Rows.png`, `_Ground.png`, `_Minimap.png`, `_Overview.png`, baked lighting. In `Logs/MapReports/`: `<Map>.json` and `.png`. Errors before the scene stage stop the build with a report and leave the last good scene alone |
 | Views (`MapViewCapture`, every build) | `Logs/MapReports/<Map>/*.png` from the scene's own match camera: `centre`, `base-N`, `crossing-N`, `settlement-N` (wide and `-close`), `overview`. None without a graphics device |
 | Key reference (`MapKeyReference.Write`) | A Markdown list of every `kind` a spec may name, for the game to write beside its map tooling |
 

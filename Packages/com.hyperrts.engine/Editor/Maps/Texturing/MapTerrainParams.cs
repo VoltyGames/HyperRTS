@@ -13,13 +13,13 @@ namespace HyperRTS.Editor.Maps.Texturing
         private const int Width = MapTerrainTextures.MaxLayers;
         private const int Rows = 4;
 
-        internal static Texture2D Write(Material material, MapClimate climate, float rowAngle)
+        internal static Texture2D Write(Material material, MapClimate climate)
         {
             var texture = SubAsset(material);
             var pixels = new Color[Width * Rows];
             for (var i = 0; i < climate.layers.Count; i++)
             {
-                Column(pixels, i, climate.layers[i], rowAngle);
+                Column(pixels, i, climate.layers[i]);
             }
 
             texture.SetPixels(pixels);
@@ -28,25 +28,29 @@ namespace HyperRTS.Editor.Maps.Texturing
             return texture;
         }
 
-        private static void Column(Color[] pixels, int layer, MapClimateLayer climateLayer, float rowAngle)
+        private static void Column(Color[] pixels, int layer, MapClimateLayer climateLayer)
         {
             var terrainLayer = climateLayer.terrainLayer;
-            // Unturned, a texture's left-to-right axis points east (90°); this lays row textures along the rows.
-            var rowTurn = climateLayer.followsRows ? rowAngle - 90f : 0f;
-            var turn = (climateLayer.rotation + rowTurn) * Mathf.Deg2Rad;
-            var tile = terrainLayer.tileSize;
             var tint = terrainLayer.diffuseRemapMax;
             var low = terrainLayer.maskMapRemapMin;
             var high = terrainLayer.maskMapRemapMax;
-            pixels[layer] = new Color(Mathf.Cos(turn), Mathf.Sin(turn), 1f / tile.x, 1f / tile.y);
+            pixels[layer] = Mapping(climateLayer);
             pixels[Width + layer] = new Color(tint.x, tint.y, tint.z, climateLayer.macroStrength);
             pixels[2 * Width + layer] = new Color(high.w - low.w, low.w, high.y - low.y, low.y);
             pixels[3 * Width + layer] = Surface(climateLayer);
         }
 
+        /// <summary>Row 0: the layer's own UV turn and tiling; row layers add the row map's turn per pixel.</summary>
+        public static Color Mapping(MapClimateLayer climateLayer)
+        {
+            var turn = climateLayer.rotation * Mathf.Deg2Rad;
+            var tile = climateLayer.terrainLayer.tileSize;
+            return new Color(Mathf.Cos(turn), Mathf.Sin(turn), 1f / tile.x, 1f / tile.y);
+        }
+
         /// <summary>
-        /// Row 3: height-blend weight, normal strength, hex rotation strength and whether hex offsets may cross rows.
-        /// Row layers turn no cell and shift it only along the rows, so furrows run on unbroken.
+        /// Row 3: height-blend weight, normal strength, hex rotation strength, and 0 for layers that follow rows.
+        /// Those turn per pixel to the row map, turn no hex cell and shift it only along the rows, so furrows run on.
         /// </summary>
         public static Color Surface(MapClimateLayer climateLayer)
         {

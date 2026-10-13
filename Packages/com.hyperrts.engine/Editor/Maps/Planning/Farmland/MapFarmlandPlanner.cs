@@ -31,11 +31,6 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             {
                 var spec = authored[i].Authored;
                 var kit = Climate.FarmlandKit(spec.kind);
-                if (i == 0)
-                {
-                    Context.RowAngle = spec.angle;
-                }
-
                 var grid = new MapFieldGrid(kit, spec.angle);
                 var polygon = spec.points.Count > 0 ? MapGeometry.ToVectors(spec.points) : null;
                 LayEnds(kit, grid, s => IsFree(polygon, s), i);
