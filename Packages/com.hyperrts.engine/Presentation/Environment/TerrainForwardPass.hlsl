@@ -8,9 +8,9 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainLayers.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
 
-#define RUT_DEPTH 0.06          // metres a full rut dents the shading normal
-#define RUT_DARKENING 0.15
-#define SOIL_DARKENING 0.18     // churned soil along and around the ruts
+#define RUT_DEPTH 0.12          // metres a full rut dents the shading normal
+#define RUT_DARKENING 0.4
+#define SOIL_TINT 0.65          // churned soil along and around the ruts turns to bare earth
 #define FLATTEN_DARKENING 0.06  // flattened grass shades the ground under it a touch
 
 struct TerrainForwardVaryings
@@ -65,8 +65,9 @@ void ApplyInteraction(inout TerrainSurface surface, float2 positionXZ)
 
     half2 tracks = SampleTracks(positionXZ);
     half flatten = SampleTrample(positionXZ).flatten;
-    surface.albedo *= (1.0 - RUT_DARKENING * tracks.r) * (1.0 - SOIL_DARKENING * tracks.g)
-        * (1.0 - FLATTEN_DARKENING * flatten);
+    half3 earth = surface.albedo * half3(0.62, 0.5, 0.4);
+    surface.albedo = lerp(surface.albedo, earth, SOIL_TINT * tracks.g);
+    surface.albedo *= (1.0 - RUT_DARKENING * tracks.r) * (1.0 - FLATTEN_DARKENING * flatten);
     half2 slope = (half2)(TrackSlope(positionXZ) * RUT_DEPTH);
     surface.normalTS = normalize(half3(surface.normalTS.xy + slope, surface.normalTS.z));
 }

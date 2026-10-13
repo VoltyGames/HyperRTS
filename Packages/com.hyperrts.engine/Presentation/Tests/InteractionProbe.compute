@@ -1,0 +1,15 @@
+// Test-only: samples an interaction map the way terrain, foliage and crop shaders do, at two world points.
+#pragma kernel Probe
+
+Texture2D<float4> _Source;
+SamplerState sampler_LinearClamp;
+RWStructuredBuffer<float> _Samples;
+float4 _Rect;   // x min, z min, 1 / width, 1 / depth
+float4 _Points; // xy first point, zw second point (world XZ)
+
+[numthreads(1, 1, 1)]
+void Probe(uint3 id : SV_DispatchThreadID)
+{
+    _Samples[0] = _Source.SampleLevel(sampler_LinearClamp, (_Points.xy - _Rect.xy) * _Rect.zw, 0).r;
+    _Samples[1] = _Source.SampleLevel(sampler_LinearClamp, (_Points.zw - _Rect.xy) * _Rect.zw, 0).r;
+}
