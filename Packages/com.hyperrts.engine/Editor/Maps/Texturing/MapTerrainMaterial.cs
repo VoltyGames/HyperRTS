@@ -19,6 +19,7 @@ namespace HyperRTS.Editor.Maps.Texturing
         private static readonly int MaskArray = Shader.PropertyToID("_MaskArray");
         private static readonly int LayerParams = Shader.PropertyToID("_LayerParams");
         private static readonly int LayerCount = Shader.PropertyToID("_LayerCount");
+        private static readonly int HeightBlendDepth = Shader.PropertyToID("_HeightBlendDepth");
         private static readonly int MacroMap = Shader.PropertyToID("_MacroMap");
         private static readonly int RowMap = Shader.PropertyToID("_RowMap");
         private static readonly int NoiseMap = Shader.PropertyToID("_NoiseMap");
@@ -44,6 +45,7 @@ namespace HyperRTS.Editor.Maps.Texturing
             material.SetTexture(MaskArray, mask);
             material.SetTexture(LayerParams, MapTerrainParams.Write(material, climate));
             material.SetFloat(LayerCount, climate.layers.Count);
+            material.SetFloat(HeightBlendDepth, climate.heightBlendDepth);
             var alphamaps = data.alphamapTextures;
             for (var i = 0; i < Controls.Length; i++)
             {

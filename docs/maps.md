@@ -202,14 +202,16 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
   copy so mirrored and rotated fields turn too; (0.5, 0.5) where nothing grows in rows. Regions carry rows when the
   planner gives them an angle (fields, gardens: `MapLandRegion.HasRows`).
 - **Terrain material** (`MapTerrainMaterial`): `HyperRTS/Terrain`, one pass, up to 16 height-blended layers from the
-  climate's texture arrays, the macro and row maps, and per-layer rotation. Each layer is hex-tiled
-  (Mikkelsen 2022): three cells per pixel, each randomly offset and turned by the layer's `antiTiling` (the fraction
-  of a full turn), blended by texel height. `followsRows` layers (param row 3 w = 0) add the row map's turn to their
-  own `rotation` per pixel, so each field's furrows follow its rows; their hex cells never turn and slide only along
-  the texture's lines, so furrows stay continuous. Normals turn back by the combined rotation. A far albedo sample at `_FarTiling` × the layer tiling fades in between `_FarStart` and `_FarEnd`
-  (camera distance) up to `_FarBlend`. `TerrainDetail.Level` (Presentation) sets the global keywords
-  `_TERRAIN_SIMPLE` (Low: one sample) or `_TERRAIN_NO_FAR` (Medium: hex only); with neither (High, edit mode, map
-  views) the shader does both.
+  climate's texture arrays, the macro and row maps, and per-layer rotation. The climate's `heightBlendDepth` (texel
+  height, 0..1; about 0.06 interlocks borders without speckle) sets how far one layer's texels must stand above
+  another's to win where they mix. Each layer is hex-tiled (Mikkelsen 2022): three cells per pixel, each randomly offset
+  and turned by the layer's `antiTiling` (the fraction of a full turn), blended by texel height. `followsRows` layers
+  (param row 3 w = 0) add the row map's turn to their own `rotation` per pixel, so each field's furrows follow its rows;
+  their hex cells never turn and slide only along the texture's lines, so furrows stay continuous. Normals turn back by
+  the combined rotation. A far albedo sample at `_FarTiling` × the layer tiling fades in between `_FarStart` and
+  `_FarEnd` (camera distance) up to `_FarBlend`. `TerrainDetail.Level` (Presentation) sets the global keywords
+  `_TERRAIN_SIMPLE` (Low: one sample) or `_TERRAIN_NO_FAR` (Medium: hex only); with neither (High, edit mode, map views)
+  the shader does both.
 - **Ground colour** (`MapGroundColor`): a top-down picture of the layers' mean albedo by splat weight, tinted by the
   macro map. Foliage blends into it at its roots.
 - **Ground decals** (`MapDecalWriter`, after `MapPlacementWriter`): a URP `DecalProjector` per decal under the main

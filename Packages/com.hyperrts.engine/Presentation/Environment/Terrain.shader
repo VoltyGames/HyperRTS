@@ -33,7 +33,7 @@ Shader "HyperRTS/Terrain"
         [NoScaleOffset] _MacroMap ("Macro Tint (RGB) Wetness (A)", 2D) = "grey" {}
         [NoScaleOffset] _RowMap ("Row Direction (RG)", 2D) = "grey" {}
         [NoScaleOffset] _NoiseMap ("Noise", 2D) = "grey" {}
-        _HeightBlendDepth ("Height Blend Depth", Range(0.02, 0.5)) = 0.12
+        _HeightBlendDepth ("Height Blend Depth", Range(0.02, 0.5)) = 0.06
         _FarTiling ("Far Tiling (x layer tiling)", Range(0.05, 1)) = 0.25
         _FarStart ("Far Start (m)", Float) = 40
         _FarEnd ("Far End (m)", Float) = 160

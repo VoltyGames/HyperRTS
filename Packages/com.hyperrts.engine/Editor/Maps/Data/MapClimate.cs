@@ -76,6 +76,10 @@ namespace HyperRTS.Editor.Maps.Data
         public float slopeStart = 22f;
         public float slopeFull = 34f;
 
+        [Tooltip("Texel height difference (0..1) over which one layer takes over from another where they mix; smaller interlocks borders more.")]
+        [Range(0.02f, 0.5f)]
+        public float heightBlendDepth = 0.06f;
+
         [Header("Rivers and ravines")]
         [Tooltip("Surface of river banks just above the water.")]
         [MapKey(typeof(MapClimateSurface))]
