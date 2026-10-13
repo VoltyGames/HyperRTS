@@ -3,6 +3,7 @@ using System.Linq;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Placement
@@ -82,7 +83,24 @@ namespace HyperRTS.Editor.Maps.Placement
             {
                 var entry = _palette.Entry(prop.Placed.kind);
                 var yaw = prop.Transform.ApplyYaw(prop.Authored.yaw + Jitter(entry, MapRandomChannel.PropYaw, prop.Index));
-                _placements.Add(new MapPlacement(entry, prop.Placed.pos.ToVector2(), yaw));
+                var position = prop.Placed.pos.ToVector2();
+                if (prop.Copy == 0)
+                {
+                    CheckOffRoad(entry, position, new MapIssueFeature(nameof(MapSpec.props), prop.Index));
+                }
+
+                _placements.Add(new MapPlacement(entry, position, yaw));
+            }
+        }
+
+        /// <summary>A structure on its own pad must not straddle a road; a road through it reads as a mistake.</summary>
+        private void CheckOffRoad(MapPaletteEntry entry, Vector2 position, MapIssueFeature feature)
+        {
+            var standsOnPad = entry.flatten || !string.IsNullOrEmpty(entry.pad);
+            var halfWidth = Mathf.Min(entry.size.x, entry.size.y) * 0.5f;
+            if (standsOnPad && _shapes.RoadEdgeDistance(position) < halfWidth)
+            {
+                _issues.Error($"Prop '{entry.key}' at ({position.x:0}, {position.y:0}) stands on a road; move it beside the road.", feature);
             }
         }
 
