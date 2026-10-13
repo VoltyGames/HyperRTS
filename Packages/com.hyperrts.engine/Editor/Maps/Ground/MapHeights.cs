@@ -54,9 +54,13 @@ namespace HyperRTS.Editor.Maps.Ground
             return Mathf.Atan(new Vector2(dx, dz).magnitude / span) * Mathf.Rad2Deg;
         }
 
+        /// <summary>Shortest span (metres) a normal is sampled across, so small things don't catch single-sample bumps.</summary>
+        public const float MinNormalSpan = 2f;
+
         /// <summary>Unit ground normal (world space, y up) from central differences across <paramref name="span"/> metres.</summary>
-        public Vector3 Normal(Vector2 point, float span = 2f)
+        public Vector3 Normal(Vector2 point, float span = MinNormalSpan)
         {
+            span = Mathf.Max(MinNormalSpan, span);
             var half = span * 0.5f;
             var dx = Height(point + new Vector2(half, 0f)) - Height(point - new Vector2(half, 0f));
             var dz = Height(point + new Vector2(0f, half)) - Height(point - new Vector2(0f, half));

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
@@ -7,9 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// What grows or lies on each surface by itself: lone trees in meadows and fields, willows on banks, rocks on
-    /// ravine rims, bales in rows on stubble the way a baler leaves them, scrub along a margin's edges. Lands that plant their own trees (woods,
-    /// belts, ravine floors) are skipped. Spots are chosen in the authored sector and copied.
+    /// What grows or lies on each surface by itself (lone trees, bank willows, rim rocks, bales in rows, scrub);
+    /// lands that plant their own trees are skipped. Spots are chosen in the authored sector and copied.
     /// </summary>
     public sealed class MapSurfacePlanter : MapLandPass
     {
@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Maps.Planning
 
         public override void Plan()
         {
-            foreach (var (index, cells) in SectorCells())
+            foreach (var (index, cells) in SectorCells(Grows, playableOnly: false))
             {
                 var region = Land.Regions[index];
                 var surface = Climate.Surface(region.Surface);
@@ -43,54 +43,22 @@ namespace HyperRTS.Editor.Maps.Planning
             }
         }
 
-        /// <summary>Cells of the authored sector per region whose surface grows trees or props.</summary>
-        private Dictionary<int, List<int>> SectorCells()
-        {
-            var cells = new Dictionary<int, List<int>>();
-            var wanted = new bool[Land.Regions.Count];
-            for (var i = 1; i < Land.Regions.Count; i++)
-            {
-                var surface = Climate.Surface(Land.Regions[i].Surface);
-                wanted[i] = surface.trees.Count > 0 || surface.props.Count > 0;
-            }
-
-            Land.ForEach((x, z, p) =>
-            {
-                var region = Land.RegionIndex(x, z);
-                if (!wanted[region] || !Symmetry.InSector(p))
-                {
-                    return;
-                }
-
-                if (!cells.TryGetValue(region, out var list))
-                {
-                    cells[region] = list = new List<int>();
-                }
-
-                list.Add(z * Land.Width + x);
-            });
-            return cells;
-        }
-
         /// <summary>Edge-limited trees count per hectare of their band, so narrow bands still get their share.</summary>
         private void PlantTrees(MapClimateSurface surface, List<int> cells, System.Random random)
         {
             foreach (var density in surface.trees)
             {
-                if (density.maxEdgeDistance <= 0f)
+                var reach = density.maxEdgeDistance;
+                var limited = reach > 0f;
+                var band = limited ? cells.FindAll(cell => EdgeDistance(cell) <= reach) : cells;
+                if (band.Count == 0)
                 {
-                    Context.Trees.Scatter(density, Hectares(cells.Count), surface.treeSpacing, random,
-                        () => RandomSpot(cells, random), _ => true);
                     continue;
                 }
 
-                var reach = density.maxEdgeDistance;
-                var band = cells.FindAll(cell => EdgeDistance(cell) <= reach);
-                if (band.Count > 0)
-                {
-                    Context.Trees.Scatter(density, Hectares(band.Count), surface.treeSpacing, random,
-                        () => RandomSpot(band, random), p => EdgeDistance(p) <= reach);
-                }
+                Func<Vector2, bool> inside = limited ? p => EdgeDistance(p) <= reach : _ => true;
+                Context.Trees.Scatter(density, Hectares(band.Count), surface.treeSpacing, random,
+                    () => RandomSpot(band, random), inside);
             }
         }
 
@@ -102,8 +70,6 @@ namespace HyperRTS.Editor.Maps.Planning
 
         private float EdgeDistance(Vector2 point) =>
             Land.TryCell(point, out var x, out var z) ? EdgeDistance(z * Land.Width + x) : float.PositiveInfinity;
-
-        private static float Hectares(int cells) => cells * MapLand.CellSize * MapLand.CellSize / 10000f;
 
         private void PlaceProps(MapLandRegion region, MapPropDensity props, List<int> cells, float hectares,
             System.Random random)
@@ -167,14 +133,6 @@ namespace HyperRTS.Editor.Maps.Planning
             return true;
         }
 
-        /// <summary>A random point inside a random cell of the list.</summary>
-        private Vector2 RandomSpot(List<int> cells, System.Random random)
-        {
-            var cell = cells[random.Next(cells.Count)];
-            var jitter = new Vector2(random.Value() - 0.5f, random.Value() - 0.5f);
-            return Land.Center(cell % Land.Width, cell / Land.Width) + jitter * MapLand.CellSize;
-        }
-
         private Rect Bounds(List<int> cells)
         {
             var min = new Vector2(float.MaxValue, float.MaxValue);
@@ -190,6 +148,8 @@ namespace HyperRTS.Editor.Maps.Planning
         }
 
         private static float Jitter(System.Random random) => random.Signed() * RowJitter;
+
+        private static bool Grows(MapClimateSurface surface) => surface.trees.Count > 0 || surface.props.Count > 0;
 
         private static bool PlantsItself(MapLandKind kind) =>
             kind is MapLandKind.Wood or MapLandKind.WoodEdge or MapLandKind.Belt or MapLandKind.Ravine;

@@ -1,6 +1,9 @@
+using System;
+using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Symmetry;
+using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning
 {
@@ -22,5 +25,48 @@ namespace HyperRTS.Editor.Maps.Planning
         protected MapSymmetry Symmetry => Context.Layout.Symmetry;
 
         public abstract void Plan();
+
+        protected static float Hectares(int cells) => cells * MapLand.CellSize * MapLand.CellSize / 10000f;
+
+        /// <summary>
+        /// Cells of the authored sector per region whose surface is <paramref name="wanted"/>; with
+        /// <paramref name="playableOnly"/> the scenery margin outside the play area is left out.
+        /// </summary>
+        protected Dictionary<int, List<int>> SectorCells(Func<MapClimateSurface, bool> wanted, bool playableOnly)
+        {
+            var playArea = Context.Layout.Bounds;
+            var cells = new Dictionary<int, List<int>>();
+            var regionWanted = new bool[Land.Regions.Count];
+            for (var i = 1; i < Land.Regions.Count; i++)
+            {
+                regionWanted[i] = wanted(Climate.Surface(Land.Regions[i].Surface));
+            }
+
+            Land.ForEach((x, z, p) =>
+            {
+                var region = Land.RegionIndex(x, z);
+                var inArea = !playableOnly || playArea.Contains(p);
+                if (!regionWanted[region] || !inArea || !Symmetry.InSector(p))
+                {
+                    return;
+                }
+
+                if (!cells.TryGetValue(region, out var list))
+                {
+                    cells[region] = list = new List<int>();
+                }
+
+                list.Add(z * Land.Width + x);
+            });
+            return cells;
+        }
+
+        /// <summary>A random point inside a random cell of the list.</summary>
+        protected Vector2 RandomSpot(List<int> cells, System.Random random)
+        {
+            var cell = cells[random.Next(cells.Count)];
+            var jitter = new Vector2(random.Value() - 0.5f, random.Value() - 0.5f);
+            return Land.Center(cell % Land.Width, cell / Land.Width) + jitter * MapLand.CellSize;
+        }
     }
 }

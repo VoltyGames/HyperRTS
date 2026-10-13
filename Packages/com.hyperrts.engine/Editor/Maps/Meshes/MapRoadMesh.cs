@@ -20,7 +20,6 @@ namespace HyperRTS.Editor.Maps.Meshes
         public const float FadeLength = 4f;
 
         private const float AcrossStep = 1.5f;
-        private const float NormalSpan = 1f;
 
         public List<Vector3> Vertices { get; } = new();
 
@@ -92,7 +91,7 @@ namespace HyperRTS.Editor.Maps.Meshes
             {
                 var across = (float)c / (columns - 1);
                 var point = center + right * ((across - 0.5f) * width);
-                var normal = Normal(heights, point);
+                var normal = heights.Normal(point);
                 var side = new Vector3(right.x, 0f, right.y);
                 var tangent = (side - normal * Vector3.Dot(side, normal)).normalized;
                 Vertices.Add(new Vector3(point.x, heights.Height(point) - groundLevel + Lift, point.y));
@@ -112,13 +111,6 @@ namespace HyperRTS.Editor.Maps.Meshes
                 var b = row + c;
                 Triangles.AddRange(new[] { a, b, a + 1, a + 1, b, b + 1 });
             }
-        }
-
-        private static Vector3 Normal(MapHeights heights, Vector2 point)
-        {
-            var dx = heights.Height(point + Vector2.right * NormalSpan) - heights.Height(point - Vector2.right * NormalSpan);
-            var dz = heights.Height(point + Vector2.up * NormalSpan) - heights.Height(point - Vector2.up * NormalSpan);
-            return new Vector3(-dx, 2f * NormalSpan, -dz).normalized;
         }
     }
 }

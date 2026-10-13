@@ -7,14 +7,13 @@ namespace HyperRTS.Editor.Maps.Scenes
     /// <summary>Burial depth and slope tilt, worked out from the finished ground at write time so mirrored copies match.</summary>
     public static class MapPlacementPose
     {
-        private const float MinNormalSpan = 2f;
-
         public static Pose OnGround(MapPlacement placement, MapHeights heights, float groundLevel)
         {
             var point = placement.Position;
             var y = (placement.Height ?? heights.Height(point)) - groundLevel - placement.Entry.buriedDepth;
-            var normal = heights.Normal(point, Mathf.Max(MinNormalSpan, placement.Radius * 2f));
-            var rotation = Tilt(normal, placement.Entry.alignToGround) * Quaternion.Euler(0f, placement.Yaw, 0f);
+            var align = placement.Entry.alignToGround;
+            var tilt = align > 0f ? Tilt(heights.Normal(point, placement.Radius * 2f), align) : Quaternion.identity;
+            var rotation = tilt * Quaternion.Euler(0f, placement.Yaw, 0f);
             return new Pose(new Vector3(point.x, y, point.y), rotation);
         }
 

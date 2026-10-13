@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
@@ -60,15 +59,14 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         /// </summary>
         private void Pipes(MapPaletteEntry pipe, MapRoad road)
         {
-            var arch = _settlement.Entries.PipeArch ?? throw new InvalidOperationException(
-                $"Settlement kit '{_settlement.Kit.key}' lays streetPipe '{pipe.key}' but names no streetPipeArch.");
+            var arch = _settlement.Entries.PipeArch;
             var section = MapSections.Length(pipe);
-            var spots = new List<float>();
+            var sections = new List<(float Along, Vector2 Position, Vector2 Direction)>();
             var pass = new List<bool>();
             for (var along = section * 0.5f; along + section * 0.5f <= road.Line.Length; along += section)
             {
                 var position = Beside(road, along, -1f, out var direction);
-                spots.Add(along);
+                sections.Add((along, position, direction));
                 pass.Add(Clear(road, position, direction * (section * 0.5f)) && CanStand(pipe, position));
             }
 
@@ -79,13 +77,13 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             {
                 if (kept[i])
                 {
-                    Add(pipe, Beside(road, spots[i], -1f, out var direction), direction);
+                    Add(pipe, sections[i].Position, sections[i].Direction);
                 }
             }
 
             foreach (var (first, count) in arches)
             {
-                var middle = Beside(road, spots[first] + (count - 1) * section * 0.5f, -1f, out var direction);
+                var middle = Beside(road, sections[first].Along + (count - 1) * section * 0.5f, -1f, out var direction);
                 if (InSettlementSector(arch, middle))
                 {
                     Add(arch, middle, direction);

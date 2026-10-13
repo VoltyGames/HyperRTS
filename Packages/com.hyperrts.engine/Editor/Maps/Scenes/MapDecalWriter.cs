@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Placement;
+using HyperRTS.Presentation.Impacts;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -9,12 +10,6 @@ namespace HyperRTS.Editor.Maps.Scenes
     /// <summary>Ground decals as URP decal projectors on the finished ground, projecting along its normal.</summary>
     public static class MapDecalWriter
     {
-        /// <summary>Faces steeper than these angles to the projection (props' sides, walls) fade out.</summary>
-        private const float StartAngleFade = 50f;
-        private const float EndAngleFade = 75f;
-
-        private const float MinNormalSpan = 2f;
-
         public static void Write(MapScene scene, MapGeneration generation)
         {
             var root = scene.CreateChild("Decals");
@@ -34,14 +29,14 @@ namespace HyperRTS.Editor.Maps.Scenes
             var heights = generation.Heights;
             var point = decal.Position;
             var y = heights.Height(point) - generation.Layout.GroundLevel;
-            var normal = heights.Normal(point, Mathf.Max(MinNormalSpan, decal.Diameter * 0.5f));
+            var normal = heights.Normal(point, decal.Diameter * 0.5f);
             go.transform.SetPositionAndRotation(new Vector3(point.x, y, point.y), Facing(normal, decal.Yaw));
             var projector = go.AddComponent<DecalProjector>();
             projector.material = decal.Kind.material;
             projector.pivot = Vector3.zero;
             projector.size = new Vector3(decal.Diameter, decal.Diameter, decal.Kind.depth);
-            projector.startAngleFade = StartAngleFade;
-            projector.endAngleFade = EndAngleFade;
+            projector.startAngleFade = ImpactMarkDecals.StartAngleFade;
+            projector.endAngleFade = ImpactMarkDecals.EndAngleFade;
             projector.uvScale = new Vector2(decal.Mirrored ? -1f : 1f, 1f);
             projector.uvBias = new Vector2(decal.Mirrored ? 1f : 0f, 0f);
         }

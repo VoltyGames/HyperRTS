@@ -9,11 +9,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// Runs an access track from each prop's pad to the nearest road: for every authored-sector placement whose
-    /// palette entry names an access road class, a straight track from just inside the pad edge to the nearest point
-    /// of the nearest road it can reach without crossing water or a ravine. Tracks are laid in every copy of the
-    /// sector; a prop with no clear route is a warning. Props within <see cref="GroupReach"/> of each other (a field of
-    /// resource stacks) share one track, from the one nearest a road.
+    /// Runs a straight access track from each prop's pad to the nearest road it can reach without crossing water or a
+    /// ravine; props within <see cref="GroupReach"/> of each other share one track.
     /// </summary>
     public sealed class MapAccessPlanner : MapLandPass
     {
@@ -54,23 +51,21 @@ namespace HyperRTS.Editor.Maps.Planning
         private bool ConnectGroup(MapAccessRoutes routes, MapRoadPlanner roads, List<MapPlacement> group)
         {
             var track = Climate.RoadClass(group[0].Entry.access);
-            var nearestFirst = group.OrderBy(p => NearestDistance(routes, p.Position));
-            return nearestFirst.Any(placement => Connect(routes, roads, placement, track));
+            var nearestFirst = group
+                .Select(p => (Placement: p, Candidates: routes.Nearest(p.Position)))
+                .OrderBy(c => NearestDistance(c.Candidates));
+            return nearestFirst.Any(c => Connect(routes, roads, c.Placement, c.Candidates, track));
         }
 
-        private static float NearestDistance(MapAccessRoutes routes, Vector2 from)
-        {
-            var nearest = routes.Nearest(from);
-            return nearest.Count == 0 ? float.PositiveInfinity : nearest[0].Distance;
-        }
+        private static float NearestDistance(List<(MapRoad Road, Vector2 Point, float Distance)> candidates) =>
+            candidates.Count == 0 ? float.PositiveInfinity : candidates[0].Distance;
 
         /// <summary>Lays the track to the nearest reachable road; false when none can be reached.</summary>
         private static bool Connect(MapAccessRoutes routes, MapRoadPlanner roads, MapPlacement placement,
-            MapRoadClass track)
+            List<(MapRoad Road, Vector2 Point, float Distance)> candidates, MapRoadClass track)
         {
             var entry = placement.Entry;
             var padRadius = placement.Radius + (string.IsNullOrEmpty(entry.pad) ? 0f : entry.padMargin);
-            var candidates = routes.Nearest(placement.Position);
             if (candidates.Count > 0 && Meets(candidates[0], padRadius))
             {
                 return true;

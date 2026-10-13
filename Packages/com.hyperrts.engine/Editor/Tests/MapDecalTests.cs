@@ -71,6 +71,18 @@ namespace HyperRTS.Editor.Tests
             Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains("Oil")), issues.ToString());
         }
 
+        [Test]
+        public void AGroundDecalWithoutASize_IsAnErrorNamingIt()
+        {
+            var palette = new MapPalette();
+            palette.entries.Add(new MapPaletteEntry { key = "Shed", groundDecal = "Puddle" });
+            var issues = new MapIssues();
+
+            MapAssetCheck.Check(Climate(10f), palette, issues);
+
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains("groundDecalSize")), issues.ToString());
+        }
+
         /// <summary>The road fixture's climate plus a Muddy surface laying Puddle decals.</summary>
         private static MapClimate Climate(float perHectare)
         {

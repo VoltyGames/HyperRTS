@@ -31,6 +31,22 @@ namespace HyperRTS.Editor.Maps.Planning
         public List<(MapRoad Road, Vector2 Point, float Distance)> Nearest(Vector2 from) =>
             _roads.Select(r => Closest(r.Road, r.Samples, from)).OrderBy(c => c.Distance).ToList();
 
+        /// <summary>The nearest sector point of the nearest road, without sorting the rest; false with no roads.</summary>
+        public bool TryNearestOne(Vector2 from, out (MapRoad Road, Vector2 Point, float Distance) nearest)
+        {
+            nearest = (null, default, float.PositiveInfinity);
+            foreach (var (road, samples) in _roads)
+            {
+                var closest = Closest(road, samples, from);
+                if (closest.Distance < nearest.Distance)
+                {
+                    nearest = closest;
+                }
+            }
+
+            return nearest.Road != null;
+        }
+
         /// <summary>True when a straight run keeps off the water and out of ravines.</summary>
         public bool Clear(Vector2 from, Vector2 to)
         {

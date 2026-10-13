@@ -1,8 +1,7 @@
-using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Checks
+namespace HyperRTS.Editor.Maps.Geometry
 {
     /// <summary>Where a road end leads (road, map edge, base, settlement); shared by the dead-end check and track planners.</summary>
     public static class MapRoadEnds
@@ -12,19 +11,18 @@ namespace HyperRTS.Editor.Maps.Checks
 
         /// <summary>Whether the end reaches the map edge, a settlement, a base or a road other than <paramref name="road"/> (null if unlaid).</summary>
         public static bool LeadsSomewhere(MapLayout layout, MapShapes shapes, MapRoad road, Vector2 end,
-            float baseRadius)
+            float baseRadius) =>
+            LeadsOffRoad(layout, end, baseRadius) || MeetsRoad(shapes, road, end);
+
+        /// <summary>Whether the end reaches the map edge, a settlement or a base, leaving roads out.</summary>
+        public static bool LeadsOffRoad(MapLayout layout, Vector2 end, float baseRadius)
         {
             if (!layout.Bounds.Contains(end) || MapGeometry.OnEdge(end, layout.Bounds))
             {
                 return true;
             }
 
-            if (InSettlement(layout, end) || AtBase(layout, end, baseRadius))
-            {
-                return true;
-            }
-
-            return MeetsRoad(shapes, road, end);
+            return InSettlement(layout, end) || AtBase(layout, end, baseRadius);
         }
 
         /// <summary>True when the end touches a road other than <paramref name="road"/>.</summary>

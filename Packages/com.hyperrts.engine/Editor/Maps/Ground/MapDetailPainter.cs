@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 var (x, z) = (i % resolution, i / resolution);
                 var p = area.min + Vector2.Scale(new Vector2(x + 0.5f, z + 0.5f), cell);
                 var open = NearProps(clearance, p);
-                if (shapes.RoadEdgeDistance(p) < 0.3f || open <= 0f)
+                if (open <= 0f || shapes.RoadEdgeDistance(p) < 0.3f)
                 {
                     continue;
                 }

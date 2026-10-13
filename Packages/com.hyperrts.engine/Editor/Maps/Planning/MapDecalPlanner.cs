@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
-using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Placement;
 using UnityEngine;
 
@@ -23,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Planning
 
         private void LaySurfaceDecals()
         {
-            foreach (var (index, cells) in SectorCells())
+            foreach (var (index, cells) in SectorCells(surface => surface.decals.Count > 0, playableOnly: true))
             {
                 var surface = Climate.Surface(Land.Regions[index].Surface);
                 var random = Context.Random(MapRandomChannel.Decals, index);
@@ -73,52 +72,11 @@ namespace HyperRTS.Editor.Maps.Planning
                 }
 
                 var decal = Climate.Decal(entry.groundDecal);
-                var diameter = entry.groundDecalSize > 0f
-                    ? entry.groundDecalSize * placement.Scale
-                    : (decal.size.x + decal.size.y) * 0.5f;
+                var diameter = entry.groundDecalSize * placement.Scale;
                 Symmetry.ToSector(placement.Position, out var copy);
                 var mirrored = Symmetry.Copies[copy].Mirrored;
                 Context.Decals.Add(new MapDecal(decal, placement.Position, diameter, placement.Yaw, mirrored));
             }
         }
-
-        /// <summary>Playable cells of the authored sector per region whose surface lays decals; the scenery margin gets none.</summary>
-        private Dictionary<int, List<int>> SectorCells()
-        {
-            var playArea = Context.Layout.Bounds;
-            var cells = new Dictionary<int, List<int>>();
-            var wanted = new bool[Land.Regions.Count];
-            for (var i = 1; i < Land.Regions.Count; i++)
-            {
-                wanted[i] = Climate.Surface(Land.Regions[i].Surface).decals.Count > 0;
-            }
-
-            Land.ForEach((x, z, p) =>
-            {
-                var region = Land.RegionIndex(x, z);
-                var playable = playArea.Contains(p) && Symmetry.InSector(p);
-                if (!wanted[region] || !playable)
-                {
-                    return;
-                }
-
-                if (!cells.TryGetValue(region, out var list))
-                {
-                    cells[region] = list = new List<int>();
-                }
-
-                list.Add(z * Land.Width + x);
-            });
-            return cells;
-        }
-
-        private Vector2 RandomSpot(List<int> cells, System.Random random)
-        {
-            var cell = cells[random.Next(cells.Count)];
-            var jitter = new Vector2(random.Value() - 0.5f, random.Value() - 0.5f);
-            return Land.Center(cell % Land.Width, cell / Land.Width) + jitter * MapLand.CellSize;
-        }
-
-        private static float Hectares(int cells) => cells * MapLand.CellSize * MapLand.CellSize / 10000f;
     }
 }

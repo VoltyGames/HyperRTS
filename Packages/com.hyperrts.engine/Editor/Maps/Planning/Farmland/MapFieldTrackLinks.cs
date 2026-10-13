@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Checks;
+using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning.Farmland
@@ -26,37 +26,40 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         /// <summary>Snaps the run's ends onto roads within reach; false when the run should be dropped.</summary>
         public bool Link(List<Vector2> run)
         {
-            Snap(run, 0);
-            Snap(run, run.Count);
-            return Leads(run[0]) || Leads(run[^1]);
+            var startOnRoad = Snap(run, 0);
+            var endOnRoad = Snap(run, run.Count);
+            return Leads(run[0], startOnRoad) || Leads(run[^1], endOnRoad);
         }
 
-        /// <summary>Carries the end at <paramref name="insertAt"/> (0 for the start, the count for the end) onto a road.</summary>
-        private void Snap(List<Vector2> run, int insertAt)
+        /// <summary>
+        /// Carries the end at <paramref name="insertAt"/> (0 for the start, the count for the end) onto a road; true
+        /// when the end is on a road, already or now.
+        /// </summary>
+        private bool Snap(List<Vector2> run, int insertAt)
         {
             var end = insertAt == 0 ? run[0] : run[^1];
-            if (MapRoadEnds.MeetsRoad(_context.Shapes, null, end))
+            if (_context.Shapes.RoadEdgeDistance(end) <= MapRoadEnds.Touch)
             {
-                return;
+                return true;
             }
 
-            var nearest = _routes.Nearest(end);
-            if (nearest.Count == 0)
+            if (!_routes.TryNearestOne(end, out var nearest))
             {
-                return;
+                return false;
             }
 
-            var (road, point, distance) = nearest[0];
-            var gap = distance - road.Width * 0.5f;
-            if (gap > Reach || !_routes.Clear(end, point))
+            var gap = nearest.Distance - nearest.Road.Width * 0.5f;
+            if (gap > Reach || !_routes.Clear(end, nearest.Point))
             {
-                return;
+                return false;
             }
 
-            run.Insert(insertAt, point);
+            run.Insert(insertAt, nearest.Point);
+            return true;
         }
 
-        private bool Leads(Vector2 end) =>
-            MapRoadEnds.LeadsSomewhere(_context.Layout, _context.Shapes, null, end, _context.Palette.baseRadius);
+        /// <summary>Snap already tested the road, so only the edge, settlements and bases are left.</summary>
+        private bool Leads(Vector2 end, bool onRoad) =>
+            onRoad || MapRoadEnds.LeadsOffRoad(_context.Layout, end, _context.Palette.baseRadius);
     }
 }

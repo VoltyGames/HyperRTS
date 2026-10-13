@@ -159,24 +159,41 @@ Shader "HyperRTS/Water"
             // Fills only the headroom under _GlintMax, so the glint never sets off bloom.
             half3 Glint(Light sun, half3 normalWS, half3 view, half3 base, float cameraDistance)
             {
+                half fade = Fade(cameraDistance, _GlintFadeStart, _GlintFadeEnd);
+                if (fade <= 0.0)
+                {
+                    return half3(0.0, 0.0, 0.0);
+                }
+
                 half3 halfway = normalize(sun.direction + view);
                 half highlight = pow(saturate(dot(normalWS, halfway)), exp2(_Smoothness * 11.0));
                 half fresnel = 0.02 + 0.98 * pow(1.0 - saturate(dot(view, halfway)), 5.0);
-                half fade = Fade(cameraDistance, _GlintFadeStart, _GlintFadeEnd);
                 half3 glint = sun.color * (highlight * fresnel * _GlintStrength * sun.shadowAttenuation * fade);
                 half headroom = max(0.0, _GlintMax - Brightest(base));
                 return glint * min(1.0, headroom / max(Brightest(glint), 0.0001));
             }
 
             // Foam only on fast water (vertex G), stretched along the current and broken into patches so the ford
-            // doesn't read as a striped block.
+            // doesn't read as a striped block. Slow water skips the fetches; gradients taken before the branch keep
+            // them valid inside it.
             half Streaks(float2 uv, half fast)
             {
+                float2 dx = ddx(uv);
+                float2 dy = ddy(uv);
+                [branch] if (fast < 0.001)
+                {
+                    return 0.0;
+                }
+
                 float drift = _Time.y * _FlowSpeed * 2.5;
-                float2 streakUV = float2(uv.x / _StreakWidth, (uv.y - drift) / _StreakLength);
-                half3 streak = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, streakUV));
+                float2 streakScale = 1.0 / float2(_StreakWidth, _StreakLength);
+                float2 streakUV = float2(uv.x, uv.y - drift) * streakScale;
+                half3 streak = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, streakUV,
+                    dx * streakScale, dy * streakScale));
+                float2 patchScale = float2(0.37, 1.0) / (_StreakLength * 1.7);
                 float2 patchUV = float2(uv.x * 0.37 + 0.21, uv.y - drift * 0.6) / (_StreakLength * 1.7);
-                half3 patches = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, patchUV));
+                half3 patches = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, patchUV,
+                    dx * patchScale, dy * patchScale));
                 return fast * smoothstep(0.1, 0.45, streak.x) * smoothstep(-0.1, 0.35, patches.y);
             }
 

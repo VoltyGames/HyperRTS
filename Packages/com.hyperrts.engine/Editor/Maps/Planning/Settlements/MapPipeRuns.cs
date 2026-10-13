@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
@@ -33,8 +34,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         private static void Close(List<(int First, int Count)> chain, int minRun, bool[] kept,
             List<(int First, int Count)> arches)
         {
-            var total = 0;
-            chain.ForEach(run => total += run.Count);
+            var total = chain.Sum(run => run.Count);
             if (total < minRun)
             {
                 return;

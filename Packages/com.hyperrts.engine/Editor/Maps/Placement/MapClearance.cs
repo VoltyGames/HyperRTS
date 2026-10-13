@@ -62,11 +62,24 @@ namespace HyperRTS.Editor.Maps.Placement
         /// <summary>True when nothing reserved overlaps a circle.</summary>
         public bool IsFree(Vector2 point, float radius)
         {
-            foreach (var (position, taken) in Near(point, radius))
+            var min = Key(point - Vector2.one * radius);
+            var max = Key(point + Vector2.one * radius);
+            for (var z = min.y; z <= max.y; z++)
             {
-                if ((position - point).magnitude < radius + taken)
+                for (var x = min.x; x <= max.x; x++)
                 {
-                    return false;
+                    if (!_cells.TryGetValue(new Vector2Int(x, z), out var list))
+                    {
+                        continue;
+                    }
+
+                    foreach (var (position, taken) in list)
+                    {
+                        if ((position - point).magnitude < radius + taken)
+                        {
+                            return false;
+                        }
+                    }
                 }
             }
 
@@ -76,10 +89,24 @@ namespace HyperRTS.Editor.Maps.Placement
         /// <summary>Distance to the nearest reserved circle's edge, or infinity beyond <paramref name="reach"/>.</summary>
         public float ReservedEdgeDistance(Vector2 point, float reach)
         {
+            // Inline cell loop: this runs per detail cell, so an iterator would allocate millions of enumerators.
             var best = float.PositiveInfinity;
-            foreach (var (position, taken) in Near(point, reach))
+            var min = Key(point - Vector2.one * reach);
+            var max = Key(point + Vector2.one * reach);
+            for (var z = min.y; z <= max.y; z++)
             {
-                best = Mathf.Min(best, (position - point).magnitude - taken);
+                for (var x = min.x; x <= max.x; x++)
+                {
+                    if (!_cells.TryGetValue(new Vector2Int(x, z), out var list))
+                    {
+                        continue;
+                    }
+
+                    foreach (var (position, taken) in list)
+                    {
+                        best = Mathf.Min(best, (position - point).magnitude - taken);
+                    }
+                }
             }
 
             return best <= reach ? best : float.PositiveInfinity;
@@ -101,28 +128,6 @@ namespace HyperRTS.Editor.Maps.Placement
                     }
 
                     list.Add((point, radius));
-                }
-            }
-        }
-
-        /// <summary>Reserved circles in the hash cells round a point; one spanning cells comes once per cell.</summary>
-        private IEnumerable<(Vector2 Position, float Radius)> Near(Vector2 point, float reach)
-        {
-            var min = Key(point - Vector2.one * reach);
-            var max = Key(point + Vector2.one * reach);
-            for (var z = min.y; z <= max.y; z++)
-            {
-                for (var x = min.x; x <= max.x; x++)
-                {
-                    if (!_cells.TryGetValue(new Vector2Int(x, z), out var list))
-                    {
-                        continue;
-                    }
-
-                    foreach (var circle in list)
-                    {
-                        yield return circle;
-                    }
                 }
             }
         }

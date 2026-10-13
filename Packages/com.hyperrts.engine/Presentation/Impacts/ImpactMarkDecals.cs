@@ -13,9 +13,9 @@ namespace HyperRTS.Presentation.Impacts
         /// <summary>Smallest fade change pushed to a projector; each push re-uploads the decal's data.</summary>
         private const float FadeStep = 1f / 64f;
 
-        /// <summary>Faces steeper than these angles to the projection (the sides of units and walls) fade out.</summary>
-        private const float StartAngleFade = 50f;
-        private const float EndAngleFade = 75f;
+        /// <summary>Faces steeper than these angles to the projection (unit sides, walls) fade out; map decals share them.</summary>
+        public const float StartAngleFade = 50f;
+        public const float EndAngleFade = 75f;
 
         private readonly ImpactMark _mark;
         private readonly Transform _root;

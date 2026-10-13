@@ -260,7 +260,7 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 | `belt` | `MapBeltKit` | Rows of trees with shrubs in the gaps | tree and surface keys |
 | `woodland` | `MapWoodlandKit` | Canopy, shrubby edge, clearings, floor | tree and surface keys |
 | `settlement` | `MapSettlementKit` | Plot layout along a street | prop, surface and tree keys |
-| `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `alignToRoad` (scatters put it on the nearest road's verge, facing along it), `alignToGround` (max tilt with the slope, 0 upright), `buriedDepth` (metres below the ground), the pad surface and access road it gets, a `groundDecal` (and `groundDecalSize`) under it | `prefab`; surface, road and decal keys |
+| `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `alignToRoad` (scatters put it on the nearest road's verge, facing along it), `alignToGround` (max tilt with the slope, 0 upright), `buriedDepth` (metres below the ground), the pad surface and access road it gets, a `groundDecal` (with its required `groundDecalSize`) under it | `prefab`; surface, road and decal keys |
 | `climate` | `MapClimate` | Ground, slope, shore, floodplain and ravine surfaces, reeds, fog and draw distances | `surfaces`, `roadClasses`, `farmlandKits`, `beltKits`, `woodlandKits`, `water`, `atmosphere`, `skybox`; surface and plant keys |
 | `palette` | `MapPalette` | Start kit, base radius (exactly one per project) | `rig`, `startingResources`; prop keys |
 | `rules` | `MapRules` | Rush thresholds, attack paths and renewable fields per player per mode, `maxDecals`, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |

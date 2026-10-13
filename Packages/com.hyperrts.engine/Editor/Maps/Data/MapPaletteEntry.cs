@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Maps.Data
         [MapKey(typeof(MapClimateDecal))]
         public string groundDecal;
 
-        [Tooltip("Diameter of the ground decal (metres), scaled with the prop; 0 uses the middle of the decal's size range.")]
+        [Tooltip("Diameter of the ground decal (metres), scaled with the prop; required above 0 when groundDecal is set.")]
         public float groundDecalSize;
 
         public float Radius => Mathf.Max(size.x, size.y) * 0.5f;

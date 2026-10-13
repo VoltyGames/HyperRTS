@@ -153,7 +153,12 @@ namespace HyperRTS.Editor.Maps.Checks
             var name = $"palette entry '{entry.key}'";
             Optional(entry.pad, key => Surface(key, $"{name} pad"));
             Optional(entry.access, key => InClimate(Climate.roadClasses, key, "road class", $"{name} access"));
-            Optional(entry.groundDecal, key => Decal(key, $"{name} ground decal"));
+            Optional(entry.groundDecal, key =>
+            {
+                Decal(key, $"{name} ground decal");
+                Require(entry.groundDecalSize > 0f,
+                    $"{name}: groundDecalSize {entry.groundDecalSize} must be above 0 for groundDecal '{key}'.");
+            });
         }
 
         private void SettlementKit(MapSettlementKit kit)
@@ -190,9 +195,14 @@ namespace HyperRTS.Editor.Maps.Checks
         private void StreetPipe(MapSettlementKit kit, string pipe, string name)
         {
             Entry(pipe, name);
-            Require(!string.IsNullOrEmpty(kit.streetPipeArch),
+            var hasArch = !string.IsNullOrEmpty(kit.streetPipeArch);
+            Require(hasArch,
                 $"{name}: streetPipe '{pipe}' needs streetPipeArch, the arch that carries it over driveways and roads.");
-            Optional(kit.streetPipeArch, key => Entry(key, name));
+            if (hasArch)
+            {
+                Entry(kit.streetPipeArch, name);
+            }
+
             Require(kit.streetPipeMinRun >= 1, $"{name}: streetPipeMinRun {kit.streetPipeMinRun} must be at least 1 section.");
         }
     }

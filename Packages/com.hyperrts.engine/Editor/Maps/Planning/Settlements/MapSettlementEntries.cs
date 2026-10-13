@@ -16,7 +16,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             SideFence = Optional(palette, kit.sideFence);
             Gate = Optional(palette, kit.gate);
             Pipe = Optional(palette, kit.streetPipe);
-            PipeArch = Optional(palette, kit.streetPipeArch);
+            PipeArch = Pipe == null ? null : palette.Entry(kit.streetPipeArch);
             Pole = Optional(palette, kit.streetPole);
             OrchardTree = string.IsNullOrEmpty(kit.orchardTree) ? -1 : climate.TreeIndex(kit.orchardTree);
             OutbuildingDepth = DeepestOutbuilding(kit, Outbuildings);
@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
 
         public MapPaletteEntry Pipe { get; }
 
-        /// <summary>The arch carrying the pipe over a gap; the asset check requires it whenever there is a pipe.</summary>
+        /// <summary>The arch carrying the pipe over a gap; required (and resolved) whenever there is a pipe.</summary>
         public MapPaletteEntry PipeArch { get; }
 
         public MapPaletteEntry Pole { get; }
