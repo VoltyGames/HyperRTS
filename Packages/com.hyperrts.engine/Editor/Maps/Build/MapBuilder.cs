@@ -38,6 +38,7 @@ namespace HyperRTS.Editor.Maps.Build
             MapEnvironmentWriter.Write(scene, generation, data, ground);
             MapRoadMeshWriter.Write(scene, generation);
             MapPlacementWriter.Write(scene, generation);
+            MapDecalWriter.Write(scene, generation);
             scene.SaveMain();
             MapLightingBaker.Bake(project.Paths);
             var minimap = MapMinimapCapture.Capture(generation.Layout, project.Paths.Minimap);

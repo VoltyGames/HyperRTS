@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
-    /// <summary>A named ground type: the layer it paints, and the trees, plants and props that grow or lie on it.</summary>
+    /// <summary>A named ground type: the layer it paints, and the trees, plants, props and decals that grow or lie on it.</summary>
     [Serializable]
     [MapLibraryItem("surface")]
     public sealed class MapClimateSurface : IMapKeyed, IMapLibraryItem
@@ -26,6 +26,9 @@ namespace HyperRTS.Editor.Maps.Data
         public List<MapDetailCoverage> details = new();
 
         public List<MapPropDensity> props = new();
+
+        [Tooltip("Ground decals laid on this surface at build time, per hectare.")]
+        public List<MapDecalDensity> decals = new();
 
         string IMapKeyed.Key => key;
 

@@ -7,9 +7,9 @@ namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
     /// Builds a climate from its library file: the surfaces, road classes and kits it lists, then the terrain layers,
-    /// trees and plants those use, each added the first time it is named. The walk goes surfaces, belt kits, woodland
-    /// kits, the reeds, then settlement orchards, so the order (and every layer, tree and plant index) only changes
-    /// when the data does.
+    /// trees, plants and decals those use, each added the first time it is named. The walk goes surfaces, belt kits,
+    /// woodland kits, the reeds, settlement orchards, then props' ground decals, so the order (and every layer, tree
+    /// and plant index) only changes when the data does.
     /// </summary>
     internal sealed class MapClimateAssembly
     {
@@ -33,6 +33,7 @@ namespace HyperRTS.Editor.Maps.Library
             climate.layers = new List<MapClimateLayer>();
             climate.trees = new List<MapClimateTree>();
             climate.details = new List<MapClimateDetail>();
+            climate.decals = new List<MapClimateDecal>();
             new MapClimateAssembly(library, climate).Collect(refs.file);
             if (climate.layers.Count > MapTerrainTextures.MaxLayers)
             {
@@ -58,6 +59,12 @@ namespace HyperRTS.Editor.Maps.Library
                 var kit = _library.Get<MapSettlementKit>(key, null);
                 Tree(kit.orchardTree, File<MapSettlementKit>(key));
             }
+
+            foreach (var key in _library.Keys<MapPaletteEntry>())
+            {
+                var entry = _library.Get<MapPaletteEntry>(key, null);
+                Add(_climate.decals, entry.groundDecal, File<MapPaletteEntry>(key));
+            }
         }
 
         private void Surface(MapClimateSurface surface)
@@ -66,6 +73,7 @@ namespace HyperRTS.Editor.Maps.Library
             Add(_climate.layers, surface.layer, file);
             surface.trees.ForEach(tree => Tree(tree.tree, file));
             surface.details.ForEach(detail => Detail(detail.detail, file));
+            surface.decals.ForEach(decal => Add(_climate.decals, decal.decal, file));
         }
 
         private void BeltKit(MapBeltKit kit)

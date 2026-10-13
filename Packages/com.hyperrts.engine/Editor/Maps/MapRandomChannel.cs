@@ -18,5 +18,6 @@ namespace HyperRTS.Editor.Maps
         SurfaceGrowth = 31,
         Settlements = 32,
         Plots = 33,
+        Decals = 34,
     }
 }

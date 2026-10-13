@@ -36,6 +36,7 @@ namespace HyperRTS.Editor.Maps.Designer
             section.Add(Figure("Fields", land.fields.ToString(CultureInfo.InvariantCulture)));
             section.Add(Figure("Trees", land.trees.ToString(CultureInfo.InvariantCulture)));
             section.Add(Figure("Placements", land.placements.ToString(CultureInfo.InvariantCulture)));
+            section.Add(Figure("Decals", land.decals.ToString(CultureInfo.InvariantCulture)));
             section.Add(Figure("Entities", land.entities.ToString(CultureInfo.InvariantCulture)));
             return section;
         }

@@ -44,6 +44,10 @@ namespace HyperRTS.Editor.Maps.Generation
         public float RowAngle { get; private set; }
 
         public List<MapTree> Trees { get; private set; }
+
+        /// <summary>Ground decals laid on surfaces and under props, copies included.</summary>
+        public List<MapDecal> Decals { get; private set; }
+
         public float[,,] Splat { get; private set; }
         public List<int[,]> Details { get; private set; }
 
@@ -106,6 +110,12 @@ namespace HyperRTS.Editor.Maps.Generation
             Land = context.Land;
             RowAngle = context.RowAngle;
             Trees = context.Trees.Planted;
+            Decals = context.Decals;
+            var maxDecals = Project.Rules.maxDecals;
+            if (Decals.Count > maxDecals)
+            {
+                _issues.Warn($"{Decals.Count} ground decals are more than the rules' maxDecals {maxDecals}; lower surface decal densities.");
+            }
         }
 
         private void Paint()

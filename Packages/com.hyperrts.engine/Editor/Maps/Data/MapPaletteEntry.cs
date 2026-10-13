@@ -50,6 +50,13 @@ namespace HyperRTS.Editor.Maps.Data
         [MapKey(typeof(MapRoadClass))]
         public string access;
 
+        [Tooltip("Decal laid on the ground under the prop, turned with it (oil under a derrick, mud at a gate); empty for none.")]
+        [MapKey(typeof(MapClimateDecal))]
+        public string groundDecal;
+
+        [Tooltip("Diameter of the ground decal (metres), scaled with the prop; 0 uses the middle of the decal's size range.")]
+        public float groundDecalSize;
+
         public float Radius => Mathf.Max(size.x, size.y) * 0.5f;
 
         /// <summary>Prefabs with HyperRTS authoring bake into the SubScene; the rest are scenery in the main scene.</summary>

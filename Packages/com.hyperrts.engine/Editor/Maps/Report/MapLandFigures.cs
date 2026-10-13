@@ -17,6 +17,9 @@ namespace HyperRTS.Editor.Maps.Report
         public int trees;
         public int placements;
 
+        /// <summary>Ground decals (the rules cap them at maxDecals).</summary>
+        public int decals;
+
         /// <summary>Placements that become entities (gameplay objects and destructible scenery): the simulation's load.</summary>
         public int entities;
 
@@ -45,6 +48,7 @@ namespace HyperRTS.Editor.Maps.Report
                 fields = fields.Count,
                 trees = generation.Trees.Count,
                 placements = placements.Count,
+                decals = generation.Decals.Count,
                 entities = placements.Count(p => p.IsEntity),
             };
         }

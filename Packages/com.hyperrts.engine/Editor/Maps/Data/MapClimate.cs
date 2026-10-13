@@ -8,8 +8,8 @@ namespace HyperRTS.Editor.Maps.Data
     /// <summary>
     /// A landscape kit named by a spec's <c>climate</c>: terrain layers, the surfaces land is painted with, trees,
     /// plants, how roads, farmland, belts and woods look, water and the sky. Read from the map library's
-    /// <c>&lt;Key&gt;.climate.json</c>, which lists its surfaces, road classes and kits by key; the layers, trees and
-    /// plants are the ones those use (see <see cref="MapLibrary.Climate"/>).
+    /// <c>&lt;Key&gt;.climate.json</c>, which lists its surfaces, road classes and kits by key; the layers, trees,
+    /// plants and decals are the ones those (and the props) use (see <see cref="MapLibrary.Climate"/>).
     /// </summary>
     [Serializable]
     [MapLibraryItem("climate", "surfaces", "roadClasses", "farmlandKits", "beltKits", "woodlandKits", "water", "atmosphere", "skybox")]
@@ -36,6 +36,10 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Grass and small plants; surfaces say where they grow.")]
         [NonSerialized]
         public List<MapClimateDetail> details = new();
+
+        [Tooltip("Ground decals; surfaces and props say where they lie.")]
+        [NonSerialized]
+        public List<MapClimateDecal> decals = new();
 
         [Header("Land")]
         [NonSerialized]
@@ -135,6 +139,8 @@ namespace HyperRTS.Editor.Maps.Data
         public int SurfaceLayer(string surface) => LayerIndex(Surface(surface).layer);
 
         public int LayerIndex(string key) => MapKeys.IndexOf(layers, key, name, "layer");
+
+        public MapClimateDecal Decal(string key) => MapKeys.Get(decals, key, name, "decal");
 
         public int TreeIndex(string key) => MapKeys.IndexOf(trees, key, name, "tree");
 

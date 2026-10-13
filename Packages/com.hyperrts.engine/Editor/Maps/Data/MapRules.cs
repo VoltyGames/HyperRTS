@@ -32,6 +32,10 @@ namespace HyperRTS.Editor.Maps.Data
         [Range(0f, 1f)]
         public float minBuildableShare = 0.8f;
 
+        [Tooltip("Most ground decals a map may lay before the report warns; each is a draw the GPU pays for.")]
+        [Min(0)]
+        public int maxDecals = 600;
+
         [Tooltip("Thresholds per mode.")]
         public List<MapModeRules> modes = new();
 

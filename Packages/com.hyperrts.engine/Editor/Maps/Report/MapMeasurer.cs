@@ -47,6 +47,7 @@ namespace HyperRTS.Editor.Maps.Report
             var measurer = new MapMeasurer(generation.Layout, nav, project.Palette, project.Rules, issues);
             measurer.Metrics.trees = generation.Trees.Count;
             measurer.Metrics.placements = placements.All.Count;
+            measurer.Metrics.decals = generation.Decals.Count;
             if (measurer.FindSpawnCells())
             {
                 measurer.MeasureRushes();

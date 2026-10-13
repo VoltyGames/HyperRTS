@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Maps.Checks
 {
     /// <summary>
     /// Checks the climate and palette before a build: every asset a pass needs is assigned, and every surface, tree,
-    /// plant, road class, kit and palette key their kits name exists.
+    /// plant, decal, road class, kit and palette key their kits name exists.
     /// </summary>
     public sealed class MapAssetCheck : MapKeyCheck
     {
@@ -50,9 +50,21 @@ namespace HyperRTS.Editor.Maps.Checks
                 Require(detail.mesh != null || detail.texture != null, $"{name}: detail '{detail.key}' has neither mesh nor texture.");
             }
 
+            Climate.decals.ForEach(decal => DecalAssets(decal, name));
             Require(Climate.water != null, $"{name} has no water material.");
             Require(Climate.atmosphere != null, $"{name} has no atmosphere prefab.");
         }
+
+        private void DecalAssets(MapClimateDecal decal, string name)
+        {
+            var what = $"{name}: decal '{decal.key}'";
+            Require(decal.material != null, $"{what} has no material.");
+            var sized = decal.size.x > 0f && decal.size.y >= decal.size.x;
+            Require(sized, $"{what}: size {decal.size} must be above 0 with y at least x.");
+            Require(decal.depth > 0f, $"{what}: depth {decal.depth} must be above 0.");
+        }
+
+        private void Decal(string key, string source) => InClimate(Climate.decals, key, "decal", source);
 
         private void PaletteAssets()
         {
@@ -94,6 +106,7 @@ namespace HyperRTS.Editor.Maps.Checks
             surface.trees.ForEach(tree => Tree(tree.tree, name));
             surface.details.ForEach(detail => InClimate(Climate.details, detail.detail, "detail", name));
             surface.props.ForEach(prop => Entry(prop.kind, name));
+            surface.decals.ForEach(decal => Decal(decal.decal, name));
         }
 
         private void RoadClass(MapRoadClass road)
@@ -140,6 +153,7 @@ namespace HyperRTS.Editor.Maps.Checks
             var name = $"palette entry '{entry.key}'";
             Optional(entry.pad, key => Surface(key, $"{name} pad"));
             Optional(entry.access, key => InClimate(Climate.roadClasses, key, "road class", $"{name} access"));
+            Optional(entry.groundDecal, key => Decal(key, $"{name} ground decal"));
         }
 
         private void SettlementKit(MapSettlementKit kit)

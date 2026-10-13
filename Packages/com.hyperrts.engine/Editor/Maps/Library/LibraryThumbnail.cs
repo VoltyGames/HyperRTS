@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
     /// The asset a library item is pictured by in lists: a layer's diffuse texture, a plant's texture or mesh, a
-    /// tree's or prop's prefab, a road's or material item's material. Kits, climates, palettes and rules have none.
+    /// tree's or prop's prefab, a road's, material item's or decal's material. Kits, climates, palettes and rules have none.
     /// </summary>
     public static class LibraryThumbnail
     {
@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Library
                 return Load<GameObject>(refs.prefab);
             }
 
-            var hasMaterial = type == typeof(MapRoadClass) || type == typeof(MapMaterial);
+            var hasMaterial = type == typeof(MapRoadClass) || type == typeof(MapMaterial) || type == typeof(MapClimateDecal);
             return hasMaterial ? Load<Material>(refs.material) : null;
         }
 

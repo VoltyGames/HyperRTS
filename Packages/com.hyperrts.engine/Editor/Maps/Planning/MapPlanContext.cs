@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
@@ -9,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
     /// What every land pass works with: the layout and shaped ground, the land-use grid it claims, the placements it
-    /// adds props to and the trees it plants.
+    /// adds props to, the trees it plants and the decals it lays.
     /// </summary>
     public sealed class MapPlanContext
     {
@@ -34,6 +35,9 @@ namespace HyperRTS.Editor.Maps.Planning
         public MapIssues Issues { get; }
         public MapLand Land { get; }
         public MapTreePlanting Trees { get; }
+
+        /// <summary>Every ground decal laid so far, in map space (copies included).</summary>
+        public List<MapDecal> Decals { get; } = new();
 
         /// <summary>Direction of the crop rows the terrain shader turns row layers to (degrees clockwise from north).</summary>
         public float RowAngle { get; set; }

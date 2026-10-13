@@ -6,7 +6,8 @@ namespace HyperRTS.Editor.Maps.Planning
     /// <summary>
     /// Lays out the land in priority order, each pass claiming only what earlier ones left: water, roads, banks, bases
     /// and pads, access tracks, ravines, settlements (and spec tree rows), spec areas, woods, belts, farmland, then
-    /// meadow everywhere else. Finally the surfaces grow their own trees and props.
+    /// meadow everywhere else. Finally the surfaces grow their own trees and props, then decals are laid on surfaces
+    /// and under props.
     /// </summary>
     public static class MapLandPlanner
     {
@@ -28,6 +29,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 new MapFarmlandPlanner(context),
                 new MapMeadowPlanner(context),
                 new MapSurfacePlanter(context),
+                new MapDecalPlanner(context),
             };
             foreach (var pass in passes)
             {

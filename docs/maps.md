@@ -166,6 +166,8 @@ each taking only what earlier ones left:
 3. ravines, settlements and spec tree rows, spec areas
 4. woods, belts, farmland
 5. meadow on everything left, then `MapSurfacePlanter`: each surface's own lone trees and props
+6. `MapDecalPlanner`: each surface's ground decals per hectare of the playable area (kept off props), then one under
+   every placement whose prop names a `groundDecal`, turned with it. They go in `MapGeneration.Decals`
 
 Passes choose at authored-sector points (`Symmetry.InSector`), place in every copy (`MapTreePlanting.Plant`,
 `MapPlacements.AddEverywhere`) and claim land for every copy; raster decisions key on the sector point (`ToSector`).
@@ -200,6 +202,10 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
   climate's texture arrays, the macro map, and per-layer rotation to the crop rows.
 - **Ground colour** (`MapGroundColor`): a top-down picture of the layers' mean albedo by splat weight, tinted by the
   macro map. Foliage blends into it at its roots.
+- **Ground decals** (`MapDecalWriter`, after `MapPlacementWriter`): a URP `DecalProjector` per decal under the main
+  scene's `Decals` root, centred on the finished ground and projecting along its normal, faces steeper than 50–75°
+  fading out (as the battle marks do). Decals laid by a mirroring copy flip their UVs. The rules' `maxDecals` caps
+  the count: above it the preview and build warn; the land figures and metrics report it.
 - **Road ribbons** (`MapRoadMesh`, `MapRoadMeshWriter`): a mesh lifted a few centimetres over the ground, UV Y in
   metres along the road. Vertex alpha fades free ends and the lower-ranked end of a junction (`MapRoadFades`); rows
   over water or under a bridge are left out. Drawn by `HyperRTS/Road`.
@@ -207,7 +213,7 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 ### Checks and measures
 
 - `MapAssetCheck` (climate and palette) and `MapSpecCheck` (size, terrain, amounts and every kind the spec names)
-  run before anything is refined: every layer, tree, plant, surface, road class, kit and palette key resolves, and
+  run before anything is refined: every layer, tree, plant, decal, surface, road class, kit and palette key resolves, and
   generated prefabs have display names. A bad key is an error that names it and the feature (`MapKeyCheck`). After
   them, lookups throw (`MapKeys`): a key the checks missed fails loudly instead of being skipped.
 - Road checks warn about dead ends and bends tighter than half the class's curve radius.
@@ -247,16 +253,17 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 | `layer` | `MapClimateLayer` | A terrain texture layer, how the shader lays it, its map colour, the grass on it | `terrainLayer` |
 | `plant` | `MapClimateDetail` | A terrain detail: instanced mesh prefab or billboard grass texture | `mesh`, `texture` |
 | `tree` | `MapClimateTree` | A terrain tree, optionally an entity version for the playable area | `prefab`, `destructible` |
+| `decal` | `MapClimateDecal` | A ground decal: size range (metres), `randomRotation`, `depth` | `material` |
 | `road` | `MapRoadClass` | Width, surface, verge, rank, levelling and curve radius of a road class | `material`; surface keys |
-| `surface` | `MapClimateSurface` | A ground type: its layer and the trees, plants and props on it (a tree with `maxEdgeDistance` grows only that close to the surface's edge, per hectare of that band) | layer, tree, plant, prop keys |
+| `surface` | `MapClimateSurface` | A ground type: its layer, the trees, plants and props on it and its `decals` per hectare (a tree with `maxEdgeDistance` grows only that close to the surface's edge, per hectare of that band) | layer, tree, plant, prop, decal keys |
 | `farmland` | `MapFarmlandKit` | Field sizes, crop mix, margins, belts and tracks | surface, belt and road keys |
 | `belt` | `MapBeltKit` | Rows of trees with shrubs in the gaps | tree and surface keys |
 | `woodland` | `MapWoodlandKit` | Canopy, shrubby edge, clearings, floor | tree and surface keys |
 | `settlement` | `MapSettlementKit` | Plot layout along a street | prop, surface and tree keys |
-| `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `alignToRoad` (scatters put it on the nearest road's verge, facing along it), `alignToGround` (max tilt with the slope, 0 upright), `buriedDepth` (metres below the ground), the pad surface and access road it gets | `prefab`; surface and road keys |
+| `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `alignToRoad` (scatters put it on the nearest road's verge, facing along it), `alignToGround` (max tilt with the slope, 0 upright), `buriedDepth` (metres below the ground), the pad surface and access road it gets, a `groundDecal` (and `groundDecalSize`) under it | `prefab`; surface, road and decal keys |
 | `climate` | `MapClimate` | Ground, slope, shore, floodplain and ravine surfaces, reeds, fog and draw distances | `surfaces`, `roadClasses`, `farmlandKits`, `beltKits`, `woodlandKits`, `water`, `atmosphere`, `skybox`; surface and plant keys |
 | `palette` | `MapPalette` | Start kit, base radius (exactly one per project) | `rig`, `startingResources`; prop keys |
-| `rules` | `MapRules` | Rush thresholds, attack paths and renewable fields per player per mode, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |
+| `rules` | `MapRules` | Rush thresholds, attack paths and renewable fields per player per mode, `maxDecals`, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |
 
 "Names" lists the asset paths and key lists a file holds beside the item's own fields (the ref fields its
 `[MapLibraryItem]` attribute lists, written first in the file), then the kinds of key the item's own fields name.
@@ -264,8 +271,8 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 What a build gets:
 
 - **Climate** (`MapLibrary.Climate`, `MapClimateAssembly`): the surfaces, road classes and kits its file lists, then
-  the terrain layers (at most 16), trees and plants those use, each added the first time it is named. The walk
-  order is fixed (surfaces, belt kits, woodland kits, reeds, settlement orchards), so layer, tree and plant indices
+  the terrain layers (at most 16), trees, plants and decals those use, each added the first time it is named. The walk
+  order is fixed (surfaces, belt kits, woodland kits, reeds, settlement orchards, every prop's ground decal), so layer, tree and plant indices
   change only when the data does.
 - **Palette** (`MapLibrary.Palette`): the palette file plus every `prop` and every `settlement` in the library.
 - **Rules** (`MapLibrary.Rules`): the one rules file.
@@ -285,7 +292,7 @@ an asset path carry `[MapAsset(typeof(...))]`, drawn as an object field that wri
 | --- | --- |
 | Toolbar | **New**, **Duplicate**, **Rename** (move or rename the file; first lists what names the old key, which must change by hand), **Reveal in Project**, **Reload** |
 | Types | Every type with its item count |
-| Items | Search field; each item with its thumbnail (a layer's texture and map colour, a plant's texture or mesh, a tree's or prop's prefab, a road's or material item's material) |
+| Items | Search field; each item with its thumbnail (a layer's texture and map colour, a plant's texture or mesh, a tree's or prop's prefab, a road's, material item's or decal's material) |
 | Form | The item loaded into a hidden `MapLibraryItemWrapper`, so property fields, drawers and Undo work; Save, Revert and an unsaved marker |
 | Used by | Items and specs whose `[MapKey]` fields name the open item (`MapLibraryUsages`); click an item to open it, a spec to select its file |
 | Problems | Files that don't index or parse, keys that don't resolve, asset paths that don't load (`MapLibraryProblems`); the count is the page's badge |
