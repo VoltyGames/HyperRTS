@@ -24,7 +24,9 @@ namespace HyperRTS.Editor.Maps.Library
         [MapAsset(typeof(GameObject))]
         public string prefab;
         [MapAsset(typeof(GameObject))]
-        public string destructible;
+        public List<string> prefabs = new();
+        [MapAsset(typeof(GameObject))]
+        public List<string> destructibles = new();
         [MapAsset(typeof(Material))]
         public string material;
         [MapAsset(typeof(Material))]
@@ -78,6 +80,24 @@ namespace HyperRTS.Editor.Maps.Library
                 ? asset
                 : throw new InvalidOperationException(
                     $"HyperRTS: map library file '{file}': {field} '{path}' is not a {typeof(T).Name} asset.");
+        }
+
+        /// <summary>The assets a path list names, in order; an empty or wrong-typed path throws naming its index.</summary>
+        public List<T> Assets<T>(List<string> paths, string field) where T : Object
+        {
+            var assets = new List<T>();
+            for (var i = 0; i < paths.Count; i++)
+            {
+                var name = $"{field}[{i}]";
+                if (string.IsNullOrEmpty(paths[i]))
+                {
+                    throw new InvalidOperationException($"HyperRTS: map library file '{file}': {name} is empty.");
+                }
+
+                assets.Add(Asset<T>(paths[i], name));
+            }
+
+            return assets;
         }
     }
 }

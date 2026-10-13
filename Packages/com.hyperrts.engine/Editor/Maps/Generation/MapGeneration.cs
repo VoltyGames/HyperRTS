@@ -153,21 +153,22 @@ namespace HyperRTS.Editor.Maps.Generation
 
         private void SplitTrees(MapClimate climate)
         {
-            var entries = new Dictionary<int, MapPaletteEntry>();
+            var entries = new Dictionary<(int, int), MapPaletteEntry>();
             foreach (var tree in Trees)
             {
-                var species = climate.trees[tree.Prototype];
-                if (species.destructible == null || !Layout.Bounds.Contains(tree.Position))
+                var species = climate.trees[tree.Species];
+                if (!species.HasEntities || !Layout.Bounds.Contains(tree.Position))
                 {
                     TerrainTrees.Add(tree);
                     continue;
                 }
 
-                if (!entries.TryGetValue(tree.Prototype, out var entry))
+                var variant = species.Variant(tree.Seed);
+                if (!entries.TryGetValue((tree.Species, variant), out var entry))
                 {
-                    entries[tree.Prototype] = entry = new MapPaletteEntry
+                    entries[(tree.Species, variant)] = entry = new MapPaletteEntry
                     {
-                        key = species.key, prefab = species.destructible, size = Vector2.one * TreeFootprint,
+                        key = species.key, prefab = species.destructibles[variant], size = Vector2.one * TreeFootprint,
                     };
                 }
 

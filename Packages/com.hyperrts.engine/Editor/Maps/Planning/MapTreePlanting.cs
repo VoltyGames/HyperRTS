@@ -37,11 +37,12 @@ namespace HyperRTS.Editor.Maps.Planning
 
         public void PlantCopies(int tree, Vector2 sectorPoint, float scale, float yaw)
         {
+            var seed = MapTree.SeedAt(sectorPoint);
             foreach (var copy in _symmetry.Copies)
             {
                 var placed = copy.Apply(sectorPoint);
                 _spacing.Add(placed);
-                Planted.Add(new MapTree(tree, placed, scale, copy.ApplyYaw(yaw)));
+                Planted.Add(new MapTree(tree, placed, scale, copy.ApplyYaw(yaw), seed));
             }
         }
 

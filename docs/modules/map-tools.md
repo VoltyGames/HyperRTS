@@ -57,6 +57,12 @@ decals. Settlements find plots along their streets (`MapPlotFinder`), fill them 
 fences, garden, orchard) and line the streets (`MapStreetFurniture`). Farmland splits leftover land into fields on
 a grid (`MapFieldGrid`), gives each a crop and links field tracks into the road net (`MapFieldTrackLinks`).
 
+Trees come in model variants: a `*.tree.json` lists `prefabs` (one terrain tree per variant) and optionally
+`destructibles` (the entity version of each, same order). Every planted `MapTree` carries a seed hashed from its
+authored-sector point, so all symmetry copies of a tree pick the same variant (`MapClimateTree.Variant`) on every
+run. Inside the playable area trees with entity versions become placements; the rest are terrain trees, one
+terrain prototype per (species, variant).
+
 ## Run and build
 
 | Folder | Holds |

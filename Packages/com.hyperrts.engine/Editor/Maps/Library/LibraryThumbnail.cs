@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -40,12 +41,21 @@ namespace HyperRTS.Editor.Maps.Library
         private static string RefPath(MapLibraryRefs refs, string name, Type type)
         {
             var field = typeof(MapLibraryRefs).GetField(name);
-            if (field == null || field.FieldType != typeof(string))
+            var isPath = field?.FieldType == typeof(string);
+            var isPathList = field?.FieldType == typeof(List<string>);
+            if (!isPath && !isPathList)
             {
                 throw new ArgumentException($"HyperRTS: {type.Name} previews by '{name}', which is no asset path ref.");
             }
 
-            return (string)field.GetValue(refs);
+            if (isPath)
+            {
+                return (string)field.GetValue(refs);
+            }
+
+            // A list of variants previews by its first.
+            var paths = (List<string>)field.GetValue(refs);
+            return paths.Count > 0 ? paths[0] : null;
         }
 
         /// <summary>A terrain layer previews as a sphere; its diffuse texture shows the ground better.</summary>

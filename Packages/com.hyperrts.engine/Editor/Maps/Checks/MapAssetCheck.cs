@@ -43,7 +43,7 @@ namespace HyperRTS.Editor.Maps.Checks
 
             foreach (var tree in Climate.trees)
             {
-                Require(tree.prefab != null, $"{name}: tree '{tree.key}' has no prefab.");
+                Require(tree.prefabs.Count > 0, $"{name}: tree '{tree.key}' has no prefabs.");
             }
 
             foreach (var detail in Climate.details)

@@ -31,8 +31,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             data.alphamapResolution = splat.GetLength(0);
             data.SetAlphamaps(0, 0, splat);
             WriteDetails(data, generation.Details, climate);
-            data.treePrototypes = climate.trees.Select(t => new TreePrototype { prefab = t.prefab }).ToArray();
-            data.SetTreeInstances(trees.Select(t => Instance(t, layout)).ToArray(), true);
+            WriteTrees(data, trees, climate, layout);
             data.wavingGrassAmount = 0.25f;
             data.wavingGrassSpeed = 0.4f;
             data.wavingGrassStrength = 0.35f;
@@ -89,12 +88,29 @@ namespace HyperRTS.Editor.Maps.Scenes
             };
         }
 
-        private static TreeInstance Instance(MapTree tree, MapLayout layout)
+        /// <summary>One terrain prototype per (species, variant), each species' variants in a run from its first.</summary>
+        private static void WriteTrees(TerrainData data, List<MapTree> trees, MapClimate climate, MapLayout layout)
+        {
+            var first = new int[climate.trees.Count];
+            var prototypes = new List<TreePrototype>();
+            for (var i = 0; i < climate.trees.Count; i++)
+            {
+                first[i] = prototypes.Count;
+                prototypes.AddRange(climate.trees[i].prefabs.Select(prefab => new TreePrototype { prefab = prefab }));
+            }
+
+            data.treePrototypes = prototypes.ToArray();
+            var instances = trees.Select(tree =>
+                Instance(tree, first[tree.Species] + climate.trees[tree.Species].Variant(tree.Seed), layout));
+            data.SetTreeInstances(instances.ToArray(), true);
+        }
+
+        private static TreeInstance Instance(MapTree tree, int prototype, MapLayout layout)
         {
             var local = (tree.Position - layout.TerrainBounds.min) / layout.TerrainBounds.size;
             return new TreeInstance
             {
-                prototypeIndex = tree.Prototype,
+                prototypeIndex = prototype,
                 position = new Vector3(local.x, 0f, local.y),
                 widthScale = tree.Scale,
                 heightScale = tree.Scale,
