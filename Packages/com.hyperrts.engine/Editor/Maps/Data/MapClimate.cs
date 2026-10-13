@@ -80,6 +80,8 @@ namespace HyperRTS.Editor.Maps.Data
         [Range(0.02f, 0.5f)]
         public float heightBlendDepth = 0.06f;
 
+        public MapClimateMacro macro = new();
+
         [Header("Rivers and ravines")]
         [Tooltip("Surface of river banks just above the water.")]
         [MapKey(typeof(MapClimateSurface))]

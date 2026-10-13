@@ -37,12 +37,5 @@ namespace HyperRTS.Editor.Maps.Ground
 
         /// <summary>The region holding the point where the band crosses its middle, as grass and tint see it.</summary>
         public int Region => Inside >= 0f ? Own : Other;
-
-        /// <summary>Metres from the border into <paramref name="region"/>, one of the two sides.</summary>
-        public float Depth(int region) => region == Own ? Inside : -Inside;
-
-        /// <summary>Share of a strip <paramref name="stripWidth"/> wide inside <paramref name="region"/>'s border.</summary>
-        public float StripShare(int region, float stripWidth) =>
-            1f - MapGeometry.Smooth(0.5f + (Depth(region) - stripWidth) / Width);
     }
 }

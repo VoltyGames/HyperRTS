@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>How surfaces meet: edge bands, edge strips, and the macro tint following the splat.</summary>
+    /// <summary>How surfaces meet: edge bands and the macro tint following the splat.</summary>
     public class MapGroundEdgeTests
     {
         private const int Resolution = 512;
@@ -26,24 +26,6 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void EdgeSurface_PaintsAStripJustInsideTheBorder()
-        {
-            var climate = Climate(0.5f, 0.05f);
-            var field = climate.Surface("A");
-            field.edgeSurface = "Weeds";
-            field.edgeSurfaceWidth = 2f;
-            var (layout, land) = Halves(2);
-            var edges = new MapEdgeField(layout, land, climate);
-            var splat = MapSplatPainter.Paint(layout, edges, Flat(layout), climate, Resolution);
-            var weeds = climate.LayerIndex("Weeds");
-
-            Assert.Greater(Weight(splat, layout, new Vector2(-1f, 7f), weeds), 0.9f, "1 m into the field is margin");
-            Assert.Less(Weight(splat, layout, new Vector2(-5f, 7f), weeds), 0.05f, "5 m in is crop");
-            Assert.Greater(Weight(splat, layout, new Vector2(-5f, 7f), climate.LayerIndex("A")), 0.95f);
-            Assert.Less(Weight(splat, layout, new Vector2(1f, 7f), weeds), 0.05f, "the neighbour has no strip");
-        }
-
-        [Test]
         public void Macro_IsEqualAtSymmetryCopies()
         {
             var climate = Climate(2f, 1.5f);
@@ -55,7 +37,8 @@ namespace HyperRTS.Editor.Tests
             land.ClaimEach(land.Bounds, p => Pick(p, plot, field, wood));
             var heights = Heights(layout, p => 2f * Mathf.Cos(p.x / 15f) * Mathf.Cos(p.y / 20f));
             var edges = new MapEdgeField(layout, land, climate);
-            var macro = new MapMacro(layout, land, edges, MapRoadFixture.Shapes(layout, climate), heights);
+            var macro = new MapMacro(layout, land, edges, MapRoadFixture.Shapes(layout, climate), heights,
+                climate.macro);
 
             for (var x = -110f; x < 110f; x += 7.3f)
             {
@@ -79,9 +62,9 @@ namespace HyperRTS.Editor.Tests
             var shapes = MapRoadFixture.Shapes(layout, climate);
             var edges = new MapEdgeField(layout, land, climate);
             var splat = MapSplatPainter.Paint(layout, edges, heights, climate, Resolution);
-            var macro = new MapMacro(layout, land, edges, shapes, heights);
+            var macro = new MapMacro(layout, land, edges, shapes, heights, climate.macro);
             var recolouredEdges = new MapEdgeField(layout, recoloured, climate);
-            var other = new MapMacro(layout, recoloured, recolouredEdges, shapes, heights);
+            var other = new MapMacro(layout, recoloured, recolouredEdges, shapes, heights, climate.macro);
             var b = climate.LayerIndex("B");
             var area = layout.TerrainBounds;
             var texel = area.size / Resolution;
@@ -103,17 +86,17 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void SurfaceEdge_IsRequiredAndAStripNeedsItsWidth()
+        public void SurfaceEdge_IsRequired()
         {
             var climate = MapRoadFixture.Climate();
             climate.Surface("Meadow").edgeWidth = 0f;
-            climate.Surface("Dirt").edgeSurface = "Verge";
+            climate.Surface("Dirt").edgeJitter = 0f;
             var issues = new MapIssues();
 
             MapAssetCheck.Check(climate, new MapPalette(), issues);
 
             StringAssert.Contains("surface 'Meadow': edgeWidth 0", issues.ToString());
-            StringAssert.Contains("surface 'Dirt': edgeSurfaceWidth 0", issues.ToString());
+            StringAssert.Contains("surface 'Dirt': edgeJitter 0", issues.ToString());
         }
 
         private static float BandWidth(float width)
@@ -165,13 +148,18 @@ namespace HyperRTS.Editor.Tests
         private static MapClimate Climate(float width, float jitter)
         {
             var climate = new MapClimate { name = "Test", slopeStart = 30f, slopeFull = 40f };
-            foreach (var key in new[] { "Meadow", "A", "B", "Weeds" })
+            foreach (var key in new[] { "Meadow", "A", "B" })
             {
                 climate.layers.Add(new MapClimateLayer { key = key });
                 climate.surfaces.Add(new MapClimateSurface { key = key, layer = key, edgeWidth = width, edgeJitter = jitter });
             }
 
             climate.groundSurface = climate.groundVariation = climate.slopeSurface = "Meadow";
+            climate.macro = new MapClimateMacro
+            {
+                regionLight = 0.09f, regionWarmth = 0.06f, gradientLight = 0.025f, gradientWarmth = 0.012f,
+                gradientWavelength = 260f, hollowDarkening = 0.045f, hollowWetness = 0.3f,
+            };
             return climate;
         }
 

@@ -1,4 +1,5 @@
 using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
@@ -13,11 +14,11 @@ namespace HyperRTS.Editor.Maps.Ground
         private const float PixelsPerMetre = 0.8f;
 
         public static Texture2D Write(string path, MapLayout layout, MapLand land, MapEdgeField edges, MapShapes shapes,
-            MapHeights heights)
+            MapHeights heights, MapClimateMacro strength)
         {
             var area = layout.TerrainBounds;
             var size = Mathf.NextPowerOfTwo(Mathf.CeilToInt(area.width * PixelsPerMetre));
-            var macro = new MapMacro(layout, land, edges, shapes, heights);
+            var macro = new MapMacro(layout, land, edges, shapes, heights, strength);
             var pixels = new Color[size * size];
             for (var y = 0; y < size; y++)
             {

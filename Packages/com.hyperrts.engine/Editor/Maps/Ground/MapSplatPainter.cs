@@ -7,9 +7,8 @@ namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
     /// Paints the terrain layers from the land use: each texel blends the two surfaces of its nearest border across
-    /// that border's band (<see cref="MapEdgeField"/>), with a surface's edge strip just inside its border (the terrain
-    /// shader's height blend sharpens them naturally); open meadow gets patches of its variation, and steep ground its
-    /// slope surface.
+    /// that border's band (<see cref="MapEdgeField"/>; the terrain shader's height blend sharpens them naturally); open
+    /// meadow gets patches of its variation, and steep ground its slope surface.
     /// </summary>
     public sealed class MapSplatPainter
     {
@@ -19,7 +18,6 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly MapNoise _patches;
         private readonly MapEdgeField _edges;
         private readonly int[] _regionLayer;
-        private readonly int[] _stripLayer;
         private readonly int _variation;
         private readonly int _slope;
         private readonly int _ground;
@@ -31,13 +29,10 @@ namespace HyperRTS.Editor.Maps.Ground
             _climate = climate;
             _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SplatPatches);
             _edges = edges;
-            var regions = edges.RegionCount;
-            (_regionLayer, _stripLayer) = (new int[regions], new int[regions]);
-            for (var i = 0; i < regions; i++)
+            _regionLayer = new int[edges.RegionCount];
+            for (var i = 0; i < _regionLayer.Length; i++)
             {
-                var surface = _edges.Surface(i);
-                _regionLayer[i] = climate.LayerIndex(surface.layer);
-                _stripLayer[i] = surface.HasEdgeSurface ? climate.SurfaceLayer(surface.edgeSurface) : -1;
+                _regionLayer[i] = climate.LayerIndex(edges.Surface(i).layer);
             }
 
             _variation = climate.SurfaceLayer(climate.groundVariation);
@@ -82,25 +77,11 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var edge = _edges.Sample(p);
             var share = edge.OwnShare;
-            Side(weights, edge, edge.Own, share);
+            Layer(weights, _regionLayer[edge.Own], share, edge.Point);
             if (share < 1f)
             {
-                Side(weights, edge, edge.Other, 1f - share);
+                Layer(weights, _regionLayer[edge.Other], 1f - share, edge.Point);
             }
-        }
-
-        /// <summary>One side's share, with its edge strip taking the part next to the border.</summary>
-        private void Side(float[] weights, MapEdgeSample edge, int region, float amount)
-        {
-            var strip = _stripLayer[region];
-            if (strip >= 0)
-            {
-                var stripShare = amount * edge.StripShare(region, _edges.Surface(region).edgeSurfaceWidth);
-                Layer(weights, strip, stripShare, edge.Point);
-                amount -= stripShare;
-            }
-
-            Layer(weights, _regionLayer[region], amount, edge.Point);
         }
 
         /// <summary>Open ground may turn to its variation.</summary>

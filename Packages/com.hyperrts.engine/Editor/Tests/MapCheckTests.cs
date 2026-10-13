@@ -90,14 +90,14 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void MissingRiverAndFarmlandDistances_AreErrorsNamingThem()
+        public void MissingClimateValues_AreErrorsNamingThem()
         {
             var climate = MapRoadFixture.Climate();
             climate.farmlandKits.Add(new MapFarmlandKit { key = "Farms", marginSurface = "Meadow" });
 
             var issues = CheckAssets(climate, new MapPalette());
 
-            foreach (var field in new[] { "fordShallowsWidth", "fordRapidsLength", "trackJoinDistance" })
+            foreach (var field in new[] { "fordShallowsWidth", "fordRapidsLength", "trackJoinDistance", "macro regionLight" })
             {
                 Assert.IsTrue(issues.Errors.Any(e => e.Contains(field)), $"{field}: {issues}");
             }

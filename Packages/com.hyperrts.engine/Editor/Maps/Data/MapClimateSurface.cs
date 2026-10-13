@@ -41,15 +41,6 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("How far the edge line wanders (metres); larger jitter also waves more slowly. The smaller of the two sides wins.")]
         public float edgeJitter;
 
-        [Tooltip("Surface painted in a strip just inside this surface's edge, such as a weedy field margin. Empty for none.")]
-        [MapKey(typeof(MapClimateSurface))]
-        public string edgeSurface;
-
-        [Tooltip("Width of the edge surface's strip (metres). 0 without an edge surface.")]
-        public float edgeSurfaceWidth;
-
-        public bool HasEdgeSurface => !string.IsNullOrEmpty(edgeSurface);
-
         string IMapKeyed.Key => key;
 
         void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;

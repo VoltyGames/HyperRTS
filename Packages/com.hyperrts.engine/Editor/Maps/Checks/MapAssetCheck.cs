@@ -54,6 +54,22 @@ namespace HyperRTS.Editor.Maps.Checks
             Require(Climate.atmosphere != null, $"{name} has no atmosphere prefab.");
             Require(Climate.fordShallowsWidth > 0f, $"{name}: fordShallowsWidth {Climate.fordShallowsWidth} must be above 0.");
             Require(Climate.fordRapidsLength > 0f, $"{name}: fordRapidsLength {Climate.fordRapidsLength} must be above 0.");
+            Macro(Climate.macro, name);
+        }
+
+        private void Macro(MapClimateMacro macro, string name)
+        {
+            var values = new (string Field, float Value)[]
+            {
+                ("regionLight", macro.regionLight), ("regionWarmth", macro.regionWarmth),
+                ("gradientLight", macro.gradientLight), ("gradientWarmth", macro.gradientWarmth),
+                ("gradientWavelength", macro.gradientWavelength), ("hollowDarkening", macro.hollowDarkening),
+                ("hollowWetness", macro.hollowWetness),
+            };
+            foreach (var (field, value) in values)
+            {
+                Require(value > 0f, $"{name}: macro {field} {value} must be above 0.");
+            }
         }
 
         private void RowCropAssets(MapClimateRowCrop rowCrop, string name)
@@ -146,20 +162,11 @@ namespace HyperRTS.Editor.Maps.Checks
             SurfaceEdge(surface, name);
         }
 
-        /// <summary>Every surface states its edge; a strip needs both its surface and a width.</summary>
+        /// <summary>Every surface states its edge.</summary>
         private void SurfaceEdge(MapClimateSurface surface, string name)
         {
             Require(surface.edgeWidth > 0f, $"{name}: edgeWidth {surface.edgeWidth} must be above 0 metres.");
             Require(surface.edgeJitter > 0f, $"{name}: edgeJitter {surface.edgeJitter} must be above 0 metres.");
-            if (!surface.HasEdgeSurface)
-            {
-                Require(surface.edgeSurfaceWidth <= 0f, $"{name}: edgeSurfaceWidth {surface.edgeSurfaceWidth} needs edgeSurface set; use 0 without one.");
-                return;
-            }
-
-            Surface(surface.edgeSurface, $"{name} edgeSurface");
-            Require(surface.edgeSurface != surface.key, $"{name}: edgeSurface '{surface.edgeSurface}' must be another surface.");
-            Require(surface.edgeSurfaceWidth > 0f, $"{name}: edgeSurfaceWidth {surface.edgeSurfaceWidth} must be above 0 metres for edgeSurface '{surface.edgeSurface}'.");
         }
 
         private void RoadClass(MapRoadClass road)

@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         {
             var (climate, paths) = (generation.Project.Climate, generation.Project.Paths);
             var macro = MapMacroPainter.Write(paths.Macro, generation.Layout, generation.Land, generation.Edges,
-                generation.Shapes, generation.Heights);
+                generation.Shapes, generation.Heights, climate.macro);
             var rows = MapRowPainter.Write(paths.RowMap, generation.Land, generation.Layout.Symmetry);
             var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, macro, rows);
             var picture = MapGroundColor.Write(paths.Ground, generation.Splat, climate, macro);

@@ -182,8 +182,7 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 - **Heights**: relief, hills, river valleys, ravines. Roads of a levelling class are cut onto embankments; ramps lead
   to bridge decks.
 - **Edges** (`MapEdgeField`): every surface states its edge style: `edgeWidth` (the blend band, m), `edgeJitter` (how
-  far the line wanders, m; larger jitter also waves more slowly, 6 m to 22 m) and an optional `edgeSurface` strip
-  `edgeSurfaceWidth` m wide just inside its border (a weedy margin inside a field). A border takes the crisper side's
+  far the line wanders, m; larger jitter also waves more slowly, 6 m to 22 m). A border takes the crisper side's
   width and jitter, so a ploughed edge stays sharp against a meadow while two meadows blend wide; the style is
   smoothed over 3 m so it changes without a step where three regions meet. Each land cell knows its distance to the
   nearest other region and which region that is (`MapEdgeNeighbours`); the jitter is a noise vector that turns with
@@ -196,7 +195,8 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 - **Macro map** (`MapMacro`, written by `MapMacroPainter`): a light and warmth shift per field and per wood plus a
   slow gradient across each (averaged over the symmetry copies), blended over the same border band as the splat;
   noise at 14, 24, 36 and 90 m; hollows (height curvature over 8 m) a little darker and damper; wetness near water
-  and on ravine floors. Shifts stay a few percent. RGB 0.5 is neutral, A is wetness.
+  and on ravine floors. The climate's `macro` section sets the region tint, gradient and hollow strengths. RGB 0.5
+  is neutral, A is wetness.
 - **Row map** (`MapRowPainter`, `_Rows.png`): one texel per land cell, RG8 linear, bilinear, no mips. RG is the
   direction of the cell's crop or garden rows (x east, y north) remapped to 0..1, moved through the cell's symmetry
   copy so mirrored and rotated fields turn too; (0.5, 0.5) where nothing grows in rows. Regions carry rows when the
