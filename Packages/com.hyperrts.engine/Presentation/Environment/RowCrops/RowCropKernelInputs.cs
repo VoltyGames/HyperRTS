@@ -24,12 +24,16 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private readonly RowCropKernels _kernels;
         private readonly RowCropFields _fields;
         private readonly GraphicsBuffer _fieldBuffer;
+        private readonly Terrain _terrain;
+        private Texture _ids;
+        private Texture _heights;
 
         /// <summary>Uploads the fields and binds what stays fixed while the map is open.</summary>
         public RowCropKernelInputs(RowCropKernels kernels, RowCropFields fields, Terrain terrain)
         {
             _kernels = kernels;
             _fields = fields;
+            _terrain = terrain;
             _fieldBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, fields.fields.Count),
                 RowCropField.Stride);
             _fieldBuffer.SetData(fields.fields);
@@ -37,8 +41,23 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             SetHeights(terrain);
         }
 
-        /// <summary>Whether the field asset's fields no longer fit the uploaded buffer.</summary>
-        public bool Stale => _fieldBuffer.count != Mathf.Max(1, _fields.fields.Count);
+        /// <summary>
+        /// Whether the field asset's fields no longer fit the uploaded buffer, or a map rebuild replaced the field ids or
+        /// the heightmap bound to the kernel.
+        /// </summary>
+        public bool Stale
+        {
+            get
+            {
+                if (_fieldBuffer.count != Mathf.Max(1, _fields.fields.Count))
+                {
+                    return true;
+                }
+
+                var replaced = _ids != _fields.fieldIds || _heights != _terrain.terrainData.heightmapTexture;
+                return replaced;
+            }
+        }
 
         /// <summary>Whether a trample map is published, which changes every frame and so needs regrowing every frame.</summary>
         public static bool Trampled => Shader.GetGlobalVector(InteractionSurfaces.RectId).z > 0f;
@@ -60,7 +79,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private void SetFields()
         {
             var compute = _kernels.Compute;
-            var ids = _fields.fieldIds;
+            var ids = _ids = _fields.fieldIds;
             var area = _fields.area;
             compute.SetBuffer(_kernels.Plant, FieldsId, _fieldBuffer);
             compute.SetTexture(_kernels.Plant, FieldIdsId, ids);
@@ -76,7 +95,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             var data = terrain.terrainData;
             var origin = terrain.GetPosition();
             var size = data.size;
-            compute.SetTexture(_kernels.Plant, HeightId, data.heightmapTexture);
+            _heights = data.heightmapTexture;
+            compute.SetTexture(_kernels.Plant, HeightId, _heights);
             compute.SetVector(HeightAreaId, InteractionMath.Rect(new float2(origin.x, origin.z), new float2(size.x, size.z)));
             compute.SetVector(HeightScaleId, new Vector4(origin.y, size.y / HeightmapFull, data.heightmapResolution, 0f));
         }
