@@ -1,18 +1,15 @@
-// HyperRTS/Terrain layer blending. Each layer with alphamap weight is sampled at its rotated, tiled world UV, then
+// HyperRTS/Terrain layer blending. Each layer with alphamap weight is hex-tiled at its rotated, tiled world UV, then
 // all are blended by weight and texel height in one pass: an online softmax over log(weight) + height / depth, so
 // the tallest texels win where layers mix without knowing every layer's height up front.
 #ifndef HYPERRTS_TERRAIN_LAYERS_INCLUDED
 #define HYPERRTS_TERRAIN_LAYERS_INCLUDED
 
+#include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainHexTiling.hlsl"
+
 #define TERRAIN_MAX_LAYERS 16
 #define TERRAIN_MIN_WEIGHT 0.003
 // Layers with less of the blend so far skip their normal and mask samples.
 #define TERRAIN_MIN_SHARE 0.02
-// Anti-tiling: offset copies per noise unit, how quickly one copy hands over to the next, and how much texel
-// heights shape the handover.
-#define ANTI_TILING_COPIES 8.0
-#define ANTI_TILING_SHARPNESS 8.0
-#define ANTI_TILING_HEIGHT 1.0
 
 struct TerrainLayerParams
 {
@@ -23,25 +20,15 @@ struct TerrainLayerParams
     half4 mask;        // smoothness scale, offset; occlusion scale, offset
     half heightWeight;
     half normalStrength;
-    float2 antiTiling; // copy offset scale in tiles along u and v
+    float2 hex;        // hex rotation strength (fraction of a full turn); 1 if offsets may cross rows
 };
 
-struct TerrainAntiTiling
+struct TerrainPixel
 {
-    float2 offsetA;
-    float2 offsetB;
-    half handover;     // copy B's share before texel heights shape it
-    bool both;         // the handover band, where both copies can show
-};
-
-struct TerrainLayerUV
-{
-    float2 a;
-    float2 b;
+    float2 xz;
     float2 dx;
     float2 dy;
-    float slice;
-    bool both;
+    half far;          // the far sample's share of albedo
 };
 
 struct TerrainBlend
@@ -79,26 +66,8 @@ TerrainLayerParams LoadLayerParams(uint layer)
     params.mask = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 2));
     params.heightWeight = surface.x;
     params.normalStrength = surface.y;
-    params.antiTiling = surface.zw;
+    params.hex = surface.zw;
     return params;
-}
-
-float2 CopyOffset(float copy)
-{
-    return frac(sin(float2(copy * 12.9898, copy * 78.233)) * 43758.5453);
-}
-
-// Low-frequency world noise picks two neighbouring offset copies of every texture and the handover between them.
-TerrainAntiTiling GetAntiTiling(float2 positionXZ)
-{
-    float noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_LinearRepeat, positionXZ / _AntiTilingSize).r;
-    float copy = noise * ANTI_TILING_COPIES;
-    TerrainAntiTiling antiTiling;
-    antiTiling.offsetA = CopyOffset(floor(copy));
-    antiTiling.offsetB = CopyOffset(floor(copy) + 1.0);
-    antiTiling.handover = (frac(copy) - 0.5) * ANTI_TILING_SHARPNESS + 0.5;
-    antiTiling.both = abs(antiTiling.handover - 0.5) < 0.5 + ANTI_TILING_HEIGHT;
-    return antiTiling;
 }
 
 float2 RotateAndTile(float2 xz, TerrainLayerParams params)
@@ -107,68 +76,26 @@ float2 RotateAndTile(float2 xz, TerrainLayerParams params)
     return float2(xz.x * r.x - xz.y * r.y, xz.x * r.y + xz.y * r.x) * params.tiling;
 }
 
-TerrainLayerUV GetLayerUV(uint layer, TerrainLayerParams params, float2 xz, float2 dx, float2 dy,
-    TerrainAntiTiling antiTiling)
+// The layer's hex-tiled albedo, with the far sample mixed in by camera distance.
+half4 LayerAlbedo(inout TerrainHex hex, TerrainLayerParams params, TerrainPixel pixel)
 {
-    float2 uv = RotateAndTile(xz, params);
-    TerrainLayerUV layerUV;
-    layerUV.a = uv + antiTiling.offsetA * params.antiTiling;
-    layerUV.b = uv + antiTiling.offsetB * params.antiTiling;
-    // Explicit gradients: the copies jump at band edges and layers are sampled inside branches.
-    layerUV.dx = RotateAndTile(dx, params);
-    layerUV.dy = RotateAndTile(dy, params);
-    layerUV.slice = layer;
-    layerUV.both = antiTiling.both && any(params.antiTiling > 0.0);
-    return layerUV;
-}
-
-// One sample where a single copy shows, two in the handover.
-half4 SampleCopies(TEXTURE2D_ARRAY_PARAM(layers, samplerLayers), TerrainLayerUV uv, half handover)
-{
-    half4 copy;
-    if (handover <= 0.0)
-    {
-        copy = SAMPLE_TEXTURE2D_ARRAY_GRAD(layers, samplerLayers, uv.a, uv.slice, uv.dx, uv.dy);
-    }
-    else if (handover >= 1.0)
-    {
-        copy = SAMPLE_TEXTURE2D_ARRAY_GRAD(layers, samplerLayers, uv.b, uv.slice, uv.dx, uv.dy);
-    }
-    else
-    {
-        half4 a = SAMPLE_TEXTURE2D_ARRAY_GRAD(layers, samplerLayers, uv.a, uv.slice, uv.dx, uv.dy);
-        half4 b = SAMPLE_TEXTURE2D_ARRAY_GRAD(layers, samplerLayers, uv.b, uv.slice, uv.dx, uv.dy);
-        copy = lerp(a, b, handover);
-    }
-
-    return copy;
-}
-
-// In the handover band the taller texels of either copy win, so stones and tufts stay whole.
-half4 SampleAlbedo(TerrainLayerUV uv, TerrainAntiTiling antiTiling, out half handover)
-{
-    half4 albedo;
-    if (uv.both)
-    {
-        half4 a = SAMPLE_TEXTURE2D_ARRAY_GRAD(_AlbedoArray, sampler_AlbedoArray, uv.a, uv.slice, uv.dx, uv.dy);
-        half4 b = SAMPLE_TEXTURE2D_ARRAY_GRAD(_AlbedoArray, sampler_AlbedoArray, uv.b, uv.slice, uv.dx, uv.dy);
-        handover = saturate(antiTiling.handover + (b.a - a.a) * ANTI_TILING_HEIGHT);
-        albedo = lerp(a, b, handover);
-    }
-    else
-    {
-        handover = step(0.5, antiTiling.handover);
-        albedo = SampleCopies(TEXTURE2D_ARRAY_ARGS(_AlbedoArray, sampler_AlbedoArray), uv, handover);
-    }
-
+    half4 albedo = SampleHexAlbedo(hex);
+    #ifdef TERRAIN_FAR_SAMPLE
+        [branch] if (pixel.far > 0.0)
+        {
+            float2 st = RotateAndTile(pixel.xz, params);
+            float2 dx = RotateAndTile(pixel.dx, params);
+            float2 dy = RotateAndTile(pixel.dy, params);
+            albedo.rgb = lerp(albedo.rgb, SampleFarAlbedo(st, dx, dy, hex.slice), pixel.far);
+        }
+    #endif
     return albedo;
 }
 
 // The layer's normal turned back by its UV rotation into terrain tangent space.
-half3 LayerNormal(TerrainLayerUV uv, half handover, TerrainLayerParams params)
+half3 LayerNormal(TerrainHex hex, TerrainLayerParams params)
 {
-    half4 packed = SampleCopies(TEXTURE2D_ARRAY_ARGS(_NormalArray, sampler_AlbedoArray), uv, handover);
-    half3 normal = UnpackNormalScale(packed, params.normalStrength);
+    half3 normal = SampleHexNormal(hex, params.normalStrength);
     float2 r = params.rotation;
     return half3(normal.x * r.x + normal.y * r.y, normal.y * r.x - normal.x * r.y, normal.z);
 }
@@ -184,13 +111,13 @@ void FadeBlend(inout TerrainBlend blend, float keep)
     blend.macro *= keep;
 }
 
-void AddLayer(inout TerrainBlend blend, uint layer, half weight, float2 xz, float2 dx, float2 dy,
-    TerrainAntiTiling antiTiling)
+void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pixel)
 {
     TerrainLayerParams params = LoadLayerParams(layer);
-    TerrainLayerUV uv = GetLayerUV(layer, params, xz, dx, dy, antiTiling);
-    half handover;
-    half4 albedo = SampleAlbedo(uv, antiTiling, handover);
+    // Explicit gradients: hex cells jump at their edges and layers are sampled inside branches.
+    TerrainHex hex = GetHex(RotateAndTile(pixel.xz, params), RotateAndTile(pixel.dx, params),
+        RotateAndTile(pixel.dy, params), layer, params.hex);
+    half4 albedo = LayerAlbedo(hex, params, pixel);
 
     // Share = weight x e^(height / depth): equal heights keep the painted blend, taller texels win where layers mix.
     float score = log(weight) + params.heightWeight * (albedo.a - 0.5) / _HeightBlendDepth;
@@ -208,8 +135,8 @@ void AddLayer(inout TerrainBlend blend, uint layer, half weight, float2 xz, floa
     half2 mask = half2(1.0, 0.0);
     if (share > blend.total * TERRAIN_MIN_SHARE)
     {
-        normal = LayerNormal(uv, handover, params);
-        mask = SampleCopies(TEXTURE2D_ARRAY_ARGS(_MaskArray, sampler_AlbedoArray), uv, handover).rg;
+        normal = LayerNormal(hex, params);
+        mask = SampleHex(TEXTURE2D_ARRAY_ARGS(_MaskArray, sampler_AlbedoArray), hex).rg;
     }
 
     blend.normal += share * normal;
@@ -236,6 +163,17 @@ TerrainSurface ResolveBlend(TerrainBlend blend)
     return surface;
 }
 
+TerrainPixel GetTerrainPixel(float3 positionWS)
+{
+    TerrainPixel pixel;
+    pixel.xz = positionWS.xz;
+    pixel.dx = ddx(pixel.xz);
+    pixel.dy = ddy(pixel.xz);
+    float cameraDistance = length(positionWS - GetCameraPositionWS());
+    pixel.far = saturate((cameraDistance - _FarStart) / (_FarEnd - _FarStart)) * _FarBlend;
+    return pixel;
+}
+
 TerrainSurface BlendLayers(float2 uv, float3 positionWS)
 {
     float2 controlUV = ControlUV(uv);
@@ -244,10 +182,7 @@ TerrainSurface BlendLayers(float2 uv, float3 positionWS)
     half4 control2 = SAMPLE_TEXTURE2D(_Control2, sampler_LinearClamp, controlUV);
     half4 control3 = SAMPLE_TEXTURE2D(_Control3, sampler_LinearClamp, controlUV);
 
-    float2 xz = positionWS.xz;
-    float2 dx = ddx(xz);
-    float2 dy = ddy(xz);
-    TerrainAntiTiling antiTiling = GetAntiTiling(xz);
+    TerrainPixel pixel = GetTerrainPixel(positionWS);
     TerrainBlend blend = (TerrainBlend)0;
     blend.maxScore = -1e8;
     uint count = min((uint)_LayerCount, TERRAIN_MAX_LAYERS);
@@ -256,7 +191,7 @@ TerrainSurface BlendLayers(float2 uv, float3 positionWS)
         half weight = LayerWeight(control0, control1, control2, control3, layer);
         [branch] if (weight > TERRAIN_MIN_WEIGHT)
         {
-            AddLayer(blend, layer, weight, xz, dx, dy, antiTiling);
+            AddLayer(blend, layer, weight, pixel);
         }
     }
 

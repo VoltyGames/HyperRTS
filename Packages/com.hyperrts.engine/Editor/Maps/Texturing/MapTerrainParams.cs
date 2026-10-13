@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Texturing
     /// The per-layer parameters of HyperRTS/Terrain as a small float texture (materials can't store arrays), one
     /// column per layer; the row layout is documented in Terrain.shader. Kept as a sub-asset of the material.
     /// </summary>
-    internal static class MapTerrainParams
+    public static class MapTerrainParams
     {
         private const int Width = MapTerrainTextures.MaxLayers;
         private const int Rows = 4;
@@ -38,12 +38,22 @@ namespace HyperRTS.Editor.Maps.Texturing
             var tint = terrainLayer.diffuseRemapMax;
             var low = terrainLayer.maskMapRemapMin;
             var high = terrainLayer.maskMapRemapMax;
-            var acrossRows = climateLayer.followsRows ? 0f : climateLayer.antiTiling;
             pixels[layer] = new Color(Mathf.Cos(turn), Mathf.Sin(turn), 1f / tile.x, 1f / tile.y);
             pixels[Width + layer] = new Color(tint.x, tint.y, tint.z, climateLayer.macroStrength);
             pixels[2 * Width + layer] = new Color(high.w - low.w, low.w, high.y - low.y, low.y);
-            pixels[3 * Width + layer] = new Color(climateLayer.heightBlend, terrainLayer.normalScale,
-                climateLayer.antiTiling, acrossRows);
+            pixels[3 * Width + layer] = Surface(climateLayer);
+        }
+
+        /// <summary>
+        /// Row 3: height-blend weight, normal strength, hex rotation strength and whether hex offsets may cross rows.
+        /// Row layers turn no cell and shift it only along the rows, so furrows run on unbroken.
+        /// </summary>
+        public static Color Surface(MapClimateLayer climateLayer)
+        {
+            var rows = climateLayer.followsRows;
+            var rotation = rows ? 0f : climateLayer.antiTiling;
+            var acrossRows = rows ? 0f : 1f;
+            return new Color(climateLayer.heightBlend, climateLayer.terrainLayer.normalScale, rotation, acrossRows);
         }
 
         private static Texture2D SubAsset(Material material)

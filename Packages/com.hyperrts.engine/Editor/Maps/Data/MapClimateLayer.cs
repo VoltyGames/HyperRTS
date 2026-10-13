@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Maps.Data
         [Range(0f, 1f)]
         public float macroStrength = 1f;
 
-        [Tooltip("How far (in tiles) anti-tiling shifts copies of the texture so it never visibly repeats; 0 is off. Copies of row layers shift only along the rows.")]
+        [Tooltip("How far hex tiling may turn each cell of the texture so it never visibly repeats: 1 is any angle, 0 none. Row layers never turn, and their cells shift only along the rows.")]
         [Range(0f, 1f)]
         public float antiTiling = 1f;
 

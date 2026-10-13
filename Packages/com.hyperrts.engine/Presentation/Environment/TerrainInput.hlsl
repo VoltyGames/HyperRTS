@@ -9,7 +9,10 @@ CBUFFER_START(UnityPerMaterial)
     float4 _Control0_TexelSize;
     float _LayerCount;
     float _HeightBlendDepth;
-    float _AntiTilingSize;
+    float _FarTiling;
+    float _FarStart;
+    float _FarEnd;
+    half _FarBlend;
     float _VariationSize;
     half _Variation;
     half _WetDarkening;

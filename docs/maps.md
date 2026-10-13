@@ -188,7 +188,13 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 - **Macro map** (`MapMacroPainter`): a colour shift per field and per wood, broad noise, wetness near water. RGB 0.5
   is neutral, A is wetness.
 - **Terrain material** (`MapTerrainMaterial`): `HyperRTS/Terrain`, one pass, up to 16 height-blended layers from the
-  climate's texture arrays, the macro map, and per-layer rotation to the crop rows.
+  climate's texture arrays, the macro map, and per-layer rotation to the crop rows. Each layer is hex-tiled
+  (Mikkelsen 2022): three cells per pixel, each randomly offset and turned by the layer's `antiTiling` (the fraction
+  of a full turn), blended by texel height. `followsRows` layers never turn and shift only along u, so furrows stay
+  continuous. A far albedo sample at `_FarTiling` × the layer tiling fades in between `_FarStart` and `_FarEnd`
+  (camera distance) up to `_FarBlend`. `TerrainDetail.Level` (Presentation) sets the global keywords
+  `_TERRAIN_SIMPLE` (Low: one sample) or `_TERRAIN_NO_FAR` (Medium: hex only); with neither (High, edit mode, map
+  views) the shader does both.
 - **Ground colour** (`MapGroundColor`): a top-down picture of the layers' mean albedo by splat weight, tinted by the
   macro map. Foliage blends into it at its roots.
 - **Ground decals** (`MapDecalWriter`, after `MapPlacementWriter`): a URP `DecalProjector` per decal under the main
