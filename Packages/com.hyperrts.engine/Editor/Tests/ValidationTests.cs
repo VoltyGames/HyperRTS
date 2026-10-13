@@ -82,6 +82,19 @@ namespace HyperRTS.Editor.Tests
             Assert.IsTrue(issues.Any(issue => issue.Severity == MessageType.Error && issue.Message.Contains("unarmed")));
         }
 
+        [Test]
+        public void ModelWithoutTeamColorMaterialIsReported()
+        {
+            var unit = Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
+            var plain = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            unit.GetComponentInChildren<Renderer>().sharedMaterial = plain;
+
+            var reported = ProjectValidator.Check(unit).Any(issue => issue.Message.Contains("owner's colour"));
+            UnityEngine.Object.DestroyImmediate(plain);
+
+            Assert.IsTrue(reported);
+        }
+
         [TestCaseSource(nameof(Templates))]
         public void TemplatesAreValidApartFromSceneLocation(Func<GameObject> build)
         {

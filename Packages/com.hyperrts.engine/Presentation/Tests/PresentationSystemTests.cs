@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Fog;
 using HyperRTS.Presentation.TeamColors;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Collections;
@@ -50,9 +51,10 @@ namespace HyperRTS.Presentation.Tests
 
             Run(_teamColor);
 
-            Assert.AreEqual(Blue, _em.GetComponentData<URPMaterialPropertyBaseColor>(unit).Value);
-            Assert.AreEqual(Blue, _em.GetComponentData<URPMaterialPropertyBaseColor>(child).Value);
-            Assert.IsFalse(_em.HasComponent<URPMaterialPropertyBaseColor>(neutral));
+            Assert.AreEqual(Blue, _em.GetComponentData<TeamColor>(unit).Value);
+            Assert.AreEqual(Blue, _em.GetComponentData<TeamColor>(child).Value);
+            Assert.IsFalse(_em.HasComponent<TeamColor>(neutral));
+            Assert.IsFalse(_em.HasComponent<TeamStrip>(unit), "no band: the mask alone decides");
         }
 
         [Test]
@@ -64,7 +66,7 @@ namespace HyperRTS.Presentation.Tests
             _em.SetComponentData(unit, new Faction { Value = 1 });
             Run(_teamColor);
 
-            Assert.AreEqual(Blue, _em.GetComponentData<URPMaterialPropertyBaseColor>(unit).Value);
+            Assert.AreEqual(Blue, _em.GetComponentData<TeamColor>(unit).Value);
         }
 
         [Test]
@@ -75,17 +77,35 @@ namespace HyperRTS.Presentation.Tests
             _em.AddBuffer<LinkedEntityGroup>(building).AddRange(new NativeArray<LinkedEntityGroup>(
                 new LinkedEntityGroup[] { building, child }, Allocator.Temp));
             Run(_teamColor);
-            Assert.AreEqual(Blue, _em.GetComponentData<URPMaterialPropertyBaseColor>(child).Value);
+            Assert.AreEqual(Blue, _em.GetComponentData<TeamColor>(child).Value);
 
             _em.SetComponentData(building, new Faction { Value = Faction.Neutral });
             Run(_teamColor);
 
-            Assert.IsFalse(_em.HasComponent<URPMaterialPropertyBaseColor>(building));
-            Assert.IsFalse(_em.HasComponent<URPMaterialPropertyBaseColor>(child), "back to its authored look");
+            Assert.IsFalse(_em.HasComponent<TeamColor>(building));
+            Assert.IsFalse(_em.HasComponent<TeamColor>(child), "back to its authored look");
 
             _em.SetComponentData(building, new Faction { Value = 2 });
             Run(_teamColor);
-            Assert.AreEqual(Red, _em.GetComponentData<URPMaterialPropertyBaseColor>(child).Value, "a new owner tints it again");
+            Assert.AreEqual(Red, _em.GetComponentData<TeamColor>(child).Value, "a new owner tints it again");
+        }
+
+        [Test]
+        public void TeamColor_CopiesTheRootsStripBand_AndDropsItWhenNeutral()
+        {
+            var building = Spawn(1, float3.zero);
+            _em.AddComponentData(building, new TeamStripBand { Bottom = 2f, Top = 2.4f });
+            var child = _em.CreateEntity(typeof(MaterialMeshInfo));
+            _em.AddBuffer<LinkedEntityGroup>(building).AddRange(new NativeArray<LinkedEntityGroup>(
+                new LinkedEntityGroup[] { building, child }, Allocator.Temp));
+            Run(_teamColor);
+            Assert.AreEqual(new float4(2f, 2.4f, 0f, 0f), _em.GetComponentData<TeamStrip>(child).Value);
+
+            _em.SetComponentData(building, new Faction { Value = Faction.Neutral });
+            Run(_teamColor);
+
+            Assert.IsFalse(_em.HasComponent<TeamStrip>(child));
+            Assert.IsFalse(_em.HasComponent<TeamColor>(child));
         }
 
         [Test]
@@ -93,12 +113,12 @@ namespace HyperRTS.Presentation.Tests
         {
             var unit = Spawn(3, float3.zero);
             Run(_teamColor);
-            Assert.IsFalse(_em.HasComponent<URPMaterialPropertyBaseColor>(unit), "no player 3 yet");
+            Assert.IsFalse(_em.HasComponent<TeamColor>(unit), "no player 3 yet");
 
             _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 3, Color = Blue });
             Run(_teamColor);
 
-            Assert.AreEqual(Blue, _em.GetComponentData<URPMaterialPropertyBaseColor>(unit).Value);
+            Assert.AreEqual(Blue, _em.GetComponentData<TeamColor>(unit).Value);
         }
 
         [Test]
@@ -112,7 +132,7 @@ namespace HyperRTS.Presentation.Tests
             _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 3, Color = Red });
             Run(_teamColor);
 
-            Assert.AreEqual(Red, _em.GetComponentData<URPMaterialPropertyBaseColor>(unit).Value);
+            Assert.AreEqual(Red, _em.GetComponentData<TeamColor>(unit).Value);
         }
 
         [Test]

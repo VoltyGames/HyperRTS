@@ -9,16 +9,19 @@ using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Upgrades;
 using Unity.NetCode;
+using UnityEditor;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Templates
 {
     /// <summary>
     /// Ready-to-bake GameObjects per role: a root with collider, authoring and ghost (so it replicates), and a primitive
-    /// Model child.
+    /// Model child in the team-coloured material.
     /// </summary>
     public static class EntityTemplates
     {
+        private const string TeamMaterial = "Packages/com.hyperrts.engine/Presentation/Materials/TeamLit.mat";
+
         public static GameObject Unit(string name = "Unit")
         {
             var go = Template(name, PrimitiveType.Capsule, new Vector3(0.8f, 0.9f, 0.8f), 0.9f);
@@ -110,6 +113,8 @@ namespace HyperRTS.Editor.Templates
             var model = GameObject.CreatePrimitive(shape);
             model.name = "Model";
             Object.DestroyImmediate(model.GetComponent<Collider>());
+            model.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(TeamMaterial)
+                ?? throw new System.IO.FileNotFoundException($"HyperRTS: missing template material {TeamMaterial}.");
             model.transform.SetParent(root.transform, false);
             model.transform.localPosition = new Vector3(0f, centerY, 0f);
             model.transform.localScale = size;

@@ -312,8 +312,8 @@ writes where the item's asset fields point, updating assets in place so their GU
 regenerates an item's assets when its file imports (saved on the Library page or by hand), once per import batch;
 `MapLibraryAssets.GenerateAll` runs every factory in item-type order, so materials exist before the props that use
 them. Items without a factory point at assets made elsewhere. The engine ships `photoMaterial` and `colorMaterial`
-(URP Lit materials) and `terrainLayer` (from the photo texture set beside the item's file); a game adds factories for
-its own kinds of asset.
+(`HyperRTS/LitTeam` materials, so a held building can show a team stripe) and `terrainLayer` (from the photo texture
+set beside the item's file); a game adds factories for its own kinds of asset.
 
 A climate's terrain texture arrays (albedo with height in alpha, normals, occlusion and smoothness) are generated
 into a `Generated` folder beside the climate's library file, named after it, and rebuilt only when their source

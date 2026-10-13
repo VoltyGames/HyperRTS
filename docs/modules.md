@@ -55,6 +55,7 @@ Shared identity for units and buildings, and the player entity's component set.
 | `ProducibleBaking` | Bakes cost and prerequisite lists (shared with upgrades) |
 | `PlayerSetup` | Player entity: `Player`, `PlayerSide`, `PlayerStats`, `Population`, `PowerGrid`, `Defeated`, `PlayerCommand`, `PlayerCommandSubject`, `CompletedResearch`, `ResourceStock` |
 | `MatchSetupSystem` | Applies a runtime `MatchSetup` once per world (see [Match](#match)) |
+| `TeamStripAuthoring` / `TeamStripBand` | Height band (m, the model's own space) where the owner's colour shows, for models painted in team-colour strips; presentation copies it to each render part |
 
 ## Match
 
@@ -448,11 +449,12 @@ Ties break by entity index. To replace it, disable the system and drive your own
 | `Selected` | Enableable; selection causes no structural change |
 | `SelectionInput` | Singleton gesture written by input: click, box, double-click, modifiers, group keys |
 | `ControlGroup` | Bit mask of groups, added on first assignment |
+| `PickRanking` | Ranks a pointer pick: a visible unit on the ray, else the visible unit within max(10 px, its projected radius) nearest the pointer, else the closest hit. Shared by click selection and `WorldPointer` targeting |
 
 `SelectionSystem`:
 
-- Click selects anything under the cursor (enemies for info). Picking uses a Unity Physics raycast, so selectable
-  prefabs need a collider.
+- Click selects anything under the cursor (enemies for info) through `PickRanking` over every Unity Physics ray
+  hit, so a unit behind a building still wins; selectable prefabs need a collider.
 - Box prefers the local player's units, then its buildings, then anything.
 - Double-click selects every on-screen entity with the same `TypeId`.
 - Shift adds, Ctrl removes, no modifier replaces.
@@ -503,7 +505,7 @@ Client only (`HyperRTS.Presentation`). `HUD.prefab` holds:
 | Panels | `ResourceBar` (resources, power, population), `SelectionPanel` (with queue), `CommandCard`, `Minimap`, `GameOverBanner` |
 | `CommandCard`, `ICommandSource`, `CommandEntry` | The card asks each source for entries when the selection changes and refreshes them every frame. Defaults: `PurchaseCommands` (build, train, research), `AbilityCommands` (abilities, powers), `StanceCommands`, `UnitActionCommands` (return, unload, sell). An entry can take a grid `Slot` and a letter or digit `Hotkey`, fed by `HotkeyInputSystem` through the `HotkeyPresses` singleton |
 | `HUDText` | All HUD strings by key. `Get(key)` for fixed text, `Name(key, authored)` for entity, resource and ability names. Set `HUDText.Current` to translate |
-| `OverlayRenderer` | Selection rings, health bars, placement ghost, rally markers (instanced meshes) |
+| `OverlayRenderer` | Selection rings, health bars, placement ghost, rally markers (instanced meshes, `HyperRTS/Overlay` shader); the local player's own selected units draw with a `_ZTest Always` clone so they show through buildings |
 | `FogOfWarRenderer` | Fog drawn as a box around the map that the shader projects onto the depth buffer, so hills, trees and buildings are fogged where they stand; scenery past the playable edge stays dim |
 | `SelectionDragBoxUI` | Marquee |
 
@@ -518,8 +520,13 @@ Other client pieces:
 
 - `MatchView`: once-per-frame read model for MonoBehaviours (local player or observer, relations, match, colours),
   `CancelInteraction`, `GetColor`.
-- `TeamColorSystem` tints owned meshes through `URPMaterialPropertyBaseColor` (use URP Lit). A
-  `TeamColorOverride` singleton shows factions in other colours (colour-blind palettes, own / ally / enemy).
+- `TeamColors/`: `HyperRTS/LitTeam` is URP Lit (Forward / Forward+) that repaints the albedo in the owner's colour
+  only where its `_TeamMask` (R, on UV0) and `_TeamStrip` height band allow, keeping the shading. `TeamColorSystem`
+  writes `TeamColor` (`_TeamColor`; alpha 0, the material default, is untinted) on each render part of an owned
+  entity, plus `TeamStrip` from the root's `TeamStripBand`, and removes both when it turns neutral. `FactionPalette`
+  is each faction's colour on this client; a `TeamColorOverride` singleton shows factions in other colours
+  (colour-blind palettes, own / ally / enemy). `TeamColorRule` warns about units and buildings without a
+  `_TeamColor` material.
 - `FogVisibilitySystem` mirrors `FogHidden` and `Inside` onto `DisableRendering`.
 - `SoundPlaybackSystem` plays the `SoundQueue` through a pool of 32 sources with per-cue limits and priority.
   `SoundListener` keeps the `AudioListener` on the camera's ground focus.

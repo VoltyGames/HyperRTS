@@ -3,7 +3,10 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Factories
 {
-    /// <summary><c>"factory": "colorMaterial"</c>: an untextured URP Lit material (glass, dark openings) at the item's <c>material</c> path.</summary>
+    /// <summary>
+    /// <c>"factory": "colorMaterial"</c>: an untextured HyperRTS/LitTeam material (glass, dark openings) at the item's
+    /// <c>material</c> path; it shows team colour only on entities that get one (captured buildings).
+    /// </summary>
     public sealed class ColorMaterialFactory : IMapAssetFactory
     {
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
@@ -15,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Factories
         {
             var settings = request.Params<ColorMaterialParams>();
             var path = request.Output(request.Refs.material, "material");
-            var material = MapAssetFiles.Material(path, "Universal Render Pipeline/Lit");
+            var material = MapAssetFiles.Material(path, "HyperRTS/LitTeam");
             material.SetColor(BaseColor, settings.color);
             material.SetFloat(Smoothness, settings.smoothness);
             return new[] { path };

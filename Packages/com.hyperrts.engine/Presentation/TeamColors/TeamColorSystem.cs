@@ -1,5 +1,6 @@
 ﻿using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.GameEntities;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -10,9 +11,9 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.TeamColors
 {
     /// <summary>
-    /// Tints owned meshes with their player's colour (or the <see cref="TeamColorOverride"/>'s), only for new entities,
-    /// when the owner changes or when the override does. An entity that turns neutral gets its authored materials
-    /// back. An entity whose player hasn't arrived yet (ghosts stream in any order) stays uncoloured and is retried
+    /// Gives owned meshes their faction's <see cref="TeamColor"/> (and the root's <see cref="TeamStripBand"/> as
+    /// <see cref="TeamStrip"/>) for HyperRTS/LitTeam's mask, only for new entities, when the owner changes or when the
+    /// override does. An entity that turns neutral loses them, so it looks as authored. An entity whose player hasn't arrived yet (ghosts stream in any order) stays uncoloured and is retried
     /// every frame.
     /// </summary>
     [BurstCompile]
@@ -26,6 +27,7 @@ namespace HyperRTS.Presentation.TeamColors
         private int _playerVersion;
         private int _factionVersion;
         private int _overrideVersion;
+        private FactionPalette _palette;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -36,6 +38,7 @@ namespace HyperRTS.Presentation.TeamColors
             _colored = SystemAPI.QueryBuilder().WithAll<TeamColored>().Build();
             _changedOverride = SystemAPI.QueryBuilder().WithAll<TeamColorOverride>().Build();
             _changedOverride.SetChangedVersionFilter(ComponentType.ReadOnly<TeamColorOverride>());
+            _palette = FactionPalette.Create(ref state);
             state.RequireForUpdate<Player>();
             state.RequireForUpdate<BeginPresentationEntityCommandBufferSystem.Singleton>();
         }
@@ -56,21 +59,13 @@ namespace HyperRTS.Presentation.TeamColors
                 return;
             }
 
-            // Index = faction; w == 0 marks a faction without a player.
-            var colors = CollectionHelper.CreateNativeArray<float4>(byte.MaxValue + 1, state.WorldUpdateAllocator);
-            foreach (var player in SystemAPI.Query<RefRO<Player>>())
-            {
-                colors[player.ValueRO.Faction] = new float4(player.ValueRO.Color.xyz, 1f);
-            }
-
-            ApplyOverride(ref state, colors);
-
             var painter = new TeamPainter
             {
-                Colors = colors,
+                Colors = _palette.Build(state.WorldUpdateAllocator),
                 Linked = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true),
                 Children = SystemAPI.GetBufferLookup<Child>(true),
                 Meshes = SystemAPI.GetComponentLookup<MaterialMeshInfo>(true),
+                Strips = SystemAPI.GetComponentLookup<TeamStripBand>(true),
                 Commands = SystemAPI.GetSingleton<BeginPresentationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
             };
@@ -89,23 +84,6 @@ namespace HyperRTS.Presentation.TeamColors
 
             _overrideVersion = order;
             return true;
-        }
-
-        /// <summary>Swaps in the override's colour for every listed faction that has a player.</summary>
-        private void ApplyOverride(ref SystemState state, NativeArray<float4> colors)
-        {
-            if (!SystemAPI.TryGetSingleton(out TeamColorOverride colorOverride))
-            {
-                return;
-            }
-
-            foreach (var entry in colorOverride.Colors)
-            {
-                if (colors[entry.Faction].w != 0f)
-                {
-                    colors[entry.Faction] = new float4(entry.Color.xyz, 1f);
-                }
-            }
         }
 
         // Entities whose player hasn't arrived only get another try once players or owned entities come or go,
@@ -135,6 +113,7 @@ namespace HyperRTS.Presentation.TeamColors
             [ReadOnly] public BufferLookup<LinkedEntityGroup> Linked;
             [ReadOnly] public BufferLookup<Child> Children;
             [ReadOnly] public ComponentLookup<MaterialMeshInfo> Meshes;
+            [ReadOnly] public ComponentLookup<TeamStripBand> Strips;
             public EntityCommandBuffer Commands;
 
             /// <summary>False while the faction has no player yet; neutral entities keep their authored materials.</summary>
@@ -151,13 +130,21 @@ namespace HyperRTS.Presentation.TeamColors
                     return false;
                 }
 
+                var hasStrip = Strips.TryGetComponent(root, out var band);
+                var strip = new TeamStrip { Value = new float4(band.Bottom, band.Top, 0f, 0f) };
                 var targets = new FixedList512Bytes<Entity>();
                 RenderHierarchy.Collect(root, Linked, Children, ref targets);
                 foreach (var target in targets)
                 {
-                    if (Meshes.HasComponent(target))
+                    if (!Meshes.HasComponent(target))
                     {
-                        Commands.AddComponent(target, new URPMaterialPropertyBaseColor { Value = color });
+                        continue;
+                    }
+
+                    Commands.AddComponent(target, new TeamColor { Value = color });
+                    if (hasStrip)
+                    {
+                        Commands.AddComponent(target, strip);
                     }
                 }
 
@@ -173,7 +160,8 @@ namespace HyperRTS.Presentation.TeamColors
                 {
                     if (Meshes.HasComponent(target))
                     {
-                        Commands.RemoveComponent<URPMaterialPropertyBaseColor>(target);
+                        Commands.RemoveComponent<TeamColor>(target);
+                        Commands.RemoveComponent<TeamStrip>(target);
                     }
                 }
             }

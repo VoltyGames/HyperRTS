@@ -4,8 +4,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Factories
 {
     /// <summary>
-    /// <c>"factory": "photoMaterial"</c>: a URP Lit material at the item's <c>material</c> path from the photo texture
-    /// set beside its file (base colour, normal, and the mask map as metallic-smoothness and occlusion).
+    /// <c>"factory": "photoMaterial"</c>: a HyperRTS/LitTeam material at the item's <c>material</c> path from the photo
+    /// texture set beside its file (base colour, normal, and the mask map as metallic-smoothness and occlusion).
     /// </summary>
     public sealed class PhotoMaterialFactory : IMapAssetFactory
     {
@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Factories
             var settings = request.Params<PhotoMaterialParams>();
             var path = request.Output(request.Refs.material, "material");
             var (baseColor, normal, mask) = MapTextureSet.Read(request.Folder, settings.textureSet, settings.textureSize);
-            var material = MapAssetFiles.Material(path, "Universal Render Pipeline/Lit");
+            var material = MapAssetFiles.Material(path, "HyperRTS/LitTeam");
             material.SetTexture(BaseMap, baseColor);
             material.SetTexture(BumpMap, normal);
             material.SetTexture(MetallicMap, mask);
