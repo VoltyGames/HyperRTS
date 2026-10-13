@@ -168,12 +168,16 @@ Shader "HyperRTS/Water"
                 return glint * min(1.0, headroom / max(Brightest(glint), 0.0001));
             }
 
-            // Foam only on fast water (vertex G), stretched along the current.
+            // Foam only on fast water (vertex G), stretched along the current and broken into patches so the ford
+            // doesn't read as a striped block.
             half Streaks(float2 uv, half fast)
             {
-                float2 streakUV = float2(uv.x / _StreakWidth, (uv.y - _Time.y * _FlowSpeed * 2.5) / _StreakLength);
-                half3 noise = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, streakUV));
-                return fast * smoothstep(0.05, 0.4, noise.x);
+                float drift = _Time.y * _FlowSpeed * 2.5;
+                float2 streakUV = float2(uv.x / _StreakWidth, (uv.y - drift) / _StreakLength);
+                half3 streak = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, streakUV));
+                float2 patchUV = float2(uv.x * 0.37 + 0.21, uv.y - drift * 0.6) / (_StreakLength * 1.7);
+                half3 patches = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, patchUV));
+                return fast * smoothstep(0.1, 0.45, streak.x) * smoothstep(-0.1, 0.35, patches.y);
             }
 
             // Clouds dim the sunlight the water scatters back up, about two thirds of it; the sky's share stays. The
@@ -217,7 +221,7 @@ Shader "HyperRTS/Water"
                 half3 color = lerp(body, sky, fresnel);
                 color += Glint(sun, normalWS, view, color, cameraDistance);
 
-                half foam = Streaks(input.uv, input.color.g) * 0.7;
+                half foam = Streaks(input.uv, input.color.g) * 0.5;
                 color = lerp(color, _FoamColor.rgb * (sun.color * sun.shadowAttenuation * 0.6 + 0.4), foam);
                 half alpha = max(input.color.a * saturate(depth / _EdgeFade), foam);
                 color = MixFog(color, input.fogFactor);

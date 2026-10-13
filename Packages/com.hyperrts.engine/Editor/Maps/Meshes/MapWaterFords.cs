@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Meshes
         public const float FordAlpha = 0.25f;
 
         /// <summary>Metres past a ford's edge over which the water deepens again.</summary>
-        private const float Fade = 3f;
+        private const float Fade = 6f;
 
         /// <summary>Metres of fast water downstream of a ford.</summary>
         private const float FastRun = 10f;
