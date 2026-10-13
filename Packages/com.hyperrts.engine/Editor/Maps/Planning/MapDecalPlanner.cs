@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 var random = Context.Random(MapRandomChannel.Decals, index);
                 foreach (var density in surface.decals)
                 {
-                    var wanted = Mathf.RoundToInt(density.perHectare * Hectares(cells.Count));
+                    var wanted = random.Count(density.perHectare * Hectares(cells.Count));
                     Scatter(Climate.Decal(density.decal), wanted, cells, random);
                 }
             }

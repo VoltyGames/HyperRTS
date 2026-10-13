@@ -20,6 +20,16 @@ namespace HyperRTS.Editor.Maps
         /// <summary>-1 to 1.</summary>
         public static float Signed(this System.Random random) => random.Value() * 2f - 1f;
 
+        /// <summary>
+        /// A whole count averaging <paramref name="expected"/>: the fraction is a chance of one more, so many small
+        /// regions still get their share where rounding each would give none.
+        /// </summary>
+        public static int Count(this System.Random random, float expected)
+        {
+            var whole = Mathf.FloorToInt(expected);
+            return random.Value() < expected - whole ? whole + 1 : whole;
+        }
+
         /// <summary>A random facing, 0 to 360 degrees.</summary>
         public static float Yaw(this System.Random random) => random.Value() * 360f;
 

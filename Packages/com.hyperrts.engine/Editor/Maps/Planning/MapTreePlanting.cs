@@ -63,7 +63,7 @@ namespace HyperRTS.Editor.Maps.Planning
         public void Scatter(MapTreeDensity density, float hectares, float spacing, System.Random random,
             Func<Vector2> candidate, Func<Vector2, bool> inside)
         {
-            var wanted = Mathf.RoundToInt(density.perHectare * hectares);
+            var wanted = random.Count(density.perHectare * hectares);
             Scatter(_climate.TreeIndex(density.tree), wanted, spacing, random, candidate, inside);
         }
 

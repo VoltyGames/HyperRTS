@@ -17,6 +17,9 @@ namespace HyperRTS.Editor.Maps.Planning
         private const float RowSpacing = 16f;
         private const float AlongSpacing = 24f;
         private const float RowJitter = 2f;
+
+        // Metres between a prop's footprint and the centre of the nearest tree, so props fit between wood trees.
+        private const float TreeClearance = 0.5f;
         private float[] _edges;
 
         public MapSurfacePlanter(MapPlanContext context) : base(context)
@@ -75,7 +78,7 @@ namespace HyperRTS.Editor.Maps.Planning
             System.Random random)
         {
             var entry = Context.Palette.Entry(props.kind);
-            var wanted = Mathf.RoundToInt(props.perHectare * hectares);
+            var wanted = random.Count(props.perHectare * hectares);
             if (props.alongRows)
             {
                 PlaceInRows(region, entry, cells, wanted, random);
@@ -124,7 +127,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 return false;
             }
 
-            if (!Context.Trees.Fits(spot, radius + 1f))
+            if (!Context.Trees.Fits(spot, radius + TreeClearance))
             {
                 return false;
             }
