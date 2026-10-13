@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Presentation.Environment.RowCrops;
-using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -49,13 +48,6 @@ namespace HyperRTS.Editor.Maps.Library
         public List<string> beltKits = new();
         [MapKey(typeof(MapWoodlandKit))]
         public List<string> woodlandKits = new();
-
-        /// <summary>The <see cref="Factories.IMapAssetFactory"/> kind that makes this item's assets, or empty when they are made elsewhere.</summary>
-        public string factory;
-
-        /// <summary>The factory's <c>params</c> object, kept whole so saves write back every key.</summary>
-        [NonSerialized]
-        public JToken factoryParams;
 
         /// <summary>The project-relative library file, named in every error.</summary>
         [NonSerialized]

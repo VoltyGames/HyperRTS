@@ -8,8 +8,8 @@ namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
     /// Reads and writes one library file as editors see it: the item and the <see cref="MapLibraryRefs"/> fields
-    /// its type reads. Written in the <see cref="MapJsonFormat"/> layout specs use, the refs first, the factory and
-    /// its params object last; the key is the file name, never a field.
+    /// its type reads. Written in the <see cref="MapJsonFormat"/> layout specs use, the refs first; the key is the
+    /// file name, never a field.
     /// </summary>
     public static class MapLibraryItemFile
     {
@@ -26,10 +26,9 @@ namespace HyperRTS.Editor.Maps.Library
             refs.file = file;
             try
             {
-                var root = MapJsonFormat.Parse(json);
+                MapJsonFormat.Parse(json);
                 JsonUtility.FromJsonOverwrite(json, item);
                 JsonUtility.FromJsonOverwrite(json, refs);
-                refs.factoryParams = root["params"];
             }
             catch (Exception e) when (e is ArgumentException or FormatException or InvalidOperationException)
             {
@@ -56,26 +55,7 @@ namespace HyperRTS.Editor.Maps.Library
                 root.Add(property.Name, property.Value);
             }
 
-            AddFactory(root, refs);
             return MapJsonFormat.Write(root);
-        }
-
-        /// <summary>The factory name and its params object, last, when the item has a factory.</summary>
-        private static void AddFactory(JObject root, MapLibraryRefs refs)
-        {
-            if (string.IsNullOrEmpty(refs.factory))
-            {
-                return;
-            }
-
-            if (refs.factoryParams == null)
-            {
-                throw new InvalidOperationException(
-                    $"HyperRTS: map library file '{refs.file}' names factory '{refs.factory}' but has no \"params\" object.");
-            }
-
-            root.Add("factory", refs.factory);
-            root.Add("params", refs.factoryParams.DeepClone());
         }
     }
 }

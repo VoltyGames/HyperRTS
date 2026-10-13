@@ -27,7 +27,6 @@ A folder uses only the folders listed before it.
 | `Data/` | Library item classes: `MapClimate` (layers, surfaces, trees, plants, row crops (`<Key>.rowCrop.json`: a `crop` ref to a `RowCrop` asset; a surface names one in `rowCrop`), decals, road classes, farmland / belt / woodland kits), `MapPalette` (what each spec `kind` places, start kit, settlement kits), `MapRules` (thresholds per mode, match settings), `MapMaterial`. `MapKeys` looks keys up after the checks |
 | `Library/` | `MapLibrary`: one `<Key>.<type>.json` per item anywhere under the root; `MapClimateAssembly` builds a climate from its file; load problems, usages, `[MapKey]` / `[MapAsset]` fields and their drawers, and the **Tools ▸ Library** page |
 | `Symmetry/` | `MapSymmetry`: the copies of the sector (rotations or mirrors) and how they number slots |
-| `Factories/` | `IMapAssetFactory`: makes a library item's Unity assets from its JSON (`photoMaterial`, `colorMaterial`, `terrainLayer`; games add their own). `MapAssetPostprocessor` reruns them when an item file imports |
 | `Generation/` | `MapProject`, `MapPaths` (generated files beside the spec), `MapGeneration` |
 
 `MapIssues` collects errors (they fail a build) and warnings, each optionally naming its spec feature;
@@ -88,6 +87,4 @@ terrain prototype per (species, variant).
 
 - **A kind of land use**: a kit in `Data/` held by `MapClimate`, a `MapLandPass` in `Planning/` added to
   `MapLandPlanner`, a spec class and a `MapFeatureKind` for the Map Editor. Steps: [maps](../maps.md#adding-a-kind-of-land-use).
-- **An asset factory**: implement `IMapAssetFactory` (`Kind` is the item's `factory` value) in game editor code;
-  `MapLibraryAssets.Factories` finds it by type discovery.
 - **After a build**: implement `IMapBuildHook`.

@@ -5,8 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>
-    /// A shared material map props are built with (model slots named after it are remapped onto it), usually made
-    /// by its factory from the photo texture set beside its file.
+    /// A shared material map props are built with (model slots named after it are remapped onto it), an
+    /// ordinary material asset.
     /// </summary>
     [Serializable]
     [MapLibraryItem("material", "material", PreviewRefs = new[] { "material" })]

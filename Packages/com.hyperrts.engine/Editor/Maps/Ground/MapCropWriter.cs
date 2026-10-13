@@ -1,5 +1,4 @@
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Maps.Factories;
 using HyperRTS.Presentation.Environment.RowCrops;
 using UnityEditor;
 using UnityEngine;
@@ -19,7 +18,13 @@ namespace HyperRTS.Editor.Maps.Ground
             }
 
             var picture = WritePicture(picturePath, bake);
-            var fields = MapAssetFiles.LoadOrCreate(assetPath, ScriptableObject.CreateInstance<RowCropFields>);
+            var fields = AssetDatabase.LoadAssetAtPath<RowCropFields>(assetPath);
+            if (fields == null)
+            {
+                fields = ScriptableObject.CreateInstance<RowCropFields>();
+                AssetDatabase.CreateAsset(fields, assetPath);
+            }
+
             fields.fieldIds = picture;
             fields.area = bake.Area;
             fields.crops = new(bake.Crops);

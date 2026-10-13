@@ -292,18 +292,10 @@ Saves go through `MapLibraryItemFile` in the same `MapJsonFormat` layout as spec
 path in any folder and refuse a taken key. Nothing caches `MapLibrary`; the page, the key dropdowns and the problems reload when `MapLibraryChanges` sees the
 project change.
 
-### Assets made from library items
+### Library assets
 
-An item can name a `factory` and give it a `params` object; its JSON is then the source of its Unity assets. An
-`IMapAssetFactory` (found by type, its `Kind` unique) reads the params (every field required, no unknown keys) and
-writes where the item's asset fields point, updating assets in place so their GUIDs stay. `MapAssetPostprocessor`
-regenerates an item's assets when its file imports (saved on the Library page or by hand), once per import batch;
-`MapLibraryAssets.GenerateAll` runs every factory in item-type order, so materials exist before the props that use
-them. Items without a factory point at assets made elsewhere. The engine ships `photoMaterial` and `colorMaterial`
-(`HyperRTS/LitTeam` materials, so a held building can show a team stripe) and `terrainLayer` (from the photo texture
-set beside the item's file); a game adds factories for its own kinds of asset.
-
-A climate's terrain texture arrays (albedo with height in alpha, normals, occlusion and smoothness) are generated
+An item's JSON holds placement data and the paths of its Unity assets (materials, layers, prefabs); the assets are
+ordinary files edited in Unity, never made from the JSON. A climate's terrain texture arrays (albedo with height in alpha, normals, occlusion and smoothness) are generated
 into a `Generated` folder beside the climate's library file, named after it, and rebuilt only when their source
 textures or the layers change (`MapTerrainTextures`). The source images are read from file and resampled to the
 slice size; mask heights are stretched so every layer blends alike (`MapTerrainSource`).
