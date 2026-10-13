@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Maps.Generation;
+using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
 using UnityEditor;
@@ -13,8 +14,8 @@ namespace HyperRTS.Editor.Maps.Scenes
 {
     /// <summary>
     /// A map's scene and SubScene open for a build, cleared of what the last build generated and with the match set
-    /// up. Generated content lives under the main scene's <c>[Generated]</c> root and in SubScene roots named
-    /// <c>[Generated] …</c>; <c>[Dressing]</c> is never touched.
+    /// up. Generated content lives under the main scene's <c>[Generated]</c> root and in the SubScene roots
+    /// <see cref="MapOwnedObjects"/> names; <c>[Dressing]</c> is never touched.
     /// </summary>
     public sealed class MapScene
     {
@@ -96,10 +97,21 @@ namespace HyperRTS.Editor.Maps.Scenes
 
         private static void Clear(Scene main, Scene entities)
         {
-            foreach (var root in main.GetRootGameObjects().Concat(entities.GetRootGameObjects())
-                         .Where(r => r.name.StartsWith(Generated, System.StringComparison.Ordinal)))
+            foreach (var root in main.GetRootGameObjects())
             {
-                Object.DestroyImmediate(root);
+                if (root.name.StartsWith(Generated, System.StringComparison.Ordinal))
+                {
+                    Object.DestroyImmediate(root);
+                }
+            }
+
+            var libraryPrefabs = MapOwnedObjects.LibraryPrefabs(MapLibrary.Load());
+            foreach (var root in entities.GetRootGameObjects())
+            {
+                if (MapOwnedObjects.IsOwned(root, libraryPrefabs))
+                {
+                    Object.DestroyImmediate(root);
+                }
             }
         }
 
