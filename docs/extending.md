@@ -65,7 +65,7 @@ Mirror the engine's layering:
 | Change | Do |
 | --- | --- |
 | Add or replace a panel | Implement `IHUDPanel` (or derive `HUDPanel` for a boxed one), subclass `HUDController`, override `CreatePanels` and `Add(panel, parent)`. Put the subclass on your HUD prefab |
-| Translate text | Subclass `HUDText`, override `Get(key)` and `Name(key, authored)`, set `HUDText.Current` before the HUD builds (`[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]`). Keys: [modules](modules.md#presentation) |
+| Translate text | Subclass `HUDText`, override `Get(key)` and `Name(key, authored)`, set `HUDText.Current` before the HUD builds (`[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]`). Keys: [modules](modules/client.md#presentation) |
 | Restyle | Override classes from `Presentation/HUD/HUD.uss` in your theme. Set `HUDController.Theme` to put one class on `hud-root` at runtime (a per-player or per-side theme) |
 | Team colours | Write a `TeamColorOverride` singleton (colour-blind palettes, own / ally / enemy) |
 

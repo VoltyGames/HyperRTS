@@ -48,8 +48,8 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
 ## Conventions
 
 - Namespaces follow the folder path (`HyperRTS.<Layer>.<Module>`); contracts stay in `HyperRTS.Core`.
-- Simulation modules are layered (order in `docs/modules.md`): a module uses only lower ones, and `Common` is the
-  base. Put a component two modules share in `Common` or the lower module; authoring files may reference any
+- Simulation modules are layered (order in `docs/modules.md#layers`): a module uses only lower ones, and `Common`
+  is the base. Put a component two modules share in `Common` or the lower module; authoring files may reference any
   module. `ModuleLayoutTests` enforces this; a new module needs a place in its `Layers`, and don't grow its
   back-edge allowlist (empty now).
 - Authoring classes derive from `AuthoringBehaviour` (game ones too, for inspector warnings, summaries and
@@ -116,10 +116,11 @@ In Play mode, the Scene view's **HyperRTS Debug** overlay and **HyperRTS ▸ Too
 
 - [`getting-started`](docs/getting-started.md) - first skirmish in the editor, controls
 - [`architecture`](docs/architecture.md) - assemblies, module layers, contract, worlds, frame order
-- [`modules`](docs/modules.md) - components and systems per module
+- [`modules`](docs/modules.md) - components and systems per module (index of `docs/modules/`)
 - [`extending`](docs/extending.md) - game code, HUD, AI, front-end integration
 - [`networking`](docs/networking.md) - sessions, join, commands, replication, fog relevancy
 - [`editor`](docs/editor.md) - Tools window, generators, menus, authoring conventions, validation, debug tools
-- [`maps`](docs/maps.md) - Map Editor, spec format, build pipeline, map library, batch tools
+- [`maps`](docs/maps.md) - Map Editor, spec format, build pipeline, map library, batch tools; code in
+  [`modules/map-tools`](docs/modules/map-tools.md)
 - [`testing`](docs/testing.md) - `TestWorld`, test kits, CI validation
 - [`roadmap`](docs/roadmap.md) - status and open work; check before new work

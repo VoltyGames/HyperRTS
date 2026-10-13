@@ -20,19 +20,7 @@ spec ─▶ Preview ─────────────▶ Build ───�
 | Build | **Build** in the Map Editor or on **HyperRTS ▸ Tools ▸ Maps**; `MapBuilder.Build(spec)`; batch `.Build` | Scene and SubScene, assets, report, minimap, views |
 | Views | Every build with graphics; **Recapture views** in the Map Editor; `MapViewCapture.Capture(spec)` | `Logs/MapReports/<Map>/*.png` |
 
-The code is layered, each row using only the rows above it:
-
-| Folders | Hold |
-| --- | --- |
-| `Spec/`, `Json/`, `Data/`, `Library/`, `Symmetry/` | The spec as authored and `MapSpecJson`; `MapJsonFormat`, the one JSON layout specs and library files are saved in; the library item classes (layers, surfaces, kits, climate, palette, rules) and the JSON map library they are read from; sector copies |
-| `Factories/` | Asset factories that make Unity assets from library items |
-| `Checks/` | Asset and spec checks, run before anything is generated |
-| `Refine/`, `Layout/` | Sector lines smoothed, then copied into the whole-map layout |
-| `Geometry/`, `Land/`, `Placement/`, `Ground/`, `Planning/` | Shapes and noise, the land grid, placements, heights and painters, land passes |
-| `Generation/` | `MapProject` (spec and library), `MapPaths`, `MapGeneration` in stages: `Lay`, `Plan`, `Run` |
-| `Scenes/`, `Meshes/`, `Texturing/`, `Nav/`, `Hints/`, `Report/`, `Views/` | What a build writes, measures and captures |
-| `Build/` | `MapBuilder`, `MapPreview`, `IMapBuildHook` |
-| `Designer/`, `Tools/` | The Map Editor; the Maps page, build commands, command line, key reference, validation rule |
+Code reference (folders, pipeline stages, land passes): [map tools](modules/map-tools.md).
 
 ## Map Editor
 

@@ -8,7 +8,7 @@ and the simulation runs headless for tests and dedicated servers.
 
 | Area | Included |
 | --- | --- |
-| Control | Click, box and double-click selection, control groups, smart right-click, queued orders, attack-move, patrol, escort, stop, hold |
+| Control | Click, box and double-click selection that picks units through buildings, control groups, smart right-click, queued orders, attack-move, patrol, escort, stop, hold |
 | Movement | Grid A* with smoothing, separation, formations, terrain height, ground / naval / amphibious / air layers, bridges |
 | Economy | Any number of resource types, harvesters, drop-offs, finite or regrowing nodes, power |
 | Bases | Snapped placement, builder construction, production and research queues, rally points, prerequisites, population, repair, sell |
@@ -16,10 +16,10 @@ and the simulation runs headless for tests and dedicated servers.
 | Mechanics | Upgrades, area fields, cooldown abilities and player powers, capture, garrisons and transports, aircraft with airfields, stealth and detection |
 | Vision | Per-team fog of war with explored state and terrain line of sight |
 | Players | Teams, colours, human / AI / remote slots, victory and defeat, skirmish AI with build orders and difficulties |
-| Multiplayer | Server-authoritative Netcode: host, dedicated server, relay, join and rejoin, per-client fog relevancy |
-| Presentation | UI Toolkit HUD, team colours, overlays, fog rendering, pooled audio with unit voices |
+| Multiplayer | Server-authoritative Netcode: host, dedicated server, relay, join and rejoin, per-client fog relevancy, map buildings as prespawned ghosts, late joiners spared old effects |
+| Presentation | UI Toolkit HUD, masked team colour (`HyperRTS/LitTeam`), unit silhouettes through cover, flags, capture dials and garrison pips on buildings, overlays, fog rendering, water and foliage shaders, pooled audio with unit voices |
 | Replays | State recording, playback, seek |
-| Maps | JSON map specs of land use (farmland, settlements, woods, belts, rivers, ravines, roads) built into terrain, scenes, bot hints and a report with rush times and attack paths; symmetric by sector; a JSON map library for the look of the land |
+| Maps | JSON map specs of land use (farmland, settlements, woods, belts, rivers, ravines, roads) built into terrain, road and river meshes, ground decals, scenes, bot hints and a report with rush times and attack paths; symmetric by sector; a JSON map library for the look of the land |
 | Editor | Tools window (maps, map library, stats catalog and tech tree, validator with quick fixes, Play-mode cheats, network and replays, generators), Map Editor with live preview, role templates, inspectors with issue badges, Play-mode debug overlay |
 
 ## Try it
@@ -44,11 +44,12 @@ Then follow [getting started](docs/getting-started.md).
 | --- | --- |
 | [Getting started](docs/getting-started.md) | First playable skirmish in the editor, no code |
 | [Architecture](docs/architecture.md) | Assemblies, worlds, frame order, the gameplay contract |
-| [Modules](docs/modules.md) | Components and systems of every module |
+| [Modules](docs/modules.md) | Components and systems of every module, one page per group |
 | [Extending](docs/extending.md) | Game code: new mechanics, HUD, AI, front-end integration |
 | [Networking](docs/networking.md) | Sessions, join, replication, relay, fog relevancy |
 | [Editor](docs/editor.md) | Tools window, generators, menus, authoring conventions, inspectors, validation, debug tools |
 | [Maps](docs/maps.md) | Map Editor, spec format, build pipeline, map library, batch tools |
+| [Map tools](docs/modules/map-tools.md) | The map builder's code: folders, pipeline stages, land passes, extension points |
 | [Testing](docs/testing.md) | `TestWorld`, test kits, validation in CI |
 | [Roadmap](docs/roadmap.md) | Status and open work |
 
