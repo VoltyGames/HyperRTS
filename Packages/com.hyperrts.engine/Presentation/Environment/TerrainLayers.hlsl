@@ -82,21 +82,17 @@ TerrainLayerParams LoadLayerParams(uint layer, float2 rowTurn)
 
 float2 RotateAndTile(float2 xz, TerrainLayerParams params)
 {
-    float2 r = params.rotation;
-    return float2(xz.x * r.x - xz.y * r.y, xz.x * r.y + xz.y * r.x) * params.tiling;
+    return RotateUV(xz, params.rotation) * params.tiling;
 }
 
-// The layer's hex-tiled albedo, with the far sample mixed in by camera distance.
-half4 LayerAlbedo(inout TerrainHex hex, TerrainLayerParams params, TerrainPixel pixel)
+// The layer's hex-tiled albedo, with the far sample at st mixed in by camera distance.
+half4 LayerAlbedo(inout TerrainHex hex, float2 st, float2 dx, float2 dy, half far)
 {
     half4 albedo = SampleHexAlbedo(hex);
     #ifdef TERRAIN_FAR_SAMPLE
-        [branch] if (pixel.far > 0.0)
+        [branch] if (far > 0.0)
         {
-            float2 st = RotateAndTile(pixel.xz, params);
-            float2 dx = RotateAndTile(pixel.dx, params);
-            float2 dy = RotateAndTile(pixel.dy, params);
-            albedo.rgb = lerp(albedo.rgb, SampleFarAlbedo(st, dx, dy, hex.slice), pixel.far);
+            albedo.rgb = lerp(albedo.rgb, SampleFarAlbedo(st, dx, dy, hex.slice), far);
         }
     #endif
     return albedo;
@@ -106,8 +102,7 @@ half4 LayerAlbedo(inout TerrainHex hex, TerrainLayerParams params, TerrainPixel 
 half3 LayerNormal(TerrainHex hex, TerrainLayerParams params)
 {
     half3 normal = SampleHexNormal(hex, params.normalStrength);
-    float2 r = params.rotation;
-    return half3(normal.x * r.x + normal.y * r.y, normal.y * r.x - normal.x * r.y, normal.z);
+    return half3(RotateUV(normal.xy, params.rotation * float2(1.0, -1.0)), normal.z);
 }
 
 void FadeBlend(inout TerrainBlend blend, float keep)
@@ -125,9 +120,11 @@ void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pi
 {
     TerrainLayerParams params = LoadLayerParams(layer, pixel.rowTurn);
     // Explicit gradients: hex cells jump at their edges and layers are sampled inside branches.
-    TerrainHex hex = GetHex(RotateAndTile(pixel.xz, params), RotateAndTile(pixel.dx, params),
-        RotateAndTile(pixel.dy, params), layer, params.hex);
-    half4 albedo = LayerAlbedo(hex, params, pixel);
+    float2 st = RotateAndTile(pixel.xz, params);
+    float2 dx = RotateAndTile(pixel.dx, params);
+    float2 dy = RotateAndTile(pixel.dy, params);
+    TerrainHex hex = GetHex(st, dx, dy, layer, params.hex);
+    half4 albedo = LayerAlbedo(hex, st, dx, dy, pixel.far);
 
     // Share = weight x e^(height / depth): equal heights keep the painted blend, taller texels win where layers mix.
     float score = log(weight) + params.heightWeight * (albedo.a - 0.5) / _HeightBlendDepth;

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Common
@@ -40,6 +41,24 @@ namespace HyperRTS.Editor.Common
         public static Texture2D WritePng(string path, int width, int height, TextureFormat format, Color[] pixels,
             Action<TextureImporter> configure) =>
             WritePng(path, width, height, format, image => image.SetPixels(pixels), configure);
+
+        /// <summary>Renders a camera into <paramref name="target"/> and saves it, shader variants compiled first.</summary>
+        public static void RenderPng(Camera camera, RenderTexture target, string path)
+        {
+            var asyncCompilation = ShaderUtil.allowAsyncCompilation;
+            try
+            {
+                // Right after a build, variants not yet compiled would render as nothing (trees as bare bark).
+                ShaderUtil.allowAsyncCompilation = false;
+                RenderPipeline.SubmitRenderRequest(camera, new RenderPipeline.StandardRequest { destination = target });
+            }
+            finally
+            {
+                ShaderUtil.allowAsyncCompilation = asyncCompilation;
+            }
+
+            SavePng(target, path);
+        }
 
         /// <summary>Writes a render texture to a PNG file as RGB.</summary>
         public static void SavePng(RenderTexture source, string path)

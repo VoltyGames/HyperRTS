@@ -2,7 +2,6 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Layout;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace HyperRTS.Editor.Maps.Scenes
 {
@@ -29,9 +28,7 @@ namespace HyperRTS.Editor.Maps.Scenes
                 camera.clearFlags = CameraClearFlags.SolidColor;
                 camera.backgroundColor = Color.black;
                 RenderSettings.fog = false;
-                var request = new RenderPipeline.StandardRequest { destination = target };
-                RenderPipeline.SubmitRenderRequest(camera, request);
-                EditorTextures.SavePng(target, path);
+                EditorTextures.RenderPng(camera, target, path);
             }
             finally
             {

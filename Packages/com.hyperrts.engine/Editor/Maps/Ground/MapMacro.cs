@@ -1,4 +1,3 @@
-using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
@@ -42,10 +41,9 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly Vector2[] _gradient;
         private readonly float[] _phase;
 
-        public MapMacro(MapLayout layout, MapLand land, MapShapes shapes, MapHeights heights, MapClimate climate)
+        public MapMacro(MapLayout layout, MapLand land, MapEdgeField edges, MapShapes shapes, MapHeights heights)
         {
-            (_land, _shapes, _heights, _symmetry) = (land, shapes, heights, layout.Symmetry);
-            _edges = new MapEdgeField(layout, land, climate);
+            (_land, _edges, _shapes, _heights, _symmetry) = (land, edges, shapes, heights, layout.Symmetry);
             _broad = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.MacroTint);
             _detail = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.MacroDetail);
             (_tint, _gradient, _phase) = (new Vector2[land.Regions.Count], new Vector2[land.Regions.Count], new float[land.Regions.Count]);
@@ -62,7 +60,12 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var edge = _edges.Sample(p);
             var share = edge.OwnShare;
-            var tint = Tint(edge.Own, p) * share + Tint(edge.Other, p) * (1f - share);
+            var tint = Tint(edge.Own, p) * share;
+            if (share < 1f)
+            {
+                tint += Tint(edge.Other, p) * (1f - share);
+            }
+
             var light = 0.5f + tint.x + 0.035f * _broad.Sample(p, 90f) + 0.02f * _detail.Sample(p, 14f) +
                         0.018f * _detail.Sample(p, 36f);
             var warmth = tint.y + 0.012f * _broad.Sample(p, 24f);

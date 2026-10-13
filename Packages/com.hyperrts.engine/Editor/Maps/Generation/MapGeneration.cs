@@ -35,6 +35,9 @@ namespace HyperRTS.Editor.Maps.Generation
         public MapPlacements Placements { get; private set; }
         public MapLand Land { get; private set; }
 
+        /// <summary>The land-use borders the splat, grass and macro painters share, so they end on one line.</summary>
+        public MapEdgeField Edges { get; private set; }
+
         public List<MapTree> Trees { get; private set; }
 
         /// <summary>Ground decals laid on surfaces and under props, copies included.</summary>
@@ -111,8 +114,9 @@ namespace HyperRTS.Editor.Maps.Generation
         {
             var climate = Project.Climate;
             Level();
-            Splat = MapSplatPainter.Paint(Layout, Land, Heights, climate, Layout.SplatResolution);
-            Details = MapDetailPainter.Paint(Layout, Land, Shapes, Heights, climate, Placements.Clearance,
+            Edges = new MapEdgeField(Layout, Land, climate);
+            Splat = MapSplatPainter.Paint(Layout, Edges, Heights, climate, Layout.SplatResolution);
+            Details = MapDetailPainter.Paint(Layout, Land, Edges, Shapes, Heights, climate, Placements.Clearance,
                 Layout.DetailResolution);
             SplitTrees(climate);
         }

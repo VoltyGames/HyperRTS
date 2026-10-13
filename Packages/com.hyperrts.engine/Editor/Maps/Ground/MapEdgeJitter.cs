@@ -36,17 +36,15 @@ namespace HyperRTS.Editor.Maps.Ground
             var offset = Vector2.zero;
             if (coarse < 1f)
             {
-                offset += Wave(point, FineWavelength) * (1f - coarse);
+                offset += _noise.SampleVector(point, FineWavelength) * (1f - coarse);
             }
 
             if (coarse > 0f)
             {
-                offset += Wave(point, CoarseWavelength) * coarse;
+                offset += _noise.SampleVector(point, CoarseWavelength) * coarse;
             }
 
             return Vector2.ClampMagnitude(offset / TypicalPeak, 1f) * amplitude;
         }
-
-        private Vector2 Wave(Vector2 point, float wavelength) => _noise.SampleVector(point, wavelength);
     }
 }

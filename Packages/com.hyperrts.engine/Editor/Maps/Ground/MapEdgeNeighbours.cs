@@ -50,13 +50,14 @@ namespace HyperRTS.Editor.Maps.Ground
             {
                 var (nx, nz) = (x + dx, z + dz);
                 var inside = nx >= 0 && nx < _width && nz >= 0 && nz < _height;
-                if (!inside || land.RegionIndex(nx, nz) == own)
+                var neighbour = inside ? land.RegionIndex(nx, nz) : own;
+                if (neighbour == own)
                 {
                     continue;
                 }
 
                 Distance[i] = 0f;
-                Other[i] = land.RegionIndex(nx, nz);
+                Other[i] = neighbour;
                 return;
             }
         }

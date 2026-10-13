@@ -21,11 +21,10 @@ namespace HyperRTS.Editor.Maps.Ground
         public const float PropGrassFalloff = 1.5f;
 
         /// <summary>Coverage per detail prototype as Unity's detail layers want it: [z, x] in 0 to 255.</summary>
-        public static List<int[,]> Paint(MapLayout layout, MapLand land, MapShapes shapes, MapHeights heights,
-            MapClimate climate, MapClearance clearance, int resolution)
+        public static List<int[,]> Paint(MapLayout layout, MapLand land, MapEdgeField edges, MapShapes shapes,
+            MapHeights heights, MapClimate climate, MapClearance clearance, int resolution)
         {
             var layers = Layers(climate.details.Count, resolution);
-            var edges = new MapEdgeField(layout, land, climate);
             var plants = Plants(land, climate, edges);
             var reed = string.IsNullOrEmpty(climate.reedDetail) ? -1 : climate.DetailIndex(climate.reedDetail);
             var clumps = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.PlantClumps);
@@ -139,8 +138,7 @@ namespace HyperRTS.Editor.Maps.Ground
             {
                 var surface = edges.Surface(i);
                 own[i] = Details(climate, surface);
-                var hasStrip = !string.IsNullOrEmpty(surface.edgeSurface);
-                strip[i] = hasStrip ? Details(climate, climate.Surface(surface.edgeSurface)) : null;
+                strip[i] = surface.HasEdgeSurface ? Details(climate, climate.Surface(surface.edgeSurface)) : null;
             }
 
             return (own, strip);

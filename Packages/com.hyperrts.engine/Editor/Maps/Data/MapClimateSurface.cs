@@ -48,6 +48,8 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Width of the edge surface's strip (metres). 0 without an edge surface.")]
         public float edgeSurfaceWidth;
 
+        public bool HasEdgeSurface => !string.IsNullOrEmpty(edgeSurface);
+
         string IMapKeyed.Key => key;
 
         void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;

@@ -151,8 +151,7 @@ namespace HyperRTS.Editor.Maps.Checks
         {
             Require(surface.edgeWidth > 0f, $"{name}: edgeWidth {surface.edgeWidth} must be above 0 metres.");
             Require(surface.edgeJitter > 0f, $"{name}: edgeJitter {surface.edgeJitter} must be above 0 metres.");
-            var hasStrip = !string.IsNullOrEmpty(surface.edgeSurface);
-            if (!hasStrip)
+            if (!surface.HasEdgeSurface)
             {
                 Require(surface.edgeSurfaceWidth <= 0f, $"{name}: edgeSurfaceWidth {surface.edgeSurfaceWidth} needs edgeSurface set; use 0 without one.");
                 return;

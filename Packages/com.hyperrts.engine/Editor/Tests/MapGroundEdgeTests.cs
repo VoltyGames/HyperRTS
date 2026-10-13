@@ -33,7 +33,8 @@ namespace HyperRTS.Editor.Tests
             field.edgeSurface = "Weeds";
             field.edgeSurfaceWidth = 2f;
             var (layout, land) = Halves(2);
-            var splat = MapSplatPainter.Paint(layout, land, Flat(layout), climate, Resolution);
+            var edges = new MapEdgeField(layout, land, climate);
+            var splat = MapSplatPainter.Paint(layout, edges, Flat(layout), climate, Resolution);
             var weeds = climate.LayerIndex("Weeds");
 
             Assert.Greater(Weight(splat, layout, new Vector2(-1f, 7f), weeds), 0.9f, "1 m into the field is margin");
@@ -53,7 +54,8 @@ namespace HyperRTS.Editor.Tests
             var plot = new Rect(-50f, -80f, 60f, 60f);
             land.ClaimEach(land.Bounds, p => Pick(p, plot, field, wood));
             var heights = Heights(layout, p => 2f * Mathf.Cos(p.x / 15f) * Mathf.Cos(p.y / 20f));
-            var macro = new MapMacro(layout, land, MapRoadFixture.Shapes(layout, climate), heights, climate);
+            var edges = new MapEdgeField(layout, land, climate);
+            var macro = new MapMacro(layout, land, edges, MapRoadFixture.Shapes(layout, climate), heights);
 
             for (var x = -110f; x < 110f; x += 7.3f)
             {
@@ -75,9 +77,11 @@ namespace HyperRTS.Editor.Tests
             var (_, recoloured) = Halves(3);
             var heights = Flat(layout);
             var shapes = MapRoadFixture.Shapes(layout, climate);
-            var splat = MapSplatPainter.Paint(layout, land, heights, climate, Resolution);
-            var macro = new MapMacro(layout, land, shapes, heights, climate);
-            var other = new MapMacro(layout, recoloured, shapes, heights, climate);
+            var edges = new MapEdgeField(layout, land, climate);
+            var splat = MapSplatPainter.Paint(layout, edges, heights, climate, Resolution);
+            var macro = new MapMacro(layout, land, edges, shapes, heights);
+            var recolouredEdges = new MapEdgeField(layout, recoloured, climate);
+            var other = new MapMacro(layout, recoloured, recolouredEdges, shapes, heights);
             var b = climate.LayerIndex("B");
             var area = layout.TerrainBounds;
             var texel = area.size / Resolution;
@@ -116,7 +120,8 @@ namespace HyperRTS.Editor.Tests
         {
             var climate = Climate(width, 0.05f);
             var (layout, land) = Halves(2);
-            var splat = MapSplatPainter.Paint(layout, land, Flat(layout), climate, Resolution);
+            var edges = new MapEdgeField(layout, land, climate);
+            var splat = MapSplatPainter.Paint(layout, edges, Flat(layout), climate, Resolution);
             var a = climate.LayerIndex("A");
             var texel = layout.TerrainBounds.width / Resolution;
             var blended = 0;

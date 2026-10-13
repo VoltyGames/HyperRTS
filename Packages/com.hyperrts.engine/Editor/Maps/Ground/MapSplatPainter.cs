@@ -1,6 +1,5 @@
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
-using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
 using UnityEngine;
 
@@ -21,27 +20,24 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly MapEdgeField _edges;
         private readonly int[] _regionLayer;
         private readonly int[] _stripLayer;
-        private readonly float[] _stripWidth;
         private readonly int _variation;
         private readonly int _slope;
         private readonly int _ground;
 
-        private MapSplatPainter(MapLayout layout, MapLand land, MapHeights heights, MapClimate climate)
+        private MapSplatPainter(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate)
         {
             _layout = layout;
             _heights = heights;
             _climate = climate;
             _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SplatPatches);
-            _edges = new MapEdgeField(layout, land, climate);
-            var regions = land.Regions.Count;
-            (_regionLayer, _stripLayer, _stripWidth) = (new int[regions], new int[regions], new float[regions]);
+            _edges = edges;
+            var regions = edges.RegionCount;
+            (_regionLayer, _stripLayer) = (new int[regions], new int[regions]);
             for (var i = 0; i < regions; i++)
             {
                 var surface = _edges.Surface(i);
                 _regionLayer[i] = climate.LayerIndex(surface.layer);
-                var hasStrip = !string.IsNullOrEmpty(surface.edgeSurface);
-                _stripLayer[i] = hasStrip ? climate.SurfaceLayer(surface.edgeSurface) : -1;
-                _stripWidth[i] = surface.edgeSurfaceWidth;
+                _stripLayer[i] = surface.HasEdgeSurface ? climate.SurfaceLayer(surface.edgeSurface) : -1;
             }
 
             _variation = climate.SurfaceLayer(climate.groundVariation);
@@ -50,11 +46,11 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         /// <summary>Layer weights as Unity's alphamaps want them: [z, x, layer], summing to 1 per texel.</summary>
-        public static float[,,] Paint(MapLayout layout, MapLand land, MapHeights heights, MapClimate climate,
+        public static float[,,] Paint(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate,
             int resolution)
         {
             var splat = new float[resolution, resolution, climate.layers.Count];
-            new MapSplatPainter(layout, land, heights, climate).Paint(splat, resolution);
+            new MapSplatPainter(layout, edges, heights, climate).Paint(splat, resolution);
             return splat;
         }
 
@@ -99,7 +95,7 @@ namespace HyperRTS.Editor.Maps.Ground
             var strip = _stripLayer[region];
             if (strip >= 0)
             {
-                var stripShare = amount * edge.StripShare(region, _stripWidth[region]);
+                var stripShare = amount * edge.StripShare(region, _edges.Surface(region).edgeSurfaceWidth);
                 Layer(weights, strip, stripShare, edge.Point);
                 amount -= stripShare;
             }

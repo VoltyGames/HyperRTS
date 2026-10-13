@@ -43,6 +43,8 @@ namespace HyperRTS.Editor.Maps.Ground
         /// <summary>The surface a region paints; unclaimed land paints the climate's ground surface.</summary>
         public MapClimateSurface Surface(int region) => _surfaces[region];
 
+        public int RegionCount => _surfaces.Length;
+
         /// <summary>The border round a map point, looked up through the edge jitter.</summary>
         public MapEdgeSample Sample(Vector2 point)
         {
@@ -55,7 +57,7 @@ namespace HyperRTS.Editor.Maps.Ground
             var inside = Mathf.Lerp(
                 Mathf.Lerp(Signed(x0, z0, own), Signed(x1, z0, own), fx),
                 Mathf.Lerp(Signed(x0, z1, own), Signed(x1, z1, own), fx), fz);
-            return new MapEdgeSample(at, own, other, inside, Bilinear(_width, at));
+            return new MapEdgeSample(at, own, other, inside, Lerp(_width, x0, z0, x1, z1, fx, fz));
         }
 
         /// <summary>Per cell, the crisper of the two sides' values, blurred so it changes smoothly.</summary>
@@ -85,6 +87,11 @@ namespace HyperRTS.Editor.Maps.Ground
         private float Bilinear(float[] field, Vector2 point)
         {
             Corners(point, out var x0, out var z0, out var x1, out var z1, out var fx, out var fz);
+            return Lerp(field, x0, z0, x1, z1, fx, fz);
+        }
+
+        private float Lerp(float[] field, int x0, int z0, int x1, int z1, float fx, float fz)
+        {
             var width = _land.Width;
             var near = Mathf.Lerp(field[z0 * width + x0], field[z0 * width + x1], fx);
             var far = Mathf.Lerp(field[z1 * width + x0], field[z1 * width + x1], fx);
