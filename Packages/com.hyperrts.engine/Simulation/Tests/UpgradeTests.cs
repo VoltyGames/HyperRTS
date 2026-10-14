@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Produce(1, lab, upgrade);
             _world.Run(3f);
 
-            Assert.AreEqual(50, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(50, _world.GetResources(1, _supplies));
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<CompletedResearch>(_world.Player(1)).Length);
             Assert.AreEqual(150f, _world.Get<Health>(tank).Max);
             Assert.AreEqual(100f, _world.Get<Health>(jeep).Max, "other types are unaffected");
@@ -93,7 +93,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick();
 
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<ProductionQueueItem>(lab).Length, "already researched");
-            Assert.AreEqual(450, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(450, _world.GetResources(1, _supplies));
         }
 
         [Test]

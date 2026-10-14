@@ -31,10 +31,10 @@ namespace HyperRTS.Simulation.Tests
             for (var t = 0f; t < 6f; t += TestWorld.FrameTime)
             {
                 _world.Tick();
-                Assert.AreEqual(0f, _world.PositionOf(aircraft).z, 1e-3f, "flew a straight line");
+                Assert.AreEqual(0f, _world.GetPosition(aircraft).z, 1e-3f, "flew a straight line");
             }
 
-            var position = _world.PositionOf(aircraft);
+            var position = _world.GetPosition(aircraft);
             Assert.Less(math.distance(position.xz, new float2(20f, 0f)), 0.5f);
             Assert.AreEqual(10f, position.y, 1e-3f, "cruises at its altitude over the ground");
         }
@@ -46,12 +46,12 @@ namespace HyperRTS.Simulation.Tests
             var jet = _world.SpawnAircraft(1, new float3(10f, 0f, 0f), loiterRadius: 5f);
             _world.Run(2f);
 
-            var hover = _world.PositionOf(helicopter);
-            var before = _world.PositionOf(jet);
+            var hover = _world.GetPosition(helicopter);
+            var before = _world.GetPosition(jet);
             _world.Run(1f);
 
-            Assert.AreEqual(hover, _world.PositionOf(helicopter), "a helicopter holds still");
-            var after = _world.PositionOf(jet);
+            Assert.AreEqual(hover, _world.GetPosition(helicopter), "a helicopter holds still");
+            var after = _world.GetPosition(jet);
             Assert.Greater(math.distance(before.xz, after.xz), 1f, "a jet keeps flying");
             Assert.Less(math.distance(after.xz, new float2(10f, 0f)), 10.5f, "within its loiter circle");
         }
@@ -64,8 +64,8 @@ namespace HyperRTS.Simulation.Tests
             var other = _world.SpawnAircraft(1, new float3(0.2f, 0f, 0f));
             _world.Run(1f);
 
-            Assert.AreEqual(0f, math.length(_world.PositionOf(tank).xz), 1e-4f, "the tank under them isn't pushed");
-            var gap = math.distance(_world.PositionOf(helicopter).xz, _world.PositionOf(other).xz);
+            Assert.AreEqual(0f, math.length(_world.GetPosition(tank).xz), 1e-4f, "the tank under them isn't pushed");
+            var gap = math.distance(_world.GetPosition(helicopter).xz, _world.GetPosition(other).xz);
             Assert.GreaterOrEqual(gap, 0.99f, "aircraft spread apart");
         }
     }

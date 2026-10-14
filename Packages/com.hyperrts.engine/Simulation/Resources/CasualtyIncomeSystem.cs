@@ -89,7 +89,7 @@ namespace HyperRTS.Simulation.Resources
                     }
 
                     var income = IncomeLookup[earner];
-                    var paid = (int)(CostOf(cost, income.Type) * income.Share);
+                    var paid = (int)(GetCost(cost, income.Type) * income.Share);
                     ResourcePayout.Pay(ref StockLookup, ref StatsLookup, Players[owner], income.Type, paid);
                 }
             }
@@ -104,7 +104,7 @@ namespace HyperRTS.Simulation.Resources
                 return victim == owner || Relations.IsHostile(owner, victim);
             }
 
-            private static int CostOf(DynamicBuffer<ResourceCost> cost, UnityObjectRef<ResourceType> type)
+            private static int GetCost(DynamicBuffer<ResourceCost> cost, UnityObjectRef<ResourceType> type)
             {
                 foreach (var item in cost)
                 {

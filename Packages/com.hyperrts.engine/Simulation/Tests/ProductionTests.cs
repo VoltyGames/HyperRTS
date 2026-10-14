@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Tests
             _world.PlaceBuilding(builder, prefab, new float3(6.3f, 0f, 0.2f));
             _world.Tick();
 
-            Assert.AreEqual(50, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(50, _world.GetResources(1, _supplies));
             var sites = _world.All<BuildingTag>();
             Assert.AreEqual(1, sites.Length);
             var site = sites[0];
@@ -146,7 +146,7 @@ namespace HyperRTS.Simulation.Tests
             _world.PlaceBuilding(builder, prefab, new float3(7f, 0f, 1f));
             _world.Tick();
 
-            Assert.AreEqual(100, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(100, _world.GetResources(1, _supplies));
             Assert.AreEqual(1, _world.All<BuildingTag>().Length);
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(builder));
         }
@@ -161,7 +161,7 @@ namespace HyperRTS.Simulation.Tests
             _world.PlaceBuilding(builder, prefab, new float3(6f, 0f, 0f));
             _world.Tick();
 
-            Assert.AreEqual(40, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(40, _world.GetResources(1, _supplies));
             Assert.AreEqual(0, _world.All<BuildingTag>().Length);
         }
 
@@ -175,7 +175,7 @@ namespace HyperRTS.Simulation.Tests
 
             _world.Produce(1, producer, prefab);
             _world.Tick();
-            Assert.AreEqual(70, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(70, _world.GetResources(1, _supplies));
             Assert.AreEqual(1, QueueLength(producer));
 
             _world.Run(0.5f);
@@ -201,12 +201,12 @@ namespace HyperRTS.Simulation.Tests
             _world.Produce(1, producer, prefab);
             _world.Produce(1, producer, prefab);
             _world.Tick();
-            Assert.AreEqual(40, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(40, _world.GetResources(1, _supplies));
 
             _world.Command(1, new PlayerCommand { Type = CommandType.CancelProduction, Unit = producer, Argument = -1 });
             _world.Tick();
 
-            Assert.AreEqual(70, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(70, _world.GetResources(1, _supplies));
             Assert.AreEqual(1, QueueLength(producer));
         }
 
@@ -276,7 +276,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Produce(1, producer, prefab);
             _world.Tick();
             Assert.AreEqual(1, QueueLength(producer));
-            Assert.AreEqual(90, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(90, _world.GetResources(1, _supplies));
         }
 
         [Test]
@@ -290,7 +290,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick();
 
             Assert.AreEqual(0, QueueLength(producer));
-            Assert.AreEqual(100, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(100, _world.GetResources(1, _supplies));
         }
     }
 }

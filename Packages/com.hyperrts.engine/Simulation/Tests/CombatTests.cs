@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Tests
 
             _world.Run(3f);
 
-            Assert.AreEqual(100f, _world.HealthOf(enemy));
+            Assert.AreEqual(100f, _world.GetHealth(enemy));
             Assert.IsFalse(_world.IsEnabled<AttackTarget>(soldier));
         }
 
@@ -76,8 +76,8 @@ namespace HyperRTS.Simulation.Tests
 
             _world.Run(3f);
 
-            Assert.AreEqual(100f, _world.HealthOf(friend));
-            Assert.AreEqual(100f, _world.HealthOf(ally));
+            Assert.AreEqual(100f, _world.GetHealth(friend));
+            Assert.AreEqual(100f, _world.GetHealth(ally));
         }
 
         [Test]
@@ -127,7 +127,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(5f);
 
             Assert.IsFalse(_world.EntityManager.Exists(near));
-            Assert.AreEqual(100f, _world.HealthOf(far), "out of weapon range");
+            Assert.AreEqual(100f, _world.GetHealth(far), "out of weapon range");
             Assert.AreEqual(0f, math.length(_world.Get<LocalTransform>(soldier).Position.xz), 1e-4f);
         }
 
@@ -152,11 +152,11 @@ namespace HyperRTS.Simulation.Tests
             }
 
             Assert.IsFalse(projectiles.IsEmpty, "a projectile was launched");
-            Assert.AreEqual(100f, _world.HealthOf(tank), "no damage until the projectile arrives");
+            Assert.AreEqual(100f, _world.GetHealth(tank), "no damage until the projectile arrives");
 
             _world.Run(2f);
 
-            Assert.AreEqual(80f, _world.HealthOf(tank), "40 damage halved by armor");
+            Assert.AreEqual(80f, _world.GetHealth(tank), "40 damage halved by armor");
             Assert.IsTrue(projectiles.IsEmpty, "the projectile is destroyed on impact");
             Object.DestroyImmediate(bullet);
         }
@@ -169,7 +169,7 @@ namespace HyperRTS.Simulation.Tests
             var enemy = _world.SpawnUnit(2, new float3(4f, 0f, 0f));
 
             _world.Run(2f);
-            Assert.AreEqual(100f, _world.HealthOf(enemy));
+            Assert.AreEqual(100f, _world.GetHealth(enemy));
 
             _world.EntityManager.SetComponentEnabled<ConstructionProgress>(tower, false);
             _world.Run(2f);

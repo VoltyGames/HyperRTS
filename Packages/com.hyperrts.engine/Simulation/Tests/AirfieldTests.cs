@@ -39,18 +39,18 @@ namespace HyperRTS.Simulation.Tests
             RunUntil(() => _world.Get<Ammo>(aircraft).Current == 0, 6f);
             RunUntil(() => _world.IsEnabled<Docked>(aircraft), 8f);
 
-            Assert.AreEqual(80f, _world.HealthOf(tank), "two rounds, then it held fire");
-            Assert.Less(math.distance(_world.PositionOf(aircraft).xz, Pad.xz), 0.6f, "back on its pad");
+            Assert.AreEqual(80f, _world.GetHealth(tank), "two rounds, then it held fire");
+            Assert.Less(math.distance(_world.GetPosition(aircraft).xz, Pad.xz), 0.6f, "back on its pad");
             Assert.AreEqual(aircraft, _world.EntityManager.GetBuffer<LandingPad>(airfield)[0].Aircraft);
 
             _world.Run(1.5f);
-            Assert.AreEqual(0f, _world.PositionOf(aircraft).y, 1e-3f, "landed");
+            Assert.AreEqual(0f, _world.GetPosition(aircraft).y, 1e-3f, "landed");
             Assert.AreEqual(2, _world.Get<Ammo>(aircraft).Current, "reloaded while docked");
 
             Attack(aircraft, tank);
             _world.Run(4f);
             Assert.IsFalse(_world.IsEnabled<Docked>(aircraft), "took off again");
-            Assert.AreEqual(60f, _world.HealthOf(tank), "and fired its fresh rounds");
+            Assert.AreEqual(60f, _world.GetHealth(tank), "and fired its fresh rounds");
         }
 
         [Test]
@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(1, built.Length, "one pad, one aircraft");
             Assert.AreEqual(airfield, _world.Get<HomePad>(built[0]).Airfield);
             Assert.IsTrue(_world.IsEnabled<Docked>(built[0]));
-            Assert.Less(math.distance(_world.PositionOf(built[0]).xz, Pad.xz), 0.01f, "spawned on its pad");
+            Assert.Less(math.distance(_world.GetPosition(built[0]).xz, Pad.xz), 0.01f, "spawned on its pad");
             Assert.AreEqual(1, _world.EntityManager.GetBuffer<ProductionQueueItem>(airfield).Length, "the next waits");
         }
 
@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(1f);
             Assert.AreEqual(Entity.Null, _world.Get<HomePad>(aircraft).Airfield, "homeless");
             Assert.IsFalse(_world.IsEnabled<Docked>(aircraft));
-            Assert.AreEqual(10f, _world.PositionOf(aircraft).y, 1e-3f, "hovering at altitude");
+            Assert.AreEqual(10f, _world.GetPosition(aircraft).y, 1e-3f, "hovering at altitude");
 
             var second = _world.SpawnAirfield(1, new float3(20f, 0f, 0f), Pad);
             _world.Command(1, new PlayerCommand { Type = CommandType.Smart, Unit = aircraft, Target = second });
@@ -95,12 +95,12 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual(second, _world.Get<HomePad>(aircraft).Airfield);
             Assert.AreEqual(aircraft, _world.EntityManager.GetBuffer<LandingPad>(second)[0].Aircraft);
-            Assert.Less(math.distance(_world.PositionOf(aircraft).xz, new float2(25f, 0f)), 0.6f);
+            Assert.Less(math.distance(_world.GetPosition(aircraft).xz, new float2(25f, 0f)), 0.6f);
         }
 
         private void Attack(Entity unit, Entity target) => _world.Command(1, new PlayerCommand
         {
-            Type = CommandType.Attack, Unit = unit, Target = target, Position = _world.PositionOf(target),
+            Type = CommandType.Attack, Unit = unit, Target = target, Position = _world.GetPosition(target),
         });
 
         private void RunUntil(Func<bool> done, float seconds)

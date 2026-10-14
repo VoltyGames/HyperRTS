@@ -45,10 +45,10 @@ namespace HyperRTS.Simulation.Tests
             _world.QueueDamage(Blast(float3.zero, 4f));
             _world.Tick();
 
-            Assert.AreEqual(60f, _world.HealthOf(centre), 1e-3f, "full damage at the centre");
-            Assert.AreEqual(80f, _world.HealthOf(edge), 1e-3f, "edge factor at the radius");
-            Assert.AreEqual(100f, _world.HealthOf(outside));
-            Assert.AreEqual(100f, _world.HealthOf(friend), "splash spares allies by default");
+            Assert.AreEqual(60f, _world.GetHealth(centre), 1e-3f, "full damage at the centre");
+            Assert.AreEqual(80f, _world.GetHealth(edge), 1e-3f, "edge factor at the radius");
+            Assert.AreEqual(100f, _world.GetHealth(outside));
+            Assert.AreEqual(100f, _world.GetHealth(friend), "splash spares allies by default");
         }
 
         [Test]
@@ -60,7 +60,7 @@ namespace HyperRTS.Simulation.Tests
             _world.QueueDamage(Blast(float3.zero, 2f, friendlyFire: true));
             _world.Tick();
 
-            Assert.AreEqual(60f, _world.HealthOf(friend), 1e-3f);
+            Assert.AreEqual(60f, _world.GetHealth(friend), 1e-3f);
         }
 
         [TestCase(0f, 0f, 10f, 0.5f)]
@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.Tests
             _world.QueueDamage(new DamageEvent { Target = tank, Origin = new float3(x, y, z), SourceFaction = 1, Amount = 20f });
             _world.Tick();
 
-            Assert.AreEqual(100f - 20f * multiplier, _world.HealthOf(tank), 1e-3f);
+            Assert.AreEqual(100f - 20f * multiplier, _world.GetHealth(tank), 1e-3f);
         }
 
         [Test]
@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Tests
             _world.QueueDamage(new DamageEvent { Target = target, Source = shooter, SourceFaction = 1, Amount = 40f });
             _world.Tick();
 
-            Assert.AreEqual(70f, _world.HealthOf(target), 1e-3f);
+            Assert.AreEqual(70f, _world.GetHealth(target), 1e-3f);
             Assert.AreEqual(shooter, _world.Get<LastAttacker>(target).Source);
         }
 
@@ -103,7 +103,7 @@ namespace HyperRTS.Simulation.Tests
             _world.QueueDamage(new DamageEvent { Target = unit, Amount = -80f });
             _world.Tick();
 
-            Assert.AreEqual(100f, _world.HealthOf(unit));
+            Assert.AreEqual(100f, _world.GetHealth(unit));
         }
 
         [Test]
@@ -121,9 +121,9 @@ namespace HyperRTS.Simulation.Tests
 
             _world.Run(1f);
 
-            Assert.AreEqual(70f, _world.HealthOf(target), 1e-3f);
-            Assert.AreEqual(70f, _world.HealthOf(neighbour), 1e-3f);
-            Assert.AreEqual(100f, _world.HealthOf(aircraft), "splash stays on the surface");
+            Assert.AreEqual(70f, _world.GetHealth(target), 1e-3f);
+            Assert.AreEqual(70f, _world.GetHealth(neighbour), 1e-3f);
+            Assert.AreEqual(100f, _world.GetHealth(aircraft), "splash stays on the surface");
             Assert.AreEqual(0f, math.length(_world.Get<LocalTransform>(gun).Position.xz), 1e-3f);
         }
     }

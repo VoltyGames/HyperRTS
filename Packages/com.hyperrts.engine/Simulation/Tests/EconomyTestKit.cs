@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Tests
         public static void AddResources(this TestWorld world, byte faction, ResourceType type, int amount) =>
             ResourceMath.Add(world.EntityManager.GetBuffer<ResourceStock>(world.Player(faction)), type, amount);
 
-        public static int ResourcesOf(this TestWorld world, byte faction, ResourceType type) =>
+        public static int GetResources(this TestWorld world, byte faction, ResourceType type) =>
             ResourceMath.GetAmount(world.EntityManager.GetBuffer<ResourceStock>(world.Player(faction)), type);
 
         public static void Order(this TestWorld world, Entity unit, OrderType type, Entity target)

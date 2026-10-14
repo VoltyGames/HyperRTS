@@ -60,7 +60,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(0.5f);
 
             Assert.IsTrue(_world.EntityManager.Exists(tree));
-            Assert.AreEqual(50f, _world.HealthOf(tree));
+            Assert.AreEqual(50f, _world.GetHealth(tree));
         }
 
         [Test]
@@ -72,8 +72,8 @@ namespace HyperRTS.Simulation.Tests
             _world.QueueDamage(new DamageEvent { Position = float3.zero, SourceFaction = 1, Amount = 20f, Radius = 6f, EdgeFactor = 1f });
             _world.Tick();
 
-            Assert.Less(_world.HealthOf(tree), 50f, "destructible scenery takes the blast");
-            Assert.AreEqual(500f, _world.HealthOf(house), "plain neutral buildings don't");
+            Assert.Less(_world.GetHealth(tree), 50f, "destructible scenery takes the blast");
+            Assert.AreEqual(500f, _world.GetHealth(house), "plain neutral buildings don't");
         }
 
         [Test]
@@ -85,11 +85,11 @@ namespace HyperRTS.Simulation.Tests
             ResourceIncomeSetup.Add(ref writer, supplies, 10, 5f, 100);
 
             _world.Run(6f);
-            Assert.AreEqual(0, _world.ResourcesOf(1, supplies), "a neutral derrick pays no one");
+            Assert.AreEqual(0, _world.GetResources(1, supplies), "a neutral derrick pays no one");
 
             _world.EntityManager.SetComponentData(derrick, new Faction { Value = 1 });
             _world.Run(11f);
-            Assert.AreEqual(120, _world.ResourcesOf(1, supplies), "the bonus plus two payments");
+            Assert.AreEqual(120, _world.GetResources(1, supplies), "the bonus plus two payments");
             Object.DestroyImmediate(supplies);
         }
 

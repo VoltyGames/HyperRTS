@@ -45,12 +45,12 @@ namespace HyperRTS.Simulation.Tests
             for (var t = 0f; t < 12f; t += TestWorld.FrameTime)
             {
                 _world.Tick();
-                var position = _world.PositionOf(unit);
+                var position = _world.GetPosition(unit);
                 Assert.IsTrue(_world.Grid().IsWalkable(position), $"entered a blocked cell at {position}");
                 widest = math.max(widest, math.abs(position.z));
             }
 
-            Assert.Less(math.distance(_world.PositionOf(unit).xz, goal.xz), 0.2f);
+            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 0.2f);
             Assert.Greater(widest, 10f, "the unit went around the wall's end");
         }
 
@@ -70,12 +70,12 @@ namespace HyperRTS.Simulation.Tests
 
             for (var i = 0; i < units.Length; i++)
             {
-                var position = _world.PositionOf(units[i]);
+                var position = _world.GetPosition(units[i]);
                 Assert.IsFalse(_world.IsEnabled<ActiveOrder>(units[i]), "every move order completed");
                 Assert.Less(math.distance(position.xz, goal.xz), 4f);
                 for (var j = i + 1; j < units.Length; j++)
                 {
-                    Assert.Greater(math.distance(position.xz, _world.PositionOf(units[j]).xz), 0.9f, "units stacked");
+                    Assert.Greater(math.distance(position.xz, _world.GetPosition(units[j]).xz), 0.9f, "units stacked");
                 }
             }
         }
@@ -110,8 +110,8 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(6f);
 
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(unit));
-            Assert.IsTrue(_world.Grid().IsWalkable(_world.PositionOf(unit)));
-            Assert.Less(math.distance(_world.PositionOf(unit).xz, building.xz), 5f);
+            Assert.IsTrue(_world.Grid().IsWalkable(_world.GetPosition(unit)));
+            Assert.Less(math.distance(_world.GetPosition(unit).xz, building.xz), 5f);
         }
 
         [Test]
@@ -125,7 +125,7 @@ namespace HyperRTS.Simulation.Tests
             for (var t = 0f; t < 3f; t += TestWorld.FrameTime)
             {
                 _world.Tick();
-                var position = _world.PositionOf(unit).xz;
+                var position = _world.GetPosition(unit).xz;
                 var offLine = math.abs(position.x * goal.z - position.y * goal.x) / math.length(goal.xz);
                 Assert.Less(offLine, 0.01f, "straight line");
             }
@@ -133,7 +133,7 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.CompleteAllTrackedJobs();
             using var grids = _world.EntityManager.CreateEntityQuery(typeof(NavGrid));
             Assert.AreEqual(0, grids.CalculateEntityCount());
-            Assert.Less(math.distance(_world.PositionOf(unit).xz, goal.xz), 0.2f);
+            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 0.2f);
             Assert.IsFalse(_world.IsEnabled<MoveDestination>(unit));
         }
     }

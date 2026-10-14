@@ -164,7 +164,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Command(1, new PlayerCommand { Type = CommandType.Sell, Unit = enemy });
             _world.Tick();
 
-            Assert.AreEqual(50 + 40, _world.ResourcesOf(1, _supplies),
+            Assert.AreEqual(50 + 40, _world.GetResources(1, _supplies),
                 "half of a finished building, all of a site, once");
             Assert.IsFalse(_world.EntityManager.Exists(depot));
             Assert.IsFalse(_world.EntityManager.Exists(site));
@@ -241,13 +241,13 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.SetComponentEnabled<Selected>(factory, true);
             _world.EntityManager.SetComponentEnabled<RallyPoint>(factory, true);
             var engineer = Capturer(float3.zero);
-            var before = _world.ResourcesOf(2, _supplies);
+            var before = _world.GetResources(2, _supplies);
 
             _world.Command(1, new PlayerCommand { Type = CommandType.Capture, Unit = engineer, Target = factory });
             _world.Run(4f);
 
             Assert.AreEqual(1, _world.Get<Faction>(factory).Value);
-            Assert.AreEqual(before + 30, _world.ResourcesOf(2, _supplies), "the old owner gets its queue back");
+            Assert.AreEqual(before + 30, _world.GetResources(2, _supplies), "the old owner gets its queue back");
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<ProductionQueueItem>(factory).Length);
             Assert.IsFalse(_world.IsEnabled<Selected>(factory));
             Assert.IsFalse(_world.IsEnabled<RallyPoint>(factory), "the old owner's rally point is dropped");

@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Tests
         {
             _world.Run(Interval + 4f);
 
-            Assert.AreEqual(2 * Amount, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(2 * Amount, _world.GetResources(1, _supplies));
             Assert.AreEqual(2 * Amount, _world.Get<PlayerStats>(_world.Player(1)).ResourcesGathered);
             Assert.AreEqual(0, Carriers().Length);
         }
@@ -84,7 +84,7 @@ namespace HyperRTS.Simulation.Tests
 
             _world.Run(4f);
 
-            Assert.AreEqual(0, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(0, _world.GetResources(1, _supplies));
         }
 
         [Test]
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(0.2f);
 
             Assert.AreEqual(0, Carriers().Length);
-            Assert.AreEqual(0, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(0, _world.GetResources(1, _supplies));
         }
 
         [Test]

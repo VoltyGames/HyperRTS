@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick();
 
             Assert.AreEqual(2, QueueLength(producer));
-            Assert.AreEqual(800, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(800, _world.GetResources(1, _supplies));
         }
 
         [Test]
@@ -115,7 +115,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick();
 
             Assert.AreEqual(1, _world.All<BuildLimit>().Length);
-            Assert.AreEqual(900, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(900, _world.GetResources(1, _supplies));
         }
 
         [Test]

@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Tests
             var aircraft = _world.SpawnAircraft(2, new float3(3f, 0f, 0f));
             _world.Run(2f);
 
-            Assert.AreEqual(100f, _world.HealthOf(aircraft), "never auto-acquired");
+            Assert.AreEqual(100f, _world.GetHealth(aircraft), "never auto-acquired");
             Assert.IsFalse(_world.IsEnabled<AttackTarget>(gun));
 
             _world.Command(1, new PlayerCommand
@@ -49,8 +49,8 @@ namespace HyperRTS.Simulation.Tests
             var aircraft = _world.SpawnAircraft(2, new float3(3f, 0f, 0f));
             _world.Run(2f);
 
-            Assert.Less(_world.HealthOf(aircraft), 100f);
-            Assert.AreEqual(100f, _world.HealthOf(tank));
+            Assert.Less(_world.GetHealth(aircraft), 100f);
+            Assert.AreEqual(100f, _world.GetHealth(tank));
             Assert.AreEqual(aircraft, _world.Get<AttackTarget>(launcher).Value);
         }
     }

@@ -51,7 +51,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Order(harvester, OrderType.Gather, node);
             _world.Run(20f);
 
-            var stock = _world.ResourcesOf(1, _supplies);
+            var stock = _world.GetResources(1, _supplies);
             var left = _world.Get<ResourceNode>(node).Amount;
             var cargo = _world.Get<Harvester>(harvester).CargoAmount;
             Assert.GreaterOrEqual(stock, 20, "several trips were delivered");
@@ -71,7 +71,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(10f);
 
             Assert.IsFalse(_world.EntityManager.Exists(node));
-            Assert.AreEqual(5, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(5, _world.GetResources(1, _supplies));
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(harvester), "no node left, so the order completes");
         }
 
@@ -106,10 +106,10 @@ namespace HyperRTS.Simulation.Tests
 
             _world.EntityManager.SetComponentEnabled<ConstructionProgress>(site, false);
             _world.Run(10f);
-            var before = _world.ResourcesOf(1, _supplies);
+            var before = _world.GetResources(1, _supplies);
 
             Assert.Greater(FarthestWest(harvester, 20f), 0f, "every later trip ends at the finished drop-off");
-            Assert.Greater(_world.ResourcesOf(1, _supplies), before + 20, "it keeps delivering there");
+            Assert.Greater(_world.GetResources(1, _supplies), before + 20, "it keeps delivering there");
         }
 
         /// <summary>Runs for the given time and returns the lowest x the harvester reached.</summary>

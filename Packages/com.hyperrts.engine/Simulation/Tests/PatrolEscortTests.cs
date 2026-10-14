@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Tests
             for (var t = 0f; t < 10f; t += TestWorld.FrameTime)
             {
                 _world.Tick();
-                var x = _world.PositionOf(unit).x;
+                var x = _world.GetPosition(unit).x;
                 if (goingOut ? x > 9.5f : x < 0.5f)
                 {
                     legs++;
@@ -59,7 +59,7 @@ namespace HyperRTS.Simulation.Tests
             for (var t = 0f; t < 14f; t += TestWorld.FrameTime)
             {
                 _world.Tick();
-                var position = _world.PositionOf(unit);
+                var position = _world.GetPosition(unit);
                 var atPatrolPoint = position.z > 9.5f;
                 var atMoveEnd = position.z < 0.5f && position.x > 9.5f;
                 if (goingOut ? atPatrolPoint : atMoveEnd)
@@ -100,7 +100,7 @@ namespace HyperRTS.Simulation.Tests
 
             _world.MoveTo(ward, new float3(30f, 0f, 0f));
             _world.Run(8f);
-            var gap = math.distance(_world.PositionOf(escort).xz, _world.PositionOf(ward).xz);
+            var gap = math.distance(_world.GetPosition(escort).xz, _world.GetPosition(ward).xz);
             Assert.LessOrEqual(gap, EscortSystem.FollowDistance + 1.5f, "kept up with the ward");
 
             var raider = _world.SpawnUnit(2, new float3(30f, 0f, 6f));

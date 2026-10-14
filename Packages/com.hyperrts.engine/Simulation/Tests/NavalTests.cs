@@ -46,16 +46,16 @@ namespace HyperRTS.Simulation.Tests
             {
                 _world.Tick();
                 var grid = _world.Grid();
-                var tankAt = _world.PositionOf(tank);
-                var shipAt = _world.PositionOf(ship);
+                var tankAt = _world.GetPosition(tank);
+                var shipAt = _world.GetPosition(ship);
                 Assert.IsTrue(grid.IsWalkable(tankAt, NavLayer.Ground), $"tank entered water at {tankAt}");
                 Assert.IsTrue(grid.IsWalkable(shipAt, NavLayer.Naval), $"ship left the water at {shipAt}");
                 Assert.AreEqual(WaterLevel, shipAt.y, 1e-4f, "ships ride at the water level");
                 widest = math.max(widest, math.abs(tankAt.z));
             }
 
-            Assert.Less(math.distance(_world.PositionOf(tank).xz, new float2(12f, 0f)), 0.5f);
-            Assert.Less(math.distance(_world.PositionOf(ship).xz, new float2(0f, 15f)), 0.5f);
+            Assert.Less(math.distance(_world.GetPosition(tank).xz, new float2(12f, 0f)), 0.5f);
+            Assert.Less(math.distance(_world.GetPosition(ship).xz, new float2(0f, 15f)), 0.5f);
             Assert.Greater(widest, 20f, "the tank went around the lake");
         }
 
@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Tests
             _world.MoveTo(ship, new float3(20f, 0f, 0f));
             _world.Run(5f);
 
-            var position = _world.PositionOf(ship);
+            var position = _world.GetPosition(ship);
             Assert.IsTrue(_world.Grid().IsWalkable(position, NavLayer.Naval));
             Assert.Greater(position.x, 3.5f, "reached the shore nearest the goal");
         }
@@ -84,8 +84,8 @@ namespace HyperRTS.Simulation.Tests
             _world.MoveTo(ship, new float3(0f, 0f, 15f));
             _world.Run(6f);
 
-            var shipAt = _world.PositionOf(ship);
-            var tankAt = _world.PositionOf(tank);
+            var shipAt = _world.GetPosition(ship);
+            var tankAt = _world.GetPosition(tank);
             Assert.Less(math.distance(shipAt.xz, new float2(0f, 15f)), 0.5f, "passed under the deck");
             Assert.AreEqual(WaterLevel, shipAt.y, 1e-4f);
             Assert.AreEqual(3f, tankAt.y, 1e-4f, "ground units stand on the deck");
@@ -112,7 +112,7 @@ namespace HyperRTS.Simulation.Tests
             for (var t = 0f; t < 12f; t += TestWorld.FrameTime)
             {
                 _world.Tick();
-                var position = _world.PositionOf(tank);
+                var position = _world.GetPosition(tank);
                 Assert.IsTrue(_world.Grid().IsWalkable(position), $"entered the river at {position}");
                 farthest = math.max(farthest, position.z);
                 if (math.abs(position.x) < 2f)
@@ -125,7 +125,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.Greater(_world.Grid().Version, version, "the grid restamped without the bridge");
             Assert.Greater(farthest, 27f, "crossed at the far bridge");
             Assert.IsTrue(onDeck);
-            Assert.Less(math.distance(_world.PositionOf(tank).xz, goal.xz), 0.5f);
+            Assert.Less(math.distance(_world.GetPosition(tank).xz, goal.xz), 0.5f);
         }
 
         [Test]

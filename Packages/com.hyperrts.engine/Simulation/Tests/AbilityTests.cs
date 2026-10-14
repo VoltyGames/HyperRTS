@@ -51,7 +51,7 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        private Ability AbilityOf(Entity entity) => _world.EntityManager.GetBuffer<Ability>(entity)[0];
+        private Ability GetAbility(Entity entity) => _world.EntityManager.GetBuffer<Ability>(entity)[0];
 
         private DynamicBuffer<AbilityActivation> Events()
         {
@@ -76,7 +76,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(50f, _world.Get<Health>(a).Current, 1e-3f);
             Assert.AreEqual(50f, _world.Get<Health>(b).Current, 1e-3f, "splash");
             Assert.Less(_world.Get<LocalTransform>(soldier).Position.x, 11f, "stopped once in range");
-            Assert.Greater(AbilityOf(soldier).CooldownRemaining, 10f);
+            Assert.Greater(GetAbility(soldier).CooldownRemaining, 10f);
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(soldier));
 
             _world.Command(1, command);
@@ -136,7 +136,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick();
 
             Assert.AreEqual(70f, _world.Get<Health>(enemy).Current, 1e-3f);
-            Assert.AreEqual(60f, AbilityOf(_world.Player(1)).CooldownRemaining, 0.1f);
+            Assert.AreEqual(60f, GetAbility(_world.Player(1)).CooldownRemaining, 0.1f);
         }
 
         [Test]
@@ -159,7 +159,7 @@ namespace HyperRTS.Simulation.Tests
                     Type = CommandType.UsePower, Target = target, Argument = snipe.Id,
                 });
                 _world.Tick();
-                Assert.AreEqual(0f, AbilityOf(_world.Player(1)).CooldownRemaining, "never fired");
+                Assert.AreEqual(0f, GetAbility(_world.Player(1)).CooldownRemaining, "never fired");
             }
 
             _world.Command(1, new PlayerCommand { Type = CommandType.UsePower, Target = visible, Argument = snipe.Id });

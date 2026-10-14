@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Tests
             return query.GetSingleton<NavGrid>();
         }
 
-        public static float3 PositionOf(this TestWorld world, Entity entity) =>
+        public static float3 GetPosition(this TestWorld world, Entity entity) =>
             world.Get<LocalTransform>(entity).Position;
     }
 }

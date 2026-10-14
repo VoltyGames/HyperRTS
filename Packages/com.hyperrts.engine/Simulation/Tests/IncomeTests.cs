@@ -69,11 +69,11 @@ namespace HyperRTS.Simulation.Tests
             _world.SetOffline(derrick, true);
 
             _world.Run(2.5f);
-            Assert.AreEqual(2, _world.ResourcesOf(1, _supplies), "only the entity without Offline paid");
+            Assert.AreEqual(2, _world.GetResources(1, _supplies), "only the entity without Offline paid");
 
             _world.SetOffline(derrick, false);
             _world.Run(1f);
-            Assert.AreEqual(13, _world.ResourcesOf(1, _supplies), "back online, the paused timer resumes");
+            Assert.AreEqual(13, _world.GetResources(1, _supplies), "back online, the paused timer resumes");
             Assert.AreEqual(13, _world.Get<PlayerStats>(_world.Player(1)).ResourcesGathered);
         }
 
@@ -86,7 +86,7 @@ namespace HyperRTS.Simulation.Tests
             ResourceIncomeSetup.AddPerOccupant(ref writer);
 
             _world.Run(1.5f);
-            Assert.AreEqual(0, _world.ResourcesOf(1, _supplies), "empty, it pays nothing");
+            Assert.AreEqual(0, _world.GetResources(1, _supplies), "empty, it pays nothing");
 
             for (var i = 0; i < 3; i++)
             {
@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Tests
             }
 
             _world.Run(1f);
-            Assert.AreEqual(15, _world.ResourcesOf(1, _supplies), "one payment for each of three passengers");
+            Assert.AreEqual(15, _world.GetResources(1, _supplies), "one payment for each of three passengers");
         }
 
         [Test]
@@ -104,13 +104,13 @@ namespace HyperRTS.Simulation.Tests
             var derrick = SpawnReserve(1, 0f, 25);
 
             _world.Run(4.5f);
-            Assert.AreEqual(25, _world.ResourcesOf(1, _supplies), "never more than the reserve held");
+            Assert.AreEqual(25, _world.GetResources(1, _supplies), "never more than the reserve held");
             Assert.AreEqual(0, _world.Get<ResourceReserve>(derrick).Remaining);
             Assert.IsTrue(_world.EntityManager.Exists(derrick), "a dry reserve stays to be refilled");
 
             SpawnRefill(1, 10f, 7);
             _world.Run(2f);
-            Assert.AreEqual(32, _world.ResourcesOf(1, _supplies), "the refill was paid out again");
+            Assert.AreEqual(32, _world.GetResources(1, _supplies), "the refill was paid out again");
         }
 
         [Test]
@@ -143,7 +143,7 @@ namespace HyperRTS.Simulation.Tests
             Kill(3, 1000);
             _world.Tick();
 
-            Assert.AreEqual(140, _world.ResourcesOf(1, _supplies), "half of own and enemy costs, twice; allies pay nothing");
+            Assert.AreEqual(140, _world.GetResources(1, _supplies), "half of own and enemy costs, twice; allies pay nothing");
             Assert.AreEqual(140, _world.Get<PlayerStats>(_world.Player(1)).ResourcesGathered);
         }
 
@@ -157,7 +157,7 @@ namespace HyperRTS.Simulation.Tests
             Kill(2, 100);
             _world.Tick();
 
-            Assert.AreEqual(0, _world.ResourcesOf(1, _supplies));
+            Assert.AreEqual(0, _world.GetResources(1, _supplies));
         }
     }
 }

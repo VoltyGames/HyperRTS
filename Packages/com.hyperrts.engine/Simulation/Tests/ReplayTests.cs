@@ -56,7 +56,7 @@ namespace HyperRTS.Simulation.Tests
             return ReplayRecorder.Stop(world.World, "Assets/Maps/Test.unity");
         }
 
-        private static int KeyOf(Replay replay, string name)
+        private static int FindKey(Replay replay, string name)
         {
             var typeId = EntityInfo.TypeIdFromName(name);
             foreach (var entity in replay.Entities)
@@ -74,7 +74,7 @@ namespace HyperRTS.Simulation.Tests
         public void Recorder_WritesKeyframes_AndOnlyChangesInDeltas()
         {
             var replay = Record(out _);
-            var mover = KeyOf(replay, "Mover");
+            var mover = FindKey(replay, "Mover");
 
             Assert.IsTrue(replay.Frames[0].Keyframe);
             Assert.AreEqual(3, replay.Frames[0].EntityCount, "the first keyframe holds every entity");
@@ -87,8 +87,8 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(1, delta.EntityCount, "idle entities are left out of deltas");
             Assert.AreEqual(mover, replay.Entities[delta.EntityStart].Key);
 
-            CollectionAssert.Contains(replay.Removed, KeyOf(replay, "Victim"));
-            Assert.AreEqual(3, KeyOf(replay, "Tank"), "spawns get the next key");
+            CollectionAssert.Contains(replay.Removed, FindKey(replay, "Victim"));
+            Assert.AreEqual(3, FindKey(replay, "Tank"), "spawns get the next key");
 
             var last = Array.FindLast(replay.Frames, frame => frame.Keyframe);
             Assert.AreEqual(3, last.EntityCount, "a later keyframe holds the living: mover, idle and tank");

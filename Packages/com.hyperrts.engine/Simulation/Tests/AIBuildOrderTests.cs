@@ -107,7 +107,7 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual(2, Owned("Barracks").Count);
             Assert.AreEqual(3, Owned("Soldier").Count, "the unmet locked step keeps the AI from training freely");
-            Assert.AreEqual(1000 - 2 * 50 - 3 * 10, _world.ResourcesOf(2, _supplies));
+            Assert.AreEqual(1000 - 2 * 50 - 3 * 10, _world.GetResources(2, _supplies));
         }
 
         [Test]

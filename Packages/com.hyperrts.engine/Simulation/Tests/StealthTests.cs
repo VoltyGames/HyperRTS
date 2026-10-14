@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Tests
             var target = _world.SpawnUnit(1, new float3(3f, 0f, 0f), maxHealth: 1000f);
 
             _world.Run(0.4f);
-            Assert.Less(_world.HealthOf(target), 1000f, "fired once");
+            Assert.Less(_world.GetHealth(target), 1000f, "fired once");
             Assert.IsFalse(_world.IsEnabled<Stealthed>(shooter));
             Assert.IsFalse(IsHidden(shooter), "visible while revealed");
 
@@ -84,14 +84,14 @@ namespace HyperRTS.Simulation.Tests
             var far = _world.SpawnUnit(2, new float3(80f, 0f, 0f));
 
             _world.Run(1f);
-            Assert.AreEqual(100f, _world.HealthOf(enemy));
+            Assert.AreEqual(100f, _world.GetHealth(enemy));
             Assert.IsTrue(IsHidden(enemy));
             Assert.IsFalse(IsHidden(far), "fog off shows everything else");
 
             Detect(soldier, 5f);
             _world.Run(1f);
             Assert.IsFalse(IsHidden(enemy));
-            Assert.Less(_world.HealthOf(enemy), 100f);
+            Assert.Less(_world.GetHealth(enemy), 100f);
         }
 
         [Test]

@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        public static float HealthOf(this TestWorld world, Entity entity) => world.Get<Health>(entity).Current;
+        public static float GetHealth(this TestWorld world, Entity entity) => world.Get<Health>(entity).Current;
 
         public static void QueueDamage(this TestWorld world, DamageEvent hit)
         {

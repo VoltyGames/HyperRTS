@@ -40,11 +40,11 @@ namespace HyperRTS.Simulation.Tests
             for (var t = 0f; t < 6f; t += TestWorld.FrameTime)
             {
                 _world.Tick();
-                var position = _world.PositionOf(unit);
+                var position = _world.GetPosition(unit);
                 Assert.AreEqual(Rolling(position.xz), position.y, 0.05f, $"off the ground at {position}");
             }
 
-            Assert.Less(math.distance(_world.PositionOf(unit).xz, goal.xz), 0.5f);
+            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 0.5f);
         }
 
         [Test]
