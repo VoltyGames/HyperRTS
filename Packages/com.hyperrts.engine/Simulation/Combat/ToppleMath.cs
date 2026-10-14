@@ -7,8 +7,6 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>Servers and clients both derive the remains pose from one fall heading byte, so footprints match.</summary>
     public static class ToppleMath
     {
-        public const int Headings = 256;
-
         /// <summary>Seconds from upright until the crown hits the ground.</summary>
         public const float FallTime = 1.2f;
         public const float SettleTime = 0.3f;
@@ -19,24 +17,10 @@ namespace HyperRTS.Simulation.Combat
         private const float Damping = 10f;
 
         /// <summary>A hit from straight above gives heading 0.</summary>
-        public static byte Quantize(float3 fellFrom, float3 position)
-        {
-            var away = position.xz - fellFrom.xz;
-            var turns = math.atan2(away.x, away.y) / (2f * math.PI);
-            return (byte)((int)math.round(turns * Headings) & (Headings - 1));
-        }
-
-        /// <summary>Radians from +Z toward +X.</summary>
-        public static float Heading(byte fall) => fall * (2f * math.PI / Headings);
-
-        public static float3 Direction(byte fall)
-        {
-            math.sincos(Heading(fall), out var sin, out var cos);
-            return new float3(sin, 0f, cos);
-        }
+        public static byte Quantize(float3 fellFrom, float3 position) => HeadingByte.Encode(position.xz - fellFrom.xz);
 
         public static LocalTransform RemainsPose(in LocalTransform standing, byte fall, float lie) =>
-            standing.WithRotation(quaternion.RotateY(Heading(fall) - lie));
+            standing.WithRotation(quaternion.RotateY(HeadingByte.Radians(fall) - lie));
 
         /// <summary>The remains' final pose and the fall presentation shows on the way.</summary>
         public static Felling Fell(in LocalTransform standing, in Topple topple, byte fall, bool witnessed,
@@ -44,7 +28,7 @@ namespace HyperRTS.Simulation.Combat
         {
             pose = RemainsPose(standing, fall, topple.Lie);
             var trunk = math.rotate(standing.Rotation, topple.Trunk);
-            return new Felling { Tilt = Rotations.FromTo(Direction(fall), trunk), Witnessed = witnessed };
+            return new Felling { Tilt = Rotations.FromTo(HeadingByte.Direction(fall), trunk), Witnessed = witnessed };
         }
 
         /// <summary>The remains' rotation <paramref name="time"/> seconds into the fall to <paramref name="final"/>.</summary>

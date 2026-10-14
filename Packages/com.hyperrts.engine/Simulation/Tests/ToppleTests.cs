@@ -28,9 +28,9 @@ namespace HyperRTS.Simulation.Tests
         public void Quantize_RoundTripsEveryHeading()
         {
             var tree = new float3(3f, 0f, -2f);
-            for (var fall = 0; fall < ToppleMath.Headings; fall++)
+            for (var fall = 0; fall < HeadingByte.Steps; fall++)
             {
-                var source = tree - ToppleMath.Direction((byte)fall) * 7f;
+                var source = tree - HeadingByte.Direction((byte)fall) * 7f;
                 Assert.AreEqual(fall, ToppleMath.Quantize(source, tree), $"heading {fall}");
             }
         }
@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var fall = ToppleMath.Quantize(new float3(0f, 5f, 0f), new float3(4f, 0f, 4f));
 
-            var direction = ToppleMath.Direction(fall);
+            var direction = HeadingByte.Direction(fall);
             Assert.AreEqual(math.SQRT2 / 2f, direction.x, 0.02f);
             Assert.AreEqual(math.SQRT2 / 2f, direction.z, 0.02f);
         }
@@ -71,8 +71,8 @@ namespace HyperRTS.Simulation.Tests
             var upright = ToppleMath.Pose(felling, pose.Rotation, 0f);
             AssertNear(math.rotate(standing.Rotation, topple.Trunk), math.rotate(upright, crown));
             var down = ToppleMath.Pose(felling, pose.Rotation, ToppleMath.Duration);
-            AssertNear(ToppleMath.Direction(200), math.rotate(down, crown));
-            AssertNear(math.rotate(pose.Rotation, crown), ToppleMath.Direction(200));
+            AssertNear(HeadingByte.Direction(200), math.rotate(down, crown));
+            AssertNear(math.rotate(pose.Rotation, crown), HeadingByte.Direction(200));
         }
 
         [Test]
@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.IsFalse(_world.EntityManager.Exists(tree));
             var fall = ToppleMath.Quantize(float3.zero, standing.Position);
-            AssertNear(new float3(1f, 0f, 0f), ToppleMath.Direction(fall));
+            AssertNear(new float3(1f, 0f, 0f), HeadingByte.Direction(fall));
             var expected = ToppleMath.Fell(standing, topple, fall, true, out var pose);
             var (shown, felling) = FellRemains();
             AssertNear(pose.Position, shown.Position);

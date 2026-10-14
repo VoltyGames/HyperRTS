@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Effects;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -10,7 +11,6 @@ namespace HyperRTS.Network.Effects
         public static PackedEffect Pack(in EffectEvent effect)
         {
             var direction = math.normalizesafe(effect.Direction, new float3(0f, 0f, 1f));
-            var yaw = math.atan2(direction.x, direction.z) / (2f * math.PI);
             var pitch = math.asin(math.clamp(direction.y, -1f, 1f)) / math.PI + 0.5f;
             return new PackedEffect
             {
@@ -18,16 +18,15 @@ namespace HyperRTS.Network.Effects
                 Position = effect.Position,
                 Slot = (byte)effect.Slot,
                 Faction = effect.Faction,
-                Yaw = (byte)((int)math.round(yaw * 256f) & 255),
+                Yaw = HeadingByte.Encode(direction.xz),
                 Pitch = (byte)math.round(pitch * 255f),
             };
         }
 
         public static EffectEvent Unpack(in PackedEffect packed)
         {
-            var yaw = packed.Yaw / 256f * 2f * math.PI;
             var pitch = (packed.Pitch / 255f - 0.5f) * math.PI;
-            math.sincos(yaw, out var sinYaw, out var cosYaw);
+            var level = HeadingByte.Direction(packed.Yaw);
             math.sincos(pitch, out var sinPitch, out var cosPitch);
             return new EffectEvent
             {
@@ -35,7 +34,7 @@ namespace HyperRTS.Network.Effects
                 Slot = (EffectSlot)packed.Slot,
                 Faction = packed.Faction,
                 Position = packed.Position,
-                Direction = new float3(cosPitch * sinYaw, sinPitch, cosPitch * cosYaw),
+                Direction = new float3(level.x * cosPitch, sinPitch, level.z * cosPitch),
             };
         }
 
