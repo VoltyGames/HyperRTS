@@ -5,12 +5,6 @@
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Wetness.hlsl"
 
-// 1 on green albedo, 0 on bare soil: grass sheds rain, so it darkens and pools less.
-half Greenness(half3 albedo)
-{
-    return saturate((albedo.g - max(albedo.r, albedo.b)) * 10.0);
-}
-
 // How readily water stands here: low texels, damp hollows and ruts, broken up by two octaves of world noise.
 // Explicit gradients: it runs inside the wetness branch.
 half PuddleCollect(TerrainSurface surface, half dampness, half rut, float2 st, float2 dx, float2 dy)
@@ -35,11 +29,11 @@ void ApplyWetness(inout TerrainSurface surface, half dampness, half rut, float2 
         return;
     }
 
-    half grass = Greenness(surface.albedo);
-    half rain = _HyperRTSWetness * lerp(1.0, _GrassWetness, grass);
+    // Grass sheds rain, so it darkens and pools less.
+    half rain = _HyperRTSWetness * lerp(1.0, _GrassWetness, surface.grass);
     // Rain has its own, less glossy wetting: from the camera's pitch a glossy field mirrors the sky and turns grey.
     Wet(surface.albedo, surface.smoothness, surface.normalTS, max(rain - dampness, 0.0), _RainDarkening, _RainSmoothness);
-    half collect = PuddleCollect(surface, dampness, rut, st, dx, dy) * (1.0 - 0.6 * grass);
+    half collect = PuddleCollect(surface, dampness, rut, st, dx, dy) * (1.0 - 0.6 * surface.grass);
     half cover = PuddleCover(collect, _PuddleCoverage);
     Puddle(surface.albedo, surface.smoothness, surface.normalTS, cover, _PuddleSmoothness);
     surface.occlusion = lerp(surface.occlusion, 1.0, cover * 0.5);

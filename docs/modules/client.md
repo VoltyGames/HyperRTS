@@ -146,8 +146,7 @@ Rendering and effects:
   150 m away. `BirdRenderer` draws camera-facing quads heading up the screen, one `Graphics.RenderMeshInstanced` per
   2×2 flipbook frame with `_BaseMap_ST` set per frame (material: GPU Instancing, double-sided, alpha clip, URP Unlit
   works). `DustDevilSystem` forms a devil every `dustDevilInterval` on `dustDevilGround` within 120 m of the camera's
-  ground focus (`DustDevilSites`, 8 samples, skipping the 16 m tiles `RowCropCover.Active` marks sown by the
-  drawing `RowCropRenderer`), drifts it along `Wind.Downwind` with a sideways wander and streams its
+  ground focus (`DustDevilSites`, 8 samples), drifts it along `Wind.Downwind` with a sideways wander and streams its
   rig from the effect pool, easing in and out. Both skip Low effect detail.
 - **Effects playback** (`Effects/`): an `EffectRig` prefab root holds world-space, Hierarchy-scaled child particle systems
   (`EffectRig.Problems`, shared by the pool and the editor check; a broken rig is an error naming the prefab), `maxDistance`, a `scale` range, `scalePerRadius` and `alignToGround`; author it

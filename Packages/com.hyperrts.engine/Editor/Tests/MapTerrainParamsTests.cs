@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>Terrain parameter rows 0 and 3: the layer turn, hex rotation strength and the follows-rows flag.</summary>
+    /// <summary>Terrain parameter rows 0, 3 and 4: the layer turn, hex rotation strength, the follows-rows flag and grass cover.</summary>
     public class MapTerrainParamsTests
     {
         private TerrainLayer _terrainLayer;
@@ -23,6 +23,7 @@ namespace HyperRTS.Editor.Tests
             heightBlend = 1.5f,
             antiTiling = 0.6f,
             rotation = 90f,
+            grass = 0.4f,
         };
 
         [Test]
@@ -54,6 +55,14 @@ namespace HyperRTS.Editor.Tests
             Assert.AreEqual(1f, mapping.g, 1e-5f, "sin 90°");
             Assert.AreEqual(0.25f, mapping.b, 1e-5f);
             Assert.AreEqual(0.5f, mapping.a, 1e-5f);
+        }
+
+        [Test]
+        public void Grass_IsTheLayersAuthoredCover()
+        {
+            var grass = MapTerrainParams.Grass(Layer(false));
+
+            Assert.AreEqual(0.4f, grass.r, 1e-5f);
         }
     }
 }

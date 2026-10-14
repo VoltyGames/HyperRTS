@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Texturing
     public static class MapTerrainParams
     {
         private const int Width = MapTerrainTextures.MaxLayers;
-        private const int Rows = 4;
+        private const int Rows = 5;
 
         internal static Texture2D Write(Material material, MapClimate climate)
         {
@@ -38,6 +38,7 @@ namespace HyperRTS.Editor.Maps.Texturing
             pixels[Width + layer] = new Color(tint.x, tint.y, tint.z, climateLayer.macroStrength);
             pixels[2 * Width + layer] = new Color(high.w - low.w, low.w, high.y - low.y, low.y);
             pixels[3 * Width + layer] = Surface(climateLayer);
+            pixels[4 * Width + layer] = Grass(climateLayer);
         }
 
         /// <summary>Row 0: the layer's own UV turn and tiling; row layers add the row map's turn per pixel.</summary>
@@ -60,12 +61,17 @@ namespace HyperRTS.Editor.Maps.Texturing
             return new Color(climateLayer.heightBlend, climateLayer.terrainLayer.normalScale, rotation, acrossRows);
         }
 
+        /// <summary>Row 4: how much the layer is grass cover, in r; the wetness shader sheds rain by it.</summary>
+        public static Color Grass(MapClimateLayer climateLayer) => new(climateLayer.grass, 0f, 0f, 0f);
+
         private static Texture2D SubAsset(Material material)
         {
             foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(AssetDatabase.GetAssetPath(material)))
             {
                 if (asset is Texture2D existing)
                 {
+                    // A material built before the last row was added still holds the smaller texture.
+                    existing.Reinitialize(Width, Rows);
                     return existing;
                 }
             }

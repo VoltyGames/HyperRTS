@@ -20,6 +20,7 @@ struct TerrainLayerParams
     half4 mask;        // smoothness scale, offset; occlusion scale, offset
     half heightWeight;
     half normalStrength;
+    half grass;        // grass cover, which sheds rain
     float4 hex;        // hex rotation strength (fraction of a full turn); 0 if the layer follows rows, else 1;
                        // a row layer's line direction in UV
 };
@@ -43,6 +44,7 @@ struct TerrainBlend
     float occlusion;
     float height;
     float macro;
+    float grass;
 };
 
 struct TerrainSurface
@@ -53,6 +55,7 @@ struct TerrainSurface
     half occlusion;
     half height;
     half macro;
+    half grass;
 };
 
 TerrainLayerParams LoadLayerParams(uint layer, float2 rowTurn)
@@ -68,6 +71,7 @@ TerrainLayerParams LoadLayerParams(uint layer, float2 rowTurn)
     params.mask = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 2));
     params.heightWeight = surface.x;
     params.normalStrength = surface.y;
+    params.grass = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 4)).x;
     params.hex = float4(surface.zw, 1.0, 0.0);
     // Row layers add the field's turn to their own, so their lines run along each field's rows. Their own turn
     // of u, tiled, is where the lines lie in UV, and the only way hex cells may slide.
@@ -114,6 +118,7 @@ void FadeBlend(inout TerrainBlend blend, float keep)
     blend.occlusion *= keep;
     blend.height *= keep;
     blend.macro *= keep;
+    blend.grass *= keep;
 }
 
 void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pixel)
@@ -137,6 +142,7 @@ void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pi
     blend.albedo += share * albedo.rgb * params.tint;
     blend.height += share * albedo.a;
     blend.macro += share * params.macro;
+    blend.grass += share * params.grass;
 
     half3 normal = half3(0.0, 0.0, 1.0);
     half2 mask = half2(1.0, 0.0);
@@ -167,6 +173,7 @@ TerrainSurface ResolveBlend(TerrainBlend blend)
     surface.occlusion = blend.occlusion * scale;
     surface.height = blend.height * scale;
     surface.macro = blend.macro * scale;
+    surface.grass = blend.grass * scale;
     return surface;
 }
 

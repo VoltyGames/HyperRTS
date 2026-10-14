@@ -36,7 +36,6 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private RowCropKernels _kernels;
         private RowCropKernelInputs _inputs;
         private Bounds[] _tileBounds;
-        private RowCropCover _cover;
         private bool _ready;
 #if UNITY_EDITOR
         private bool _dirty;
@@ -92,18 +91,12 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             _kernels = new RowCropKernels(compute);
             _inputs = new RowCropKernelInputs(_kernels, fields, terrain);
             _tileBounds = RowCropTileBounds.Measure(fields, terrain);
-            _cover = RowCropCover.Active = RowCropCover.Build(fields);
             _ready = true;
         }
 
         private void Release()
         {
             _ready = false;
-            if (RowCropCover.Active == _cover)
-            {
-                RowCropCover.Active = RowCropCover.None;
-            }
-
             foreach (var state in _cameras.Values)
             {
                 state.Dispose();

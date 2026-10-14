@@ -221,7 +221,8 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
   the combined rotation. A far albedo sample at `_FarTiling` × the layer tiling fades in between `_FarStart` and
   `_FarEnd` (camera distance) up to `_FarBlend`. `TerrainDetail.Level` (Presentation) sets the global keywords
   `_TERRAIN_SIMPLE` (Low: one sample) or `_TERRAIN_NO_FAR` (Medium: hex only); with neither (High, edit mode, map views)
-  the shader does both.
+  the shader does both. Param row 4 x is the layer's `grass` cover (0..1), which `TerrainWetness.hlsl` uses to shed
+  rain: grass darkens toward `_GrassWetness` of bare ground's and pools fewer puddles.
 - **Weather** (`MapEnvironmentWriter`): a `Weather` object whose `WeatherSet` (Presentation) holds every climate
   weather's key and atmosphere prefab and `defaultKey`, with the spec weather's prefab instanced under it. The
   prefab's `Atmosphere` sets the sky and ambient as it enables, so the lighting bake reads them; the minimap capture

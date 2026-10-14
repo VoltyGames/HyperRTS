@@ -37,6 +37,10 @@ namespace HyperRTS.Editor.Maps.Data
         [Range(0f, 1f)]
         public float antiTiling = 1f;
 
+        [Tooltip("How much the layer is grass cover that sheds rain instead of darkening and puddling: 1 is all grass, 0 bare ground.")]
+        [Range(0f, 1f)]
+        public float grass;
+
         string IMapKeyed.Key => key;
 
         void IMapLibraryItem.Load(string key, MapLibraryRefs refs)
