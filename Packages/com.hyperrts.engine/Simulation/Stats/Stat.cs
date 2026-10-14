@@ -1,9 +1,6 @@
 namespace HyperRTS.Simulation.Stats
 {
-    /// <summary>
-    /// Values a <see cref="StatModifier"/> can change; the module owning each value applies it. Games add their own
-    /// from <see cref="Custom"/> upward and apply them in their own systems with <see cref="StatMath.Apply"/>.
-    /// </summary>
+    /// <summary>Values a <see cref="StatModifier"/> can change.</summary>
     public enum Stat : byte
     {
         MaxHealth = 0,
@@ -11,7 +8,7 @@ namespace HyperRTS.Simulation.Stats
         Range = 2,
 
         /// <summary>
-        /// Shots per second: Add is extra shots per second and +100% halves the cooldown. Its captured base is the
+        /// Shots per second: Add is extra shots per second and +100% halves the cooldown. Its recorded base is the
         /// cooldown.
         /// </summary>
         FireRate = 3,
@@ -25,6 +22,5 @@ namespace HyperRTS.Simulation.Stats
 
         /// <summary>On a player: resources its harvesters deliver, as a multiplier (base 1).</summary>
         Income = 9,
-        Custom = 128,
     }
 }

@@ -10,8 +10,5 @@ namespace HyperRTS.Simulation.Stats
 
         /// <summary>An AI difficulty's handicap or bonus, on the AI player.</summary>
         Difficulty = 4,
-
-        /// <summary>Kinds from here up belong to games; the engine never uses them.</summary>
-        Custom = 128,
     }
 }

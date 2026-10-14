@@ -29,6 +29,7 @@ namespace HyperRTS.Simulation.GameEntities
             writer.SetEnabled<Dead>(false);
             writer.Add<LastAttacker>();
             writer.AddBuffer<BaseStat>();
+            writer.Add<StatBasesPending>();
             writer.AddBuffer<StatModifier>();
             writer.AddBuffer<FieldPresence>();
             writer.Add(new ExperienceValue { Value = spec.ExperienceValue });

@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var shooter = _world.SpawnUnit(1, new float3(-5f, 0f, 0f));
             var target = _world.SpawnUnit(2, float3.zero);
-            var source = new StatSource(StatSourceKind.Custom, 99);
+            var source = new StatSource(StatSourceKind.Upgrade, 99);
             _world.EntityManager.GetBuffer<StatModifier>(target)
                 .Add(new StatModifier { Stat = Stat.DamageTaken, Percent = -0.25f, Source = source });
 

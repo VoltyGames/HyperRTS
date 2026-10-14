@@ -1,3 +1,4 @@
+using System;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -28,16 +29,12 @@ namespace HyperRTS.Simulation.Stats
             }
         }
 
-        /// <summary>The modified value of a stat now at <paramref name="live"/>; see <see cref="BaseValue"/>.</summary>
-        public static float Apply(DynamicBuffer<StatModifier> modifiers, DynamicBuffer<BaseStat> bases, Stat stat,
-            float live) =>
-            Evaluate(modifiers, stat, BaseValue(bases, stat, live));
+        /// <summary>The modified value of a stat from its recorded base.</summary>
+        public static float Apply(DynamicBuffer<StatModifier> modifiers, DynamicBuffer<BaseStat> bases, Stat stat) =>
+            Evaluate(modifiers, stat, BaseValue(bases, stat));
 
-        /// <summary>
-        /// The stat's base value, captured from <paramref name="live"/> on first use: afterwards the live value holds
-        /// modified results, and only the base still remembers the authored one.
-        /// </summary>
-        public static float BaseValue(DynamicBuffer<BaseStat> bases, Stat stat, float live)
+        /// <summary>The stat's base value, recorded when the entity spawned.</summary>
+        public static float BaseValue(DynamicBuffer<BaseStat> bases, Stat stat)
         {
             foreach (var item in bases)
             {
@@ -47,8 +44,7 @@ namespace HyperRTS.Simulation.Stats
                 }
             }
 
-            bases.Add(new BaseStat { Stat = stat, Value = live });
-            return live;
+            throw new InvalidOperationException("The entity has no recorded base for this stat.");
         }
 
         /// <summary>Incoming damage multiplier; 1 for entities without modifiers.</summary>

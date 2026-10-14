@@ -26,8 +26,8 @@ Mirror the engine's layering:
 | You want | Do |
 | --- | --- |
 | A new behaviour | Component + authoring + Burst `ISystem` in a phase group |
-| A new order (lay mines) | `OrderType` value from `OrderType.Custom` up. `OrderTraits.Register` it if it should fight on the way, attack-move or use formations. Issue with `OrderWriter.Issue`. A system runs units whose `ActiveOrder` has your type, walks them up with `TargetReach.Approach` (or sets `MoveDestination`), and disables `ActiveOrder` when done |
-| A new command (call reinforcements) | `CommandType` value from `CommandType.Custom` up. Append to the player's `PlayerCommand` buffer; consume in `OrderSystemGroup`, skipping quiet frames with `PlayerCommands.Any(ref state, players, TypeSet.Single(type))` |
+| A new order (lay mines) | A new `OrderType` value; extend `OrderTypeExtensions` if it should fight on the way, attack-move or use formations. Issue with `OrderWriter.Issue`. A system runs units whose `ActiveOrder` has your type, walks them up with `TargetReach.Approach` (or sets `MoveDestination`), and disables `ActiveOrder` when done |
+| A new command (call reinforcements) | A new `CommandType` value below 64 (`TypeSet` is one bit each). Append to the player's `PlayerCommand` buffer; consume in `OrderSystemGroup`, skipping quiet frames with `PlayerCommands.Any(ref state, players, TypeSet.Single(type))` |
 | Right-click behaviour (jam a radar) | Add `SmartOrderRule.For<TargetComponent>(order, RelationMask.Enemy)` to the unit's `SmartOrderRule` buffer in its baker |
 | React to production, construction or capture | Read `UnitProduced`, `BuildingCompleted` or `OwnerChanged` on the `GameEvents` singleton later in the frame (after `ProductionSystemGroup`) |
 | Change an owner (mind control) | `Ownership.Transfer(ecb, events, entity, from, to)`; queues, targets and upgrades follow |
@@ -36,10 +36,9 @@ Mirror the engine's layering:
 | Ability effects | An ability without built-in effects; read `AbilityActivation` after `AbilitySystem` |
 | Field effects (jamming) | Read the entity's `FieldPresence` |
 | Disable an entity (EMP, stun) | Set a bit from `OfflineReason.Custom` up in its `Offline.Reasons` and clear it when the effect ends; `OfflineSystem` enables `Offline`. Units need `Offline` added (disabled) in their baker |
-| Change a stat | `StatModifier` with a `StatSource` kind from `StatSourceKind.Custom` (128) up, so removing yours never strips the engine's |
-| A player-wide bonus (more income) | Add a `StatModifier` to the player entity's buffer: `Stat.Income`, or a custom stat your own system reads with `StatMath.Evaluate` |
-| A custom stat (fuel) | `Stat` value from `Stat.Custom` (128) up. A system last in `LifecycleSystemGroup`, change-filtered on `StatModifier`, sets your value with `StatMath.Apply(modifiers, bases, stat, value)` |
-| A sound or effect | `CueWriter.Play(entity, slot, ...)` before the end of the lifecycle phase; custom slots from `CueSlot.Custom` |
+| Change a stat | `StatModifier` on a `Stat` with a `StatSource` (Upgrade, Veterancy, Field or Difficulty); `StatSystem` applies it |
+| A player-wide bonus (more income) | Add a `StatModifier` to the player entity's buffer: `Stat.Income` |
+| A sound or effect | `CueWriter.Play(entity, slot, ...)` before the end of the lifecycle phase |
 | Spawn from code | `ecb.Instantiate(prefab)`, set `LocalTransform` and `Faction`. Prefab entities come from authoring references (`PrefabRegistry` by `TypeId`) |
 
 ## Mapping a Generals-style design

@@ -31,12 +31,13 @@ Turrets that turn on their own are not built in.
 
 | Type | Role |
 | --- | --- |
-| `StatModifier`, `Stat` | `(base + Add) × (1 + ΣPercent)` for MaxHealth, Damage, Range, FireRate, MoveSpeed, VisionRange, DamageTaken, BuildRate, ProductionSpeed, Income; games from `Stat.Custom` (128) |
-| `StatSource` | Who added a modifier: Upgrade, Veterancy, Field; games from `Custom` |
-| `BaseStat`, `StatMath` | Unmodified values; `Evaluate`, `Apply`, `RemoveSource` |
+| `StatModifier`, `Stat` | `(base + Add) × (1 + ΣPercent)` for MaxHealth, Damage, Range, FireRate, MoveSpeed, VisionRange, DamageTaken, BuildRate, ProductionSpeed, Income |
+| `StatSource` | Who added a modifier: Upgrade, Veterancy, Field, Difficulty |
+| `BaseStat`, `StatBasesPending`, `StatMath` | Unmodified values; `Evaluate`, `Apply`, `RemoveSource` |
 
-Each module applies its stats last in the lifecycle phase, only when the modifier buffer changes (`MaxHealth` keeps
-the health fraction).
+`StatBaseSystem` records each entity's bases from its authored components at spawn (first in the order phase);
+`StatSystem` rewrites every live stat from them last in the lifecycle phase, only when the modifier buffer changes
+(`MaxHealth` keeps the health fraction).
 
 ## Veterancy
 

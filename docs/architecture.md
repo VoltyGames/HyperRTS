@@ -88,7 +88,7 @@ SimulationSystemGroup
  │   ├─ first   ClientSingletonSystem, MatchSetupSystem, PlayerGhostSystem, LocalGhostActivationSystem,
  │   │          MatchStartSystem, ReferenceResolveSystem, CueClearSystem, CueReceiveSystem,
  │   │          SelectionInputSystem, SelectionSystem, CommandInputSystem, PlacementInputSystem,
- │   │          CommandReceiveSystem, SkirmishAISystem
+ │   │          CommandReceiveSystem, SkirmishAISystem, StatBaseSystem
  │   ├─         UnitCommandSystem, AbilityCommandSystem, PlaceBuildingSystem, ProductionCommandSystem,
  │   │          SellSystem, UnloadSystem, SurrenderSystem, AcknowledgementSystem,
  │   │          OrderDispatchSystem, MoveOrderSystem, EscortSystem, RearmSystem, PadSystem
@@ -109,7 +109,7 @@ SimulationSystemGroup
  └─ LifecycleSystemGroup
      ├─         DeathSystem, VictorySystem, CasualtyStatsSystem, KillCreditSystem, VeterancySystem,
      │          ContainerDeathSystem, DeathCueSystem
-     └─ last    *StatSystem (MaxHealth, Weapon, MoveSpeed, Vision, BuildRate, ProductionSpeed),
+     └─ last    StatSystem (every live stat from its spawn-time base),
                 ReplayRecorderSystem, FactionConnectionsSystem, CueSendSystem, ImpactSendSystem
 PresentationSystemGroup
  └─ TeamColorSystem, FogVisibilitySystem, SoundPlaybackSystem   (+ HUD and overlay MonoBehaviours)

@@ -62,6 +62,20 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void Modifiers_UseTheSpawnBase_WhenTheLiveStatChangedFirst()
+        {
+            var unit = _world.SpawnUnit(1, float3.zero, speed: 4f);
+            _world.Tick();
+            _world.EntityManager.SetComponentData(unit, new MovementSpeed { Value = 9f });
+            _world.EntityManager.GetBuffer<StatModifier>(unit)
+                .Add(new StatModifier { Stat = Stat.MoveSpeed, Percent = 0.5f, Source = StatSource.Upgrade(7) });
+
+            _world.Tick();
+
+            Assert.AreEqual(6f, _world.Get<MovementSpeed>(unit).Value, 1e-3f);
+        }
+
+        [Test]
         public void Kill_EarnsExperience_AndRankBonus()
         {
             var veteran = Veteran(float3.zero);
