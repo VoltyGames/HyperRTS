@@ -30,10 +30,11 @@ start in the south-west base against an AI in the north-east. Controls:
 
 ## Use it in a game
 
-Add this repo as a git submodule and reference the package from `Packages/manifest.json`:
+Add this repo as a git submodule (here at the game's root, `HyperRTS/`) and reference the package from
+`Packages/manifest.json`:
 
 ```json
-"com.hyperrts.engine": "file:../External/HyperRTS/Packages/com.hyperrts.engine"
+"com.hyperrts.engine": "file:../HyperRTS/Packages/com.hyperrts.engine"
 ```
 
 Then follow [getting started](docs/getting-started.md).

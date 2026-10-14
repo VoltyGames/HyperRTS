@@ -51,15 +51,6 @@ A heredoc works too, but it is bash. The lookalike `@'...'@` is PowerShell, and 
 4. Run `git log -1 --format=%s`. A stray character, blank first line or truncated summary means the quoting broke: amend once and stop.
 5. If a hook rewrote files, amend once and stop. Do not push unless asked.
 
-## Submodules
-
-Skip this section unless `git status` reports a submodule as modified or holding new commits. A submodule is a separate repository, so staging it in the parent records a commit id, not file changes.
-
-1. Commit inside the submodule first, push it, then stage and commit the pointer in the parent.
-2. Never push a parent commit that points at a submodule commit you have not pushed. Clones will not find it.
-3. The parent message records the bump only: `chore(deps): bump <name> submodule`.
-4. Check `git submodule status`. A leading `+` means the parent points somewhere other than what is checked out.
-
 ## Examples
 
 | Change                           | Message                                           |

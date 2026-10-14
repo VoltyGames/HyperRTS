@@ -77,6 +77,11 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
 - UI is UI Toolkit everywhere: HUD, menus, world-space UI, inspectors, property drawers, editor windows and
   overlays. uGUI only for UI that needs Animation Clips or Timeline. No IMGUI; Scene view `Handles` are the one
   exception (no UI Toolkit equivalent). Mass per-unit markers (health bars, rings) are instanced meshes, not UI.
+- Readable predicates: no long multi-line `&&`/`||` chains. Write a block body with an early `return` per rule
+  and name intermediate facts with locals. Short one- or two-term `=>` bodies are fine.
+- No fallback code: no defaults for missing data, no readers for old formats, no compatibility overloads. Require
+  the data the design guarantees and fail loudly with a message naming the bad key. A format change bumps its
+  version and rejects older ones; tests set up what the real pipeline provides.
 
 ## Comments
 
@@ -84,11 +89,15 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
 - Comment *why*, never *what*. No comments that restate the code, narrate changes, or explain C#/Unity basics.
 - No `<param>`/`<returns>` boilerplate, multi-paragraph remarks, or per-field docs on self-explanatory fields.
 - Keep each comment to one or two short lines. Delete stale comments when the code changes.
+- No narrative: no history ("after play-testing"), walkthroughs of behaviour or clauses chained with semicolons.
+  File headers are a line or two. Do a comment pass over every touched file before committing.
 
 ## LOC
 
 - Files ≤ 300 lines, methods ≤ 40 lines. Split by responsibility when a file grows past that.
-- One type per file, except authoring + baker; runtime components live in their own files.
+- One type per file, except authoring + baker, and a feature's small unmanaged components and tags, which may
+  share one file named after the feature (`HarvesterComponents.cs`). Systems, MonoBehaviours and ScriptableObjects
+  stay one per file.
 - Prefer deleting code to adding it. No dead code, unused usings or commented-out code.
 
 ## Run / test
