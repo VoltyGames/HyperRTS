@@ -164,6 +164,7 @@ namespace HyperRTS.Editor.Maps.Checks
             surface.props.ForEach(prop => EntryNotBesideRoad(prop.kind, name));
             surface.decals.ForEach(decal => Decal(decal.decal, name));
             SurfaceEdge(surface, name);
+            Require(MapImpactClass.IsValid(surface.impactClass), MapImpactClass.Problem(name, surface.impactClass));
         }
 
         /// <summary>Every surface states its edge.</summary>
@@ -177,6 +178,7 @@ namespace HyperRTS.Editor.Maps.Checks
         {
             var name = $"road class '{road.key}'";
             Surface(road.surface, name);
+            Require(MapImpactClass.IsValid(road.impactClass), MapImpactClass.Problem(name, road.impactClass));
             if (road.vergeWidth > 0f)
             {
                 Surface(road.vergeSurface, $"{name} verge");

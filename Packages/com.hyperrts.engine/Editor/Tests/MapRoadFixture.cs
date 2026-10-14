@@ -39,17 +39,17 @@ namespace HyperRTS.Editor.Tests
             foreach (var key in new[] { "Asphalt", "Dirt", "Verge", "Meadow" })
             {
                 climate.layers.Add(new MapClimateLayer { key = key });
-                climate.surfaces.Add(new MapClimateSurface { key = key, layer = key, edgeWidth = 1f, edgeJitter = 1f });
+                climate.surfaces.Add(new MapClimateSurface { key = key, layer = key, impactClass = "Grass", edgeWidth = 1f, edgeJitter = 1f });
             }
 
             climate.groundSurface = "Meadow";
             climate.roadClasses.Add(new MapRoadClass
             {
-                key = "Asphalt", width = 8f, surface = "Asphalt", vergeSurface = "Verge", vergeWidth = 2f, rank = 2, curve = 25f,
+                key = "Asphalt", width = 8f, surface = "Asphalt", impactClass = "Paved", vergeSurface = "Verge", vergeWidth = 2f, rank = 2, curve = 25f,
             });
             climate.roadClasses.Add(new MapRoadClass
             {
-                key = "Dirt", width = 4f, surface = "Dirt", vergeSurface = "Verge", vergeWidth = 1f, rank = 0, curve = 10f,
+                key = "Dirt", width = 4f, surface = "Dirt", impactClass = "Soil", vergeSurface = "Verge", vergeWidth = 1f, rank = 0, curve = 10f,
             });
             return climate;
         }

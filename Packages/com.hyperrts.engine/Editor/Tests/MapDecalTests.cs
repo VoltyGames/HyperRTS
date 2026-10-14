@@ -89,7 +89,7 @@ namespace HyperRTS.Editor.Tests
         {
             var climate = Climate(0f);
             climate.decals.Add(new MapClimateDecal { key = "Ruts", size = new Vector2(3f, 5f), randomRotation = false, alongRoad = true });
-            var rutted = new MapClimateSurface { key = "Rutted", layer = "Dirt", edgeWidth = 1f, edgeJitter = 1f };
+            var rutted = new MapClimateSurface { key = "Rutted", layer = "Dirt", impactClass = "Grass", edgeWidth = 1f, edgeJitter = 1f };
             rutted.decals.Add(new MapDecalDensity { decal = "Ruts", perHectare = 400f });
             climate.surfaces.Add(rutted);
             var context = MapRoadFixture.Context(MapRoadFixture.Spec(), climate, new MapIssues());
@@ -131,7 +131,7 @@ namespace HyperRTS.Editor.Tests
         {
             var climate = MapRoadFixture.Climate();
             climate.decals.Add(new MapClimateDecal { key = "Puddle", size = new Vector2(1f, 2f), randomRotation = true });
-            var muddy = new MapClimateSurface { key = "Muddy", layer = "Meadow", edgeWidth = 1f, edgeJitter = 1f };
+            var muddy = new MapClimateSurface { key = "Muddy", layer = "Meadow", impactClass = "Grass", edgeWidth = 1f, edgeJitter = 1f };
             muddy.decals.Add(new MapDecalDensity { decal = "Puddle", perHectare = perHectare });
             climate.surfaces.Add(muddy);
             return climate;

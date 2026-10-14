@@ -202,6 +202,10 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
   direction of the cell's crop or garden rows (x east, y north) remapped to 0..1, moved through the cell's symmetry
   copy so mirrored and rotated fields turn too; (0.5, 0.5) where nothing grows in rows. Regions carry rows when the
   planner gives them an angle (fields, gardens: `MapLandRegion.HasRows`).
+- **Ground materials** (`MapGroundMaterialPainter`, `_GroundMaterials.png`): one texel per land cell, R8, point
+  filter, no mips, readable. Each byte is a `SurfaceMaterial`: the region surface's `impactClass`, the nearest road's
+  class `impactClass` on road cells, `Water` in river beds. The SubScene's `Ground Materials` object
+  (`GroundMaterialsAuthoring`, at the land's south-west corner) bakes it into the `GroundMaterials` singleton.
 - **Terrain material** (`MapTerrainMaterial`): `HyperRTS/Terrain`, one pass, up to 16 height-blended layers from the
   climate's texture arrays, the macro and row maps, and per-layer rotation. The climate's `heightBlendDepth` (texel
   height, 0..1; about 0.06 interlocks borders without speckle) sets how far one layer's texels must stand above
@@ -250,7 +254,7 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 | Tool | Writes |
 | --- | --- |
 | Preview (`MapPreview.Run`) | `Logs/MapReports/<Map>.preview.png` (land, trees, props, crossings, bases) and `.preview.json` (issues, land figures). The Map Editor's live preview writes nothing |
-| Build (`MapBuilder.Build`) | Beside the spec: scene and `_Entities` SubScene (gameplay prefabs at `[Generated] …` roots, scenery under `[Generated]`; the build also clears every library prefab instance at the SubScene root, since a prefab whose internal IDs changed drops the instance's name; hand-placed objects go under `[Dressing]`, which is never touched), `_Terrain.asset` and `.mat`, `_Water.asset`, `_Roads.asset`, `_Macro.png`, `_Rows.png`, `_Ground.png`, `_Minimap.png`, `_Overview.png`, baked lighting. In `Logs/MapReports/`: `<Map>.json` and `.png`. Errors before the scene stage stop the build with a report and leave the last good scene alone |
+| Build (`MapBuilder.Build`) | Beside the spec: scene and `_Entities` SubScene (gameplay prefabs at `[Generated] …` roots, scenery under `[Generated]`; the build also clears every library prefab instance at the SubScene root, since a prefab whose internal IDs changed drops the instance's name; hand-placed objects go under `[Dressing]`, which is never touched), `_Terrain.asset` and `.mat`, `_Water.asset`, `_Roads.asset`, `_Macro.png`, `_Rows.png`, `_Ground.png`, `_GroundMaterials.png`, `_Minimap.png`, `_Overview.png`, baked lighting. In `Logs/MapReports/`: `<Map>.json` and `.png`. Errors before the scene stage stop the build with a report and leave the last good scene alone |
 | Views (`MapViewCapture`, every build) | `Logs/MapReports/<Map>/*.png` from the scene's own match camera: `centre`, `base-N`, `crossing-N`, `settlement-N` (wide and `-close`), `overview`. None without a graphics device |
 | Key reference (`MapKeyReference.Write`) | A Markdown list of every `kind` a spec may name, for the game to write beside its map tooling |
 
@@ -268,8 +272,8 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 | `plant` | `MapClimateDetail` | A terrain detail: instanced mesh prefab or billboard grass texture | `mesh`, `texture` |
 | `tree` | `MapClimateTree` | A terrain tree, optionally an entity version for the playable area | `prefab`, `destructible` |
 | `decal` | `MapClimateDecal` | A ground decal: size range (metres), `randomRotation`, `depth` | `material` |
-| `road` | `MapRoadClass` | Width, surface, verge, rank, levelling and curve radius of a road class | `material`; surface keys |
-| `surface` | `MapClimateSurface` | A ground type: its layer, the trees, plants and props on it and its `decals` per hectare (a tree with `maxEdgeDistance` grows only that close to the surface's edge, per hectare of that band; not on the ravine surface) | layer, tree, plant, prop, decal keys |
+| `road` | `MapRoadClass` | Width, surface, `impactClass` (the road's own `SurfaceMaterial`, since its painted surface may differ), verge, rank, levelling and curve radius of a road class | `material`; surface keys |
+| `surface` | `MapClimateSurface` | A ground type: its layer, its `impactClass` (a `SurfaceMaterial` name other than `None`: the debris hits and wheels throw up), the trees, plants and props on it and its `decals` per hectare (a tree with `maxEdgeDistance` grows only that close to the surface's edge, per hectare of that band; not on the ravine surface) | layer, tree, plant, prop, decal keys |
 | `farmland` | `MapFarmlandKit` | Field sizes, crop mix, margins, belts and tracks (`trackJoinDistance`: metres from a road's edge within which a track end joins it) | surface, belt and road keys |
 | `belt` | `MapBeltKit` | Rows of trees with shrubs in the gaps | tree and surface keys |
 | `woodland` | `MapWoodlandKit` | Canopy, shrubby edge, clearings, floor | tree and surface keys |

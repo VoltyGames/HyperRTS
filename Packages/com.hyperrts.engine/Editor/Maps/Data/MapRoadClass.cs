@@ -19,6 +19,9 @@ namespace HyperRTS.Editor.Maps.Data
         [MapKey(typeof(MapClimateSurface))]
         public string surface;
 
+        [Tooltip("SurfaceMaterial name of the road itself, which its painted surface may not match (Paved, Gravel, Soil...).")]
+        public string impactClass;
+
         [Tooltip("Material of the road mesh laid over the terrain (HyperRTS/Road); empty paints the terrain only.")]
         [NonSerialized]
         public Material material;

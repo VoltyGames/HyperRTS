@@ -49,6 +49,9 @@ namespace HyperRTS.Editor.Maps.Generation
         /// <summary>The top-down ground colour foliage blends into at its roots.</summary>
         public string Ground => $"{Folder}/{Name}_Ground.png";
 
+        /// <summary>What each ground cell is made of, baked for hit and wheel debris.</summary>
+        public string GroundMaterials => $"{Folder}/{Name}_GroundMaterials.png";
+
         /// <summary>The overview view from the match camera, kept with the map for loading screens.</summary>
         public string Overview => $"{Folder}/{Name}_Overview.png";
 

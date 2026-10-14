@@ -152,7 +152,7 @@ namespace HyperRTS.Editor.Tests
             foreach (var key in new[] { "Meadow", "Road", "Verge", "Yard", "Garden", "Orchard" })
             {
                 climate.layers.Add(new MapClimateLayer { key = key });
-                climate.surfaces.Add(new MapClimateSurface { key = key, layer = key, edgeWidth = 1f, edgeJitter = 1f });
+                climate.surfaces.Add(new MapClimateSurface { key = key, layer = key, impactClass = "Grass", edgeWidth = 1f, edgeJitter = 1f });
             }
 
             climate.groundSurface = "Meadow";
@@ -162,7 +162,7 @@ namespace HyperRTS.Editor.Tests
             climate.trees.Add(new MapClimateTree { key = "Apple", prefabs = { Make(new GameObject("Apple")) } });
             climate.roadClasses.Add(new MapRoadClass
             {
-                key = "Street", width = 6f, surface = "Road", vergeWidth = 3f, vergeSurface = "Verge",
+                key = "Street", width = 6f, surface = "Road", impactClass = "Soil", vergeWidth = 3f, vergeSurface = "Verge",
             });
             return climate;
         }

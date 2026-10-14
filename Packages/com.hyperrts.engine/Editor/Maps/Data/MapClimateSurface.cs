@@ -17,6 +17,9 @@ namespace HyperRTS.Editor.Maps.Data
         [MapKey(typeof(MapClimateLayer))]
         public string layer;
 
+        [Tooltip("SurfaceMaterial name hits and wheels on this surface throw up (Soil, Grass, Mud, Gravel...).")]
+        public string impactClass;
+
         public List<MapTreeDensity> trees = new();
 
         [Tooltip("Smallest distance between trees on this surface (metres).")]

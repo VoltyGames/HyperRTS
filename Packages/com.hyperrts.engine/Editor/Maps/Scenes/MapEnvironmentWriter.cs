@@ -2,11 +2,13 @@ using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Meshes;
 using HyperRTS.Editor.Maps.Texturing;
 using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Presentation.HUD;
+using HyperRTS.Simulation.Effects;
 using HyperRTS.Simulation.Navigation;
 using UnityEditor;
 using UnityEngine;
@@ -31,6 +33,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, macro, rows);
             var picture = MapGroundColor.Write(paths.Ground, generation.Splat, climate, macro);
             MapCropWriter.Write(paths.RowCrops, paths.RowCropIds, generation.Crops);
+            MapGroundMaterialPainter.Write(paths.GroundMaterials, generation.Land, generation.Shapes, climate);
             return (material, picture);
         }
 
@@ -44,10 +47,25 @@ namespace HyperRTS.Editor.Maps.Scenes
             var height = scene.CreateEntityObject("Terrain Height");
             height.transform.position = layout.TerrainOrigin;
             height.AddComponent<TerrainHeightAuthoring>().terrainData = data;
+            CreateGroundMaterials(scene, generation);
             CreateWater(scene, generation);
             PrefabUtility.InstantiatePrefab(climate.atmosphere, scene.Root);
             ApplySky(climate);
             CreateDecks(scene, generation.Shapes, layout.GroundLevel);
+        }
+
+        // Loaded by path because opening the scene unloads the picture WriteGround saved.
+        private static void CreateGroundMaterials(MapScene scene, MapGeneration generation)
+        {
+            var path = generation.Project.Paths.GroundMaterials;
+            var map = AssetDatabase.LoadAssetAtPath<Texture2D>(path)
+                ?? throw new System.InvalidOperationException($"HyperRTS: the ground material map '{path}' is missing.");
+            var land = generation.Land.Bounds;
+            var go = scene.CreateEntityObject("Ground Materials");
+            go.transform.position = new Vector3(land.xMin, 0f, land.yMin);
+            var materials = go.AddComponent<GroundMaterialsAuthoring>();
+            materials.map = map;
+            materials.spacing = MapLand.CellSize;
         }
 
         /// <summary>Points the scene's minimap at a picture of the map.</summary>
