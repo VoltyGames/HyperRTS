@@ -78,6 +78,7 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
 - UI is UI Toolkit everywhere: HUD, menus, world-space UI, inspectors, property drawers, editor windows and
   overlays. uGUI only for UI that needs Animation Clips or Timeline. No IMGUI; Scene view `Handles` are the one
   exception (no UI Toolkit equivalent). Mass per-unit markers (health bars, rings) are instanced meshes, not UI.
+- Name a method after what it returns or does (`TierIndex`, `PlaybackControl`), never a bare `Of` or `XOf`.
 - Readable predicates: no long multi-line `&&`/`||` chains. Write a block body with an early `return` per rule
   and name intermediate facts with locals. Short one- or two-term `=>` bodies are fine.
 - No fallback code: no defaults for missing data, no readers for old formats, no compatibility overloads. Require

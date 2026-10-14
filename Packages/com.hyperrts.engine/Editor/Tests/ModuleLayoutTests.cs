@@ -81,7 +81,7 @@ namespace HyperRTS.Editor.Tests
             foreach (var dependency in SimulationDependencies())
             {
                 var (module, used) = Split(dependency.Key);
-                if (TierOf(used) > TierOf(module))
+                if (TierIndex(used) > TierIndex(module))
                 {
                     upward.Add($"{dependency.Key} ({string.Join(", ", dependency.Value)})");
                 }
@@ -97,7 +97,7 @@ namespace HyperRTS.Editor.Tests
             foreach (var edge in SimulationDependencies().Keys)
             {
                 var (module, used) = Split(edge);
-                if (TierOf(module) != TierOf(used))
+                if (TierIndex(module) != TierIndex(used))
                 {
                     continue;
                 }
@@ -203,7 +203,7 @@ namespace HyperRTS.Editor.Tests
             finished.Add(module);
         }
 
-        private static int TierOf(string module) => Array.FindIndex(Tiers, tier => tier.Contains(module));
+        private static int TierIndex(string module) => Array.FindIndex(Tiers, tier => tier.Contains(module));
 
         private static (string Module, string Used) Split(string edge)
         {
