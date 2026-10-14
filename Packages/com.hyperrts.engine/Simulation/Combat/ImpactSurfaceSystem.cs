@@ -42,6 +42,7 @@ namespace HyperRTS.Simulation.Combat
             _agents.Update(ref state);
             _materials.Update(ref state);
             var hasGrid = SystemAPI.TryGetSingleton<NavGrid>(out var grid) && grid.IsCreated;
+            var hasGround = SystemAPI.TryGetSingleton<GroundMaterials>(out var ground);
             new ClassifyJob
             {
                 Buildings = _buildings,
@@ -49,6 +50,8 @@ namespace HyperRTS.Simulation.Combat
                 Materials = _materials,
                 Grid = hasGrid ? grid : _noGrid,
                 HasGrid = hasGrid,
+                Ground = ground,
+                HasGround = hasGround,
             }.Schedule();
         }
 
@@ -61,6 +64,8 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<HitMaterial> Materials;
             [ReadOnly] public NavGrid Grid;
             public bool HasGrid;
+            public GroundMaterials Ground;
+            public bool HasGround;
 
             private void Execute(DynamicBuffer<ImpactEvent> impacts)
             {
@@ -88,7 +93,7 @@ namespace HyperRTS.Simulation.Combat
                 return HasGrid ? SurfaceAt(impact.Position) : ImpactSurface.Ground;
             }
 
-            /// <summary>Open ground stays None: presentation reads it from the ground material map.</summary>
+            /// <summary>The target's own material wins; open ground comes from the baked ground material map.</summary>
             private SurfaceMaterial ResolveMaterial(in ImpactEvent impact)
             {
                 if (Materials.TryGetComponent(impact.Target, out var hit))
@@ -96,7 +101,15 @@ namespace HyperRTS.Simulation.Combat
                     return hit.Value;
                 }
 
-                return impact.Surface == ImpactSurface.Water ? SurfaceMaterial.Water : SurfaceMaterial.None;
+                switch (impact.Surface)
+                {
+                    case ImpactSurface.Water:
+                        return SurfaceMaterial.Water;
+                    case ImpactSurface.Ground when HasGround:
+                        return Ground.At(impact.Position.xz);
+                    default:
+                        return SurfaceMaterial.None;
+                }
             }
 
             /// <summary>A ford's deck lies under the water; a bridge's stands above it.</summary>

@@ -94,7 +94,6 @@ namespace HyperRTS.Presentation.Effects
         private void PlayImpacts(DynamicBuffer<ImpactEvent> events, in LocalFogView view, in FogOfWar fog,
             in FactionRelations relations, in PrefabRegistry registry)
         {
-            var hasGround = SystemAPI.TryGetSingleton(out GroundMaterials ground);
             var hasTerrain = SystemAPI.TryGetSingleton(out TerrainHeight terrain);
             foreach (var impact in events)
             {
@@ -109,13 +108,7 @@ namespace HyperRTS.Presentation.Effects
                     continue;
                 }
 
-                var material = impact.Material;
-                if (material == SurfaceMaterial.None && hasGround)
-                {
-                    material = ground.At(impact.Position.xz);
-                }
-
-                var rig = _pool.Get(surfaces.RigFor(material));
+                var rig = _pool.Get(surfaces.RigFor(impact.Material));
                 if (rig == null || !EffectRange.InRange(_camera, rig, impact.Position))
                 {
                     continue;

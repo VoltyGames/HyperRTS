@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Combat
 
         public ImpactSurface Surface;
 
-        /// <summary>What was struck; None on open ground, which presentation reads from <see cref="GroundMaterials"/>.</summary>
+        /// <summary>What was struck: the target's material, water, or the <see cref="GroundMaterials"/> cell under open ground.</summary>
         public SurfaceMaterial Material;
 
         /// <summary>What the shot was aimed at, for <see cref="ImpactSurfaceSystem"/>; it never leaves the frame.</summary>

@@ -139,7 +139,7 @@ Rendering and effects:
   emits rate × time + rate over distance along a path with a carried fraction. `EffectDetail.Level` thins particles
   (Low 0.35, Medium 0.7, High 1); High adds `EffectLight` flashes from 8 shared shadowless lights; Low halves loop
   range. `EffectPlaybackSystem` bursts seen `EffectEvent`s (the type's slot rig, facing `Direction`) and impacts of
-  shooters with `EntityImpactEffects` (`SurfaceEffects.RigFor` the event's material, else `GroundMaterials`; on the
+  shooters with `EntityImpactEffects` (`SurfaceEffects.RigFor` the event's material; on the
   terrain, facing up or the ground normal). `LoopEffectSystem`, `TrailSystem` and `MotionDustSystem` stream drawn
   entities (no `DisableRendering`): loops at sockets with health gate and timed fade, trails along the frame's path,
   dust by ground material and speed / `FullSpeed`. `TypeCatalog<T>` caches each type's effects (and impact marks, sound

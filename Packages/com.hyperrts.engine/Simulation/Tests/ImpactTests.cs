@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Effects;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -145,8 +146,17 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void HitOnATargetWithAHitMaterial_StruckThatMaterial_OpenGroundNone()
+        public void HitOnATargetWithAHitMaterial_StruckThatMaterial_OpenGroundTheGroundMap()
         {
+            var cells = new NativeArray<byte>(64 * 64, Allocator.Temp);
+            for (var i = 0; i < cells.Length; i++)
+            {
+                cells[i] = (byte)SurfaceMaterial.Sand;
+            }
+
+            var ground = GroundMaterials.Create(cells, new int2(64, 64), new float2(-32f, -32f), 2f, Allocator.Persistent);
+            cells.Dispose();
+            _world.EntityManager.CreateSingleton(ground);
             Gun(float3.zero);
             Gun(new float3(0f, 0f, 40f));
             var tank = _world.SpawnUnit(2, new float3(3f, 0f, 0f));
@@ -160,7 +170,8 @@ namespace HyperRTS.Simulation.Tests
             var onTank = landed[0].Position.z < 20f ? landed[0] : landed[1];
             var onGround = landed[0].Position.z < 20f ? landed[1] : landed[0];
             Assert.AreEqual(SurfaceMaterial.Metal, onTank.Material);
-            Assert.AreEqual(SurfaceMaterial.None, onGround.Material, "presentation reads the ground map");
+            Assert.AreEqual(SurfaceMaterial.Sand, onGround.Material, "open ground reads the ground map");
+            ground.Blob.Dispose();
         }
 
         [Test]
