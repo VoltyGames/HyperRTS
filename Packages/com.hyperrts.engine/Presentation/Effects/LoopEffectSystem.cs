@@ -56,7 +56,7 @@ namespace HyperRTS.Presentation.Effects
                 }
 
                 var fraction = health.TryGetComponent(entity, out var hp) ? hp.Fraction : 1f;
-                var standing = decays.TryGetComponent(entity, out var decay) ? 1f - decay.Sunk : 1f;
+                var standing = decays.TryGetComponent(entity, out var decay) ? 1f - decay.DespawnProgress : 1f;
                 for (var i = 0; i < loops.Length; i++)
                 {
                     Stream(entity, i, loops[i], place.ValueRO, fraction, (float)(now - seen), standing);

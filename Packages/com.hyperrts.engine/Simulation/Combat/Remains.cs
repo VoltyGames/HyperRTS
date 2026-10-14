@@ -15,14 +15,13 @@ namespace HyperRTS.Simulation.Combat
         public bool Felled;
 
         /// <summary><paramref name="fall"/> is read only for <see cref="Topple"/> pieces.</summary>
-        public static Remains Of(Entity piece, in LocalTransform standing, byte fall, bool witnessed,
-            ComponentLookup<PostTransformMatrix> stretches, ComponentLookup<PartStretch> partStretches,
-            ComponentLookup<Topple> topples)
+        public static Remains FromPiece(Entity piece, in LocalTransform standing, byte fall, bool witnessed,
+            in RemainsLookups lookups)
         {
             var remains = new Remains { Transform = standing };
-            remains.Stretched = stretches.TryGetComponent(piece, out remains.Stretch);
-            remains.PartsStretched = partStretches.TryGetComponent(piece, out remains.Parts);
-            remains.Felled = topples.TryGetComponent(piece, out var topple);
+            remains.Stretched = lookups.Stretches.TryGetComponent(piece, out remains.Stretch);
+            remains.PartsStretched = lookups.PartStretches.TryGetComponent(piece, out remains.Parts);
+            remains.Felled = lookups.Topples.TryGetComponent(piece, out var topple);
             if (remains.Felled)
             {
                 remains.Felling = ToppleMath.Fell(standing, topple, fall, witnessed, out remains.Transform);

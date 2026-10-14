@@ -92,7 +92,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             _kernels = new RowCropKernels(compute);
             _inputs = new RowCropKernelInputs(_kernels, fields, terrain);
             _tileBounds = RowCropTileBounds.Measure(fields, terrain);
-            _cover = RowCropCover.Active = RowCropCover.Of(fields);
+            _cover = RowCropCover.Active = RowCropCover.Build(fields);
             _ready = true;
         }
 

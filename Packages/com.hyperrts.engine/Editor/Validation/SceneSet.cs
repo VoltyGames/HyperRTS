@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
+using Unity.Scenes;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -27,6 +28,9 @@ namespace HyperRTS.Editor.Validation
         public IReadOnlyList<GameEntityAuthoring> Entities { get; }
 
         public bool AnySubScene => Scenes.Any(scene => scene.isSubScene);
+
+        /// <summary>True when a loaded scene holds a <see cref="SubScene"/>, so it can host a match.</summary>
+        public bool HostsSubScene => Roots.Any(root => root.GetComponentInChildren<SubScene>(true) != null);
 
         public static SceneSet Loaded()
         {

@@ -21,19 +21,19 @@ namespace HyperRTS.Simulation.Combat
 
         [Tooltip("Seconds they take to sink out of sight; their loop effects fade over the same time.")]
         [Min(0.01f)]
-        public float sinkDuration = 6f;
+        public float despawnDuration = 6f;
 
         [Tooltip("Metres they sink: at least their height above the ground.")]
         [Min(0.01f)]
-        public float sinkDepth = 3f;
+        public float despawnDepth = 3f;
 
         public class Baker : Baker<DecayAuthoring>
         {
             public override void Bake(DecayAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                DecaySetup.Add(ref writer, authoring.name, authoring.lifetime, authoring.sinkDuration,
-                    authoring.sinkDepth);
+                DecaySetup.Add(ref writer, authoring.name, authoring.lifetime, authoring.despawnDuration,
+                    authoring.despawnDepth);
             }
         }
     }

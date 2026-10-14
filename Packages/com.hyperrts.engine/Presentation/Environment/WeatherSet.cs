@@ -21,13 +21,12 @@ namespace HyperRTS.Presentation.Environment
 
         public List<WeatherEntry> entries = new();
 
-        /// <summary>The weather in effect.</summary>
-        public string CurrentKey { get; private set; }
+        private string _currentKey;
 
         // Awake, before the first frame renders, so the default weather never shows when another was picked.
         private void Awake()
         {
-            CurrentKey = defaultKey;
+            _currentKey = defaultKey;
             var requested = MatchSetupRequest.TryGet(out var setup) ? setup.Weather.ToString() : "";
             Apply(requested);
         }
@@ -35,7 +34,7 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>Switches to <paramref name="key"/>; empty or the current key keeps the weather in effect.</summary>
         public void Apply(string key)
         {
-            if (string.IsNullOrEmpty(key) || key == CurrentKey)
+            if (string.IsNullOrEmpty(key) || key == _currentKey)
             {
                 return;
             }
@@ -43,7 +42,7 @@ namespace HyperRTS.Presentation.Environment
             var prefab = Find(key);
             RemoveCurrent();
             Instantiate(prefab, transform);
-            CurrentKey = key;
+            _currentKey = key;
         }
 
         /// <summary>The atmosphere prefab of <paramref name="key"/>; an unknown key throws naming it.</summary>

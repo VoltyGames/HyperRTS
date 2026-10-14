@@ -10,8 +10,6 @@ namespace HyperRTS.Presentation.Environment
         [Range(0f, 1f)]
         public float threshold = 0.5f;
 
-        public bool Shown => Wetness.Level >= threshold;
-
         private void OnEnable()
         {
             Wetness.Changed += Apply;
@@ -25,7 +23,7 @@ namespace HyperRTS.Presentation.Environment
 
         public void Apply()
         {
-            var shown = Shown;
+            var shown = Wetness.Level >= threshold;
             foreach (Transform child in transform)
             {
                 child.gameObject.SetActive(shown);

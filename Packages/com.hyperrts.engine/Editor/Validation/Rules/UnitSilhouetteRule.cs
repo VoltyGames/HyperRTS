@@ -1,6 +1,4 @@
-using System.Linq;
 using HyperRTS.Presentation.Rendering;
-using Unity.Scenes;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
@@ -9,13 +7,13 @@ namespace HyperRTS.Editor.Validation.Rules
     {
         public void Check(SceneSet scenes, ValidationIssues issues)
         {
-            var hostsMatch = scenes.Roots.Any(root => root.GetComponentInChildren<SubScene>(true) != null);
+            var hostsMatch = scenes.HostsSubScene;
             if (!hostsMatch)
             {
                 return;
             }
 
-            foreach (var renderer in UnitSilhouetteSettings.ActiveRenderers())
+            foreach (var renderer in RendererFeatures.ActiveRenderers())
             {
                 if (!UnitSilhouetteSettings.HasFeature(renderer))
                 {

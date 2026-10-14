@@ -118,7 +118,7 @@ namespace HyperRTS.Presentation.Tests
                 }
             }
 
-            var cover = RowCropCover.Of(fields);
+            var cover = RowCropCover.Build(fields);
             Object.DestroyImmediate(fields);
             return cover;
         }

@@ -1,6 +1,4 @@
-using System.Linq;
 using HyperRTS.Presentation.Rendering;
-using Unity.Scenes;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -13,7 +11,7 @@ namespace HyperRTS.Editor.Validation.Rules
 
         public void Check(SceneSet scenes, ValidationIssues issues)
         {
-            var hostsMatch = scenes.Roots.Any(root => root.GetComponentInChildren<SubScene>(true) != null);
+            var hostsMatch = scenes.HostsSubScene;
             if (!hostsMatch)
             {
                 return;

@@ -23,42 +23,51 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private Entity SpawnWreck(float lifetime, float sinkDuration, float sinkDepth)
+        private Entity SpawnWreck(float lifetime, float despawnDuration, float despawnDepth)
         {
             var wreck = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(wreck, LocalTransform.FromPosition(new float3(4f, 2f, 0f)));
             var writer = new EntityManagerWriter(_world.EntityManager, wreck);
-            DecaySetup.Add(ref writer, "wreck", lifetime, sinkDuration, sinkDepth);
+            DecaySetup.Add(ref writer, "wreck", lifetime, despawnDuration, despawnDepth);
             return wreck;
         }
 
         [Test]
-        public void Lifetime_CountsDown_WithoutSinking()
+        public void Waiting_LeavesTheRemainsUnwritten()
         {
             var wreck = SpawnWreck(2f, 1f, 3f);
+            _world.Tick();
+            var decayVersion = ChangeVersion<Decay>(wreck);
+            var transformVersion = ChangeVersion<LocalTransform>(wreck);
 
             _world.Run(1f);
 
-            var decay = _world.Get<Decay>(wreck);
-            Assert.AreEqual(1f, decay.Lifetime, 0.05f);
-            Assert.AreEqual(0f, decay.Sunk);
+            Assert.AreEqual(decayVersion, ChangeVersion<Decay>(wreck), "a waiting wreck is only read");
+            Assert.AreEqual(transformVersion, ChangeVersion<LocalTransform>(wreck));
+            Assert.AreEqual(0f, _world.Get<Decay>(wreck).DespawnProgress);
             Assert.AreEqual(2f, _world.Get<LocalTransform>(wreck).Position.y, 1e-5f, "it stays put while it waits");
         }
 
+        private uint ChangeVersion<T>(Entity entity) where T : unmanaged, IComponentData
+        {
+            var handle = _world.EntityManager.GetComponentTypeHandle<T>(true);
+            return _world.EntityManager.GetChunk(entity).GetChangeVersion(ref handle);
+        }
+
         [Test]
-        public void Sink_LowersTheRemains_ByTheShareDone()
+        public void Despawn_LowersTheRemains_ByTheShareDone()
         {
             var wreck = SpawnWreck(1f, 2f, 3f);
 
             _world.Run(2f);
 
             var decay = _world.Get<Decay>(wreck);
-            Assert.AreEqual(0.5f, decay.Sunk, 0.05f);
+            Assert.AreEqual(0.5f, decay.DespawnProgress, 0.05f);
             Assert.AreEqual(2f - 1.5f, _world.Get<LocalTransform>(wreck).Position.y, 0.15f);
         }
 
         [Test]
-        public void Remains_AreDestroyed_OnceSunk()
+        public void Remains_AreDestroyed_OnceDespawned()
         {
             var wreck = SpawnWreck(1f, 2f, 3f);
 
@@ -70,14 +79,14 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void Setup_RejectsZeroSinkDuration()
+        public void Setup_RejectsZeroDespawnDuration()
         {
             var wreck = _world.EntityManager.CreateEntity();
             var writer = new EntityManagerWriter(_world.EntityManager, wreck);
 
             var error = Assert.Throws<ArgumentException>(() => DecaySetup.Add(ref writer, "wreck", 180f, 0f, 3f));
 
-            StringAssert.Contains("sinkDuration", error.Message);
+            StringAssert.Contains("despawnDuration", error.Message);
         }
     }
 }

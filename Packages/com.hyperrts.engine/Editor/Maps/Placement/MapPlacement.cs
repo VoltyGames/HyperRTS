@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Placement
         public float Stretch { get; }
 
         /// <summary>The long side is local Z when the entry's size is deeper than wide, else local X.</summary>
-        public bool LongSideAlongZ => Entry.size.y >= Entry.size.x;
+        private bool LongSideAlongZ => Entry.size.y >= Entry.size.x;
 
         /// <summary>Owning slot; 0 is neutral.</summary>
         public int Owner { get; set; }

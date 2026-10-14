@@ -24,11 +24,7 @@ half PuddleCollect(TerrainSurface surface, half dampness, half rut, float2 st, f
 
 void ApplyWetness(inout TerrainSurface surface, half dampness, half rut, float2 positionXZ)
 {
-    half grass = Greenness(surface.albedo);
-    half rain = _HyperRTSWetness * lerp(1.0, _GrassWetness, grass);
     Wet(surface.albedo, surface.smoothness, surface.normalTS, dampness, _WetDarkening, _WetSmoothness);
-    // Rain has its own, less glossy wetting: from the camera's pitch a glossy field mirrors the sky and turns grey.
-    Wet(surface.albedo, surface.smoothness, surface.normalTS, max(rain - dampness, 0.0), _RainDarkening, _RainSmoothness);
     float2 st = positionXZ / _PuddleNoiseSize;
     float2 dx = ddx(st);
     float2 dy = ddy(st);
@@ -39,6 +35,10 @@ void ApplyWetness(inout TerrainSurface surface, half dampness, half rut, float2 
         return;
     }
 
+    half grass = Greenness(surface.albedo);
+    half rain = _HyperRTSWetness * lerp(1.0, _GrassWetness, grass);
+    // Rain has its own, less glossy wetting: from the camera's pitch a glossy field mirrors the sky and turns grey.
+    Wet(surface.albedo, surface.smoothness, surface.normalTS, max(rain - dampness, 0.0), _RainDarkening, _RainSmoothness);
     half collect = PuddleCollect(surface, dampness, rut, st, dx, dy) * (1.0 - 0.6 * grass);
     half cover = PuddleCover(collect, _PuddleCoverage);
     Puddle(surface.albedo, surface.smoothness, surface.normalTS, cover, _PuddleSmoothness);

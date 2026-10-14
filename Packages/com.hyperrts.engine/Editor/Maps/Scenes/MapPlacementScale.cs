@@ -1,4 +1,3 @@
-using System;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Simulation.Combat;
 using UnityEditor;
@@ -26,24 +25,8 @@ namespace HyperRTS.Editor.Maps.Scenes
                 return;
             }
 
-            RequireSameAxis(parts, placement);
             parts.Extend(placement.PartsExtension);
             Record(parts);
-        }
-
-        /// <summary>The planners stretch along the palette size's long side, so the parts must lie along it too.</summary>
-        private static void RequireSameAxis(StretchPartsAuthoring parts, MapPlacement placement)
-        {
-            var axis = parts.transform.InverseTransformDirection(parts.startCap.parent.TransformDirection(parts.Layout().Axis));
-            var partsAlongZ = Mathf.Abs(axis.z) > Mathf.Abs(axis.x);
-            if (partsAlongZ == placement.LongSideAlongZ)
-            {
-                return;
-            }
-
-            throw new InvalidOperationException(
-                $"HyperRTS: '{placement.Entry.key}' stretch parts lie along {(partsAlongZ ? "Z" : "X")}, but its size " +
-                $"{placement.Entry.size} puts the long side along {(placement.LongSideAlongZ ? "Z" : "X")}.");
         }
 
         private static void Record(StretchPartsAuthoring parts)

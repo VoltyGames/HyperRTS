@@ -19,7 +19,11 @@ namespace HyperRTS.Editor.Maps.Checks
             }
 
             var name = $"Palette entry '{entry.key}'";
-            Parts(parts, name, issues);
+            if (Parts(parts, name, issues, out var layout))
+            {
+                Axis(entry, parts, layout, name, issues);
+            }
+
             if (!entry.prefab.TryGetComponent<DestructibleAuthoring>(out var destructible) || destructible.remains == null)
             {
                 return;
@@ -32,11 +36,12 @@ namespace HyperRTS.Editor.Maps.Checks
                 return;
             }
 
-            Parts(remainsParts, $"{name} remains '{remains.name}'", issues);
+            Parts(remainsParts, $"{name} remains '{remains.name}'", issues, out _);
         }
 
-        private static void Parts(StretchPartsAuthoring parts, string name, MapIssues issues)
+        private static bool Parts(StretchPartsAuthoring parts, string name, MapIssues issues, out StretchLayout layout)
         {
+            layout = default;
             var problems = 0;
             foreach (var problem in parts.Problems())
             {
@@ -44,22 +49,40 @@ namespace HyperRTS.Editor.Maps.Checks
                 problems++;
             }
 
-            if (problems == 0)
-            {
-                Layout(parts, name, issues);
-            }
+            return problems == 0 && Layout(parts, name, issues, out layout);
         }
 
-        private static void Layout(StretchPartsAuthoring parts, string name, MapIssues issues)
+        private static bool Layout(StretchPartsAuthoring parts, string name, MapIssues issues, out StretchLayout layout)
         {
             try
             {
-                parts.Layout();
+                layout = parts.Layout();
+                return true;
             }
             catch (InvalidOperationException error)
             {
                 issues.Error($"{name}: {error.Message}");
+                layout = default;
+                return false;
             }
         }
+
+        /// <summary>The planners stretch along the size's long side, so the parts must lie along it too.</summary>
+        private static void Axis(MapPaletteEntry entry, StretchPartsAuthoring parts, StretchLayout layout, string name,
+            MapIssues issues)
+        {
+            var axis = parts.transform.InverseTransformDirection(parts.startCap.parent.TransformDirection(layout.Axis));
+            var partsAlongZ = Mathf.Abs(axis.z) > Mathf.Abs(axis.x);
+            var sizeAlongZ = entry.size.y >= entry.size.x;
+            if (partsAlongZ == sizeAlongZ)
+            {
+                return;
+            }
+
+            issues.Error($"{name}: stretch parts lie along {AxisName(partsAlongZ)}, but its size {entry.size} puts " +
+                $"the long side along {AxisName(sizeAlongZ)}.");
+        }
+
+        private static string AxisName(bool alongZ) => alongZ ? "Z" : "X";
     }
 }

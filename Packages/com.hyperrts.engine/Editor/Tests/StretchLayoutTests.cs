@@ -76,7 +76,7 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void Of_ReadsATurnedSpanAlongItsOwnAxis()
+        public void Measure_ReadsATurnedSpanAlongItsOwnAxis()
         {
             var root = new GameObject("Arch").transform;
             try
@@ -86,7 +86,7 @@ namespace HyperRTS.Editor.Tests
                 var span = Child(root, Vector3.zero, Quaternion.Euler(-90f, 0f, 0f));
                 var bounds = new Bounds(new Vector3(0f, 0.1f, 0f), new Vector3(0.1f, 3.4f, 0.1f));
 
-                var layout = StretchLayout.Of(root, start, end, span, bounds);
+                var layout = StretchLayout.Measure(root, start, end, span, bounds);
 
                 Assert.AreEqual(new float3(0f, 0f, 1f), layout.Axis);
                 Assert.AreEqual(new float3(0f, 1f, 0f), layout.SpanAxis);
@@ -100,7 +100,7 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void Of_FindsTheAxisFromCapMeshes_WhenEveryPivotIsAtTheOrigin()
+        public void Measure_FindsTheAxisFromCapMeshes_WhenEveryPivotIsAtTheOrigin()
         {
             var root = new GameObject("Arch").transform;
             var meshes = new[] { CapMesh(-2f), CapMesh(2f) };
@@ -113,7 +113,7 @@ namespace HyperRTS.Editor.Tests
                 var span = Child(root, Vector3.zero, Quaternion.identity);
                 var bounds = new Bounds(Vector3.zero, new Vector3(0.1f, 0.1f, 3.4f));
 
-                var layout = StretchLayout.Of(root, start, end, span, bounds);
+                var layout = StretchLayout.Measure(root, start, end, span, bounds);
 
                 Assert.AreEqual(new float3(0f, 0f, 1f), layout.Axis);
                 Assert.AreEqual(1f, layout.EndCapAt(1f).z, 1e-5f);

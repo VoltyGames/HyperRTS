@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Combat
         private float Local(float extension) => extension / RootUnits;
 
         /// <summary>Reads the rest pose from the parts' local transforms (one parent under the root) and the span mesh's bounds.</summary>
-        public static StretchLayout Of(Transform root, Transform startCap, Transform endCap, Transform span, Bounds spanBounds)
+        public static StretchLayout Measure(Transform root, Transform startCap, Transform endCap, Transform span, Bounds spanBounds)
         {
             var axis = LongAxis(Centre(startCap), Centre(endCap));
             var rootUnits = root.InverseTransformVector(startCap.parent.TransformVector(axis)).magnitude;

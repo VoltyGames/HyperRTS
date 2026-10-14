@@ -31,6 +31,7 @@ namespace HyperRTS.Editor.Maps.Designer
         private PopupField<string> _climate;
         private IntegerField _seed;
         private Label _error;
+        private MapLibrary _library;
 
         public static void Open()
         {
@@ -45,7 +46,8 @@ namespace HyperRTS.Editor.Maps.Designer
             var root = rootVisualElement;
             EditorAssets.AddStyles(root);
             root.AddToClassList("hrts-new-map");
-            var climates = MapLibrary.Load().Keys<MapClimate>().OrderBy(key => key).ToList();
+            _library = MapLibrary.Load();
+            var climates = _library.Keys<MapClimate>().OrderBy(key => key).ToList();
 
             _name = new TextField("Name") { tooltip = "PascalCase, unique: names the folder, the spec and the scene." };
             _mode = new PopupField<string>("Mode", MapSpecTemplate.Modes.ToList(), 0);
@@ -97,9 +99,10 @@ namespace HyperRTS.Editor.Maps.Designer
         }
 
         /// <summary>A new map starts in its climate's first weather; the spec's <c>weather</c> key changes it.</summary>
-        private static string FirstWeather(string climate)
+        private string FirstWeather(string climate)
         {
-            var weathers = MapLibrary.Load().Climate(climate, null).weathers;
+            _library.Get<MapClimate>(climate, null, out var refs);
+            var weathers = refs.weathers;
             return weathers.Count > 0 ? weathers[0].key : null;
         }
 

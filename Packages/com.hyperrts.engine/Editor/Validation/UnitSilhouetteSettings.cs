@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using HyperRTS.Presentation.Rendering;
 using UnityEditor;
 using UnityEngine;
@@ -15,8 +14,6 @@ namespace HyperRTS.Editor.Validation
     {
         private const string TagManagerPath = "ProjectSettings/TagManager.asset";
         private const string FeatureName = "Unit Silhouettes";
-
-        public static List<UniversalRendererData> ActiveRenderers() => RendererFeatures.ActiveRenderers();
 
         public static bool HasFeature(UniversalRendererData data) =>
             RendererFeatures.Find<UnitSilhouetteFeature>(data) != null;

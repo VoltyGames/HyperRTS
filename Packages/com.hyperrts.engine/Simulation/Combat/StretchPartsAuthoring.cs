@@ -62,7 +62,8 @@ namespace HyperRTS.Simulation.Combat
             }
         }
 
-        public StretchLayout Layout() => StretchLayout.Of(transform, startCap, endCap, span, RequireSpanMesh().bounds);
+        public StretchLayout Layout() =>
+            StretchLayout.Measure(transform, startCap, endCap, span, RequireSpanMesh().bounds);
 
         /// <summary>Moves the caps out by <paramref name="by"/> and stretches the span to meet them, once per instance.</summary>
         public void Extend(float by)
@@ -124,7 +125,7 @@ namespace HyperRTS.Simulation.Combat
                 DependsOn(mesh);
                 // A dynamic parent keeps the parts' transforms relative to it, the space the layout is in.
                 GetEntity(GetComponent<Transform>(authoring.startCap.parent), TransformUsageFlags.Dynamic);
-                var layout = StretchLayout.Of(authoring.transform, GetComponent<Transform>(authoring.startCap),
+                var layout = StretchLayout.Measure(authoring.transform, GetComponent<Transform>(authoring.startCap),
                     GetComponent<Transform>(authoring.endCap), GetComponent<Transform>(authoring.span), mesh.bounds);
                 AddComponent(root, new StretchParts
                 {

@@ -27,7 +27,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         public static RowCropCover Active { get; internal set; } = None;
 
         /// <summary>Marks every tile that holds at least one field.</summary>
-        public static RowCropCover Of(RowCropFields fields)
+        public static RowCropCover Build(RowCropFields fields)
         {
             var size = new int2(
                 (int)math.ceil(fields.area.width / RowCropFields.TileSize),

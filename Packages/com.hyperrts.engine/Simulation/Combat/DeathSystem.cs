@@ -15,9 +15,7 @@ namespace HyperRTS.Simulation.Combat
     public partial struct DeathSystem : ISystem
     {
         private ComponentLookup<SpawnOnDeath> _spawnLookup;
-        private ComponentLookup<PostTransformMatrix> _stretches;
-        private ComponentLookup<PartStretch> _partStretches;
-        private ComponentLookup<Topple> _topples;
+        private RemainsLookups _remains;
         private ComponentLookup<FellFrom> _fellFrom;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
@@ -26,9 +24,7 @@ namespace HyperRTS.Simulation.Combat
         public void OnCreate(ref SystemState state)
         {
             _spawnLookup = state.GetComponentLookup<SpawnOnDeath>(true);
-            _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
-            _partStretches = state.GetComponentLookup<PartStretch>(true);
-            _topples = state.GetComponentLookup<Topple>(true);
+            _remains = RemainsLookups.Create(ref state);
             _fellFrom = state.GetComponentLookup<FellFrom>(true);
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
@@ -39,9 +35,7 @@ namespace HyperRTS.Simulation.Combat
         public void OnUpdate(ref SystemState state)
         {
             _spawnLookup.Update(ref state);
-            _stretches.Update(ref state);
-            _partStretches.Update(ref state);
-            _topples.Update(ref state);
+            _remains.Update(ref state);
             _fellFrom.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
@@ -50,8 +44,7 @@ namespace HyperRTS.Simulation.Combat
 
             new DeathJob
             {
-                Ecb = ecb.AsParallelWriter(), SpawnLookup = _spawnLookup, Stretches = _stretches, PartStretches = _partStretches,
-                Topples = _topples,
+                Ecb = ecb.AsParallelWriter(), SpawnLookup = _spawnLookup, RemainsLookups = _remains,
                 FallSources = _fellFrom, Groups = _groups, Children = _children,
             }.ScheduleParallel();
         }
@@ -63,9 +56,7 @@ namespace HyperRTS.Simulation.Combat
         {
             public EntityCommandBuffer.ParallelWriter Ecb;
             [ReadOnly] public ComponentLookup<SpawnOnDeath> SpawnLookup;
-            [ReadOnly] public ComponentLookup<PostTransformMatrix> Stretches;
-            [ReadOnly] public ComponentLookup<PartStretch> PartStretches;
-            [ReadOnly] public ComponentLookup<Topple> Topples;
+            [ReadOnly] public RemainsLookups RemainsLookups;
             [ReadOnly] public ComponentLookup<FellFrom> FallSources;
             [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
             [ReadOnly] public BufferLookup<Child> Children;
@@ -93,7 +84,7 @@ namespace HyperRTS.Simulation.Combat
             {
                 // Only Topple pieces carry FellFrom, and only they read the heading.
                 FallSources.TryGetComponent(entity, out var fell);
-                var remains = Remains.Of(entity, transform, fell.Heading, true, Stretches, PartStretches, Topples);
+                var remains = Remains.FromPiece(entity, transform, fell.Heading, true, RemainsLookups);
                 var spawned = Ecb.Instantiate(sortKey, prefab);
                 Ecb.SetComponent(sortKey, spawned, remains.Transform);
                 if (remains.Stretched)

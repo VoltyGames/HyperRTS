@@ -3,78 +3,111 @@ using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>Counts down <see cref="Decay"/> remains, sinks them once their lifetime runs out and destroys them sunk.</summary>
+    /// <summary>Starts <see cref="Decay"/> remains' clocks, sinks them when their lifetime ends, then destroys them.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     public partial struct DecaySystem : ISystem
     {
+        private ComponentLookup<Decay> _decays;
+        private ComponentLookup<LocalTransform> _transforms;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _decays = state.GetComponentLookup<Decay>();
+            _transforms = state.GetComponentLookup<LocalTransform>();
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
             state.RequireForUpdate<Decay>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
+        // Waiting remains are only read, so their chunks keep their change versions and static ghosts stay quiet.
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _decays.Update(ref state);
+            _transforms.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
-            var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
-                .CreateCommandBuffer(state.WorldUnmanaged);
-            new DecayJob
+            var now = SystemAPI.Time.ElapsedTime;
+            var due = new NativeQueue<Entity>(Allocator.TempJob);
+            new FindDueJob { Due = due.AsParallelWriter(), Now = now }.ScheduleParallel();
+            state.Dependency = new DespawnJob
             {
-                Ecb = ecb.AsParallelWriter(), DeltaTime = SystemAPI.Time.DeltaTime, Groups = _groups,
+                Due = due, Now = now, Decays = _decays, Transforms = _transforms, Groups = _groups,
                 Children = _children,
-            }.ScheduleParallel();
+                Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
+                    .CreateCommandBuffer(state.WorldUnmanaged),
+            }.Schedule(state.Dependency);
+            due.Dispose(state.Dependency);
         }
 
         [BurstCompile]
-        private partial struct DecayJob : IJobEntity
+        [WithAll(typeof(LocalTransform))]
+        private partial struct FindDueJob : IJobEntity
         {
-            public EntityCommandBuffer.ParallelWriter Ecb;
-            public float DeltaTime;
+            public NativeQueue<Entity>.ParallelWriter Due;
+            public double Now;
+
+            private void Execute(Entity entity, in Decay decay)
+            {
+                var unstarted = decay.DespawnStartTime == 0d;
+                if (unstarted || Now >= decay.DespawnStartTime)
+                {
+                    Due.Enqueue(entity);
+                }
+            }
+        }
+
+        [BurstCompile]
+        private struct DespawnJob : IJob
+        {
+            public NativeQueue<Entity> Due;
+            public double Now;
+            public ComponentLookup<Decay> Decays;
+            public ComponentLookup<LocalTransform> Transforms;
             [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
             [ReadOnly] public BufferLookup<Child> Children;
+            public EntityCommandBuffer Ecb;
 
-            // The transform is written only while sinking, so a waiting ghost sends no changes.
-            private void Execute([ChunkIndexInQuery] int sortKey, Entity entity, ref Decay decay,
-                RefRW<LocalTransform> transform)
+            public void Execute()
             {
-                var sinkTime = DeltaTime;
-                if (decay.Lifetime > 0f)
+                while (Due.TryDequeue(out var entity))
                 {
-                    decay.Lifetime -= DeltaTime;
-                    if (decay.Lifetime > 0f)
-                    {
-                        return;
-                    }
+                    Advance(entity);
+                }
+            }
 
-                    // The tick that ends the lifetime sinks only by what it overran.
-                    sinkTime = -decay.Lifetime;
+            private void Advance(Entity entity)
+            {
+                var decay = Decays.GetRefRW(entity);
+                ref var value = ref decay.ValueRW;
+                if (value.DespawnStartTime == 0d)
+                {
+                    value.DespawnStartTime = Now + value.Lifetime;
+                    return;
                 }
 
-                var sunk = math.min(1f, decay.Sunk + sinkTime / decay.SinkDuration);
-                transform.ValueRW.Position.y -= (sunk - decay.Sunk) * decay.SinkDepth;
-                decay.Sunk = sunk;
-                if (sunk < 1f)
+                var progress = (float)math.min(1d, (Now - value.DespawnStartTime) / value.DespawnDuration);
+                Transforms.GetRefRW(entity).ValueRW.Position.y -= (progress - value.DespawnProgress) * value.DespawnDepth;
+                value.DespawnProgress = progress;
+                if (progress < 1f)
                 {
                     return;
                 }
 
                 var parts = new NativeList<Entity>(4, Allocator.Temp);
                 EntityParts.Collect(entity, Groups, Children, parts);
-                Ecb.DestroyEntity(sortKey, parts.AsArray());
+                Ecb.DestroyEntity(parts.AsArray());
             }
         }
     }
