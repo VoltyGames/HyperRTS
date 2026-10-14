@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Effects;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
@@ -8,15 +9,20 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Shows the <see cref="DamageStage"/> model matching each entity's health and hides the others (scaled to
-    /// zero, which leaves fog's rendering toggles alone), playing the stage's effect (a self-destroying particle
-    /// prefab) when health drops into it.
+    /// Shows the <see cref="DamageStage"/> model matching health (others scaled to zero, leaving fog's toggles alone)
+    /// and bursts the stage's rig on entering it.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class DamageStageSystem : SystemBase
     {
-        protected override void OnCreate() => RequireForUpdate<ShownDamageStage>();
+        private EffectPool _pool;
+
+        protected override void OnCreate()
+        {
+            _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
+            RequireForUpdate<ShownDamageStage>();
+        }
 
         protected override void OnUpdate()
         {
@@ -46,8 +52,17 @@ namespace HyperRTS.Presentation.Destruction
                 // The first frame only sets the look; a spawned or loaded wreck doesn't replay its damage.
                 if (previous >= 0 && index > previous && stages[index].Effect.IsValid())
                 {
-                    Object.Instantiate(stages[index].Effect.Value, place.ValueRO.Position, place.ValueRO.Rotation);
+                    Play(stages[index].Effect.Value, place.ValueRO);
                 }
+            }
+        }
+
+        private void Play(GameObject prefab, in LocalToWorld place)
+        {
+            var rig = _pool.Get(prefab);
+            if (rig != null)
+            {
+                rig.Burst(place.Position, place.Rotation, 1f, EffectPoolSystem.Density);
             }
         }
 

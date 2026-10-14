@@ -1,8 +1,8 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Effects;
 using HyperRTS.Simulation.Combat;
 using Unity.Entities;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace HyperRTS.Presentation.Destruction
 {
@@ -11,7 +11,13 @@ namespace HyperRTS.Presentation.Destruction
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class SpawnEffectSystem : SystemBase
     {
-        protected override void OnCreate() => RequireForUpdate<SpawnEffect>();
+        private EffectPool _pool;
+
+        protected override void OnCreate()
+        {
+            _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
+            RequireForUpdate<SpawnEffect>();
+        }
 
         protected override void OnUpdate()
         {
@@ -20,9 +26,10 @@ namespace HyperRTS.Presentation.Destruction
                          .Query<RefRO<SpawnEffect>, EnabledRefRW<SpawnEffect>, RefRO<LocalToWorld>>())
             {
                 pending.ValueRW = false;
-                if (effect.ValueRO.Prefab.IsValid())
+                var rig = effect.ValueRO.Prefab.IsValid() ? _pool.Get(effect.ValueRO.Prefab.Value) : null;
+                if (rig != null)
                 {
-                    Object.Instantiate(effect.ValueRO.Prefab.Value, place.ValueRO.Position, place.ValueRO.Rotation);
+                    rig.Burst(place.ValueRO.Position, place.ValueRO.Rotation, 1f, EffectPoolSystem.Density);
                 }
             }
         }

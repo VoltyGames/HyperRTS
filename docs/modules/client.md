@@ -63,8 +63,9 @@ Rendering and effects:
   the first half of a capture and the capturer's rises over the second; a neutral one's rises over the whole).
   `FlagSystem` writes `FlagState` (flag layer = the shown player's `PlayerSide`, hoist, shown) and `FlagColor` (hoist
   band). `HyperRTS/Flag` samples the game's flag `Texture2DArray` and waves the `FlagMesh` cloth downwind.
-- **Destruction**: `DamageStageSystem` shows the stage model for the health and plays its effect;
-  `SpawnEffectSystem` plays spawn effects once; `ToppleSystem` tips felled remains (`Felling`) over with ease-in
+- **Destruction**: `DamageStageSystem` shows the stage model for the health and bursts its effect rig;
+  `SpawnEffectSystem` bursts spawn effect rigs once (both from the effect pool; a prefab without `EffectRig` logs an
+  error once); `ToppleSystem` tips felled remains (`Felling`) over with ease-in
   and a damped bounce, or lays them down at once when the fall was out of sight. It writes only their
   `LocalToWorld` (and their children's) after the transform systems, timed by its own `FallClock`, so the
   simulation keeps the final pose. `Animation/MachineSystem` poses
@@ -119,6 +120,18 @@ Rendering and effects:
   `SV_InstanceID` and has forward, shadow, depth, depth-normals and motion-vector passes, lit like Foliage with plant
   wind. Regrowing every visible tile per camera needs no cache when the camera moves or crops get trampled. The
   game sets density and distance from its vegetation quality.
+- **Effects playback** (`Effects/`): an `EffectRig` prefab root holds world-space child particle systems (anything
+  else is an error naming the prefab), `maxDistance`, a `scale` range, `scalePerRadius` and `alignToGround`; it faces
+  +Z. `EffectPool` (owned by `EffectPoolSystem`, ticked first) keeps one DontSave instance per prefab, never
+  instantiating per event. On first use each system's authored bursts and rates are read and its own emission is
+  switched off: `Burst` replays the bursts (timed ones later, at the same pose; sub-emitters still fire), `Stream`
+  emits rate × time + rate over distance along a path with a carried fraction. `EffectDetail.Level` thins particles
+  (Low 0.35, Medium 0.7, High 1); High adds `EffectLight` flashes from 8 shared shadowless lights; Low halves loop
+  range. `EffectPlaybackSystem` bursts seen `EffectEvent`s (the type's slot rig, facing `Direction`) and impacts of
+  shooters with `EntityImpactEffects` (`SurfaceEffects.RigFor` the event's material, else `GroundMaterials`; on the
+  terrain, facing up or the ground normal). `LoopEffectSystem`, `TrailSystem` and `MotionDustSystem` stream drawn
+  entities (no `DisableRendering`): loops at sockets with health gate and timed fade, trails along the frame's path,
+  dust by ground material and speed / `FullSpeed`. `EffectCatalog` caches each type's effects like the impact marks.
 - **Audio**: `SoundPlaybackSystem` plays the `SoundQueue` through 32 pooled sources; `SoundListener` follows the
   camera's ground focus.
 - **Minimap**: the baked `MinimapImage`, local fog, blips and the camera view.
