@@ -133,8 +133,8 @@ Rendering and effects:
   rig from the effect pool, easing in and out. Both skip Low effect detail.
 - **Effects playback** (`Effects/`): an `EffectRig` prefab root holds world-space child particle systems (anything
   else is an error naming the prefab), `maxDistance`, a `scale` range, `scalePerRadius` and `alignToGround`; author it
-  +Y up, +Z forward (impacts turn +Y to the ground normal). `EffectPool` (owned by `EffectPoolSystem`, ticked first) keeps one DontSave instance per prefab, never
-  instantiating per event. On first use each system's authored bursts and rates are read and its own emission is
+  +Y up, +Z forward (impacts turn +Y to the ground normal). `EffectPool` (owned by `EffectPoolSystem`, ticked
+  first) keeps one DontSave instance per prefab, never instantiating per event. On first use each system's authored bursts and rates are read and its own emission is
   switched off: `Burst` replays the bursts (timed ones later, at the same pose; sub-emitters still fire), `Stream`
   emits rate × time + rate over distance along a path with a carried fraction. `EffectDetail.Level` thins particles
   (Low 0.35, Medium 0.7, High 1); High adds `EffectLight` flashes from 8 shared shadowless lights; Low halves loop
