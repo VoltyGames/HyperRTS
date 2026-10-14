@@ -22,12 +22,19 @@ namespace HyperRTS.Simulation.Resources
         [Min(0.01f)]
         public float gatherRate = 2f;
 
+        public static void Add<TWriter>(ref TWriter writer, int capacity, float gatherRate)
+            where TWriter : struct, IEntityWriter
+        {
+            writer.Add(new Harvester { Capacity = capacity, GatherRate = gatherRate });
+            writer.Add<HarvestState>();
+        }
+
         public class Baker : Baker<HarvesterAuthoring>
         {
             public override void Bake(HarvesterAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                HarvesterSetup.Add(ref writer, authoring.capacity, authoring.gatherRate);
+                HarvesterAuthoring.Add(ref writer, authoring.capacity, authoring.gatherRate);
             }
         }
     }

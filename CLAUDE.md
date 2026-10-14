@@ -56,8 +56,9 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
 - Authoring classes derive from `AuthoringBehaviour` (game ones too, for inspector warnings, summaries and
   validation). One `*Authoring.cs` file holds the authoring class and its nested `Baker`; runtime components live
   in their own files (`ModuleLayoutTests` enforces this).
-  Bakers use `GetEntity(TransformUsageFlags.Dynamic)` and write component sets through the `*Setup` helpers
-  (`IEntityWriter`), so tests build the same entities.
+  Bakers use `GetEntity(TransformUsageFlags.Dynamic)` and write component sets through `IEntityWriter` methods (a
+  static `Add…` on the authoring class, or a shared `*Setup` when several authorings use it), so tests build the
+  same entities.
 - Authoring classes carry `[AddComponentMenu]`, `[Icon]`, `[HelpURL]`, `[DisallowMultipleComponent]` and a
   `[Tooltip]` per field, with paths from `HyperRTSMenu`, `HyperRTSIcons` and `HyperRTSDocs`. See
   [`docs/editor.md`](docs/editor.md).
@@ -114,7 +115,7 @@ In Play mode, the Scene view's **HyperRTS Debug** overlay and **HyperRTS ▸ Too
 - Enter Play Mode skips domain reload (CoreCLR-ready), so statics survive between sessions. Reset runtime
   statics with `[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]` or keep state in ECS. Treat `UAC*`
   analyzer diagnostics as errors.
-- Entities built with the `*Setup` helpers have no mesh. Rendered spawns instantiate baked prefabs.
+- Entities built through `IEntityWriter` in tests have no mesh. Rendered spawns instantiate baked prefabs.
 - SubScene entities stream in over the first frames: guard on singletons (`RequireForUpdate`) and never treat
   "nothing exists yet" as a game state (see `VictorySystem`).
 - Keep `OverrideAutomaticNetcodeBootstrap` (on `RTSWorld.prefab`) in scenes: single player is one local world and

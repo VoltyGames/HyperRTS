@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Upgrades;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Production
@@ -32,12 +33,22 @@ namespace HyperRTS.Simulation.Production
         [Range(1, 10)]
         public int queueLimit = 5;
 
+        public static DynamicBuffer<ProductionOption> Add<TWriter>(ref TWriter writer, float3 spawnOffset,
+            int queueLimit) where TWriter : struct, IEntityWriter
+        {
+            writer.Add(new Producer { SpawnOffset = spawnOffset, QueueLimit = queueLimit, Speed = 1f });
+            writer.AddBuffer<ProductionQueueItem>();
+            writer.Add<RallyPoint>();
+            writer.SetEnabled<RallyPoint>(false);
+            return writer.AddBuffer<ProductionOption>();
+        }
+
         public class Baker : Baker<ProducerAuthoring>
         {
             public override void Bake(ProducerAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                var options = ProducerSetup.Add(ref writer, authoring.spawnOffset, authoring.queueLimit);
+                var options = ProducerAuthoring.Add(ref writer, authoring.spawnOffset, authoring.queueLimit);
                 AddOptions(options, authoring.productionOptions, TransformUsageFlags.Dynamic);
                 AddOptions(options, authoring.researchOptions, TransformUsageFlags.None);
             }

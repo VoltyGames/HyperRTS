@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Resources
             public override void Bake(ResourceDropOffAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                ResourceDropOffSetup.Add(ref writer);
+                writer.Add<ResourceDropOff>();
             }
         }
     }

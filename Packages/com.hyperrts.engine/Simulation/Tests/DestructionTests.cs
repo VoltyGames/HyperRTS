@@ -82,7 +82,7 @@ namespace HyperRTS.Simulation.Tests
             var supplies = ScriptableObject.CreateInstance<ResourceType>();
             var derrick = _world.SpawnBuilding(0, float3.zero, new float2(4f, 4f));
             var writer = new EntityManagerWriter(_world.EntityManager, derrick);
-            ResourceIncomeSetup.Add(ref writer, supplies, 10, 5f, 100);
+            writer.Add(new ResourceIncome { Type = supplies, Amount = 10, Interval = 5f, FirstOwnerBonus = 100 });
 
             _world.Run(6f);
             Assert.AreEqual(0, _world.GetResources(1, supplies), "a neutral derrick pays no one");

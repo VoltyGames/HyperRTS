@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Production
             public override void Bake(BuildLimitAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                BuildLimitSetup.Add(ref writer, authoring.max);
+                writer.Add(new BuildLimit { Max = authoring.max });
             }
         }
     }

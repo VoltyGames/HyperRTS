@@ -46,6 +46,17 @@ namespace HyperRTS.Simulation.Fields
 
         public int FieldId => EntityInfo.TypeIdFromName(fieldName);
 
+        public static void AddField<TWriter>(ref TWriter writer, in AreaField field,
+            IReadOnlyList<StatModifier> bonuses) where TWriter : struct, IEntityWriter
+        {
+            writer.Add(field);
+            var buffer = writer.AddBuffer<AreaFieldBonus>();
+            foreach (var bonus in bonuses)
+            {
+                buffer.Add(new AreaFieldBonus { Modifier = bonus });
+            }
+        }
+
         public class Baker : Baker<AreaFieldAuthoring>
         {
             public override void Bake(AreaFieldAuthoring authoring)
@@ -57,7 +68,7 @@ namespace HyperRTS.Simulation.Fields
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                FieldSetup.AddField(ref writer, new AreaField
+                AreaFieldAuthoring.AddField(ref writer, new AreaField
                 {
                     FieldId = authoring.FieldId,
                     Radius = authoring.radius,

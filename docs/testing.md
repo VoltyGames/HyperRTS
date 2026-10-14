@@ -26,7 +26,7 @@ Assert.That(world.Get<LocalTransform>(unit).Position.x, Is.EqualTo(10f).Within(0
 | `CreateMatch(params byte[] teams)` | Match singletons and one player per team entry |
 | `CreateTerrain(height, spacing)` | Baked terrain from a height function |
 | `Player(faction)` | The player entity |
-| `SpawnUnit`, `SpawnBuilding` | Entities with the baked component set (`*Setup` helpers), no mesh |
+| `SpawnUnit`, `SpawnBuilding` | Entities with the baked component set (the bakers' `IEntityWriter` methods), no mesh |
 | `MakePrefab(entity)` | Turns an entity into a prefab for producers and builders |
 | `Command(faction, command)` | Appends a `PlayerCommand` |
 | `Tick(dt, frames)`, `Run(seconds)` | Advances the world |

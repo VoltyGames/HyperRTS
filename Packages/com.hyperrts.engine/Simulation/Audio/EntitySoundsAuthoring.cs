@@ -40,20 +40,33 @@ namespace HyperRTS.Simulation.Audio
         [Tooltip("When the owner orders it to attack.")]
         public SoundCue attack;
 
+        public static DynamicBuffer<EntitySound> Add<TWriter>(ref TWriter writer)
+            where TWriter : struct, IEntityWriter =>
+            writer.AddBuffer<EntitySound>();
+
+        /// <summary>Unset cues are skipped, so the slot stays silent and writes no events.</summary>
+        public static void Set(DynamicBuffer<EntitySound> sounds, CueSlot slot, SoundCue cue)
+        {
+            if (cue != null)
+            {
+                sounds.Add(new EntitySound { Slot = slot, Cue = cue });
+            }
+        }
+
         public class Baker : Baker<EntitySoundsAuthoring>
         {
             public override void Bake(EntitySoundsAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                var sounds = SoundSetup.Add(ref writer);
-                SoundSetup.Set(sounds, CueSlot.Fire, authoring.fire);
-                SoundSetup.Set(sounds, CueSlot.Impact, authoring.impact);
-                SoundSetup.Set(sounds, CueSlot.Death, authoring.death);
-                SoundSetup.Set(sounds, CueSlot.Ability, authoring.ability);
-                SoundSetup.Set(sounds, CueSlot.Ready, authoring.ready);
-                SoundSetup.Set(sounds, CueSlot.Select, authoring.select);
-                SoundSetup.Set(sounds, CueSlot.Move, authoring.move);
-                SoundSetup.Set(sounds, CueSlot.Attack, authoring.attack);
+                var sounds = EntitySoundsAuthoring.Add(ref writer);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Fire, authoring.fire);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Impact, authoring.impact);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Death, authoring.death);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Ability, authoring.ability);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Ready, authoring.ready);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Select, authoring.select);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Move, authoring.move);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Attack, authoring.attack);
             }
         }
     }

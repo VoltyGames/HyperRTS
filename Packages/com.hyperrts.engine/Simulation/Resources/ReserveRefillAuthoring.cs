@@ -28,7 +28,12 @@ namespace HyperRTS.Simulation.Resources
             public override void Bake(ReserveRefillAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                ReserveRefillSetup.Add(ref writer, authoring.type, authoring.amount, authoring.interval);
+                writer.Add(new ReserveRefill
+                {
+                    Type = authoring.type,
+                    Amount = authoring.amount,
+                    Interval = authoring.interval,
+                });
             }
         }
     }

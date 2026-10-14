@@ -60,11 +60,11 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                ArmorSetup.Add(ref writer, modifiers);
+                writer.AddBuffer(modifiers);
                 if (authoring.IsDirectional)
                 {
-                    ArmorSetup.AddFacing(ref writer,
-                        new ArmorFacing { Front = authoring.front, Side = authoring.side, Rear = authoring.rear });
+                    var facing = new ArmorFacing { Front = authoring.front, Side = authoring.side, Rear = authoring.rear };
+                    writer.Add(facing);
                 }
             }
         }

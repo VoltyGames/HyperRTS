@@ -203,7 +203,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var research = _world.EntityManager.CreateEntity();
             var writer = new EntityManagerWriter(_world.EntityManager, research);
-            UpgradeSetup.Add(ref writer, new EntityInfo { TypeId = EntityInfo.TypeIdFromName("Optics"), Name = "Optics" },
+            UpgradeAuthoring.Add(ref writer, new EntityInfo { TypeId = EntityInfo.TypeIdFromName("Optics"), Name = "Optics" },
                 30f, new[] { new ResourceCost { Type = _supplies, Amount = 50 } }, new Prerequisite[0],
                 new UpgradeEffect[0]);
             research = _world.MakePrefab(research);

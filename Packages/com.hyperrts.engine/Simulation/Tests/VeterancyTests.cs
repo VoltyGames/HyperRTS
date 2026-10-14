@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var unit = _world.AddWeapon(_world.SpawnUnit(1, position), damage: 50f);
             var writer = new EntityManagerWriter(_world.EntityManager, unit);
-            VeterancySetup.Add(ref writer, new[] { 10f, 100f }, new[]
+            VeterancyAuthoring.Add(ref writer, new[] { 10f, 100f }, new[]
             {
                 new VeterancyBonus
                 {

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
@@ -17,12 +18,26 @@ namespace HyperRTS.Simulation.Combat
                  "and a scorch.")]
         public ImpactMark[] marks = { };
 
+        /// <summary>Unset entries are skipped; an entity left without marks writes no impact events.</summary>
+        public static void Add<TWriter>(ref TWriter writer, IReadOnlyList<ImpactMark> marks)
+            where TWriter : struct, IEntityWriter
+        {
+            var buffer = writer.AddBuffer<EntityImpactMark>();
+            foreach (var mark in marks)
+            {
+                if (mark != null)
+                {
+                    buffer.Add(new EntityImpactMark { Mark = mark });
+                }
+            }
+        }
+
         public class Baker : Baker<ImpactMarksAuthoring>
         {
             public override void Bake(ImpactMarksAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                ImpactMarkSetup.Add(ref writer, authoring.marks);
+                ImpactMarksAuthoring.Add(ref writer, authoring.marks);
             }
         }
     }

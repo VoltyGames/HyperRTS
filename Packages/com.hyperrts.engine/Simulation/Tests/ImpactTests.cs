@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Tests
         internal static Entity Marked(TestWorld world, Entity shooter, ImpactMark mark)
         {
             var writer = new EntityManagerWriter(world.EntityManager, shooter);
-            ImpactMarkSetup.Add(ref writer, new[] { mark });
+            ImpactMarksAuthoring.Add(ref writer, new[] { mark });
             return shooter;
         }
 

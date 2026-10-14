@@ -31,7 +31,16 @@ namespace HyperRTS.Simulation.Tests
             var carrier = _world.MakePrefab(_world.SpawnUnit(0, float3.zero, speed: 20f, name: "Truck"));
             _source = _world.SpawnBuilding(1, new float3(40f, 0f, 0f), new float2(4f, 4f));
             var writer = new EntityManagerWriter(_world.EntityManager, _source);
-            DeliverySourceSetup.Add(ref writer, carrier, 2, Interval, _supplies, Amount, 6f, 4f);
+            writer.Add(new DeliverySource
+            {
+                Carrier = carrier,
+                Count = 2,
+                Interval = Interval,
+                Type = _supplies,
+                Amount = Amount,
+                ArrivalRange = 6f,
+                Spacing = 4f,
+            });
         }
 
         [TearDown]

@@ -31,6 +31,20 @@ namespace HyperRTS.Simulation.Veterancy
         [Tooltip("Ranks in ascending order of experience.")]
         public List<Rank> ranks = new();
 
+        // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
+        public static void Add<TWriter>(ref TWriter writer, IReadOnlyList<float> thresholds,
+            IReadOnlyList<VeterancyBonus> bonuses) where TWriter : struct, IEntityWriter
+        {
+            writer.Add<Experience>();
+            var ranks = writer.AddBuffer<VeterancyRank>();
+            foreach (var threshold in thresholds)
+            {
+                ranks.Add(new VeterancyRank { Experience = threshold });
+            }
+
+            writer.AddBuffer(bonuses);
+        }
+
         public class Baker : Baker<VeterancyAuthoring>
         {
             public override void Bake(VeterancyAuthoring authoring)
@@ -52,7 +66,7 @@ namespace HyperRTS.Simulation.Veterancy
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                VeterancySetup.Add(ref writer, thresholds, bonuses);
+                VeterancyAuthoring.Add(ref writer, thresholds, bonuses);
             }
         }
     }

@@ -64,12 +64,21 @@ namespace HyperRTS.Simulation.AI
             return data;
         }
 
+        public static void Add<TWriter>(ref TWriter writer, AIMapHintsData data)
+            where TWriter : struct, IEntityWriter
+        {
+            writer.Add<AIMapHints>();
+            writer.AddBuffer(data.Slots);
+            writer.AddBuffer(data.Lanes);
+            writer.AddBuffer(data.Points);
+        }
+
         public class Baker : Baker<AIMapHintsAuthoring>
         {
             public override void Bake(AIMapHintsAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.None));
-                AIMapHintsSetup.Add(ref writer, authoring.ToData());
+                AIMapHintsAuthoring.Add(ref writer, authoring.ToData());
             }
         }
     }

@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var derrick = _world.AddIncome(SpawnBuilding(faction, x), _supplies, amount, interval);
             var writer = new EntityManagerWriter(_world.EntityManager, derrick);
-            ResourceIncomeSetup.AddReserve(ref writer, capacity);
+            writer.Add(new ResourceReserve { Remaining = capacity, Capacity = capacity });
             return derrick;
         }
 
@@ -44,14 +44,14 @@ namespace HyperRTS.Simulation.Tests
         {
             var depot = SpawnBuilding(faction, x);
             var writer = new EntityManagerWriter(_world.EntityManager, depot);
-            ReserveRefillSetup.Add(ref writer, _supplies, amount, 1f);
+            writer.Add(new ReserveRefill { Type = _supplies, Amount = amount, Interval = 1f });
             return depot;
         }
 
         private void SpawnCasualtyIncome(float x)
         {
             var writer = new EntityManagerWriter(_world.EntityManager, SpawnBuilding(1, x));
-            CasualtyIncomeSetup.Add(ref writer, _supplies, 0.5f);
+            writer.Add(new CasualtyIncome { Type = _supplies, Share = 0.5f });
         }
 
         private void Kill(byte faction, int cost)
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Tests
             var bunker = _world.AddIncome(SpawnBuilding(1, 0f), _supplies, 5, 1f);
             var writer = new EntityManagerWriter(_world.EntityManager, bunker);
             TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
-            ResourceIncomeSetup.AddPerOccupant(ref writer);
+            writer.Add<OccupantIncome>();
 
             _world.Run(1.5f);
             Assert.AreEqual(0, _world.GetResources(1, _supplies), "empty, it pays nothing");

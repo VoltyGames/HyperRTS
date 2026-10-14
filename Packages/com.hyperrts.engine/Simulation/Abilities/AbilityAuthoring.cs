@@ -82,7 +82,7 @@ namespace HyperRTS.Simulation.Abilities
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                AbilitySetup.Add(ref writer, abilities);
+                writer.AddBuffer(abilities);
             }
 
             private Ability BakeEntry(Entry entry)

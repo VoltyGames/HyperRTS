@@ -27,7 +27,7 @@ The base: ownership, identity, health and shared helpers.
 | `Ownership.Transfer` | The one way to change an owner: sets `Faction` through the ECB and raises `OwnerChanged` |
 | `AttackTarget` | Enableable current target (here so orders can halt attacks) |
 | `EntityInfo`, `PrefabRegistry` | `TypeId` (hash of the display name), name, icon; singleton `TypeId` → prefab |
-| `IEntityWriter` | Target of every `*Setup` helper: `BakerWriter` in bakers, `EntityManagerWriter` in tests |
+| `IEntityWriter` | Target of the authorings' static `Add…` methods and the shared `*Setup` helpers: `BakerWriter` in bakers, `EntityManagerWriter` in tests |
 | `AuthoringBehaviour`, `[Owner]`, `[RequiresAuthoring]` | Base of all authoring; player dropdown; a required companion |
 | `EnabledExtensions` | `lookup.HasEnabled(entity)` |
 

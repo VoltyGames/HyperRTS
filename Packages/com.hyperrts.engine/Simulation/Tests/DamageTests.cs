@@ -70,7 +70,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var tank = _world.SpawnUnit(2, float3.zero);
             var writer = new EntityManagerWriter(_world.EntityManager, tank);
-            ArmorSetup.AddFacing(ref writer, new ArmorFacing { Front = 0.5f, Side = 1f, Rear = 2f });
+            writer.Add(new ArmorFacing { Front = 0.5f, Side = 1f, Rear = 2f });
 
             _world.QueueDamage(new DamageEvent { Target = tank, Origin = new float3(x, y, z), SourceFaction = 1, Amount = 20f });
             _world.Tick();

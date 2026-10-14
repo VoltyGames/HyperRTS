@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Tests
             var wreck = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(wreck, LocalTransform.FromPosition(new float3(4f, 2f, 0f)));
             var writer = new EntityManagerWriter(_world.EntityManager, wreck);
-            DecaySetup.Add(ref writer, "wreck", lifetime, despawnDuration, despawnDepth);
+            DecayAuthoring.Add(ref writer, "wreck", lifetime, despawnDuration, despawnDepth);
             return wreck;
         }
 
@@ -84,7 +84,7 @@ namespace HyperRTS.Simulation.Tests
             var wreck = _world.EntityManager.CreateEntity();
             var writer = new EntityManagerWriter(_world.EntityManager, wreck);
 
-            var error = Assert.Throws<ArgumentException>(() => DecaySetup.Add(ref writer, "wreck", 180f, 0f, 3f));
+            var error = Assert.Throws<ArgumentException>(() => DecayAuthoring.Add(ref writer, "wreck", 180f, 0f, 3f));
 
             StringAssert.Contains("despawnDuration", error.Message);
         }

@@ -106,7 +106,8 @@ public class WeaponAuthoring : AuthoringBehaviour
 
 - Derive from `AuthoringBehaviour` (engine and game), so the inspector and validation pick the component up.
 - `[Tooltip]` on every field; `[Header]` to group; `[Min]` / `[Range]` to stop bad values.
-- Bakers write through `*Setup` helpers and an `IEntityWriter`, so tests build the same entities.
+- Bakers write through `IEntityWriter` methods (a static `Add…` on the authoring class, or a shared `*Setup` when
+  several authorings use it), so tests build the same entities.
 - Paths come from `Core/HyperRTSMenu`, `HyperRTSIcons` and `HyperRTSDocs`. A new module adds a line to the first
   two and an accent colour in the icon generator (**Component icons** on **HyperRTS ▸ Tools ▸ Generate**).
 - `[Owner]` on an int field shows a dropdown of the scene Match's players with their colour.

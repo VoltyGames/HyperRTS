@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Tests
             world.RemoveHints();
             var entity = world.EntityManager.CreateEntity();
             var writer = new EntityManagerWriter(world.EntityManager, entity);
-            AIMapHintsSetup.Add(ref writer, data);
+            AIMapHintsAuthoring.Add(ref writer, data);
             return entity;
         }
 

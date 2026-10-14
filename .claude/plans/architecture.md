@@ -7,7 +7,7 @@ documentation: update or delete items as they land.
 
 - One intent channel (`PlayerCommand`) for input, AI and network, with server-side ownership checks.
 - `OrderWriter`, the damage queue and the stat-modifier pipeline: one path per concern.
-- `*Setup` helpers + `IEntityWriter`: bakers and tests build identical entities.
+- `IEntityWriter` methods (authoring `Add…` or shared `*Setup`): bakers and tests build identical entities.
 - `ModuleLayoutTests` with an empty back-edge allowlist.
 - Discovered validation rules and debug layers.
 

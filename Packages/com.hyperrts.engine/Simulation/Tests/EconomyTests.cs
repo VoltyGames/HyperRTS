@@ -33,8 +33,7 @@ namespace HyperRTS.Simulation.Tests
         private Entity SpawnDropOff(float3 position)
         {
             var building = _world.SpawnBuilding(1, position, new float2(4f, 4f));
-            var writer = new EntityManagerWriter(_world.EntityManager, building);
-            ResourceDropOffSetup.Add(ref writer);
+            _world.EntityManager.AddComponent<ResourceDropOff>(building);
             return building;
         }
 
@@ -96,8 +95,7 @@ namespace HyperRTS.Simulation.Tests
         {
             SpawnDropOff(new float3(-30f, 0f, 0f));
             var site = _world.SpawnBuilding(1, new float3(6f, 0f, 4f), new float2(4f, 4f), complete: false);
-            var writer = new EntityManagerWriter(_world.EntityManager, site);
-            ResourceDropOffSetup.Add(ref writer);
+            _world.EntityManager.AddComponent<ResourceDropOff>(site);
             var node = _world.SpawnNode(new float3(10f, 0f, 0f), _supplies, 1000);
             var harvester = SpawnHarvester(new float3(8f, 0f, 0f));
 

@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var building = _em.CreateEntity();
             var writer = new EntityManagerWriter(_em, building);
-            FlagSetup.AddFlagMount(ref writer, _em.CreateEntity(), flagHeight, poleHeight);
+            FlagMountAuthoring.AddFlagMount(ref writer, _em.CreateEntity(), flagHeight, poleHeight);
             return building;
         }
     }

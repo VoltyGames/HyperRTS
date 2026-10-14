@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 using UnityEngine;
 
@@ -39,6 +40,23 @@ namespace HyperRTS.Simulation.Units
 
         protected override int Population => population;
 
+        public static void Add<TWriter>(ref TWriter writer, float moveSpeed, float radius,
+            NavLayer layer = NavLayer.Ground) where TWriter : struct, IEntityWriter
+        {
+            writer.Add<UnitTag>();
+            writer.Add(new MovementSpeed { Value = moveSpeed });
+            writer.Add<MoveDestination>();
+            writer.SetEnabled<MoveDestination>(false);
+            writer.Add(new NavAgent { Radius = radius, Layer = layer });
+            writer.AddBuffer<PathWaypoint>();
+            writer.Add<PathState>();
+            writer.Add<ActiveOrder>();
+            writer.SetEnabled<ActiveOrder>(false);
+            writer.AddBuffer<QueuedOrder>();
+            writer.Add<MoveOrderState>();
+            writer.SetEnabled<MoveOrderState>(false);
+        }
+
         public class Baker : Baker<UnitAuthoring>
         {
             public override void Bake(UnitAuthoring authoring)
@@ -47,7 +65,7 @@ namespace HyperRTS.Simulation.Units
                 authoring.BakeGameEntity(this, entity);
 
                 var writer = new BakerWriter(this, entity);
-                UnitSetup.Add(ref writer, authoring.moveSpeed, authoring.radius, Layer(authoring));
+                UnitAuthoring.Add(ref writer, authoring.moveSpeed, authoring.radius, Layer(authoring));
             }
 
             // Flight bakes the Flight component, so its presence alone makes the unit an aircraft.

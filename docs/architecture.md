@@ -7,7 +7,7 @@ or UI.
 
 | Assembly | Folders | Holds |
 | --- | --- | --- |
-| `HyperRTS.Simulation` | `Simulation/`, `Core/` | Components, systems, authoring and bakers, `*Setup` helpers; phase groups, world filters, menu / icon / doc paths |
+| `HyperRTS.Simulation` | `Simulation/`, `Core/` | Components, systems, authoring and bakers, shared `*Setup` helpers; phase groups, world filters, menu / icon / doc paths |
 | `HyperRTS.Network` | `Network/` | Session, join, command RPCs, replication, fog relevancy, sound forwarding |
 | `HyperRTS.Presentation` | `Presentation/`, `Client/` | HUD, overlays, fog rendering, team colours, audio playback; client-only state shared by input, HUD and overlays (`Interaction/`), `DefaultWorld`, `LiveQuery` |
 | `HyperRTS.Input` | `Input/` | Camera, input actions, input → `PlayerCommand` |

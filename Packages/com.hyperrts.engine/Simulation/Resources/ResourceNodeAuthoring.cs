@@ -24,12 +24,25 @@ namespace HyperRTS.Simulation.Resources
         [Min(0f)]
         public float regrowthPerSecond;
 
+        public static void Add<TWriter>(ref TWriter writer, UnityObjectRef<ResourceType> type, int amount,
+            float regrowthPerSecond) where TWriter : struct, IEntityWriter
+        {
+            writer.Add(new ResourceNode
+            {
+                Type = type,
+                Amount = amount,
+                MaxAmount = amount,
+                RegrowthPerSecond = regrowthPerSecond,
+            });
+            writer.Add(new Faction { Value = Faction.Neutral });
+        }
+
         public class Baker : Baker<ResourceNodeAuthoring>
         {
             public override void Bake(ResourceNodeAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                ResourceNodeSetup.Add(ref writer, authoring.type, authoring.amount, authoring.regrowthPerSecond);
+                ResourceNodeAuthoring.Add(ref writer, authoring.type, authoring.amount, authoring.regrowthPerSecond);
             }
         }
     }

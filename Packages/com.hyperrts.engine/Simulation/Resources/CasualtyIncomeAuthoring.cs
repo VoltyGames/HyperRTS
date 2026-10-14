@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Resources
             public override void Bake(CasualtyIncomeAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                CasualtyIncomeSetup.Add(ref writer, authoring.type, authoring.share);
+                writer.Add(new CasualtyIncome { Type = authoring.type, Share = authoring.share });
             }
         }
     }

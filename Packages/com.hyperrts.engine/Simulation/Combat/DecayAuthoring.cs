@@ -1,3 +1,4 @@
+using System;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
@@ -27,12 +28,29 @@ namespace HyperRTS.Simulation.Combat
         [Min(0.01f)]
         public float despawnDepth = 3f;
 
+        public static void Add<TWriter>(ref TWriter writer, string owner, float lifetime, float despawnDuration,
+            float despawnDepth) where TWriter : struct, IEntityWriter
+        {
+            Require(lifetime > 0f, owner, "lifetime");
+            Require(despawnDuration > 0f, owner, "despawnDuration");
+            Require(despawnDepth > 0f, owner, "despawnDepth");
+            writer.Add(new Decay { Lifetime = lifetime, DespawnDuration = despawnDuration, DespawnDepth = despawnDepth });
+        }
+
+        private static void Require(bool positive, string owner, string field)
+        {
+            if (!positive)
+            {
+                throw new ArgumentException($"Decay on '{owner}': {field} must be above 0.");
+            }
+        }
+
         public class Baker : Baker<DecayAuthoring>
         {
             public override void Bake(DecayAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                DecaySetup.Add(ref writer, authoring.name, authoring.lifetime, authoring.despawnDuration,
+                DecayAuthoring.Add(ref writer, authoring.name, authoring.lifetime, authoring.despawnDuration,
                     authoring.despawnDepth);
             }
         }

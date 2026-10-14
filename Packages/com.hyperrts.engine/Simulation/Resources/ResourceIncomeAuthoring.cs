@@ -39,16 +39,21 @@ namespace HyperRTS.Simulation.Resources
             public override void Bake(ResourceIncomeAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                ResourceIncomeSetup.Add(ref writer, authoring.type, authoring.amount, authoring.interval,
-                    authoring.firstOwnerBonus);
+                writer.Add(new ResourceIncome
+                {
+                    Type = authoring.type,
+                    Amount = authoring.amount,
+                    Interval = authoring.interval,
+                    FirstOwnerBonus = authoring.firstOwnerBonus,
+                });
                 if (authoring.perOccupant)
                 {
-                    ResourceIncomeSetup.AddPerOccupant(ref writer);
+                    writer.Add<OccupantIncome>();
                 }
 
                 if (authoring.reserve > 0)
                 {
-                    ResourceIncomeSetup.AddReserve(ref writer, authoring.reserve);
+                    writer.Add(new ResourceReserve { Remaining = authoring.reserve, Capacity = authoring.reserve });
                 }
             }
         }

@@ -19,21 +19,21 @@ namespace HyperRTS.Simulation.Tests
             var node = world.EntityManager.CreateEntity();
             world.EntityManager.AddComponentData(node, LocalTransform.FromPosition(position));
             var writer = new EntityManagerWriter(world.EntityManager, node);
-            ResourceNodeSetup.Add(ref writer, type, amount, regrowth);
+            ResourceNodeAuthoring.Add(ref writer, type, amount, regrowth);
             return node;
         }
 
         public static Entity MakeHarvester(this TestWorld world, Entity unit, int capacity, float gatherRate)
         {
             var writer = new EntityManagerWriter(world.EntityManager, unit);
-            HarvesterSetup.Add(ref writer, capacity, gatherRate);
+            HarvesterAuthoring.Add(ref writer, capacity, gatherRate);
             return unit;
         }
 
         public static Entity MakeBuilder(this TestWorld world, Entity unit, params Entity[] options)
         {
             var writer = new EntityManagerWriter(world.EntityManager, unit);
-            var buffer = BuilderSetup.Add(ref writer, 1f);
+            var buffer = BuilderAuthoring.Add(ref writer, 1f);
             foreach (var option in options)
             {
                 buffer.Add(new BuildOption { Prefab = option });
@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Tests
             params Entity[] options)
         {
             var writer = new EntityManagerWriter(world.EntityManager, building);
-            var buffer = ProducerSetup.Add(ref writer, spawnOffset, 5);
+            var buffer = ProducerAuthoring.Add(ref writer, spawnOffset, 5);
             foreach (var option in options)
             {
                 buffer.Add(new ProductionOption { Prefab = option });
@@ -62,14 +62,14 @@ namespace HyperRTS.Simulation.Tests
             float interval)
         {
             var writer = new EntityManagerWriter(world.EntityManager, entity);
-            ResourceIncomeSetup.Add(ref writer, type, amount, interval, 0);
+            writer.Add(new ResourceIncome { Type = type, Amount = amount, Interval = interval });
             return entity;
         }
 
         public static Entity AddBuildLimit(this TestWorld world, Entity entity, int max)
         {
             var writer = new EntityManagerWriter(world.EntityManager, entity);
-            BuildLimitSetup.Add(ref writer, max);
+            writer.Add(new BuildLimit { Max = max });
             return entity;
         }
 

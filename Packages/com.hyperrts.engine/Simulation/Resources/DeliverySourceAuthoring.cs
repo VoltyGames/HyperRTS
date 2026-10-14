@@ -52,9 +52,16 @@ namespace HyperRTS.Simulation.Resources
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                DeliverySourceSetup.Add(ref writer, GetEntity(authoring.carrier, TransformUsageFlags.Dynamic),
-                    authoring.count, authoring.interval, authoring.type, authoring.amount, authoring.arrivalRange,
-                    authoring.spacing);
+                writer.Add(new DeliverySource
+                {
+                    Carrier = GetEntity(authoring.carrier, TransformUsageFlags.Dynamic),
+                    Count = authoring.count,
+                    Interval = authoring.interval,
+                    Type = authoring.type,
+                    Amount = authoring.amount,
+                    ArrivalRange = authoring.arrivalRange,
+                    Spacing = authoring.spacing,
+                });
             }
         }
     }

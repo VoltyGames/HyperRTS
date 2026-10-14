@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Tests
             var upgrade = _world.EntityManager.CreateEntity();
             var writer = new EntityManagerWriter(_world.EntityManager, upgrade);
             var typeId = EntityInfo.TypeIdFromName(name);
-            UpgradeSetup.Add(ref writer, new EntityInfo { TypeId = typeId, Name = name }, 2f,
+            UpgradeAuthoring.Add(ref writer, new EntityInfo { TypeId = typeId, Name = name }, 2f,
                 new[] { new ResourceCost { Type = _supplies, Amount = 50 } }, new Prerequisite[0], new[]
                 {
                     new UpgradeEffect
