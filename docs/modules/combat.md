@@ -18,6 +18,7 @@
 | `DamageStagesAuthoring` / `DamageStage` | Child models shown by health fraction, each step with an effect |
 | `ImpactWriter`, `ImpactQueue` / `ImpactEvent` | Where shots of shooters with impact marks or effects land; `ImpactSurfaceSystem` sets the `ImpactSurface` and `Material` (the target's `HitMaterial`, else `Water`, else the `GroundMaterials` cell under open ground, else `None`) |
 | `SpawnEffectAuthoring` / `SpawnEffect` | Effect played once where an entity appears (a ruin's dust) |
+| `DecayAuthoring` / `Decay`, `DecaySetup` | Remains (a wreck) that wait `lifetime` s, sink `sinkDepth` m over `sinkDuration` s and are destroyed (`DecaySystem`, authoritative worlds; put it on a ghost so clients follow). `Sunk` is replicated so clients fade the loop effects |
 
 Systems, in order: `AttackOrderSystem` (explicit attacks), `TargetAcquisitionSystem` (idle and moving units pick
 the nearest hostile, every 4th frame each), `EngagementSystem` (chase, stop in range, release), `WeaponFireSystem`

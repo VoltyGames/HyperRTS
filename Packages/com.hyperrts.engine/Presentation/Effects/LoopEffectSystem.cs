@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Effects;
 using Unity.Entities;
@@ -12,7 +13,8 @@ namespace HyperRTS.Presentation.Effects
 {
     /// <summary>
     /// Streams each drawn entity's <see cref="LoopEffect"/>s at their sockets while in range (half range on Low):
-    /// gated by health, and faded out once a timed loop's duration since the entity was first seen runs out.
+    /// gated by health, and faded out once a timed loop's duration since the entity was first seen runs out or as
+    /// <see cref="Decay"/> remains sink.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -43,6 +45,7 @@ namespace HyperRTS.Presentation.Effects
             _deltaTime = SystemAPI.Time.DeltaTime;
             _reach = EffectDetail.Level == EffectDetailLevel.Low ? 0.5f : 1f;
             var health = SystemAPI.GetComponentLookup<Health>(true);
+            var decays = SystemAPI.GetComponentLookup<Decay>(true);
             _streams.BeginFrame();
             foreach (var (loops, place, entity) in SystemAPI.Query<DynamicBuffer<LoopEffect>, RefRO<LocalToWorld>>()
                          .WithNone<DisableRendering>().WithEntityAccess())
@@ -53,9 +56,10 @@ namespace HyperRTS.Presentation.Effects
                 }
 
                 var fraction = health.TryGetComponent(entity, out var hp) ? hp.Fraction : 1f;
+                var standing = decays.TryGetComponent(entity, out var decay) ? 1f - decay.Sunk : 1f;
                 for (var i = 0; i < loops.Length; i++)
                 {
-                    Stream(entity, i, loops[i], place.ValueRO, fraction, (float)(now - seen));
+                    Stream(entity, i, loops[i], place.ValueRO, fraction, (float)(now - seen), standing);
                 }
             }
 
@@ -64,9 +68,9 @@ namespace HyperRTS.Presentation.Effects
         }
 
         private void Stream(Entity entity, int index, in LoopEffect loop, in LocalToWorld place, float health,
-            float age)
+            float age, float standing)
         {
-            var strength = LoopFade.Strength(age, loop.Duration);
+            var strength = LoopFade.Strength(age, loop.Duration) * standing;
             var gated = loop.AboveHealth > 0f && health <= loop.AboveHealth;
             if (strength <= 0f || gated || !loop.Rig.IsValid())
             {
