@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.IO.Compression;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
@@ -44,20 +43,6 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(2, header.Result.WinningTeam);
             Assert.IsEmpty(header.Frames, "samples are not read for a header");
             Assert.AreEqual(1, ReplaySerializer.Load(_path).Frames.Length);
-        }
-
-        [Test]
-        public void OtherFormatVersions_AreRejected()
-        {
-            using (var file = File.Create(_path))
-            using (var zip = new GZipStream(file, CompressionMode.Compress))
-            using (var writer = new BinaryWriter(zip))
-            {
-                writer.Write(0x4C505248);
-                writer.Write(ReplaySerializer.Version - 1);
-            }
-
-            Assert.Throws<InvalidDataException>(() => ReplaySerializer.LoadHeader(_path));
         }
 
         [Test]

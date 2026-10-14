@@ -14,9 +14,6 @@ namespace HyperRTS.Simulation.Replays
     {
         private const int Magic = 0x4C505248; // "HRPL"
 
-        /// <summary>Bumped on every layout change; other versions are rejected, never converted.</summary>
-        public const int Version = 2;
-
         /// <summary>Most elements reserved before any are read; larger lists grow as data arrives.</summary>
         private const int PreallocateLimit = 4096;
 
@@ -163,7 +160,6 @@ namespace HyperRTS.Simulation.Replays
         private static void WriteHeader(BinaryWriter writer, Replay replay)
         {
             writer.Write(Magic);
-            writer.Write(Version);
             writer.Write(replay.ScenePath ?? "");
             writer.Write(replay.Seed);
             writer.Write(replay.SampleRate);
@@ -190,12 +186,6 @@ namespace HyperRTS.Simulation.Replays
             if (reader.ReadInt32() != Magic)
             {
                 throw new InvalidDataException("Not a HyperRTS replay.");
-            }
-
-            var version = reader.ReadInt32();
-            if (version != Version)
-            {
-                throw new InvalidDataException($"Replay format version {version} is not the supported {Version}.");
             }
 
             var replay = new Replay
