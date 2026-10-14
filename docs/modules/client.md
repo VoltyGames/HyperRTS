@@ -53,7 +53,7 @@ Rendering and effects:
   `_TeamMask` (R, UV0) and the `_TeamStrip` height band allow. `TeamColorSystem` writes `TeamColor` (alpha 0 =
   untinted) and `TeamStrip` on an owned entity's render parts. `FactionPalette` holds this client's colours;
   `TeamColorOverride` swaps them (colour-blind, own / ally / enemy). `TeamColorRule` flags units without it.
-- **Silhouettes**: `UnitSilhouetteFeature` (Render Graph, after the skybox, game cameras) draws renderers on
+- **Silhouettes**: `UnitSilhouetteFeature` (Render Graph, after the skybox and height fog, game cameras) draws renderers on
   `UnitRenderingLayer` (8) through cover: LitTeam's `HyperRTSUnitMask` marks visible pixels in stencil, then
   `HyperRTSSilhouette` paints a team-colour fill and rim where the unit is hidden. `UnitRenderingLayerBakingSystem`
   puts every rendered part of a `UnitTag` entity on the layer at bake time.
@@ -74,6 +74,23 @@ Rendering and effects:
   fords, G streaks rapids foam; calm water drifts foam flecks at `_FlowSpeed` and gathers a foam band (`_BankFoamWidth` m,
   from the depth over the bed slope) at the banks, off under `_TERRAIN_SIMPLE`; needs Depth and Opaque Textures),
   `HyperRTS/Foliage` (alpha-cut, wind sway, translucency) and `HyperRTS/Bark` (opaque URP Lit: base, normal, optional mask map R metallic G AO A smoothness).
+- **Atmosphere**: `Atmosphere` sits on the root of a weather's atmosphere prefab (with its sun, global post volume,
+  `Wind` and `HeightFog`). On enable it sets the skybox, skybox ambient (`ambientIntensity`), the custom
+  `reflection` cubemap (`reflectionIntensity`), turns Unity fog off, publishes its `wetness` (`Wetness.Publish`; 0 on
+  disable) and updates the environment lighting. A missing skybox or reflection logs an error and applies nothing.
+- **Height fog**: `HeightFog` (on the atmosphere prefab; the last enabled is `HeightFog.Current`) publishes
+  `_HyperRTSFogColor`, `_HyperRTSFogSunColor` (added toward the main light), `_HyperRTSFogParams` (x `density` per
+  metre at `baseHeight`, y `baseHeight` world y, z `heightFalloff` per metre, w `startDistance`) and
+  `_HyperRTSFogShape` (x `maxOpacity`, 0 when none is enabled; y `sunExponent`). `HeightFog.hlsl` integrates
+  density · e^(-falloff · (y - base)) along the view ray from the start distance (`HeightFogAt`, capped at the far
+  plane; a series keeps level rays stable). `HeightFogFeature` (Render Graph, its `shader` set to
+  `Hidden/HyperRTS/HeightFog`) blends it over the opaques and sky from the camera depth texture, after the skybox and
+  screen-space decals and before the silhouettes, in game and scene view perspective cameras only (orthographic
+  captures such as the minimap stay clear). Water applies the same fog and takes it out of its refracted bottom.
+  `HeightFogRule` flags a match scene whose renderers lack the feature or its shader.
+- **Camera settings**: `CameraAntialiasing` on a camera follows `CameraAntialiasingMode.Mode` (SMAA at high quality).
+  `MainLightShadows.SetResolution` sets the active URP asset's shadow map size in memory, never dirtying it, and
+  restores the authored size on quit.
 - **Wind**: `Wind` (on the scene's directional `WindZone`) publishes `_HyperRTSWindDirection` (xz downwind),
   `_HyperRTSWindStrength` (windMain), `_HyperRTSWindGust` (x windPulseMagnitude, y windTurbulence, z gust tiles per
   metre), `_HyperRTSWindGustMap` (procedural tileable noise), `_HyperRTSWindGustOffset` (xy this frame's scroll in

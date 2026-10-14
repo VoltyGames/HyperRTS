@@ -59,7 +59,6 @@ Shader "HyperRTS/Water"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
-            #pragma multi_compile_fog
             #pragma multi_compile_fragment _ _TERRAIN_SIMPLE
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -100,6 +99,7 @@ Shader "HyperRTS/Water"
             CBUFFER_END
 
             #include "WaterFoam.hlsl"
+            #include "HeightFog.hlsl"
 
             struct Attributes
             {
@@ -117,8 +117,7 @@ Shader "HyperRTS/Water"
                 float2 uv : TEXCOORD1;
                 half3 normalWS : TEXCOORD2;
                 half4 tangentWS : TEXCOORD3;
-                half fogFactor : TEXCOORD4;
-                half4 color : TEXCOORD5;
+                half4 color : TEXCOORD4;
             };
 
             Varyings Vert(Attributes input)
@@ -131,7 +130,6 @@ Shader "HyperRTS/Water"
                 output.uv = input.uv;
                 output.normalWS = normals.normalWS;
                 output.tangentWS = half4(normals.tangentWS, input.tangentOS.w * GetOddNegativeScale());
-                output.fogFactor = ComputeFogFactor(position.positionCS.z);
                 output.color = input.color;
                 return output;
             }
@@ -217,7 +215,9 @@ Shader "HyperRTS/Water"
                     refracted = screenUV;
                 }
 
-                half3 bottom = SampleSceneColor(refracted);
+                // The opaque texture already holds the height fog; take it out so the water fogs it once.
+                half4 fog = HeightFogAt(input.positionWS);
+                half3 bottom = RemoveHeightFog(SampleSceneColor(refracted), fog);
                 half3 tint = lerp(_ShallowColor.rgb, _DeepColor.rgb, saturate(depth / _DepthRange)) * CloudShade(input.positionWS);
                 half3 body = lerp(tint, bottom * _ShallowColor.rgb * 1.8, exp(-depth / _Clarity));
 
@@ -235,7 +235,7 @@ Shader "HyperRTS/Water"
                 half foam = max(rapids, calm);
                 color = lerp(color, _FoamColor.rgb * (sun.color * sun.shadowAttenuation * 0.6 + 0.4), foam);
                 half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(depth / _ShoreFadeDepth), foam);
-                color = MixFog(color, input.fogFactor);
+                color = ApplyHeightFog(color, fog);
                 return half4(color, alpha);
             }
             ENDHLSL

@@ -126,6 +126,7 @@ GameObject:
   - component: {fileID: 3555598927700202188}
   - component: {fileID: 4665418945433789882}
   - component: {fileID: 823885573077874371}
+  - component: {fileID: 5997137428456952270}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -224,6 +225,18 @@ MonoBehaviour:
   defaultRotation: {x: 0.25881904, y: 0, z: 0, w: 0.9659258}
   startAtHome: 1
   homeSearchSeconds: 3
+--- !u!114 &5997137428456952270
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8073591838981333275}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4292e0470d3795d4bb3684fecbad921b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HyperRTS.Presentation::HyperRTS.Presentation.Rendering.CameraAntialiasing
 --- !u!1001 &5325597525576703505
 PrefabInstance:
   m_ObjectHideFlags: 0

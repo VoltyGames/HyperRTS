@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using HyperRTS.Presentation.Rendering;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Editor.Validation
@@ -18,47 +16,13 @@ namespace HyperRTS.Editor.Validation
         private const string TagManagerPath = "ProjectSettings/TagManager.asset";
         private const string FeatureName = "Unit Silhouettes";
 
-        /// <summary>The URP renderers of the active quality level's pipeline asset.</summary>
-        public static List<UniversalRendererData> ActiveRenderers()
-        {
-            var renderers = new List<UniversalRendererData>();
-            if (GraphicsSettings.currentRenderPipeline is not UniversalRenderPipelineAsset asset)
-            {
-                return renderers;
-            }
-
-            foreach (var data in asset.rendererDataList)
-            {
-                if (data is UniversalRendererData universal)
-                {
-                    renderers.Add(universal);
-                }
-            }
-
-            return renderers;
-        }
+        public static List<UniversalRendererData> ActiveRenderers() => RendererFeatures.ActiveRenderers();
 
         public static bool HasFeature(UniversalRendererData data) =>
-            data.rendererFeatures.OfType<UnitSilhouetteFeature>().Any();
+            RendererFeatures.Find<UnitSilhouetteFeature>(data) != null;
 
-        /// <summary>Adds the feature the way the renderer inspector does.</summary>
-        public static void AddFeature(UniversalRendererData data)
-        {
-            var feature = ScriptableObject.CreateInstance<UnitSilhouetteFeature>();
-            feature.name = FeatureName;
-            AssetDatabase.AddObjectToAsset(feature, data);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(feature, out _, out long id);
-            var serialized = new SerializedObject(data);
-            var features = Property(serialized, "m_RendererFeatures");
-            features.arraySize++;
-            features.GetArrayElementAtIndex(features.arraySize - 1).objectReferenceValue = feature;
-            var map = Property(serialized, "m_RendererFeatureMap");
-            map.arraySize++;
-            map.GetArrayElementAtIndex(map.arraySize - 1).longValue = id;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            AssetDatabase.SaveAssets();
-        }
+        public static void AddFeature(UniversalRendererData data) =>
+            RendererFeatures.Add(data, ScriptableObject.CreateInstance<UnitSilhouetteFeature>(), FeatureName);
 
         /// <summary>The name of the units' rendering layer in Tags and Layers; empty when unnamed.</summary>
         public static string LayerName()

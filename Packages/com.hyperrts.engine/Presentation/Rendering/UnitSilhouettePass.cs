@@ -19,12 +19,12 @@ namespace HyperRTS.Presentation.Rendering
             public RendererListHandle Silhouette;
         }
 
-        // After the opaques, skybox and screen-space decals so the silhouette sits on the finished scene, and before
-        // the transparents so smoke and effects still cover it.
+        // After the opaques, skybox, screen-space decals and height fog so the silhouette sits on the finished scene,
+        // and before the transparents so smoke and effects still cover it.
         public UnitSilhouettePass(uint renderingLayerMask)
         {
             this.renderingLayerMask = renderingLayerMask;
-            renderPassEvent = RenderPassEvent.AfterRenderingSkybox;
+            renderPassEvent = RenderPassEvent.AfterRenderingSkybox + 2;
             profilingSampler = new ProfilingSampler("Unit Silhouettes");
         }
 
