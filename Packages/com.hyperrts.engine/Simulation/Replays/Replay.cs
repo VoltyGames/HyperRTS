@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Replays
         public ReplayFrame[] Frames = Array.Empty<ReplayFrame>();
         public ReplayEntity[] Entities = Array.Empty<ReplayEntity>();
         public int[] Removed = Array.Empty<int>();
-        public ReplayImpact[] Impacts = Array.Empty<ReplayImpact>();
+        public PackedImpact[] Impacts = Array.Empty<PackedImpact>();
 
         /// <summary>Copies the samples into a native stream the caller disposes.</summary>
         public ReplayStream ToStream(Allocator allocator)

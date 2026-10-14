@@ -150,8 +150,9 @@ slot, owner, position): only those its team can see (the fog and stealth rule ab
 
 `EffectSendSystem` sends each client the effects its team may see (`EffectRules`) as `EffectRpc` batches of up to 48
 `PackedEffect`s (type id, slot, owner, position, yaw and pitch bytes; 20 bytes each), at most 2 batches per tick.
-`EffectReceiveSystem` unpacks them into the client's `EffectQueue`. Impacts go one `ImpactRpc` each (type id,
-position, radius, owner, surface, material), at most 16 per tick.
+`EffectReceiveSystem` unpacks them into the client's `EffectQueue`. Impacts go as `ImpactRpc` batches of up to
+64 `PackedImpact`s (the replay's 15-byte format: type id, position in 1/16 m steps within ±2048 m, radius, owner,
+surface, material), at most 1 batch per tick.
 
 ## Physics
 

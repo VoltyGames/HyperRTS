@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Replays
         {
             foreach (var impact in SystemAPI.GetSingletonBuffer<ImpactEvent>(true))
             {
-                stream.Impacts.Add(ReplayImpact.Capture(impact));
+                stream.Impacts.Add(PackedImpact.Pack(impact));
             }
         }
 

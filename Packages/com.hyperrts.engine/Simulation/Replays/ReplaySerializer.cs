@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Effects;
 using HyperRTS.Simulation.Match;
 using Unity.Mathematics;
 
@@ -72,7 +70,7 @@ namespace HyperRTS.Simulation.Replays
 
             foreach (var impact in replay.Impacts)
             {
-                WriteImpact(writer, impact);
+                impact.Write(writer);
             }
         }
 
@@ -120,7 +118,7 @@ namespace HyperRTS.Simulation.Replays
             replay.Frames = frames.ToArray();
             replay.Entities = ReadAll(reader, (int)entities, ReadEntity);
             replay.Removed = ReadAll(reader, (int)removed, r => r.ReadInt32());
-            replay.Impacts = ReadAll(reader, (int)impacts, ReadImpact);
+            replay.Impacts = ReadAll(reader, (int)impacts, PackedImpact.Read);
         }
 
         private static int ReadCount(BinaryReader reader, string what)
@@ -238,30 +236,6 @@ namespace HyperRTS.Simulation.Replays
             Faction = reader.ReadByte(),
             Health = reader.ReadByte(),
             Progress = reader.ReadByte(),
-        };
-
-        private static void WriteImpact(BinaryWriter writer, in ReplayImpact impact)
-        {
-            writer.Write(impact.TypeId);
-            writer.Write(impact.X);
-            writer.Write(impact.Y);
-            writer.Write(impact.Z);
-            writer.Write(impact.Radius);
-            writer.Write(impact.Faction);
-            writer.Write((byte)impact.Surface);
-            writer.Write((byte)impact.Material);
-        }
-
-        private static ReplayImpact ReadImpact(BinaryReader reader) => new()
-        {
-            TypeId = reader.ReadInt32(),
-            X = reader.ReadInt16(),
-            Y = reader.ReadInt16(),
-            Z = reader.ReadInt16(),
-            Radius = reader.ReadUInt16(),
-            Faction = reader.ReadByte(),
-            Surface = (ImpactSurface)reader.ReadByte(),
-            Material = (SurfaceMaterial)reader.ReadByte(),
         };
     }
 }

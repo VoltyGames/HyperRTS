@@ -71,7 +71,7 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual(1, total);
             Assert.AreEqual(1, replay.Impacts.Length);
-            var impact = replay.Impacts[0].ToEvent();
+            var impact = replay.Impacts[0].Unpack();
             Assert.AreEqual(EntityInfo.TypeIdFromName("Mortar"), impact.TypeId);
             Assert.AreEqual(TargetPosition.x, impact.Position.x, ReplayEntity.PositionStep);
             Assert.AreEqual(ImpactSurface.Ground, impact.Surface);
@@ -82,7 +82,7 @@ namespace HyperRTS.Simulation.Tests
         public void Serializer_RoundTripsImpacts()
         {
             var replay = Record();
-            replay.Impacts[0].Material = SurfaceMaterial.Metal;
+            replay.Impacts[0].Material = (byte)SurfaceMaterial.Metal;
 
             using var memory = new MemoryStream();
             ReplaySerializer.Write(replay, memory);

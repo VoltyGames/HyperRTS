@@ -11,14 +11,14 @@ namespace HyperRTS.Simulation.Replays
         public NativeList<ReplayFrame> Frames;
         public NativeList<ReplayEntity> Entities;
         public NativeList<int> Removed;
-        public NativeList<ReplayImpact> Impacts;
+        public NativeList<PackedImpact> Impacts;
 
         public static ReplayStream Create(Allocator allocator) => new()
         {
             Frames = new NativeList<ReplayFrame>(64, allocator),
             Entities = new NativeList<ReplayEntity>(1024, allocator),
             Removed = new NativeList<int>(64, allocator),
-            Impacts = new NativeList<ReplayImpact>(256, allocator),
+            Impacts = new NativeList<PackedImpact>(256, allocator),
         };
 
         public void Dispose()
@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Replays
             var sample = Frames[frame];
             for (var i = sample.ImpactStart; i < sample.ImpactStart + sample.ImpactCount; i++)
             {
-                queue.Add(Impacts[i].ToEvent());
+                queue.Add(Impacts[i].Unpack());
             }
         }
 
