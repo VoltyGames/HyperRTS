@@ -71,8 +71,9 @@ Rendering and effects:
   simulation keeps the final pose. `Animation/MachineSystem` poses
   machine parts.
 - **Environment**: `HyperRTS/Water` (depth colour, refraction, ripples, sky reflection, capped glint; vertex A thins
-  fords, G streaks foam; needs Depth and Opaque Textures), `HyperRTS/Foliage` (alpha-cut, wind sway,
-  translucency) and `HyperRTS/Bark` (opaque URP Lit: base, normal, optional mask map R metallic G AO A smoothness).
+  fords, G streaks rapids foam; calm water drifts foam flecks at `_FlowSpeed` and gathers a foam band (`_BankFoamWidth` m,
+  from the depth over the bed slope) at the banks, off under `_TERRAIN_SIMPLE`; needs Depth and Opaque Textures),
+  `HyperRTS/Foliage` (alpha-cut, wind sway, translucency) and `HyperRTS/Bark` (opaque URP Lit: base, normal, optional mask map R metallic G AO A smoothness).
 - **Wind**: `Wind` (on the scene's directional `WindZone`) publishes `_HyperRTSWindDirection` (xz downwind),
   `_HyperRTSWindStrength` (windMain), `_HyperRTSWindGust` (x windPulseMagnitude, y windTurbulence, z gust tiles per
   metre), `_HyperRTSWindGustMap` (procedural tileable noise), `_HyperRTSWindGustOffset` (xy this frame's scroll in
@@ -120,6 +121,16 @@ Rendering and effects:
   `SV_InstanceID` and has forward, shadow, depth, depth-normals and motion-vector passes, lit like Foliage with plant
   wind. Regrowing every visible tile per camera needs no cache when the camera moves or crops get trampled. The
   game sets density and distance from its vegetation quality.
+- **Ambient life** (`Environment/Ambient/`): an `AmbientLife` component in the scene (one per climate) configures
+  client-only birds and dust devils; never simulated or networked, so clients may differ. A zero count turns a feature
+  off; an unusable field throws naming it. `BirdFlockSystem` flies `BirdFlock`s (pure, tested): each circles a random
+  anchor inside the `TerrainHeight` extent at its height range (ring pull, separation, noise); an `ImpactEvent` within
+  `scatterRadius` of a flock sends it away, climbing, and after `returnDelay` it settles over an anchor at least
+  150 m away. `BirdRenderer` draws camera-facing quads heading up the screen, one `Graphics.RenderMeshInstanced` per
+  2×2 flipbook frame with `_BaseMap_ST` set per frame (material: GPU Instancing, double-sided, alpha clip, URP Unlit
+  works). `DustDevilSystem` forms a devil every `dustDevilInterval` on `dustDevilGround` within 120 m of the camera's
+  ground focus (`DustDevilSites`, 8 samples), drifts it along `Wind.Downwind` with a sideways wander and streams its
+  rig from the effect pool, easing in and out. Both skip Low effect detail.
 - **Effects playback** (`Effects/`): an `EffectRig` prefab root holds world-space child particle systems (anything
   else is an error naming the prefab), `maxDistance`, a `scale` range, `scalePerRadius` and `alignToGround`; author it
   +Y up, +Z forward (impacts turn +Y to the ground normal). `EffectPool` (owned by `EffectPoolSystem`, ticked first) keeps one DontSave instance per prefab, never

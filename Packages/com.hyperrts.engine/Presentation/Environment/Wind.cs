@@ -32,6 +32,9 @@ namespace HyperRTS.Presentation.Environment
         [Tooltip("How much trees, grass and crops move in this wind. None keeps them still. Flags still fly.")]
         public WindDetail vegetation = WindDetail.Flutter;
 
+        /// <summary>The last published downwind direction on the ground (xz); zero before any Wind has run.</summary>
+        public static Vector3 Downwind => Shader.GetGlobalVector(DirectionId);
+
         private WindZone _zone;
         private Texture2D _gustMap;
         private Vector2 _gustOffset;
