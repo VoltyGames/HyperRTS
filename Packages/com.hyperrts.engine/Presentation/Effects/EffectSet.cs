@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Effects;
+using Unity.Entities;
 
 namespace HyperRTS.Presentation.Effects
 {
@@ -11,6 +12,18 @@ namespace HyperRTS.Presentation.Effects
         {
             _effects = effects;
             Impacts = impacts;
+        }
+
+        /// <summary>The set of an entity with <see cref="EntityEffect"/>s or <see cref="EntityImpactEffects"/>.</summary>
+        public static EffectSet Read(EntityManager entityManager, Entity source)
+        {
+            var effects = entityManager.HasBuffer<EntityEffect>(source)
+                ? entityManager.GetBuffer<EntityEffect>(source, true).AsNativeArray().ToArray()
+                : new EntityEffect[0];
+            var impacts = entityManager.HasComponent<EntityImpactEffects>(source)
+                ? entityManager.GetComponentData<EntityImpactEffects>(source).Effects.Value
+                : null;
+            return new EffectSet(effects, impacts);
         }
 
         /// <summary>Null when the type's shots throw nothing up.</summary>

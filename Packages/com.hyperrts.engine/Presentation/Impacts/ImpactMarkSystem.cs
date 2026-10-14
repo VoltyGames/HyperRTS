@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
@@ -22,16 +23,29 @@ namespace HyperRTS.Presentation.Impacts
     public partial class ImpactMarkSystem : SystemBase
     {
         private readonly Dictionary<ImpactMark, ImpactMarkDecals> _decals = new();
-        private ImpactMarkCatalog _catalog;
+        private TypeCatalog<ImpactMark[]> _catalog;
         private EntityQuery _fog;
         private GameObject _root;
         private float _clock = float.NegativeInfinity;
         private Unity.Mathematics.Random _random = new(0x9E3779B9u);
 
+        /// <summary>The marks of an entity with <see cref="EntityImpactMark"/>s.</summary>
+        public static ImpactMark[] ReadMarks(EntityManager entityManager, Entity source)
+        {
+            var entries = entityManager.GetBuffer<EntityImpactMark>(source, true);
+            var marks = new ImpactMark[entries.Length];
+            for (var i = 0; i < marks.Length; i++)
+            {
+                marks[i] = entries[i].Mark.Value;
+            }
+
+            return marks;
+        }
+
         protected override void OnCreate()
         {
-            _catalog = new ImpactMarkCatalog(SystemAPI.QueryBuilder().WithAll<EntityInfo, EntityImpactMark>()
-                .WithOptions(EntityQueryOptions.IncludePrefab).Build());
+            _catalog = new TypeCatalog<ImpactMark[]>(SystemAPI.QueryBuilder().WithAll<EntityInfo, EntityImpactMark>()
+                .WithOptions(EntityQueryOptions.IncludePrefab).Build(), ReadMarks);
             _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
             RequireForUpdate<ImpactQueue>();
             RequireForUpdate<PrefabRegistry>();

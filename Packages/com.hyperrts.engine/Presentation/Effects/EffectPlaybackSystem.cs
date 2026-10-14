@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Effects;
@@ -18,7 +19,7 @@ namespace HyperRTS.Presentation.Effects
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class EffectPlaybackSystem : SystemBase
     {
-        private EffectCatalog _catalog;
+        private TypeCatalog<EffectSet> _catalog;
         private EffectPool _pool;
         private EntityQuery _fog;
         private Camera _camera;
@@ -26,8 +27,9 @@ namespace HyperRTS.Presentation.Effects
 
         protected override void OnCreate()
         {
-            _catalog = new EffectCatalog(SystemAPI.QueryBuilder().WithAll<EntityInfo>()
-                .WithAny<EntityEffect, EntityImpactEffects>().WithOptions(EntityQueryOptions.IncludePrefab).Build());
+            _catalog = new TypeCatalog<EffectSet>(SystemAPI.QueryBuilder().WithAll<EntityInfo>()
+                .WithAny<EntityEffect, EntityImpactEffects>().WithOptions(EntityQueryOptions.IncludePrefab).Build(),
+                EffectSet.Read);
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
             _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
             RequireForUpdate<PrefabRegistry>();

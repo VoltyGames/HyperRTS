@@ -142,8 +142,8 @@ Rendering and effects:
   shooters with `EntityImpactEffects` (`SurfaceEffects.RigFor` the event's material, else `GroundMaterials`; on the
   terrain, facing up or the ground normal). `LoopEffectSystem`, `TrailSystem` and `MotionDustSystem` stream drawn
   entities (no `DisableRendering`): loops at sockets with health gate and timed fade, trails along the frame's path,
-  dust by ground material and speed / `FullSpeed`. `EffectCatalog` caches each type's effects from its prefab for good,
-  or from an instance until effect entities change.
+  dust by ground material and speed / `FullSpeed`. `TypeCatalog<T>` caches each type's effects (and impact marks, sound
+  cues) from its prefab for good, or from an instance until entities with that data change.
 - **Audio**: `SoundPlaybackSystem` plays the `SoundQueue` through 32 pooled sources; `SoundListener` follows the
   camera's ground focus.
 - **Minimap**: the baked `MinimapImage`, local fog, blips and the camera view.

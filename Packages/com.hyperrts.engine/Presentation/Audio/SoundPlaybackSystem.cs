@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -21,10 +21,7 @@ namespace HyperRTS.Presentation.Audio
         private const int Voices = 32;
 
         private readonly SoundPool _pool = new(Voices);
-        private readonly Dictionary<int, List<(SoundSlot Slot, SoundCue Cue)>> _cues = new();
-        private readonly HashSet<int> _missing = new();
-        private int _typedVersion;
-        private EntityQuery _typed;
+        private TypeCatalog<List<(SoundSlot Slot, SoundCue Cue)>> _cues;
         private EntityQuery _fog;
         private GameObject _root;
         private AudioSource[] _sources;
@@ -32,8 +29,8 @@ namespace HyperRTS.Presentation.Audio
 
         protected override void OnCreate()
         {
-            _typed = SystemAPI.QueryBuilder().WithAll<EntityInfo, EntitySound>()
-                .WithOptions(EntityQueryOptions.IncludePrefab).Build();
+            _cues = new TypeCatalog<List<(SoundSlot Slot, SoundCue Cue)>>(SystemAPI.QueryBuilder()
+                .WithAll<EntityInfo, EntitySound>().WithOptions(EntityQueryOptions.IncludePrefab).Build(), ReadCues);
             _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
             RequireForUpdate<SoundQueue>();
             RequireForUpdate<PrefabRegistry>();
@@ -74,12 +71,13 @@ namespace HyperRTS.Presentation.Audio
                 _listener = Object.FindAnyObjectByType<AudioListener>();
             }
 
+            var registry = SystemAPI.GetSingleton<PrefabRegistry>();
             for (var i = 0; i < sounds.Length; i++)
             {
                 var sound = sounds[i];
                 if (SoundRules.IsAudible(sound, view.Viewer, fog, relations))
                 {
-                    Play(FindCue(sound.TypeId, sound.Slot), sound.Position);
+                    Play(FindCue(registry, sound.TypeId, sound.Slot), sound.Position);
                 }
             }
         }
@@ -128,13 +126,11 @@ namespace HyperRTS.Presentation.Audio
             return (position - _listener.transform.position).sqrMagnitude > cue.maxDistance * cue.maxDistance;
         }
 
-        /// <summary>
-        /// Cues come from any prefab or instance of the type, cached per type: a dead unit's own entity may be gone,
-        /// and on a client the event names a type the server resolved.
-        /// </summary>
-        private SoundCue FindCue(int typeId, SoundSlot slot)
+        /// <summary>The slot's cue among the type's, or null.</summary>
+        private SoundCue FindCue(in PrefabRegistry registry, int typeId, SoundSlot slot)
         {
-            if (!_cues.TryGetValue(typeId, out var cues) && !TryLoad(typeId, out cues))
+            var cues = _cues.Find(EntityManager, registry, typeId);
+            if (cues == null)
             {
                 return null;
             }
@@ -150,55 +146,15 @@ namespace HyperRTS.Presentation.Audio
             return null;
         }
 
-        /// <summary>
-        /// Misses are cached too, until an entity with sounds is created or destroyed (a prefab streaming in).
-        /// </summary>
-        private bool TryLoad(int typeId, out List<(SoundSlot Slot, SoundCue Cue)> cues)
+        private static List<(SoundSlot Slot, SoundCue Cue)> ReadCues(EntityManager entityManager, Entity source)
         {
-            cues = null;
-            var version = _typed.GetCombinedComponentOrderVersion(includeEntityType: true);
-            if (version != _typedVersion)
-            {
-                _typedVersion = version;
-                _missing.Clear();
-            }
-
-            var source = _missing.Contains(typeId) ? Entity.Null : FindSource(typeId);
-            if (source == Entity.Null)
-            {
-                _missing.Add(typeId);
-                return false;
-            }
-
-            cues = new List<(SoundSlot, SoundCue)>();
-            foreach (var sound in EntityManager.GetBuffer<EntitySound>(source, true))
+            var cues = new List<(SoundSlot, SoundCue)>();
+            foreach (var sound in entityManager.GetBuffer<EntitySound>(source, true))
             {
                 cues.Add((sound.Slot, sound.Cue.Value));
             }
 
-            _cues[typeId] = cues;
-            return true;
-        }
-
-        /// <summary>The type's prefab, else any instance: a SubScene-placed entity may have no prefab loaded.</summary>
-        private Entity FindSource(int typeId)
-        {
-            var prefab = SystemAPI.GetSingleton<PrefabRegistry>().Find(typeId);
-            if (EntityManager.HasBuffer<EntitySound>(prefab))
-            {
-                return prefab;
-            }
-
-            using var entities = _typed.ToEntityArray(Allocator.Temp);
-            foreach (var entity in entities)
-            {
-                if (EntityManager.GetComponentData<EntityInfo>(entity).TypeId == typeId)
-                {
-                    return entity;
-                }
-            }
-
-            return Entity.Null;
+            return cues;
         }
 
         private AudioSource[] Sources()
