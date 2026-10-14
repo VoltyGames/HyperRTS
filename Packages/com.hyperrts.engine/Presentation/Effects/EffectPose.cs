@@ -6,33 +6,31 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects
 {
-    /// <summary>Where and which way a rig plays; rigs face their +Z.</summary>
+    /// <summary>Where and which way a rig plays; rigs are authored with +Y up and +Z forward.</summary>
     public static class EffectPose
     {
-        /// <summary>Facing along a direction; straight up when it has none.</summary>
+        /// <summary>Forward along a direction, kept upright; unturned when it has none.</summary>
         public static Quaternion Facing(Vector3 direction) =>
-            direction.sqrMagnitude > 1e-8f ? Quaternion.LookRotation(direction) : Up;
+            direction.sqrMagnitude > 1e-8f ? Quaternion.LookRotation(direction) : Quaternion.identity;
 
         /// <summary>
-        /// An impact's pose: on the terrain for ground hits, facing up or along the ground's normal, turned about that
-        /// axis by <paramref name="spin"/> radians for variety.
+        /// An impact's pose: on the terrain for ground hits, up along the world or the ground's normal, spun about
+        /// that axis by <paramref name="spin"/> radians for variety.
         /// </summary>
         public static (Vector3 Position, Quaternion Rotation) Impact(in ImpactEvent impact, in TerrainHeight terrain,
             bool hasTerrain, bool alignToGround, float spin)
         {
+            var turn = Quaternion.Euler(0f, spin * Mathf.Rad2Deg, 0f);
             var onGround = impact.Surface == ImpactSurface.Ground && hasTerrain;
             if (!onGround)
             {
-                return (impact.Position, Up * Quaternion.Euler(0f, 0f, spin * Mathf.Rad2Deg));
+                return (impact.Position, turn);
             }
 
             var point = impact.Position.xz;
             var position = new float3(point.x, terrain.Height(point), point.y);
             var normal = alignToGround ? (Vector3)ImpactMarkMath.GroundNormal(terrain, point, 1f) : Vector3.up;
-            var rotation = Quaternion.LookRotation(normal, Vector3.forward);
-            return (position, rotation * Quaternion.Euler(0f, 0f, spin * Mathf.Rad2Deg));
+            return (position, Quaternion.FromToRotation(Vector3.up, normal) * turn);
         }
-
-        private static Quaternion Up => Quaternion.LookRotation(Vector3.up, Vector3.forward);
     }
 }

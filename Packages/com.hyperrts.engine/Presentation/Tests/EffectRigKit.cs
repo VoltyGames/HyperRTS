@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests
 {
-    /// <summary>Tiny effect rigs built in code: one still, shapeless, long-lived particle system.</summary>
+    /// <summary>Tiny effect rigs built in code: still, shapeless, long-lived particle systems.</summary>
     public static class EffectRigKit
     {
         public static EffectRig Rig(string name,
@@ -11,8 +11,15 @@ namespace HyperRTS.Presentation.Tests
         {
             var root = new GameObject(name);
             var rig = root.AddComponent<EffectRig>();
-            var child = new GameObject("Particles");
-            child.transform.SetParent(root.transform);
+            AddSystem(rig, "Particles", space);
+            return rig;
+        }
+
+        public static ParticleSystem AddSystem(EffectRig rig, string name,
+            ParticleSystemSimulationSpace space = ParticleSystemSimulationSpace.World)
+        {
+            var child = new GameObject(name);
+            child.transform.SetParent(rig.transform);
             var system = child.AddComponent<ParticleSystem>();
             system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = system.main;
@@ -26,7 +33,7 @@ namespace HyperRTS.Presentation.Tests
             var emission = system.emission;
             emission.rateOverTime = 0f;
             emission.rateOverDistance = 0f;
-            return rig;
+            return system;
         }
 
         public static ParticleSystem System(EffectRig rig) => rig.GetComponentInChildren<ParticleSystem>();
@@ -40,9 +47,12 @@ namespace HyperRTS.Presentation.Tests
             emission.SetBursts(bursts);
         }
 
-        public static void SetRates(EffectRig rig, float perSecond, float perMetre)
+        public static void SetRates(EffectRig rig, float perSecond, float perMetre) =>
+            SetRates(System(rig), perSecond, perMetre);
+
+        public static void SetRates(ParticleSystem system, float perSecond, float perMetre)
         {
-            var emission = System(rig).emission;
+            var emission = system.emission;
             emission.rateOverTime = perSecond;
             emission.rateOverDistance = perMetre;
         }

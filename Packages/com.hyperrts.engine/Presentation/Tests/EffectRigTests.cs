@@ -71,6 +71,23 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void Stream_OneParticleAFrame_FeedsEverySystem()
+        {
+            EffectRigKit.SetRates(_rig, 10f, 0f);
+            var second = EffectRigKit.AddSystem(_rig, "Second");
+            EffectRigKit.SetRates(second, 10f, 0f);
+            var carry = 0f;
+
+            for (var frame = 0; frame < 300; frame++)
+            {
+                _rig.Stream(Vector3.zero, Vector3.zero, Quaternion.identity, 1f / 30f, 1f, 1f, ref carry);
+            }
+
+            Assert.Greater(EffectRigKit.System(_rig).particleCount, 60);
+            Assert.Greater(second.particleCount, 60);
+        }
+
+        [Test]
         public void Stream_SpreadsParticlesEvenlyAlongThePath()
         {
             EffectRigKit.SetRates(_rig, 0f, 1f);

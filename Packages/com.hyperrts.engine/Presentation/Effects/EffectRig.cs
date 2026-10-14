@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.Effects
 {
     /// <summary>
     /// Root of an effect rig prefab: child particle systems in world space, played by hand from a pool. Bursts
-    /// replay the authored bursts at a pose; streams spread the authored rates along a path. The rig faces +Z.
+    /// replay the authored bursts at a pose; streams spread the authored rates along a path. Author it +Y up, +Z forward.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Effects + "Effect Rig")]
     [Icon(HyperRTSIcons.Effects)]
@@ -30,6 +30,7 @@ namespace HyperRTS.Presentation.Effects
         private readonly List<DelayedBurst> _delayed = new();
         private EffectEmitter[] _emitters;
         private EffectLight[] _lights;
+        private int[] _counts;
 
         /// <summary>The shared flash lights; none means no flashes.</summary>
         public EffectLights Lights { get; set; }
@@ -92,15 +93,49 @@ namespace HyperRTS.Presentation.Effects
                 return;
             }
 
-            var share = 0f;
-            var emitted = 0;
+            // A frame often owes one particle: a weighted draw per particle keeps every emitter at its rate.
+            var counts = Counts(emitters.Length);
+            for (var n = 0; n < whole; n++)
+            {
+                counts[Pick(emitters, deltaTime, distance)]++;
+            }
+
             for (var e = 0; e < emitters.Length; e++)
             {
-                share += Expected(emitters[e], deltaTime, distance) * strength * density;
-                var upTo = e == emitters.Length - 1 ? whole : Mathf.FloorToInt(share / total * whole);
-                Spread(emitters[e], upTo - emitted, from, to, rotation);
-                emitted = upTo;
+                Spread(emitters[e], counts[e], from, to, rotation);
             }
+        }
+
+        private int[] Counts(int length)
+        {
+            if (_counts == null || _counts.Length != length)
+            {
+                _counts = new int[length];
+            }
+
+            Array.Clear(_counts, 0, length);
+            return _counts;
+        }
+
+        private static int Pick(EffectEmitter[] emitters, float deltaTime, float distance)
+        {
+            var total = 0f;
+            foreach (var emitter in emitters)
+            {
+                total += Expected(emitter, deltaTime, distance);
+            }
+
+            var pick = UnityEngine.Random.value * total;
+            for (var e = 0; e < emitters.Length - 1; e++)
+            {
+                pick -= Expected(emitters[e], deltaTime, distance);
+                if (pick < 0f)
+                {
+                    return e;
+                }
+            }
+
+            return emitters.Length - 1;
         }
 
         /// <summary>Fires the queued timed bursts that are due.</summary>
