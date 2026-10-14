@@ -1,4 +1,5 @@
-// HyperRTS/Terrain forward pass: URP PBR on the blended layers, plus ruts and trampled grass (Trample.hlsl).
+// HyperRTS/Terrain forward pass: URP PBR on the blended layers, plus ruts and trampled grass (Trample.hlsl) and
+// wetness and puddles (TerrainWetness.hlsl).
 #ifndef HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 #define HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 
@@ -6,6 +7,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainLayers.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainWetness.hlsl"
 
 #define RUT_DEPTH 0.12          // metres a full rut dents the shading normal
 #define RUT_DARKENING 0.4
@@ -53,12 +55,13 @@ TerrainForwardVaryings TerrainForwardVertex(TerrainAttributes input)
     return output;
 }
 
-void ApplyInteraction(inout TerrainSurface surface, float2 positionXZ)
+// Returns the rut depth, where puddles gather.
+half ApplyInteraction(inout TerrainSurface surface, float2 positionXZ)
 {
     UNITY_BRANCH
     if (!InteractionMapsOn())
     {
-        return;
+        return 0.0;
     }
 
     TrackSample tracks = ReadTracks(positionXZ);
@@ -68,6 +71,7 @@ void ApplyInteraction(inout TerrainSurface surface, float2 positionXZ)
     surface.albedo *= (1.0 - RUT_DARKENING * tracks.depth) * (1.0 - FLATTEN_DARKENING * flatten);
     half2 slope = (half2)(tracks.slope * RUT_DEPTH);
     surface.normalTS = normalize(half3(surface.normalTS.xy + slope, surface.normalTS.z));
+    return tracks.depth;
 }
 
 InputData TerrainInputData(TerrainForwardVaryings input, half3 normalTS)
@@ -119,8 +123,9 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
 {
     ClipHoles(input.uv);
     TerrainSurface surface = BlendLayers(input.uv, input.positionWS);
-    ApplyMacro(surface, input.uv, input.positionWS.xz);
-    ApplyInteraction(surface, input.positionWS.xz);
+    half dampness = ApplyMacro(surface, input.uv, input.positionWS.xz);
+    half rut = ApplyInteraction(surface, input.positionWS.xz);
+    ApplyWetness(surface, dampness, rut, input.positionWS.xz);
     InputData inputData = TerrainInputData(input, surface.normalTS);
     SurfaceData surfaceData = TerrainSurfaceData(surface);
     #ifdef _DBUFFER

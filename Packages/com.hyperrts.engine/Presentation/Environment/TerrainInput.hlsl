@@ -17,6 +17,12 @@ CBUFFER_START(UnityPerMaterial)
     half _Variation;
     half _WetDarkening;
     half _WetSmoothness;
+    half _RainDarkening;
+    half _RainSmoothness;
+    half _GrassWetness;
+    half _PuddleCoverage;
+    half _PuddleSmoothness;
+    float _PuddleNoiseSize;
 CBUFFER_END
 
 CBUFFER_START(_Terrain)

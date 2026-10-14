@@ -12,9 +12,10 @@
 //                 row 3  height-blend weight; normal strength; hex rotation strength (0..1 of a full turn);
 //                        0 for layers that follow rows (turned on by _RowMap, hex cells slide only along their lines), else 1
 //   _Control0..3  the terrain's alphamaps, four layers each, for _LayerCount layers
-//   _MacroMap     over the whole terrain, linear: RGB tint (0.5 neutral, doubled), A wetness
+//   _MacroMap     over the whole terrain, linear: RGB tint (0.5 neutral, doubled), A wetness (damp hollows)
 //   _RowMap       over the whole terrain, linear, bilinear, no mips: RG the crop rows' direction (x east, y north)
 //                 remapped to 0..1, (0.5, 0.5) off the fields; row layers lay u along it
+// The weather's _HyperRTSWetness (Wetness.cs) wets the ground further and pools puddles (TerrainWetness.hlsl).
 // Every layer is bound in this one pass, so the terrain needs no add-pass or basemap shaders. TerrainDetail sets
 // _TERRAIN_SIMPLE (one sample per texture) or _TERRAIN_NO_FAR (hex, no far sample); neither is the full ground.
 Shader "HyperRTS/Terrain"
@@ -42,6 +43,12 @@ Shader "HyperRTS/Terrain"
         _VariationSize ("Variation Noise Size (m)", Float) = 400
         _WetDarkening ("Wet Darkening", Range(0, 1)) = 0.45
         _WetSmoothness ("Wet Smoothness", Range(0, 1)) = 0.7
+        _RainDarkening ("Rain Darkening", Range(0, 1)) = 0.5
+        _RainSmoothness ("Rain Smoothness", Range(0, 1)) = 0.45
+        _GrassWetness ("Grass Wetness (of bare soil's)", Range(0, 1)) = 0.5
+        _PuddleCoverage ("Puddle Coverage (at full wetness)", Range(0, 1)) = 0.6
+        _PuddleSmoothness ("Puddle Smoothness", Range(0, 1)) = 0.95
+        _PuddleNoiseSize ("Puddle Noise Size (m)", Float) = 8
         [HideInInspector] _TerrainHolesTexture ("Holes Map (RGB)", 2D) = "white" {}
     }
 

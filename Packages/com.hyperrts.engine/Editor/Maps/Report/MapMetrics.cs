@@ -23,6 +23,7 @@ namespace HyperRTS.Editor.Maps.Report
         public int trees;
         public int placements;
         public int decals;
+        public int wetDecals;
         public List<MapSpawnMetrics> spawns = new();
     }
 }

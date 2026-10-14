@@ -3,7 +3,8 @@
 // broken up by world-space noise so the road crumbles into the ground. URP PBR lighting with shadows, SSAO, DBuffer
 // decals and light cookies. Alpha-blended without writing depth, in the opaque queue after the terrain: decals, SSAO
 // and the fog of war (projected on the depth buffer) all see the terrain underneath, so they cover the road too.
-// Needs mesh normals and tangents.
+// After rain (_HyperRTSWetness, Wetness.cs) it darkens and glosses, and puddles stand in the wheel ruts (a strip
+// Rut Offset from the middle, in U) and along the edges. Needs mesh normals and tangents.
 Shader "HyperRTS/Road"
 {
     Properties
@@ -19,6 +20,15 @@ Shader "HyperRTS/Road"
         _EdgeNoise ("Edge Breakup", Range(0, 1)) = 0.6
         [NoScaleOffset] _NoiseMap ("Edge Noise", 2D) = "gray" {}
         _NoiseSize ("Edge Noise Size (m)", Float) = 3
+        _WetDarkening ("Wet Darkening", Range(0, 1)) = 0.45
+        _WetSmoothness ("Wet Smoothness", Range(0, 1)) = 0.55
+        _PuddleCoverage ("Puddle Coverage (at full wetness)", Range(0, 1)) = 0.6
+        _PuddleSmoothness ("Puddle Smoothness", Range(0, 1)) = 0.95
+        _PuddleNoiseSize ("Puddle Noise Size (m)", Float) = 5
+        _RutOffset ("Rut Offset (U from the middle)", Range(0, 0.5)) = 0.2
+        _RutWidth ("Rut Width (U)", Range(0.01, 0.25)) = 0.06
+        _RutPuddles ("Rut Puddles", Range(0, 1)) = 0.6
+        _EdgePuddles ("Edge Puddles", Range(0, 1)) = 0.4
     }
 
     SubShader
@@ -61,6 +71,7 @@ Shader "HyperRTS/Road"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Wetness.hlsl"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -79,6 +90,15 @@ Shader "HyperRTS/Road"
                 half _EdgeWidth;
                 half _EdgeNoise;
                 float _NoiseSize;
+                half _WetDarkening;
+                half _WetSmoothness;
+                half _PuddleCoverage;
+                half _PuddleSmoothness;
+                float _PuddleNoiseSize;
+                half _RutOffset;
+                half _RutWidth;
+                half _RutPuddles;
+                half _EdgePuddles;
             CBUFFER_END
 
             struct Attributes
@@ -135,6 +155,33 @@ Shader "HyperRTS/Road"
                 return smoothstep(0.0, 1.0, crumble) * albedoAlpha * input.opacityAndFog.x;
             }
 
+            // How readily water stands here: in the wheel ruts and along the edges, broken up by world noise.
+            // Explicit gradients: it runs inside the wetness branch.
+            half PuddleCollect(Varyings input, float2 st, float2 dx, float2 dy)
+            {
+                half fromMiddle = abs(input.uv.x - 0.5);
+                half rut = _RutPuddles * (1.0 - smoothstep(0.0, _RutWidth, abs(fromMiddle - _RutOffset)));
+                half edge = _EdgePuddles * saturate((fromMiddle - 0.35) / 0.15);
+                half noise = SAMPLE_TEXTURE2D_GRAD(_NoiseMap, sampler_NoiseMap, st, dx, dy).r;
+                return max(rut, edge) + (noise - 0.5) * 1.2;
+            }
+
+            void ApplyRain(inout SurfaceData surface, Varyings input)
+            {
+                float2 st = input.positionWS.xz / _PuddleNoiseSize;
+                float2 dx = ddx(st);
+                float2 dy = ddy(st);
+                UNITY_BRANCH
+                if (!RainWet())
+                {
+                    return;
+                }
+
+                Wet(surface.albedo, surface.smoothness, surface.normalTS, _HyperRTSWetness, _WetDarkening, _WetSmoothness);
+                half cover = PuddleCover(PuddleCollect(input, st, dx, dy), _PuddleCoverage);
+                Puddle(surface.albedo, surface.smoothness, surface.normalTS, cover, _PuddleSmoothness);
+            }
+
             InputData Inputs(Varyings input, half3 normalTS)
             {
                 InputData data = (InputData)0;
@@ -168,6 +215,7 @@ Shader "HyperRTS/Road"
                 surface.normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uv), _BumpScale);
                 surface.occlusion = mask.g;
                 surface.smoothness = mask.a * _Smoothness;
+                ApplyRain(surface, input);
 
                 InputData inputData = Inputs(input, surface.normalTS);
                 #if defined(_DBUFFER)

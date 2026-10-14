@@ -3,6 +3,8 @@
 #ifndef HYPERRTS_PLANT_SHADING_INCLUDED
 #define HYPERRTS_PLANT_SHADING_INCLUDED
 
+#define PLANT_RAIN_DARKENING 0.22 // rain-soaked leaves and stems
+
 #ifndef PLANT_TWO_SIDED
     #error "PlantShading.hlsl: define PLANT_TWO_SIDED (0 both sides lit alike, 1 side in view lit, bent skyward)."
 #endif
@@ -10,6 +12,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Wetness.hlsl"
 #if defined(LOD_FADE_CROSSFADE)
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
 #endif
@@ -170,7 +173,7 @@ half4 ForwardFrag(ForwardVaryings input, bool front : SV_IsFrontFace) : SV_Targe
     half4 albedo = texel * _BaseColor;
     clip(albedo.a - _Cutoff);
     PlantCrossFade(input.positionCS);
-    albedo.rgb *= input.tint.rgb;
+    albedo.rgb *= input.tint.rgb * (1.0 - PLANT_RAIN_DARKENING * _HyperRTSWetness);
 
     // The root fades into the ground's colour.
     half root = input.ground.a * (1.0 - smoothstep(0.0, _GroundBlendHeight, input.uv.z));

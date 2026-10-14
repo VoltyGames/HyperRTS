@@ -215,9 +215,9 @@ TerrainSurface BlendLayers(float2 uv, float3 positionWS)
     return ResolveBlend(blend);
 }
 
-// The map's macro tint and wetness, and world-noise variation (broad light and dark, smaller warm and cool
-// patches), scaled by the layers' macro strength.
-void ApplyMacro(inout TerrainSurface surface, float2 uv, float2 positionXZ)
+// The map's macro tint and world-noise variation (broad light and dark, smaller warm and cool patches), scaled by the
+// layers' macro strength. Returns the macro's dampness for TerrainWetness.hlsl.
+half ApplyMacro(inout TerrainSurface surface, float2 uv, float2 positionXZ)
 {
     half4 macro = SAMPLE_TEXTURE2D(_MacroMap, sampler_LinearClamp, uv);
     half2 noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_LinearRepeat, positionXZ / _VariationSize).gb;
@@ -225,11 +225,7 @@ void ApplyMacro(inout TerrainSurface surface, float2 uv, float2 positionXZ)
     half warmth = (noise.y - 0.5) * _Variation;
     half3 variation = 1.0 + half3(light + warmth, light, light - warmth);
     surface.albedo *= lerp(1.0, macro.rgb * 2.0 * variation, surface.macro);
-
-    half wetness = macro.a;
-    surface.albedo *= 1.0 - _WetDarkening * wetness;
-    surface.smoothness = lerp(surface.smoothness, _WetSmoothness, wetness);
-    surface.normalTS = normalize(lerp(surface.normalTS, half3(0.0, 0.0, 1.0), wetness * 0.5));
+    return macro.a;
 }
 
 #endif

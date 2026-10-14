@@ -39,6 +39,9 @@ namespace HyperRTS.Editor.Maps.Planning
         /// <summary>Every ground decal laid so far, in map space (copies included).</summary>
         public List<MapDecal> Decals { get; } = new();
 
+        /// <summary>Surface decals shown only after rain, in map space (copies included).</summary>
+        public List<MapDecal> WetDecals { get; } = new();
+
         /// <summary>Props laid in the backdrop as terrain scenery, in map space (copies included).</summary>
         public List<MapScenery> Scenery { get; } = new();
 

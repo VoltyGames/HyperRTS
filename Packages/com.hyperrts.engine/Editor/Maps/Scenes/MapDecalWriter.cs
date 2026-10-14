@@ -1,20 +1,34 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Placement;
+using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.Impacts;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Editor.Maps.Scenes
 {
-    /// <summary>Ground decals as URP decal projectors on the finished ground, projecting along its normal.</summary>
+    /// <summary>Ground decals as URP decal projectors on the finished ground, projecting along its normal; wet-only ones
+    /// under a Wet Decals group that shows them after rain.</summary>
     public static class MapDecalWriter
     {
         public static void Write(MapScene scene, MapGeneration generation)
         {
-            var root = scene.CreateChild("Decals");
+            WriteGroup(scene.CreateChild("Decals"), generation.Decals, generation);
+            if (generation.WetDecals.Count == 0)
+            {
+                return;
+            }
+
+            var wet = scene.CreateChild("Wet Decals");
+            WriteGroup(wet, generation.WetDecals, generation);
+            wet.gameObject.AddComponent<WetnessGroup>();
+        }
+
+        private static void WriteGroup(Transform root, List<MapDecal> decals, MapGeneration generation)
+        {
             var counts = new Dictionary<string, int>();
-            foreach (var decal in generation.Decals)
+            foreach (var decal in decals)
             {
                 var key = decal.Kind.key;
                 counts[key] = counts.TryGetValue(key, out var count) ? count + 1 : 1;

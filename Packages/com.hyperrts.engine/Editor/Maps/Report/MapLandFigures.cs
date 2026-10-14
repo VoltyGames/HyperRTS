@@ -17,8 +17,11 @@ namespace HyperRTS.Editor.Maps.Report
         public int trees;
         public int placements;
 
-        /// <summary>Ground decals, capped by the rules' maxDecals.</summary>
+        /// <summary>Ground decals; the rules' maxDecals caps them and the wet ones together.</summary>
         public int decals;
+
+        /// <summary>Surface decals shown only after rain.</summary>
+        public int wetDecals;
 
         /// <summary>Placements that become entities, the simulation's load.</summary>
         public int entities;
@@ -55,6 +58,7 @@ namespace HyperRTS.Editor.Maps.Report
                 trees = generation.Trees.Count,
                 placements = placements.Count,
                 decals = generation.Decals.Count,
+                wetDecals = generation.WetDecals.Count,
                 entities = placements.Count(p => p.IsEntity),
                 cropTiles = generation.Crops.Tiles.Count,
                 cropPlants = generation.Crops.Plants,

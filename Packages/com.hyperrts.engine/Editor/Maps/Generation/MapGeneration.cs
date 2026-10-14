@@ -43,6 +43,9 @@ namespace HyperRTS.Editor.Maps.Generation
         /// <summary>Ground decals laid on surfaces and under props, copies included.</summary>
         public List<MapDecal> Decals { get; private set; }
 
+        /// <summary>Surface decals shown only after rain, copies included.</summary>
+        public List<MapDecal> WetDecals { get; private set; }
+
         /// <summary>Where row crops grow, baked once the land is planned.</summary>
         public MapCropBake Crops { get; private set; }
 
@@ -105,12 +108,15 @@ namespace HyperRTS.Editor.Maps.Generation
             Land = context.Land;
             Trees = context.Trees.Planted;
             Decals = context.Decals;
+            WetDecals = context.WetDecals;
             Scenery = context.Scenery;
             Crops = MapCropPainter.Paint(this);
+            // Wet decals show on top of the dry ones after rain, so the cap holds for both together.
             var maxDecals = Project.Rules.maxDecals;
-            if (Decals.Count > maxDecals)
+            var decals = Decals.Count + WetDecals.Count;
+            if (decals > maxDecals)
             {
-                _issues.Warn($"{Decals.Count} ground decals are more than the rules' maxDecals {maxDecals}; lower surface decal densities.");
+                _issues.Warn($"{decals} ground decals (wet ones included) are more than the rules' maxDecals {maxDecals}; lower surface decal densities.");
             }
         }
 

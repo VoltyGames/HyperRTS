@@ -13,5 +13,8 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Min(0f)]
         public float perHectare = 1f;
+
+        [Tooltip("Laid under the scene's Wet Decals group, shown only after rain (puddles).")]
+        public bool wet;
     }
 }
