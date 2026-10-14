@@ -203,9 +203,10 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
   copy so mirrored and rotated fields turn too; (0.5, 0.5) where nothing grows in rows. Regions carry rows when the
   planner gives them an angle (fields, gardens: `MapLandRegion.HasRows`).
 - **Ground materials** (`MapGroundMaterialPainter`, `_GroundMaterials.png`): one texel per land cell, R8, point
-  filter, no mips, readable. Each byte is a `SurfaceMaterial`: the region surface's `impactClass`, the nearest road's
-  class `impactClass` on road cells, `Water` in river beds. The SubScene's `Ground Materials` object
-  (`GroundMaterialsAuthoring`, at the land's south-west corner) bakes it into the `GroundMaterials` singleton.
+  filter, no mips, readable. Each byte is a `SurfaceMaterial`: the region surface's `impactClass`, on road cells the
+  `impactClass` of the road class that claimed them (carried on its land region, so junctions match the surface),
+  `Water` in river beds. The SubScene's `Ground Materials` object (`GroundMaterialsAuthoring`, at the land's
+  south-west corner) bakes it into the `GroundMaterials` singleton.
 - **Terrain material** (`MapTerrainMaterial`): `HyperRTS/Terrain`, one pass, up to 16 height-blended layers from the
   climate's texture arrays, the macro and row maps, and per-layer rotation. The climate's `heightBlendDepth` (texel
   height, 0..1; about 0.06 interlocks borders without speckle) sets how far one layer's texels must stand above

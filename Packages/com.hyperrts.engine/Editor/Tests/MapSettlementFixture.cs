@@ -149,11 +149,7 @@ namespace HyperRTS.Editor.Tests
         {
             var climate = new MapClimate();
             climate.name = "Test";
-            foreach (var key in new[] { "Meadow", "Road", "Verge", "Yard", "Garden", "Orchard" })
-            {
-                climate.layers.Add(new MapClimateLayer { key = key });
-                climate.surfaces.Add(new MapClimateSurface { key = key, layer = key, impactClass = "Grass", edgeWidth = 1f, edgeJitter = 1f });
-            }
+            MapClimateFixture.AddSurfaces(climate, "Meadow", "Road", "Verge", "Yard", "Garden", "Orchard");
 
             climate.groundSurface = "Meadow";
             climate.baseSurface = "Meadow";

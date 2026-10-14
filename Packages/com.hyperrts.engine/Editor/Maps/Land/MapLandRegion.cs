@@ -9,6 +9,7 @@ namespace HyperRTS.Editor.Maps.Land
     public sealed class MapLandRegion
     {
         private readonly float? _rowAngle;
+        private readonly string _impactClass;
 
         public MapLandRegion(MapLandKind kind, string surface, int seed = 0, float? rowAngle = null)
         {
@@ -17,6 +18,14 @@ namespace HyperRTS.Editor.Maps.Land
             Seed = seed;
             _rowAngle = rowAngle;
         }
+
+        private MapLandRegion(string surface, string impactClass) : this(MapLandKind.Road, surface)
+        {
+            _impactClass = impactClass;
+        }
+
+        /// <summary>A road's land, carrying its class's impact class so junction cells keep their owner's.</summary>
+        public static MapLandRegion Road(string surface, string impactClass) => new(surface, impactClass);
 
         public MapLandKind Kind { get; }
 
@@ -33,5 +42,9 @@ namespace HyperRTS.Editor.Maps.Land
         /// </summary>
         public float RowAngle => _rowAngle
             ?? throw new InvalidOperationException($"HyperRTS: the {Kind} region painting '{Surface}' has no rows.");
+
+        /// <summary>The road class's impact class; only road regions carry one.</summary>
+        public string ImpactClass => _impactClass
+            ?? throw new InvalidOperationException($"HyperRTS: the {Kind} region painting '{Surface}' has no impact class.");
     }
 }

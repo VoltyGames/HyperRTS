@@ -19,19 +19,28 @@ namespace HyperRTS.Editor.Tests
         {
             var climate = MapRoadFixture.Climate();
             climate.Surface("Dirt").impactClass = "Soil";
-            var shapes = MapRoadFixture.Shapes(MapRoadFixture.Layout(MapRoadFixture.Spec()), climate);
-            shapes.AddRoad(MapRoadFixture.RoadShape(climate.roadClasses[0], false, new Vector2(-10f, 0f), new Vector2(10f, 0f)));
             var land = new MapLand(new Rect(-Size * 0.5f, -Size * 0.5f, Size, Size));
             Claim(land, new MapLandRegion(MapLandKind.Water, "Meadow"), p => p.y < -5f);
-            Claim(land, new MapLandRegion(MapLandKind.Road, "Asphalt"), p => Mathf.Abs(p.y) < 2f);
+            Claim(land, MapLandRegion.Road("Asphalt", "Paved"), p => Mathf.Abs(p.y) < 2f);
             Claim(land, new MapLandRegion(MapLandKind.Field, "Dirt"), p => p.y > 5f);
 
-            var cells = MapGroundMaterialPainter.Paint(land, shapes, climate);
+            var cells = MapGroundMaterialPainter.Paint(land, climate);
 
             Assert.AreEqual(SurfaceMaterial.Water, At(cells, 2), "river bed");
             Assert.AreEqual(SurfaceMaterial.Grass, At(cells, 7), "unclaimed ground takes the ground surface");
             Assert.AreEqual(SurfaceMaterial.Paved, At(cells, 10), "road takes its class, not its Grass surface");
             Assert.AreEqual(SurfaceMaterial.Soil, At(cells, 17), "field takes its surface");
+        }
+
+        [Test]
+        public void ARoadRegionWithoutAnImpactClass_IsAnError()
+        {
+            var climate = MapRoadFixture.Climate();
+            var land = new MapLand(new Rect(-Size * 0.5f, -Size * 0.5f, Size, Size));
+            Claim(land, new MapLandRegion(MapLandKind.Road, "Asphalt"), p => Mathf.Abs(p.y) < 2f);
+
+            var error = Assert.Throws<System.InvalidOperationException>(() => MapGroundMaterialPainter.Paint(land, climate));
+            StringAssert.Contains("'Asphalt' has no impact class", error.Message);
         }
 
         [TestCase(null, TestName = "AMissingSurfaceImpactClass_IsAnErrorNamingIt")]

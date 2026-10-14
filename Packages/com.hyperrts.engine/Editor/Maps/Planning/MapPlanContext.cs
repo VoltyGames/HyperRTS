@@ -53,5 +53,8 @@ namespace HyperRTS.Editor.Maps.Planning
         /// <summary>A new land region painting a climate surface; land sown in rows gives their authored angle.</summary>
         public int Region(MapLandKind kind, string surface, int seed = 0, float? rowAngle = null) =>
             Land.Add(new MapLandRegion(kind, surface, seed, rowAngle));
+
+        /// <summary>A new road region painting a climate surface with its road class's impact class.</summary>
+        public int RoadRegion(string surface, string impactClass) => Land.Add(MapLandRegion.Road(surface, impactClass));
     }
 }

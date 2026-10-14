@@ -148,11 +148,7 @@ namespace HyperRTS.Editor.Tests
         private static MapClimate Climate(float width, float jitter)
         {
             var climate = new MapClimate { name = "Test", slopeStart = 30f, slopeFull = 40f };
-            foreach (var key in new[] { "Meadow", "A", "B" })
-            {
-                climate.layers.Add(new MapClimateLayer { key = key });
-                climate.surfaces.Add(new MapClimateSurface { key = key, layer = key, impactClass = "Grass", edgeWidth = width, edgeJitter = jitter });
-            }
+            MapClimateFixture.AddSurfaces(climate, width, jitter, "Meadow", "A", "B");
 
             climate.groundSurface = climate.groundVariation = climate.slopeSurface = "Meadow";
             climate.macro = new MapClimateMacro

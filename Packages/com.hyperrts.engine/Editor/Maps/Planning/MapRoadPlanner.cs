@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             var roadClass = road.Class;
             var half = road.Width * 0.5f;
-            var surface = Context.Region(MapLandKind.Road, roadClass.surface);
+            var surface = Context.RoadRegion(roadClass.surface, roadClass.impactClass);
             if (roadClass.vergeWidth <= 0f)
             {
                 Land.ClaimWhere(road.Line.Bounds, surface, p => road.Line.Distance(p) < half);

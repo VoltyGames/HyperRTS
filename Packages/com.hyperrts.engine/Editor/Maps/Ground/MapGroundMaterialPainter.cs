@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Data;
-using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Simulation.Effects;
 using UnityEditor;
@@ -10,25 +9,25 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
-    /// Paints one R8 <see cref="SurfaceMaterial"/> per land cell: the region's surface, the nearest road's class, or
+    /// Paints one R8 <see cref="SurfaceMaterial"/> per land cell: the region's surface, a road region's class, or
     /// water.
     /// </summary>
     public sealed class MapGroundMaterialPainter
     {
         private readonly MapLand _land;
-        private readonly MapShapes _shapes;
         private readonly MapClimate _climate;
         private readonly Dictionary<string, SurfaceMaterial> _surfaces = new();
+        private readonly Dictionary<MapLandRegion, SurfaceMaterial> _roads = new();
 
-        private MapGroundMaterialPainter(MapLand land, MapShapes shapes, MapClimate climate)
+        private MapGroundMaterialPainter(MapLand land, MapClimate climate)
         {
-            (_land, _shapes, _climate) = (land, shapes, climate);
+            (_land, _climate) = (land, climate);
         }
 
         // Point-filtered and uncompressed so every texel stays an exact enum value; readable for the baker.
-        public static Texture2D Write(string path, MapLand land, MapShapes shapes, MapClimate climate)
+        public static Texture2D Write(string path, MapLand land, MapClimate climate)
         {
-            var cells = Paint(land, shapes, climate);
+            var cells = Paint(land, climate);
             var pixels = new Color32[cells.Length];
             for (var i = 0; i < cells.Length; i++)
             {
@@ -56,15 +55,15 @@ namespace HyperRTS.Editor.Maps.Ground
         /// <summary>
         /// Row-major cells from the land's south-west corner, each a <see cref="SurfaceMaterial"/> byte.
         /// </summary>
-        public static byte[] Paint(MapLand land, MapShapes shapes, MapClimate climate)
+        public static byte[] Paint(MapLand land, MapClimate climate)
         {
-            var painter = new MapGroundMaterialPainter(land, shapes, climate);
+            var painter = new MapGroundMaterialPainter(land, climate);
             var cells = new byte[land.Width * land.Height];
-            land.ForEach((x, z, center) => cells[z * land.Width + x] = (byte)painter.Cell(x, z, center));
+            land.ForEach((x, z, _) => cells[z * land.Width + x] = (byte)painter.Cell(x, z));
             return cells;
         }
 
-        private SurfaceMaterial Cell(int x, int z, Vector2 center)
+        private SurfaceMaterial Cell(int x, int z)
         {
             var region = _land.Region(x, z);
             if (region == null)
@@ -75,19 +74,20 @@ namespace HyperRTS.Editor.Maps.Ground
             return region.Kind switch
             {
                 MapLandKind.Water => SurfaceMaterial.Water,
-                MapLandKind.Road => Road(center),
+                MapLandKind.Road => Road(region),
                 _ => Surface(region.Surface),
             };
         }
 
-        private SurfaceMaterial Road(Vector2 center)
+        private SurfaceMaterial Road(MapLandRegion region)
         {
-            if (!_shapes.NearestRoad(center, out var road, out _, out _, out _))
+            if (!_roads.TryGetValue(region, out var material))
             {
-                throw new System.InvalidOperationException($"HyperRTS: road land at {center} has no road shape.");
+                material = MapImpactClass.Parse($"road region painting '{region.Surface}'", region.ImpactClass);
+                _roads.Add(region, material);
             }
 
-            return MapImpactClass.Parse($"road class '{road.Class.key}'", road.Class.impactClass);
+            return material;
         }
 
         private SurfaceMaterial Surface(string key)

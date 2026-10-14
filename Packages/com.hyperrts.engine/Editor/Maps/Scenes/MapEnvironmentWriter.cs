@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, macro, rows);
             var picture = MapGroundColor.Write(paths.Ground, generation.Splat, climate, macro);
             MapCropWriter.Write(paths.RowCrops, paths.RowCropIds, generation.Crops);
-            MapGroundMaterialPainter.Write(paths.GroundMaterials, generation.Land, generation.Shapes, climate);
+            MapGroundMaterialPainter.Write(paths.GroundMaterials, generation.Land, climate);
             return (material, picture);
         }
 
