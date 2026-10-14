@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 
 namespace HyperRTS.Editor.Validation.Rules
 {

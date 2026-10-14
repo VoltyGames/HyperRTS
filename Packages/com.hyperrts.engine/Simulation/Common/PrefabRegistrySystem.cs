@@ -42,7 +42,13 @@ namespace HyperRTS.Simulation.Common
             }
 
             _version = version;
-            PrefabLookup.ByTypeId(_prefabs, _byTypeId);
+            _byTypeId.Clear();
+            var entities = _prefabs.ToEntityArray(Allocator.Temp);
+            var infos = _prefabs.ToComponentDataArray<EntityInfo>(Allocator.Temp);
+            for (var i = 0; i < entities.Length; i++)
+            {
+                _byTypeId[infos[i].TypeId] = entities[i];
+            }
         }
     }
 }

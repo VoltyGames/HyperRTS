@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Stats;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Veterancy;
 using NUnit.Framework;

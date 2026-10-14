@@ -1,6 +1,6 @@
 # Combat modules
 
-[Modules](../modules.md) ▸ Combat, Stats, Veterancy, Upgrades, Fields, Abilities, Vision
+[Modules](../modules.md) ▸ Combat, Veterancy, Upgrades, Auras, Abilities, Vision
 
 ## Combat
 
@@ -14,6 +14,7 @@
 | `LastAttacker`, `Projectile`, `SpawnOnDeath` | Kill credit; a shot in flight; the wreck spawned on death |
 | `TargetLookup` | `IsValidTarget` (hostile, alive, hittable layer, not stealthed); `IsAttackable` adds `Destructible` scenery for explicit orders |
 | `DestructibleAuthoring` | Marks a building or unit `Destructible`, or makes standalone scenery with health, crush rating, remains and a blocked box |
+| `Crusher` | A vehicle that flattens destructible scenery it drives over |
 | `StretchPartsAuthoring` / `StretchParts`, `PartStretch`, `StretchLayout` | Start cap, end cap and span (sharing one parent under the root) of a prop the map builder stretches: caps move out, only the span scales. A stretched prop carries its `PartStretch`; `DeathSystem` copies it to the remains, whose own parts `StretchPartsSystem` stretches once to match |
 | `ToppleAuthoring` / `Topple`, `FellFrom`, `Felling`, `ToppleMath` | Scenery that falls away from its lethal hit (`DamageSystem` records the fall heading away from the shooter, crusher or blast centre); `DeathSystem` lays the remains along the fall, and `ToppleSystem` (Presentation) shows a seen fall over 1.5 s. The inspector's **Measure from model** (`ToppleMeasure`) sets `trunk` from the LOD0 faces of a chosen trunk material and `lie` from the Destructible's remains |
 | `DamageStagesAuthoring` / `DamageStage` | Child models shown by health fraction, each step with an effect |
@@ -28,6 +29,8 @@ the nearest hostile, every 4th frame each), `EngagementSystem` (chase, stop in r
 Turrets that turn on their own are not built in.
 
 ## Stats
+
+Part of `Common`.
 
 | Type | Role |
 | --- | --- |
@@ -49,7 +52,7 @@ pays the last hostile attacker; `VeterancySystem` promotes and swaps rank modifi
 `UpgradeAuthoring` / `UpgradeEffect`: a research prefab with stat bonuses per target type. `UpgradeSystem` applies
 the owner's `CompletedResearch` to matching entities, catches up later spawns, and swaps sets on an owner change.
 
-## Fields
+## Auras
 
 `AreaFieldAuthoring` / `AreaField`: an aura (radius, targets by relation and kind, stat bonuses, heal or damage per
 second). Every 0.25 s `AreaFieldSystem` rewrites each entity's `FieldPresence` (one entry per field name, no

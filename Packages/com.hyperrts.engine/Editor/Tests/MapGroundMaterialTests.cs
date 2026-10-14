@@ -4,7 +4,7 @@ using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Land;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using UnityEngine;
 

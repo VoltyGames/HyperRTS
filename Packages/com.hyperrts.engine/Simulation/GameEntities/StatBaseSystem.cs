@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
-using HyperRTS.Simulation.Stats;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;

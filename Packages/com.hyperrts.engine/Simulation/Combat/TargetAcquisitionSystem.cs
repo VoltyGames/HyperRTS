@@ -1,7 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;

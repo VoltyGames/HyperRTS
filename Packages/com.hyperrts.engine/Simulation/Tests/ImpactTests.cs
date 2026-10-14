@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Collections;

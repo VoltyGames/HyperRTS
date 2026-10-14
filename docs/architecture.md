@@ -30,20 +30,21 @@ or UI.
 
 ## Modules
 
-Simulation is split into modules, one folder and namespace each (`HyperRTS.Simulation.<Module>`). Modules are
-layered, lowest first:
+Simulation is split into modules, one folder and namespace each (`HyperRTS.Simulation.<Module>`). Modules sit
+in tiers, lowest first:
 
-```text
-Common < Navigation < Stats < Power < Vision < Spatial < Selection < Orders < Audio < Effects < Combat < Transport
-  < Air < Units < Resources < Match < Production < Upgrades < Buildings < Abilities < Fields < Veterancy < Capture
-  < AI < GameEntities < Commands < Replays
-```
+| Tier | Modules |
+| --- | --- |
+| Base | Common |
+| Foundation | Animation, Navigation, Vision, Selection, Orders, Cues |
+| Gameplay | Combat, Transport, Air, Units, Resources, Production, Upgrades, Buildings, Abilities, Auras, Veterancy, Capture, Match |
+| Orchestration | AI, GameEntities, Commands, Replays |
 
-- A module uses only modules before it. A type two modules need goes in `Common` or the lower module.
-- To order two systems, put `[UpdateBefore]`/`[UpdateAfter]` on the one in the higher module.
+- A module uses its own tier or lower ones, and the modules of one tier never use each other in a cycle. A type two
+  modules need goes in `Common` or the module the other already uses.
+- To order two systems, put `[UpdateBefore]`/`[UpdateAfter]` on the one whose module uses the other's.
 - `*Authoring.cs` files may use any module; they hold only the authoring class and its `Baker`.
-- `ModuleLayoutTests` enforces the order, namespace = folder, and the authoring file rule. Its back-edge
-  allowlist is empty; keep it that way.
+- `ModuleLayoutTests` enforces the tiers, the no-cycle rule, namespace = folder, and the authoring file rule.
 
 Per-module reference: [modules](modules.md).
 

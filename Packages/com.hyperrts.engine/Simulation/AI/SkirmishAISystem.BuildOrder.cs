@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Spatial;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

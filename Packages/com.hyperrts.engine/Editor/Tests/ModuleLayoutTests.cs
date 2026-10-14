@@ -9,20 +9,21 @@ using UnityEditor.PackageManager;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>Source layout rules: namespaces follow folders, modules stay layered, authoring files hold authoring.</summary>
+    /// <summary>Source layout rules: namespaces follow folders, modules stay tiered, authoring files hold authoring.</summary>
     public class ModuleLayoutTests
     {
-        // Simulation modules, lowest first: each one may use only the modules before it.
-        private static readonly string[] Layers =
+        // Simulation module tiers, lowest first: a module may use its own tier or lower ones, never a higher tier.
+        private static readonly string[][] Tiers =
         {
-            "Common", "Animation", "Navigation", "Stats", "Power", "Vision", "Spatial", "Selection", "Orders", "Audio",
-            "Effects", "Cues", "Combat", "Transport", "Air", "Units", "Resources", "Match", "Production", "Upgrades",
-            "Buildings", "Abilities", "Fields", "Veterancy", "Capture", "AI", "GameEntities", "Commands", "Replays",
+            new[] { "Common" },
+            new[] { "Animation", "Navigation", "Vision", "Selection", "Orders", "Cues" },
+            new[]
+            {
+                "Combat", "Transport", "Air", "Units", "Resources", "Production", "Upgrades", "Buildings", "Abilities",
+                "Auras", "Veterancy", "Capture", "Match",
+            },
+            new[] { "AI", "GameEntities", "Commands", "Replays" },
         };
-
-        // Uses of a higher layer that are part of the design. Shrink this list; never grow it casually: a new entry
-        // usually means a shared type belongs in Common or a lower module.
-        private static readonly string[] AllowedBackEdges = { };
 
         private static readonly Regex Namespace = new(@"^namespace ([\w.]+)", RegexOptions.Multiline);
         private static readonly Regex SimulationUsing = new(@"^using HyperRTS\.Simulation\.(\w+)", RegexOptions.Multiline);
@@ -66,32 +67,58 @@ namespace HyperRTS.Editor.Tests
             var modules = Directory.EnumerateDirectories(root).Select(Path.GetFileName).Where(name => name != "Tests")
                 .ToList();
 
-            var unlayered = modules.Except(Layers).ToList();
-            var unknown = Layers.Except(modules).ToList();
-            Assert.IsEmpty(unlayered, "Add these modules to Layers:\n" + string.Join("\n", unlayered));
-            Assert.IsEmpty(unknown, "No such module, remove from Layers:\n" + string.Join("\n", unknown));
+            var tiered = Tiers.SelectMany(tier => tier).ToList();
+            var untiered = modules.Except(tiered).ToList();
+            var unknown = tiered.Except(modules).ToList();
+            Assert.IsEmpty(untiered, "Add these modules to a tier in Tiers:\n" + string.Join("\n", untiered));
+            Assert.IsEmpty(unknown, "No such module, remove from Tiers:\n" + string.Join("\n", unknown));
         }
 
         [Test]
-        public void ModulesOnlyUseLowerLayers()
+        public void ModulesOnlyUseTheirTierOrLower()
         {
-            var dependencies = SimulationDependencies();
             var upward = new List<string>();
-            foreach (var dependency in dependencies)
+            foreach (var dependency in SimulationDependencies())
             {
-                var edge = dependency.Key;
-                if (!IsUpward(edge) || AllowedBackEdges.Contains(edge))
+                var (module, used) = Split(dependency.Key);
+                if (TierOf(used) > TierOf(module))
+                {
+                    upward.Add($"{dependency.Key} ({string.Join(", ", dependency.Value)})");
+                }
+            }
+
+            Assert.IsEmpty(upward, "Uses of a higher tier (move the shared type lower):\n" + string.Join("\n", upward));
+        }
+
+        [Test]
+        public void ModulesWithinATierHaveNoCycles()
+        {
+            var uses = new Dictionary<string, List<string>>();
+            foreach (var edge in SimulationDependencies().Keys)
+            {
+                var (module, used) = Split(edge);
+                if (TierOf(module) != TierOf(used))
                 {
                     continue;
                 }
 
-                upward.Add($"{edge} ({string.Join(", ", dependency.Value)})");
+                if (!uses.TryGetValue(module, out var targets))
+                {
+                    uses[module] = targets = new List<string>();
+                }
+
+                targets.Add(used);
             }
 
-            var resolved = AllowedBackEdges.Where(edge => !dependencies.ContainsKey(edge) || !IsUpward(edge)).ToList();
-            Assert.IsEmpty(upward, "Uses of a higher layer (move the shared type lower):\n" + string.Join("\n", upward));
-            Assert.IsEmpty(resolved, "No longer a back-edge, remove it from the allowlist:\n" +
-                                     string.Join("\n", resolved));
+            var finished = new HashSet<string>();
+            var path = new List<string>();
+            var cycles = new List<string>();
+            foreach (var module in uses.Keys.OrderBy(name => name))
+            {
+                FindCycles(module, uses, path, finished, cycles);
+            }
+
+            Assert.IsEmpty(cycles, "Modules in one tier use each other in a cycle:\n" + string.Join("\n", cycles));
         }
 
         [Test]
@@ -147,11 +174,41 @@ namespace HyperRTS.Editor.Tests
             return result;
         }
 
-        /// <summary>Whether a "Module -> Used" edge points at a later layer.</summary>
-        private static bool IsUpward(string edge)
+        /// <summary>Depth-first walk that records each back edge as the cycle path it closes.</summary>
+        private static void FindCycles(string module, Dictionary<string, List<string>> uses, List<string> path,
+            HashSet<string> finished, List<string> cycles)
+        {
+            if (finished.Contains(module))
+            {
+                return;
+            }
+
+            var onPath = path.IndexOf(module);
+            if (onPath >= 0)
+            {
+                cycles.Add(string.Join(" -> ", path.Skip(onPath).Append(module)));
+                return;
+            }
+
+            path.Add(module);
+            if (uses.TryGetValue(module, out var targets))
+            {
+                foreach (var used in targets)
+                {
+                    FindCycles(used, uses, path, finished, cycles);
+                }
+            }
+
+            path.RemoveAt(path.Count - 1);
+            finished.Add(module);
+        }
+
+        private static int TierOf(string module) => Array.FindIndex(Tiers, tier => tier.Contains(module));
+
+        private static (string Module, string Used) Split(string edge)
         {
             var modules = edge.Split(new[] { " -> " }, StringSplitOptions.None);
-            return Array.IndexOf(Layers, modules[1]) > Array.IndexOf(Layers, modules[0]);
+            return (modules[0], modules[1]);
         }
 
         // Path.GetRelativePath is missing from the .NET Framework profile editor code may compile against.

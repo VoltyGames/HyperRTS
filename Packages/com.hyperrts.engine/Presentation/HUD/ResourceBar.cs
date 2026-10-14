@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using UnityEngine.UIElements;

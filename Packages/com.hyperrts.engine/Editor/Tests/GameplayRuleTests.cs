@@ -2,7 +2,7 @@ using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Abilities;
-using HyperRTS.Simulation.Fields;
+using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Veterancy;
 using NUnit.Framework;

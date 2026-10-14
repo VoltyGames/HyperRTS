@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 
 namespace HyperRTS.Presentation.Effects

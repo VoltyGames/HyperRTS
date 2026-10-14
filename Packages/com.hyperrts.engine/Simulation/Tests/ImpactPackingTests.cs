@@ -1,6 +1,6 @@
 using HyperRTS.Network.Combat;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
 using Unity.Collections;

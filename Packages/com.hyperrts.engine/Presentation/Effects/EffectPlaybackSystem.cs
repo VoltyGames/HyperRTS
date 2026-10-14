@@ -3,7 +3,6 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
-using HyperRTS.Simulation.Effects;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;

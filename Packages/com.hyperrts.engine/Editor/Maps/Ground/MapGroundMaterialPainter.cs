@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Land;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using UnityEditor;
 using UnityEngine;
 

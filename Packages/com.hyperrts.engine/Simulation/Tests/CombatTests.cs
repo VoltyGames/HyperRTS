@@ -2,7 +2,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Stats;
 using NUnit.Framework;
 using Unity.Mathematics;
 using Unity.Transforms;

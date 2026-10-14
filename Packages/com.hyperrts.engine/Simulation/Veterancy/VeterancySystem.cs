@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Stats;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

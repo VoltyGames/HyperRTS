@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Spatial;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;

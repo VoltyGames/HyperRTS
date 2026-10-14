@@ -3,7 +3,6 @@ using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Stats;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

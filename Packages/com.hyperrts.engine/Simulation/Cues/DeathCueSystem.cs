@@ -1,7 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Effects;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;

@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;

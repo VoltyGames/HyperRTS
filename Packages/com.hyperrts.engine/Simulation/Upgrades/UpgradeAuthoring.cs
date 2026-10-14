@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Stats;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;

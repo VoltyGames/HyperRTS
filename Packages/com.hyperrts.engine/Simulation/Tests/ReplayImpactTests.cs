@@ -1,7 +1,7 @@
 using System.IO;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
 using Unity.Mathematics;

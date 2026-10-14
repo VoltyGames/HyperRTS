@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Common
     /// </summary>
     public struct Destructible : IComponentData
     {
-        /// <summary>Smallest <see cref="Crusher"/> size that flattens it by driving over it; 0 = never.</summary>
+        /// <summary>Smallest <c>Crusher</c> size that flattens it by driving over it; 0 = never.</summary>
         public int Crush;
     }
 }

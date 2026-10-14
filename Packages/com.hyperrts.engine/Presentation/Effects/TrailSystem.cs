@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Rendering;
 using Unity.Transforms;

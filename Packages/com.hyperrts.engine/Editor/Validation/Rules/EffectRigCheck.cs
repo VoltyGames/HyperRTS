@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Effects;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using UnityEditor;
 using UnityEngine;
 

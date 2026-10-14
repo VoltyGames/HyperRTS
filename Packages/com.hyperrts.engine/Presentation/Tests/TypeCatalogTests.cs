@@ -3,7 +3,7 @@ using HyperRTS.Presentation.Effects;
 using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;

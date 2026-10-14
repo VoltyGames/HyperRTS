@@ -1,7 +1,6 @@
 using System.Collections.Generic;
-using HyperRTS.Simulation.Audio;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;

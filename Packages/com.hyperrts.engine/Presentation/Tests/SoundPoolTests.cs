@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Audio;
-using HyperRTS.Simulation.Audio;
+using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using UnityEngine;
 

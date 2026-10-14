@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;

@@ -1,6 +1,6 @@
 # Economy modules
 
-[Modules](../modules.md) ▸ Resources, Power, Buildings, Production, Capture
+[Modules](../modules.md) ▸ Resources, Buildings, Production, Capture
 
 ## Resources
 
@@ -24,6 +24,8 @@ from the centre through the building and moves them to it; a carrier in `Arrival
 destroyed. Killed carriers pay nothing; a lost source takes its carriers with it.
 
 ## Power
+
+Part of `Buildings`.
 
 `BuildingAuthoring.power` adds a `PowerSupply` (+ generates, − draws). `PowerSystem` totals each `PowerGrid` and
 marks consumers `Unpowered` while demand exceeds supply: weapons hold fire, producers slow to

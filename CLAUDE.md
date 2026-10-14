@@ -19,10 +19,9 @@ code must never depend on anything under `Assets/`. See [`docs/architecture.md`]
 ```text
 Packages/com.hyperrts.engine/
 ├── Core/          contracts: SystemGroups, SimulationWorlds, HyperRTSMenu/Icons/Docs (in HyperRTS.Simulation)
-├── Simulation/    headless gameplay, one folder per module: Common (base), AI, Abilities, Air, Audio, Buildings,
-│                  Capture, Combat, Commands, Cues, Effects, Fields, GameEntities, Match, Navigation, Orders, Power,
-│                  Production, Replays, Resources, Selection, Spatial, Stats, Transport, Units, Upgrades,
-│                  Veterancy, Vision, Tests/
+├── Simulation/    headless gameplay, one folder per module: Common (base), AI, Abilities, Air, Animation,
+│                  Auras, Buildings, Capture, Combat, Commands, Cues, GameEntities, Match, Navigation, Orders,
+│                  Production, Replays, Resources, Selection, Transport, Units, Upgrades, Veterancy, Vision, Tests/
 ├── Client/        client-only state input, HUD and overlays share (Interaction), DefaultWorld, LiveQuery
 │                  (in HyperRTS.Presentation)
 ├── Presentation/  team colours, overlays, rendering helpers, fog, UI Toolkit HUD, audio playback, Tests/
@@ -49,10 +48,10 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
 ## Conventions
 
 - Namespaces follow the folder path (`HyperRTS.<Layer>.<Module>`); contracts stay in the `HyperRTS.Core` namespace (`Core/`, part of `HyperRTS.Simulation`).
-- Simulation modules are layered (order in `docs/modules.md#layers`): a module uses only lower ones, and `Common`
-  is the base. Put a component two modules share in `Common` or the lower module; authoring files may reference any
-  module. `ModuleLayoutTests` enforces this; a new module needs a place in its `Layers`, and don't grow its
-  back-edge allowlist (empty now).
+- Simulation modules sit in tiers (Base, Foundation, Gameplay, Orchestration; see `docs/modules.md#tiers`): a
+  module uses its own tier or lower ones, and modules in one tier never use each other in a cycle. Put a component
+  two modules share in `Common` or the lower module; authoring files may reference any module. `ModuleLayoutTests`
+  enforces this; a new module needs a place in a tier in its `Tiers`.
 - Authoring classes derive from `AuthoringBehaviour` (game ones too, for inspector warnings, summaries and
   validation). One `*Authoring.cs` file holds the authoring class and its nested `Baker`; runtime components live
   in their own files (`ModuleLayoutTests` enforces this).

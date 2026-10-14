@@ -8,7 +8,7 @@ using HyperRTS.Editor.Maps.Texturing;
 using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Presentation.HUD;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using UnityEditor;
 using UnityEngine;

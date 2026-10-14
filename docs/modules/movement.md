@@ -1,6 +1,6 @@
 # Movement modules
 
-[Modules](../modules.md) ▸ Navigation, Units, Spatial, Air, Transport
+[Modules](../modules.md) ▸ Navigation, Units, Air, Transport
 
 ## Navigation
 
@@ -31,6 +31,8 @@ Layers that share a surface flag share cells: ships pass under a deck that tanks
 units, keeps them on their layer's ground, deck or water, and disables `MoveDestination` on arrival.
 
 ## Spatial
+
+Part of `Navigation`.
 
 `SpatialIndex`: a uniform-grid hash of living entities with `Faction` + `Health`, rebuilt at the start of the
 movement phase. Query it with a struct `ISpatialVisitor`; `Closest` breaks ties by entity index.

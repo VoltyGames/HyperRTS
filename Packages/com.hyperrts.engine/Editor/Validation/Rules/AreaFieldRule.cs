@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Fields;
+using HyperRTS.Simulation.Auras;
 
 namespace HyperRTS.Editor.Validation.Rules
 {

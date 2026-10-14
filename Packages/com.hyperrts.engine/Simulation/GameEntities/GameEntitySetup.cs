@@ -1,12 +1,11 @@
 using System.Collections.Generic;
+using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Fields;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Stats;
 using HyperRTS.Simulation.Upgrades;
 using HyperRTS.Simulation.Veterancy;
 using HyperRTS.Simulation.Vision;

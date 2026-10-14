@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;

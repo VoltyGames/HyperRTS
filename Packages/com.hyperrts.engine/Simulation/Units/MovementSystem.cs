@@ -2,7 +2,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
-using HyperRTS.Simulation.Spatial;
 using HyperRTS.Simulation.Transport;
 using Unity.Burst;
 using Unity.Collections;

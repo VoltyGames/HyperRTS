@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Audio;
+using HyperRTS.Simulation.Cues;
 
 namespace HyperRTS.Presentation.Audio
 {

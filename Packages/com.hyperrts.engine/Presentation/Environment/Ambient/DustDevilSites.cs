@@ -1,5 +1,5 @@
 using System;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using Unity.Mathematics;
 using Random = Unity.Mathematics.Random;
 

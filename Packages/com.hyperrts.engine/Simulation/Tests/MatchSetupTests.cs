@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Stats;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -1,5 +1,5 @@
 using System;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 
 namespace HyperRTS.Editor.Maps.Data
 {

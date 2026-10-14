@@ -1,6 +1,6 @@
 # Support modules
 
-[Modules](../modules.md) ▸ AI, Audio, Replays, Animation
+[Modules](../modules.md) ▸ AI, Cues, Replays, Animation
 
 ## AI
 
@@ -27,6 +27,8 @@ To replace it, disable the system and write your own `PlayerCommand`s.
 
 ## Audio
 
+Part of `Cues`.
+
 | Type | Role |
 | --- | --- |
 | `SoundCue` (asset) | Clips, volume and pitch ranges, max instances, priority, mixer group, 2D / 3D, distance |
@@ -36,6 +38,8 @@ To replace it, disable the system and write your own `PlayerCommand`s.
 Sounds play through [cues](#cues). Playback is on the [client](client.md#presentation).
 
 ## Effects
+
+Part of `Cues`.
 
 | Type | Role |
 | --- | --- |

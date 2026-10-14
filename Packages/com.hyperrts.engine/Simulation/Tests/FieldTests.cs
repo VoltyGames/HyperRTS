@@ -1,7 +1,6 @@
+using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Fields;
-using HyperRTS.Simulation.Stats;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Entities;
