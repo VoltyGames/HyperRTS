@@ -7,7 +7,8 @@ namespace HyperRTS.Simulation.Cues
     public static class CueRules
     {
         /// <summary>Voices (produced, select, move, attack) speak only to their owner.</summary>
-        public static bool IsVoice(CueSlot slot) => slot >= CueSlot.Ready && slot < CueSlot.Custom;
+        public static bool IsVoice(CueSlot slot) =>
+            slot is CueSlot.Ready or CueSlot.Select or CueSlot.Move or CueSlot.Attack;
 
         /// <summary>
         /// Voices reach their owner only; everything else reaches whoever could see its source there, by the same

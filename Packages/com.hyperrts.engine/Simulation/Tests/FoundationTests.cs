@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void PlayerCommands_AreClearedAfterTheOrderPhase()
         {
-            _world.Command(1, new PlayerCommand { Type = CommandType.Custom });
+            _world.Command(1, new PlayerCommand { Type = CommandType.Stop });
             _world.Tick();
 
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<PlayerCommand>(_world.Player(1)).Length);

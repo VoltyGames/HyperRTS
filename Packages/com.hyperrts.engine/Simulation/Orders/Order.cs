@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Orders
 {
-    /// <summary>Built-in order kinds. Games add their own from <see cref="Custom"/> upward.</summary>
+    /// <summary>Order kinds.</summary>
     public enum OrderType : byte
     {
         None = 0,
@@ -25,7 +25,6 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>Fly to the home pad (or claim one at Target, an own airfield) and dock there.</summary>
         ReturnToBase = 12,
-        Custom = 128,
     }
 
     /// <summary>One unit instruction: where to go and/or which entity to act on.</summary>

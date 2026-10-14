@@ -1,15 +1,12 @@
 namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
-    /// A set of <see cref="CommandType"/> values, custom ones included.
+    /// A set of <see cref="CommandType"/> values, one bit each (every value is below 64).
     /// A value type, so it copies into jobs and Burst code.
     /// </summary>
     public struct TypeSet
     {
-        private ulong _bits0;
-        private ulong _bits1;
-        private ulong _bits2;
-        private ulong _bits3;
+        private ulong _bits;
 
         public static TypeSet Single(CommandType type) => default(TypeSet).With(type);
 
@@ -17,57 +14,20 @@ namespace HyperRTS.Simulation.Orders
         public static TypeSet Range(CommandType first, CommandType last)
         {
             var set = default(TypeSet);
-            for (var value = (int)first; value <= (int)last; value++)
+            for (var value = first; value <= last; value++)
             {
-                set.Add((byte)value);
+                set = set.With(value);
             }
 
             return set;
         }
 
-        public readonly TypeSet With(CommandType type) => With((byte)type);
+        public readonly TypeSet With(CommandType type) => new() { _bits = _bits | Bit(type) };
 
-        public readonly TypeSet With(in TypeSet other)
-        {
-            var set = this;
-            set._bits0 |= other._bits0;
-            set._bits1 |= other._bits1;
-            set._bits2 |= other._bits2;
-            set._bits3 |= other._bits3;
-            return set;
-        }
+        public readonly TypeSet With(in TypeSet other) => new() { _bits = _bits | other._bits };
 
-        public void Add(byte value)
-        {
-            var bit = 1ul << (value & 63);
-            switch (value >> 6)
-            {
-                case 0: _bits0 |= bit; break;
-                case 1: _bits1 |= bit; break;
-                case 2: _bits2 |= bit; break;
-                default: _bits3 |= bit; break;
-            }
-        }
+        public readonly bool Contains(CommandType type) => (_bits & Bit(type)) != 0;
 
-        public readonly bool Contains(CommandType type) => Contains((byte)type);
-
-        public readonly bool Contains(byte value)
-        {
-            var bits = (value >> 6) switch
-            {
-                0 => _bits0,
-                1 => _bits1,
-                2 => _bits2,
-                _ => _bits3,
-            };
-            return (bits & (1ul << (value & 63))) != 0;
-        }
-
-        private readonly TypeSet With(byte value)
-        {
-            var set = this;
-            set.Add(value);
-            return set;
-        }
+        private static ulong Bit(CommandType type) => 1ul << (int)type;
     }
 }

@@ -222,41 +222,29 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void TypeSet_HoldsCustomTypes()
+        public void TypeSet_HoldsItsRangeAndAddedTypes()
         {
-            var custom = (CommandType)200;
-            var set = TypeSet.Single(CommandType.Move).With(custom);
+            var set = TypeSet.Range(CommandType.UseAbility, CommandType.UsePower).With(CommandType.Surrender);
 
-            Assert.IsTrue(set.Contains(custom));
-            Assert.IsTrue(set.Contains(CommandType.Move));
-            Assert.IsFalse(set.Contains((CommandType)136));
+            Assert.IsTrue(set.Contains(CommandType.UseAbility));
+            Assert.IsTrue(set.Contains(CommandType.UsePower));
+            Assert.IsTrue(set.Contains(CommandType.Surrender));
+            Assert.IsFalse(set.Contains(CommandType.Patrol));
         }
 
         [Test]
-        public void RegisteredOrderTraits_ApplyToCustomTypes()
+        public void SmartOrderRule_ChoosesItsOrder_ForMatchingTargets()
         {
-            // The table outlives the test (no domain reload between runs), so only the registered state is checked.
-            var sweep = (OrderType)141;
-            OrderTraits.Register(sweep, OrderTrait.EngagesWhileMoving | OrderTrait.UsesFormation);
-
-            Assert.IsTrue(sweep.EngagesWhileMoving());
-            Assert.IsTrue(sweep.UsesFormation());
-            Assert.IsFalse(sweep.IsAttackMove());
-        }
-
-        [Test]
-        public void SmartOrderRule_ChoosesTheGameOrder_ForMatchingTargets()
-        {
-            var jam = OrderType.Custom + 3;
+            var rule = OrderType.Capture;
             var unit = SpawnSelected(float3.zero);
             _world.EntityManager.AddBuffer<SmartOrderRule>(unit)
-                .Add(SmartOrderRule.For<UnitTag>(jam, RelationMask.Enemy));
+                .Add(SmartOrderRule.For<UnitTag>(rule, RelationMask.Enemy));
             var enemy = _world.SpawnUnit(2, new float3(10f, 0f, 0f));
             var friend = _world.SpawnUnit(1, new float3(-10f, 0f, 0f));
 
             Command(CommandType.Smart, _world.GetPosition(enemy), enemy);
             RunCommands();
-            Assert.AreEqual(jam, _world.Get<ActiveOrder>(unit).Value.Type);
+            Assert.AreEqual(rule, _world.Get<ActiveOrder>(unit).Value.Type);
 
             Command(CommandType.Smart, _world.GetPosition(friend), friend);
             RunCommands();

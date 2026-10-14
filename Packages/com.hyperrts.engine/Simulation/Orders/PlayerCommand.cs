@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Orders
 {
-    /// <summary>Kinds of <see cref="PlayerCommand"/>. Games add their own from <see cref="Custom"/> upward.</summary>
+    /// <summary>Kinds of <see cref="PlayerCommand"/>.</summary>
     public enum CommandType : byte
     {
         None = 0,
@@ -62,7 +62,6 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>The issuing player concedes and is defeated; its units stay on the map.</summary>
         Surrender = 23,
-        Custom = 128,
     }
 
     /// <summary>

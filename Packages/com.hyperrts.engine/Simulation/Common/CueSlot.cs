@@ -1,8 +1,8 @@
 namespace HyperRTS.Simulation.Common
 {
     /// <summary>
-    /// What an entity's sound and effect are for. Voice slots (<see cref="Ready"/> up to <see cref="Custom"/>) reach
-    /// only the owner, and <see cref="Impact"/> is sound only. Games add their own slots from <see cref="Custom"/> up.
+    /// What an entity's sound and effect are for. Voice slots (<see cref="Ready"/> to <see cref="Attack"/>) reach
+    /// only the owner, and <see cref="Impact"/> is sound only.
     /// </summary>
     public enum CueSlot : byte
     {
@@ -19,6 +19,5 @@ namespace HyperRTS.Simulation.Common
         Select = 6,
         Move = 7,
         Attack = 8,
-        Custom = 64,
     }
 }
