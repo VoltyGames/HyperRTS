@@ -1,0 +1,178 @@
+/* HyperRTS default HUD look: dark translucent panels. Layout is in HUD.uss; a game swaps this sheet for its own. */
+
+.hud-root {
+    color: rgb(228, 232, 238);
+    font-size: 13px;
+}
+
+.hud-panel {
+    background-color: rgba(12, 16, 22, 0.82);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+}
+
+.hud-icon {
+    background-color: rgba(255, 255, 255, 0.06);
+    -unity-background-scale-mode: scale-to-fit;
+    border-radius: 4px;
+}
+
+.hud-icon__initials {
+    -unity-font-style: bold;
+    font-size: 15px;
+    color: rgb(170, 180, 195);
+}
+
+.hud-bar {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 3px;
+}
+
+.hud-bar__fill {
+    background-color: rgb(82, 214, 96);
+}
+
+/* Top bar */
+
+.hud-resource__icon {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.hud-resource__name {
+    font-size: 11px;
+    color: rgb(140, 150, 165);
+}
+
+.hud-resource__amount {
+    font-size: 15px;
+    -unity-font-style: bold;
+}
+
+.hud-resource__amount--full {
+    color: rgb(255, 102, 89);
+}
+
+.hud-resource__amount--low-power {
+    color: rgb(255, 184, 56);
+}
+
+/* Bottom row */
+
+.hud-minimap__canvas {
+    background-color: rgba(30, 42, 34, 0.9);
+    border-radius: 4px;
+}
+
+.hud-single__icon {
+    border-bottom-width: 3px;
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.hud-single__name {
+    font-size: 17px;
+    -unity-font-style: bold;
+}
+
+.hud-single__caption {
+    font-size: 11px;
+    color: rgb(150, 160, 175);
+}
+
+.hud-construction > .hud-bar__fill {
+    background-color: rgb(240, 190, 60);
+}
+
+/* Production queue */
+
+.hud-slot {
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.hud-slot:hover {
+    border-color: rgb(255, 110, 90);
+}
+
+.hud-slot__progress > .hud-bar__fill {
+    background-color: rgb(90, 180, 255);
+}
+
+/* Group tiles */
+
+.hud-group__count {
+    font-size: 12px;
+    -unity-font-style: bold;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 3px;
+}
+
+/* Command card */
+
+.hud-command {
+    color: rgb(228, 232, 238);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.hud-command:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+    border-color: rgba(120, 200, 255, 0.7);
+}
+
+.hud-command:active {
+    background-color: rgba(120, 200, 255, 0.25);
+}
+
+.hud-command:disabled {
+    opacity: 0.4;
+}
+
+.hud-command--active {
+    border-color: rgb(110, 220, 120);
+    background-color: rgba(110, 220, 120, 0.18);
+}
+
+.hud-command__cooldown {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(255, 210, 120);
+}
+
+.hud-command__hotkey {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.hud-command__name {
+    font-size: 10px;
+}
+
+.hud-costs__amount {
+    font-size: 10px;
+    -unity-font-style: bold;
+}
+
+/* Game over */
+
+.hud-banner__title {
+    font-size: 72px;
+    -unity-font-style: bold;
+    background-color: rgba(8, 10, 14, 0.75);
+    border-radius: 8px;
+    letter-spacing: 8px;
+}
+
+.hud-banner__title--victory {
+    color: rgb(120, 230, 130);
+}
+
+.hud-banner__title--defeat {
+    color: rgb(255, 95, 80);
+}

@@ -17,12 +17,16 @@ namespace HyperRTS.Presentation.HUD
     public class HUDController : PanelContent
     {
         [SerializeField]
-        [Tooltip("HUD style sheet (HUD.uss).")]
+        [Tooltip("HUD layout sheet (HUD.uss): positions, sizes and spacing.")]
         private StyleSheet styleSheet;
+
+        [SerializeField]
+        [Tooltip("HUD theme sheet (HUDTheme.uss): colours, fonts and borders. A game swaps in its own.")]
+        private StyleSheet themeSheet;
 
         private readonly HUDContext _context = new();
         private readonly HUDPointerTracker _pointer = new();
-        private readonly List<IHUDPanel> _panels = new();
+        private readonly List<HUDPanel> _panels = new();
         private string _theme;
 
         /// <summary>
@@ -57,7 +61,7 @@ namespace HyperRTS.Presentation.HUD
             Add(new GameOverBanner(), hud);
         }
 
-        protected void Add(IHUDPanel panel, VisualElement parent)
+        protected void Add(HUDPanel panel, VisualElement parent)
         {
             parent.Add(panel.Root);
             _panels.Add(panel);
@@ -76,10 +80,9 @@ namespace HyperRTS.Presentation.HUD
                 hud.AddToClassList(_theme);
             }
 
-            if (styleSheet != null)
-            {
-                hud.styleSheets.Add(styleSheet);
-            }
+            // The theme goes second so its rules win over layout ones of equal specificity.
+            hud.styleSheets.Add(styleSheet);
+            hud.styleSheets.Add(themeSheet);
 
             var bottom = HUDElements.Box("hud-bottom", hud);
             bottom.pickingMode = PickingMode.Ignore;

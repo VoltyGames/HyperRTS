@@ -3,27 +3,25 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD
 {
     /// <summary>Victory / defeat banner for the local team once the match ends or the local player is defeated.</summary>
-    public sealed class GameOverBanner : IHUDPanel
+    public sealed class GameOverBanner : HUDPanel
     {
         private readonly Label _title;
         private MatchOutcome _shown;
 
         public GameOverBanner()
+            : base("hud-banner", boxed: false)
         {
-            Root = HUDElements.Box("hud-banner");
             Root.pickingMode = PickingMode.Ignore;
             _title = HUDElements.Text("", "hud-banner__title", Root);
             _title.pickingMode = PickingMode.Ignore;
             Root.SetVisible(false);
         }
 
-        public VisualElement Root { get; }
+        public override bool BlocksPointer => false;
 
-        public bool BlocksPointer => false;
+        public override bool NeedsPlayer => false;
 
-        public bool NeedsPlayer => false;
-
-        public void Refresh(HUDContext context)
+        public override void Refresh(HUDContext context)
         {
             var outcome = MatchOutcomes.Get(context.View);
             if (outcome == _shown)

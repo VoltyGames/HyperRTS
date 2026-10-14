@@ -35,7 +35,7 @@ Escape sets `FrontEndOwnsCancel` and calls `MatchView.CancelInteraction()` first
 
 | Component | Role |
 | --- | --- |
-| `HUDController` | UI Toolkit HUD; builds its `IHUDPanel`s and refreshes them from a `HUDContext` |
+| `HUDController` | UI Toolkit HUD; builds its `HUDPanel`s from a layout sheet (`HUD.uss`) and a theme sheet (`HUDTheme.uss`) and refreshes them from a `HUDContext` |
 | Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner` |
 | `CommandCard`, `ICommandSource` | Entries from each source: purchases, abilities, stances, unit actions; `Slot` and `Hotkey` per entry |
 | `HUDText` | Every HUD string by key; set `HUDText.Current` to translate (keys below) |

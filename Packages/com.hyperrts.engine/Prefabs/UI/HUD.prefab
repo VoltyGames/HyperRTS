@@ -107,6 +107,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HyperRTS.Presentation::HyperRTS.Presentation.HUD.HUDController
   styleSheet: {fileID: 7433441132597879392, guid: 16a8ea83ee490604197c9fa840cfc62f, type: 3}
+  themeSheet: {fileID: 7433441132597879392, guid: 0089d02251744c059288178ccb210019, type: 3}
 --- !u!114 &8308982075612287877
 MonoBehaviour:
   m_ObjectHideFlags: 0
