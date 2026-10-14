@@ -24,14 +24,20 @@ namespace HyperRTS.Presentation.Effects
         public EffectCatalog(EntityQuery typed) => _typed = typed;
 
         /// <summary>
-        /// The type's effects, or null. Misses are cached too, until an entity with effects is created or destroyed
-        /// (a prefab streaming in).
+        /// The type's effects, or null. A type with a loaded prefab is cached for good; one found only by its instances
+        /// misses until an entity with effects is created or destroyed (a prefab streaming in).
         /// </summary>
         public EffectSet Find(EntityManager entityManager, in PrefabRegistry registry, int typeId)
         {
             if (_sets.TryGetValue(typeId, out var set))
             {
                 return set;
+            }
+
+            var prefab = registry.Find(typeId);
+            if (prefab != Entity.Null)
+            {
+                return _sets[typeId] = HasEffects(entityManager, prefab) ? Read(entityManager, prefab) : null;
             }
 
             var version = _typed.GetCombinedComponentOrderVersion(includeEntityType: true);
@@ -41,7 +47,7 @@ namespace HyperRTS.Presentation.Effects
                 _missing.Clear();
             }
 
-            var source = _missing.Contains(typeId) ? Entity.Null : FindSource(entityManager, registry, typeId);
+            var source = _missing.Contains(typeId) ? Entity.Null : FindInstance(entityManager, typeId);
             if (source == Entity.Null)
             {
                 _missing.Add(typeId);
@@ -62,15 +68,9 @@ namespace HyperRTS.Presentation.Effects
             return new EffectSet(effects, impacts);
         }
 
-        /// <summary>The type's prefab, else any instance: a SubScene-placed entity may have no prefab loaded.</summary>
-        private Entity FindSource(EntityManager entityManager, in PrefabRegistry registry, int typeId)
+        /// <summary>Any instance of the type: a SubScene-placed entity may have no prefab loaded.</summary>
+        private Entity FindInstance(EntityManager entityManager, int typeId)
         {
-            var prefab = registry.Find(typeId);
-            if (prefab != Entity.Null && HasEffects(entityManager, prefab))
-            {
-                return prefab;
-            }
-
             using var entities = _typed.ToEntityArray(Allocator.Temp);
             foreach (var entity in entities)
             {

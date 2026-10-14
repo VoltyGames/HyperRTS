@@ -24,6 +24,7 @@ namespace HyperRTS.Presentation.Tests
             system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = system.main;
             main.simulationSpace = space;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
             main.playOnAwake = false;
             main.startLifetime = 100f;
             main.startSpeed = 0f;

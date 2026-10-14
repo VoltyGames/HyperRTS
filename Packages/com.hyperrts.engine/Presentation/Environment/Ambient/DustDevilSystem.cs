@@ -118,7 +118,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
                 }
 
                 rig.Stream(from, devil.Position, Quaternion.identity, deltaTime, devil.Strength,
-                    EffectPoolSystem.Density, ref devil.Carry);
+                    EffectDetail.Density, ref devil.Carry);
             }
         }
 

@@ -26,8 +26,6 @@ namespace HyperRTS.Presentation.Effects
             system.Play(false);
         }
 
-        public ParticleSystem System => _system;
-
         /// <summary>Particles a second, from the authored rate over time.</summary>
         public float RateOverTime { get; }
 

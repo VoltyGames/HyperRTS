@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Effects;
-using UnityEngine;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
@@ -8,26 +7,14 @@ namespace HyperRTS.Editor.Validation.Rules
     {
         protected override void Check(EntityEffectsAuthoring effects, ValidationIssues issues)
         {
-            if (effects.fire != null)
+            EffectRigCheck.CheckOptional(effects, effects.fire, "Fire", issues);
+            if (effects.fire != null && effects.muzzle == null)
             {
-                EffectRigCheck.Check(effects, effects.fire, "Fire", issues);
-                if (effects.muzzle == null)
-                {
-                    issues.Error(effects, $"Fire '{effects.fire.name}' has no muzzle socket.");
-                }
+                issues.Error(effects, $"Fire '{effects.fire.name}' has no muzzle socket.");
             }
 
-            CheckIfSet(effects, effects.death, "Death", issues);
-            CheckIfSet(effects, effects.ability, "Ability", issues);
-        }
-
-        private static void CheckIfSet(EntityEffectsAuthoring effects, GameObject rig, string field,
-            ValidationIssues issues)
-        {
-            if (rig != null)
-            {
-                EffectRigCheck.Check(effects, rig, field, issues);
-            }
+            EffectRigCheck.CheckOptional(effects, effects.death, "Death", issues);
+            EffectRigCheck.CheckOptional(effects, effects.ability, "Ability", issues);
         }
     }
 }

@@ -31,6 +31,7 @@ namespace HyperRTS.Presentation.Effects
         private EffectEmitter[] _emitters;
         private EffectLight[] _lights;
         private int[] _counts;
+        private float[] _weights;
 
         /// <summary>The shared flash lights; none means no flashes.</summary>
         public EffectLights Lights { get; set; }
@@ -79,13 +80,8 @@ namespace HyperRTS.Presentation.Effects
         {
             var emitters = Captured();
             var distance = Vector3.Distance(from, to);
-            var total = 0f;
-            foreach (var emitter in emitters)
-            {
-                total += Expected(emitter, deltaTime, distance);
-            }
-
-            total *= strength * density;
+            var weights = Weights(emitters, deltaTime, distance, out var expected);
+            var total = expected * strength * density;
             var whole = Mathf.FloorToInt(carry + total);
             carry = carry + total - whole;
             if (whole <= 0)
@@ -97,7 +93,7 @@ namespace HyperRTS.Presentation.Effects
             var counts = Counts(emitters.Length);
             for (var n = 0; n < whole; n++)
             {
-                counts[Pick(emitters, deltaTime, distance)]++;
+                counts[Pick(weights, expected)]++;
             }
 
             for (var e = 0; e < emitters.Length; e++)
@@ -117,25 +113,37 @@ namespace HyperRTS.Presentation.Effects
             return _counts;
         }
 
-        private static int Pick(EffectEmitter[] emitters, float deltaTime, float distance)
+        /// <summary>Each emitter's expected particles for the step, and their sum.</summary>
+        private float[] Weights(EffectEmitter[] emitters, float deltaTime, float distance, out float total)
         {
-            var total = 0f;
-            foreach (var emitter in emitters)
+            if (_weights == null || _weights.Length != emitters.Length)
             {
-                total += Expected(emitter, deltaTime, distance);
+                _weights = new float[emitters.Length];
             }
 
-            var pick = UnityEngine.Random.value * total;
-            for (var e = 0; e < emitters.Length - 1; e++)
+            total = 0f;
+            for (var e = 0; e < emitters.Length; e++)
             {
-                pick -= Expected(emitters[e], deltaTime, distance);
+                _weights[e] = emitters[e].RateOverTime * deltaTime + emitters[e].RateOverDistance * distance;
+                total += _weights[e];
+            }
+
+            return _weights;
+        }
+
+        private static int Pick(float[] weights, float total)
+        {
+            var pick = UnityEngine.Random.value * total;
+            for (var e = 0; e < weights.Length - 1; e++)
+            {
+                pick -= weights[e];
                 if (pick < 0f)
                 {
                     return e;
                 }
             }
 
-            return emitters.Length - 1;
+            return weights.Length - 1;
         }
 
         /// <summary>Fires the queued timed bursts that are due.</summary>
@@ -156,9 +164,6 @@ namespace HyperRTS.Presentation.Effects
                 _emitters[burst.Emitter].Emit(burst.Count);
             }
         }
-
-        private static float Expected(EffectEmitter emitter, float deltaTime, float distance) =>
-            emitter.RateOverTime * deltaTime + emitter.RateOverDistance * distance;
 
         private void Spread(EffectEmitter emitter, int count, Vector3 from, Vector3 to, Quaternion rotation)
         {
@@ -188,7 +193,37 @@ namespace HyperRTS.Presentation.Effects
             }
         }
 
-        /// <summary>Reads the authored emission on first use; every system must simulate in world space.</summary>
+        /// <summary>What stops <paramref name="prefab"/> playing as an effect rig; empty when it is fine.</summary>
+        public static List<string> Problems(GameObject prefab)
+        {
+            var problems = new List<string>();
+            if (!prefab.TryGetComponent<EffectRig>(out var rig))
+            {
+                problems.Add("its root has no EffectRig");
+            }
+            else if (rig.maxDistance <= 0f)
+            {
+                problems.Add("maxDistance must be above 0");
+            }
+
+            foreach (var system in prefab.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main = system.main;
+                if (main.simulationSpace != ParticleSystemSimulationSpace.World)
+                {
+                    problems.Add($"particle system '{system.name}' does not simulate in World space");
+                }
+
+                if (main.scalingMode != ParticleSystemScalingMode.Hierarchy)
+                {
+                    problems.Add($"particle system '{system.name}' does not use Hierarchy scaling");
+                }
+            }
+
+            return problems;
+        }
+
+        /// <summary>Reads the authored emission on first use.</summary>
         private EffectEmitter[] Captured()
         {
             if (_emitters != null)
@@ -196,24 +231,11 @@ namespace HyperRTS.Presentation.Effects
                 return _emitters;
             }
 
-            if (maxDistance <= 0f)
-            {
-                throw new InvalidOperationException($"Effect rig '{name}': maxDistance must be above 0.");
-            }
-
             var systems = GetComponentsInChildren<ParticleSystem>(true);
             var subEmitters = SubEmitters(systems);
             var emitters = new List<EffectEmitter>();
             foreach (var system in systems)
             {
-                var space = system.main.simulationSpace;
-                if (space != ParticleSystemSimulationSpace.World)
-                {
-                    throw new InvalidOperationException(
-                        $"Effect rig '{name}': particle system '{system.name}' simulates in {space} space; " +
-                        "rigs need World.");
-                }
-
                 if (!subEmitters.Contains(system))
                 {
                     emitters.Add(new EffectEmitter(system));

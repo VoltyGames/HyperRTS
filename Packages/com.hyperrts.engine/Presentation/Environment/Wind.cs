@@ -33,7 +33,7 @@ namespace HyperRTS.Presentation.Environment
         public WindDetail vegetation = WindDetail.Flutter;
 
         /// <summary>The last published downwind direction on the ground (xz); zero before any Wind has run.</summary>
-        public static Vector3 Downwind => Shader.GetGlobalVector(DirectionId);
+        public static Vector3 Downwind { get; private set; }
 
         private WindZone _zone;
         private Texture2D _gustMap;
@@ -46,6 +46,9 @@ namespace HyperRTS.Presentation.Environment
             Shader.SetGlobalTexture(GustMapId, _gustMap);
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => Downwind = Vector3.zero;
+
         private void Update()
         {
             var forward = transform.forward;
@@ -53,6 +56,7 @@ namespace HyperRTS.Presentation.Environment
             var last = _gustOffset;
             _gustOffset = WindGust.Scroll(_gustOffset, new Vector2(downwind.x, downwind.z), _zone.windPulseFrequency, Time.deltaTime);
 
+            Downwind = downwind;
             Shader.SetGlobalVector(DirectionId, downwind);
             Shader.SetGlobalFloat(StrengthId, _zone.windMain);
             Shader.SetGlobalVector(GustId, new Vector4(_zone.windPulseMagnitude, _zone.windTurbulence, 1f / gustSize, 0f));

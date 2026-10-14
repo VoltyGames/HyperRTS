@@ -23,11 +23,16 @@ namespace HyperRTS.Presentation.Effects
         private readonly List<Entity> _gone = new();
         private EffectPool _pool;
         private Camera _camera;
+        private EntityQuery _loops;
+        private int _loopsVersion;
+        private float _reach;
+        private float _deltaTime;
 
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
-            RequireForUpdate<LoopEffect>();
+            _loops = GetEntityQuery(ComponentType.ReadOnly<LoopEffect>());
+            RequireForUpdate(_loops);
         }
 
         protected override void OnUpdate()
@@ -35,6 +40,8 @@ namespace HyperRTS.Presentation.Effects
             CompleteDependency();
             _camera = EffectRange.Main(_camera);
             var now = SystemAPI.Time.ElapsedTime;
+            _deltaTime = SystemAPI.Time.DeltaTime;
+            _reach = EffectDetail.Level == EffectDetailLevel.Low ? 0.5f : 1f;
             var health = SystemAPI.GetComponentLookup<Health>(true);
             _streams.BeginFrame();
             foreach (var (loops, place, entity) in SystemAPI.Query<DynamicBuffer<LoopEffect>, RefRO<LocalToWorld>>()
@@ -68,20 +75,26 @@ namespace HyperRTS.Presentation.Effects
 
             var rig = _pool.Get(loop.Rig.Value);
             Vector3 socket = math.transform(place.Value, loop.Socket);
-            var reach = EffectDetail.Level == EffectDetailLevel.Low ? 0.5f : 1f;
-            if (rig == null || !EffectRange.InRange(_camera, rig, socket, reach))
+            if (rig == null || !EffectRange.InRange(_camera, rig, socket, _reach))
             {
                 return;
             }
 
             var state = _streams.Step(entity, index, socket);
-            rig.Stream(state.From, state.To, place.Rotation, SystemAPI.Time.DeltaTime, strength,
-                EffectPoolSystem.Density, ref state.Carry);
+            rig.Stream(state.From, state.To, place.Rotation, _deltaTime, strength,
+                EffectDetail.Density, ref state.Carry);
         }
 
-        /// <summary>Forgets when entities that no longer exist were first seen.</summary>
+        /// <summary>Forgets when entities that no longer exist were first seen, once loop entities came or went.</summary>
         private void Prune()
         {
+            var version = _loops.GetCombinedComponentOrderVersion(includeEntityType: false);
+            if (version == _loopsVersion)
+            {
+                return;
+            }
+
+            _loopsVersion = version;
             _gone.Clear();
             foreach (var entity in _firstSeen.Keys)
             {

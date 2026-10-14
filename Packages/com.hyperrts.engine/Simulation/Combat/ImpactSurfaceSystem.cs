@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Combat
                 {
                     var impact = impacts[i];
                     impact.Surface = Classify(impact);
-                    impact.Material = MaterialOf(impact);
+                    impact.Material = ResolveMaterial(impact);
                     impacts[i] = impact;
                 }
             }
@@ -89,7 +89,7 @@ namespace HyperRTS.Simulation.Combat
             }
 
             /// <summary>Open ground stays None: presentation reads it from the ground material map.</summary>
-            private SurfaceMaterial MaterialOf(in ImpactEvent impact)
+            private SurfaceMaterial ResolveMaterial(in ImpactEvent impact)
             {
                 if (Materials.TryGetComponent(impact.Target, out var hit))
                 {

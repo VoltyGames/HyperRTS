@@ -65,5 +65,20 @@ namespace HyperRTS.Presentation.Tests
 
             Assert.IsTrue(set.TryGet(EffectSlot.Death, out _));
         }
+
+        [Test]
+        public void PrefabWithoutEffects_IsAFinalMiss()
+        {
+            var prefab = _entityManager.CreateEntity(typeof(EntityInfo), typeof(Prefab));
+            _entityManager.SetComponentData(prefab, new EntityInfo { TypeId = TypeId });
+            _registry.ByTypeId.Add(TypeId, prefab);
+            Assert.IsNull(_catalog.Find(_entityManager, _registry, TypeId));
+
+            var entity = _entityManager.CreateEntity(typeof(EntityInfo));
+            _entityManager.SetComponentData(entity, new EntityInfo { TypeId = TypeId });
+            _entityManager.AddBuffer<EntityEffect>(entity).Add(new EntityEffect { Slot = EffectSlot.Fire });
+
+            Assert.IsNull(_catalog.Find(_entityManager, _registry, TypeId), "the prefab speaks for its instances");
+        }
     }
 }

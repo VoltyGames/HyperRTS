@@ -124,8 +124,9 @@ namespace HyperRTS.Simulation.Combat
 
                 weapon.CooldownRemaining = weapon.Cooldown;
                 Reveal(entity);
-                var origin = Transforms[entity].Position;
-                PlayFire(entity, targetPosition, faction.Value);
+                var place = Transforms[entity];
+                var origin = place.Position;
+                PlayFire(entity, place, targetPosition, faction.Value);
                 if (weapon.ProjectilePrefab == Entity.Null)
                 {
                     var hit = CombatMath.Hit(weapon, entity, faction.Value, origin, target, targetPosition);
@@ -156,9 +157,8 @@ namespace HyperRTS.Simulation.Combat
             }
 
             /// <summary>The fire effect faces the target level, the way the shooter turned.</summary>
-            private void PlayFire(Entity shooter, float3 targetPosition, byte faction)
+            private void PlayFire(Entity shooter, in LocalTransform transform, float3 targetPosition, byte faction)
             {
-                var transform = Transforms[shooter];
                 Sounds.Play(shooter, SoundSlot.Fire, transform.Position, faction);
                 var toward = targetPosition - transform.Position;
                 toward.y = 0f;

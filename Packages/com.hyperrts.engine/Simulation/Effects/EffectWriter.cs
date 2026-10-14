@@ -39,50 +39,30 @@ namespace HyperRTS.Simulation.Effects
 
         /// <summary>
         /// Plays <paramref name="source"/>'s rig for the slot at its socket, placed by <paramref name="transform"/>;
-        /// false if it has none.
+        /// nothing if it has none.
         /// </summary>
-        public bool Play(Entity source, EffectSlot slot, in LocalTransform transform, float3 direction, byte faction)
+        public void Play(Entity source, EffectSlot slot, in LocalTransform transform, float3 direction, byte faction)
         {
             if (!_effects.TryGetBuffer(source, out var effects))
             {
-                return false;
+                return;
             }
 
             if (!EffectRules.TryGetSocket(effects, slot, out var socket))
             {
-                return false;
+                return;
             }
 
-            var typeId = _info.TryGetComponent(source, out var info) ? info.TypeId : 0;
-            return Add(typeId, slot, transform.TransformPoint(socket), direction, faction, _cloaks.HasEnabled(source));
-        }
-
-        /// <summary><paramref name="source"/>'s type id if it has a rig for the slot, else 0.</summary>
-        public int TypeIdFor(Entity source, EffectSlot slot)
-        {
-            if (!_effects.TryGetBuffer(source, out var effects) || !EffectRules.TryGetSocket(effects, slot, out _))
+            if (!_info.TryGetComponent(source, out var info) || info.TypeId == 0)
             {
-                return 0;
-            }
-
-            return _info.TryGetComponent(source, out var info) ? info.TypeId : 0;
-        }
-
-        /// <summary>Plays the slot's rig of an entity type; a type id of 0 is ignored and returns false.</summary>
-        public bool Add(int typeId, EffectSlot slot, float3 position, float3 direction, byte faction,
-            bool stealthed = false)
-        {
-            if (typeId == 0)
-            {
-                return false;
+                return;
             }
 
             _events[_queue].Add(new EffectEvent
             {
-                TypeId = typeId, Slot = slot, Faction = faction, Position = position, Direction = direction,
-                Stealthed = stealthed,
+                TypeId = info.TypeId, Slot = slot, Faction = faction, Position = transform.TransformPoint(socket),
+                Direction = direction, Stealthed = _cloaks.HasEnabled(source),
             });
-            return true;
         }
     }
 }

@@ -10,14 +10,14 @@ namespace HyperRTS.Editor.Tests
         [Test]
         public void WorldSpaceHierarchyRigIsValid()
         {
-            Assert.IsEmpty(EffectRigCheck.Problems(Rig(true, ParticleSystemSimulationSpace.World,
+            Assert.IsEmpty(EffectRig.Problems(Rig(true, ParticleSystemSimulationSpace.World,
                 ParticleSystemScalingMode.Hierarchy)));
         }
 
         [Test]
         public void RigWithoutEffectRigIsReported()
         {
-            var problems = EffectRigCheck.Problems(Rig(false, ParticleSystemSimulationSpace.World,
+            var problems = EffectRig.Problems(Rig(false, ParticleSystemSimulationSpace.World,
                 ParticleSystemScalingMode.Hierarchy));
 
             Assert.AreEqual(1, problems.Count);
@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.Tests
         [Test]
         public void LocalSpaceSystemIsReported()
         {
-            var problems = EffectRigCheck.Problems(Rig(true, ParticleSystemSimulationSpace.Local,
+            var problems = EffectRig.Problems(Rig(true, ParticleSystemSimulationSpace.Local,
                 ParticleSystemScalingMode.Hierarchy));
 
             Assert.AreEqual(1, problems.Count);
@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Tests
         [Test]
         public void NonHierarchyScalingIsReported()
         {
-            var problems = EffectRigCheck.Problems(Rig(true, ParticleSystemSimulationSpace.World,
+            var problems = EffectRig.Problems(Rig(true, ParticleSystemSimulationSpace.World,
                 ParticleSystemScalingMode.Local));
 
             Assert.AreEqual(1, problems.Count);

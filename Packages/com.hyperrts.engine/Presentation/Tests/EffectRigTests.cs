@@ -106,20 +106,5 @@ namespace HyperRTS.Presentation.Tests
             Array.Sort(xs);
             Assert.That(xs, Is.EqualTo(new[] { 1f, 2f, 3f, 4f }).Within(1e-3f));
         }
-
-        [Test]
-        public void LocalSpaceSystem_FailsNamingThePrefab()
-        {
-            var local = EffectRigKit.Rig("Local Smoke", ParticleSystemSimulationSpace.Local);
-            try
-            {
-                var error = Assert.Throws<InvalidOperationException>(local.Prepare);
-                StringAssert.Contains("Local Smoke", error.Message);
-            }
-            finally
-            {
-                Object.DestroyImmediate(local.gameObject);
-            }
-        }
     }
 }

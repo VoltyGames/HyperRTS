@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Presentation.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -14,7 +15,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
         private const int Frames = 4;
         private static readonly int BaseMapST = Shader.PropertyToID("_BaseMap_ST");
 
-        private readonly Mesh _quad = CreateQuad();
+        private readonly Mesh _quad = OverlayMeshes.Billboard();
         private readonly Matrix4x4[][] _matrices = new Matrix4x4[Frames][];
         private readonly int[] _counts = new int[Frames];
         private readonly MaterialPropertyBlock[] _blocks = new MaterialPropertyBlock[Frames];
@@ -87,22 +88,6 @@ namespace HyperRTS.Presentation.Environment.Ambient
                 receiveShadows = false,
             };
             Graphics.RenderMeshInstanced(parameters, _quad, 0, _matrices[frame], _counts[frame]);
-        }
-
-        /// <summary>A unit quad in XY facing -Z, so +Z (the look direction) points away from the camera.</summary>
-        private static Mesh CreateQuad()
-        {
-            var mesh = new Mesh { name = "Bird", hideFlags = HideFlags.DontSave };
-            mesh.vertices = new[]
-            {
-                new Vector3(-0.5f, -0.5f, 0f), new Vector3(0.5f, -0.5f, 0f),
-                new Vector3(-0.5f, 0.5f, 0f), new Vector3(0.5f, 0.5f, 0f),
-            };
-            mesh.uv = new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f) };
-            mesh.normals = new[] { Vector3.back, Vector3.back, Vector3.back, Vector3.back };
-            mesh.triangles = new[] { 0, 3, 1, 3, 0, 2 };
-            mesh.RecalculateBounds();
-            return mesh;
         }
     }
 }

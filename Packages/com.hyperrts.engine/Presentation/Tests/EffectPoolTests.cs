@@ -55,6 +55,21 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void Get_LocalSpaceRig_LogsNamingThePrefabAndReturnsNull()
+        {
+            var local = EffectRigKit.Rig("Local Smoke", ParticleSystemSimulationSpace.Local);
+            try
+            {
+                LogAssert.Expect(LogType.Error, new Regex("Local Smoke.*World space"));
+                Assert.IsNull(_pool.Get(local.gameObject));
+            }
+            finally
+            {
+                Object.DestroyImmediate(local.gameObject);
+            }
+        }
+
+        [Test]
         public void Tick_FiresQueuedTimedBursts()
         {
             EffectRigKit.AddBurst(_dust, 0.2f, 4);
@@ -69,9 +84,9 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void Density_ThinsByDetailLevel()
         {
-            Assert.AreEqual(0.35f, EffectPool.Density(EffectDetailLevel.Low));
-            Assert.AreEqual(0.7f, EffectPool.Density(EffectDetailLevel.Medium));
-            Assert.AreEqual(1f, EffectPool.Density(EffectDetailLevel.High));
+            Assert.AreEqual(0.35f, EffectDetail.DensityAt(EffectDetailLevel.Low));
+            Assert.AreEqual(0.7f, EffectDetail.DensityAt(EffectDetailLevel.Medium));
+            Assert.AreEqual(1f, EffectDetail.DensityAt(EffectDetailLevel.High));
         }
     }
 }

@@ -131,8 +131,8 @@ Rendering and effects:
   works). `DustDevilSystem` forms a devil every `dustDevilInterval` on `dustDevilGround` within 120 m of the camera's
   ground focus (`DustDevilSites`, 8 samples), drifts it along `Wind.Downwind` with a sideways wander and streams its
   rig from the effect pool, easing in and out. Both skip Low effect detail.
-- **Effects playback** (`Effects/`): an `EffectRig` prefab root holds world-space child particle systems (anything
-  else is an error naming the prefab), `maxDistance`, a `scale` range, `scalePerRadius` and `alignToGround`; author it
+- **Effects playback** (`Effects/`): an `EffectRig` prefab root holds world-space, Hierarchy-scaled child particle systems
+  (`EffectRig.Problems`, shared by the pool and the editor check; a broken rig is an error naming the prefab), `maxDistance`, a `scale` range, `scalePerRadius` and `alignToGround`; author it
   +Y up, +Z forward (impacts turn +Y to the ground normal). `EffectPool` (owned by `EffectPoolSystem`, ticked
   first) keeps one DontSave instance per prefab, never instantiating per event. On first use each system's authored bursts and rates are read and its own emission is
   switched off: `Burst` replays the bursts (timed ones later, at the same pose; sub-emitters still fire), `Stream`
@@ -142,7 +142,8 @@ Rendering and effects:
   shooters with `EntityImpactEffects` (`SurfaceEffects.RigFor` the event's material, else `GroundMaterials`; on the
   terrain, facing up or the ground normal). `LoopEffectSystem`, `TrailSystem` and `MotionDustSystem` stream drawn
   entities (no `DisableRendering`): loops at sockets with health gate and timed fade, trails along the frame's path,
-  dust by ground material and speed / `FullSpeed`. `EffectCatalog` caches each type's effects like the impact marks.
+  dust by ground material and speed / `FullSpeed`. `EffectCatalog` caches each type's effects from its prefab for good,
+  or from an instance until effect entities change.
 - **Audio**: `SoundPlaybackSystem` plays the `SoundQueue` through 32 pooled sources; `SoundListener` follows the
   camera's ground focus.
 - **Minimap**: the baked `MinimapImage`, local fog, blips and the camera view.

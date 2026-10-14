@@ -67,19 +67,18 @@ namespace HyperRTS.Presentation.Effects
                     continue;
                 }
 
-                var prefab = RigOf(effect, registry);
-                var rig = prefab != null ? _pool.Get(prefab) : null;
+                var rig = _pool.Get(FindRig(effect, registry));
                 if (rig == null || !EffectRange.InRange(_camera, rig, effect.Position))
                 {
                     continue;
                 }
 
                 rig.Burst(effect.Position, EffectPose.Facing(effect.Direction), rig.ScaleFor(0f),
-                    EffectPoolSystem.Density);
+                    EffectDetail.Density);
             }
         }
 
-        private GameObject RigOf(in EffectEvent effect, in PrefabRegistry registry)
+        private GameObject FindRig(in EffectEvent effect, in PrefabRegistry registry)
         {
             var set = _catalog.Find(EntityManager, registry, effect.TypeId);
             if (set == null || !set.TryGet(effect.Slot, out var entry))
@@ -97,8 +96,13 @@ namespace HyperRTS.Presentation.Effects
             var hasTerrain = SystemAPI.TryGetSingleton(out TerrainHeight terrain);
             foreach (var impact in events)
             {
+                if (!ImpactRules.IsSeenLocally(impact, view, fog, relations))
+                {
+                    continue;
+                }
+
                 var surfaces = _catalog.Find(EntityManager, registry, impact.TypeId)?.Impacts;
-                if (surfaces == null || !ImpactRules.IsSeenLocally(impact, view, fog, relations))
+                if (surfaces == null)
                 {
                     continue;
                 }
@@ -109,8 +113,7 @@ namespace HyperRTS.Presentation.Effects
                     material = ground.At(impact.Position.xz);
                 }
 
-                var prefab = surfaces.RigFor(material);
-                var rig = prefab != null ? _pool.Get(prefab) : null;
+                var rig = _pool.Get(surfaces.RigFor(material));
                 if (rig == null || !EffectRange.InRange(_camera, rig, impact.Position))
                 {
                     continue;
@@ -118,7 +121,7 @@ namespace HyperRTS.Presentation.Effects
 
                 var spin = _random.NextFloat(2f * Mathf.PI);
                 var (position, rotation) = EffectPose.Impact(impact, terrain, hasTerrain, rig.alignToGround, spin);
-                rig.Burst(position, rotation, rig.ScaleFor(impact.Radius), EffectPoolSystem.Density);
+                rig.Burst(position, rotation, rig.ScaleFor(impact.Radius), EffectDetail.Density);
             }
         }
     }

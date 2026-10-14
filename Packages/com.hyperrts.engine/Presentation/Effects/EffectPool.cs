@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Effects
@@ -16,38 +17,27 @@ namespace HyperRTS.Presentation.Effects
         private GameObject _root;
         private EffectLights _lights;
 
-        /// <summary>The share of authored particles emitted at a detail level.</summary>
-        public static float Density(EffectDetailLevel level) => level switch
-        {
-            EffectDetailLevel.Low => 0.35f,
-            EffectDetailLevel.Medium => 0.7f,
-            _ => 1f,
-        };
-
-        /// <summary>The prefab's live rig, or null when the prefab is broken (logged once, naming it).</summary>
+        /// <summary>The prefab's live rig, or null when there is no prefab or it is broken (logged once, naming it).</summary>
         public EffectRig Get(GameObject prefab)
         {
+            if (prefab == null)
+            {
+                return null;
+            }
+
             if (_rigs.TryGetValue(prefab, out var rig) || _broken.Contains(prefab))
             {
                 return rig;
             }
 
-            if (!prefab.TryGetComponent<EffectRig>(out _))
+            var problems = EffectRig.Problems(prefab);
+            if (problems.Count > 0)
             {
-                return Broken(prefab, $"Effect prefab '{prefab.name}' has no EffectRig on its root.");
+                return Broken(prefab, $"Effect rig '{prefab.name}': {string.Join("; ", problems)}.");
             }
 
             rig = Spawn(prefab);
-            try
-            {
-                rig.Prepare();
-            }
-            catch (InvalidOperationException error)
-            {
-                Destroy(rig.gameObject);
-                return Broken(prefab, error.Message);
-            }
-
+            rig.Prepare();
             return _rigs[prefab] = rig;
         }
 
@@ -69,7 +59,7 @@ namespace HyperRTS.Presentation.Effects
             _lights = null;
             if (_root != null)
             {
-                Destroy(_root);
+                CoreUtils.Destroy(_root);
             }
         }
 
@@ -98,18 +88,6 @@ namespace HyperRTS.Presentation.Effects
             _broken.Add(prefab);
             Debug.LogError(message, prefab);
             return null;
-        }
-
-        private static void Destroy(GameObject target)
-        {
-            if (Application.isPlaying)
-            {
-                Object.Destroy(target);
-            }
-            else
-            {
-                Object.DestroyImmediate(target);
-            }
         }
     }
 }

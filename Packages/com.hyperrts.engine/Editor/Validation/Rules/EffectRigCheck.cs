@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Simulation.Effects;
 using UnityEditor;
@@ -7,37 +6,11 @@ using UnityEngine;
 namespace HyperRTS.Editor.Validation.Rules
 {
     /// <summary>
-    /// Effect rigs are pooled and played detached from their owner, so each must be an <see cref="EffectRig"/> prefab
-    /// whose particles stay in world space and scale with the rig's transform.
+    /// Effect rigs are pooled and played detached from their owner, so each must be a prefab that passes
+    /// <see cref="EffectRig.Problems"/>.
     /// </summary>
     public static class EffectRigCheck
     {
-        /// <summary>What stops <paramref name="rig"/> playing as an effect rig; empty when it is fine.</summary>
-        public static List<string> Problems(GameObject rig)
-        {
-            var problems = new List<string>();
-            if (!rig.TryGetComponent<EffectRig>(out _))
-            {
-                problems.Add("its root has no EffectRig");
-            }
-
-            foreach (var system in rig.GetComponentsInChildren<ParticleSystem>(true))
-            {
-                var main = system.main;
-                if (main.simulationSpace != ParticleSystemSimulationSpace.World)
-                {
-                    problems.Add($"particle system '{system.name}' does not simulate in World space");
-                }
-
-                if (main.scalingMode != ParticleSystemScalingMode.Hierarchy)
-                {
-                    problems.Add($"particle system '{system.name}' does not use Hierarchy scaling");
-                }
-            }
-
-            return problems;
-        }
-
         /// <summary>Errors on <paramref name="owner"/> for each problem of the rig in <paramref name="field"/>.</summary>
         public static void Check(Object owner, GameObject rig, string field, ValidationIssues issues)
         {
@@ -47,13 +20,24 @@ namespace HyperRTS.Editor.Validation.Rules
                 return;
             }
 
+            CheckOptional(owner, rig, field, issues);
+        }
+
+        /// <summary>As <see cref="Check"/>, but an empty field is fine.</summary>
+        public static void CheckOptional(Object owner, GameObject rig, string field, ValidationIssues issues)
+        {
+            if (rig == null)
+            {
+                return;
+            }
+
             if (!PrefabUtility.IsPartOfPrefabAsset(rig))
             {
                 issues.Error(owner, $"{field} '{rig.name}' is not a prefab asset.");
                 return;
             }
 
-            foreach (var problem in Problems(rig))
+            foreach (var problem in EffectRig.Problems(rig))
             {
                 issues.Error(owner, $"{field} '{rig.name}': {problem}.");
             }
@@ -72,10 +56,7 @@ namespace HyperRTS.Editor.Validation.Rules
             Check(owner, effects.anyMaterial, $"{field} '{effects.name}' anyMaterial", issues);
             foreach (var entry in effects.materials)
             {
-                if (entry.rig != null)
-                {
-                    Check(owner, entry.rig, $"{field} '{effects.name}' {entry.material} rig", issues);
-                }
+                CheckOptional(owner, entry.rig, $"{field} '{effects.name}' {entry.material} rig", issues);
             }
         }
     }

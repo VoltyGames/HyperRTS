@@ -3,10 +3,10 @@
 #ifndef HYPERRTS_WATER_FOAM_INCLUDED
 #define HYPERRTS_WATER_FOAM_INCLUDED
 
-half FoamSample(float2 uv, float2 tile, float2 dx, float2 dy)
+half2 FoamSample(float2 uv, float2 tile, float2 dx, float2 dy)
 {
     float2 scale = 1.0 / tile;
-    return UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, uv * scale, dx * scale, dy * scale)).x;
+    return UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, uv * scale, dx * scale, dy * scale)).xy;
 }
 
 // Foam only on fast water (vertex G), stretched along the current and broken into patches so the ford doesn't read as a
@@ -19,11 +19,10 @@ half RapidsFoam(float2 uv, half fast)
     [branch] if (fast >= 0.001)
     {
         float drift = _Time.y * _FlowSpeed * 2.5;
-        half streak = FoamSample(float2(uv.x, uv.y - drift), float2(_RapidsFoamWidth, _RapidsFoamLength), dx, dy);
-        float2 breakupScale = float2(0.37, 1.0) / (_RapidsFoamLength * 1.7);
-        float2 breakupUV = float2(uv.x * 0.37 + 0.21, uv.y - drift * 0.6) / (_RapidsFoamLength * 1.7);
-        half breakup = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, breakupUV,
-            dx * breakupScale, dy * breakupScale)).y;
+        half streak = FoamSample(float2(uv.x, uv.y - drift), float2(_RapidsFoamWidth, _RapidsFoamLength), dx, dy).x;
+        float2 squeeze = float2(0.37, 1.0);
+        half breakup = FoamSample(float2(uv.x * 0.37 + 0.21, uv.y - drift * 0.6), _RapidsFoamLength * 1.7,
+            dx * squeeze, dy * squeeze).y;
         foam = fast * smoothstep(0.1, 0.45, streak) * smoothstep(-0.1, 0.35, breakup);
     }
 
@@ -56,16 +55,22 @@ half CalmFoam(float2 uv, float shoreDistance)
         float2 dy = ddy(uv);
         float drift = _Time.y * _FlowSpeed;
         float2 streakTile = float2(1.0, 5.0) * _FlowFoamScale;
-        half streak = FoamSample(float2(uv.x, uv.y - drift), streakTile, dx, dy);
-        half patches = FoamSample(float2(uv.x + 0.37 * _FlowFoamScale, uv.y - drift * 0.85), streakTile * 6.0, dx, dy);
+        half streak = FoamSample(float2(uv.x, uv.y - drift), streakTile, dx, dy).x;
+        half patches = FoamSample(float2(uv.x + 0.37 * _FlowFoamScale, uv.y - drift * 0.85), streakTile * 6.0, dx, dy).x;
         half flow = smoothstep(0.22, 0.5, streak) * smoothstep(0.05, 0.35, patches) * _FlowFoamAmount;
 
-        half wobble = FoamSample(float2(0.21, uv.y), float2(1.0, 40.0), float2(0.0, dx.y), float2(0.0, dy.y));
-        float bandWidth = _BankFoamWidth * (0.6 + 0.8 * saturate(wobble * 1.5 + 0.5));
-        half band = 1.0 - smoothstep(0.0, bandWidth, shoreDistance);
-        half broken = smoothstep(0.0, 0.35, streak) * smoothstep(-0.1, 0.3, patches);
-        half waterline = 1.0 - smoothstep(0.2, 0.7, shoreDistance);
-        half bank = max(band * band, waterline * 0.35) * broken * _BankFoamAmount;
+        // The band is at most 1.4 widths wide and the waterline 0.7 m: open water skips the wobble fetch.
+        half bank = 0.0;
+        [branch] if (shoreDistance < max(_BankFoamWidth * 1.4, 0.7))
+        {
+            half wobble = FoamSample(float2(0.21, uv.y), float2(1.0, 40.0), float2(0.0, dx.y), float2(0.0, dy.y)).x;
+            float bandWidth = _BankFoamWidth * (0.6 + 0.8 * saturate(wobble * 1.5 + 0.5));
+            half band = 1.0 - smoothstep(0.0, bandWidth, shoreDistance);
+            half broken = smoothstep(0.0, 0.35, streak) * smoothstep(-0.1, 0.3, patches);
+            half waterline = 1.0 - smoothstep(0.2, 0.7, shoreDistance);
+            bank = max(band * band, waterline * 0.35) * broken * _BankFoamAmount;
+        }
+
         return max(flow, bank);
     #endif
 }

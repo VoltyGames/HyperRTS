@@ -10,9 +10,6 @@ namespace HyperRTS.Presentation.Effects
     {
         public EffectPool Pool { get; } = new();
 
-        /// <summary>The share of authored particles to emit at the current detail.</summary>
-        public static float Density => EffectPool.Density(EffectDetail.Level);
-
         // The rigs are DontSave, so they outlive scene reloads and must go with the world.
         protected override void OnDestroy() => Pool.Dispose();
 

@@ -9,11 +9,7 @@ namespace HyperRTS.Editor.Validation.Rules
         {
             for (var i = 0; i < damage.stages.Count; i++)
             {
-                var effect = damage.stages[i].effect;
-                if (effect != null)
-                {
-                    EffectRigCheck.Check(damage, effect, $"Damage stage {i} effect", issues);
-                }
+                EffectRigCheck.CheckOptional(damage, damage.stages[i].effect, $"Damage stage {i} effect", issues);
             }
         }
     }

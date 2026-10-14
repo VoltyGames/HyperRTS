@@ -12,6 +12,7 @@ namespace HyperRTS.Presentation.Effects
     {
         private readonly Dictionary<(Entity, int), StreamState> _states = new();
         private readonly List<(Entity, int)> _stale = new();
+        private readonly Stack<StreamState> _free = new();
         private int _frame;
 
         /// <summary>Starts a frame; call <see cref="EndFrame"/> after the last <see cref="Step"/>.</summary>
@@ -21,9 +22,17 @@ namespace HyperRTS.Presentation.Effects
         public StreamState Step(Entity entity, int index, Vector3 position)
         {
             var key = (entity, index);
-            if (!_states.TryGetValue(key, out var state) || state.Frame != _frame - 1)
+            if (!_states.TryGetValue(key, out var state))
             {
-                state = _states[key] = new StreamState { To = position };
+                // Recycled: projectiles and reveals start streams every frame.
+                state = _states[key] = _free.Count > 0 ? _free.Pop() : new StreamState();
+                state.Frame = int.MinValue;
+            }
+
+            if (state.Frame != _frame - 1)
+            {
+                state.To = position;
+                state.Carry = 0f;
             }
 
             state.From = state.To;
@@ -46,7 +55,8 @@ namespace HyperRTS.Presentation.Effects
 
             foreach (var key in _stale)
             {
-                _states.Remove(key);
+                _states.Remove(key, out var state);
+                _free.Push(state);
             }
         }
     }
