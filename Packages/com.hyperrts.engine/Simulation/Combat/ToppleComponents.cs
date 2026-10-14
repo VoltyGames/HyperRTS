@@ -1,0 +1,31 @@
+using Unity.Entities;
+using Unity.Mathematics;
+
+namespace HyperRTS.Simulation.Combat
+{
+    /// <summary>Scenery that falls away from its lethal hit, such as a tree.</summary>
+    public struct Topple : IComponentData
+    {
+        /// <summary>Unit trunk direction in the standing model, base to top.</summary>
+        public float3 Trunk;
+
+        /// <summary>Heading in radians from +Z toward +X that the crown points in the remains model.</summary>
+        public float Lie;
+    }
+
+    /// <summary>Remains of a <see cref="Topple"/> piece that presentation shows falling. Their transform already holds the final pose.</summary>
+    public struct Felling : IComponentData
+    {
+        /// <summary>Turns the final crown direction up to where the trunk stood.</summary>
+        public quaternion Tilt;
+
+        /// <summary>Unwitnessed falls show lying down at once.</summary>
+        public bool Witnessed;
+    }
+
+    /// <summary>The fall heading (<see cref="ToppleMath"/>) a <see cref="Topple"/> piece's lethal hit gave it.</summary>
+    public struct FellFrom : IComponentData
+    {
+        public byte Heading;
+    }
+}

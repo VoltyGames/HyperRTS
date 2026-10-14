@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Common
 {
@@ -8,4 +9,34 @@ namespace HyperRTS.Simulation.Common
     /// the order phase; sound, stats, cleanup and game systems react to them later in the frame.
     /// </summary>
     public struct GameEvents : IComponentData { }
+
+    /// <summary>A producer finished a unit this frame; the unit itself appears when the frame's commands play back.</summary>
+    [InternalBufferCapacity(0)]
+    public struct UnitProduced : IBufferElementData
+    {
+        public Entity Producer;
+        public Entity Prefab;
+        public byte Faction;
+        public float3 Position;
+    }
+
+    /// <summary>A building site was finished this frame.</summary>
+    [InternalBufferCapacity(0)]
+    public struct BuildingCompleted : IBufferElementData
+    {
+        public Entity Building;
+        public byte Faction;
+    }
+
+    /// <summary>
+    /// An entity changed hands this frame (capture, a game's mind control). Its <see cref="Faction"/> switches to
+    /// <see cref="To"/> when the frame's commands play back; write it with <see cref="Ownership.Transfer"/>.
+    /// </summary>
+    [InternalBufferCapacity(0)]
+    public struct OwnerChanged : IBufferElementData
+    {
+        public Entity Entity;
+        public byte From;
+        public byte To;
+    }
 }
