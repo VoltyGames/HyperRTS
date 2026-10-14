@@ -69,6 +69,7 @@ namespace HyperRTS.Network.Combat
             Radius = impact.Radius,
             Faction = impact.Faction,
             Surface = (byte)impact.Surface,
+            Material = (byte)impact.Material,
         };
     }
 }

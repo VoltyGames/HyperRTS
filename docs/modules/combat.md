@@ -16,6 +16,7 @@
 | `DestructibleAuthoring` | Marks a building or unit `Destructible`, or makes standalone scenery with health, crush rating, remains and a blocked box |
 | `ToppleAuthoring` / `Topple`, `FellFrom`, `Felling`, `ToppleMath` | Scenery that falls away from its lethal hit (`DamageSystem` records the fall heading away from the shooter, crusher or blast centre); `DeathSystem` lays the remains along the fall, and `ToppleSystem` (Presentation) shows a seen fall over 1.5 s. The inspector's **Measure from model** (`ToppleMeasure`) sets `trunk` from the LOD0 faces of a chosen trunk material and `lie` from the Destructible's remains |
 | `DamageStagesAuthoring` / `DamageStage` | Child models shown by health fraction, each step with an effect |
+| `ImpactWriter`, `ImpactQueue` / `ImpactEvent` | Where shots of shooters with impact marks or effects land; `ImpactSurfaceSystem` sets the `ImpactSurface` and `Material` (the target's `HitMaterial`, else `Water`, else `None` for presentation to read from `GroundMaterials`) |
 | `SpawnEffectAuthoring` / `SpawnEffect` | Effect played once where an entity appears (a ruin's dust) |
 
 Systems, in order: `AttackOrderSystem` (explicit attacks), `TargetAcquisitionSystem` (idle and moving units pick

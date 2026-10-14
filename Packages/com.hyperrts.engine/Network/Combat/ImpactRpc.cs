@@ -11,5 +11,6 @@ namespace HyperRTS.Network.Combat
         public float Radius;
         public byte Faction;
         public byte Surface;
+        public byte Material;
     }
 }

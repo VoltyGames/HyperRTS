@@ -42,8 +42,8 @@ Simulation is split into modules, one folder and namespace each (`HyperRTS.Simul
 layered, lowest first:
 
 ```text
-Common < Navigation < Stats < Power < Vision < Spatial < Selection < Orders < Audio < Combat < Transport < Air
-  < Units < Resources < Match < Production < Upgrades < Buildings < Abilities < Fields < Veterancy < Capture
+Common < Navigation < Stats < Power < Vision < Spatial < Selection < Orders < Audio < Effects < Combat < Transport
+  < Air < Units < Resources < Match < Production < Upgrades < Buildings < Abilities < Fields < Veterancy < Capture
   < AI < GameEntities < Commands < Replays
 ```
 

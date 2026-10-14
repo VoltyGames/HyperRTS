@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Effects;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -22,6 +23,9 @@ namespace HyperRTS.Simulation.Combat
         public byte Faction;
 
         public ImpactSurface Surface;
+
+        /// <summary>What was struck; None on open ground, which presentation reads from <see cref="GroundMaterials"/>.</summary>
+        public SurfaceMaterial Material;
 
         /// <summary>What the shot was aimed at, for <see cref="ImpactSurfaceSystem"/>; it never leaves the frame.</summary>
         public Entity Target;

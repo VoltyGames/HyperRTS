@@ -19,6 +19,7 @@ namespace HyperRTS.Editor.Icons
             (HyperRTSIcons.Buildings, new Color(0.45f, 0.50f, 0.58f)),
             (HyperRTSIcons.Cameras, new Color(0.55f, 0.40f, 0.85f)),
             (HyperRTSIcons.Combat, new Color(0.85f, 0.25f, 0.22f)),
+            (HyperRTSIcons.Effects, new Color(1.00f, 0.42f, 0.10f)),
             (HyperRTSIcons.Environment, new Color(0.62f, 0.45f, 0.28f)),
             (HyperRTSIcons.Match, new Color(0.30f, 0.75f, 0.35f)),
             (HyperRTSIcons.Navigation, new Color(0.20f, 0.75f, 0.70f)),

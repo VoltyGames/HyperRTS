@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Combat
                 Damage.Add(hit);
                 Ecb.DestroyEntity(entity);
                 Sounds.Add(projectile.ImpactSoundTypeId, SoundSlot.Impact, transform.Position, hit.SourceFaction);
-                Impacts.Add(projectile.ImpactMarkTypeId, hit);
+                Impacts.Add(projectile.ImpactTypeId, hit);
             }
         }
     }

@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Effects;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.NetCode;
@@ -36,6 +37,7 @@ namespace HyperRTS.Network.Combat
                     Radius = rpc.ValueRO.Radius,
                     Faction = rpc.ValueRO.Faction,
                     Surface = (ImpactSurface)rpc.ValueRO.Surface,
+                    Material = (SurfaceMaterial)rpc.ValueRO.Material,
                 });
             }
 

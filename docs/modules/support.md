@@ -38,6 +38,23 @@ Weapons, projectiles, deaths, abilities and ready events write sounds; `SoundCle
 frame. `AcknowledgementSystem` plays a selected or commanded unit's voice at most once a second. Playback is on the
 [client](client.md#presentation).
 
+## Effects
+
+| Type | Role |
+| --- | --- |
+| `EntityEffectsAuthoring` / `EntityEffect` | Rig per `EffectSlot` (Fire at a `muzzle` socket, Death, Ability; games from `Custom`) |
+| `ImpactEffectsAuthoring` / `EntityImpactEffects` | A weapon's `SurfaceEffects` (rig per `SurfaceMaterial`) where its shots land |
+| `HitMaterialAuthoring` / `HitMaterial` | What a unit, building or tree is made of, for hits on it |
+| `LoopEffectsAuthoring` / `LoopEffect` | Rigs that stream while shown (exhaust, smoke), gated by health and duration |
+| `EffectTrailAuthoring` / `EffectTrail` | A rig along a projectile's path |
+| `MotionDustAuthoring` / `MotionDust` | Dust by ground material and speed, from a socket |
+| `EffectWriter`, `EffectQueue` | This frame's effects (type, slot, owner, socket position, direction, stealth) |
+| `EffectRules` | `IsVisible` / `IsSeenLocally`: whoever sees the source there, stealth honoured |
+
+Sockets bake as positions in the root's local space; `EffectSetup` writes all of it and skips unset rigs.
+`WeaponFireSystem` plays Fire facing the target, `DeathEffectSystem` Death and `AbilitySoundSystem` Ability at the aim
+point; `EffectClearSystem` empties the queue each frame. Rigs play on the client.
+
 ## Replays
 
 | Type | Role |

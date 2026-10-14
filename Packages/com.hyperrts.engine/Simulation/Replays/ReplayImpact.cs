@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Effects;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Replays
@@ -16,6 +17,7 @@ namespace HyperRTS.Simulation.Replays
 
         public byte Faction;
         public ImpactSurface Surface;
+        public SurfaceMaterial Material;
 
         public static ReplayImpact Capture(in ImpactEvent impact)
         {
@@ -28,6 +30,7 @@ namespace HyperRTS.Simulation.Replays
                 Radius = (ushort)math.clamp(math.round(impact.Radius / ReplayEntity.PositionStep), 0, ushort.MaxValue),
                 Faction = impact.Faction,
                 Surface = impact.Surface,
+                Material = impact.Material,
             };
         }
 
@@ -38,6 +41,7 @@ namespace HyperRTS.Simulation.Replays
             Radius = Radius * ReplayEntity.PositionStep,
             Faction = Faction,
             Surface = Surface,
+            Material = Material,
         };
     }
 }

@@ -9,6 +9,7 @@ namespace HyperRTS.Core
         public const string Buildings = Dir + "Buildings.png";
         public const string Cameras = Dir + "Cameras.png";
         public const string Combat = Dir + "Combat.png";
+        public const string Effects = Dir + "Effects.png";
         public const string Environment = Dir + "Environment.png";
         public const string Match = Dir + "Match.png";
         public const string Navigation = Dir + "Navigation.png";

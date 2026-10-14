@@ -1,6 +1,7 @@
 using System.IO;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Effects;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
 using Unity.Mathematics;
@@ -81,6 +82,7 @@ namespace HyperRTS.Simulation.Tests
         public void Serializer_RoundTripsImpacts()
         {
             var replay = Record();
+            replay.Impacts[0].Material = SurfaceMaterial.Metal;
 
             using var memory = new MemoryStream();
             ReplaySerializer.Write(replay, memory);

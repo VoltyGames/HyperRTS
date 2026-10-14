@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Effects;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Entities;
@@ -138,7 +139,44 @@ namespace HyperRTS.Simulation.Tests
             Gun(float3.zero, range: 10f);
             _world.SpawnShip(2, new float3(9f, 0f, 0f));
 
-            Assert.AreEqual(ImpactSurface.Water, Landed(1f)[0].Surface);
+            var landed = Landed(1f)[0];
+            Assert.AreEqual(ImpactSurface.Water, landed.Surface);
+            Assert.AreEqual(SurfaceMaterial.Water, landed.Material, "a ship without a hit material splashes");
+        }
+
+        [Test]
+        public void HitOnATargetWithAHitMaterial_StruckThatMaterial_OpenGroundNone()
+        {
+            Gun(float3.zero);
+            Gun(new float3(0f, 0f, 40f));
+            var tank = _world.SpawnUnit(2, new float3(3f, 0f, 0f));
+            var writer = new EntityManagerWriter(_world.EntityManager, tank);
+            EffectSetup.AddHitMaterial(ref writer, SurfaceMaterial.Metal);
+            _world.SpawnUnit(2, new float3(3f, 0f, 40f));
+
+            var landed = Landed(1f);
+
+            Assert.AreEqual(2, landed.Count);
+            var onTank = landed[0].Position.z < 20f ? landed[0] : landed[1];
+            var onGround = landed[0].Position.z < 20f ? landed[1] : landed[0];
+            Assert.AreEqual(SurfaceMaterial.Metal, onTank.Material);
+            Assert.AreEqual(SurfaceMaterial.None, onGround.Material, "presentation reads the ground map");
+        }
+
+        [Test]
+        public void ShotsWithOnlyImpactEffects_StillWriteImpacts()
+        {
+            var effects = ScriptableObject.CreateInstance<SurfaceEffects>();
+            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Rifle"), cooldown: 100f);
+            var writer = new EntityManagerWriter(_world.EntityManager, gun);
+            EffectSetup.AddImpactEffects(ref writer, effects);
+            _world.SpawnUnit(2, new float3(3f, 0f, 0f));
+
+            var landed = Landed(1f);
+            Object.DestroyImmediate(effects);
+
+            Assert.AreEqual(1, landed.Count);
+            Assert.AreEqual(GetTypeId(gun), landed[0].TypeId);
         }
 
         [Test]

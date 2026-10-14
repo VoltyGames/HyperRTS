@@ -146,6 +146,13 @@ The server never plays audio. `SoundSendSystem` sends each client the frame's so
 slot, owner, position): only those its team can see (the fog and stealth rule above), plus its own voices, at most
 16 per tick. `SoundReceiveSystem` queues them on the client, which plays them like single player.
 
+## Effects and impacts
+
+`EffectSendSystem` sends each client the effects its team may see (`EffectRules`) as `EffectRpc` batches of up to 48
+`PackedEffect`s (type id, slot, owner, position, yaw and pitch bytes; 20 bytes each), at most 2 batches per tick.
+`EffectReceiveSystem` unpacks them into the client's `EffectQueue`. Impacts go one `ImpactRpc` each (type id,
+position, radius, owner, surface, material), at most 16 per tick.
+
 ## Physics
 
 Clicks raycast against Unity Physics, which Netcode only steps inside the prediction loop. The Match object needs

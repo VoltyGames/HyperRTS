@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Effects;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
@@ -29,6 +30,7 @@ namespace HyperRTS.Simulation.Combat
         private DamageWriter _damage;
         private SoundWriter _sounds;
         private ImpactWriter _impacts;
+        private EffectWriter _effects;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -41,9 +43,11 @@ namespace HyperRTS.Simulation.Combat
             _damage = new DamageWriter(ref state);
             _sounds = new SoundWriter(ref state);
             _impacts = new ImpactWriter(ref state);
+            _effects = new EffectWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<SoundQueue>();
             state.RequireForUpdate<ImpactQueue>();
+            state.RequireForUpdate<EffectQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -58,6 +62,7 @@ namespace HyperRTS.Simulation.Combat
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
             _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
             _impacts.Update(ref state, SystemAPI.GetSingletonEntity<ImpactQueue>());
+            _effects.Update(ref state, SystemAPI.GetSingletonEntity<EffectQueue>());
 
             // Single-threaded: every shot appends to the one damage queue.
             new FireJob
@@ -73,6 +78,7 @@ namespace HyperRTS.Simulation.Combat
                 Damage = _damage,
                 Sounds = _sounds,
                 Impacts = _impacts,
+                Effects = _effects,
             }.Schedule();
         }
 
@@ -91,6 +97,7 @@ namespace HyperRTS.Simulation.Combat
             public DamageWriter Damage;
             public SoundWriter Sounds;
             public ImpactWriter Impacts;
+            public EffectWriter Effects;
 
             private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
                 EnabledRefRO<AttackTarget> attacking, in Faction faction)
@@ -118,7 +125,7 @@ namespace HyperRTS.Simulation.Combat
                 weapon.CooldownRemaining = weapon.Cooldown;
                 Reveal(entity);
                 var origin = Transforms[entity].Position;
-                Sounds.Play(entity, SoundSlot.Fire, origin, faction.Value);
+                PlayFire(entity, targetPosition, faction.Value);
                 if (weapon.ProjectilePrefab == Entity.Null)
                 {
                     var hit = CombatMath.Hit(weapon, entity, faction.Value, origin, target, targetPosition);
@@ -146,6 +153,17 @@ namespace HyperRTS.Simulation.Combat
 
                 ammo.ValueRW.Current--;
                 return true;
+            }
+
+            /// <summary>The fire effect faces the target level, the way the shooter turned.</summary>
+            private void PlayFire(Entity shooter, float3 targetPosition, byte faction)
+            {
+                var transform = Transforms[shooter];
+                Sounds.Play(shooter, SoundSlot.Fire, transform.Position, faction);
+                var toward = targetPosition - transform.Position;
+                toward.y = 0f;
+                Effects.Play(shooter, EffectSlot.Fire, transform, math.normalizesafe(toward, transform.Forward()),
+                    faction);
             }
 
             private void Reveal(Entity shooter)
@@ -190,7 +208,7 @@ namespace HyperRTS.Simulation.Combat
                     Speed = weapon.ProjectileSpeed,
                     Height = weapon.ProjectileHeight,
                     ImpactSoundTypeId = Sounds.TypeIdFor(shooter, SoundSlot.Impact),
-                    ImpactMarkTypeId = Impacts.TypeIdFor(shooter),
+                    ImpactTypeId = Impacts.TypeIdFor(shooter),
                     Hit = CombatMath.Hit(weapon, shooter, faction.Value, origin, target, aim),
                 });
             }
