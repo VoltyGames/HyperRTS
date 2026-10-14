@@ -1,6 +1,6 @@
 // River and lake surface: depth-tinted colour, refracted bottom, ripples drifting along V (metres), fresnel sky and
 // sun glint kept under bloom, cloud shadows. Vertex colour A is how shallow a ford is (thinned to _FordAlpha); G streaks
-// foam on fast water.
+// foam on fast water. Calm water drifts sparse foam flecks and gathers foam along the banks (WaterFoam.hlsl).
 // Needs the URP asset's Depth and Opaque Textures.
 Shader "HyperRTS/Water"
 {
@@ -28,6 +28,10 @@ Shader "HyperRTS/Water"
         _FoamColor ("Foam Color", Color) = (0.82, 0.82, 0.76, 1)
         _RapidsFoamWidth ("Rapids Foam Width (m)", Float) = 1.5
         _RapidsFoamLength ("Rapids Foam Length (m)", Float) = 10
+        _FlowFoamAmount ("Flow Foam Amount", Range(0, 1)) = 0.5
+        _FlowFoamScale ("Flow Foam Scale (m)", Float) = 6
+        _BankFoamWidth ("Bank Foam Width (m)", Float) = 2.5
+        _BankFoamAmount ("Bank Foam Amount", Range(0, 1)) = 0.35
     }
 
     SubShader
@@ -56,6 +60,7 @@ Shader "HyperRTS/Water"
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #pragma multi_compile_fog
+            #pragma multi_compile_fragment _ _TERRAIN_SIMPLE
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -88,7 +93,13 @@ Shader "HyperRTS/Water"
                 half _FordAlpha;
                 float _RapidsFoamWidth;
                 float _RapidsFoamLength;
+                half _FlowFoamAmount;
+                float _FlowFoamScale;
+                float _BankFoamWidth;
+                half _BankFoamAmount;
             CBUFFER_END
+
+            #include "WaterFoam.hlsl"
 
             struct Attributes
             {
@@ -176,30 +187,6 @@ Shader "HyperRTS/Water"
                 return glint * min(1.0, headroom / max(Brightest(glint), 0.0001));
             }
 
-            // Foam only on fast water (vertex G), stretched along the current and broken into patches so the ford
-            // doesn't read as a striped block. Slow water skips the fetches; gradients taken before the branch keep
-            // them valid inside it.
-            half RapidsFoam(float2 uv, half fast)
-            {
-                float2 dx = ddx(uv);
-                float2 dy = ddy(uv);
-                [branch] if (fast < 0.001)
-                {
-                    return 0.0;
-                }
-
-                float drift = _Time.y * _FlowSpeed * 2.5;
-                float2 streakScale = 1.0 / float2(_RapidsFoamWidth, _RapidsFoamLength);
-                float2 streakUV = float2(uv.x, uv.y - drift) * streakScale;
-                half3 streak = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, streakUV,
-                    dx * streakScale, dy * streakScale));
-                float2 breakupScale = float2(0.37, 1.0) / (_RapidsFoamLength * 1.7);
-                float2 breakupUV = float2(uv.x * 0.37 + 0.21, uv.y - drift * 0.6) / (_RapidsFoamLength * 1.7);
-                half3 breakup = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, breakupUV,
-                    dx * breakupScale, dy * breakupScale));
-                return fast * smoothstep(0.1, 0.45, streak.x) * smoothstep(-0.1, 0.35, breakup.y);
-            }
-
             // Clouds dim the sunlight the water scatters back up, about two thirds of it; the sky's share stays. The
             // refracted bottom already carries the cloud shadow on the ground.
             half3 CloudShade(float3 positionWS)
@@ -222,6 +209,7 @@ Shader "HyperRTS/Water"
                 float2 screenUV = input.positionCS.xy / _ScaledScreenParams.xy;
                 float surface = EyeDepth(input.positionCS.z);
                 float depth = max(0.0, EyeDepth(SampleSceneDepth(screenUV)) - surface);
+                float shoreDistance = ShoreDistance(depth, input.positionWS);
 
                 float2 refracted = screenUV + ripple.xy * _Refraction * saturate(depth);
                 if (EyeDepth(SampleSceneDepth(refracted)) < surface)
@@ -241,7 +229,10 @@ Shader "HyperRTS/Water"
                 half3 color = lerp(body, sky, fresnel);
                 color += Glint(sun, normalWS, view, color, cameraDistance);
 
-                half foam = RapidsFoam(input.uv, input.color.g) * 0.5;
+                // Calm foam thins out on the last few centimetres so it never paints over the dry bank.
+                half rapids = RapidsFoam(input.uv, input.color.g) * 0.5;
+                half calm = CalmFoam(input.uv, shoreDistance) * saturate(depth / (_ShoreFadeDepth * 0.5));
+                half foam = max(rapids, calm);
                 color = lerp(color, _FoamColor.rgb * (sun.color * sun.shadowAttenuation * 0.6 + 0.4), foam);
                 half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(depth / _ShoreFadeDepth), foam);
                 color = MixFog(color, input.fogFactor);
