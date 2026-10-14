@@ -8,14 +8,14 @@ namespace HyperRTS.Network.Common
     /// Server singleton: this tick's in-game connections grouped by viewer faction (observers under neutral), so event
     /// senders filter and pack once per faction instead of once per connection.
     /// </summary>
-    public struct ViewerFanout : IComponentData
+    public struct FactionConnections : IComponentData
     {
         /// <summary>Each distinct viewer faction once.</summary>
         public NativeList<byte> Factions;
 
         public NativeParallelMultiHashMap<byte, Entity> Connections;
 
-        public static ViewerFanout Create(Allocator allocator) => new()
+        public static FactionConnections Create(Allocator allocator) => new()
         {
             Factions = new NativeList<byte>(8, allocator),
             Connections = new NativeParallelMultiHashMap<byte, Entity>(16, allocator),

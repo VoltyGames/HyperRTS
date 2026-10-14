@@ -7,31 +7,31 @@ using Unity.NetCode;
 
 namespace HyperRTS.Network.Common
 {
-    /// <summary>Server: regroups the in-game connections into the <see cref="ViewerFanout"/> before the senders run.</summary>
+    /// <summary>Server: regroups the in-game connections into <see cref="FactionConnections"/> before the senders.</summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
-    public partial struct ViewerFanoutSystem : ISystem
+    public partial struct FactionConnectionsSystem : ISystem
     {
-        private ViewerFanout _fanout;
+        private FactionConnections _connections;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _fanout = ViewerFanout.Create(Allocator.Persistent);
-            state.EntityManager.CreateSingleton(_fanout);
+            _connections = FactionConnections.Create(Allocator.Persistent);
+            state.EntityManager.CreateSingleton(_connections);
         }
 
-        public void OnDestroy(ref SystemState state) => _fanout.Dispose();
+        public void OnDestroy(ref SystemState state) => _connections.Dispose();
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _fanout.Clear();
+            _connections.Clear();
             foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>().WithAll<NetworkStreamInGame>()
                          .WithEntityAccess())
             {
-                _fanout.Add(ConnectionPlayers.Faction(ref state, connection), connection);
+                _connections.Add(ConnectionPlayers.Faction(ref state, connection), connection);
             }
         }
     }

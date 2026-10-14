@@ -118,7 +118,7 @@ SimulationSystemGroup
      ├─         DeathSystem, VictorySystem, CasualtyStatsSystem, KillCreditSystem, VeterancySystem,
      │          ContainerDeathSystem, DeathCueSystem
      └─ last    *StatSystem (MaxHealth, Weapon, MoveSpeed, Vision, BuildRate, ProductionSpeed),
-                ReplayRecorderSystem, ViewerFanoutSystem, CueSendSystem, ImpactSendSystem
+                ReplayRecorderSystem, FactionConnectionsSystem, CueSendSystem, ImpactSendSystem
 PresentationSystemGroup
  └─ TeamColorSystem, FogVisibilitySystem, SoundPlaybackSystem   (+ HUD and overlay MonoBehaviours)
 ```

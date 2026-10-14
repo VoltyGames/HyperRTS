@@ -8,7 +8,7 @@ using Unity.NetCode;
 namespace HyperRTS.Simulation.Tests
 {
     /// <summary>Connections group by viewer faction, and each faction's batches reach all its connections.</summary>
-    public class ViewerFanoutTests
+    public class FactionConnectionsTests
     {
         [Test]
         public void Factions_AreListedOnce_AndBatchesReachEveryConnectionOfTheFaction()
@@ -17,18 +17,18 @@ namespace HyperRTS.Simulation.Tests
             var entities = world.EntityManager;
             var allies = new[] { entities.CreateEntity(), entities.CreateEntity() };
             var observer = entities.CreateEntity();
-            var fanout = ViewerFanout.Create(Allocator.Temp);
-            fanout.Add(1, allies[0]);
-            fanout.Add(0, observer);
-            fanout.Add(1, allies[1]);
+            var viewers = FactionConnections.Create(Allocator.Temp);
+            viewers.Add(1, allies[0]);
+            viewers.Add(0, observer);
+            viewers.Add(1, allies[1]);
             using var batches = new NativeList<ImpactRpc>(Allocator.Temp) { new ImpactRpc(), new ImpactRpc() };
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
-            fanout.Send(ecb, 1, batches);
+            viewers.Send(ecb, 1, batches);
             ecb.Playback(entities);
             ecb.Dispose();
 
-            CollectionAssert.AreEqual(new byte[] { 1, 0 }, fanout.Factions.AsArray().ToArray());
+            CollectionAssert.AreEqual(new byte[] { 1, 0 }, viewers.Factions.AsArray().ToArray());
             using var query = entities.CreateEntityQuery(typeof(ImpactRpc), typeof(SendRpcCommandRequest));
             var requests = query.ToComponentDataArray<SendRpcCommandRequest>(Allocator.Temp);
             Assert.AreEqual(4, requests.Length, "two batches to each of the two allies");
@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Tests
                 Assert.AreNotEqual(observer, request.TargetConnection, "the observer views as another faction");
             }
 
-            fanout.Dispose();
+            viewers.Dispose();
         }
     }
 }

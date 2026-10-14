@@ -16,7 +16,7 @@ namespace HyperRTS.Network.Cues
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
-    [UpdateAfter(typeof(ViewerFanoutSystem))]
+    [UpdateAfter(typeof(FactionConnectionsSystem))]
     public partial struct CueSendSystem : ISystem
     {
         /// <summary>
@@ -29,7 +29,7 @@ namespace HyperRTS.Network.Cues
         {
             state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<ViewerFanout>();
+            state.RequireForUpdate<FactionConnections>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -48,8 +48,8 @@ namespace HyperRTS.Network.Cues
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var visible = new NativeList<CueEvent>(cues.Length, Allocator.Temp);
             var batches = new NativeList<CueRpc>(MaxBatchesPerTick, Allocator.Temp);
-            var fanout = SystemAPI.GetSingleton<ViewerFanout>();
-            foreach (var viewer in fanout.Factions)
+            var viewers = SystemAPI.GetSingleton<FactionConnections>();
+            foreach (var viewer in viewers.Factions)
             {
                 visible.Clear();
                 foreach (var cue in cues)
@@ -62,7 +62,7 @@ namespace HyperRTS.Network.Cues
 
                 batches.Clear();
                 CuePacking.Batch(visible.AsArray(), MaxBatchesPerTick, batches);
-                fanout.Send(ecb, viewer, batches);
+                viewers.Send(ecb, viewer, batches);
             }
         }
     }

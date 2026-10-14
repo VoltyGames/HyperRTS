@@ -17,7 +17,7 @@ namespace HyperRTS.Network.Combat
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
-    [UpdateAfter(typeof(ViewerFanoutSystem))]
+    [UpdateAfter(typeof(FactionConnectionsSystem))]
     public partial struct ImpactSendSystem : ISystem
     {
         /// <summary>Most batches each client gets per tick; a barrage drops the rest instead of flooding RPCs.</summary>
@@ -28,7 +28,7 @@ namespace HyperRTS.Network.Combat
         {
             state.RequireForUpdate<ImpactQueue>();
             state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<ViewerFanout>();
+            state.RequireForUpdate<FactionConnections>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -47,8 +47,8 @@ namespace HyperRTS.Network.Combat
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var visible = new NativeList<ImpactEvent>(impacts.Length, Allocator.Temp);
             var batches = new NativeList<ImpactRpc>(MaxBatchesPerTick, Allocator.Temp);
-            var fanout = SystemAPI.GetSingleton<ViewerFanout>();
-            foreach (var viewer in fanout.Factions)
+            var viewers = SystemAPI.GetSingleton<FactionConnections>();
+            foreach (var viewer in viewers.Factions)
             {
                 visible.Clear();
                 foreach (var impact in impacts)
@@ -61,7 +61,7 @@ namespace HyperRTS.Network.Combat
 
                 batches.Clear();
                 ImpactRpc.Batch(visible.AsArray(), MaxBatchesPerTick, batches);
-                fanout.Send(ecb, viewer, batches);
+                viewers.Send(ecb, viewer, batches);
             }
         }
     }
