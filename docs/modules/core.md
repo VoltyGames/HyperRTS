@@ -67,7 +67,7 @@ The base: ownership, identity, health and shared helpers.
 | `ActiveOrder`, `QueuedOrder` | Current order (disabled = idle) and the shift queue |
 | `OrderWriter` | `Issue(unit, order, queue)`, `Stop(unit)` |
 | `PlayerCommands`, `PlayerCommandSubject` | `Any(types)` skips idle frames; `Collect` lists who a command addresses (group, `Unit`, else selection) |
-| `TypeSet`, `OrderTraits` | Sets of command types; `Register` lets a custom order engage while moving or use formations |
+| `TypeSet` | A bit set of command types (`PlayerCommands.Any`) |
 
 `OrderDispatchSystem` starts the next queued order. `MoveOrderSystem` runs Move, AttackMove and Patrol (patrol
 re-queues its leg). `EscortSystem` follows a friendly ward. `PlayerCommandClearSystem` clears commands last.

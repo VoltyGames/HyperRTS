@@ -39,6 +39,12 @@ Status of the engine and the work still open. Update it when a feature lands or 
 
 ## Open
 
+### Frozen until a game uses them
+
+Abilities, aircraft, upgrades, veterancy, stealth and detection, auras, build limits and the delivery and refill
+economy are built and tested, but no shipped content uses them yet. Keep them working; don't extend them until a
+game's units need them. The same goes for ambient polish (birds, dust devils, cloth flags, puddles).
+
 ### Gameplay
 
 - Moving obstacles, per-area water levels, ramps onto decks.
