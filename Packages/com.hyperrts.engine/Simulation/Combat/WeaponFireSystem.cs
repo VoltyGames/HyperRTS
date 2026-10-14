@@ -1,7 +1,6 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
@@ -28,9 +27,8 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<Stealth> _stealth;
         private ComponentLookup<Ammo> _ammo;
         private DamageWriter _damage;
-        private SoundWriter _sounds;
+        private CueWriter _cues;
         private ImpactWriter _impacts;
-        private EffectWriter _effects;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -41,13 +39,11 @@ namespace HyperRTS.Simulation.Combat
             _stealth = state.GetComponentLookup<Stealth>();
             _ammo = state.GetComponentLookup<Ammo>();
             _damage = new DamageWriter(ref state);
-            _sounds = new SoundWriter(ref state);
+            _cues = new CueWriter(ref state);
             _impacts = new ImpactWriter(ref state);
-            _effects = new EffectWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
-            state.RequireForUpdate<SoundQueue>();
+            state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<ImpactQueue>();
-            state.RequireForUpdate<EffectQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -60,9 +56,8 @@ namespace HyperRTS.Simulation.Combat
             _stealth.Update(ref state);
             _ammo.Update(ref state);
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
-            _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
+            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
             _impacts.Update(ref state, SystemAPI.GetSingletonEntity<ImpactQueue>());
-            _effects.Update(ref state, SystemAPI.GetSingletonEntity<EffectQueue>());
 
             // Single-threaded: every shot appends to the one damage queue.
             new FireJob
@@ -76,9 +71,8 @@ namespace HyperRTS.Simulation.Combat
                 Stealth = _stealth,
                 Ammo = _ammo,
                 Damage = _damage,
-                Sounds = _sounds,
+                Cues = _cues,
                 Impacts = _impacts,
-                Effects = _effects,
             }.Schedule();
         }
 
@@ -95,9 +89,8 @@ namespace HyperRTS.Simulation.Combat
             public ComponentLookup<Stealth> Stealth;
             public ComponentLookup<Ammo> Ammo;
             public DamageWriter Damage;
-            public SoundWriter Sounds;
+            public CueWriter Cues;
             public ImpactWriter Impacts;
-            public EffectWriter Effects;
 
             private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
                 EnabledRefRO<AttackTarget> attacking, in Faction faction)
@@ -131,7 +124,8 @@ namespace HyperRTS.Simulation.Combat
                 {
                     var hit = CombatMath.Hit(weapon, entity, faction.Value, origin, target, targetPosition);
                     Damage.Add(hit);
-                    Sounds.Play(entity, SoundSlot.Impact, targetPosition, faction.Value);
+                    Cues.Play(entity, CueSlot.Impact, LocalTransform.FromPosition(targetPosition), place.Forward(),
+                        faction.Value);
                     Impacts.Add(Impacts.TypeIdFor(entity), hit);
                 }
                 else
@@ -156,14 +150,12 @@ namespace HyperRTS.Simulation.Combat
                 return true;
             }
 
-            /// <summary>The fire effect faces the target level, the way the shooter turned.</summary>
+            /// <summary>The fire cue faces the target level, the way the shooter turned.</summary>
             private void PlayFire(Entity shooter, in LocalTransform transform, float3 targetPosition, byte faction)
             {
-                Sounds.Play(shooter, SoundSlot.Fire, transform.Position, faction);
                 var toward = targetPosition - transform.Position;
                 toward.y = 0f;
-                Effects.Play(shooter, EffectSlot.Fire, transform, math.normalizesafe(toward, transform.Forward()),
-                    faction);
+                Cues.Play(shooter, CueSlot.Fire, transform, math.normalizesafe(toward, transform.Forward()), faction);
             }
 
             private void Reveal(Entity shooter)
@@ -207,7 +199,7 @@ namespace HyperRTS.Simulation.Combat
                 {
                     Speed = weapon.ProjectileSpeed,
                     Height = weapon.ProjectileHeight,
-                    ImpactSoundTypeId = Sounds.TypeIdFor(shooter, SoundSlot.Impact),
+                    ImpactSoundTypeId = Cues.TypeIdFor(shooter, CueSlot.Impact),
                     ImpactTypeId = Impacts.TypeIdFor(shooter),
                     Hit = CombatMath.Hit(weapon, shooter, faction.Value, origin, target, aim),
                 });

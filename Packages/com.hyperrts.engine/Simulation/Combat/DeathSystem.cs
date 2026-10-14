@@ -1,6 +1,6 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>Marks zero-health entities <see cref="Dead"/>, spawns their remains and destroys them at the end of the frame.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
-    [UpdateBefore(typeof(DeathSoundSystem))]
+    [UpdateBefore(typeof(DeathCueSystem))]
     public partial struct DeathSystem : ISystem
     {
         private ComponentLookup<SpawnOnDeath> _spawnLookup;

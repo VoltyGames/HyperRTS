@@ -38,9 +38,9 @@ namespace HyperRTS.Simulation.Effects
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 var effects = EffectSetup.Add(ref writer);
                 var muzzle = EffectSetup.Socket(authoring.transform, authoring.muzzle);
-                EffectSetup.Set(effects, EffectSlot.Fire, authoring.fire, muzzle);
-                EffectSetup.Set(effects, EffectSlot.Death, authoring.death, default);
-                EffectSetup.Set(effects, EffectSlot.Ability, authoring.ability, default);
+                EffectSetup.Set(effects, CueSlot.Fire, authoring.fire, muzzle);
+                EffectSetup.Set(effects, CueSlot.Death, authoring.death, default);
+                EffectSetup.Set(effects, CueSlot.Ability, authoring.ability, default);
             }
         }
     }

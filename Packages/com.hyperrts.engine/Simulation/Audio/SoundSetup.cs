@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Audio
             writer.AddBuffer<EntitySound>();
 
         /// <summary>Unset cues are skipped, so the slot stays silent and writes no events.</summary>
-        public static void Set(DynamicBuffer<EntitySound> sounds, SoundSlot slot, SoundCue cue)
+        public static void Set(DynamicBuffer<EntitySound> sounds, CueSlot slot, SoundCue cue)
         {
             if (cue != null)
             {

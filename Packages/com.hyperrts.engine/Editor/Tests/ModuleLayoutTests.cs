@@ -16,8 +16,8 @@ namespace HyperRTS.Editor.Tests
         private static readonly string[] Layers =
         {
             "Common", "Animation", "Navigation", "Stats", "Power", "Vision", "Spatial", "Selection", "Orders", "Audio",
-            "Effects", "Combat", "Transport", "Air", "Units", "Resources", "Match", "Production", "Upgrades", "Buildings", "Abilities",
-            "Fields", "Veterancy", "Capture", "AI", "GameEntities", "Commands", "Replays",
+            "Effects", "Cues", "Combat", "Transport", "Air", "Units", "Resources", "Match", "Production", "Upgrades",
+            "Buildings", "Abilities", "Fields", "Veterancy", "Capture", "AI", "GameEntities", "Commands", "Replays",
         };
 
         // Uses of a higher layer that are part of the design. Shrink this list; never grow it casually: a new entry

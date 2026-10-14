@@ -3,6 +3,7 @@ using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using UnityEngine;
@@ -10,7 +11,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Audio
 {
     /// <summary>
-    /// Plays the frame's <see cref="SoundEvent"/>s from a pool of audio sources: random clip, volume and pitch, 3D at
+    /// Plays the sounds of the frame's <see cref="CueEvent"/>s from a pool of audio sources: random clip, volume and pitch, 3D at
     /// the event position. Skips what the local player can't hear (fog, other players' voices) and 3D sounds out of
     /// the cue's range of the <see cref="AudioListener"/>.
     /// </summary>
@@ -21,7 +22,7 @@ namespace HyperRTS.Presentation.Audio
         private const int Voices = 32;
 
         private readonly SoundPool _pool = new(Voices);
-        private TypeCatalog<List<(SoundSlot Slot, SoundCue Cue)>> _cues;
+        private TypeCatalog<List<(CueSlot Slot, SoundCue Cue)>> _cues;
         private EntityQuery _fog;
         private GameObject _root;
         private AudioSource[] _sources;
@@ -29,10 +30,10 @@ namespace HyperRTS.Presentation.Audio
 
         protected override void OnCreate()
         {
-            _cues = new TypeCatalog<List<(SoundSlot Slot, SoundCue Cue)>>(SystemAPI.QueryBuilder()
+            _cues = new TypeCatalog<List<(CueSlot Slot, SoundCue Cue)>>(SystemAPI.QueryBuilder()
                 .WithAll<EntityInfo, EntitySound>().WithOptions(EntityQueryOptions.IncludePrefab).Build(), ReadCues);
             _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
-            RequireForUpdate<SoundQueue>();
+            RequireForUpdate<CueQueue>();
             RequireForUpdate<PrefabRegistry>();
         }
 
@@ -56,7 +57,7 @@ namespace HyperRTS.Presentation.Audio
 
         protected override void OnUpdate()
         {
-            var sounds = SystemAPI.GetSingletonBuffer<SoundEvent>(true);
+            var sounds = SystemAPI.GetSingletonBuffer<CueEvent>(true);
             if (sounds.IsEmpty)
             {
                 return;
@@ -75,7 +76,7 @@ namespace HyperRTS.Presentation.Audio
             for (var i = 0; i < sounds.Length; i++)
             {
                 var sound = sounds[i];
-                if (SoundRules.IsAudible(sound, view.Viewer, fog, relations))
+                if (CueRules.IsVisible(sound, view.Viewer, fog, relations))
                 {
                     Play(FindCue(registry, sound.TypeId, sound.Slot), sound.Position);
                 }
@@ -127,7 +128,7 @@ namespace HyperRTS.Presentation.Audio
         }
 
         /// <summary>The slot's cue among the type's, or null.</summary>
-        private SoundCue FindCue(in PrefabRegistry registry, int typeId, SoundSlot slot)
+        private SoundCue FindCue(in PrefabRegistry registry, int typeId, CueSlot slot)
         {
             var cues = _cues.Find(EntityManager, registry, typeId);
             if (cues == null)
@@ -146,9 +147,9 @@ namespace HyperRTS.Presentation.Audio
             return null;
         }
 
-        private static List<(SoundSlot Slot, SoundCue Cue)> ReadCues(EntityManager entityManager, Entity source)
+        private static List<(CueSlot Slot, SoundCue Cue)> ReadCues(EntityManager entityManager, Entity source)
         {
-            var cues = new List<(SoundSlot, SoundCue)>();
+            var cues = new List<(CueSlot, SoundCue)>();
             foreach (var sound in entityManager.GetBuffer<EntitySound>(source, true))
             {
                 cues.Add((sound.Slot, sound.Cue.Value));

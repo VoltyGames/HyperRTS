@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Effects;
 using Unity.Entities;
 
@@ -30,7 +31,7 @@ namespace HyperRTS.Presentation.Effects
         public SurfaceEffects Impacts { get; }
 
         /// <summary>The slot's rig entry; false when the type has none.</summary>
-        public bool TryGet(EffectSlot slot, out EntityEffect effect)
+        public bool TryGet(CueSlot slot, out EntityEffect effect)
         {
             foreach (var entry in _effects)
             {

@@ -18,7 +18,7 @@ Input / AI / network ─PlayerCommand─▶ command systems ─OrderWriter─▶
 
 A module uses only modules before it; `Common` is the base. `ModuleLayoutTests.Layers` holds the order:
 
-Common, Animation, Navigation, Stats, Power, Vision, Spatial, Selection, Orders, Audio, Effects, Combat, Transport,
+Common, Animation, Navigation, Stats, Power, Vision, Spatial, Selection, Orders, Audio, Effects, Cues, Combat, Transport,
 Air, Units, Resources, Match, Production, Upgrades, Buildings, Abilities, Fields, Veterancy, Capture, AI,
 GameEntities, Commands, Replays.
 
@@ -30,6 +30,6 @@ GameEntities, Commands, Replays.
 | [Movement](modules/movement.md) | Navigation, Units, Spatial, Air, Transport |
 | [Combat](modules/combat.md) | Combat, Stats, Veterancy, Upgrades, Fields, Abilities, Vision |
 | [Economy](modules/economy.md) | Resources, Power, Buildings, Production, Capture |
-| [Support](modules/support.md) | AI, Audio, Effects, Replays, Animation |
+| [Support](modules/support.md) | AI, Audio, Effects, Cues, Replays, Animation |
 | [Client](modules/client.md) | Interaction (`HyperRTS.Client`), Input, Presentation |
 | [Map tools](modules/map-tools.md) | The map builder, Map Editor and map library (`Editor/Maps/`) |

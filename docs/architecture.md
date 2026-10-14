@@ -94,7 +94,7 @@ InitializationSystemGroup
 SimulationSystemGroup
  ├─ OrderSystemGroup
  │   ├─ first   ClientSingletonSystem, MatchSetupSystem, PlayerGhostSystem, LocalGhostActivationSystem,
- │   │          MatchStartSystem, ReferenceResolveSystem, SoundClearSystem, SoundReceiveSystem,
+ │   │          MatchStartSystem, ReferenceResolveSystem, CueClearSystem, CueReceiveSystem,
  │   │          SelectionInputSystem, SelectionSystem, CommandInputSystem, PlacementInputSystem,
  │   │          CommandReceiveSystem, SkirmishAISystem
  │   ├─         UnitCommandSystem, AbilityCommandSystem, PlaceBuildingSystem, ProductionCommandSystem,
@@ -108,7 +108,7 @@ SimulationSystemGroup
  ├─ CombatSystemGroup
  │   ├─ first   FogOfWarSystem, LocalFogViewSystem
  │   ├─         AttackOrderSystem, TargetAcquisitionSystem, EngagementSystem, WeaponFireSystem,
- │   │          ProjectileSystem, StealthSystem, AbilitySystem, AbilitySoundSystem, AreaFieldSystem
+ │   │          ProjectileSystem, StealthSystem, AbilitySystem, AbilityCueSystem, AreaFieldSystem
  │   └─ last    DamageSystem
  ├─ ProductionSystemGroup
  │   ├─ first   PopulationSystem
@@ -116,9 +116,9 @@ SimulationSystemGroup
  │              ProductionSystem, UpgradeSystem, BoardingSystem
  └─ LifecycleSystemGroup
      ├─         DeathSystem, VictorySystem, CasualtyStatsSystem, KillCreditSystem, VeterancySystem,
-     │          ContainerDeathSystem, DeathSoundSystem
+     │          ContainerDeathSystem, DeathCueSystem
      └─ last    *StatSystem (MaxHealth, Weapon, MoveSpeed, Vision, BuildRate, ProductionSpeed),
-                ReplayRecorderSystem, SoundSendSystem
+                ReplayRecorderSystem, CueSendSystem, ImpactSendSystem
 PresentationSystemGroup
  └─ TeamColorSystem, FogVisibilitySystem, SoundPlaybackSystem   (+ HUD and overlay MonoBehaviours)
 ```

@@ -46,14 +46,14 @@ namespace HyperRTS.Simulation.Audio
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 var sounds = SoundSetup.Add(ref writer);
-                SoundSetup.Set(sounds, SoundSlot.Fire, authoring.fire);
-                SoundSetup.Set(sounds, SoundSlot.Impact, authoring.impact);
-                SoundSetup.Set(sounds, SoundSlot.Death, authoring.death);
-                SoundSetup.Set(sounds, SoundSlot.Ability, authoring.ability);
-                SoundSetup.Set(sounds, SoundSlot.Ready, authoring.ready);
-                SoundSetup.Set(sounds, SoundSlot.Select, authoring.select);
-                SoundSetup.Set(sounds, SoundSlot.Move, authoring.move);
-                SoundSetup.Set(sounds, SoundSlot.Attack, authoring.attack);
+                SoundSetup.Set(sounds, CueSlot.Fire, authoring.fire);
+                SoundSetup.Set(sounds, CueSlot.Impact, authoring.impact);
+                SoundSetup.Set(sounds, CueSlot.Death, authoring.death);
+                SoundSetup.Set(sounds, CueSlot.Ability, authoring.ability);
+                SoundSetup.Set(sounds, CueSlot.Ready, authoring.ready);
+                SoundSetup.Set(sounds, CueSlot.Select, authoring.select);
+                SoundSetup.Set(sounds, CueSlot.Move, authoring.move);
+                SoundSetup.Set(sounds, CueSlot.Attack, authoring.attack);
             }
         }
     }

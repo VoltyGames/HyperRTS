@@ -47,12 +47,12 @@ namespace HyperRTS.Presentation.Tests
             Assert.IsNull(_catalog.Find(_entityManager, _registry, TypeId));
 
             var entity = CreateTyped(false);
-            _entityManager.AddBuffer<EntityEffect>(entity).Add(new EntityEffect { Slot = EffectSlot.Fire });
+            _entityManager.AddBuffer<EntityEffect>(entity).Add(new EntityEffect { Slot = CueSlot.Fire });
 
             var set = _catalog.Find(_entityManager, _registry, TypeId);
             Assert.IsNotNull(set);
-            Assert.IsTrue(set.TryGet(EffectSlot.Fire, out _));
-            Assert.IsFalse(set.TryGet(EffectSlot.Death, out _));
+            Assert.IsTrue(set.TryGet(CueSlot.Fire, out _));
+            Assert.IsFalse(set.TryGet(CueSlot.Death, out _));
             Assert.IsNull(set.Impacts);
         }
 
@@ -60,12 +60,12 @@ namespace HyperRTS.Presentation.Tests
         public void Prefab_IsPreferredOverInstances()
         {
             var prefab = CreateTyped(true);
-            _entityManager.AddBuffer<EntityEffect>(prefab).Add(new EntityEffect { Slot = EffectSlot.Death });
+            _entityManager.AddBuffer<EntityEffect>(prefab).Add(new EntityEffect { Slot = CueSlot.Death });
             _registry.ByTypeId.Add(TypeId, prefab);
 
             var set = _catalog.Find(_entityManager, _registry, TypeId);
 
-            Assert.IsTrue(set.TryGet(EffectSlot.Death, out _));
+            Assert.IsTrue(set.TryGet(CueSlot.Death, out _));
         }
 
         [Test]
@@ -75,7 +75,7 @@ namespace HyperRTS.Presentation.Tests
             Assert.IsNull(_catalog.Find(_entityManager, _registry, TypeId));
 
             var entity = CreateTyped(false);
-            _entityManager.AddBuffer<EntityEffect>(entity).Add(new EntityEffect { Slot = EffectSlot.Fire });
+            _entityManager.AddBuffer<EntityEffect>(entity).Add(new EntityEffect { Slot = CueSlot.Fire });
 
             Assert.IsNull(_catalog.Find(_entityManager, _registry, TypeId), "the prefab speaks for its instances");
         }

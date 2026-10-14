@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Effects;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
@@ -30,7 +31,7 @@ namespace HyperRTS.Simulation.Tests
             Object.DestroyImmediate(_rig);
         }
 
-        private Entity Rigged(Entity entity, EffectSlot slot, float3 socket)
+        private Entity Rigged(Entity entity, CueSlot slot, float3 socket)
         {
             var writer = new EntityManagerWriter(_world.EntityManager, entity);
             EffectSetup.Set(EffectSetup.Add(ref writer), slot, _rig, socket);
@@ -38,14 +39,14 @@ namespace HyperRTS.Simulation.Tests
         }
 
         /// <summary>Every event of the next frames; the queue itself only holds the last frame's.</summary>
-        private List<EffectEvent> Played(float seconds)
+        private List<CueEvent> Played(float seconds)
         {
-            var played = new List<EffectEvent>();
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(EffectQueue));
+            var played = new List<CueEvent>();
+            using var query = _world.EntityManager.CreateEntityQuery(typeof(CueQueue));
             for (var t = 0f; t < seconds; t += TestWorld.FrameTime)
             {
                 _world.Tick();
-                var buffer = _world.EntityManager.GetBuffer<EffectEvent>(query.GetSingletonEntity());
+                var buffer = _world.EntityManager.GetBuffer<CueEvent>(query.GetSingletonEntity());
                 played.AddRange(buffer.AsNativeArray().ToArray());
             }
 
@@ -57,11 +58,11 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Fire_PlaysAtTheMuzzle_FacingTheTarget()
         {
-            var shooter = Rigged(_world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Rifle")), EffectSlot.Fire,
+            var shooter = Rigged(_world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Rifle")), CueSlot.Fire,
                 new float3(0f, 1f, 2f));
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
-            var fire = Played(0.5f).Find(effect => effect.Slot == EffectSlot.Fire);
+            var fire = Played(0.5f).Find(effect => effect.Slot == CueSlot.Fire);
 
             Assert.AreEqual(GetTypeId(shooter), fire.TypeId);
             Assert.AreEqual(1, fire.Faction);
@@ -73,7 +74,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void EntitiesWithoutARigForTheSlot_PlayNothing()
         {
-            Rigged(_world.AddWeapon(_world.SpawnUnit(1, float3.zero)), EffectSlot.Death, float3.zero);
+            Rigged(_world.AddWeapon(_world.SpawnUnit(1, float3.zero)), CueSlot.Death, float3.zero);
             _world.AddWeapon(_world.SpawnUnit(1, new float3(0f, 0f, 2f)));
             _world.SpawnUnit(2, new float3(3f, 0f, 0f), maxHealth: 1000f);
 
@@ -84,11 +85,11 @@ namespace HyperRTS.Simulation.Tests
         public void Death_PlaysTheVictimsDeathRig()
         {
             _world.AddWeapon(_world.SpawnUnit(1, float3.zero), damage: 100f);
-            var victim = Rigged(_world.SpawnUnit(2, new float3(3f, 0f, 0f), name: "Victim"), EffectSlot.Death,
+            var victim = Rigged(_world.SpawnUnit(2, new float3(3f, 0f, 0f), name: "Victim"), CueSlot.Death,
                 float3.zero);
             var typeId = GetTypeId(victim);
 
-            var death = Played(1f).Find(effect => effect.Slot == EffectSlot.Death);
+            var death = Played(1f).Find(effect => effect.Slot == CueSlot.Death);
 
             Assert.AreEqual(typeId, death.TypeId);
             Assert.AreEqual(2, death.Faction);
@@ -103,16 +104,16 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.CompleteAllTrackedJobs();
             var fog = Single<FogOfWar>();
             var relations = Single<FactionRelations>();
-            var hidden = new EffectEvent { Slot = EffectSlot.Fire, Faction = 1 };
-            var seen = new EffectEvent { Slot = EffectSlot.Fire, Faction = 1, Position = new float3(52f, 0f, 50f) };
+            var hidden = new CueEvent { Slot = CueSlot.Fire, Faction = 1 };
+            var seen = new CueEvent { Slot = CueSlot.Fire, Faction = 1, Position = new float3(52f, 0f, 50f) };
 
-            Assert.IsFalse(EffectRules.IsVisible(hidden, 2, fog, relations), "hidden by fog");
-            Assert.IsTrue(EffectRules.IsVisible(seen, 2, fog, relations));
-            Assert.IsTrue(EffectRules.IsVisible(hidden, 1, fog, relations), "own effects always");
+            Assert.IsFalse(CueRules.IsVisible(hidden, 2, fog, relations), "hidden by fog");
+            Assert.IsTrue(CueRules.IsVisible(seen, 2, fog, relations));
+            Assert.IsTrue(CueRules.IsVisible(hidden, 1, fog, relations), "own effects always");
             seen.Stealthed = true;
-            Assert.IsFalse(EffectRules.IsVisible(seen, 2, fog, relations), "undetected stealth shows nothing");
+            Assert.IsFalse(CueRules.IsVisible(seen, 2, fog, relations), "undetected stealth shows nothing");
             var inactive = new LocalFogView { Viewer = 2, Active = false };
-            Assert.IsTrue(EffectRules.IsSeenLocally(hidden, inactive, fog, relations), "no local fog shows all");
+            Assert.IsTrue(CueRules.IsSeenLocally(hidden, inactive, fog, relations), "no local fog shows all");
         }
 
         private T Single<T>() where T : unmanaged, IComponentData

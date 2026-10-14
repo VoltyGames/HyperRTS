@@ -1,30 +1,33 @@
 using HyperRTS.Core;
 using HyperRTS.Network.Players;
-using HyperRTS.Simulation.Audio;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 
-namespace HyperRTS.Network.Audio
+namespace HyperRTS.Network.Cues
 {
     /// <summary>
-    /// Server: sends each client the frame's sounds it may hear (<see cref="SoundRules.IsAudible"/>: what its team
-    /// sees and detects, plus its own voices). The server itself never plays audio.
+    /// Server: sends each client the frame's cues it may hear or see (<see cref="CueRules.IsVisible"/>), batched into
+    /// <see cref="CueRpc"/>s.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
-    public partial struct SoundSendSystem : ISystem
+    public partial struct CueSendSystem : ISystem
     {
-        /// <summary>Most sounds one client gets per tick; a big battle drops the rest instead of flooding RPCs.</summary>
-        public const int MaxPerTick = 16;
+        /// <summary>
+        /// Most batches one client gets per tick; a big battle drops the rest instead of flooding RPCs.
+        /// </summary>
+        public const int MaxBatchesPerTick = 2;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<SoundQueue>();
+            state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -32,8 +35,8 @@ namespace HyperRTS.Network.Audio
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var sounds = SystemAPI.GetSingletonBuffer<SoundEvent>(true);
-            if (sounds.IsEmpty)
+            var cues = SystemAPI.GetSingletonBuffer<CueEvent>(true);
+            if (cues.IsEmpty)
             {
                 return;
             }
@@ -42,29 +45,30 @@ namespace HyperRTS.Network.Audio
             SystemAPI.TryGetSingleton(out FogOfWar fog);
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
+            var visible = new NativeList<CueEvent>(cues.Length, Allocator.Temp);
+            var batches = new NativeList<CueRpc>(MaxBatchesPerTick, Allocator.Temp);
             foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>().WithAll<NetworkStreamInGame>()
                          .WithEntityAccess())
             {
-                var listener = ConnectionPlayers.Faction(ref state, connection);
-                var sent = 0;
-                for (var i = 0; i < sounds.Length && sent < MaxPerTick; i++)
+                var viewer = ConnectionPlayers.Faction(ref state, connection);
+                visible.Clear();
+                foreach (var cue in cues)
                 {
-                    if (!SoundRules.IsAudible(sounds[i], listener, fog, relations))
+                    if (CueRules.IsVisible(cue, viewer, fog, relations))
                     {
-                        continue;
+                        visible.Add(cue);
                     }
+                }
 
+                batches.Clear();
+                CuePacking.Batch(visible.AsArray(), MaxBatchesPerTick, batches);
+                foreach (var batch in batches)
+                {
                     var rpc = ecb.CreateEntity();
-                    ecb.AddComponent(rpc, ToRpc(sounds[i]));
+                    ecb.AddComponent(rpc, batch);
                     ecb.AddComponent(rpc, new SendRpcCommandRequest { TargetConnection = connection });
-                    sent++;
                 }
             }
         }
-
-        private static SoundRpc ToRpc(in SoundEvent sound) => new()
-        {
-            TypeId = sound.TypeId, Slot = (byte)sound.Slot, Faction = sound.Faction, Position = sound.Position,
-        };
     }
 }

@@ -140,17 +140,12 @@ cooldowns) is checked by the same systems as in single player.
 reveal. Undetected stealthed enemies count as unseen, with fog on or off. Ghosts without a `Faction` (players, the
 match) always replicate, and observers see everything.
 
-## Sound
+## Cues and impacts
 
-The server never plays audio. `SoundSendSystem` sends each client the frame's sound events as `SoundRpc`s (type id,
-slot, owner, position): only those its team can see (the fog and stealth rule above), plus its own voices, at most
-16 per tick. `SoundReceiveSystem` queues them on the client, which plays them like single player.
-
-## Effects and impacts
-
-`EffectSendSystem` sends each client the effects its team may see (`EffectRules`) as `EffectRpc` batches of up to 48
-`PackedEffect`s (type id, slot, owner, position, yaw and pitch bytes; 20 bytes each), at most 2 batches per tick.
-`EffectReceiveSystem` unpacks them into the client's `EffectQueue`. Impacts go as `ImpactRpc` batches of up to
+The server never plays sounds or effects. `CueSendSystem` sends each client the cues its team may see (`CueRules`: the
+fog and stealth rule above, plus its own voices) as `CueRpc` batches of up to 48 `PackedCue`s (type id, slot, owner,
+position, yaw byte, 7-bit pitch with a stealth flag bit; 20 bytes each), at most 2 batches per tick.
+`CueReceiveSystem` unpacks them into the client's `CueQueue`, which plays them like single player. Impacts go as `ImpactRpc` batches of up to
 64 `PackedImpact`s (the replay's 15-byte format: type id, position in 1/16 m steps within ±2048 m, radius, owner,
 surface, material), at most 1 batch per tick.
 

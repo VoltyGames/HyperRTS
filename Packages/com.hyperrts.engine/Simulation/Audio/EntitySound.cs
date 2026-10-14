@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Audio
@@ -6,7 +7,7 @@ namespace HyperRTS.Simulation.Audio
     [InternalBufferCapacity(0)]
     public struct EntitySound : IBufferElementData
     {
-        public SoundSlot Slot;
+        public CueSlot Slot;
         public UnityObjectRef<SoundCue> Cue;
     }
 }

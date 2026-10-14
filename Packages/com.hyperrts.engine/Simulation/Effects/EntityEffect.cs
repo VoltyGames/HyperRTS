@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -8,7 +9,7 @@ namespace HyperRTS.Simulation.Effects
     [InternalBufferCapacity(0)]
     public struct EntityEffect : IBufferElementData
     {
-        public EffectSlot Slot;
+        public CueSlot Slot;
 
         /// <summary>A rig prefab (an <c>EffectRig</c> root with particle systems).</summary>
         public UnityObjectRef<GameObject> Rig;

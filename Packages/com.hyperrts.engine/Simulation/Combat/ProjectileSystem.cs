@@ -1,5 +1,6 @@
 ﻿using HyperRTS.Core;
-using HyperRTS.Simulation.Audio;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -19,7 +20,7 @@ namespace HyperRTS.Simulation.Combat
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
         private DamageWriter _damage;
-        private SoundWriter _sounds;
+        private CueWriter _cues;
         private ImpactWriter _impacts;
 
         [BurstCompile]
@@ -28,10 +29,10 @@ namespace HyperRTS.Simulation.Combat
             _targets = new TargetLookup(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
             _damage = new DamageWriter(ref state);
-            _sounds = new SoundWriter(ref state);
+            _cues = new CueWriter(ref state);
             _impacts = new ImpactWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
-            state.RequireForUpdate<SoundQueue>();
+            state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<ImpactQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -41,7 +42,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _targets.Update(ref state, _fogQuery);
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
-            _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
+            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
             _impacts.Update(ref state, SystemAPI.GetSingletonEntity<ImpactQueue>());
 
             new HomingJob { Targets = _targets }.ScheduleParallel();
@@ -51,7 +52,7 @@ namespace HyperRTS.Simulation.Combat
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Damage = _damage,
-                Sounds = _sounds,
+                Cues = _cues,
                 Impacts = _impacts,
             }.Schedule();
         }
@@ -78,7 +79,7 @@ namespace HyperRTS.Simulation.Combat
             public float DeltaTime;
             public EntityCommandBuffer Ecb;
             public DamageWriter Damage;
-            public SoundWriter Sounds;
+            public CueWriter Cues;
             public ImpactWriter Impacts;
 
             private void Execute(Entity entity, ref LocalTransform transform, in Projectile projectile)
@@ -98,7 +99,8 @@ namespace HyperRTS.Simulation.Combat
                 hit.Origin = transform.Position;
                 Damage.Add(hit);
                 Ecb.DestroyEntity(entity);
-                Sounds.Add(projectile.ImpactSoundTypeId, SoundSlot.Impact, transform.Position, hit.SourceFaction);
+                Cues.Add(projectile.ImpactSoundTypeId, CueSlot.Impact, transform.Position, transform.Forward(),
+                    hit.SourceFaction);
                 Impacts.Add(projectile.ImpactTypeId, hit);
             }
         }

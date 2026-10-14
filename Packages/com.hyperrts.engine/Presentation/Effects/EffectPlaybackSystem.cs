@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Effects;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
@@ -11,7 +12,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects
 {
     /// <summary>
-    /// Bursts the frame's <see cref="EffectEvent"/>s (the source type's slot rig at the socket, facing the event's
+    /// Bursts the frame's <see cref="CueEvent"/>s (the source type's slot rig at the socket, facing the event's
     /// direction) and <see cref="ImpactEvent"/>s (the shooter's <see cref="SurfaceEffects"/> rig for the material
     /// struck, on the ground) from the pool. Skips what the local player can't see and what is beyond a rig's range.
     /// </summary>
@@ -48,9 +49,9 @@ namespace HyperRTS.Presentation.Effects
             _fog.CompleteDependency();
             _fog.TryGetSingleton(out FogOfWar fog);
             var registry = SystemAPI.GetSingleton<PrefabRegistry>();
-            if (SystemAPI.TryGetSingletonBuffer<EffectEvent>(out var effects, true))
+            if (SystemAPI.TryGetSingletonBuffer<CueEvent>(out var cues, true))
             {
-                PlayEffects(effects, view, fog, relations, registry);
+                PlayEffects(cues, view, fog, relations, registry);
             }
 
             if (SystemAPI.TryGetSingletonBuffer<ImpactEvent>(out var impacts, true))
@@ -59,12 +60,12 @@ namespace HyperRTS.Presentation.Effects
             }
         }
 
-        private void PlayEffects(DynamicBuffer<EffectEvent> events, in LocalFogView view, in FogOfWar fog,
+        private void PlayEffects(DynamicBuffer<CueEvent> events, in LocalFogView view, in FogOfWar fog,
             in FactionRelations relations, in PrefabRegistry registry)
         {
             foreach (var effect in events)
             {
-                if (!EffectRules.IsSeenLocally(effect, view, fog, relations))
+                if (!CueRules.IsSeenLocally(effect, view, fog, relations))
                 {
                     continue;
                 }
@@ -80,7 +81,7 @@ namespace HyperRTS.Presentation.Effects
             }
         }
 
-        private GameObject FindRig(in EffectEvent effect, in PrefabRegistry registry)
+        private GameObject FindRig(in CueEvent effect, in PrefabRegistry registry)
         {
             var set = _catalog.Find(EntityManager, registry, effect.TypeId);
             if (set == null || !set.TryGet(effect.Slot, out var entry))

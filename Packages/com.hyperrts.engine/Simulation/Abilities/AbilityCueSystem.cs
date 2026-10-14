@@ -1,6 +1,6 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Audio;
-using HyperRTS.Simulation.Effects;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -9,53 +9,47 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Abilities
 {
-    /// <summary>Plays each <see cref="AbilityActivation"/>'s ability cue and effect at the aim point.</summary>
+    /// <summary>Plays each <see cref="AbilityActivation"/>'s ability cue at the aim point.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
     [UpdateAfter(typeof(AbilitySystem))]
-    public partial struct AbilitySoundSystem : ISystem
+    public partial struct AbilityCueSystem : ISystem
     {
-        private SoundWriter _sounds;
-        private EffectWriter _effects;
+        private CueWriter _cues;
         private ComponentLookup<LocalTransform> _transforms;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _sounds = new SoundWriter(ref state);
-            _effects = new EffectWriter(ref state);
+            _cues = new CueWriter(ref state);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
-            state.RequireForUpdate<SoundQueue>();
-            state.RequireForUpdate<EffectQueue>();
+            state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<AbilityEvents>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _sounds.Update(ref state, SystemAPI.GetSingletonEntity<SoundQueue>());
-            _effects.Update(ref state, SystemAPI.GetSingletonEntity<EffectQueue>());
+            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
             _transforms.Update(ref state);
-            new CastJob { Sounds = _sounds, Effects = _effects, Transforms = _transforms }.Schedule();
+            new CastJob { Cues = _cues, Transforms = _transforms }.Schedule();
         }
 
         [BurstCompile]
         [WithAll(typeof(AbilityEvents))]
         private partial struct CastJob : IJobEntity
         {
-            public SoundWriter Sounds;
-            public EffectWriter Effects;
+            public CueWriter Cues;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
 
             private void Execute(in DynamicBuffer<AbilityActivation> activations)
             {
                 foreach (var cast in activations)
                 {
-                    Sounds.Play(cast.Caster, SoundSlot.Ability, cast.Position, cast.Faction);
                     var direction = Direction(cast);
                     var aim = LocalTransform.FromPositionRotation(cast.Position,
                         quaternion.LookRotationSafe(direction, math.up()));
-                    Effects.Play(cast.Caster, EffectSlot.Ability, aim, direction, cast.Faction);
+                    Cues.Play(cast.Caster, CueSlot.Ability, aim, direction, cast.Faction);
                 }
             }
 

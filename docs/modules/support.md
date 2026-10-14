@@ -30,30 +30,38 @@ To replace it, disable the system and write your own `PlayerCommand`s.
 | Type | Role |
 | --- | --- |
 | `SoundCue` (asset) | Clips, volume and pitch ranges, max instances, priority, mixer group, 2D / 3D, distance |
-| `EntitySoundsAuthoring` | Cues per `SoundSlot`: Fire, Impact, Death, Ability, and owner-only Ready, Select, Move, Attack; games from `Custom` |
-| `SoundWriter`, `SoundQueue` | This frame's sounds (type, slot, position, owner); games append before the lifecycle phase ends |
-| `SoundRules` | `IsAudible`: voices reach their owner, other sounds whoever sees the source |
+| `EntitySoundsAuthoring` | Cues per `CueSlot`: Fire, Impact, Death, Ability, and owner-only Ready, Select, Move, Attack; games from `Custom` |
+| `SoundRules` | `HasCue`: whether an entity has a sound for a slot |
 
-Weapons, projectiles, deaths, abilities and ready events write sounds; `SoundClearSystem` empties the queue each
-frame. `AcknowledgementSystem` plays a selected or commanded unit's voice at most once a second. Playback is on the
-[client](client.md#presentation).
+Sounds play through [cues](#cues). Playback is on the [client](client.md#presentation).
 
 ## Effects
 
 | Type | Role |
 | --- | --- |
-| `EntityEffectsAuthoring` / `EntityEffect` | Rig per `EffectSlot` (Fire at a `muzzle` socket, Death, Ability; games from `Custom`) |
+| `EntityEffectsAuthoring` / `EntityEffect` | Rig per `CueSlot` (Fire at a `muzzle` socket, Death, Ability; games from `Custom`) |
 | `ImpactEffectsAuthoring` / `EntityImpactEffects` | A weapon's `SurfaceEffects` (rig per `SurfaceMaterial`) where its shots land |
 | `HitMaterialAuthoring` / `HitMaterial` | What a unit, building or tree is made of, for hits on it |
 | `LoopEffectsAuthoring` / `LoopEffect` | Rigs that stream while shown (exhaust, smoke), gated by health and duration |
 | `EffectTrailAuthoring` / `EffectTrail` | A rig along a projectile's path |
 | `MotionDustAuthoring` / `MotionDust` | Dust by ground material and speed, from a socket |
-| `EffectWriter`, `EffectQueue` | This frame's effects (type, slot, owner, socket position, direction, stealth) |
-| `EffectRules` | `IsVisible` / `IsSeenLocally`: whoever sees the source there, stealth honoured |
+| `EffectRules` | `TryGetSocket`: an entity's rig socket for a slot |
 
-Sockets bake as positions in the root's local space; `EffectSetup` writes all of it and skips unset rigs.
-`WeaponFireSystem` plays Fire facing the target, `DeathEffectSystem` Death and `AbilitySoundSystem` Ability at the aim
-point; `EffectClearSystem` empties the queue each frame. Rigs play on the client.
+Sockets bake as positions in the root's local space; `EffectSetup` writes all of it and skips unset rigs. Rigs play
+through [cues](#cues), on the client.
+
+## Cues
+
+| Type | Role |
+| --- | --- |
+| `CueSlot` (Common) | What a sound and effect are for; voice slots reach only the owner, Impact is sound only |
+| `CueWriter`, `CueQueue` / `CueEvent` | This frame's cues (type, slot, owner, position, direction, stealth); one event when the source has a sound or an effect for the slot, at the effect socket when it has a rig |
+| `CueRules` | `IsVisible` / `IsSeenLocally`: voices reach their owner, other cues whoever sees the source there, stealth honoured |
+
+`WeaponFireSystem` plays Fire facing the target (and Impact for instant hits), `ProjectileSystem` Impact,
+`DeathCueSystem` Death, `AbilityCueSystem` Ability at the aim point and `ReadyCueSystem` Ready; games append before
+the lifecycle phase ends. `AcknowledgementSystem` plays a selected or commanded unit's voice at most once a second.
+`CueClearSystem` empties the queue each frame. Sound and effect playback each look up their own table and skip misses.
 
 ## Replays
 
