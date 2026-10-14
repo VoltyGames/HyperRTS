@@ -160,6 +160,7 @@ namespace HyperRTS.Simulation.Replays
             writer.Write(Magic);
             writer.Write(replay.ScenePath ?? "");
             writer.Write(replay.Seed);
+            writer.Write(replay.Weather ?? "");
             writer.Write(replay.SampleRate);
             writer.Write(replay.Duration);
             writer.Write((byte)replay.Result.Phase);
@@ -190,6 +191,7 @@ namespace HyperRTS.Simulation.Replays
             {
                 ScenePath = reader.ReadString(),
                 Seed = reader.ReadUInt32(),
+                Weather = reader.ReadString(),
                 SampleRate = reader.ReadSingle(),
                 Duration = reader.ReadSingle(),
                 Result = new MatchState { Phase = (MatchPhase)reader.ReadByte(), WinningTeam = reader.ReadByte() },

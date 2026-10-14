@@ -53,7 +53,8 @@ The base: ownership, identity, health and shared helpers.
 | `VictoryCritical`, `PopulationProvider`, `Population` | Victory flag; population source; used / cap per player |
 
 - `MatchSetupSystem` (first in the order phase) applies `MatchSetup` alike on server and clients: drops closed slots
-  and what they own, sets names, colours, teams and `PlayerSide`, adds `AIPlayer`, scales stock, overrides fog.
+  and what they own, sets names, colours, teams and `PlayerSide`, adds `AIPlayer`, scales stock, overrides fog. `MatchSetup.Weather` (empty for the map's own) is read by
+  the scene's `WeatherSet` when it loads, not by a system.
 - `VictorySystem` defeats a player who lost every `VictoryCritical` entity (never one who owned none) and ends the
   match when one team is left. `SurrenderSystem` handles `CommandType.Surrender`.
 - `PopulationSystem` recounts each frame; delivery carriers are free.

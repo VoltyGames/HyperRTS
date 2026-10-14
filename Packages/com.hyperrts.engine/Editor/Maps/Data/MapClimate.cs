@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A landscape kit named by a spec's <c>climate</c>, read from the library's <c>&lt;Key&gt;.climate.json</c>.</summary>
     [Serializable]
-    [MapLibraryItem("climate", "surfaces", "roadClasses", "farmlandKits", "beltKits", "woodlandKits", "water", "atmosphere", "skybox")]
+    [MapLibraryItem("climate", "surfaces", "roadClasses", "farmlandKits", "beltKits", "woodlandKits", "water", "weathers")]
     public sealed class MapClimate : IMapLibraryItem
     {
         [NonSerialized]
@@ -122,15 +122,9 @@ namespace HyperRTS.Editor.Maps.Data
         [NonSerialized]
         public Material water;
 
-        [Tooltip("Sun, post-processing and lighting placed in every map of this climate.")]
+        [Tooltip("Weathers a map or match can pick, each an atmosphere prefab (sky, sun, fog, post-processing).")]
         [NonSerialized]
-        public GameObject atmosphere;
-
-        [NonSerialized]
-        public Material skybox;
-        public Color fogColor = new(0.72f, 0.76f, 0.8f);
-        public float fogStart = 150f;
-        public float fogEnd = 600f;
+        public List<MapClimateWeather> weathers = new();
 
         [Header("Distances")]
         public float detailDistance = 120f;
@@ -161,13 +155,18 @@ namespace HyperRTS.Editor.Maps.Data
 
         public bool HasTree(string key) => MapKeys.Contains(trees, key);
 
+        public MapClimateWeather Weather(string key) => MapKeys.Get(weathers, key, name, "weather");
+
         void IMapLibraryItem.Load(string key, MapLibraryRefs refs)
         {
             name = key;
             file = refs.file;
             water = refs.Asset<Material>(refs.water, "water");
-            atmosphere = refs.Asset<GameObject>(refs.atmosphere, "atmosphere");
-            skybox = refs.Asset<Material>(refs.skybox, "skybox");
+            weathers = refs.weathers.ConvertAll(weather => new MapClimateWeather
+            {
+                key = weather.key,
+                atmosphere = refs.Asset<GameObject>(weather.atmosphere, $"weathers '{weather.key}' atmosphere"),
+            });
         }
     }
 }

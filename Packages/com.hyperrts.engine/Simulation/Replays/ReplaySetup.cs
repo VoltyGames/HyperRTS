@@ -14,6 +14,7 @@ namespace HyperRTS.Simulation.Replays
         {
             var setup = MatchSetup.Create();
             setup.Seed = replay.Seed;
+            setup.Weather.CopyFromTruncated(replay.Weather ?? "");
             var last = 0;
             foreach (var player in replay.Players)
             {

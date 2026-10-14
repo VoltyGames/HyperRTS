@@ -63,6 +63,18 @@ namespace HyperRTS.Editor.Maps.Checks
             var rising = terrain.waterLevel < terrain.height && terrain.height < terrain.maxHeight;
             Require(rising, "Terrain heights must rise: waterLevel < height < maxHeight.");
             Require(Mathf.IsPowerOfTwo(terrain.resolution - 1), $"Terrain resolution {terrain.resolution} must be 2^n + 1.");
+            Weather();
+        }
+
+        private void Weather()
+        {
+            if (string.IsNullOrEmpty(_spec.weather))
+            {
+                Issues.Error($"The map spec's 'weather' key is missing; name one of climate '{Climate.name}''s weathers.", Feature);
+                return;
+            }
+
+            InClimate(Climate.weathers, _spec.weather, "weather", "The map spec's 'weather' key");
         }
 
         /// <summary>A line plants a climate tree or places a palette prop.</summary>

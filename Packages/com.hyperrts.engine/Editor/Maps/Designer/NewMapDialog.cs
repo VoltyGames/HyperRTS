@@ -79,7 +79,7 @@ namespace HyperRTS.Editor.Maps.Designer
                 }
 
                 var spec = MapSpecTemplate.Create(name, _mode.value, _size.value, _symmetry.value, _climate.value,
-                    _seed.value);
+                    FirstWeather(_climate.value), _seed.value);
                 var folder = PickFolder();
                 if (folder == null)
                 {
@@ -94,6 +94,13 @@ namespace HyperRTS.Editor.Maps.Designer
             {
                 _error.text = exception.Message;
             }
+        }
+
+        /// <summary>A new map starts in its climate's first weather; the spec's <c>weather</c> key changes it.</summary>
+        private static string FirstWeather(string climate)
+        {
+            var weathers = MapLibrary.Load().Climate(climate, null).weathers;
+            return weathers.Count > 0 ? weathers[0].key : null;
         }
 
         /// <summary>The project folder the map's own folder goes in, or null when the user cancels.</summary>

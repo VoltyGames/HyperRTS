@@ -24,6 +24,7 @@ namespace HyperRTS.Editor.Maps.Tools
             foreach (var climate in climates)
             {
                 Climate(text, climate);
+                text.AppendLine().AppendLine($"Weathers (`weather`): {string.Join(", ", climate.weathers.Select(w => $"`{w.key}`"))}.");
             }
 
             Palette(text, palette);

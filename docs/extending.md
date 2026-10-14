@@ -89,7 +89,7 @@ A game shell (menus, lobby, loading) drives a match through these:
 
 | Need | API |
 | --- | --- |
-| Configure players before the map loads | `MatchSetupRequest.Set(MatchSetup)`: per slot open, control, team, colour, name, AI difficulty, side; resource scale; `FogOverride` |
+| Configure players before the map loads | `MatchSetupRequest.Set(MatchSetup)`: per slot open, control, team, colour, name, AI difficulty, side; resource scale; `FogOverride`; `Weather` key |
 | Load a single-player map | `NetworkSession.StartLocal(SessionScene.Load(path))` |
 | Host or join with the menu still up | `NetworkSession.StartHost(port, SessionScene.Keep)` / `StartClient(address, port, SessionScene.Keep)`, then every peer `NetworkSession.LoadScene(path)` |
 | Loading progress | `NetworkSession.SceneLoad`; networked matches also wait for `MatchState.Started` |

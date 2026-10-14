@@ -18,6 +18,9 @@ namespace HyperRTS.Editor.Maps.Spec
         public string mapType;
         [MapKey(typeof(MapClimate))]
         public string climate;
+
+        /// <summary>The climate weather the scene is built with; a match may pick another the climate offers.</summary>
+        public string weather;
         public MapPoint size;
         public string symmetry;
         public int seed;

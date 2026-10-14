@@ -16,6 +16,9 @@ namespace HyperRTS.Simulation.Replays
 
         /// <summary>The <see cref="MatchSetup.Seed"/> the match ran with.</summary>
         public uint Seed;
+
+        /// <summary>The <see cref="MatchSetup.Weather"/> the match ran with; empty for the map's own.</summary>
+        public string Weather = "";
         public float Duration;
         public List<ReplayPlayerInfo> Players = new();
 

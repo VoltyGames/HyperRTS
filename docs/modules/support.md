@@ -68,7 +68,7 @@ the lifecycle phase ends. `AcknowledgementSystem` plays a selected or commanded 
 | Type | Role |
 | --- | --- |
 | `ReplayRecorder` | `Start`, `Snapshot`, `Stop` in the authoritative world |
-| `Replay`, `ReplaySerializer` | Header (scene, rate, duration, players, result) and samples; GZip file |
+| `Replay`, `ReplaySerializer` | Header (scene, seed, weather, rate, duration, players, result) and samples; GZip file; `ReplaySetup` rebuilds the `MatchSetup` (players, seed, weather) for playback |
 | `ReplayViewer`, `ReplayPlayback` | Plays a replay in a local world; HUD singleton (time, speed; writing the time seeks) |
 
 Replays store observed state, not commands: every entity with `EntityInfo` + `Faction` at 10 Hz, keyframes every

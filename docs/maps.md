@@ -35,7 +35,7 @@ the Project window, **Open** on **HyperRTS ▸ Tools ▸ Maps** and **New map...
 | Inspector (right) | The selected feature's fields, bound to the spec. Key fields are dropdowns of the library's keys |
 | Report panel (under the inspector) | The newest preview's or build's issues, the land figures, the last build's metrics, **Open scene** and **Recapture views** |
 
-The editor changes features only. The header (name, mode, size, symmetry, climate, seed, terrain) is edited in the
+The editor changes features only. The header (name, mode, size, symmetry, climate, weather, seed, terrain) is edited in the
 JSON or set by **New map...**.
 
 ### Tools and shortcuts
@@ -118,6 +118,7 @@ origin at the map centre, X east, Z north, angles clockwise from north.
 | `name`, `displayName` | The map name, which the spec's file name must match (`<name>.map.json`); the name the game shows |
 | `mode`, `mapType`, `status`, `notes` | `1v1` to `4v4` or `ffa`; `land`; work state; dated notes |
 | `climate` | A library climate key |
+| `weather` | Required: one of the climate's `weathers`; the scene is built and lit with it (**New map...** takes the climate's first) |
 | `size` | Playable width (X) and depth (Z) |
 | `symmetry` | `rotate-180`, `mirror-x`, `mirror-z`, `rotate-3` to `rotate-8` |
 | `seed` | Seeds every random stream and noise field |
@@ -218,6 +219,11 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
   `_FarEnd` (camera distance) up to `_FarBlend`. `TerrainDetail.Level` (Presentation) sets the global keywords
   `_TERRAIN_SIMPLE` (Low: one sample) or `_TERRAIN_NO_FAR` (Medium: hex only); with neither (High, edit mode, map views)
   the shader does both.
+- **Weather** (`MapEnvironmentWriter`): a `Weather` object whose `WeatherSet` (Presentation) holds every climate
+  weather's key and atmosphere prefab and `defaultKey`, with the spec weather's prefab instanced under it. The
+  prefab's `Atmosphere` sets the sky and ambient as it enables, so the lighting bake reads them; the minimap capture
+  turns its `HeightFog` off. In play, `WeatherSet` swaps the child for the prefab `MatchSetup.Weather` names (empty
+  keeps the default; an unknown key is an error naming it).
 - **Ground colour** (`MapGroundColor`): a top-down picture of the layers' mean albedo by splat weight, tinted by the
   macro map. Foliage blends into it at its roots.
 - **Ground decals** (`MapDecalWriter`, after `MapPlacementWriter`): a URP `DecalProjector` per decal under the main
@@ -280,7 +286,7 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 | `woodland` | `MapWoodlandKit` | Canopy, shrubby edge, clearings, floor | tree and surface keys |
 | `settlement` | `MapSettlementKit` | Plot layout along a street, street poles and pipe (`streetPipeMinSections` sections, arches over gaps up to `streetPipeMaxGap` m) | prop, surface and tree keys |
 | `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `besideRoad` (scatters only: puts it on the nearest road's verge, facing along it), `maxTilt` (max tilt with the slope, 0 upright), `buriedDepth` (metres below the ground), the pad surface and access road it gets, `sharedAccessDistance` (metres within which props with the same access share its track; 0 for its own, required 0 without access), a `groundDecal` (with its required `groundDecalSize`) under it | `prefab`, `scenery` (a plain model drawn on the terrain where a surface's prop falls in the backdrop; empty leaves the backdrop bare); surface, road and decal keys |
-| `climate` | `MapClimate` | Ground, slope, shore, floodplain and ravine surfaces, reeds, ford shallows (`fordShallowsWidth`) and fast water (`fordRapidsLength`), fog and draw distances | `surfaces`, `roadClasses`, `farmlandKits`, `beltKits`, `woodlandKits`, `water`, `atmosphere`, `skybox`; surface and plant keys |
+| `climate` | `MapClimate` | Ground, slope, shore, floodplain and ravine surfaces, reeds, ford shallows (`fordShallowsWidth`) and fast water (`fordRapidsLength`), draw distances | `surfaces`, `roadClasses`, `farmlandKits`, `beltKits`, `woodlandKits`, `water`, `weathers` (`key` and `atmosphere` prefab each; unique keys); surface and plant keys |
 | `palette` | `MapPalette` | Start kit, base radius (exactly one per project) | `rig`, `startingResources`; prop keys |
 | `rules` | `MapRules` | Rush thresholds, attack paths and renewable fields per player per mode, `maxDecals`, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |
 
@@ -356,7 +362,7 @@ edits, and redraws the preview image when a preview run elsewhere rewrites it.
 ## What a game supplies
 
 - A map library: the item files above, with exactly one palette and one rules file, and the Unity assets they name
-  (terrain layers, plant and tree prefabs, road materials, water, atmosphere, sky, prop prefabs, the match rig).
+  (terrain layers, plant and tree prefabs, road materials, water, weather atmosphere prefabs, prop prefabs, the match rig).
   A game makes those assets through library factories or a `Generator` (**HyperRTS ▸ Tools ▸ Generate**), and
   writes the key reference there.
 - Specs, each in its own folder; the build writes beside it.

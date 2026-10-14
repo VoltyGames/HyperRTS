@@ -45,6 +45,7 @@ namespace HyperRTS.Simulation.Replays
             if (setupQuery.TryGetSingleton(out MatchSetup setup))
             {
                 replay.Seed = setup.Seed;
+                replay.Weather = setup.Weather.ToString();
             }
 
             return replay;

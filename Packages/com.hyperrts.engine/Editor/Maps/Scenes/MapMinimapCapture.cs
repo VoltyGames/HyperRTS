@@ -1,5 +1,7 @@
+using System.Linq;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Presentation.Environment;
 using UnityEditor;
 using UnityEngine;
 
@@ -15,7 +17,8 @@ namespace HyperRTS.Editor.Maps.Scenes
         {
             var camera = new GameObject("Minimap Capture").AddComponent<Camera>();
             var target = RenderTexture.GetTemporary(Size, Size, 24, RenderTextureFormat.ARGB32);
-            var fog = RenderSettings.fog;
+            var fogs = Object.FindObjectsByType<HeightFog>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
+                .Where(fog => fog.enabled).ToArray();
             try
             {
                 camera.orthographic = true;
@@ -27,17 +30,26 @@ namespace HyperRTS.Editor.Maps.Scenes
                     Quaternion.Euler(90f, 0f, 0f));
                 camera.clearFlags = CameraClearFlags.SolidColor;
                 camera.backgroundColor = Color.black;
-                RenderSettings.fog = false;
+                SetEnabled(fogs, false);
                 EditorTextures.RenderPng(camera, target, path);
             }
             finally
             {
-                RenderSettings.fog = fog;
+                SetEnabled(fogs, true);
                 RenderTexture.ReleaseTemporary(target);
                 Object.DestroyImmediate(camera.gameObject);
             }
 
             return Import(path);
+        }
+
+        // Fog would grey the far side of the picture: the camera looks down from far above.
+        private static void SetEnabled(HeightFog[] fogs, bool enabled)
+        {
+            foreach (var fog in fogs)
+            {
+                fog.enabled = enabled;
+            }
         }
 
         private static Texture2D Import(string path)

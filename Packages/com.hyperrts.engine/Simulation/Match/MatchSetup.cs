@@ -17,6 +17,9 @@ namespace HyperRTS.Simulation.Match
 
         public FogOverride Fog;
 
+        /// <summary>The map weather's key the scene switches to when it loads; empty keeps the map's own.</summary>
+        public FixedString32Bytes Weather;
+
         /// <summary>Bit per closed faction, filled in when the setup is applied.</summary>
         public uint ClosedFactions;
 

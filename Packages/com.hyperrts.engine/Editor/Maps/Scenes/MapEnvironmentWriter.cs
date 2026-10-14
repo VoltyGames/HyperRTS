@@ -49,8 +49,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             height.AddComponent<TerrainHeightAuthoring>().terrainData = data;
             CreateGroundMaterials(scene, generation);
             CreateWater(scene, generation);
-            PrefabUtility.InstantiatePrefab(climate.atmosphere, scene.Root);
-            ApplySky(climate);
+            CreateWeather(scene, climate, generation.Project.Spec.weather);
             CreateDecks(scene, generation.Shapes, layout.GroundLevel);
         }
 
@@ -153,16 +152,18 @@ namespace HyperRTS.Editor.Maps.Scenes
             renderer.shadowCastingMode = ShadowCastingMode.Off;
         }
 
-        private static void ApplySky(MapClimate climate)
+        /// <summary>The climate's weathers on a <see cref="WeatherSet"/>, the spec's instanced under it to light the bake.</summary>
+        private static void CreateWeather(MapScene scene, MapClimate climate, string key)
         {
-            RenderSettings.skybox = climate.skybox;
-            RenderSettings.ambientMode = AmbientMode.Skybox;
-            RenderSettings.fog = true;
-            RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = climate.fogColor;
-            RenderSettings.fogStartDistance = climate.fogStart;
-            RenderSettings.fogEndDistance = climate.fogEnd;
-            DynamicGI.UpdateEnvironment();
+            var go = scene.CreateChild("Weather").gameObject;
+            var set = go.AddComponent<WeatherSet>();
+            set.defaultKey = key;
+            set.entries = climate.weathers.ConvertAll(weather => new WeatherEntry
+            {
+                key = weather.key,
+                atmosphere = weather.atmosphere,
+            });
+            PrefabUtility.InstantiatePrefab(climate.Weather(key).atmosphere, go.transform);
         }
 
         /// <summary>A deck nav area over each ford at the height units wade. Bridges carry their own.</summary>

@@ -23,12 +23,15 @@ namespace HyperRTS.Editor.Tests
         [TestCase("ffa", "rotate-8")]
         public void NewSpecs_PassTheSpecCheckAndTheLayout(string mode, string symmetry)
         {
-            var spec = MapSpecTemplate.Create("NewMap", mode, Size, symmetry, "Temperate", 7);
+            var spec = MapSpecTemplate.Create("NewMap", mode, Size, symmetry, "Temperate", "Clear", 7);
             var issues = new MapIssues();
             var rules = new MapRules();
             rules.modes.Add(new MapModeRules { mode = mode });
 
-            MapSpecCheck.Check(spec, new MapClimate(), new MapPalette(), rules, issues);
+            var climate = new MapClimate();
+            climate.weathers.Add(new MapClimateWeather { key = "Clear" });
+
+            MapSpecCheck.Check(spec, climate, new MapPalette(), rules, issues);
             var layout = MapExpander.Expand(spec, issues);
 
             Assert.IsFalse(issues.HasErrors, issues.ToString());
@@ -50,7 +53,7 @@ namespace HyperRTS.Editor.Tests
         [Test]
         public void Spawns_FaceTheCentre()
         {
-            var spec = MapSpecTemplate.Create("NewMap", "1v1", Size, MapSymmetry.Rotate180, "Temperate", 7);
+            var spec = MapSpecTemplate.Create("NewMap", "1v1", Size, MapSymmetry.Rotate180, "Temperate", "Clear", 7);
 
             Assert.AreEqual(new Vector2(0f, -140f), spec.spawns[0].pos.ToVector2());
             Assert.AreEqual(0f, spec.spawns[0].yaw);
@@ -64,7 +67,7 @@ namespace HyperRTS.Editor.Tests
         public void Create_RefusesWhatCannotWork_NamingIt(string name, string mode, string symmetry, string named)
         {
             var error = Assert.Throws<ArgumentException>(() =>
-                MapSpecTemplate.Create(name, mode, Size, symmetry, "Temperate", 7));
+                MapSpecTemplate.Create(name, mode, Size, symmetry, "Temperate", "Clear", 7));
 
             StringAssert.Contains(named, error.Message);
         }

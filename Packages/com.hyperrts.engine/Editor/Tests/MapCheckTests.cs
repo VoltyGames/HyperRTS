@@ -89,6 +89,30 @@ namespace HyperRTS.Editor.Tests
             Assert.IsTrue(issues.Errors.Any(e => e.Contains("Village") && e.Contains(named)), issues.ToString());
         }
 
+        [TestCase("", "'weather' key is missing")]
+        [TestCase("Blizzard", "weather 'Blizzard' is not in climate")]
+        public void ASpecWeatherOutsideTheClimate_IsAnErrorNamingIt(string weather, string error)
+        {
+            var spec = MapRoadFixture.Spec();
+            spec.weather = weather;
+
+            var issues = CheckSpec(spec);
+
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains(error)), issues.ToString());
+        }
+
+        [Test]
+        public void ClimateWeathers_NeedUniqueKeysAndAtmospheres()
+        {
+            var climate = MapRoadFixture.Climate();
+            climate.weathers.Add(new MapClimateWeather { key = "Clear" });
+
+            var issues = CheckAssets(climate, new MapPalette());
+
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("weather 'Clear' is listed twice")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("weather 'Clear' has no atmosphere")), issues.ToString());
+        }
+
         [Test]
         public void MissingClimateValues_AreErrorsNamingThem()
         {

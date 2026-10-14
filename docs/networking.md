@@ -35,7 +35,7 @@ Each start takes an optional `SessionScene`: `ReloadActive` (the default, for a 
 `Load(path)`, or `Keep` to load nothing. A lobby connects with `Keep` while the menu stays up, then every peer calls
 `LoadScene(path)` to stream the map into the running worlds. `SceneLoad` exposes the load for a progress bar.
 
-To configure the match itself (open and closed slots, teams, colours, AI, starting resources, fog) every peer sets
+To configure the match itself (open and closed slots, teams, colours, AI, starting resources, fog, weather) every peer sets
 the same `MatchSetupRequest` before the map loads; see [modules](modules/core.md#match).
 
 The `Start*` calls return `false` when the session can't start (bad address, port in use) and stay in single

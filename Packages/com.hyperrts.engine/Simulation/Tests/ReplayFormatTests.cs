@@ -21,6 +21,7 @@ namespace HyperRTS.Simulation.Tests
         {
             ScenePath = "Assets/Maps/Map.unity",
             SampleRate = 10f,
+            Weather = "Rain",
             Metadata = "{\"map\":\"desert\"}",
             Result = new MatchState { Phase = MatchPhase.Ended, WinningTeam = 2 },
             Players =
@@ -41,6 +42,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual("{\"map\":\"desert\"}", header.Metadata);
             Assert.AreEqual(3, header.Players[0].Side);
             Assert.AreEqual(2, header.Result.WinningTeam);
+            Assert.AreEqual("Rain", header.Weather);
             Assert.IsEmpty(header.Frames, "samples are not read for a header");
             Assert.AreEqual(1, ReplaySerializer.Load(_path).Frames.Length);
         }
@@ -51,6 +53,7 @@ namespace HyperRTS.Simulation.Tests
             var setup = ReplaySetup.ToMatchSetup(Sample());
 
             Assert.AreEqual(3, setup.Slots.Length);
+            Assert.AreEqual("Rain", setup.Weather.ToString(), "playback shows the recorded weather");
             Assert.AreEqual(PlayerControl.LocalHuman, setup.Slots[0].Control);
             Assert.AreEqual("Ivanov", setup.Slots[0].Name.ToString());
             Assert.IsFalse(setup.Slots[1].Open, "faction 2 wasn't in the match");

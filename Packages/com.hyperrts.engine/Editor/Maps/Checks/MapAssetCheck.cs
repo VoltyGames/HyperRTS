@@ -52,7 +52,7 @@ namespace HyperRTS.Editor.Maps.Checks
             Climate.rowCrops.ForEach(crop => RowCropAssets(crop, name));
             Climate.decals.ForEach(decal => DecalAssets(decal, name));
             Require(Climate.water != null, $"{name} has no water material.");
-            Require(Climate.atmosphere != null, $"{name} has no atmosphere prefab.");
+            MapWeatherCheck.Check(Climate, Issues);
             Require(Climate.fordShallowsWidth > 0f, $"{name}: fordShallowsWidth {Climate.fordShallowsWidth} must be above 0.");
             Require(Climate.fordRapidsLength > 0f, $"{name}: fordRapidsLength {Climate.fordRapidsLength} must be above 0.");
             Macro(Climate.macro, name);

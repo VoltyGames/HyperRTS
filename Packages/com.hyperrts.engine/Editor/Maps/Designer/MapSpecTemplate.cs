@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         /// <summary>The spec of a new map; throws <see cref="ArgumentException"/> naming the field that doesn't fit.</summary>
         public static MapSpec Create(string name, string mode, Vector2Int size, string symmetryName, string climate,
-            int seed)
+            string weather, int seed)
         {
             RequireName(name);
             if (size.x <= 0 || size.y <= 0)
@@ -49,6 +49,11 @@ namespace HyperRTS.Editor.Maps.Designer
                 throw new ArgumentException("Pick a climate for the map.");
             }
 
+            if (string.IsNullOrEmpty(weather))
+            {
+                throw new ArgumentException($"Climate '{climate}' lists no weathers to build the map with.");
+            }
+
             var symmetry = MapSymmetry.Parse(symmetryName);
             var spec = new MapSpec
             {
@@ -57,6 +62,7 @@ namespace HyperRTS.Editor.Maps.Designer
                 mode = mode,
                 mapType = MapType,
                 climate = climate,
+                weather = weather,
                 size = new MapPoint(size.x, size.y),
                 symmetry = symmetryName,
                 seed = seed,

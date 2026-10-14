@@ -31,14 +31,11 @@ namespace HyperRTS.Editor.Maps.Library
         [MapAsset(typeof(Material))]
         public string water;
         [MapAsset(typeof(GameObject))]
-        public string atmosphere;
-        [MapAsset(typeof(Material))]
-        public string skybox;
-        [MapAsset(typeof(GameObject))]
         public string rig;
         [MapAsset(typeof(RowCrop))]
         public string crop;
         public List<MapResourcePath> startingResources = new();
+        public List<MapWeatherPath> weathers = new();
 
         [MapKey(typeof(MapClimateSurface))]
         public List<string> surfaces = new();

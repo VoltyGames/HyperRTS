@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Tests
         /// <summary>A 240 m rotate-180 map: the authored sector is z at or under 0, the playable edge is at ±120.</summary>
         public static MapSpec Spec() => new()
         {
-            name = "Test", climate = "Test", mode = "1v1", seed = 11,
+            name = "Test", climate = "Test", weather = "Clear", mode = "1v1", seed = 11,
             size = new MapPoint(240f, 240f), symmetry = MapSymmetry.Rotate180,
             terrain = new MapTerrainSpec { resolution = 257, backdropWidth = 20f, relief = 0f },
             spawns = new List<MapSpawnSpec> { new() { pos = new MapPoint(0f, -100f) } },
@@ -39,6 +39,7 @@ namespace HyperRTS.Editor.Tests
             MapClimateFixture.AddSurfaces(climate, "Asphalt", "Dirt", "Verge", "Meadow");
 
             climate.groundSurface = "Meadow";
+            climate.weathers.Add(new MapClimateWeather { key = "Clear" });
             climate.roadClasses.Add(new MapRoadClass
             {
                 key = "Asphalt", width = 8f, surface = "Asphalt", impactClass = "Paved", vergeSurface = "Verge", vergeWidth = 2f, rank = 2, curve = 25f,
