@@ -14,6 +14,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<SpawnEffect> _effects;
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<PostTransformMatrix> _stretches;
+        private ComponentLookup<PartStretch> _partStretches;
         private ComponentLookup<Topple> _topples;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
@@ -26,6 +27,7 @@ namespace HyperRTS.Simulation.Combat
             _effects = state.GetComponentLookup<SpawnEffect>(true);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
+            _partStretches = state.GetComponentLookup<PartStretch>(true);
             _topples = state.GetComponentLookup<Topple>(true);
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
@@ -39,6 +41,7 @@ namespace HyperRTS.Simulation.Combat
             _effects.Update(ref state);
             _transforms.Update(ref state);
             _stretches.Update(ref state);
+            _partStretches.Update(ref state);
             _topples.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
@@ -75,12 +78,17 @@ namespace HyperRTS.Simulation.Combat
 
         private void SpawnRemains(Entity scenery, Entity prefab, bool witnessed, byte fall, EntityCommandBuffer ecb)
         {
-            var remains = Remains.Of(scenery, _transforms[scenery], fall, witnessed, _stretches, _topples);
+            var remains = Remains.Of(scenery, _transforms[scenery], fall, witnessed, _stretches, _partStretches, _topples);
             var spawned = ecb.Instantiate(prefab);
             ecb.SetComponent(spawned, remains.Transform);
             if (remains.Stretched)
             {
                 ecb.AddComponent(spawned, remains.Stretch);
+            }
+
+            if (remains.PartsStretched)
+            {
+                ecb.AddComponent(spawned, remains.Parts);
             }
 
             if (remains.Felled)

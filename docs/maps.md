@@ -169,8 +169,11 @@ settlement, the same test as the dead-end check in `MapRoadEnds`) is dropped. A 
 spec settlement) fits plots along the streets: house on the street, yard, outbuildings, garden, orchard, fences, gate,
 street furniture. The street pipe decides every section first, then keeps only runs of at least `streetPipeMinSections`
 sections, with a `streetPipeArch` over each gap of up to `streetPipeMaxGap` metres (a driveway, a crossing road) inside a
-run (`MapPipeRuns`), stretched along its long side so its ends meet the runs (a placement's `Stretch`, written
-as a non-uniform local scale; remains of a stretched piece keep the stretch). Access tracks: props asking for the same road class within the smaller `sharedAccessDistance` of the two
+run (`MapPipeRuns`), stretched along its long side so its ends meet the runs (a placement's `Stretch`, applied by
+`MapPlacementScale`). A prefab with `StretchPartsAuthoring` keeps a uniform scale: its start and end caps move out to
+the stretched ends at their own size and only the span between them scales along the axis (`StretchLayout`); its
+remains need the same component and are stretched to match (`PartStretch`, `StretchPartsSystem`). Any other prefab
+is stretched whole, as a non-uniform local scale its remains keep. Access tracks: props asking for the same road class within the smaller `sharedAccessDistance` of the two
 share one track, from the one nearest a road (`MapAccessGroups`). The report says why a plot didn't fit.
 
 ### Refiners

@@ -40,7 +40,7 @@ namespace HyperRTS.Editor.Maps.Scenes
 
                 var pose = MapPlacementPose.OnGround(placement, heights, groundLevel);
                 instance.transform.SetPositionAndRotation(pose.position, pose.rotation);
-                instance.transform.localScale = placement.LocalScale;
+                MapPlacementScale.Apply(instance, placement);
             }
         }
 
