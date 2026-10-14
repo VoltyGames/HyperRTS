@@ -1,8 +1,7 @@
 # CLAUDE.md
 
 **HyperRTS** is a reusable RTS engine on Unity DOTS, not a game. Prefer generic, data-driven code over
-game-specific code. `Assets/ThirdParty/RTS Engine/` is a MonoBehaviour asset kept as a feature reference only:
-don't edit it or copy its architecture.
+game-specific code. No third-party assets go into this public repo.
 
 ## Environment
 
