@@ -42,7 +42,7 @@ Sounds play through [cues](#cues). Playback is on the [client](client.md#present
 | `EntityEffectsAuthoring` / `EntityEffect` | Rig per `CueSlot` (Fire at a `muzzle` socket, Death, Ability; games from `Custom`) |
 | `ImpactEffectsAuthoring` / `EntityImpactEffects` | A weapon's `SurfaceEffects` (rig per `SurfaceMaterial`) where its shots land |
 | `HitMaterialAuthoring` / `HitMaterial` | What a unit, building or tree is made of, for hits on it |
-| `LoopEffectsAuthoring` / `LoopEffect` | Rigs that stream while shown (exhaust, smoke), gated by health and duration |
+| `LoopEffectsAuthoring` / `LoopEffect` | Rigs that stream while shown (exhaust, smoke), gated by health and duration, faded as `Decay` remains sink |
 | `EffectTrailAuthoring` / `EffectTrail` | A rig along a projectile's path |
 | `MotionDustAuthoring` / `MotionDust` | Dust by ground material and speed, from a socket |
 | `EffectRules` | `TryGetSocket`: an entity's rig socket for a slot |

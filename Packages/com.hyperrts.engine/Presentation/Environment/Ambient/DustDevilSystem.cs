@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Simulation.Effects;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
@@ -11,8 +12,9 @@ using Random = Unity.Mathematics.Random;
 namespace HyperRTS.Presentation.Environment.Ambient
 {
     /// <summary>
-    /// Forms <see cref="AmbientLife"/> dust devils on allowed ground near the camera's focus and streams their rig as
-    /// they drift downwind. Client visuals only; idle without an AmbientLife, with none allowed, or on Low effect detail.
+    /// Forms <see cref="AmbientLife"/> dust devils on allowed, crop-free ground near the camera's focus and streams
+    /// their rig as they drift downwind. Client visuals only; idle without an AmbientLife, with none allowed, or on Low
+    /// effect detail.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -87,7 +89,8 @@ namespace HyperRTS.Presentation.Environment.Ambient
             var eye = _camera.transform;
             var focus = ViewGround.Focus(terrain, eye.position, eye.forward, _camera.farClipPlane);
             var ground = SystemAPI.GetSingleton<GroundMaterials>();
-            if (!DustDevilSites.TryPick(ground, focus.xz, Reach, _life.dustDevilGround, ref _random, out var site))
+            if (!DustDevilSites.TryPick(ground, RowCropCover.Active, focus.xz, Reach, _life.dustDevilGround,
+                    ref _random, out var site))
             {
                 return;
             }
