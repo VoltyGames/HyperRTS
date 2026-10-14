@@ -149,6 +149,10 @@ position, yaw byte, 7-bit pitch with a stealth flag bit; 20 bytes each), at most
 64 `PackedImpact`s (the replay's 15-byte format: type id, position in 1/16 m steps within ±2048 m, radius, owner,
 surface, material), at most 1 batch per tick.
 
+Both senders share `ViewerFanout`: `ViewerFanoutSystem` groups the in-game connections by viewer faction once per
+tick (observers under neutral), and each sender filters and packs once per faction, then queues the same batches to
+every connection of that faction.
+
 ## Physics
 
 Clicks raycast against Unity Physics, which Netcode only steps inside the prediction loop. The Match object needs

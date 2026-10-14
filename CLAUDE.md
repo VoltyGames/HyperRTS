@@ -21,13 +21,14 @@ code must never depend on anything under `Assets/`. See [`docs/architecture.md`]
 Packages/com.hyperrts.engine/
 ├── Core/          contracts: SystemGroups, SimulationWorlds, HyperRTSMenu/Icons/Docs
 ├── Simulation/    headless gameplay, one folder per module: Common (base), AI, Abilities, Air, Audio, Buildings,
-│                  Capture, Combat, Commands, Fields, GameEntities, Match, Navigation, Orders, Power,
+│                  Capture, Combat, Commands, Cues, Effects, Fields, GameEntities, Match, Navigation, Orders, Power,
 │                  Production, Replays, Resources, Selection, Spatial, Stats, Transport, Units, Upgrades,
 │                  Veterancy, Vision, Tests/
 ├── Client/        client-only state input, HUD and overlays share (Interaction), DefaultWorld, LiveQuery
 ├── Presentation/  team colours, overlays, rendering helpers, fog, UI Toolkit HUD, audio playback, Tests/
 ├── Input/         camera, shared input actions, input → PlayerCommand bridge
-├── Network/       Session, Players (join), Commands (RPCs), Replication, Relevancy, Audio (docs/networking.md)
+├── Network/       Session, Players (join), Commands (RPCs), Replication, Relevancy, Cues, Combat (impacts),
+│                  Common (viewer fanout) (docs/networking.md)
 ├── Editor/        Hub (Tools window), Generators, Authoring (inspectors, handles), Validation, Templates, Catalog,
 │                  PlayMode (debug draw, cheats), Maps (Map Editor, map library, builder), Common, scene wizard, Tests/
 └── Prefabs/       RTSWorld rig (camera + HUD), MatchState ghost, UI/HUD

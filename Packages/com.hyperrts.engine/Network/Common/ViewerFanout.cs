@@ -1,0 +1,61 @@
+using Unity.Collections;
+using Unity.Entities;
+using Unity.NetCode;
+
+namespace HyperRTS.Network.Common
+{
+    /// <summary>
+    /// Server singleton: this tick's in-game connections grouped by viewer faction (observers under neutral), so event
+    /// senders filter and pack once per faction instead of once per connection.
+    /// </summary>
+    public struct ViewerFanout : IComponentData
+    {
+        /// <summary>Each distinct viewer faction once.</summary>
+        public NativeList<byte> Factions;
+
+        public NativeParallelMultiHashMap<byte, Entity> Connections;
+
+        public static ViewerFanout Create(Allocator allocator) => new()
+        {
+            Factions = new NativeList<byte>(8, allocator),
+            Connections = new NativeParallelMultiHashMap<byte, Entity>(16, allocator),
+        };
+
+        public void Dispose()
+        {
+            Factions.Dispose();
+            Connections.Dispose();
+        }
+
+        public void Clear()
+        {
+            Factions.Clear();
+            Connections.Clear();
+        }
+
+        public void Add(byte faction, Entity connection)
+        {
+            if (!Connections.ContainsKey(faction))
+            {
+                Factions.Add(faction);
+            }
+
+            Connections.Add(faction, connection);
+        }
+
+        /// <summary>Queues every batch as an RPC to each connection viewing as <paramref name="faction"/>.</summary>
+        public readonly void Send<T>(EntityCommandBuffer ecb, byte faction, NativeList<T> batches)
+            where T : unmanaged, IRpcCommand
+        {
+            foreach (var connection in Connections.GetValuesForKey(faction))
+            {
+                foreach (var batch in batches)
+                {
+                    var rpc = ecb.CreateEntity();
+                    ecb.AddComponent(rpc, batch);
+                    ecb.AddComponent(rpc, new SendRpcCommandRequest { TargetConnection = connection });
+                }
+            }
+        }
+    }
+}
