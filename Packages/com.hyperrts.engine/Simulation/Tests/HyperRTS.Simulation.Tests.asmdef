@@ -2,7 +2,6 @@
     "name": "HyperRTS.Simulation.Tests",
     "rootNamespace": "HyperRTS.Simulation.Tests",
     "references": [
-        "HyperRTS.Core",
         "HyperRTS.Simulation",
         "HyperRTS.Network",
         "Unity.NetCode",
@@ -21,7 +20,7 @@
         "Editor"
     ],
     "excludePlatforms": [],
-    "allowUnsafeCode": true,
+    "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
         "nunit.framework.dll"

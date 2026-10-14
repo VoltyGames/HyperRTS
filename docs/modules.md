@@ -31,5 +31,5 @@ GameEntities, Commands, Replays.
 | [Combat](modules/combat.md) | Combat, Stats, Veterancy, Upgrades, Fields, Abilities, Vision |
 | [Economy](modules/economy.md) | Resources, Power, Buildings, Production, Capture |
 | [Support](modules/support.md) | AI, Audio, Effects, Cues, Replays, Animation |
-| [Client](modules/client.md) | Interaction (`HyperRTS.Client`), Input, Presentation |
+| [Client](modules/client.md) | Interaction (`Client/`), Input, Presentation |
 | [Map tools](modules/map-tools.md) | The map builder, Map Editor and map library (`Editor/Maps/`) |

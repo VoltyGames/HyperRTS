@@ -120,7 +120,7 @@ public class WeaponAuthoring : AuthoringBehaviour
 
 - Default fields under a header badge counting the validation issues of every selected object (red errors, yellow
   warnings); click it to expand the list with its quick fixes. Refreshed on edits, undo and hierarchy changes.
-- `[ShowIf(nameof(field))]` (HyperRTS.Core) hides a field while a bool is false, a number is 0 or less or an
+- `[ShowIf(nameof(field))]` (`HyperRTS.Core` namespace) hides a field while a bool is false, a number is 0 or less or an
   object reference is empty, e.g. the Weapon's projectile and splash settings.
 - Producer options are compact rows: the prefab plus its icon, cost and build time. Each Match AI difficulty is
   one collapsed line with its key numbers.

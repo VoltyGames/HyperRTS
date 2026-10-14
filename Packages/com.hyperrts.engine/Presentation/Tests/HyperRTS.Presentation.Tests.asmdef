@@ -2,9 +2,7 @@
     "name": "HyperRTS.Presentation.Tests",
     "rootNamespace": "HyperRTS.Presentation.Tests",
     "references": [
-        "HyperRTS.Core",
         "HyperRTS.Simulation",
-    "HyperRTS.Client",
         "HyperRTS.Presentation",
         "Unity.Entities",
         "Unity.Entities.Graphics",

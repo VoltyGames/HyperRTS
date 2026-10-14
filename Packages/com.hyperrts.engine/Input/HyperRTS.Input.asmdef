@@ -1,24 +1,23 @@
 {
-  "name": "HyperRTS.Input",
-  "rootNamespace": "HyperRTS.Input",
-  "references": [
-    "HyperRTS.Core",
-    "HyperRTS.Simulation",
-    "HyperRTS.Client",
-    "Unity.Entities",
-    "Unity.Mathematics",
-    "Unity.Collections",
-    "Unity.Physics",
-    "Unity.Transforms",
-    "Unity.InputSystem"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false
+    "name": "HyperRTS.Input",
+    "rootNamespace": "HyperRTS.Input",
+    "references": [
+        "HyperRTS.Simulation",
+        "HyperRTS.Presentation",
+        "Unity.Entities",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Physics",
+        "Unity.Transforms",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

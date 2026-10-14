@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
@@ -36,7 +36,6 @@ namespace HyperRTS.Simulation.Tests
             World = new World("HyperRTS Test World");
 
             var simulation = typeof(UnitTag).Assembly;
-            var core = typeof(OrderSystemGroup).Assembly;
             var systems = new List<Type>
             {
                 typeof(SimulationSystemGroup),
@@ -47,7 +46,7 @@ namespace HyperRTS.Simulation.Tests
 
             foreach (var type in DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default))
             {
-                if (type.Assembly == simulation || type.Assembly == core)
+                if (type.Assembly == simulation)
                 {
                     systems.Add(type);
                 }

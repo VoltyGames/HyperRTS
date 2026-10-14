@@ -1,31 +1,30 @@
 {
-  "name": "HyperRTS.Editor",
-  "rootNamespace": "HyperRTS.Editor",
-  "references": [
-    "HyperRTS.Core",
-    "HyperRTS.Simulation",
-    "HyperRTS.Presentation",
-    "HyperRTS.Network",
-    "Unity.Collections",
-    "Unity.Entities",
-    "Unity.Mathematics",
-    "Unity.NetCode",
-    "Unity.NetCode.Authoring.Hybrid",
-    "Unity.NetCode.Physics",
-    "Unity.NetCode.Physics.Hybrid",
-    "Unity.RenderPipelines.Universal.Runtime",
-    "Unity.Scenes",
-    "Unity.Transforms"
-  ],
-  "includePlatforms": [
-    "Editor"
-  ],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false
+    "name": "HyperRTS.Editor",
+    "rootNamespace": "HyperRTS.Editor",
+    "references": [
+        "HyperRTS.Simulation",
+        "HyperRTS.Presentation",
+        "HyperRTS.Network",
+        "Unity.Collections",
+        "Unity.Entities",
+        "Unity.Mathematics",
+        "Unity.NetCode",
+        "Unity.NetCode.Authoring.Hybrid",
+        "Unity.NetCode.Physics",
+        "Unity.NetCode.Physics.Hybrid",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.Scenes",
+        "Unity.Transforms"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

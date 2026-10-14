@@ -4,7 +4,7 @@
 
 ## Interaction
 
-UI state that input, HUD and overlays share (`HyperRTS.Client`), created once per presented world.
+UI state that input, HUD and overlays share (`Client/`, namespace `HyperRTS.Client`), created once per presented world.
 `DefaultWorld` and `LiveQuery` give MonoBehaviours the presented world and a query that survives world swaps.
 
 | Singleton | Role |

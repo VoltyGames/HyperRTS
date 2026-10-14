@@ -9,7 +9,7 @@ Mirror the engine's layering:
 
 | Assembly | References | Holds |
 | --- | --- | --- |
-| `MyGame.Simulation` | `HyperRTS.Core`, `HyperRTS.Simulation`, Entities, Collections, Mathematics, Burst, Transforms, `Unity.NetCode` (for `[GhostField]`) | Components, systems, authoring. No Graphics, InputSystem or UIElements |
+| `MyGame.Simulation` | `HyperRTS.Simulation`, Entities, Collections, Mathematics, Burst, Transforms, `Unity.NetCode` (for `[GhostField]`) | Components, systems, authoring. No Graphics, InputSystem or UIElements |
 | `MyGame.Presentation` | the above + `HyperRTS.Presentation` | HUD panels, visuals |
 | `MyGame.Network` | the above + `HyperRTS.Network` | Game RPCs (lobby) |
 | `MyGame.Editor` | the above + `HyperRTS.Editor` | Validation rules, builders |

@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
@@ -12,11 +11,12 @@ namespace HyperRTS.Simulation.Replays
     /// </summary>
     public static class ReplayViewer
     {
-        /// <summary>Every phase group in <c>SystemGroups</c> except replay playback's own, so new phases are paused too.</summary>
-        private static readonly Type[] GameplayGroups = typeof(OrderSystemGroup).Assembly.GetTypes()
-            .Where(type => type.IsSubclassOf(typeof(ComponentSystemGroup)) && type != typeof(ReplaySystemGroup))
-            .OrderBy(type => type.FullName, StringComparer.Ordinal)
-            .ToArray();
+        /// <summary>Every phase group in <c>SystemGroups</c> except replay playback's own; a new phase goes here too.</summary>
+        private static readonly Type[] GameplayGroups =
+        {
+            typeof(OrderSystemGroup), typeof(MovementSystemGroup), typeof(CombatSystemGroup),
+            typeof(ProductionSystemGroup), typeof(LifecycleSystemGroup),
+        };
 
         public static void Begin(World world, Replay replay)
         {

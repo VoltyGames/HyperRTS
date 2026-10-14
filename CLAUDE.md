@@ -12,18 +12,19 @@ game-specific code. No third-party assets go into this public repo.
 ## Layout
 
 `Packages/com.hyperrts.engine/` is the engine (code + shipped assets) as an embedded UPM package, split into layered
-assemblies so the simulation can run headless: `Core ← Simulation ← {Network, Client ← {Presentation, Input}}`, with
+assemblies so the simulation can run headless: `Simulation ← {Network, Presentation ← Input}`, with
 Editor/Tests on top. The sample game is `Assets/Demo/`. Games consume the package (e.g. as a submodule + `file:` reference), so engine
 code must never depend on anything under `Assets/`. See [`docs/architecture.md`](docs/architecture.md).
 
 ```text
 Packages/com.hyperrts.engine/
-├── Core/          contracts: SystemGroups, SimulationWorlds, HyperRTSMenu/Icons/Docs
+├── Core/          contracts: SystemGroups, SimulationWorlds, HyperRTSMenu/Icons/Docs (in HyperRTS.Simulation)
 ├── Simulation/    headless gameplay, one folder per module: Common (base), AI, Abilities, Air, Audio, Buildings,
 │                  Capture, Combat, Commands, Cues, Effects, Fields, GameEntities, Match, Navigation, Orders, Power,
 │                  Production, Replays, Resources, Selection, Spatial, Stats, Transport, Units, Upgrades,
 │                  Veterancy, Vision, Tests/
 ├── Client/        client-only state input, HUD and overlays share (Interaction), DefaultWorld, LiveQuery
+│                  (in HyperRTS.Presentation)
 ├── Presentation/  team colours, overlays, rendering helpers, fog, UI Toolkit HUD, audio playback, Tests/
 ├── Input/         camera, shared input actions, input → PlayerCommand bridge
 ├── Network/       Session, Players (join), Commands (RPCs), Replication, Relevancy, Cues, Combat (impacts),
@@ -35,7 +36,7 @@ Packages/com.hyperrts.engine/
 
 `HyperRTS.Simulation` must never reference Graphics, InputSystem or UIElements. Client UI state that input, HUD
 and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `CameraFocusRequest`) lives in
-`Client/Interaction` (`HyperRTS.Client`), which a headless server never loads. Module map and contracts: [`docs/modules.md`](docs/modules.md).
+`Client/Interaction` (in `HyperRTS.Presentation` through an `.asmref`), which a headless server never runs. Module map and contracts: [`docs/modules.md`](docs/modules.md).
 
 ## Gameplay contract
 
@@ -47,7 +48,7 @@ and overlays share (`PlacementState`, `PointerState`, `SelectionDragState`, `Cam
 
 ## Conventions
 
-- Namespaces follow the folder path (`HyperRTS.<Layer>.<Module>`); contracts stay in `HyperRTS.Core`.
+- Namespaces follow the folder path (`HyperRTS.<Layer>.<Module>`); contracts stay in the `HyperRTS.Core` namespace (`Core/`, part of `HyperRTS.Simulation`).
 - Simulation modules are layered (order in `docs/modules.md#layers`): a module uses only lower ones, and `Common`
   is the base. Put a component two modules share in `Common` or the lower module; authoring files may reference any
   module. `ModuleLayoutTests` enforces this; a new module needs a place in its `Layers`, and don't grow its

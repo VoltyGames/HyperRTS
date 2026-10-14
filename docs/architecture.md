@@ -5,36 +5,28 @@
 The engine is split so the simulation runs headless (dedicated server, EditMode tests) with no rendering, input
 or UI.
 
-| Assembly | Folder | Holds |
+| Assembly | Folders | Holds |
 | --- | --- | --- |
-| `HyperRTS.Core` | `Core/` | Phase groups, world filters, menu / icon / doc paths |
-| `HyperRTS.Simulation` | `Simulation/` | Components, systems, authoring and bakers, `*Setup` helpers |
-| `HyperRTS.Client` | `Client/` | Client-only state shared by input, HUD and overlays (`Interaction/`), `DefaultWorld`, `LiveQuery`. A dedicated server never loads it |
+| `HyperRTS.Simulation` | `Simulation/`, `Core/` | Components, systems, authoring and bakers, `*Setup` helpers; phase groups, world filters, menu / icon / doc paths |
 | `HyperRTS.Network` | `Network/` | Session, join, command RPCs, replication, fog relevancy, sound forwarding |
-| `HyperRTS.Presentation` | `Presentation/` | HUD, overlays, fog rendering, team colours, audio playback |
+| `HyperRTS.Presentation` | `Presentation/`, `Client/` | HUD, overlays, fog rendering, team colours, audio playback; client-only state shared by input, HUD and overlays (`Interaction/`), `DefaultWorld`, `LiveQuery` |
 | `HyperRTS.Input` | `Input/` | Camera, input actions, input → `PlayerCommand` |
 | `HyperRTS.Editor` | `Editor/` | Tools window, generators, inspectors, validation, templates, catalog, debug draw, cheats, scene wizard, Map Editor, map library and builder |
 | `HyperRTS.*.Tests` | `*/Tests/` | EditMode tests |
 
+`Core/` and `Client/` join their assembly through an `.asmref`, so their namespaces (`HyperRTS.Core`,
+`HyperRTS.Client`) still follow the folders. A server build strips client systems by world filter
+(`SimulationWorlds`), not by assembly.
+
 ```text
-                 Core
-                  ▲
               Simulation
         ▲                    ▲
-     Network               Client
-        ▲               ▲         ▲
-        │         Presentation   Input
-        ▲               ▲         ▲
-                 Editor, Tests
+     Network            Presentation
+        ▲                    ▲
+        │                  Input
+        ▲                    ▲
+             Editor, Tests
 ```
-
-Rules:
-
-- `HyperRTS.Simulation` never references `Unity.Entities.Graphics`, `Unity.InputSystem` or `UIElements`. It may use
-  Physics and NetCode attributes (`[GhostField]`, ghost authoring).
-- Network, Presentation and Input never reference each other. Client-only data Presentation and Input share
-  lives in Client; data the server also needs lives in Simulation.
-- Engine code never depends on anything under `Assets/`.
 
 ## Modules
 
