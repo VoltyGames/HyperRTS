@@ -140,16 +140,17 @@ cooldowns) is checked by the same systems as in single player.
 reveal. Undetected stealthed enemies count as unseen, with fog on or off. Ghosts without a `Faction` (players, the
 match) always replicate, and observers see everything.
 
-## Cues and impacts
+## Cues
 
-The server never plays sounds or effects. `CueSendSystem` sends each client the cues its team may see (`CueRules`: the
-fog and stealth rule above, plus its own voices) as `CueRpc` batches of up to 48 `PackedCue`s (type id, slot, owner,
-position, yaw byte, 7-bit pitch with a stealth flag bit; 20 bytes each), at most 2 batches per tick.
-`CueReceiveSystem` unpacks them into the client's `CueQueue`, which plays them like single player. Impacts go as `ImpactRpc` batches of up to
-64 `PackedImpact`s (the replay's 15-byte format: type id, position in 1/16 m steps within ±2048 m, radius, owner,
-surface, material), at most 1 batch per tick.
+The server never plays sounds or effects. Every transient event (fire, impact, death, ability, ready, voices) is one
+`CueEvent` stream; a landed shot is a `CueSlot.Impact` cue carrying its radius, surface and material.
+`CueSendSystem` sends each client the cues its team may see (`CueRules`: the fog and stealth rule above, plus its own
+voices) as `CueRpc` batches of up to 48 `PackedCue`s, at most 3 batches per tick. A `PackedCue` is the replay's 18-byte
+format: type id, position in 1/16 m steps within ±2048 m, radius, slot, owner, yaw byte, 7-bit pitch with a stealth
+flag bit, surface, material. `CueReceiveSystem` unpacks them into the client's `CueQueue`, which plays them like single
+player.
 
-Both senders share `FactionConnections`: `FactionConnectionsSystem` groups the in-game connections by viewer
+The sender uses `FactionConnections`: `FactionConnectionsSystem` groups the in-game connections by viewer
 faction once per tick (observers under neutral), and each sender filters and packs once per faction, then queues the
 same batches to every connection of that faction.
 

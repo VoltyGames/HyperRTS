@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Impact events for impact marks: who writes them, where they land and what surface they struck.</summary>
+    /// <summary>Impact cues for marks and effects: who writes them, where they land and what surface they struck.</summary>
     public class ImpactTests
     {
         private TestWorld _world;
@@ -40,16 +40,18 @@ namespace HyperRTS.Simulation.Tests
             return shooter;
         }
 
-        internal static ImpactEvent[] Queued(TestWorld world)
+        /// <summary>This frame's cues of one slot.</summary>
+        internal static CueEvent[] Queued(TestWorld world, CueSlot slot = CueSlot.Impact)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(ImpactQueue));
-            return world.EntityManager.GetBuffer<ImpactEvent>(query.GetSingletonEntity()).AsNativeArray().ToArray();
+            using var query = world.EntityManager.CreateEntityQuery(typeof(CueQueue));
+            var cues = world.EntityManager.GetBuffer<CueEvent>(query.GetSingletonEntity()).AsNativeArray().ToArray();
+            return System.Array.FindAll(cues, cue => cue.Slot == slot);
         }
 
         /// <summary>Every impact of the next frames; the queue itself only holds the last frame's.</summary>
-        private List<ImpactEvent> Landed(float seconds)
+        private List<CueEvent> Landed(float seconds)
         {
-            var landed = new List<ImpactEvent>();
+            var landed = new List<CueEvent>();
             for (var t = 0f; t < seconds; t += TestWorld.FrameTime)
             {
                 _world.Tick();

@@ -101,7 +101,7 @@ SimulationSystemGroup
  ├─ CombatSystemGroup
  │   ├─ first   FogOfWarSystem, LocalFogViewSystem
  │   ├─         AttackOrderSystem, TargetAcquisitionSystem, EngagementSystem, WeaponFireSystem,
- │   │          ProjectileSystem, StealthSystem, AbilitySystem, AbilityCueSystem, AreaFieldSystem
+ │   │          ProjectileSystem, ImpactSurfaceSystem, StealthSystem, AbilitySystem, AbilityCueSystem, AreaFieldSystem
  │   └─ last    DamageSystem
  ├─ ProductionSystemGroup
  │   ├─ first   PopulationSystem
@@ -111,7 +111,7 @@ SimulationSystemGroup
      ├─         DeathSystem, VictorySystem, CasualtyStatsSystem, KillCreditSystem, VeterancySystem,
      │          ContainerDeathSystem, DeathCueSystem
      └─ last    StatSystem (every live stat from its spawn-time base),
-                ReplayRecorderSystem, FactionConnectionsSystem, CueSendSystem, ImpactSendSystem
+                ReplayRecorderSystem, FactionConnectionsSystem, CueSendSystem
 PresentationSystemGroup
  └─ TeamColorSystem, FogVisibilitySystem, SoundPlaybackSystem   (+ HUD and overlay MonoBehaviours)
 ```

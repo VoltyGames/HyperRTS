@@ -217,6 +217,19 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(CueRules.IsVisible(hiddenShot, 1, fog, relations), "own sounds always");
         }
 
+        [Test]
+        public void VoicesPlayLocally_ForTheirOwnerOnly_WithoutAFogView()
+        {
+            var noFog = new LocalFogView { Viewer = 1, Active = false };
+            var own = new CueEvent { Slot = CueSlot.Select, Faction = 1 };
+            var other = new CueEvent { Slot = CueSlot.Select, Faction = 2 };
+
+            Assert.IsTrue(CueRules.IsSeenLocally(own, noFog, default, default));
+            Assert.IsFalse(CueRules.IsSeenLocally(other, noFog, default, default), "another player's voice stays private");
+            Assert.IsTrue(CueRules.IsSeenLocally(new CueEvent { Slot = CueSlot.Fire, Faction = 2 }, noFog, default,
+                default), "world sounds play for all without fog");
+        }
+
         private T Single<T>() where T : unmanaged, IComponentData
         {
             using var query = _world.EntityManager.CreateEntityQuery(typeof(T));

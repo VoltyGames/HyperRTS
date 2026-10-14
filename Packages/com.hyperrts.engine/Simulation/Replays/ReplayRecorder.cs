@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
@@ -77,20 +78,31 @@ namespace HyperRTS.Simulation.Replays
             relationsQuery.TryGetSingleton(out FactionRelations relations);
             using var playerQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<Player>(),
                 ComponentType.ReadOnly<PlayerSide>());
+            using var entities = playerQuery.ToEntityArray(Allocator.Temp);
             using var players = playerQuery.ToComponentDataArray<Player>(Allocator.Temp);
             using var sides = playerQuery.ToComponentDataArray<PlayerSide>(Allocator.Temp);
 
             for (var i = 0; i < players.Length; i++)
             {
                 var player = players[i];
-                replay.Players.Add(new ReplayPlayerInfo
+                var info = new ReplayPlayerInfo
                 {
                     Faction = player.Faction,
                     Team = relations.GetTeam(player.Faction),
                     Name = player.Name.ToString(),
                     Color = player.Color,
                     Side = sides[i].Value,
-                });
+                    Control = entityManager.HasComponent<LocalPlayer>(entities[i])
+                        ? PlayerControl.LocalHuman
+                        : PlayerControl.Remote,
+                };
+                if (entityManager.HasComponent<AIPlayer>(entities[i]))
+                {
+                    info.Control = PlayerControl.AI;
+                    info.Difficulty = entityManager.GetComponentData<AIPlayer>(entities[i]).Difficulty;
+                }
+
+                replay.Players.Add(info);
             }
 
             replay.Players.Sort((a, b) => a.Faction.CompareTo(b.Faction));

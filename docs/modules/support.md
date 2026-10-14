@@ -58,25 +58,30 @@ through [cues](#cues), on the client.
 
 | Type | Role |
 | --- | --- |
-| `CueSlot` (Common) | What a sound and effect are for; voice slots reach only the owner, Impact is sound only |
-| `CueWriter`, `CueQueue` / `CueEvent` | This frame's cues (type, slot, owner, position, direction, stealth); one event when the source has a sound or an effect for the slot, at the effect socket when it has a rig |
-| `CueRules` | `IsVisible` / `IsSeenLocally`: voices reach their owner, other cues whoever sees the source there, stealth honoured |
+| `CueSlot` (Common) | What a sound and effect are for; voice slots reach only the owner |
+| `CueWriter`, `CueQueue` / `CueEvent` | This frame's cues (type, slot, owner, position, direction, stealth; impacts also radius, surface, material and the frame-local target); one event when the source has a sound or an effect for the slot (for Impact also impact marks or impact effects), at the effect socket when it has a rig |
+| `CueRules` | `IsVisible` / `IsSeenLocally`: voices reach their owner only, other cues whoever sees the source there, stealth honoured; every consumer uses it |
+| `PackedCue` | One cue in 18 bytes (positions and radius in `QuantizedPosition` steps) for the network and replays |
+| `ImpactMark` (asset), `EntityImpactMark`, `ImpactSurface` | Marks a shooter's shots leave on open ground, and what an impact struck |
 
 `WeaponFireSystem` plays Fire facing the target (and Impact for instant hits), `ProjectileSystem` Impact,
 `DeathCueSystem` Death, `AbilityCueSystem` Ability at the aim point and `ReadyCueSystem` Ready; games append before
 the lifecycle phase ends. `AcknowledgementSystem` plays a selected or commanded unit's voice at most once a second.
-`CueClearSystem` empties the queue each frame. Sound and effect playback each look up their own table and skip misses.
+`CueClearSystem` empties the queue each frame. Sound and effect playback, impact marks, craters and birds read the one
+queue (impact consumers take `Slot == Impact`) and each look up their own table, skipping misses.
 
 ## Replays
 
 | Type | Role |
 | --- | --- |
 | `ReplayRecorder` | `Start`, `Snapshot`, `Stop` in the authoritative world |
-| `Replay`, `ReplaySerializer` | Header (scene, seed, weather, rate, duration, players, result) and samples; GZip file; `ReplaySetup` rebuilds the `MatchSetup` (players, seed, weather) for playback |
+| `Replay`, `ReplaySerializer` | Magic and `Version` (2; other versions throw `InvalidDataException`), header (scene, seed, weather, rate, duration, players with control and AI difficulty, result) and samples; GZip file; `ReplaySetup` rebuilds the `MatchSetup` (players, AI slots, seed, weather) for playback |
 | `ReplayViewer`, `ReplayPlayback` | Plays a replay in a local world; HUD singleton (time, speed; writing the time seeks) |
 
 Replays store observed state, not commands: every entity with `EntityInfo` + `Faction` at 10 Hz, keyframes every
-10 s. Playback stops gameplay, reveals the fog, matches recorded entities and interpolates transforms.
+10 s, plus every cue but voices (fire, impact, death, ability...) since the last sample. Playback stops gameplay,
+reveals the fog, matches recorded entities, interpolates transforms and re-queues the cues it passes; a seek queues
+only the impacts of the last 30 s, so marks show without a burst of sound.
 
 ## Animation
 

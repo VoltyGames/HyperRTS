@@ -1,6 +1,6 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -13,14 +13,14 @@ namespace HyperRTS.Simulation.Replays
     /// <summary>
     /// Shows a replay without simulating: takes over the scene's entities (same type, nearest position), then each
     /// frame spawns, destroys and interpolates entities to the recorded state at <see cref="ReplayPlayback.Time"/>,
-    /// and queues the impacts it passes. Seeking rebuilds from the nearest keyframe at or before the time.
+    /// and queues the cues it passes. Seeking rebuilds from the nearest keyframe at or before the time.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ReplaySystemGroup))]
     public partial struct ReplayPlaybackSystem : ISystem
     {
         /// <summary>Seconds of impacts a seek (or the start) queues at once, so the ground shows the recent marks.</summary>
-        public const float SeekImpactSeconds = 30f;
+        public const float SeekCueSeconds = 30f;
 
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<Faction> _factions;
@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Replays
             state.RequireForUpdate<ReplayPlaybackState>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<PrefabRegistry>();
-            state.RequireForUpdate<ImpactQueue>();
+            state.RequireForUpdate<CueQueue>();
         }
 
         public void OnDestroy(ref SystemState state)
@@ -70,24 +70,25 @@ namespace HyperRTS.Simulation.Replays
             }
 
             Show(ref state, in data, clock.Time);
-            QueueImpacts(ref state, data.Stream, previous, index, clock.Time);
+            QueueCues(ref state, data.Stream, previous, index, clock.Time);
             SystemAPI.SetComponent(entity, data);
             SystemAPI.SetComponent(entity, clock);
         }
 
         /// <summary>
-        /// Refills the impact queue, whose clear system is off with the gameplay, with the frames just passed. A jump
-        /// queues only the last <see cref="SeekImpactSeconds"/> rather than a whole battle in one frame.
+        /// Refills the cue queue, whose clear system is off with the gameplay, with the frames just passed. A jump
+        /// queues only the impacts of the last <see cref="SeekCueSeconds"/>, so marks show without a burst of sound.
         /// </summary>
-        private void QueueImpacts(ref SystemState state, in ReplayStream stream, int previous, int index, float time)
+        private void QueueCues(ref SystemState state, in ReplayStream stream, int previous, int index, float time)
         {
-            var queue = SystemAPI.GetSingletonBuffer<ImpactEvent>();
+            var queue = SystemAPI.GetSingletonBuffer<CueEvent>();
             queue.Clear();
-            var recent = stream.FrameAfter(time - SeekImpactSeconds);
+            var recent = stream.FrameAfter(time - SeekCueSeconds);
             var first = previous >= 0 && index >= previous ? math.max(previous + 1, recent) : recent;
+            var jumped = first != previous + 1;
             for (var frame = first; frame <= index; frame++)
             {
-                stream.AddImpacts(frame, queue);
+                stream.AddCues(frame, queue, jumped);
             }
         }
 

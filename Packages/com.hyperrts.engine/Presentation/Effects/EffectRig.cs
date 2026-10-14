@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects
@@ -182,7 +183,7 @@ namespace HyperRTS.Presentation.Effects
 
         private void Flash()
         {
-            if (Lights == null || EffectDetail.Level != EffectDetailLevel.High)
+            if (Lights == null || EffectDetail.Level != DetailLevel.High)
             {
                 return;
             }

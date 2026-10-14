@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Impacts;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Collections;

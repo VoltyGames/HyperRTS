@@ -10,7 +10,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// Sets each impact's <see cref="ImpactSurface"/> and <see cref="SurfaceMaterial"/> where the targets live, so
+    /// Sets each impact cue's <see cref="ImpactSurface"/> and <see cref="SurfaceMaterial"/> where the targets live, so
     /// clients and replays get them with the event.
     /// </summary>
     [BurstCompile]
@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Combat
             _agents = state.GetComponentLookup<NavAgent>(true);
             _materials = state.GetComponentLookup<HitMaterial>(true);
             _noGrid = NavGrid.Placeholder();
-            state.RequireForUpdate<ImpactQueue>();
+            state.RequireForUpdate<CueQueue>();
         }
 
         public void OnDestroy(ref SystemState state) => _noGrid.Dispose();
@@ -56,7 +56,7 @@ namespace HyperRTS.Simulation.Combat
         }
 
         [BurstCompile]
-        [WithAll(typeof(ImpactQueue))]
+        [WithAll(typeof(CueQueue))]
         private partial struct ClassifyJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<BuildingTag> Buildings;
@@ -67,18 +67,23 @@ namespace HyperRTS.Simulation.Combat
             public GroundMaterials Ground;
             public bool HasGround;
 
-            private void Execute(DynamicBuffer<ImpactEvent> impacts)
+            private void Execute(DynamicBuffer<CueEvent> cues)
             {
-                for (var i = 0; i < impacts.Length; i++)
+                for (var i = 0; i < cues.Length; i++)
                 {
-                    var impact = impacts[i];
+                    var impact = cues[i];
+                    if (impact.Slot != CueSlot.Impact)
+                    {
+                        continue;
+                    }
+
                     impact.Surface = Classify(impact);
                     impact.Material = ResolveMaterial(impact);
-                    impacts[i] = impact;
+                    cues[i] = impact;
                 }
             }
 
-            private ImpactSurface Classify(in ImpactEvent impact)
+            private ImpactSurface Classify(in CueEvent impact)
             {
                 if (Buildings.HasComponent(impact.Target))
                 {
@@ -94,7 +99,7 @@ namespace HyperRTS.Simulation.Combat
             }
 
             /// <summary>The target's own material wins; open ground comes from the baked ground material map.</summary>
-            private SurfaceMaterial ResolveMaterial(in ImpactEvent impact)
+            private SurfaceMaterial ResolveMaterial(in CueEvent impact)
             {
                 if (Materials.TryGetComponent(impact.Target, out var hit))
                 {

@@ -1,7 +1,7 @@
 using HyperRTS.Core;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Cues
 {
     /// <summary>
     /// A mark shots leave where they land on open ground (a crater, a scorch): decal variants, size and lifetime.

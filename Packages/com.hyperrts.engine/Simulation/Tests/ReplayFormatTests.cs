@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.IO.Compression;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
@@ -6,7 +7,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Replay headers carry game metadata and sides, and load on their own.</summary>
+    /// <summary>Replay headers carry a version, game metadata, sides and control, and load on their own.</summary>
     public class ReplayFormatTests
     {
         private string _path;
@@ -27,7 +28,11 @@ namespace HyperRTS.Simulation.Tests
             Players =
             {
                 new ReplayPlayerInfo { Faction = 1, Team = 1, Name = "Ivanov", Color = new float4(1f), Side = 3 },
-                new ReplayPlayerInfo { Faction = 3, Team = 2, Name = "AI", Color = new float4(0.5f), Side = 1 },
+                new ReplayPlayerInfo
+                {
+                    Faction = 3, Team = 2, Name = "", Color = new float4(0.5f), Side = 1, Control = PlayerControl.AI,
+                    Difficulty = AIDifficulty.Hard,
+                },
             },
             Frames = new[] { new ReplayFrame { Time = 0f, Keyframe = true } },
         };
@@ -41,6 +46,8 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual("{\"map\":\"desert\"}", header.Metadata);
             Assert.AreEqual(3, header.Players[0].Side);
+            Assert.AreEqual(PlayerControl.AI, header.Players[1].Control);
+            Assert.AreEqual(AIDifficulty.Hard, header.Players[1].Difficulty);
             Assert.AreEqual(2, header.Result.WinningTeam);
             Assert.AreEqual("Rain", header.Weather);
             Assert.IsEmpty(header.Frames, "samples are not read for a header");
@@ -59,6 +66,25 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsFalse(setup.Slots[1].Open, "faction 2 wasn't in the match");
             Assert.AreEqual(1, setup.Slots[2].Side);
             Assert.AreEqual(2, setup.Slots[2].Team);
+            Assert.AreEqual(PlayerControl.AI, setup.Slots[2].Control, "bots stay bots, so each viewer names them");
+            Assert.AreEqual(AIDifficulty.Hard, setup.Slots[2].Difficulty);
+        }
+
+        [Test]
+        public void Read_RejectsAnotherVersion()
+        {
+            using var memory = new MemoryStream();
+            using (var zip = new GZipStream(memory, CompressionLevel.Fastest, leaveOpen: true))
+            using (var writer = new BinaryWriter(zip))
+            {
+                writer.Write(0x4C505248);
+                writer.Write(ReplaySerializer.Version - 1);
+            }
+
+            memory.Position = 0;
+
+            var error = Assert.Throws<InvalidDataException>(() => ReplaySerializer.Read(memory));
+            StringAssert.Contains($"version {ReplaySerializer.Version - 1}", error.Message);
         }
     }
 }

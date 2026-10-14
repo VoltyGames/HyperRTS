@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Cues
 {
     /// <summary>A mark the entity's shots leave where they land on open ground; one entry per <see cref="ImpactMark"/>.</summary>
     [InternalBufferCapacity(0)]

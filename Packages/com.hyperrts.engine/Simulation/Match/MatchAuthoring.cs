@@ -173,7 +173,7 @@ namespace HyperRTS.Simulation.Match
                 if (slot.control == PlayerControl.AI)
                 {
                     var tuning = authoring.AITuningFor(slot.difficulty);
-                    AddBuildOrder(AIPlayerSetup.Add(ref writer, tuning.ToComponent()), buildOrder);
+                    AddBuildOrder(AIPlayerSetup.Add(ref writer, tuning.ToComponent(slot.difficulty)), buildOrder);
                     AddIncomeBonus(player, tuning.incomeMultiplier);
                     return;
                 }

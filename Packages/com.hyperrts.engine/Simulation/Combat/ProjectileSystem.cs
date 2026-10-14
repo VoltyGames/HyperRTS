@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Flies projectiles toward their target (or its last known position once it dies), queues their
-    /// <see cref="DamageEvent"/> and <see cref="ImpactEvent"/> on arrival and destroys them.
+    /// <see cref="DamageEvent"/> and impact <see cref="CueEvent"/> on arrival and destroys them.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -21,7 +21,6 @@ namespace HyperRTS.Simulation.Combat
         private EntityQuery _fogQuery;
         private DamageWriter _damage;
         private CueWriter _cues;
-        private ImpactWriter _impacts;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -30,10 +29,8 @@ namespace HyperRTS.Simulation.Combat
             _fogQuery = TargetLookup.FogQuery(ref state);
             _damage = new DamageWriter(ref state);
             _cues = new CueWriter(ref state);
-            _impacts = new ImpactWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<CueQueue>();
-            state.RequireForUpdate<ImpactQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -43,7 +40,6 @@ namespace HyperRTS.Simulation.Combat
             _targets.Update(ref state, _fogQuery);
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
             _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
-            _impacts.Update(ref state, SystemAPI.GetSingletonEntity<ImpactQueue>());
 
             new HomingJob { Targets = _targets }.ScheduleParallel();
             new FlightJob
@@ -53,7 +49,6 @@ namespace HyperRTS.Simulation.Combat
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Damage = _damage,
                 Cues = _cues,
-                Impacts = _impacts,
             }.Schedule();
         }
 
@@ -80,7 +75,6 @@ namespace HyperRTS.Simulation.Combat
             public EntityCommandBuffer Ecb;
             public DamageWriter Damage;
             public CueWriter Cues;
-            public ImpactWriter Impacts;
 
             private void Execute(Entity entity, ref LocalTransform transform, in Projectile projectile)
             {
@@ -99,9 +93,8 @@ namespace HyperRTS.Simulation.Combat
                 hit.Origin = transform.Position;
                 Damage.Add(hit);
                 Ecb.DestroyEntity(entity);
-                Cues.Add(projectile.ImpactSoundTypeId, CueSlot.Impact, transform.Position, transform.Forward(),
-                    hit.SourceFaction);
-                Impacts.Add(projectile.ImpactTypeId, hit);
+                Cues.AddImpact(projectile.ImpactTypeId, hit.Position, transform.Forward(), hit.Radius, hit.SourceFaction,
+                    hit.Target);
             }
         }
     }

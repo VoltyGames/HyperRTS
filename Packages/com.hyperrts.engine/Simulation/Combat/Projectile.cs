@@ -13,10 +13,7 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Queued on impact; its Position is the aim point, tracked while the target lives.</summary>
         public DamageEvent Hit;
 
-        /// <summary>Shooter type whose impact cue plays on arrival (0 = silent); outlives the shooter.</summary>
-        public int ImpactSoundTypeId;
-
-        /// <summary>Shooter type whose impact marks and effects the hit leaves (0 = none); outlives the shooter.</summary>
+        /// <summary>Shooter type whose impact cue (sound, effects, marks) plays on arrival (0 = none); outlives the shooter.</summary>
         public int ImpactTypeId;
     }
 }

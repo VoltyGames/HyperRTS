@@ -88,9 +88,14 @@ Rendering and effects:
   screen-space decals and before the silhouettes, in game and scene view perspective cameras only (orthographic
   captures such as the minimap stay clear). Water applies the same fog and takes it out of its refracted bottom.
   `HeightFogRule` flags a match scene whose renderers lack the feature or its shader.
-- **Camera settings**: `CameraAntialiasing` on a camera follows `CameraAntialiasingMode.Mode` (SMAA at high quality).
-  `MainLightShadows.SetResolution` sets the active URP asset's shadow map size in memory, never dirtying it, and
-  restores the authored size on quit.
+- **Quality knobs**: the game fills one `PresentationQuality` (effects and ground `DetailLevel`, `InteractionQuality`,
+  grass density and distance, row crop density and distance, URP antialiasing, shadow map size) and calls
+  `PresentationQuality.Apply`; `Current` holds the last one, reset to `Default` (full detail) on subsystem
+  registration. Apply writes `EffectDetail.Level`, `TerrainDetail.Level`, `InteractionMap.Quality`,
+  `RowCropRenderer.Density`/`Distance`, `DetailFade` and `CameraAntialiasingMode.Mode` (all read-only outside the
+  engine), sets every active terrain's detail density and distance (call it again after a scene loads), and has
+  `MainLightShadows` set the active URP asset's shadow map size in memory, never dirtying it and restoring the
+  authored size on quit. `CameraAntialiasing` on a camera follows `CameraAntialiasingMode.Mode`.
 - **Wind**: `Wind` (on the scene's directional `WindZone`) publishes `_HyperRTSWindDirection` (xz downwind),
   `_HyperRTSWindStrength` (windMain), `_HyperRTSWindGust` (x windPulseMagnitude, y windTurbulence, z gust tiles per
   metre), `_HyperRTSWindGustMap` (procedural tileable noise), `_HyperRTSWindGustOffset` (xy this frame's scroll in
@@ -115,7 +120,7 @@ Rendering and effects:
   per texel). `InteractionStampSystem`
   stamps vehicles with `TrackMarks` that are on the ground and not hidden from the local player, seen building
   footprints (`NavObstacle`) and ground impacts of 3 m splash or more. `InteractionMap.Quality` (Off, Low = half
-  resolution, Full) is set by the game; Off frees the textures. Presentation only, so clients may differ.
+  resolution, Full) comes from `PresentationQuality`; Off frees the textures. Presentation only, so clients may differ.
   `Trample.hlsl` reads them: the terrain darkens ruts, soil and flattened grass and dents its normal along the ruts;
   Foliage without Tree Wind leans plants flat along the travel direction (`_Trample`: Off, Grass by B, Crop by A),
   and `TrampleBend` serves any plant shader.
@@ -136,12 +141,12 @@ Rendering and effects:
   distance. The bands are drawn with `Graphics.RenderMeshIndirect` for that camera only (GPU buffers are per renderer, reused by
   each camera in turn); `RowCrop.shader` reads the plants by
   `SV_InstanceID` and has forward, shadow, depth, depth-normals and motion-vector passes, lit like Foliage with plant
-  wind. Regrowing every visible tile per camera needs no cache when the camera moves or crops get trampled. The
-  game sets density and distance from its vegetation quality.
+  wind. Regrowing every visible tile per camera needs no cache when the camera moves or crops get trampled. Density and
+  distance come from `PresentationQuality`.
 - **Ambient life** (`Environment/Ambient/`): an `AmbientLife` component in the scene (one per climate) configures
   client-only birds and dust devils; never simulated or networked, so clients may differ. A zero count turns a feature
   off; an unusable field throws naming it. `BirdFlockSystem` flies `BirdFlock`s (pure, tested): each circles a random
-  anchor inside the `TerrainHeight` extent at its height range (ring pull, separation, noise); an `ImpactEvent` within
+  anchor inside the `TerrainHeight` extent at its height range (ring pull, separation, noise); an impact `CueEvent` within
   `scatterRadius` of a flock sends it away, climbing, and after `returnDelay` it settles over an anchor at least
   150 m away. `BirdRenderer` draws camera-facing quads heading up the screen, one `Graphics.RenderMeshInstanced` per
   2×2 flipbook frame with `_BaseMap_ST` set per frame (material: GPU Instancing, double-sided, alpha clip, URP Unlit
@@ -155,7 +160,7 @@ Rendering and effects:
   switched off: `Burst` replays the bursts (timed ones later, at the same pose; sub-emitters still fire), `Stream`
   emits rate × time + rate over distance along a path with a carried fraction. `EffectDetail.Level` thins particles
   (Low 0.35, Medium 0.7, High 1); High adds `EffectLight` flashes from 8 shared shadowless lights; Low halves loop
-  range. `EffectPlaybackSystem` bursts seen `CueEvent`s (the type's slot rig, facing `Direction`) and impacts of
+  range. `EffectPlaybackSystem` bursts seen `CueEvent`s (the type's slot rig, facing `Direction`) and `Impact` cues of
   shooters with `EntityImpactEffects` (`SurfaceEffects.RigFor` the event's material; on the
   terrain, facing up or the ground normal). `LoopEffectSystem`, `TrailSystem` and `MotionDustSystem` stream drawn
   entities (no `DisableRendering`): loops at sockets with health gate and timed fade, trails along the frame's path,

@@ -2,7 +2,7 @@ namespace HyperRTS.Simulation.Common
 {
     /// <summary>
     /// What an entity's sound and effect are for. Voice slots (<see cref="Ready"/> to <see cref="Attack"/>) reach
-    /// only the owner, and <see cref="Impact"/> is sound only.
+    /// only the owner. <see cref="Impact"/> is where a shot landed: its sound, the shooter's impact effects and marks.
     /// </summary>
     public enum CueSlot : byte
     {

@@ -43,7 +43,7 @@ namespace HyperRTS.Presentation.Effects
             _camera = EffectRange.Main(_camera);
             var now = SystemAPI.Time.ElapsedTime;
             _deltaTime = SystemAPI.Time.DeltaTime;
-            _reach = EffectDetail.Level == EffectDetailLevel.Low ? 0.5f : 1f;
+            _reach = EffectDetail.Level == DetailLevel.Low ? 0.5f : 1f;
             var health = SystemAPI.GetComponentLookup<Health>(true);
             var decays = SystemAPI.GetComponentLookup<Decay>(true);
             _streams.BeginFrame();

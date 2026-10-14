@@ -26,7 +26,7 @@ Packages/com.hyperrts.engine/
 │                  (in HyperRTS.Presentation)
 ├── Presentation/  team colours, overlays, rendering helpers, fog, UI Toolkit HUD, audio playback, Tests/
 ├── Input/         camera, shared input actions, input → PlayerCommand bridge
-├── Network/       Session, Players (join), Commands (RPCs), Replication, Relevancy, Cues, Combat (impacts),
+├── Network/       Session, Players (join), Commands (RPCs), Replication, Relevancy, Cues (sounds, effects, impacts),
 │                  Common (viewer fanout) (docs/networking.md)
 ├── Editor/        Hub (Tools window), Generators, Authoring (inspectors, handles), Validation, Templates, Catalog,
 │                  PlayMode (debug draw, cheats), Maps (Map Editor, map library, builder), Common, scene wizard, Tests/

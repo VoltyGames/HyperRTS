@@ -16,6 +16,8 @@ namespace HyperRTS.Simulation.Cues
         private BufferLookup<CueEvent> _events;
         [ReadOnly] private BufferLookup<EntitySound> _sounds;
         [ReadOnly] private BufferLookup<EntityEffect> _effects;
+        [ReadOnly] private BufferLookup<EntityImpactMark> _marks;
+        [ReadOnly] private ComponentLookup<EntityImpactEffects> _impactEffects;
         [ReadOnly] private ComponentLookup<EntityInfo> _info;
         [ReadOnly] private ComponentLookup<Stealthed> _cloaks;
         private Entity _queue;
@@ -25,6 +27,8 @@ namespace HyperRTS.Simulation.Cues
             _events = state.GetBufferLookup<CueEvent>();
             _sounds = state.GetBufferLookup<EntitySound>(true);
             _effects = state.GetBufferLookup<EntityEffect>(true);
+            _marks = state.GetBufferLookup<EntityImpactMark>(true);
+            _impactEffects = state.GetComponentLookup<EntityImpactEffects>(true);
             _info = state.GetComponentLookup<EntityInfo>(true);
             _cloaks = state.GetComponentLookup<Stealthed>(true);
         }
@@ -35,6 +39,8 @@ namespace HyperRTS.Simulation.Cues
             _events.Update(ref state);
             _sounds.Update(ref state);
             _effects.Update(ref state);
+            _marks.Update(ref state);
+            _impactEffects.Update(ref state);
             _info.Update(ref state);
             _cloaks.Update(ref state);
             _queue = queue;
@@ -55,7 +61,10 @@ namespace HyperRTS.Simulation.Cues
             return Add(TypeIdFor(source, slot), slot, position, direction, faction, _cloaks.HasEnabled(source));
         }
 
-        /// <summary><paramref name="source"/>'s type id if it has a sound or an effect for the slot, else 0.</summary>
+        /// <summary>
+        /// <paramref name="source"/>'s type id if it has a sound or an effect for the slot (for impacts also marks or
+        /// impact effects), else 0.
+        /// </summary>
         public int TypeIdFor(Entity source, CueSlot slot)
         {
             if (!HasCue(source, slot))
@@ -83,14 +92,40 @@ namespace HyperRTS.Simulation.Cues
             return true;
         }
 
+        /// <summary>Reports where a shot of a shooter type landed; a type id of 0 is ignored.</summary>
+        public void AddImpact(int typeId, float3 position, float3 direction, float radius, byte faction, Entity target)
+        {
+            if (typeId == 0)
+            {
+                return;
+            }
+
+            _events[_queue].Add(new CueEvent
+            {
+                TypeId = typeId, Slot = CueSlot.Impact, Faction = faction, Position = position, Direction = direction,
+                Radius = radius, Target = target,
+            });
+        }
+
         private bool HasCue(Entity source, CueSlot slot)
         {
+            if (slot == CueSlot.Impact && LeavesImpact(source))
+            {
+                return true;
+            }
+
             if (_sounds.TryGetBuffer(source, out var sounds) && SoundRules.HasCue(sounds, slot))
             {
                 return true;
             }
 
             return _effects.TryGetBuffer(source, out var effects) && EffectRules.TryGetSocket(effects, slot, out _);
+        }
+
+        private bool LeavesImpact(Entity shooter)
+        {
+            var marked = _marks.TryGetBuffer(shooter, out var marks) && !marks.IsEmpty;
+            return marked || _impactEffects.HasComponent(shooter);
         }
     }
 }

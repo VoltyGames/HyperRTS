@@ -4,12 +4,12 @@ using Unity.Collections;
 namespace HyperRTS.Simulation.Replays
 {
     /// <summary>
-    /// The <see cref="MatchSetup"/> that rebuilds a recorded match's players (names, colours, teams, sides, closed
+    /// The <see cref="MatchSetup"/> that rebuilds a recorded match's players (names, colours, teams, sides, AI, closed
     /// slots) on its map, so playback shows them as they were rather than as the map baked them.
     /// </summary>
     public static class ReplaySetup
     {
-        /// <summary>The viewer sees through the first recorded player; replays reveal the whole map anyway.</summary>
+        /// <summary>The viewer sees through the first human player; replays reveal the whole map anyway.</summary>
         public static MatchSetup ToMatchSetup(Replay replay)
         {
             var setup = MatchSetup.Create();
@@ -21,15 +21,16 @@ namespace HyperRTS.Simulation.Replays
                 last = player.Faction > last ? player.Faction : last;
             }
 
+            var viewer = FirstHuman(replay);
             for (var faction = 1; faction <= last; faction++)
             {
-                setup.Slots.Add(Slot(replay, (byte)faction));
+                setup.Slots.Add(Slot(replay, (byte)faction, viewer));
             }
 
             return setup;
         }
 
-        private static SlotSetup Slot(Replay replay, byte faction)
+        private static SlotSetup Slot(Replay replay, byte faction, int viewer)
         {
             for (var i = 0; i < replay.Players.Count; i++)
             {
@@ -44,7 +45,8 @@ namespace HyperRTS.Simulation.Replays
                 return new SlotSetup
                 {
                     Open = true,
-                    Control = i == 0 ? PlayerControl.LocalHuman : PlayerControl.Remote,
+                    Control = PlaybackControl(player, i == viewer),
+                    Difficulty = player.Difficulty,
                     Team = player.Team,
                     Color = player.Color,
                     Name = name,
@@ -54,5 +56,19 @@ namespace HyperRTS.Simulation.Replays
 
             return new SlotSetup { Open = false };
         }
+
+        private static PlayerControl PlaybackControl(in ReplayPlayerInfo player, bool isViewer)
+        {
+            if (player.Control == PlayerControl.AI)
+            {
+                return PlayerControl.AI;
+            }
+
+            return isViewer ? PlayerControl.LocalHuman : PlayerControl.Remote;
+        }
+
+        /// <summary>Index of the first human player, or -1 when only bots played.</summary>
+        private static int FirstHuman(Replay replay) =>
+            replay.Players.FindIndex(player => player.Control != PlayerControl.AI);
     }
 }

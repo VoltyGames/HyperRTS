@@ -1,6 +1,6 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Match;
 using Unity.Burst;
 using Unity.Collections;
@@ -11,8 +11,8 @@ namespace HyperRTS.Simulation.Replays
 {
     /// <summary>
     /// While a <see cref="ReplayRecording"/> exists, samples every gameplay entity at its rate after the frame's
-    /// gameplay ran: a keyframe every few seconds, deltas of what changed in between, and every impact since the last
-    /// sample. Starts one itself when <see cref="MatchRules.RecordReplay"/> is set.
+    /// gameplay ran: a keyframe every few seconds, deltas of what changed in between, and every cue since the last
+    /// sample but the owner-only voices. Starts one itself when <see cref="MatchRules.RecordReplay"/> is set.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Replays
         private bool _autoStarted;
 
         [BurstCompile]
-        public void OnCreate(ref SystemState state) => state.RequireForUpdate<ImpactQueue>();
+        public void OnCreate(ref SystemState state) => state.RequireForUpdate<CueQueue>();
 
         public void OnDestroy(ref SystemState state)
         {
@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Replays
             }
 
             var recording = SystemAPI.GetComponent<ReplayRecording>(entity);
-            RecordImpacts(ref state, recording.Stream);
+            RecordCues(ref state, recording.Stream);
             if (!TryBeginFrame(ref recording, SystemAPI.Time.ElapsedTime, out var frame))
             {
                 return;
@@ -52,17 +52,23 @@ namespace HyperRTS.Simulation.Replays
             CollectRemoved(ref recording, frame.Keyframe);
             frame.EntityCount = recording.Stream.Entities.Length - frame.EntityStart;
             frame.RemovedCount = recording.Stream.Removed.Length - frame.RemovedStart;
-            frame.ImpactCount = recording.Stream.Impacts.Length - frame.ImpactStart;
+            frame.CueCount = recording.Stream.Cues.Length - frame.CueStart;
             recording.Stream.Frames.Add(frame);
             SystemAPI.SetComponent(entity, recording);
         }
 
-        /// <summary>Shots land between samples, so every frame's impacts are kept for the next sample.</summary>
-        private void RecordImpacts(ref SystemState state, ReplayStream stream)
+        /// <summary>
+        /// Cues play between samples, so every frame's are kept for the next sample. Voices are skipped: they answer
+        /// one player's clicks, which a spectator doesn't make.
+        /// </summary>
+        private void RecordCues(ref SystemState state, ReplayStream stream)
         {
-            foreach (var impact in SystemAPI.GetSingletonBuffer<ImpactEvent>(true))
+            foreach (var cue in SystemAPI.GetSingletonBuffer<CueEvent>(true))
             {
-                stream.Impacts.Add(PackedImpact.Pack(impact));
+                if (!CueRules.IsVoice(cue.Slot))
+                {
+                    stream.Cues.Add(PackedCue.Pack(cue));
+                }
             }
         }
 
@@ -101,7 +107,7 @@ namespace HyperRTS.Simulation.Replays
                 Keyframe = keyframe,
                 EntityStart = recording.Stream.Entities.Length,
                 RemovedStart = recording.Stream.Removed.Length,
-                ImpactStart = recording.Stream.SampledImpacts,
+                CueStart = recording.Stream.SampledCues,
             };
             return true;
         }

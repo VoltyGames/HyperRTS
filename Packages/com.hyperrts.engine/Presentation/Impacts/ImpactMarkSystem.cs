@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Replays;
 using HyperRTS.Simulation.Vision;
@@ -13,7 +13,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Impacts
 {
     /// <summary>
-    /// Lays the frame's <see cref="ImpactEvent"/>s on open ground as their shooter type's <see cref="ImpactMark"/>s:
+    /// Lays the frame's impact <see cref="CueEvent"/>s on open ground as their shooter type's <see cref="ImpactMark"/>s:
     /// pooled URP decal projectors at terrain height, along the ground's slope, turned and sized at random, fading
     /// with age; past a kind's cap the oldest is reused. Skips impacts the local player can't see. During a replay,
     /// marks age on its clock and clear when it seeks back.
@@ -47,7 +47,7 @@ namespace HyperRTS.Presentation.Impacts
             _catalog = new TypeCatalog<ImpactMark[]>(SystemAPI.QueryBuilder().WithAll<EntityInfo, EntityImpactMark>()
                 .WithOptions(EntityQueryOptions.IncludePrefab).Build(), ReadMarks);
             _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
-            RequireForUpdate<ImpactQueue>();
+            RequireForUpdate<CueQueue>();
             RequireForUpdate<PrefabRegistry>();
         }
 
@@ -92,8 +92,8 @@ namespace HyperRTS.Presentation.Impacts
 
         private void PlaceNew(float now)
         {
-            var impacts = SystemAPI.GetSingletonBuffer<ImpactEvent>(true);
-            if (impacts.IsEmpty)
+            var cues = SystemAPI.GetSingletonBuffer<CueEvent>(true);
+            if (cues.IsEmpty)
             {
                 return;
             }
@@ -104,10 +104,10 @@ namespace HyperRTS.Presentation.Impacts
             _fog.TryGetSingleton(out FogOfWar fog);
             SystemAPI.TryGetSingleton(out TerrainHeight terrain);
             var registry = SystemAPI.GetSingleton<PrefabRegistry>();
-            foreach (var impact in impacts)
+            foreach (var impact in cues)
             {
-                var seen = ImpactRules.IsSeenLocally(impact, view, fog, relations);
-                if (impact.Surface != ImpactSurface.Ground || !seen)
+                var onGround = impact.Slot == CueSlot.Impact && impact.Surface == ImpactSurface.Ground;
+                if (!onGround || !CueRules.IsSeenLocally(impact, view, fog, relations))
                 {
                     continue;
                 }
@@ -120,7 +120,7 @@ namespace HyperRTS.Presentation.Impacts
             }
         }
 
-        private void Place(ImpactMark mark, in ImpactEvent impact, in TerrainHeight terrain, float now)
+        private void Place(ImpactMark mark, in CueEvent impact, in TerrainHeight terrain, float now)
         {
             var decal = mark != null && mark.decals.Length > 0 ? mark.decals[_random.NextInt(mark.decals.Length)] : null;
             if (decal == null)

@@ -21,8 +21,8 @@ namespace HyperRTS.Presentation.Environment
         private float _recoveryCarry;
         private float _fadeCarry;
 
-        /// <summary>Map resolution, or Off. Set by the game from its vegetation quality.</summary>
-        public static InteractionQuality Quality { get; set; } = InteractionQuality.Full;
+        /// <summary>Map resolution, or Off. Written by <see cref="Rendering.PresentationQuality.Apply"/>.</summary>
+        public static InteractionQuality Quality { get; internal set; } = InteractionQuality.Full;
 
         private void Awake() => _brush = new InteractionBrush(brush);
 

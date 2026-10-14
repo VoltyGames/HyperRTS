@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using Unity.Mathematics;
 

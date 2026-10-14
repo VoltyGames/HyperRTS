@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Impacts;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using Unity.Mathematics;
 using UnityEngine;
@@ -14,10 +14,10 @@ namespace HyperRTS.Presentation.Effects
             direction.sqrMagnitude > 1e-8f ? Quaternion.LookRotation(direction) : Quaternion.identity;
 
         /// <summary>
-        /// An impact's pose: on the terrain for ground hits, up along the world or the ground's normal, spun about
+        /// An impact cue's pose: on the terrain for ground hits, up along the world or the ground's normal, spun about
         /// that axis by <paramref name="spin"/> radians for variety.
         /// </summary>
-        public static (Vector3 Position, Quaternion Rotation) Impact(in ImpactEvent impact, in TerrainHeight terrain,
+        public static (Vector3 Position, Quaternion Rotation) Impact(in CueEvent impact, in TerrainHeight terrain,
             bool hasTerrain, bool alignToGround, float spin)
         {
             var turn = Quaternion.Euler(0f, spin * Mathf.Rad2Deg, 0f);

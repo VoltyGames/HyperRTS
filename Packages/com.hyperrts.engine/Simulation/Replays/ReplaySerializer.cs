@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Match;
 using Unity.Mathematics;
 
@@ -11,6 +12,9 @@ namespace HyperRTS.Simulation.Replays
     public static class ReplaySerializer
     {
         private const int Magic = 0x4C505248; // "HRPL"
+
+        /// <summary>Bumped on every format change; files of any other version are rejected.</summary>
+        public const int Version = 2;
 
         /// <summary>Most elements reserved before any are read; larger lists grow as data arrives.</summary>
         private const int PreallocateLimit = 4096;
@@ -55,7 +59,7 @@ namespace HyperRTS.Simulation.Replays
                 writer.Write(frame.Keyframe);
                 writer.Write(frame.EntityCount);
                 writer.Write(frame.RemovedCount);
-                writer.Write(frame.ImpactCount);
+                writer.Write(frame.CueCount);
             }
 
             foreach (var entity in replay.Entities)
@@ -68,9 +72,9 @@ namespace HyperRTS.Simulation.Replays
                 writer.Write(key);
             }
 
-            foreach (var impact in replay.Impacts)
+            foreach (var cue in replay.Cues)
             {
-                impact.Write(writer);
+                cue.Write(writer);
             }
         }
 
@@ -99,7 +103,7 @@ namespace HyperRTS.Simulation.Replays
         {
             var frameCount = ReadCount(reader, "frames");
             var frames = new List<ReplayFrame>(Capacity(frameCount));
-            long entities = 0, removed = 0, impacts = 0;
+            long entities = 0, removed = 0, cues = 0;
             for (var i = 0; i < frameCount; i++)
             {
                 var frame = new ReplayFrame { Time = reader.ReadSingle(), Keyframe = reader.ReadBoolean() };
@@ -107,18 +111,18 @@ namespace HyperRTS.Simulation.Replays
                 frame.EntityCount = ReadCount(reader, "entity samples");
                 frame.RemovedStart = (int)removed;
                 frame.RemovedCount = ReadCount(reader, "removals");
-                frame.ImpactStart = (int)impacts;
-                frame.ImpactCount = ReadCount(reader, "impacts");
+                frame.CueStart = (int)cues;
+                frame.CueCount = ReadCount(reader, "cues");
                 entities = Total(entities + frame.EntityCount, "entity samples");
                 removed = Total(removed + frame.RemovedCount, "removals");
-                impacts = Total(impacts + frame.ImpactCount, "impacts");
+                cues = Total(cues + frame.CueCount, "cues");
                 frames.Add(frame);
             }
 
             replay.Frames = frames.ToArray();
             replay.Entities = ReadAll(reader, (int)entities, ReadEntity);
             replay.Removed = ReadAll(reader, (int)removed, r => r.ReadInt32());
-            replay.Impacts = ReadAll(reader, (int)impacts, PackedImpact.Read);
+            replay.Cues = ReadAll(reader, (int)cues, PackedCue.Read);
         }
 
         private static int ReadCount(BinaryReader reader, string what)
@@ -158,6 +162,7 @@ namespace HyperRTS.Simulation.Replays
         private static void WriteHeader(BinaryWriter writer, Replay replay)
         {
             writer.Write(Magic);
+            writer.Write(Version);
             writer.Write(replay.ScenePath ?? "");
             writer.Write(replay.Seed);
             writer.Write(replay.Weather ?? "");
@@ -177,6 +182,8 @@ namespace HyperRTS.Simulation.Replays
                 writer.Write(player.Color.z);
                 writer.Write(player.Color.w);
                 writer.Write(player.Side);
+                writer.Write((byte)player.Control);
+                writer.Write((byte)player.Difficulty);
             }
         }
 
@@ -185,6 +192,12 @@ namespace HyperRTS.Simulation.Replays
             if (reader.ReadInt32() != Magic)
             {
                 throw new InvalidDataException("Not a HyperRTS replay.");
+            }
+
+            var version = reader.ReadInt32();
+            if (version != Version)
+            {
+                throw new InvalidDataException($"replay from an older build (version {version})");
             }
 
             var replay = new Replay
@@ -208,6 +221,8 @@ namespace HyperRTS.Simulation.Replays
                     Name = reader.ReadString(),
                     Color = new float4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
                     Side = reader.ReadByte(),
+                    Control = (PlayerControl)reader.ReadByte(),
+                    Difficulty = (AIDifficulty)reader.ReadByte(),
                 });
             }
 

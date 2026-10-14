@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Match;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.AI
@@ -5,6 +6,9 @@ namespace HyperRTS.Simulation.AI
     /// <summary>Marks a computer-controlled player and tunes its skirmish behaviour.</summary>
     public struct AIPlayer : IComponentData
     {
+        /// <summary>The preset it was tuned from, recorded in replays.</summary>
+        public AIDifficulty Difficulty;
+
         public float ThinkInterval;
         public float TimeUntilThink;
 

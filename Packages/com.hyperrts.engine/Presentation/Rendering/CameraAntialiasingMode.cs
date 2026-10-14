@@ -1,21 +1,20 @@
 using System;
-using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Presentation.Rendering
 {
-    /// <summary>The game's antialiasing, applied to every camera with <see cref="CameraAntialiasing"/>.</summary>
+    /// <summary>The antialiasing every camera with <see cref="CameraAntialiasing"/> uses.</summary>
     public static class CameraAntialiasingMode
     {
         private static AntialiasingMode _mode = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
 
         public static event Action Changed;
 
-        /// <summary>Set by the game from its graphics options.</summary>
+        /// <summary>Written by <see cref="PresentationQuality.Apply"/>.</summary>
         public static AntialiasingMode Mode
         {
             get => _mode;
-            set
+            internal set
             {
                 if (_mode == value)
                 {
@@ -27,11 +26,10 @@ namespace HyperRTS.Presentation.Rendering
             }
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
+        internal static void Reset(AntialiasingMode mode)
         {
             Changed = null;
-            _mode = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+            _mode = mode;
         }
     }
 }

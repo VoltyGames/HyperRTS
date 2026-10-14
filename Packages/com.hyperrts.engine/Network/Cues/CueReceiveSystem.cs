@@ -31,7 +31,7 @@ namespace HyperRTS.Network.Cues
             {
                 foreach (var packed in rpc.ValueRO.Cues)
                 {
-                    cues.Add(CuePacking.Unpack(packed));
+                    cues.Add(packed.Unpack());
                 }
             }
 

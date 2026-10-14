@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
@@ -104,7 +104,7 @@ namespace HyperRTS.Presentation.Environment
 
         private void AddCraters()
         {
-            if (!SystemAPI.TryGetSingletonBuffer<ImpactEvent>(out var impacts, true) || impacts.IsEmpty)
+            if (!SystemAPI.TryGetSingletonBuffer<CueEvent>(out var cues, true) || cues.IsEmpty)
             {
                 return;
             }
@@ -113,15 +113,23 @@ namespace HyperRTS.Presentation.Environment
             SystemAPI.TryGetSingleton(out FactionRelations relations);
             _fog.CompleteDependency();
             _fog.TryGetSingleton(out FogOfWar fog);
-            foreach (var impact in impacts)
+            foreach (var impact in cues)
             {
-                var big = impact.Surface == ImpactSurface.Ground && impact.Radius >= InteractionMath.BigCraterRadius;
-                var seen = ImpactRules.IsSeenLocally(impact, view, fog, relations);
-                if (big && seen)
+                if (IsBigCrater(impact) && CueRules.IsSeenLocally(impact, view, fog, relations))
                 {
                     InteractionMath.AddCrater(impact.Position.xz, impact.Radius, Stamps.Trample, Stamps.Tracks);
                 }
             }
+        }
+
+        private static bool IsBigCrater(in CueEvent cue)
+        {
+            if (cue.Slot != CueSlot.Impact || cue.Surface != ImpactSurface.Ground)
+            {
+                return false;
+            }
+
+            return cue.Radius >= InteractionMath.BigCraterRadius;
         }
     }
 }

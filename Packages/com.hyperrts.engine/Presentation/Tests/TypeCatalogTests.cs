@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Presentation.Impacts;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;

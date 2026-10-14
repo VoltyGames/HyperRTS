@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using HyperRTS.Presentation.Effects;
+using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -84,9 +85,9 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void Density_ThinsByDetailLevel()
         {
-            Assert.AreEqual(0.35f, EffectDetail.DensityAt(EffectDetailLevel.Low));
-            Assert.AreEqual(0.7f, EffectDetail.DensityAt(EffectDetailLevel.Medium));
-            Assert.AreEqual(1f, EffectDetail.DensityAt(EffectDetailLevel.High));
+            Assert.AreEqual(0.35f, EffectDetail.DensityAt(DetailLevel.Low));
+            Assert.AreEqual(0.7f, EffectDetail.DensityAt(DetailLevel.Medium));
+            Assert.AreEqual(1f, EffectDetail.DensityAt(DetailLevel.High));
         }
     }
 }

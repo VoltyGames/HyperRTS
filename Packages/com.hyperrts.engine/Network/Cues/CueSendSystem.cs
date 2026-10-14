@@ -22,7 +22,7 @@ namespace HyperRTS.Network.Cues
         /// <summary>
         /// Most batches each client gets per tick; a big battle drops the rest instead of flooding RPCs.
         /// </summary>
-        public const int MaxBatchesPerTick = 2;
+        public const int MaxBatchesPerTick = 3;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -61,7 +61,7 @@ namespace HyperRTS.Network.Cues
                 }
 
                 batches.Clear();
-                CuePacking.Batch(visible.AsArray(), MaxBatchesPerTick, batches);
+                CueRpc.Batch(visible.AsArray(), MaxBatchesPerTick, batches);
                 viewers.Send(ecb, viewer, batches);
             }
         }

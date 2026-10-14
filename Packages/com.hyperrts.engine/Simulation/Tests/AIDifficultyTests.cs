@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Tests
         private Entity[] Squad(byte faction, AIDifficulty difficulty, float3 at)
         {
             var writer = new EntityManagerWriter(_world.EntityManager, _world.Player(faction));
-            AIPlayerSetup.Add(ref writer, _match.AITuningFor(difficulty).ToComponent());
+            AIPlayerSetup.Add(ref writer, _match.AITuningFor(difficulty).ToComponent(difficulty));
 
             var squad = new Entity[5];
             for (var i = 0; i < squad.Length; i++)
@@ -59,8 +59,8 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void HarderAI_ThinksSooner_AndAttacksWithSmallerWaves()
         {
-            var easy = _match.AITuningFor(AIDifficulty.Easy).ToComponent();
-            var hard = _match.AITuningFor(AIDifficulty.Hard).ToComponent();
+            var easy = _match.AITuningFor(AIDifficulty.Easy).ToComponent(AIDifficulty.Easy);
+            var hard = _match.AITuningFor(AIDifficulty.Hard).ToComponent(AIDifficulty.Hard);
             Assert.Greater(easy.ThinkInterval, hard.ThinkInterval);
             Assert.Greater(easy.AttackWaveSize, hard.AttackWaveSize);
             Assert.IsFalse(easy.UseAbilities);

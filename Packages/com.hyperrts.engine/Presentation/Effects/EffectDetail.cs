@@ -1,23 +1,24 @@
-using UnityEngine;
+using HyperRTS.Presentation.Rendering;
+using HyperRTS.Simulation.Common;
 
 namespace HyperRTS.Presentation.Effects
 {
-    /// <summary>Effect detail, set by the game from its effects quality.</summary>
+    /// <summary>
+    /// Effect detail, written by <see cref="PresentationQuality.Apply"/>. Low thins particles and keeps loops near
+    /// the camera; only High adds flash lights.
+    /// </summary>
     public static class EffectDetail
     {
-        public static EffectDetailLevel Level { get; set; } = EffectDetailLevel.High;
+        public static DetailLevel Level { get; internal set; } = DetailLevel.High;
 
         /// <summary>The share of authored particles emitted at the current level.</summary>
         public static float Density => DensityAt(Level);
 
-        public static float DensityAt(EffectDetailLevel level) => level switch
+        public static float DensityAt(DetailLevel level) => level switch
         {
-            EffectDetailLevel.Low => 0.35f,
-            EffectDetailLevel.Medium => 0.7f,
+            DetailLevel.Low => 0.35f,
+            DetailLevel.Medium => 0.7f,
             _ => 1f,
         };
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => Level = EffectDetailLevel.High;
     }
 }

@@ -1,3 +1,5 @@
+using HyperRTS.Presentation.Rendering;
+using HyperRTS.Simulation.Common;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -17,21 +19,18 @@ namespace HyperRTS.Presentation.Environment
 
         private static readonly GlobalKeyword Simple = GlobalKeyword.Create(SimpleKeyword);
         private static readonly GlobalKeyword NoFar = GlobalKeyword.Create(NoFarKeyword);
-        private static TerrainDetailLevel _level = TerrainDetailLevel.High;
+        private static DetailLevel _level = DetailLevel.High;
 
-        /// <summary>Set by the game from its ground quality.</summary>
-        public static TerrainDetailLevel Level
+        /// <summary>Written by <see cref="PresentationQuality.Apply"/>.</summary>
+        public static DetailLevel Level
         {
             get => _level;
-            set
+            internal set
             {
                 _level = value;
-                Shader.SetKeyword(Simple, value == TerrainDetailLevel.Low);
-                Shader.SetKeyword(NoFar, value == TerrainDetailLevel.Medium);
+                Shader.SetKeyword(Simple, value == DetailLevel.Low);
+                Shader.SetKeyword(NoFar, value == DetailLevel.Medium);
             }
         }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => Level = TerrainDetailLevel.High;
     }
 }

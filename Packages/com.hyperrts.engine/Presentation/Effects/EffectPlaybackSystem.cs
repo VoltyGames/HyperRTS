@@ -1,6 +1,5 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
@@ -11,9 +10,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects
 {
     /// <summary>
-    /// Bursts the frame's <see cref="CueEvent"/>s (the source type's slot rig at the socket, facing the event's
-    /// direction) and <see cref="ImpactEvent"/>s (the shooter's <see cref="SurfaceEffects"/> rig for the material
-    /// struck, on the ground) from the pool. Skips what the local player can't see and what is beyond a rig's range.
+    /// Bursts the frame's <see cref="CueEvent"/>s from the pool: the source type's slot rig at the socket, facing the
+    /// event's direction, or for impacts the shooter's <see cref="SurfaceEffects"/> rig for the material struck. Skips what the local player can't see and what is beyond a rig's range.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -33,6 +31,7 @@ namespace HyperRTS.Presentation.Effects
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
             _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
             RequireForUpdate<PrefabRegistry>();
+            RequireForUpdate<CueQueue>();
         }
 
         protected override void OnUpdate()
@@ -48,36 +47,34 @@ namespace HyperRTS.Presentation.Effects
             _fog.CompleteDependency();
             _fog.TryGetSingleton(out FogOfWar fog);
             var registry = SystemAPI.GetSingleton<PrefabRegistry>();
-            if (SystemAPI.TryGetSingletonBuffer<CueEvent>(out var cues, true))
+            var hasTerrain = SystemAPI.TryGetSingleton(out TerrainHeight terrain);
+            foreach (var cue in SystemAPI.GetSingletonBuffer<CueEvent>(true))
             {
-                PlayEffects(cues, view, fog, relations, registry);
-            }
+                if (!CueRules.IsSeenLocally(cue, view, fog, relations))
+                {
+                    continue;
+                }
 
-            if (SystemAPI.TryGetSingletonBuffer<ImpactEvent>(out var impacts, true))
-            {
-                PlayImpacts(impacts, view, fog, relations, registry);
+                if (cue.Slot == CueSlot.Impact)
+                {
+                    PlayImpact(cue, registry, terrain, hasTerrain);
+                }
+                else
+                {
+                    PlayEffect(cue, registry);
+                }
             }
         }
 
-        private void PlayEffects(DynamicBuffer<CueEvent> events, in LocalFogView view, in FogOfWar fog,
-            in FactionRelations relations, in PrefabRegistry registry)
+        private void PlayEffect(in CueEvent effect, in PrefabRegistry registry)
         {
-            foreach (var effect in events)
+            var rig = _pool.Get(FindRig(effect, registry));
+            if (rig == null || !EffectRange.InRange(_camera, rig, effect.Position))
             {
-                if (!CueRules.IsSeenLocally(effect, view, fog, relations))
-                {
-                    continue;
-                }
-
-                var rig = _pool.Get(FindRig(effect, registry));
-                if (rig == null || !EffectRange.InRange(_camera, rig, effect.Position))
-                {
-                    continue;
-                }
-
-                rig.Burst(effect.Position, EffectPose.Facing(effect.Direction), rig.ScaleFor(0f),
-                    EffectDetail.Density);
+                return;
             }
+
+            rig.Burst(effect.Position, EffectPose.Facing(effect.Direction), rig.ScaleFor(0f), EffectDetail.Density);
         }
 
         private GameObject FindRig(in CueEvent effect, in PrefabRegistry registry)
@@ -91,33 +88,24 @@ namespace HyperRTS.Presentation.Effects
             return entry.Rig.IsValid() ? entry.Rig.Value : null;
         }
 
-        private void PlayImpacts(DynamicBuffer<ImpactEvent> events, in LocalFogView view, in FogOfWar fog,
-            in FactionRelations relations, in PrefabRegistry registry)
+        private void PlayImpact(in CueEvent impact, in PrefabRegistry registry, in TerrainHeight terrain,
+            bool hasTerrain)
         {
-            var hasTerrain = SystemAPI.TryGetSingleton(out TerrainHeight terrain);
-            foreach (var impact in events)
+            var surfaces = _catalog.Find(EntityManager, registry, impact.TypeId)?.Impacts;
+            if (surfaces == null)
             {
-                if (!ImpactRules.IsSeenLocally(impact, view, fog, relations))
-                {
-                    continue;
-                }
-
-                var surfaces = _catalog.Find(EntityManager, registry, impact.TypeId)?.Impacts;
-                if (surfaces == null)
-                {
-                    continue;
-                }
-
-                var rig = _pool.Get(surfaces.RigFor(impact.Material));
-                if (rig == null || !EffectRange.InRange(_camera, rig, impact.Position))
-                {
-                    continue;
-                }
-
-                var spin = _random.NextFloat(2f * Mathf.PI);
-                var (position, rotation) = EffectPose.Impact(impact, terrain, hasTerrain, rig.alignToGround, spin);
-                rig.Burst(position, rotation, rig.ScaleFor(impact.Radius), EffectDetail.Density);
+                return;
             }
+
+            var rig = _pool.Get(surfaces.RigFor(impact.Material));
+            if (rig == null || !EffectRange.InRange(_camera, rig, impact.Position))
+            {
+                return;
+            }
+
+            var spin = _random.NextFloat(2f * Mathf.PI);
+            var (position, rotation) = EffectPose.Impact(impact, terrain, hasTerrain, rig.alignToGround, spin);
+            rig.Burst(position, rotation, rig.ScaleFor(impact.Radius), EffectDetail.Density);
         }
     }
 }

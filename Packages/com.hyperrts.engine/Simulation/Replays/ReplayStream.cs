@@ -1,5 +1,6 @@
 using System;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -11,14 +12,14 @@ namespace HyperRTS.Simulation.Replays
         public NativeList<ReplayFrame> Frames;
         public NativeList<ReplayEntity> Entities;
         public NativeList<int> Removed;
-        public NativeList<PackedImpact> Impacts;
+        public NativeList<PackedCue> Cues;
 
         public static ReplayStream Create(Allocator allocator) => new()
         {
             Frames = new NativeList<ReplayFrame>(64, allocator),
             Entities = new NativeList<ReplayEntity>(1024, allocator),
             Removed = new NativeList<int>(64, allocator),
-            Impacts = new NativeList<PackedImpact>(256, allocator),
+            Cues = new NativeList<PackedCue>(256, allocator),
         };
 
         public void Dispose()
@@ -26,11 +27,11 @@ namespace HyperRTS.Simulation.Replays
             Frames.Dispose();
             Entities.Dispose();
             Removed.Dispose();
-            Impacts.Dispose();
+            Cues.Dispose();
         }
 
-        /// <summary>Impacts the frames so far hold; those recorded after them belong to the next sample.</summary>
-        public readonly int SampledImpacts
+        /// <summary>Cues the frames so far hold; those recorded after them belong to the next sample.</summary>
+        public readonly int SampledCues
         {
             get
             {
@@ -40,20 +41,24 @@ namespace HyperRTS.Simulation.Replays
                 }
 
                 var last = Frames[Frames.Length - 1];
-                return last.ImpactStart + last.ImpactCount;
+                return last.CueStart + last.CueCount;
             }
         }
 
         /// <summary>The first frame recorded after <paramref name="time"/>.</summary>
         public readonly int FrameAfter(float time) => time < Frames[0].Time ? 0 : FrameAt(time) + 1;
 
-        /// <summary>Adds a frame's impacts to <paramref name="queue"/>.</summary>
-        public readonly void AddImpacts(int frame, DynamicBuffer<ImpactEvent> queue)
+        /// <summary>Adds a frame's cues, or only its impacts, to <paramref name="queue"/>.</summary>
+        public readonly void AddCues(int frame, DynamicBuffer<CueEvent> queue, bool impactsOnly)
         {
             var sample = Frames[frame];
-            for (var i = sample.ImpactStart; i < sample.ImpactStart + sample.ImpactCount; i++)
+            for (var i = sample.CueStart; i < sample.CueStart + sample.CueCount; i++)
             {
-                queue.Add(Impacts[i].Unpack());
+                var cue = Cues[i].Unpack();
+                if (!impactsOnly || cue.Slot == CueSlot.Impact)
+                {
+                    queue.Add(cue);
+                }
             }
         }
 

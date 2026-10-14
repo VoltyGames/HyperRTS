@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
 
@@ -28,7 +29,7 @@ namespace HyperRTS.Simulation.Replays
         public ReplayFrame[] Frames = Array.Empty<ReplayFrame>();
         public ReplayEntity[] Entities = Array.Empty<ReplayEntity>();
         public int[] Removed = Array.Empty<int>();
-        public PackedImpact[] Impacts = Array.Empty<PackedImpact>();
+        public PackedCue[] Cues = Array.Empty<PackedCue>();
 
         /// <summary>Copies the samples into a native stream the caller disposes.</summary>
         public ReplayStream ToStream(Allocator allocator)
@@ -37,7 +38,7 @@ namespace HyperRTS.Simulation.Replays
             Append(stream.Frames, Frames);
             Append(stream.Entities, Entities);
             Append(stream.Removed, Removed);
-            Append(stream.Impacts, Impacts);
+            Append(stream.Cues, Cues);
             return stream;
         }
 
@@ -47,7 +48,7 @@ namespace HyperRTS.Simulation.Replays
             Frames = stream.Frames.AsArray().ToArray();
             Entities = stream.Entities.AsArray().ToArray();
             Removed = stream.Removed.AsArray().ToArray();
-            Impacts = stream.Impacts.AsArray().GetSubArray(0, stream.SampledImpacts).ToArray();
+            Cues = stream.Cues.AsArray().GetSubArray(0, stream.SampledCues).ToArray();
             Duration = Frames.Length == 0 ? 0f : Frames[^1].Time;
         }
 

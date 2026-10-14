@@ -1,5 +1,5 @@
-using HyperRTS.Network.Combat;
 using HyperRTS.Network.Common;
+using HyperRTS.Network.Cues;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Tests
             viewers.Add(1, allies[0]);
             viewers.Add(0, observer);
             viewers.Add(1, allies[1]);
-            using var batches = new NativeList<ImpactRpc>(Allocator.Temp) { new ImpactRpc(), new ImpactRpc() };
+            using var batches = new NativeList<CueRpc>(Allocator.Temp) { new CueRpc(), new CueRpc() };
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
             viewers.Send(ecb, 1, batches);
@@ -29,7 +29,7 @@ namespace HyperRTS.Simulation.Tests
             ecb.Dispose();
 
             CollectionAssert.AreEqual(new byte[] { 1, 0 }, viewers.Factions.AsArray().ToArray());
-            using var query = entities.CreateEntityQuery(typeof(ImpactRpc), typeof(SendRpcCommandRequest));
+            using var query = entities.CreateEntityQuery(typeof(CueRpc), typeof(SendRpcCommandRequest));
             var requests = query.ToComponentDataArray<SendRpcCommandRequest>(Allocator.Temp);
             Assert.AreEqual(4, requests.Length, "two batches to each of the two allies");
             foreach (var request in requests)

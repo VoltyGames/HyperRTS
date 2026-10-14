@@ -10,7 +10,7 @@ namespace HyperRTS.Presentation.Environment
 
         private static readonly int FadeId = Shader.PropertyToID("_HyperRTSDetailFade");
 
-        public static void Publish(float detailDistance) =>
+        internal static void Publish(float detailDistance) =>
             Shader.SetGlobalVector(FadeId, new Vector4(detailDistance * (1f - Band), detailDistance, 0f, 0f));
     }
 }

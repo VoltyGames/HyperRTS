@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Rendering
         private static readonly Dictionary<UniversalRenderPipelineAsset, int> Authored = new();
 
         /// <summary>Sets the shadow map size (a power of two, 256 to 8192) on the active pipeline asset.</summary>
-        public static void SetResolution(int resolution)
+        internal static void SetResolution(int resolution)
         {
             if (GraphicsSettings.currentRenderPipeline is not UniversalRenderPipelineAsset asset)
             {
@@ -44,8 +44,7 @@ namespace HyperRTS.Presentation.Rendering
             Authored.Clear();
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
+        internal static void Reset()
         {
             Application.quitting -= Restore;
             Authored.Clear();

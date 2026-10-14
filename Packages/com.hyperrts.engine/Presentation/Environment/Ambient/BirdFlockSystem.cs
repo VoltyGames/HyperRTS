@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Effects;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -29,7 +30,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
         {
             _renderer = new BirdRenderer();
             RequireForUpdate<TerrainHeight>();
-            RequireForUpdate<ImpactQueue>();
+            RequireForUpdate<CueQueue>();
         }
 
         protected override void OnDestroy() => _renderer.Dispose();
@@ -38,7 +39,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
         {
             var life = AmbientLife.Active;
             var off = life == null || life.flocks == 0;
-            if (off || EffectDetail.Level == EffectDetailLevel.Low)
+            if (off || EffectDetail.Level == DetailLevel.Low)
             {
                 return;
             }
@@ -83,18 +84,22 @@ namespace HyperRTS.Presentation.Environment.Ambient
 
         private ReadOnlySpan<float3> Impacts()
         {
-            var queue = SystemAPI.GetSingletonBuffer<ImpactEvent>(true);
+            var queue = SystemAPI.GetSingletonBuffer<CueEvent>(true);
             if (_impacts.Length < queue.Length)
             {
                 _impacts = new float3[math.ceilpow2(queue.Length)];
             }
 
-            for (var i = 0; i < queue.Length; i++)
+            var count = 0;
+            foreach (var cue in queue)
             {
-                _impacts[i] = queue[i].Position;
+                if (cue.Slot == CueSlot.Impact)
+                {
+                    _impacts[count++] = cue.Position;
+                }
             }
 
-            return new ReadOnlySpan<float3>(_impacts, 0, queue.Length);
+            return new ReadOnlySpan<float3>(_impacts, 0, count);
         }
     }
 }

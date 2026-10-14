@@ -132,13 +132,13 @@ namespace HyperRTS.Simulation.Tests
                 LocalTransform.FromPositionRotation(new float3(3.03f, 0f, -2.5f), quaternion.RotateY(math.radians(10f))),
                 0.5f, 0f, false);
 
-            Assert.AreEqual(1.03f, a.Position.x, ReplayEntity.PositionStep);
+            Assert.AreEqual(1.03f, a.Position.x, QuantizedPosition.Step);
             Assert.AreEqual(0.5f, a.HealthFraction, 0.01f);
             Assert.IsFalse(a.UnderConstruction);
 
             var middle = a.Interpolate(b, 0.5f, 1f);
             var forward = math.mul(middle.Rotation, math.forward());
-            Assert.AreEqual(2.03f, middle.Position.x, ReplayEntity.PositionStep);
+            Assert.AreEqual(2.03f, middle.Position.x, QuantizedPosition.Step);
             Assert.AreEqual(1f, forward.z, 1e-3f, "350° to 10° passes through 0°, not 180°");
         }
 

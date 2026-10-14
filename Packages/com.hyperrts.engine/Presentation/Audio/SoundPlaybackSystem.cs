@@ -33,6 +33,7 @@ namespace HyperRTS.Presentation.Audio
                 .WithAll<EntityInfo, EntitySound>().WithOptions(EntityQueryOptions.IncludePrefab).Build(), ReadCues);
             _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
             RequireForUpdate<CueQueue>();
+            RequireForUpdate<LocalFogView>();
             RequireForUpdate<PrefabRegistry>();
         }
 
@@ -62,7 +63,7 @@ namespace HyperRTS.Presentation.Audio
                 return;
             }
 
-            var view = SystemAPI.TryGetSingleton(out LocalFogView local) ? local : default;
+            var view = SystemAPI.GetSingleton<LocalFogView>();
             SystemAPI.TryGetSingleton(out FactionRelations relations);
             _fog.CompleteDependency();
             _fog.TryGetSingleton(out FogOfWar fog);
@@ -75,7 +76,7 @@ namespace HyperRTS.Presentation.Audio
             for (var i = 0; i < sounds.Length; i++)
             {
                 var sound = sounds[i];
-                if (CueRules.IsVisible(sound, view.Viewer, fog, relations))
+                if (CueRules.IsSeenLocally(sound, view, fog, relations))
                 {
                     Play(FindCue(registry, sound.TypeId, sound.Slot), sound.Position);
                 }

@@ -37,12 +37,13 @@ namespace HyperRTS.Simulation.AI
         public AIDifficultyTuning ToTuning(AIDifficulty difficulty) => new()
         {
             Difficulty = difficulty,
-            Tuning = ToComponent(),
+            Tuning = ToComponent(difficulty),
             IncomeMultiplier = incomeMultiplier,
         };
 
-        public AIPlayer ToComponent() => new()
+        public AIPlayer ToComponent(AIDifficulty difficulty) => new()
         {
+            Difficulty = difficulty,
             ThinkInterval = thinkInterval,
             TimeUntilThink = thinkInterval,
             AttackWaveSize = attackWaveSize,

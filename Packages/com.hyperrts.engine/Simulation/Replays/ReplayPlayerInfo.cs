@@ -1,4 +1,5 @@
-﻿using Unity.Mathematics;
+﻿using HyperRTS.Simulation.Match;
+using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Replays
 {
@@ -14,5 +15,10 @@ namespace HyperRTS.Simulation.Replays
 
         /// <summary>The game's army id (<c>PlayerSide</c>).</summary>
         public byte Side;
+
+        public PlayerControl Control;
+
+        /// <summary>The AI preset; meaningful for <see cref="PlayerControl.AI"/> players only.</summary>
+        public AIDifficulty Difficulty;
     }
 }

@@ -28,7 +28,6 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<Ammo> _ammo;
         private DamageWriter _damage;
         private CueWriter _cues;
-        private ImpactWriter _impacts;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -40,10 +39,8 @@ namespace HyperRTS.Simulation.Combat
             _ammo = state.GetComponentLookup<Ammo>();
             _damage = new DamageWriter(ref state);
             _cues = new CueWriter(ref state);
-            _impacts = new ImpactWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<CueQueue>();
-            state.RequireForUpdate<ImpactQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -57,7 +54,6 @@ namespace HyperRTS.Simulation.Combat
             _ammo.Update(ref state);
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
             _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
-            _impacts.Update(ref state, SystemAPI.GetSingletonEntity<ImpactQueue>());
 
             // Single-threaded: every shot appends to the one damage queue.
             new FireJob
@@ -72,7 +68,6 @@ namespace HyperRTS.Simulation.Combat
                 Ammo = _ammo,
                 Damage = _damage,
                 Cues = _cues,
-                Impacts = _impacts,
             }.Schedule();
         }
 
@@ -90,7 +85,6 @@ namespace HyperRTS.Simulation.Combat
             public ComponentLookup<Ammo> Ammo;
             public DamageWriter Damage;
             public CueWriter Cues;
-            public ImpactWriter Impacts;
 
             private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
                 EnabledRefRO<AttackTarget> attacking, in Faction faction)
@@ -124,9 +118,8 @@ namespace HyperRTS.Simulation.Combat
                 {
                     var hit = CombatMath.Hit(weapon, entity, faction.Value, origin, target, targetPosition);
                     Damage.Add(hit);
-                    Cues.Play(entity, CueSlot.Impact, LocalTransform.FromPosition(targetPosition), place.Forward(),
-                        faction.Value);
-                    Impacts.Add(Impacts.TypeIdFor(entity), hit);
+                    Cues.AddImpact(Cues.TypeIdFor(entity, CueSlot.Impact), hit.Position, place.Forward(), hit.Radius,
+                        faction.Value, target);
                 }
                 else
                 {
@@ -199,8 +192,7 @@ namespace HyperRTS.Simulation.Combat
                 {
                     Speed = weapon.ProjectileSpeed,
                     Height = weapon.ProjectileHeight,
-                    ImpactSoundTypeId = Cues.TypeIdFor(shooter, CueSlot.Impact),
-                    ImpactTypeId = Impacts.TypeIdFor(shooter),
+                    ImpactTypeId = Cues.TypeIdFor(shooter, CueSlot.Impact),
                     Hit = CombatMath.Hit(weapon, shooter, faction.Value, origin, target, aim),
                 });
             }

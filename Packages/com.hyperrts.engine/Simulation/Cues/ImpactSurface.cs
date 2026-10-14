@@ -1,4 +1,4 @@
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Cues
 {
     /// <summary>What a shot struck where it landed; impact marks only go on open ground.</summary>
     public enum ImpactSurface : byte

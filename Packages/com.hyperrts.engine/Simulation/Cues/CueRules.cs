@@ -29,10 +29,18 @@ namespace HyperRTS.Simulation.Cues
             return !fog.IsHiddenFrom(relations, viewer, cue.Faction, cue.Position, cue.Stealthed);
         }
 
-        /// <summary>Whether the local player gets the cue: all of them without a local fog view.</summary>
+        /// <summary>
+        /// Whether the local player gets the cue: their own voices, and every other cue while the fog view is
+        /// inactive (no fog, or everything revealed).
+        /// </summary>
         public static bool IsSeenLocally(in CueEvent cue, in LocalFogView view, in FogOfWar fog,
             in FactionRelations relations)
         {
+            if (IsVoice(cue.Slot))
+            {
+                return cue.Faction == view.Viewer;
+            }
+
             if (!view.Active)
             {
                 return true;

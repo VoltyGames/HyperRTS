@@ -1,7 +1,7 @@
 using System.Linq;
 using HyperRTS.Presentation.Impacts;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
 using Unity.Collections;
@@ -31,7 +31,7 @@ namespace HyperRTS.Presentation.Tests
             _world = new World("Impact Mark Tests");
             _em = _world.EntityManager;
             _system = _world.CreateSystemManaged<ImpactMarkSystem>();
-            _em.CreateEntity(typeof(ImpactQueue), typeof(ImpactEvent));
+            _em.CreateEntity(typeof(CueQueue), typeof(CueEvent));
 
             _decal = new Material(Shader.Find("Shader Graphs/Decal"));
             _mark = ScriptableObject.CreateInstance<ImpactMark>();
@@ -60,17 +60,17 @@ namespace HyperRTS.Presentation.Tests
 
         private void Land(float3 position, ImpactSurface surface = ImpactSurface.Ground, int typeId = Mortar)
         {
-            using var query = _em.CreateEntityQuery(typeof(ImpactQueue));
-            _em.GetBuffer<ImpactEvent>(query.GetSingletonEntity())
-                .Add(new ImpactEvent { TypeId = typeId, Position = position, Faction = 1, Surface = surface });
+            using var query = _em.CreateEntityQuery(typeof(CueQueue));
+            _em.GetBuffer<CueEvent>(query.GetSingletonEntity())
+                .Add(new CueEvent { TypeId = typeId, Slot = CueSlot.Impact, Position = position, Faction = 1, Surface = surface });
         }
 
         private void Run(double time)
         {
             _world.SetTime(new TimeData(time, 1f / 30f));
             _system.Update();
-            using var query = _em.CreateEntityQuery(typeof(ImpactQueue));
-            _em.GetBuffer<ImpactEvent>(query.GetSingletonEntity()).Clear();
+            using var query = _em.CreateEntityQuery(typeof(CueQueue));
+            _em.GetBuffer<CueEvent>(query.GetSingletonEntity()).Clear();
         }
 
         private static DecalProjector[] Shown() => Resources.FindObjectsOfTypeAll<DecalProjector>()

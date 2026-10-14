@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -41,20 +42,20 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private bool _dirty;
 #endif
 
-        /// <summary>Share of plants grown, 0 to 1. Set by the game from its vegetation quality.</summary>
+        /// <summary>Share of plants grown, 0 to 1. Written by <see cref="PresentationQuality.Apply"/>.</summary>
         public static float Density
         {
             get => _density;
-            set => _density = value is >= 0f and <= 1f
+            internal set => _density = value is >= 0f and <= 1f
                 ? value
                 : throw new ArgumentOutOfRangeException(nameof(value), value, "Row crop density must be 0 to 1.");
         }
 
-        /// <summary>Metres from the camera crops are drawn to. Set by the game from its vegetation quality.</summary>
+        /// <summary>Metres from the camera crops are drawn to; written by <see cref="PresentationQuality"/>.</summary>
         public static float Distance
         {
             get => _distance;
-            set => _distance = value > 0f
+            internal set => _distance = value > 0f
                 ? value
                 : throw new ArgumentOutOfRangeException(nameof(value), value, "Row crop distance must be above 0.");
         }

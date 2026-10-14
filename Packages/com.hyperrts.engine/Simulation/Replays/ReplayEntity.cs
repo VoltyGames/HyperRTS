@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 using Unity.Transforms;
 
@@ -6,9 +7,6 @@ namespace HyperRTS.Simulation.Replays
     /// <summary>One entity's quantized state in a replay sample; quantized, idle entities compare equal.</summary>
     public struct ReplayEntity
     {
-        /// <summary>Metres per position step; 16-bit coordinates cover ±2 km.</summary>
-        public const float PositionStep = 1f / 16f;
-
         /// <summary><see cref="Progress"/> of an entity that isn't under construction.</summary>
         public const byte Finished = byte.MaxValue;
 
@@ -27,7 +25,7 @@ namespace HyperRTS.Simulation.Replays
         /// <summary>Construction progress in 0..254, or <see cref="Finished"/>.</summary>
         public byte Progress;
 
-        public readonly float3 Position => Dequantize(X, Y, Z);
+        public readonly float3 Position => QuantizedPosition.Dequantize(X, Y, Z);
         public readonly float HealthFraction => Health / 255f;
         public readonly bool UnderConstruction => Progress != Finished;
         public readonly float ConstructionValue => Progress / 254f;
@@ -41,21 +39,15 @@ namespace HyperRTS.Simulation.Replays
             {
                 Key = key,
                 TypeId = typeId,
-                X = Quantize(transform.Position.x),
-                Y = Quantize(transform.Position.y),
-                Z = Quantize(transform.Position.z),
+                X = QuantizedPosition.Quantize(transform.Position.x),
+                Y = QuantizedPosition.Quantize(transform.Position.y),
+                Z = QuantizedPosition.Quantize(transform.Position.z),
                 Yaw = (ushort)((int)math.round(yaw / YawStep) & 0xFFFF),
                 Faction = faction,
                 Health = (byte)math.round(math.saturate(healthFraction) * 255f),
                 Progress = underConstruction ? (byte)math.round(math.saturate(constructionProgress) * 254f) : Finished,
             };
         }
-
-        /// <summary>One world coordinate in <see cref="PositionStep"/>s, clamped to 16 bits.</summary>
-        public static short Quantize(float metres) =>
-            (short)math.clamp((int)math.round(metres / PositionStep), short.MinValue, short.MaxValue);
-
-        public static float3 Dequantize(short x, short y, short z) => new float3(x, y, z) * PositionStep;
 
         /// <summary>Transform between this sample and <paramref name="next"/>, turning the short way round.</summary>
         public readonly LocalTransform Interpolate(in ReplayEntity next, float t, float scale)
