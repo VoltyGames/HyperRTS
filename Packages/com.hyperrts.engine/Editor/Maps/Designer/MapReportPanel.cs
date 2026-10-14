@@ -47,13 +47,13 @@ namespace HyperRTS.Editor.Maps.Designer
             Add(buttons);
         }
 
-        private string ScenePath => new MapPaths(_document.Path, _document.spec.name).Scene;
+        private string ScenePath => new MapPaths(_document.Path, _document.Spec.name).Scene;
 
         /// <summary>Reads the reports the last preview and build wrote for the open spec.</summary>
         public void LoadFromDisk()
         {
-            _preview = Current(MapReport.LoadPreview(_document.spec.name));
-            _build = Current(MapReport.Load(_document.spec.name));
+            _preview = Current(MapReport.LoadPreview(_document.Spec.name));
+            _build = Current(MapReport.Load(_document.Spec.name));
             _issues = Newest(_preview, _build);
             Refresh();
         }

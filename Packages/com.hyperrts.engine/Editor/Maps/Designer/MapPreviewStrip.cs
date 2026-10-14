@@ -16,7 +16,7 @@ namespace HyperRTS.Editor.Maps.Designer
             {
                 text = "Auto preview",
                 value = MapLivePreview.Auto,
-                tooltip = "Preview the map a moment after each edit, unsaved edits included.",
+                tooltip = "Preview the map when it opens and whenever its spec file changes.",
             };
             auto.RegisterValueChangedCallback(change => MapLivePreview.Auto = change.newValue);
             Add(auto);
@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Maps.Designer
             Add(_busy);
             ShowBusy(false);
 
-            Add(new ToolbarButton(build) { text = "Build", tooltip = "Save the spec, build the map's scene and show the report." });
+            Add(new ToolbarButton(build) { text = "Build", tooltip = "Build the map's scene and show the report." });
         }
 
         public void ShowBusy(bool busy) => _busy.style.visibility = busy ? Visibility.Visible : Visibility.Hidden;

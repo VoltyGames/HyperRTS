@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Maps.Designer
             _strip = strip;
             Panel = new MapReportPanel(document, Show);
             Panel.LoadFromDisk();
-            _live = new MapLivePreview(document, canvas, canvas);
+            _live = new MapLivePreview(document);
             _live.Finished += OnFinished;
             _live.BusyChanged += () => _strip.ShowBusy(_live.Busy);
             _strip.ShowBusy(false);
@@ -39,10 +39,9 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public void Preview() => _live.Run();
 
-        /// <summary>Saves the document, builds its map (asking to save open scenes first) and shows the build's report.</summary>
+        /// <summary>Builds the spec's map from its file (asking to save open scenes first) and shows the build's report.</summary>
         public void Build()
         {
-            _document.Save();
             var report = MapBuildCommands.Build(_document.Path);
             if (report != null)
             {
@@ -61,11 +60,11 @@ namespace HyperRTS.Editor.Maps.Designer
             }
         }
 
-        /// <summary>Selects and frames an issue's feature, unless edits since the report removed it.</summary>
+        /// <summary>Selects and frames an issue's feature, unless the spec changed since the report and dropped it.</summary>
         private void Show(MapIssueFeature issueFeature)
         {
             var kind = MapFeatureKinds.Find(issueFeature.array);
-            if (issueFeature.index >= kind.Count(_document.spec))
+            if (issueFeature.index >= kind.Count(_document.Spec))
             {
                 Debug.LogWarning($"HyperRTS: {issueFeature} is no longer in the spec; preview again to refresh the report.");
                 return;

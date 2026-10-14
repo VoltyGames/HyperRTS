@@ -28,6 +28,7 @@ namespace HyperRTS.Editor.Maps.Build
                 return Log(failed);
             }
 
+            project.Paths.EnsureGenerated();
             var data = MapTerrainWriter.Write(generation);
             var ground = MapEnvironmentWriter.WriteGround(generation, data);
             var scene = MapScene.Open(generation);
@@ -36,8 +37,7 @@ namespace HyperRTS.Editor.Maps.Build
             MapPlacementWriter.Write(scene, generation);
             MapDecalWriter.Write(scene, generation);
             scene.SaveMain();
-            MapLightingBaker.Bake(project.Paths);
-            var minimap = MapMinimapCapture.Capture(generation.Layout, project.Paths.Minimap);
+            var minimap = Render(generation);
             MapEnvironmentWriter.SetMinimap(scene, minimap);
             var report = Measure(generation, scene, data, issues);
             scene.SaveAndCloseEntities();
@@ -68,10 +68,33 @@ namespace HyperRTS.Editor.Maps.Build
             return report;
         }
 
-        /// <summary>Screenshots of the map, or null without a graphics device (batch mode with -nographics).</summary>
+        // Without a graphics device (batch mode with -nographics) nothing renders, so the last lighting and pictures stay.
+        private static bool HasGraphics => SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null;
+
+        /// <summary>Bakes the lighting and captures the minimap, or keeps the last minimap without graphics.</summary>
+        private static Texture2D Render(MapGeneration generation)
+        {
+            var paths = generation.Project.Paths;
+            if (HasGraphics)
+            {
+                MapLightingBaker.Bake(paths);
+                return MapMinimapCapture.Capture(generation.Layout, paths.Minimap);
+            }
+
+            var kept = AssetDatabase.LoadAssetAtPath<Texture2D>(paths.Minimap);
+            if (kept == null)
+            {
+                throw new System.InvalidOperationException(
+                    $"HyperRTS: the first build of '{paths.Name}' needs graphics for its minimap ({paths.Minimap}): build it in the editor.");
+            }
+
+            return kept;
+        }
+
+        /// <summary>Screenshots of the map, or null without a graphics device.</summary>
         private static Texture2D CaptureViews(MapGeneration generation)
         {
-            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+            if (!HasGraphics)
             {
                 return null;
             }

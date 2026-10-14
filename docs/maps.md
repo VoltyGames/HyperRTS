@@ -15,98 +15,47 @@ spec ─▶ Preview ─────────────▶ Build ───�
 
 | Stage | Entry | Writes |
 | --- | --- | --- |
-| Edit | **HyperRTS ▸ Map Editor**, or any editor or agent writing the JSON | The spec |
-| Preview | Live in the Map Editor (memory only); `MapPreview.Run(spec)` or batch `.Preview` (to disk) | Layout image, issues, land figures. No rush times or paths |
-| Build | **Build** in the Map Editor or on **HyperRTS ▸ Tools ▸ Maps**; `MapBuilder.Build(spec)`; batch `.Build` | Scene and SubScene, assets, report, minimap, views |
+| Edit | Any editor or agent writing the JSON; **HyperRTS ▸ Map Editor** shows it | The spec |
+| Preview | `MapPreview.Run(spec)` or batch `.Preview`; the Map Editor previews on load and when the file changes | Layout image, issues, land figures. No rush times or paths |
+| Build | **Build** on **HyperRTS ▸ Tools ▸ Maps** or in the Map Editor; `MapBuilder.Build(spec)`; batch `.Build` | Scene and SubScene, assets, report, minimap, views |
 | Views | Every build with graphics; **Recapture views** in the Map Editor; `MapViewCapture.Capture(spec)` | `Logs/MapReports/<Map>/*.png` |
 
 Code reference (folders, pipeline stages, land passes): [map tools](modules/map-tools.md).
 
 ## Map Editor
 
-**HyperRTS ▸ Map Editor** edits one spec's authored sector on a top-down canvas. Double-clicking a `.map.json` in
-the Project window, **Open** on **HyperRTS ▸ Tools ▸ Maps** and **New map...** open a spec in it.
+**HyperRTS ▸ Map Editor** shows one spec's authored sector on a top-down canvas; it does not edit. Specs are written
+as JSON (by hand or by an agent), and the editor reloads the file within a second of it changing on disk.
+Double-clicking a `.map.json` in the Project window or **Open** on **HyperRTS ▸ Tools ▸ Maps** opens a spec in it.
+The editing tools (select, point, line and area drawing, snapping, undo) were removed while the spec format still
+changes weekly; the engine tag `map-editor-write-tools` keeps them for when it settles.
 
 | Part | Holds |
 | --- | --- |
-| Toolbar | Spec picker, the tools (Select, Point, Line, Area) and the feature kind the drawing tool adds, Save, Revert, **Ghosts**, **Auto preview**, **Preview**, **Build** |
+| Toolbar | Spec picker, **Ghosts** (the symmetry copies, faded), **Preview**, **Build** |
 | Feature list (left) | Every feature grouped by kind with counts; click one to select it |
-| Canvas (centre) | The newest preview image under a metre grid, the playable bounds and backdrop edge, the sector edges, every feature, the symmetry ghosts and the selection's handles |
-| Inspector (right) | The selected feature's fields, bound to the spec. Key fields are dropdowns of the library's keys |
-| Report panel (under the inspector) | The newest preview's or build's issues, the land figures, the last build's metrics, **Open scene** and **Recapture views** |
+| Canvas (centre) | The newest preview image under a metre grid, the playable bounds and backdrop edge, the sector edges, every feature and the symmetry ghosts. Click a feature to select it; middle drag or Space+drag pans, the wheel zooms, F fits |
+| Selection (right) | The selected feature's place in the spec, e.g. `roads[3]` |
+| Report panel | The newest preview's or build's issues, the land figures, the last build's metrics, **Open scene** and **Recapture views** |
 
-The editor changes features only. The header (name, mode, size, symmetry, climate, weather, seed, terrain) is edited in the
-JSON or set by **New map...**.
+An issue that names a feature (the report's `errorFeatures` / `warningFeatures`, index for index with `errors` /
+`warnings`) has **Show**, which selects and frames it. Metrics (rush, attack paths, path search, buildable share and
+resources per base) come from the last build. **Build** asks to save open scenes, builds the map
+(`MapBuildCommands.Build`), reopens the scene that was open and shows the build's report.
 
-### Tools and shortcuts
+### Authoring rules
 
-Shortcuts work while the canvas has focus. Ctrl, Cmd or Alt with a tool key does not switch tools.
-
-| Input | Does |
-| --- | --- |
-| V | Select tool: click selects, drag moves the feature, drag a handle moves that vertex or a circle's radius |
-| P | Point tool: each click adds the picked point or circle kind (spawn, resource, prop, hill, settlement) |
-| L | Line tool: click adds vertices; Enter or double-click finishes (2+ points) |
-| A | Area tool: click adds vertices; Enter or double-click finishes (3+ points) |
-| Escape | Drops the line or area being drawn; with nothing in progress, back to Select |
-| Alt+click on the selected line or area's edge | Adds a vertex there and drags it |
-| Ctrl+click (Cmd+click) on a vertex | Removes it, as long as a line keeps 2 points and an area 3 |
-| Delete, Backspace | Deletes the selected feature |
-| Middle drag, Space+drag | Pan |
-| Wheel | Zoom at the cursor |
-| F | Fit the map and its margin |
-
-A new feature copies the last one of its kind (kind, amount, width, `shared`...) or takes the class defaults when
-the list is empty. Each gesture (a drag, a finished line, a deleted vertex) is one undo step.
-
-### Editing rules
-
-- **One sector is authored.** The symmetry copies it into the others. Points outside the authored sector get a
-  ring in the warning colour: they would overlap their own copies. **Ghosts** shows the copies, faded.
-- **Shared features sit on the axis.** A feature with `"shared": true` is placed once, not copied. The editor
-  snaps a shared point or circle onto the mirror axis, or the centre for a rotation, so it stays symmetric.
+- **One sector is authored.** The symmetry copies it into the others. A point outside the authored sector would
+  overlap its own copies; the editor rings it in the warning colour.
+- **Shared features sit on the axis.** A feature with `"shared": true` is placed once, not copied, so a shared
+  point or circle belongs on the mirror axis, or the centre for a rotation.
 - **Array order is the random stream.** Each feature draws from a stream seeded by the map seed, its channel and
   its index in its list (`MapRandom.Stream`). Deleting or reordering a feature renumbers the later ones of its
-  kind and reshuffles their random detail; the inspector says so on every feature that has later ones.
-- **Points snap to 0.5 m** (`MapSnap`), the grid specs are written in.
-
-### Live preview and report
-
-With **Auto preview** on (remembered per user), the editor previews the spec as it is in memory, unsaved edits
-included: 0.75 s after an edit is committed (pointer up, field changed) it runs the checks on the main thread,
-plans on a worker thread (`MapPreview.RunAsync`, `MapGeneration.PlanChecked`) and swaps the canvas image.
-**Preview** runs one now. Nothing is written to `Logs/MapReports/`. The canvas also reloads
-`<Map>.preview.png` when a preview run elsewhere (an agent, batch mode) rewrites it.
-
-The report panel shows the newer of the last preview and the last build. An issue that names a feature (the
-report's `errorFeatures` / `warningFeatures`, index for index with `errors` / `warnings`) has **Show**, which
-selects and frames it. Land figures are the land-use shares and counts; metrics (rush, attack paths, path search,
-buildable share and resources per base) come from the last build.
-
-### Build
-
-**Build** saves the spec, asks to save open scenes, builds the map (`MapBuildCommands.Build`), reopens the scene
-that was open and shows the build's report.
-
-### New map
-
-**New map...** on **HyperRTS ▸ Tools ▸ Maps** asks for name (PascalCase, unique), mode (`1v1` to `4v4`, `ffa`),
-size, symmetry, climate (from the library) and seed, then a folder under `Assets`. It writes
-`<folder>/<Name>/<Name>.map.json` from `MapSpecTemplate`: status `blockout`, gentle relief with a margin of 30 % of
-the size, and the spawns of one sector facing the centre. Team modes need a two-copy symmetry (`rotate-180`,
-`mirror-x`, `mirror-z`: one sector per team); `ffa` needs `rotate-3` to `rotate-8` (one sector per player).
-
-### Saving and files changed on disk
-
-Edits go through a hidden `MapSpecDocument` and its `SerializedObject`, so Undo and Redo work. **Save** writes the
-spec with `MapSpecJson` in the `MapJsonFormat` layout (Newtonsoft-parsed): indented by two spaces, points and short
-scalar arrays on one line, floats in their shortest form (`0.35`, `20`), so saves diff cleanly. The document is
-dirty while the spec writes differently from the file; the window asks to save on close or when another spec is
-picked.
-
-Once a second the editor checks the file's write time. When the file changed on disk (an agent or a text editor
-wrote it) and the editor has no unsaved edits, it reloads the spec and drops the undo history. With unsaved edits
-it keeps them; **Revert** reloads the file.
+  kind and reshuffles their random detail.
+- **Points sit on a 0.5 m grid.** Team modes need a two-copy symmetry (`rotate-180`, `mirror-x`, `mirror-z`: one
+  sector per team); `ffa` needs `rotate-3` to `rotate-8` (one sector per player).
+- `MapSpecJson` writes specs in the `MapJsonFormat` layout (Newtonsoft-parsed): indented by two spaces, points and
+  short scalar arrays on one line, floats in their shortest form (`0.35`, `20`), so files diff cleanly.
 
 ## Spec format
 
@@ -118,7 +67,7 @@ origin at the map centre, X east, Z north, angles clockwise from north.
 | `name`, `displayName` | The map name, which the spec's file name must match (`<name>.map.json`); the name the game shows |
 | `mode`, `mapType`, `status`, `notes` | `1v1` to `4v4` or `ffa`; `land`; work state; dated notes |
 | `climate` | A library climate key |
-| `weather` | Required: one of the climate's `weathers`; the scene is built and lit with it (**New map...** takes the climate's first) |
+| `weather` | Required: one of the climate's `weathers`; the scene is built and lit with it  |
 | `size` | Playable width (X) and depth (Z) |
 | `symmetry` | `rotate-180`, `mirror-x`, `mirror-z`, `rotate-3` to `rotate-8` |
 | `seed` | Seeds every random stream and noise field |
@@ -264,8 +213,8 @@ that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or
 
 | Tool | Writes |
 | --- | --- |
-| Preview (`MapPreview.Run`) | `Logs/MapReports/<Map>.preview.png` (land, trees, props, crossings, bases) and `.preview.json` (issues, land figures). The Map Editor's live preview writes nothing |
-| Build (`MapBuilder.Build`) | Beside the spec: scene and `_Entities` SubScene (gameplay prefabs at `[Generated] …` roots, scenery under `[Generated]`; the build also clears every library prefab instance at the SubScene root, since a prefab whose internal IDs changed drops the instance's name; hand-placed objects go under `[Dressing]`, which is never touched), `_Terrain.asset` and `.mat`, `_Water.asset`, `_Roads.asset`, `_Macro.png`, `_Rows.png`, `_Ground.png`, `_GroundMaterials.png`, `_Minimap.png`, `_Overview.png`, baked lighting. In `Logs/MapReports/`: `<Map>.json` and `.png`. Errors before the scene stage stop the build with a report and leave the last good scene alone |
+| Preview (`MapPreview.Run`) | `Logs/MapReports/<Map>.preview.png` (land, trees, props, crossings, bases) and `.preview.json` (issues, land figures) |
+| Build (`MapBuilder.Build`) | In a `Generated/` folder beside the spec: scene and `_Entities` SubScene (gameplay prefabs at `[Generated] …` roots, scenery under `[Generated]`; the build also clears every library prefab instance at the SubScene root, since a prefab whose internal IDs changed drops the instance's name; hand-placed objects go under `[Dressing]`, which is never touched), `_Terrain.asset` and `.mat`, `_Water.asset`, `_Roads.asset`, `_Macro.png`, `_Rows.png`, `_Ground.png`, `_GroundMaterials.png`, `_Minimap.png`, `_Overview.png`, baked lighting, and whatever the game's `IMapBuildHook` adds. Without a graphics device the build skips the lighting bake, minimap and views and keeps the files a graphics build left. In `Logs/MapReports/`: `<Map>.json` and `.png`. Errors before the scene stage stop the build with a report and leave the last good scene alone |
 | Views (`MapViewCapture`, every build) | `Logs/MapReports/<Map>/*.png` from the scene's own match camera: `centre`, `base-N`, `crossing-N`, `settlement-N` (wide and `-close`), `overview`. None without a graphics device |
 | Key reference (`MapKeyReference.Write`) | A Markdown list of every `kind` a spec may name, for the game to write beside its map tooling |
 
@@ -278,7 +227,6 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 
 | Type | Class | Holds | Names |
 | --- | --- | --- | --- |
-| `material` | `MapMaterial` | A shared material props are built with; model slots named after it are remapped onto it | `material` |
 | `layer` | `MapClimateLayer` | A terrain texture layer, how the shader lays it, its map colour, the grass on it | `terrainLayer` |
 | `plant` | `MapClimateDetail` | A terrain detail: instanced mesh prefab or billboard grass texture | `mesh`, `texture` |
 | `tree` | `MapClimateTree` | A terrain tree, optionally an entity version for the playable area | `prefab`, `destructible` |
@@ -309,27 +257,11 @@ What a build gets:
 ### Keys and asset fields
 
 String fields that name another item carry `[MapKey(typeof(...))]` (several types when either fits); spec key
-fields (`climate`, each feature's `kind`) carry it too. `MapKeyDrawer` shows them as a dropdown of the library's
-keys; a key the library doesn't hold stays selected and is marked missing, so a typo shows. String fields that hold
-an asset path carry `[MapAsset(typeof(...))]`, drawn as an object field that writes the picked asset's path.
-
-### Library page
-
-**HyperRTS ▸ Tools ▸ Library** (`LibraryPage`) edits the library:
-
-| Part | Does |
-| --- | --- |
-| Toolbar | **New**, **Duplicate**, **Rename** (move or rename the file; first lists what names the old key, which must change by hand), **Reveal in Project**, **Reload** |
-| Types | Every type with its item count |
-| Items | Search field; each item with its thumbnail (a layer's texture and map colour, a plant's texture or mesh, a tree's or prop's prefab, a road's, material item's or decal's material) |
-| Form | The item loaded into a hidden `MapLibraryItemWrapper`, so property fields, drawers and Undo work; Save, Revert and an unsaved marker |
-| Used by | Items and specs whose `[MapKey]` fields name the open item (`MapLibraryUsages`); click an item to open it, a spec to select its file |
-| Problems | Files that don't index or parse, keys that don't resolve, asset paths that don't load (`MapLibraryProblems`); the count is the page's badge |
-
-Saves go through `MapLibraryItemFile` in the same `MapJsonFormat` layout as specs: the ref fields first, the
-`factory` and its `params` last, no key field. New, Duplicate and Rename ask for a `<Key>.<type>.json`
-path in any folder and refuse a taken key. Nothing caches `MapLibrary`; the page, the key dropdowns and the problems reload when `MapLibraryChanges` sees the
-project change.
+fields (`climate`, each feature's `kind`) carry it too. String fields that hold an asset path carry
+`[MapAsset(typeof(...))]`. `MapLibraryProblems.Find(root)` lists files that don't index or parse, keys that don't
+resolve and asset paths that don't load; a game test runs it on its library. Items are written by hand (or by an
+agent) in the `MapJsonFormat` layout through `MapLibraryItemFile`: the ref fields first, the `factory` and its
+`params` last, no key field. Nothing caches `MapLibrary`.
 
 ### Library assets
 
@@ -344,8 +276,7 @@ slice size; mask heights are stretched so every layer blends alike (`MapTerrainS
 1. A class in `Data/` implementing `IMapLibraryItem` (and `IMapKeyed` if things name it), with `[MapKey]` on its
    key fields.
 2. A `[MapLibraryItem("<type>", "<ref field>"...)]` attribute naming its type and ref fields (new asset paths or key
-   lists go on `MapLibraryRefs` with `[MapAsset]` or `[MapKey]`), its place in `MapLibrary`'s ordered type list, and
-   the refs that picture it in lists as the attribute's `Preview`, if it has one.
+   lists go on `MapLibraryRefs` with `[MapAsset]` or `[MapKey]`) and its place in `MapLibrary`'s ordered type list.
 3. Where builds get it: `MapClimateAssembly` for climate content, `MapLibrary.Palette` for palette content.
 4. Its keys checked in `MapAssetCheck` and listed in `MapKeyReference`.
 
@@ -355,13 +286,13 @@ slice size; mask heights are stretched so every layer blends alike (`MapTerrainS
 | --- | --- |
 | `-executeMethod HyperRTS.Editor.Maps.Tools.MapCommandLine.Build -map <spec>` | Builds one map in batch mode. Exits 0 when the report passes, 1 on report errors, 2 on a crash or a missing `-map` |
 | `...MapCommandLine.Preview -map <spec>` | Previews one map to `Logs/MapReports/`, same exit codes |
-| `-nographics` | No graphics device: the build skips views, so no overview picture |
+| `-nographics` | No graphics device: the build skips the lighting bake, minimap and views and keeps the files a graphics build left; a map's first build needs graphics |
 | `MapPreview.Run(spec)`, `MapBuilder.Build(spec)`, `MapViewCapture.Capture(spec)` | The same from editor code or an `eval` against a running editor |
 | `MapBuildCommands.Build(spec)`, `.BuildAll()` | What the Map Editor and the Maps page call: save open scenes first, reopen the active scene after |
 | `MapKeyReference.Write(path, MapLibrary.Load())` | Writes the key reference |
 
-An agent can edit a spec's JSON while the Map Editor has it open: the editor reloads the file when it has no unsaved
-edits, and redraws the preview image when a preview run elsewhere rewrites it.
+An agent can edit a spec's JSON while the Map Editor has it open: the editor reloads the file and redraws the
+preview image when a preview run elsewhere rewrites it.
 
 ## What a game supplies
 
@@ -369,7 +300,7 @@ edits, and redraws the preview image when a preview run elsewhere rewrites it.
   (terrain layers, plant and tree prefabs, road materials, water, weather atmosphere prefabs, prop prefabs, the match rig).
   A game makes those assets through library factories or a `Generator` (**HyperRTS ▸ Tools ▸ Generate**), and
   writes the key reference there.
-- Specs, each in its own folder; the build writes beside it.
+- Specs, each in its own folder; the build writes into a `Generated/` folder beside it.
 - Optionally an `IMapBuildHook`: called after every build with the spec, paths, report, player count, minimap and
   overview, e.g. to list the map in the game's menus and build settings.
 

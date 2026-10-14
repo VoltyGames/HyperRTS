@@ -1,39 +1,27 @@
 using System;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Generation;
-using HyperRTS.Editor.Maps.Spec;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// Previews the Map Editor's document as it is in memory, unsaved edits included. With <see cref="Auto"/> on, an
-    /// edit starts a preview once it is committed (the pointer is up) and nothing changed for a moment. The checks,
-    /// measuring and drawing run on the main thread, the planning on a worker (<see cref="MapPreview.RunAsync"/>).
+    /// Previews the Map Editor's document; with <see cref="Auto"/> on, also when it opens and whenever its file
+    /// changes on disk. The checks, measuring and drawing run on the main thread, the planning on a worker
+    /// (<see cref="MapPreview.RunAsync"/>).
     /// </summary>
     public sealed class MapLivePreview
     {
         private const string AutoPref = "HyperRTS.MapEditor.AutoPreview";
-        private const long DebounceMilliseconds = 750;
 
         private readonly MapSpecDocument _document;
-        private readonly IVisualElementScheduledItem _due;
-        private string _previewedJson;
-        private bool _pointerHeld;
         private bool _again;
         private bool _disposed;
 
-        /// <param name="host">An element of the window: the debounce runs on its scheduler.</param>
-        /// <param name="editor">Where edits are made by pointer (the canvas): no preview while a drag is held.</param>
-        public MapLivePreview(MapSpecDocument document, VisualElement host, VisualElement editor)
+        public MapLivePreview(MapSpecDocument document)
         {
             _document = document;
-            _due = host.schedule.Execute(OnDue);
-            _due.Pause();
-            editor.RegisterCallback<PointerDownEvent>(_ => _pointerHeld = true, TrickleDown.TrickleDown);
-            editor.RegisterCallback<PointerUpEvent>(_ => OnPointerUp(), TrickleDown.TrickleDown);
             _document.Changed += OnDocumentChanged;
         }
 
@@ -54,7 +42,6 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>Previews now, whatever <see cref="Auto"/> says; queued behind one that is running.</summary>
         public void Run()
         {
-            _due.Pause();
             if (Busy)
             {
                 _again = true;
@@ -67,28 +54,12 @@ namespace HyperRTS.Editor.Maps.Designer
         public void Dispose()
         {
             _disposed = true;
-            _due.Pause();
             _document.Changed -= OnDocumentChanged;
         }
 
         private void OnDocumentChanged()
         {
-            if (Auto && MapSpecJson.Write(_document.spec) != _previewedJson)
-            {
-                _due.ExecuteLater(DebounceMilliseconds);
-            }
-        }
-
-        private void OnPointerUp()
-        {
-            _pointerHeld = false;
-            OnDocumentChanged();
-        }
-
-        private void OnDue()
-        {
-            _due.Pause();
-            if (!_pointerHeld)
+            if (Auto)
             {
                 Run();
             }
@@ -97,10 +68,9 @@ namespace HyperRTS.Editor.Maps.Designer
         private async void Start()
         {
             SetBusy(true);
-            _previewedJson = MapSpecJson.Write(_document.spec);
             try
             {
-                var project = MapProject.FromSpec(_document.spec, _document.Path);
+                var project = MapProject.FromSpec(_document.Spec, _document.Path);
                 var result = await MapPreview.RunAsync(project);
                 Deliver(result);
             }

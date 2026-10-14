@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public void Clear() => Set(MapFeatureRef.None);
 
-        /// <summary>Drops the selection when undo, delete or reload removed the feature.</summary>
+        /// <summary>Drops the selection when a reload removed the feature.</summary>
         public void Validate(MapSpec spec)
         {
             if (!Current.IsNone && Current.Index >= Current.Kind.Count(spec))

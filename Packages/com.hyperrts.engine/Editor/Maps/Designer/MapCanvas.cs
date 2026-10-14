@@ -8,8 +8,7 @@ namespace HyperRTS.Editor.Maps.Designer
     /// <summary>
     /// The Map Editor's map view: the latest preview image under a metre grid, the bounds and sector edges, every
     /// feature with its symmetry ghosts, and the selection's handles. Middle-drag or Space+drag pans, the wheel
-    /// zooms to the cursor, F fits the map. The left button and other keys go to the active tool
-    /// (<see cref="MapCanvasTools"/>).
+    /// zooms to the cursor, F fits the map, and a left click selects the feature under the cursor.
     /// </summary>
     public sealed class MapCanvas : VisualElement
     {
@@ -20,8 +19,6 @@ namespace HyperRTS.Editor.Maps.Designer
         private readonly MapSpecDocument _document;
         private readonly MapFeatureSelection _selection;
         private readonly MapCanvasView _view = new();
-        private readonly MapToolContext _context;
-        private readonly MapCanvasTools _tools;
         private readonly MapCanvasBackdrop _image;
         private readonly VisualElement _overlay;
         private readonly Label _scale;
@@ -34,11 +31,10 @@ namespace HyperRTS.Editor.Maps.Designer
         private Vector2 _lastPointer;
         private bool _ghosts = true;
 
-        public MapCanvas(MapSpecDocument document, MapFeatureSelection selection, MapToolbox toolbox)
+        public MapCanvas(MapSpecDocument document, MapFeatureSelection selection)
         {
             _document = document;
             _selection = selection;
-            _context = new MapToolContext(document, selection, _view);
             AddToClassList("hrts-map-canvas");
             focusable = true;
 
@@ -48,9 +44,6 @@ namespace HyperRTS.Editor.Maps.Designer
             _overlay.generateVisualContent = Paint;
             _scale = AddLabel("hrts-map-canvas__scale");
             _error = AddLabel("hrts-map-canvas__error");
-            _tools = new MapCanvasTools(_context, toolbox, _overlay.MarkDirtyRepaint);
-            RegisterCallback<AttachToPanelEvent>(_ => _tools.Attach());
-            RegisterCallback<DetachFromPanelEvent>(_ => _tools.Detach());
 
             RegisterCallback<GeometryChangedEvent>(_ => OnResized());
             RegisterCallback<WheelEvent>(OnWheel);
@@ -77,7 +70,7 @@ namespace HyperRTS.Editor.Maps.Designer
         {
             get
             {
-                var size = _document.spec.size.ToVector2();
+                var size = _document.Spec.size.ToVector2();
                 return new Rect(-size * 0.5f, size);
             }
         }
@@ -86,7 +79,7 @@ namespace HyperRTS.Editor.Maps.Designer
         {
             get
             {
-                var backdrop = _document.spec.terrain.backdropWidth;
+                var backdrop = _document.Spec.terrain.backdropWidth;
                 var playable = PlayableBounds;
                 return new Rect(playable.min - Vector2.one * backdrop, playable.size + Vector2.one * (backdrop * 2f));
             }
@@ -97,7 +90,7 @@ namespace HyperRTS.Editor.Maps.Designer
         {
             try
             {
-                _symmetry = MapSymmetry.Parse(_document.spec.symmetry);
+                _symmetry = MapSymmetry.Parse(_document.Spec.symmetry);
                 _error.text = string.Empty;
             }
             catch (ArgumentException exception)
@@ -105,8 +98,6 @@ namespace HyperRTS.Editor.Maps.Designer
                 _symmetry = null;
                 _error.text = exception.Message;
             }
-
-            _context.Symmetry = _symmetry;
 
             LoadPreview();
             OnViewChanged();
@@ -118,7 +109,7 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>Zooms and pans to show <paramref name="feature"/>.</summary>
         public void Frame(MapFeatureRef feature)
         {
-            _view.Fit(MapFeatureBounds.Measure(_document.spec, feature));
+            _view.Fit(MapFeatureBounds.Measure(_document.Spec, feature));
             OnViewChanged();
         }
 
@@ -148,7 +139,7 @@ namespace HyperRTS.Editor.Maps.Designer
         private void Paint(MeshGenerationContext context)
         {
             var painter = context.painter2D;
-            var spec = _document.spec;
+            var spec = _document.Spec;
             MapCanvasPainter.DrawGrid(painter, _view, TerrainBounds);
             MapCanvasPainter.DrawBounds(painter, _view, PlayableBounds, TerrainBounds);
             if (_symmetry != null)
@@ -163,9 +154,7 @@ namespace HyperRTS.Editor.Maps.Designer
             }
 
             MapFeaturePainter.DrawFeatures(painter, spec, _view);
-            MapFeaturePainter.DrawSelection(painter, spec, _view, _selection.Current);
-            _tools.Active.Paint(painter);
-        }
+            MapFeaturePainter.DrawSelection(painter, spec, _view, _selection.Current);        }
 
         private void OnResized()
         {
@@ -207,8 +196,7 @@ namespace HyperRTS.Editor.Maps.Designer
             _panning = evt.button == MiddleButton || _spaceHeld;
             if (!_panning && evt.button == 0)
             {
-                _tools.Active.Down(evt.localPosition, evt.modifiers, evt.clickCount);
-                _overlay.MarkDirtyRepaint();
+                _selection.Set(MapHitTest.FeatureAt(_document.Spec, _view, evt.localPosition));
             }
 
             evt.StopPropagation();
@@ -222,11 +210,6 @@ namespace HyperRTS.Editor.Maps.Designer
                 _view.PanBy(position - _lastPointer);
                 OnViewChanged();
             }
-            else
-            {
-                _tools.Active.Move(position);
-                _overlay.MarkDirtyRepaint();
-            }
 
             _lastPointer = position;
         }
@@ -234,9 +217,7 @@ namespace HyperRTS.Editor.Maps.Designer
         private void OnPointerUp(PointerUpEvent evt)
         {
             this.ReleasePointer(evt.pointerId);
-            _panning = false;
-            _tools.Active.Up();
-        }
+            _panning = false;        }
 
         private void OnKeyDown(KeyDownEvent evt)
         {
@@ -249,11 +230,7 @@ namespace HyperRTS.Editor.Maps.Designer
                     Fit();
                     break;
                 default:
-                    if (!_tools.Key(evt.keyCode, evt.modifiers))
-                    {
-                        return;
-                    }
-                    break;
+                    return;
             }
 
             evt.StopPropagation();

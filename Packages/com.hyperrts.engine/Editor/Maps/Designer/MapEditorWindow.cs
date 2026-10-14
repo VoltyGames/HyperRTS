@@ -3,26 +3,25 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Generation;
 using UnityEditor;
 using UnityEditor.Callbacks;
-using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// HyperRTS ▸ Map Editor: edits a map spec's authored sector on a top-down canvas, with the feature list on the
-    /// left and the selected feature's fields on the right. Double-clicking a <c>.map.json</c> opens it here.
+    /// HyperRTS ▸ Map Editor: a read-only view of a map spec on a top-down canvas, with the feature list on the left
+    /// and the selected feature's spec path on the right. Specs are edited as JSON; the view follows the file on disk.
+    /// Double-clicking a <c>.map.json</c> opens it here.
     /// </summary>
     public sealed class MapEditorWindow : EditorWindow
     {
         private const string WindowTitle = "Map Editor";
         private const long DiskPollMilliseconds = 1000;
 
-        [SerializeField] private MapSpecDocument _document;
         [SerializeField] private string _specPath;
 
         private readonly MapFeatureSelection _selection = new();
-        private readonly MapToolbox _toolbox = new();
+        private MapSpecDocument _document;
         private MapEditorToolbar _toolbar;
         private VisualElement _body;
         private MapFeatureList _list;
@@ -54,9 +53,8 @@ namespace HyperRTS.Editor.Maps.Designer
             var root = rootVisualElement;
             EditorAssets.AddStyles(root);
             root.AddToClassList("hrts-map-editor");
-            _toolbar = new MapEditorToolbar(path => Load(path), Save, Revert, OnGhostsToggled);
+            _toolbar = new MapEditorToolbar(Load, OnGhostsToggled);
             root.Add(_toolbar);
-            _toolbar.Insert(1, new MapToolStrip(_toolbox));
             _previewStrip = new MapPreviewStrip(() => _preview?.Preview(), () => _preview?.Build());
             _toolbar.Add(_previewStrip);
             _body = new VisualElement();
@@ -72,17 +70,7 @@ namespace HyperRTS.Editor.Maps.Designer
             BuildBody();
         }
 
-        public override void SaveChanges()
-        {
-            _document.Save();
-            base.SaveChanges();
-        }
-
-        private void OnEnable()
-        {
-            saveChangesMessage = "This map spec has unsaved changes. Save them?";
-            _selection.Changed += OnSelectionChanged;
-        }
+        private void OnEnable() => _selection.Changed += OnSelectionChanged;
 
         private void OnDisable()
         {
@@ -95,59 +83,23 @@ namespace HyperRTS.Editor.Maps.Designer
             }
         }
 
-        private void OnDestroy()
-        {
-            if (_document != null)
-            {
-                DestroyImmediate(_document);
-            }
-        }
-
-        /// <summary>Opens a spec, first asking what to do with unsaved edits; false when the user cancels.</summary>
-        private bool Load(string specPath)
+        private void Load(string specPath)
         {
             Focus();
             if (_document != null && _document.Path == specPath)
             {
-                return true;
+                return;
             }
 
-            if (!ConfirmDiscard())
+            if (_document != null)
             {
-                _toolbar?.Show(_document);
-                return false;
+                _document.Changed -= OnDocumentChanged;
             }
 
-            if (_document == null)
-            {
-                _document = MapSpecDocument.Open(specPath);
-            }
-            else
-            {
-                _document.Load(specPath);
-            }
-
+            _document = MapSpecDocument.Open(specPath);
             _specPath = specPath;
             _selection.Clear();
             BuildBody();
-            return true;
-        }
-
-        private bool ConfirmDiscard()
-        {
-            if (_document == null || !_document.IsDirty)
-            {
-                return true;
-            }
-
-            var choice = EditorUtility.DisplayDialogComplex(WindowTitle, $"Save changes to {_document.MapName}?",
-                "Save", "Cancel", "Discard");
-            if (choice == 0)
-            {
-                _document.Save();
-            }
-
-            return choice != 1;
         }
 
         private void BuildBody()
@@ -162,7 +114,6 @@ namespace HyperRTS.Editor.Maps.Designer
             _preview = null;
             if (_document == null)
             {
-                _toolbar.ShowNone();
                 var hint = new Label("Pick a map spec in the toolbar, or double-click a .map.json file.");
                 hint.AddToClassList("hrts-hint");
                 _body.Add(hint);
@@ -170,12 +121,11 @@ namespace HyperRTS.Editor.Maps.Designer
             }
 
             _list = new MapFeatureList(_selection);
-            _canvas = new MapCanvas(_document, _selection, _toolbox) { ShowGhosts = _toolbar.Ghosts };
-            _inspector = new MapFeatureInspector(_document);
+            _canvas = new MapCanvas(_document, _selection) { ShowGhosts = _toolbar.Ghosts };
+            _inspector = new MapFeatureInspector();
             _body.Add(_list);
             _body.Add(_canvas);
             _body.Add(SidePanel());
-            _body.TrackSerializedObjectValue(_document.Serialized, _ => _document.NotifyChanged());
 
             _document.Changed -= OnDocumentChanged;
             _document.Changed += OnDocumentChanged;
@@ -201,11 +151,10 @@ namespace HyperRTS.Editor.Maps.Designer
                 return;
             }
 
-            _selection.Validate(_document.spec);
-            _list.Refresh(_document.spec);
+            _selection.Validate(_document.Spec);
+            _list.Refresh(_document.Spec);
             _canvas.Refresh();
             _toolbar.Show(_document);
-            hasUnsavedChanges = _document.IsDirty;
         }
 
         private void OnSelectionChanged()
@@ -228,16 +177,6 @@ namespace HyperRTS.Editor.Maps.Designer
             }
         }
 
-        private void Save() => _document.Save();
-
-        private void Revert() => _document.Revert();
-
-        private void PollDisk()
-        {
-            if (_document != null)
-            {
-                _document.ReloadIfChangedOnDisk();
-            }
-        }
+        private void PollDisk() => _document?.ReloadIfChangedOnDisk();
     }
 }

@@ -9,11 +9,10 @@ namespace HyperRTS.Editor.Maps.Library
     /// <summary>The map library: one <c>&lt;Key&gt;.&lt;type&gt;.json</c> per item anywhere under the root, read on first use.</summary>
     public sealed class MapLibrary
     {
-        /// <summary>Listing and generation order: materials before the props whose models use them.</summary>
+        /// <summary>Item types in listing order.</summary>
         private static readonly Type[] Types =
         {
             typeof(MapClimateLayer),
-            typeof(MapMaterial),
             typeof(MapClimateDetail),
             typeof(MapClimateRowCrop),
             typeof(MapClimateTree),

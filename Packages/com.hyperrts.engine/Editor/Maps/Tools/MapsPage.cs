@@ -27,7 +27,6 @@ namespace HyperRTS.Editor.Maps.Tools
         {
             var root = new VisualElement();
             var toolbar = new Toolbar();
-            toolbar.Add(new ToolbarButton(NewMapDialog.Open) { text = "New map..." });
             toolbar.Add(new ToolbarButton(BuildAll) { text = "Build all" });
             toolbar.Add(new ToolbarButton(RTSSceneWizard.Open) { text = "New blank scene..." });
             toolbar.Add(new ToolbarSpacer { flex = true });

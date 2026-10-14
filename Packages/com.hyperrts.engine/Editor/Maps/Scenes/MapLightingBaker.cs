@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Maps.Scenes
     {
         public static void Bake(MapPaths paths)
         {
-            var path = $"{paths.Folder}/{paths.Name}_Lighting.lighting";
+            var path = paths.Lighting;
             var settings = AssetDatabase.LoadAssetAtPath<LightingSettings>(path);
             if (settings == null)
             {

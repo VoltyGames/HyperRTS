@@ -9,7 +9,7 @@ Scene view `Handles`, which have no UI Toolkit equivalent.
 | Menu | Does |
 | --- | --- |
 | **HyperRTS ▸ Tools** | Opens the Tools window (below) |
-| **HyperRTS ▸ Map Editor** | Opens the Map Editor; double-clicking a `.map.json` opens it too ([maps](maps.md#map-editor)) |
+| **HyperRTS ▸ Map Editor** | Opens the Map Editor (a read-only viewer); double-clicking a `.map.json` opens it too ([maps](maps.md#map-editor)) |
 | **HyperRTS ▸ Documentation ▸** | Getting Started, Module Reference, Editor, Networking, in the browser |
 
 Paths and priorities live in `Editor/EditorMenu.cs`.
@@ -24,8 +24,7 @@ re-read every 2 s and on project or hierarchy changes), `Build()` for the conten
 
 | Page | Does |
 | --- | --- |
-| **Maps** | Every `.map.json` with its mode, size and last build (passed, errors and warnings, or not built); **Open** (Map Editor) and **Build** per map; **New map...**, **Build all** and **New blank scene...** ([maps](maps.md)) |
-| **Library** | Browses and edits the JSON map library: types, items with thumbnails, a form per item, Used by, load problems. Badge: problem count ([maps](maps.md#library-page)) |
+| **Maps** | Every `.map.json` with its mode, size and last build (passed, errors and warnings, or not built); **Open** (Map Editor) and **Build** per map; **Build all** and **New blank scene...** ([maps](maps.md)) |
 | **Catalog** | Stats tab: every unit and building prefab in one table, edit HP, build time, vision, speed, damage, cooldown, range; DPS and cost update live. Tech Tree tab: requires, made by, makes, unlocks |
 | **Validate** | Setup problems in every authoring prefab and the open scenes, with quick fixes; click an object name to select it. Badge: error count |
 | **Play** | Cheats (Play mode): add resources, instant build, fog toggle, spawn any prefab at the view, control another player (single player), game speed. Acts on the authoritative world; instant build completes through the construction and production systems. Any cheat drops the running replay recording. Network: host, join localhost, dedicated server, stop. Replays: save the Play-mode recording, or play a replay file |
@@ -179,9 +178,9 @@ position before saving it. It returns the `SubScene` component in the new scene.
 ## Maps from specs
 
 A map is a JSON spec (`<Map>.map.json`) of land use that `MapBuilder` turns into a scene, a SubScene and a report,
-with the look of the land from the game's JSON map library. **HyperRTS ▸ Map Editor** edits specs on a top-down
-canvas with a live preview; **HyperRTS ▸ Tools ▸ Maps** lists, creates and builds them; **HyperRTS ▸ Tools ▸
-Library** edits the library. The spec format, the pipeline, the library and the batch entry points are in
+with the look of the land from the game's JSON map library. Specs and library items are JSON written by hand or by
+an agent; **HyperRTS ▸ Map Editor** shows a spec on a top-down canvas with its preview; **HyperRTS ▸ Tools ▸ Maps**
+lists and builds them. The spec format, the pipeline, the library and the batch entry points are in
 [maps](maps.md).
 
 A library item names its Unity assets (materials, layers, prefabs) by path; they are ordinary assets edited in

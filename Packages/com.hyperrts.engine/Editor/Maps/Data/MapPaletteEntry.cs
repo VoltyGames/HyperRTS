@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>One placeable prefab.</summary>
     [Serializable]
-    [MapLibraryItem("prop", "prefab", "scenery", PreviewRefs = new[] { "prefab" })]
+    [MapLibraryItem("prop", "prefab", "scenery")]
     public sealed class MapPaletteEntry : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

@@ -1,19 +1,11 @@
-using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Maps.Designer
 {
-    /// <summary>The Map Editor's right panel: the selected feature's fields, bound to the document.</summary>
-    public sealed class MapFeatureInspector : ScrollView
+    /// <summary>The Map Editor's right panel: where the selected feature sits in the spec, e.g. <c>roads[3]</c>.</summary>
+    public sealed class MapFeatureInspector : VisualElement
     {
-        private readonly MapSpecDocument _document;
-
-        public MapFeatureInspector(MapSpecDocument document)
-        {
-            _document = document;
-            AddToClassList("hrts-map-inspector");
-        }
+        public MapFeatureInspector() => AddToClassList("hrts-map-inspector");
 
         public void Show(MapFeatureRef feature)
         {
@@ -27,24 +19,8 @@ namespace HyperRTS.Editor.Maps.Designer
             var title = new Label(feature.ToString());
             title.AddToClassList("hrts-section__title");
             Add(title);
-            if (feature.Index < feature.Kind.Count(_document.spec) - 1)
-            {
-                Add(Note($"Deleting this renumbers the later {feature.Kind.Label.ToLowerInvariant()} and reshuffles " +
-                    "their random detail (seeds follow list order)."));
-            }
-
-            var serialized = _document.Serialized;
-            serialized.Update();
-            var element = serialized.FindProperty(feature.PropertyPath);
-            var end = element.GetEndProperty();
-            var child = element.Copy();
-            for (var more = child.NextVisible(true); more && !SerializedProperty.EqualContents(child, end);
-                 more = child.NextVisible(false))
-            {
-                var field = new PropertyField(child.Copy());
-                field.Bind(serialized);
-                Add(field);
-            }
+            var path = new Label($"{feature.Kind.Field}[{feature.Index}]") { selection = { isSelectable = true } };
+            Add(path);
         }
 
         private static Label Note(string text)

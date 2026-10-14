@@ -6,26 +6,19 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Maps.Designer
 {
-    /// <summary>The Map Editor's toolbar: spec picker, Save, Revert and the symmetry ghosts toggle.</summary>
+    /// <summary>The Map Editor's toolbar: spec picker and the symmetry ghosts toggle.</summary>
     public sealed class MapEditorToolbar : Toolbar
     {
         private readonly PopupField<string> _picker;
-        private readonly ToolbarButton _save;
-        private readonly ToolbarButton _revert;
         private readonly ToolbarToggle _ghosts;
 
-        public MapEditorToolbar(Action<string> pick, Action save, Action revert, Action<bool> ghosts)
+        public MapEditorToolbar(Action<string> pick, Action<bool> ghosts)
         {
             var specs = MapPaths.All().OrderBy(MapPaths.MapName).ToList();
             _picker = new PopupField<string>(specs, -1, Label, Label);
             _picker.AddToClassList("hrts-map-toolbar__picker");
             _picker.RegisterValueChangedCallback(evt => pick(evt.newValue));
             Add(_picker);
-
-            _save = new ToolbarButton(save) { text = "Save" };
-            Add(_save);
-            _revert = new ToolbarButton(revert) { text = "Revert" };
-            Add(_revert);
 
             var spacer = new ToolbarSpacer();
             spacer.AddToClassList("hrts-fill");
@@ -38,11 +31,9 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public bool Ghosts => _ghosts.value;
 
-        /// <summary>Shows the open spec in the picker and enables Save and Revert while it has unsaved edits.</summary>
+        /// <summary>Shows the open spec in the picker.</summary>
         public void Show(MapSpecDocument document)
         {
-            _save.SetEnabled(document.IsDirty);
-            _revert.SetEnabled(document.IsDirty);
             if (!_picker.choices.Contains(document.Path))
             {
                 _picker.choices.Add(document.Path);
@@ -53,12 +44,5 @@ namespace HyperRTS.Editor.Maps.Designer
 
         // The picker formats its empty value too, before any spec is open.
         private static string Label(string spec) => spec == null ? "Open a map…" : MapPaths.MapName(spec);
-
-        /// <summary>No spec open yet: nothing to save or revert.</summary>
-        public void ShowNone()
-        {
-            _save.SetEnabled(false);
-            _revert.SetEnabled(false);
-        }
     }
 }

@@ -108,52 +108,6 @@ namespace HyperRTS.Editor.Maps.Designer
             return string.IsNullOrEmpty(kind) ? $"{index + 1}" : $"{index + 1}  {kind}";
         }
 
-        /// <summary>
-        /// Appends a feature at <paramref name="points"/> and returns its index. It copies the list's last feature
-        /// (kind, width, shared...) or, in an empty list, takes the type's defaults. Lists on the feature other than
-        /// its points (a river's crossings) start empty: they belong to the old feature's geometry.
-        /// </summary>
-        public int Add(MapSpec spec, IReadOnlyList<Vector2> points)
-        {
-            var list = List(spec);
-            var element = list.Count == 0
-                ? Activator.CreateInstance(ElementType)
-                : JsonUtility.FromJson(JsonUtility.ToJson(list[list.Count - 1]), ElementType);
-            ClearLists(element);
-            WritePoints(element, points);
-            list.Add(element);
-            return list.Count - 1;
-        }
-
-        private void WritePoints(object element, IReadOnlyList<Vector2> points)
-        {
-            if (_points == null)
-            {
-                _position.SetValue(element, new MapPoint(points[0].x, points[0].y));
-                return;
-            }
-
-            var list = new List<MapPoint>();
-            foreach (var point in points)
-            {
-                list.Add(new MapPoint(point.x, point.y));
-            }
-
-            _points.SetValue(element, list);
-        }
-
-        private void ClearLists(object element)
-        {
-            foreach (var field in ElementType.GetFields(Public))
-            {
-                var type = field.FieldType;
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
-                {
-                    field.SetValue(element, Activator.CreateInstance(type));
-                }
-            }
-        }
-
         private IList List(MapSpec spec) => (IList)_list.GetValue(spec)
             ?? throw new InvalidOperationException($"Spec '{spec.name}' has no '{Field}' list.");
 

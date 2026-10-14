@@ -8,8 +8,8 @@ using NUnit.Framework;
 namespace HyperRTS.Editor.Tests
 {
     /// <summary>
-    /// Editing the map library: what names an item, new items written and read back unchanged, the file format,
-    /// file names and the load problems the Library page lists.
+    /// The map library files: new items written and read back unchanged, the file format and the load problems
+    /// <see cref="MapLibraryProblems"/> reports.
     /// </summary>
     public class MapLibraryEditingTests
     {
@@ -29,27 +29,6 @@ namespace HyperRTS.Editor.Tests
 
         [TearDown]
         public void TearDown() => Directory.Delete(_root, true);
-
-        [Test]
-        public void UsedBy_FindsItemsWhoseKeyFieldsNameTheItem()
-        {
-            var usages = MapLibraryUsages.Find(MapLibrary.Load(_root), typeof(MapClimateSurface), "Meadow");
-
-            CollectionAssert.AreEquivalent(
-                new[] { "Lane.surface", "Lane.vergeSurface", "Steppe.surfaces", "Steppe.groundSurface" },
-                usages.Select(usage => $"{usage.Key}.{usage.Field}"));
-            Assert.IsTrue(usages.All(usage => usage.File.StartsWith(_root, StringComparison.Ordinal)));
-        }
-
-        [Test]
-        public void UsedBy_MatchesOnlyFieldsOfTheItemsType()
-        {
-            var usages = MapLibraryUsages.Find(MapLibrary.Load(_root), typeof(MapClimateLayer), "Meadow");
-
-            Assert.AreEqual(1, usages.Count);
-            Assert.AreEqual(typeof(MapClimateSurface), usages[0].Type);
-            Assert.AreEqual("layer", usages[0].Field);
-        }
 
         [Test]
         public void NewItems_RoundTripThroughTheirFiles()
@@ -81,14 +60,6 @@ namespace HyperRTS.Editor.Tests
             StringAssert.Contains("\n  \"rotation\": 90,\n", json);
             StringAssert.EndsWith("\n}\n", json);
             Assert.IsFalse(json.Contains("prefab"));
-        }
-
-        [Test]
-        public void FileNames_MustBeKeyDotType()
-        {
-            Assert.AreEqual("Meadow", LibraryFiles.ParseKey(typeof(MapClimateSurface), "Assets/X/Meadow.surface.json"));
-            Assert.Throws<ArgumentException>(() => LibraryFiles.ParseKey(typeof(MapClimateSurface), "Assets/Meadow.json"));
-            Assert.Throws<ArgumentException>(() => LibraryFiles.ParseKey(typeof(MapClimateSurface), "Assets/A.B.surface.json"));
         }
 
         [Test]

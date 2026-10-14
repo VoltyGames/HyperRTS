@@ -1,6 +1,6 @@
 # Map tools
 
-[Modules](../modules.md) ▸ Map tools: the map builder, Map Editor and map library in `Editor/Maps/`
+[Modules](../modules.md) ▸ Map tools: the map builder, Map Editor (viewer) and map library in `Editor/Maps/`
 (`HyperRTS.Editor.Maps.<Folder>`). How to use them: [maps](../maps.md).
 
 ## Pipeline
@@ -24,10 +24,10 @@ A folder uses only the folders listed before it.
 | --- | --- |
 | `Spec/` | The map as authored (`MapSpec`, one sector) and its feature classes: terrain, hills, rivers and crossings, roads, ravines, woods, belts, farmland, settlements, areas, lines, props, scatters, resources, spawns. `MapSpecJson` reads and writes it |
 | `Json/` | `MapJsonFormat`: the one layout specs and library files are saved in |
-| `Data/` | Library item classes: `MapClimate` (layers, surfaces, trees, plants, row crops (`<Key>.rowCrop.json`: a `crop` ref to a `RowCrop` asset; a surface names one in `rowCrop`), decals, road classes, farmland / belt / woodland kits), `MapPalette` (what each spec `kind` places, start kit, settlement kits), `MapRules` (thresholds per mode, match settings), `MapMaterial`. `MapKeys` looks keys up after the checks |
-| `Library/` | `MapLibrary`: one `<Key>.<type>.json` per item anywhere under the root; `MapClimateAssembly` builds a climate from its file; load problems, usages, `[MapKey]` / `[MapAsset]` fields and their drawers, and the **Tools ▸ Library** page |
+| `Data/` | Library item classes: `MapClimate` (layers, surfaces, trees, plants, row crops (`<Key>.rowCrop.json`: a `crop` ref to a `RowCrop` asset; a surface names one in `rowCrop`), decals, road classes, farmland / belt / woodland kits), `MapPalette` (what each spec `kind` places, start kit, settlement kits), `MapRules` (thresholds per mode, match settings). `MapKeys` looks keys up after the checks |
+| `Library/` | `MapLibrary`: one `<Key>.<type>.json` per item anywhere under the root; `MapClimateAssembly` builds a climate from its file; `[MapKey]` / `[MapAsset]` fields and `MapLibraryProblems` (keys and asset paths that don't resolve) |
 | `Symmetry/` | `MapSymmetry`: the copies of the sector (rotations or mirrors) and how they number slots |
-| `Generation/` | `MapProject`, `MapPaths` (generated files beside the spec), `MapGeneration` |
+| `Generation/` | `MapProject`, `MapPaths` (generated files in a `Generated/` folder beside the spec), `MapGeneration` |
 
 `MapIssues` collects errors (they fail a build) and warnings, each optionally naming its spec feature;
 `MapRandom` and `MapNoise` draw from fixed channels, so changing a channel changes every map.
@@ -80,7 +80,7 @@ terrain prototype per (species, variant).
 
 | Folder | Holds |
 | --- | --- |
-| `Designer/` | **HyperRTS ▸ Map Editor**: `MapSpecDocument` (undoable edits), canvas with pan, zoom and symmetry ghosts, Select / Point / Line / Area tools, feature list and inspector, live preview, `NewMapDialog` |
+| `Designer/` | **HyperRTS ▸ Map Editor**, a read-only viewer: `MapSpecDocument` (reloads on disk changes), canvas with pan, zoom and symmetry ghosts, feature list, selection, preview, report panel |
 | `Tools/` | **Tools ▸ Maps** page, `MapBuildCommands`, `MapCommandLine` (batch `.Build` / `.Preview`), `MapKeyReference`, the `MapSpecRule` validation rule |
 
 ## Extending
