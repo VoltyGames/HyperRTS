@@ -144,7 +144,7 @@ Styles for engine editor UI live in `Editor/Common/HyperRTSEditor.uss` (classes 
 
 | Rule type | Checks | Example |
 | --- | --- | --- |
-| `AuthoringRule<T>` | One authoring component | Producer with empty options, unit without a collider |
+| `AuthoringRule<T>` | One authoring component | Producer with empty options, unit without a collider, effect rig that is not a world-space `EffectRig` prefab (`EffectRigCheck`) |
 | `ISceneRule` | The open scenes | No or several Matches, owners without a slot, missing Netcode bootstrap, a match scene without the Unit Silhouette renderer feature or the named Units rendering layer (with fixes), a map scene whose last build report has errors |
 | `IPrefabRule` | The project's prefabs | Two prefabs sharing a display name (same `TypeId`) |
 
