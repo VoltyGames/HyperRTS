@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
@@ -92,11 +91,6 @@ namespace HyperRTS.Simulation.Cues
             });
             return true;
         }
-
-        /// <summary>Reports where a shot of a shooter type landed; a type id of 0 is ignored.</summary>
-        public void AddImpact(int typeId, in DamageEvent hit, float3 direction) =>
-            Add(typeId, CueSlot.Impact, hit.Position, direction, hit.SourceFaction, radius: hit.Radius,
-                target: hit.Target);
 
         private bool HasCue(Entity source, CueSlot slot)
         {
