@@ -16,6 +16,7 @@ namespace HyperRTS.Editor.PlayMode
         private Button _join;
         private Button _server;
         private Button _stop;
+        private Label _traffic;
         private Button _save;
         private Button _play;
         private IVisualElementScheduledItem _poll;
@@ -57,6 +58,9 @@ namespace HyperRTS.Editor.PlayMode
             _server = new Button(() => NetworkSession.StartServer()) { text = "Dedicated Server" };
             _stop = new Button(NetworkSession.Stop) { text = "Stop" };
             section.Add(HubSections.Buttons(_host, _join, _server, _stop));
+            _traffic = new Label();
+            _traffic.AddToClassList("hrts-note");
+            section.Add(_traffic);
             return section;
         }
 
@@ -81,9 +85,22 @@ namespace HyperRTS.Editor.PlayMode
             _join.SetEnabled(canStart);
             _server.SetEnabled(canStart);
             _stop.SetEnabled(playing && running);
+            ShowTraffic(running);
 
             _save.SetEnabled(ReplayPlayback.CanSave);
             _play.SetEnabled(ReplayPlayback.CanPlay);
+        }
+
+        private void ShowTraffic(bool running)
+        {
+            if (!running || !NetworkStress.TryRead(out var sample))
+            {
+                _traffic.style.display = DisplayStyle.None;
+                return;
+            }
+
+            _traffic.text = sample.ToString();
+            _traffic.style.display = DisplayStyle.Flex;
         }
     }
 }

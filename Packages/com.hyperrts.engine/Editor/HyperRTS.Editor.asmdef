@@ -12,6 +12,7 @@
         "Unity.NetCode.Authoring.Hybrid",
         "Unity.NetCode.Physics",
         "Unity.NetCode.Physics.Hybrid",
+        "Unity.Networking.Transport",
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.Scenes",
         "Unity.Transforms"

@@ -17,6 +17,9 @@ namespace HyperRTS.Network.Session
     {
         public const ushort DefaultPort = 7979;
 
+        /// <summary>Snapshots per second; the simulation still ticks at Netcode's default 60 Hz.</summary>
+        public const int SnapshotRate = 20;
+
         /// <summary>The scene load the last start or <see cref="LoadScene"/> began, for loading screens; null if none.</summary>
         public static AsyncOperation SceneLoad => SessionSceneLoader.Current;
 
@@ -144,6 +147,7 @@ namespace HyperRTS.Network.Session
         private static bool TryListen(ushort port, INetworkStreamDriverConstructor drivers, out World world)
         {
             world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
+            world.EntityManager.CreateSingleton(ServerTickRate());
             DisablePhysics(world);
             bool listening;
             using (var query = DriverQuery(world))
@@ -200,6 +204,15 @@ namespace HyperRTS.Network.Session
             }
 
             driver.ResetDriverStore(world.Unmanaged, ref store);
+        }
+
+        // Interpolated units look the same at 20 Hz as at 60, for a third of the bandwidth (docs/networking.md#bandwidth).
+        private static ClientServerTickRate ServerTickRate()
+        {
+            var rate = new ClientServerTickRate();
+            rate.ResolveDefaults();
+            rate.NetworkTickRate = SnapshotRate;
+            return rate;
         }
 
         // Clicks raycast against Unity Physics, which Netcode only steps inside the prediction loop.

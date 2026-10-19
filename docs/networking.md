@@ -123,6 +123,25 @@ back.
 A new component the HUD or overlays read needs `[GhostField]` on the fields that change, and
 `[GhostEnabledBit]` if it is enableable.
 
+## Bandwidth
+
+The server ticks the simulation at 60 Hz and sends snapshots at `NetworkSession.SnapshotRate` (20 Hz). Netcode fills
+each snapshot up to about 1.4 KB and sends the ghosts that waited longest first, so a full snapshot makes updates
+older instead of making packets bigger.
+
+Measured on a 400 m map, host and client in the Editor, 500 tanks spawned through the Play page's **Armies** cheat:
+
+| Case | Snapshot rate | Client receives | Unit update age |
+| --- | --- | --- | --- |
+| 500 tanks marching, fog on (~340 visible) | 60 Hz | 600-780 kbps | 6 ticks max |
+| 640 units visible, fog off | 60 Hz | 690-750 kbps (cap) | 9 ticks max |
+| 650 units visible, fog off | 20 Hz | ~240 kbps | 13 ticks max |
+| 1,060 units visible, fog off | 20 Hz | ~230 kbps (cap) | 28 ticks max (~470 ms) |
+| 500 tanks in combat, fog on or off | 20 Hz | peak 316 kbps | 18 ticks max |
+
+At 20 Hz a client needs about 0.3 Mbps in a large battle, so a player hosting a 4v4 uploads about 2.2 Mbps.
+Combat adds about 80 kbps of cue RPCs on top of the capped snapshots.
+
 ## Commands
 
 The client never runs a `PlayerCommand`. `CommandSendSystem` turns each one into a `CommandRpc` carrying ghost

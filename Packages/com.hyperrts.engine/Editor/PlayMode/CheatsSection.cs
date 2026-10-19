@@ -21,6 +21,7 @@ namespace HyperRTS.Editor.PlayMode
         private PopupField<string> _player;
         private PopupField<string> _prefab;
         private IntegerField _amount;
+        private IntegerField _perSide;
         private Button _control;
         private Toggle _fog;
         private Slider _speed;
@@ -88,6 +89,9 @@ namespace HyperRTS.Editor.PlayMode
             _prefab = Popup("Spawn");
             parent.Add(Row(_prefab, new Button(SpawnAtView) { text = "At view" }));
 
+            _perSide = new IntegerField("Armies per side") { value = 250 };
+            parent.Add(Row(_perSide, new Button(SpawnArmies) { text = "Attack" }));
+
             _speed = new Slider("Game speed", 0f, 4f) { showInputField = true };
             _speed.RegisterValueChangedCallback(change => LocalGameSpeed.SetScale(change.newValue));
             parent.Add(_speed);
@@ -140,6 +144,16 @@ namespace HyperRTS.Editor.PlayMode
             if (_prefab.index >= 0 && _prefab.index < prefabs.Length)
             {
                 Cheats.Spawn(manager, prefabs[_prefab.index], faction, Cheats.ViewCenter(manager));
+            }
+        });
+
+        // A load test: two hostile armies of the chosen prefab march on each other's bases.
+        private void SpawnArmies() => Act((manager, _, _) =>
+        {
+            var prefabs = Cheats.Prefabs(manager);
+            if (_prefab.index >= 0 && _prefab.index < prefabs.Length)
+            {
+                NetworkStress.SpawnArmies(manager, prefabs[_prefab.index], _perSide.value);
             }
         });
 

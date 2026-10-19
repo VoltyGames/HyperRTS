@@ -19,7 +19,7 @@ Status of the engine and the work still open. Update it when a feature lands or 
 | Skirmish AI | ✅ | Build orders, abilities, five difficulties |
 | Audio | ✅ | Cues, network forwarding, pooled playback, voices |
 | Replays | ✅ | State recording, playback, seek |
-| Multiplayer | 🟡 | Works end to end; not measured at scale |
+| Multiplayer | 🟡 | Works end to end; 500 units cost a client about 0.3 Mbps at 20 Hz snapshots |
 | Editor tooling | ✅ | Tools window, generators, wizard, templates, validator, catalog, debug overlay, cheats, Map Editor with live preview, JSON map library, maps from specs (terrain, towns, trees, metrics, report) |
 | Destruction | ✅ | Destructible scenery, crushing, damage stages, remains effects, neutral garrisons, bridges that take their deck with them |
 | Hardening | 🟡 | No CI, no stress scene, no performance budgets |
@@ -57,7 +57,7 @@ game's units need them. The same goes for ambient polish (birds, dust devils, cl
 
 ### Multiplayer
 
-- 500-unit bandwidth test; ghost importance and send-rate tuning.
+- Ghost importance by distance to the viewer, once snapshots cap in real matches.
 - Command feedback before the server confirms.
 - Observer HUD (minimap, banner and overlays without a local player).
 - Host migration, automatic reconnect.
