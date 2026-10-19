@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Rendering;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -22,7 +23,7 @@ namespace HyperRTS.Presentation.Environment
         private float _fadeCarry;
 
         /// <summary>Map resolution, or Off. Written by <see cref="Rendering.PresentationQuality.Apply"/>.</summary>
-        public static InteractionQuality Quality { get; internal set; } = InteractionQuality.Full;
+        public static InteractionQuality Quality { get; internal set; } = PresentationQuality.Default.Interactions;
 
         private void Awake() => _brush = new InteractionBrush(brush);
 

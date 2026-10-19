@@ -6,7 +6,7 @@ namespace HyperRTS.Presentation.Rendering
     /// <summary>The antialiasing every camera with <see cref="CameraAntialiasing"/> uses.</summary>
     public static class CameraAntialiasingMode
     {
-        private static AntialiasingMode _mode = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+        private static AntialiasingMode _mode = PresentationQuality.Default.Antialiasing;
 
         public static event Action Changed;
 

@@ -19,8 +19,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     [DisallowMultipleComponent]
     public sealed class RowCropRenderer : MonoBehaviour
     {
-        private static float _density = 1f;
-        private static float _distance = 300f;
+        private static float _density = PresentationQuality.Default.CropDensity;
+        private static float _distance = PresentationQuality.Default.CropDistance;
 
         [Tooltip("The baked fields this map grows.")]
         public RowCropFields fields;

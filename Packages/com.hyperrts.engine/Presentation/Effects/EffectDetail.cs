@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.Effects
     /// </summary>
     public static class EffectDetail
     {
-        public static DetailLevel Level { get; internal set; } = DetailLevel.High;
+        public static DetailLevel Level { get; internal set; } = PresentationQuality.Default.Effects;
 
         /// <summary>The share of authored particles emitted at the current level.</summary>
         public static float Density => DensityAt(Level);

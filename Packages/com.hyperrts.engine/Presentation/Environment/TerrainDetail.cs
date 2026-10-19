@@ -19,7 +19,7 @@ namespace HyperRTS.Presentation.Environment
 
         private static readonly GlobalKeyword Simple = GlobalKeyword.Create(SimpleKeyword);
         private static readonly GlobalKeyword NoFar = GlobalKeyword.Create(NoFarKeyword);
-        private static DetailLevel _level = DetailLevel.High;
+        private static DetailLevel _level = PresentationQuality.Default.Ground;
 
         /// <summary>Written by <see cref="PresentationQuality.Apply"/>.</summary>
         public static DetailLevel Level
