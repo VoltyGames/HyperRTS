@@ -82,7 +82,7 @@ namespace HyperRTS.Editor.PlayMode
             ulong packets = 0;
             for (var id = store.FirstDriver; id < store.LastDriver; id++)
             {
-                var stats = store.GetNetworkDriver(id).GetStatistics();
+                var stats = store.GetDriverRO(id).GetStatistics();
                 sample.ReceivedKbps += stats.RxBandwidth.Current;
                 sample.ReceivedMeanKbps += stats.RxBandwidth.Mean;
                 sample.ReceivedPeakKbps += stats.RxBandwidth.Maximum;

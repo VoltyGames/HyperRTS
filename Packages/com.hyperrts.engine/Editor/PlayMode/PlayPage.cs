@@ -1,11 +1,13 @@
+using System;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Network.Session;
+using HyperRTS.Simulation.Match;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>Tools ▸ Play: cheats, turning the Play-mode scene into a networked match, and replays.</summary>
+    /// <summary>Tools ▸ Play: cheats, turning the Play-mode scene into a networked match, bot matches and replays.</summary>
     public class PlayPage : HubPage
     {
         private const long PollMilliseconds = 250;
@@ -17,6 +19,10 @@ namespace HyperRTS.Editor.PlayMode
         private Button _server;
         private Button _stop;
         private Label _traffic;
+        private Button _runBots;
+        private Button _stopBots;
+        private Label _botStatus;
+        private readonly BotMatches.Settings _bots = new();
         private Button _save;
         private Button _play;
         private IVisualElementScheduledItem _poll;
@@ -36,6 +42,7 @@ namespace HyperRTS.Editor.PlayMode
             _cheats = new CheatsSection();
             scroll.Add(_cheats.Root);
             scroll.Add(NetworkSection());
+            scroll.Add(BotSection());
             scroll.Add(ReplaySection());
 
             _poll = scroll.schedule.Execute(Poll).Every(PollMilliseconds);
@@ -64,6 +71,34 @@ namespace HyperRTS.Editor.PlayMode
             return section;
         }
 
+        private VisualElement BotSection()
+        {
+            var section = HubSections.Section("Bot matches");
+            var matches = new IntegerField("Matches") { value = _bots.matches };
+            matches.RegisterValueChangedCallback(change => _bots.matches = Math.Max(1, change.newValue));
+            var players = new IntegerField("Players") { value = _bots.players };
+            players.RegisterValueChangedCallback(change => _bots.players = Math.Max(2, change.newValue));
+            var difficulty = new EnumField("Difficulty", _bots.difficulty);
+            difficulty.RegisterValueChangedCallback(change => _bots.difficulty = (AIDifficulty)change.newValue);
+            var speed = new FloatField("Game speed") { value = _bots.speed };
+            speed.RegisterValueChangedCallback(change => _bots.speed = Math.Max(1f, change.newValue));
+            var limit = new FloatField("Time limit (min)") { value = _bots.timeLimitMinutes };
+            limit.RegisterValueChangedCallback(change => _bots.timeLimitMinutes = Math.Max(1f, change.newValue));
+            section.Add(matches);
+            section.Add(players);
+            section.Add(difficulty);
+            section.Add(speed);
+            section.Add(limit);
+
+            _runBots = new Button(() => BotMatches.Start(_bots)) { text = "Run" };
+            _stopBots = new Button(BotMatches.Stop) { text = "Stop" };
+            section.Add(HubSections.Buttons(_runBots, _stopBots));
+            _botStatus = new Label();
+            _botStatus.AddToClassList("hrts-note");
+            section.Add(_botStatus);
+            return section;
+        }
+
         private VisualElement ReplaySection()
         {
             var section = HubSections.Section("Replays");
@@ -86,6 +121,9 @@ namespace HyperRTS.Editor.PlayMode
             _server.SetEnabled(canStart);
             _stop.SetEnabled(playing && running);
             ShowTraffic(running);
+            _runBots.SetEnabled(playing && !running && !BotMatches.IsRunning);
+            _stopBots.SetEnabled(BotMatches.IsRunning);
+            _botStatus.text = BotMatches.Status;
 
             _save.SetEnabled(ReplayPlayback.CanSave);
             _play.SetEnabled(ReplayPlayback.CanPlay);
