@@ -59,6 +59,9 @@ Rendering and effects:
   puts every rendered part of a `UnitTag` entity on the layer at bake time.
 - **Fog**: `FogVisibilitySystem` turns `FogHidden` and `Inside` into `DisableRendering`. Map buildings never get
   `FogHidden`, so `BuildingFog.IsHidden` hides their flags, dials and pips under the local fog.
+  `FogMemoryVisualSystem` draws each `LastSeen` memory as a `VisualPrefab` copy of its type (transforms, meshes and
+  material properties only, so nothing picks, selects or counts it), team-coloured through `TeamColorSource`; the
+  minimap shows memories as dimmed squares.
 - **Flags** (`Flags/`): `FlagDisplay.Resolve` picks the shown flag and hoist (an owned building's flag lowers over
   the first half of a capture and the capturer's rises over the second; a neutral one's rises over the whole).
   `FlagSystem` writes `FlagState` (flag layer = the shown player's `PlayerSide`, hoist, shown) and `FlagColor` (hoist

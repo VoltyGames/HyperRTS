@@ -48,7 +48,6 @@ game's units need them. The same goes for ambient polish (birds, dust devils, cl
 ### Gameplay
 
 - Moving obstacles, per-area water levels, ramps onto decks.
-- "Last seen" ghosts of enemy buildings.
 - Micro AI (kiting, focus fire); AI scouting, defence, naval and air behaviour; fog-honest difficulties.
 - Upgrades as prerequisites; ability targeting cursor and range preview; cargo slots in the selection panel.
 - Aircraft: turn rates and attack runs, landed aircraft as surface targets, intercept stance, ammo readout.

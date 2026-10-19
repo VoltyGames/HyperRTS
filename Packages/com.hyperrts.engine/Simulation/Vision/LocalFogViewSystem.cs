@@ -84,6 +84,7 @@ namespace HyperRTS.Simulation.Vision
             {
                 using var hidden = entityManager.CreateEntityQuery(ComponentType.ReadOnly<FogHidden>());
                 entityManager.RemoveComponent<FogHidden>(hidden);
+                FogMemorySystem.Forget(entityManager);
             }
         }
 

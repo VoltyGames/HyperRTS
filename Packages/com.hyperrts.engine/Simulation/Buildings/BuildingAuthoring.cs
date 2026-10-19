@@ -31,6 +31,9 @@ namespace HyperRTS.Simulation.Buildings
         [Tooltip("Ground the footprint must cover when placed: land, water, or shoreline (both).")]
         public PlacementSurface placementSurface;
 
+        [Tooltip("Enemies who saw it keep seeing it where they last did once it is in the fog.")]
+        public bool rememberedInFog = true;
+
         public override float Radius => EntityRadius.Get(new NavObstacle { Size = footprint });
 
         public class Baker : Baker<BuildingAuthoring>
@@ -42,7 +45,8 @@ namespace HyperRTS.Simulation.Buildings
 
                 var writer = new BakerWriter(this, entity);
                 BuildingSetup.Add(ref writer, authoring.footprint, authoring.populationProvided,
-                    !authoring.startsUnderConstruction, authoring.power, authoring.placementSurface);
+                    !authoring.startsUnderConstruction, authoring.power, authoring.placementSurface,
+                    authoring.rememberedInFog);
             }
         }
     }

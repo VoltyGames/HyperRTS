@@ -16,15 +16,21 @@ namespace HyperRTS.Presentation.HUD
 {
     /// <summary>
     /// Map overview: the scene's <see cref="MinimapImage"/>, the local fog of war, owner-coloured blips (squares for
-    /// structures), resource nodes and the camera view; click or drag to move the camera.
+    /// structures, dimmed for remembered ones), resource nodes and the camera view; click or drag to move the camera.
     /// </summary>
     public sealed class Minimap : HUDPanel
     {
         private const float MaxViewDistance = 1000f;
         private const float BlipInterval = 0.1f;
 
+        /// <summary>Remembered buildings show at this share of their owner's brightness.</summary>
+        private const float MemoryShade = 0.5f;
+
         private readonly LiveQuery _units = Blips(ComponentType.Exclude<NavObstacle>());
         private readonly LiveQuery _structures = Blips(ComponentType.ReadOnly<NavObstacle>());
+
+        private readonly LiveQuery _memories = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<LastSeen>()));
 
         private readonly LiveQuery _nodes = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<ResourceNode>(),
@@ -94,6 +100,7 @@ namespace HyperRTS.Presentation.HUD
                 GatherNodes(context.EntityManager);
                 GatherEntities(view, _units, 2.2f, false);
                 GatherEntities(view, _structures, 3.2f, true);
+                GatherMemories(view);
             }
 
             _blipLayer.MarkDirtyRepaint();
@@ -150,6 +157,17 @@ namespace HyperRTS.Presentation.HUD
             for (var i = 0; i < factions.Length; i++)
             {
                 AddBlip(transforms[i].Position.xz, view.GetColor(factions[i].Value), radius, square);
+            }
+        }
+
+        private void GatherMemories(MatchView view)
+        {
+            using var memories = _memories.In(view.EntityManager).ToComponentDataArray<LastSeen>(Allocator.Temp);
+            foreach (var memory in memories)
+            {
+                var color = view.GetColor(memory.Record.Faction);
+                var shaded = new Color(color.r * MemoryShade, color.g * MemoryShade, color.b * MemoryShade, color.a);
+                AddBlip(memory.Record.Transform.Position.xz, shaded, 3.2f, true);
             }
         }
 

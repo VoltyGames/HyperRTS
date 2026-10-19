@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Vision;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Buildings
@@ -9,9 +10,15 @@ namespace HyperRTS.Simulation.Buildings
     public static class BuildingSetup
     {
         public static void Add<TWriter>(ref TWriter writer, float2 footprint, int populationProvided, bool complete,
-            float power = 0f, PlacementSurface surface = PlacementSurface.Land) where TWriter : struct, IEntityWriter
+            float power = 0f, PlacementSurface surface = PlacementSurface.Land, bool rememberedInFog = true)
+            where TWriter : struct, IEntityWriter
         {
             writer.Add<BuildingTag>();
+            if (rememberedInFog)
+            {
+                writer.Add<FogMemory>();
+            }
+
             NavSetup.AddObstacle(ref writer, footprint);
             if (surface != PlacementSurface.Land)
             {

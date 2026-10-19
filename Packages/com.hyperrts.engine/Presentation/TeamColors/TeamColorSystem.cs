@@ -20,6 +20,7 @@ namespace HyperRTS.Presentation.TeamColors
         private EntityQuery _recolored;
         private EntityQuery _colored;
         private EntityQuery _changedOverride;
+        private EntityQuery _uncoloredSources;
         private int _playerVersion;
         private int _factionVersion;
         private int _overrideVersion;
@@ -34,6 +35,7 @@ namespace HyperRTS.Presentation.TeamColors
             _colored = SystemAPI.QueryBuilder().WithAll<TeamColored>().Build();
             _changedOverride = SystemAPI.QueryBuilder().WithAll<TeamColorOverride>().Build();
             _changedOverride.SetChangedVersionFilter(ComponentType.ReadOnly<TeamColorOverride>());
+            _uncoloredSources = SystemAPI.QueryBuilder().WithAll<TeamColorSource>().WithNone<TeamColored>().Build();
             _palette = FactionPalette.Create(ref state);
             state.RequireForUpdate<Player>();
             state.RequireForUpdate<BeginPresentationEntityCommandBufferSystem.Singleton>();
@@ -50,7 +52,8 @@ namespace HyperRTS.Presentation.TeamColors
                 _factionVersion = -1;
             }
 
-            if (_recolored.IsEmpty && !HasNewWork(ref state))
+            var newWork = HasNewWork(ref state) || !_uncoloredSources.IsEmpty;
+            if (_recolored.IsEmpty && !newWork)
             {
                 return;
             }
@@ -68,6 +71,7 @@ namespace HyperRTS.Presentation.TeamColors
 
             state.Dependency = new ColorNewJob { Painter = painter }.Schedule(state.Dependency);
             state.Dependency = new RecolorJob { Painter = painter }.Schedule(state.Dependency);
+            state.Dependency = new ColorSourceJob { Painter = painter }.Schedule(state.Dependency);
         }
 
         private bool OverrideChanged(ref SystemState state)
@@ -180,6 +184,21 @@ namespace HyperRTS.Presentation.TeamColors
                 if (Painter.Paint(entity, faction.Value))
                 {
                     Painter.Commands.AddComponent(entity, new TeamColored { Faction = faction.Value });
+                }
+            }
+        }
+
+        [BurstCompile]
+        [WithNone(typeof(TeamColored))]
+        private partial struct ColorSourceJob : IJobEntity
+        {
+            public TeamPainter Painter;
+
+            private void Execute(Entity entity, in TeamColorSource source)
+            {
+                if (Painter.Paint(entity, source.Faction))
+                {
+                    Painter.Commands.AddComponent(entity, new TeamColored { Faction = source.Faction });
                 }
             }
         }
