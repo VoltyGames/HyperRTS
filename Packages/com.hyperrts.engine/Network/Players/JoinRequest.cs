@@ -10,5 +10,8 @@ namespace HyperRTS.Network.Players
 
         /// <summary>Join as an observer: claim no slot.</summary>
         public bool Observe;
+
+        /// <summary>The sender's <see cref="JoinToken"/>; the slot it owns comes back to it. 0 owns nothing.</summary>
+        public ulong Token;
     }
 }

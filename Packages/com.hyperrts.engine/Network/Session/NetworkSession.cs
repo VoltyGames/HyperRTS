@@ -1,10 +1,10 @@
+using System;
 using System.Collections.Generic;
 using HyperRTS.Network.Players;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
-using Unity.Physics.Systems;
 using UnityEngine;
 
 namespace HyperRTS.Network.Session
@@ -25,12 +25,21 @@ namespace HyperRTS.Network.Session
 
         /// <summary>
         /// Slot (faction) to ask for when joining. Updated to the granted slot when the client world closes, so a
-        /// reconnecting client gets its old slot back.
+        /// reconnecting client asks for its old slot.
         /// </summary>
         public static byte PreferredFaction { get; set; }
 
-        /// <summary>Join as an observer instead of claiming a slot.</summary>
+        /// <summary>Join as an observer instead of claiming a slot. Set when an observer's client world closes, so it
+        /// rejoins as one.</summary>
         public static bool JoinAsObserver { get; set; }
+
+        /// <summary>This process's identity, sent with every join: the server gives the slot it owns back to it.</summary>
+        public static ulong Token { get; private set; } = NewToken();
+
+        /// <summary>Whether <see cref="Rejoin"/> has a direct endpoint: the last session was a direct join.</summary>
+        public static bool CanRejoin => _rejoin.IsValid;
+
+        private static NetworkEndpoint _rejoin;
 
         public static bool IsRunning => ClientServerBootstrap.ServerWorld != null || ClientServerBootstrap.ClientWorld != null;
 
@@ -60,6 +69,7 @@ namespace HyperRTS.Network.Session
             }
 
             DisposeWorlds(server);
+            _rejoin = default;
             World.DefaultGameObjectInjectionWorld = server;
             SetStatus(NetworkStatus.Connected);
             SessionSceneLoader.Load(scene);
@@ -91,6 +101,23 @@ namespace HyperRTS.Network.Session
             return true;
         }
 
+        /// <summary>
+        /// Joins the server of the last <see cref="StartClient"/> again, as after a dropped connection; the scene must
+        /// load the map again, since a SubScene only streams into worlds that exist when it loads. Relay sessions
+        /// rejoin through a new allocation and <see cref="StartRelayClient"/>.
+        /// </summary>
+        public static bool Rejoin(SessionScene scene)
+        {
+            if (!CanRejoin)
+            {
+                Debug.LogError("[HyperRTS] Nothing to rejoin: the last session was not a direct join.");
+                return false;
+            }
+
+            Join(_rejoin, null, scene);
+            return true;
+        }
+
         /// <summary>Back to a single-player world, reloading the active scene.</summary>
         public static void Stop() => StartLocal(SessionScene.ReloadActive);
 
@@ -98,6 +125,7 @@ namespace HyperRTS.Network.Session
         public static void StartLocal(SessionScene scene)
         {
             DisposeWorlds(null);
+            _rejoin = default;
             DefaultWorldInitialization.Initialize("Default World");
             SetStatus(NetworkStatus.Idle);
             SessionSceneLoader.Load(scene);
@@ -127,6 +155,7 @@ namespace HyperRTS.Network.Session
             }
 
             DisposeWorlds(server);
+            _rejoin = default;
             World.DefaultGameObjectInjectionWorld = server;
             StartClientWorld(NetworkEndpoint.LoopbackIpv4.WithPort(port), clientDrivers);
             SessionSceneLoader.Load(scene);
@@ -136,6 +165,7 @@ namespace HyperRTS.Network.Session
         private static void Join(NetworkEndpoint server, INetworkStreamDriverConstructor drivers, SessionScene scene)
         {
             DisposeWorlds(null);
+            _rejoin = drivers == null ? server : default;
             StartClientWorld(server, drivers);
             SessionSceneLoader.Load(scene);
         }
@@ -147,13 +177,13 @@ namespace HyperRTS.Network.Session
         private static bool TryListen(ushort port, INetworkStreamDriverConstructor drivers, out World world)
         {
             world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
-            world.EntityManager.CreateSingleton(ServerTickRate());
-            DisablePhysics(world);
+            world.EntityManager.CreateSingleton(SessionWorlds.ServerTickRate());
+            SessionWorlds.DisablePhysics(world);
             bool listening;
-            using (var query = DriverQuery(world))
+            using (var query = SessionWorlds.DriverQuery(world))
             {
                 ref var driver = ref query.GetSingletonRW<NetworkStreamDriver>().ValueRW;
-                UseDrivers(world, ref driver, drivers);
+                SessionWorlds.UseDrivers(world, ref driver, drivers);
                 listening = driver.Listen(NetworkEndpoint.AnyIpv4.WithPort(port));
             }
 
@@ -170,71 +200,19 @@ namespace HyperRTS.Network.Session
         private static void StartClientWorld(NetworkEndpoint server, INetworkStreamDriverConstructor drivers)
         {
             var world = ClientServerBootstrap.CreateClientWorld("ClientWorld");
-            world.EntityManager.CreateSingleton(ClientTickRate());
+            world.EntityManager.CreateSingleton(SessionWorlds.ClientTickRate());
             world.EntityManager.CreateSingleton(new JoinPreference { Faction = PreferredFaction, Observe = JoinAsObserver });
-            using (var query = DriverQuery(world))
+            world.EntityManager.CreateSingleton(new JoinToken { Value = Token });
+            using (var query = SessionWorlds.DriverQuery(world))
             {
                 ref var driver = ref query.GetSingletonRW<NetworkStreamDriver>().ValueRW;
-                UseDrivers(world, ref driver, drivers);
+                SessionWorlds.UseDrivers(world, ref driver, drivers);
                 driver.Connect(world.EntityManager, server);
             }
 
             World.DefaultGameObjectInjectionWorld = world;
             SetStatus(NetworkStatus.Connecting);
         }
-
-        // Netcode builds its default drivers with the world; a relay session swaps them before listening or connecting.
-        private static void UseDrivers(World world, ref NetworkStreamDriver driver, INetworkStreamDriverConstructor drivers)
-        {
-            if (drivers == null)
-            {
-                return;
-            }
-
-            using var netDebugQuery = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<NetDebug>());
-            var netDebug = netDebugQuery.GetSingleton<NetDebug>();
-            var store = new NetworkDriverStore();
-            if (world.IsServer())
-            {
-                drivers.CreateServerDriver(world, ref store, netDebug);
-            }
-            else
-            {
-                drivers.CreateClientDriver(world, ref store, netDebug);
-            }
-
-            driver.ResetDriverStore(world.Unmanaged, ref store);
-        }
-
-        // Interpolated units look the same at 20 Hz as at 60, for a third of the bandwidth (docs/networking.md#bandwidth).
-        private static ClientServerTickRate ServerTickRate()
-        {
-            var rate = new ClientServerTickRate();
-            rate.ResolveDefaults();
-            rate.NetworkTickRate = SnapshotRate;
-            return rate;
-        }
-
-        // Clicks raycast against Unity Physics, which Netcode only steps inside the prediction loop.
-        private static ClientTickRate ClientTickRate()
-        {
-            var rate = NetworkTimeSystem.DefaultClientTickRate;
-            rate.PredictionLoopUpdateMode = PredictionLoopUpdateMode.AlwaysRun;
-            return rate;
-        }
-
-        // Physics only serves click raycasts, which run on clients; the server would rebuild it every tick for nothing.
-        private static void DisablePhysics(World world)
-        {
-            var physics = world.GetExistingSystemManaged<PhysicsSystemGroup>();
-            if (physics != null)
-            {
-                physics.Enabled = false;
-            }
-        }
-
-        private static EntityQuery DriverQuery(World world) =>
-            world.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>());
 
         /// <summary>Disposes every simulation world but <paramref name="keep"/>.</summary>
         private static void DisposeWorlds(World keep)
@@ -253,6 +231,7 @@ namespace HyperRTS.Network.Session
             }
         }
 
+        /// <summary>Keeps the closing client's slot, or its observer seat, for the next join.</summary>
         private static void RememberSlot()
         {
             var client = ClientServerBootstrap.ClientWorld;
@@ -261,18 +240,39 @@ namespace HyperRTS.Network.Session
                 return;
             }
 
-            using var query = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalFaction>());
-            if (query.TryGetSingleton(out LocalFaction granted))
+            if (!TryRemember(client.EntityManager, out var rejoin))
             {
-                PreferredFaction = granted.Value;
+                return;
             }
+
+            PreferredFaction = rejoin.Faction;
+            JoinAsObserver = rejoin.Observe;
         }
+
+        private static bool TryRemember(EntityManager entities, out JoinPreference rejoin)
+        {
+            using var granted = entities.CreateEntityQuery(ComponentType.ReadOnly<LocalFaction>());
+            if (granted.TryGetSingleton(out LocalFaction faction))
+            {
+                rejoin = JoinPreference.Rejoining(faction);
+                return true;
+            }
+
+            // Dropped before the server answered: ask again for what this client asked for.
+            using var asked = entities.CreateEntityQuery(ComponentType.ReadOnly<JoinPreference>());
+            return asked.TryGetSingleton(out rejoin);
+        }
+
+        // Never 0, which a join request sends when it owns no slot.
+        private static ulong NewToken() => BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0) | 1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
             PreferredFaction = 0;
             JoinAsObserver = false;
+            Token = NewToken();
+            _rejoin = default;
             Status = NetworkStatus.Idle;
             DisconnectReason = default;
         }

@@ -31,6 +31,7 @@ namespace HyperRTS.Network.Players
             }
 
             SystemAPI.TryGetSingleton(out JoinPreference preference);
+            SystemAPI.TryGetSingleton(out JoinToken token);
             var entityManager = state.EntityManager;
             foreach (var connection in connections.ToEntityArray(Allocator.Temp))
             {
@@ -40,6 +41,7 @@ namespace HyperRTS.Network.Players
                 {
                     Faction = preference.Faction,
                     Observe = preference.Observe,
+                    Token = token.Value,
                 });
                 entityManager.AddComponent<SendRpcCommandRequest>(request);
             }

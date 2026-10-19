@@ -1,12 +1,15 @@
+using System.Text.RegularExpressions;
 using HyperRTS.Network.Session;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Networking.Transport.Relay;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Relay driver choice and the lobby-facing connection status, without opening sockets.</summary>
+    /// <summary>Relay driver choice, the lobby-facing connection status and rejoin guards, without opening sockets.</summary>
     public class NetworkSessionTests
     {
         [TestCase(ConnectionState.State.Connecting, NetworkStatus.Connecting)]
@@ -33,6 +36,17 @@ namespace HyperRTS.Simulation.Tests
             }
 
             store.Dispose();
+        }
+
+        [Test]
+        public void Token_IsNeverZero() => Assert.AreNotEqual(0UL, NetworkSession.Token);
+
+        [Test]
+        public void Rejoin_WithoutADirectJoin_ChangesNothing()
+        {
+            LogAssert.Expect(LogType.Error, new Regex("Nothing to rejoin"));
+            Assert.IsFalse(NetworkSession.CanRejoin);
+            Assert.IsFalse(NetworkSession.Rejoin(SessionScene.Keep));
         }
 
         private static NetworkDriverStore Build(WorldFlags flags, RelayServerData relay)

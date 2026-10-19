@@ -7,8 +7,8 @@ using Unity.NetCode;
 namespace HyperRTS.Network.Players
 {
     /// <summary>
-    /// Binds joining connections to free human slots (observers when none is left or they asked to watch) and frees
-    /// the slot of a dropped connection, so its owner can reconnect while the units wait.
+    /// Binds joining connections to human slots (observers when none is left or they asked to watch) and frees the
+    /// slot of a dropped connection, keeping it for its owner's token so only the owner can reconnect to it.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
@@ -46,7 +46,7 @@ namespace HyperRTS.Network.Players
 
             var wanted = entityManager.GetComponentData<JoinRequest>(request);
             var networkId = entityManager.GetComponentData<NetworkId>(connection).Value;
-            var slot = wanted.Observe ? Entity.Null : Claim(ref state, wanted.Faction, networkId);
+            var slot = wanted.Observe ? Entity.Null : Claim(ref state, wanted, networkId);
             byte faction = 0;
             if (slot != Entity.Null)
             {
@@ -60,36 +60,62 @@ namespace HyperRTS.Network.Players
             entityManager.AddComponentData(reply, new SendRpcCommandRequest { TargetConnection = connection });
         }
 
-        /// <summary>The wanted slot if it is free, else the first free human slot, else none (observer).</summary>
-        private Entity Claim(ref SystemState state, byte wanted, int networkId)
+        /// <summary>Binds the slot <see cref="SlotClaim"/> picks; Entity.Null makes the sender an observer.</summary>
+        private Entity Claim(ref SystemState state, JoinRequest wanted, int networkId)
         {
-            var slot = Entity.Null;
+            var entities = new NativeList<Entity>(Allocator.Temp);
+            var slots = new NativeList<SlotClaim.Slot>(Allocator.Temp);
             foreach (var (player, connection, entity) in SystemAPI.Query<RefRO<Player>, RefRO<PlayerConnection>>()
                          .WithNone<AIPlayer>().WithEntityAccess())
             {
-                if (connection.ValueRO.NetworkId != 0)
+                entities.Add(entity);
+                slots.Add(new SlotClaim.Slot
                 {
-                    continue;
-                }
+                    Faction = player.ValueRO.Faction,
+                    NetworkId = connection.ValueRO.NetworkId,
+                    Token = connection.ValueRO.Token,
+                });
+            }
 
-                if (player.ValueRO.Faction == wanted)
+            var index = SlotClaim.Choose(slots.AsArray().AsReadOnlySpan(), wanted.Faction, wanted.Token);
+            if (index < 0)
+            {
+                return Entity.Null;
+            }
+
+            var slot = entities[index];
+            DisconnectStale(ref state, slots[index].NetworkId);
+            SystemAPI.SetComponent(slot, new PlayerConnection { NetworkId = networkId, Token = wanted.Token });
+            return slot;
+        }
+
+        /// <summary>Its owner came back on a new connection before the old one timed out: the old one goes.</summary>
+        private void DisconnectStale(ref SystemState state, int networkId)
+        {
+            if (networkId == 0)
+            {
+                return;
+            }
+
+            var stale = Entity.Null;
+            foreach (var (id, connection) in SystemAPI.Query<RefRO<NetworkId>>().WithEntityAccess())
+            {
+                if (id.ValueRO.Value == networkId)
                 {
-                    slot = entity;
+                    stale = connection;
                     break;
                 }
-
-                if (slot == Entity.Null)
-                {
-                    slot = entity;
-                }
             }
 
-            if (slot != Entity.Null)
+            // Changed after the loop: structural changes aren't allowed while iterating.
+            if (stale == Entity.Null)
             {
-                SystemAPI.SetComponent(slot, new PlayerConnection { NetworkId = networkId });
+                return;
             }
 
-            return slot;
+            state.EntityManager.RemoveComponent<ConnectionPlayer>(stale);
+            state.EntityManager.AddComponentData(stale,
+                new NetworkStreamRequestDisconnect { Reason = NetworkStreamDisconnectReason.ConnectionClose });
         }
 
         private void ReleaseDropped(ref SystemState state)

@@ -10,5 +10,9 @@ namespace HyperRTS.Network.Players
 
         /// <summary>Watch the match instead of claiming a slot.</summary>
         public bool Observe;
+
+        /// <summary>What to ask for when rejoining after the server granted <paramref name="granted"/>.</summary>
+        public static JoinPreference Rejoining(LocalFaction granted) =>
+            new() { Faction = granted.Value, Observe = granted.Value == 0 };
     }
 }
