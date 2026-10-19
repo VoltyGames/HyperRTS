@@ -40,19 +40,19 @@ namespace HyperRTS.Editor.PlayMode
 
         /// <summary>
         /// Spawns <paramref name="perSide"/> of <paramref name="prefab"/> in front of the first player's base and of
-        /// the farthest hostile base, each army attack-moving to the other base. Returns the units spawned.
+        /// the farthest hostile base, each army attack-moving to the other base.
         /// </summary>
-        public static int SpawnArmies(EntityManager entityManager, Entity prefab, int perSide)
+        public static void SpawnArmies(EntityManager entityManager, Entity prefab, int perSide)
         {
             if (!TryFindOpposingBases(entityManager, out var first, out var second))
             {
                 Debug.LogWarning("[HyperRTS] The armies cheat needs two hostile factions with buildings.");
-                return 0;
+                return;
             }
 
             PlayWorld.TryGetSingleton(entityManager, out TerrainHeight terrain);
-            return Army(entityManager, prefab, perSide, first, second, terrain) +
-                   Army(entityManager, prefab, perSide, second, first, terrain);
+            Army(entityManager, prefab, perSide, first, second, terrain);
+            Army(entityManager, prefab, perSide, second, first, terrain);
         }
 
         /// <summary>Reads the presented (client) world: transport receive rates and how old each unit's latest snapshot is.</summary>
@@ -64,9 +64,17 @@ namespace HyperRTS.Editor.PlayMode
                 return false;
             }
 
-            if (!PlayWorld.TryGetSingleton(entityManager, out NetworkStreamDriver driver) ||
-                !PlayWorld.TryGetSingleton(entityManager, out NetworkTime time) ||
-                !PlayWorld.TryGetSingleton(entityManager, out ClientServerTickRate tickRate))
+            if (!PlayWorld.TryGetSingleton(entityManager, out NetworkStreamDriver driver))
+            {
+                return false;
+            }
+
+            if (!PlayWorld.TryGetSingleton(entityManager, out NetworkTime time))
+            {
+                return false;
+            }
+
+            if (!PlayWorld.TryGetSingleton(entityManager, out ClientServerTickRate tickRate))
             {
                 return false;
             }
@@ -124,7 +132,7 @@ namespace HyperRTS.Editor.PlayMode
             sample.MeanUnitAgeTicks = sample.Units > 0 ? (float)total / sample.Units : 0f;
         }
 
-        private static int Army(EntityManager entityManager, Entity prefab, int count, Base home, Base enemy,
+        private static void Army(EntityManager entityManager, Entity prefab, int count, Base home, Base enemy,
             in TerrainHeight terrain)
         {
             var forward = math.normalizesafe(new float3(enemy.Position.x - home.Position.x, 0f,
@@ -133,43 +141,22 @@ namespace HyperRTS.Editor.PlayMode
             var columns = (int)math.ceil(math.sqrt(count));
             var front = home.Position + forward * FrontDistance;
 
+            var spawned = new NativeArray<Entity>(count, Allocator.Temp);
             for (var i = 0; i < count; i++)
             {
                 var column = i % columns - (columns - 1) * 0.5f;
                 var row = i / columns;
                 var position = front + right * (column * Spacing) + forward * (row * Spacing);
                 position.y = terrain.Height(position.xz);
-                Cheats.Spawn(entityManager, prefab, home.Faction, position);
+                spawned[i] = Cheats.Spawn(entityManager, prefab, home.Faction, position);
             }
 
-            // Spawned units need their entity ids, so the orders go out once the batch exists.
-            using var spawned = SpawnedUnits(entityManager, prefab, home.Faction);
+            // Spawning is structural, so the command buffer is fetched once the batch exists.
             var commands = entityManager.GetBuffer<PlayerCommand>(PlayerOf(entityManager, home.Faction));
             foreach (var unit in spawned)
             {
                 commands.Add(new PlayerCommand { Type = CommandType.AttackMove, Unit = unit, Position = enemy.Position });
             }
-
-            return count;
-        }
-
-        private static NativeArray<Entity> SpawnedUnits(EntityManager entityManager, Entity prefab, byte faction)
-        {
-            var typeId = entityManager.GetComponentData<EntityInfo>(prefab).TypeId;
-            using var query = new EntityQueryBuilder(Allocator.Temp).WithAll<UnitTag, EntityInfo, Faction>()
-                .Build(entityManager);
-            using var units = query.ToEntityArray(Allocator.Temp);
-            var matches = new NativeList<Entity>(units.Length, Allocator.Temp);
-            foreach (var unit in units)
-            {
-                var sameType = entityManager.GetComponentData<EntityInfo>(unit).TypeId == typeId;
-                if (sameType && entityManager.GetComponentData<Faction>(unit).Value == faction)
-                {
-                    matches.Add(unit);
-                }
-            }
-
-            return matches.ToArray(Allocator.Temp);
         }
 
         private readonly struct Base

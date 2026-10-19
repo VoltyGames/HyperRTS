@@ -4,7 +4,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -41,7 +40,7 @@ namespace HyperRTS.Simulation.Tests
             world.CreateTerrain(_ => Ground);
             basePrefab = world.MakePrefab(world.SpawnBuilding(0, float3.zero, new float2(4f, 4f), name: "Base"));
             truck = world.MakePrefab(world.SpawnUnit(0, float3.zero, name: "Truck"));
-            var match = MatchEntity(world);
+            var match = world.MatchEntity();
             var entityManager = world.EntityManager;
             var sides = entityManager.AddBuffer<MatchSide>(match);
             sides.Add(new MatchSide { Value = 1 });
@@ -63,12 +62,6 @@ namespace HyperRTS.Simulation.Tests
             }
         }
 
-        private static Entity MatchEntity(TestWorld world)
-        {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(MapSettings));
-            return query.GetSingletonEntity();
-        }
-
         private static SlotSetup Slot(byte team, byte side) => new()
         {
             Open = true, Control = PlayerControl.AI, Team = team, Name = $"Slot {team}", Side = side,
@@ -85,29 +78,12 @@ namespace HyperRTS.Simulation.Tests
             MatchSetupRequest.Set(setup);
         }
 
-        private static NativeList<Entity> Owned(TestWorld world, Entity prefab, byte faction)
-        {
-            var typeId = world.Get<EntityInfo>(prefab).TypeId;
-            var result = new NativeList<Entity>(Allocator.Temp);
-            using var query = world.EntityManager.CreateEntityQuery(typeof(EntityInfo), typeof(Faction));
-            foreach (var entity in query.ToEntityArray(Allocator.Temp))
-            {
-                var matches = world.Get<EntityInfo>(entity).TypeId == typeId;
-                if (matches && world.Get<Faction>(entity).Value == faction)
-                {
-                    result.Add(entity);
-                }
-            }
-
-            return result;
-        }
-
         private static int CountType(TestWorld world, Entity prefab)
         {
             var count = 0;
             for (byte faction = 0; faction <= 3; faction++)
             {
-                count += Owned(world, prefab, faction).Length;
+                count += world.Owned(prefab, faction).Count;
             }
 
             return count;
@@ -121,15 +97,15 @@ namespace HyperRTS.Simulation.Tests
 
             _world.Tick();
 
-            Assert.AreEqual(1, Owned(_world, _base, 1).Length);
-            Assert.AreEqual(1, Owned(_world, _truck, 2).Length);
-            Assert.AreEqual(0, Owned(_world, _base, 3).Length + Owned(_world, _truck, 3).Length, "slot 3 is closed");
+            Assert.AreEqual(1, _world.Owned(_base, 1).Count);
+            Assert.AreEqual(1, _world.Owned(_truck, 2).Count);
+            Assert.AreEqual(0, _world.Owned(_base, 3).Count + _world.Owned(_truck, 3).Count, "slot 3 is closed");
 
-            var homeBase = _world.Get<LocalTransform>(Owned(_world, _base, 1)[0]);
+            var homeBase = _world.Get<LocalTransform>(_world.Owned(_base, 1)[0]);
             Assert.That(math.distance(homeBase.Position, new float3(-40f, Ground, 0f)), Is.LessThan(1e-3f));
 
             // Spawn 2 faces +X: right is -Z, so the offset (2, 5) lands 2 m towards -Z and 5 m towards +X.
-            var truck = _world.Get<LocalTransform>(Owned(_world, _truck, 2)[0]);
+            var truck = _world.Get<LocalTransform>(_world.Owned(_truck, 2)[0]);
             Assert.That(math.distance(truck.Position, new float3(45f, Ground, -2f)), Is.LessThan(1e-3f));
             var facing = math.mul(truck.Rotation, new float3(0f, 0f, 1f));
             Assert.That(math.distance(facing, new float3(0f, 0f, -1f)), Is.LessThan(1e-3f), "spawn yaw plus item yaw");
@@ -143,7 +119,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick(frames: 3);
 
             Assert.AreEqual(3, CountType(_world, _base));
-            Assert.AreEqual(1, Owned(_world, _truck, 3).Length);
+            Assert.AreEqual(1, _world.Owned(_truck, 3).Count);
         }
 
         [Test]
@@ -160,7 +136,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(2, first[0].Count);
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<AIBuildStep>(_world.Player(2)).Length,
                 "side 2 has no build order, so its bot trains freely");
-            Assert.AreEqual(0, Owned(_world, _base, 2).Length, "side 2 has no kit");
+            Assert.AreEqual(0, _world.Owned(_base, 2).Count, "side 2 has no kit");
         }
 
         [Test]

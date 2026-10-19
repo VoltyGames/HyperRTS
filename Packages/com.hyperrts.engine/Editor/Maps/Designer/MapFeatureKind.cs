@@ -16,6 +16,7 @@ namespace HyperRTS.Editor.Maps.Designer
         private const BindingFlags Public = BindingFlags.Public | BindingFlags.Instance;
 
         private readonly FieldInfo _list;
+        private readonly Type _element;
         private readonly FieldInfo _position;
         private readonly FieldInfo _points;
         private readonly FieldInfo _radius;
@@ -29,13 +30,10 @@ namespace HyperRTS.Editor.Maps.Designer
             Label = label;
             Geometry = geometry;
             Color = color;
-            PositionField = positionField;
-            PointsField = pointsField;
-            RadiusField = radiusField;
 
             _list = typeof(MapSpec).GetField(field, Public)
                 ?? throw new ArgumentException($"MapSpec has no feature list '{field}'.");
-            ElementType = _list.FieldType.GetGenericArguments()[0];
+            _element = _list.FieldType.GetGenericArguments()[0];
             _position = Require(positionField, typeof(MapPoint));
             _points = Require(pointsField, typeof(List<MapPoint>));
             _radius = Require(radiusField, typeof(float));
@@ -51,19 +49,6 @@ namespace HyperRTS.Editor.Maps.Designer
         public MapFeatureGeometry Geometry { get; }
 
         public Color Color { get; }
-
-        public Type ElementType { get; }
-
-        /// <summary>The MapPoint field of Point and Circle features, or null.</summary>
-        public string PositionField { get; }
-
-        /// <summary>The List&lt;MapPoint&gt; field of Polyline and Polygon features, or null.</summary>
-        public string PointsField { get; }
-
-        /// <summary>The radius field of Circle features, or null.</summary>
-        public string RadiusField { get; }
-
-        public bool HasPoints => _points != null;
 
         public static MapFeatureKind Point(string field, string label, Color color, string position = "pos") =>
             new(field, label, MapFeatureGeometry.Point, color, position, null, null);
@@ -118,10 +103,10 @@ namespace HyperRTS.Editor.Maps.Designer
                 return null;
             }
 
-            var field = ElementType.GetField(name, Public);
+            var field = _element.GetField(name, Public);
             if (field == null || field.FieldType != type)
             {
-                throw new ArgumentException($"{ElementType.Name} has no {type.Name} field '{name}' for '{Field}'.");
+                throw new ArgumentException($"{_element.Name} has no {type.Name} field '{name}' for '{Field}'.");
             }
 
             return field;
@@ -129,7 +114,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private FieldInfo Optional(string name, Type type)
         {
-            var field = ElementType.GetField(name, Public);
+            var field = _element.GetField(name, Public);
             return field != null && field.FieldType == type ? field : null;
         }
     }

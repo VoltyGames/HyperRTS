@@ -81,29 +81,34 @@ namespace HyperRTS.Editor.Maps.Build
                 return MapMinimapCapture.Capture(generation.Layout, paths.Minimap);
             }
 
-            var kept = AssetDatabase.LoadAssetAtPath<Texture2D>(paths.Minimap);
-            if (kept == null)
-            {
-                throw new System.InvalidOperationException(
-                    $"HyperRTS: the first build of '{paths.Name}' needs graphics for its minimap ({paths.Minimap}): build it in the editor.");
-            }
-
-            return kept;
+            return Kept(paths.Name, paths.Minimap);
         }
 
-        /// <summary>Screenshots of the map, or null without a graphics device.</summary>
+        /// <summary>Screenshots the map and saves its overview, or keeps the last overview without graphics.</summary>
         private static Texture2D CaptureViews(MapGeneration generation)
         {
+            var project = generation.Project;
             if (!HasGraphics)
             {
-                return null;
+                return Kept(project.Paths.Name, project.Paths.Overview);
             }
 
-            var project = generation.Project;
             var views = MapViews.For(generation.Layout, generation.Shapes, project.Rules);
             var files = MapViews.Capture(project.Spec.name, views, project.Rules);
             var overview = files.Find(f => Path.GetFileNameWithoutExtension(f) == MapViews.OverviewName);
             return MapOverviewPicture.Save(overview, project.Paths.Overview);
+        }
+
+        private static Texture2D Kept(string map, string path)
+        {
+            var kept = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (kept == null)
+            {
+                throw new System.InvalidOperationException(
+                    $"HyperRTS: the first build of '{map}' needs graphics for {path}: build it in the editor.");
+            }
+
+            return kept;
         }
 
         private static MapReport Log(MapReport report)

@@ -93,7 +93,7 @@ Rendering and effects:
   `PresentationQuality.Apply`; `Current` holds the last one, reset to `Default` (full detail) on subsystem
   registration. Apply writes `EffectDetail.Level`, `TerrainDetail.Level`, `InteractionMap.Quality`,
   `RowCropRenderer.Density`/`Distance`, `DetailFade` and `CameraAntialiasingMode.Mode` (all read-only outside the
-  engine), sets every active terrain's detail density and distance (call it again after a scene loads), and has
+  engine), sets every active terrain's detail density and distance (and again on every scene load), and has
   `MainLightShadows` set the active URP asset's shadow map size in memory, never dirtying it and restoring the
   authored size on quit. `CameraAntialiasing` on a camera follows `CameraAntialiasingMode.Mode`.
 - **Wind**: `Wind` (on the scene's directional `WindZone`) publishes `_HyperRTSWindDirection` (xz downwind),

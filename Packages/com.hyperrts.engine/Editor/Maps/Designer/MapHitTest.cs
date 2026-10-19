@@ -15,16 +15,6 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private static readonly List<Vector2> Points = new();
 
-        /// <summary>The handles of a feature in map metres: its points, plus a radius handle east of a circle.</summary>
-        public static void Handles(MapSpec spec, MapFeatureRef feature, List<Vector2> into)
-        {
-            feature.Kind.ReadPoints(spec, feature.Index, into);
-            if (feature.Kind.Geometry == MapFeatureGeometry.Circle)
-            {
-                into.Add(into[0] + new Vector2(feature.Kind.Radius(spec, feature.Index), 0f));
-            }
-        }
-
         public static MapFeatureRef FeatureAt(MapSpec spec, MapCanvasView view, Vector2 local)
         {
             var edge = Find(spec, view, local, false);

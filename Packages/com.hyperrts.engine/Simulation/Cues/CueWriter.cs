@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
@@ -77,7 +78,7 @@ namespace HyperRTS.Simulation.Cues
 
         /// <summary>Plays the slot's cue of an entity type; a type id of 0 is ignored and returns false.</summary>
         public bool Add(int typeId, CueSlot slot, float3 position, float3 direction, byte faction,
-            bool stealthed = false)
+            bool stealthed = false, float radius = 0f, Entity target = default)
         {
             if (typeId == 0)
             {
@@ -87,25 +88,15 @@ namespace HyperRTS.Simulation.Cues
             _events[_queue].Add(new CueEvent
             {
                 TypeId = typeId, Slot = slot, Faction = faction, Position = position, Direction = direction,
-                Stealthed = stealthed,
+                Stealthed = stealthed, Radius = radius, Target = target,
             });
             return true;
         }
 
         /// <summary>Reports where a shot of a shooter type landed; a type id of 0 is ignored.</summary>
-        public void AddImpact(int typeId, float3 position, float3 direction, float radius, byte faction, Entity target)
-        {
-            if (typeId == 0)
-            {
-                return;
-            }
-
-            _events[_queue].Add(new CueEvent
-            {
-                TypeId = typeId, Slot = CueSlot.Impact, Faction = faction, Position = position, Direction = direction,
-                Radius = radius, Target = target,
-            });
-        }
+        public void AddImpact(int typeId, in DamageEvent hit, float3 direction) =>
+            Add(typeId, CueSlot.Impact, hit.Position, direction, hit.SourceFaction, radius: hit.Radius,
+                target: hit.Target);
 
         private bool HasCue(Entity source, CueSlot slot)
         {

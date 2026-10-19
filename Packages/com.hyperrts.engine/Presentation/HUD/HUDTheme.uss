@@ -14,7 +14,6 @@
 
 .hud-icon {
     background-color: rgba(255, 255, 255, 0.06);
-    -unity-background-scale-mode: scale-to-fit;
     border-radius: 4px;
 }
 
@@ -127,10 +126,6 @@
 
 .hud-command:active {
     background-color: rgba(120, 200, 255, 0.25);
-}
-
-.hud-command:disabled {
-    opacity: 0.4;
 }
 
 .hud-command--active {

@@ -1,4 +1,5 @@
-/* HyperRTS in-game HUD layout: positions, sizes and spacing on an 8px rhythm. The look is in HUDTheme.uss. */
+/* HyperRTS in-game HUD layout: positions, sizes, spacing on an 8px rhythm, icon scaling and disabled state. The look
+   is in HUDTheme.uss. */
 
 .hud-root {
     position: absolute;
@@ -15,6 +16,7 @@
 .hud-icon {
     align-items: center;
     justify-content: center;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .hud-icon__initials {
@@ -210,6 +212,10 @@
     align-items: center;
     justify-content: flex-start;
     white-space: normal;
+}
+
+.hud-command:disabled {
+    opacity: 0.4;
 }
 
 .hud-command--text {

@@ -118,8 +118,7 @@ namespace HyperRTS.Simulation.Combat
                 {
                     var hit = CombatMath.Hit(weapon, entity, faction.Value, origin, target, targetPosition);
                     Damage.Add(hit);
-                    Cues.AddImpact(Cues.TypeIdFor(entity, CueSlot.Impact), hit.Position, place.Forward(), hit.Radius,
-                        faction.Value, target);
+                    Cues.AddImpact(Cues.TypeIdFor(entity, CueSlot.Impact), hit, place.Forward());
                 }
                 else
                 {

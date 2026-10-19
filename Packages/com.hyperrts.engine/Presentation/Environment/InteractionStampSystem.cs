@@ -124,12 +124,7 @@ namespace HyperRTS.Presentation.Environment
 
         private static bool IsBigCrater(in CueEvent cue)
         {
-            if (cue.Slot != CueSlot.Impact || cue.Surface != ImpactSurface.Ground)
-            {
-                return false;
-            }
-
-            return cue.Radius >= InteractionMath.BigCraterRadius;
+            return CueRules.IsGroundImpact(cue) && cue.Radius >= InteractionMath.BigCraterRadius;
         }
     }
 }

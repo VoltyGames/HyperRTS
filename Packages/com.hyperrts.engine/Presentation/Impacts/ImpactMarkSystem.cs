@@ -106,8 +106,7 @@ namespace HyperRTS.Presentation.Impacts
             var registry = SystemAPI.GetSingleton<PrefabRegistry>();
             foreach (var impact in cues)
             {
-                var onGround = impact.Slot == CueSlot.Impact && impact.Surface == ImpactSurface.Ground;
-                if (!onGround || !CueRules.IsSeenLocally(impact, view, fog, relations))
+                if (!CueRules.IsGroundImpact(impact) || !CueRules.IsSeenLocally(impact, view, fog, relations))
                 {
                     continue;
                 }

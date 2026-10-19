@@ -60,20 +60,7 @@ namespace HyperRTS.Simulation.Tests
             }
         }
 
-        private List<Entity> Owned(string name)
-        {
-            var result = new List<Entity>();
-            var typeId = EntityInfo.TypeIdFromName(name);
-            foreach (var entity in _world.All<EntityInfo>())
-            {
-                if (_world.Get<EntityInfo>(entity).TypeId == typeId && _world.Get<Faction>(entity).Value == 2)
-                {
-                    result.Add(entity);
-                }
-            }
-
-            return result;
-        }
+        private List<Entity> Owned(string name) => _world.Owned(EntityInfo.TypeIdFromName(name), 2);
 
         [Test]
         public void BuildOrder_PlacesBuildingWithBuilder_ThenTrainsUnit()

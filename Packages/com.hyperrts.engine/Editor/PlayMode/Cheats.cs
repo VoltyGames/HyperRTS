@@ -112,13 +112,14 @@ namespace HyperRTS.Editor.PlayMode
             entityManager.SetComponentData(entity, producer);
         }
 
-        public static void Spawn(EntityManager entityManager, Entity prefab, byte faction, float3 position)
+        public static Entity Spawn(EntityManager entityManager, Entity prefab, byte faction, float3 position)
         {
             var entity = entityManager.Instantiate(prefab);
             var transform = entityManager.GetComponentData<LocalTransform>(prefab);
             transform.Position = position;
             entityManager.SetComponentData(entity, transform);
             entityManager.SetComponentData(entity, new Faction { Value = faction });
+            return entity;
         }
 
         /// <summary>Where the game camera looks on the ground, or the map centre without a camera.</summary>

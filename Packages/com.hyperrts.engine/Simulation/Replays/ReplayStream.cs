@@ -54,11 +54,12 @@ namespace HyperRTS.Simulation.Replays
             var sample = Frames[frame];
             for (var i = sample.CueStart; i < sample.CueStart + sample.CueCount; i++)
             {
-                var cue = Cues[i].Unpack();
-                if (!impactsOnly || cue.Slot == CueSlot.Impact)
+                if (impactsOnly && Cues[i].Slot != (byte)CueSlot.Impact)
                 {
-                    queue.Add(cue);
+                    continue;
                 }
+
+                queue.Add(Cues[i].Unpack());
             }
         }
 

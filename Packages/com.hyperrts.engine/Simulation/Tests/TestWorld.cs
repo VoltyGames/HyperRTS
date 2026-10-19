@@ -96,6 +96,13 @@ namespace HyperRTS.Simulation.Tests
             return query.GetSingleton<T>();
         }
 
+        /// <summary>The match singleton carrying <see cref="MapSettings"/>.</summary>
+        public Entity MatchEntity()
+        {
+            using var query = EntityManager.CreateEntityQuery(typeof(MapSettings));
+            return query.GetSingletonEntity();
+        }
+
         public bool IsEnabled<T>(Entity entity) where T : unmanaged, IComponentData, IEnableableComponent =>
             EntityManager.IsComponentEnabled<T>(entity);
 

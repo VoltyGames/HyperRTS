@@ -65,7 +65,7 @@ Mirror the engine's layering:
 | --- | --- |
 | Add or replace a panel | Derive `HUDPanel` (pass `boxed: false` for a frameless overlay), subclass `HUDController`, override `CreatePanels` and `Add(panel, parent)`. Put the subclass on your HUD prefab |
 | Translate text | Subclass `HUDText`, override `Get(key)` and `Name(key, authored)`, set `HUDText.Current` before the HUD builds (`[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]`). Keys: [modules](modules/client.md#presentation) |
-| Restyle | `HUD.uss` holds layout (positions, sizes, spacing) and `HUDTheme.uss` the look (colours, fonts, borders). Assign your own sheet as `HUDController.themeSheet` to replace the look, overriding layout rules only where your layout differs. Set `HUDController.Theme` to put one class on `hud-root` at runtime (a per-player or per-side theme) |
+| Restyle | `HUD.uss` holds layout (positions, sizes, spacing, icon scaling, the disabled state) and `HUDTheme.uss` the look (colours, fonts, borders). Assign your own sheet as `HUDController.themeSheet` to replace the look, overriding layout rules only where your layout differs. Set `HUDController.Theme` to put one class on `hud-root` at runtime (a per-player or per-side theme) |
 | Team colours | Write a `TeamColorOverride` singleton (colour-blind palettes, own / ally / enemy) |
 
 UI: use UI Toolkit for the HUD, menus and world-space UI. uGUI only where a UI needs Animation or Timeline. No

@@ -93,8 +93,7 @@ namespace HyperRTS.Simulation.Combat
                 hit.Origin = transform.Position;
                 Damage.Add(hit);
                 Ecb.DestroyEntity(entity);
-                Cues.AddImpact(projectile.ImpactTypeId, hit.Position, transform.Forward(), hit.Radius, hit.SourceFaction,
-                    hit.Target);
+                Cues.AddImpact(projectile.ImpactTypeId, hit, transform.Forward());
             }
         }
     }

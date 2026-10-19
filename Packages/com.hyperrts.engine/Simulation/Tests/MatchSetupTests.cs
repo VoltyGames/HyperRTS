@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Tests
         public void AISlots_UseTheBakedTuningOfTheirDifficulty()
         {
             _world.CreateMatch(1, 2);
-            var tunings = _world.EntityManager.GetBuffer<AIDifficultyTuning>(MatchEntity());
+            var tunings = _world.EntityManager.GetBuffer<AIDifficultyTuning>(_world.MatchEntity());
             tunings.Clear();
             tunings.Add(new AIDifficultyTuning
             {
@@ -130,7 +130,7 @@ namespace HyperRTS.Simulation.Tests
 
             var stock = _world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1));
             Assert.AreEqual(2500, ResourceMath.GetAmount(stock, supplies));
-            Assert.IsFalse(_world.Get<MapSettings>(MatchEntity()).FogOfWar);
+            Assert.IsFalse(_world.Get<MapSettings>(_world.MatchEntity()).FogOfWar);
             Object.DestroyImmediate(supplies);
         }
 
@@ -173,13 +173,6 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(MatchPhase.Ended, _world.Singleton<MatchState>().Phase);
             Assert.AreEqual(2, _world.Singleton<MatchState>().WinningTeam);
         }
-
-        private Entity MatchEntity()
-        {
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(MapSettings));
-            return query.GetSingletonEntity();
-        }
-
         private FactionRelations Relations()
         {
             using var query = _world.EntityManager.CreateEntityQuery(typeof(FactionRelations));

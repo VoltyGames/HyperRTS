@@ -4,6 +4,7 @@ using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Simulation.Common;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Presentation.Rendering
 {
@@ -59,7 +60,7 @@ namespace HyperRTS.Presentation.Rendering
 
         /// <summary>
         /// Writes every knob, scales every active terrain's grass and sets the shadow map size on the active URP
-        /// asset. Call it again after a scene loads, since map terrains are authored at full detail.
+        /// asset. Terrains in scenes loaded later get <see cref="Current"/> too.
         /// </summary>
         public static void Apply(in PresentationQuality quality)
         {
@@ -93,6 +94,11 @@ namespace HyperRTS.Presentation.Rendering
             CameraAntialiasingMode.Reset(Default.Antialiasing);
             WriteKnobs(Default);
             Current = Default;
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
+
+        // Map terrains are authored at full detail.
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode) => Apply(Current);
     }
 }

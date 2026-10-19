@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public static MapSpecDocument Open(string specPath) => new(specPath);
 
-        public void Load(string specPath)
+        private void Load(string specPath)
         {
             if (!MapPaths.IsSpec(specPath))
             {
@@ -36,21 +36,20 @@ namespace HyperRTS.Editor.Maps.Designer
             Changed?.Invoke();
         }
 
-        /// <summary>Reloads when the file changed on disk since it was read; false when it did not.</summary>
-        public bool ReloadIfChangedOnDisk()
+        /// <summary>Reloads when the file changed on disk since it was read.</summary>
+        public void ReloadIfChangedOnDisk()
         {
             if (!File.Exists(Path))
             {
-                return false;
+                return;
             }
 
             if (File.GetLastWriteTimeUtc(Path).Ticks == _diskTicks)
             {
-                return false;
+                return;
             }
 
             Load(Path);
-            return true;
         }
     }
 }

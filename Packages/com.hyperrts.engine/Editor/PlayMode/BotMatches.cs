@@ -20,6 +20,7 @@ namespace HyperRTS.Editor.PlayMode
     internal static class BotMatches
     {
         private const string Folder = "Logs/BotMatches";
+        private const double TickSeconds = 0.25;
 
         [Serializable]
         public class Settings
@@ -70,6 +71,7 @@ namespace HyperRTS.Editor.PlayMode
         private static byte[] _bakedSides;
         private static int _current = -1;
         private static bool _setupSeen;
+        private static double _nextTick;
 
         public static bool IsRunning => _report != null;
 
@@ -174,23 +176,42 @@ namespace HyperRTS.Editor.PlayMode
             NetworkSession.StartLocal(SessionScene.ReloadActive);
         }
 
+        // Polled at the Play page's rate: reading the world completes all of its jobs.
         private static void Tick()
         {
-            if (!PlayWorld.TryGetAuthoritative(out var entityManager) ||
-                !PlayWorld.TryGetSingleton(entityManager, out MatchSetup setup) ||
-                !PlayWorld.TryGetSingleton(entityManager, out MatchState state))
+            if (EditorApplication.timeSinceStartup < _nextTick)
+            {
+                return;
+            }
+
+            _nextTick = EditorApplication.timeSinceStartup + TickSeconds;
+            if (!PlayWorld.TryGetAuthoritative(out var entityManager))
+            {
+                return;
+            }
+
+            if (!PlayWorld.TryGetSingleton(entityManager, out MatchSetup setup))
+            {
+                return;
+            }
+
+            if (!PlayWorld.TryGetSingleton(entityManager, out MatchState state))
             {
                 return;
             }
 
             // The world from before the restart still answers until the new scene has applied its setup.
-            _setupSeen |= setup.Applied && setup.Seed == _report.matches[_current].seed;
             if (!_setupSeen)
             {
-                return;
+                _setupSeen = setup.Applied && setup.Seed == _report.matches[_current].seed;
+                if (!_setupSeen)
+                {
+                    return;
+                }
+
+                LocalGameSpeed.SetScale(_report.settings.speed);
             }
 
-            LocalGameSpeed.SetScale(_report.settings.speed);
             var minutes = (float)entityManager.World.Time.ElapsedTime / 60f;
             var timedOut = minutes >= _report.settings.timeLimitMinutes;
             Status = $"Match {_current + 1}/{_report.settings.matches}: {minutes:F1} min";
@@ -212,8 +233,7 @@ namespace HyperRTS.Editor.PlayMode
             using var query = new EntityQueryBuilder(Allocator.Temp).WithAll<Player, PlayerSide, PlayerStats>()
                 .Build(entityManager);
             using var players = query.ToEntityArray(Allocator.Temp);
-            using var relations = new EntityQueryBuilder(Allocator.Temp).WithAll<FactionRelations>().Build(entityManager);
-            var teams = relations.GetSingleton<FactionRelations>();
+            PlayWorld.TryGetSingleton(entityManager, out FactionRelations teams);
             foreach (var player in players)
             {
                 var faction = entityManager.GetComponentData<Player>(player).Faction;

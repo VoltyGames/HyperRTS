@@ -10,6 +10,10 @@ namespace HyperRTS.Simulation.Cues
         public static bool IsVoice(CueSlot slot) =>
             slot is CueSlot.Ready or CueSlot.Select or CueSlot.Move or CueSlot.Attack;
 
+        /// <summary>A shot that landed on the ground, the only impact that marks or deforms terrain.</summary>
+        public static bool IsGroundImpact(in CueEvent cue) =>
+            cue.Slot == CueSlot.Impact && cue.Surface == ImpactSurface.Ground;
+
         /// <summary>
         /// Voices reach their owner only; everything else reaches whoever could see its source there, by the same
         /// fog and stealth rule as entities. Without a fog grid every non-voice cue does.

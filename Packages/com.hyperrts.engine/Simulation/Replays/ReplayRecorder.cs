@@ -92,13 +92,10 @@ namespace HyperRTS.Simulation.Replays
                     Name = player.Name.ToString(),
                     Color = player.Color,
                     Side = sides[i].Value,
-                    Control = entityManager.HasComponent<LocalPlayer>(entities[i])
-                        ? PlayerControl.LocalHuman
-                        : PlayerControl.Remote,
+                    Control = Control(entityManager, entities[i]),
                 };
-                if (entityManager.HasComponent<AIPlayer>(entities[i]))
+                if (info.Control == PlayerControl.AI)
                 {
-                    info.Control = PlayerControl.AI;
                     info.Difficulty = entityManager.GetComponentData<AIPlayer>(entities[i]).Difficulty;
                 }
 
@@ -106,6 +103,16 @@ namespace HyperRTS.Simulation.Replays
             }
 
             replay.Players.Sort((a, b) => a.Faction.CompareTo(b.Faction));
+        }
+
+        private static PlayerControl Control(EntityManager entityManager, Entity player)
+        {
+            if (entityManager.HasComponent<AIPlayer>(player))
+            {
+                return PlayerControl.AI;
+            }
+
+            return entityManager.HasComponent<LocalPlayer>(player) ? PlayerControl.LocalHuman : PlayerControl.Remote;
         }
     }
 }

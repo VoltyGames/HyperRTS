@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
@@ -113,6 +114,26 @@ namespace HyperRTS.Simulation.Tests
         {
             using var query = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<T>());
             return query.ToEntityArray(Allocator.Temp);
+        }
+
+        /// <summary>Live entities of <paramref name="prefab"/>'s type owned by <paramref name="faction"/>.</summary>
+        public static List<Entity> Owned(this TestWorld world, Entity prefab, byte faction) =>
+            world.Owned(world.Get<EntityInfo>(prefab).TypeId, faction);
+
+        /// <summary>Live entities of an entity type owned by <paramref name="faction"/>.</summary>
+        public static List<Entity> Owned(this TestWorld world, int typeId, byte faction)
+        {
+            var result = new List<Entity>();
+            foreach (var entity in world.All<EntityInfo>())
+            {
+                var ofType = world.Get<EntityInfo>(entity).TypeId == typeId;
+                if (ofType && world.Get<Faction>(entity).Value == faction)
+                {
+                    result.Add(entity);
+                }
+            }
+
+            return result;
         }
     }
 }

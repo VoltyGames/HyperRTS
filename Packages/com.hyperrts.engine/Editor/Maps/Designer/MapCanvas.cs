@@ -154,7 +154,8 @@ namespace HyperRTS.Editor.Maps.Designer
             }
 
             MapFeaturePainter.DrawFeatures(painter, spec, _view);
-            MapFeaturePainter.DrawSelection(painter, spec, _view, _selection.Current);        }
+            MapFeaturePainter.DrawSelection(painter, spec, _view, _selection.Current);
+        }
 
         private void OnResized()
         {
@@ -217,7 +218,8 @@ namespace HyperRTS.Editor.Maps.Designer
         private void OnPointerUp(PointerUpEvent evt)
         {
             this.ReleasePointer(evt.pointerId);
-            _panning = false;        }
+            _panning = false;
+        }
 
         private void OnKeyDown(KeyDownEvent evt)
         {

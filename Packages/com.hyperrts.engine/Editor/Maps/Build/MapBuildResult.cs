@@ -29,7 +29,7 @@ namespace HyperRTS.Editor.Maps.Build
 
         public Texture2D Minimap { get; }
 
-        /// <summary>The map seen whole from the match camera (loading screens, menus); null in a build without graphics.</summary>
+        /// <summary>The map seen whole from the match camera (loading screens, menus); the last one saved in a build without graphics.</summary>
         public Texture2D Overview { get; }
     }
 }
