@@ -170,6 +170,24 @@ namespace HyperRTS.Editor.Tests
             Assert.IsTrue(issues.Errors.Any(e => e.Contains("Prop 1") && e.Contains("besideRoad")), issues.ToString());
         }
 
+        [Test]
+        public void PaletteSides_NeedValidUniqueIdsAndKnownKitKeys()
+        {
+            var palette = new MapPalette();
+            palette.sides.Add(new MapPaletteSide { side = 0 });
+            var side = new MapPaletteSide { side = 2 };
+            side.startKit.Add(new MapStartItem { key = "Bunker" });
+            palette.sides.Add(side);
+            palette.sides.Add(new MapPaletteSide { side = 2, buildOrder = "Assets/Missing.asset" });
+
+            var issues = CheckAssets(MapRoadFixture.Climate(), palette);
+
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("side 0") && e.Contains("1 to 255")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("side 2 is listed twice")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("'Bunker' is not in the palette")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Assets/Missing.asset")), issues.ToString());
+        }
+
         private static MapIssues CheckAssets(MapClimate climate, MapPalette palette)
         {
             var issues = new MapIssues();

@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Maps.Checks
             Climate.woodlandKits.ForEach(WoodlandKit);
             Palette.entries.ForEach(EntryKeys);
             Palette.entries.ForEach(entry => MapStretchPartsCheck.Check(entry, Issues));
-            Palette.startKit.ForEach(item => Entry(item.key, "start kit"));
+            MapSideCheck.Check(Palette, Issues);
             Palette.settlementKits.ForEach(SettlementKit);
         }
 

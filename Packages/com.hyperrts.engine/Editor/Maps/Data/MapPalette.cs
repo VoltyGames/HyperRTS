@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>
-    /// The game's map vocabulary: what each spec <c>kind</c> places, what every player starts with, and the
+    /// The game's map vocabulary: what each spec <c>kind</c> places, what each side starts with, and the
     /// settlement kits. Exactly one <c>*.palette.json</c> per project; its entries are every library prop and its
     /// settlement kits every library settlement (see <see cref="MapLibrary.Palette"/>). Prefabs with HyperRTS authoring
     /// go into the SubScene; the rest are scenery.
@@ -27,8 +28,8 @@ namespace HyperRTS.Editor.Maps.Data
         [NonSerialized]
         public List<MapPaletteEntry> entries = new();
 
-        [Tooltip("Placed for every spawn, owned by that slot. Offsets are metres right (x) and forward (y) of the spawn.")]
-        public List<MapStartItem> startKit = new();
+        [Tooltip("Start kit and AI build order per side. Slot n plays sides[(n - 1) % count] when its scene plays as baked.")]
+        public List<MapPaletteSide> sides = new();
 
         [Tooltip("Every slot's starting stock.")]
         [NonSerialized]
@@ -53,6 +54,10 @@ namespace HyperRTS.Editor.Maps.Data
                 type = refs.Asset<ResourceType>(resource.type, "startingResources.type"),
                 amount = resource.amount,
             });
+            for (var i = 0; i < sides.Count; i++)
+            {
+                sides[i].buildOrderAsset = refs.Asset<AIBuildOrder>(sides[i].buildOrder, $"sides[{i}].buildOrder");
+            }
         }
     }
 }

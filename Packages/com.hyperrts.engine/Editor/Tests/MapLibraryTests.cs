@@ -75,6 +75,32 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
+        public void PaletteSides_ReadTheirKitsAndBuildOrders()
+        {
+            Write("Library/Game.palette.json",
+                "{\"sides\": [{\"side\": 3, \"startKit\": [{\"key\": \"Shed\", \"offset\": {\"x\": 2, \"y\": 5}, \"yaw\": 90}], \"buildOrder\": \"\"}]}");
+
+            var side = MapLibrary.Load(_root).Palette().sides.Single();
+
+            Assert.AreEqual(3, side.side);
+            Assert.AreEqual("Shed", side.startKit.Single().key);
+            Assert.AreEqual(new UnityEngine.Vector2(2f, 5f), side.startKit.Single().offset);
+            Assert.AreEqual(90f, side.startKit.Single().yaw);
+            Assert.IsNull(side.buildOrderAsset, "an empty build order lets the side's bots train freely");
+        }
+
+        [Test]
+        public void AFieldTheItemDoesNotRead_Throws_LikeTheOldPaletteStartKit()
+        {
+            Write("Library/Game.palette.json", "{\"startKit\": [{\"key\": \"Shed\"}]}");
+
+            var error = Assert.Throws<InvalidOperationException>(() => MapLibrary.Load(_root).Palette());
+
+            StringAssert.Contains("'startKit' is not a palette field", error.Message);
+            StringAssert.Contains("Game.palette.json", error.Message);
+        }
+
+        [Test]
         public void ADuplicateKey_ThrowsNamingBothFiles()
         {
             Write("Elsewhere/Meadow.layer.json", "{}");

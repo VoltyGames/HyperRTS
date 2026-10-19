@@ -11,7 +11,7 @@ The base: ownership, identity, health and shared helpers.
 | `Faction` | Owner of an ownable entity: 0 = neutral, up to `Faction.Max` (29). `Faction.Bit` for 32-bit sets |
 | `FactionRelations`, `Relation` | Singleton team per faction: `IsHostile`, `IsAllied`, `GetRelation` (Own, Ally, Enemy, Neutral) |
 | `Player`, `PlayerRegistry` | Player identity (faction, name, colour); faction → player singleton, rebuilt first each frame |
-| `PlayerSide` | The game's army or nation id for a player; the engine never reads it |
+| `PlayerSide` | The game's army or nation id for a player; it picks the player's start kit and AI build order from the Match's sides |
 | `LocalPlayer`, `Defeated` | The player this client controls; enabled once a player loses |
 | `PlayerStats` | Replicated totals: trained, built, delivered, lost, destroyed |
 | `MapSettings` | Singleton: playable bounds, cell sizes, water level, flooding, max slope |
@@ -43,8 +43,10 @@ The base: ownership, identity, health and shared helpers.
 
 | Type | Role |
 | --- | --- |
-| `MatchAuthoring` | One per map: size, nav and fog cells, fog, player slots, AI tuning, replays, join timeout |
-| `PlayerSlot`, `PlayerControl` | Name, team, colour, control (LocalHuman, AI, Remote), stock, AI difficulty, build order. Index + 1 = faction |
+| `MatchAuthoring` | One per map: size, nav and fog cells, fog, player slots, sides, AI tuning, replays, join timeout |
+| `PlayerSlot`, `PlayerControl` | Name, team, colour, control (LocalHuman, AI, Remote), stock, AI difficulty, build order, side, spawn (position, yaw). Index + 1 = faction |
+| `SideContent`, `StartKitItem` | Per side: start kit (prefab, offset right/forward of the spawn, yaw) and AI build order |
+| `MatchSide`, `SideStartItem`, `SideBuildStep`, `PlayerSpawn` | Baked sides on the Match entity; each player's spawn. Kit and build order prefabs are referenced, so they are in the `PrefabRegistry` |
 | `MatchState` | Replicated: `Phase`, winning team, `Started` (every human joined) |
 | `MatchRules` | Low-power production rate, sell refund, replays, join timeout |
 | `MatchSetup`, `MatchSetupRequest` | Runtime configuration from a lobby; set the request before the map loads |
@@ -54,6 +56,10 @@ The base: ownership, identity, health and shared helpers.
 - `MatchSetupSystem` (first in the order phase) applies `MatchSetup` alike on server and clients: drops closed slots
   and what they own, sets names, colours, teams and `PlayerSide`, adds `AIPlayer`, scales stock, overrides fog. `MatchSetup.Weather` (empty for the map's own) is read by
   the scene's `WeatherSet` when it loads, not by a system.
+- `SideContentSystem` (server and single player, after the setup, or at once when the scene plays as baked) gives
+  each player its side's build order (none: an empty one, so the bot trains freely) and spawns its side's kit at its
+  `PlayerSpawn` on the `TerrainHeight`, owned by it. Closed slots get nothing; a side the Match doesn't list (0 too)
+  throws. On the server kits are ordinary server-spawned ghosts; replays claim them like scene entities.
 - `VictorySystem` defeats a player who lost every `VictoryCritical` entity (never one who owned none) and ends the
   match when one team is left. `SurrenderSystem` handles `CommandType.Surrender`.
 - `PopulationSystem` recounts each frame; delivery carriers are free.

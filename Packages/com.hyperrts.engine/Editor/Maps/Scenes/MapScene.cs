@@ -1,10 +1,8 @@
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Resources;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -133,14 +131,10 @@ namespace HyperRTS.Editor.Maps.Scenes
             match.maxSlope = project.Rules.maxSlope;
             match.waterLevel = layout.WaterHeight;
             match.floodBelowWaterLevel = true;
-            match.players = layout.Spawns.Select(spawn => new PlayerSlot
-            {
-                name = spawn.Slot == 1 ? "Player" : $"AI {spawn.Slot - 1}",
-                team = spawn.Team,
-                color = PlayerSlot.Palette[(spawn.Slot - 1) % PlayerSlot.Palette.Length],
-                control = spawn.Slot == 1 ? PlayerControl.LocalHuman : PlayerControl.AI,
-                startingResources = new List<ResourceQuantity>(project.Palette.startingResources),
-            }).ToList();
+            var (heights, groundLevel) = (generation.Heights, layout.GroundLevel);
+            match.players = MapMatchContent.Players(layout.Spawns, project.Palette,
+                point => heights.Height(point) - groundLevel);
+            match.sides = MapMatchContent.Sides(project.Palette);
             EditorUtility.SetDirty(match);
         }
     }

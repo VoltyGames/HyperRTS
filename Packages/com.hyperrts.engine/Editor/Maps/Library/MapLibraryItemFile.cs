@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using HyperRTS.Editor.Maps.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -24,9 +26,11 @@ namespace HyperRTS.Editor.Maps.Library
         {
             var (item, refs) = Create(type);
             refs.file = file;
+            JToken root;
+            var fields = Fields(item);
             try
             {
-                MapJsonFormat.Parse(json);
+                root = MapJsonFormat.Parse(json);
                 JsonUtility.FromJsonOverwrite(json, item);
                 JsonUtility.FromJsonOverwrite(json, refs);
             }
@@ -35,8 +39,32 @@ namespace HyperRTS.Editor.Maps.Library
                 throw new InvalidOperationException($"HyperRTS: map library file '{file}' is not valid JSON: {e.Message}", e);
             }
 
+            RejectUnknown(type, root, fields, file);
             return (item, refs);
         }
+
+        /// <summary>A field neither the item nor its refs read is a typo or an old format, so it fails rather than vanishing.</summary>
+        private static void RejectUnknown(Type type, JToken root, HashSet<string> fields, string file)
+        {
+            if (root is not JObject properties)
+            {
+                return;
+            }
+
+            var attribute = MapLibraryItemAttribute.Require(type);
+            fields.UnionWith(attribute.Refs);
+            foreach (var property in properties.Properties())
+            {
+                if (!fields.Contains(property.Name))
+                {
+                    throw new InvalidOperationException(
+                        $"HyperRTS: map library file '{file}': '{property.Name}' is not a {attribute.Name} field.");
+                }
+            }
+        }
+
+        private static HashSet<string> Fields(object item) =>
+            ((JObject)MapJsonFormat.Parse(JsonUtility.ToJson(item))).Properties().Select(p => p.Name).ToHashSet();
 
         public static void Write(string file, Type type, object item, MapLibraryRefs refs) =>
             File.WriteAllText(file, ToJson(type, item, refs));

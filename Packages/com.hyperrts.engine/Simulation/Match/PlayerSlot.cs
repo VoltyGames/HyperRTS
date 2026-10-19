@@ -36,7 +36,18 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("AI only: tuning preset from the Match's AI settings.")]
         public AIDifficulty difficulty = AIDifficulty.Normal;
 
-        [Tooltip("AI only: opening to build before training freely; empty trains from the start.")]
+        [Tooltip("AI only: opening to build before training freely; empty trains from the start. The Match's sides " +
+                 "replace it when it has any.")]
         public AIBuildOrder buildOrder;
+
+        [Tooltip("The game's army id, which picks the start kit and AI build order from the Match's sides. A match " +
+                 "setup replaces it.")]
+        public byte side;
+
+        [Tooltip("Where the side's start kit goes (world position on the ground).")]
+        public Vector3 spawnPosition;
+
+        [Tooltip("Degrees: the start kit's forward.")]
+        public float spawnYaw;
     }
 }

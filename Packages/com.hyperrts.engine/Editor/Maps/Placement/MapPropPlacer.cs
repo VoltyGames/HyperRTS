@@ -9,8 +9,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Placement
 {
     /// <summary>
-    /// Places the spec's palette prefabs: start kits, resources, props, bridges, prop rows and scatters. Random choices
-    /// are made once in the authored sector and copied, so every copy matches.
+    /// Places the spec's palette prefabs (resources, props, bridges, prop rows and scatters) clear of the start kits'
+    /// ground. Random choices are made once in the authored sector and copied, so every copy matches.
     /// </summary>
     public sealed class MapPropPlacer
     {
@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Maps.Placement
             MapIssues issues)
         {
             var placer = new MapPropPlacer(layout, shapes, palette, climate, issues);
-            placer.PlaceStartKits();
+            placer.ReserveStartKits();
             placer.PlaceResources();
             placer.PlaceProps();
             placer.PlaceBridges();
@@ -51,17 +51,17 @@ namespace HyperRTS.Editor.Maps.Placement
             return placer._placements;
         }
 
-        private void PlaceStartKits()
+        /// <summary>Kits spawn in the match, not the scene; their ground is kept clear of what is placed after.</summary>
+        private void ReserveStartKits()
         {
             foreach (var spawn in _layout.Spawns)
             {
                 var forward = MapGeometry.Forward(spawn.Yaw);
                 var right = MapGeometry.Right(forward);
-                foreach (var item in _palette.startKit)
+                foreach (var item in _palette.sides.SelectMany(side => side.startKit))
                 {
-                    var entry = _palette.Entry(item.key);
                     var position = spawn.Position + right * item.offset.x + forward * item.offset.y;
-                    _placements.Add(new MapPlacement(entry, position, spawn.Yaw + item.yaw, 1f) { Owner = spawn.Slot });
+                    Clearance.Reserve(position, _palette.Entry(item.key).Radius);
                 }
             }
         }

@@ -80,7 +80,7 @@ field (`MapNoiseChannel`): a new feature takes a new channel, since changing a c
 
 | Feature | Fields | Builds |
 | --- | --- | --- |
-| `spawns` | `pos`, `yaw` | The palette's start kit; the base is levelled and kept clear |
+| `spawns` | `pos`, `yaw` | The slot's spawn: its side's start kit spawns there in the match; the base is levelled and kept clear |
 | `resources` | `pos`, `kind`, `amount`, `shared` | The palette prefab `kind` (a resource node) holding `amount`; random facing |
 | `props` | `pos`, `yaw`, `kind`, `shared` | A palette prefab; one with a pad gets ground round it, one with access a track to the nearest road |
 | `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings`, `shared` | Meandering channel of varying width, banks, floodplain, reeds, water mesh; each crossing (`t`, `kind` bridge or ford, `width`, `prop`) sits at `t` along the river; fords thin the water and streak it with foam (vertex A carries how shallow the bed is, the water material's `_FordAlpha` is the alpha mid-ford; the climate's `fordShallowsWidth` and `fordRapidsLength` set how far the shallows and the foam reach) |
@@ -239,10 +239,10 @@ first asked for. A missing, duplicate or unreadable file throws naming the file.
 | `settlement` | `MapSettlementKit` | Plot layout along a street, street poles and pipe (`streetPipeMinSections` sections, arches over gaps up to `streetPipeMaxGap` m) | prop, surface and tree keys |
 | `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `besideRoad` (scatters only: puts it on the nearest road's verge, facing along it), `maxTilt` (max tilt with the slope, 0 upright), `buriedDepth` (metres below the ground), the pad surface and access road it gets, `sharedAccessDistance` (metres within which props with the same access share its track; 0 for its own, required 0 without access), a `groundDecal` (with its required `groundDecalSize`) under it | `prefab`, `scenery` (a plain model drawn on the terrain where a surface's prop falls in the backdrop; empty leaves the backdrop bare); surface, road and decal keys |
 | `climate` | `MapClimate` | Ground, slope, shore, floodplain and ravine surfaces, reeds, ford shallows (`fordShallowsWidth`) and fast water (`fordRapidsLength`), draw distances | `surfaces`, `roadClasses`, `farmlandKits`, `beltKits`, `woodlandKits`, `water`, `weathers` (`key` and `atmosphere` prefab each; unique keys); surface and plant keys |
-| `palette` | `MapPalette` | Start kit, base radius (exactly one per project) | `rig`, `startingResources`; prop keys |
+| `palette` | `MapPalette` | `sides` (`side` 1-255, `startKit` of `key`/`offset`/`yaw`, `buildOrder` path to an `AIBuildOrder` or empty), base radius (exactly one per project). Slot n defaults to `sides[(n - 1) % count]` | `rig`, `startingResources`; prop keys |
 | `rules` | `MapRules` | Rush thresholds, attack paths and renewable fields per player per mode, `maxDecals`, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |
 
-"Names" lists the asset paths and key lists a file holds beside the item's own fields (the ref fields its
+A field neither the item nor its refs read is an error naming the file. "Names" lists the asset paths and key lists a file holds beside the item's own fields (the ref fields its
 `[MapLibraryItem]` attribute lists, written first in the file), then the kinds of key the item's own fields name.
 
 What a build gets:

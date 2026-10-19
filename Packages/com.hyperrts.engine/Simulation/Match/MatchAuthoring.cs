@@ -71,6 +71,11 @@ namespace HyperRTS.Simulation.Match
             new PlayerSlot { name = "Enemy", team = 2, color = PlayerSlot.Palette[1], control = PlayerControl.AI },
         };
 
+        [Header("Sides")]
+        [Tooltip("Start kit and AI build order per side (the game's army id). Empty: players start with what the " +
+                 "scene places and keep their own build orders.")]
+        public List<SideContent> sides = new();
+
         [Header("AI")]
         [Tooltip("Tuning of AI slots set to Easy.")]
         public AITuning easyAI = new() { thinkInterval = 4f, attackWaveSize = 10, useAbilities = false };
@@ -146,6 +151,55 @@ namespace HyperRTS.Simulation.Match
 
                 AddComponent(entity, relations);
                 AddTunings(entity, authoring);
+                AddSides(entity, authoring.sides);
+            }
+
+            // Kit and build order prefabs are referenced here, so every world's PrefabRegistry has them.
+            private void AddSides(Entity match, List<SideContent> sides)
+            {
+                AddBuffer<MatchSide>(match);
+                AddBuffer<SideStartItem>(match);
+                AddBuffer<SideBuildStep>(match);
+                var seen = new HashSet<byte>();
+                foreach (var content in sides)
+                {
+                    if (content.side == 0)
+                    {
+                        throw new ArgumentException("The Match has a side with id 0; side ids start at 1.");
+                    }
+
+                    if (!seen.Add(content.side))
+                    {
+                        throw new ArgumentException($"The Match lists side {content.side} twice.");
+                    }
+
+                    AppendToBuffer(match, new MatchSide { Value = content.side });
+                    AddStartKit(match, content);
+                    foreach (var (prefab, count) in Steps(content.buildOrder))
+                    {
+                        AppendToBuffer(match, new SideBuildStep { Side = content.side, Prefab = prefab, Count = count });
+                    }
+                }
+            }
+
+            private void AddStartKit(Entity match, SideContent content)
+            {
+                for (var i = 0; i < content.startKit.Count; i++)
+                {
+                    var item = content.startKit[i];
+                    if (item.prefab == null)
+                    {
+                        throw new ArgumentException($"Side {content.side}'s start kit item {i} has no prefab.");
+                    }
+
+                    AppendToBuffer(match, new SideStartItem
+                    {
+                        Side = content.side,
+                        Prefab = GetEntity(item.prefab, TransformUsageFlags.Dynamic),
+                        Offset = item.offset,
+                        Yaw = math.radians(item.yaw),
+                    });
+                }
             }
 
             // Every difficulty is baked, so a match setup can hand any slot to the AI at runtime.
@@ -167,6 +221,12 @@ namespace HyperRTS.Simulation.Match
 
                 var writer = new BakerWriter(this, player);
                 var stock = PlayerSetup.Add(ref writer, faction, playerName, color, populationCap: 0);
+                writer.Add(new PlayerSpawn
+                {
+                    Position = slot.spawnPosition,
+                    Yaw = math.radians(slot.spawnYaw),
+                });
+                SetComponent(player, new PlayerSide { Value = slot.side });
                 AddStartingResources(stock, slot);
                 var buildOrder = slot.buildOrder != null ? slot.buildOrder : authoring.defaultBuildOrder;
 
@@ -197,9 +257,18 @@ namespace HyperRTS.Simulation.Match
 
             private void AddBuildOrder(DynamicBuffer<AIBuildStep> steps, AIBuildOrder buildOrder)
             {
+                foreach (var (prefab, count) in Steps(buildOrder))
+                {
+                    steps.Add(new AIBuildStep { Prefab = prefab, Count = count });
+                }
+            }
+
+            private List<(Entity Prefab, int Count)> Steps(AIBuildOrder buildOrder)
+            {
+                var steps = new List<(Entity, int)>();
                 if (buildOrder == null)
                 {
-                    return;
+                    return steps;
                 }
 
                 DependsOn(buildOrder);
@@ -208,10 +277,11 @@ namespace HyperRTS.Simulation.Match
                     if (step.prefab != null)
                     {
                         // None: the prefab's own bakers pick its transform usage (upgrades have none).
-                        var prefab = GetEntity(step.prefab, TransformUsageFlags.None);
-                        steps.Add(new AIBuildStep { Prefab = prefab, Count = step.count });
+                        steps.Add((GetEntity(step.prefab, TransformUsageFlags.None), step.count));
                     }
                 }
+
+                return steps;
             }
 
             private static void AddStartingResources(DynamicBuffer<ResourceStock> stock, PlayerSlot slot)

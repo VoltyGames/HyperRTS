@@ -24,7 +24,7 @@ A folder uses only the folders listed before it.
 | --- | --- |
 | `Spec/` | The map as authored (`MapSpec`, one sector) and its feature classes: terrain, hills, rivers and crossings, roads, ravines, woods, belts, farmland, settlements, areas, lines, props, scatters, resources, spawns. `MapSpecJson` reads and writes it |
 | `Json/` | `MapJsonFormat`: the one layout specs and library files are saved in |
-| `Data/` | Library item classes: `MapClimate` (layers, surfaces, trees, plants, row crops (`<Key>.rowCrop.json`: a `crop` ref to a `RowCrop` asset; a surface names one in `rowCrop`), decals, road classes, farmland / belt / woodland kits), `MapPalette` (what each spec `kind` places, start kit, settlement kits), `MapRules` (thresholds per mode, match settings). `MapKeys` looks keys up after the checks |
+| `Data/` | Library item classes: `MapClimate` (layers, surfaces, trees, plants, row crops (`<Key>.rowCrop.json`: a `crop` ref to a `RowCrop` asset; a surface names one in `rowCrop`), decals, road classes, farmland / belt / woodland kits), `MapPalette` (what each spec `kind` places, `sides` with start kits and build orders, settlement kits), `MapRules` (thresholds per mode, match settings). `MapKeys` looks keys up after the checks |
 | `Library/` | `MapLibrary`: one `<Key>.<type>.json` per item anywhere under the root; `MapClimateAssembly` builds a climate from its file; `[MapKey]` / `[MapAsset]` fields and `MapLibraryProblems` (keys and asset paths that don't resolve) |
 | `Symmetry/` | `MapSymmetry`: the copies of the sector (rotations or mirrors) and how they number slots |
 | `Generation/` | `MapProject`, `MapPaths` (generated files in a `Generated/` folder beside the spec), `MapGeneration` |
@@ -36,7 +36,7 @@ A folder uses only the folders listed before it.
 
 | Folder | Holds |
 | --- | --- |
-| `Checks/` | `MapAssetCheck` (every asset and key the climate and palette name exists), `MapSpecCheck` (sizes, amounts, kinds), `MapKeyCheck`; `MapRoadChecks` warns about dead ends and tight bends after a build |
+| `Checks/` | `MapAssetCheck` (every asset and key the climate and palette name exists; `MapSideCheck` for the palette sides), `MapSpecCheck` (sizes, amounts, kinds), `MapKeyCheck`; `MapRoadChecks` warns about dead ends and tight bends after a build |
 | `Refine/` | `MapRefiner` shapes the sector's coarse lines before copying: meandering rivers, filleted roads that join each other (`MapRoadJoiner`), ravines with side gullies |
 | `Layout/` | `MapExpander` copies the sector into `MapLayout` (map space, spawns with slots and teams) and rejects features outside it |
 | `Geometry/` | `MapShapes` (rivers, roads, ravines, crossings in map space, shared by every pass), curves and fillets, `MapPathWalker`, noise |
@@ -46,7 +46,7 @@ A folder uses only the folders listed before it.
 | Folder | Holds |
 | --- | --- |
 | `Land/` | `MapLand`: land use on a 1 m grid, each cell owned by the first region that claimed it (`MapLandRegion`, `MapLandKind`); `MapLandDistance` for edge bands |
-| `Placement/` | `MapPlacements` (palette prefabs to instantiate, each reserving its footprint), `MapClearance`, `MapPropPlacer` (start kits, resources, props, rows, scatters), `MapDecal` |
+| `Placement/` | `MapPlacements` (palette prefabs to instantiate, each reserving its footprint), `MapClearance`, `MapPropPlacer` (reserves the start kits' ground, places resources, props, rows, scatters), `MapDecal` |
 | `Ground/` (shape) | `MapHeightShaper` (relief, hills, valleys, fords, ravines), `MapHeights`, `MapTreeSpacing` |
 | `Planning/` | `MapLandPlanner` runs the `MapLandPass`es in priority order, each claiming only what earlier ones left |
 
@@ -69,7 +69,7 @@ terrain prototype per (species, variant).
 | `Ground/` (paint) | `MapRoadLeveller`, `MapSplatPainter` (terrain layers with soft borders), `MapDetailPainter` (grass and crops), `MapMacroPainter` (field tint, wetness), `MapRowPainter` (`<Map>_Rows.png`: each cell's row direction, moved through its symmetry copy, for row layers), `MapCropPainter` (row crop fields: a field id per 1 m cell for each region and symmetry copy whose surface names a row crop, each copy getting the authored lattice turned or mirrored with the same seed; cleared within the crop's `edgeMargin` of the field edge, roads, placed objects and water; the 16 m tiles holding crops; baked at the end of Plan so previews report crop tiles and plants) and `MapCropWriter` (`<Map>_RowCrops.asset` and `<Map>_RowCropIds.png`, none for a map without row crops) |
 | `Texturing/` | The `HyperRTS/Terrain` material: layer texture arrays (`MapTerrainTextures`), per-layer params, ground colour for foliage |
 | `Meshes/` | Road ribbons (`MapRoadMeshWriter`, faded ends) and river ribbons (`MapWaterMesh`, ford colours from `MapWaterFords`) |
-| `Scenes/` | `MapScene` (scene and SubScene, cleared of the last build), terrain, environment, placements (`MapPlacementWriter`, posed on the ground by `MapPlacementPose`), decals, lighting, minimap, overview picture |
+| `Scenes/` | `MapScene` (scene and SubScene, cleared of the last build; `MapMatchContent` fills the Match's sides and slot spawns), terrain, environment, placements (`MapPlacementWriter`, posed on the ground by `MapPlacementPose`), decals, lighting, minimap, overview picture |
 | `Nav/` | `MapNavGrid` (the runtime's grid, built in the editor), `MapPathfinder`, `MapWalkField`, `MapPathCounter` (distinct attack paths) |
 | `Hints/` | `MapHintWriter`: bot hints from the nav grid (expansion order, attack lanes, defence points) |
 | `Report/` | `MapMeasurer` (rush times, paths, reachability, buildable ground, resources), `MapReport`, `MapOverviewImage` |
