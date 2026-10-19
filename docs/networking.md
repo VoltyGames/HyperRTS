@@ -39,10 +39,33 @@ To configure the match itself (open and closed slots, teams, colours, AI, starti
 the same `MatchSetupRequest` before the map loads; see [modules](modules/core.md#match).
 
 The `Start*` calls return `false` when the session can't start (bad address, port in use) and stay in single
-player. In Play mode use **HyperRTS ▸ Tools ▸ Play**. Builds accept `-server`, `-host`, `-connect <address>` and
-`-port <n>`, plus `-scene <path>` to pick the map; a dedicated server runs with
-`-batchmode -nographics -server -scene <map>`. Relay needs runtime data from the
-game, so it has no menu item or flag.
+player. In Play mode use **HyperRTS ▸ Tools ▸ Play**. Builds take command-line flags (next section). Relay needs
+runtime data from the game, so it has no menu item or flag.
+
+## Command line and dedicated server
+
+`NetworkLauncher` reads the flags of a player build (`LaunchOptions`, never in the Editor) after the first scene loads:
+
+| Flag | Meaning |
+| --- | --- |
+| `-server`, `-host`, `-connect <address>` | The session to start; one at most |
+| `-port <n>` | Port to listen on or connect to (default 7979) |
+| `-scene <path>` | Map to load; else `NetworkLauncher.DefaultScene` if the game set it, else the first scene again |
+| `-observe` | Client only: join as an observer (`NetworkSession.JoinAsObserver`) |
+| `-exit-on-end` | Server only: quit once `MatchState.Phase` is `Ended` |
+| `-time-limit <minutes>` | Server only: quit after that much server time, whatever the match does |
+| `-report <path>` | Server only, with one of the two above: write a `ServerReport` JSON when it quits |
+
+A bad flag or a session that can't start logs the reason and quits with exit code 1. A dedicated server runs as
+`-batchmode -nographics -server -scene <map> -exit-on-end -report <path>`; it exits 0 when the match ended and 2
+on the time limit. In batch mode nothing renders, so the launcher turns vSync off and caps the frame rate at the
+simulation tick rate (60 Hz) instead of spinning.
+
+`ServerMonitor` watches a server that ends itself. From `MatchState.Started` it samples once a second: process CPU
+time per wall second (`cpuPercentOfCore`, 100 = one core busy), working set, Unity's "Total Used Memory" profiler
+counter, connections (`NetworkId` entities), kilobits per second sent by every driver (`GetStatistics().TxTotalBytes`)
+and entities in the server world. The report gives mean, p95 (nearest rank) and max of each, plus the outcome, server
+and match minutes, the winning team, each player's `PlayerStats` and the number of errors logged.
 
 ## Relay (player-hosted matches)
 
@@ -82,16 +105,27 @@ drops every player command, so nothing in the order phase (placing, selling, abi
 
 ## Join and reconnect
 
-1. Once the match is loaded, the client sends `JoinRequest` with its preferred slot.
-2. The server binds the connection to that slot if it is free, else the first free human slot (no `AIPlayer`),
-   else makes it an observer (faction 0, sees everything). A client that set `NetworkSession.JoinAsObserver`
-   (`JoinPreference.Observe`) always becomes an observer. The server replies with `JoinAccepted`.
+1. Once the match is loaded, the client sends `JoinRequest` with its preferred slot and its token.
+2. The server picks the slot with `SlotClaim`: the slot that token owns, else the preferred slot if it was never
+   claimed, else the first never-claimed human slot (no `AIPlayer`), else none, which makes the client an observer
+   (faction 0, sees everything). A client that set `NetworkSession.JoinAsObserver` (`JoinPreference.Observe`)
+   always becomes an observer. The server replies with `JoinAccepted`.
 3. The client tags the player ghost of that faction as `LocalPlayer`, so input and HUD work unchanged.
 
-The server links the connection to its slot (`ConnectionPlayer`). When a connection drops (read from Netcode's
-connection events, since network ids are reused), its slot is freed and its units stay idle. The client world asks for the slot in its `JoinPreference` singleton, seeded
-from `NetworkSession.PreferredFaction`, which takes the granted slot when the client world closes, so a rejoin gets it
-back.
+**Identity.** `NetworkSession.Token` is a random non-zero `ulong` made once per process; every client world gets it
+as its `JoinToken` singleton. The server keeps the token of the client that claimed a slot on its `PlayerConnection`.
+When a connection drops (read from Netcode's connection events, since network ids are reused), its slot's
+`NetworkId` goes back to 0 but the token stays, so the slot waits for its owner and its units stay idle; a stranger
+only takes slots never claimed. If the owner comes back before the old connection timed out, the new connection
+gets the slot and the stale one is disconnected. A join with token 0 owns nothing, and its slot is free again once
+it drops.
+
+**Rejoin.** The client world asks for the slot in its `JoinPreference` singleton, seeded from
+`NetworkSession.PreferredFaction` and `JoinAsObserver`. When a client world closes, both take what it was granted
+(an observer stays an observer), or what it asked for if the server never answered. `NetworkSession.Rejoin(scene)`
+starts a client again to the last `StartClient` endpoint (`CanRejoin` says whether there is one). The scene must load
+the map again (`SessionScene.Load`), since a SubScene only streams into worlds that exist when it loads. A relay
+session rejoins through a new allocation the game gets from its service, then `StartRelayClient` with the map scene.
 
 ## Replication
 
@@ -157,7 +191,8 @@ cooldowns) is checked by the same systems as in single player.
 
 `FogRelevancySystem` sends each client only the owned ghosts its team can see, so map hacks have nothing to
 reveal. Undetected stealthed enemies count as unseen, with fog on or off. Ghosts without a `Faction` (players, the
-match) always replicate, and observers see everything.
+match) always replicate, and observers see everything. A client remembers enemy buildings it saw where it last saw
+them (`FogMemorySystem`), so a ghost leaving relevancy doesn't vanish from its map.
 
 ## Cues
 
@@ -182,6 +217,7 @@ Clicks raycast against Unity Physics, which Netcode only steps inside the predic
 ## Limits
 
 - No client-side prediction: commands take a round trip to show, like most server-based RTS.
-- Enemy buildings disappear when they leave vision (no "last seen" ghosts yet).
 - No host migration: if the host leaves, the match ends.
-- No automatic reconnect: after `Disconnected` the game calls `Stop()` and starts the session again.
+- No automatic reconnect: after `Disconnected` the game calls `Rejoin` (or `StartRelayClient`) or `Stop()`.
+- The token lives as long as the process: a client that restarts gets a new one, so its slot stays reserved and it
+  rejoins as an observer.

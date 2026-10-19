@@ -1,15 +1,22 @@
 ﻿using System;
+using Unity.NetCode;
 using UnityEngine;
 
 namespace HyperRTS.Network.Session
 {
     /// <summary>
-    /// Starts a session from the command line: <c>-server</c>, <c>-host</c> or <c>-connect &lt;address&gt;</c>,
-    /// with optional <c>-port &lt;n&gt;</c> and <c>-scene &lt;path&gt;</c> (default: reload the first scene).
-    /// Dedicated server builds run with <c>-batchmode -nographics -server -scene &lt;map&gt;</c>.
+    /// Starts a session from the command line (<see cref="LaunchOptions"/>): <c>-server</c>, <c>-host</c> or
+    /// <c>-connect &lt;address&gt;</c> [<c>-observe</c>], with optional <c>-port</c> and <c>-scene</c>. A server may add
+    /// <c>-exit-on-end</c>, <c>-time-limit &lt;minutes&gt;</c> and <c>-report &lt;path&gt;</c>. Player builds only.
     /// </summary>
     public static class NetworkLauncher
     {
+        /// <summary>
+        /// The scene a command-line session loads when it has no <c>-scene</c>; null reloads the first scene. A game
+        /// sets it before the first scene loads, as when it reads the match from its own flag.
+        /// </summary>
+        public static string DefaultScene { get; set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
         {
@@ -18,27 +25,63 @@ namespace HyperRTS.Network.Session
                 return;
             }
 
-            var args = Environment.GetCommandLineArgs();
-            var port = ushort.TryParse(Value(args, "-port"), out var parsed) ? parsed : NetworkSession.DefaultPort;
-            var scene = Value(args, "-scene") is { } path ? SessionScene.Load(path) : SessionScene.ReloadActive;
-            if (Array.IndexOf(args, "-server") >= 0)
+            LaunchOptions options;
+            try
             {
-                NetworkSession.StartServer(port, scene);
+                options = LaunchOptions.Parse(Environment.GetCommandLineArgs());
             }
-            else if (Array.IndexOf(args, "-host") >= 0)
+            catch (ArgumentException exception)
             {
-                NetworkSession.StartHost(port, scene);
+                Debug.LogError($"[HyperRTS] {exception.Message}");
+                Application.Quit(ServerMonitor.ErrorCode);
+                return;
             }
-            else if (Value(args, "-connect") is { } address)
+
+            if (options.Mode == LaunchMode.None)
             {
-                NetworkSession.StartClient(address, port, scene);
+                return;
+            }
+
+            if (Application.isBatchMode)
+            {
+                CapFrameRate();
+            }
+
+            if (!Start(options))
+            {
+                Application.Quit(ServerMonitor.ErrorCode);
+                return;
+            }
+
+            if (options.EndsItself)
+            {
+                ServerMonitor.Begin(options);
             }
         }
 
-        private static string Value(string[] args, string flag)
+        private static bool Start(LaunchOptions options)
         {
-            var index = Array.IndexOf(args, flag);
-            return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
+            var path = options.ScenePath ?? DefaultScene;
+            var scene = path != null ? SessionScene.Load(path) : SessionScene.ReloadActive;
+            NetworkSession.JoinAsObserver = options.Observe;
+            return options.Mode switch
+            {
+                LaunchMode.Server => NetworkSession.StartServer(options.Port, scene),
+                LaunchMode.Host => NetworkSession.StartHost(options.Port, scene),
+                _ => NetworkSession.StartClient(options.Address, options.Port, scene),
+            };
         }
+
+        // Nothing renders in batch mode, so an uncapped loop would only spin: one frame per simulation tick.
+        private static void CapFrameRate()
+        {
+            var rate = new ClientServerTickRate();
+            rate.ResolveDefaults();
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = rate.SimulationTickRate;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => DefaultScene = null;
     }
 }
