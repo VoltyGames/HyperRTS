@@ -13,7 +13,8 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Points idle, attack-moving and hold-position weapons (and finished towers) at the nearest hostile in range that
-    /// the weapon can hit and stealth doesn't hide. Units on any other order, or out of ammo, never auto-acquire.
+    /// the weapon can hit and its team can see: in the fog's sight and not hidden by stealth, so long-range fires need
+    /// a spotter. Units on any other order, or out of ammo, never auto-acquire.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -93,6 +94,7 @@ namespace HyperRTS.Simulation.Combat
                     Relations = Relations,
                     Targets = Targets,
                     Faction = faction.Value,
+                    Team = Relations.GetTeam(faction.Value),
                     Reach = weapon.Targets,
                     Center = transform.Position,
                     BestDistance = float.MaxValue,
@@ -127,6 +129,7 @@ namespace HyperRTS.Simulation.Combat
             public FactionRelations Relations;
             public TargetLookup Targets;
             public byte Faction;
+            public byte Team;
             public WeaponTargets Reach;
             public float3 Center;
             public Entity Best;
@@ -139,7 +142,7 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                if (Targets.IsCloakedFrom(entry.Entity, Relations.GetTeam(Faction)))
+                if (!Targets.IsSpotted(entry.Entity, entry.Position, Team))
                 {
                     return;
                 }

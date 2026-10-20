@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Combat
         [ReadOnly] private ComponentLookup<Stealthed> _stealthed;
         [ReadOnly] private ComponentLookup<Destructible> _destructibles;
         [ReadOnly] private FogOfWar _fog;
+        private bool _fogUnbuilt;
 
         public TargetLookup(ref SystemState state)
         {
@@ -34,6 +35,7 @@ namespace HyperRTS.Simulation.Combat
             _stealthed = state.GetComponentLookup<Stealthed>(true);
             _destructibles = state.GetComponentLookup<Destructible>(true);
             FogQuery(ref state).TryGetSingleton(out _fog);
+            _fogUnbuilt = !_fog.IsCreated && FogEnabled(ref state);
         }
 
         /// <summary><paramref name="fog"/> is the system's <see cref="FogQuery"/>, built once in OnCreate.</summary>
@@ -48,6 +50,7 @@ namespace HyperRTS.Simulation.Combat
             _stealthed.Update(ref state);
             _destructibles.Update(ref state);
             fog.TryGetSingleton(out _fog);
+            _fogUnbuilt = !_fog.IsCreated && FogEnabled(ref state);
         }
 
         /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
@@ -62,7 +65,7 @@ namespace HyperRTS.Simulation.Combat
             }
 
             var hostile = relations.IsHostile(attackerFaction, faction.Value);
-            return hostile && !IsCloakedFrom(target, relations.GetTeam(attackerFaction));
+            return hostile && !IsHiddenByStealth(target, relations.GetTeam(attackerFaction));
         }
 
         /// <summary>
@@ -90,14 +93,31 @@ namespace HyperRTS.Simulation.Combat
             return CombatMath.CanHit(targets, NavAgent.GetLayer(_agents, target));
         }
 
-        /// <summary>
-        /// Stealthed and outside every detector of the team (see <see cref="FogOfWar.IsCloakedFrom"/>). Checks stealth
-        /// first so unstealthed candidates skip the transform lookup.
-        /// </summary>
-        public bool IsCloakedFrom(Entity target, byte team) =>
+        /// <summary>Stealthed and outside every detector of the team (see <see cref="FogOfWar.IsHiddenByStealth"/>).</summary>
+        // Stealth first, so unstealthed candidates skip the transform lookup.
+        public bool IsHiddenByStealth(Entity target, byte team) =>
             _stealthed.HasEnabled(target) && !_fog.IsDetected(Position(target), team);
 
+        /// <summary>
+        /// In the team's sight right now and not cloaked from it: all a unit may pick on its own. A world without a
+        /// fog grid has no fog.
+        /// </summary>
+        public bool IsSpotted(Entity target, float3 position, byte team)
+        {
+            // A match's first frames run before the grid exists; that is not a world without fog.
+            if (_fogUnbuilt)
+            {
+                return false;
+            }
+
+            var inSight = !_fog.IsCreated || _fog.IsVisible(position, team);
+            return inSight && !IsHiddenByStealth(target, team);
+        }
+
         public float3 Position(Entity entity) => _transforms[entity].Position;
+
+        private static bool FogEnabled(ref SystemState state) =>
+            state.GetEntityQuery(ComponentType.ReadOnly<MapSettings>()).TryGetSingleton(out MapSettings map) && map.FogOfWar;
 
         /// <summary>Passengers take their container's footprint, so they fire from its edge.</summary>
         public float Radius(Entity entity) =>

@@ -39,12 +39,12 @@ namespace HyperRTS.Simulation.Vision
         public readonly bool IsDetected(float3 position, byte team) => Test(Detected, position, team);
 
         /// <summary>Stealth hides an entity from a team none of whose detectors covers it, with or without fog.</summary>
-        public readonly bool IsCloakedFrom(byte team, float3 position, bool stealthed) =>
+        public readonly bool IsHiddenByStealth(byte team, float3 position, bool stealthed) =>
             stealthed && !IsDetected(position, team);
 
         /// <summary>Whether a team sees an entity there: in its sight and, if stealthed, detected.</summary>
         public readonly bool CanSee(byte team, float3 position, bool stealthed) =>
-            IsVisible(position, team) && !IsCloakedFrom(team, position, stealthed);
+            IsVisible(position, team) && !IsHiddenByStealth(team, position, stealthed);
 
         /// <summary>Hostile entities the viewer team can't see are hidden; own, allied and neutral never are.</summary>
         public readonly bool IsHiddenFrom(in FactionRelations relations, byte viewerFaction, byte faction,

@@ -4,7 +4,9 @@
 
 ## Combat
 
-A unit with a `Weapon` picks the nearest hostile, closes to range and fires. Every hit goes through one damage
+A unit with a `Weapon` picks the nearest hostile its team can see, closes to range and fires. A target in fog or
+hidden by stealth is never auto-acquired, so long-range weapons need a spotter; explicit attack orders still reach
+past sight. Every hit goes through one damage
 queue, so armor, splash and kill credit apply to all of them.
 
 | Type | Role |

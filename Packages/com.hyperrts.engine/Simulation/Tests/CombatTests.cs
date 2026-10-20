@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
+using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
@@ -77,6 +78,35 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual(100f, _world.GetHealth(friend));
             Assert.AreEqual(100f, _world.GetHealth(ally));
+        }
+
+        [Test]
+        public void LongRangeWeapon_HoldsFireAtUnseenEnemy_UntilAnAllySpotsIt()
+        {
+            var artillery = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 30f);
+            var enemy = _world.SpawnUnit(2, new float3(25f, 0f, 0f));
+
+            _world.Run(2f);
+
+            Assert.AreEqual(100f, _world.GetHealth(enemy), "out of its team's sight");
+            Assert.IsFalse(_world.IsEnabled<AttackTarget>(artillery));
+
+            _world.SpawnUnit(3, new float3(18f, 0f, 0f), name: "Spotter");
+            _world.Run(2f);
+
+            Assert.IsTrue(WasHit(enemy), "fires once an ally sees it");
+        }
+
+        [Test]
+        public void LongRangeWeapon_WithFogOff_FiresAtAnythingInRange()
+        {
+            _world.DisableFog();
+            _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 30f);
+            var enemy = _world.SpawnUnit(2, new float3(25f, 0f, 0f));
+
+            _world.Run(2f);
+
+            Assert.IsTrue(WasHit(enemy));
         }
 
         [Test]
@@ -190,5 +220,7 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual(expected, _world.Get<Weapon>(soldier).Cooldown, 1e-5f);
         }
+
+        private bool WasHit(Entity unit) => !_world.EntityManager.Exists(unit) || _world.GetHealth(unit) < 100f;
     }
 }
