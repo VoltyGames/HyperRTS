@@ -95,11 +95,18 @@ An entity shows the damage stage model for its health and bursts that stage's ef
 Felled remains, such as trees, tip over with a bounce, or lie down at once if the fall was out of sight. The tipping
 only moves the rendered pose, and the simulation keeps the final one.
 
+A building with `BreakablePartsAuthoring` lists its parts, each an intact and a broken model. **Find Parts By Name**
+in its context menu fills the list from `<Part>_Intact` children and their `<Part>_Broken` siblings. Health picks
+how many break: round(parts x `breakShare` x (1 - health fraction)). The next to break is the intact part nearest the
+latest impact on the building, else the first in bake order, and it bursts the part effect outward from the centre.
+Repair restores the latest broken part first. A building first seen, or changed out of sight, shows its breakage
+without effects. It is presentation only: the simulation never reads it.
+
 ### Shaders
 
 | Shader | Use |
 | --- | --- |
-| `HyperRTS/Water` | Depth colour, refraction, ripples, reflection, foam at banks. Needs Depth and Opaque Textures |
+| `HyperRTS/Water` | Depth colour, refraction, ripples, screen-space scene reflection over the sky, foam and swells at banks, unit wakes (`SampleWake`). Needs Depth and Opaque Textures |
 | `HyperRTS/Foliage` | Alpha-cut plants and tree leaves with wind, trample and translucency |
 | `HyperRTS/Bark` | Opaque tree bark with wind. Mask map: R metallic, G AO, A smoothness |
 | `HyperRTS/RowCrop` | GPU-placed field crops. See [row crops](#row-crops) |
@@ -140,18 +147,25 @@ Tree meshes for Foliage with **Tree Wind** on, and for Bark, carry wind data in 
 
 ### Interaction maps
 
-Vehicles leave ruts and flatten grass and crops. `InteractionMap` on the rig keeps two GPU textures over the map
-and stamps them each frame. It needs the `Hidden/HyperRTS/Interaction Brush` shader.
+Vehicles leave ruts and flatten grass and crops, shells leave craters and scorch, and units moving through water
+leave wakes. `InteractionMap` on the rig keeps three GPU textures over the map and stamps them each frame. It needs
+the `Hidden/HyperRTS/Interaction Brush` shader.
 
 | Texture | Channels |
 | --- | --- |
 | `_HyperRTSTrample` | RG travel direction, B flattened grass that recovers over 60 s, A crop damage that never recovers |
-| `_HyperRTSTracks` | R rut depth, G churned soil. Both fade over 4 minutes |
+| `_HyperRTSTracks` | R rut depth and G churned soil, which fade over 4 minutes. B scorch and A crater depth (up to 2 m), which last the match |
+| `_HyperRTSWake` | R foam, which fades over 5 s |
 
-Vehicles with `TrackMarks` stamp while on the ground and visible, as do building footprints and ground impacts with
-3 m splash or more. Shaders read the maps through `Trample.hlsl`. The terrain darkens ruts and flattened grass, and
-Foliage leans plants along the travel direction. The quality setting picks Full, Low at half resolution, or Off,
-which frees the textures.
+Vehicles with `TrackMarks` stamp while on the ground and visible, as do building footprints. Every ground impact
+whose `ImpactMark` has a `craterDepth` or `scorch` stamps a round bowl half the mark's size across, inside a
+slightly wider scorch disc, and flattens the plants over it. Units with a `NavAgent` riding water cells stamp foam
+behind them. A replay seeking back clears the maps, as it clears the decals.
+
+Shaders read the maps through `Trample.hlsl`. The terrain darkens ruts and flattened grass, bends its normal down
+the crater's slope so the sun lights the bowl, darkens and dampens the bowl's soil, and blackens scorched ground.
+Foliage leans plants along the travel direction, and water reads `SampleWake`. The quality setting picks Full, Low
+at half resolution, or Off, which frees the textures.
 
 ### Row crops
 
@@ -179,6 +193,16 @@ so clients may differ. A count of zero turns a feature off. Both are skipped at 
 An `EffectRig` is a prefab whose root holds world-space child particle systems. Author it +Y up and +Z forward.
 Impacts turn +Y to the ground normal. The rig sets a max distance, a scale range, scale per splash radius and ground
 alignment. The validator reports a broken rig, naming the prefab.
+
+No two plays need look the same:
+
+- **Variants**: a rig may list alternative rigs. Each burst plays the rig or one variant at random. A loop or trail
+  keeps one per entity. Each variant is its own pooled rig and has no variants of its own.
+- **Random spin** turns each burst about the rig's +Y. It is off by default, so muzzles keep their aim. Impacts
+  always get a random yaw.
+- **Loops** play at a scale inside the rig's range, and with random spin at a yaw, both stable per entity.
+- **Burst cycles**: a Shuriken burst's cycle count and interval repeat it, such as ammo cooking off. A burst that
+  repeats forever is a broken rig.
 
 `EffectPool` keeps one instance per prefab and replays it for every event, never instantiating per shot. Effects
 play for cues the client can see:
