@@ -6,6 +6,7 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Status;
 using HyperRTS.Simulation.Upgrades;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
@@ -30,6 +31,8 @@ namespace HyperRTS.Simulation.GameEntities
             writer.Add<StatBasesPending>();
             writer.AddBuffer<StatModifier>();
             writer.AddBuffer<FieldPresence>();
+            writer.AddBuffer<ActiveStatus>();
+            writer.AddBuffer<DamageTakenModifier>();
             writer.Add(new AppliedUpgrades { Faction = spec.Owner });
             writer.Add(new VisionRange { Value = spec.VisionRange, EyeHeight = spec.EyeHeight });
             writer.Add(new Producible { BuildTime = spec.BuildTime, Population = spec.Population });

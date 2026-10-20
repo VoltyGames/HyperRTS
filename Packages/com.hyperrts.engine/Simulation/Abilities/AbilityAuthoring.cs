@@ -4,6 +4,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Status;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -66,6 +67,9 @@ namespace HyperRTS.Simulation.Abilities
 
             [Tooltip("The damage also hurts the caster's allies.")]
             public bool friendlyFire = true;
+
+            [Tooltip("Status effect prefab applied to an entity target.")]
+            public StatusEffectAuthoring statusEffect;
         }
 
         [Tooltip("Abilities in command-card order.")]
@@ -112,6 +116,9 @@ namespace HyperRTS.Simulation.Abilities
                     Radius = entry.radius,
                     DamageType = entry.damageType,
                     FriendlyFire = entry.friendlyFire,
+                    StatusEffect = entry.statusEffect != null
+                        ? GetEntity(entry.statusEffect, TransformUsageFlags.None)
+                        : Entity.Null,
                 };
             }
         }

@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Status;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -44,6 +45,7 @@ namespace HyperRTS.Simulation.Abilities
             _factions = state.GetComponentLookup<Faction>(true);
             _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<DamageQueue>();
+            state.RequireForUpdate<StatusQueue>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -64,7 +66,8 @@ namespace HyperRTS.Simulation.Abilities
             _writer.Update(ref state);
             _targets.Update(ref state, _fogQuery);
             _factions.Update(ref state);
-            _caster.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(), events);
+            _caster.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
+                SystemAPI.GetSingletonEntity<StatusQueue>(), events);
 
             var context = new Context
             {

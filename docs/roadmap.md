@@ -5,8 +5,8 @@ What the engine does today, why, and what is still open. Update it when a featur
 ## Status
 
 Done and tested: selection and orders, pathfinding over terrain, water and bridges, economy, bases and production,
-combat, fog of war and stealth, power, upgrades, veterancy, fields, abilities, capture, transports, aircraft,
-destruction, skirmish AI, audio, replays and the editor tooling with the Map Editor.
+combat, fog of war and stealth, power, upgrades, veterancy, fields, abilities, status effects, capture, transports,
+aircraft, destruction, skirmish AI, audio, replays and the editor tooling with the Map Editor.
 
 In progress:
 

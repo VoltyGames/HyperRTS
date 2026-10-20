@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Status;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -14,6 +15,7 @@ namespace HyperRTS.Simulation.Abilities
         [ReadOnly] private ComponentLookup<PostTransformMatrix> _stretches;
         private BufferLookup<AbilityActivation> _events;
         private DamageWriter _damage;
+        private StatusEffectWriter _status;
         private Entity _eventQueue;
 
         public AbilityCaster(ref SystemState state) : this()
@@ -22,14 +24,16 @@ namespace HyperRTS.Simulation.Abilities
             _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
             _events = state.GetBufferLookup<AbilityActivation>();
             _damage = new DamageWriter(ref state);
+            _status = new StatusEffectWriter(ref state);
         }
 
-        public void Update(ref SystemState state, Entity damageQueue, Entity eventQueue)
+        public void Update(ref SystemState state, Entity damageQueue, Entity statusQueue, Entity eventQueue)
         {
             _transforms.Update(ref state);
             _stretches.Update(ref state);
             _events.Update(ref state);
             _damage.Update(ref state, damageQueue);
+            _status.Update(ref state, statusQueue);
             _eventQueue = eventQueue;
         }
 
@@ -48,6 +52,11 @@ namespace HyperRTS.Simulation.Abilities
                 var prefabTransform = _transforms[ability.SpawnPrefab];
                 ecb.Spawn(ability.SpawnPrefab, prefabTransform, _stretches, position, prefabTransform.Rotation,
                     faction);
+            }
+
+            if (ability.StatusEffect != Entity.Null && ability.Target == AbilityTarget.Entity)
+            {
+                _status.Apply(target, ability.StatusEffect, caster, faction);
             }
 
             if (ability.Damage != 0f)

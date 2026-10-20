@@ -10,5 +10,8 @@ namespace HyperRTS.Simulation.Common
 
         /// <summary>An AI difficulty's handicap or bonus, on the AI player.</summary>
         Difficulty = 4,
+
+        /// <summary>A timed status effect; the id is the effect's type id.</summary>
+        Status = 5,
     }
 }

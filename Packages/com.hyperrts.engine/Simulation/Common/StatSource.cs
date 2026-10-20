@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Common
     {
         public StatSourceKind Kind;
 
-        /// <summary>The upgrade type id, field id or game-defined id.</summary>
+        /// <summary>The upgrade type id, field id, status effect type id or game-defined id.</summary>
         public int Id;
 
         public StatSource(StatSourceKind kind, int id)
@@ -24,6 +24,8 @@ namespace HyperRTS.Simulation.Common
         public static StatSource Field(int fieldId) => new(StatSourceKind.Field, fieldId);
 
         public static StatSource Difficulty => new(StatSourceKind.Difficulty, 0);
+
+        public static StatSource Status(int typeId) => new(StatSourceKind.Status, typeId);
 
         public readonly bool Equals(StatSource other) => Kind == other.Kind && Id == other.Id;
 

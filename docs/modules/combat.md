@@ -1,6 +1,6 @@
 # Combat modules
 
-[Modules](../modules.md) ▸ Combat, Veterancy, Upgrades, Auras, Abilities, Vision
+[Modules](../modules.md) ▸ Combat, Veterancy, Upgrades, Auras, Abilities, Status, Vision
 
 ## Combat
 
@@ -36,8 +36,8 @@ that aim on their own are not built in.
 
 ## Stats
 
-Part of `Common`. Upgrades, veterancy, fields and difficulty all change stats through one formula, and each source
-can be removed later:
+Part of `Common`. Upgrades, veterancy, fields, status effects and difficulty all change stats through one formula,
+and each source can be removed later:
 
 ```text
 value = (base + Add) × (1 + ΣPercent)
@@ -70,6 +70,19 @@ frame's `AbilityActivation`.
 
 A self-targeted ability fires on every ready caster. An aimed one walks the nearest caster into range. Player
 powers are `Ability` entries on the player entity.
+
+## Status effects
+
+Part of `Status`. A status effect is a prefab with `StatusEffectAuthoring`: a duration, a stack rule, stat bonuses,
+extra damage taken from chosen damage types and damage over time, all per stack. Its type id is the hash of its
+name, and its bonuses use that id as their source.
+
+Game code applies one with `StatusEffectWriter.Apply`, and an entity-targeted ability applies its `statusEffect`
+on use. `StatusEffectSystem` applies the queue on the server, refreshes or stacks effects already active, expires
+them and credits damage over time to whoever applied the effect. Each effect is an `ActiveStatus` entry, and
+clients get only its type id and end time for the HUD.
+
+`DamageTakenModifier`, in `Combat`, scales hits of one damage type on top of the unfiltered `DamageTaken` stat.
 
 ## Vision
 

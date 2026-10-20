@@ -20,6 +20,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<ArmorFacing> _facing;
         private BufferLookup<ArmorModifier> _armor;
         private BufferLookup<StatModifier> _modifiers;
+        private BufferLookup<DamageTakenModifier> _typedModifiers;
         private ComponentLookup<Destructible> _destructibles;
         private ComponentLookup<FellFrom> _fellFrom;
 
@@ -31,6 +32,7 @@ namespace HyperRTS.Simulation.Combat
             _facing = state.GetComponentLookup<ArmorFacing>(true);
             _armor = state.GetBufferLookup<ArmorModifier>(true);
             _modifiers = state.GetBufferLookup<StatModifier>(true);
+            _typedModifiers = state.GetBufferLookup<DamageTakenModifier>(true);
             _destructibles = state.GetComponentLookup<Destructible>(true);
             _fellFrom = state.GetComponentLookup<FellFrom>();
 
@@ -49,6 +51,7 @@ namespace HyperRTS.Simulation.Combat
             _facing.Update(ref state);
             _armor.Update(ref state);
             _modifiers.Update(ref state);
+            _typedModifiers.Update(ref state);
             _destructibles.Update(ref state);
             _fellFrom.Update(ref state);
 
@@ -62,6 +65,7 @@ namespace HyperRTS.Simulation.Combat
                 Facing = _facing,
                 Armor = _armor,
                 Modifiers = _modifiers,
+                TypedModifiers = _typedModifiers,
                 Destructibles = _destructibles,
                 FallSources = _fellFrom,
             }.Schedule();
@@ -79,6 +83,7 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<ArmorFacing> Facing;
             [ReadOnly] public BufferLookup<ArmorModifier> Armor;
             [ReadOnly] public BufferLookup<StatModifier> Modifiers;
+            [ReadOnly] public BufferLookup<DamageTakenModifier> TypedModifiers;
             [ReadOnly] public ComponentLookup<Destructible> Destructibles;
             public ComponentLookup<FellFrom> FallSources;
 
@@ -149,7 +154,7 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 amount *= CombatMath.ArmorMultiplier(Armor, target, hit.Type) * FacingMultiplier(target, hit.Origin) *
-                          StatMath.DamageTaken(Modifiers, target);
+                          StatMath.DamageTaken(Modifiers, target) * TypedMultiplier(target, hit.Type);
                 health.Current = math.max(0f, health.Current - amount);
                 Health[target] = health;
                 if (health.Current <= 0f && FallSources.HasComponent(target))
@@ -163,6 +168,11 @@ namespace HyperRTS.Simulation.Combat
                     Attackers[target] = new LastAttacker { Source = hit.Source, Faction = hit.SourceFaction };
                 }
             }
+
+            private float TypedMultiplier(Entity target, UnityObjectRef<DamageType> type) =>
+                TypedModifiers.TryGetBuffer(target, out var modifiers)
+                    ? DamageTakenModifier.Multiplier(modifiers, type)
+                    : 1f;
 
             private float FacingMultiplier(Entity target, float3 origin) =>
                 Facing.TryGetComponent(target, out var facing) && Transforms.TryGetComponent(target, out var transform)

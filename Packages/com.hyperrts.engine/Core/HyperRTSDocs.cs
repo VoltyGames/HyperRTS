@@ -27,6 +27,7 @@ namespace HyperRTS.Core
         public const string Production = Pages + "economy.md#production";
         public const string Resources = Pages + "economy.md#resources";
         public const string Selection = Pages + "core.md#selection";
+        public const string Status = Pages + "combat.md#status-effects";
         public const string Transport = Pages + "movement.md#transport";
         public const string Units = Pages + "movement.md#units";
         public const string Upgrades = Pages + "combat.md#upgrades";

@@ -8,9 +8,9 @@ namespace HyperRTS.Simulation.Abilities
 {
     /// <summary>
     /// A cooldown ability on a unit, building or player entity (support power). Built-in effects are optional: a
-    /// prefab spawned at the target and damage (negative heals) around it. Every use is published as an
-    /// <see cref="AbilityActivation"/> for game systems. Only the id and cooldown replicate and clients bake the rest,
-    /// so the buffer must keep its baked length and order.
+    /// prefab spawned at the target, damage (negative heals) around it and a status effect on an entity target. Every
+    /// use is published as an <see cref="AbilityActivation"/> for game systems. Only the id and cooldown replicate and
+    /// clients bake the rest, so the buffer must keep its baked length and order.
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct Ability : IBufferElementData
@@ -38,6 +38,9 @@ namespace HyperRTS.Simulation.Abilities
         [GhostField(SendData = false)] public float Radius;
         [GhostField(SendData = false)] public UnityObjectRef<DamageType> DamageType;
         [GhostField(SendData = false)] public bool FriendlyFire;
+
+        /// <summary>Status effect prefab applied to an entity target; <c>Entity.Null</c> for none.</summary>
+        [GhostField(SendData = false)] public Entity StatusEffect;
 
         public readonly bool IsReady => CooldownRemaining <= 0f;
     }

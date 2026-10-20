@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
+using HyperRTS.Simulation.Status;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -38,6 +39,7 @@ namespace HyperRTS.Simulation.Abilities
             _factions = state.GetComponentLookup<Faction>(true);
             _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<DamageQueue>();
+            state.RequireForUpdate<StatusQueue>();
             state.RequireForUpdate<AbilityEvents>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -49,7 +51,7 @@ namespace HyperRTS.Simulation.Abilities
             _targets.Update(ref state, _fogQuery);
             _factions.Update(ref state);
             _caster.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
-                SystemAPI.GetSingletonEntity<AbilityEvents>());
+                SystemAPI.GetSingletonEntity<StatusQueue>(), SystemAPI.GetSingletonEntity<AbilityEvents>());
 
             new CooldownJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
 
