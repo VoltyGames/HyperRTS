@@ -1,4 +1,4 @@
-// Draws InteractionBrush.cs stamps into the interaction maps, one instanced quad each. Not for materials.
+// Only InteractionBrush.cs draws with this, never a material.
 Shader "Hidden/HyperRTS/Interaction Brush"
 {
     SubShader
@@ -17,23 +17,24 @@ Shader "Hidden/HyperRTS/Interaction Brush"
         // Matches InteractionStamp.cs.
         struct InteractionStamp
         {
-            float2 center;   // world XZ
-            float2 forward;  // world XZ unit direction of travel
-            float2 halfSize; // x across, y along forward, metres
-            float4 value;    // trample: flatten, crop, direction weight, round. tracks: rut, soil, -, round
+            float2 center;
+            float2 forward;
+            float2 halfSize;
+            float4 value;
         };
 
         StructuredBuffer<InteractionStamp> _InteractionStamps;
         int _InteractionStampOffset;
-        float4 _HyperRTSInteractionRect; // x min, z min, 1 / width, 1 / depth
+        float4 _HyperRTSInteractionRect;
         float4 _InteractionFade;
 
         struct StampVaryings
         {
             float4 positionCS : SV_POSITION;
-            float2 local : TEXCOORD0; // -1..1 across and along
+            float2 local : TEXCOORD0;
             nointerpolation float4 value : TEXCOORD1;
             nointerpolation float2 forward : TEXCOORD2;
+            nointerpolation float phase : TEXCOORD3;
         };
 
         // On top-origin APIs the texture's first row is clip y = +1.
@@ -63,6 +64,7 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             output.local = corner;
             output.value = stamp.value;
             output.forward = stamp.forward;
+            output.phase = frac(sin(dot(stamp.center, float2(12.9898, 78.233))) * 43758.5453) * TWO_PI;
             return output;
         }
 
@@ -92,6 +94,27 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             return half4(input.value.x * rut * Footprint(input, 0.9), input.value.y * Footprint(input, 0.6), 0.0, 0.0);
         }
 
+        // A ragged rim keeps hundreds of scars from reading as stamped circles.
+        half4 ScarsFragment(StampVaryings input) : SV_Target
+        {
+            float angle = atan2(input.local.y, input.local.x);
+            float ragged = 1.0 + 0.08 * sin(5.0 * angle + input.phase) + 0.05 * sin(3.0 * angle - 2.0 * input.phase);
+            float reach = length(input.local) * ragged;
+            float bowl = saturate(1.0 - Sq(reach / input.value.z));
+            float scorch = 1.0 - smoothstep(0.55, 1.0, reach);
+            return half4(0.0, input.value.w * saturate(bowl * 3.0), input.value.y * scorch, input.value.x * bowl * bowl);
+        }
+
+        // Brightest along the edges, where the bow wave breaks.
+        half4 WakeFragment(StampVaryings input) : SV_Target
+        {
+            float across = abs(input.local.x);
+            float shape = (1.0 - smoothstep(0.75, 1.0, across)) * (1.0 - smoothstep(0.85, 1.0, abs(input.local.y)));
+            float edge = lerp(0.6, 1.0, smoothstep(0.3, 0.8, across));
+            float along = lerp(0.5, 1.0, input.local.y * 0.5 + 0.5);
+            return half4(input.value.x * shape * edge * along, 0.0, 0.0, 0.0);
+        }
+
         float4 FadeVertex(uint vertexID : SV_VertexID) : SV_POSITION
         {
             float2 uv = float2((vertexID << 1) & 2, vertexID & 2);
@@ -104,7 +127,6 @@ Shader "Hidden/HyperRTS/Interaction Brush"
         }
         ENDHLSL
 
-        // RG: travel direction, steered by the stamp's direction weight.
         Pass
         {
             Name "TrampleDirection"
@@ -141,7 +163,31 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             ENDHLSL
         }
 
-        // dst - _InteractionFade over the whole map.
+        // Scars only deepen: they last the match.
+        Pass
+        {
+            Name "Scars"
+            ColorMask GBA
+            BlendOp Max
+            Blend One One
+            HLSLPROGRAM
+            #pragma vertex StampVertex
+            #pragma fragment ScarsFragment
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Wake"
+            ColorMask R
+            BlendOp Max
+            Blend One One
+            HLSLPROGRAM
+            #pragma vertex StampVertex
+            #pragma fragment WakeFragment
+            ENDHLSL
+        }
+
         Pass
         {
             Name "Fade"

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
@@ -13,16 +12,18 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>Gathers this frame's stamps from vehicles, building footprints and big craters the local player sees.</summary>
+    /// <summary>Gathers this frame's stamps from vehicles, building footprints and wakes the local player sees.</summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class InteractionStampSystem : SystemBase
     {
         private Dictionary<Entity, float2> _last = new();
         private Dictionary<Entity, float2> _current = new();
+        private Dictionary<Entity, float2> _lastAfloat = new();
+        private Dictionary<Entity, float2> _currentAfloat = new();
         private EntityQuery _vehicles;
         private EntityQuery _buildings;
-        private EntityQuery _fog;
+        private EntityQuery _units;
 
         public InteractionStamps Stamps { get; } = new();
 
@@ -32,7 +33,8 @@ namespace HyperRTS.Presentation.Environment
                 .WithNone<FogHidden, DisableRendering>().Build();
             _buildings = SystemAPI.QueryBuilder().WithAll<BuildingTag, NavObstacle, LocalToWorld>()
                 .WithNone<FogHidden, DisableRendering>().Build();
-            _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
+            _units = SystemAPI.QueryBuilder().WithAll<NavAgent, LocalToWorld>()
+                .WithNone<FogHidden, DisableRendering>().Build();
         }
 
         protected override void OnUpdate()
@@ -41,13 +43,14 @@ namespace HyperRTS.Presentation.Environment
             if (InteractionMap.Quality == InteractionQuality.Off)
             {
                 _last.Clear();
+                _lastAfloat.Clear();
                 return;
             }
 
             CompleteDependency();
             AddVehicles();
             AddBuildings();
-            AddCraters();
+            AddWakes();
         }
 
         private void AddVehicles()
@@ -102,29 +105,47 @@ namespace HyperRTS.Presentation.Environment
             }
         }
 
-        private void AddCraters()
+        private void AddWakes()
         {
-            if (!SystemAPI.TryGetSingletonBuffer<CueEvent>(out var cues, true) || cues.IsEmpty)
+            var deltaTime = SystemAPI.Time.DeltaTime;
+            if (!SystemAPI.TryGetSingleton(out NavGrid grid) || !grid.IsCreated || deltaTime <= 0f)
             {
+                _lastAfloat.Clear();
                 return;
             }
 
-            SystemAPI.TryGetSingleton(out LocalFogView view);
-            SystemAPI.TryGetSingleton(out FactionRelations relations);
-            _fog.CompleteDependency();
-            _fog.TryGetSingleton(out FogOfWar fog);
-            foreach (var impact in cues)
+            _currentAfloat.Clear();
+
+            using var entities = _units.ToEntityArray(Allocator.Temp);
+            using var agents = _units.ToComponentDataArray<NavAgent>(Allocator.Temp);
+            using var transforms = _units.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
+            for (var i = 0; i < entities.Length; i++)
             {
-                if (IsBigCrater(impact) && CueRules.IsSeenLocally(impact, view, fog, relations))
+                var position = transforms[i].Position;
+                if (!InWater(grid, position))
                 {
-                    InteractionMath.AddCrater(impact.Position.xz, impact.Radius, Stamps.Trample, Stamps.Tracks);
+                    continue;
+                }
+
+                _currentAfloat[entities[i]] = position.xz;
+                var step = _lastAfloat.TryGetValue(entities[i], out var last) ? position.xz - last : float2.zero;
+                var travelled = math.length(step);
+                var speed = travelled / deltaTime;
+                if (speed >= InteractionMath.MinWakeSpeed && travelled <= InteractionMath.MaxStep)
+                {
+                    Stamps.AddWake(position.xz, step / travelled, speed, agents[i].Radius);
                 }
             }
+
+            (_lastAfloat, _currentAfloat) = (_currentAfloat, _lastAfloat);
         }
 
-        private static bool IsBigCrater(in CueEvent cue)
+        // The height checks leave out aircraft and units on bridges.
+        private static bool InWater(in NavGrid grid, float3 position)
         {
-            return CueRules.IsGroundImpact(cue) && cue.Radius >= InteractionMath.BigCraterRadius;
+            var water = (grid.Surface(grid.WorldToCell(position)) & NavSurface.Water) != 0;
+            return water && grid.Terrain.Height(position.xz) < grid.WaterLevel &&
+                   position.y <= grid.WaterLevel + InteractionMath.MaxGroundGap;
         }
     }
 }

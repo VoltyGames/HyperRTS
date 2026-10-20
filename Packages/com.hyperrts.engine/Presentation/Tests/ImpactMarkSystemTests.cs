@@ -1,4 +1,5 @@
 using System.Linq;
+using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
@@ -13,7 +14,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Presentation.Tests
 {
-    /// <summary>The impact mark system run on hand-made impacts: where projectors go, the cap, fades, replay seeks.</summary>
+    /// <summary>The impact mark system run on hand-made impacts: where projectors go, the cap, fades, scars, replay seeks.</summary>
     public class ImpactMarkSystemTests
     {
         private const int Mortar = 7;
@@ -21,6 +22,7 @@ namespace HyperRTS.Presentation.Tests
         private World _world;
         private EntityManager _em;
         private ImpactMarkSystem _system;
+        private InteractionStampSystem _stamps;
         private ImpactMark _mark;
         private Material _decal;
         private NativeHashMap<int, Entity> _prefabs;
@@ -30,6 +32,7 @@ namespace HyperRTS.Presentation.Tests
         {
             _world = new World("Impact Mark Tests");
             _em = _world.EntityManager;
+            _stamps = _world.CreateSystemManaged<InteractionStampSystem>();
             _system = _world.CreateSystemManaged<ImpactMarkSystem>();
             _em.CreateEntity(typeof(CueQueue), typeof(CueEvent));
 
@@ -68,6 +71,7 @@ namespace HyperRTS.Presentation.Tests
         private void Run(double time)
         {
             _world.SetTime(new TimeData(time, 1f / 30f));
+            _stamps.Update();
             _system.Update();
             using var query = _em.CreateEntityQuery(typeof(CueQueue));
             _em.GetBuffer<CueEvent>(query.GetSingletonEntity()).Clear();
@@ -122,6 +126,44 @@ namespace HyperRTS.Presentation.Tests
 
             Run(15.5);
             Assert.IsEmpty(Shown());
+        }
+
+        [Test]
+        public void CraterMark_ScarsTheGround_HalfItsSizeAcross()
+        {
+            _mark.craterDepth = 0.8f;
+            Land(new float3(5f, 0f, -2f));
+            Land(new float3(9f, 0f, 0f), ImpactSurface.Water);
+            Run(1.0);
+
+            var scars = _stamps.Stamps.Scars;
+            Assert.AreEqual(1, scars.Count, "one scar, on the ground only");
+            Assert.AreEqual(new float2(5f, -2f), scars[0].Center);
+            Assert.AreEqual(new float2(1.5f), scars[0].HalfSize);
+            Assert.AreEqual(1, _stamps.Stamps.Trample.Count, "grass flattened in the crater");
+        }
+
+        [Test]
+        public void MarkWithoutCraterOrScorch_LeavesNoScar()
+        {
+            Land(float3.zero);
+            Run(1.0);
+
+            Assert.IsEmpty(_stamps.Stamps.Scars);
+        }
+
+        [Test]
+        public void ReplaySeekBack_ResetsTheScars()
+        {
+            var clock = _em.CreateEntity();
+            _em.AddComponentData(clock, new ReplayPlayback { Time = 20f, Duration = 60f });
+            Run(1.0);
+            Assert.IsFalse(_stamps.Stamps.Reset);
+
+            _em.SetComponentData(clock, new ReplayPlayback { Time = 5f, Duration = 60f });
+            Run(1.1);
+
+            Assert.IsTrue(_stamps.Stamps.Reset);
         }
 
         [Test]

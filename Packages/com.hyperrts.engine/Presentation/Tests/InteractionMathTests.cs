@@ -127,20 +127,6 @@ namespace HyperRTS.Presentation.Tests
             Assert.AreEqual(new float4(1f, 1f, 0f, 0f), stamp.Value);
         }
 
-        [Test]
-        public void AddCrater_StampsRoundOnBothMaps()
-        {
-            var trample = new List<InteractionStamp>();
-            var tracks = new List<InteractionStamp>();
-
-            InteractionMath.AddCrater(new float2(1f, 2f), 4f, trample, tracks);
-
-            Assert.AreEqual(new float2(4f, 4f), trample[0].HalfSize);
-            Assert.AreEqual(1f, trample[0].Value.w);
-            Assert.AreEqual(1f, tracks[0].Value.w);
-            Assert.AreEqual(0f, tracks[0].Value.x);
-        }
-
         private static void AssertNear(float2 expected, float2 actual)
         {
             Assert.AreEqual(expected.x, actual.x, 1e-5f);

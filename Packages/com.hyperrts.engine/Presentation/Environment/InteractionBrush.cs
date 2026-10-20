@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -12,7 +13,9 @@ namespace HyperRTS.Presentation.Environment
         private const int TrampleDirectionPass = 0;
         private const int TrampleAmountPass = 1;
         private const int TracksPass = 2;
-        private const int FadePass = 3;
+        private const int ScarsPass = 3;
+        private const int WakePass = 4;
+        private const int FadePass = 5;
 
         private static readonly int StampsId = Shader.PropertyToID("_InteractionStamps");
         private static readonly int OffsetId = Shader.PropertyToID("_InteractionStampOffset");
@@ -32,31 +35,41 @@ namespace HyperRTS.Presentation.Environment
             _material = new Material(shader) { hideFlags = HideFlags.DontSave };
         }
 
-        /// <summary>Clears both maps to no direction, standing plants and clean ground.</summary>
         public void Clear(InteractionSurfaces surfaces)
         {
             _commands.Clear();
-            _commands.SetRenderTarget(surfaces.Trample);
-            _commands.ClearRenderTarget(false, true, InteractionSurfaces.TrampleClear);
-            _commands.SetRenderTarget(surfaces.Tracks);
-            _commands.ClearRenderTarget(false, true, Color.clear);
+            AppendClear(surfaces);
             Graphics.ExecuteCommandBuffer(_commands);
         }
 
-        public void Draw(InteractionSurfaces surfaces, int recoverySteps, int fadeSteps, InteractionStamps stamps)
+        public void Draw(InteractionSurfaces surfaces, int recoverySteps, int fadeSteps, int wakeSteps, InteractionStamps stamps)
         {
             Upload(stamps);
             _commands.Clear();
-            _commands.SetGlobalBuffer(StampsId, _buffer);
+            if (stamps.Reset)
+            {
+                AppendClear(surfaces);
+            }
 
+            _commands.SetGlobalBuffer(StampsId, _buffer);
+            var offset = 0;
             _commands.SetRenderTarget(surfaces.Trample);
             Fade(new Vector4(0f, 0f, recoverySteps, 0f) / InteractionMath.Levels);
-            DrawStamps(TrampleDirectionPass, 0, stamps.Trample.Count);
-            DrawStamps(TrampleAmountPass, 0, stamps.Trample.Count);
+            DrawStamps(TrampleDirectionPass, offset, stamps.Trample.Count);
+            DrawStamps(TrampleAmountPass, offset, stamps.Trample.Count);
+            offset += stamps.Trample.Count;
 
+            // Scars (BA) never fade: they last the match.
             _commands.SetRenderTarget(surfaces.Tracks);
             Fade(new Vector4(fadeSteps, fadeSteps, 0f, 0f) / InteractionMath.Levels);
-            DrawStamps(TracksPass, stamps.Trample.Count, stamps.Tracks.Count);
+            DrawStamps(TracksPass, offset, stamps.Tracks.Count);
+            offset += stamps.Tracks.Count;
+            DrawStamps(ScarsPass, offset, stamps.Scars.Count);
+            offset += stamps.Scars.Count;
+
+            _commands.SetRenderTarget(surfaces.Wake);
+            Fade(new Vector4(wakeSteps, 0f, 0f, 0f) / InteractionMath.Levels);
+            DrawStamps(WakePass, offset, stamps.Wakes.Count);
             Graphics.ExecuteCommandBuffer(_commands);
         }
 
@@ -67,11 +80,10 @@ namespace HyperRTS.Presentation.Environment
             CoreUtils.Destroy(_material);
         }
 
-        // One buffer: tracks start after the trample stamps.
+        // One buffer in Draw's order, so each pass draws a slice of it.
         private void Upload(InteractionStamps stamps)
         {
-            var trample = stamps.Trample.Count;
-            var needed = Mathf.Max(trample + stamps.Tracks.Count, 1);
+            var needed = Mathf.Max(stamps.Trample.Count + stamps.Tracks.Count + stamps.Scars.Count + stamps.Wakes.Count, 1);
             if (_buffer == null || _buffer.count < needed)
             {
                 _buffer?.Release();
@@ -79,8 +91,27 @@ namespace HyperRTS.Presentation.Environment
                     InteractionStamp.Stride);
             }
 
-            _buffer.SetData(stamps.Trample, 0, 0, trample);
-            _buffer.SetData(stamps.Tracks, 0, trample, stamps.Tracks.Count);
+            var offset = 0;
+            Put(stamps.Trample, ref offset);
+            Put(stamps.Tracks, ref offset);
+            Put(stamps.Scars, ref offset);
+            Put(stamps.Wakes, ref offset);
+        }
+
+        private void Put(List<InteractionStamp> list, ref int offset)
+        {
+            _buffer.SetData(list, 0, offset, list.Count);
+            offset += list.Count;
+        }
+
+        private void AppendClear(InteractionSurfaces surfaces)
+        {
+            _commands.SetRenderTarget(surfaces.Trample);
+            _commands.ClearRenderTarget(false, true, InteractionSurfaces.TrampleClear);
+            _commands.SetRenderTarget(surfaces.Tracks);
+            _commands.ClearRenderTarget(false, true, Color.clear);
+            _commands.SetRenderTarget(surfaces.Wake);
+            _commands.ClearRenderTarget(false, true, Color.clear);
         }
 
         private void Fade(Vector4 amount)

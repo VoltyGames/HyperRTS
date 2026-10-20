@@ -21,6 +21,7 @@ namespace HyperRTS.Presentation.Environment
         private InteractionSurfaces _surfaces;
         private float _recoveryCarry;
         private float _fadeCarry;
+        private float _wakeCarry;
 
         /// <summary>Map resolution, or Off. Written by <see cref="Rendering.PresentationQuality.Apply"/>.</summary>
         public static InteractionQuality Quality { get; internal set; } = PresentationQuality.Default.Interactions;
@@ -39,7 +40,8 @@ namespace HyperRTS.Presentation.Environment
             var deltaTime = Time.deltaTime;
             var recovery = InteractionMath.FadeSteps(ref _recoveryCarry, deltaTime, InteractionMath.TrampleRecoverySeconds);
             var fade = InteractionMath.FadeSteps(ref _fadeCarry, deltaTime, InteractionMath.TrackFadeSeconds);
-            _brush.Draw(_surfaces, recovery, fade, stamps);
+            var wake = InteractionMath.FadeSteps(ref _wakeCarry, deltaTime, InteractionMath.WakeFadeSeconds);
+            _brush.Draw(_surfaces, recovery, fade, wake, stamps);
         }
 
         protected override void OnDisabled() => Release();
@@ -82,6 +84,7 @@ namespace HyperRTS.Presentation.Environment
         {
             _recoveryCarry = 0f;
             _fadeCarry = 0f;
+            _wakeCarry = 0f;
             if (_surfaces == null)
             {
                 return;

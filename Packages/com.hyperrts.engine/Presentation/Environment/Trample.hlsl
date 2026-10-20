@@ -1,31 +1,34 @@
-// Interaction maps published by InteractionSurfaces. Include after URP's Core.hlsl.
-//   _HyperRTSTrample  RG travel direction * 0.5 + 0.5, B grass flatten, A crop damage
-//   _HyperRTSTracks   R rut depth, G churned soil
-// A zero rect (no map, or maps off) makes every guarded read neutral.
+// Include after URP's Core.hlsl. Channel layout: docs/modules/client.md, Interaction maps.
 #ifndef HYPERRTS_TRAMPLE_INCLUDED
 #define HYPERRTS_TRAMPLE_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
 
-#define TRAMPLE_MAX_BEND 1.4 // radians a fully flattened plant leans over
+#define TRAMPLE_MAX_BEND 1.4
+#define TRACKS_MAX_CRATER 2.0   // matches InteractionMath.MaxCraterDepth
+#define CRATER_TAP_TEXELS 1.5
 
 TEXTURE2D(_HyperRTSTrample);
 TEXTURE2D(_HyperRTSTracks);
+TEXTURE2D(_HyperRTSWake);
 float4 _HyperRTSInteractionRect; // x min, z min, 1 / width, 1 / depth; zero = no maps
-float4 _HyperRTSTracksTexel;     // texels across and deep, metres per texel in x and z
+float4 _HyperRTSTracksTexel;     // texels in x and z, metres per texel in x and z
 
 struct TrampleSample
 {
-    float2 direction; // world XZ the trampler drove
-    half flatten;     // grass: 1 flat, recovers to 0
-    half crop;        // crops: 1 flattened or gone for good
+    float2 direction;
+    half flatten;
+    half crop;
 };
 
 struct TrackSample
 {
-    half depth;   // rut depth
-    half churn;   // churned soil
-    float2 slope; // rut depth per metre in x and z
+    half depth;
+    half churn;
+    float2 slope;
+    half scorch;
+    float crater; // metres
+    float2 craterSlope;
 };
 
 bool InteractionMapsOn()
@@ -38,7 +41,7 @@ float2 InteractionUV(float2 positionXZ)
     return RectUV(_HyperRTSInteractionRect, positionXZ);
 }
 
-// Unguarded: the caller checks InteractionMapsOn. Vertex-safe (explicit LOD).
+// Unguarded: the caller checks InteractionMapsOn.
 TrampleSample ReadTrample(float2 positionXZ)
 {
     half4 texel = SAMPLE_TEXTURE2D_LOD(_HyperRTSTrample, sampler_LinearClamp, InteractionUV(positionXZ), 0);
@@ -49,7 +52,6 @@ TrampleSample ReadTrample(float2 positionXZ)
     return s;
 }
 
-// Vertex-safe (explicit LOD). Zero direction and amounts where there are no maps.
 TrampleSample SampleTrample(float2 positionXZ)
 {
     TrampleSample s = (TrampleSample)0;
@@ -61,14 +63,17 @@ TrampleSample SampleTrample(float2 positionXZ)
     return s;
 }
 
-// Unguarded: the caller checks InteractionMapsOn. Slope is the bilinear surface's gradient over one 2x2 gather.
+// Unguarded: the caller checks InteractionMapsOn.
 TrackSample ReadTracks(float2 positionXZ)
 {
     float2 uv = InteractionUV(positionXZ);
     TrackSample s;
-    half2 tracks = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0).rg;
+    half4 tracks = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0);
     s.depth = tracks.r;
     s.churn = tracks.g;
+    s.scorch = tracks.b;
+    s.crater = tracks.a * TRACKS_MAX_CRATER;
+    s.craterSlope = 0.0;
 
     // Gather order: x (u0, v1), y (u1, v1), z (u1, v0), w (u0, v0).
     float4 ruts = GATHER_RED_TEXTURE2D(_HyperRTSTracks, sampler_LinearClamp, uv);
@@ -76,10 +81,34 @@ TrackSample ReadTracks(float2 positionXZ)
     float alongX = lerp(ruts.z - ruts.w, ruts.y - ruts.x, t.y);
     float alongZ = lerp(ruts.x - ruts.w, ruts.y - ruts.z, t.x);
     s.slope = float2(alongX, alongZ) / max(_HyperRTSTracksTexel.zw, 1e-4);
+
+    // A bowl spans many texels, so a wide central difference keeps its slope smooth.
+    UNITY_BRANCH
+    if (tracks.a > 0.0)
+    {
+        float2 step = CRATER_TAP_TEXELS / max(_HyperRTSTracksTexel.xy, 1.0);
+        float east = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv + float2(step.x, 0.0), 0).a;
+        float west = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv - float2(step.x, 0.0), 0).a;
+        float north = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv + float2(0.0, step.y), 0).a;
+        float south = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv - float2(0.0, step.y), 0).a;
+        float2 span = 2.0 * CRATER_TAP_TEXELS * max(_HyperRTSTracksTexel.zw, 1e-4);
+        s.craterSlope = float2(east - west, north - south) * TRACKS_MAX_CRATER / span;
+    }
     return s;
 }
 
-// Leans a plant vertex about its root along the travel direction (0 standing, 1 flat). No direction just sinks.
+half SampleWake(float3 positionWS)
+{
+    half wake = 0.0;
+    UNITY_BRANCH
+    if (InteractionMapsOn())
+    {
+        wake = SAMPLE_TEXTURE2D_LOD(_HyperRTSWake, sampler_LinearClamp, InteractionUV(positionWS.xz), 0).r;
+    }
+    return wake;
+}
+
+// With no direction a plant just sinks.
 float3 TrampleBend(float3 world, float3 origin, float2 direction, half amount)
 {
     float lean = amount * TRAMPLE_MAX_BEND;
@@ -91,7 +120,7 @@ float3 TrampleBend(float3 world, float3 origin, float2 direction, half amount)
     }
 
     float2 d = direction * rsqrt(length2);
-    float3 axis = float3(d.y, 0.0, -d.x); // tips the top towards +direction
+    float3 axis = float3(d.y, 0.0, -d.x);
     return WindRotate(world, origin, axis, lean);
 }
 

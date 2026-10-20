@@ -1,5 +1,3 @@
-// HyperRTS/Terrain forward pass: URP PBR on the blended layers, plus ruts and trampled grass (Trample.hlsl) and
-// wetness and puddles (TerrainWetness.hlsl).
 #ifndef HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 #define HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 
@@ -9,10 +7,18 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainWetness.hlsl"
 
-#define RUT_DEPTH 0.12          // metres a full rut dents the shading normal
+#define RUT_DEPTH 0.12
 #define RUT_DARKENING 0.4
-#define SOIL_TINT 0.65          // churned soil's blend toward bare earth
-#define FLATTEN_DARKENING 0.06  // darkening under flattened grass
+#define SOIL_TINT 0.65
+#define FLATTEN_DARKENING 0.06
+#define CRATER_RELIEF 1.6       // exaggerated so the sun shapes the bowl from the RTS camera
+#define CRATER_FULL_DEPTH 0.5
+#define CRATER_DARKENING 0.3
+#define CRATER_DAMPNESS 0.2
+#define CRATER_OCCLUSION 0.35
+#define CRATER_PUDDLE 0.6
+#define SCORCH_COVER 0.9
+#define SCORCH_SMOOTHNESS 0.03
 
 struct TerrainForwardVaryings
 {
@@ -55,7 +61,7 @@ TerrainForwardVaryings TerrainForwardVertex(TerrainAttributes input)
     return output;
 }
 
-// Returns the rut depth, where puddles gather.
+// Returns where puddles gather.
 half ApplyInteraction(inout TerrainSurface surface, float2 positionXZ)
 {
     UNITY_BRANCH
@@ -66,12 +72,20 @@ half ApplyInteraction(inout TerrainSurface surface, float2 positionXZ)
 
     TrackSample tracks = ReadTracks(positionXZ);
     half flatten = ReadTrample(positionXZ).flatten;
+    half bowl = (half)saturate(tracks.crater / CRATER_FULL_DEPTH);
     half3 earth = surface.albedo * half3(0.62, 0.5, 0.4);
-    surface.albedo = lerp(surface.albedo, earth, SOIL_TINT * tracks.churn);
-    surface.albedo *= (1.0 - RUT_DARKENING * tracks.depth) * (1.0 - FLATTEN_DARKENING * flatten);
-    half2 slope = (half2)(tracks.slope * RUT_DEPTH);
+    surface.albedo = lerp(surface.albedo, earth, SOIL_TINT * max(tracks.churn, bowl));
+    surface.albedo *= (1.0 - RUT_DARKENING * tracks.depth) * (1.0 - FLATTEN_DARKENING * flatten) *
+        (1.0 - CRATER_DARKENING * bowl);
+    surface.smoothness = saturate(surface.smoothness + CRATER_DAMPNESS * bowl);
+    surface.occlusion *= 1.0 - CRATER_OCCLUSION * bowl;
+
+    surface.albedo = lerp(surface.albedo, half3(0.045, 0.04, 0.035), SCORCH_COVER * tracks.scorch);
+    surface.smoothness = lerp(surface.smoothness, SCORCH_SMOOTHNESS, tracks.scorch);
+
+    half2 slope = (half2)(tracks.slope * RUT_DEPTH + tracks.craterSlope * CRATER_RELIEF);
     surface.normalTS = normalize(half3(surface.normalTS.xy + slope, surface.normalTS.z));
-    return tracks.depth;
+    return max(tracks.depth, CRATER_PUDDLE * bowl);
 }
 
 InputData TerrainInputData(TerrainForwardVaryings input, half3 normalTS)

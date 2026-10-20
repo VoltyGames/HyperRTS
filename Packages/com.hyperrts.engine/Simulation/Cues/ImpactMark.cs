@@ -26,7 +26,18 @@ namespace HyperRTS.Simulation.Cues
         [Min(0.1f)]
         public float depth = 1f;
 
-        [Tooltip("Seconds the mark stays at full strength; 0 keeps it until newer marks of this kind reuse it.")]
+        [Tooltip("Metres deep the crater bowl dents the ground's lighting for the rest of the match, half the mark's size " +
+                 "across; 0 for none. Clipped at 2 m.")]
+        [Min(0f)]
+        public float craterDepth;
+
+        [Tooltip("How black the ground is burnt for the rest of the match, in a disc a little wider than the bowl: 0 none, " +
+                 "1 soot black.")]
+        [Range(0f, 1f)]
+        public float scorch;
+
+        [Tooltip("Seconds the decal stays at full strength; 0 keeps it until newer marks of this kind reuse it. The " +
+                 "crater and scorch outlast it.")]
         [Min(0f)]
         public float lifetime = 120f;
 
@@ -37,5 +48,8 @@ namespace HyperRTS.Simulation.Cues
         [Tooltip("Most marks of this kind on the map at once; past it the oldest is reused.")]
         [Min(1)]
         public int maxCount = 64;
+
+        /// <summary>Leaves a crater or scorch in the ground for the rest of the match.</summary>
+        public bool ScarsGround => craterDepth > 0f || scorch > 0f;
     }
 }

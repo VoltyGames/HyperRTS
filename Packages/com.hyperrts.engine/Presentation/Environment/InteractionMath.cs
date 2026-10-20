@@ -5,7 +5,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>Sizes, timing and stamp shapes of the interaction maps (trampling and track marks).</summary>
+    /// <summary>Sizes, timing and stamp shapes of the interaction maps (trampling, track marks, scars and wakes).</summary>
     public static class InteractionMath
     {
         /// <summary>Largest side of either map; bigger maps get coarser texels.</summary>
@@ -16,9 +16,18 @@ namespace HyperRTS.Presentation.Environment
 
         public const float TrampleRecoverySeconds = 60f;
         public const float TrackFadeSeconds = 240f;
+        public const float WakeFadeSeconds = 5f;
 
-        /// <summary>Smallest splash radius whose crater flattens the ground around it.</summary>
-        public const float BigCraterRadius = 3f;
+        /// <summary>Metres at full scale; deeper craters clip. Matches Trample.hlsl.</summary>
+        public const float MaxCraterDepth = 2f;
+
+        public const float ScorchReach = 1.25f;
+
+        public const float MinWakeSpeed = 0.5f;
+
+        public const float FullWakeSpeed = 8f;
+
+        public const float WakeReachSeconds = 0.5f;
 
         /// <summary>A vehicle this far above the terrain (on a bridge or deck) leaves no marks on it.</summary>
         public const float MaxGroundGap = 1f;
@@ -39,6 +48,9 @@ namespace HyperRTS.Presentation.Environment
             InteractionQuality.Low => 1f,
             _ => throw new ArgumentOutOfRangeException(nameof(quality), quality, "Off has no interaction maps."),
         };
+
+        /// <summary>Foam is soft, so the wake map shares the trample map's texel.</summary>
+        public static float WakeTexel(InteractionQuality quality) => TrampleTexel(quality);
 
         /// <summary>Texels needed to cover <paramref name="mapSize"/> metres, capped at <see cref="MaxTextureSize"/>.</summary>
         public static int2 TextureSize(float2 mapSize, float texel) =>
@@ -78,16 +90,6 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>A building's footprint: plants under it stay flat and crops never come back.</summary>
         public static InteractionStamp Footprint(float2 center, float2 size) =>
             Stamp(center, new float2(0f, 1f), size * 0.5f, new float4(1f, 1f, 0f, 0f));
-
-        /// <summary>A big crater: flattened plants and churned soil in a disc of <paramref name="radius"/>.</summary>
-        public static void AddCrater(float2 center, float radius, List<InteractionStamp> trample,
-            List<InteractionStamp> tracks)
-        {
-            var halfSize = new float2(radius);
-            var north = new float2(0f, 1f);
-            trample.Add(Stamp(center, north, halfSize, new float4(1f, 1f, 0f, 1f)));
-            tracks.Add(Stamp(center, north, halfSize, new float4(0f, 1f, 0f, 1f)));
-        }
 
         /// <summary>The unit vector to the right of <paramref name="forward"/> on the ground.</summary>
         public static float2 Right(float2 forward) => new(forward.y, -forward.x);

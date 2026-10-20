@@ -6,11 +6,12 @@ using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>The two interaction render textures and the globals that publish them (layout in Trample.hlsl).</summary>
+    /// <summary>The three interaction render textures and the globals that publish them.</summary>
     public sealed class InteractionSurfaces : IDisposable
     {
         public static readonly int TrampleId = Shader.PropertyToID("_HyperRTSTrample");
         public static readonly int TracksId = Shader.PropertyToID("_HyperRTSTracks");
+        public static readonly int WakeId = Shader.PropertyToID("_HyperRTSWake");
         public static readonly int RectId = Shader.PropertyToID("_HyperRTSInteractionRect");
         public static readonly int TracksTexelId = Shader.PropertyToID("_HyperRTSTracksTexel");
 
@@ -19,6 +20,7 @@ namespace HyperRTS.Presentation.Environment
 
         public readonly RenderTexture Trample;
         public readonly RenderTexture Tracks;
+        public readonly RenderTexture Wake;
         public readonly float4 Rect;
         public readonly InteractionQuality Quality;
 
@@ -39,7 +41,9 @@ namespace HyperRTS.Presentation.Environment
             var trampleSize = InteractionMath.TextureSize(size, InteractionMath.TrampleTexel(quality));
             var tracksSize = InteractionMath.TextureSize(size, InteractionMath.TracksTexel(quality));
             Trample = Create("HyperRTS Trample", trampleSize, GraphicsFormat.R8G8B8A8_UNorm);
-            Tracks = Create("HyperRTS Tracks", tracksSize, GraphicsFormat.R8G8_UNorm);
+            var wakeSize = InteractionMath.TextureSize(size, InteractionMath.WakeTexel(quality));
+            Tracks = Create("HyperRTS Tracks", tracksSize, GraphicsFormat.R8G8B8A8_UNorm);
+            Wake = Create("HyperRTS Wake", wakeSize, GraphicsFormat.R8_UNorm);
         }
 
         public bool Matches(float2 min, float2 size, InteractionQuality quality) =>
@@ -49,6 +53,7 @@ namespace HyperRTS.Presentation.Environment
         {
             Shader.SetGlobalTexture(TrampleId, Trample);
             Shader.SetGlobalTexture(TracksId, Tracks);
+            Shader.SetGlobalTexture(WakeId, Wake);
             Shader.SetGlobalVector(RectId, Rect);
             var texels = new float2(Tracks.width, Tracks.height);
             Shader.SetGlobalVector(TracksTexelId, new float4(texels, _size / texels));
@@ -59,6 +64,7 @@ namespace HyperRTS.Presentation.Environment
         {
             Shader.SetGlobalTexture(TrampleId, Texture2D.blackTexture);
             Shader.SetGlobalTexture(TracksId, Texture2D.blackTexture);
+            Shader.SetGlobalTexture(WakeId, Texture2D.blackTexture);
             Shader.SetGlobalVector(RectId, Vector4.zero);
             Shader.SetGlobalVector(TracksTexelId, Vector4.zero);
         }
@@ -67,6 +73,7 @@ namespace HyperRTS.Presentation.Environment
         {
             Release(Trample);
             Release(Tracks);
+            Release(Wake);
         }
 
         private static RenderTexture Create(string name, int2 size, GraphicsFormat format)

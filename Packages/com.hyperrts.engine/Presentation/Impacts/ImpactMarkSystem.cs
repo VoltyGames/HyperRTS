@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Environment;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
@@ -15,11 +16,13 @@ namespace HyperRTS.Presentation.Impacts
     /// <summary>
     /// Lays the frame's impact <see cref="CueEvent"/>s on open ground as their shooter type's <see cref="ImpactMark"/>s:
     /// pooled URP decal projectors at terrain height, along the ground's slope, turned and sized at random, fading
-    /// with age; past a kind's cap the oldest is reused. Skips impacts the local player can't see. During a replay,
-    /// marks age on its clock and clear when it seeks back.
+    /// with age; past a kind's cap the oldest is reused. Craters and scorch also scar the interaction maps. Skips
+    /// impacts the local player can't see. During a replay, marks age on its clock and clear when it seeks back.
     /// </summary>
+    // After InteractionStampSystem, which clears the stamps craters join.
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateAfter(typeof(InteractionStampSystem))]
     public partial class ImpactMarkSystem : SystemBase
     {
         private readonly Dictionary<ImpactMark, ImpactMarkDecals> _decals = new();
@@ -73,13 +76,18 @@ namespace HyperRTS.Presentation.Impacts
         {
             CompleteDependency();
             var now = Clock();
+            var scars = Scars();
             if (now < _clock)
             {
                 Clear();
+                if (scars != null)
+                {
+                    scars.Reset = true;
+                }
             }
 
             _clock = now;
-            PlaceNew(now);
+            PlaceNew(now, scars);
             foreach (var decals in _decals.Values)
             {
                 decals.Fade(now);
@@ -90,7 +98,11 @@ namespace HyperRTS.Presentation.Impacts
         private float Clock() =>
             SystemAPI.TryGetSingleton(out ReplayPlayback replay) ? replay.Time : (float)SystemAPI.Time.ElapsedTime;
 
-        private void PlaceNew(float now)
+        private InteractionStamps Scars() => InteractionMap.Quality == InteractionQuality.Off
+            ? null
+            : World.GetExistingSystemManaged<InteractionStampSystem>()?.Stamps;
+
+        private void PlaceNew(float now, InteractionStamps scars)
         {
             var cues = SystemAPI.GetSingletonBuffer<CueEvent>(true);
             if (cues.IsEmpty)
@@ -114,21 +126,31 @@ namespace HyperRTS.Presentation.Impacts
                 var marks = _catalog.Find(EntityManager, registry, impact.TypeId);
                 for (var i = 0; marks != null && i < marks.Length; i++)
                 {
-                    Place(marks[i], impact, terrain, now);
+                    Place(marks[i], impact, terrain, now, scars);
                 }
             }
         }
 
-        private void Place(ImpactMark mark, in CueEvent impact, in TerrainHeight terrain, float now)
+        private void Place(ImpactMark mark, in CueEvent impact, in TerrainHeight terrain, float now, InteractionStamps scars)
         {
-            var decal = mark != null && mark.decals.Length > 0 ? mark.decals[_random.NextInt(mark.decals.Length)] : null;
+            if (mark == null)
+            {
+                return;
+            }
+
+            var decal = mark.decals.Length > 0 ? mark.decals[_random.NextInt(mark.decals.Length)] : null;
+            var diameter = ImpactMarkMath.Diameter(mark, impact.Radius, _random.NextFloat());
+            var point = impact.Position.xz;
+            if (scars != null && mark.ScarsGround)
+            {
+                scars.AddCrater(point, mark, diameter);
+            }
+
             if (decal == null)
             {
                 return;
             }
 
-            var diameter = ImpactMarkMath.Diameter(mark, impact.Radius, _random.NextFloat());
-            var point = impact.Position.xz;
             var ground = new float3(point.x, terrain.Height(point), point.y);
             var normal = ImpactMarkMath.GroundNormal(terrain, point, math.max(diameter * 0.25f, 0.5f));
             var rotation = ImpactMarkMath.Facing(normal, _random.NextFloat(2f * math.PI));
