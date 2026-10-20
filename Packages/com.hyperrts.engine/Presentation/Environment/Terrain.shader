@@ -39,6 +39,7 @@ Shader "HyperRTS/Terrain"
         _FarBlend ("Far Blend", Range(0, 1)) = 0.5
         _Variation ("Variation", Range(0, 0.5)) = 0.2
         _VariationSize ("Variation Noise Size (m)", Float) = 400
+        _GrassPatches ("Grass Patch Variation (dry and green)", Range(0, 0.4)) = 0.15
         _WetDarkening ("Wet Darkening", Range(0, 1)) = 0.45
         _WetSmoothness ("Wet Smoothness", Range(0, 1)) = 0.7
         _RainDarkening ("Rain Darkening", Range(0, 1)) = 0.5

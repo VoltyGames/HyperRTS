@@ -9,8 +9,8 @@ ForwardVaryings ForwardVert(Attributes input)
 {
     RowCropInstance plant = _Instances[input.instanceID];
     float3 world = RowCropPosition(input, plant, WindThisFrame());
-    half4 tint = half4(PlantTint(plant.shade, plant.shade), 1.0);
     float height = input.positionOS.y * plant.scale;
+    half4 tint = half4(PlantTint(plant.shade, plant.shade), CanopyLight(height));
     return PlantForwardVaryings(world, plant.position, input.uv, height, RowCropNormal(input, plant), tint);
 }
 

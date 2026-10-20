@@ -5,18 +5,6 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/FoliageInput.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/PlantShading.hlsl"
 
-// Drier and greener patches: a 10 m and a 4.4 m octave, stretched towards the full 0..1 range.
-static const float PatchCoarseCellsPerMetre = 1.0 / 10.0;
-static const float PatchFineCellsPerMetre = 9.0 / 40.0;
-static const float PatchFineWeight = 0.35;
-
-half DryPatch(float2 positionXZ)
-{
-    float coarse = ValueNoise(positionXZ * PatchCoarseCellsPerMetre);
-    float fine = ValueNoise(positionXZ * PatchFineCellsPerMetre);
-    return saturate((lerp(coarse, fine, PatchFineWeight) - 0.5) * 1.6 + 0.5);
-}
-
 ForwardVaryings ForwardVert(Attributes input)
 {
     UNITY_SETUP_INSTANCE_ID(input);

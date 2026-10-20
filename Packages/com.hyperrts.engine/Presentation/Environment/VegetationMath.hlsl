@@ -1,4 +1,4 @@
-// Small math shared by wind, trample and plant shading. Plain HLSL, no textures.
+// Small math shared by wind, trample, plant shading and the terrain. Plain HLSL, no textures.
 #ifndef HYPERRTS_VEGETATION_MATH_INCLUDED
 #define HYPERRTS_VEGETATION_MATH_INCLUDED
 
@@ -37,6 +37,18 @@ float ValueNoise(float2 p)
     float c = WindHash(float3(cell + float2(0.0, 1.0), 0.0));
     float d = WindHash(float3(cell + float2(1.0, 1.0), 0.0));
     return lerp(lerp(a, b, t.x), lerp(c, d, t.x), t.y);
+}
+
+// Drier and greener patches: a 10 m and a 4.4 m octave, stretched towards the full 0..1 range.
+static const float PatchCoarseCellsPerMetre = 1.0 / 10.0;
+static const float PatchFineCellsPerMetre = 9.0 / 40.0;
+static const float PatchFineWeight = 0.35;
+
+float DryPatch(float2 positionXZ)
+{
+    float coarse = ValueNoise(positionXZ * PatchCoarseCellsPerMetre);
+    float fine = ValueNoise(positionXZ * PatchFineCellsPerMetre);
+    return saturate((lerp(coarse, fine, PatchFineWeight) - 0.5) * 1.6 + 0.5);
 }
 
 #endif

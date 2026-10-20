@@ -15,6 +15,7 @@ CBUFFER_START(UnityPerMaterial)
     half _FarBlend;
     float _VariationSize;
     half _Variation;
+    half _GrassPatches;
     half _WetDarkening;
     half _WetSmoothness;
     half _RainDarkening;

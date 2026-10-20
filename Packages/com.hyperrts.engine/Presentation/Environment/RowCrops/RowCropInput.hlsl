@@ -21,7 +21,10 @@ CBUFFER_START(UnityPerMaterial)
     float _Flutter;
     half _GroundBlend;
     half _GroundBlendHeight;
+    half _CanopyShade;
 CBUFFER_END
+
+float _CanopyHeight; // RowCrop.height, set per draw
 
 struct RowCropInstance // RowCrops.compute, 48 bytes
 {
@@ -79,6 +82,13 @@ float3 SwayRowCrop(float3 placed, RowCropInstance plant, WindFrame frame)
 float3 RowCropPosition(Attributes input, RowCropInstance plant, WindFrame frame)
 {
     return SwayRowCrop(PlaceRowCrop(input, plant), plant, frame);
+}
+
+// Light left under the field's heads: it falls off fast below them, so rows show dark gaps between lit tops.
+half CanopyLight(float height)
+{
+    half depth = (half)saturate(height / _CanopyHeight);
+    return lerp(1.0 - _CanopyShade, 1.0, depth * depth);
 }
 
 half3 RowCropNormal(Attributes input, RowCropInstance plant)

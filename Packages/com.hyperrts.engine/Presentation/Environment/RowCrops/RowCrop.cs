@@ -64,7 +64,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         [Tooltip("Bare margin in metres round field edges, roads and placed objects.")]
         public float edgeMargin = 0.6f;
 
-        [Tooltip("Tallest plant height in metres, for culling.")]
+        [Tooltip("Tallest plant height in metres, for culling and the canopy's shade.")]
         public float height = 2f;
 
         [Header("Distances")]

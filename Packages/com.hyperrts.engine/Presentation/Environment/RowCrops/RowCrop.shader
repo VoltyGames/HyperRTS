@@ -15,6 +15,7 @@ Shader "HyperRTS/RowCrop"
         _Flutter ("Plant Flutter (m)", Range(0, 0.2)) = 0.02
         _GroundBlend ("Ground Colour At Roots", Range(0, 1)) = 0.5
         _GroundBlendHeight ("Ground Colour Height (m)", Range(0.01, 2)) = 0.3
+        _CanopyShade ("Canopy Shade At The Roots", Range(0, 1)) = 0.6
     }
 
     SubShader

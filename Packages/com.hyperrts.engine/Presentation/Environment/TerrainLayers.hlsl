@@ -4,6 +4,7 @@
 #define HYPERRTS_TERRAIN_LAYERS_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainHexTiling.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
 
 #define TERRAIN_MAX_LAYERS 16
 #define TERRAIN_MIN_WEIGHT 0.003
@@ -230,6 +231,10 @@ half ApplyMacro(inout TerrainSurface surface, float2 uv, float2 positionXZ)
     half warmth = (noise.y - 0.5) * _Variation;
     half3 variation = 1.0 + half3(light + warmth, light, light - warmth);
     surface.albedo *= lerp(1.0, macro.rgb * 2.0 * variation, surface.macro);
+
+    // The grass cards' dry and green patches, so grass and the ground under it change together.
+    half patch = (half)(DryPatch(positionXZ) * 2.0 - 1.0) * _GrassPatches;
+    surface.albedo *= lerp(1.0, 1.0 + patch * half3(1.0, 0.55, 0.15), surface.grass);
     return macro.a;
 }
 

@@ -28,6 +28,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private static readonly int PatchId = Shader.PropertyToID("_Patch");
         private static readonly int VariantId = Shader.PropertyToID("_Variant");
         private static readonly int InstancesId = Shader.PropertyToID("_Instances");
+        private static readonly int CanopyHeightId = Shader.PropertyToID("_CanopyHeight");
         private static readonly int[] OutputIds =
             { Shader.PropertyToID("_Full"), Shader.PropertyToID("_Simple"), Shader.PropertyToID("_Card") };
 
@@ -161,6 +162,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                 }
 
                 var card = lod == RowCropView.Card;
+                _blocks[slot].SetFloat(CanopyHeightId, _crop.height);
                 var parameters = new RenderParams(card ? _crop.cardMaterial : _crop.material)
                 {
                     camera = camera,

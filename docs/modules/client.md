@@ -108,7 +108,7 @@ without effects. It is presentation only: the simulation never reads it.
 | Shader | Use |
 | --- | --- |
 | `HyperRTS/Water` | Depth colour, refraction, ripples, screen-space scene reflection over the sky, foam and swells at banks, unit wakes (`SampleWake`). Needs Depth and Opaque Textures |
-| `HyperRTS/Foliage` | Alpha-cut plants and tree leaves with wind, trample and translucency |
+| `HyperRTS/Foliage` | Alpha-cut plants and tree leaves with wind, trample, translucency and dry and green patches |
 | `HyperRTS/Bark` | Opaque tree bark with wind. Mask map: R metallic, G AO, A smoothness |
 | `HyperRTS/RowCrop` | GPU-placed field crops. See [row crops](#row-crops) |
 
@@ -176,6 +176,8 @@ direction.
 
 A `RowCrop` asset describes one crop: model variants with full, simple and card meshes, materials, row and plant
 spacing, random scale, turn and lean, and two LOD distances. Variant meshes face +Z with the origin at the root.
+Its `height` also shades the field: light falls off below the heads to `_CanopyShade` at the roots, so rows show
+dark gaps between lit tops.
 
 Each camera regrows the plants of its visible tiles every frame, so trampling and camera moves need no cache.
 Trampled plants bend or disappear. Plants shrink away over the last 15 % of the draw distance. It also runs in edit
