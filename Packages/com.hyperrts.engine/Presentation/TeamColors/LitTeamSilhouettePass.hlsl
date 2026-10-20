@@ -5,7 +5,7 @@
 
 #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamInput.hlsl"
 
-#define SILHOUETTE_FILL 0.35
+#define SILHOUETTE_FILL 0.12
 #define SILHOUETTE_RIM_POWER 2.0
 
 struct SilhouetteAttributes
