@@ -1,4 +1,4 @@
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Cues
 {
     /// <summary>
     /// What an entity's sound and effect are for. Voice slots (<see cref="Ready"/> to <see cref="Attack"/>) reach

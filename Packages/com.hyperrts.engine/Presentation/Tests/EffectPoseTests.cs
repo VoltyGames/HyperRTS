@@ -1,5 +1,4 @@
 using HyperRTS.Presentation.Effects;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;

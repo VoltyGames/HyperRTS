@@ -1,6 +1,6 @@
 using System;
 
-namespace HyperRTS.Core
+namespace HyperRTS.Simulation.Common
 {
     /// <summary>
     /// Shows the field in authoring inspectors only while another field of the same component is set: a bool that is

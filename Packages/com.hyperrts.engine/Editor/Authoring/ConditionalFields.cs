@@ -1,6 +1,6 @@
 using System;
 using System.Reflection;
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
