@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Simulation.Common;
@@ -68,6 +69,43 @@ namespace HyperRTS.Presentation.Tests
             {
                 Object.DestroyImmediate(local.gameObject);
             }
+        }
+
+        [Test]
+        public void Pick_PlaysEachVariantAsItsOwnPooledRig()
+        {
+            _dust.variants = new[] { _sparks.gameObject };
+
+            var dust = _pool.Get(_dust.gameObject);
+            var sparks = _pool.Get(_sparks.gameObject);
+
+            Assert.AreSame(dust, _pool.Get(_dust.gameObject).Pick(0u));
+            Assert.AreSame(sparks, _pool.Get(_dust.gameObject).Pick(1u));
+            Assert.AreSame(sparks, _pool.Get(_dust.gameObject).Pick(1u), "the same key keeps its variant");
+        }
+
+        [Test]
+        public void Pick_ForABurst_ReachesEveryVariant()
+        {
+            _dust.variants = new[] { _sparks.gameObject };
+            var played = new HashSet<EffectRig>();
+
+            for (var i = 0; i < 64; i++)
+            {
+                played.Add(_pool.Get(_dust.gameObject).Pick());
+            }
+
+            Assert.AreEqual(2, played.Count);
+        }
+
+        [Test]
+        public void Get_VariantWithVariants_LogsAndReturnsNull()
+        {
+            _dust.variants = new[] { _sparks.gameObject };
+            _sparks.variants = new[] { _dust.gameObject };
+
+            LogAssert.Expect(LogType.Error, new Regex("Dust.*variants of its own"));
+            Assert.IsNull(_pool.Get(_dust.gameObject));
         }
 
         [Test]

@@ -85,8 +85,10 @@ namespace HyperRTS.Presentation.Effects
             }
 
             var state = _streams.Step(entity, index, socket);
-            rig.Stream(state.From, state.To, place.Rotation, _deltaTime, strength,
-                EffectDetail.Density, ref state.Carry);
+            var key = EffectStreams.Key(entity, index);
+            rig = rig.Pick(key);
+            rig.Stream(state.From, state.To, rig.LoopRotation(place.Rotation, key), _deltaTime, strength,
+                EffectDetail.Density, ref state.Carry, rig.LoopScale(key));
         }
 
         /// <summary>Forgets when entities that no longer exist were first seen, once loop entities came or went.</summary>

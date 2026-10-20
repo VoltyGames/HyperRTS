@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects
@@ -29,14 +30,22 @@ namespace HyperRTS.Presentation.Effects
         [Tooltip("Impacts face the ground normal instead of straight up.")]
         public bool alignToGround = true;
 
+        [Tooltip("Turns each burst, and each entity's loop, by a random angle about the rig's +Y. Off keeps aim.")]
+        public bool randomSpin;
+
+        [Tooltip("Alternative rigs, each without variants of its own. Each play picks this rig or one of them.")]
+        public GameObject[] variants = Array.Empty<GameObject>();
+
         private readonly List<DelayedBurst> _delayed = new();
         private EffectEmitter[] _emitters;
         private EffectLight[] _lights;
-        private int[] _counts;
-        private float[] _weights;
+        private readonly StreamShares _shares = new();
 
         /// <summary>The shared flash lights; none means no flashes.</summary>
         public EffectLights Lights { get; set; }
+
+        /// <summary>Set by the pool from <see cref="variants"/>.</summary>
+        public EffectRig[] Alternatives { get; set; } = Array.Empty<EffectRig>();
 
         /// <summary>Reads the authored emission now, so a broken rig fails when the pool first loads it.</summary>
         public void Prepare() => Captured();
@@ -45,107 +54,81 @@ namespace HyperRTS.Presentation.Effects
         public float ScaleFor(float splashRadius) =>
             UnityEngine.Random.Range(scale.x, scale.y) + scalePerRadius * splashRadius;
 
+        public EffectRig Pick(uint key)
+        {
+            var pick = (int)(key % (uint)(Alternatives.Length + 1));
+            return pick == 0 ? this : Alternatives[pick - 1];
+        }
+
+        public EffectRig Pick() => Pick((uint)UnityEngine.Random.Range(0, int.MaxValue));
+
+        public float LoopScale(uint key) => Mathf.Lerp(scale.x, scale.y, Fraction(key, 1u));
+
+        public Quaternion LoopRotation(Quaternion rotation, uint key) =>
+            randomSpin ? rotation * Yaw(Fraction(key, 2u)) : rotation;
+
+        private static float Fraction(uint key, uint salt) => (math.hash(new uint2(key, salt)) >> 8) / 16777216f;
+
         /// <summary>Fires every authored burst at the pose, the timed ones later, thinned by density.</summary>
         public void Burst(Vector3 position, Quaternion rotation, float burstScale, float density)
         {
             var emitters = Captured();
+            if (randomSpin)
+            {
+                rotation *= Yaw(UnityEngine.Random.value);
+            }
+
             Pose(position, rotation, burstScale);
             for (var e = 0; e < emitters.Length; e++)
             {
                 for (var b = 0; b < emitters[e].BurstCount; b++)
                 {
-                    var count = emitters[e].BurstSize(b, density);
-                    var time = emitters[e].BurstTime(b);
-                    if (time <= 0f)
+                    for (var cycle = 0; cycle < emitters[e].BurstCycles(b); cycle++)
                     {
-                        emitters[e].Emit(count);
-                        continue;
+                        var count = emitters[e].BurstSize(b, density);
+                        Fire(e, count, emitters[e].BurstTime(b, cycle), position, rotation, burstScale);
                     }
-
-                    _delayed.Add(new DelayedBurst
-                    {
-                        Remaining = time, Emitter = e, Count = count,
-                        Position = position, Rotation = rotation, Scale = burstScale,
-                    });
                 }
             }
 
             Flash();
         }
 
+        private void Fire(int emitter, int count, float time, Vector3 position, Quaternion rotation, float burstScale)
+        {
+            if (count <= 0)
+            {
+                return;
+            }
+
+            if (time <= 0f)
+            {
+                _emitters[emitter].Emit(count);
+                return;
+            }
+
+            _delayed.Add(new DelayedBurst
+            {
+                Remaining = time, Emitter = emitter, Count = count,
+                Position = position, Rotation = rotation, Scale = burstScale,
+            });
+        }
+
+        private static Quaternion Yaw(float fraction) => Quaternion.Euler(0f, fraction * 360f, 0f);
+
         /// <summary>
         /// Emits the authored rates for <paramref name="deltaTime"/> and the distance from→to, scaled by strength and
         /// density, spread evenly along the path. <paramref name="carry"/> keeps the fraction of a particle per stream.
         /// </summary>
         public void Stream(Vector3 from, Vector3 to, Quaternion rotation, float deltaTime, float strength,
-            float density, ref float carry)
+            float density, ref float carry, float poseScale = 1f)
         {
             var emitters = Captured();
-            var distance = Vector3.Distance(from, to);
-            var weights = Weights(emitters, deltaTime, distance, out var expected);
-            var total = expected * strength * density;
-            var whole = Mathf.FloorToInt(carry + total);
-            carry = carry + total - whole;
-            if (whole <= 0)
-            {
-                return;
-            }
-
-            // A frame often owes one particle: a weighted draw per particle keeps every emitter at its rate.
-            var counts = Counts(emitters.Length);
-            for (var n = 0; n < whole; n++)
-            {
-                counts[Pick(weights, expected)]++;
-            }
-
+            var counts = _shares.Split(emitters, deltaTime, Vector3.Distance(from, to), strength * density, ref carry);
             for (var e = 0; e < emitters.Length; e++)
             {
-                Spread(emitters[e], counts[e], from, to, rotation);
+                Spread(emitters[e], counts[e], from, to, rotation, poseScale);
             }
-        }
-
-        private int[] Counts(int length)
-        {
-            if (_counts == null || _counts.Length != length)
-            {
-                _counts = new int[length];
-            }
-
-            Array.Clear(_counts, 0, length);
-            return _counts;
-        }
-
-        /// <summary>Each emitter's expected particles for the step, and their sum.</summary>
-        private float[] Weights(EffectEmitter[] emitters, float deltaTime, float distance, out float total)
-        {
-            if (_weights == null || _weights.Length != emitters.Length)
-            {
-                _weights = new float[emitters.Length];
-            }
-
-            total = 0f;
-            for (var e = 0; e < emitters.Length; e++)
-            {
-                _weights[e] = emitters[e].RateOverTime * deltaTime + emitters[e].RateOverDistance * distance;
-                total += _weights[e];
-            }
-
-            return _weights;
-        }
-
-        private static int Pick(float[] weights, float total)
-        {
-            var pick = UnityEngine.Random.value * total;
-            for (var e = 0; e < weights.Length - 1; e++)
-            {
-                pick -= weights[e];
-                if (pick < 0f)
-                {
-                    return e;
-                }
-            }
-
-            return weights.Length - 1;
         }
 
         /// <summary>Fires the queued timed bursts that are due.</summary>
@@ -167,11 +150,12 @@ namespace HyperRTS.Presentation.Effects
             }
         }
 
-        private void Spread(EffectEmitter emitter, int count, Vector3 from, Vector3 to, Quaternion rotation)
+        private void Spread(EffectEmitter emitter, int count, Vector3 from, Vector3 to, Quaternion rotation,
+            float poseScale)
         {
             for (var i = 1; i <= count; i++)
             {
-                Pose(Vector3.Lerp(from, to, i / (float)count), rotation, 1f);
+                Pose(Vector3.Lerp(from, to, i / (float)count), rotation, poseScale);
                 emitter.Emit(1);
             }
         }
@@ -199,30 +183,67 @@ namespace HyperRTS.Presentation.Effects
         public static List<string> Problems(GameObject prefab)
         {
             var problems = new List<string>();
+            AddProblems(prefab, "", problems);
             if (!prefab.TryGetComponent<EffectRig>(out var rig))
             {
-                problems.Add("its root has no EffectRig");
-            }
-            else if (rig.maxDistance <= 0f)
-            {
-                problems.Add("maxDistance must be above 0");
+                return problems;
             }
 
-            foreach (var system in prefab.GetComponentsInChildren<ParticleSystem>(true))
+            for (var i = 0; i < rig.variants.Length; i++)
             {
-                var main = system.main;
-                if (main.simulationSpace != ParticleSystemSimulationSpace.World)
+                var variant = rig.variants[i];
+                if (variant == null)
                 {
-                    problems.Add($"particle system '{system.name}' does not simulate in World space");
+                    problems.Add($"variant {i} is empty");
+                    continue;
                 }
 
-                if (main.scalingMode != ParticleSystemScalingMode.Hierarchy)
+                AddProblems(variant, $"variant '{variant.name}': ", problems);
+                if (variant.TryGetComponent<EffectRig>(out var inner) && inner.variants.Length > 0)
                 {
-                    problems.Add($"particle system '{system.name}' does not use Hierarchy scaling");
+                    problems.Add($"variant '{variant.name}' has variants of its own");
                 }
             }
 
             return problems;
+        }
+
+        private static void AddProblems(GameObject prefab, string prefix, List<string> problems)
+        {
+            if (!prefab.TryGetComponent<EffectRig>(out var rig))
+            {
+                problems.Add(prefix + "its root has no EffectRig");
+            }
+            else if (rig.maxDistance <= 0f)
+            {
+                problems.Add(prefix + "maxDistance must be above 0");
+            }
+
+            var systems = prefab.GetComponentsInChildren<ParticleSystem>(true);
+            var subEmitters = SubEmitters(systems);
+            foreach (var system in systems)
+            {
+                var main = system.main;
+                if (main.simulationSpace != ParticleSystemSimulationSpace.World)
+                {
+                    problems.Add($"{prefix}particle system '{system.name}' does not simulate in World space");
+                }
+
+                if (main.scalingMode != ParticleSystemScalingMode.Hierarchy)
+                {
+                    problems.Add($"{prefix}particle system '{system.name}' does not use Hierarchy scaling");
+                }
+
+                // Bursts are replayed by hand, so an endless one would never stop.
+                var emission = system.emission;
+                for (var b = 0; !subEmitters.Contains(system) && b < emission.burstCount; b++)
+                {
+                    if (emission.GetBurst(b).cycleCount < 1)
+                    {
+                        problems.Add($"{prefix}particle system '{system.name}' burst {b} repeats forever");
+                    }
+                }
+            }
         }
 
         /// <summary>Reads the authored emission on first use.</summary>

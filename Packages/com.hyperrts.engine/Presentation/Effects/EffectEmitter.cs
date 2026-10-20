@@ -34,8 +34,9 @@ namespace HyperRTS.Presentation.Effects
 
         public int BurstCount => _bursts.Length;
 
-        /// <summary>Seconds after the burst starts that this authored burst fires.</summary>
-        public float BurstTime(int index) => _bursts[index].time;
+        public int BurstCycles(int index) => _bursts[index].cycleCount;
+
+        public float BurstTime(int index, int cycle) => _bursts[index].time + cycle * _bursts[index].repeatInterval;
 
         /// <summary>
         /// The burst's particle count thinned by density, at least one while it has any; 0 when its probability fails.

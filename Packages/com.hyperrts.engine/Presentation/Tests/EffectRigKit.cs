@@ -39,12 +39,12 @@ namespace HyperRTS.Presentation.Tests
 
         public static ParticleSystem System(EffectRig rig) => rig.GetComponentInChildren<ParticleSystem>();
 
-        public static void AddBurst(EffectRig rig, float time, short count)
+        public static void AddBurst(EffectRig rig, float time, short count, int cycles = 1, float interval = 0.01f)
         {
             var emission = System(rig).emission;
             var bursts = new ParticleSystem.Burst[emission.burstCount + 1];
             emission.GetBursts(bursts);
-            bursts[^1] = new ParticleSystem.Burst(time, count);
+            bursts[^1] = new ParticleSystem.Burst(time, count, count, cycles, interval);
             emission.SetBursts(bursts);
         }
 

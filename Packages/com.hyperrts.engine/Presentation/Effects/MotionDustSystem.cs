@@ -47,7 +47,7 @@ namespace HyperRTS.Presentation.Effects
                 var state = _streams.Step(entity, 0, socket);
                 var speed = deltaTime > 0f ? Vector3.Distance(state.From, state.To) / deltaTime : 0f;
                 var strength = Mathf.Clamp01(speed / dust.ValueRO.FullSpeed);
-                rig.Stream(state.From, state.To, place.ValueRO.Rotation, deltaTime, strength,
+                rig.Pick(EffectStreams.Key(entity, 0)).Stream(state.From, state.To, place.ValueRO.Rotation, deltaTime, strength,
                     EffectDetail.Density, ref state.Carry);
             }
 

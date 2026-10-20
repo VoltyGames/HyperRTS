@@ -44,6 +44,16 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void VarietyKey_IsStablePerEntityAndStream()
+        {
+            var other = new Entity { Index = 2, Version = 1 };
+
+            Assert.AreEqual(EffectStreams.Key(Shell, 0), EffectStreams.Key(Shell, 0));
+            Assert.AreNotEqual(EffectStreams.Key(Shell, 0), EffectStreams.Key(Shell, 1));
+            Assert.AreNotEqual(EffectStreams.Key(Shell, 0), EffectStreams.Key(other, 0));
+        }
+
+        [Test]
         public void LoopFade_HoldsThenFadesOverTheEnd()
         {
             Assert.AreEqual(1f, LoopFade.Strength(100f, 0f), "no duration streams forever");

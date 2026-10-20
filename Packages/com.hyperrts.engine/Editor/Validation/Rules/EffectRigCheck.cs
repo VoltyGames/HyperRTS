@@ -41,6 +41,24 @@ namespace HyperRTS.Editor.Validation.Rules
             {
                 issues.Error(owner, $"{field} '{rig.name}': {problem}.");
             }
+
+            CheckVariantsArePrefabs(owner, rig, field, issues);
+        }
+
+        private static void CheckVariantsArePrefabs(Object owner, GameObject rig, string field, ValidationIssues issues)
+        {
+            if (!rig.TryGetComponent<EffectRig>(out var root))
+            {
+                return;
+            }
+
+            foreach (var variant in root.variants)
+            {
+                if (variant != null && !PrefabUtility.IsPartOfPrefabAsset(variant))
+                {
+                    issues.Error(owner, $"{field} '{rig.name}' variant '{variant.name}' is not a prefab asset.");
+                }
+            }
         }
 
         /// <summary>Checks the catch-all rig and every per-material rig; an empty material rig plays nothing there.</summary>

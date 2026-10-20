@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects
@@ -14,6 +15,9 @@ namespace HyperRTS.Presentation.Effects
         private readonly List<(Entity, int)> _stale = new();
         private readonly Stack<StreamState> _free = new();
         private int _frame;
+
+        /// <summary>Stable per entity, so its stream keeps one look.</summary>
+        public static uint Key(Entity entity, int index) => math.hash(new int3(entity.Index, entity.Version, index));
 
         /// <summary>Starts a frame; call <see cref="EndFrame"/> after the last <see cref="Step"/>.</summary>
         public void BeginFrame() => _frame++;

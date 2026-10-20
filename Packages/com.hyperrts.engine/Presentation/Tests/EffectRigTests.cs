@@ -56,6 +56,98 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void RepeatingBurst_FiresEachCycleAtItsInterval()
+        {
+            EffectRigKit.AddBurst(_rig, 0f, 5, 3, 0.5f);
+
+            _rig.Burst(Vector3.zero, Quaternion.identity, 1f, 1f);
+            Assert.AreEqual(5, EffectRigKit.System(_rig).particleCount);
+
+            _rig.Tick(0.6f);
+            Assert.AreEqual(10, EffectRigKit.System(_rig).particleCount);
+
+            _rig.Tick(0.5f);
+            _rig.Tick(1f);
+            Assert.AreEqual(15, EffectRigKit.System(_rig).particleCount, "three cycles, no more");
+        }
+
+        [Test]
+        public void Burst_WithoutSpin_KeepsTheAim()
+        {
+            var aim = Quaternion.Euler(30f, 70f, 0f);
+
+            _rig.Burst(Vector3.zero, aim, 1f, 1f);
+
+            Assert.That(Quaternion.Angle(aim, _rig.transform.rotation), Is.LessThan(1e-2f));
+        }
+
+        [Test]
+        public void Burst_WithSpin_TurnsAboutTheRigUp()
+        {
+            _rig.randomSpin = true;
+            var aim = Quaternion.Euler(30f, 70f, 0f);
+            var turned = false;
+
+            for (var i = 0; i < 20; i++)
+            {
+                _rig.Burst(Vector3.zero, aim, 1f, 1f);
+                Assert.That(Vector3.Angle(aim * Vector3.up, _rig.transform.up), Is.LessThan(1e-2f));
+                turned |= Vector3.Angle(aim * Vector3.forward, _rig.transform.forward) > 1f;
+            }
+
+            Assert.IsTrue(turned);
+        }
+
+        [Test]
+        public void Variant_PicksTheRigOrAnAlternativeByKey()
+        {
+            var other = EffectRigKit.Rig("Other");
+            try
+            {
+                _rig.Alternatives = new[] { other };
+
+                Assert.AreSame(_rig, _rig.Pick(0u));
+                Assert.AreSame(other, _rig.Pick(1u));
+                Assert.AreSame(_rig, _rig.Pick(2u));
+            }
+            finally
+            {
+                Object.DestroyImmediate(other.gameObject);
+            }
+        }
+
+        [Test]
+        public void LoopPose_IsStablePerKey_InsideTheScaleRange()
+        {
+            _rig.scale = new Vector2(0.8f, 1.4f);
+            _rig.randomSpin = true;
+            var scales = new float[16];
+
+            for (var key = 0u; key < scales.Length; key++)
+            {
+                scales[key] = _rig.LoopScale(key);
+                Assert.AreEqual(scales[key], _rig.LoopScale(key));
+                Assert.That(scales[key], Is.InRange(0.8f, 1.4f));
+                Assert.AreEqual(_rig.LoopRotation(Quaternion.identity, key),
+                    _rig.LoopRotation(Quaternion.identity, key));
+            }
+
+            Assert.AreNotEqual(scales[0], scales[1]);
+            Assert.AreNotEqual(_rig.LoopRotation(Quaternion.identity, 0u), _rig.LoopRotation(Quaternion.identity, 1u));
+        }
+
+        [Test]
+        public void Stream_PosesAtTheGivenScale()
+        {
+            EffectRigKit.SetRates(_rig, 10f, 0f);
+            var carry = 0f;
+
+            _rig.Stream(Vector3.zero, Vector3.zero, Quaternion.identity, 1f, 1f, 1f, ref carry, 1.5f);
+
+            Assert.AreEqual(Vector3.one * 1.5f, _rig.transform.localScale);
+        }
+
+        [Test]
         public void Stream_CarriesTheFractionToTheNextFrame()
         {
             EffectRigKit.SetRates(_rig, 10f, 0f);

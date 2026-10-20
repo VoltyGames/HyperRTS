@@ -29,7 +29,7 @@ namespace HyperRTS.Presentation.Destruction
                 var rig = effect.ValueRO.Prefab.IsValid() ? _pool.Get(effect.ValueRO.Prefab.Value) : null;
                 if (rig != null)
                 {
-                    rig.Burst(place.ValueRO.Position, place.ValueRO.Rotation, 1f, EffectDetail.Density);
+                    rig.Pick().Burst(place.ValueRO.Position, place.ValueRO.Rotation, 1f, EffectDetail.Density);
                 }
             }
         }

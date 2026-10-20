@@ -39,7 +39,7 @@ namespace HyperRTS.Presentation.Effects
                 }
 
                 var state = _streams.Step(entity, 0, position);
-                rig.Stream(state.From, state.To, EffectPose.Facing(state.To - state.From), deltaTime, 1f,
+                rig.Pick(EffectStreams.Key(entity, 0)).Stream(state.From, state.To, EffectPose.Facing(state.To - state.From), deltaTime, 1f,
                     EffectDetail.Density, ref state.Carry);
             }
 

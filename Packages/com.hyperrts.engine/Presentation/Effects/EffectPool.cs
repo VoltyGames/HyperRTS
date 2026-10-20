@@ -38,8 +38,11 @@ namespace HyperRTS.Presentation.Effects
 
             rig = Spawn(prefab);
             rig.Prepare();
-            return _rigs[prefab] = rig;
+            _rigs[prefab] = rig;
+            rig.Alternatives = Array.ConvertAll(rig.variants, Get);
+            return rig;
         }
+
 
         /// <summary>Fires due timed bursts and fades flashes.</summary>
         public void Tick(float deltaTime)

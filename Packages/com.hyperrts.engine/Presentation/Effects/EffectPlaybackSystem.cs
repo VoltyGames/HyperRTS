@@ -74,7 +74,9 @@ namespace HyperRTS.Presentation.Effects
                 return;
             }
 
-            rig.Burst(effect.Position, EffectPose.Facing(effect.Direction), rig.ScaleFor(0f), EffectDetail.Density);
+            var played = rig.Pick();
+            played.Burst(effect.Position, EffectPose.Facing(effect.Direction), played.ScaleFor(0f),
+                EffectDetail.Density);
         }
 
         private GameObject FindRig(in CueEvent effect, in PrefabRegistry registry)
@@ -103,9 +105,10 @@ namespace HyperRTS.Presentation.Effects
                 return;
             }
 
+            var played = rig.Pick();
             var spin = _random.NextFloat(2f * Mathf.PI);
-            var (position, rotation) = EffectPose.Impact(impact, terrain, hasTerrain, rig.alignToGround, spin);
-            rig.Burst(position, rotation, rig.ScaleFor(impact.Radius), EffectDetail.Density);
+            var (position, rotation) = EffectPose.Impact(impact, terrain, hasTerrain, played.alignToGround, spin);
+            played.Burst(position, rotation, played.ScaleFor(impact.Radius), EffectDetail.Density);
         }
     }
 }
