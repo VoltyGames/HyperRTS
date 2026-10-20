@@ -27,6 +27,7 @@ namespace HyperRTS.Simulation.Combat
         }
     }
 
+    /// <summary>Damage multiplier against one damage type; types not listed take full damage.</summary>
     [InternalBufferCapacity(2)]
     public struct ArmorModifier : IBufferElementData
     {

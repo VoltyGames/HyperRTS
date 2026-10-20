@@ -2,6 +2,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Common
 {
+    /// <summary>Quaternion helpers the simulation shares.</summary>
     public static class Rotations
     {
         /// <summary>The shortest rotation turning unit vector <paramref name="from"/> onto unit vector <paramref name="to"/>.</summary>

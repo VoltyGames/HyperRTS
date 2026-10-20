@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using UnityEditor.PackageManager;
@@ -35,6 +36,9 @@ namespace HyperRTS.Editor.Tests
 
         private static string PackageRoot =>
             PackageInfo.FindForAssembly(typeof(AuthoringBehaviour).Assembly).resolvedPath;
+
+        [Test]
+        public void TopLevelTypesHaveSummaries() => CollectionAssert.IsEmpty(TypeSummaries.Missing(PackageRoot));
 
         [Test]
         public void NamespacesFollowFolders()

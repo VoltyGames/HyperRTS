@@ -12,6 +12,7 @@ namespace HyperRTS.Simulation.Common
         void SetEnabled<T>(bool enabled) where T : unmanaged, IComponentData, IEnableableComponent;
     }
 
+    /// <summary>Buffer helpers for any IEntityWriter.</summary>
     public static class EntityWriterExtensions
     {
         /// <summary>Adds a buffer holding <paramref name="items"/>; a null list adds it empty.</summary>

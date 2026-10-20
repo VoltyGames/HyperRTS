@@ -1,5 +1,6 @@
 namespace HyperRTS.Simulation.Common
 {
+    /// <summary>Whether a RelationMask includes a Relation.</summary>
     public static class RelationMaskExtensions
     {
         public static bool Includes(this RelationMask mask, Relation relation) =>
