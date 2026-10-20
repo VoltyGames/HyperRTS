@@ -1,5 +1,4 @@
-// Water.shader's foam, all drawn from the ripple normal map: rapids on fast water, drifting flecks over the whole river
-// and a band along the banks. Include after the water's CBUFFER and _NormalMap.
+// Water.shader's foam, all from the ripple normal map. Include after the water's CBUFFER, _NormalMap and Trample.hlsl.
 #ifndef HYPERRTS_WATER_FOAM_INCLUDED
 #define HYPERRTS_WATER_FOAM_INCLUDED
 
@@ -9,8 +8,8 @@ half2 FoamSample(float2 uv, float2 tile, float2 dx, float2 dy)
     return UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, uv * scale, dx * scale, dy * scale)).xy;
 }
 
-// Foam only on fast water (vertex G), stretched along the current and broken into patches so the ford doesn't read as a
-// striped block. Slow water skips the fetches; gradients taken before the branch keep them valid inside it.
+// Fast water (vertex G), broken into patches so the ford doesn't read as a striped block.
+// Gradients taken before the branch keep the fetches valid inside it.
 half RapidsFoam(float2 uv, half fast)
 {
     float2 dx = ddx(uv);
@@ -29,8 +28,8 @@ half RapidsFoam(float2 uv, half fast)
     return foam;
 }
 
-// Metres to the waterline: depth over the bed's slope, the slope solved from screen derivatives of depth and position.
-// The ribbon's edge lies buried past the bank, so uv.x can't place it. A flat ford bed reads as far from shore.
+// Metres to the waterline from depth and screen derivatives: the ribbon's edge lies buried past the bank, so uv.x
+// can't place it. A flat ford bed reads as far from shore.
 float ShoreDistance(float depth, float3 positionWS)
 {
     float2 ex = ddx(positionWS.xz);
@@ -44,8 +43,13 @@ float ShoreDistance(float depth, float3 positionWS)
     return depth / slope;
 }
 
-// Calm-water foam: sparse streaks drifting at _FlowSpeed, gathered into patches, denser in a wobbling band along the
-// banks and a thin line at the waterline. Ground detail Low drops it.
+// Swells only pull the waterline down: the bank hides water above it, so rising would harden the soft edge.
+float ShoreLap(float2 uv)
+{
+    return -(0.5 + 0.5 * sin((_Time.y / _ShoreWavePeriod + uv.y * 0.07) * TWO_PI)) * _ShoreLap * _ShoreFadeDepth;
+}
+
+// Calm-water foam: drifting streaks in patches, denser along the banks. Ground detail Low drops it.
 half CalmFoam(float2 uv, float shoreDistance)
 {
     #if defined(_TERRAIN_SIMPLE)
@@ -68,11 +72,43 @@ half CalmFoam(float2 uv, float shoreDistance)
             half band = 1.0 - smoothstep(0.0, bandWidth, shoreDistance);
             half broken = smoothstep(0.0, 0.35, streak) * smoothstep(-0.1, 0.3, patches);
             half waterline = 1.0 - smoothstep(0.2, 0.7, shoreDistance);
-            bank = max(band * band, waterline * 0.35) * broken * _BankFoamAmount;
+
+            // The phase falls with distance, so crests travel shoreward; the wobble bends them off straight lines.
+            float phase = shoreDistance / _ShoreWaveLength + _Time.y / _ShoreWavePeriod + wobble * 0.6;
+            half crest = pow(saturate(sin(phase * TWO_PI) * 0.5 + 0.5), 6.0) * band;
+            bank = max(max(band * band, waterline * 0.35) * _BankFoamAmount, crest * _ShoreWaveFoam) * broken;
         }
 
         return max(flow, bank);
     #endif
+}
+
+struct WakeSample
+{
+    half foam;
+    half2 slope; // wake per metre in x and z, read as a height to tilt the surface
+};
+
+// Foam where units moved through the water, broken up at its fading edges. Water with no wake skips the slope reads.
+WakeSample SampleWakeFoam(float3 positionWS, float2 uv)
+{
+    float2 dx = ddx(uv);
+    float2 dy = ddy(uv);
+    WakeSample wake;
+    wake.foam = 0.0;
+    wake.slope = half2(0.0, 0.0);
+    half amount = SampleWake(positionWS);
+    [branch] if (amount > 0.002)
+    {
+        const float spacing = 0.6; // metres between slope reads, about a wake texel
+        half aheadX = SampleWake(positionWS + float3(spacing, 0.0, 0.0));
+        half aheadZ = SampleWake(positionWS + float3(0.0, 0.0, spacing));
+        wake.slope = (half2(aheadX, aheadZ) - amount) / spacing;
+        half breakup = FoamSample(float2(uv.x, uv.y - _Time.y * _FlowSpeed), _FlowFoamScale * 0.5, dx, dy).x;
+        wake.foam = smoothstep(0.15, 0.6, amount * (0.65 + 0.7 * saturate(breakup + 0.5))) * _WakeFoam;
+    }
+
+    return wake;
 }
 
 #endif

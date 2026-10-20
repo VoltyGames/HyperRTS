@@ -1,6 +1,4 @@
-// River and lake surface: depth-tinted colour, refracted bottom, ripples drifting along V (metres), fresnel sky and
-// sun glint kept under bloom, cloud shadows. Vertex colour A is how shallow a ford is (thinned to _FordAlpha); G streaks
-// foam on fast water. Calm water drifts sparse foam flecks and gathers foam along the banks (WaterFoam.hlsl).
+// River and lake surface, ripples drifting along V (metres). Vertex A is how shallow a ford is, G fast water.
 // Needs the URP asset's Depth and Opaque Textures.
 Shader "HyperRTS/Water"
 {
@@ -32,6 +30,17 @@ Shader "HyperRTS/Water"
         _FlowFoamScale ("Flow Foam Scale (m)", Float) = 6
         _BankFoamWidth ("Bank Foam Width (m)", Float) = 2.5
         _BankFoamAmount ("Bank Foam Amount", Range(0, 1)) = 0.35
+        _ShoreWaveFoam ("Shore Wave Foam", Range(0, 1)) = 0.4
+        _ShoreWaveLength ("Shore Wave Length (m)", Float) = 1.6
+        _ShoreWavePeriod ("Shore Wave Period (s)", Float) = 3.5
+        _ShoreLap ("Shore Lap (fraction of fade depth)", Range(0, 1)) = 0.6
+        _WakeFoam ("Wake Foam", Range(0, 1)) = 0.8
+        _WakeRipple ("Wake Ripple Strength", Range(0, 2)) = 0.5
+        _ReflectionStrength ("Scene Reflection Strength", Range(0, 1)) = 1
+        _ReflectionFloor ("Reflection Looking Straight Down", Range(0.02, 0.5)) = 0.06
+        _ReflectionDistance ("Scene Reflection Reach (m)", Float) = 40
+        _ReflectionThickness ("Scene Reflection Hit Thickness (m)", Float) = 2
+        _ReflectionDistortion ("Scene Reflection Ripple Distortion", Range(0, 1)) = 0.4
     }
 
     SubShader
@@ -96,9 +105,22 @@ Shader "HyperRTS/Water"
                 float _FlowFoamScale;
                 float _BankFoamWidth;
                 half _BankFoamAmount;
+                half _ShoreWaveFoam;
+                float _ShoreWaveLength;
+                float _ShoreWavePeriod;
+                half _ShoreLap;
+                half _WakeFoam;
+                half _WakeRipple;
+                half _ReflectionStrength;
+                half _ReflectionFloor;
+                float _ReflectionDistance;
+                float _ReflectionThickness;
+                half _ReflectionDistortion;
             CBUFFER_END
 
+            #include "Trample.hlsl"
             #include "WaterFoam.hlsl"
+            #include "WaterReflection.hlsl"
             #include "HeightFog.hlsl"
 
             struct Attributes
@@ -185,8 +207,7 @@ Shader "HyperRTS/Water"
                 return glint * min(1.0, headroom / max(Brightest(glint), 0.0001));
             }
 
-            // Clouds dim the sunlight the water scatters back up, about two thirds of it; the sky's share stays. The
-            // refracted bottom already carries the cloud shadow on the ground.
+            // Clouds dim about two thirds of the scattered sunlight. The refracted bottom already has the cloud shadow.
             half3 CloudShade(float3 positionWS)
             {
                 #if defined(_LIGHT_COOKIES)
@@ -203,11 +224,15 @@ Shader "HyperRTS/Water"
                 half3 ripple = Ripples(input.uv, _RippleStrength * rippleScale);
                 half3 bitangent = input.tangentWS.w * cross(input.normalWS, input.tangentWS.xyz);
                 half3 normalWS = normalize(TransformTangentToWorld(ripple, half3x3(input.tangentWS.xyz, bitangent, input.normalWS)));
+                // A wake tilts the surface down its slope, as if the foam were a height.
+                WakeSample wake = SampleWakeFoam(input.positionWS, input.uv);
+                normalWS = normalize(normalWS - half3(wake.slope.x, 0.0, wake.slope.y) * _WakeRipple);
 
                 float2 screenUV = input.positionCS.xy / _ScaledScreenParams.xy;
                 float surface = EyeDepth(input.positionCS.z);
                 float depth = max(0.0, EyeDepth(SampleSceneDepth(screenUV)) - surface);
                 float shoreDistance = ShoreDistance(depth, input.positionWS);
+                float shoreDepth = depth + ShoreLap(input.uv);
 
                 float2 refracted = screenUV + ripple.xy * _Refraction * saturate(depth);
                 if (EyeDepth(SampleSceneDepth(refracted)) < surface)
@@ -224,17 +249,23 @@ Shader "HyperRTS/Water"
                 // The cookie variant tints the sun's colour with the cloud cover, shading glint and foam.
                 Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
                 half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
-                half fresnel = 0.02 + 0.98 * pow(1.0 - saturate(dot(normalWS, view)), 5.0);
+                half grazing = pow(1.0 - saturate(dot(normalWS, view)), 5.0);
+                half fresnel = _ReflectionFloor + (1.0 - _ReflectionFloor) * grazing;
                 half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - _Smoothness, 1.0);
-                half3 color = lerp(body, sky, fresnel);
+                // Ripples only partly bend the scene reflection, so banks and hulls stay readable in it.
+                half3 mirror = normalize(lerp(input.normalWS, normalWS, _ReflectionDistortion));
+                half4 scene = ScreenReflection(input.positionWS, reflect(-view, mirror), input.positionCS.xy);
+                half3 reflection = lerp(sky, RemoveHeightFog(scene.rgb, fog), scene.a * _ReflectionStrength);
+                half3 color = lerp(body, reflection, fresnel);
                 color += Glint(sun, normalWS, view, color, cameraDistance);
 
-                // Calm foam thins out on the last few centimetres so it never paints over the dry bank.
+                // Calm and wake foam thin out on the last few centimetres so they never paint over the dry bank.
                 half rapids = RapidsFoam(input.uv, input.color.g) * 0.5;
-                half calm = CalmFoam(input.uv, shoreDistance) * saturate(depth / (_ShoreFadeDepth * 0.5));
+                half shallowFade = saturate(shoreDepth / (_ShoreFadeDepth * 0.5));
+                half calm = max(CalmFoam(input.uv, shoreDistance), wake.foam) * shallowFade;
                 half foam = max(rapids, calm);
                 color = lerp(color, _FoamColor.rgb * (sun.color * sun.shadowAttenuation * 0.6 + 0.4), foam);
-                half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(depth / _ShoreFadeDepth), foam);
+                half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(shoreDepth / _ShoreFadeDepth), foam);
                 color = ApplyHeightFog(color, fog);
                 return half4(color, alpha);
             }
