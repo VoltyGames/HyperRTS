@@ -26,6 +26,7 @@ that aim on their own are not built in.
 | `DestructibleAuthoring` | Scenery with health and remains. Only explicit attack orders target it |
 | `Crusher` | A vehicle that flattens destructible scenery it drives over |
 | `DamageStagesAuthoring` | Models swapped by health fraction |
+| `BreakablePartsAuthoring` | Wall and roof sections that break one at a time as health drops |
 | `ToppleAuthoring` | Scenery that falls away from the hit that killed it |
 | `StretchPartsAuthoring` | A prop the map builder stretches. Only the middle span scales |
 | `DecayAuthoring` | Remains that wait, sink and disappear |

@@ -10,6 +10,7 @@ namespace HyperRTS.Simulation.Combat
     {
         private ComponentLookup<Health> _health;
         private ComponentLookup<ShownDamageStage> _shownStages;
+        private ComponentLookup<ShownBreakage> _shownBreakage;
         private ComponentLookup<SpawnOnDeath> _remains;
         private ComponentLookup<SpawnEffect> _effects;
         private ComponentLookup<LocalTransform> _transforms;
@@ -21,6 +22,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _health = state.GetComponentLookup<Health>();
             _shownStages = state.GetComponentLookup<ShownDamageStage>();
+            _shownBreakage = state.GetComponentLookup<ShownBreakage>();
             _remains = state.GetComponentLookup<SpawnOnDeath>(true);
             _effects = state.GetComponentLookup<SpawnEffect>(true);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
@@ -33,6 +35,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _health.Update(ref state);
             _shownStages.Update(ref state);
+            _shownBreakage.Update(ref state);
             _remains.Update(ref state);
             _effects.Update(ref state);
             _transforms.Update(ref state);
@@ -50,10 +53,17 @@ namespace HyperRTS.Simulation.Combat
             health.Current = health.Max * fraction;
             _health[scenery] = health;
 
-            // Like a freshly loaded wreck, the stage model changes without its damage effect.
+            // Like a freshly loaded wreck, the stage model and broken parts change without their effects.
             if (!witnessed && _shownStages.HasComponent(scenery))
             {
                 _shownStages[scenery] = new ShownDamageStage { Index = -1 };
+            }
+
+            if (!witnessed && _shownBreakage.HasComponent(scenery))
+            {
+                var breakage = _shownBreakage[scenery];
+                breakage.Seen = false;
+                _shownBreakage[scenery] = breakage;
             }
         }
 
