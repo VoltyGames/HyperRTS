@@ -32,12 +32,12 @@ namespace HyperRTS.Simulation.Tests
             CollectionAssert.Contains(ai.GetAllSystems().AsArray().ToArray(),
                 world.World.Unmanaged.GetExistingUnmanagedSystem<SkirmishAISystem>(), "the skirmish AI runs in the AI group");
 
-            var resume = GameplayPhases.PauseAllButOrders(world.World);
+            var resume = GameplayPhaseGroup.PauseAllButOrders(world.World);
             Assert.IsTrue(orders.Enabled, "players still spawn and join");
             Assert.IsFalse(ai.Enabled, "no AI plays");
             Assert.IsFalse(combat.Enabled);
 
-            GameplayPhases.Restore(world.World, resume);
+            GameplayPhaseGroup.Restore(world.World, resume);
             Assert.IsTrue(ai.Enabled);
             Assert.IsTrue(combat.Enabled);
         }

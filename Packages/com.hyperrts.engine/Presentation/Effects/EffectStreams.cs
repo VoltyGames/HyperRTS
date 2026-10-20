@@ -31,6 +31,8 @@ namespace HyperRTS.Presentation.Effects
                 // Recycled: projectiles and reveals start streams every frame.
                 state = _states[key] = _free.Count > 0 ? _free.Pop() : new StreamState();
                 state.Frame = int.MinValue;
+                state.Key = Key(entity, index);
+                state.Root = null;
             }
 
             var fresh = state.Frame != _frame - 1;

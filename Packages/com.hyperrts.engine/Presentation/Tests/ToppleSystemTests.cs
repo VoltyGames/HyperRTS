@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Core;
 using Unity.Entities;

@@ -17,6 +17,19 @@ namespace HyperRTS.Presentation.Effects
 
         public uint Key;
 
+        /// <summary>The rig <see cref="Rig"/> was picked from.</summary>
+        public EffectRig Root;
+
+        /// <summary>Plays the root's variant for <see cref="Key"/>, picked again only when the root changes.</summary>
+        public void Use(EffectRig root)
+        {
+            if (Root != root)
+            {
+                Root = root;
+                Rig = root.Pick(Key);
+            }
+        }
+
         /// <summary>Streams the rig's authored rates along this frame's path at the effect detail's density.</summary>
         public void Emit(Quaternion rotation, float deltaTime, float strength, float poseScale = 1f) =>
             Rig.Stream(From, To, rotation, deltaTime, strength, EffectDetail.Density, ref Carry, poseScale);

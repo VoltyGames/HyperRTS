@@ -42,6 +42,11 @@ namespace HyperRTS.Editor.Common
             Action<TextureImporter> configure) =>
             WritePng(path, width, height, format, image => image.SetPixels(pixels), configure);
 
+        /// <inheritdoc cref="WritePng(string, int, int, TextureFormat, Color32[], Action{TextureImporter})"/>
+        public static Texture2D WritePng(string path, int width, int height, TextureFormat format, byte[] pixels,
+            Action<TextureImporter> configure) =>
+            WritePng(path, width, height, format, image => image.SetPixelData(pixels, 0), configure);
+
         /// <summary>Renders a camera into <paramref name="target"/> and saves it, shader variants compiled first.</summary>
         public static void RenderPng(Camera camera, RenderTexture target, string path)
         {
@@ -86,7 +91,8 @@ namespace HyperRTS.Editor.Common
             {
                 fill(image);
                 image.Apply(false);
-                File.WriteAllBytes(path, image.EncodeToPNG());
+                // The full path, since a local package's files are not under the project folder.
+                File.WriteAllBytes(Path.GetFullPath(path), image.EncodeToPNG());
             }
             finally
             {

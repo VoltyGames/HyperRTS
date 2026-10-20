@@ -58,6 +58,15 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void Step_KeysANewStreamByEntityAndIndex()
+        {
+            var streams = new EffectStreams();
+            streams.BeginFrame();
+
+            Assert.AreEqual(EffectStreams.Key(Shell, 1), streams.Step(Shell, 1, Vector3.zero).Key);
+        }
+
+        [Test]
         public void LoopFade_HoldsThenFadesOverTheEnd()
         {
             Assert.AreEqual(1f, LoopFade.Strength(100f, 0f), "no duration streams forever");

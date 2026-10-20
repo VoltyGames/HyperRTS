@@ -35,7 +35,6 @@ namespace HyperRTS.Simulation.Navigation
 
         public readonly bool IsCreated => Cells.IsCreated;
 
-
         public void Dispose()
         {
             Cells.Dispose();

@@ -11,13 +11,14 @@ namespace HyperRTS.Presentation.Effects
         /// </summary>
         public static bool InRange(Camera camera, EffectRig rig, Vector3 position, float reach = 1f)
         {
-            if (camera == null)
-            {
-                return false;
-            }
+            return camera != null && InRange(camera.transform.position, rig, position, reach);
+        }
 
+        /// <summary>Whether a rig at the position is within <paramref name="reach"/> × its max distance.</summary>
+        public static bool InRange(Vector3 eye, EffectRig rig, Vector3 position, float reach = 1f)
+        {
             var limit = rig.maxDistance * reach;
-            return (position - camera.transform.position).sqrMagnitude <= limit * limit;
+            return (position - eye).sqrMagnitude <= limit * limit;
         }
 
         /// <summary>The main camera, looked up again only once the cached one is gone.</summary>

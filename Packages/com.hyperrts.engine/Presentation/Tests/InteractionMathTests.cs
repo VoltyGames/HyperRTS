@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Environment;
+using HyperRTS.Simulation.Tests;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Mathematics;

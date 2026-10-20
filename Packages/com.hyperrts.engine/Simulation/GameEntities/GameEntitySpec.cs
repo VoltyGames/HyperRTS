@@ -1,15 +1,12 @@
-using Unity.Collections;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.GameEntities
 {
     /// <summary>Values shared by every ownable unit and building.</summary>
     public struct GameEntitySpec
     {
-        public int TypeId;
-        public FixedString64Bytes Name;
-        public UnityObjectRef<Texture2D> Icon;
+        public EntityInfo Info;
         public byte Owner;
         public float MaxHealth;
         public float VisionRange;

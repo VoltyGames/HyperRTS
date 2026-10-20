@@ -147,7 +147,7 @@ namespace HyperRTS.Simulation.Tests
                 ComponentType.Exclude<Health>()));
 
             Assert.AreEqual(pose, _world.Get<LocalTransform>(spawned));
-            AssertMatrix(stretch, _world.Get<PostTransformMatrix>(spawned).Value, "the stretch is kept");
+            MathAssert.Near(stretch, _world.Get<PostTransformMatrix>(spawned).Value);
             AssertPlaced(spawned, stretch);
         }
 
@@ -249,15 +249,7 @@ namespace HyperRTS.Simulation.Tests
         private void AssertPlaced(Entity spawned, float4x4 stretch)
         {
             var expected = math.mul(_world.Get<LocalTransform>(spawned).ToMatrix(), stretch);
-            AssertMatrix(expected, _world.Get<LocalToWorld>(spawned).Value, "LocalToWorld");
-        }
-
-        private static void AssertMatrix(float4x4 expected, float4x4 actual, string what)
-        {
-            for (var c = 0; c < 4; c++)
-            {
-                Assert.That(math.distance(expected[c], actual[c]), Is.LessThan(1e-4f), $"{what} column {c}");
-            }
+            MathAssert.Near(expected, _world.Get<LocalToWorld>(spawned).Value);
         }
     }
 }

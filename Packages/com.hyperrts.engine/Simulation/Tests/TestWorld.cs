@@ -250,8 +250,7 @@ namespace HyperRTS.Simulation.Tests
             writer = new EntityManagerWriter(EntityManager, entity);
             GameEntitySetup.Add(ref writer, new GameEntitySpec
             {
-                TypeId = EntityInfo.TypeIdFromName(name),
-                Name = name,
+                Info = new EntityInfo { TypeId = EntityInfo.TypeIdFromName(name), Name = name },
                 Owner = faction,
                 MaxHealth = maxHealth,
                 VisionRange = 10f,

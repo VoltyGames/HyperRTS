@@ -18,6 +18,8 @@ namespace HyperRTS.Presentation.Effects
         private GameObject _root;
         private EffectLights _lights;
         private Camera _camera;
+        private Vector3 _eye;
+        private bool _hasEye;
 
         /// <summary>The prefab's live rig, or null when there is no prefab or it is broken (logged once, naming it).</summary>
         public EffectRig Get(GameObject prefab)
@@ -69,20 +71,25 @@ namespace HyperRTS.Presentation.Effects
             }
 
             var state = streams.Step(entity, index, position);
-            state.Key = EffectStreams.Key(entity, index);
-            state.Rig = rig.Pick(state.Key);
+            state.Use(rig);
             return state;
         }
 
-        private bool InRange(EffectRig rig, Vector3 position, float reach = 1f)
-        {
-            _camera = EffectRange.Main(_camera);
-            return EffectRange.InRange(_camera, rig, position, reach);
-        }
+        /// <summary>Whether the rig at the position is within <paramref name="reach"/> × its range.</summary>
+        public bool InRange(EffectRig rig, Vector3 position, float reach = 1f) =>
+            _hasEye && EffectRange.InRange(_eye, rig, position, reach);
 
-        /// <summary>Fires due timed bursts and fades flashes.</summary>
+        /// <summary>Takes this frame's camera position, fires due timed bursts and fades flashes.</summary>
         public void Tick(float deltaTime)
         {
+            // Nothing plays without a camera, since nobody would see it.
+            _camera = EffectRange.Main(_camera);
+            _hasEye = _camera != null;
+            if (_hasEye)
+            {
+                _eye = _camera.transform.position;
+            }
+
             foreach (var rig in _rigs.Values)
             {
                 rig.Tick(deltaTime);

@@ -46,7 +46,7 @@ namespace HyperRTS.Network.Players
             {
                 _holding = true;
                 _waitingSince = now;
-                _resume = GameplayPhases.PauseAllButOrders(state.World);
+                _resume = GameplayPhaseGroup.PauseAllButOrders(state.World);
             }
 
             var humans = _humans.ToComponentDataArray<PlayerConnection>(Allocator.Temp);
@@ -57,7 +57,7 @@ namespace HyperRTS.Network.Players
 
             match.Started = true;
             _holding = false;
-            GameplayPhases.Restore(state.World, _resume);
+            GameplayPhaseGroup.Restore(state.World, _resume);
         }
 
         private double JoinTimeout(ref SystemState state)

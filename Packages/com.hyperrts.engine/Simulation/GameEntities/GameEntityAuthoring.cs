@@ -45,9 +45,7 @@ namespace HyperRTS.Simulation.GameEntities
             var info = BakeProducible(baker, out var costs, out var required);
             GameEntitySetup.Add(ref writer, new GameEntitySpec
             {
-                TypeId = info.TypeId,
-                Name = info.Name,
-                Icon = info.Icon,
+                Info = info,
                 Owner = (byte)owner,
                 MaxHealth = maxHealth,
                 VisionRange = visionRange,

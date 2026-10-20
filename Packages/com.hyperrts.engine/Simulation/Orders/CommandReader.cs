@@ -13,6 +13,7 @@ namespace HyperRTS.Simulation.Orders
         private TypeSet _types;
         private EntityQuery _players;
         private EntityQuery _selected;
+        private ComponentLookup<Faction> _factions;
 
         /// <summary><paramref name="selected"/> matches what a command without its own subjects addresses.</summary>
         public CommandReader(ref SystemState state, in TypeSet types, EntityQuery selected)
@@ -26,6 +27,7 @@ namespace HyperRTS.Simulation.Orders
         {
             _types = types;
             _selected = default;
+            _factions = state.GetComponentLookup<Faction>(true);
             _players = new EntityQueryBuilder(Allocator.Temp)
                 .WithAll<Player, PlayerCommand, PlayerCommandSubject>().WithNone<Defeated>().Build(ref state);
         }
@@ -37,19 +39,23 @@ namespace HyperRTS.Simulation.Orders
         public NativeList<IssuedCommand> Read(ref SystemState state)
         {
             var issued = new NativeList<IssuedCommand>(Allocator.Temp);
-            var entityManager = state.EntityManager;
+            _factions.Update(ref state);
             foreach (var player in _players.ToEntityArray(Allocator.Temp))
             {
-                foreach (var command in entityManager.GetBuffer<PlayerCommand>(player, true))
-                {
-                    if (!_types.Contains(command.Type))
-                    {
-                        continue;
-                    }
+                Append(state.EntityManager, player, issued);
+            }
 
-                    var faction = entityManager.GetComponentData<Player>(player).Faction;
-                    issued.Add(new IssuedCommand { Player = player, Faction = faction, Command = command });
-                }
+            return issued;
+        }
+
+        /// <summary>This frame's commands of the reader's types from <paramref name="player"/> alone.</summary>
+        public NativeList<IssuedCommand> Read(ref SystemState state, Entity player)
+        {
+            var issued = new NativeList<IssuedCommand>(Allocator.Temp);
+            _factions.Update(ref state);
+            if (_players.Matches(player))
+            {
+                Append(state.EntityManager, player, issued);
             }
 
             return issued;
@@ -58,14 +64,13 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>The entities the command addresses that its player owns, in the order it lists them.</summary>
         public void Subjects(ref SystemState state, in IssuedCommand issued, NativeList<Entity> subjects)
         {
-            var entityManager = state.EntityManager;
-            var listed = entityManager.GetBuffer<PlayerCommandSubject>(issued.Player, true);
+            var listed = state.EntityManager.GetBuffer<PlayerCommandSubject>(issued.Player, true);
             PlayerCommands.Collect(issued.Command, listed, _selected, subjects);
             var kept = 0;
             for (var i = 0; i < subjects.Length; i++)
             {
                 var entity = subjects[i];
-                if (IsOwned(entityManager, entity, issued.Faction))
+                if (IsOwned(entity, issued.Faction))
                 {
                     subjects[kept++] = entity;
                 }
@@ -81,14 +86,19 @@ namespace HyperRTS.Simulation.Orders
             return subjects;
         }
 
-        private static bool IsOwned(EntityManager entityManager, Entity entity, byte faction)
+        private readonly void Append(EntityManager entityManager, Entity player, NativeList<IssuedCommand> issued)
         {
-            if (!entityManager.HasComponent<Faction>(entity))
+            var faction = entityManager.GetComponentData<Player>(player).Faction;
+            foreach (var command in entityManager.GetBuffer<PlayerCommand>(player, true))
             {
-                return false;
+                if (_types.Contains(command.Type))
+                {
+                    issued.Add(new IssuedCommand { Player = player, Faction = faction, Command = command });
+                }
             }
-
-            return entityManager.GetComponentData<Faction>(entity).Value == faction;
         }
+
+        private readonly bool IsOwned(Entity entity, byte faction) =>
+            _factions.TryGetComponent(entity, out var owner) && owner.Value == faction;
     }
 }

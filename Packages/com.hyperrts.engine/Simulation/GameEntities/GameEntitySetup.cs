@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.GameEntities
             IReadOnlyList<ResourceCost> cost = null, IReadOnlyList<Prerequisite> prerequisites = null)
             where TWriter : struct, IEntityWriter
         {
-            writer.Add(new EntityInfo { TypeId = spec.TypeId, Name = spec.Name, Icon = spec.Icon });
+            writer.Add(spec.Info);
             writer.Add(new Faction { Value = spec.Owner });
             writer.Add(new Health { Current = spec.MaxHealth, Max = spec.MaxHealth });
             writer.Add<Dead>();

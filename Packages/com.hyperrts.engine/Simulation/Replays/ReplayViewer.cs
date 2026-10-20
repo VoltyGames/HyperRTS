@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Replays
 
             Stop(world);
             var data = ReplayPlaybackState.Create(replay);
-            data.GameplayEnabled = GameplayPhases.PauseAll(world);
+            data.GameplayEnabled = GameplayPhaseGroup.PauseAll(world);
             var entityManager = world.EntityManager;
             LocalFogViewSystem.SetRevealAll(entityManager, true);
             var entity = entityManager.CreateEntity();
@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Replays
             var data = entityManager.GetComponentData<ReplayPlaybackState>(entity);
             data.Dispose();
             entityManager.DestroyEntity(entity);
-            GameplayPhases.Restore(world, data.GameplayEnabled);
+            GameplayPhaseGroup.Restore(world, data.GameplayEnabled);
             LocalFogViewSystem.SetRevealAll(entityManager, false);
         }
     }

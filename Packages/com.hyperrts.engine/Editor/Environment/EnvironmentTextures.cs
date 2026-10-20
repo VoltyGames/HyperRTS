@@ -1,10 +1,8 @@
 using System;
-using System.IO;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Generators;
 using UnityEditor;
 using UnityEngine;
-using Object = UnityEngine.Object;
 using Random = Unity.Mathematics.Random;
 
 namespace HyperRTS.Editor.Environment
@@ -153,8 +151,14 @@ namespace HyperRTS.Editor.Environment
                 }
             }
 
-            var low = TileableNoise.Percentile(height, 0f);
-            var high = TileableNoise.Percentile(height, 1f);
+            var low = float.MaxValue;
+            var high = float.MinValue;
+            foreach (var value in height)
+            {
+                low = Mathf.Min(low, value);
+                high = Mathf.Max(high, value);
+            }
+
             for (var i = 0; i < height.Length; i++)
             {
                 height[i] = Mathf.InverseLerp(low, high, height[i]);
@@ -198,7 +202,7 @@ namespace HyperRTS.Editor.Environment
                 pixels[i] = (byte)Mathf.RoundToInt(Mathf.Clamp01(values[i]) * 255f);
             }
 
-            WritePixels(path, size, TextureFormat.R8, pixels, Configure);
+            WriteTiling(path, size, TextureFormat.R8, pixels, Configure);
         }
 
         private static void WriteRGB(string path, int size, Vector3[] texels, Func<float, byte> encode,
@@ -212,22 +216,20 @@ namespace HyperRTS.Editor.Environment
                 pixels[i * 3 + 2] = encode(texels[i].z);
             }
 
-            WritePixels(path, size, TextureFormat.RGB24, pixels, configure);
+            WriteTiling(path, size, TextureFormat.RGB24, pixels, configure);
         }
 
-        /// <summary>Writes to the full path, since a local package's files are not under the project folder.</summary>
-        private static void WritePixels(string path, int size, TextureFormat format, byte[] pixels,
-            Action<TextureImporter> configure)
-        {
-            var texture = new Texture2D(size, size, format, false, true);
-            texture.SetPixelData(pixels, 0);
-            texture.Apply(false);
-            File.WriteAllBytes(Path.GetFullPath(path), texture.EncodeToPNG());
-            Object.DestroyImmediate(texture);
-            EditorTextures.Import(path, configure);
-        }
+        /// <summary>Every baked texture tiles and has mips; <paramref name="configure"/> sets the rest.</summary>
+        private static void WriteTiling(string path, int size, TextureFormat format, byte[] pixels,
+            Action<TextureImporter> configure) =>
+            EditorTextures.WritePng(path, size, size, format, pixels, importer =>
+            {
+                configure(importer);
+                importer.wrapMode = TextureWrapMode.Repeat;
+                importer.mipmapEnabled = true;
+            });
 
-        /// <summary>One linear channel in red (the light cookie reads it as a red-format cookie), tiling, with mips.</summary>
+        /// <summary>One linear channel in red, since the light cookie reads it as a red-format cookie.</summary>
         private static void Configure(TextureImporter importer)
         {
             importer.textureType = TextureImporterType.SingleChannel;
@@ -236,8 +238,6 @@ namespace HyperRTS.Editor.Environment
             settings.singleChannelComponent = TextureImporterSingleChannelComponent.Red;
             importer.SetTextureSettings(settings);
             importer.sRGBTexture = false;
-            importer.wrapMode = TextureWrapMode.Repeat;
-            importer.mipmapEnabled = true;
         }
 
         /// <summary>Linear and uncompressed, since the terrain shader reads each channel as separate data.</summary>
@@ -246,16 +246,12 @@ namespace HyperRTS.Editor.Environment
             importer.textureType = TextureImporterType.Default;
             importer.sRGBTexture = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.wrapMode = TextureWrapMode.Repeat;
-            importer.mipmapEnabled = true;
         }
 
         private static void ConfigureWaterRipples(TextureImporter importer)
         {
             importer.textureType = TextureImporterType.NormalMap;
             importer.textureCompression = TextureImporterCompression.Compressed;
-            importer.wrapMode = TextureWrapMode.Repeat;
-            importer.mipmapEnabled = true;
         }
     }
 }

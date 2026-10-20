@@ -207,8 +207,9 @@ No two plays need look the same:
 - **Burst cycles**: a Shuriken burst's cycle count and interval repeat it, such as ammo cooking off. A burst that
   repeats forever is a broken rig.
 
-`EffectPool` keeps one instance per prefab and replays it for every event, never instantiating per shot. Effects
-play for cues the client can see:
+`EffectPool` keeps one instance per prefab and replays it for every event, never instantiating per shot. It reads
+the camera position once a frame, in `EffectPoolSystem`, for every range check. Effects play for cues the client
+can see:
 
 - **Bursts**: fire, death, ability and impact cues. Impacts pick a rig by the surface material that was hit.
 - **Loops**: effects at sockets while health is in range, such as fires on a damaged building.

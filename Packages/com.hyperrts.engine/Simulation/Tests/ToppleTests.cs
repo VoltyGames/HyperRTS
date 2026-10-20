@@ -5,7 +5,6 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using static HyperRTS.Simulation.Tests.VectorAssert;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -56,8 +55,8 @@ namespace HyperRTS.Simulation.Tests
             var pose = ToppleMath.RemainsPose(standing, 64, lie);
 
             var crown = math.rotate(pose.Rotation, new float3(math.sin(lie), 0f, math.cos(lie)));
-            AssertNear(new float3(1f, 0f, 0f), crown, PoseTolerance);
-            AssertNear(standing.Position, pose.Position, PoseTolerance);
+            MathAssert.Near(new float3(1f, 0f, 0f), crown, PoseTolerance);
+            MathAssert.Near(standing.Position, pose.Position, PoseTolerance);
             Assert.AreEqual(1.5f, pose.Scale);
         }
 
@@ -71,10 +70,10 @@ namespace HyperRTS.Simulation.Tests
 
             var crown = new float3(math.sin(topple.Lie), 0f, math.cos(topple.Lie));
             var upright = ToppleMath.Pose(felling, pose.Rotation, 0f);
-            AssertNear(math.rotate(standing.Rotation, topple.Trunk), math.rotate(upright, crown), PoseTolerance);
+            MathAssert.Near(math.rotate(standing.Rotation, topple.Trunk), math.rotate(upright, crown), PoseTolerance);
             var down = ToppleMath.Pose(felling, pose.Rotation, ToppleMath.Duration);
-            AssertNear(HeadingByte.Direction(200), math.rotate(down, crown), PoseTolerance);
-            AssertNear(math.rotate(pose.Rotation, crown), HeadingByte.Direction(200), PoseTolerance);
+            MathAssert.Near(HeadingByte.Direction(200), math.rotate(down, crown), PoseTolerance);
+            MathAssert.Near(math.rotate(pose.Rotation, crown), HeadingByte.Direction(200), PoseTolerance);
         }
 
         [Test]
@@ -97,10 +96,10 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.IsFalse(_world.EntityManager.Exists(tree));
             var fall = ToppleMath.Quantize(float3.zero, standing.Position);
-            AssertNear(new float3(1f, 0f, 0f), HeadingByte.Direction(fall), PoseTolerance);
+            MathAssert.Near(new float3(1f, 0f, 0f), HeadingByte.Direction(fall), PoseTolerance);
             var expected = ToppleMath.Fell(standing, topple, fall, true, out var pose);
             var (shown, felling) = FellRemains();
-            AssertNear(pose.Position, shown.Position, PoseTolerance);
+            MathAssert.Near(pose.Position, shown.Position, PoseTolerance);
             Assert.Greater(math.abs(math.dot(pose.Rotation.value, shown.Rotation.value)), 1f - Tolerance, "same pose");
             Assert.Greater(math.abs(math.dot(expected.Tilt.value, felling.Tilt.value)), 1f - Tolerance, "same fall");
         }
@@ -115,7 +114,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick();
 
             var (shown, _) = FellRemains();
-            AssertNear(new float3(0f, 0f, 1f), math.rotate(shown.Rotation, new float3(0f, 0f, 1f)), PoseTolerance);
+            MathAssert.Near(new float3(0f, 0f, 1f), math.rotate(shown.Rotation, new float3(0f, 0f, 1f)), PoseTolerance);
         }
 
         private Entity SpawnTree(float3 position, Entity remains, out LocalTransform standing, out Topple topple)

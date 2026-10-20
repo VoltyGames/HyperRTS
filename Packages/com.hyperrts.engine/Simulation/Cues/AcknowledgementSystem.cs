@@ -76,13 +76,8 @@ namespace HyperRTS.Simulation.Cues
         private CueSlot Requested(ref SystemState state, ref IssuedCommand local)
         {
             var slot = CueSlot.None;
-            foreach (var each in _commands.Read(ref state))
+            foreach (var each in _commands.Read(ref state, local.Player))
             {
-                if (each.Player != local.Player)
-                {
-                    continue;
-                }
-
                 var answer = Answer(ref state, each.Command, local.Faction);
                 if (answer != CueSlot.None)
                 {

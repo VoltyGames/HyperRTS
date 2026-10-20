@@ -70,14 +70,14 @@ namespace HyperRTS.Presentation.Effects
         {
             var prefab = _catalog.Find(EntityManager, registry, impact.TypeId)?.Impacts?.RigFor(impact.Material);
             var rig = _pool.Get(prefab);
-            if (rig == null)
+            if (rig == null || !_pool.InRange(rig, impact.Position))
             {
                 return;
             }
 
             // Variants share the root's ground alignment, since the pose is set before one is picked.
             var (position, rotation) = EffectPose.Impact(impact, terrain, hasTerrain, rig.alignToGround);
-            _pool.Play(prefab, position, rotation, impact.Radius);
+            rig.Play(position, rotation, impact.Radius);
         }
     }
 }

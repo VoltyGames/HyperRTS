@@ -70,7 +70,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 `SkirmishAISystem` only writes `PlayerCommand`s. Tune it with difficulty presets on `Match` and `AIBuildOrder`
 assets. It needs the map's bot hints, which the map builder writes. To replace it, disable the system and write your
 own commands for players with `AIPlayer`. Put every AI system in `AISystemGroup`, so the join hold and replays pause
-it with the rest of gameplay through `GameplayPhases`.
+it with the rest of gameplay through `GameplayPhaseGroup`.
 
 ## Front-end integration
 
