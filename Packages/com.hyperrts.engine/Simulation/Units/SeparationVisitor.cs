@@ -5,10 +5,10 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// Sums how far a unit must move to stop crowding neighbouring units (half each, as both move). Footprints are
+    /// Sums how far a unit must move to stop crowding neighbouring units (half each, as both move). Blockers are
     /// capsules (circles when the segment is zero) and must stay the larger of the two spacings apart, pushed along
-    /// the line between their closest points. Units on layers that never share a surface (a ship under a bridge, a
-    /// tank on it) ignore each other.
+    /// the line between their closest points. A blocker (a wreck) takes no share and pushes the unit fully
+    /// clear. Units on layers that never share a surface (a ship under a bridge, a tank on it) ignore each other.
     /// </summary>
     internal struct SeparationVisitor : ISpatialVisitor
     {
@@ -22,7 +22,13 @@ namespace HyperRTS.Simulation.Units
 
         public void Visit(in SpatialEntry entry)
         {
-            if (entry.Entity == Self || !entry.IsUnit)
+            if (entry.Entity == Self)
+            {
+                return;
+            }
+
+            var crowds = entry.IsUnit || entry.IsBlocker;
+            if (!crowds)
             {
                 return;
             }
@@ -41,7 +47,9 @@ namespace HyperRTS.Simulation.Units
             }
 
             var distance = math.sqrt(distanceSq);
-            Push += Direction(offset, distance, entry) * ((reach - distance) * 0.5f);
+            // A blocker never moves, so the unit takes the whole push.
+            var share = entry.IsBlocker ? 1f : 0.5f;
+            Push += Direction(offset, distance, entry) * ((reach - distance) * share);
         }
 
         /// <summary>From the other unit's segment to this one's, between their closest points.</summary>

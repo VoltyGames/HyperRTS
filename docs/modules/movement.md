@@ -27,6 +27,11 @@ circle. `SeparationVisitor` pushes neighbours apart along the line between their
 the larger of their two spacings lies between them (0.6 m by default, less for infantry). Formation slots are
 spaced by the same footprint, so a tank column doesn't pile up nose to tail.
 
+`BlockerAuthoring` makes remains such as a wreck solid: a capsule of radius and hull length along its forward that
+never moves. Units take the whole push and are moved fully clear of it where they are headed, so they slide round
+it. It doesn't close nav cells, so a unit beside a tank as it dies is never trapped. A `Decay` wreck stops blocking
+once it starts to sink.
+
 ## Air
 
 `FlightAuthoring` makes a unit an aircraft with an altitude and a loiter radius. A radius of 0 hovers.

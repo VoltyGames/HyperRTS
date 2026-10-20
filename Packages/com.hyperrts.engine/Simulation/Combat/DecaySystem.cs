@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -9,13 +10,17 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>Starts <see cref="Decay"/> remains' clocks, sinks them when their lifetime ends, then destroys them.</summary>
+    /// <summary>
+    /// Starts <see cref="Decay"/> remains' clocks, sinks them when their lifetime ends (no longer blocking), then destroys
+    /// them.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     public partial struct DecaySystem : ISystem
     {
         private ComponentLookup<Decay> _decays;
         private ComponentLookup<LocalTransform> _transforms;
+        private ComponentLookup<Blocker> _blockers;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
 
@@ -24,6 +29,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _decays = state.GetComponentLookup<Decay>();
             _transforms = state.GetComponentLookup<LocalTransform>();
+            _blockers = state.GetComponentLookup<Blocker>();
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
             state.RequireForUpdate<Decay>();
@@ -36,6 +42,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _decays.Update(ref state);
             _transforms.Update(ref state);
+            _blockers.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
             var now = SystemAPI.Time.ElapsedTime;
@@ -43,8 +50,8 @@ namespace HyperRTS.Simulation.Combat
             new FindDueJob { Due = due.AsParallelWriter(), Now = now }.ScheduleParallel();
             state.Dependency = new DespawnJob
             {
-                Due = due, Now = now, Decays = _decays, Transforms = _transforms, Groups = _groups,
-                Children = _children,
+                Due = due, Now = now, Decays = _decays, Transforms = _transforms, Blockers = _blockers,
+                Groups = _groups, Children = _children,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
             }.Schedule(state.Dependency);
@@ -75,6 +82,7 @@ namespace HyperRTS.Simulation.Combat
             public double Now;
             public ComponentLookup<Decay> Decays;
             public ComponentLookup<LocalTransform> Transforms;
+            public ComponentLookup<Blocker> Blockers;
             [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
             [ReadOnly] public BufferLookup<Child> Children;
             public EntityCommandBuffer Ecb;
@@ -95,6 +103,12 @@ namespace HyperRTS.Simulation.Combat
                 {
                     value.DespawnStartTime = Now + value.Lifetime;
                     return;
+                }
+
+                // Sinking remains are on their way out, so units may drive over them.
+                if (Blockers.HasComponent(entity))
+                {
+                    Blockers.SetComponentEnabled(entity, false);
                 }
 
                 var progress = (float)math.min(1d, (Now - value.DespawnStartTime) / value.DespawnDuration);

@@ -5,7 +5,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Singleton uniform-grid hash of living units and buildings, rebuilt each frame by
+    /// Singleton uniform-grid hash of living units and buildings, with blockers in their own grid, rebuilt each frame by
     /// <see cref="SpatialIndexSystem"/>. Read it with <c>SystemAPI.GetSingleton</c> so job dependencies chain.
     /// </summary>
     public struct SpatialIndex : IComponentData
@@ -19,6 +19,12 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public NativeList<SpatialEntry> Oversized;
 
+        /// <summary>Enabled <see cref="Blocker"/>s, kept apart so only movement ever sees them.</summary>
+        public NativeParallelMultiHashMap<int, SpatialEntry> Blockers;
+
+        /// <summary>Blockers wider than a cell, as <see cref="Oversized"/> is for the rest.</summary>
+        public NativeList<SpatialEntry> WideBlockers;
+
         public readonly int2 CellAt(float3 position) => CellAt(position, CellSize);
 
         public static int2 CellAt(float3 position, float cellSize) => (int2)math.floor(position.xz / cellSize);
@@ -30,14 +36,20 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Visits entries whose circle overlaps the query circle on the XZ plane.</summary>
         public readonly void Query<T>(float3 center, float radius, ref T visitor) where T : struct, ISpatialVisitor =>
-            Query(center, radius, false, ref visitor);
+            Query(Cells, Oversized, center, radius, false, ref visitor);
 
         /// <summary>Visits entries whose <see cref="SpatialEntry.HullReach"/> overlaps the query circle.</summary>
         public readonly void QueryHulls<T>(float3 center, float radius, ref T visitor)
             where T : struct, ISpatialVisitor =>
-            Query(center, radius, true, ref visitor);
+            Query(Cells, Oversized, center, radius, true, ref visitor);
 
-        private readonly void Query<T>(float3 center, float radius, bool hulls, ref T visitor)
+        /// <summary>Visits blockers whose <see cref="SpatialEntry.HullReach"/> overlaps the query circle.</summary>
+        public readonly void QueryBlockers<T>(float3 center, float radius, ref T visitor)
+            where T : struct, ISpatialVisitor =>
+            Query(Blockers, WideBlockers, center, radius, true, ref visitor);
+
+        private readonly void Query<T>(NativeParallelMultiHashMap<int, SpatialEntry> cells,
+            NativeList<SpatialEntry> oversized, float3 center, float radius, bool hulls, ref T visitor)
             where T : struct, ISpatialVisitor
         {
             var search = radius + CellSize;
@@ -48,7 +60,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 for (var x = min.x; x <= max.x; x++)
                 {
-                    if (!Cells.TryGetFirstValue(Key(new int2(x, y)), out var entry, out var iterator))
+                    if (!cells.TryGetFirstValue(Key(new int2(x, y)), out var entry, out var iterator))
                     {
                         continue;
                     }
@@ -56,11 +68,11 @@ namespace HyperRTS.Simulation.Navigation
                     do
                     {
                         VisitIfOverlapping(entry, center, radius, hulls, ref visitor);
-                    } while (Cells.TryGetNextValue(out entry, ref iterator));
+                    } while (cells.TryGetNextValue(out entry, ref iterator));
                 }
             }
 
-            foreach (var entry in Oversized)
+            foreach (var entry in oversized)
             {
                 VisitIfOverlapping(entry, center, radius, hulls, ref visitor);
             }

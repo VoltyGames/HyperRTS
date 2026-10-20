@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
     /// Rebuilds the <see cref="SpatialIndex"/> from every living entity with health and an owner, except passengers
-    /// inside a container.
+    /// inside a container, and its blocker grid from every enabled <see cref="Blocker"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup), OrderFirst = true)]
@@ -18,6 +18,7 @@ namespace HyperRTS.Simulation.Navigation
         public const float CellSize = 8f;
 
         private EntityQuery _indexed;
+        private EntityQuery _blockers;
         private ComponentLookup<NavAgent> _agentLookup;
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<BuildingTag> _buildingLookup;
@@ -25,6 +26,7 @@ namespace HyperRTS.Simulation.Navigation
         public void OnCreate(ref SystemState state)
         {
             _indexed = SystemAPI.QueryBuilder().WithAll<LocalTransform, Faction, Health>().WithNone<Dead, Inside>().Build();
+            _blockers = SystemAPI.QueryBuilder().WithAll<LocalTransform, Blocker>().Build();
             _agentLookup = state.GetComponentLookup<NavAgent>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
@@ -34,6 +36,8 @@ namespace HyperRTS.Simulation.Navigation
                 Cells = new NativeParallelMultiHashMap<int, SpatialEntry>(1024, Allocator.Persistent),
                 CellSize = CellSize,
                 Oversized = new NativeList<SpatialEntry>(16, Allocator.Persistent),
+                Blockers = new NativeParallelMultiHashMap<int, SpatialEntry>(64, Allocator.Persistent),
+                WideBlockers = new NativeList<SpatialEntry>(4, Allocator.Persistent),
             }, "SpatialIndex");
         }
 
@@ -44,6 +48,8 @@ namespace HyperRTS.Simulation.Navigation
             {
                 index.ValueRW.Cells.Dispose();
                 index.ValueRW.Oversized.Dispose();
+                index.ValueRW.Blockers.Dispose();
+                index.ValueRW.WideBlockers.Dispose();
             }
         }
 
@@ -78,6 +84,30 @@ namespace HyperRTS.Simulation.Navigation
                 ObstacleLookup = _obstacleLookup,
                 BuildingLookup = _buildingLookup,
             }.ScheduleParallel(_indexed);
+            IndexBlockers(ref state, ref index);
+        }
+
+        private void IndexBlockers(ref SystemState state, ref SpatialIndex index)
+        {
+            var count = _blockers.CalculateEntityCount();
+            index.Blockers.Clear();
+            index.WideBlockers.Clear();
+            if (index.Blockers.Capacity < count)
+            {
+                index.Blockers.Capacity = count;
+            }
+
+            if (index.WideBlockers.Capacity < count)
+            {
+                index.WideBlockers.Capacity = count;
+            }
+
+            new BlockerJob
+            {
+                Writer = index.Blockers.AsParallelWriter(),
+                Wide = index.WideBlockers.AsParallelWriter(),
+                CellSize = index.CellSize,
+            }.ScheduleParallel(_blockers);
         }
 
         [BurstCompile]
@@ -108,6 +138,35 @@ namespace HyperRTS.Simulation.Navigation
                 if (entry.HullReach > CellSize)
                 {
                     Oversized.AddNoResize(entry);
+                    return;
+                }
+
+                Writer.Add(SpatialIndex.Key(SpatialIndex.CellAt(transform.Position, CellSize)), entry);
+            }
+        }
+
+        [BurstCompile]
+        private partial struct BlockerJob : IJobEntity
+        {
+            public NativeParallelMultiHashMap<int, SpatialEntry>.ParallelWriter Writer;
+            public NativeList<SpatialEntry>.ParallelWriter Wide;
+            public float CellSize;
+
+            private void Execute(Entity entity, in LocalTransform transform, in Blocker blocker)
+            {
+                var entry = new SpatialEntry
+                {
+                    Entity = entity,
+                    Position = transform.Position,
+                    Radius = blocker.Radius,
+                    IsBlocker = true,
+                    Layer = NavLayer.Ground,
+                    SegmentAxis = blocker.SegmentAxis(transform.Rotation),
+                };
+
+                if (entry.HullReach > CellSize)
+                {
+                    Wide.AddNoResize(entry);
                     return;
                 }
 

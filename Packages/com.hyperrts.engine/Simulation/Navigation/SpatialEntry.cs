@@ -11,8 +11,11 @@ namespace HyperRTS.Simulation.Navigation
         public float Radius;
         public byte Faction;
 
-        /// <summary>False for buildings.</summary>
+        /// <summary>False for buildings and blockers.</summary>
         public bool IsUnit;
+
+        /// <summary>A <see cref="Blocker"/>: units are pushed fully clear of it and it never moves.</summary>
+        public bool IsBlocker;
 
         /// <summary>The <see cref="NavAgent"/> layer; Ground for entities without one.</summary>
         public NavLayer Layer;
