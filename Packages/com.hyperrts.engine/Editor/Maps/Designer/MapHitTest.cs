@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
@@ -66,7 +67,7 @@ namespace HyperRTS.Editor.Maps.Designer
                 case MapFeatureGeometry.Circle:
                     return Vector2.Distance(points[0], world) <= radius;
                 case MapFeatureGeometry.Polygon:
-                    return InPolygon(points, world);
+                    return MapGeometry.Contains(points, world);
                 default:
                     return false;
             }
@@ -80,35 +81,10 @@ namespace HyperRTS.Editor.Maps.Designer
             {
                 var a = view.ToLocal(points[i]);
                 var b = view.ToLocal(points[(i + 1) % points.Count]);
-                best = Mathf.Min(best, SegmentDistance(local, a, b));
+                best = Mathf.Min(best, MapGeometry.DistanceToSegment(a, b, local));
             }
 
             return best;
-        }
-
-        public static float SegmentDistance(Vector2 p, Vector2 a, Vector2 b)
-        {
-            var ab = b - a;
-            var lengthSquared = ab.sqrMagnitude;
-            var t = lengthSquared > 0f ? Mathf.Clamp01(Vector2.Dot(p - a, ab) / lengthSquared) : 0f;
-            return Vector2.Distance(p, a + ab * t);
-        }
-
-        /// <summary>Even-odd point in polygon.</summary>
-        public static bool InPolygon(List<Vector2> polygon, Vector2 p)
-        {
-            var inside = false;
-            for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
-            {
-                var (a, b) = (polygon[i], polygon[j]);
-                var crosses = (a.y > p.y) != (b.y > p.y);
-                if (crosses && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x)
-                {
-                    inside = !inside;
-                }
-            }
-
-            return inside;
         }
     }
 }

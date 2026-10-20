@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         public MapNoise(MapSymmetry symmetry, int seed, MapNoiseChannel channel)
         {
             _symmetry = symmetry;
-            var random = new System.Random(seed * 7919 + (int)channel * 104729);
+            var random = MapRandom.Stream(seed, MapRandomChannel.Noise, (int)channel);
             _offset = new Vector2(random.Value() * 10000f, random.Value() * 10000f);
 
             // Averaging n uncorrelated copies shrinks the spread by sqrt(n); scale it back.

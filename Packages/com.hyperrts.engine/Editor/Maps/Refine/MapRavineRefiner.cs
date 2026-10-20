@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.Maps.Refine
                 var ravine = spec.ravines[i];
                 var curve = MapCurves.Spline(MapGeometry.ToVectors(ravine.points), Step);
                 ravine.points = MapGeometry.ToPoints(curve);
-                var random = new System.Random(unchecked(spec.seed * 31337 + i * 7907));
+                var random = MapRandom.Stream(spec.seed, MapRandomChannel.RavineBranches, i);
                 for (var b = 0; b < ravine.branches; b++)
                 {
                     var branch = Branch(ravine, curve, random, symmetry);

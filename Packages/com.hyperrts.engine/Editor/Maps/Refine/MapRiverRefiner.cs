@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.Maps.Refine
                 return curve;
             }
 
-            var random = new System.Random(unchecked(seed * 92821 + index * 68903));
+            var random = MapRandom.Stream(seed, MapRandomChannel.RiverMeanders, index);
             var phase = random.Value() * 1000f;
             var meandered = new List<Vector2>(curve.Count);
             var along = 0f;

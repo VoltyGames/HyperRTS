@@ -11,11 +11,9 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
     /// </summary>
     public sealed class MapFieldRegions
     {
-        private const int LeftoverChannel = 0x5f3759df;
-
         private readonly MapPlanContext _context;
         private readonly MapFarmlandKit _kit;
-        private readonly int _index;
+        private readonly int _seed;
         private readonly float _angle;
         private readonly Dictionary<int, int> _fields = new();
         private readonly Dictionary<int, int> _leftovers = new();
@@ -24,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         {
             _context = context;
             _kit = kit;
-            _index = index;
+            _seed = context.Random(MapRandomChannel.Farmlands, index).Next();
             _angle = angle;
             Margin = context.Region(MapLandKind.Margin, kit.marginSurface, index);
         }
@@ -36,9 +34,9 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         {
             if (!_fields.TryGetValue(field, out var region))
             {
-                var seed = Seed(field, 0);
-                var crop = new System.Random(seed).Pick(_kit.crops, c => c.weight);
-                _fields[field] = region = _context.Region(MapLandKind.Field, crop.surface, seed, _angle);
+                var random = MapRandom.Stream(_seed, MapRandomChannel.FieldCrops, field);
+                var crop = random.Pick(_kit.crops, c => c.weight);
+                _fields[field] = region = _context.Region(MapLandKind.Field, crop.surface, random.Next(), _angle);
             }
 
             return region;
@@ -54,14 +52,12 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
 
             if (!_leftovers.TryGetValue(field, out var region))
             {
-                var seed = Seed(field, LeftoverChannel);
-                var surface = new System.Random(seed).Pick(_kit.leftovers, c => c.weight).surface;
-                _leftovers[field] = region = _context.Region(MapLandKind.Margin, surface, seed);
+                var random = MapRandom.Stream(_seed, MapRandomChannel.FieldLeftovers, field);
+                var surface = random.Pick(_kit.leftovers, c => c.weight).surface;
+                _leftovers[field] = region = _context.Region(MapLandKind.Margin, surface, random.Next());
             }
 
             return region;
         }
-
-        private int Seed(int field, int channel) => unchecked(field * 73856093 ^ _index * 19349663 ^ _context.Seed ^ channel);
     }
 }

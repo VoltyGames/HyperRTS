@@ -19,11 +19,8 @@ namespace HyperRTS.Editor.Maps.Geometry
             var walked = 0f;
             for (var i = 0; i + 1 < line.Count; i++)
             {
-                var a = line[i];
-                var segment = line[i + 1] - a;
-                var length = segment.magnitude;
-                var t = length > 0f ? Mathf.Clamp01(Vector2.Dot(point - a, segment) / (length * length)) : 0f;
-                var distance = (a + segment * t - point).magnitude;
+                var length = (line[i + 1] - line[i]).magnitude;
+                var distance = DistanceToSegment(line[i], line[i + 1], point, out var t);
                 if (distance < best)
                 {
                     best = distance;
@@ -175,11 +172,14 @@ namespace HyperRTS.Editor.Maps.Geometry
             return t * t * (3f - 2f * t);
         }
 
-        private static float DistanceToSegment(Vector2 a, Vector2 b, Vector2 point)
+        public static float DistanceToSegment(Vector2 a, Vector2 b, Vector2 point) => DistanceToSegment(a, b, point, out _);
+
+        /// <summary>Distance from a point to segment ab, with the closest point's fraction <paramref name="t"/> along it.</summary>
+        public static float DistanceToSegment(Vector2 a, Vector2 b, Vector2 point, out float t)
         {
             var segment = b - a;
             var lengthSquared = segment.sqrMagnitude;
-            var t = lengthSquared > 0f ? Mathf.Clamp01(Vector2.Dot(point - a, segment) / lengthSquared) : 0f;
+            t = lengthSquared > 0f ? Mathf.Clamp01(Vector2.Dot(point - a, segment) / lengthSquared) : 0f;
             return (a + segment * t - point).magnitude;
         }
     }

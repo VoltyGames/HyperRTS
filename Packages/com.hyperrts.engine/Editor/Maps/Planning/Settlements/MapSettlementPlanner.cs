@@ -49,6 +49,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         private int Build(MapSettlement settlement, List<MapPlot> plots)
         {
             var builder = new MapPlotBuilder(settlement, Context.Random(MapRandomChannel.Settlements, settlement.Index));
+            var regionSeeds = Context.Random(MapRandomChannel.PlotRegions, settlement.Index);
             var built = 0;
             foreach (var plot in plots)
             {
@@ -57,7 +58,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                     break;
                 }
 
-                var seed = unchecked(Context.Seed * 31 + settlement.Index * 7919 + built * 104729);
+                var seed = regionSeeds.Next();
                 var problem = TryBuild(settlement, builder, plot, seed);
                 if (problem == null)
                 {

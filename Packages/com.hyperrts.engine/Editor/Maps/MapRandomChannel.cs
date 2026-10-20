@@ -19,5 +19,19 @@ namespace HyperRTS.Editor.Maps
         Settlements = 32,
         Plots = 33,
         Decals = 34,
+        RiverMeanders = 35,
+        RavineBranches = 36,
+
+        /// <summary>Offsets each <see cref="Geometry.MapNoiseChannel"/> field, indexed by that channel.</summary>
+        Noise = 37,
+        PlotRegions = 38,
+
+        /// <summary>One seed per farmland that keys its field streams.</summary>
+        Farmlands = 39,
+        FieldCrops = 40,
+        FieldLeftovers = 41,
+
+        /// <summary>A land region's own macro tint, indexed by the region's seed.</summary>
+        RegionTints = 42,
     }
 }

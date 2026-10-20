@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Maps.Ground
             {
                 if (Varies(land.Regions[i].Kind))
                 {
-                    RegionTint(i, land.Regions[i].Seed);
+                    RegionTint(i, MapRandom.Stream(layout.Spec.seed, MapRandomChannel.RegionTints, land.Regions[i].Seed));
                 }
             }
         }
@@ -71,9 +71,8 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         /// <summary>A region's own light and warmth shift, and the direction and phase of its gradient.</summary>
-        private void RegionTint(int region, int seed)
+        private void RegionTint(int region, System.Random random)
         {
-            var random = new System.Random(seed);
             _tint[region] = new Vector2((random.Value() - 0.5f) * _strength.regionLight,
                 (random.Value() - 0.5f) * _strength.regionWarmth);
             var angle = random.Value() * Mathf.PI * 2f;
