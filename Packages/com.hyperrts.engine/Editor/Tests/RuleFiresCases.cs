@@ -4,6 +4,7 @@ using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Rules;
+using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Buildings;
@@ -161,6 +162,12 @@ namespace HyperRTS.Editor.Tests
                 return effects;
             });
             yield return Row<MotionDustRule>("has no socket", f => f.Add<MotionDustAuthoring>(new GameObject("Dust")));
+            yield return Row<MotionRigRule>("has no part", f =>
+            {
+                var rig = f.Add<MotionRigAuthoring>(new GameObject("Rig"));
+                rig.turrets.Add(new TurretSlot());
+                return rig;
+            });
             yield return Row<SpawnEffectRule>("has no effect rig",
                 f => f.Add<SpawnEffectAuthoring>(new GameObject("Spawn")));
         }

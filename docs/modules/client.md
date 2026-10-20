@@ -98,6 +98,32 @@ render bounds to cover every frame. It fails the bake when the material and tabl
 Game code plays clips with `VATClip.Play(range, now)`, using `SystemAPI.Time.ElapsedTime` as `now`.
 `VATClockSystem` feeds the same clock to the shader, so pausing and replay speed apply to the animation.
 
+### Motion rig
+
+`MotionRigAuthoring` on a unit prefab root moves the model's pivots on the client. Its slots list turrets, barrels
+and launchers that follow a `WeaponPose` index, barrels that recoil per shot, wheels, sprockets and idlers that
+roll, rotors that spool up in flight and down while `Docked`, and a tilt root (the hull) that pitches and rolls with
+the ground under its footprint. With **Aircraft** on, the tilt root leans with acceleration instead. **Fill from
+model** finds the parts by their art names: `Hull`, `Turret`, `Barrel`, `Launcher`, `Wheel_L01`, `Sprocket_L`,
+`Idler_L`, `Rotor_Main` and `Rotor_Tail`. It keeps slots it already lists, measures wheel radii and the footprint
+from the meshes, and gives `Launcher` pose 1 when the unit has an extra weapon. `MotionRigRule` checks every slot
+names a child of the rig and a pose the unit has.
+
+The baker stores a `MotionRig` and a `MotionRigPart` buffer on the root. `MotionRigSystem` runs in
+`PresentationSystemGroup` on the interpolated unit and writes only child `LocalTransform`s, never the ghost root.
+Like `MachineSystem`, the poses render a frame later, once the transform systems have run.
+
+#### Squad figures
+
+`SquadFiguresAuthoring` on a squad unit draws it as hand-placed VAT figures: children of its `Model`, each with
+`VATAnimatedAuthoring` and one shared clip table, listed in the order they stay. It names the idle, walk, run, fire
+and die clips, the run speed and how long a fallen figure stays down. `SquadFigureSystem` shows ceil(figures x
+health fraction), at least one while alive. A figure health drops plays die once, then scales to zero after the
+hold, leaving fog's rendering toggles alone. A squad spawned damaged hides its lost figures without the fall. The
+rest walk or run by the unit's horizontal speed and fire for 0.6 s after each change of the primary weapon's
+`WeaponPose.Shots`. A figure gets a new `VATClip` only when its state changes, and looping clips start at a
+per-figure phase so the squad doesn't move in step.
+
 ### Fog
 
 Entities hidden by fog, and passengers inside a container, stop rendering. `FogOfWarRenderer` projects the fog onto

@@ -12,10 +12,12 @@ In progress:
 
 - **Multiplayer** works end to end. 500 units cost a client about 0.3 Mbps at 20 Hz snapshots.
 - **Hardening**: no CI, stress scene or performance budgets yet.
-- **Turret visuals**: `WeaponPose` replicates each weapon's yaw, pitch and shot count. Nothing on the client
-  turns turrets or plays recoil from it yet.
-- **Vertex animation**: `HyperRTS/LitTeam` plays VAT clips for instanced infantry. No clip blending or
-  per-instance speed yet. See [vertex animation](modules/client.md#vertex-animation).
+- **Unit motion**: `MotionRigSystem` turns turrets, elevates barrels, plays recoil, rolls wheels, spools rotors and
+  tilts hulls on the client. Tracks don't scroll and suspension doesn't flex yet. See
+  [motion rig](modules/client.md#motion-rig).
+- **Vertex animation**: `HyperRTS/LitTeam` plays VAT clips for instanced infantry, and squads show one figure per
+  share of health that idles, walks, runs, fires and dies with the unit. No clip blending, per-instance speed or
+  figure spacing in formation yet. See [vertex animation](modules/client.md#vertex-animation).
 
 ## Decisions
 
