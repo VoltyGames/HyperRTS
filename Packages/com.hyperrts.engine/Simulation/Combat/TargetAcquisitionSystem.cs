@@ -39,6 +39,7 @@ namespace HyperRTS.Simulation.Combat
             _ammo = state.GetComponentLookup<Ammo>(true);
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<FogOfWar>();
         }
 
         [BurstCompile]

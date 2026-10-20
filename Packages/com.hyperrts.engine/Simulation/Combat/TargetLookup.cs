@@ -22,7 +22,6 @@ namespace HyperRTS.Simulation.Combat
         [ReadOnly] private ComponentLookup<Stealthed> _stealthed;
         [ReadOnly] private ComponentLookup<Destructible> _destructibles;
         [ReadOnly] private FogOfWar _fog;
-        private bool _fogUnbuilt;
 
         public TargetLookup(ref SystemState state)
         {
@@ -35,7 +34,6 @@ namespace HyperRTS.Simulation.Combat
             _stealthed = state.GetComponentLookup<Stealthed>(true);
             _destructibles = state.GetComponentLookup<Destructible>(true);
             FogQuery(ref state).TryGetSingleton(out _fog);
-            _fogUnbuilt = IsFogUnbuilt(_fog, ref state);
         }
 
         /// <summary><paramref name="fog"/> is the system's <see cref="FogQuery"/>, built once in OnCreate.</summary>
@@ -50,7 +48,6 @@ namespace HyperRTS.Simulation.Combat
             _stealthed.Update(ref state);
             _destructibles.Update(ref state);
             fog.TryGetSingleton(out _fog);
-            _fogUnbuilt = IsFogUnbuilt(_fog, ref state);
         }
 
         /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
@@ -99,34 +96,13 @@ namespace HyperRTS.Simulation.Combat
             _stealthed.HasEnabled(target) && !_fog.IsDetected(Position(target), team);
 
         /// <summary>
-        /// In the team's sight right now and not cloaked from it: all a unit may pick on its own. A world without a
-        /// fog grid has no fog.
+        /// In the team's sight right now and not cloaked from it: all a unit may pick on its own. Callers require the
+        /// fog grid, which fog-off maps fill as all-visible.
         /// </summary>
-        public bool IsSpotted(Entity target, float3 position, byte team)
-        {
-            if (_fogUnbuilt)
-            {
-                return false;
-            }
-
-            // Without a grid nothing detects, so only stealth hides.
-            var stealthed = _stealthed.HasEnabled(target);
-            return _fog.IsCreated ? _fog.CanSee(team, position, stealthed) : !stealthed;
-        }
+        public bool IsSpotted(Entity target, float3 position, byte team) =>
+            _fog.CanSee(team, position, _stealthed.HasEnabled(target));
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
-
-        // A match's first frames run before the grid exists; that is not a world without fog.
-        private static bool IsFogUnbuilt(in FogOfWar fog, ref SystemState state)
-        {
-            if (fog.IsCreated)
-            {
-                return false;
-            }
-
-            var settings = state.GetEntityQuery(ComponentType.ReadOnly<MapSettings>());
-            return settings.TryGetSingleton(out MapSettings map) && map.FogOfWar;
-        }
 
         /// <summary>Passengers take their container's footprint, so they fire from its edge.</summary>
         public float Radius(Entity entity) =>
