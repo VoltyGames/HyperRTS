@@ -1,6 +1,5 @@
-// HyperRTS/Terrain layer blending. Each layer with alphamap weight is hex-tiled at its rotated, tiled world UV, then
-// all are blended by weight and texel height in one pass: an online softmax over log(weight) + height / depth, so
-// the tallest texels win where layers mix without knowing every layer's height up front.
+// HyperRTS/Terrain layer blending: an online softmax over log(weight) + height / depth, so the tallest texels win
+// where layers mix without knowing every layer's height up front.
 #ifndef HYPERRTS_TERRAIN_LAYERS_INCLUDED
 #define HYPERRTS_TERRAIN_LAYERS_INCLUDED
 
@@ -21,8 +20,7 @@ struct TerrainLayerParams
     half heightWeight;
     half normalStrength;
     half grass;        // grass cover, which sheds rain
-    float4 hex;        // hex rotation strength (fraction of a full turn); 0 if the layer follows rows, else 1;
-                       // a row layer's line direction in UV
+    float4 hex;        // x hex rotation (fraction of a turn), y 0 for row layers else 1, zw row line direction in UV
 };
 
 struct TerrainPixel

@@ -1,6 +1,5 @@
-// HyperRTS/Terrain hex tiling (Mikkelsen, "Practical Real-Time Hex-Tiling", JCGT 2022): a layer texture is blended
-// from the three hex cells around the pixel, each randomly offset and turned, so it never visibly repeats. Under
-// _TERRAIN_SIMPLE it is one plain sample; the far sample is off there and under _TERRAIN_NO_FAR.
+// HyperRTS/Terrain hex tiling (Mikkelsen, "Practical Real-Time Hex-Tiling", JCGT 2022), so layers never visibly repeat.
+// _TERRAIN_SIMPLE makes it one plain sample. The far sample is off there and under _TERRAIN_NO_FAR.
 #ifndef HYPERRTS_TERRAIN_HEX_TILING_INCLUDED
 #define HYPERRTS_TERRAIN_HEX_TILING_INCLUDED
 

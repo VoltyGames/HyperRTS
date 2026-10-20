@@ -1,10 +1,6 @@
-// Road surface on a ribbon mesh laid over the terrain: U runs across the road (0..1), V along it in metres, and
-// vertex alpha fades the ribbon out at its ends and junctions. The sides fade over Edge Fade of the half width,
-// broken up by world-space noise so the road crumbles into the ground. URP PBR lighting with shadows, SSAO, DBuffer
-// decals and light cookies. Alpha-blended without writing depth, in the opaque queue after the terrain: decals, SSAO
-// and the fog of war (projected on the depth buffer) all see the terrain underneath, so they cover the road too.
-// After rain (_HyperRTSWetness, Wetness.cs) it darkens and glosses, and puddles stand in the wheel ruts (a strip
-// Rut Offset from the middle, in U) and along the edges. Needs mesh normals and tangents.
+// Road on a ribbon mesh over the terrain: U across (0..1), V along in metres, vertex alpha fading ends and junctions.
+// No depth write, so decals, SSAO and the fog of war see the terrain underneath and cover the road too.
+// Needs mesh normals and tangents.
 Shader "HyperRTS/Road"
 {
     Properties
@@ -144,8 +140,7 @@ Shader "HyperRTS/Road"
                 return output;
             }
 
-            // How much road covers the pixel. Toward the sides the noise decides, so gravel thins out in patches
-            // instead of along a clean line; the base map's alpha and the vertex alpha fade it further.
+            // Noise decides coverage toward the sides, so gravel thins in patches instead of along a clean line.
             half Coverage(Varyings input, half albedoAlpha)
             {
                 half inside = 1.0 - abs(input.uv.x * 2.0 - 1.0);

@@ -151,7 +151,7 @@ namespace HyperRTS.Input.Cameras
                 return;
             }
 
-            // A menu suspends the map; a disabled Point reads (0, 0), the bottom-left corner, and would edge scroll.
+            // A disabled Point reads (0, 0), the bottom-left corner, and would edge scroll behind a menu.
             if (!camera.enabled)
             {
                 return;
@@ -209,8 +209,8 @@ namespace HyperRTS.Input.Cameras
             ViewGround.Focus(default, transform.position, transform.forward, float.PositiveInfinity);
 
         /// <summary>
-        /// Moves the camera so it looks at <paramref name="focus"/> from <paramref name="height"/>, pitched for that
-        /// height; the focus stays put, so zooming never slides the view.
+        /// Looks at <paramref name="focus"/> from <paramref name="height"/>, pitched for that height.
+        /// The focus stays put, so zooming never slides the view.
         /// </summary>
         private void PlaceAt(Vector3 focus, float height)
         {
@@ -237,8 +237,8 @@ namespace HyperRTS.Input.Cameras
         }
 
         /// <summary>
-        /// The local player's base, looked for during <see cref="homeSearchSeconds"/> after the local player
-        /// exists (while <see cref="startAtHome"/> is set); a player with no buildings by then keeps the view.
+        /// The local player's base, searched for over <see cref="homeSearchSeconds"/> when <see cref="startAtHome"/>
+        /// is set. A player with no buildings by then keeps the view.
         /// </summary>
         private bool TryFindHomeOnce(out Vector3 home)
         {

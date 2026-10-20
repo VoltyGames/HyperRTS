@@ -1,6 +1,5 @@
-// A building's flag: a layer of a flag texture array with a team-colour band along the hoist, streaming downwind as
-// cloth (FlagCloth.hlsl). Two-sided, lit with light shining through, casts shadows. FlagSystem sets _FlagState and
-// _FlagColor per flag entity (DOTS instancing).
+// A building's flag from a texture array, with a team band at the hoist, waving downwind as cloth (FlagCloth.hlsl).
+// FlagSystem sets _FlagState and _FlagColor per entity (DOTS instancing).
 Shader "HyperRTS/Flag"
 {
     Properties

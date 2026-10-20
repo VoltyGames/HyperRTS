@@ -1,9 +1,8 @@
-// URP Lit with masked team colour: renders as URP 17.6 Lit (mirrors its passes and keywords, minus GBuffer, so use
-// Forward or Forward+) and repaints the albedo in _TeamColor where _TeamMask's R and the _TeamStrip band allow.
-//   _TeamColor  linear RGB; A = how much of it shows (0 = untinted, the default, so neutral needs no special case)
-//   _TeamMask   R = where team colour goes, on UV0 (white = everywhere)
-//   _TeamStrip  x = bottom, y = top of the band (object-space metres) the mask applies in
-// TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS-instanced).
+// URP 17.6 Lit (minus GBuffer, so Forward or Forward+) with the albedo repainted in _TeamColor.
+//   _TeamColor  linear RGB, A how much shows (0 untinted, so neutral needs no special case)
+//   _TeamMask   R where team colour goes, on UV0
+//   _TeamStrip  x bottom, y top of the band (object-space metres) the mask applies in
+// TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing).
 Shader "HyperRTS/LitTeam"
 {
     Properties
@@ -273,7 +272,7 @@ Shader "HyperRTS/LitTeam"
             ENDHLSL
         }
 
-        // UnitSilhouetteFeature: team colour where something hides the unit; it sets bit 128 too so each pixel blends once.
+        // UnitSilhouetteFeature: team colour where something hides the unit. Bit 128 again, so each pixel blends once.
         Pass
         {
             Name "UnitSilhouette"

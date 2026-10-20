@@ -1,6 +1,5 @@
-// Darkens everything the camera sees by the fog-of-war grid: drawn as a box around the map, it rebuilds each
-// pixel's world position from the depth texture, so hills, trees and buildings are fogged where they stand.
-// Needs the URP asset's Depth Texture. The R8 grid (one texel per fog cell) is sampled bilinearly for soft edges.
+// Fog of war over everything the camera sees, rebuilding world position from depth so hills, trees and buildings
+// fog where they stand. Needs the URP asset's Depth Texture.
 Shader "HyperRTS/Fog Of War"
 {
     Properties
@@ -48,7 +47,7 @@ Shader "HyperRTS/Fog Of War"
                 float _BorderFade;
             CBUFFER_END
 
-            // Fog grid rectangle on the XZ plane: min x, min z, size x, size z. Set per draw.
+            // XZ: min x, min z, size x, size z.
             float4 _FogRect;
 
             struct Attributes

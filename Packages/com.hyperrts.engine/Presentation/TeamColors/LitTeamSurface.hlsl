@@ -47,10 +47,7 @@ half SampleOcclusion(float2 uv)
     #endif
 }
 
-
-// Returns clear coat parameters
-// .x/.r == mask
-// .y/.g == smoothness
+// x mask, y smoothness.
 half2 SampleClearCoat(float2 uv)
 {
 #if defined(_CLEARCOAT) || defined(_CLEARCOATMAP)
@@ -73,17 +70,9 @@ void ApplyPerPixelDisplacement(half3 viewDirTS, inout float2 uv)
 #endif
 }
 
-// Used for scaling detail albedo. Main features:
-// - Depending if detailAlbedo brightens or darkens, scale magnifies effect.
-// - No effect is applied if detailAlbedo is 0.5.
+// Scales detail albedo's distance from 0.5 (no effect), then doubles it, in one multiply-add.
 half3 ScaleDetailAlbedo(half3 detailAlbedo, half scale)
 {
-    // detailAlbedo = detailAlbedo * 2.0h - 1.0h;
-    // detailAlbedo *= _DetailAlbedoMapScale;
-    // detailAlbedo = detailAlbedo * 0.5h + 0.5h;
-    // return detailAlbedo * 2.0f;
-
-    // A bit more optimized
     return half(2.0) * detailAlbedo * scale - scale + half(1.0);
 }
 
@@ -92,7 +81,7 @@ half3 ApplyDetailAlbedo(float2 detailUv, half3 albedo, half detailMask)
 #if defined(_DETAIL)
     half3 detailAlbedo = SAMPLE_TEXTURE2D(_DetailAlbedoMap, sampler_DetailAlbedoMap, detailUv).rgb;
 
-    // In order to have same performance as builtin, we do scaling only if scale is not 1.0 (Scaled version has 6 additional instructions)
+    // Scaling costs 6 instructions, so only scaled materials pay for it.
 #if defined(_DETAIL_SCALED)
     detailAlbedo = ScaleDetailAlbedo(detailAlbedo, _DetailAlbedoMapScale);
 #else
@@ -114,11 +103,10 @@ half3 ApplyDetailNormal(float2 detailUv, half3 normalTS, half detailMask)
     half3 detailNormalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_DetailNormalMap, sampler_DetailNormalMap, detailUv), _DetailNormalMapScale);
 #endif
 
-    // With UNITY_NO_DXT5nm unpacked vector is not normalized for BlendNormalRNM
-    // For visual consistancy we going to do in all cases
+    // BlendNormalRNM needs a unit vector, which UNITY_NO_DXT5nm doesn't unpack. Normalized everywhere to match.
     detailNormalTS = normalize(detailNormalTS);
 
-    return lerp(normalTS, BlendNormalRNM(normalTS, detailNormalTS), detailMask); // todo: detailMask should lerp the angle of the quaternion rotation, not the normals
+    return lerp(normalTS, BlendNormalRNM(normalTS, detailNormalTS), detailMask);
 #else
     return normalTS;
 #endif

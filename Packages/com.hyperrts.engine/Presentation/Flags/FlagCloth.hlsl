@@ -67,8 +67,7 @@ float3 Downwind()
     return float3(heading.x, 0.0, heading.y);
 }
 
-// The flag streams downwind from the pole top, a wave travelling from hoist to fly with amplitude growing toward
-// the fly; it slides down the pole as it is lowered and shrinks to nothing while hidden.
+// Streams downwind from the pole top, sliding down as it is lowered and shrinking to nothing while hidden.
 Cloth FlagCloth(float3 positionOS, float2 uv)
 {
     float4x4 objectToWorld = GetObjectToWorldMatrix();

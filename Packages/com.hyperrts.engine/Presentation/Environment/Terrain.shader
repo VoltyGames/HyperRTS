@@ -1,7 +1,5 @@
-// Map ground: up to 16 terrain layers in one pass from texture arrays, blended by alphamap weight and texel height,
-// with hex tiling, a far sample, per-layer UV rotation, a per-map macro tint and wetness map and a world-noise
-// brightness variation, lit by URP's PBR model like other lit objects. Use it as Terrain.materialTemplate (instanced
-// terrain with per-pixel normals, holes); the map tools build its inputs:
+// Map ground: up to 16 terrain layers in one pass, lit by URP PBR. Use it as Terrain.materialTemplate (instanced,
+// per-pixel normals, holes). The map tools build its inputs:
 //   _AlbedoArray  RGB albedo (sRGB), A height (linear, stretched to 0..1 per layer)
 //   _NormalArray  normal maps, u east and v north before the layer's rotation
 //   _MaskArray    R occlusion, G smoothness (linear)
@@ -10,15 +8,14 @@
 //                 row 1  tint RGB; macro strength
 //                 row 2  smoothness scale, offset; occlusion scale, offset
 //                 row 3  height-blend weight; normal strength; hex rotation strength (0..1 of a full turn);
-//                        0 for layers that follow rows (turned on by _RowMap, hex cells slide only along their lines), else 1
-//                 row 4  grass cover 0..1 (sheds rain: darkens and puddles less); y, z, w unused
+//                        0 for row layers (hex cells slide only along their lines), else 1
+//                 row 4  grass cover 0..1 (sheds rain); y, z, w unused
 //   _Control0..3  the terrain's alphamaps, four layers each, for _LayerCount layers
 //   _MacroMap     over the whole terrain, linear: RGB tint (0.5 neutral, doubled), A wetness (damp hollows)
 //   _RowMap       over the whole terrain, linear, bilinear, no mips: RG the crop rows' direction (x east, y north)
 //                 remapped to 0..1, (0.5, 0.5) off the fields; row layers lay u along it
-// The weather's _HyperRTSWetness (Wetness.cs) wets the ground further and pools puddles (TerrainWetness.hlsl).
-// Every layer is bound in this one pass, so the terrain needs no add-pass or basemap shaders. TerrainDetail sets
-// _TERRAIN_SIMPLE (one sample per texture) or _TERRAIN_NO_FAR (hex, no far sample); neither is the full ground.
+// One pass binds every layer, so the terrain needs no add-pass or basemap shaders.
+// TerrainDetail sets _TERRAIN_SIMPLE (one sample per texture) or _TERRAIN_NO_FAR (hex, no far sample).
 Shader "HyperRTS/Terrain"
 {
     Properties
