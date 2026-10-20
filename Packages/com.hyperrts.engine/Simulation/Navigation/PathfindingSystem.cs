@@ -36,17 +36,14 @@ namespace HyperRTS.Simulation.Navigation
                 .Build();
             _waypointLookup = state.GetBufferLookup<PathWaypoint>();
             _stateLookup = state.GetComponentLookup<PathState>();
+            state.RequireForUpdate<NavGrid>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _frame++;
-            if (!SystemAPI.TryGetSingleton<NavGrid>(out var grid) || !grid.IsCreated)
-            {
-                state.Dependency = new StraightPathJob().ScheduleParallel(_agents, state.Dependency);
-                return;
-            }
+            var grid = SystemAPI.GetSingleton<NavGrid>();
 
             var requests = new NativeList<PathRequest>(_agents.CalculateEntityCount(), Allocator.TempJob);
             state.Dependency = new EvaluateJob
@@ -144,23 +141,6 @@ namespace HyperRTS.Simulation.Navigation
                 {
                     last.Position.xz = goal.xz;
                 }
-            }
-        }
-
-        /// <summary>Without a grid every unit heads straight for its destination.</summary>
-        [BurstCompile]
-        private partial struct StraightPathJob : IJobEntity
-        {
-            private void Execute(ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
-                in MoveDestination destination, EnabledRefRO<MoveDestination> moving)
-            {
-                if (!moving.ValueRO)
-                {
-                    Reset(ref path, waypoints);
-                    return;
-                }
-
-                Straight(ref path, waypoints, destination.Value);
             }
         }
 
