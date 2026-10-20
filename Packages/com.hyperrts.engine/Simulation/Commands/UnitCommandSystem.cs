@@ -197,15 +197,14 @@ namespace HyperRTS.Simulation.Commands
 
             var positions = new NativeArray<float3>(movers.Length, Allocator.Temp);
             var slots = new NativeArray<float3>(movers.Length, Allocator.Temp);
-            var radius = 0f;
+            var spacing = float2.zero;
             for (var i = 0; i < movers.Length; i++)
             {
                 positions[i] = _transforms[movers[i]].Position;
-                var own = _agents.TryGetComponent(movers[i], out var agent) ? agent.Radius : EntityRadius.Default;
-                radius = math.max(radius, own);
+                spacing = math.max(spacing, SlotSpacing(movers[i]));
             }
 
-            Formation.Assign(positions, command.Position, radius * 2.5f, slots);
+            Formation.Assign(positions, command.Position, spacing, slots);
             for (var i = 0; i < movers.Length; i++)
             {
                 var order = new Order { Type = types[i], Position = hasMap ? map.Clamp(slots[i]) : slots[i] };
@@ -221,6 +220,12 @@ namespace HyperRTS.Simulation.Commands
 
             positions.Dispose();
             slots.Dispose();
+        }
+
+        private float2 SlotSpacing(Entity unit)
+        {
+            var agent = _agents.TryGetComponent(unit, out var own) ? own : new NavAgent { Radius = EntityRadius.Default };
+            return agent.SlotSpacing;
         }
 
         /// <summary>

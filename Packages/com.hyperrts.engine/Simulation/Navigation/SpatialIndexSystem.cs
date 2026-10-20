@@ -92,6 +92,7 @@ namespace HyperRTS.Simulation.Navigation
 
             private void Execute(Entity entity, in LocalTransform transform, in Faction faction)
             {
+                AgentLookup.TryGetComponent(entity, out var agent);
                 var entry = new SpatialEntry
                 {
                     Entity = entity,
@@ -100,9 +101,11 @@ namespace HyperRTS.Simulation.Navigation
                     Faction = faction.Value,
                     IsUnit = !BuildingLookup.HasComponent(entity),
                     Layer = NavAgent.GetLayer(AgentLookup, entity),
+                    SegmentAxis = agent.SegmentAxis(transform.Rotation),
+                    Spacing = agent.Spacing,
                 };
 
-                if (entry.Radius > CellSize)
+                if (entry.HullReach > CellSize)
                 {
                     Oversized.AddNoResize(entry);
                     return;

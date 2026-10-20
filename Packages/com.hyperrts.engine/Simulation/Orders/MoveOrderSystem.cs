@@ -71,7 +71,7 @@ namespace HyperRTS.Simulation.Orders
                     return;
                 }
 
-                var stalled = IsStalled(ref progress, position, order.Value.Position, agent.Radius);
+                var stalled = IsStalled(ref progress, position, order.Value.Position, agent);
 
                 // A disabled destination means locomotion arrived, or got as close as the grid allows.
                 if (!moving.ValueRO || stalled)
@@ -85,8 +85,9 @@ namespace HyperRTS.Simulation.Orders
                 }
             }
 
-            private bool IsStalled(ref MoveOrderState progress, float3 position, float3 goal, float radius)
+            private bool IsStalled(ref MoveOrderState progress, float3 position, float3 goal, in NavAgent agent)
             {
+                var radius = agent.Radius;
                 if (math.distancesq(position.xz, progress.StallAnchor.xz) > radius * radius * 0.25f)
                 {
                     progress = new MoveOrderState { StallAnchor = position };
@@ -94,7 +95,8 @@ namespace HyperRTS.Simulation.Orders
                 }
 
                 progress.StallTime += DeltaTime;
-                var near = math.distance(position.xz, goal.xz) <= NavTolerances.Crowded(radius);
+                // Long or widely spaced footprints crowd the goal from further away.
+                var near = math.distance(position.xz, goal.xz) <= NavTolerances.Crowded(agent.HalfLength + agent.Spacing);
                 return near && progress.StallTime >= StallSeconds;
             }
         }

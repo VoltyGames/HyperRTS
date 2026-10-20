@@ -29,25 +29,40 @@ namespace HyperRTS.Simulation.Units
         [Min(0f)]
         public float moveSpeed = 5f;
 
-        [Tooltip("Radius used for avoidance, formations and spatial queries.")]
+        [Tooltip("Radius used for avoidance, formations and spatial queries. For a long hull, half its width.")]
         [Min(0.05f)]
         public float radius = 0.5f;
 
+        [Tooltip("Full hull length along the unit's forward: avoidance treats it as a capsule this long and two radii wide. 0 (or up to the diameter) keeps a circle.")]
+        [Min(0f)]
+        public float hullLength;
+
+        [Tooltip("Gap kept clear between this unit's footprint and its neighbours'. Vehicles stop short of touching; infantry can stand closer.")]
+        [Min(0f)]
+        public float spacing = DefaultSpacing;
+
         [Tooltip("Surface the unit moves on: Ground (land and decks), Naval (water) or Amphibious (both). A Flight component makes it Air.")]
         public NavLayer navLayer;
+
+        /// <summary>Vehicles' gap: they stop short of touching, as crews keep their distance.</summary>
+        public const float DefaultSpacing = 0.6f;
 
         public override float Radius => radius;
 
         protected override int Population => population;
 
         public static void Add<TWriter>(ref TWriter writer, float moveSpeed, float radius,
-            NavLayer layer = NavLayer.Ground) where TWriter : struct, IEntityWriter
+            NavLayer layer = NavLayer.Ground) where TWriter : struct, IEntityWriter =>
+            Add(ref writer, moveSpeed, new NavAgent { Radius = radius, Layer = layer });
+
+        public static void Add<TWriter>(ref TWriter writer, float moveSpeed, NavAgent agent)
+            where TWriter : struct, IEntityWriter
         {
             writer.Add<UnitTag>();
             writer.Add(new MovementSpeed { Value = moveSpeed });
             writer.Add<MoveDestination>();
             writer.SetEnabled<MoveDestination>(false);
-            writer.Add(new NavAgent { Radius = radius, Layer = layer });
+            writer.Add(agent);
             writer.AddBuffer<PathWaypoint>();
             writer.Add<PathState>();
             writer.Add<ActiveOrder>();
@@ -65,7 +80,13 @@ namespace HyperRTS.Simulation.Units
                 authoring.BakeGameEntity(this, entity);
 
                 var writer = new BakerWriter(this, entity);
-                UnitAuthoring.Add(ref writer, authoring.moveSpeed, authoring.radius, Layer(authoring));
+                UnitAuthoring.Add(ref writer, authoring.moveSpeed, new NavAgent
+                {
+                    Radius = authoring.radius,
+                    HullLength = authoring.hullLength,
+                    Spacing = authoring.spacing,
+                    Layer = Layer(authoring),
+                });
             }
 
             // Flight bakes the Flight component, so its presence alone makes the unit an aircraft.

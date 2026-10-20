@@ -16,5 +16,14 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>The <see cref="NavAgent"/> layer; Ground for entities without one.</summary>
         public NavLayer Layer;
+
+        /// <summary>Half the <see cref="NavAgent"/> capsule's core segment on XZ; zero for round footprints.</summary>
+        public float2 SegmentAxis;
+
+        /// <summary>The <see cref="NavAgent.Spacing"/> it keeps; zero for entities without an agent.</summary>
+        public float Spacing;
+
+        /// <summary>Bounding radius of the footprint plus its spacing, for <see cref="SpatialIndex.QueryHulls{T}"/>.</summary>
+        public readonly float HullReach => Radius + math.length(SegmentAxis) + Spacing;
     }
 }

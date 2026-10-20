@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Units
 {
     /// <summary>
     /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> (disabled on arrival),
-    /// pushes overlapping units of the same layer apart and never steps into a cell closed to the agent's layer.
+    /// keeps units of the same layer their spacing apart and never steps into a cell closed to the agent's layer.
     /// Steers on XZ; with a <see cref="NavGrid"/>, Y follows the layer's surface (ground, deck or water). Aircraft
     /// ignore the grid, climb to their <see cref="Flight"/> altitude (land while <see cref="Docked"/>) and, if they
     /// can't hover, circle when idle.
@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Units
                 }
 
                 var from = transform.Position.xz;
-                var wanted = from + step + Separation(entity, transform.Position, agent, maxStep);
+                var wanted = from + step + Separation(entity, transform, agent, maxStep);
                 if (flying)
                 {
                     Fly(entity, ref transform, wanted);
@@ -152,13 +152,19 @@ namespace HyperRTS.Simulation.Units
 
             private readonly bool IsLanded(Entity entity) => DockedLookup.HasEnabled(entity);
 
-            private readonly float2 Separation(Entity entity, float3 position, in NavAgent agent, float maxStep)
+            private readonly float2 Separation(Entity entity, in LocalTransform transform, in NavAgent agent,
+                float maxStep)
             {
                 var separation = new SeparationVisitor
                 {
-                    Self = entity, Position = position.xz, Radius = agent.Radius, Layer = agent.Layer,
+                    Self = entity,
+                    Position = transform.Position.xz,
+                    Radius = agent.Radius,
+                    SegmentAxis = agent.SegmentAxis(transform.Rotation),
+                    Spacing = agent.Spacing,
+                    Layer = agent.Layer,
                 };
-                Index.Query(position, agent.Radius, ref separation);
+                Index.QueryHulls(transform.Position, agent.HalfLength + agent.Spacing, ref separation);
                 var length = math.length(separation.Push);
                 return length > maxStep ? separation.Push * (maxStep / length) : separation.Push;
             }

@@ -10,8 +10,11 @@ namespace HyperRTS.Simulation.Commands
     /// </summary>
     public static class Formation
     {
-        /// <summary>Writes one goal per unit into <paramref name="slots"/> (same index as its position).</summary>
-        public static void Assign(NativeArray<float3> positions, float3 goal, float spacing, NativeArray<float3> slots)
+        /// <summary>
+        /// Writes one goal per unit into <paramref name="slots"/> (same index as its position), <paramref name="spacing"/>
+        /// apart across (x) and along (y) the travel direction.
+        /// </summary>
+        public static void Assign(NativeArray<float3> positions, float3 goal, float2 spacing, NativeArray<float3> slots)
         {
             var count = positions.Length;
             if (count == 1)
@@ -40,8 +43,8 @@ namespace HyperRTS.Simulation.Commands
             {
                 var start = row * columns;
                 var members = order.GetSubArray(start, math.min(columns, count - start));
-                var center = goal.xz + forward * (((rows - 1) * 0.5f - row) * spacing);
-                PlaceRow(positions, members, keys, new float3(center.x, goal.y, center.y), right, spacing, slots);
+                var center = goal.xz + forward * (((rows - 1) * 0.5f - row) * spacing.y);
+                PlaceRow(positions, members, keys, new float3(center.x, goal.y, center.y), right, spacing.x, slots);
             }
 
             order.Dispose();
