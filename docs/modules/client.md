@@ -74,6 +74,30 @@ or own, ally and enemy colours. The validator flags units and buildings without 
 Units hidden behind cover still show. `UnitSilhouetteFeature`, a URP renderer feature, draws a team-coloured fill
 and rim where a unit is hidden. Every rendered part of a unit is put on rendering layer 8 at bake time for this.
 
+### Vertex animation
+
+`HyperRTS/LitTeam` with the `_VAT` keyword on plays baked vertex animation textures (VAT), so crowds of animated
+infantry draw as instanced static meshes. Every pass, shadows and silhouettes included, reads the same pose. A VAT
+set is:
+
+- `<Model>.fbx`: the rest pose. UV1 holds each vertex's texel, u = (column + 0.5) / width and v = row within the
+  frame, so Unity may split vertices at seams. A model with `VAT/<Model>.json` beside it imports uncompressed,
+  without generated lightmap UVs, and with UV1 kept as 32-bit floats. VAT renderers can't be lightmapped.
+- The position and normal textures the sidecar names: RGBA half float, Unity object space in metres. Each frame
+  takes `rowsPerFrame` rows and every clip is stacked, so frame f's texel is (column, f x rowsPerFrame + v). They
+  import exact: linear, point filtered, clamped, no mipmaps or compression.
+- `VAT/<Model>.json`: `positions`, `normals`, `width`, `height`, `rowsPerFrame`, `vertexCount`, `clips` (each with
+  `name`, `startRow` as its first frame, `frameCount`, `fps` and `loop`), `boundsMin` and `boundsMax` over every
+  frame. A looping clip does not repeat its first frame at the end.
+
+Put the textures in the material's VAT slots, set its rows per frame and turn on `_VAT` (the Debug inspector shows
+material keywords). A `VATClipTable` asset imports the sidecar through **Import Sidecar** in its context menu, then
+stays hand-editable. `VATAnimatedAuthoring` beside the renderer bakes its start clip into `VATClip` and widens the
+render bounds to cover every frame. It fails the bake when the material and table disagree.
+
+Game code plays clips with `VATClip.Play(range, now)`, using `SystemAPI.Time.ElapsedTime` as `now`.
+`VATClockSystem` feeds the same clock to the shader, so pausing and replay speed apply to the animation.
+
 ### Fog
 
 Entities hidden by fog, and passengers inside a container, stop rendering. `FogOfWarRenderer` projects the fog onto

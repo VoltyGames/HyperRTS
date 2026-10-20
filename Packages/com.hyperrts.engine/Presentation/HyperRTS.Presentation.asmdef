@@ -5,6 +5,7 @@
         "HyperRTS.Simulation",
         "Unity.Entities",
         "Unity.Entities.Graphics",
+        "Unity.Entities.Hybrid",
         "Unity.Transforms",
         "Unity.Mathematics",
         "Unity.Mathematics.Extensions",

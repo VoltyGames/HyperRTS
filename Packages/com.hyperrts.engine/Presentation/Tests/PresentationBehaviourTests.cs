@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -13,10 +14,12 @@ namespace HyperRTS.Presentation.Tests
         private const BindingFlags Declared =
             BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
+        // Authoring is baked away and never runs, so it keeps the AuthoringBehaviour base instead.
         private static Type[] Behaviours() =>
             new[] { typeof(GraphicsSupport).Assembly, Assembly.Load("HyperRTS.Input") }
             .SelectMany(assembly => assembly.GetTypes())
             .Where(type => typeof(MonoBehaviour).IsAssignableFrom(type) && type != typeof(PresentationBehaviour))
+            .Where(type => !typeof(AuthoringBehaviour).IsAssignableFrom(type))
             .ToArray();
 
         [Test]

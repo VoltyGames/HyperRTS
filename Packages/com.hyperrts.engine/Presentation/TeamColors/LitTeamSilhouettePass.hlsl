@@ -3,7 +3,7 @@
 #ifndef HYPERRTS_LIT_TEAM_SILHOUETTE_PASS_INCLUDED
 #define HYPERRTS_LIT_TEAM_SILHOUETTE_PASS_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamInput.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamVAT.hlsl"
 
 #define SILHOUETTE_FILL 0.12
 #define SILHOUETTE_RIM_POWER 2.0
@@ -25,12 +25,15 @@ struct SilhouetteVaryings
 };
 
 // Same transform as the forward pass so the mask's ZTest Equal matches its depth exactly.
-SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input)
+SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT)
 {
     SilhouetteVaryings output = (SilhouetteVaryings)0;
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_TRANSFER_INSTANCE_ID(input, output);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+#ifdef _VAT
+    ApplyVAT(vatIndex, input.positionOS.xyz, input.normalOS);
+#endif
 
     VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
     output.positionCS = vertexInput.positionCS;
