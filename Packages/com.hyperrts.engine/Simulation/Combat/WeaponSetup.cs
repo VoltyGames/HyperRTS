@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 
@@ -20,6 +21,13 @@ namespace HyperRTS.Simulation.Combat
             where TWriter : struct, IEntityWriter
         {
             writer.Add(new Ammo { Max = rounds, Current = rounds, ReloadTime = reloadTime });
+        }
+
+        /// <summary>Extra weapons beside the primary; build each with <see cref="WeaponMount.Create"/>.</summary>
+        public static void AddMounts<TWriter>(ref TWriter writer, IReadOnlyList<WeaponMount> mounts)
+            where TWriter : struct, IEntityWriter
+        {
+            writer.AddBuffer(mounts);
         }
     }
 }

@@ -7,7 +7,13 @@ namespace HyperRTS.Simulation.Common
     {
         public Entity Value;
 
-        /// <summary>Refreshed each frame by <c>EngagementSystem</c>; the weapon fires only while set.</summary>
+        /// <summary>
+        /// Refreshed each frame by <c>EngagementSystem</c> against the longest reach of the weapons that can hit the
+        /// target; each weapon fires only while set and within its own range of <see cref="Gap"/>.
+        /// </summary>
         public bool InRange;
+
+        /// <summary>Edge to edge distance to the target, refreshed with <see cref="InRange"/>.</summary>
+        public float Gap;
     }
 }

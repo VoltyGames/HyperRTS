@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
@@ -26,6 +28,9 @@ namespace HyperRTS.Simulation.Cues
 
         [Tooltip("When it uses an ability.")]
         public SoundCue ability;
+
+        [Tooltip("Each shot of the extra weapons, in order: Fire2, Fire3, then Fire4 for the rest.")]
+        public List<SoundCue> mountFire = new();
 
         [Header("Voice (owner only)")]
         [Tooltip("When it is produced or its construction finishes.")]
@@ -67,6 +72,10 @@ namespace HyperRTS.Simulation.Cues
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Select, authoring.select);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Move, authoring.move);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Attack, authoring.attack);
+                for (var i = 0; i < authoring.mountFire.Count; i++)
+                {
+                    EntitySoundsAuthoring.Set(sounds, WeaponMount.FireSlot(i), authoring.mountFire[i]);
+                }
             }
         }
     }

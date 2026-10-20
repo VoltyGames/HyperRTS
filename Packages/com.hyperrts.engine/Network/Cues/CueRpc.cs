@@ -67,7 +67,7 @@ namespace HyperRTS.Network.Cues
         // A battle fires and lands far more shots than anything else, and losing one of them goes unnoticed.
         private static int Tier(CueSlot slot) => slot switch
         {
-            CueSlot.Fire => 2,
+            CueSlot.Fire or CueSlot.Fire2 or CueSlot.Fire3 or CueSlot.Fire4 => 2,
             CueSlot.Impact => 1,
             _ => 0,
         };

@@ -31,6 +31,30 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
+        /// <summary>Gives the entity one extra weapon beside its primary.</summary>
+        public static Entity AddMount(this TestWorld world, Entity entity, float range = 4f, float damage = 10f,
+            float cooldown = 0.5f, WeaponTargets targets = WeaponTargets.Surface, bool independent = false,
+            float minEffect = 0f, UnityObjectRef<DamageType> damageType = default, int rounds = 0,
+            float reloadTime = 0.5f, int requiredResearchTypeId = 0)
+        {
+            var weapon = new Weapon
+            {
+                Range = range,
+                Damage = damage,
+                Cooldown = cooldown,
+                DamageType = damageType,
+                Targets = targets,
+                MinEffect = minEffect,
+            };
+            var mount = WeaponMount.Create(weapon, rounds, reloadTime, requiredResearchTypeId, 1, independent);
+            var writer = new EntityManagerWriter(world.EntityManager, entity);
+            WeaponSetup.AddMounts(ref writer, new[] { mount });
+            return entity;
+        }
+
+        public static WeaponMount Mount(this TestWorld world, Entity entity) =>
+            world.EntityManager.GetBuffer<WeaponMount>(entity)[0];
+
         public static float GetHealth(this TestWorld world, Entity entity) => world.Get<Health>(entity).Current;
 
         /// <summary>Drops health to zero and keeps its max, so the death systems take it from there.</summary>

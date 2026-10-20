@@ -33,7 +33,11 @@ namespace HyperRTS.Editor.Authoring
             return string.Join(" · ", parts);
         }
 
-        public static float Dps(WeaponAuthoring weapon) => weapon.damage / Mathf.Max(weapon.cooldown, 0.05f);
+        /// <summary>The primary's and every extra weapon's damage per second, added up.</summary>
+        public static float Dps(WeaponAuthoring weapon) =>
+            Dps(weapon.damage, weapon.cooldown) + weapon.extraWeapons.Sum(slot => Dps(slot.damage, slot.cooldown));
+
+        private static float Dps(float damage, float cooldown) => damage / Mathf.Max(cooldown, 0.05f);
 
         public static string CostText(GameEntityAuthoring entity) => CostText(entity.cost);
 

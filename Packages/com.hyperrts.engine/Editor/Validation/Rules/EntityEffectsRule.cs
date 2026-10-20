@@ -15,6 +15,16 @@ namespace HyperRTS.Editor.Validation.Rules
 
             EffectRigCheck.CheckOptional(effects, effects.death, "Death", issues);
             EffectRigCheck.CheckOptional(effects, effects.ability, "Ability", issues);
+            for (var i = 0; i < effects.mountFire.Count; i++)
+            {
+                var mount = effects.mountFire[i];
+                var label = $"Mount fire {i + 1}";
+                EffectRigCheck.CheckOptional(effects, mount.rig, label, issues);
+                if (mount.rig != null && mount.muzzle == null)
+                {
+                    issues.Error(effects, $"{label} '{mount.rig.name}' has no muzzle socket.");
+                }
+            }
         }
     }
 }

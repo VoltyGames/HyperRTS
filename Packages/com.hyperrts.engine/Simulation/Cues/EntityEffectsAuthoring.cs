@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
@@ -26,6 +29,20 @@ namespace HyperRTS.Simulation.Cues
         [Tooltip("When it uses an ability, at the aim point.")]
         public GameObject ability;
 
+        [Tooltip("Each shot of the extra weapons, in order: Fire2, Fire3, then Fire4 for the rest.")]
+        public List<MountFire> mountFire = new();
+
+        /// <summary>The fire rig of one extra weapon.</summary>
+        [Serializable]
+        public class MountFire
+        {
+            [Tooltip("Each shot, at the muzzle, facing the target.")]
+            public GameObject rig;
+
+            [Tooltip("Child transform the rig plays at; none plays it at the root.")]
+            public Transform muzzle;
+        }
+
         public class Baker : Baker<EntityEffectsAuthoring>
         {
             public override void Bake(EntityEffectsAuthoring authoring)
@@ -41,6 +58,17 @@ namespace HyperRTS.Simulation.Cues
                 EffectSetup.Set(effects, CueSlot.Fire, authoring.fire, muzzle);
                 EffectSetup.Set(effects, CueSlot.Death, authoring.death, default);
                 EffectSetup.Set(effects, CueSlot.Ability, authoring.ability, default);
+                for (var i = 0; i < authoring.mountFire.Count; i++)
+                {
+                    var mount = authoring.mountFire[i];
+                    if (mount.muzzle != null)
+                    {
+                        DependsOn(mount.muzzle);
+                    }
+
+                    EffectSetup.Set(effects, WeaponMount.FireSlot(i), mount.rig,
+                        EffectSetup.Socket(authoring.transform, mount.muzzle));
+                }
             }
         }
     }

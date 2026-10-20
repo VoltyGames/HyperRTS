@@ -9,7 +9,8 @@ namespace HyperRTS.Simulation.Air
 {
     /// <summary>
     /// The rearm cycle: aircraft out of <see cref="Ammo"/> get a Return to Base order, and docked aircraft reload one
-    /// round per <see cref="Ammo.ReloadTime"/>. Games refuel and repair docked aircraft the same way.
+    /// round per <see cref="Ammo.ReloadTime"/>, each <see cref="WeaponMount"/> at its own pace. Games refuel and repair
+    /// docked aircraft the same way.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -31,6 +32,7 @@ namespace HyperRTS.Simulation.Air
             _writer.Update(ref state);
             new ReturnJob { Writer = _writer }.Schedule();
             new ReloadJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
+            new MountReloadJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
         }
 
         /// <summary>Single-threaded: the order writer's lookups aren't safe to share.</summary>
@@ -74,6 +76,23 @@ namespace HyperRTS.Simulation.Air
                 {
                     ammo.ReloadElapsed -= ammo.ReloadTime;
                     ammo.Current++;
+                }
+            }
+        }
+
+        [BurstCompile]
+        [WithAll(typeof(Docked))]
+        private partial struct MountReloadJob : IJobEntity
+        {
+            public float DeltaTime;
+
+            private void Execute(DynamicBuffer<WeaponMount> mounts)
+            {
+                for (var i = 0; i < mounts.Length; i++)
+                {
+                    var mount = mounts[i];
+                    mount.Reload(DeltaTime);
+                    mounts[i] = mount;
                 }
             }
         }

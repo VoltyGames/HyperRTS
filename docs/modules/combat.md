@@ -11,15 +11,22 @@ queue, so armor, splash and kill credit apply to all of them.
 
 | Type | Role |
 | --- | --- |
-| `WeaponAuthoring` | Range, damage type, cooldown, splash, projectile, surface or air targets |
+| `WeaponAuthoring` | Range, damage type, cooldown, splash, projectile, muzzle, surface or air targets, extra weapons |
+| `WeaponMount` | An extra weapon. Server only, rewritten by stats like the primary |
 | `AmmoAuthoring` | Rounds per load. Reloads while docked |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
 | `DamageWriter` | Queues a hit. A negative amount heals |
 | `CombatStance` | Aggressive, Defensive, HoldPosition or Passive |
 | `LastAttacker` | Who gets the kill credit |
 
-Idle units look for targets every 4th frame. `DamageSystem` applies all damage last in the combat phase. Turrets
-that aim on their own are not built in.
+Idle units look for targets every 4th frame. `DamageSystem` applies all damage last in the combat phase.
+
+The primary `Weapon` sets how a unit engages, and orders and the AI read only it. Extra weapons in
+`WeaponAuthoring.extraWeapons` become `WeaponMount`s that fire at the unit's target when they can hit it, and the
+unit closes to the longest reach among them. An independent mount picks its own target, such as a missile that
+engages aircraft while the gun shoots tanks. `MinEffect` skips targets whose armor blunts the damage, a mount may
+need research and carry rounds that refill while docked, and mount 1 to 3 play the `Fire2` to `Fire4` cues.
+`ShotWriter` fires both kinds of weapon.
 
 ### Destruction
 

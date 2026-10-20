@@ -28,6 +28,8 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<ActiveOrder> _orders;
         private ComponentLookup<MoveDestination> _moves;
         private ComponentLookup<Ammo> _ammo;
+        private BufferLookup<WeaponMount> _mounts;
+        private BufferLookup<ArmorModifier> _armor;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -37,6 +39,8 @@ namespace HyperRTS.Simulation.Combat
             _orders = state.GetComponentLookup<ActiveOrder>(true);
             _moves = state.GetComponentLookup<MoveDestination>();
             _ammo = state.GetComponentLookup<Ammo>(true);
+            _mounts = state.GetBufferLookup<WeaponMount>(true);
+            _armor = state.GetBufferLookup<ArmorModifier>(true);
             state.RequireForUpdate<FactionRelations>();
         }
 
@@ -47,6 +51,8 @@ namespace HyperRTS.Simulation.Combat
             _orders.Update(ref state);
             _moves.Update(ref state);
             _ammo.Update(ref state);
+            _mounts.Update(ref state);
+            _armor.Update(ref state);
 
             new EngageJob
             {
@@ -55,6 +61,8 @@ namespace HyperRTS.Simulation.Combat
                 Orders = _orders,
                 Moves = _moves,
                 AmmoLookup = _ammo,
+                Mounts = _mounts,
+                Armor = _armor,
             }.ScheduleParallel();
         }
 
@@ -66,6 +74,8 @@ namespace HyperRTS.Simulation.Combat
             public FactionRelations Relations;
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
+            [ReadOnly] public BufferLookup<WeaponMount> Mounts;
+            [ReadOnly] public BufferLookup<ArmorModifier> Armor;
 
             // Each entity writes only its own MoveDestination.
             [NativeDisableParallelForRestriction] public ComponentLookup<MoveDestination> Moves;
@@ -89,7 +99,8 @@ namespace HyperRTS.Simulation.Combat
                 // An ordered attack chases indefinitely; the stance only governs targets the unit picked itself.
                 var target = attack.Value;
                 var ordered = order.Type == OrderType.Attack && order.Target == target;
-                if (ShouldRelease(entity, transform.Position, weapon, vision, faction, stance, target, ordered))
+                var reach = Reach(entity, weapon, target);
+                if (ShouldRelease(entity, transform.Position, weapon, vision, faction, stance, target, ordered, reach))
                 {
                     Release(entity, order, stance, ref attack, attacking);
                     return;
@@ -100,7 +111,8 @@ namespace HyperRTS.Simulation.Combat
                     stance.Anchor = transform.Position;
                 }
 
-                attack.InRange = Distance(entity, transform.Position, target) <= weapon.Range;
+                attack.Gap = Distance(entity, transform.Position, target);
+                attack.InRange = attack.Gap <= reach;
                 if (attack.InRange)
                 {
                     Halt(entity);
@@ -113,7 +125,7 @@ namespace HyperRTS.Simulation.Combat
 
             /// <summary>Gone, hidden, out of the weapon's reach, out of ammo, or (unless ordered) leashed.</summary>
             private bool ShouldRelease(Entity entity, float3 position, in Weapon weapon, in VisionRange vision,
-                in Faction faction, in CombatStance stance, Entity target, bool ordered)
+                in Faction faction, in CombatStance stance, Entity target, bool ordered, float reach)
             {
                 // Only orders point units at scenery, so an ordered target need only be attackable.
                 var keep = ordered
@@ -129,20 +141,50 @@ namespace HyperRTS.Simulation.Combat
                     return true;
                 }
 
-                return !ordered && ShouldLeash(entity, position, weapon, vision, stance, target);
+                return !ordered && ShouldLeash(entity, position, weapon, vision, stance, target, reach);
             }
 
             private bool ShouldLeash(Entity entity, float3 position, in Weapon weapon, in VisionRange vision,
-                in CombatStance stance, Entity target)
+                in CombatStance stance, Entity target, float reach)
             {
                 if (stance.Value == Stance.HoldPosition || !Moves.HasComponent(entity))
                 {
-                    return Distance(entity, position, target) > weapon.Range;
+                    return Distance(entity, position, target) > reach;
                 }
 
                 // Defensive units measure from their post, so a fleeing target can't drag them away.
                 var origin = stance.Value == Stance.Defensive ? stance.Anchor : position;
                 return Distance(entity, origin, target) > CombatMath.AcquireRange(weapon, vision.Value) * weapon.LeashFactor;
+            }
+
+            /// <summary>The longest range of the primary and the ready shared-target mounts that can hit the target.</summary>
+            private float Reach(Entity entity, in Weapon weapon, Entity target)
+            {
+                var reach = weapon.Range;
+                if (!Mounts.TryGetBuffer(entity, out var mounts))
+                {
+                    return reach;
+                }
+
+                foreach (var mount in mounts)
+                {
+                    if (JoinsAttack(mount, target))
+                    {
+                        reach = math.max(reach, mount.Weapon.Range);
+                    }
+                }
+
+                return reach;
+            }
+
+            private bool JoinsAttack(in WeaponMount mount, Entity target)
+            {
+                if (mount.Independent || !mount.Ready)
+                {
+                    return false;
+                }
+
+                return Targets.CanHit(target, mount.Weapon.Targets) && mount.Weapon.Affects(Armor, target);
             }
 
             private float Distance(Entity entity, float3 position, Entity target) =>

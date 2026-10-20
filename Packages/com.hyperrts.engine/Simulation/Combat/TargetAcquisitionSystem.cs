@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
@@ -28,6 +27,7 @@ namespace HyperRTS.Simulation.Combat
         private EntityQuery _fogQuery;
         private ComponentLookup<ActiveOrder> _orders;
         private ComponentLookup<Ammo> _ammo;
+        private BufferLookup<ArmorModifier> _armor;
         private uint _frame;
 
         [BurstCompile]
@@ -37,6 +37,7 @@ namespace HyperRTS.Simulation.Combat
             _fogQuery = TargetLookup.FogQuery(ref state);
             _orders = state.GetComponentLookup<ActiveOrder>(true);
             _ammo = state.GetComponentLookup<Ammo>(true);
+            _armor = state.GetBufferLookup<ArmorModifier>(true);
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<FogOfWar>();
@@ -48,6 +49,7 @@ namespace HyperRTS.Simulation.Combat
             _targets.Update(ref state, _fogQuery);
             _orders.Update(ref state);
             _ammo.Update(ref state);
+            _armor.Update(ref state);
             _frame++;
 
             new AcquireJob
@@ -57,6 +59,7 @@ namespace HyperRTS.Simulation.Combat
                 Targets = _targets,
                 Orders = _orders,
                 AmmoLookup = _ammo,
+                Armor = _armor,
                 Slot = (int)(_frame % ScanInterval),
             }.ScheduleParallel();
         }
@@ -71,6 +74,7 @@ namespace HyperRTS.Simulation.Combat
             public TargetLookup Targets;
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
+            [ReadOnly] public BufferLookup<ArmorModifier> Armor;
             public int Slot;
 
             private void Execute(Entity entity, in LocalTransform transform, in Weapon weapon, in CombatStance stance,
@@ -90,16 +94,7 @@ namespace HyperRTS.Simulation.Combat
                 var range = stance.Value == Stance.HoldPosition
                     ? weapon.Range
                     : CombatMath.AcquireRange(weapon, vision.Value);
-                var finder = new NearestHostile
-                {
-                    Relations = Relations,
-                    Targets = Targets,
-                    Faction = faction.Value,
-                    Team = Relations.GetTeam(faction.Value),
-                    Reach = weapon.Targets,
-                    Center = transform.Position,
-                    BestDistance = float.MaxValue,
-                };
+                var finder = new NearestHostile(Relations, Targets, Armor, weapon, faction.Value, transform.Position);
                 Index.Query(transform.Position, range + Targets.Radius(entity), ref finder);
 
                 if (finder.Best != Entity.Null)
@@ -122,38 +117,6 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 return Orders[entity].Value.Has(OrderTraits.EngagesWhileMoving);
-            }
-        }
-
-        private struct NearestHostile : ISpatialVisitor
-        {
-            public FactionRelations Relations;
-            public TargetLookup Targets;
-            public byte Faction;
-            public byte Team;
-            public WeaponTargets Reach;
-            public float3 Center;
-            public Entity Best;
-            public float BestDistance;
-
-            public void Visit(in SpatialEntry entry)
-            {
-                if (!Relations.IsHostile(Faction, entry.Faction) || !CombatMath.CanHit(Reach, entry.Layer))
-                {
-                    return;
-                }
-
-                if (!Targets.IsSpotted(entry.Entity, entry.Position, Team))
-                {
-                    return;
-                }
-
-                var distance = math.distance(entry.Position.xz, Center.xz) - entry.Radius;
-                if (Closest.IsCloser(distance, entry.Entity, BestDistance, Best))
-                {
-                    Best = entry.Entity;
-                    BestDistance = distance;
-                }
             }
         }
     }

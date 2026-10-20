@@ -21,6 +21,11 @@ namespace HyperRTS.Simulation.Cues
         Move = 7,
         Attack = 8,
 
+        /// <summary>Each shot of the first, second and third extra weapon mount, at its muzzle.</summary>
+        Fire2 = 9,
+        Fire3 = 10,
+        Fire4 = 11,
+
         /// <summary>First value a game may use for its own slots; the engine never defines one from here up.</summary>
         GameFirst = 128,
     }

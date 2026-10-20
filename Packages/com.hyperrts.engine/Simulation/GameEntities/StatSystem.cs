@@ -27,6 +27,7 @@ namespace HyperRTS.Simulation.GameEntities
         {
             new MaxHealthJob().ScheduleParallel();
             new WeaponJob().ScheduleParallel();
+            new MountJob().ScheduleParallel();
             new MoveSpeedJob().ScheduleParallel();
             new VisionJob().ScheduleParallel();
             new BuildRateJob().ScheduleParallel();
@@ -70,6 +71,25 @@ namespace HyperRTS.Simulation.GameEntities
                 weapon.Damage = StatMath.Apply(modifiers, bases, Stat.Damage);
                 weapon.Range = StatMath.Apply(modifiers, bases, Stat.Range);
                 weapon.Cooldown = Cooldown(modifiers, StatMath.BaseValue(bases, Stat.FireRate));
+            }
+        }
+
+        /// <summary>Mounts keep their own bases, so the primary's upgrades and veterancy reach every weapon.</summary>
+        [BurstCompile]
+        [WithChangeFilter(typeof(StatModifier))]
+        [WithDisabled(typeof(StatBasesPending))]
+        private partial struct MountJob : IJobEntity
+        {
+            private void Execute(DynamicBuffer<WeaponMount> mounts, in DynamicBuffer<StatModifier> modifiers)
+            {
+                for (var i = 0; i < mounts.Length; i++)
+                {
+                    var mount = mounts[i];
+                    mount.Weapon.Damage = StatMath.Evaluate(modifiers, Stat.Damage, mount.BaseDamage);
+                    mount.Weapon.Range = StatMath.Evaluate(modifiers, Stat.Range, mount.BaseRange);
+                    mount.Weapon.Cooldown = Cooldown(modifiers, mount.BaseCooldown);
+                    mounts[i] = mount;
+                }
             }
         }
 
