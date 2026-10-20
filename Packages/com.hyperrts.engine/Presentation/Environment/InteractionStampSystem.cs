@@ -17,13 +17,10 @@ namespace HyperRTS.Presentation.Environment
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class InteractionStampSystem : SystemBase
     {
-        private Dictionary<Entity, float2> _last = new();
-        private Dictionary<Entity, float2> _current = new();
-        private Dictionary<Entity, float2> _lastAfloat = new();
-        private Dictionary<Entity, float2> _currentAfloat = new();
+        private readonly FramePositions _grounded = new();
+        private readonly FramePositions _afloat = new();
         private EntityQuery _vehicles;
         private EntityQuery _buildings;
-        private EntityQuery _units;
 
         public InteractionStamps Stamps { get; } = new();
 
@@ -33,8 +30,6 @@ namespace HyperRTS.Presentation.Environment
                 .WithNone<FogHidden, DisableRendering>().Build();
             _buildings = SystemAPI.QueryBuilder().WithAll<BuildingTag, NavObstacle, LocalToWorld>()
                 .WithNone<FogHidden, DisableRendering>().Build();
-            _units = SystemAPI.QueryBuilder().WithAll<NavAgent, LocalToWorld>()
-                .WithNone<FogHidden, DisableRendering>().Build();
         }
 
         protected override void OnUpdate()
@@ -42,8 +37,8 @@ namespace HyperRTS.Presentation.Environment
             Stamps.Clear();
             if (InteractionMap.Quality == InteractionQuality.Off)
             {
-                _last.Clear();
-                _lastAfloat.Clear();
+                _grounded.Forget();
+                _afloat.Forget();
                 return;
             }
 
@@ -60,7 +55,6 @@ namespace HyperRTS.Presentation.Environment
             using var entities = _vehicles.ToEntityArray(Allocator.Temp);
             using var marks = _vehicles.ToComponentDataArray<TrackMarks>(Allocator.Temp);
             using var transforms = _vehicles.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
-            _current.Clear();
             for (var i = 0; i < entities.Length; i++)
             {
                 var position = transforms[i].Position;
@@ -71,12 +65,12 @@ namespace HyperRTS.Presentation.Environment
                 }
 
                 forward = math.normalize(forward);
-                _current[entities[i]] = position.xz;
+                _grounded.Record(entities[i], position.xz);
                 var advance = Advance(entities[i], position.xz, forward);
                 InteractionMath.AddVehicle(marks[i], position.xz, forward, advance, Stamps.Trample, Stamps.Tracks);
             }
 
-            (_last, _current) = (_current, _last);
+            _grounded.EndFrame();
         }
 
         private static bool OnGround(in TerrainHeight terrain, float3 position) =>
@@ -85,7 +79,7 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>Metres driven along <paramref name="forward"/> since last frame; 0 when new in sight or teleported.</summary>
         private float Advance(Entity vehicle, float2 position, float2 forward)
         {
-            if (!_last.TryGetValue(vehicle, out var last))
+            if (!_grounded.TryGetLast(vehicle, out var last))
             {
                 return 0f;
             }
@@ -110,34 +104,30 @@ namespace HyperRTS.Presentation.Environment
             var deltaTime = SystemAPI.Time.DeltaTime;
             if (!SystemAPI.TryGetSingleton(out NavGrid grid) || !grid.IsCreated || deltaTime <= 0f)
             {
-                _lastAfloat.Clear();
+                _afloat.Forget();
                 return;
             }
 
-            _currentAfloat.Clear();
-
-            using var entities = _units.ToEntityArray(Allocator.Temp);
-            using var agents = _units.ToComponentDataArray<NavAgent>(Allocator.Temp);
-            using var transforms = _units.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
-            for (var i = 0; i < entities.Length; i++)
+            foreach (var (agent, transform, entity) in SystemAPI.Query<RefRO<NavAgent>, RefRO<LocalToWorld>>()
+                         .WithNone<FogHidden, DisableRendering>().WithEntityAccess())
             {
-                var position = transforms[i].Position;
+                var position = transform.ValueRO.Position;
                 if (!InWater(grid, position))
                 {
                     continue;
                 }
 
-                _currentAfloat[entities[i]] = position.xz;
-                var step = _lastAfloat.TryGetValue(entities[i], out var last) ? position.xz - last : float2.zero;
+                _afloat.Record(entity, position.xz);
+                var step = _afloat.TryGetLast(entity, out var last) ? position.xz - last : float2.zero;
                 var travelled = math.length(step);
                 var speed = travelled / deltaTime;
                 if (speed >= InteractionMath.MinWakeSpeed && travelled <= InteractionMath.MaxStep)
                 {
-                    Stamps.AddWake(position.xz, step / travelled, speed, agents[i].Radius);
+                    Stamps.AddWake(position.xz, step / travelled, speed, agent.ValueRO.Radius);
                 }
             }
 
-            (_lastAfloat, _currentAfloat) = (_currentAfloat, _lastAfloat);
+            _afloat.EndFrame();
         }
 
         // The height checks leave out aircraft and units on bridges.
@@ -146,6 +136,26 @@ namespace HyperRTS.Presentation.Environment
             var water = (grid.Surface(grid.WorldToCell(position)) & NavSurface.Water) != 0;
             return water && grid.Terrain.Height(position.xz) < grid.WaterLevel &&
                    position.y <= grid.WaterLevel + InteractionMath.MaxGroundGap;
+        }
+
+        /// <summary>Last frame's positions, kept to measure how far each unit moved.</summary>
+        private sealed class FramePositions
+        {
+            private Dictionary<Entity, float2> _last = new();
+            private Dictionary<Entity, float2> _current = new();
+
+            public void Forget() => _last.Clear();
+
+            public bool TryGetLast(Entity entity, out float2 position) => _last.TryGetValue(entity, out position);
+
+            public void Record(Entity entity, float2 position) => _current[entity] = position;
+
+            /// <summary>This frame's positions become last frame's, so units out of sight are forgotten.</summary>
+            public void EndFrame()
+            {
+                (_last, _current) = (_current, _last);
+                _current.Clear();
+            }
         }
     }
 }

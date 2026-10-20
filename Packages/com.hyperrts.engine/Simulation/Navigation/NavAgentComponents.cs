@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Navigation
         public NavLayer Layer;
 
         /// <summary>Half the capsule's core segment: zero for round footprints.</summary>
-        public readonly float HalfSegment => math.max(0f, HullLength * 0.5f - Radius);
+        public readonly float HalfSegment => HalfSegmentFor(Radius, HullLength);
 
         /// <summary>Half the footprint's length; the radius for round footprints.</summary>
         public readonly float HalfLength => Radius + HalfSegment;
@@ -33,8 +33,13 @@ namespace HyperRTS.Simulation.Navigation
             new float2(Radius * 2f, HalfLength * 2f) * 1.25f + Spacing;
 
         /// <summary>The core segment's half on the XZ plane, along the unit's facing.</summary>
-        public readonly float2 SegmentAxis(quaternion rotation) =>
-            math.normalizesafe(math.mul(rotation, math.forward()).xz) * HalfSegment;
+        public readonly float2 SegmentAxis(quaternion rotation) => SegmentAxis(rotation, Radius, HullLength);
+
+        /// <summary>The same axis for any capsule footprint, such as a <see cref="Blocker"/>.</summary>
+        public static float2 SegmentAxis(quaternion rotation, float radius, float hullLength) =>
+            math.normalizesafe(math.mul(rotation, math.forward()).xz) * HalfSegmentFor(radius, hullLength);
+
+        private static float HalfSegmentFor(float radius, float hullLength) => math.max(0f, hullLength * 0.5f - radius);
 
         /// <summary>Entities without an agent (buildings, props) sit on the ground.</summary>
         public static NavLayer GetLayer(in ComponentLookup<NavAgent> agents, Entity entity) =>

@@ -43,7 +43,6 @@ namespace HyperRTS.Presentation.Effects
             return rig;
         }
 
-
         /// <summary>Fires due timed bursts and fades flashes.</summary>
         public void Tick(float deltaTime)
         {

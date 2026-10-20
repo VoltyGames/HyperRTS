@@ -24,6 +24,7 @@ namespace HyperRTS.Presentation.Environment
         private readonly Material _material;
         private readonly CommandBuffer _commands = new() { name = "HyperRTS Interaction Maps" };
         private GraphicsBuffer _buffer;
+        private int _wakeFadedSteps;
 
         public InteractionBrush(Shader shader)
         {
@@ -67,9 +68,7 @@ namespace HyperRTS.Presentation.Environment
             DrawStamps(ScarsPass, offset, stamps.Scars.Count);
             offset += stamps.Scars.Count;
 
-            _commands.SetRenderTarget(surfaces.Wake);
-            Fade(new Vector4(wakeSteps, 0f, 0f, 0f) / InteractionMath.Levels);
-            DrawStamps(WakePass, offset, stamps.Wakes.Count);
+            DrawWakes(surfaces, wakeSteps, offset, stamps.Wakes.Count);
             Graphics.ExecuteCommandBuffer(_commands);
         }
 
@@ -112,6 +111,21 @@ namespace HyperRTS.Presentation.Environment
             _commands.ClearRenderTarget(false, true, Color.clear);
             _commands.SetRenderTarget(surfaces.Wake);
             _commands.ClearRenderTarget(false, true, Color.clear);
+            _wakeFadedSteps = InteractionMath.Levels;
+        }
+
+        // Calm water skips the wake map once a full fade has emptied it.
+        private void DrawWakes(InteractionSurfaces surfaces, int wakeSteps, int offset, int count)
+        {
+            if (count == 0 && _wakeFadedSteps >= InteractionMath.Levels)
+            {
+                return;
+            }
+
+            _commands.SetRenderTarget(surfaces.Wake);
+            Fade(new Vector4(wakeSteps, 0f, 0f, 0f) / InteractionMath.Levels);
+            DrawStamps(WakePass, offset, count);
+            _wakeFadedSteps = count > 0 ? 0 : Mathf.Min(_wakeFadedSteps + wakeSteps, InteractionMath.Levels);
         }
 
         private void Fade(Vector4 amount)

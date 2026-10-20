@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -27,6 +28,23 @@ namespace HyperRTS.Simulation.Navigation
         public float Spacing;
 
         /// <summary>Bounding radius of the footprint plus its spacing, for <see cref="SpatialIndex.QueryHulls{T}"/>.</summary>
-        public readonly float HullReach => Radius + math.length(SegmentAxis) + Spacing;
+        public float HullReach;
+
+        /// <summary>
+        /// Fixes <see cref="HullReach"/> once, so queries skip the length, and files the entry by its centre cell or,
+        /// wider than a cell, in the oversized list.
+        /// </summary>
+        public void AddTo(NativeParallelMultiHashMap<int, SpatialEntry>.ParallelWriter cells,
+            NativeList<SpatialEntry>.ParallelWriter oversized, float cellSize)
+        {
+            HullReach = Radius + math.length(SegmentAxis) + Spacing;
+            if (HullReach > cellSize)
+            {
+                oversized.AddNoResize(this);
+                return;
+            }
+
+            cells.Add(SpatialIndex.Key(SpatialIndex.CellAt(Position, cellSize)), this);
+        }
     }
 }

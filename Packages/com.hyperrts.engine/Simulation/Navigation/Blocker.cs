@@ -15,7 +15,6 @@ namespace HyperRTS.Simulation.Navigation
         public float HullLength;
 
         /// <summary>Half the capsule's core segment on XZ, along the entity's facing.</summary>
-        public readonly float2 SegmentAxis(quaternion rotation) =>
-            math.normalizesafe(math.mul(rotation, math.forward()).xz) * math.max(0f, HullLength * 0.5f - Radius);
+        public readonly float2 SegmentAxis(quaternion rotation) => NavAgent.SegmentAxis(rotation, Radius, HullLength);
     }
 }

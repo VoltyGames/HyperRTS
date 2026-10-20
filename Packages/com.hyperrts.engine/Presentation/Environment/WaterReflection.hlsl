@@ -25,17 +25,12 @@ bool OnScreen(float2 uv)
     return all(uv == saturate(uv));
 }
 
-// Interleaved gradient noise: a per-pixel start offset that trades the march's banding for a fine dither.
-float MarchJitter(float2 pixel)
-{
-    return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
-}
-
 // Fraction along the ray of the first surface it meets, or -1. A deep gap after refining a crossing means the ray
 // slipped behind a thin silhouette, so the march goes on.
 float MarchReflection(float4 startCS, float4 endCS, float2 pixel)
 {
-    float jitter = MarchJitter(pixel);
+    // A per-pixel start offset trades the march's banding for a fine dither.
+    float jitter = InterleavedGradientNoise(pixel, 0);
     float previous = 0.0;
     [loop] for (int i = 1; i <= WATER_REFLECTION_STEPS; i++)
     {
@@ -48,19 +43,22 @@ float MarchReflection(float4 startCS, float4 endCS, float2 pixel)
             return -1.0;
         }
 
-        if (BehindScene(probe) > 0.0)
+        float gap = BehindScene(probe);
+        if (gap > 0.0)
         {
             float front = previous;
             float back = t;
             [unroll] for (int j = 0; j < WATER_REFLECTION_REFINE; j++)
             {
                 float middle = 0.5 * (front + back);
-                bool behind = BehindScene(ClipToScreen(lerp(startCS, endCS, middle))) > 0.0;
+                float middleGap = BehindScene(ClipToScreen(lerp(startCS, endCS, middle)));
+                bool behind = middleGap > 0.0;
                 front = behind ? front : middle;
                 back = behind ? middle : back;
+                gap = behind ? middleGap : gap;
             }
 
-            if (BehindScene(ClipToScreen(lerp(startCS, endCS, back))) < _ReflectionThickness)
+            if (gap < _ReflectionThickness)
             {
                 return back;
             }

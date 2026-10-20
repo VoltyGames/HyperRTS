@@ -241,9 +241,14 @@ namespace HyperRTS.Presentation.Effects
                     problems.Add($"{prefix}particle system '{system.name}' does not use Hierarchy scaling");
                 }
 
+                if (subEmitters.Contains(system))
+                {
+                    continue;
+                }
+
                 // Bursts are replayed by hand, so an endless one would never stop.
                 var emission = system.emission;
-                for (var b = 0; !subEmitters.Contains(system) && b < emission.burstCount; b++)
+                for (var b = 0; b < emission.burstCount; b++)
                 {
                     if (emission.GetBurst(b).cycleCount < 1)
                     {

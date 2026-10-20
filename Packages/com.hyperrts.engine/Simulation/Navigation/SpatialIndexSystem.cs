@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Navigation
@@ -57,7 +58,8 @@ namespace HyperRTS.Simulation.Navigation
         public void OnUpdate(ref SystemState state)
         {
             ref var index = ref SystemAPI.GetSingletonRW<SpatialIndex>().ValueRW;
-            var count = _indexed.CalculateEntityCount();
+            // Unfiltered: an upper bound is enough for capacity and doesn't wait on jobs toggling Dead or Inside.
+            var count = _indexed.CalculateEntityCountWithoutFiltering();
             index.Cells.Clear();
             index.Oversized.Clear();
             if (index.Cells.Capacity < count)
@@ -75,7 +77,8 @@ namespace HyperRTS.Simulation.Navigation
             _obstacleLookup.Update(ref state);
             _buildingLookup.Update(ref state);
 
-            new IndexJob
+            var input = state.Dependency;
+            var indexed = new IndexJob
             {
                 Writer = index.Cells.AsParallelWriter(),
                 Oversized = index.Oversized.AsParallelWriter(),
@@ -83,13 +86,14 @@ namespace HyperRTS.Simulation.Navigation
                 AgentLookup = _agentLookup,
                 ObstacleLookup = _obstacleLookup,
                 BuildingLookup = _buildingLookup,
-            }.ScheduleParallel(_indexed);
-            IndexBlockers(ref state, ref index);
+            }.ScheduleParallel(_indexed, input);
+            state.Dependency = JobHandle.CombineDependencies(indexed, IndexBlockers(ref state, ref index, input));
         }
 
-        private void IndexBlockers(ref SystemState state, ref SpatialIndex index)
+        // Writes only the blocker containers, so it runs alongside IndexJob.
+        private JobHandle IndexBlockers(ref SystemState state, ref SpatialIndex index, JobHandle input)
         {
-            var count = _blockers.CalculateEntityCount();
+            var count = _blockers.CalculateEntityCountWithoutFiltering();
             index.Blockers.Clear();
             index.WideBlockers.Clear();
             if (index.Blockers.Capacity < count)
@@ -102,12 +106,12 @@ namespace HyperRTS.Simulation.Navigation
                 index.WideBlockers.Capacity = count;
             }
 
-            new BlockerJob
+            return new BlockerJob
             {
                 Writer = index.Blockers.AsParallelWriter(),
                 Wide = index.WideBlockers.AsParallelWriter(),
                 CellSize = index.CellSize,
-            }.ScheduleParallel(_blockers);
+            }.ScheduleParallel(_blockers, input);
         }
 
         [BurstCompile]
@@ -122,6 +126,7 @@ namespace HyperRTS.Simulation.Navigation
 
             private void Execute(Entity entity, in LocalTransform transform, in Faction faction)
             {
+                // Without an agent the default is round, unspaced and on the ground.
                 AgentLookup.TryGetComponent(entity, out var agent);
                 var entry = new SpatialEntry
                 {
@@ -130,18 +135,11 @@ namespace HyperRTS.Simulation.Navigation
                     Radius = EntityRadius.Get(entity, AgentLookup, ObstacleLookup),
                     Faction = faction.Value,
                     IsUnit = !BuildingLookup.HasComponent(entity),
-                    Layer = NavAgent.GetLayer(AgentLookup, entity),
+                    Layer = agent.Layer,
                     SegmentAxis = agent.SegmentAxis(transform.Rotation),
                     Spacing = agent.Spacing,
                 };
-
-                if (entry.HullReach > CellSize)
-                {
-                    Oversized.AddNoResize(entry);
-                    return;
-                }
-
-                Writer.Add(SpatialIndex.Key(SpatialIndex.CellAt(transform.Position, CellSize)), entry);
+                entry.AddTo(Writer, Oversized, CellSize);
             }
         }
 
@@ -163,14 +161,7 @@ namespace HyperRTS.Simulation.Navigation
                     Layer = NavLayer.Ground,
                     SegmentAxis = blocker.SegmentAxis(transform.Rotation),
                 };
-
-                if (entry.HullReach > CellSize)
-                {
-                    Wide.AddNoResize(entry);
-                    return;
-                }
-
-                Writer.Add(SpatialIndex.Key(SpatialIndex.CellAt(transform.Position, CellSize)), entry);
+                entry.AddTo(Writer, Wide, CellSize);
             }
         }
     }

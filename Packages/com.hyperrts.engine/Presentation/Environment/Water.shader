@@ -74,6 +74,7 @@ Shader "HyperRTS/Water"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/EyeDepth.hlsl"
 
             TEXTURE2D(_NormalMap);
             SAMPLER(sampler_NormalMap);
@@ -154,20 +155,6 @@ Shader "HyperRTS/Water"
                 output.tangentWS = half4(normals.tangentWS, input.tangentOS.w * GetOddNegativeScale());
                 output.color = input.color;
                 return output;
-            }
-
-            // Eye-space depth for perspective and orthographic cameras (map tools render the water top-down).
-            float EyeDepth(float rawDepth)
-            {
-                if (unity_OrthoParams.w == 0)
-                {
-                    return LinearEyeDepth(rawDepth, _ZBufferParams);
-                }
-
-                #if UNITY_REVERSED_Z
-                    rawDepth = 1.0 - rawDepth;
-                #endif
-                return lerp(_ProjectionParams.y, _ProjectionParams.z, rawDepth);
             }
 
             // 1 before start metres, 0 past end.
@@ -254,7 +241,12 @@ Shader "HyperRTS/Water"
                 half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - _Smoothness, 1.0);
                 // Ripples only partly bend the scene reflection, so banks and hulls stay readable in it.
                 half3 mirror = normalize(lerp(input.normalWS, normalWS, _ReflectionDistortion));
-                half4 scene = ScreenReflection(input.positionWS, reflect(-view, mirror), input.positionCS.xy);
+                half4 scene = half4(0.0, 0.0, 0.0, 0.0);
+                if (_ReflectionStrength > 0.0)
+                {
+                    scene = ScreenReflection(input.positionWS, reflect(-view, mirror), input.positionCS.xy);
+                }
+
                 half3 reflection = lerp(sky, RemoveHeightFog(scene.rgb, fog), scene.a * _ReflectionStrength);
                 half3 color = lerp(body, reflection, fresnel);
                 color += Glint(sun, normalWS, view, color, cameraDistance);

@@ -183,7 +183,7 @@ namespace HyperRTS.Simulation.Tests
             float maxHealth = 100f, string name = "Unit")
         {
             var unit = CreateGameEntity(faction, position, maxHealth, name, out var writer);
-            UnitAuthoring.Add(ref writer, speed, radius);
+            UnitAuthoring.Add(ref writer, speed, new NavAgent { Radius = radius });
             return unit;
         }
 

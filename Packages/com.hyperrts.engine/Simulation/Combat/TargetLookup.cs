@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Combat
             _stealthed = state.GetComponentLookup<Stealthed>(true);
             _destructibles = state.GetComponentLookup<Destructible>(true);
             FogQuery(ref state).TryGetSingleton(out _fog);
-            _fogUnbuilt = !_fog.IsCreated && FogEnabled(ref state);
+            _fogUnbuilt = IsFogUnbuilt(_fog, ref state);
         }
 
         /// <summary><paramref name="fog"/> is the system's <see cref="FogQuery"/>, built once in OnCreate.</summary>
@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Combat
             _stealthed.Update(ref state);
             _destructibles.Update(ref state);
             fog.TryGetSingleton(out _fog);
-            _fogUnbuilt = !_fog.IsCreated && FogEnabled(ref state);
+            _fogUnbuilt = IsFogUnbuilt(_fog, ref state);
         }
 
         /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
@@ -104,20 +104,29 @@ namespace HyperRTS.Simulation.Combat
         /// </summary>
         public bool IsSpotted(Entity target, float3 position, byte team)
         {
-            // A match's first frames run before the grid exists; that is not a world without fog.
             if (_fogUnbuilt)
             {
                 return false;
             }
 
-            var inSight = !_fog.IsCreated || _fog.IsVisible(position, team);
-            return inSight && !IsHiddenByStealth(target, team);
+            // Without a grid nothing detects, so only stealth hides.
+            var stealthed = _stealthed.HasEnabled(target);
+            return _fog.IsCreated ? _fog.CanSee(team, position, stealthed) : !stealthed;
         }
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
 
-        private static bool FogEnabled(ref SystemState state) =>
-            state.GetEntityQuery(ComponentType.ReadOnly<MapSettings>()).TryGetSingleton(out MapSettings map) && map.FogOfWar;
+        // A match's first frames run before the grid exists; that is not a world without fog.
+        private static bool IsFogUnbuilt(in FogOfWar fog, ref SystemState state)
+        {
+            if (fog.IsCreated)
+            {
+                return false;
+            }
+
+            var settings = state.GetEntityQuery(ComponentType.ReadOnly<MapSettings>());
+            return settings.TryGetSingleton(out MapSettings map) && map.FogOfWar;
+        }
 
         /// <summary>Passengers take their container's footprint, so they fire from its edge.</summary>
         public float Radius(Entity entity) =>

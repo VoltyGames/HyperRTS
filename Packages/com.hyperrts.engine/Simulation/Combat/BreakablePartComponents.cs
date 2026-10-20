@@ -84,9 +84,14 @@ namespace HyperRTS.Simulation.Combat
 
         public readonly int LatestBroken(NativeArray<BreakablePart> parts)
         {
+            if (Broken <= 0)
+            {
+                return -1;
+            }
+
             for (var i = 0; i < parts.Length; i++)
             {
-                if (Broken > 0 && parts[i].Order == Broken)
+                if (parts[i].Order == Broken)
                 {
                     return i;
                 }

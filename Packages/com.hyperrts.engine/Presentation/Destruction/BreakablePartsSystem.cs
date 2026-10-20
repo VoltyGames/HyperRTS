@@ -68,20 +68,43 @@ namespace HyperRTS.Presentation.Destruction
 
         private void RecordHits(DynamicBuffer<CueEvent> cues)
         {
+            if (!HasImpact(cues))
+            {
+                return;
+            }
+
             foreach (var (building, shown, place) in SystemAPI
                          .Query<RefRO<BreakableParts>, RefRW<ShownBreakage>, RefRO<LocalToWorld>>())
             {
                 var toLocal = math.inverse(place.ValueRO.Value);
                 foreach (var cue in cues)
                 {
+                    if (cue.Slot != CueSlot.Impact)
+                    {
+                        continue;
+                    }
+
                     var local = math.transform(toLocal, cue.Position);
-                    if (cue.Slot == CueSlot.Impact && building.ValueRO.IsNear(local))
+                    if (building.ValueRO.IsNear(local))
                     {
                         shown.ValueRW.LastHit = local;
                         shown.ValueRW.HasHit = true;
                     }
                 }
             }
+        }
+
+        private static bool HasImpact(DynamicBuffer<CueEvent> cues)
+        {
+            foreach (var cue in cues)
+            {
+                if (cue.Slot == CueSlot.Impact)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private BreakablePart Break(DynamicBuffer<BreakablePart> parts, ref ShownBreakage shown)

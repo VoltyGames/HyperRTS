@@ -49,9 +49,6 @@ namespace HyperRTS.Presentation.Environment
             _ => throw new ArgumentOutOfRangeException(nameof(quality), quality, "Off has no interaction maps."),
         };
 
-        /// <summary>Foam is soft, so the wake map shares the trample map's texel.</summary>
-        public static float WakeTexel(InteractionQuality quality) => TrampleTexel(quality);
-
         /// <summary>Texels needed to cover <paramref name="mapSize"/> metres, capped at <see cref="MaxTextureSize"/>.</summary>
         public static int2 TextureSize(float2 mapSize, float texel) =>
             math.clamp((int2)math.ceil(mapSize / texel), 1, MaxTextureSize);

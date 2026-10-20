@@ -1,5 +1,5 @@
-// Vertex and fragment programs of ParticlesSixWay.shader. Needs SixWayInput.hlsl, SixWayLighting.hlsl and
-// HeightFog.hlsl first.
+// Vertex and fragment programs of ParticlesSixWay.shader. Needs SixWayInput.hlsl, SixWayLighting.hlsl,
+// HeightFog.hlsl and EyeDepth.hlsl first.
 #ifndef HYPERRTS_SIX_WAY_PASS_INCLUDED
 #define HYPERRTS_SIX_WAY_PASS_INCLUDED
 
@@ -34,18 +34,11 @@ SixWayMaps SampleSixWayMaps(float4 frames, half frameBlend, out half opacity, ou
     return maps;
 }
 
-// Eye-space depth of the opaque scene behind the pixel, for perspective and orthographic cameras.
-float SceneEyeDepth(float2 screenUV)
-{
-    float rawDepth = SampleSceneDepth(screenUV);
-    return unity_OrthoParams.w == 0 ? LinearEyeDepth(rawDepth, _ZBufferParams) : LinearDepthToEyeDepth(rawDepth);
-}
-
 // Fades the card where it cuts into the ground and as the camera flies into it.
 half DepthFade(SixWayVaryings input, float2 screenUV)
 {
     float eyeDepth = LinearEyeDepth(input.positionWS, GetWorldToViewMatrix());
-    half soft = saturate((SceneEyeDepth(screenUV) - eyeDepth) / max(_SoftDistance, 0.001));
+    half soft = saturate((EyeDepth(SampleSceneDepth(screenUV)) - eyeDepth) / max(_SoftDistance, 0.001));
     half near = saturate((eyeDepth - _NearFadeStart) / max(_NearFadeEnd - _NearFadeStart, 0.001));
     return soft * near;
 }

@@ -41,9 +41,9 @@ namespace HyperRTS.Presentation.Environment
             var trampleSize = InteractionMath.TextureSize(size, InteractionMath.TrampleTexel(quality));
             var tracksSize = InteractionMath.TextureSize(size, InteractionMath.TracksTexel(quality));
             Trample = Create("HyperRTS Trample", trampleSize, GraphicsFormat.R8G8B8A8_UNorm);
-            var wakeSize = InteractionMath.TextureSize(size, InteractionMath.WakeTexel(quality));
             Tracks = Create("HyperRTS Tracks", tracksSize, GraphicsFormat.R8G8B8A8_UNorm);
-            Wake = Create("HyperRTS Wake", wakeSize, GraphicsFormat.R8_UNorm);
+            // Foam is soft, so the wake map shares the trample map's texel.
+            Wake = Create("HyperRTS Wake", trampleSize, GraphicsFormat.R8_UNorm);
         }
 
         public bool Matches(float2 min, float2 size, InteractionQuality quality) =>

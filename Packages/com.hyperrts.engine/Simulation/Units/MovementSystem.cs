@@ -26,6 +26,7 @@ namespace HyperRTS.Simulation.Units
     public partial struct MovementSystem : ISystem
     {
         private NavGrid _noGrid;
+        private EntityQuery _blockers;
         private ComponentLookup<Flight> _flights;
         private ComponentLookup<Docked> _docked;
 
@@ -34,6 +35,7 @@ namespace HyperRTS.Simulation.Units
             _noGrid = NavGrid.Placeholder();
             _flights = state.GetComponentLookup<Flight>(true);
             _docked = state.GetComponentLookup<Docked>(true);
+            _blockers = SystemAPI.QueryBuilder().WithPresent<Blocker>().Build();
             state.RequireForUpdate<SpatialIndex>();
         }
 
@@ -50,6 +52,8 @@ namespace HyperRTS.Simulation.Units
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Grid = hasGrid ? grid : _noGrid,
                 HasGrid = hasGrid,
+                // Asked of the query, not the index, which its builder is still filling.
+                HasBlockers = !_blockers.IsEmptyIgnoreFilter,
                 Flights = _flights,
                 DockedLookup = _docked,
                 DeltaTime = SystemAPI.Time.DeltaTime,
@@ -64,6 +68,7 @@ namespace HyperRTS.Simulation.Units
             [ReadOnly] public SpatialIndex Index;
             [ReadOnly] public NavGrid Grid;
             public bool HasGrid;
+            public bool HasBlockers;
             [ReadOnly] public ComponentLookup<Flight> Flights;
             [ReadOnly] public ComponentLookup<Docked> DockedLookup;
             public float DeltaTime;
@@ -91,14 +96,19 @@ namespace HyperRTS.Simulation.Units
                 }
 
                 var from = transform.Position.xz;
-                var wanted = from + step + Separation(entity, transform, agent, maxStep);
+                var axis = agent.SegmentAxis(transform.Rotation);
+                var wanted = from + step + Separation(Crowd(entity, from, axis, agent), agent, maxStep);
                 if (flying)
                 {
                     Fly(entity, ref transform, wanted);
                 }
                 else
                 {
-                    wanted += Clearance(entity, wanted, transform.Rotation, agent);
+                    if (HasBlockers)
+                    {
+                        wanted += Clearance(Crowd(entity, wanted, axis, agent), agent);
+                    }
+
                     Walk(ref transform, from, wanted, agent, moving.ValueRO, waypoints, ref path);
                 }
 
@@ -154,39 +164,36 @@ namespace HyperRTS.Simulation.Units
 
             private readonly bool IsLanded(Entity entity) => DockedLookup.HasEnabled(entity);
 
-            private readonly float2 Separation(Entity entity, in LocalTransform transform, in NavAgent agent,
-                float maxStep)
+            private readonly float2 Separation(SeparationVisitor separation, in NavAgent agent, float maxStep)
             {
-                var separation = new SeparationVisitor
-                {
-                    Self = entity,
-                    Position = transform.Position.xz,
-                    Radius = agent.Radius,
-                    SegmentAxis = agent.SegmentAxis(transform.Rotation),
-                    Spacing = agent.Spacing,
-                    Layer = agent.Layer,
-                };
-                Index.QueryHulls(transform.Position, agent.HalfLength + agent.Spacing, ref separation);
+                Index.QueryHulls(Center(separation), Reach(agent), ref separation);
                 var length = math.length(separation.Push);
                 return length > maxStep ? separation.Push * (maxStep / length) : separation.Push;
             }
 
             // Measured where the unit is headed and left unclamped, so it never sinks into a blocker even for a frame.
-            private readonly float2 Clearance(Entity entity, float2 wanted, quaternion rotation, in NavAgent agent)
+            private readonly float2 Clearance(SeparationVisitor clearance, in NavAgent agent)
             {
-                var clearance = new SeparationVisitor
+                Index.QueryBlockers(Center(clearance), Reach(agent), ref clearance);
+                return clearance.Push;
+            }
+
+            private static SeparationVisitor Crowd(Entity entity, float2 position, float2 axis, in NavAgent agent) =>
+                new()
                 {
                     Self = entity,
-                    Position = wanted,
+                    Position = position,
                     Radius = agent.Radius,
-                    SegmentAxis = agent.SegmentAxis(rotation),
+                    SegmentAxis = axis,
                     Spacing = agent.Spacing,
                     Layer = agent.Layer,
                 };
-                Index.QueryBlockers(new float3(wanted.x, 0f, wanted.y), agent.HalfLength + agent.Spacing,
-                    ref clearance);
-                return clearance.Push;
-            }
+
+            // Queries only read XZ.
+            private static float3 Center(in SeparationVisitor visitor) =>
+                new(visitor.Position.x, 0f, visitor.Position.y);
+
+            private static float Reach(in NavAgent agent) => agent.HalfLength + agent.Spacing;
 
             /// <summary>Steps toward the next corner; false once the final one is reached.</summary>
             private readonly bool Steer(float3 position, in NavAgent agent, float maxStep, float3 goal,

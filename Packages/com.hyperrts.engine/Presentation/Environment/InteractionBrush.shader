@@ -64,7 +64,7 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             output.local = corner;
             output.value = stamp.value;
             output.forward = stamp.forward;
-            output.phase = frac(sin(dot(stamp.center, float2(12.9898, 78.233))) * 43758.5453) * TWO_PI;
+            output.phase = WindHash(float3(stamp.center, 0.0)) * TWO_PI;
             return output;
         }
 

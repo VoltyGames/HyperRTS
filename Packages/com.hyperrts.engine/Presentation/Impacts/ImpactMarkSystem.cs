@@ -29,6 +29,7 @@ namespace HyperRTS.Presentation.Impacts
         private TypeCatalog<ImpactMark[]> _catalog;
         private EntityQuery _fog;
         private GameObject _root;
+        private InteractionStampSystem _stampSystem;
         private float _clock = float.NegativeInfinity;
         private Unity.Mathematics.Random _random = new(0x9E3779B9u);
 
@@ -100,7 +101,7 @@ namespace HyperRTS.Presentation.Impacts
 
         private InteractionStamps Scars() => InteractionMap.Quality == InteractionQuality.Off
             ? null
-            : World.GetExistingSystemManaged<InteractionStampSystem>()?.Stamps;
+            : (_stampSystem ??= World.GetExistingSystemManaged<InteractionStampSystem>())?.Stamps;
 
         private void PlaceNew(float now, InteractionStamps scars)
         {

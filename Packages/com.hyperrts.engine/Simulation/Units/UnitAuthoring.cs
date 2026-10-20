@@ -51,10 +51,6 @@ namespace HyperRTS.Simulation.Units
 
         protected override int Population => population;
 
-        public static void Add<TWriter>(ref TWriter writer, float moveSpeed, float radius,
-            NavLayer layer = NavLayer.Ground) where TWriter : struct, IEntityWriter =>
-            Add(ref writer, moveSpeed, new NavAgent { Radius = radius, Layer = layer });
-
         public static void Add<TWriter>(ref TWriter writer, float moveSpeed, NavAgent agent)
             where TWriter : struct, IEntityWriter
         {

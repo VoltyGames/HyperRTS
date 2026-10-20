@@ -233,8 +233,12 @@ half ApplyMacro(inout TerrainSurface surface, float2 uv, float2 positionXZ)
     surface.albedo *= lerp(1.0, macro.rgb * 2.0 * variation, surface.macro);
 
     // The grass cards' dry and green patches, so grass and the ground under it change together.
-    half patch = (half)(DryPatch(positionXZ) * 2.0 - 1.0) * _GrassPatches;
-    surface.albedo *= lerp(1.0, 1.0 + patch * half3(1.0, 0.55, 0.15), surface.grass);
+    [branch] if (surface.grass * _GrassPatches != 0.0)
+    {
+        half patch = (half)(DryPatch(positionXZ) * 2.0 - 1.0) * _GrassPatches;
+        surface.albedo *= lerp(1.0, 1.0 + patch * half3(1.0, 0.55, 0.15), surface.grass);
+    }
+
     return macro.a;
 }
 
