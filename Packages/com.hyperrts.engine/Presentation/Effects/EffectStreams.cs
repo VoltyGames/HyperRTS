@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects
@@ -19,6 +20,22 @@ namespace HyperRTS.Presentation.Effects
         /// <summary>Stable per entity, so its stream keeps one look.</summary>
         public static uint Key(Entity entity, int index) => math.hash(new int3(entity.Index, entity.Version, index));
 
+        /// <summary>
+        /// False on the frame after an ECB spawn, when a still root's <see cref="LocalToWorld"/> holds the prefab's
+        /// baked pose at the world origin. Moving roots read stale too, so streams warm up instead (see
+        /// <see cref="StreamState.Ready"/>). Children are trusted.
+        /// </summary>
+        public static bool PoseCurrent(Entity entity, in LocalToWorld world, in ComponentLookup<LocalTransform> locals,
+            in ComponentLookup<Parent> parents)
+        {
+            if (parents.HasComponent(entity) || !locals.TryGetComponent(entity, out var local))
+            {
+                return true;
+            }
+
+            return math.distancesq(local.Position, world.Position) < 1e-4f;
+        }
+
         /// <summary>Starts a frame; call <see cref="EndFrame"/> after the last <see cref="Step"/>.</summary>
         public void BeginFrame() => _frame++;
 
@@ -35,11 +52,11 @@ namespace HyperRTS.Presentation.Effects
 
             if (state.Frame != _frame - 1)
             {
-                state.To = position;
+                state.Started = _frame;
                 state.Carry = 0f;
             }
 
-            state.From = state.To;
+            state.From = state.Started == _frame - 1 || state.Started == _frame ? position : state.To;
             state.To = position;
             state.Frame = _frame;
             return state;

@@ -142,9 +142,46 @@ namespace HyperRTS.Presentation.Tests
             EffectRigKit.SetRates(_rig, 10f, 0f);
             var carry = 0f;
 
+            var main = EffectRigKit.System(_rig).main;
+            main.startSize = 2f;
+
             _rig.Stream(Vector3.zero, Vector3.zero, Quaternion.identity, 1f, 1f, 1f, ref carry, 1.5f);
 
-            Assert.AreEqual(Vector3.one * 1.5f, _rig.transform.localScale);
+            Assert.That(Sizes(EffectRigKit.System(_rig)), Is.All.EqualTo(3f).Within(1e-4f));
+            Assert.AreEqual(Vector3.one, _rig.transform.localScale, "live particles must not follow the next pose");
+        }
+
+        [Test]
+        public void Burst_SizesItsParticles_AndLeavesEarlierOnesAlone()
+        {
+            EffectRigKit.AddBurst(_rig, 0f, 1);
+            var main = EffectRigKit.System(_rig).main;
+            main.startSize = 2f;
+
+            _rig.Burst(Vector3.zero, Quaternion.identity, 0.5f, 1f);
+            _rig.Burst(Vector3.zero, Quaternion.identity, 2f, 1f);
+
+            CollectionAssert.AreEquivalent(new[] { 1f, 4f }, Sizes(EffectRigKit.System(_rig)));
+            Assert.AreEqual(Vector3.one, _rig.transform.localScale);
+        }
+
+        [Test]
+        public void PreparedSystems_AlwaysSimulate_WithThePoolCap()
+        {
+            var main = EffectRigKit.System(_rig).main;
+            main.maxParticles = 300;
+
+            _rig.Prepare();
+
+            Assert.AreEqual(ParticleSystemCullingMode.AlwaysSimulate, main.cullingMode);
+            Assert.AreEqual(EffectEmitter.MaxParticles, main.maxParticles);
+        }
+
+        private static float[] Sizes(ParticleSystem system)
+        {
+            var particles = new ParticleSystem.Particle[system.particleCount];
+            system.GetParticles(particles);
+            return Array.ConvertAll(particles, particle => particle.startSize);
         }
 
         [Test]

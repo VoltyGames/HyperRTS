@@ -103,7 +103,7 @@ namespace HyperRTS.Presentation.Effects
 
             if (time <= 0f)
             {
-                _emitters[emitter].Emit(count);
+                EmitPosed(_emitters[emitter], count);
                 return;
             }
 
@@ -146,7 +146,7 @@ namespace HyperRTS.Presentation.Effects
 
                 _delayed.RemoveAt(i);
                 Pose(burst.Position, burst.Rotation, burst.Scale);
-                _emitters[burst.Emitter].Emit(burst.Count);
+                EmitPosed(_emitters[burst.Emitter], burst.Count);
             }
         }
 
@@ -156,8 +156,15 @@ namespace HyperRTS.Presentation.Effects
             for (var i = 1; i <= count; i++)
             {
                 Pose(Vector3.Lerp(from, to, i / (float)count), rotation, poseScale);
-                emitter.Emit(1);
+                EmitPosed(emitter, 1);
             }
+        }
+
+        // Live particles render at the rig's current scale, so it returns to 1 once the posed ones carry it.
+        private void EmitPosed(EffectEmitter emitter, int count)
+        {
+            emitter.Emit(count, transform.localScale.x);
+            transform.localScale = Vector3.one;
         }
 
         private void Pose(Vector3 position, Quaternion rotation, float poseScale)

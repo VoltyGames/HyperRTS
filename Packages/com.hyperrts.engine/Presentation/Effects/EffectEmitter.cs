@@ -22,6 +22,10 @@ namespace HyperRTS.Presentation.Effects
             emission.enabled = false;
             var main = system.main;
             main.loop = true;
+            // One pooled system serves every instance on the map, so the authored cap would starve busy battles and
+            // culling would pause it as the pose jumps; cost follows live particles, not the cap.
+            main.maxParticles = Mathf.Max(main.maxParticles, MaxParticles);
+            main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
             system.Clear(false);
             system.Play(false);
         }
@@ -53,12 +57,40 @@ namespace HyperRTS.Presentation.Effects
             return count > 0f ? Mathf.Max(1, Mathf.RoundToInt(count * density)) : 0;
         }
 
-        public void Emit(int count)
+        /// <summary>The particle cap every pooled system gets at least.</summary>
+        public const int MaxParticles = 20000;
+
+        /// <summary>Emits at the system's pose, each particle's start size grown by scale.</summary>
+        public void Emit(int count, float scale = 1f)
         {
-            if (count > 0)
+            if (Mathf.Approximately(scale, 1f))
             {
-                _system.Emit(count);
+                _system.Emit(Mathf.Max(count, 0));
+                return;
             }
+
+            for (var i = 0; i < count; i++)
+            {
+                _system.Emit(Scaled(scale), 1);
+            }
+        }
+
+        private ParticleSystem.EmitParams Scaled(float scale)
+        {
+            var main = _system.main;
+            var lerp = Random.value;
+            var emit = new ParticleSystem.EmitParams { applyShapeToPosition = true };
+            if (main.startSize3D)
+            {
+                emit.startSize3D = scale * new Vector3(main.startSizeX.Evaluate(0f, lerp),
+                    main.startSizeY.Evaluate(0f, lerp), main.startSizeZ.Evaluate(0f, lerp));
+            }
+            else
+            {
+                emit.startSize = scale * main.startSize.Evaluate(0f, lerp);
+            }
+
+            return emit;
         }
     }
 }

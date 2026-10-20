@@ -22,9 +22,17 @@ namespace HyperRTS.Presentation.Destruction
         protected override void OnUpdate()
         {
             CompleteDependency();
-            foreach (var (effect, pending, place) in SystemAPI
-                         .Query<RefRO<SpawnEffect>, EnabledRefRW<SpawnEffect>, RefRO<LocalToWorld>>())
+            var locals = SystemAPI.GetComponentLookup<LocalTransform>(true);
+            var parents = SystemAPI.GetComponentLookup<Parent>(true);
+            foreach (var (effect, pending, place, entity) in SystemAPI
+                         .Query<RefRO<SpawnEffect>, EnabledRefRW<SpawnEffect>, RefRO<LocalToWorld>>().WithEntityAccess())
             {
+                // Waits a frame for the spawn's real pose, or the effect plays at the world origin.
+                if (!EffectStreams.PoseCurrent(entity, place.ValueRO, locals, parents))
+                {
+                    continue;
+                }
+
                 pending.ValueRW = false;
                 var rig = effect.ValueRO.Prefab.IsValid() ? _pool.Get(effect.ValueRO.Prefab.Value) : null;
                 if (rig != null)
