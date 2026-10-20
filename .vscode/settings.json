@@ -13,9 +13,8 @@
     "Library": true,
     "Temp": true,
     "obj": true,
-    "Build": true,
-    "Builds": true,
-    "UserSettings": true
+    "UserSettings": true,
+    ".mypy_cache": true
   },
   "files.watcherExclude": {
     "**/Library/**": true,
