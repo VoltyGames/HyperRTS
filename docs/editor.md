@@ -42,7 +42,7 @@ method. A step that uses another's output must come after it.
 generator and run it again.
 
 The engine has two: **Component icons** for the authoring icons, and **Environment textures** for the cloud
-shadow cookie and road edge noise. They write into the package, so they only show when it is embedded or local.
+shadow cookie, road edge noise, terrain noise and water ripple normals. They write into the package, so they only show when it is embedded or local.
 
 ## Creation menus
 

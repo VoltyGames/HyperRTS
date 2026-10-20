@@ -1,8 +1,9 @@
 using UnityEngine;
+using Random = Unity.Mathematics.Random;
 
 namespace HyperRTS.Editor.Environment
 {
-    /// <summary>Gradient noise and fBm that repeat seamlessly every <c>period</c> lattice cells.</summary>
+    /// <summary>Gradient noise, fBm and lowpassed white noise that repeat seamlessly across their tile.</summary>
     public static class TileableNoise
     {
         /// <summary>Octaves of gradient noise, each twice as fine and half as strong; roughly -1..1.</summary>
@@ -56,6 +57,119 @@ namespace HyperRTS.Editor.Environment
             var sorted = (float[])values.Clone();
             System.Array.Sort(sorted);
             return sorted[Mathf.Clamp(Mathf.RoundToInt(fraction * (sorted.Length - 1)), 0, sorted.Length - 1)];
+        }
+
+        /// <summary>
+        /// White Gaussian noise with blobs about <paramref name="size"/> / <paramref name="cycles"/> pixels across,
+        /// standardised to mean 0 and std 1.
+        /// </summary>
+        public static float[] Lowpass(int size, float cycles, ref Random random)
+        {
+            var values = new float[size * size];
+            for (var i = 0; i < values.Length; i++)
+            {
+                values[i] = StandardNormal(ref random);
+            }
+
+            // This blur is the spatial form of the frequency filter exp(-(f / cycles)^2), f in cycles per tile.
+            var kernel = GaussianKernel(size / (Mathf.Sqrt(2f) * Mathf.PI * cycles), size);
+            var scratch = new float[values.Length];
+            KernelLines(values, scratch, size, kernel, 1, size);
+            KernelLines(scratch, values, size, kernel, size, 1);
+            Standardise(values);
+            return values;
+        }
+
+        /// <summary>Replaces each value with its rank spread evenly over 0..1, so the histogram is flat.</summary>
+        public static void RankUniform(float[] values)
+        {
+            var keys = (float[])values.Clone();
+            var order = new int[values.Length];
+            for (var i = 0; i < order.Length; i++)
+            {
+                order[i] = i;
+            }
+
+            System.Array.Sort(keys, order);
+            for (var rank = 0; rank < order.Length; rank++)
+            {
+                values[order[rank]] = (rank + 0.5f) / order.Length;
+            }
+        }
+
+        /// <summary>Wrapping Sobel derivative along (du, dv) of a square field: [-1, 0, 1] along it, [1, 2, 1] across.</summary>
+        public static float Sobel(float[] values, int size, int x, int y, int du, int dv)
+        {
+            var sum = 0f;
+            for (var across = -1; across <= 1; across++)
+            {
+                var weight = across == 0 ? 2f : 1f;
+                var ahead = values[Wrap(y + dv + across * du, size) * size + Wrap(x + du + across * dv, size)];
+                var behind = values[Wrap(y - dv + across * du, size) * size + Wrap(x - du + across * dv, size)];
+                sum += weight * (ahead - behind);
+            }
+
+            return sum;
+        }
+
+        private static float StandardNormal(ref Random random)
+        {
+            var radius = Mathf.Sqrt(-2f * Mathf.Log(1f - random.NextFloat()));
+            return radius * Mathf.Cos(2f * Mathf.PI * random.NextFloat());
+        }
+
+        /// <summary>Gaussian weights for offsets -radius..radius, cut at four sigma or half the tile.</summary>
+        private static float[] GaussianKernel(float sigma, int size)
+        {
+            var radius = Mathf.Min(Mathf.CeilToInt(4f * sigma), size / 2 - 1);
+            var kernel = new float[radius * 2 + 1];
+            for (var offset = -radius; offset <= radius; offset++)
+            {
+                kernel[offset + radius] = Mathf.Exp(-offset * offset / (2f * sigma * sigma));
+            }
+
+            return kernel;
+        }
+
+        private static void KernelLines(float[] source, float[] target, int size, float[] kernel, int step, int stride)
+        {
+            var radius = kernel.Length / 2;
+            for (var line = 0; line < size; line++)
+            {
+                var start = line * stride;
+                for (var i = 0; i < size; i++)
+                {
+                    var sum = 0f;
+                    for (var k = 0; k < kernel.Length; k++)
+                    {
+                        sum += kernel[k] * source[start + Wrap(i + k - radius, size) * step];
+                    }
+
+                    target[start + i * step] = sum;
+                }
+            }
+        }
+
+        private static void Standardise(float[] values)
+        {
+            var mean = 0.0;
+            foreach (var value in values)
+            {
+                mean += value;
+            }
+
+            mean /= values.Length;
+            var variance = 0.0;
+            foreach (var value in values)
+            {
+                variance += (value - mean) * (value - mean);
+            }
+
+            var std = System.Math.Sqrt(variance / values.Length);
+            for (var i = 0; i < values.Length; i++)
+            {
+                values[i] = (float)((values[i] - mean) / std);
+            }
         }
 
         /// <summary>A running box sum along each line; <paramref name="step"/> walks a line, <paramref name="stride"/> picks the next one.</summary>
