@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
 using HyperRTS.Network.Session;
 using NUnit.Framework;
@@ -12,6 +13,12 @@ namespace HyperRTS.Simulation.Tests
     /// <summary>Relay driver choice, the lobby-facing connection status and rejoin guards, without opening sockets.</summary>
     public class NetworkSessionTests
     {
+        // Session statics outlive Play mode in the editor; start each test as a fresh player would.
+        [SetUp]
+        public void ResetSession() =>
+            typeof(NetworkSession).GetMethod("ResetStatics", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, null);
+
         [TestCase(ConnectionState.State.Connecting, NetworkStatus.Connecting)]
         [TestCase(ConnectionState.State.Handshake, NetworkStatus.Connecting)]
         [TestCase(ConnectionState.State.Approval, NetworkStatus.Connecting)]

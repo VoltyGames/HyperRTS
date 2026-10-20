@@ -4,10 +4,11 @@ using HyperRTS.Simulation.Production;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.NetCode;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Clients fill in prefab references that snapshots carry only as type ids.</summary>
+    /// <summary>Clients fill in prefab references that snapshots carry only as type ids, and predict only in game.</summary>
     public class ReplicationTests
     {
         [Test]
@@ -26,6 +27,25 @@ namespace HyperRTS.Simulation.Tests
             PrefabReferences.Resolve<ProductionQueueItem>(world.EntityManager, holders, registry);
 
             Assert.AreEqual(prefab, world.EntityManager.GetBuffer<ProductionQueueItem>(holder)[0].Prefab);
+        }
+
+        [Test]
+        public void Prediction_RunsOnlyWhileInGame()
+        {
+            using var world = new World("Prediction Gate Test", WorldFlags.GameClient);
+            var prediction = world.CreateSystemManaged<PredictedSimulationSystemGroup>();
+            var gate = world.CreateSystem<PredictionGateSystem>();
+
+            gate.Update(world.Unmanaged);
+            Assert.IsFalse(prediction.Enabled, "No connection in game yet.");
+
+            var connection = world.EntityManager.CreateEntity(typeof(NetworkStreamInGame));
+            gate.Update(world.Unmanaged);
+            Assert.IsTrue(prediction.Enabled, "In game.");
+
+            world.EntityManager.DestroyEntity(connection);
+            gate.Update(world.Unmanaged);
+            Assert.IsFalse(prediction.Enabled, "The connection dropped.");
         }
     }
 }
