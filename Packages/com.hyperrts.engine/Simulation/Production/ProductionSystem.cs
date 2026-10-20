@@ -24,6 +24,7 @@ namespace HyperRTS.Simulation.Production
         private ComponentLookup<Population> _populationLookup;
         private ComponentLookup<Producible> _producibleLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
+        private ComponentLookup<PostTransformMatrix> _stretchLookup;
         private ComponentLookup<ActiveOrder> _orderLookup;
         private ComponentLookup<Research> _researchLookup;
         private ComponentLookup<Offline> _offlineLookup;
@@ -39,6 +40,7 @@ namespace HyperRTS.Simulation.Production
             _populationLookup = state.GetComponentLookup<Population>(true);
             _producibleLookup = state.GetComponentLookup<Producible>(true);
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
+            _stretchLookup = state.GetComponentLookup<PostTransformMatrix>(true);
             _orderLookup = state.GetComponentLookup<ActiveOrder>(true);
             _researchLookup = state.GetComponentLookup<Research>(true);
             _offlineLookup = state.GetComponentLookup<Offline>(true);
@@ -57,6 +59,7 @@ namespace HyperRTS.Simulation.Production
             _populationLookup.Update(ref state);
             _producibleLookup.Update(ref state);
             _transformLookup.Update(ref state);
+            _stretchLookup.Update(ref state);
             _orderLookup.Update(ref state);
             _researchLookup.Update(ref state);
             _offlineLookup.Update(ref state);
@@ -77,6 +80,7 @@ namespace HyperRTS.Simulation.Production
                 PopulationLookup = _populationLookup,
                 ProducibleLookup = _producibleLookup,
                 TransformLookup = _transformLookup,
+                StretchLookup = _stretchLookup,
                 OrderLookup = _orderLookup,
                 ResearchLookup = _researchLookup,
                 OfflineLookup = _offlineLookup,
@@ -102,6 +106,7 @@ namespace HyperRTS.Simulation.Production
             [ReadOnly] public ComponentLookup<Population> PopulationLookup;
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
+            [ReadOnly] public ComponentLookup<PostTransformMatrix> StretchLookup;
             [ReadOnly] public ComponentLookup<ActiveOrder> OrderLookup;
             [ReadOnly] public ComponentLookup<Research> ResearchLookup;
             [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
@@ -209,14 +214,8 @@ namespace HyperRTS.Simulation.Production
             private Entity Spawn(Entity prefab, float3 position, in LocalTransform producer,
                 in Faction faction, bool rally, float3 rallyPosition)
             {
-                var unit = Ecb.Instantiate(prefab);
-                var placement = TransformLookup.TryGetComponent(prefab, out var prefabTransform)
-                    ? prefabTransform
-                    : LocalTransform.Identity;
-                placement.Position = position;
-                placement.Rotation = producer.Rotation;
-                Ecb.Place(unit, placement);
-                Ecb.SetComponent(unit, faction);
+                var unit = Ecb.Spawn(prefab, TransformLookup[prefab], StretchLookup, position, producer.Rotation,
+                    faction.Value);
 
                 if (rally && OrderLookup.HasComponent(prefab))
                 {

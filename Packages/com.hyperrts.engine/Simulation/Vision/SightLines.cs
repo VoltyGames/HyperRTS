@@ -10,9 +10,6 @@ namespace HyperRTS.Simulation.Vision
     /// </summary>
     internal struct SightLines
     {
-        /// <summary>Eye height above the viewer's ground or its own position, whichever is higher.</summary>
-        public const float EyeHeight = 2f;
-
         /// <summary>A cell counts as seen when this much above its ground is in sight, like a unit's top.</summary>
         public const float TargetHeight = 1f;
 
@@ -22,11 +19,12 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Flooded terrain hides its bed below this surface; negative infinity when nothing floods.</summary>
         public float WaterFloor;
 
-        public void Stamp(float3 position, float range, ushort bit)
+        public void Stamp(float3 position, in VisionRange vision, ushort bit)
         {
+            var range = vision.Value;
             var center = Fog.WorldToCell(position);
             var radius = (int)math.ceil(range / Fog.CellSize);
-            var eye = math.max(position.y, Terrain.Height(position.xz)) + EyeHeight;
+            var eye = math.max(position.y, Terrain.Height(position.xz)) + vision.EyeHeight;
             var origin = new float3(position.xz, eye);
             Mark(center, bit);
 

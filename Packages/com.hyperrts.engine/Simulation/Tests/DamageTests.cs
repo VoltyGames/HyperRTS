@@ -113,6 +113,7 @@ namespace HyperRTS.Simulation.Tests
             WeaponSetup.Add(ref writer, new Weapon
             {
                 Range = 8f, Damage = 30f, Cooldown = 100f, SplashRadius = 3f, SplashEdgeFactor = 1f,
+                LeashFactor = 1.5f,
             }, Stance.Aggressive, float3.zero);
             var target = _world.SpawnUnit(2, new float3(6f, 0f, 0f));
             var neighbour = _world.SpawnUnit(2, new float3(6f, 0f, 1.5f));

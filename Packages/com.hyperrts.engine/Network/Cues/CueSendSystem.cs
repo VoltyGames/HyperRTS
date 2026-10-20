@@ -20,7 +20,7 @@ namespace HyperRTS.Network.Cues
     public partial struct CueSendSystem : ISystem
     {
         /// <summary>
-        /// Most batches each client gets per tick; a big battle drops the rest instead of flooding RPCs.
+        /// Most batches each client gets per tick; a big battle drops its least important cues rather than flood RPCs.
         /// </summary>
         public const int MaxBatchesPerTick = 3;
 

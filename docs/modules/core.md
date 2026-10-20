@@ -27,7 +27,7 @@ The base tier: ownership, identity, health and shared helpers.
 | `Ownership.Transfer` | The one way to change an owner. Raises `OwnerChanged` |
 | `EntityInfo`, `PrefabRegistry` | Type id, name and icon. The registry maps type id to prefab |
 | `IEntityWriter` | Writes component sets, so bakers and tests build the same entities |
-| `SpawnExtensions.Place` | Sets a command-buffer spawn's `LocalTransform` and its `LocalToWorld`, so its first frame draws in place |
+| `SpawnExtensions.Spawn` | Instantiates a baked prefab, places it with its `LocalToWorld` (stretch included) and sets its `Faction` |
 | `AuthoringBehaviour` | Base of all authoring components |
 
 An entity's type id is a hash of its display name, so two prefab types must not share a name.
@@ -52,7 +52,7 @@ spawn point, and its side's build order. A side the Match doesn't list is an err
 | Type | Role |
 | --- | --- |
 | `MatchState` | Replicated phase, winning team, and `Started` once every human joined |
-| `MatchRules` | Low-power production rate, sell refund, replays, join timeout |
+| `MatchRules` | Low-power production rate, sell refund, experience per cost, replays, join timeout |
 | `MatchSetupRequest` | Lobby configuration. Set it before the map loads |
 | `LocalGameSpeed` | Single-player pause and speed |
 | `VictoryCritical` | A player who loses all of these is defeated |

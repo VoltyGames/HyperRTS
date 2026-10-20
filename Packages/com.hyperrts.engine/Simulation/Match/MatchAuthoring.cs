@@ -56,6 +56,10 @@ namespace HyperRTS.Simulation.Match
         [Range(0f, 1f)]
         public float sellRefund = 0.5f;
 
+        [Tooltip("Experience a veteran-capable killer earns per resource unit the destroyed entity cost.")]
+        [Min(0f)]
+        public float experiencePerCost = 0.1f;
+
         [Tooltip("Record a replay from the start of the match; save it with HyperRTS ▸ Replays ▸ Save Recording.")]
         public bool recordReplay;
 
@@ -131,6 +135,7 @@ namespace HyperRTS.Simulation.Match
                 {
                     LowPowerProductionRate = authoring.lowPowerProductionRate,
                     SellRefund = authoring.sellRefund,
+                    ExperiencePerCost = authoring.experiencePerCost,
                     RecordReplay = authoring.recordReplay,
                     JoinTimeout = authoring.joinTimeout,
                 });
@@ -221,11 +226,7 @@ namespace HyperRTS.Simulation.Match
 
                 var writer = new BakerWriter(this, player);
                 var stock = PlayerSetup.Add(ref writer, faction, playerName, color, populationCap: 0);
-                writer.Add(new PlayerSpawn
-                {
-                    Position = slot.spawnPosition,
-                    Yaw = math.radians(slot.spawnYaw),
-                });
+                writer.Add(new PlayerSpawn { Position = slot.spawnPosition, Yaw = math.radians(slot.spawnYaw) });
                 SetComponent(player, new PlayerSide { Value = slot.side });
                 AddStartingResources(stock, slot);
                 var buildOrder = slot.buildOrder != null ? slot.buildOrder : authoring.defaultBuildOrder;
@@ -234,7 +235,11 @@ namespace HyperRTS.Simulation.Match
                 {
                     var tuning = authoring.AITuningFor(slot.difficulty);
                     AddBuildOrder(AIPlayerSetup.Add(ref writer, tuning.ToComponent(slot.difficulty)), buildOrder);
-                    AddIncomeBonus(player, tuning.incomeMultiplier);
+                    if (AIDifficultyTuning.TryGetIncomeBonus(tuning.incomeMultiplier, out var bonus))
+                    {
+                        AppendToBuffer(player, bonus);
+                    }
+
                     return;
                 }
 
@@ -245,14 +250,6 @@ namespace HyperRTS.Simulation.Match
 
                 // Kept for a match setup that hands this slot to the AI.
                 AddBuildOrder(writer.AddBuffer<AIBuildStep>(), buildOrder);
-            }
-
-            private void AddIncomeBonus(Entity player, float multiplier)
-            {
-                if (AIDifficultyTuning.TryGetIncomeBonus(multiplier, out var bonus))
-                {
-                    AppendToBuffer(player, bonus);
-                }
             }
 
             private void AddBuildOrder(DynamicBuffer<AIBuildStep> steps, AIBuildOrder buildOrder)

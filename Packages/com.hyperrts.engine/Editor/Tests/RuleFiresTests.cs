@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Tools;
+using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Rules;
+using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Upgrades;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -64,6 +67,17 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
+        public void GameEntityRule_WarnsOnUnitPrerequisites_NotOnResearch()
+        {
+            var unit = Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
+            unit.prerequisites.Add(Track(EntityTemplates.Upgrade()).GetComponent<UpgradeAuthoring>());
+            Assert.IsFalse(PrerequisiteWarned(unit), "research is a prerequisite a player can finish");
+
+            unit.prerequisites.Add(Track(EntityTemplates.Unit("Tank")).GetComponent<UnitAuthoring>());
+            Assert.IsTrue(PrerequisiteWarned(unit));
+        }
+
+        [Test]
         public void SkippedRulesHaveNoRow() =>
             Assert.IsEmpty(Skipped.Keys.Where(Rows.ContainsKey).Select(rule => rule.Name));
 
@@ -100,6 +114,9 @@ namespace HyperRTS.Editor.Tests
 
             return issues;
         }
+
+        private static bool PrerequisiteWarned(UnitAuthoring unit) =>
+            Run(new GameEntityRule(), unit).Any(issue => issue.Message.Contains("unit prerequisite"));
 
         private T Track<T>(T created) where T : Object
         {

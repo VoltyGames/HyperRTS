@@ -1,5 +1,5 @@
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Units;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -22,9 +22,9 @@ namespace HyperRTS.Editor.Validation.Rules
                 "A cost entry has no resource type and will be ignored.", issues);
             CheckDeathSpawn(entity, issues);
 
-            if (entity.prerequisites.Exists(prerequisite => prerequisite != null && prerequisite is not BuildingAuthoring))
+            if (entity.prerequisites.Exists(prerequisite => prerequisite is UnitAuthoring))
             {
-                issues.Warn(entity, "Prerequisites must be buildings; a unit prerequisite is never met.");
+                issues.Warn(entity, "A unit prerequisite is never met; require buildings or research.");
             }
 
             if (IsInPlainScene(entity.gameObject))

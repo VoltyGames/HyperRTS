@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -31,37 +30,18 @@ namespace HyperRTS.Simulation.Upgrades
             public List<StatBonus> bonuses = new();
         }
 
-        [Tooltip("Name shown in the HUD; also the upgrade's identity, so keep it unique.")]
-        public string displayName;
-
-        [Tooltip("Icon for the research button.")]
-        public Texture2D icon;
-
-        [Tooltip("Resources spent when research is queued.")]
-        public List<ResourceQuantity> cost = new();
-
-        [Tooltip("Seconds of research.")]
-        [Min(0f)]
-        public float researchTime = 30f;
-
-        [Tooltip("Completed buildings or finished research the owner needs before researching.")]
-        public List<ProducibleAuthoring> prerequisites = new();
-
+        [Header("Research")]
         [Tooltip("What the upgrade changes.")]
         public List<Effect> effects = new();
 
-        public override string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
-
-        private void Reset() => displayName = name;
-
         // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
-        public static void Add<TWriter>(ref TWriter writer, in EntityInfo info, float researchTime,
+        public static void Add<TWriter>(ref TWriter writer, in EntityInfo info, float buildTime,
             IReadOnlyList<ResourceCost> cost, IReadOnlyList<Prerequisite> prerequisites,
             IReadOnlyList<UpgradeEffect> effects) where TWriter : struct, IEntityWriter
         {
             writer.Add<Research>();
             writer.Add(info);
-            writer.Add(new Producible { BuildTime = researchTime });
+            writer.Add(new Producible { BuildTime = buildTime });
 
             writer.AddBuffer(cost);
             writer.AddBuffer(prerequisites);
@@ -72,14 +52,9 @@ namespace HyperRTS.Simulation.Upgrades
         {
             public override void Bake(UpgradeAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.None);
-                var text = new FixedString64Bytes();
-                text.CopyFromTruncated(authoring.DisplayName);
-
-                var writer = new BakerWriter(this, entity);
-                var info = new EntityInfo { TypeId = authoring.TypeId, Name = text, Icon = authoring.icon };
-                UpgradeAuthoring.Add(ref writer, info, authoring.researchTime, ProducibleBaking.Costs(authoring.cost),
-                    ProducibleBaking.Prerequisites(this, authoring.prerequisites), BakeEffects(authoring));
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.None));
+                var info = authoring.BakeProducible(this, out var costs, out var required);
+                UpgradeAuthoring.Add(ref writer, info, authoring.buildTime, costs, required, BakeEffects(authoring));
             }
 
             private List<UpgradeEffect> BakeEffects(UpgradeAuthoring authoring)

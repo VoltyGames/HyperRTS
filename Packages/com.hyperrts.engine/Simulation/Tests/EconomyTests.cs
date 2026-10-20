@@ -32,8 +32,9 @@ namespace HyperRTS.Simulation.Tests
             return building;
         }
 
-        private Entity SpawnHarvester(float3 position, int capacity = 10, float rate = 10f) =>
-            _world.MakeHarvester(_world.SpawnUnit(1, position), capacity, rate);
+        private Entity SpawnHarvester(float3 position, int capacity = 10, float rate = 10f,
+            float replacementRange = 30f) =>
+            _world.MakeHarvester(_world.SpawnUnit(1, position), capacity, rate, replacementRange);
 
         [Test]
         public void Harvester_LoopsBetweenNodeAndDropOff()
@@ -84,6 +85,21 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsFalse(_world.EntityManager.Exists(first));
             Assert.Less(_world.Get<ResourceNode>(second).Amount, 100);
             Assert.AreEqual(second, _world.Get<ActiveOrder>(harvester).Value.Target);
+        }
+
+        [Test]
+        public void DepletedNode_HarvesterIgnoresNodesBeyondItsReplacementRange()
+        {
+            SpawnDropOff(new float3(-6f, 0f, 0f));
+            var first = _world.SpawnNode(new float3(4f, 0f, 0f), _supplies, 5);
+            var second = _world.SpawnNode(new float3(8f, 0f, 4f), _supplies, 100);
+            var harvester = SpawnHarvester(float3.zero, replacementRange: 2f);
+
+            _world.Order(harvester, OrderType.Gather, first);
+            _world.RunUntil(() => !_world.IsEnabled<ActiveOrder>(harvester), 10f);
+
+            Assert.IsFalse(_world.EntityManager.Exists(first));
+            Assert.AreEqual(100, _world.Get<ResourceNode>(second).Amount, "too far to replace the depleted node");
         }
 
         [Test]

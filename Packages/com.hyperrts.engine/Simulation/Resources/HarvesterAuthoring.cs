@@ -22,10 +22,17 @@ namespace HyperRTS.Simulation.Resources
         [Min(0.01f)]
         public float gatherRate = 2f;
 
-        public static void Add<TWriter>(ref TWriter writer, int capacity, float gatherRate)
+        [Tooltip("How far from a depleted node it looks for another of the same type, in world units.")]
+        [Min(0f)]
+        public float replacementRange = 30f;
+
+        public static void Add<TWriter>(ref TWriter writer, int capacity, float gatherRate, float replacementRange)
             where TWriter : struct, IEntityWriter
         {
-            writer.Add(new Harvester { Capacity = capacity, GatherRate = gatherRate });
+            writer.Add(new Harvester
+            {
+                Capacity = capacity, GatherRate = gatherRate, ReplacementRange = replacementRange,
+            });
             writer.Add<HarvestState>();
         }
 
@@ -34,7 +41,8 @@ namespace HyperRTS.Simulation.Resources
             public override void Bake(HarvesterAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                HarvesterAuthoring.Add(ref writer, authoring.capacity, authoring.gatherRate);
+                HarvesterAuthoring.Add(ref writer, authoring.capacity, authoring.gatherRate,
+                    authoring.replacementRange);
             }
         }
     }

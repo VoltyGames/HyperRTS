@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Tests
                 ProjectilePrefab = projectile,
                 ProjectileSpeed = 10f,
                 ProjectileHeight = 1f,
+                LeashFactor = 1.5f,
                 DamageType = damageType,
                 Targets = targets,
             };

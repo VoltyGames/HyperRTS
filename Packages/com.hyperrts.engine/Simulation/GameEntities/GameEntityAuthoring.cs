@@ -1,8 +1,5 @@
-using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
-using HyperRTS.Simulation.Resources;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -12,13 +9,7 @@ namespace HyperRTS.Simulation.GameEntities
     [RequiresGhost]
     public abstract class GameEntityAuthoring : ProducibleAuthoring
     {
-        [Header("Identity")]
-        [Tooltip("Name shown in the HUD. Instances sharing a name are one type (double-click, prerequisites).")]
-        public string displayName;
-
-        [Tooltip("Icon for HUD buttons and the selection panel.")]
-        public Texture2D icon;
-
+        [Header("Ownership")]
         [Tooltip("Owning player number from MatchAuthoring (1 = first player). 0 = neutral.")]
         [Owner]
         public int owner = 1;
@@ -32,56 +23,40 @@ namespace HyperRTS.Simulation.GameEntities
         [Min(0f)]
         public float visionRange = 12f;
 
+        [Tooltip("Eye height above the ground in world units; higher eyes see over more terrain.")]
+        [Min(0f)]
+        public float eyeHeight = 2f;
+
         [Tooltip("Optional prefab spawned where this dies (wreck, debris).")]
         public GameObject deathSpawn;
 
-        [Tooltip("Experience a veteran-capable killer earns for destroying this.")]
-        [Min(0f)]
-        public float experienceValue = 10f;
-
         [Tooltip("The owner is defeated once no entity with this flag remains.")]
         public bool countsForVictory = true;
-
-        [Header("Production")]
-        [Tooltip("Resources spent to produce or place this.")]
-        public List<ResourceQuantity> cost = new();
-
-        [Tooltip("Seconds to produce (units) or construct (buildings).")]
-        [Min(0f)]
-        public float buildTime = 10f;
-
-        [Tooltip("Completed buildings or finished research the owner needs before this can be produced.")]
-        public List<ProducibleAuthoring> prerequisites = new();
-
-        public override string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
 
         /// <summary>Edge-to-edge reach is measured from this, matching <see cref="Navigation.EntityRadius"/> at runtime.</summary>
         public abstract float Radius { get; }
 
         protected virtual int Population => 0;
 
-        private void Reset() => displayName = name;
-
         /// <summary>Bakes the shared components; subclasses call this before adding their own.</summary>
         protected void BakeGameEntity(IBaker baker, Entity entity)
         {
             var writer = new BakerWriter(baker, entity);
-            var displayText = new FixedString64Bytes();
-            displayText.CopyFromTruncated(DisplayName);
+            var info = BakeProducible(baker, out var costs, out var required);
             GameEntitySetup.Add(ref writer, new GameEntitySpec
             {
-                TypeId = TypeId,
-                Name = displayText,
-                Icon = icon,
+                TypeId = info.TypeId,
+                Name = info.Name,
+                Icon = info.Icon,
                 Owner = (byte)owner,
                 MaxHealth = maxHealth,
                 VisionRange = visionRange,
+                EyeHeight = eyeHeight,
                 BuildTime = buildTime,
                 Population = Population,
                 CountsForVictory = countsForVictory,
-                ExperienceValue = experienceValue,
                 DeathPrefab = deathSpawn != null ? baker.GetEntity(deathSpawn, TransformUsageFlags.Dynamic) : Entity.Null,
-            }, ProducibleBaking.Costs(cost), ProducibleBaking.Prerequisites(baker, prerequisites));
+            }, costs, required);
         }
     }
 }

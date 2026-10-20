@@ -11,6 +11,7 @@ namespace HyperRTS.Simulation.Abilities
     public struct AbilityCaster
     {
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
+        [ReadOnly] private ComponentLookup<PostTransformMatrix> _stretches;
         private BufferLookup<AbilityActivation> _events;
         private DamageWriter _damage;
         private Entity _eventQueue;
@@ -18,6 +19,7 @@ namespace HyperRTS.Simulation.Abilities
         public AbilityCaster(ref SystemState state) : this()
         {
             _transforms = state.GetComponentLookup<LocalTransform>(true);
+            _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
             _events = state.GetBufferLookup<AbilityActivation>();
             _damage = new DamageWriter(ref state);
         }
@@ -25,6 +27,7 @@ namespace HyperRTS.Simulation.Abilities
         public void Update(ref SystemState state, Entity damageQueue, Entity eventQueue)
         {
             _transforms.Update(ref state);
+            _stretches.Update(ref state);
             _events.Update(ref state);
             _damage.Update(ref state, damageQueue);
             _eventQueue = eventQueue;
@@ -41,7 +44,10 @@ namespace HyperRTS.Simulation.Abilities
 
             if (ability.SpawnPrefab != Entity.Null)
             {
-                Spawn(ability.SpawnPrefab, faction, position, ecb);
+                // Keeps the prefab's rotation: only the position comes from the target.
+                var prefabTransform = _transforms[ability.SpawnPrefab];
+                ecb.Spawn(ability.SpawnPrefab, prefabTransform, _stretches, position, prefabTransform.Rotation,
+                    faction);
             }
 
             if (ability.Damage != 0f)
@@ -60,19 +66,6 @@ namespace HyperRTS.Simulation.Abilities
                     FriendlyFire = ability.FriendlyFire,
                 });
             }
-        }
-
-        private void Spawn(Entity prefab, byte faction, float3 position, EntityCommandBuffer ecb)
-        {
-            // Keep the prefab's rotation and scale; only place the instance.
-            var transform = _transforms.TryGetComponent(prefab, out var prefabTransform)
-                ? prefabTransform
-                : LocalTransform.Identity;
-            transform.Position = position;
-
-            var instance = ecb.Instantiate(prefab);
-            ecb.Place(instance, transform);
-            ecb.AddComponent(instance, new Faction { Value = faction });
         }
     }
 }

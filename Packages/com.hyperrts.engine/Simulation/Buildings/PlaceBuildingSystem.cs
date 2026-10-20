@@ -148,11 +148,9 @@ namespace HyperRTS.Simulation.Buildings
         private Entity SpawnSite(ref SystemState state, Entity prefab, float3 center, byte faction,
             EntityCommandBuffer ecb)
         {
-            var building = ecb.Instantiate(prefab);
             var transform = SystemAPI.GetComponent<LocalTransform>(prefab);
-            transform.Position = center;
-            ecb.Place(building, transform);
-            ecb.SetComponent(building, new Faction { Value = faction });
+            var building = ecb.Spawn(prefab, transform, SystemAPI.GetComponentLookup<PostTransformMatrix>(true),
+                center, transform.Rotation, faction);
             ecb.SetComponent(building, new ConstructionProgress { Value = 0f });
             ecb.SetComponentEnabled<ConstructionProgress>(building, true);
             // Offline from the first frame, before OfflineSystem sees the site.

@@ -1,13 +1,18 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Resources;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Veterancy
 {
-    /// <summary>Pays a dying entity's <see cref="ExperienceValue"/> to its last hostile attacker, if still alive.</summary>
+    /// <summary>
+    /// Pays a dying entity's resource cost times <see cref="MatchRules.ExperiencePerCost"/> as experience to its last
+    /// hostile attacker, if still alive.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     [UpdateAfter(typeof(DeathSystem))]
@@ -22,6 +27,7 @@ namespace HyperRTS.Simulation.Veterancy
             _experience = state.GetComponentLookup<Experience>();
             _health = state.GetComponentLookup<Health>(true);
             state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<MatchRules>();
         }
 
         [BurstCompile]
@@ -33,6 +39,7 @@ namespace HyperRTS.Simulation.Veterancy
             new CreditJob
             {
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                ExperiencePerCost = SystemAPI.GetSingleton<MatchRules>().ExperiencePerCost,
                 Experience = _experience,
                 HealthLookup = _health,
             }.Schedule();
@@ -44,12 +51,14 @@ namespace HyperRTS.Simulation.Veterancy
         private partial struct CreditJob : IJobEntity
         {
             public FactionRelations Relations;
+            public float ExperiencePerCost;
             public ComponentLookup<Experience> Experience;
             [ReadOnly] public ComponentLookup<Health> HealthLookup;
 
-            private void Execute(in LastAttacker attacker, in ExperienceValue value, in Faction faction)
+            private void Execute(in LastAttacker attacker, in DynamicBuffer<ResourceCost> cost, in Faction faction)
             {
-                if (value.Value <= 0f || !Relations.IsHostile(attacker.Faction, faction.Value))
+                var value = ExperiencePerCost * TotalAmount(cost);
+                if (value <= 0f || !Relations.IsHostile(attacker.Faction, faction.Value))
                 {
                     return;
                 }
@@ -60,7 +69,18 @@ namespace HyperRTS.Simulation.Veterancy
                     return;
                 }
 
-                Experience.GetRefRW(killer).ValueRW.Points += value.Value;
+                Experience.GetRefRW(killer).ValueRW.Points += value;
+            }
+
+            private static int TotalAmount(DynamicBuffer<ResourceCost> cost)
+            {
+                var total = 0;
+                foreach (var entry in cost)
+                {
+                    total += entry.Amount;
+                }
+
+                return total;
             }
         }
     }

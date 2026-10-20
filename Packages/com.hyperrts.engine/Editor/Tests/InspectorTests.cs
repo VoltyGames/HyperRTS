@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Tests
         public void OptionSummaryShowsCostAndTime()
         {
             var upgrade = Track(EntityTemplates.Upgrade()).GetComponent<UpgradeAuthoring>();
-            upgrade.researchTime = 30f;
+            upgrade.buildTime = 30f;
             Assert.AreEqual("free · 30s", EntitySummary.ProducibleText(upgrade));
             Assert.AreEqual("", EntitySummary.ProducibleText(null));
         }

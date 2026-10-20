@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Combat
     public partial struct WeaponFireSystem : ISystem
     {
         private ComponentLookup<LocalTransform> _transforms;
+        private ComponentLookup<PostTransformMatrix> _stretches;
         private ComponentLookup<Health> _health;
         private ComponentLookup<UnitTag> _units;
         private ComponentLookup<Stealth> _stealth;
@@ -33,6 +34,7 @@ namespace HyperRTS.Simulation.Combat
         public void OnCreate(ref SystemState state)
         {
             _transforms = state.GetComponentLookup<LocalTransform>();
+            _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
             _health = state.GetComponentLookup<Health>(true);
             _units = state.GetComponentLookup<UnitTag>(true);
             _stealth = state.GetComponentLookup<Stealth>();
@@ -48,6 +50,7 @@ namespace HyperRTS.Simulation.Combat
         public void OnUpdate(ref SystemState state)
         {
             _transforms.Update(ref state);
+            _stretches.Update(ref state);
             _health.Update(ref state);
             _units.Update(ref state);
             _stealth.Update(ref state);
@@ -62,6 +65,7 @@ namespace HyperRTS.Simulation.Combat
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Transforms = _transforms,
+                Stretches = _stretches,
                 HealthLookup = _health,
                 Units = _units,
                 Stealth = _stealth,
@@ -79,6 +83,7 @@ namespace HyperRTS.Simulation.Combat
             public float DeltaTime;
             public EntityCommandBuffer Ecb;
             public ComponentLookup<LocalTransform> Transforms;
+            [ReadOnly] public ComponentLookup<PostTransformMatrix> Stretches;
             [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<UnitTag> Units;
             public ComponentLookup<Stealth> Stealth;
@@ -177,16 +182,9 @@ namespace HyperRTS.Simulation.Combat
                 var origin = Transforms[shooter].Position + lift;
                 var aim = targetPosition + lift;
 
-                // Keep the prefab's scale; only place and orient the instance.
-                var transform = Transforms.HasComponent(weapon.ProjectilePrefab)
-                    ? Transforms[weapon.ProjectilePrefab]
-                    : LocalTransform.Identity;
-                transform.Position = origin;
-                transform.Rotation = quaternion.LookRotationSafe(aim - origin, math.up());
-
-                var projectile = Ecb.Instantiate(weapon.ProjectilePrefab);
-                Ecb.Place(projectile, transform);
-                Ecb.AddComponent(projectile, new Faction { Value = faction.Value });
+                var prefab = weapon.ProjectilePrefab;
+                var projectile = Ecb.Spawn(prefab, Transforms[prefab], Stretches, origin,
+                    quaternion.LookRotationSafe(aim - origin, math.up()), faction.Value);
                 Ecb.AddComponent(projectile, new Projectile
                 {
                     Speed = weapon.ProjectileSpeed,

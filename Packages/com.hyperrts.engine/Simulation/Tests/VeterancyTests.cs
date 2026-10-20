@@ -1,5 +1,7 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Veterancy;
 using NUnit.Framework;
@@ -12,12 +14,14 @@ namespace HyperRTS.Simulation.Tests
     public class VeterancyTests
     {
         private TestWorld _world;
+        private ResourceType _supplies;
 
         [SetUp]
         public void SetUp()
         {
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
+            _supplies = _world.CreateSupplies();
         }
 
         [TearDown]
@@ -36,6 +40,13 @@ namespace HyperRTS.Simulation.Tests
                 },
             });
             return unit;
+        }
+
+        private Entity Victim(byte faction, float3 position, int cost)
+        {
+            var victim = _world.SpawnUnit(faction, position);
+            _world.SetCost(victim, _supplies, cost);
+            return victim;
         }
 
         [Test]
@@ -78,13 +89,13 @@ namespace HyperRTS.Simulation.Tests
         public void Kill_EarnsExperience_AndRankBonus()
         {
             var veteran = Veteran(float3.zero);
-            var enemy = _world.SpawnUnit(2, new float3(3f, 0f, 0f));
+            var enemy = Victim(2, new float3(3f, 0f, 0f), cost: 100);
 
             _world.Run(3f);
 
             Assert.IsFalse(_world.EntityManager.Exists(enemy));
             var experience = _world.Get<Experience>(veteran);
-            Assert.AreEqual(10f, experience.Points, 1e-3f, "the default experience value");
+            Assert.AreEqual(10f, experience.Points, 1e-3f, "cost 100 times the match's 0.1");
             Assert.AreEqual(1, experience.Rank);
             Assert.AreEqual(75f, _world.Get<Weapon>(veteran).Damage, 1e-3f, "+50% damage at rank 1");
         }
@@ -93,13 +104,30 @@ namespace HyperRTS.Simulation.Tests
         public void AlliedKills_EarnNothing()
         {
             var veteran = Veteran(float3.zero);
-            var friend = _world.SpawnUnit(1, new float3(30f, 0f, 0f));
+            var friend = Victim(1, new float3(30f, 0f, 0f), cost: 100);
             _world.EntityManager.SetComponentData(friend, new LastAttacker { Source = veteran, Faction = 1 });
             _world.Kill(friend);
 
             _world.Tick();
 
             Assert.AreEqual(0f, _world.Get<Experience>(veteran).Points);
+        }
+
+        [Test]
+        public void Kill_PaysTheVictimsCost_TimesTheMatchFactor()
+        {
+            var veteran = Veteran(float3.zero);
+            using var query = _world.EntityManager.CreateEntityQuery(typeof(MatchRules));
+            var rules = query.GetSingleton<MatchRules>();
+            rules.ExperiencePerCost = 0.5f;
+            query.SetSingleton(rules);
+            var enemy = Victim(2, new float3(30f, 0f, 0f), cost: 40);
+            _world.EntityManager.SetComponentData(enemy, new LastAttacker { Source = veteran, Faction = 1 });
+            _world.Kill(enemy);
+
+            _world.Tick();
+
+            Assert.AreEqual(20f, _world.Get<Experience>(veteran).Points, 1e-3f);
         }
     }
 }

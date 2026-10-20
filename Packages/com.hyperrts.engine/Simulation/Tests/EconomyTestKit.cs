@@ -49,10 +49,11 @@ namespace HyperRTS.Simulation.Tests
             return node;
         }
 
-        public static Entity MakeHarvester(this TestWorld world, Entity unit, int capacity, float gatherRate)
+        public static Entity MakeHarvester(this TestWorld world, Entity unit, int capacity, float gatherRate,
+            float replacementRange = 30f)
         {
             var writer = new EntityManagerWriter(world.EntityManager, unit);
-            HarvesterAuthoring.Add(ref writer, capacity, gatherRate);
+            HarvesterAuthoring.Add(ref writer, capacity, gatherRate, replacementRange);
             return unit;
         }
 

@@ -16,9 +16,6 @@ namespace HyperRTS.Simulation.Resources
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct GatherSystem : ISystem
     {
-        /// <summary>How far from a depleted node harvesters look for another of the same type.</summary>
-        public const float ReplacementRange = 30f;
-
         private EntityQuery _nodes;
         private EntityQuery _dropOffs;
         private ComponentLookup<ResourceNode> _nodeLookup;
@@ -188,7 +185,7 @@ namespace HyperRTS.Simulation.Resources
             /// <summary>Retargets to the nearest node of the carried type near the depleted one.</summary>
             private bool TryReplaceNode(ref ActiveOrder order, in Harvester harvester, in HarvestState harvest)
             {
-                var closest = Closest.Within(ReplacementRange * ReplacementRange);
+                var closest = Closest.Within(harvester.ReplacementRange * harvester.ReplacementRange);
                 for (var i = 0; i < Nodes.Length; i++)
                 {
                     var candidate = Nodes[i];

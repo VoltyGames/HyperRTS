@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Navigation;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.GameEntities
 {
@@ -134,12 +133,8 @@ namespace HyperRTS.Simulation.GameEntities
                 }
 
                 var ground = spawn.Position.xz + right * item.Offset.x + forward * item.Offset.y;
-                var transform = entityManager.GetComponentData<LocalTransform>(item.Prefab);
-                transform.Position = new float3(ground.x, terrain.Height(ground), ground.y);
-                transform.Rotation = quaternion.RotateY(spawn.Yaw + item.Yaw);
-                var entity = entityManager.Instantiate(item.Prefab);
-                entityManager.SetComponentData(entity, transform);
-                entityManager.SetComponentData(entity, new Faction { Value = faction });
+                var position = new float3(ground.x, terrain.Height(ground), ground.y);
+                entityManager.Spawn(item.Prefab, position, quaternion.RotateY(spawn.Yaw + item.Yaw), faction);
             }
         }
     }

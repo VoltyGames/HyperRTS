@@ -13,10 +13,10 @@ namespace HyperRTS.Simulation.GameEntities
         public byte Owner;
         public float MaxHealth;
         public float VisionRange;
+        public float EyeHeight;
         public float BuildTime;
         public int Population;
         public bool CountsForVictory;
         public Entity DeathPrefab;
-        public float ExperienceValue;
     }
 }

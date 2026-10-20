@@ -92,6 +92,41 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void StretchedProjectile_KeepsThePrefabStretch()
+        {
+            var stretch = float4x4.Scale(1f, 1f, 3f);
+            var prefab = _world.EntityManager.CreateEntity();
+            _world.EntityManager.AddComponentData(prefab, LocalTransform.Identity);
+            _world.EntityManager.AddComponentData(prefab, new PostTransformMatrix { Value = stretch });
+            _world.MakePrefab(prefab);
+            _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 8f, cooldown: 100f, projectile: prefab);
+            _world.SpawnUnit(2, new float3(4f, 0f, 4f), speed: 0f);
+
+            var projectile = Single(TickUntilSpawned(30, ComponentType.ReadOnly<Projectile>()));
+
+            Assert.AreEqual(1, _world.Get<Faction>(projectile).Value);
+            AssertPlaced(projectile, stretch);
+        }
+
+        [Test]
+        public void EntityManagerSpawn_PlacesWithTheStretch_AndOwns()
+        {
+            var stretch = float4x4.Scale(2f, 1f, 1f);
+            var prefab = Scaled(_world.MakePrefab(_world.SpawnUnit(0, Far)), 1.5f);
+            _world.EntityManager.AddComponentData(prefab, new PostTransformMatrix { Value = stretch });
+            var rotation = quaternion.RotateY(0.4f);
+
+            var spawned = _world.EntityManager.Spawn(prefab, new float3(3f, 0f, 7f), rotation, 2);
+
+            var placed = _world.Get<LocalTransform>(spawned);
+            Assert.AreEqual(new float3(3f, 0f, 7f), placed.Position);
+            Assert.AreEqual(rotation, placed.Rotation);
+            Assert.AreEqual(1.5f, placed.Scale, 1e-5f);
+            Assert.AreEqual(2, _world.Get<Faction>(spawned).Value);
+            AssertPlaced(spawned, stretch);
+        }
+
+        [Test]
         public void Remains_CarryTheDeadPiecesPoseAndStretch()
         {
             var remains = _world.MakePrefab(_world.EntityManager.CreateEntity(typeof(LocalTransform)));

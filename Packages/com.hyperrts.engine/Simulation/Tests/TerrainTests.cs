@@ -135,6 +135,17 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void TallViewer_SeesOverTheRidge()
+        {
+            _world.CreateTerrain(p => math.abs(p.x - 5f) < 1.5f ? 10f : 0f);
+            var tower = _world.SpawnUnit(1, float3.zero);
+            _world.EntityManager.SetComponentData(tower, new VisionRange { Value = 10f, EyeHeight = 50f });
+            _world.Tick();
+
+            Assert.IsTrue(_world.Fog().IsVisible(new float3(9f, 0f, 0f), Team1), "behind the ridge");
+        }
+
+        [Test]
         public void FlatTerrain_SeesTheSameCircle_AsNoTerrain()
         {
             using var flat = new TestWorld();

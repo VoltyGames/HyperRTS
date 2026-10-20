@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -14,21 +15,62 @@ namespace HyperRTS.Network.Cues
         [GhostFixedListCapacity(Capacity = Capacity)]
         public FixedList4096Bytes<PackedCue> Cues;
 
-        /// <summary>Fills up to <paramref name="maxBatches"/> RPCs of <see cref="Capacity"/>; the rest is dropped.</summary>
+        /// <summary>
+        /// Fills up to <paramref name="maxBatches"/> RPCs of <see cref="Capacity"/> in arrival order. Past the limit,
+        /// per-shot fire and impact cues are dropped before deaths, abilities and voices.
+        /// </summary>
         public static void Batch(NativeArray<CueEvent> cues, int maxBatches, NativeList<CueRpc> batches)
         {
-            var count = math.min(cues.Length, maxBatches * Capacity);
-            for (var start = 0; start < count; start += Capacity)
+            var quotas = Quotas(cues, maxBatches * Capacity);
+            var rpc = new CueRpc();
+            foreach (var cue in cues)
             {
-                var rpc = new CueRpc();
-                var end = math.min(start + Capacity, count);
-                for (var i = start; i < end; i++)
+                var tier = Tier(cue.Slot);
+                if (quotas[tier] == 0)
                 {
-                    rpc.Cues.Add(PackedCue.Pack(cues[i]));
+                    continue;
                 }
 
+                quotas[tier]--;
+                rpc.Cues.Add(PackedCue.Pack(cue));
+                if (rpc.Cues.Length == Capacity)
+                {
+                    batches.Add(rpc);
+                    rpc = new CueRpc();
+                }
+            }
+
+            if (rpc.Cues.Length > 0)
+            {
                 batches.Add(rpc);
             }
         }
+
+        /// <summary>How many cues of each tier fit in <paramref name="budget"/>, most important first.</summary>
+        private static int3 Quotas(NativeArray<CueEvent> cues, int budget)
+        {
+            var counts = int3.zero;
+            foreach (var cue in cues)
+            {
+                counts[Tier(cue.Slot)]++;
+            }
+
+            var quotas = int3.zero;
+            for (var tier = 0; tier < 3; tier++)
+            {
+                quotas[tier] = math.min(counts[tier], budget);
+                budget -= quotas[tier];
+            }
+
+            return quotas;
+        }
+
+        // A battle fires and lands far more shots than anything else, and losing one of them goes unnoticed.
+        private static int Tier(CueSlot slot) => slot switch
+        {
+            CueSlot.Fire => 2,
+            CueSlot.Impact => 1,
+            _ => 0,
+        };
     }
 }

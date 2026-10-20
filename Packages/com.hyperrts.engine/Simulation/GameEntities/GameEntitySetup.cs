@@ -7,7 +7,6 @@ using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Upgrades;
-using HyperRTS.Simulation.Veterancy;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 
@@ -31,9 +30,8 @@ namespace HyperRTS.Simulation.GameEntities
             writer.Add<StatBasesPending>();
             writer.AddBuffer<StatModifier>();
             writer.AddBuffer<FieldPresence>();
-            writer.Add(new ExperienceValue { Value = spec.ExperienceValue });
             writer.Add(new AppliedUpgrades { Faction = spec.Owner });
-            writer.Add(new VisionRange { Value = spec.VisionRange });
+            writer.Add(new VisionRange { Value = spec.VisionRange, EyeHeight = spec.EyeHeight });
             writer.Add(new Producible { BuildTime = spec.BuildTime, Population = spec.Population });
             writer.AddBuffer(cost);
             writer.AddBuffer(prerequisites);

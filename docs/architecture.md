@@ -38,7 +38,7 @@ in one of the [tiers](modules.md#tiers).
 | Combat owns movement | While `AttackTarget` is enabled, combat writes `MoveDestination` |
 | Ownership | `Faction` on every ownable entity, 0 for neutral. `FactionRelations` decides hostility |
 | Damage goes through the queue | `DamageWriter`, so armor, splash and kill credit apply |
-| Spawn baked prefabs | `ecb.Instantiate(prefab)`, then `ecb.Place(entity, transform)` and set `Faction` |
+| Spawn baked prefabs | `ecb.Spawn(prefab, prefabTransform, stretches, position, rotation, faction)` |
 
 ## Worlds
 

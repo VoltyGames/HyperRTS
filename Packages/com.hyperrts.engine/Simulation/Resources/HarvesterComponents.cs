@@ -9,6 +9,9 @@ namespace HyperRTS.Simulation.Resources
         public int Capacity;
         public float GatherRate;
 
+        /// <summary>How far from a depleted node it looks for another of the same type.</summary>
+        public float ReplacementRange;
+
         public UnityObjectRef<ResourceType> CargoType;
         public int CargoAmount;
     }

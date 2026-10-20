@@ -146,6 +146,27 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(soldier));
         }
 
+        [TestCase(1.5f, true)]
+        [TestCase(1f, false)]
+        public void DefensiveLeash_ScalesWithTheWeaponsLeashFactor(float leashFactor, bool keeps)
+        {
+            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), Stance.Defensive, range: 2f);
+            var weapon = _world.Get<Weapon>(soldier);
+            weapon.LeashFactor = leashFactor;
+            _world.EntityManager.SetComponentData(soldier, weapon);
+            var enemy = _world.SpawnUnit(2, new float3(6f, 0f, 0f), speed: 0f);
+            _world.Tick();
+
+            // About 12 from its post: past a 10 acquire range, inside 1.5 times it.
+            var post = new float3(-7f, 0f, 0f);
+            _world.EntityManager.SetComponentData(soldier, new CombatStance { Value = Stance.Defensive, Anchor = post });
+            _world.EntityManager.SetComponentData(soldier, new AttackTarget { Value = enemy });
+            _world.EntityManager.SetComponentEnabled<AttackTarget>(soldier, true);
+            _world.Tick();
+
+            Assert.AreEqual(keeps, _world.IsEnabled<AttackTarget>(soldier));
+        }
+
         [Test]
         public void HoldPosition_FiresInRangeButNeverMoves()
         {

@@ -153,7 +153,7 @@ namespace HyperRTS.Simulation.Tests
             EntityManager.AddComponentData(match, new MatchState());
             EntityManager.AddComponentData(match, new MatchRules
             {
-                LowPowerProductionRate = 0.5f, SellRefund = 0.5f, JoinTimeout = 60f,
+                LowPowerProductionRate = 0.5f, SellRefund = 0.5f, ExperiencePerCost = 0.1f, JoinTimeout = 60f,
             });
 
             var relations = new FactionRelations();
@@ -255,10 +255,10 @@ namespace HyperRTS.Simulation.Tests
                 Owner = faction,
                 MaxHealth = maxHealth,
                 VisionRange = 10f,
+                EyeHeight = 2f,
                 BuildTime = buildTime,
                 Population = 1,
                 CountsForVictory = true,
-                ExperienceValue = 10f,
             });
             return entity;
         }

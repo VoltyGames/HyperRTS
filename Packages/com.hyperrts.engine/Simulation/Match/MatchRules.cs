@@ -11,6 +11,9 @@ namespace HyperRTS.Simulation.Match
         /// <summary>Share of a finished building's cost refunded when sold; unfinished ones refund in full.</summary>
         public float SellRefund;
 
+        /// <summary>Experience a kill pays per resource unit of the victim's cost (<c>KillCreditSystem</c>).</summary>
+        public float ExperiencePerCost;
+
         /// <summary>Record a replay from the start of the match (<c>ReplayRecorderSystem</c>).</summary>
         public bool RecordReplay;
 

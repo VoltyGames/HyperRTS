@@ -66,6 +66,10 @@ namespace HyperRTS.Simulation.Combat
         [Min(0f)]
         public float acquireRange;
 
+        [Tooltip("Auto-acquired targets are dropped beyond this multiple of the acquire range.")]
+        [Min(1f)]
+        public float leashFactor = 1.5f;
+
         [Tooltip("How the unit reacts to enemies when not ordered.")]
         public Stance stance = Stance.Aggressive;
 
@@ -89,6 +93,7 @@ namespace HyperRTS.Simulation.Combat
                     ProjectileSpeed = authoring.projectileSpeed,
                     ProjectileHeight = authoring.projectileHeight,
                     AcquireRange = authoring.acquireRange,
+                    LeashFactor = authoring.leashFactor,
                     Targets = authoring.targets,
                 };
 

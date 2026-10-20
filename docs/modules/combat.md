@@ -48,8 +48,8 @@ recomputes stats at the end of the frame when modifiers change. A `MaxHealth` ch
 
 ## Veterancy
 
-Units gain ranks from kills. `VeterancyAuthoring` sets the thresholds and bonuses. `ExperienceValue` is what killing
-this unit earns, paid to the last hostile attacker.
+Units gain ranks from kills. `VeterancyAuthoring` sets the thresholds and bonuses. A kill pays the victim's resource
+cost times `MatchRules.ExperiencePerCost` to the last hostile attacker.
 
 ## Upgrades
 

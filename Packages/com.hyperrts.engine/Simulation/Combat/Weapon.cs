@@ -21,6 +21,9 @@ namespace HyperRTS.Simulation.Combat
 
         public float AcquireRange;
 
+        /// <summary>Auto-acquired targets are dropped beyond this multiple of the acquire range.</summary>
+        public float LeashFactor;
+
         /// <summary>What the weapon can hit; units and orders never aim it at anything else.</summary>
         public WeaponTargets Targets;
     }

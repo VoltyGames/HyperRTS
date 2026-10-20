@@ -10,12 +10,6 @@ namespace HyperRTS.Simulation.Veterancy
         public byte Rank;
     }
 
-    /// <summary>Experience the killer earns when this entity dies.</summary>
-    public struct ExperienceValue : IComponentData
-    {
-        public float Value;
-    }
-
     /// <summary>Experience threshold of rank index + 1, ascending.</summary>
     [InternalBufferCapacity(3)]
     public struct VeterancyRank : IBufferElementData

@@ -194,7 +194,7 @@ namespace HyperRTS.Simulation.Vision
                 if (Terrain.IsCreated)
                 {
                     var sight = new SightLines { Fog = Fog, Terrain = Terrain, WaterFloor = WaterFloor };
-                    sight.Stamp(transform.Position, vision.Value, bit);
+                    sight.Stamp(transform.Position, vision, bit);
                     return;
                 }
 

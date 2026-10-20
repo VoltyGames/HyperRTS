@@ -23,9 +23,6 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Chasers re-target their move only once the target has drifted this far from it.</summary>
         public const float RepathDistance = 1f;
 
-        /// <summary>Auto-acquired targets are dropped beyond this multiple of the acquire range.</summary>
-        public const float LeashFactor = 1.5f;
-
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
         private ComponentLookup<ActiveOrder> _orders;
@@ -145,7 +142,7 @@ namespace HyperRTS.Simulation.Combat
 
                 // Defensive units measure from their post, so a fleeing target can't drag them away.
                 var origin = stance.Value == Stance.Defensive ? stance.Anchor : position;
-                return Distance(entity, origin, target) > CombatMath.AcquireRange(weapon, vision.Value) * LeashFactor;
+                return Distance(entity, origin, target) > CombatMath.AcquireRange(weapon, vision.Value) * weapon.LeashFactor;
             }
 
             private float Distance(Entity entity, float3 position, Entity target) =>
