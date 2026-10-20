@@ -166,6 +166,26 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void Play_SizesEachBurst_InsideTheScaleRange()
+        {
+            EffectRigKit.AddBurst(_rig, 0f, 1);
+            var main = EffectRigKit.System(_rig).main;
+            main.startSize = 2f;
+            _rig.scale = new Vector2(1.5f, 2.5f);
+            UnityEngine.Random.InitState(7);
+
+            for (var i = 0; i < 8; i++)
+            {
+                _rig.Play(Vector3.zero, Quaternion.identity);
+            }
+
+            var sizes = Sizes(EffectRigKit.System(_rig));
+            Assert.AreEqual(8, sizes.Length);
+            Assert.That(sizes, Is.All.InRange(3f, 5f));
+            Assert.That(sizes, Is.Not.All.EqualTo(sizes[0]), "each play rolls its own scale");
+        }
+
+        [Test]
         public void PreparedSystems_AlwaysSimulate_WithThePoolCap()
         {
             var main = EffectRigKit.System(_rig).main;

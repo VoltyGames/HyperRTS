@@ -71,7 +71,7 @@ namespace HyperRTS.Simulation.Abilities
             transform.Position = position;
 
             var instance = ecb.Instantiate(prefab);
-            ecb.AddComponent(instance, transform);
+            ecb.Place(instance, transform);
             ecb.AddComponent(instance, new Faction { Value = faction });
         }
     }

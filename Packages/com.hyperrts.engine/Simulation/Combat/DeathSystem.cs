@@ -86,7 +86,7 @@ namespace HyperRTS.Simulation.Combat
                 FallSources.TryGetComponent(entity, out var fell);
                 var remains = Remains.FromPiece(entity, transform, fell.Heading, true, RemainsLookups);
                 var spawned = Ecb.Instantiate(sortKey, prefab);
-                Ecb.SetComponent(sortKey, spawned, remains.Transform);
+                Ecb.Place(sortKey, spawned, remains.Transform, remains.StretchMatrix);
                 if (remains.Stretched)
                 {
                     Ecb.AddComponent(sortKey, spawned, remains.Stretch);

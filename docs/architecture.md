@@ -45,7 +45,7 @@ in a tier:
 | Combat owns movement | While `AttackTarget` is enabled, combat writes `MoveDestination` |
 | Ownership | `Faction` on every ownable entity, 0 for neutral. `FactionRelations` decides hostility |
 | Damage goes through the queue | `DamageWriter`, so armor, splash and kill credit apply |
-| Spawn baked prefabs | `ecb.Instantiate(prefab)`, then set `LocalTransform` and `Faction` |
+| Spawn baked prefabs | `ecb.Instantiate(prefab)`, then `ecb.Place(entity, transform)` and set `Faction` |
 
 ## Worlds
 

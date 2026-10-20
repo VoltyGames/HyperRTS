@@ -215,7 +215,7 @@ namespace HyperRTS.Simulation.Production
                     : LocalTransform.Identity;
                 placement.Position = position;
                 placement.Rotation = producer.Rotation;
-                Ecb.AddComponent(unit, placement);
+                Ecb.Place(unit, placement);
                 Ecb.SetComponent(unit, faction);
 
                 if (rally && OrderLookup.HasComponent(prefab))

@@ -150,7 +150,7 @@ namespace HyperRTS.Presentation.Destruction
             {
                 var position = math.transform(place.Value, part.Centre);
                 var rotation = math.mul(place.Rotation, part.EffectFacing);
-                rig.Pick().Burst(position, rotation, 1f, EffectDetail.Density);
+                rig.Play(position, rotation);
             }
         }
     }

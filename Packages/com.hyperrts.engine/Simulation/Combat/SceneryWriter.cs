@@ -84,7 +84,7 @@ namespace HyperRTS.Simulation.Combat
         {
             var remains = Remains.FromPiece(scenery, _transforms[scenery], fall, witnessed, _remainsLookups);
             var spawned = ecb.Instantiate(prefab);
-            ecb.SetComponent(spawned, remains.Transform);
+            ecb.Place(spawned, remains.Transform, remains.StretchMatrix);
             if (remains.Stretched)
             {
                 ecb.AddComponent(spawned, remains.Stretch);

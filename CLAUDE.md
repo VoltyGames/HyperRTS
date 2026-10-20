@@ -37,7 +37,8 @@ Graphics, InputSystem or UIElements. A headless server never runs `Client/`. See
 - Orders go through `OrderWriter`. The system that owns an order type disables `ActiveOrder` when it is done.
 - To move a unit, set and enable `MoveDestination`. Combat owns movement while `AttackTarget` is enabled.
 - Ownable entities carry `Faction`, where 0 is neutral. Hostility comes from `FactionRelations`.
-- Spawn by instantiating a baked entity prefab, then set `LocalTransform` and `Faction`.
+- Spawn by instantiating a baked entity prefab, then `Place` it and set `Faction`. `Place` also writes
+  `LocalToWorld`, since command buffers play back after the transform systems.
 
 ## Conventions
 

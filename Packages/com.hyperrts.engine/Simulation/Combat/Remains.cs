@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
@@ -13,6 +14,8 @@ namespace HyperRTS.Simulation.Combat
         public bool PartsStretched;
         public Felling Felling;
         public bool Felled;
+
+        public float4x4 StretchMatrix => Stretched ? Stretch.Value : float4x4.identity;
 
         /// <summary><paramref name="fall"/> is read only for <see cref="Topple"/> pieces.</summary>
         public static Remains FromPiece(Entity piece, in LocalTransform standing, byte fall, bool witnessed,

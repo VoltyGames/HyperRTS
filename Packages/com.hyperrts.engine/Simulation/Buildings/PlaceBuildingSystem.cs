@@ -168,7 +168,7 @@ namespace HyperRTS.Simulation.Buildings
             var building = ecb.Instantiate(prefab);
             var transform = SystemAPI.GetComponent<LocalTransform>(prefab);
             transform.Position = center;
-            ecb.SetComponent(building, transform);
+            ecb.Place(building, transform);
             ecb.SetComponent(building, new Faction { Value = faction });
             ecb.SetComponent(building, new ConstructionProgress { Value = 0f });
             ecb.SetComponentEnabled<ConstructionProgress>(building, true);

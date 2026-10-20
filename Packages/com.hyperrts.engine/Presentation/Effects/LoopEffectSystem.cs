@@ -85,11 +85,6 @@ namespace HyperRTS.Presentation.Effects
             }
 
             var state = _streams.Step(entity, index, socket);
-            if (!state.Ready)
-            {
-                return;
-            }
-
             var key = EffectStreams.Key(entity, index);
             rig = rig.Pick(key);
             rig.Stream(state.From, state.To, rig.LoopRotation(place.Rotation, key), _deltaTime, strength,

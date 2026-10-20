@@ -185,7 +185,7 @@ namespace HyperRTS.Simulation.Combat
                 transform.Rotation = quaternion.LookRotationSafe(aim - origin, math.up());
 
                 var projectile = Ecb.Instantiate(weapon.ProjectilePrefab);
-                Ecb.AddComponent(projectile, transform);
+                Ecb.Place(projectile, transform);
                 Ecb.AddComponent(projectile, new Faction { Value = faction.Value });
                 Ecb.AddComponent(projectile, new Projectile
                 {

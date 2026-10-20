@@ -62,7 +62,7 @@ namespace HyperRTS.Presentation.Destruction
             var rig = _pool.Get(prefab);
             if (rig != null)
             {
-                rig.Pick().Burst(place.Position, place.Rotation, 1f, EffectDetail.Density);
+                rig.Play(place.Position, place.Rotation);
             }
         }
 

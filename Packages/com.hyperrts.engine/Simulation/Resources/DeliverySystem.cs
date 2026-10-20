@@ -126,7 +126,7 @@ namespace HyperRTS.Simulation.Resources
                 placement.Position = position;
                 var heading = new float3(goal.x - position.x, 0f, goal.z - position.z);
                 placement.Rotation = quaternion.LookRotationSafe(heading, math.up());
-                Ecb.SetComponent(chunk, carrier, placement);
+                Ecb.Place(chunk, carrier, placement);
                 Ecb.SetComponent(chunk, carrier, faction);
                 Ecb.AddComponent(chunk, carrier, new DeliveryCarrier
                 {

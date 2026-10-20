@@ -27,6 +27,7 @@ The base tier: ownership, identity, health and shared helpers.
 | `Ownership.Transfer` | The one way to change an owner. Raises `OwnerChanged` |
 | `EntityInfo`, `PrefabRegistry` | Type id, name and icon. The registry maps type id to prefab |
 | `IEntityWriter` | Writes component sets, so bakers and tests build the same entities |
+| `SpawnExtensions.Place` | Sets a command-buffer spawn's `LocalTransform` and its `LocalToWorld`, so its first frame draws in place |
 | `AuthoringBehaviour` | Base of all authoring components |
 
 An entity's type id is a hash of its display name, so two prefab types must not share a name.

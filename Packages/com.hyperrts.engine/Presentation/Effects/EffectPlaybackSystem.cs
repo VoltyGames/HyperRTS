@@ -74,9 +74,7 @@ namespace HyperRTS.Presentation.Effects
                 return;
             }
 
-            var played = rig.Pick();
-            played.Burst(effect.Position, EffectPose.Facing(effect.Direction), played.ScaleFor(0f),
-                EffectDetail.Density);
+            rig.Play(effect.Position, EffectPose.Facing(effect.Direction));
         }
 
         private GameObject FindRig(in CueEvent effect, in PrefabRegistry registry)
