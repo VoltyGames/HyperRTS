@@ -27,7 +27,7 @@ namespace HyperRTS.Presentation.Impacts
     {
         private readonly Dictionary<ImpactMark, ImpactMarkDecals> _decals = new();
         private TypeCatalog<ImpactMark[]> _catalog;
-        private EntityQuery _fog;
+        private CueVisibility _visibility;
         private GameObject _root;
         private InteractionStampSystem _stampSystem;
         private float _clock = float.NegativeInfinity;
@@ -50,7 +50,7 @@ namespace HyperRTS.Presentation.Impacts
         {
             _catalog = new TypeCatalog<ImpactMark[]>(SystemAPI.QueryBuilder().WithAll<EntityInfo, EntityImpactMark>()
                 .WithOptions(EntityQueryOptions.IncludePrefab).Build(), ReadMarks);
-            _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
+            _visibility = new CueVisibility(ref CheckedStateRef);
             RequireForUpdate<CueQueue>();
             RequireForUpdate<PrefabRegistry>();
         }
@@ -111,15 +111,12 @@ namespace HyperRTS.Presentation.Impacts
                 return;
             }
 
-            SystemAPI.TryGetSingleton(out LocalFogView view);
-            SystemAPI.TryGetSingleton(out FactionRelations relations);
-            _fog.CompleteDependency();
-            _fog.TryGetSingleton(out FogOfWar fog);
+            _visibility.Begin();
             SystemAPI.TryGetSingleton(out TerrainHeight terrain);
             var registry = SystemAPI.GetSingleton<PrefabRegistry>();
             foreach (var impact in cues)
             {
-                if (!CueRules.IsGroundImpact(impact) || !CueRules.IsSeenLocally(impact, view, fog, relations))
+                if (!CueRules.IsGroundImpact(impact) || !_visibility.IsSeen(impact))
                 {
                     continue;
                 }

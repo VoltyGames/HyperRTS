@@ -22,7 +22,7 @@ namespace HyperRTS.Presentation.Audio
 
         private readonly SoundPool _pool = new(Voices);
         private TypeCatalog<List<(CueSlot Slot, SoundCue Cue)>> _cues;
-        private EntityQuery _fog;
+        private CueVisibility _visibility;
         private GameObject _root;
         private AudioSource[] _sources;
         private AudioListener _listener;
@@ -31,7 +31,7 @@ namespace HyperRTS.Presentation.Audio
         {
             _cues = new TypeCatalog<List<(CueSlot Slot, SoundCue Cue)>>(SystemAPI.QueryBuilder()
                 .WithAll<EntityInfo, EntitySound>().WithOptions(EntityQueryOptions.IncludePrefab).Build(), ReadCues);
-            _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
+            _visibility = new CueVisibility(ref CheckedStateRef);
             RequireForUpdate<CueQueue>();
             RequireForUpdate<LocalFogView>();
             RequireForUpdate<PrefabRegistry>();
@@ -63,10 +63,7 @@ namespace HyperRTS.Presentation.Audio
                 return;
             }
 
-            var view = SystemAPI.GetSingleton<LocalFogView>();
-            SystemAPI.TryGetSingleton(out FactionRelations relations);
-            _fog.CompleteDependency();
-            _fog.TryGetSingleton(out FogOfWar fog);
+            _visibility.Begin();
             if (_listener == null)
             {
                 _listener = Object.FindAnyObjectByType<AudioListener>();
@@ -76,7 +73,7 @@ namespace HyperRTS.Presentation.Audio
             for (var i = 0; i < sounds.Length; i++)
             {
                 var sound = sounds[i];
-                if (CueRules.IsSeenLocally(sound, view, fog, relations))
+                if (_visibility.IsSeen(sound))
                 {
                     Play(FindCue(registry, sound.TypeId, sound.Slot), sound.Position);
                 }

@@ -23,11 +23,13 @@ namespace HyperRTS.Presentation.Environment.Ambient
         private const float Reach = 120f;
 
         private readonly List<DustDevil> _devils = new();
+        private readonly EffectStreams _streams = new();
         private EffectPool _pool;
         private Camera _camera;
         private AmbientLife _life;
         private Random _random = new(0x2545F491u);
         private float _untilSpawn;
+        private int _nextId;
 
         protected override void OnCreate()
         {
@@ -97,32 +99,29 @@ namespace HyperRTS.Presentation.Environment.Ambient
 
             var lifetime = _random.NextFloat(_life.dustDevilLifetime.x, _life.dustDevilLifetime.y);
             var position = new float3(site.x, terrain.Height(site), site.y);
-            _devils.Add(new DustDevil(position, lifetime, _random.NextFloat(2f * math.PI)));
+            _devils.Add(new DustDevil(_nextId++, position, lifetime, _random.NextFloat(2f * math.PI)));
         }
 
         private void Advance(float deltaTime, in TerrainHeight terrain)
         {
-            var rig = _pool.Get(_life.dustDevilRig);
             Vector3 wind = Wind.Downwind;
             var downwind = math.normalizesafe(new float2(wind.x, wind.z));
+            _streams.BeginFrame();
             for (var i = _devils.Count - 1; i >= 0; i--)
             {
                 var devil = _devils[i];
-                Vector3 from = devil.Step(deltaTime, downwind, _life.dustDevilSpeed, terrain);
+                devil.Step(deltaTime, downwind, _life.dustDevilSpeed, terrain);
                 if (devil.Done)
                 {
                     _devils.RemoveAt(i);
                     continue;
                 }
 
-                if (rig == null || !EffectRange.InRange(_camera, rig, from))
-                {
-                    continue;
-                }
-
-                rig.Stream(from, devil.Position, Quaternion.identity, deltaTime, devil.Strength,
-                    EffectDetail.Density, ref devil.Carry);
+                var state = _pool.Step(_streams, _life.dustDevilRig, Entity.Null, devil.Id, devil.Position);
+                state?.Emit(Quaternion.identity, deltaTime, devil.Strength);
             }
+
+            _streams.EndFrame();
         }
 
         private float NextInterval() => _random.NextFloat(_life.dustDevilInterval.x, _life.dustDevilInterval.y);

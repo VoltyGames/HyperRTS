@@ -26,7 +26,7 @@ CutoutVaryings ShadowVert(Attributes input)
     RowCropInstance plant = _Instances[input.instanceID];
     float3 world = RowCropPosition(input, plant, WindThisFrame());
     half3 normal = RowCropNormal(input, plant);
-    return PlantCutoutVaryings(PlantShadowPosition(world, normal), input.uv, normal);
+    return PlantCutoutVaryings(ShadowCasterPositionCS(world, normal), input.uv, normal);
 }
 
 MotionVaryings MotionVert(Attributes input)

@@ -12,19 +12,20 @@ namespace HyperRTS.Presentation.Environment.Ambient
 
         private readonly float _wanderPhase;
 
-        public DustDevil(float3 position, float lifetime, float wanderPhase)
+        public DustDevil(int id, float3 position, float lifetime, float wanderPhase)
         {
+            Id = id;
             Position = position;
             Lifetime = lifetime;
             _wanderPhase = wanderPhase;
         }
 
+        /// <summary>Unique among live devils, so each keeps its own stream.</summary>
+        public int Id { get; }
+
         public float3 Position { get; private set; }
         public float Lifetime { get; }
         public float Age { get; private set; }
-
-        /// <summary>Leftover particle fraction between frames, for <c>EffectRig.Stream</c>.</summary>
-        public float Carry;
 
         public bool Done => Age >= Lifetime;
 
@@ -38,16 +39,14 @@ namespace HyperRTS.Presentation.Environment.Ambient
             }
         }
 
-        /// <summary>Moves along <paramref name="downwind"/> (xz) and onto the ground; returns where it was.</summary>
-        public float3 Step(float deltaTime, float2 downwind, float speed, in TerrainHeight terrain)
+        /// <summary>Moves along <paramref name="downwind"/> (xz) and onto the ground.</summary>
+        public void Step(float deltaTime, float2 downwind, float speed, in TerrainHeight terrain)
         {
-            var from = Position;
             Age += deltaTime;
             var side = new float2(-downwind.y, downwind.x);
             var wander = math.sin(_wanderPhase + Age * 2f * math.PI / WanderPeriod) * WanderShare;
-            var xz = from.xz + (downwind + side * wander) * speed * deltaTime;
+            var xz = Position.xz + (downwind + side * wander) * speed * deltaTime;
             Position = new float3(xz.x, terrain.Height(xz), xz.y);
-            return from;
         }
     }
 }

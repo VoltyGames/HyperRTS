@@ -12,7 +12,6 @@ namespace HyperRTS.Presentation.Tests
     /// <summary>Effect poses: facing a direction, and impacts laid on flat or sloped ground.</summary>
     public class EffectPoseTests
     {
-        private const float Spin = 0.7f;
         private static readonly Vector3 RampNormal = new Vector3(-1f, 1f, 0f).normalized;
 
         private TerrainHeight _ramp;
@@ -49,7 +48,7 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void GroundImpact_Aligned_SitsOnTheSlope_UpAlongItsNormal()
         {
-            var (position, rotation) = EffectPose.Impact(Hit(ImpactSurface.Ground), _ramp, true, true, Spin);
+            var (position, rotation) = EffectPose.Impact(Hit(ImpactSurface.Ground), _ramp, true, true);
 
             MathAssert.Near(new Vector3(5f, 5f, 5f), position);
             MathAssert.Near(RampNormal, rotation * Vector3.up);
@@ -58,24 +57,22 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void GroundImpact_Unaligned_SitsOnTheSlope_UpStaysWorldUp()
         {
-            var (position, rotation) = EffectPose.Impact(Hit(ImpactSurface.Ground), _ramp, true, false, Spin);
+            var (position, rotation) = EffectPose.Impact(Hit(ImpactSurface.Ground), _ramp, true, false);
 
             MathAssert.Near(new Vector3(5f, 5f, 5f), position);
             MathAssert.Near(Vector3.up, rotation * Vector3.up);
         }
 
         [Test]
-        public void OffTheGround_KeepsTheCuePosition_AndOnlySpins()
+        public void OffTheGround_KeepsTheCuePosition_Unturned()
         {
-            var spin = Quaternion.Euler(0f, Spin * Mathf.Rad2Deg, 0f);
-
-            var air = EffectPose.Impact(Hit(ImpactSurface.Air), _ramp, true, true, Spin);
-            var noTerrain = EffectPose.Impact(Hit(ImpactSurface.Ground), _ramp, false, true, Spin);
+            var air = EffectPose.Impact(Hit(ImpactSurface.Air), _ramp, true, true);
+            var noTerrain = EffectPose.Impact(Hit(ImpactSurface.Ground), _ramp, false, true);
 
             MathAssert.Near(new Vector3(5f, 9f, 5f), air.Position);
             MathAssert.Near(new Vector3(5f, 9f, 5f), noTerrain.Position);
-            Assert.Greater(Quaternion.Dot(spin, air.Rotation), 0.9999f);
-            Assert.Greater(Quaternion.Dot(spin, noTerrain.Rotation), 0.9999f);
+            Assert.AreEqual(Quaternion.identity, air.Rotation);
+            Assert.AreEqual(Quaternion.identity, noTerrain.Rotation);
         }
 
         private static CueEvent Hit(ImpactSurface surface) =>

@@ -186,6 +186,19 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void Play_GrowsTheBurst_WithTheSplashRadius()
+        {
+            EffectRigKit.AddBurst(_rig, 0f, 1);
+            var main = EffectRigKit.System(_rig).main;
+            main.startSize = 2f;
+            _rig.scalePerRadius = 0.5f;
+
+            _rig.Play(Vector3.zero, Quaternion.identity, 4f);
+
+            Assert.AreEqual(6f, Sizes(EffectRigKit.System(_rig))[0], 1e-4f, "scale 1 plus 0.5 per metre of 4 m");
+        }
+
+        [Test]
         public void PreparedSystems_AlwaysSimulate_WithThePoolCap()
         {
             var main = EffectRigKit.System(_rig).main;

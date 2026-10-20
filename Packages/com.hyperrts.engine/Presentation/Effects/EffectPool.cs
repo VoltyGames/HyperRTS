@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Entities;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
@@ -16,6 +17,7 @@ namespace HyperRTS.Presentation.Effects
         private readonly HashSet<GameObject> _broken = new();
         private GameObject _root;
         private EffectLights _lights;
+        private Camera _camera;
 
         /// <summary>The prefab's live rig, or null when there is no prefab or it is broken (logged once, naming it).</summary>
         public EffectRig Get(GameObject prefab)
@@ -41,6 +43,41 @@ namespace HyperRTS.Presentation.Effects
             _rigs[prefab] = rig;
             rig.Alternatives = Array.ConvertAll(rig.variants, Get);
             return rig;
+        }
+
+        /// <summary>Bursts the prefab's rig at the pose when it is within the rig's range of the camera.</summary>
+        public void Play(GameObject prefab, Vector3 position, Quaternion rotation, float splashRadius = 0f)
+        {
+            var rig = Get(prefab);
+            if (rig != null && InRange(rig, position))
+            {
+                rig.Play(position, rotation, splashRadius);
+            }
+        }
+
+        /// <summary>
+        /// Moves the entity's stream of the prefab's rig on to this frame's point, with its variant picked; null when
+        /// there is no rig or the point is beyond <paramref name="reach"/> × its range, so the stream starts afresh.
+        /// </summary>
+        public StreamState Step(EffectStreams streams, GameObject prefab, Entity entity, int index, Vector3 position,
+            float reach = 1f)
+        {
+            var rig = Get(prefab);
+            if (rig == null || !InRange(rig, position, reach))
+            {
+                return null;
+            }
+
+            var state = streams.Step(entity, index, position);
+            state.Key = EffectStreams.Key(entity, index);
+            state.Rig = rig.Pick(state.Key);
+            return state;
+        }
+
+        private bool InRange(EffectRig rig, Vector3 position, float reach = 1f)
+        {
+            _camera = EffectRange.Main(_camera);
+            return EffectRange.InRange(_camera, rig, position, reach);
         }
 
         /// <summary>Fires due timed bursts and fades flashes.</summary>

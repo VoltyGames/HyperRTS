@@ -42,7 +42,6 @@ Shader "HyperRTS/Flag"
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
-            #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
@@ -54,7 +53,6 @@ Shader "HyperRTS/Flag"
                 float2 uv : TEXCOORD0;
                 float3 positionWS : TEXCOORD1;
                 half3 normalWS : TEXCOORD2;
-                half fogFactor : TEXCOORD3;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -68,7 +66,6 @@ Shader "HyperRTS/Flag"
                 output.positionCS = TransformWorldToHClip(cloth.positionWS);
                 output.uv = input.uv;
                 output.normalWS = cloth.normalWS;
-                output.fogFactor = ComputeFogFactor(output.positionCS.z);
                 return output;
             }
 
@@ -90,7 +87,7 @@ Shader "HyperRTS/Flag"
                 #endif
 
                 half3 color = albedo * (sun.color * sun.shadowAttenuation * lit + SampleSH(normal) * occlusion);
-                return half4(MixFog(color, input.fogFactor), 1.0);
+                return half4(color, 1.0);
             }
             ENDHLSL
         }
@@ -110,10 +107,7 @@ Shader "HyperRTS/Flag"
             #pragma multi_compile _ DOTS_INSTANCING_ON
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
-
-            float3 _LightDirection;
-            float3 _LightPosition;
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
 
             struct Varyings
             {
@@ -127,17 +121,7 @@ Shader "HyperRTS/Flag"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 Cloth cloth = FlagCloth(input.positionOS.xyz, input.uv);
-                #if defined(_CASTING_PUNCTUAL_LIGHT_SHADOW)
-                    float3 toLight = normalize(_LightPosition - cloth.positionWS);
-                #else
-                    float3 toLight = _LightDirection;
-                #endif
-                output.positionCS = TransformWorldToHClip(ApplyShadowBias(cloth.positionWS, cloth.normalWS, toLight));
-                #if UNITY_REVERSED_Z
-                    output.positionCS.z = min(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
-                #else
-                    output.positionCS.z = max(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
-                #endif
+                output.positionCS = ShadowCasterPositionCS(cloth.positionWS, cloth.normalWS);
                 return output;
             }
 
@@ -200,6 +184,8 @@ Shader "HyperRTS/Flag"
             #pragma multi_compile _ DOTS_INSTANCING_ON
             #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
 
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
+
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
@@ -221,13 +207,7 @@ Shader "HyperRTS/Flag"
             half4 Frag(Varyings input, FRONT_FACE_TYPE face : FRONT_FACE_SEMANTIC) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
-                float3 normal = normalize(input.normalWS) * IS_FRONT_VFACE(face, 1.0, -1.0);
-                #if defined(_GBUFFER_NORMALS_OCT)
-                    float2 octahedral = PackNormalOctQuadEncode(normal);
-                    return half4(PackFloat2To888(saturate(octahedral * 0.5 + 0.5)), 0.0);
-                #else
-                    return half4(normal, 0.0);
-                #endif
+                return DepthNormalOutput(normalize(input.normalWS) * IS_FRONT_VFACE(face, 1.0, -1.0));
             }
             ENDHLSL
         }

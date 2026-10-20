@@ -18,7 +18,6 @@ namespace HyperRTS.Presentation.Effects
     {
         private readonly EffectStreams _streams = new();
         private EffectPool _pool;
-        private Camera _camera;
 
         protected override void OnCreate()
         {
@@ -29,7 +28,6 @@ namespace HyperRTS.Presentation.Effects
         protected override void OnUpdate()
         {
             CompleteDependency();
-            _camera = EffectRange.Main(_camera);
             var deltaTime = SystemAPI.Time.DeltaTime;
             var hasGround = SystemAPI.TryGetSingleton(out GroundMaterials ground);
             _streams.BeginFrame();
@@ -38,17 +36,15 @@ namespace HyperRTS.Presentation.Effects
             {
                 var socket = math.transform(place.ValueRO.Value, dust.ValueRO.Socket);
                 var material = hasGround ? ground.At(socket.xz) : SurfaceMaterial.None;
-                var rig = _pool.Get(dust.ValueRO.Effects.Value.RigFor(material));
-                if (rig == null || !EffectRange.InRange(_camera, rig, socket))
+                var state = _pool.Step(_streams, dust.ValueRO.Effects.Value.RigFor(material), entity, 0, socket);
+                if (state == null)
                 {
                     continue;
                 }
 
-                var state = _streams.Step(entity, 0, socket);
                 var speed = deltaTime > 0f ? Vector3.Distance(state.From, state.To) / deltaTime : 0f;
                 var strength = Mathf.Clamp01(speed / dust.ValueRO.FullSpeed);
-                rig.Pick(EffectStreams.Key(entity, 0)).Stream(state.From, state.To, place.ValueRO.Rotation, deltaTime, strength,
-                    EffectDetail.Density, ref state.Carry);
+                state.Emit(place.ValueRO.Rotation, deltaTime, strength);
             }
 
             _streams.EndFrame();

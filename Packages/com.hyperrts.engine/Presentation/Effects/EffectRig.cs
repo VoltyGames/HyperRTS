@@ -54,11 +54,11 @@ namespace HyperRTS.Presentation.Effects
         public float ScaleFor(float splashRadius) =>
             UnityEngine.Random.Range(scale.x, scale.y) + scalePerRadius * splashRadius;
 
-        /// <summary>Bursts a random variant at a random scale from its range.</summary>
-        public void Play(Vector3 position, Quaternion rotation)
+        /// <summary>Bursts a random variant at a random scale from its range, grown by an impact's splash radius.</summary>
+        public void Play(Vector3 position, Quaternion rotation, float splashRadius = 0f)
         {
             var played = Pick();
-            played.Burst(position, rotation, played.ScaleFor(0f), EffectDetail.Density);
+            played.Burst(position, rotation, played.ScaleFor(splashRadius), EffectDetail.Density);
         }
 
         public EffectRig Pick(uint key)

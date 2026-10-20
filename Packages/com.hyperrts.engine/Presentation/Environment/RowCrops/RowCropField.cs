@@ -1,13 +1,14 @@
 using System;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
-    /// <summary>One sown field as the GPU reads it (32 bytes, matches RowCrops.compute).</summary>
+    /// <summary>One sown field as the GPU reads it (the layout RowCrops.compute declares).</summary>
     [Serializable]
     public struct RowCropField
     {
-        public const int Stride = 32;
+        public static readonly int Stride = UnsafeUtility.SizeOf<RowCropField>();
 
         [Tooltip("World XZ of lattice spot (0, 0).")]
         public Vector2 origin;

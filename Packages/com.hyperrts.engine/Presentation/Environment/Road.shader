@@ -60,7 +60,6 @@ Shader "HyperRTS/Road"
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #pragma multi_compile _ _LIGHT_LAYERS
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
-            #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
@@ -114,7 +113,7 @@ Shader "HyperRTS/Road"
                 float3 positionWS : TEXCOORD1;
                 half3 normalWS : TEXCOORD2;
                 half4 tangentWS : TEXCOORD3;
-                half2 opacityAndFog : TEXCOORD4;
+                half opacity : TEXCOORD4;
                 #if defined(_ADDITIONAL_LIGHTS_VERTEX)
                     half3 vertexLighting : TEXCOORD5;
                 #endif
@@ -133,7 +132,7 @@ Shader "HyperRTS/Road"
                 output.uv = input.uv;
                 output.normalWS = normals.normalWS;
                 output.tangentWS = half4(normals.tangentWS, input.tangentOS.w * GetOddNegativeScale());
-                output.opacityAndFog = half2(input.color.a, ComputeFogFactor(position.positionCS.z));
+                output.opacity = input.color.a;
                 #if defined(_ADDITIONAL_LIGHTS_VERTEX)
                     output.vertexLighting = VertexLighting(position.positionWS, normals.normalWS);
                 #endif
@@ -147,7 +146,7 @@ Shader "HyperRTS/Road"
                 half fade = saturate(inside / _EdgeWidth);
                 half noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, input.positionWS.xz / _NoiseSize).r;
                 half crumble = saturate(fade * (1.0 + _EdgeNoise) - noise * _EdgeNoise);
-                return smoothstep(0.0, 1.0, crumble) * albedoAlpha * input.opacityAndFog.x;
+                return smoothstep(0.0, 1.0, crumble) * albedoAlpha * input.opacity;
             }
 
             // How readily water stands here: in the wheel ruts and along the edges, broken up by world noise.
@@ -187,7 +186,6 @@ Shader "HyperRTS/Road"
                 data.normalWS = NormalizeNormalPerPixel(TransformTangentToWorld(normalTS, data.tangentToWorld));
                 data.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 data.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
-                data.fogCoord = InitializeInputDataFog(float4(input.positionWS, 1.0), input.opacityAndFog.y);
                 data.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
                 data.bakedGI = SampleSH(data.normalWS);
                 data.shadowMask = half4(1.0, 1.0, 1.0, 1.0);
@@ -217,7 +215,7 @@ Shader "HyperRTS/Road"
                     ApplyDecalToSurfaceData(input.positionCS, surface, inputData);
                 #endif
                 half4 color = UniversalFragmentPBR(inputData, surface);
-                return half4(MixFog(color.rgb, inputData.fogCoord), surface.alpha);
+                return half4(color.rgb, surface.alpha);
             }
             ENDHLSL
         }

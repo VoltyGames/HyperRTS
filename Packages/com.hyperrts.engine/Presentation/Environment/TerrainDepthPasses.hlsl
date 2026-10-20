@@ -4,7 +4,7 @@
 #define HYPERRTS_TERRAIN_DEPTH_PASSES_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainInput.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
 
 struct TerrainDepthVaryings
 {
@@ -43,21 +43,11 @@ void TerrainDepthNormalsFragment(TerrainDepthVaryings input, out half4 outNormal
     )
 {
     ClipHoles(input.uv);
-    float3 normalWS = TerrainNormalWS(input.uv, input.normalWS);
-    #if defined(_GBUFFER_NORMALS_OCT)
-        float2 octahedral = PackNormalOctQuadEncode(normalWS);
-        outNormalWS = half4(PackFloat2To888(saturate(octahedral * 0.5 + 0.5)), 0.0);
-    #else
-        outNormalWS = half4(NormalizeNormalPerPixel(normalWS), 0.0);
-    #endif
+    outNormalWS = DepthNormalOutput(NormalizeNormalPerPixel(TerrainNormalWS(input.uv, input.normalWS)));
     #ifdef _WRITE_RENDERING_LAYERS
         outRenderingLayers = EncodeMeshRenderingLayer();
     #endif
 }
-
-// Set by URP while it renders shadow maps; punctual lights bias along the direction to each vertex.
-float3 _LightDirection;
-float3 _LightPosition;
 
 TerrainDepthVaryings TerrainShadowVertex(TerrainAttributes input)
 {
@@ -65,19 +55,8 @@ TerrainDepthVaryings TerrainShadowVertex(TerrainAttributes input)
     TerrainInstancing(input);
     float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
     float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
-    #if defined(_CASTING_PUNCTUAL_LIGHT_SHADOW)
-        float3 lightDirectionWS = normalize(_LightPosition - positionWS);
-    #else
-        float3 lightDirectionWS = _LightDirection;
-    #endif
-
     TerrainDepthVaryings output;
-    output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDirectionWS));
-    #if UNITY_REVERSED_Z
-        output.positionCS.z = min(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
-    #else
-        output.positionCS.z = max(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
-    #endif
+    output.positionCS = ShadowCasterPositionCS(positionWS, normalWS);
     output.uv = input.uv;
     output.normalWS = normalWS;
     return output;

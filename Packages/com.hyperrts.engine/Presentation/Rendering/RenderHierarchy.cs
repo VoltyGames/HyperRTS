@@ -12,12 +12,12 @@ namespace HyperRTS.Presentation.Rendering
         /// appears a frame later); SubScene objects have no group, so walk the transform children instead.
         /// </summary>
         public static void Collect(Entity root, in BufferLookup<LinkedEntityGroup> linked, in BufferLookup<Child> children,
-            ref FixedList512Bytes<Entity> result)
+            NativeList<Entity> result)
         {
             result.Clear();
             if (linked.TryGetBuffer(root, out var group))
             {
-                for (var i = 0; i < group.Length && result.Length < result.Capacity; i++)
+                for (var i = 0; i < group.Length; i++)
                 {
                     result.Add(group[i].Value);
                 }
@@ -33,7 +33,7 @@ namespace HyperRTS.Presentation.Rendering
                     continue;
                 }
 
-                for (var k = 0; k < kids.Length && result.Length < result.Capacity; k++)
+                for (var k = 0; k < kids.Length; k++)
                 {
                     result.Add(kids[k].Value);
                 }

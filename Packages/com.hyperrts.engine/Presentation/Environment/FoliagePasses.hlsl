@@ -35,7 +35,7 @@ CutoutVaryings ShadowVert(Attributes input)
     float3 origin;
     float3 world = FoliagePosition(input, WindThisFrame(), origin);
     half3 normal = TransformObjectToWorldNormal(input.normalOS);
-    CutoutVaryings output = PlantCutoutVaryings(PlantShadowPosition(world, normal), input.uv, normal);
+    CutoutVaryings output = PlantCutoutVaryings(ShadowCasterPositionCS(world, normal), input.uv, normal);
     UNITY_TRANSFER_INSTANCE_ID(input, output);
     return output;
 }

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects
 {
-    /// <summary>One stream's path and leftover particle fraction between frames.</summary>
+    /// <summary>One stream's path, picked rig and leftover particle fraction between frames.</summary>
     public sealed class StreamState
     {
         /// <summary>Last frame's point; this frame's on the first frame, so the first segment is empty.</summary>
@@ -11,5 +11,14 @@ namespace HyperRTS.Presentation.Effects
         public Vector3 To;
         public float Carry;
         public int Frame;
+
+        /// <summary>The variant this stream plays, picked by <see cref="Key"/>.</summary>
+        public EffectRig Rig;
+
+        public uint Key;
+
+        /// <summary>Streams the rig's authored rates along this frame's path at the effect detail's density.</summary>
+        public void Emit(Quaternion rotation, float deltaTime, float strength, float poseScale = 1f) =>
+            Rig.Stream(From, To, rotation, deltaTime, strength, EffectDetail.Density, ref Carry, poseScale);
     }
 }

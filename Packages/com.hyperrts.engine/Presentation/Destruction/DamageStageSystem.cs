@@ -4,7 +4,6 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace HyperRTS.Presentation.Destruction
 {
@@ -52,17 +51,8 @@ namespace HyperRTS.Presentation.Destruction
                 // The first frame only sets the look; a spawned or loaded wreck doesn't replay its damage.
                 if (previous >= 0 && index > previous && stages[index].Effect.IsValid())
                 {
-                    Play(stages[index].Effect.Value, place.ValueRO);
+                    _pool.Play(stages[index].Effect.Value, place.ValueRO.Position, place.ValueRO.Rotation);
                 }
-            }
-        }
-
-        private void Play(GameObject prefab, in LocalToWorld place)
-        {
-            var rig = _pool.Get(prefab);
-            if (rig != null)
-            {
-                rig.Play(place.Position, place.Rotation);
             }
         }
 

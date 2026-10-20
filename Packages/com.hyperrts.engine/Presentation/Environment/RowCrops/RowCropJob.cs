@@ -1,11 +1,12 @@
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
-    /// <summary>One visible tile of one field for RowCrops.compute to grow (28 bytes, the layout the kernel declares).</summary>
+    /// <summary>One visible tile of one field for RowCrops.compute to grow (the layout the kernel declares).</summary>
     public struct RowCropJob
     {
-        public const int Stride = 28;
+        public static readonly int Stride = UnsafeUtility.SizeOf<RowCropJob>();
 
         /// <summary>World XZ of the tile's minimum corner.</summary>
         public Vector2 tileMin;

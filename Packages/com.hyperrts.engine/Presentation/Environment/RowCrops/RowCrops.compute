@@ -9,6 +9,7 @@
 SamplerState sampler_LinearClamp;
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/RowCrops/RowCropInstance.hlsl"
 
 #define CHANNEL_DENSITY 0u
 #define CHANNEL_ACROSS 1u
@@ -42,17 +43,6 @@ struct RowCropJob // RowCropJob.cs, 28 bytes
     uint field;
     int2 first; // first (row, plant) whose spot can fall in the tile
     int2 count; // rows and plants from first
-};
-
-struct RowCropInstance // RowCropInput.hlsl, 48 bytes
-{
-    float3 position;
-    float scale;
-    float2 facing;
-    float2 trampleDirection;
-    float bend;
-    float shade;
-    float2 lean;
 };
 
 struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes

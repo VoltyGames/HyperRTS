@@ -13,6 +13,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Wetness.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
 #if defined(LOD_FADE_CROSSFADE)
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
 #endif
@@ -22,9 +23,6 @@ TEXTURE2D(_HyperRTSGroundColor);
 SAMPLER(sampler_HyperRTSGroundColor);
 float4 _HyperRTSGroundRect;
 
-float3 _LightDirection;
-float3 _LightPosition;
-
 struct ForwardVaryings
 {
     float4 positionCS : SV_POSITION;
@@ -33,7 +31,6 @@ struct ForwardVaryings
     half3 normalWS : TEXCOORD2;
     half4 tint : TEXCOORD3; // rgb per-plant shade, a crown occlusion
     half4 ground : TEXCOORD4; // rgb ground colour over texture mean brightness, a root blend
-    half fogFactor : TEXCOORD5;
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
@@ -93,7 +90,6 @@ ForwardVaryings PlantForwardVaryings(float3 positionWS, float3 origin, float2 uv
     output.normalWS = normalWS;
     output.tint = tint;
     output.ground = RootGround(origin);
-    output.fogFactor = ComputeFogFactor(output.positionCS.z);
     return output;
 }
 
@@ -104,23 +100,6 @@ CutoutVaryings PlantCutoutVaryings(float4 positionCS, float2 uv, half3 normalWS)
     output.uv = TRANSFORM_TEX(uv, _BaseMap);
     output.normalWS = normalWS;
     return output;
-}
-
-// Clamped to the near plane so casters between the light and its near plane still cast.
-float4 PlantShadowPosition(float3 world, float3 normal)
-{
-    #if defined(_CASTING_PUNCTUAL_LIGHT_SHADOW)
-        float3 toLight = normalize(_LightPosition - world);
-    #else
-        float3 toLight = _LightDirection;
-    #endif
-    float4 positionCS = TransformWorldToHClip(ApplyShadowBias(world, normal, toLight));
-    #if UNITY_REVERSED_Z
-        positionCS.z = min(positionCS.z, UNITY_NEAR_CLIP_VALUE);
-    #else
-        positionCS.z = max(positionCS.z, UNITY_NEAR_CLIP_VALUE);
-    #endif
-    return positionCS;
 }
 
 // Last frame's position comes from last frame's wind.
@@ -181,7 +160,7 @@ half4 ForwardFrag(ForwardVaryings input, bool front : SV_IsFrontFace) : SV_Targe
 
     half3 normal = PlantNormal(input.normalWS, front, root);
     half3 color = PlantLight(albedo.rgb, input, normal, root);
-    return half4(MixFog(color, input.fogFactor), 1.0);
+    return half4(color, 1.0);
 }
 
 half4 ShadowFrag(CutoutVaryings input) : SV_Target
@@ -205,13 +184,7 @@ half4 DepthNormalsFrag(CutoutVaryings input) : SV_Target
     UNITY_SETUP_INSTANCE_ID(input);
     ClipCoverage(input.uv);
     PlantCrossFade(input.positionCS);
-    float3 normal = normalize(input.normalWS);
-    #if defined(_GBUFFER_NORMALS_OCT)
-        float2 octahedral = PackNormalOctQuadEncode(normal);
-        return half4(PackFloat2To888(saturate(octahedral * 0.5 + 0.5)), 0.0);
-    #else
-        return half4(normal, 0.0);
-    #endif
+    return DepthNormalOutput(normalize(input.normalWS));
 }
 
 float4 MotionFrag(MotionVaryings input) : SV_Target

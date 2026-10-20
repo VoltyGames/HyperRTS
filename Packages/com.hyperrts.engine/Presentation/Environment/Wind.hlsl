@@ -5,16 +5,9 @@
 #define HYPERRTS_WIND_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/WindGlobals.hlsl"
 
 #define WIND_TAU 6.2831853
-
-float4 _HyperRTSWindDirection;  // xz unit downwind
-float _HyperRTSWindStrength;
-float4 _HyperRTSWindGust;       // x gust amount, y turbulence, z gust tiles per metre
-float4 _HyperRTSWindGustOffset; // xy this frame's gust scroll (tiles), zw last frame's
-float _HyperRTSWindDetail;      // 0 none, 1 sway, 2 + branches, 3 + flutter
-TEXTURE2D(_HyperRTSWindGustMap);
-SAMPLER(sampler_HyperRTSWindGustMap);
 
 struct WindFrame
 {

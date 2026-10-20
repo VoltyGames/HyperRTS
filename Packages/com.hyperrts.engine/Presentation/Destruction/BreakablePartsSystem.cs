@@ -145,13 +145,8 @@ namespace HyperRTS.Presentation.Destruction
 
         private void Play(GameObject prefab, in BreakablePart part, in LocalToWorld place)
         {
-            var rig = _pool.Get(prefab);
-            if (rig != null)
-            {
-                var position = math.transform(place.Value, part.Centre);
-                var rotation = math.mul(place.Rotation, part.EffectFacing);
-                rig.Play(position, rotation);
-            }
+            var position = math.transform(place.Value, part.Centre);
+            _pool.Play(prefab, position, math.mul(place.Rotation, part.EffectFacing));
         }
     }
 }

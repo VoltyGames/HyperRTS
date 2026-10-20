@@ -14,6 +14,7 @@ namespace HyperRTS.Presentation.Environment
         public static readonly int WakeId = Shader.PropertyToID("_HyperRTSWake");
         public static readonly int RectId = Shader.PropertyToID("_HyperRTSInteractionRect");
         public static readonly int TracksTexelId = Shader.PropertyToID("_HyperRTSTracksTexel");
+        public static readonly int MaxCraterDepthId = Shader.PropertyToID("_HyperRTSMaxCraterDepth");
 
         /// <summary>No direction, standing plants.</summary>
         public static readonly Color TrampleClear = new(0.5f, 0.5f, 0f, 0f);
@@ -57,6 +58,7 @@ namespace HyperRTS.Presentation.Environment
             Shader.SetGlobalVector(RectId, Rect);
             var texels = new float2(Tracks.width, Tracks.height);
             Shader.SetGlobalVector(TracksTexelId, new float4(texels, _size / texels));
+            Shader.SetGlobalFloat(MaxCraterDepthId, InteractionMath.MaxCraterDepth);
         }
 
         /// <summary>No maps: shaders read a zero rect as nothing trampled.</summary>
@@ -67,6 +69,7 @@ namespace HyperRTS.Presentation.Environment
             Shader.SetGlobalTexture(WakeId, Texture2D.blackTexture);
             Shader.SetGlobalVector(RectId, Vector4.zero);
             Shader.SetGlobalVector(TracksTexelId, Vector4.zero);
+            Shader.SetGlobalFloat(MaxCraterDepthId, InteractionMath.MaxCraterDepth);
         }
 
         public void Dispose()

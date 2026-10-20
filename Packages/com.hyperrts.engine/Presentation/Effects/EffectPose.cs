@@ -14,23 +14,22 @@ namespace HyperRTS.Presentation.Effects
             direction.sqrMagnitude > 1e-8f ? Quaternion.LookRotation(direction) : Quaternion.identity;
 
         /// <summary>
-        /// An impact cue's pose: on the terrain for ground hits, up along the world or the ground's normal, spun about
-        /// that axis by <paramref name="spin"/> radians for variety.
+        /// An impact cue's pose: on the terrain for ground hits, up along the world or the ground's normal. The rig's
+        /// random spin turns it about that axis.
         /// </summary>
         public static (Vector3 Position, Quaternion Rotation) Impact(in CueEvent impact, in TerrainHeight terrain,
-            bool hasTerrain, bool alignToGround, float spin)
+            bool hasTerrain, bool alignToGround)
         {
-            var turn = Quaternion.Euler(0f, spin * Mathf.Rad2Deg, 0f);
             var onGround = impact.Surface == ImpactSurface.Ground && hasTerrain;
             if (!onGround)
             {
-                return (impact.Position, turn);
+                return (impact.Position, Quaternion.identity);
             }
 
             var point = impact.Position.xz;
             var position = new float3(point.x, terrain.Height(point), point.y);
             var normal = alignToGround ? (Vector3)ImpactMarkMath.GroundNormal(terrain, point, 1f) : Vector3.up;
-            return (position, Quaternion.FromToRotation(Vector3.up, normal) * turn);
+            return (position, Quaternion.FromToRotation(Vector3.up, normal));
         }
     }
 }

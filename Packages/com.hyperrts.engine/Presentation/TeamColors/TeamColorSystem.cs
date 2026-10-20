@@ -137,8 +137,8 @@ namespace HyperRTS.Presentation.TeamColors
                 }
 
                 var hasStrip = Strips.TryGetComponent(root, out var band);
-                var targets = new FixedList512Bytes<Entity>();
-                RenderHierarchy.Collect(root, Linked, Children, ref targets);
+                var targets = new NativeList<Entity>(Allocator.Temp);
+                RenderHierarchy.Collect(root, Linked, Children, targets);
                 foreach (var target in targets)
                 {
                     if (!Meshes.HasComponent(target))
@@ -164,8 +164,8 @@ namespace HyperRTS.Presentation.TeamColors
             /// <summary>Gives a root that had a player's colour (and is neutral now) its authored materials back.</summary>
             public void Unpaint(Entity root)
             {
-                var targets = new FixedList512Bytes<Entity>();
-                RenderHierarchy.Collect(root, Linked, Children, ref targets);
+                var targets = new NativeList<Entity>(Allocator.Temp);
+                RenderHierarchy.Collect(root, Linked, Children, targets);
                 foreach (var target in targets)
                 {
                     if (Meshes.HasComponent(target))

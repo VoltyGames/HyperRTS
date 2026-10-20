@@ -13,6 +13,7 @@ Shader "Hidden/HyperRTS/Interaction Brush"
         #pragma target 4.5
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
+        #include "Packages/com.hyperrts.engine/Presentation/Environment/InteractionGlobals.hlsl"
 
         // Matches InteractionStamp.cs.
         struct InteractionStamp
@@ -25,7 +26,6 @@ Shader "Hidden/HyperRTS/Interaction Brush"
 
         StructuredBuffer<InteractionStamp> _InteractionStamps;
         int _InteractionStampOffset;
-        float4 _HyperRTSInteractionRect;
         float4 _InteractionFade;
 
         struct StampVaryings

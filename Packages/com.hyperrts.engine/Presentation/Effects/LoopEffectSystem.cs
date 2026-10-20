@@ -7,7 +7,6 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects
 {
@@ -24,7 +23,6 @@ namespace HyperRTS.Presentation.Effects
         private readonly Dictionary<Entity, double> _firstSeen = new();
         private readonly List<Entity> _gone = new();
         private EffectPool _pool;
-        private Camera _camera;
         private EntityQuery _loops;
         private int _loopsVersion;
         private float _reach;
@@ -40,7 +38,6 @@ namespace HyperRTS.Presentation.Effects
         protected override void OnUpdate()
         {
             CompleteDependency();
-            _camera = EffectRange.Main(_camera);
             var now = SystemAPI.Time.ElapsedTime;
             _deltaTime = SystemAPI.Time.DeltaTime;
             _reach = EffectDetail.Level == DetailLevel.Low ? 0.5f : 1f;
@@ -77,18 +74,10 @@ namespace HyperRTS.Presentation.Effects
                 return;
             }
 
-            var rig = _pool.Get(loop.Rig.Value);
-            Vector3 socket = math.transform(place.Value, loop.Socket);
-            if (rig == null || !EffectRange.InRange(_camera, rig, socket, _reach))
-            {
-                return;
-            }
-
-            var state = _streams.Step(entity, index, socket);
-            var key = EffectStreams.Key(entity, index);
-            rig = rig.Pick(key);
-            rig.Stream(state.From, state.To, rig.LoopRotation(place.Rotation, key), _deltaTime, strength,
-                EffectDetail.Density, ref state.Carry, rig.LoopScale(key));
+            var socket = math.transform(place.Value, loop.Socket);
+            var state = _pool.Step(_streams, loop.Rig.Value, entity, index, socket, _reach);
+            state?.Emit(state.Rig.LoopRotation(place.Rotation, state.Key), _deltaTime, strength,
+                state.Rig.LoopScale(state.Key));
         }
 
         /// <summary>Forgets when entities that no longer exist were first seen, once loop entities came or went.</summary>

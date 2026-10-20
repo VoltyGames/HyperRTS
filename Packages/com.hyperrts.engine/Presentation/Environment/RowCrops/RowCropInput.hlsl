@@ -5,6 +5,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Wind.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/RowCrops/RowCropInstance.hlsl"
 
 TEXTURE2D(_BaseMap);
 SAMPLER(sampler_BaseMap);
@@ -25,17 +26,6 @@ CBUFFER_START(UnityPerMaterial)
 CBUFFER_END
 
 float _CanopyHeight; // RowCrop.height, set per draw
-
-struct RowCropInstance // RowCrops.compute, 48 bytes
-{
-    float3 position;
-    float scale;
-    float2 facing;
-    float2 trampleDirection;
-    float bend;
-    float shade;
-    float2 lean; // XZ direction times the sine of the tilt
-};
 
 StructuredBuffer<RowCropInstance> _Instances;
 

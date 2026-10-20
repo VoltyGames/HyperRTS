@@ -8,7 +8,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     /// <summary>One crop's GPU side for one camera: visible tiles, the (variant, band) buffers RowCrops.compute fills, and the indirect draws.</summary>
     internal sealed class RowCropBatch : IDisposable
     {
-        // Matches RowCropInstance in RowCrops.compute and RowCropInput.hlsl.
+        // Matches RowCropInstance.hlsl.
         private const int InstanceStride = 48;
         private const int ThreadGroup = 64;
         private const int MinCapacity = 1024;

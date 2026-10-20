@@ -47,8 +47,8 @@ namespace HyperRTS.Presentation.Fog
 
             public void Set(int sortKey, Entity root, bool hide)
             {
-                var targets = new FixedList512Bytes<Entity>();
-                RenderHierarchy.Collect(root, Linked, Children, ref targets);
+                var targets = new NativeList<Entity>(Allocator.Temp);
+                RenderHierarchy.Collect(root, Linked, Children, targets);
                 foreach (var target in targets)
                 {
                     if (hide)

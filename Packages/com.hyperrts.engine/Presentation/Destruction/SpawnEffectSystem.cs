@@ -26,11 +26,8 @@ namespace HyperRTS.Presentation.Destruction
                          .Query<RefRO<SpawnEffect>, EnabledRefRW<SpawnEffect>, RefRO<LocalToWorld>>())
             {
                 pending.ValueRW = false;
-                var rig = effect.ValueRO.Prefab.IsValid() ? _pool.Get(effect.ValueRO.Prefab.Value) : null;
-                if (rig != null)
-                {
-                    rig.Play(place.ValueRO.Position, place.ValueRO.Rotation);
-                }
+                var prefab = effect.ValueRO.Prefab.IsValid() ? effect.ValueRO.Prefab.Value : null;
+                _pool.Play(prefab, place.ValueRO.Position, place.ValueRO.Rotation);
             }
         }
     }

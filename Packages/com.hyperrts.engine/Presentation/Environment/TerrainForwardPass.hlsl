@@ -27,7 +27,7 @@ struct TerrainForwardVaryings
     float3 positionWS : TEXCOORD1;
     half3 normalWS : TEXCOORD2;
     half3 vertexSH : TEXCOORD3;
-    half4 fogAndVertexLight : TEXCOORD4;
+    half3 vertexLight : TEXCOORD4;
     #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
         float4 shadowCoord : TEXCOORD5;
     #endif
@@ -45,15 +45,9 @@ TerrainForwardVaryings TerrainForwardVertex(TerrainAttributes input)
     output.normalWS = TransformObjectToWorldNormal(input.normalOS);
     output.vertexSH = SampleSHVertex(output.normalWS);
 
-    half fog = 0.0;
-    #if !defined(_FOG_FRAGMENT)
-        fog = ComputeFogFactor(position.positionCS.z);
-    #endif
-    half3 vertexLight = 0.0;
     #ifdef _ADDITIONAL_LIGHTS_VERTEX
-        vertexLight = VertexLighting(position.positionWS, output.normalWS);
+        output.vertexLight = VertexLighting(position.positionWS, output.normalWS);
     #endif
-    output.fogAndVertexLight = half4(fog, vertexLight);
 
     #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
         output.shadowCoord = GetShadowCoord(position);
@@ -105,8 +99,7 @@ InputData TerrainInputData(TerrainForwardVaryings input, half3 normalTS)
         inputData.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
     #endif
 
-    inputData.fogCoord = InitializeInputDataFog(float4(input.positionWS, 1.0), input.fogAndVertexLight.x);
-    inputData.vertexLighting = input.fogAndVertexLight.yzw;
+    inputData.vertexLighting = input.vertexLight;
     inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
     inputData.shadowMask = half4(1.0, 1.0, 1.0, 1.0);
 
@@ -147,7 +140,7 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
     #endif
 
     half4 color = UniversalFragmentPBR(inputData, surfaceData);
-    outColor = half4(MixFog(color.rgb, inputData.fogCoord), 1.0);
+    outColor = half4(color.rgb, 1.0);
     #ifdef _WRITE_RENDERING_LAYERS
         outRenderingLayers = EncodeMeshRenderingLayer();
     #endif

@@ -3,6 +3,7 @@
 #define HYPERRTS_FLAG_CLOTH_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/WindGlobals.hlsl"
 
 TEXTURE2D_ARRAY(_FlagArray);
 SAMPLER(sampler_FlagArray);
@@ -39,10 +40,6 @@ void SetupDOTSFlagMaterialPropertyCaches()
 #define _FlagState unity_DOTS_Sampled_FlagState
 #define _FlagColor unity_DOTS_Sampled_FlagColor
 #endif
-
-// Published by the scene's Wind: unit downwind direction on XZ and the wind zone's main strength.
-float4 _HyperRTSWindDirection;
-float _HyperRTSWindStrength;
 
 struct Attributes
 {
