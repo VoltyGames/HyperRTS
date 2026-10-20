@@ -6,7 +6,6 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -25,7 +24,7 @@ namespace HyperRTS.Simulation.Tests
         {
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
-            _supplies = ScriptableObject.CreateInstance<ResourceType>();
+            _supplies = _world.CreateSupplies();
 
             // The test map spans -100..100, so carriers enter at x = 100, 60 m east of the source.
             var carrier = _world.MakePrefab(_world.SpawnUnit(0, float3.zero, speed: 20f, name: "Truck"));
@@ -44,11 +43,7 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            _world.Dispose();
-            Object.DestroyImmediate(_supplies);
-        }
+        public void TearDown() => _world.Dispose();
 
         private Entity[] Carriers() => _world.All<DeliveryCarrier>().ToArray();
 

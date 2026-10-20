@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using HyperRTS.Network.Players;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using UnityEngine;
+
+[assembly: InternalsVisibleTo("HyperRTS.Simulation.Tests")]
 
 namespace HyperRTS.Network.Session
 {
@@ -262,7 +265,7 @@ namespace HyperRTS.Network.Session
         private static ulong NewToken() => BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0) | 1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
+        internal static void ResetStatics()
         {
             Preference = default;
             Token = NewToken();

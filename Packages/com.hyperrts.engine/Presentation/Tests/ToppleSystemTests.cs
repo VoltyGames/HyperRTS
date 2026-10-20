@@ -37,8 +37,8 @@ namespace HyperRTS.Presentation.Tests
             var midway = Shown(remains);
             Assert.Less(math.abs(math.dot(midway.value, final.value)), 0.99f, "still near upright");
             Assert.AreEqual(final, _em.GetComponentData<LocalTransform>(remains).Rotation, "simulation pose untouched");
-            AssertNear(math.transform(_em.GetComponentData<LocalToWorld>(remains).Value, new float3(0f, 3f, 0f)),
-                _em.GetComponentData<LocalToWorld>(child).Position);
+            MathAssert.Near(math.transform(_em.GetComponentData<LocalToWorld>(remains).Value, new float3(0f, 3f, 0f)),
+                _em.GetComponentData<LocalToWorld>(child).Position, 1e-3f);
             Assert.IsTrue(_em.IsComponentEnabled<FallClock>(remains));
 
             Update((int)math.ceil(ToppleMath.Duration / Step));
@@ -81,9 +81,6 @@ namespace HyperRTS.Presentation.Tests
         }
 
         private quaternion Shown(Entity entity) => _em.GetComponentData<LocalToWorld>(entity).Rotation;
-
-        private static void AssertNear(float3 expected, float3 actual) =>
-            Assert.Less(math.distance(expected, actual), 1e-3f, $"expected {expected}, was {actual}");
 
         private void Update(int frames)
         {

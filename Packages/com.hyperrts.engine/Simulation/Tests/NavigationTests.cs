@@ -1,3 +1,4 @@
+using System;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
@@ -26,6 +27,16 @@ namespace HyperRTS.Simulation.Tests
             }
 
             _world.Command(1, new PlayerCommand { Type = CommandType.Smart, Position = goal });
+        }
+
+        private bool Arrived(Entity unit, float3 goal)
+        {
+            if (_world.IsEnabled<ActiveOrder>(unit))
+            {
+                return false;
+            }
+
+            return math.distance(_world.GetPosition(unit).xz, goal.xz) < 4f;
         }
 
         [Test]
@@ -66,7 +77,7 @@ namespace HyperRTS.Simulation.Tests
 
             var goal = new float3(10f, 0f, 0f);
             Move(goal, units);
-            _world.Run(10f);
+            _world.RunUntil(() => Array.TrueForAll(units, unit => Arrived(unit, goal)), 10f);
 
             for (var i = 0; i < units.Length; i++)
             {

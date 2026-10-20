@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision;
@@ -37,23 +36,6 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        /// <summary>Every event of the next frames; the queue itself only holds the last frame's.</summary>
-        private List<CueEvent> Played(float seconds)
-        {
-            var played = new List<CueEvent>();
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(CueQueue));
-            for (var t = 0f; t < seconds; t += TestWorld.FrameTime)
-            {
-                _world.Tick();
-                var buffer = _world.EntityManager.GetBuffer<CueEvent>(query.GetSingletonEntity());
-                played.AddRange(buffer.AsNativeArray().ToArray());
-            }
-
-            return played;
-        }
-
-        private int GetTypeId(Entity entity) => _world.Get<EntityInfo>(entity).TypeId;
-
         [Test]
         public void Fire_PlaysAtTheMuzzle_FacingTheTarget()
         {
@@ -61,9 +43,9 @@ namespace HyperRTS.Simulation.Tests
                 new float3(0f, 1f, 2f));
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
-            var fire = Played(0.5f).Find(effect => effect.Slot == CueSlot.Fire);
+            var fire = _world.QueuedOver(0.5f).Find(effect => effect.Slot == CueSlot.Fire);
 
-            Assert.AreEqual(GetTypeId(shooter), fire.TypeId);
+            Assert.AreEqual(_world.GetTypeId(shooter), fire.TypeId);
             Assert.AreEqual(1, fire.Faction);
             Assert.That(math.distance(new float3(2f, 1f, 0f), fire.Position), Is.LessThan(1e-3f),
                 "the muzzle turns with the shooter");
@@ -77,7 +59,7 @@ namespace HyperRTS.Simulation.Tests
             _world.AddWeapon(_world.SpawnUnit(1, new float3(0f, 0f, 2f)));
             _world.SpawnUnit(2, new float3(3f, 0f, 0f), maxHealth: 1000f);
 
-            Assert.IsEmpty(Played(1f));
+            Assert.IsEmpty(_world.QueuedOver(1f));
         }
 
         [Test]
@@ -86,9 +68,9 @@ namespace HyperRTS.Simulation.Tests
             _world.AddWeapon(_world.SpawnUnit(1, float3.zero), damage: 100f);
             var victim = Rigged(_world.SpawnUnit(2, new float3(3f, 0f, 0f), name: "Victim"), CueSlot.Death,
                 float3.zero);
-            var typeId = GetTypeId(victim);
+            var typeId = _world.GetTypeId(victim);
 
-            var death = Played(1f).Find(effect => effect.Slot == CueSlot.Death);
+            var death = _world.QueuedOver(1f).Find(effect => effect.Slot == CueSlot.Death);
 
             Assert.AreEqual(typeId, death.TypeId);
             Assert.AreEqual(2, death.Faction);

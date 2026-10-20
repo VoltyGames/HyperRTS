@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Tests
             var outpost = _world.SpawnBuilding(2, new float3(-8f, 0f, 0f), new float2(2f, 2f));
             _world.EntityManager.SetComponentData(outpost, new Health { Current = 10f, Max = 500f });
 
-            _world.Run(10f);
+            _world.RunUntil(() => _world.Get<PlayerStats>(_world.Player(2)) is { UnitsLost: 1, BuildingsLost: 1 }, 10f);
 
             var attacker = _world.Get<PlayerStats>(_world.Player(1));
             var victim = _world.Get<PlayerStats>(_world.Player(2));
@@ -122,7 +122,7 @@ namespace HyperRTS.Simulation.Tests
             });
             _world.EntityManager.SetComponentEnabled<ActiveOrder>(soldier, true);
 
-            _world.Run(15f);
+            _world.RunUntil(() => !_world.EntityManager.Exists(enemy) && _world.IsIdle(soldier), 15f);
 
             Assert.IsFalse(_world.EntityManager.Exists(enemy));
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(soldier), "the attack order completes");
@@ -139,7 +139,7 @@ namespace HyperRTS.Simulation.Tests
             var goal = new float3(80f, 0f, 0f);
             _world.Command(1, new PlayerCommand { Type = CommandType.AttackMove, Unit = soldier, Position = goal });
 
-            _world.Run(30f);
+            _world.RunUntil(() => !_world.EntityManager.Exists(enemy) && _world.IsIdle(soldier), 30f);
 
             Assert.IsFalse(_world.EntityManager.Exists(enemy));
             Assert.Less(math.distance(_world.Get<LocalTransform>(soldier).Position, goal), 1f, "resumes after the fight");

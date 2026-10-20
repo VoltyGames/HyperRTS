@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Tests
             clock.Time = time;
             query.SetSingleton(clock);
             world.Tick();
-            return ImpactTests.Queued(world).Length;
+            return world.Queued(CueSlot.Impact).Length;
         }
 
         [Test]
@@ -121,7 +121,7 @@ namespace HyperRTS.Simulation.Tests
             for (var t = 0f; t < replay.Duration + 0.5f; t += TestWorld.FrameTime)
             {
                 world.Tick();
-                queued += ImpactTests.Queued(world).Length;
+                queued += world.Queued(CueSlot.Impact).Length;
             }
 
             Assert.AreEqual(1, queued, "played through once");
@@ -140,7 +140,7 @@ namespace HyperRTS.Simulation.Tests
             for (var t = 0f; t < replay.Duration + 0.5f; t += TestWorld.FrameTime)
             {
                 world.Tick();
-                fired += ImpactTests.Queued(world, CueSlot.Fire).Length;
+                fired += world.Queued(CueSlot.Fire).Length;
             }
 
             Assert.AreEqual(2, replay.Cues.Length, "the shot and where it landed");

@@ -164,7 +164,7 @@ namespace HyperRTS.Simulation.Tests
             var writer = new EntityManagerWriter(world.EntityManager, world.Player(2));
             AIPlayerSetup.Add(ref writer, new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 2 });
             world.RemoveHints();
-            var supplies = ScriptableObject.CreateInstance<ResourceType>();
+            var supplies = world.CreateSupplies();
             var harvester = world.MakeHarvester(world.SpawnUnit(2, float3.zero), 10, 1f);
             world.SpawnNode(new float3(5f, 0f, 0f), supplies, 100);
             var map = Regex.Escape(SceneManager.GetActiveScene().name);
@@ -173,7 +173,6 @@ namespace HyperRTS.Simulation.Tests
             world.Tick(frames: 5);
 
             Assert.IsFalse(world.IsEnabled<ActiveOrder>(harvester), "no hints, no AI");
-            UnityEngine.Object.DestroyImmediate(supplies);
         }
 
         [Test]

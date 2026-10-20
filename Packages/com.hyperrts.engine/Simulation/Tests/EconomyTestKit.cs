@@ -8,12 +8,37 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
     /// <summary>Economy, production and match helpers on top of <see cref="TestWorld"/>.</summary>
     public static class EconomyTestKit
     {
+        private static readonly float3 Far = new(90f, 0f, 90f);
+
+        /// <summary>A resource type that <paramref name="world"/> destroys on dispose.</summary>
+        public static ResourceType CreateSupplies(this TestWorld world) =>
+            world.Own(ScriptableObject.CreateInstance<ResourceType>());
+
+        /// <summary>A unit prefab parked far from the action, costing <paramref name="cost"/> supplies.</summary>
+        public static Entity UnitPrefab(this TestWorld world, ResourceType supplies, int cost, float buildTime = 1f,
+            string name = "Unit")
+        {
+            var prefab = world.MakePrefab(world.SpawnUnit(0, Far, name: name));
+            world.SetBuildTime(prefab, buildTime);
+            world.SetCost(prefab, supplies, cost);
+            return prefab;
+        }
+
+        /// <summary>Player 1's producer at the origin, spawning south of it.</summary>
+        public static Entity SpawnProducer(this TestWorld world, Entity unitPrefab, bool complete = true) =>
+            world.MakeProducer(world.SpawnBuilding(1, float3.zero, new float2(4f, 4f), complete),
+                new float3(0f, 0f, -4f), unitPrefab);
+
+        public static int QueueLength(this TestWorld world, Entity producer) =>
+            world.EntityManager.GetBuffer<ProductionQueueItem>(producer).Length;
+
         public static Entity SpawnNode(this TestWorld world, float3 position, ResourceType type, int amount,
             float regrowth = 0f)
         {

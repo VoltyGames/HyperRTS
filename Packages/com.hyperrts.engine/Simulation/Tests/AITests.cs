@@ -24,18 +24,14 @@ namespace HyperRTS.Simulation.Tests
         {
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
-            _supplies = ScriptableObject.CreateInstance<ResourceType>();
+            _supplies = _world.CreateSupplies();
             var writer = new EntityManagerWriter(_world.EntityManager, _world.Player(2));
             AIPlayerSetup.Add(ref writer,
                 new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 2, UseAbilities = true });
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            _world.Dispose();
-            Object.DestroyImmediate(_supplies);
-        }
+        public void TearDown() => _world.Dispose();
 
         private Entity SoldierPrefab()
         {

@@ -7,7 +7,6 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -26,7 +25,7 @@ namespace HyperRTS.Simulation.Tests
         {
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
-            _supplies = ScriptableObject.CreateInstance<ResourceType>();
+            _supplies = _world.CreateSupplies();
             var writer = new EntityManagerWriter(_world.EntityManager, _world.Player(2));
             AIPlayerSetup.Add(ref writer,
                 new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 50, BuildingGap = BuildingGap });
@@ -42,11 +41,7 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            _world.Dispose();
-            Object.DestroyImmediate(_supplies);
-        }
+        public void TearDown() => _world.Dispose();
 
         private Entity SpawnBuilder(float3 position) =>
             _world.MakeBuilder(_world.SpawnUnit(2, position, name: "Builder"), _barracks);

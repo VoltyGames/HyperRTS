@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Presentation.Environment;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
@@ -8,9 +9,23 @@ namespace HyperRTS.Presentation.Tests
 {
     public class InteractionStampsTests
     {
-        private static ImpactMark Mark(float craterDepth, float scorch)
+        private readonly List<Object> _created = new();
+
+        [TearDown]
+        public void TearDown()
+        {
+            foreach (var created in _created)
+            {
+                Object.DestroyImmediate(created);
+            }
+
+            _created.Clear();
+        }
+
+        private ImpactMark Mark(float craterDepth, float scorch)
         {
             var mark = ScriptableObject.CreateInstance<ImpactMark>();
+            _created.Add(mark);
             mark.craterDepth = craterDepth;
             mark.scorch = scorch;
             return mark;
@@ -32,7 +47,6 @@ namespace HyperRTS.Presentation.Tests
             Assert.AreEqual(scar.HalfSize, stamps.Trample[0].HalfSize, "plants flattened over the whole scar");
             Assert.AreEqual(1f, stamps.Trample[0].Value.w, "round");
             Assert.IsEmpty(stamps.Tracks, "scars stay out of the fading channels' stamps");
-            Object.DestroyImmediate(mark);
         }
 
         [Test]
@@ -45,7 +59,6 @@ namespace HyperRTS.Presentation.Tests
 
             Assert.AreEqual(new float2(3f), stamps.Scars[0].HalfSize);
             Assert.AreEqual(new float4(1f, 0f, 1f, 1f), stamps.Scars[0].Value);
-            Object.DestroyImmediate(mark);
         }
 
         [Test]
@@ -83,8 +96,6 @@ namespace HyperRTS.Presentation.Tests
 
             Assert.IsFalse(none.ScarsGround);
             Assert.IsTrue(scorch.ScarsGround);
-            Object.DestroyImmediate(none);
-            Object.DestroyImmediate(scorch);
         }
     }
 }

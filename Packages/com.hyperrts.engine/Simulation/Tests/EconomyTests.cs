@@ -5,7 +5,6 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -20,15 +19,11 @@ namespace HyperRTS.Simulation.Tests
         {
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
-            _supplies = ScriptableObject.CreateInstance<ResourceType>();
+            _supplies = _world.CreateSupplies();
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            _world.Dispose();
-            Object.DestroyImmediate(_supplies);
-        }
+        public void TearDown() => _world.Dispose();
 
         private Entity SpawnDropOff(float3 position)
         {
@@ -67,7 +62,8 @@ namespace HyperRTS.Simulation.Tests
             var harvester = SpawnHarvester(float3.zero);
 
             _world.Order(harvester, OrderType.Gather, node);
-            _world.Run(10f);
+            _world.RunUntil(() => _world.GetResources(1, _supplies) == 5 && !_world.IsEnabled<ActiveOrder>(harvester),
+                10f);
 
             Assert.IsFalse(_world.EntityManager.Exists(node));
             Assert.AreEqual(5, _world.GetResources(1, _supplies));
@@ -83,7 +79,7 @@ namespace HyperRTS.Simulation.Tests
             var harvester = SpawnHarvester(float3.zero);
 
             _world.Order(harvester, OrderType.Gather, first);
-            _world.Run(10f);
+            _world.RunUntil(() => _world.Get<ResourceNode>(second).Amount < 100, 10f);
 
             Assert.IsFalse(_world.EntityManager.Exists(first));
             Assert.Less(_world.Get<ResourceNode>(second).Amount, 100);

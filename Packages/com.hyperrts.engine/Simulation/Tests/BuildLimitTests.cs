@@ -5,7 +5,6 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -22,28 +21,15 @@ namespace HyperRTS.Simulation.Tests
         {
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
-            _supplies = ScriptableObject.CreateInstance<ResourceType>();
+            _supplies = _world.CreateSupplies();
             _world.AddResources(1, _supplies, 1000);
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            _world.Dispose();
-            Object.DestroyImmediate(_supplies);
-        }
+        public void TearDown() => _world.Dispose();
 
-        private Entity UnitPrefab(int max)
-        {
-            var prefab = _world.AddBuildLimit(_world.MakePrefab(_world.SpawnUnit(0, Far, name: "Hero")), max);
-            _world.SetBuildTime(prefab, 30f);
-            _world.SetCost(prefab, _supplies, 100);
-            return prefab;
-        }
-
-        private Entity Producer(Entity prefab) =>
-            _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), new float3(0f, 0f, -4f),
-                prefab);
+        private Entity HeroPrefab(int max) =>
+            _world.AddBuildLimit(_world.UnitPrefab(_supplies, 100, buildTime: 30f, name: "Hero"), max);
 
         private Entity LiveHero(byte faction, Entity prefab)
         {
@@ -51,13 +37,11 @@ namespace HyperRTS.Simulation.Tests
             return _world.AddBuildLimit(hero, _world.Get<BuildLimit>(prefab).Max);
         }
 
-        private int QueueLength(Entity producer) => _world.EntityManager.GetBuffer<ProductionQueueItem>(producer).Length;
-
         [Test]
         public void Produce_StopsQueueingAtTheLimit_AndChargesOnlyWhatQueued()
         {
-            var prefab = UnitPrefab(2);
-            var producer = Producer(prefab);
+            var prefab = HeroPrefab(2);
+            var producer = _world.SpawnProducer(prefab);
 
             for (var i = 0; i < 3; i++)
             {
@@ -66,15 +50,15 @@ namespace HyperRTS.Simulation.Tests
 
             _world.Tick();
 
-            Assert.AreEqual(2, QueueLength(producer));
+            Assert.AreEqual(2, _world.QueueLength(producer));
             Assert.AreEqual(800, _world.GetResources(1, _supplies));
         }
 
         [Test]
         public void Produce_CountsOwnStandingUnits_NotOtherPlayers()
         {
-            var prefab = UnitPrefab(2);
-            var producer = Producer(prefab);
+            var prefab = HeroPrefab(2);
+            var producer = _world.SpawnProducer(prefab);
             LiveHero(1, prefab);
             LiveHero(2, prefab);
             LiveHero(2, prefab);
@@ -83,21 +67,21 @@ namespace HyperRTS.Simulation.Tests
             _world.Produce(1, producer, prefab);
             _world.Tick();
 
-            Assert.AreEqual(1, QueueLength(producer));
+            Assert.AreEqual(1, _world.QueueLength(producer));
         }
 
         [Test]
         public void Produce_DeadUnitFreesItsSlot()
         {
-            var prefab = UnitPrefab(1);
-            var producer = Producer(prefab);
+            var prefab = HeroPrefab(1);
+            var producer = _world.SpawnProducer(prefab);
             var hero = LiveHero(1, prefab);
             _world.EntityManager.SetComponentEnabled<Dead>(hero, true);
 
             _world.Produce(1, producer, prefab);
             _world.Tick();
 
-            Assert.AreEqual(1, QueueLength(producer));
+            Assert.AreEqual(1, _world.QueueLength(producer));
         }
 
         [Test]
@@ -121,7 +105,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void CanBuy_IsFalseAtTheLimit_ForTheHUD()
         {
-            var prefab = UnitPrefab(1);
+            var prefab = HeroPrefab(1);
             Assert.IsTrue(CanBuy(prefab), "nothing owned yet");
 
             LiveHero(1, prefab);

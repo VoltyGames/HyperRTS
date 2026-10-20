@@ -14,6 +14,7 @@ namespace HyperRTS.Presentation.Tests
     /// <summary>The HUD's view of a world built by hand, without a scene or the default world.</summary>
     public class HUDContextTests
     {
+        private PresentationWorldKit _kit;
         private World _world;
         private EntityManager _em;
         private MatchView _view;
@@ -26,11 +27,11 @@ namespace HyperRTS.Presentation.Tests
             // A game's translated HUDText outlives Play mode (no domain reload); these tests read the engine's keys.
             _text = HUDText.Current;
             HUDText.Current = new HUDText();
-            _world = new World("HUD Tests");
-            _em = _world.EntityManager;
+            _kit = new PresentationWorldKit("HUD Tests");
+            _world = _kit.World;
+            _em = _kit.EntityManager;
             _world.CreateSystem<ClientSingletonSystem>();
-            var local = _em.CreateEntity(typeof(LocalPlayer));
-            _em.AddComponentData(local, new Player { Faction = 1 });
+            _kit.AddPlayer(1, local: true);
             _view = new MatchView();
             _context = new HUDContext();
         }
@@ -39,7 +40,7 @@ namespace HyperRTS.Presentation.Tests
         public void TearDown()
         {
             HUDText.Current = _text;
-            _world.Dispose();
+            _kit.Dispose();
         }
 
         [Test]

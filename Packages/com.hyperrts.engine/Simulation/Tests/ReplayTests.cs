@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Tests
             {
                 if (frame == 6)
                 {
-                    world.EntityManager.SetComponentData(victim, new Health { Current = 0f, Max = 100f });
+                    world.Kill(victim);
                 }
 
                 if (frame == 20)

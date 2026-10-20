@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
@@ -11,6 +12,19 @@ namespace HyperRTS.Presentation.Tests
     /// <summary>Impact mark bookkeeping and placement: the ring, fades, sizes and the ground frame.</summary>
     public class ImpactMarkMathTests
     {
+        private readonly List<Object> _created = new();
+
+        [TearDown]
+        public void TearDown()
+        {
+            foreach (var created in _created)
+            {
+                Object.DestroyImmediate(created);
+            }
+
+            _created.Clear();
+        }
+
         [Test]
         public void Ring_FillsInOrder_ThenReusesTheOldest()
         {
@@ -43,13 +57,13 @@ namespace HyperRTS.Presentation.Tests
         public void Diameter_SpansTheRange_AndGrowsWithTheSplash()
         {
             var mark = ScriptableObject.CreateInstance<ImpactMark>();
+            _created.Add(mark);
             mark.size = new Vector2(2f, 4f);
             mark.sizePerSplashRadius = 0.5f;
 
             Assert.AreEqual(2f, ImpactMarkMath.Diameter(mark, 0f, 0f), 1e-5f);
             Assert.AreEqual(4f, ImpactMarkMath.Diameter(mark, 0f, 1f), 1e-5f);
             Assert.AreEqual(6f, ImpactMarkMath.Diameter(mark, 6f, 0.5f), 1e-5f);
-            Object.DestroyImmediate(mark);
         }
 
         [Test]

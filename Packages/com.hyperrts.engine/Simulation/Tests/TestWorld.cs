@@ -27,6 +27,7 @@ namespace HyperRTS.Simulation.Tests
 
         public readonly World World;
         private readonly List<BlobAssetReference<HeightfieldBlob>> _terrains = new();
+        private readonly List<UnityEngine.Object> _owned = new();
         private double _elapsed;
 
         public TestWorld()
@@ -68,6 +69,18 @@ namespace HyperRTS.Simulation.Tests
             {
                 terrain.Dispose();
             }
+
+            foreach (var owned in _owned)
+            {
+                UnityEngine.Object.DestroyImmediate(owned);
+            }
+        }
+
+        /// <summary>Hands <paramref name="asset"/> to this world, which destroys it on dispose.</summary>
+        public T Own<T>(T asset) where T : UnityEngine.Object
+        {
+            _owned.Add(asset);
+            return asset;
         }
 
         /// <summary>
@@ -87,6 +100,20 @@ namespace HyperRTS.Simulation.Tests
 
         /// <summary>Ticks fixed frames until <paramref name="seconds"/> of game time have passed.</summary>
         public void Run(float seconds) => Tick(FrameTime, (int)math.ceil(seconds / FrameTime));
+
+        /// <summary>
+        /// Ticks until <paramref name="done"/> holds or <paramref name="cap"/> seconds pass. Returns whether it
+        /// holds, without asserting, so callers keep their own assert message.
+        /// </summary>
+        public bool RunUntil(Func<bool> done, float cap)
+        {
+            for (var t = 0f; t < cap && !done(); t += FrameTime)
+            {
+                Tick();
+            }
+
+            return done();
+        }
 
         public T Get<T>(Entity entity) where T : unmanaged, IComponentData => EntityManager.GetComponentData<T>(entity);
 

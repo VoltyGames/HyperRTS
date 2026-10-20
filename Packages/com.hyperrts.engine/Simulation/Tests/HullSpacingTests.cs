@@ -1,3 +1,4 @@
+using System;
 using HyperRTS.Simulation.Commands;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
@@ -36,6 +37,8 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.SetComponentData(tank, transform);
             return tank;
         }
+
+        private bool Arrived(Entity tank) => !_world.IsEnabled<ActiveOrder>(tank);
 
         [Test]
         public void ParallelTanks_EndSideBySide_WidthPlusSpacingApart()
@@ -86,7 +89,9 @@ namespace HyperRTS.Simulation.Tests
             }
 
             _world.Command(1, new PlayerCommand { Type = CommandType.Smart, Position = new float3(20f, 0f, 0f) });
-            _world.Run(25f);
+            // The command only starts the orders on the next tick.
+            _world.Tick();
+            _world.RunUntil(() => Array.TrueForAll(tanks, Arrived), 25f);
 
             for (var i = 0; i < tanks.Length; i++)
             {

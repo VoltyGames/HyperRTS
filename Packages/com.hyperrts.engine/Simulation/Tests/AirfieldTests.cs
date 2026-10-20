@@ -1,4 +1,3 @@
-using System;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Orders;
@@ -36,8 +35,8 @@ namespace HyperRTS.Simulation.Tests
             var tank = _world.SpawnUnit(2, new float3(30f, 0f, 0f));
 
             Attack(aircraft, tank);
-            RunUntil(() => _world.Get<Ammo>(aircraft).Current == 0, 6f);
-            RunUntil(() => _world.IsEnabled<Docked>(aircraft), 8f);
+            Assert.IsTrue(_world.RunUntil(() => _world.Get<Ammo>(aircraft).Current == 0, 6f), "fires every round");
+            Assert.IsTrue(_world.RunUntil(() => _world.IsEnabled<Docked>(aircraft), 8f), "flies home and docks");
 
             Assert.AreEqual(80f, _world.GetHealth(tank), "two rounds, then it held fire");
             Assert.Less(math.distance(_world.GetPosition(aircraft).xz, Pad.xz), 0.6f, "back on its pad");
@@ -91,7 +90,7 @@ namespace HyperRTS.Simulation.Tests
 
             var second = _world.SpawnAirfield(1, new float3(20f, 0f, 0f), Pad);
             _world.Command(1, new PlayerCommand { Type = CommandType.Smart, Unit = aircraft, Target = second });
-            RunUntil(() => _world.IsEnabled<Docked>(aircraft), 6f);
+            Assert.IsTrue(_world.RunUntil(() => _world.IsEnabled<Docked>(aircraft), 6f), "docks");
 
             Assert.AreEqual(second, _world.Get<HomePad>(aircraft).Airfield);
             Assert.AreEqual(aircraft, _world.EntityManager.GetBuffer<LandingPad>(second)[0].Aircraft);
@@ -102,15 +101,5 @@ namespace HyperRTS.Simulation.Tests
         {
             Type = CommandType.Attack, Unit = unit, Target = target, Position = _world.GetPosition(target),
         });
-
-        private void RunUntil(Func<bool> done, float seconds)
-        {
-            for (var t = 0f; t < seconds && !done(); t += TestWorld.FrameTime)
-            {
-                _world.Tick();
-            }
-
-            Assert.IsTrue(done(), $"not reached within {seconds} s");
-        }
     }
 }

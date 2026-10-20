@@ -9,7 +9,6 @@ using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -26,15 +25,11 @@ namespace HyperRTS.Simulation.Tests
         {
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
-            _supplies = ScriptableObject.CreateInstance<ResourceType>();
+            _supplies = _world.CreateSupplies();
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            _world.Dispose();
-            Object.DestroyImmediate(_supplies);
-        }
+        public void TearDown() => _world.Dispose();
 
         [Test]
         public void LowPower_SilencesConsumers_UntilSupplyRecovers()
@@ -184,7 +179,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.Greater(partial, 100f);
             Assert.Less(partial, 500f);
 
-            _world.Run(10f);
+            _world.RunUntil(() => !_world.IsEnabled<ActiveOrder>(builder), 10f);
             Assert.AreEqual(500f, _world.Get<Health>(depot).Current);
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(builder), "the order ends when whole");
         }

@@ -17,9 +17,6 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private void Kill(Entity entity) =>
-            _world.EntityManager.SetComponentData(entity, new Health { Current = 0f, Max = 100f });
-
         [Test]
         public void Population_CountsLivingUnitsAndCompletedProviders()
         {
@@ -59,7 +56,7 @@ namespace HyperRTS.Simulation.Tests
             var enemy = _world.SpawnUnit(3, new float3(20f, 0f, 0f));
             _world.Tick();
 
-            Kill(enemy);
+            _world.Kill(enemy);
             _world.Tick(frames: 2);
 
             Assert.IsTrue(_world.IsEnabled<Defeated>(_world.Player(3)));
@@ -75,8 +72,8 @@ namespace HyperRTS.Simulation.Tests
             var second = _world.SpawnUnit(2, new float3(10f, 0f, 0f));
             _world.Tick();
 
-            Kill(first);
-            Kill(second);
+            _world.Kill(first);
+            _world.Kill(second);
             _world.Tick(frames: 2);
 
             Assert.AreEqual(MatchPhase.Ended, _world.Singleton<MatchState>().Phase);

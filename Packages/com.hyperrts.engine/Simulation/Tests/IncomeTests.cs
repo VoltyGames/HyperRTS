@@ -4,7 +4,6 @@ using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -19,15 +18,11 @@ namespace HyperRTS.Simulation.Tests
         {
             _world = new TestWorld();
             _world.CreateMatch(1, 2, 1);
-            _supplies = ScriptableObject.CreateInstance<ResourceType>();
+            _supplies = _world.CreateSupplies();
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            _world.Dispose();
-            Object.DestroyImmediate(_supplies);
-        }
+        public void TearDown() => _world.Dispose();
 
         private Entity SpawnBuilding(byte faction, float x) =>
             _world.SpawnBuilding(faction, new float3(x, 0f, 0f), new float2(4f, 4f));
@@ -58,7 +53,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var unit = _world.SpawnUnit(faction, new float3(0f, 0f, 20f));
             _world.SetCost(unit, _supplies, cost);
-            _world.EntityManager.SetComponentData(unit, new Health { Current = 0f, Max = 100f });
+            _world.Kill(unit);
         }
 
         [Test]

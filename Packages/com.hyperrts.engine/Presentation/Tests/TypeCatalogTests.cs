@@ -4,7 +4,6 @@ using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -14,7 +13,7 @@ namespace HyperRTS.Presentation.Tests
     {
         private const int TypeId = 42;
 
-        private World _world;
+        private PresentationWorldKit _kit;
         private EntityManager _entityManager;
         private PrefabRegistry _registry;
         private TypeCatalog<EffectSet> _catalog;
@@ -22,9 +21,9 @@ namespace HyperRTS.Presentation.Tests
         [SetUp]
         public void SetUp()
         {
-            _world = new World("Type Catalog Test");
-            _entityManager = _world.EntityManager;
-            _registry = new PrefabRegistry { ByTypeId = new NativeHashMap<int, Entity>(1, Allocator.Persistent) };
+            _kit = new PresentationWorldKit("Type Catalog Test");
+            _entityManager = _kit.EntityManager;
+            _registry = _kit.AddRegistry();
             _catalog = new TypeCatalog<EffectSet>(_entityManager.CreateEntityQuery(new EntityQueryDesc
             {
                 All = new[] { ComponentType.ReadOnly<EntityInfo>() },
@@ -34,11 +33,7 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            _registry.ByTypeId.Dispose();
-            _world.Dispose();
-        }
+        public void TearDown() => _kit.Dispose();
 
         [Test]
         public void Miss_IsForgotten_OnceAnEntityWithDataAppears()
@@ -60,7 +55,7 @@ namespace HyperRTS.Presentation.Tests
         {
             var prefab = CreateTyped(true);
             _entityManager.AddBuffer<EntityEffect>(prefab).Add(new EntityEffect { Slot = CueSlot.Death });
-            _registry.ByTypeId.Add(TypeId, prefab);
+            _kit.RefreshRegistry();
 
             var set = _catalog.Find(_entityManager, _registry, TypeId);
 
@@ -70,7 +65,8 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void PrefabWithoutData_IsAFinalMiss()
         {
-            _registry.ByTypeId.Add(TypeId, CreateTyped(true));
+            CreateTyped(true);
+            _kit.RefreshRegistry();
             Assert.IsNull(_catalog.Find(_entityManager, _registry, TypeId));
 
             var entity = CreateTyped(false);

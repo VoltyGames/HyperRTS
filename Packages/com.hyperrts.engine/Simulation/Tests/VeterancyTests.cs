@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Tests
             var veteran = Veteran(float3.zero);
             var friend = _world.SpawnUnit(1, new float3(30f, 0f, 0f));
             _world.EntityManager.SetComponentData(friend, new LastAttacker { Source = veteran, Faction = 1 });
-            _world.EntityManager.SetComponentData(friend, new Health { Current = 0f, Max = 100f });
+            _world.Kill(friend);
 
             _world.Tick();
 

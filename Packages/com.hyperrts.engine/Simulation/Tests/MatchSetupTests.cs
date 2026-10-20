@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Resources;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -119,7 +118,7 @@ namespace HyperRTS.Simulation.Tests
         public void StartingResourcesAndFog_FollowTheSetup()
         {
             _world.CreateMatch(1, 2);
-            var supplies = ScriptableObject.CreateInstance<ResourceType>();
+            var supplies = _world.CreateSupplies();
             ResourceMath.Add(_world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1)), supplies, 1000);
             var setup = Setup(Slot(1, PlayerControl.LocalHuman), Slot(2));
             setup.StartingResourceScale = 2.5f;
@@ -131,7 +130,6 @@ namespace HyperRTS.Simulation.Tests
             var stock = _world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1));
             Assert.AreEqual(2500, ResourceMath.GetAmount(stock, supplies));
             Assert.IsFalse(_world.Get<MapSettings>(_world.MatchEntity()).FogOfWar);
-            Object.DestroyImmediate(supplies);
         }
 
         [Test]

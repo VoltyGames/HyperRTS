@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
@@ -40,32 +39,9 @@ namespace HyperRTS.Simulation.Tests
             return shooter;
         }
 
-        /// <summary>This frame's cues of one slot.</summary>
-        internal static CueEvent[] Queued(TestWorld world, CueSlot slot = CueSlot.Impact)
-        {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(CueQueue));
-            var cues = world.EntityManager.GetBuffer<CueEvent>(query.GetSingletonEntity()).AsNativeArray().ToArray();
-            return System.Array.FindAll(cues, cue => cue.Slot == slot);
-        }
-
-        /// <summary>Every impact of the next frames; the queue itself only holds the last frame's.</summary>
-        private List<CueEvent> Landed(float seconds)
-        {
-            var landed = new List<CueEvent>();
-            for (var t = 0f; t < seconds; t += TestWorld.FrameTime)
-            {
-                _world.Tick();
-                landed.AddRange(Queued(_world));
-            }
-
-            return landed;
-        }
-
         private Entity Gun(float3 position, float range = 6f, WeaponTargets targets = WeaponTargets.Surface) =>
             Marked(_world, _world.AddWeapon(_world.SpawnUnit(1, position, name: "Mortar"), range: range,
                 cooldown: 100f, targets: targets), _mark);
-
-        private int GetTypeId(Entity entity) => _world.Get<EntityInfo>(entity).TypeId;
 
         [Test]
         public void InstantHit_LandsOnceOnTheGroundAtItsTarget_UnderTheShootersType()
@@ -73,10 +49,10 @@ namespace HyperRTS.Simulation.Tests
             var gun = Gun(float3.zero);
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
-            var landed = Landed(1f);
+            var landed = _world.QueuedOver(1f, CueSlot.Impact);
 
             Assert.AreEqual(1, landed.Count, "one shot, reported for its frame only");
-            Assert.AreEqual(GetTypeId(gun), landed[0].TypeId);
+            Assert.AreEqual(_world.GetTypeId(gun), landed[0].TypeId);
             Assert.AreEqual(new float3(3f, 0f, 0f), landed[0].Position);
             Assert.AreEqual(1, landed[0].Faction);
             Assert.AreEqual(ImpactSurface.Ground, landed[0].Surface);
@@ -88,7 +64,7 @@ namespace HyperRTS.Simulation.Tests
             _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
-            Assert.IsEmpty(Landed(2f));
+            Assert.IsEmpty(_world.QueuedOver(2f, CueSlot.Impact));
         }
 
         [Test]
@@ -98,7 +74,7 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.SetComponentData(shell, LocalTransform.Identity);
             var gun = Marked(_world, _world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Howitzer"), range: 8f,
                 cooldown: 100f, projectile: shell), _mark);
-            var typeId = GetTypeId(gun);
+            var typeId = _world.GetTypeId(gun);
             _world.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             using var projectiles = _world.EntityManager.CreateEntityQuery(typeof(Projectile));
@@ -108,7 +84,7 @@ namespace HyperRTS.Simulation.Tests
             }
 
             _world.EntityManager.DestroyEntity(gun);
-            var landed = Landed(2f);
+            var landed = _world.QueuedOver(2f, CueSlot.Impact);
 
             Assert.AreEqual(1, landed.Count);
             Assert.AreEqual(typeId, landed[0].TypeId);
@@ -122,7 +98,7 @@ namespace HyperRTS.Simulation.Tests
             Gun(float3.zero);
             _world.SpawnBuilding(2, new float3(4f, 0f, 0f), new float2(2f, 2f));
 
-            Assert.AreEqual(ImpactSurface.Structure, Landed(1f)[0].Surface);
+            Assert.AreEqual(ImpactSurface.Structure, _world.QueuedOver(1f, CueSlot.Impact)[0].Surface);
         }
 
         [Test]
@@ -131,7 +107,7 @@ namespace HyperRTS.Simulation.Tests
             Gun(float3.zero, targets: WeaponTargets.Air);
             _world.SpawnAircraft(2, new float3(3f, 0f, 0f));
 
-            Assert.AreEqual(ImpactSurface.Air, Landed(1f)[0].Surface);
+            Assert.AreEqual(ImpactSurface.Air, _world.QueuedOver(1f, CueSlot.Impact)[0].Surface);
         }
 
         [Test]
@@ -142,7 +118,7 @@ namespace HyperRTS.Simulation.Tests
             Gun(float3.zero, range: 10f);
             _world.SpawnShip(2, new float3(9f, 0f, 0f));
 
-            var landed = Landed(1f)[0];
+            var landed = _world.QueuedOver(1f, CueSlot.Impact)[0];
             Assert.AreEqual(ImpactSurface.Water, landed.Surface);
             Assert.AreEqual(SurfaceMaterial.Water, landed.Material, "a ship without a hit material splashes");
         }
@@ -166,7 +142,7 @@ namespace HyperRTS.Simulation.Tests
             EffectSetup.AddHitMaterial(ref writer, SurfaceMaterial.Metal);
             _world.SpawnUnit(2, new float3(3f, 0f, 40f));
 
-            var landed = Landed(1f);
+            var landed = _world.QueuedOver(1f, CueSlot.Impact);
 
             Assert.AreEqual(2, landed.Count);
             var onTank = landed[0].Position.z < 20f ? landed[0] : landed[1];
@@ -185,11 +161,11 @@ namespace HyperRTS.Simulation.Tests
             EffectSetup.AddImpactEffects(ref writer, effects);
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
-            var landed = Landed(1f);
+            var landed = _world.QueuedOver(1f, CueSlot.Impact);
             Object.DestroyImmediate(effects);
 
             Assert.AreEqual(1, landed.Count);
-            Assert.AreEqual(GetTypeId(gun), landed[0].TypeId);
+            Assert.AreEqual(_world.GetTypeId(gun), landed[0].TypeId);
         }
 
         [Test]
@@ -204,7 +180,7 @@ namespace HyperRTS.Simulation.Tests
             _world.SpawnUnit(2, new float3(0f, 2f, 0f));
             _world.SpawnUnit(2, new float3(0f, -1.15f, 40f));
 
-            var landed = Landed(1f);
+            var landed = _world.QueuedOver(1f, CueSlot.Impact);
 
             Assert.AreEqual(2, landed.Count);
             var onBridge = landed[0].Position.z < 20f ? landed[0] : landed[1];

@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void TextureSize_CoversTheMapAtTheTexelSize()
         {
-            var size = InteractionMath.TextureSize(new float2(500f, 301f), InteractionMath.TracksTexel(InteractionQuality.Full));
+            var size = InteractionMath.TextureSize(new float2(500f, 301f), 0.2f);
 
             Assert.AreEqual(new int2(2500, 1505), size);
         }
@@ -30,9 +30,11 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void Texels_LowIsTwiceAsCoarse()
         {
-            Assert.AreEqual(0.2f, InteractionMath.TracksTexel(InteractionQuality.Full));
-            Assert.AreEqual(0.4f, InteractionMath.TracksTexel(InteractionQuality.Low));
-            Assert.AreEqual(1f, InteractionMath.TrampleTexel(InteractionQuality.Low));
+            var tracks = InteractionMath.TracksTexel(InteractionQuality.Full);
+            var trample = InteractionMath.TrampleTexel(InteractionQuality.Full);
+            Assert.AreEqual(2f * tracks, InteractionMath.TracksTexel(InteractionQuality.Low), 1e-6f);
+            Assert.AreEqual(2f * trample, InteractionMath.TrampleTexel(InteractionQuality.Low), 1e-6f);
+            Assert.Less(tracks, trample, "ruts need finer texels than flattened grass");
             Assert.Throws<ArgumentOutOfRangeException>(() => InteractionMath.TrampleTexel(InteractionQuality.Off));
         }
 
@@ -41,9 +43,9 @@ namespace HyperRTS.Presentation.Tests
         {
             var rect = InteractionMath.Rect(new float2(-100f, 20f), new float2(400f, 200f));
 
-            AssertNear(new float2(0f, 0f), InteractionMath.WorldToUV(rect, new float2(-100f, 20f)));
-            AssertNear(new float2(1f, 1f), InteractionMath.WorldToUV(rect, new float2(300f, 220f)));
-            AssertNear(new float2(0.25f, 0.5f), InteractionMath.WorldToUV(rect, new float2(0f, 120f)));
+            MathAssert.Near(new float2(0f, 0f), InteractionMath.WorldToUV(rect, new float2(-100f, 20f)));
+            MathAssert.Near(new float2(1f, 1f), InteractionMath.WorldToUV(rect, new float2(300f, 220f)));
+            MathAssert.Near(new float2(0.25f, 0.5f), InteractionMath.WorldToUV(rect, new float2(0f, 120f)));
         }
 
         [Test]
@@ -80,7 +82,7 @@ namespace HyperRTS.Presentation.Tests
             Assert.AreEqual(2, tracks.Count);
             Assert.AreEqual(8.6f, tracks[0].Center.x, 1e-5f);
             Assert.AreEqual(11.4f, tracks[1].Center.x, 1e-5f);
-            AssertNear(new float2(0.3f, 0.3f), tracks[0].HalfSize);
+            MathAssert.Near(new float2(0.3f, 0.3f), tracks[0].HalfSize);
             Assert.AreEqual(1f, tracks[0].Value.x);
         }
 
@@ -125,12 +127,6 @@ namespace HyperRTS.Presentation.Tests
 
             Assert.AreEqual(new float2(6f, 4f), stamp.HalfSize);
             Assert.AreEqual(new float4(1f, 1f, 0f, 0f), stamp.Value);
-        }
-
-        private static void AssertNear(float2 expected, float2 actual)
-        {
-            Assert.AreEqual(expected.x, actual.x, 1e-5f);
-            Assert.AreEqual(expected.y, actual.y, 1e-5f);
         }
 
         [Test]

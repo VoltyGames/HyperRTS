@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.RegularExpressions;
 using HyperRTS.Network.Session;
 using NUnit.Framework;
@@ -15,9 +14,7 @@ namespace HyperRTS.Simulation.Tests
     {
         // Session statics outlive Play mode in the editor; start each test as a fresh player would.
         [SetUp]
-        public void ResetSession() =>
-            typeof(NetworkSession).GetMethod("ResetStatics", BindingFlags.NonPublic | BindingFlags.Static)!
-                .Invoke(null, null);
+        public void ResetSession() => NetworkSession.ResetStatics();
 
         [TestCase(ConnectionState.State.Connecting, NetworkStatus.Connecting)]
         [TestCase(ConnectionState.State.Handshake, NetworkStatus.Connecting)]

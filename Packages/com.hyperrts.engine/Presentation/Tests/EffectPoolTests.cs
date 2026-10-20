@@ -123,9 +123,12 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void Density_ThinsByDetailLevel()
         {
-            Assert.AreEqual(0.35f, EffectDetail.DensityAt(DetailLevel.Low));
-            Assert.AreEqual(0.7f, EffectDetail.DensityAt(DetailLevel.Medium));
-            Assert.AreEqual(1f, EffectDetail.DensityAt(DetailLevel.High));
+            var low = EffectDetail.DensityAt(DetailLevel.Low);
+            var medium = EffectDetail.DensityAt(DetailLevel.Medium);
+            Assert.Greater(low, 0f, "low thins effects, never empties them");
+            Assert.Less(low, medium);
+            Assert.Less(medium, EffectDetail.DensityAt(DetailLevel.High));
+            Assert.AreEqual(1f, EffectDetail.DensityAt(DetailLevel.High), "high plays rigs as authored");
         }
     }
 }

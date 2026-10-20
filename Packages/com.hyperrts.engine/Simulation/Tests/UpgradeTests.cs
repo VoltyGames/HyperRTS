@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Upgrades;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -20,15 +19,11 @@ namespace HyperRTS.Simulation.Tests
         {
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
-            _supplies = ScriptableObject.CreateInstance<ResourceType>();
+            _supplies = _world.CreateSupplies();
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            _world.Dispose();
-            Object.DestroyImmediate(_supplies);
-        }
+        public void TearDown() => _world.Dispose();
 
         private Entity UpgradePrefab(string name, int appliesTo)
         {

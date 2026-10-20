@@ -63,11 +63,6 @@ namespace HyperRTS.Simulation.Tests
             return unit;
         }
 
-        private void Enter(Entity unit, Entity house) => _world.Command(1,
-            new PlayerCommand { Type = CommandType.Smart, Unit = unit, Target = house });
-
-        private bool IsInside(Entity unit) => _world.IsEnabled<Inside>(unit);
-
         private int Occupants(Entity house) => _world.EntityManager.GetBuffer<Cargo>(house).Length;
 
         private byte Owner(Entity house) => _world.Get<Faction>(house).Value;
@@ -93,14 +88,14 @@ namespace HyperRTS.Simulation.Tests
             var first = Rifleman(1, center + new float3(14f, 0f, 0f));
             var second = Rifleman(1, center + new float3(18f, 0f, 1f));
             var third = Rifleman(1, center + new float3(22f, 0f, -1f));
-            Enter(first, house);
-            Enter(second, house);
-            Enter(third, house);
+            _world.Enter(first, house);
+            _world.Enter(second, house);
+            _world.Enter(third, house);
 
-            _world.Run(20f);
+            _world.RunUntil(() => Occupants(house) == 3 && Owner(house) == 1, 20f);
 
             Assert.AreEqual(3, Occupants(house));
-            Assert.IsTrue(IsInside(first) && IsInside(second) && IsInside(third));
+            Assert.IsTrue(_world.IsInside(first) && _world.IsInside(second) && _world.IsInside(third));
             Assert.AreEqual(1, Owner(house), "it belongs to its garrison");
         }
 
@@ -111,15 +106,15 @@ namespace HyperRTS.Simulation.Tests
             SetNavCellSize(navCellSize);
             var house = House(float3.zero);
             var first = Rifleman(1, new float3(10f, 0f, 0f));
-            Enter(first, house);
+            _world.Enter(first, house);
             _world.Run(5f);
             Assert.AreEqual(1, Owner(house));
 
             var second = Rifleman(1, new float3(10f, 0f, 3f));
-            Enter(second, house);
+            _world.Enter(second, house);
             _world.Run(5f);
 
-            Assert.IsTrue(IsInside(second));
+            Assert.IsTrue(_world.IsInside(second));
             Assert.AreEqual(2, Occupants(house));
         }
 
@@ -128,14 +123,14 @@ namespace HyperRTS.Simulation.Tests
         {
             var house = House(float3.zero);
             var first = Rifleman(1, new float3(10f, 0f, 0f));
-            Enter(first, house);
+            _world.Enter(first, house);
             _world.Run(5f);
 
             var enemy = Rifleman(2, new float3(10f, 0f, 3f));
             _world.Command(2, new PlayerCommand { Type = CommandType.Enter, Unit = enemy, Target = house });
             _world.Run(5f);
 
-            Assert.IsFalse(IsInside(enemy));
+            Assert.IsFalse(_world.IsInside(enemy));
             Assert.AreEqual(1, Occupants(house));
         }
 
@@ -157,7 +152,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var house = House(float3.zero);
             var rifleman = Rifleman(1, new float3(10f, 0f, 0f));
-            Enter(rifleman, house);
+            _world.Enter(rifleman, house);
             _world.Run(5f);
             Assert.AreEqual(1, Owner(house));
 
@@ -165,7 +160,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick(frames: 3);
 
             Assert.IsTrue(_world.EntityManager.Exists(house));
-            Assert.IsTrue(IsInside(rifleman));
+            Assert.IsTrue(_world.IsInside(rifleman));
             Assert.AreEqual(1, Owner(house));
         }
 
@@ -178,10 +173,10 @@ namespace HyperRTS.Simulation.Tests
             for (var i = 0; i < garrison.Length; i++)
             {
                 garrison[i] = Rifleman(1, new float3(10f, 0f, i * 2f - 5f));
-                Enter(garrison[i], house);
+                _world.Enter(garrison[i], house);
             }
 
-            _world.Run(12f);
+            _world.RunUntil(() => Occupants(house) == garrison.Length, 12f);
             Assert.AreEqual(garrison.Length, Occupants(house));
             _world.EntityManager.SetComponentEnabled<Selected>(house, true);
 
@@ -211,7 +206,7 @@ namespace HyperRTS.Simulation.Tests
 
         private void AssertStandsBesideTheHouse(Entity unit)
         {
-            Assert.IsFalse(IsInside(unit), "got out");
+            Assert.IsFalse(_world.IsInside(unit), "got out");
             var position = _world.GetPosition(unit);
             Assert.IsTrue(math.all(math.isfinite(position)), "has a position");
             var outside = math.abs(position.x) >= Footprint.x * 0.5f || math.abs(position.z) >= Footprint.y * 0.5f;

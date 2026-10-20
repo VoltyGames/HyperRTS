@@ -1,6 +1,5 @@
 ﻿using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.TeamColors;
-using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -15,6 +14,7 @@ namespace HyperRTS.Presentation.Tests
         private static readonly float4 Green = new(0f, 1f, 0f, 1f);
         private static readonly float4 Blue = new(0f, 0f, 1f, 1f);
 
+        private PresentationWorldKit _kit;
         private World _world;
         private EntityManager _em;
         private MatchView _view;
@@ -22,16 +22,16 @@ namespace HyperRTS.Presentation.Tests
         [SetUp]
         public void SetUp()
         {
-            _world = new World("MatchView Colour Tests");
-            _em = _world.EntityManager;
-            var local = _em.CreateEntity(typeof(LocalPlayer));
-            _em.AddComponentData(local, new Player { Faction = 1, Color = Red });
-            _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 2, Color = Green });
+            _kit = new PresentationWorldKit("MatchView Colour Tests");
+            _world = _kit.World;
+            _em = _kit.EntityManager;
+            _kit.AddPlayer(1, Red, local: true);
+            _kit.AddPlayer(2, Green);
             _view = new MatchView();
         }
 
         [TearDown]
-        public void TearDown() => _world.Dispose();
+        public void TearDown() => _kit.Dispose();
 
         [Test]
         public void Colors_ComeFromPlayers_UntilAnOverrideReplacesThem()

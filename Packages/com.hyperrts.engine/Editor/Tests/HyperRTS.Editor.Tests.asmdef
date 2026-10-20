@@ -7,6 +7,7 @@
         "Unity.RenderPipelines.Universal.Runtime",
         "HyperRTS.Editor",
         "Unity.Mathematics",
+        "Unity.Scenes",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
-using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -19,22 +18,23 @@ namespace HyperRTS.Presentation.Tests
     {
         private const int Mortar = 7;
 
+        private PresentationWorldKit _kit;
         private World _world;
         private EntityManager _em;
         private ImpactMarkSystem _system;
         private InteractionStampSystem _stamps;
         private ImpactMark _mark;
         private Material _decal;
-        private NativeHashMap<int, Entity> _prefabs;
 
         [SetUp]
         public void SetUp()
         {
-            _world = new World("Impact Mark Tests");
-            _em = _world.EntityManager;
+            _kit = new PresentationWorldKit("Impact Mark Tests");
+            _world = _kit.World;
+            _em = _kit.EntityManager;
             _stamps = _world.CreateSystemManaged<InteractionStampSystem>();
             _system = _world.CreateSystemManaged<ImpactMarkSystem>();
-            _em.CreateEntity(typeof(CueQueue), typeof(CueEvent));
+            _kit.AddCues();
 
             _decal = new Material(Shader.Find("Shader Graphs/Decal"));
             _mark = ScriptableObject.CreateInstance<ImpactMark>();
@@ -48,33 +48,29 @@ namespace HyperRTS.Presentation.Tests
             var prefab = _em.CreateEntity(typeof(Prefab));
             _em.AddComponentData(prefab, new EntityInfo { TypeId = Mortar });
             _em.AddBuffer<EntityImpactMark>(prefab).Add(new EntityImpactMark { Mark = _mark });
-            _prefabs = new NativeHashMap<int, Entity>(1, Allocator.Persistent) { [Mortar] = prefab };
-            _em.AddComponentData(_em.CreateEntity(), new PrefabRegistry { ByTypeId = _prefabs });
+            _kit.AddRegistry();
         }
 
         [TearDown]
         public void TearDown()
         {
-            _world.Dispose();
-            _prefabs.Dispose();
+            _kit.Dispose();
             Object.DestroyImmediate(_mark);
             Object.DestroyImmediate(_decal);
         }
 
-        private void Land(float3 position, ImpactSurface surface = ImpactSurface.Ground, int typeId = Mortar)
-        {
-            using var query = _em.CreateEntityQuery(typeof(CueQueue));
-            _em.GetBuffer<CueEvent>(query.GetSingletonEntity())
-                .Add(new CueEvent { TypeId = typeId, Slot = CueSlot.Impact, Position = position, Faction = 1, Surface = surface });
-        }
+        private void Land(float3 position, ImpactSurface surface = ImpactSurface.Ground, int typeId = Mortar) =>
+            _kit.PushCue(new CueEvent
+            {
+                TypeId = typeId, Slot = CueSlot.Impact, Position = position, Faction = 1, Surface = surface,
+            });
 
         private void Run(double time)
         {
             _world.SetTime(new TimeData(time, 1f / 30f));
             _stamps.Update();
             _system.Update();
-            using var query = _em.CreateEntityQuery(typeof(CueQueue));
-            _em.GetBuffer<CueEvent>(query.GetSingletonEntity()).Clear();
+            _kit.ClearCues();
         }
 
         private static DecalProjector[] Shown() => Resources.FindObjectsOfTypeAll<DecalProjector>()

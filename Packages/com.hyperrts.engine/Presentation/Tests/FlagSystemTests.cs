@@ -18,6 +18,7 @@ namespace HyperRTS.Presentation.Tests
         private static readonly float4 Blue = new(0f, 0f, 1f, 1f);
         private static readonly float4 Red = new(1f, 0f, 0f, 1f);
 
+        private PresentationWorldKit _kit;
         private World _world;
         private EntityManager _em;
         private SystemHandle _flags;
@@ -25,11 +26,12 @@ namespace HyperRTS.Presentation.Tests
         [SetUp]
         public void SetUp()
         {
-            _world = new World("Flag Tests");
-            _em = _world.EntityManager;
+            _kit = new PresentationWorldKit("Flag Tests");
+            _world = _kit.World;
+            _em = _kit.EntityManager;
             _flags = _world.CreateSystem<FlagSystem>();
-            AddPlayer(1, Blue, LocalSide, true);
-            AddPlayer(2, Red, EnemySide, false);
+            _kit.AddPlayer(1, Blue, local: true, side: LocalSide);
+            _kit.AddPlayer(2, Red, side: EnemySide);
         }
 
         [TearDown]
@@ -43,7 +45,7 @@ namespace HyperRTS.Presentation.Tests
                 }
             }
 
-            _world.Dispose();
+            _kit.Dispose();
         }
 
         [Test]
@@ -91,17 +93,6 @@ namespace HyperRTS.Presentation.Tests
             _em.AddComponentData(building, new CaptureProgress());
             _em.AddComponentData(building, new FlagMount { Flag = flag, Drop = 3f });
             return flag;
-        }
-
-        private void AddPlayer(byte faction, float4 color, byte side, bool local)
-        {
-            var player = _em.CreateEntity();
-            _em.AddComponentData(player, new Player { Faction = faction, Color = color });
-            _em.AddComponentData(player, new PlayerSide { Value = side });
-            if (local)
-            {
-                _em.AddComponent<LocalPlayer>(player);
-            }
         }
 
         // One fog cell nobody sees, with factions 1 and 2 on opposing teams.

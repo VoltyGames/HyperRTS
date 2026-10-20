@@ -17,6 +17,7 @@ namespace HyperRTS.Presentation.Tests
         private static readonly float4 Blue = new(0f, 0f, 1f, 1f);
         private static readonly float4 Red = new(1f, 0f, 0f, 1f);
 
+        private PresentationWorldKit _kit;
         private World _world;
         private EntityManager _em;
         private SystemHandle _teamColor;
@@ -26,19 +27,18 @@ namespace HyperRTS.Presentation.Tests
         [SetUp]
         public void SetUp()
         {
-            _world = new World("Presentation Tests");
-            _em = _world.EntityManager;
+            _kit = new PresentationWorldKit("Presentation Tests");
+            _world = _kit.World;
+            _em = _kit.EntityManager;
             _commands = _world.GetOrCreateSystemManaged<BeginPresentationEntityCommandBufferSystem>();
             _teamColor = _world.CreateSystem<TeamColorSystem>();
             _fog = _world.CreateSystem<FogVisibilitySystem>();
-
-            var local = _em.CreateEntity(typeof(LocalPlayer));
-            _em.AddComponentData(local, new Player { Faction = 1, Color = Blue });
-            _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 2, Color = Red });
+            _kit.AddPlayer(1, Blue, local: true);
+            _kit.AddPlayer(2, Red);
         }
 
         [TearDown]
-        public void TearDown() => _world.Dispose();
+        public void TearDown() => _kit.Dispose();
 
         [Test]
         public void TeamColor_TintsOwnedMeshesAndChildren_LeavesNeutralAlone()

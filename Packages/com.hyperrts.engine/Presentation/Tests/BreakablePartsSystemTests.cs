@@ -14,22 +14,21 @@ namespace HyperRTS.Presentation.Tests
     {
         private static readonly float3 Origin = new(10f, 0f, 10f);
 
-        private World _world;
+        private PresentationWorldKit _kit;
         private EntityManager _em;
         private BreakablePartsSystem _system;
-        private Entity _cues;
 
         [SetUp]
         public void SetUp()
         {
-            _world = new World("Breakable Parts Tests");
-            _em = _world.EntityManager;
-            _system = _world.CreateSystemManaged<BreakablePartsSystem>();
-            _cues = _em.CreateEntity(typeof(CueQueue), typeof(CueEvent));
+            _kit = new PresentationWorldKit("Breakable Parts Tests");
+            _em = _kit.EntityManager;
+            _system = _kit.World.CreateSystemManaged<BreakablePartsSystem>();
+            _kit.AddCues();
         }
 
         [TearDown]
-        public void TearDown() => _world.Dispose();
+        public void TearDown() => _kit.Dispose();
 
         [Test]
         public void FirstFrame_ShowsTheBreakageForTheHealthInBakeOrder()
@@ -83,7 +82,7 @@ namespace HyperRTS.Presentation.Tests
             Impact(Origin + new float3(-4.5f, 1f, 0f));
             SetHealth(house, 0.75f);
             _system.Update();
-            ClearImpacts();
+            _kit.ClearCues();
             Impact(Origin + new float3(0f, 1f, 4.5f));
             SetHealth(house, 0.5f);
             _system.Update();
@@ -145,10 +144,7 @@ namespace HyperRTS.Presentation.Tests
         private void SetHealth(Entity house, float fraction) =>
             _em.SetComponentData(house, new Health { Current = 100f * fraction, Max = 100f });
 
-        private void Impact(float3 at) =>
-            _em.GetBuffer<CueEvent>(_cues).Add(new CueEvent { Slot = CueSlot.Impact, Position = at });
-
-        private void ClearImpacts() => _em.GetBuffer<CueEvent>(_cues).Clear();
+        private void Impact(float3 at) => _kit.PushCue(new CueEvent { Slot = CueSlot.Impact, Position = at });
 
         private void AssertBroken(in BreakablePart part, bool broken)
         {

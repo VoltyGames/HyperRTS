@@ -46,30 +46,8 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        private CueEvent[] Queued()
-        {
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(CueQueue));
-            var buffer = _world.EntityManager.GetBuffer<CueEvent>(query.GetSingletonEntity());
-            return buffer.AsNativeArray().ToArray();
-        }
-
-        /// <summary>Every event of the next frames; the queue itself only holds the last frame's.</summary>
-        private List<CueEvent> Heard(float seconds)
-        {
-            var heard = new List<CueEvent>();
-            for (var t = 0f; t < seconds; t += TestWorld.FrameTime)
-            {
-                _world.Tick();
-                heard.AddRange(Queued());
-            }
-
-            return heard;
-        }
-
         private static CueEvent Find(List<CueEvent> heard, CueSlot slot) =>
             heard.Find(sound => sound.Slot == slot);
-
-        private int GetTypeId(Entity entity) => _world.Get<EntityInfo>(entity).TypeId;
 
         [Test]
         public void InstantWeapon_PlaysFireAtShooter_AndImpactAtTarget()
@@ -78,10 +56,10 @@ namespace HyperRTS.Simulation.Tests
                 CueSlot.Impact);
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
-            var heard = Heard(0.5f);
+            var heard = _world.QueuedOver(0.5f);
 
             var fire = Find(heard, CueSlot.Fire);
-            Assert.AreEqual(GetTypeId(shooter), fire.TypeId);
+            Assert.AreEqual(_world.GetTypeId(shooter), fire.TypeId);
             Assert.AreEqual(1, fire.Faction);
             Assert.AreEqual(float3.zero, fire.Position);
             Assert.AreEqual(new float3(3f, 0f, 0f), Find(heard, CueSlot.Impact).Position);
@@ -93,7 +71,7 @@ namespace HyperRTS.Simulation.Tests
             _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
-            Assert.IsEmpty(Heard(3f));
+            Assert.IsEmpty(_world.QueuedOver(3f));
         }
 
         [Test]
@@ -103,7 +81,7 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.SetComponentData(bullet, LocalTransform.Identity);
             var shooter = Voiced(_world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Mortar"), range: 8f,
                 cooldown: 100f, projectile: bullet), CueSlot.Impact);
-            var typeId = GetTypeId(shooter);
+            var typeId = _world.GetTypeId(shooter);
             _world.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             using var projectiles = _world.EntityManager.CreateEntityQuery(typeof(Projectile));
@@ -113,7 +91,7 @@ namespace HyperRTS.Simulation.Tests
             }
 
             _world.EntityManager.DestroyEntity(shooter);
-            var impact = Find(Heard(2f), CueSlot.Impact);
+            var impact = Find(_world.QueuedOver(2f), CueSlot.Impact);
 
             Assert.AreEqual(typeId, impact.TypeId);
             Assert.AreEqual(6f, impact.Position.x, 0.5f);
@@ -124,9 +102,9 @@ namespace HyperRTS.Simulation.Tests
         {
             _world.AddWeapon(_world.SpawnUnit(1, float3.zero), damage: 100f);
             var victim = Voiced(_world.SpawnUnit(2, new float3(3f, 0f, 0f), name: "Victim"), CueSlot.Death);
-            var typeId = GetTypeId(victim);
+            var typeId = _world.GetTypeId(victim);
 
-            var death = Find(Heard(1f), CueSlot.Death);
+            var death = Find(_world.QueuedOver(1f), CueSlot.Death);
 
             Assert.AreEqual(typeId, death.TypeId);
             Assert.AreEqual(2, death.Faction);
@@ -144,9 +122,9 @@ namespace HyperRTS.Simulation.Tests
             _world.SpawnProvider(1, new float3(20f, 0f, 20f), 10);
 
             _world.Produce(1, producer, prefab);
-            var ready = Find(Heard(1f), CueSlot.Ready);
+            var ready = Find(_world.QueuedOver(1f), CueSlot.Ready);
 
-            Assert.AreEqual(GetTypeId(prefab), ready.TypeId);
+            Assert.AreEqual(_world.GetTypeId(prefab), ready.TypeId);
             Assert.AreEqual(1, ready.Faction);
             Assert.AreEqual(new float3(0f, 0f, -4f), ready.Position);
         }
@@ -159,7 +137,7 @@ namespace HyperRTS.Simulation.Tests
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, new float3(2f, 0f, 0f)));
             _world.Order(builder, OrderType.Build, site);
 
-            Assert.AreEqual(GetTypeId(site), Find(Heard(2f), CueSlot.Ready).TypeId);
+            Assert.AreEqual(_world.GetTypeId(site), Find(_world.QueuedOver(2f), CueSlot.Ready).TypeId);
         }
 
         [Test]
@@ -168,9 +146,9 @@ namespace HyperRTS.Simulation.Tests
             Voiced(_world.AddWeapon(_world.SpawnUnit(1, float3.zero), cooldown: 100f), CueSlot.Fire);
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
-            Assert.IsNotEmpty(Heard(0.5f).FindAll(sound => sound.Slot == CueSlot.Fire));
+            Assert.IsNotEmpty(_world.QueuedOver(0.5f).FindAll(sound => sound.Slot == CueSlot.Fire));
             _world.Tick();
-            Assert.IsEmpty(Queued());
+            Assert.IsEmpty(_world.Queued());
         }
 
         [Test]
@@ -182,18 +160,18 @@ namespace HyperRTS.Simulation.Tests
 
             _world.Command(1, move);
             _world.Tick();
-            Assert.AreEqual(CueSlot.Move, Queued()[0].Slot);
-            Assert.AreEqual(GetTypeId(unit), Queued()[0].TypeId);
+            Assert.AreEqual(CueSlot.Move, _world.Queued()[0].Slot);
+            Assert.AreEqual(_world.GetTypeId(unit), _world.Queued()[0].TypeId);
 
             _world.Command(1, move);
             _world.Tick();
-            Assert.IsEmpty(Queued(), "spam-clicking within the interval stays quiet");
+            Assert.IsEmpty(_world.Queued(), "spam-clicking within the interval stays quiet");
 
             _world.Run(AcknowledgementSystem.Interval);
             var enemy = _world.SpawnUnit(2, new float3(30f, 0f, 0f));
             _world.Command(1, new PlayerCommand { Type = CommandType.Smart, Target = enemy });
             _world.Tick();
-            Assert.AreEqual(CueSlot.Attack, Queued()[0].Slot, "a smart click on an enemy is an attack");
+            Assert.AreEqual(CueSlot.Attack, _world.Queued()[0].Slot, "a smart click on an enemy is an attack");
         }
 
         [Test]

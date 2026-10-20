@@ -5,7 +5,6 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -79,7 +78,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void ResourceIncome_PaysOwnerWithFirstOwnerBonus_AndNothingWhileNeutral()
         {
-            var supplies = ScriptableObject.CreateInstance<ResourceType>();
+            var supplies = _world.CreateSupplies();
             var derrick = _world.SpawnBuilding(0, float3.zero, new float2(4f, 4f));
             var writer = new EntityManagerWriter(_world.EntityManager, derrick);
             writer.Add(new ResourceIncome { Type = supplies, Amount = 10, Interval = 5f, FirstOwnerBonus = 100 });
@@ -90,7 +89,6 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.SetComponentData(derrick, new Faction { Value = 1 });
             _world.Run(11f);
             Assert.AreEqual(120, _world.GetResources(1, supplies), "the bonus plus two payments");
-            Object.DestroyImmediate(supplies);
         }
 
         private float3 FindNear(EntityQuery query, float3 point)

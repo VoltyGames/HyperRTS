@@ -9,13 +9,16 @@ namespace HyperRTS.Editor.Maps.Tools
     /// <summary>Writes every key a map spec can name as a Markdown reference for spec authors.</summary>
     public static class MapKeyReference
     {
-        public static void Write(string path, MapLibrary library)
+        public static void Write(string path, MapLibrary library) => File.WriteAllText(path, Text(library));
+
+        /// <summary>The reference <see cref="Write"/> writes, so a test can compare it with the committed file.</summary>
+        public static string Text(MapLibrary library)
         {
             var climates = library.Keys<MapClimate>().Select(key => library.Climate(key, null)).ToArray();
-            Write(path, library.Palette(), climates);
+            return Text(library.Palette(), climates);
         }
 
-        public static void Write(string path, MapPalette palette, params MapClimate[] climates)
+        public static string Text(MapPalette palette, params MapClimate[] climates)
         {
             var text = new StringBuilder();
             text.AppendLine("# Map keys");
@@ -29,7 +32,7 @@ namespace HyperRTS.Editor.Maps.Tools
 
             Palette(text, palette);
             // LF on every platform, so the committed file doesn't churn.
-            File.WriteAllText(path, text.ToString().Replace("\r\n", "\n"));
+            return text.ToString().Replace("\r\n", "\n");
         }
 
         private static void Climate(StringBuilder text, MapClimate climate)

@@ -48,11 +48,6 @@ namespace HyperRTS.Simulation.Tests
             return bunker;
         }
 
-        private void Enter(Entity unit, Entity container) =>
-            _world.Command(1, new PlayerCommand { Type = CommandType.Smart, Unit = unit, Target = container });
-
-        private bool IsInside(Entity unit) => _world.IsEnabled<Inside>(unit);
-
         [Test]
         public void SmartClick_Boards_UpToCapacity()
         {
@@ -60,15 +55,15 @@ namespace HyperRTS.Simulation.Tests
             var a = Passenger(new float3(8f, 0f, 0f));
             var b = Passenger(new float3(8f, 0f, 2f));
             var c = Passenger(new float3(8f, 0f, -2f));
-            Enter(a, bunker);
-            Enter(b, bunker);
-            Enter(c, bunker);
+            _world.Enter(a, bunker);
+            _world.Enter(b, bunker);
+            _world.Enter(c, bunker);
 
             _world.Run(4f);
 
             Assert.AreEqual(2, _world.EntityManager.GetBuffer<Cargo>(bunker).Length);
-            Assert.IsTrue(IsInside(a) && IsInside(b));
-            Assert.IsFalse(IsInside(c), "no room left");
+            Assert.IsTrue(_world.IsInside(a) && _world.IsInside(b));
+            Assert.IsFalse(_world.IsInside(c), "no room left");
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(c), "the order ends when full");
         }
 
@@ -80,15 +75,15 @@ namespace HyperRTS.Simulation.Tests
             var writer = new EntityManagerWriter(_world.EntityManager, truck);
             TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
             TransportSetup.AddPassenger(ref writer, 2);
-            Enter(truck, ship);
+            _world.Enter(truck, ship);
             _world.Run(2f);
-            Assert.IsTrue(IsInside(truck));
+            Assert.IsTrue(_world.IsInside(truck));
 
             var rider = Passenger(new float3(8f, 0f, 0f));
             _world.Command(1, new PlayerCommand { Type = CommandType.Enter, Unit = rider, Target = truck });
             _world.Run(2f);
 
-            Assert.IsFalse(IsInside(rider));
+            Assert.IsFalse(_world.IsInside(rider));
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<Cargo>(truck).Length);
         }
 
@@ -99,9 +94,9 @@ namespace HyperRTS.Simulation.Tests
             var writer = new EntityManagerWriter(_world.EntityManager, truck);
             TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
             var rider = Passenger(new float3(4f, 0f, 0f));
-            Enter(rider, truck);
+            _world.Enter(rider, truck);
             _world.Run(2f);
-            Assert.IsTrue(IsInside(rider));
+            Assert.IsTrue(_world.IsInside(rider));
 
             _world.Command(1, new PlayerCommand { Type = CommandType.Move, Unit = truck, Position = new float3(30f, 0f, 0f) });
             _world.Command(1, new PlayerCommand { Type = CommandType.Move, Unit = rider, Position = new float3(-30f, 0f, 0f) });
@@ -117,7 +112,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var bunker = Bunker(float3.zero, fire: true);
             var rifle = Passenger(new float3(6f, 0f, 0f), armed: true);
-            Enter(rifle, bunker);
+            _world.Enter(rifle, bunker);
             _world.Run(2f);
 
             var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 4.5f), speed: 0f);
@@ -134,13 +129,13 @@ namespace HyperRTS.Simulation.Tests
         {
             var bunker = Bunker(float3.zero);
             var rifle = Passenger(new float3(6f, 0f, 0f), armed: true);
-            Enter(rifle, bunker);
+            _world.Enter(rifle, bunker);
             _world.Run(2f);
 
             _world.Command(1, new PlayerCommand { Type = CommandType.Unload, Unit = bunker, Argument = -1 });
             _world.Tick();
 
-            Assert.IsFalse(IsInside(rifle));
+            Assert.IsFalse(_world.IsInside(rifle));
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<Cargo>(bunker).Length);
             Assert.AreEqual(Stance.Aggressive, _world.Get<CombatStance>(rifle).Value);
             Assert.Greater(math.length(_world.Get<LocalTransform>(rifle).Position.xz), 2f, "outside the footprint");
@@ -151,14 +146,14 @@ namespace HyperRTS.Simulation.Tests
         {
             var bunker = Bunker(float3.zero);
             var rifle = Passenger(new float3(6f, 0f, 0f), armed: true);
-            Enter(rifle, bunker);
+            _world.Enter(rifle, bunker);
             _world.Run(2f);
 
             _world.Command(1, new PlayerCommand { Type = CommandType.Sell, Unit = bunker });
             _world.Tick(frames: 2);
 
             Assert.IsFalse(_world.EntityManager.Exists(bunker));
-            Assert.IsFalse(IsInside(rifle));
+            Assert.IsFalse(_world.IsInside(rifle));
             Assert.AreEqual(Stance.Aggressive, _world.Get<CombatStance>(rifle).Value);
         }
 
@@ -168,17 +163,17 @@ namespace HyperRTS.Simulation.Tests
         {
             var bunker = Bunker(float3.zero, survive: survive);
             var rifle = Passenger(new float3(6f, 0f, 0f));
-            Enter(rifle, bunker);
+            _world.Enter(rifle, bunker);
             _world.Run(2f);
 
-            _world.EntityManager.SetComponentData(bunker, new Health { Current = 0f, Max = 500f });
+            _world.Kill(bunker);
             _world.Tick(frames: 3);
 
             Assert.IsFalse(_world.EntityManager.Exists(bunker));
             Assert.AreEqual(survive, _world.EntityManager.Exists(rifle));
             if (survive)
             {
-                Assert.IsFalse(IsInside(rifle));
+                Assert.IsFalse(_world.IsInside(rifle));
             }
         }
     }
