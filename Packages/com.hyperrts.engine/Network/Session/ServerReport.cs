@@ -38,7 +38,9 @@ namespace HyperRTS.Network.Session
 
         /// <summary>Process CPU time per wall second; 100 is one core busy.</summary>
         public Stat cpuPercentOfCore = new();
-        public Stat workingSetMB = new();
+
+        /// <summary>Unity's "System Used Memory" profiler counter: the whole process, as the OS sees it.</summary>
+        public Stat systemMemoryMB = new();
 
         /// <summary>Unity's "Total Used Memory" profiler counter.</summary>
         public Stat usedMemoryMB = new();

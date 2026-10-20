@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Tests
 
             var json = JsonUtility.ToJson(report);
             foreach (var key in new[] { "outcome", "exitCode", "matchMinutes", "winningTeam", "players", "unitsBuilt",
-                         "cpuPercentOfCore", "workingSetMB", "usedMemoryMB", "connections", "sentKbps", "entities",
+                         "cpuPercentOfCore", "systemMemoryMB", "usedMemoryMB", "connections", "sentKbps", "entities",
                          "p95" })
             {
                 StringAssert.Contains($"\"{key}\"", json);

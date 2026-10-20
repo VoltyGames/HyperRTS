@@ -1,10 +1,11 @@
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment
 {
     /// <summary>Shows its children (puddle decals) only while the ground is at least <see cref="threshold"/> wet.</summary>
     [ExecuteAlways]
-    public sealed class WetnessGroup : MonoBehaviour
+    public sealed class WetnessGroup : PresentationBehaviour
     {
         [Tooltip("Wetness (0 dry, 1 soaked) from which the children show.")]
         [Range(0f, 1f)]
@@ -16,7 +17,7 @@ namespace HyperRTS.Presentation.Environment
             Apply();
         }
 
-        private void OnDisable()
+        protected override void OnDisabled()
         {
             Wetness.Changed -= Apply;
         }

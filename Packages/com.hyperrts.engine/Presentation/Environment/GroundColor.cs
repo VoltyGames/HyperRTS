@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment
@@ -12,7 +13,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class GroundColor : MonoBehaviour
+    public sealed class GroundColor : PresentationBehaviour
     {
         private static readonly int PictureId = Shader.PropertyToID("_HyperRTSGroundColor");
         private static readonly int RectId = Shader.PropertyToID("_HyperRTSGroundRect");
@@ -33,7 +34,7 @@ namespace HyperRTS.Presentation.Environment
             }
         }
 
-        private void OnDisable() => Clear();
+        protected override void OnDisabled() => Clear();
 
         private void Publish()
         {

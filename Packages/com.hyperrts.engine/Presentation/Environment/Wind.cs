@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -14,7 +15,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class Wind : MonoBehaviour
+    public sealed class Wind : PresentationBehaviour
     {
         private const int GustMapSize = 128;
 
@@ -64,7 +65,7 @@ namespace HyperRTS.Presentation.Environment
             Shader.SetGlobalFloat(DetailId, (float)vegetation);
         }
 
-        private void OnDisable()
+        protected override void OnDisabled()
         {
             Shader.SetGlobalFloat(StrengthId, 0f);
             Shader.SetGlobalFloat(DetailId, (float)WindDetail.None);

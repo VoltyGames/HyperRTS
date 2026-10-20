@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -13,7 +14,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class Atmosphere : MonoBehaviour
+    public sealed class Atmosphere : PresentationBehaviour
     {
         [Tooltip("Sky material; also the source of ambient light.")]
         public Material skybox;
@@ -49,7 +50,7 @@ namespace HyperRTS.Presentation.Environment
             DynamicGI.UpdateEnvironment();
         }
 
-        private void OnDisable() => Wetness.Publish(0f);
+        protected override void OnDisabled() => Wetness.Publish(0f);
 
         private bool IsComplete()
         {

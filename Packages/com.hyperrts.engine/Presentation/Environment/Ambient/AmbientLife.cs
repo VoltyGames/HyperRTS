@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using System;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Cues;
@@ -14,7 +15,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class AmbientLife : MonoBehaviour
+    public sealed class AmbientLife : PresentationBehaviour
     {
         // Graphics.RenderMeshInstanced draws at most this many instances per call.
         private const int MaxBirds = 1023;
@@ -99,7 +100,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
 
         private void OnEnable() => Active = this;
 
-        private void OnDisable()
+        protected override void OnDisabled()
         {
             if (Active == this)
             {

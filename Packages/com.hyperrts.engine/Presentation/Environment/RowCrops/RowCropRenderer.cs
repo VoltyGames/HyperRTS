@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
@@ -17,7 +18,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class RowCropRenderer : MonoBehaviour
+    public sealed class RowCropRenderer : PresentationBehaviour
     {
         private static float _density = PresentationQuality.Default.CropDensity;
         private static float _distance = PresentationQuality.Default.CropDistance;
@@ -66,7 +67,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             RenderPipelineManager.beginCameraRendering += Render;
         }
 
-        private void OnDisable()
+        protected override void OnDisabled()
         {
             RenderPipelineManager.beginCameraRendering -= Render;
             Release();

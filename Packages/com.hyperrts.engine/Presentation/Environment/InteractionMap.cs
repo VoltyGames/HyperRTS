@@ -11,7 +11,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class InteractionMap : MonoBehaviour
+    public sealed class InteractionMap : PresentationBehaviour
     {
         [SerializeField]
         [Tooltip("The " + InteractionBrush.ShaderName + " shader the maps are drawn with.")]
@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>Map resolution, or Off. Written by <see cref="Rendering.PresentationQuality.Apply"/>.</summary>
         public static InteractionQuality Quality { get; internal set; } = PresentationQuality.Default.Interactions;
 
-        private void Awake() => _brush = new InteractionBrush(brush);
+        protected override void OnAwake() => _brush = new InteractionBrush(brush);
 
         private void LateUpdate()
         {
@@ -42,9 +42,9 @@ namespace HyperRTS.Presentation.Environment
             _brush.Draw(_surfaces, recovery, fade, stamps);
         }
 
-        private void OnDisable() => Release();
+        protected override void OnDisabled() => Release();
 
-        private void OnDestroy() => _brush?.Dispose();
+        protected override void OnDestroyed() => _brush?.Dispose();
 
         private static bool TryGetStamps(out MatchView view, out InteractionStamps stamps)
         {

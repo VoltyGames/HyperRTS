@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -5,7 +6,7 @@ namespace HyperRTS.Presentation.HUD
 {
     /// <summary>Adds one element tree to the <see cref="PanelRenderer"/> and rebuilds it whenever the panel reloads.</summary>
     [RequireComponent(typeof(PanelRenderer))]
-    public abstract class PanelContent : MonoBehaviour
+    public abstract class PanelContent : PresentationBehaviour
     {
         private int _uiVersion = -1;
 
@@ -15,12 +16,12 @@ namespace HyperRTS.Presentation.HUD
         protected abstract VisualElement Build();
 
         // Register once (not in OnEnable) so reloads never duplicate the content.
-        protected virtual void Awake()
+        protected override void OnAwake()
         {
             GetComponent<PanelRenderer>().RegisterUIReloadCallback(OnUIReload);
         }
 
-        protected virtual void OnDestroy()
+        protected override void OnDestroyed()
         {
             if (TryGetComponent<PanelRenderer>(out var panelRenderer))
             {

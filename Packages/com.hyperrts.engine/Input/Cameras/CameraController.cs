@@ -1,6 +1,7 @@
 using HyperRTS.Client.Common;
 using HyperRTS.Client.Interaction;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
@@ -14,7 +15,7 @@ namespace HyperRTS.Input.Cameras
     [HelpURL(HyperRTSDocs.Input)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
-    public class CameraController : MonoBehaviour
+    public class CameraController : PresentationBehaviour
     {
         // Mouse delta is per frame, so yaw scales with pixels dragged rather than time.
         private const float DegreesPerPixel = 1f / 500f;
@@ -76,14 +77,14 @@ namespace HyperRTS.Input.Cameras
         /// <summary>Centres the view on a world point, keeping height and rotation.</summary>
         public void FocusOn(Vector3 worldPoint) => PlaceAt(ClampToMap(worldPoint), transform.position.y);
 
-        private void Awake()
+        protected override void OnAwake()
         {
             _actions = InputActionsProvider.Actions;
         }
 
         private void OnEnable() => InputActionsProvider.Enable(_actions.Camera);
 
-        private void OnDisable() => InputActionsProvider.Disable(_actions.Camera);
+        protected override void OnDisabled() => InputActionsProvider.Disable(_actions.Camera);
 
         private void Start()
         {

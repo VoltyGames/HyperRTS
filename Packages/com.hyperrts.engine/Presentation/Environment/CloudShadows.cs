@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -14,7 +15,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class CloudShadows : MonoBehaviour
+    public sealed class CloudShadows : PresentationBehaviour
     {
         [Tooltip("Tileable greyscale clouds: white lets the sun through, darker is cloud shadow.")]
         public Texture2D clouds;
@@ -38,7 +39,7 @@ namespace HyperRTS.Presentation.Environment
             }
         }
 
-        private void OnDisable()
+        protected override void OnDisabled()
         {
             if (_light != null)
             {

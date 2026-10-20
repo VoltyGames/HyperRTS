@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.HUD
@@ -11,7 +12,7 @@ namespace HyperRTS.Presentation.HUD
     [Icon(HyperRTSIcons.UI)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class MinimapImage : MonoBehaviour
+    public sealed class MinimapImage : PresentationBehaviour
     {
         [Tooltip("Covers the match's map rectangle exactly, north up.")]
         public Texture2D image;

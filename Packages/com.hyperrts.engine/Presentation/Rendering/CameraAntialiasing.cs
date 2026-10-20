@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -10,7 +11,7 @@ namespace HyperRTS.Presentation.Rendering
     [Icon(HyperRTSIcons.Cameras)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class CameraAntialiasing : MonoBehaviour
+    public sealed class CameraAntialiasing : PresentationBehaviour
     {
         private UniversalAdditionalCameraData _data;
 
@@ -21,7 +22,7 @@ namespace HyperRTS.Presentation.Rendering
             Apply();
         }
 
-        private void OnDisable() => CameraAntialiasingMode.Changed -= Apply;
+        protected override void OnDisabled() => CameraAntialiasingMode.Changed -= Apply;
 
         private void Apply()
         {

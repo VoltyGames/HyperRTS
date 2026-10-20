@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects
@@ -8,7 +9,7 @@ namespace HyperRTS.Presentation.Effects
     [Icon(HyperRTSIcons.Effects)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
-    public class EffectLight : MonoBehaviour
+    public class EffectLight : PresentationBehaviour
     {
         [Tooltip("Colour of the flash.")]
         public Color color = new(1f, 0.75f, 0.45f);

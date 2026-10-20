@@ -13,7 +13,7 @@ namespace HyperRTS.Presentation.Overlays
     [Icon(HyperRTSIcons.UI)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public class OverlayRenderer : MonoBehaviour
+    public class OverlayRenderer : PresentationBehaviour
     {
         [SerializeField]
         [Tooltip("HyperRTS/Overlay material; tinted per overlay through _BaseColor.")]
@@ -29,7 +29,7 @@ namespace HyperRTS.Presentation.Overlays
         private BuildingOverlays _buildings;
         private CommandOverlays _commands;
 
-        private void Awake()
+        protected override void OnAwake()
         {
             var ring = OverlayMeshes.Ring(48, 0.82f);
             var billboard = OverlayMeshes.Billboard();
@@ -61,7 +61,7 @@ namespace HyperRTS.Presentation.Overlays
             _commands.Draw(_materials.DepthTested, style, gameObject.layer);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroyed()
         {
             foreach (var mesh in _meshes)
             {

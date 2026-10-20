@@ -61,8 +61,17 @@ A bad flag or a session that can't start logs the reason and quits with exit cod
 on the time limit. In batch mode nothing renders, so the launcher turns vSync off and caps the frame rate at the
 simulation tick rate (60 Hz) instead of spinning.
 
+Without a graphics device (`-nographics`, `PresentationGate.HasGraphics` false) shaders, materials and compute kernels
+never load, so presentation stays off: every presentation and input MonoBehaviour derives from `PresentationBehaviour`,
+which disables itself in Awake before OnEnable or an update can run, and `PresentationGateSystem` switches off the
+`PresentationSystemGroup` of a presented world. A server or headless client only simulates and networks.
+
+The server's Match is a prespawned ghost, and Netcode enables prespawns only once the first client is in game, so
+`MatchStartSystem` and the match start then: a server with nobody connected never starts, and a cost run needs at least
+one observer.
+
 `ServerMonitor` watches a server that ends itself. From `MatchState.Started` it samples once a second: process CPU
-time per wall second (`cpuPercentOfCore`, 100 = one core busy), working set, Unity's "Total Used Memory" profiler
+time per wall second (`cpuPercentOfCore`, 100 = one core busy), the process's system memory ("System Used Memory"), Unity's "Total Used Memory" profiler
 counter, connections (`NetworkId` entities), kilobits per second sent by every driver (`GetStatistics().TxTotalBytes`)
 and entities in the server world. The report gives mean, p95 (nearest rank) and max of each, plus the outcome, server
 and match minutes, the winning team, each player's `PlayerStats` and the number of errors logged.
@@ -100,7 +109,8 @@ calls `Stop()` or starts a new session, so the UI can show why instead of an emp
 so the AI and the first players to load don't get a head start. The order phase keeps running so player ghosts spawn
 and joins bind; movement, combat, production, lifecycle and the skirmish AI wait, and `CommandReceiveSystem`
 drops every player command, so nothing in the order phase (placing, selling, abilities) acts early. After
-`MatchRules.JoinTimeout` seconds (the Match's **Join Timeout**, 60 by default) it starts anyway. It then sets
+`MatchRules.JoinTimeout` seconds (the Match's **Join Timeout**, 60 by default) it starts anyway. A match of only AI
+starts as soon as its player ghosts spawn. It then sets
 `MatchState.Started`, which client loading screens wait for. Single-player matches never hold.
 
 ## Join and reconnect

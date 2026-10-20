@@ -15,8 +15,11 @@ namespace HyperRTS.Network.Session
         private readonly Process _process = Process.GetCurrentProcess();
         private readonly Stopwatch _clock = Stopwatch.StartNew();
         private ProfilerRecorder _usedMemory = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "Total Used Memory");
+
+        // Process.WorkingSet64 reads 0 in a Mono player; this counter is the process's memory as the OS sees it.
+        private ProfilerRecorder _systemMemory = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "System Used Memory");
         private readonly List<float> _cpu = new();
-        private readonly List<float> _workingSet = new();
+        private readonly List<float> _systemMemoryMB = new();
         private readonly List<float> _usedMemoryMB = new();
         private readonly List<float> _connections = new();
         private readonly List<float> _sentKbps = new();
@@ -43,7 +46,7 @@ namespace HyperRTS.Network.Session
             var cpu = _process.TotalProcessorTime;
             _cpu.Add((float)((cpu - _lastCpu).TotalSeconds / interval * 100.0));
             _lastCpu = cpu;
-            _workingSet.Add(_process.WorkingSet64 / Megabyte);
+            _systemMemoryMB.Add(_systemMemory.LastValue / Megabyte);
             _usedMemoryMB.Add(_usedMemory.LastValue / Megabyte);
 
             var sent = SentBytes(entityManager);
@@ -57,7 +60,7 @@ namespace HyperRTS.Network.Session
         {
             report.samples = _cpu.Count;
             report.cpuPercentOfCore = ServerReport.Stat.Summarize(_cpu);
-            report.workingSetMB = ServerReport.Stat.Summarize(_workingSet);
+            report.systemMemoryMB = ServerReport.Stat.Summarize(_systemMemoryMB);
             report.usedMemoryMB = ServerReport.Stat.Summarize(_usedMemoryMB);
             report.connections = ServerReport.Stat.Summarize(_connections);
             report.sentKbps = ServerReport.Stat.Summarize(_sentKbps);
@@ -67,6 +70,7 @@ namespace HyperRTS.Network.Session
         public void Dispose()
         {
             _usedMemory.Dispose();
+            _systemMemory.Dispose();
             _process.Dispose();
         }
 

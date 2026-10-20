@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
@@ -14,7 +15,7 @@ namespace HyperRTS.Presentation.Effects
     [Icon(HyperRTSIcons.Effects)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
-    public class EffectRig : MonoBehaviour
+    public class EffectRig : PresentationBehaviour
     {
         [Tooltip("Not played beyond this many metres from the camera.")]
         public float maxDistance = 150f;

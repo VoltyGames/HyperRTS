@@ -1,5 +1,6 @@
 using HyperRTS.Client.Common;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
@@ -17,7 +18,7 @@ namespace HyperRTS.Presentation.Audio
     [HelpURL(HyperRTSDocs.Audio)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioListener))]
-    public class SoundListener : MonoBehaviour
+    public class SoundListener : PresentationBehaviour
     {
         [Tooltip("Camera to follow; empty uses the main camera.")]
         public Camera view;

@@ -20,12 +20,14 @@ namespace HyperRTS.Network.Players
     [UpdateAfter(typeof(PlayerGhostSystem))]
     public partial struct MatchStartSystem : ISystem
     {
+        private EntityQuery _players;
         private EntityQuery _humans;
         private double _waitingSince;
         private bool _holding;
 
         public void OnCreate(ref SystemState state)
         {
+            _players = SystemAPI.QueryBuilder().WithAll<Player, PlayerConnection>().Build();
             _humans = SystemAPI.QueryBuilder().WithAll<Player, PlayerConnection>().WithNone<AIPlayer>().Build();
             state.RequireForUpdate<MatchState>();
         }
@@ -46,7 +48,8 @@ namespace HyperRTS.Network.Players
                 SetGameplay(ref state, false);
             }
 
-            if (!AllJoined() && now - _waitingSince < JoinTimeout(ref state))
+            var humans = _humans.ToComponentDataArray<PlayerConnection>(Allocator.Temp);
+            if (!AllJoined(_players.CalculateEntityCount(), humans) && now - _waitingSince < JoinTimeout(ref state))
             {
                 return;
             }
@@ -67,15 +70,16 @@ namespace HyperRTS.Network.Players
             return timeout;
         }
 
-        // Player ghosts spawn a frame after the map loads, so an empty query is "not yet", not "nobody".
-        private bool AllJoined()
+        /// <summary>Every spawned human has a connection; a match of only AI has once its players spawn.</summary>
+        public static bool AllJoined(int players, NativeArray<PlayerConnection> humans)
         {
-            if (_humans.IsEmpty)
+            // Player ghosts spawn a frame after the map loads, so no players is "not yet", not "nobody".
+            if (players == 0)
             {
                 return false;
             }
 
-            foreach (var connection in _humans.ToComponentDataArray<PlayerConnection>(Allocator.Temp))
+            foreach (var connection in humans)
             {
                 if (connection.NetworkId == 0)
                 {

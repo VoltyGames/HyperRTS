@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
@@ -14,7 +15,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class WeatherSet : MonoBehaviour
+    public sealed class WeatherSet : PresentationBehaviour
     {
         [Tooltip("Key of the weather the scene was built with; its atmosphere is this object's child.")]
         public string defaultKey;
@@ -24,7 +25,7 @@ namespace HyperRTS.Presentation.Environment
         private string _currentKey;
 
         // Awake, before the first frame renders, so the default weather never shows when another was picked.
-        private void Awake()
+        protected override void OnAwake()
         {
             _currentKey = defaultKey;
             var requested = MatchSetupRequest.TryGet(out var setup) ? setup.Weather.ToString() : "";

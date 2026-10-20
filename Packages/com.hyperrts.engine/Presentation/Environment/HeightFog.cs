@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment
@@ -12,7 +13,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class HeightFog : MonoBehaviour
+    public sealed class HeightFog : PresentationBehaviour
     {
         private static readonly int ColorId = Shader.PropertyToID("_HyperRTSFogColor");
         private static readonly int SunColorId = Shader.PropertyToID("_HyperRTSFogSunColor");
@@ -57,7 +58,7 @@ namespace HyperRTS.Presentation.Environment
             Publish();
         }
 
-        private void OnDisable()
+        protected override void OnDisabled()
         {
             if (Current != this)
             {

@@ -18,7 +18,7 @@ namespace HyperRTS.Presentation.Fog
     [Icon(HyperRTSIcons.Vision)]
     [HelpURL(HyperRTSDocs.Vision)]
     [DisallowMultipleComponent]
-    public class FogOfWarRenderer : MonoBehaviour
+    public class FogOfWarRenderer : PresentationBehaviour
     {
         private static readonly int FogTexId = Shader.PropertyToID("_FogTex");
         private static readonly int FogRectId = Shader.PropertyToID("_FogRect");
@@ -130,7 +130,7 @@ namespace HyperRTS.Presentation.Fog
 
         private static byte ToByte(float opacity) => (byte)Mathf.RoundToInt(Mathf.Clamp01(opacity) * 255f);
 
-        private void OnDestroy()
+        protected override void OnDestroyed()
         {
             DestroyTexture();
             if (_box != null)
