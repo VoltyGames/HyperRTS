@@ -21,7 +21,6 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<BuildingTag> _buildings;
         private ComponentLookup<NavAgent> _agents;
         private ComponentLookup<HitMaterial> _materials;
-        private NavGrid _noGrid;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -29,11 +28,9 @@ namespace HyperRTS.Simulation.Combat
             _buildings = state.GetComponentLookup<BuildingTag>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
             _materials = state.GetComponentLookup<HitMaterial>(true);
-            _noGrid = NavGrid.Placeholder();
             state.RequireForUpdate<CueQueue>();
+            state.RequireForUpdate<NavGrid>();
         }
-
-        public void OnDestroy(ref SystemState state) => _noGrid.Dispose();
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
@@ -41,15 +38,13 @@ namespace HyperRTS.Simulation.Combat
             _buildings.Update(ref state);
             _agents.Update(ref state);
             _materials.Update(ref state);
-            var hasGrid = SystemAPI.TryGetSingleton<NavGrid>(out var grid) && grid.IsCreated;
             var hasGround = SystemAPI.TryGetSingleton<GroundMaterials>(out var ground);
             new ClassifyJob
             {
                 Buildings = _buildings,
                 Agents = _agents,
                 Materials = _materials,
-                Grid = hasGrid ? grid : _noGrid,
-                HasGrid = hasGrid,
+                Grid = SystemAPI.GetSingleton<NavGrid>(),
                 Ground = ground,
                 HasGround = hasGround,
             }.Schedule();
@@ -63,7 +58,6 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<NavAgent> Agents;
             [ReadOnly] public ComponentLookup<HitMaterial> Materials;
             [ReadOnly] public NavGrid Grid;
-            public bool HasGrid;
             public GroundMaterials Ground;
             public bool HasGround;
 
@@ -95,7 +89,7 @@ namespace HyperRTS.Simulation.Combat
                     return ImpactSurface.Air;
                 }
 
-                return HasGrid ? SurfaceAt(impact.Position) : ImpactSurface.Ground;
+                return SurfaceAt(impact.Position);
             }
 
             /// <summary>The target's own material wins; open ground comes from the baked ground material map.</summary>

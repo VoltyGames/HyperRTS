@@ -21,12 +21,11 @@ namespace HyperRTS.Simulation.Abilities
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct AbilityCommandSystem : ISystem
     {
-        private EntityQuery _selected;
+        private CommandReader _commands;
         private EntityQuery _completed;
         private OrderWriter _writer;
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
-        private EntityQuery _commanders;
         private ComponentLookup<Faction> _factions;
         private AbilityCaster _caster;
 
@@ -35,16 +34,18 @@ namespace HyperRTS.Simulation.Abilities
             var events = state.EntityManager.CreateEntity(typeof(AbilityEvents), typeof(AbilityActivation));
             state.EntityManager.SetName(events, "AbilityEvents");
 
-            _selected = SystemAPI.QueryBuilder().WithAll<Ability, Selected, Faction>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Ability, Selected, Faction>().WithNone<Dead>().Build();
+            _commands = new CommandReader(ref state, TypeSet.Range(CommandType.UseAbility, CommandType.UsePower),
+                selected);
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _writer = new OrderWriter(ref state);
             _targets = new TargetLookup(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
-            _commanders = PlayerCommands.Query(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -53,8 +54,8 @@ namespace HyperRTS.Simulation.Abilities
         {
             var events = SystemAPI.GetSingletonEntity<AbilityEvents>();
             SystemAPI.GetBuffer<AbilityActivation>(events).Clear();
-            var types = TypeSet.Range(CommandType.UseAbility, CommandType.UsePower);
-            if (!PlayerCommands.Any(ref state, _commanders, types))
+            var issued = _commands.Read(ref state);
+            if (issued.IsEmpty)
             {
                 return;
             }
@@ -71,34 +72,19 @@ namespace HyperRTS.Simulation.Abilities
                 Completed = new CompletedBuildings(_completed, Allocator.Temp),
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
-                HasMap = SystemAPI.TryGetSingleton<MapSettings>(out var map),
-                Map = map,
             };
-            Dispatch(ref state, context);
-        }
-
-        private void Dispatch(ref SystemState state, in Context context)
-        {
-            foreach (var (player, commands, listed, entity) in SystemAPI
-                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>>()
-                         .WithNone<Defeated>().WithEntityAccess())
+            var map = SystemAPI.GetSingleton<MapSettings>();
+            foreach (var each in issued)
             {
-                foreach (var command in commands)
+                var aimed = each;
+                aimed.Command.Position = map.Clamp(each.Command.Position);
+                if (aimed.Command.Type == CommandType.UseAbility)
                 {
-                    var aimed = command;
-                    if (context.HasMap)
-                    {
-                        aimed.Position = context.Map.Clamp(command.Position);
-                    }
-
-                    if (command.Type == CommandType.UseAbility)
-                    {
-                        UseAbility(ref state, player.ValueRO.Faction, aimed, listed, context);
-                    }
-                    else if (command.Type == CommandType.UsePower)
-                    {
-                        UsePower(ref state, entity, player.ValueRO.Faction, aimed, context);
-                    }
+                    UseAbility(ref state, aimed, context);
+                }
+                else
+                {
+                    UsePower(ref state, aimed.Player, aimed.Faction, aimed.Command, context);
                 }
             }
         }
@@ -108,15 +94,14 @@ namespace HyperRTS.Simulation.Abilities
             public FactionRelations Relations;
             public CompletedBuildings Completed;
             public EntityCommandBuffer Ecb;
-            public bool HasMap;
-            public MapSettings Map;
         }
 
-        private void UseAbility(ref SystemState state, byte faction, in PlayerCommand command,
-            DynamicBuffer<PlayerCommandSubject> listed, in Context context)
+        private void UseAbility(ref SystemState state, in IssuedCommand issued, in Context context)
         {
+            var faction = issued.Faction;
+            var command = issued.Command;
             var closest = Closest.None;
-            foreach (var caster in PlayerCommands.Collect(command, listed, _selected))
+            foreach (var caster in _commands.Subjects(ref state, issued))
             {
                 var index = UsableIndex(ref state, caster, faction, command, context);
                 if (index < 0)
@@ -146,7 +131,7 @@ namespace HyperRTS.Simulation.Abilities
         private int UsableIndex(ref SystemState state, Entity caster, byte faction, in PlayerCommand command,
             in Context context)
         {
-            if (!CanCast(ref state, caster, faction))
+            if (!CanCast(ref state, caster))
             {
                 return -1;
             }
@@ -156,16 +141,9 @@ namespace HyperRTS.Simulation.Abilities
             return index >= 0 && IsUsable(abilities[index], faction, command, context) ? index : -1;
         }
 
-        /// <summary>An owned caster that is finished and powered.</summary>
-        private bool CanCast(ref SystemState state, Entity caster, byte faction)
-        {
-            if (!SystemAPI.HasBuffer<Ability>(caster) || SystemAPI.GetComponent<Faction>(caster).Value != faction)
-            {
-                return false;
-            }
-
-            return AbilityRules.CanCast(state.EntityManager, caster);
-        }
+        /// <summary>A caster that is finished and powered.</summary>
+        private bool CanCast(ref SystemState state, Entity caster) =>
+            SystemAPI.HasBuffer<Ability>(caster) && AbilityRules.CanCast(state.EntityManager, caster);
 
         private bool IsUsable(in Ability ability, byte faction, in PlayerCommand command, in Context context) =>
             AbilityRules.IsUsable(ability, command.Target, faction, context.Completed, _targets, _factions,

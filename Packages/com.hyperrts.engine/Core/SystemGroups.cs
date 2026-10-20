@@ -3,7 +3,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Core
 {
-    // Frame order: Order -> Movement -> Combat -> Production -> Lifecycle.
+    // Frame order: Order (AI first) -> Movement -> Combat -> Production -> Lifecycle. GameplayPhases pauses them.
     // Every phase exists on clients too, but systems default to the authoritative worlds (local and server);
     // client-side ones (selection, input, fog view) opt in with their own [WorldSystemFilter].
 
@@ -12,6 +12,13 @@ namespace HyperRTS.Core
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateBefore(typeof(MovementSystemGroup))]
     public partial class OrderSystemGroup : ComponentSystemGroup
+    {
+    }
+
+    /// <summary>Every computer player's systems, first in the order phase so their commands land this frame.</summary>
+    [WorldSystemFilter(SimulationWorlds.Authoritative, SimulationWorlds.Authoritative)]
+    [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
+    public partial class AISystemGroup : ComponentSystemGroup
     {
     }
 

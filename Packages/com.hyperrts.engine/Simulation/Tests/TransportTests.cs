@@ -142,6 +142,21 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void DefeatedPlayer_CannotUnload()
+        {
+            var bunker = Bunker(float3.zero);
+            var rifle = Passenger(new float3(6f, 0f, 0f));
+            _world.Enter(rifle, bunker);
+            _world.Run(2f);
+            _world.EntityManager.SetComponentEnabled<Defeated>(_world.Player(1), true);
+
+            _world.Command(1, new PlayerCommand { Type = CommandType.Unload, Unit = bunker, Argument = -1 });
+            _world.World.GetExistingSystem<UnloadSystem>().Update(_world.World.Unmanaged);
+
+            Assert.IsTrue(_world.IsInside(rifle), "a surrendered player's containers stay shut");
+        }
+
+        [Test]
         public void SellingAGarrison_LetsPassengersOut()
         {
             var bunker = Bunker(float3.zero);

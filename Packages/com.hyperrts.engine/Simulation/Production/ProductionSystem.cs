@@ -47,6 +47,7 @@ namespace HyperRTS.Simulation.Production
             _padUserLookup = state.GetComponentLookup<HomePad>(true);
             _producedLookup = state.GetBufferLookup<UnitProduced>();
             state.RequireForUpdate<GameEvents>();
+            state.RequireForUpdate<MatchRules>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -65,11 +66,10 @@ namespace HyperRTS.Simulation.Production
             _producedLookup.Update(ref state);
 
             var allocator = state.WorldUpdateAllocator;
-            var rules = SystemAPI.TryGetSingleton<MatchRules>(out var match) ? match : MatchRules.Default;
             new ProduceJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                LowPowerRate = rules.LowPowerProductionRate,
+                LowPowerRate = SystemAPI.GetSingleton<MatchRules>().LowPowerProductionRate,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),

@@ -121,7 +121,7 @@ namespace HyperRTS.Simulation.Combat
                     return true;
                 }
 
-                return Orders[entity].Value.Type.EngagesWhileMoving();
+                return Orders[entity].Value.Has(OrderTraits.EngagesWhileMoving);
             }
         }
 

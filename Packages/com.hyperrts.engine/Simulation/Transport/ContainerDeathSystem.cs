@@ -15,29 +15,19 @@ namespace HyperRTS.Simulation.Transport
     public partial struct ContainerDeathSystem : ISystem
     {
         private CargoExit _exit;
-        private NavGrid _noGrid;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _exit = new CargoExit(ref state);
-            _noGrid = NavGrid.Placeholder();
+            state.RequireForUpdate<NavGrid>();
         }
-
-        [BurstCompile]
-        public void OnDestroy(ref SystemState state) => _noGrid.Dispose();
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _exit.Update(ref state);
-            var hasGrid = SystemAPI.TryGetSingleton<NavGrid>(out var grid) && grid.IsCreated;
-            new EvacuateJob
-            {
-                Exit = _exit,
-                HasGrid = hasGrid,
-                Grid = hasGrid ? grid : _noGrid,
-            }.Schedule();
+            new EvacuateJob { Exit = _exit, Grid = SystemAPI.GetSingleton<NavGrid>() }.Schedule();
         }
 
         [BurstCompile]
@@ -45,7 +35,6 @@ namespace HyperRTS.Simulation.Transport
         private partial struct EvacuateJob : IJobEntity
         {
             public CargoExit Exit;
-            public bool HasGrid;
             [ReadOnly] public NavGrid Grid;
 
             private void Execute(Entity entity, in Container container, DynamicBuffer<Cargo> cargo)
@@ -57,7 +46,7 @@ namespace HyperRTS.Simulation.Transport
 
                 if (container.PassengersSurvive)
                 {
-                    Exit.Unload(entity, cargo, -1, HasGrid, Grid);
+                    Exit.Unload(entity, cargo, -1, Grid);
                 }
                 else
                 {

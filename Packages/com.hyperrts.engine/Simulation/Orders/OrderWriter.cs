@@ -54,7 +54,10 @@ namespace HyperRTS.Simulation.Orders
             return true;
         }
 
-        /// <summary>Replaces current orders, or appends when <paramref name="queue"/> and the unit is busy.</summary>
+        /// <summary>
+        /// Replaces current orders, or appends when <paramref name="queue"/> and the unit is busy. A game order
+        /// (<see cref="OrderType.GameFirst"/> up) brings its own <see cref="Order.Traits"/>.
+        /// </summary>
         public void Issue(Entity unit, in Order order, bool queue)
         {
             if (!CanReceiveOrders(unit))
@@ -62,15 +65,16 @@ namespace HyperRTS.Simulation.Orders
                 return;
             }
 
+            var stamped = order.WithTypeTraits();
             var pending = _queue[unit];
             if (queue && (_active.IsComponentEnabled(unit) || pending.Length > 0))
             {
-                pending.Add(new QueuedOrder { Value = order });
+                pending.Add(new QueuedOrder { Value = stamped });
                 return;
             }
 
             Interrupt(unit);
-            _active[unit] = new ActiveOrder { Value = order };
+            _active[unit] = new ActiveOrder { Value = stamped };
             _active.SetComponentEnabled(unit, true);
         }
 

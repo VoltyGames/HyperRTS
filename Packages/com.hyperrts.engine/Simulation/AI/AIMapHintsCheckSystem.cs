@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.AI
     /// this logs one error naming the map when the hints are missing (or lack an AI player's slot) instead of the
     /// bots quietly doing something else.
     /// </summary>
-    [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
+    [UpdateInGroup(typeof(AISystemGroup), OrderFirst = true)]
     public partial struct AIMapHintsCheckSystem : ISystem
     {
         public void OnCreate(ref SystemState state)

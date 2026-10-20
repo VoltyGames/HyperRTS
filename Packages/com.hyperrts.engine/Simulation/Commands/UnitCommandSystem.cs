@@ -28,12 +28,10 @@ namespace HyperRTS.Simulation.Commands
         private OrderWriter _writer;
         private OrderResolver _resolver;
         private EntityQuery _fogQuery;
-        private EntityQuery _commanders;
-        private ComponentLookup<Faction> _factions;
+        private CommandReader _commands;
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<NavAgent> _agents;
         private ComponentLookup<CombatStance> _stances;
-        private EntityQuery _selected;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -41,22 +39,23 @@ namespace HyperRTS.Simulation.Commands
             _writer = new OrderWriter(ref state);
             _resolver = new OrderResolver(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
-            _commanders = PlayerCommands.Query(ref state);
-            _factions = state.GetComponentLookup<Faction>(true);
+            var selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction>().WithPresent<ActiveOrder>()
+                .WithNone<Dead>().Build();
+            _commands = new CommandReader(ref state, UnitCommands, selected);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
             _stances = state.GetComponentLookup<CombatStance>();
-            _selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction>().WithPresent<ActiveOrder>()
-                .WithNone<Dead>().Build();
             state.RequireForUpdate<PlayerCommand>();
+            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<MapSettings>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             // Most frames carry no commands; skip the sync with every job touching unit components.
-            var unitCommands = UnitCommands;
-            if (!PlayerCommands.Any(ref state, _commanders, unitCommands))
+            var issued = _commands.Read(ref state);
+            if (issued.IsEmpty)
             {
                 return;
             }
@@ -64,37 +63,23 @@ namespace HyperRTS.Simulation.Commands
             state.CompleteDependency();
             _writer.Update(ref state);
             _resolver.Update(ref state, _fogQuery);
-            _factions.Update(ref state);
             _transforms.Update(ref state);
             _agents.Update(ref state);
             _stances.Update(ref state);
 
-            SystemAPI.TryGetSingleton<FactionRelations>(out var relations);
-            var hasMap = SystemAPI.TryGetSingleton<MapSettings>(out var map);
+            var relations = SystemAPI.GetSingleton<FactionRelations>();
+            var map = SystemAPI.GetSingleton<MapSettings>();
             var subjects = new NativeList<Entity>(64, Allocator.Temp);
-            foreach (var (player, commands, listed) in SystemAPI
-                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>>())
+            foreach (var each in issued)
             {
-                for (var i = 0; i < commands.Length; i++)
+                if (!GatherSubjects(ref state, each, subjects))
                 {
-                    var command = commands[i];
-                    if (!unitCommands.Contains(command.Type))
-                    {
-                        continue;
-                    }
-
-                    if (!GatherSubjects(player.ValueRO.Faction, command, listed, subjects))
-                    {
-                        continue;
-                    }
-
-                    if (hasMap)
-                    {
-                        command.Position = map.Clamp(command.Position);
-                    }
-
-                    Execute(command, subjects.AsArray(), relations, hasMap, map);
+                    continue;
                 }
+
+                var command = each.Command;
+                command.Position = map.Clamp(command.Position);
+                Execute(command, subjects.AsArray(), relations, map);
             }
         }
 
@@ -103,16 +88,15 @@ namespace HyperRTS.Simulation.Commands
                 .With(TypeSet.Range(CommandType.Repair, CommandType.Enter))
                 .With(TypeSet.Range(CommandType.Patrol, CommandType.ReturnToBase));
 
-        /// <summary>Keeps the command's subjects that this faction owns and that take orders, in order.</summary>
-        private bool GatherSubjects(byte faction, in PlayerCommand command, DynamicBuffer<PlayerCommandSubject> listed,
-            NativeList<Entity> subjects)
+        /// <summary>Keeps the command's owned subjects that take orders, in order.</summary>
+        private bool GatherSubjects(ref SystemState state, in IssuedCommand issued, NativeList<Entity> subjects)
         {
-            PlayerCommands.Collect(command, listed, _selected, subjects);
+            _commands.Subjects(ref state, issued, subjects);
             var kept = 0;
             for (var i = 0; i < subjects.Length; i++)
             {
                 var entity = subjects[i];
-                if (TakesOrdersFrom(entity, faction))
+                if (_writer.CanReceiveOrders(entity))
                 {
                     subjects[kept++] = entity;
                 }
@@ -122,18 +106,8 @@ namespace HyperRTS.Simulation.Commands
             return kept > 0;
         }
 
-        private bool TakesOrdersFrom(Entity entity, byte faction)
-        {
-            if (!_writer.CanReceiveOrders(entity))
-            {
-                return false;
-            }
-
-            return _factions.TryGetComponent(entity, out var owner) && owner.Value == faction;
-        }
-
         private void Execute(in PlayerCommand command, NativeArray<Entity> subjects, in FactionRelations relations,
-            bool hasMap, in MapSettings map)
+            in MapSettings map)
         {
             if (TryApplyDirectly(command, subjects))
             {
@@ -141,30 +115,31 @@ namespace HyperRTS.Simulation.Commands
             }
 
             var movers = new NativeList<Entity>(subjects.Length, Allocator.Temp);
-            var moveTypes = new NativeList<OrderType>(subjects.Length, Allocator.Temp);
+            var moveOrders = new NativeList<Order>(subjects.Length, Allocator.Temp);
             foreach (var unit in subjects)
             {
-                var type = _resolver.Resolve(command.Type, unit, command.Target, relations);
-                if (type == OrderType.None)
+                var order = _resolver.Resolve(command.Type, unit, command.Target, relations);
+                if (order.Type == OrderType.None)
                 {
                     continue;
                 }
 
-                if (type.UsesFormation())
+                if (order.Has(OrderTraits.Formation))
                 {
                     movers.Add(unit);
-                    moveTypes.Add(type);
+                    moveOrders.Add(order);
                 }
                 else
                 {
-                    var order = new Order { Type = type, Position = command.Position, Target = command.Target };
+                    order.Position = command.Position;
+                    order.Target = command.Target;
                     _writer.Issue(unit, order, command.Queue);
                 }
             }
 
-            IssueFormation(command, movers.AsArray(), moveTypes.AsArray(), hasMap, map);
+            IssueFormation(command, movers.AsArray(), moveOrders.AsArray(), map);
             movers.Dispose();
-            moveTypes.Dispose();
+            moveOrders.Dispose();
         }
 
         /// <summary>Stop and stance changes need no order; true if the command was one of them.</summary>
@@ -187,8 +162,8 @@ namespace HyperRTS.Simulation.Commands
             }
         }
 
-        private void IssueFormation(in PlayerCommand command, NativeArray<Entity> movers, NativeArray<OrderType> types,
-            bool hasMap, in MapSettings map)
+        private void IssueFormation(in PlayerCommand command, NativeArray<Entity> movers, NativeArray<Order> orders,
+            in MapSettings map)
         {
             if (movers.Length == 0)
             {
@@ -207,7 +182,8 @@ namespace HyperRTS.Simulation.Commands
             Formation.Assign(positions, command.Position, spacing, slots);
             for (var i = 0; i < movers.Length; i++)
             {
-                var order = new Order { Type = types[i], Position = hasMap ? map.Clamp(slots[i]) : slots[i] };
+                var order = orders[i];
+                order.Position = map.Clamp(slots[i]);
                 if (order.Type == OrderType.Patrol)
                 {
                     IssuePatrol(movers[i], order, positions[i], command.Queue);
@@ -244,7 +220,7 @@ namespace HyperRTS.Simulation.Commands
                 }
 
                 // Only ground moves end at their Position; other orders end wherever their target is.
-                if (last.Type.UsesFormation())
+                if (last.Has(OrderTraits.Formation))
                 {
                     start = last.Position;
                 }

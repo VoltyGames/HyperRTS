@@ -124,28 +124,5 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(_world.Grid().IsWalkable(_world.GetPosition(unit)));
             Assert.Less(math.distance(_world.GetPosition(unit).xz, building.xz), 5f);
         }
-
-        [Test]
-        public void WithoutGrid_UnitMovesStraightToDestination()
-        {
-            var unit = _world.SpawnUnit(1, float3.zero);
-            var goal = new float3(6f, 0f, 3f);
-            _world.EntityManager.SetComponentData(unit, new MoveDestination { Value = goal });
-            _world.EntityManager.SetComponentEnabled<MoveDestination>(unit, true);
-
-            for (var t = 0f; t < 3f; t += TestWorld.FrameTime)
-            {
-                _world.Tick();
-                var position = _world.GetPosition(unit).xz;
-                var offLine = math.abs(position.x * goal.z - position.y * goal.x) / math.length(goal.xz);
-                Assert.Less(offLine, 0.01f, "straight line");
-            }
-
-            _world.EntityManager.CompleteAllTrackedJobs();
-            using var grids = _world.EntityManager.CreateEntityQuery(typeof(NavGrid));
-            Assert.AreEqual(0, grids.CalculateEntityCount());
-            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 0.2f);
-            Assert.IsFalse(_world.IsEnabled<MoveDestination>(unit));
-        }
     }
 }

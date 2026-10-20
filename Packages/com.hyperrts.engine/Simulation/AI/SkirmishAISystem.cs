@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
@@ -23,7 +24,7 @@ namespace HyperRTS.Simulation.AI
     /// over partial files.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
+    [UpdateInGroup(typeof(AISystemGroup))]
     public partial struct SkirmishAISystem : ISystem
     {
         /// <summary>Query results shared by every AI that thinks this frame.</summary>
@@ -102,6 +103,8 @@ namespace HyperRTS.Simulation.AI
             _fogQuery = TargetLookup.FogQuery(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<MapSettings>();
+            state.RequireForUpdate<NavGrid>();
 
             // Without the map's hints there is no AI; AIMapHintsCheckSystem says so.
             state.RequireForUpdate<AIMapHints>();

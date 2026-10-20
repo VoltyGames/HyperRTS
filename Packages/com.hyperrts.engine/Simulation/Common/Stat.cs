@@ -1,6 +1,6 @@
 namespace HyperRTS.Simulation.Common
 {
-    /// <summary>Values a <see cref="StatModifier"/> can change.</summary>
+    /// <summary>Values a <see cref="StatModifier"/> can change. Values from <see cref="GameFirst"/> up belong to games.</summary>
     public enum Stat : byte
     {
         MaxHealth = 0,
@@ -22,5 +22,8 @@ namespace HyperRTS.Simulation.Common
 
         /// <summary>On a player: resources its harvesters deliver, as a multiplier (base 1).</summary>
         Income = 9,
+
+        /// <summary>First value a game may use for its own stats; the engine never defines one from here up.</summary>
+        GameFirst = 128,
     }
 }

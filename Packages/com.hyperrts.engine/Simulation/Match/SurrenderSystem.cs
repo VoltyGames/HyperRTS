@@ -11,30 +11,18 @@ namespace HyperRTS.Simulation.Match
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct SurrenderSystem : ISystem
     {
-        private EntityQuery _commanders;
+        private CommandReader _commands;
 
         [BurstCompile]
-        public void OnCreate(ref SystemState state) => _commanders = PlayerCommands.Query(ref state);
+        public void OnCreate(ref SystemState state) =>
+            _commands = new CommandReader(ref state, TypeSet.Single(CommandType.Surrender));
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!PlayerCommands.Any(ref state, _commanders, TypeSet.Single(CommandType.Surrender)))
+            foreach (var each in _commands.Read(ref state))
             {
-                return;
-            }
-
-            foreach (var (commands, defeated) in SystemAPI.Query<DynamicBuffer<PlayerCommand>, EnabledRefRW<Defeated>>()
-                         .WithPresent<Defeated>())
-            {
-                foreach (var command in commands)
-                {
-                    if (command.Type == CommandType.Surrender)
-                    {
-                        defeated.ValueRW = true;
-                        break;
-                    }
-                }
+                SystemAPI.SetComponentEnabled<Defeated>(each.Player, true);
             }
         }
     }

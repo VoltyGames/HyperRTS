@@ -35,12 +35,6 @@ namespace HyperRTS.Simulation.Navigation
 
         public readonly bool IsCreated => Cells.IsCreated;
 
-        /// <summary>A one-cell stand-in for jobs in worlds without a map: jobs reject unallocated containers.</summary>
-        public static NavGrid Placeholder() => new()
-        {
-            Cells = new NativeArray<byte>(1, Allocator.Persistent),
-            DeckHeights = new NativeArray<float>(1, Allocator.Persistent),
-        };
 
         public void Dispose()
         {

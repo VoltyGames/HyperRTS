@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Transport
         }
 
         /// <summary>Lets out passenger <paramref name="slot"/> (or all for -1).</summary>
-        public void Unload(Entity container, DynamicBuffer<Cargo> cargo, int slot, bool hasGrid, in NavGrid grid)
+        public void Unload(Entity container, DynamicBuffer<Cargo> cargo, int slot, in NavGrid grid)
         {
             for (var i = cargo.Length - 1; i >= 0; i--)
             {
@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Transport
                 cargo.RemoveAt(i);
                 if (_inside.HasComponent(unit))
                 {
-                    Exit(unit, ExitPosition(container, unit, i, hasGrid, grid));
+                    Exit(unit, ExitPosition(container, unit, i, grid));
                 }
             }
         }
@@ -98,18 +98,12 @@ namespace HyperRTS.Simulation.Transport
             _transforms[unit] = transform;
         }
 
-        private float3 ExitPosition(Entity container, Entity unit, int slot, bool hasGrid, in NavGrid grid)
+        private float3 ExitPosition(Entity container, Entity unit, int slot, in NavGrid grid)
         {
             var center = _transforms[container].Position;
             var distance = EntityRadius.Get(container, _agents, _obstacles) + EntityRadius.Get(unit, _agents, _obstacles) + 0.5f;
             math.sincos(slot * GoldenAngle, out var sin, out var cos);
             var position = center + new float3(cos, 0f, sin) * distance;
-
-            if (!hasGrid)
-            {
-                return position;
-            }
-
             var layer = NavAgent.GetLayer(_agents, unit);
             if (grid.TryFindNearestWalkable(grid.WorldToCell(position), WalkableSearchRings, out var cell, layer))
             {
@@ -117,7 +111,6 @@ namespace HyperRTS.Simulation.Transport
             }
 
             position.y = grid.HeightFor(position, layer);
-
             return position;
         }
     }

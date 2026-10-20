@@ -20,63 +20,46 @@ namespace HyperRTS.Simulation.Buildings
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct SellSystem : ISystem
     {
-        private EntityQuery _selected;
-        private EntityQuery _commanders;
+        private CommandReader _commands;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _commanders = PlayerCommands.Query(ref state);
-            _selected = SystemAPI.QueryBuilder().WithAll<BuildingTag, Selected, Faction>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<BuildingTag, Selected, Faction>().WithNone<Dead>().Build();
+            _commands = new CommandReader(ref state, TypeSet.Single(CommandType.Sell), selected);
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate<MatchRules>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!PlayerCommands.Any(ref state, _commanders, TypeSet.Single(CommandType.Sell)))
+            var issued = _commands.Read(ref state);
+            if (issued.IsEmpty)
             {
                 return;
             }
 
-            var rules = SystemAPI.TryGetSingleton<MatchRules>(out var match) ? match : MatchRules.Default;
+            var refund = SystemAPI.GetSingleton<MatchRules>().SellRefund;
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var sold = new NativeHashSet<Entity>(8, Allocator.Temp);
-
-            foreach (var (player, commands, listed, stock) in SystemAPI
-                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>,
-                             DynamicBuffer<ResourceStock>>()
-                         .WithNone<Defeated>())
+            foreach (var each in issued)
             {
-                foreach (var command in commands)
+                var stock = SystemAPI.GetBuffer<ResourceStock>(each.Player);
+                foreach (var building in _commands.Subjects(ref state, each))
                 {
-                    if (command.Type != CommandType.Sell)
+                    if (IsSellableBuilding(ref state, building) && sold.Add(building))
                     {
-                        continue;
-                    }
-
-                    foreach (var building in PlayerCommands.Collect(command, listed, _selected))
-                    {
-                        if (IsSellableBuilding(ref state, building, player.ValueRO.Faction) && sold.Add(building))
-                        {
-                            Sell(ref state, building, stock, rules.SellRefund);
-                            ecb.DestroyEntity(building);
-                        }
+                        Sell(ref state, building, stock, refund);
+                        ecb.DestroyEntity(building);
                     }
                 }
             }
         }
 
-        private bool IsSellableBuilding(ref SystemState state, Entity entity, byte faction)
-        {
-            if (!BuildingRules.IsSellable(state.EntityManager, entity) || state.EntityManager.HasEnabled<Dead>(entity))
-            {
-                return false;
-            }
-
-            return SystemAPI.GetComponent<Faction>(entity).Value == faction;
-        }
+        private static bool IsSellableBuilding(ref SystemState state, Entity entity) =>
+            BuildingRules.IsSellable(state.EntityManager, entity) && !state.EntityManager.HasEnabled<Dead>(entity);
 
         private void Sell(ref SystemState state, Entity building, DynamicBuffer<ResourceStock> stock, float refund)
         {

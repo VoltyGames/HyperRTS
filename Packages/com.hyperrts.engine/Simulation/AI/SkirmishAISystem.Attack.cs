@@ -34,10 +34,12 @@ namespace HyperRTS.Simulation.AI
             }
 
             // Nothing known: sweep through the middle, where attack-move meets whatever is there.
-            if (!ai.LimitedByFog || !SystemAPI.TryGetSingleton<MapSettings>(out var map))
+            if (!ai.LimitedByFog)
             {
                 return;
             }
+
+            var map = SystemAPI.GetSingleton<MapSettings>();
 
             foreach (var i in wave)
             {

@@ -72,12 +72,12 @@ All player intent is a `PlayerCommand` on the player entity. Units carry orders.
 | Type | Role |
 | --- | --- |
 | `PlayerCommand`, `CommandType` | Player intent: Smart, Move, Attack, Gather, Build, Produce, Capture, Enter, UseAbility, Surrender and more |
-| `Order`, `OrderType` | A unit's order. `Argument` carries extra data such as an ability id |
+| `Order`, `OrderType`, `OrderTraits` | A unit's order and how it runs. `Argument` carries extra data such as an ability id |
 | `ActiveOrder`, `QueuedOrder` | The current order and the Shift queue. Disabled `ActiveOrder` means idle |
-| `OrderWriter` | `Issue(unit, order, queue)` and `Stop(unit)` |
-| `PlayerCommands` | Which units a command addresses, and a fast check for idle frames |
+| `OrderWriter` | `Issue(unit, order, queue)`, which stamps engine order traits, and `Stop(unit)` |
+| `CommandReader` | This frame's commands of some types from undefeated players, and the owned units each addresses |
 
-Games add command and order types from `Custom`. The engine runs Move, AttackMove, Patrol and Escort. When the active
+Games add command and order types from `GameFirst` (128) up, with their own order traits. The engine runs Move, AttackMove, Patrol and Escort. When the active
 order finishes, the next queued one starts.
 
 ## Commands

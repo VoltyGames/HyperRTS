@@ -19,7 +19,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 | You want | Do |
 | --- | --- |
 | A new behaviour | A component, its authoring and a Burst `ISystem` |
-| A new command | A `CommandType` below 64, consumed in `OrderSystemGroup` |
+| A new command | A `CommandType` from `GameFirst` (128) up, read with a `CommandReader` in `OrderSystemGroup` |
 | Custom right-click | Add a `SmartOrderRule` to the unit in its baker |
 | React to production or capture | Read `GameEvents` after `ProductionSystemGroup` |
 | Change an owner | `Ownership.Transfer` |
@@ -34,8 +34,9 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 
 ### A new order
 
-1. Add an `OrderType` value. Extend `OrderTypeExtensions` if it should fight on the way or use formations.
-2. Issue it with `OrderWriter.Issue`.
+1. Pick an `OrderType` value from `GameFirst` (128) up in your own code. The engine never defines one there.
+2. Issue it with `OrderWriter.Issue`, setting `Order.Traits`: `EngagesWhileMoving`, `AttackMove` or `Formation`,
+   which the move order then runs. A `SmartOrderRule` carries the same traits.
 3. In a system, move units with that `ActiveOrder` using `TargetReach.Approach` or `MoveDestination`.
 4. Disable `ActiveOrder` when the order is done.
 
@@ -68,7 +69,8 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 
 `SkirmishAISystem` only writes `PlayerCommand`s. Tune it with difficulty presets on `Match` and `AIBuildOrder`
 assets. It needs the map's bot hints, which the map builder writes. To replace it, disable the system and write your
-own commands for players with `AIPlayer`.
+own commands for players with `AIPlayer`. Put every AI system in `AISystemGroup`, so the join hold and replays pause
+it with the rest of gameplay through `GameplayPhases`.
 
 ## Front-end integration
 

@@ -75,7 +75,18 @@ namespace HyperRTS.Simulation.Commands
             _entityManager = state.EntityManager;
         }
 
-        public OrderType Resolve(CommandType command, Entity unit, Entity target, in FactionRelations relations)
+        /// <summary>The order type and traits the unit gets; callers fill in where and what it acts on.</summary>
+        public Order Resolve(CommandType command, Entity unit, Entity target, in FactionRelations relations)
+        {
+            if (command == CommandType.Smart && TryRule(unit, target, relations, out var ruled))
+            {
+                return ruled;
+            }
+
+            return new Order { Type = ResolveType(command, unit, target, relations) }.WithTypeTraits();
+        }
+
+        private OrderType ResolveType(CommandType command, Entity unit, Entity target, in FactionRelations relations)
         {
             return command switch
             {
@@ -98,11 +109,6 @@ namespace HyperRTS.Simulation.Commands
 
         private OrderType ResolveSmart(Entity unit, Entity target, in FactionRelations relations)
         {
-            if (TryRule(unit, target, relations, out var ruled))
-            {
-                return ruled;
-            }
-
             if (CanAttack(unit, target, relations))
             {
                 return OrderType.Attack;
@@ -136,9 +142,9 @@ namespace HyperRTS.Simulation.Commands
             return CanCapture(unit, target, relations) ? OrderType.Capture : OrderType.Move;
         }
 
-        private bool TryRule(Entity unit, Entity target, in FactionRelations relations, out OrderType order)
+        private bool TryRule(Entity unit, Entity target, in FactionRelations relations, out Order order)
         {
-            order = OrderType.None;
+            order = default;
             if (target == Entity.Null || !_rules.TryGetBuffer(unit, out var rules))
             {
                 return false;
@@ -156,7 +162,7 @@ namespace HyperRTS.Simulation.Commands
                 var type = TypeManager.GetTypeIndexFromStableTypeHash(rule.TargetComponent);
                 if (_entityManager.HasComponent(target, ComponentType.FromTypeIndex(type)))
                 {
-                    order = rule.Order;
+                    order = new Order { Type = rule.Order, Traits = rule.Traits }.WithTypeTraits();
                     return true;
                 }
             }

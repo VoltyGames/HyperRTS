@@ -22,14 +22,17 @@ namespace HyperRTS.Simulation.Cues
         /// <summary>Seconds between two acknowledgements.</summary>
         public const float Interval = 1f;
 
-        private EntityQuery _selected;
+        private CommandReader _commands;
         private CueWriter _cues;
         private double _next;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction, LocalTransform, EntitySound>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction, LocalTransform, EntitySound>().Build();
+            var answered = TypeSet.Range(CommandType.Smart, CommandType.Attack).With(CommandType.ReturnToBase)
+                .With(CommandType.Patrol).With(CommandType.Escort);
+            _commands = new CommandReader(ref state, answered, selected);
             _cues = new CueWriter(ref state);
             state.RequireForUpdate<LocalPlayer>();
             state.RequireForUpdate<CueQueue>();
@@ -47,7 +50,8 @@ namespace HyperRTS.Simulation.Cues
 
             var player = SystemAPI.GetSingletonEntity<LocalPlayer>();
             var faction = SystemAPI.GetComponent<Player>(player).Faction;
-            var slot = Requested(ref state, player, faction, out var command);
+            var issued = new IssuedCommand { Player = player, Faction = faction };
+            var slot = Requested(ref state, ref issued);
             if (slot == CueSlot.None)
             {
                 return;
@@ -55,10 +59,9 @@ namespace HyperRTS.Simulation.Cues
 
             state.CompleteDependency();
             _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
-            var listed = SystemAPI.GetBuffer<PlayerCommandSubject>(player);
-            foreach (var unit in PlayerCommands.Collect(command, listed, _selected))
+            foreach (var unit in _commands.Subjects(ref state, issued))
             {
-                if (TryAnswer(ref state, unit, slot, faction))
+                if (TryAnswer(ref state, unit, slot, issued.Faction))
                 {
                     _next = now + Interval;
                     return;
@@ -66,18 +69,25 @@ namespace HyperRTS.Simulation.Cues
             }
         }
 
-        /// <summary>The voice this frame's input asks for; a selection gesture reads as a command on the selection.</summary>
-        private CueSlot Requested(ref SystemState state, Entity player, byte faction, out PlayerCommand command)
+        /// <summary>
+        /// The voice this frame's input asks for, filling in the command it answers. A selection gesture reads as a
+        /// command on the selection.
+        /// </summary>
+        private CueSlot Requested(ref SystemState state, ref IssuedCommand local)
         {
             var slot = CueSlot.None;
-            command = default;
-            foreach (var issued in SystemAPI.GetBuffer<PlayerCommand>(player))
+            foreach (var each in _commands.Read(ref state))
             {
-                var answer = Answer(ref state, issued, faction);
+                if (each.Player != local.Player)
+                {
+                    continue;
+                }
+
+                var answer = Answer(ref state, each.Command, local.Faction);
                 if (answer != CueSlot.None)
                 {
                     slot = answer;
-                    command = issued;
+                    local.Command = each.Command;
                 }
             }
 
@@ -124,11 +134,6 @@ namespace HyperRTS.Simulation.Cues
 
         private bool TryAnswer(ref SystemState state, Entity unit, CueSlot slot, byte faction)
         {
-            if (!SystemAPI.HasComponent<Faction>(unit) || SystemAPI.GetComponent<Faction>(unit).Value != faction)
-            {
-                return false;
-            }
-
             var transform = SystemAPI.GetComponent<LocalTransform>(unit);
             return _cues.Play(unit, slot, transform, transform.Forward(), faction);
         }

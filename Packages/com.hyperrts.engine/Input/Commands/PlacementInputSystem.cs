@@ -27,6 +27,8 @@ namespace HyperRTS.Input.Commands
             RequireForUpdate<PlacementState>();
             RequireForUpdate<PointerState>();
             RequireForUpdate<LocalPlayer>();
+            RequireForUpdate<MapSettings>();
+            RequireForUpdate<NavGrid>();
         }
 
         // Not in OnCreate: without domain reload the Input System wipes action states after the world is created.
@@ -66,16 +68,10 @@ namespace HyperRTS.Input.Commands
 
         private void MoveGhost(ref PlacementState placement, float3 ground)
         {
-            if (!SystemAPI.TryGetSingleton<MapSettings>(out var map))
-            {
-                placement.Position = ground;
-                placement.Valid = true;
-                return;
-            }
-
+            var map = SystemAPI.GetSingleton<MapSettings>();
             var footprint = SystemAPI.GetComponent<NavObstacle>(placement.Prefab).Size;
             var surface = BuildingPlacement.GetSurface(EntityManager, placement.Prefab);
-            SystemAPI.TryGetSingleton<NavGrid>(out var grid);
+            var grid = SystemAPI.GetSingleton<NavGrid>();
             CompleteDependency();
             placement.Valid = PlacementMath.Resolve(in map, in grid, ground, footprint, surface, out placement.Position);
         }

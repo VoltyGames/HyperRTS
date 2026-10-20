@@ -3,33 +3,9 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Orders
 {
-    /// <summary>Reading <see cref="PlayerCommand"/> buffers: a cheap pre-check and who each command addresses.</summary>
+    /// <summary>Who a <see cref="PlayerCommand"/> addresses; command systems read through <see cref="CommandReader"/>.</summary>
     public static class PlayerCommands
     {
-        /// <summary>Players that can hold commands; build it in OnCreate for <see cref="Any"/>.</summary>
-        public static EntityQuery Query(ref SystemState state) =>
-            new EntityQueryBuilder(Allocator.Temp).WithAll<PlayerCommand>().Build(ref state);
-
-        /// <summary>
-        /// Whether any player recorded a command whose type is in <paramref name="types"/> this frame, so command
-        /// systems skip their job sync on the many frames without commands.
-        /// </summary>
-        public static bool Any(ref SystemState state, EntityQuery players, in TypeSet types)
-        {
-            foreach (var player in players.ToEntityArray(Allocator.Temp))
-            {
-                foreach (var command in state.EntityManager.GetBuffer<PlayerCommand>(player, true))
-                {
-                    if (types.Contains(command.Type))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
         /// <summary>
         /// Who a command addresses (callers apply their own ownership filter): the command's listed group, else its
         /// <see cref="PlayerCommand.Unit"/>, else every entity <paramref name="selected"/> matches.

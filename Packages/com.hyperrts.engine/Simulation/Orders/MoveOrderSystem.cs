@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Orders
                 EnabledRefRW<MoveDestination> moving, in LocalTransform transform, in NavAgent agent,
                 DynamicBuffer<QueuedOrder> queue)
             {
-                if (!order.Value.Type.UsesFormation())
+                if (!order.Value.Has(OrderTraits.Formation))
                 {
                     return;
                 }

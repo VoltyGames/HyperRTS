@@ -21,13 +21,6 @@ namespace HyperRTS.Simulation.Buildings
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct PlaceBuildingSystem : ISystem
     {
-        private struct Request
-        {
-            public Entity Player;
-            public byte Faction;
-            public PlayerCommand Command;
-        }
-
         private struct Assignment
         {
             public Entity Builder;
@@ -41,7 +34,7 @@ namespace HyperRTS.Simulation.Buildings
             public float2 Footprint;
         }
 
-        private EntityQuery _selectedBuilders;
+        private CommandReader _commands;
         private EntityQuery _obstacles;
         private EntityQuery _completed;
         private EntityQuery _queues;
@@ -51,39 +44,29 @@ namespace HyperRTS.Simulation.Buildings
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _selectedBuilders = SystemAPI.QueryBuilder().WithAll<Builder, BuildOption, Faction, Selected>()
+            var selected = SystemAPI.QueryBuilder().WithAll<Builder, BuildOption, Faction, Selected>()
                 .WithNone<Dead>().Build();
+            _commands = new CommandReader(ref state, TypeSet.Single(CommandType.PlaceBuilding), selected);
             _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
             _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
             _orders = new OrderWriter(ref state);
             state.RequireForUpdate<MapSettings>();
+            state.RequireForUpdate<NavGrid>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var requests = new NativeList<Request>(Allocator.Temp);
-            foreach (var (player, commands, entity) in SystemAPI.Query<RefRO<Player>, DynamicBuffer<PlayerCommand>>()
-                         .WithNone<Defeated>().WithEntityAccess())
-            {
-                foreach (var command in commands)
-                {
-                    if (command.Type == CommandType.PlaceBuilding)
-                    {
-                        requests.Add(new Request { Player = entity, Faction = player.ValueRO.Faction, Command = command });
-                    }
-                }
-            }
-
+            var requests = _commands.Read(ref state);
             if (requests.Length > 0)
             {
                 PlaceAll(ref state, requests);
             }
         }
 
-        private void PlaceAll(ref SystemState state, NativeList<Request> requests)
+        private void PlaceAll(ref SystemState state, NativeList<IssuedCommand> requests)
         {
             // Played back right away so the Build orders below can target the real site entities.
             var ecb = new EntityCommandBuffer(Allocator.Temp);
@@ -129,7 +112,7 @@ namespace HyperRTS.Simulation.Buildings
             }
         }
 
-        private bool TryPlace(ref SystemState state, in Request request, in Buyer buyer, EntityCommandBuffer ecb,
+        private bool TryPlace(ref SystemState state, in IssuedCommand request, in Buyer buyer, EntityCommandBuffer ecb,
             NativeList<Site> sites, out Order order)
         {
             order = default;
@@ -137,7 +120,7 @@ namespace HyperRTS.Simulation.Buildings
             var map = SystemAPI.GetSingleton<MapSettings>();
             var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
-            SystemAPI.TryGetSingleton<NavGrid>(out var grid);
+            var grid = SystemAPI.GetSingleton<NavGrid>();
             if (!PlacementMath.Resolve(map, grid, request.Command.Position, footprint, surface, out var center))
             {
                 return false;
@@ -179,7 +162,7 @@ namespace HyperRTS.Simulation.Buildings
         }
 
         /// <summary>The commanded unit, or the player's selected builders, that can place the prefab.</summary>
-        private NativeList<Entity> Builders(ref SystemState state, in Request request)
+        private NativeList<Entity> Builders(ref SystemState state, in IssuedCommand request)
         {
             var result = new NativeList<Entity>(Allocator.Temp);
             var prefab = request.Command.Prefab;
@@ -188,10 +171,9 @@ namespace HyperRTS.Simulation.Buildings
                 return result;
             }
 
-            var listed = SystemAPI.GetBuffer<PlayerCommandSubject>(request.Player);
-            foreach (var unit in PlayerCommands.Collect(request.Command, listed, _selectedBuilders))
+            foreach (var unit in _commands.Subjects(ref state, request))
             {
-                if (CanBuild(ref state, unit, request.Faction, prefab))
+                if (CanBuild(ref state, unit, prefab))
                 {
                     result.Add(unit);
                 }
@@ -211,21 +193,10 @@ namespace HyperRTS.Simulation.Buildings
             return SystemAPI.HasComponent<NavObstacle>(prefab) && SystemAPI.HasComponent<LocalTransform>(prefab);
         }
 
-        /// <summary>An owned builder listing <paramref name="prefab"/> among its build options.</summary>
-        private bool CanBuild(ref SystemState state, Entity unit, byte faction, Entity prefab)
-        {
-            if (!SystemAPI.HasBuffer<BuildOption>(unit) || !SystemAPI.HasComponent<Faction>(unit))
-            {
-                return false;
-            }
-
-            if (SystemAPI.GetComponent<Faction>(unit).Value != faction)
-            {
-                return false;
-            }
-
-            return ProductionRules.HasOption(SystemAPI.GetBuffer<BuildOption>(unit), prefab);
-        }
+        /// <summary>A builder listing <paramref name="prefab"/> among its build options.</summary>
+        private bool CanBuild(ref SystemState state, Entity unit, Entity prefab) =>
+            SystemAPI.HasBuffer<BuildOption>(unit)
+            && ProductionRules.HasOption(SystemAPI.GetBuffer<BuildOption>(unit), prefab);
 
         /// <summary>Checks existing obstacles too: the nav grid may lag a frame behind newly placed sites.</summary>
         private bool IsOccupied(float3 center, float2 footprint, NativeList<Site> sites)

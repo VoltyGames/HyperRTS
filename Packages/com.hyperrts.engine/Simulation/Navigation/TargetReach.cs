@@ -23,16 +23,11 @@ namespace HyperRTS.Simulation.Navigation
             _navCellSize = 0f;
         }
 
-        /// <summary>The map singleton's query; systems build it once in <c>OnCreate</c> and pass it to <see cref="Update"/>.</summary>
-        public static EntityQuery MapQuery(ref SystemState state) =>
-            state.GetEntityQuery(ComponentType.ReadOnly<MapSettings>());
-
-        /// <summary><paramref name="map"/> is the system's <see cref="MapQuery"/>; without a map there is no nav grid.</summary>
-        public void Update(ref SystemState state, EntityQuery map)
+        public void Update(ref SystemState state, in MapSettings map)
         {
             _transforms.Update(ref state);
             _obstacles.Update(ref state);
-            _navCellSize = map.TryGetSingleton(out MapSettings settings) ? settings.NavCellSize : 0f;
+            _navCellSize = map.NavCellSize;
         }
 
         /// <summary>The entity is still in the world (destroyed targets lose their transform first).</summary>

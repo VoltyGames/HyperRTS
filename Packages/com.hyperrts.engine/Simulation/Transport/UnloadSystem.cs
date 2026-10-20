@@ -13,52 +13,37 @@ namespace HyperRTS.Simulation.Transport
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct UnloadSystem : ISystem
     {
-        private EntityQuery _selected;
-        private EntityQuery _commanders;
+        private CommandReader _commands;
         private CargoExit _exit;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _commanders = PlayerCommands.Query(ref state);
-            _selected = SystemAPI.QueryBuilder().WithAll<Container, Selected, Faction>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Container, Selected, Faction>().WithNone<Dead>().Build();
+            _commands = new CommandReader(ref state, TypeSet.Single(CommandType.Unload), selected);
             _exit = new CargoExit(ref state);
+            state.RequireForUpdate<NavGrid>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!PlayerCommands.Any(ref state, _commanders, TypeSet.Single(CommandType.Unload)))
+            var issued = _commands.Read(ref state);
+            if (issued.IsEmpty)
             {
                 return;
             }
 
             state.CompleteDependency();
             _exit.Update(ref state);
-            var hasGrid = SystemAPI.TryGetSingleton<NavGrid>(out var grid) && grid.IsCreated;
-
-            foreach (var (player, commands, listed) in SystemAPI
-                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>>())
+            var grid = SystemAPI.GetSingleton<NavGrid>();
+            foreach (var each in issued)
             {
-                foreach (var command in commands)
+                foreach (var container in _commands.Subjects(ref state, each))
                 {
-                    if (command.Type != CommandType.Unload)
+                    if (SystemAPI.HasComponent<Container>(container))
                     {
-                        continue;
-                    }
-
-                    foreach (var container in PlayerCommands.Collect(command, listed, _selected))
-                    {
-                        if (!SystemAPI.HasComponent<Container>(container))
-                        {
-                            continue;
-                        }
-
-                        if (SystemAPI.GetComponent<Faction>(container).Value == player.ValueRO.Faction)
-                        {
-                            _exit.Unload(container, SystemAPI.GetBuffer<Cargo>(container), command.Argument, hasGrid,
-                                grid);
-                        }
+                        _exit.Unload(container, SystemAPI.GetBuffer<Cargo>(container), each.Command.Argument, grid);
                     }
                 }
             }

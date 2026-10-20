@@ -25,6 +25,9 @@ namespace HyperRTS.Simulation.Vision
         {
             state.EntityManager.CreateSingleton<LocalFogView>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate<MapSettings>();
+            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<FogOfWar>();
         }
 
         [BurstCompile]
@@ -102,13 +105,11 @@ namespace HyperRTS.Simulation.Vision
                 view.Viewer = player.ValueRO.Faction;
             }
 
-            SystemAPI.TryGetSingleton(out relations);
-            SystemAPI.TryGetSingleton(out fog);
+            relations = SystemAPI.GetSingleton<FactionRelations>();
+            fog = SystemAPI.GetSingleton<FogOfWar>();
             view.Team = relations.GetTeam(view.Viewer);
-            hides = view.Team != 0 && fog.IsCreated && !revealAll;
-
-            var fogOn = SystemAPI.TryGetSingleton(out MapSettings map) && map.FogOfWar;
-            view.Active = hides && fogOn;
+            hides = view.Team != 0 && !revealAll;
+            view.Active = hides && SystemAPI.GetSingleton<MapSettings>().FogOfWar;
             return view;
         }
 

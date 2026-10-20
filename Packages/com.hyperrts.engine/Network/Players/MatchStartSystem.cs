@@ -24,6 +24,7 @@ namespace HyperRTS.Network.Players
         private EntityQuery _humans;
         private double _waitingSince;
         private bool _holding;
+        private ulong _resume;
 
         public void OnCreate(ref SystemState state)
         {
@@ -45,7 +46,7 @@ namespace HyperRTS.Network.Players
             {
                 _holding = true;
                 _waitingSince = now;
-                SetGameplay(ref state, false);
+                _resume = GameplayPhases.PauseAllButOrders(state.World);
             }
 
             var humans = _humans.ToComponentDataArray<PlayerConnection>(Allocator.Temp);
@@ -56,7 +57,7 @@ namespace HyperRTS.Network.Players
 
             match.Started = true;
             _holding = false;
-            SetGameplay(ref state, true);
+            GameplayPhases.Restore(state.World, _resume);
         }
 
         private double JoinTimeout(ref SystemState state)
@@ -88,21 +89,6 @@ namespace HyperRTS.Network.Players
             }
 
             return true;
-        }
-
-        /// <summary>The order phase keeps running (it spawns player ghosts and binds joins); the rest and the AI wait.</summary>
-        private static void SetGameplay(ref SystemState state, bool enabled)
-        {
-            var world = state.World;
-            world.GetExistingSystemManaged<MovementSystemGroup>().Enabled = enabled;
-            world.GetExistingSystemManaged<CombatSystemGroup>().Enabled = enabled;
-            world.GetExistingSystemManaged<ProductionSystemGroup>().Enabled = enabled;
-            world.GetExistingSystemManaged<LifecycleSystemGroup>().Enabled = enabled;
-            var ai = world.Unmanaged.GetExistingUnmanagedSystem<SkirmishAISystem>();
-            if (ai != SystemHandle.Null)
-            {
-                world.Unmanaged.ResolveSystemStateRef(ai).Enabled = enabled;
-            }
         }
     }
 }

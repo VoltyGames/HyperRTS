@@ -11,13 +11,6 @@ namespace HyperRTS.Simulation.Replays
     /// </summary>
     public static class ReplayViewer
     {
-        /// <summary>Every phase group in <c>SystemGroups</c> except replay playback's own; a new phase goes here too.</summary>
-        private static readonly Type[] GameplayGroups =
-        {
-            typeof(OrderSystemGroup), typeof(MovementSystemGroup), typeof(CombatSystemGroup),
-            typeof(ProductionSystemGroup), typeof(LifecycleSystemGroup),
-        };
-
         public static void Begin(World world, Replay replay)
         {
             if (replay.Frames.Length == 0)
@@ -27,7 +20,7 @@ namespace HyperRTS.Simulation.Replays
 
             Stop(world);
             var data = ReplayPlaybackState.Create(replay);
-            data.GameplayEnabled = PauseGameplay(world);
+            data.GameplayEnabled = GameplayPhases.PauseAll(world);
             var entityManager = world.EntityManager;
             LocalFogViewSystem.SetRevealAll(entityManager, true);
             var entity = entityManager.CreateEntity();
@@ -59,39 +52,8 @@ namespace HyperRTS.Simulation.Replays
             var data = entityManager.GetComponentData<ReplayPlaybackState>(entity);
             data.Dispose();
             entityManager.DestroyEntity(entity);
-            RestoreGameplay(world, data.GameplayEnabled);
+            GameplayPhases.Restore(world, data.GameplayEnabled);
             LocalFogViewSystem.SetRevealAll(entityManager, false);
-        }
-
-        /// <summary>Turns the gameplay phases off; returns which were on, one bit per <see cref="GameplayGroups"/> entry.</summary>
-        private static ulong PauseGameplay(World world)
-        {
-            var enabled = 0ul;
-            for (var i = 0; i < GameplayGroups.Length; i++)
-            {
-                var group = world.GetExistingSystemManaged(GameplayGroups[i]);
-                if (group == null)
-                {
-                    continue;
-                }
-
-                enabled |= group.Enabled ? 1ul << i : 0ul;
-                group.Enabled = false;
-            }
-
-            return enabled;
-        }
-
-        private static void RestoreGameplay(World world, ulong enabled)
-        {
-            for (var i = 0; i < GameplayGroups.Length; i++)
-            {
-                var group = world.GetExistingSystemManaged(GameplayGroups[i]);
-                if (group != null)
-                {
-                    group.Enabled = (enabled & (1ul << i)) != 0;
-                }
-            }
         }
     }
 }

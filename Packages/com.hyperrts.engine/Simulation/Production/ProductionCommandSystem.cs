@@ -18,8 +18,7 @@ namespace HyperRTS.Simulation.Production
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct ProductionCommandSystem : ISystem
     {
-        private EntityQuery _selectedProducers;
-        private EntityQuery _commanders;
+        private CommandReader _commands;
         private EntityQuery _completed;
         private EntityQuery _queues;
         private EntityQuery _limited;
@@ -27,65 +26,72 @@ namespace HyperRTS.Simulation.Production
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _commanders = PlayerCommands.Query(ref state);
-            _selectedProducers = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, Faction, Selected>()
+            var selected = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, Faction, Selected>()
                 .WithNone<Dead>().Build();
+            _commands = new CommandReader(ref state, ProducerCommands, selected);
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
             _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
+            state.RequireForUpdate<NavGrid>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             // Most frames carry no producer commands; skip fetching writable stockpiles.
-            if (!PlayerCommands.Any(ref state, _commanders, ProducerCommands))
+            var issued = _commands.Read(ref state);
+            if (issued.IsEmpty)
             {
                 return;
             }
 
             var buildings = new CompletedBuildings(_completed, Allocator.Temp);
-            foreach (var (player, commands, listed, stock, researched) in SystemAPI
-                         .Query<RefRO<Player>, DynamicBuffer<PlayerCommand>, DynamicBuffer<PlayerCommandSubject>,
-                             DynamicBuffer<ResourceStock>, DynamicBuffer<CompletedResearch>>()
-                         .WithNone<Defeated>())
+            var buyer = default(Buyer);
+            var buyerPlayer = Entity.Null;
+            foreach (var each in issued)
             {
-                var faction = player.ValueRO.Faction;
-                var buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, faction, buildings,
-                    researched);
-                foreach (var command in commands)
+                // One buyer per player for the frame, so each purchase counts against the next one's limits.
+                if (each.Player != buyerPlayer)
                 {
-                    switch (command.Type)
-                    {
-                        case CommandType.Produce:
-                            Produce(ref state, faction, command, listed, stock, buyer);
-                            break;
-                        case CommandType.CancelProduction:
-                            Cancel(ref state, faction, command, listed, stock, buyer);
-                            break;
-                        case CommandType.SetRallyPoint:
-                        case CommandType.Smart:
-                            SetRallyPoint(ref state, faction, command, listed);
-                            break;
-                    }
+                    buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, each.Faction, buildings,
+                        SystemAPI.GetBuffer<CompletedResearch>(each.Player));
+                    buyerPlayer = each.Player;
                 }
+
+                Execute(ref state, each, buyer);
+            }
+        }
+
+        private void Execute(ref SystemState state, in IssuedCommand issued, in Buyer buyer)
+        {
+            switch (issued.Command.Type)
+            {
+                case CommandType.Produce:
+                    Produce(ref state, issued, buyer);
+                    break;
+                case CommandType.CancelProduction:
+                    Cancel(ref state, issued, buyer);
+                    break;
+                default:
+                    SetRallyPoint(ref state, issued);
+                    break;
             }
         }
 
         private static TypeSet ProducerCommands =>
             TypeSet.Range(CommandType.Produce, CommandType.SetRallyPoint).With(CommandType.Smart);
 
-        private void Produce(ref SystemState state, byte faction, in PlayerCommand command,
-            DynamicBuffer<PlayerCommandSubject> listed, DynamicBuffer<ResourceStock> stock, in Buyer buyer)
+        private void Produce(ref SystemState state, in IssuedCommand issued, in Buyer buyer)
         {
-            var producer = FindProducer(ref state, faction, command, listed);
+            var producer = FindProducer(ref state, issued);
             if (producer == Entity.Null)
             {
                 return;
             }
 
             var queue = SystemAPI.GetBuffer<ProductionQueueItem>(producer);
-            var prefab = command.Prefab;
+            var prefab = issued.Command.Prefab;
+            var stock = SystemAPI.GetBuffer<ResourceStock>(issued.Player);
             if (queue.Length >= SystemAPI.GetComponent<Producer>(producer).QueueLimit)
             {
                 return;
@@ -101,17 +107,17 @@ namespace HyperRTS.Simulation.Production
             buyer.AddPurchase(state.EntityManager, prefab);
         }
 
-        private void Cancel(ref SystemState state, byte faction, in PlayerCommand command,
-            DynamicBuffer<PlayerCommandSubject> listed, DynamicBuffer<ResourceStock> stock, in Buyer buyer)
+        private void Cancel(ref SystemState state, in IssuedCommand issued, in Buyer buyer)
         {
-            var producer = FirstWithQueue(ref state, faction, command, listed);
+            var producer = FirstWithQueue(ref state, issued);
             if (producer == Entity.Null)
             {
                 return;
             }
 
             var queue = SystemAPI.GetBuffer<ProductionQueueItem>(producer);
-            var index = command.Argument < 0 ? queue.Length - 1 : command.Argument;
+            var argument = issued.Command.Argument;
+            var index = argument < 0 ? queue.Length - 1 : argument;
             if (index < 0 || index >= queue.Length)
             {
                 return;
@@ -126,18 +132,17 @@ namespace HyperRTS.Simulation.Production
                 SystemAPI.GetComponentRW<Producer>(producer).ValueRW.Elapsed = 0f;
             }
 
+            var stock = SystemAPI.GetBuffer<ResourceStock>(issued.Player);
             ProductionRules.Refund(stock, prefab, SystemAPI.GetBufferLookup<ResourceCost>(true));
         }
 
-        private void SetRallyPoint(ref SystemState state, byte faction, in PlayerCommand command,
-            DynamicBuffer<PlayerCommandSubject> listed)
+        private void SetRallyPoint(ref SystemState state, in IssuedCommand issued)
         {
-            SystemAPI.TryGetSingleton<NavGrid>(out var grid);
-            var position = command.Position;
-            position.y = PlacementMath.Height(grid, position);
-            foreach (var producer in PlayerCommands.Collect(command, listed, _selectedProducers))
+            var position = issued.Command.Position;
+            position.y = SystemAPI.GetSingleton<NavGrid>().SurfaceHeight(position);
+            foreach (var producer in _commands.Subjects(ref state, issued))
             {
-                if (IsOwnedProducer(ref state, producer, faction))
+                if (SystemAPI.HasComponent<Producer>(producer))
                 {
                     SystemAPI.SetComponent(producer, new RallyPoint { Position = position });
                     SystemAPI.SetComponentEnabled<RallyPoint>(producer, true);
@@ -146,14 +151,13 @@ namespace HyperRTS.Simulation.Production
         }
 
         /// <summary>The commanded producer, or the selected one with the shortest queue that offers the prefab.</summary>
-        private Entity FindProducer(ref SystemState state, byte faction, in PlayerCommand command,
-            DynamicBuffer<PlayerCommandSubject> listed)
+        private Entity FindProducer(ref SystemState state, in IssuedCommand issued)
         {
             var best = Entity.Null;
             var shortest = int.MaxValue;
-            foreach (var producer in PlayerCommands.Collect(command, listed, _selectedProducers))
+            foreach (var producer in _commands.Subjects(ref state, issued))
             {
-                if (!CanProduce(ref state, producer, faction, command.Prefab))
+                if (!CanProduce(ref state, producer, issued.Command.Prefab))
                 {
                     continue;
                 }
@@ -169,10 +173,10 @@ namespace HyperRTS.Simulation.Production
             return best;
         }
 
-        /// <summary>An owned, finished producer offering <paramref name="prefab"/>.</summary>
-        private bool CanProduce(ref SystemState state, Entity producer, byte faction, Entity prefab)
+        /// <summary>A finished producer offering <paramref name="prefab"/>.</summary>
+        private bool CanProduce(ref SystemState state, Entity producer, Entity prefab)
         {
-            if (!IsOwnedProducer(ref state, producer, faction))
+            if (!SystemAPI.HasComponent<Producer>(producer))
             {
                 return false;
             }
@@ -185,13 +189,12 @@ namespace HyperRTS.Simulation.Production
             return ProductionRules.HasOption(SystemAPI.GetBuffer<ProductionOption>(producer), prefab);
         }
 
-        /// <summary>The first commanded producer the faction owns that has something queued.</summary>
-        private Entity FirstWithQueue(ref SystemState state, byte faction, in PlayerCommand command,
-            DynamicBuffer<PlayerCommandSubject> listed)
+        /// <summary>The first commanded producer that has something queued.</summary>
+        private Entity FirstWithQueue(ref SystemState state, in IssuedCommand issued)
         {
-            foreach (var producer in PlayerCommands.Collect(command, listed, _selectedProducers))
+            foreach (var producer in _commands.Subjects(ref state, issued))
             {
-                if (!IsOwnedProducer(ref state, producer, faction))
+                if (!SystemAPI.HasComponent<Producer>(producer))
                 {
                     continue;
                 }
@@ -204,8 +207,5 @@ namespace HyperRTS.Simulation.Production
 
             return Entity.Null;
         }
-
-        private bool IsOwnedProducer(ref SystemState state, Entity entity, byte faction) =>
-            SystemAPI.HasComponent<Producer>(entity) && SystemAPI.GetComponent<Faction>(entity).Value == faction;
     }
 }

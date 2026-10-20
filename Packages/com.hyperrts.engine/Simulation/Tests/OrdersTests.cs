@@ -222,14 +222,15 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void TypeSet_HoldsItsRangeAndAddedTypes()
+        public void DefeatedPlayer_UnitCommandsAreIgnored()
         {
-            var set = TypeSet.Range(CommandType.UseAbility, CommandType.UsePower).With(CommandType.Surrender);
+            var unit = SpawnSelected(float3.zero);
+            _world.EntityManager.SetComponentEnabled<Defeated>(_world.Player(1), true);
 
-            Assert.IsTrue(set.Contains(CommandType.UseAbility));
-            Assert.IsTrue(set.Contains(CommandType.UsePower));
-            Assert.IsTrue(set.Contains(CommandType.Surrender));
-            Assert.IsFalse(set.Contains(CommandType.Patrol));
+            Command(CommandType.Move, new float3(10f, 0f, 0f));
+            RunCommands();
+
+            Assert.IsFalse(_world.IsEnabled<ActiveOrder>(unit), "a surrendered player's units take no orders");
         }
 
         [Test]
@@ -238,7 +239,7 @@ namespace HyperRTS.Simulation.Tests
             var rule = OrderType.Capture;
             var unit = SpawnSelected(float3.zero);
             _world.EntityManager.AddBuffer<SmartOrderRule>(unit)
-                .Add(SmartOrderRule.For<UnitTag>(rule, RelationMask.Enemy));
+                .Add(SmartOrderRule.For<UnitTag>(rule, OrderTraits.None, RelationMask.Enemy));
             var enemy = _world.SpawnUnit(2, new float3(10f, 0f, 0f));
             var friend = _world.SpawnUnit(1, new float3(-10f, 0f, 0f));
 

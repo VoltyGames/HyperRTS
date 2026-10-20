@@ -112,12 +112,13 @@ namespace HyperRTS.Simulation.AI
         private bool TryPlace(ref SystemState state, in Turn turn, in Snapshot snapshot, Entity prefab)
         {
             var builder = PickBuilder(ref state, turn, snapshot, prefab);
-            if (builder == Entity.Null || !SystemAPI.TryGetSingleton<MapSettings>(out var map))
+            if (builder == Entity.Null)
             {
                 return false;
             }
 
-            SystemAPI.TryGetSingleton<NavGrid>(out var grid);
+            var map = SystemAPI.GetSingleton<MapSettings>();
+            var grid = SystemAPI.GetSingleton<NavGrid>();
             var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var gap = SystemAPI.GetComponent<AIPlayer>(turn.Player).BuildingGap;

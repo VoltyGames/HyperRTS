@@ -134,9 +134,10 @@ namespace HyperRTS.Simulation.Tests
             EntityManager.IsComponentEnabled<T>(entity);
 
         /// <summary>
-        /// Creates map, relations, AI tunings and one player per team entry (faction = index + 1, first is local),
-        /// plus the AI map hints every AI needs: a slot per player and a direct lane (no waypoints) between enemies;
-        /// <see cref="AIHintsTestKit.CreateHints"/> replaces them.
+        /// Creates map, rules, relations, AI tunings and one player per team entry (faction = index + 1, first is
+        /// local), plus the AI map hints every AI needs: a slot per player and a direct lane (no waypoints) between
+        /// enemies; <see cref="AIHintsTestKit.CreateHints"/> replaces them. Builds the nav grid, as a loaded map has
+        /// before anyone commands.
         /// </summary>
         public void CreateMatch(params byte[] teams)
         {
@@ -150,7 +151,10 @@ namespace HyperRTS.Simulation.Tests
                 FogOfWar = true,
             });
             EntityManager.AddComponentData(match, new MatchState());
-            EntityManager.AddComponentData(match, MatchRules.Default);
+            EntityManager.AddComponentData(match, new MatchRules
+            {
+                LowPowerProductionRate = 0.5f, SellRefund = 0.5f, JoinTimeout = 60f,
+            });
 
             var relations = new FactionRelations();
             relations.Teams.Add(0);
@@ -168,6 +172,7 @@ namespace HyperRTS.Simulation.Tests
             }
 
             this.CreateHints(AIHintsTestKit.DirectHints(teams));
+            BuildNavGrid();
         }
 
         /// <summary>Bakes a heightfield over the test map from a height function, as Terrain Height authoring does.</summary>
@@ -186,6 +191,14 @@ namespace HyperRTS.Simulation.Tests
             _terrains.Add(terrain.Blob);
             var writer = new EntityManagerWriter(EntityManager, EntityManager.CreateEntity());
             NavSetup.AddTerrain(ref writer, terrain);
+            BuildNavGrid();
+        }
+
+        /// <summary>Builds the nav grid over the current map and terrain, as the map's first frames do.</summary>
+        private void BuildNavGrid()
+        {
+            World.GetExistingSystem<NavGridSystem>().Update(World.Unmanaged);
+            EntityManager.CompleteAllTrackedJobs();
         }
 
         public Entity Player(byte faction)

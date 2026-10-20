@@ -2,7 +2,7 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Match
 {
-    /// <summary>Match-wide tuning on the match singleton; systems fall back to <see cref="Default"/> without one.</summary>
+    /// <summary>Match-wide tuning on the match singleton, baked by <c>MatchAuthoring</c>; systems that read it require it.</summary>
     public struct MatchRules : IComponentData
     {
         /// <summary>Production speed of an unpowered producer (<c>OfflineReason.Unpowered</c>).</summary>
@@ -16,10 +16,5 @@ namespace HyperRTS.Simulation.Match
 
         /// <summary>Networked matches: seconds the server waits for every human slot to join before starting anyway.</summary>
         public float JoinTimeout;
-
-        public static MatchRules Default => new()
-        {
-            LowPowerProductionRate = 0.5f, SellRefund = 0.5f, JoinTimeout = 60f,
-        };
     }
 }

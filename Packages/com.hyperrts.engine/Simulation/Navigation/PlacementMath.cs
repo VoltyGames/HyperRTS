@@ -17,8 +17,8 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>
-        /// Inside the map and, when a grid exists, over free cells of the surface only: plain land or plain water,
-        /// never a deck or a blocked cell. Without a grid only land placement is possible.
+        /// Inside the map and over free cells of the surface only: plain land or plain water, never a deck or a
+        /// blocked cell.
         /// </summary>
         public static bool IsValid(in MapSettings map, in NavGrid grid, float3 center, float2 footprint,
             PlacementSurface surface = PlacementSurface.Land)
@@ -29,11 +29,6 @@ namespace HyperRTS.Simulation.Navigation
                 return false;
             }
 
-            if (!grid.IsCreated)
-            {
-                return surface == PlacementSurface.Land;
-            }
-
             return Covers(grid, center, footprint, surface);
         }
 
@@ -42,13 +37,9 @@ namespace HyperRTS.Simulation.Navigation
             PlacementSurface surface, out float3 center)
         {
             center = Snap(map, position, footprint);
-            center.y = Height(grid, center);
+            center.y = grid.SurfaceHeight(center);
             return IsValid(map, grid, center, footprint, surface);
         }
-
-        /// <summary>Height a building stands at: the water surface over water cells, the ground elsewhere.</summary>
-        public static float Height(in NavGrid grid, float3 center) =>
-            grid.IsCreated ? grid.SurfaceHeight(center) : center.y;
 
         private static bool Covers(in NavGrid grid, float3 center, float2 footprint, PlacementSurface surface)
         {

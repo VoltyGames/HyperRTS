@@ -4,7 +4,7 @@
 
 ## AI
 
-`SkirmishAISystem` plays computer players. Like a human, it acts only through `PlayerCommand`s. Difficulty
+`SkirmishAISystem` plays computer players from `AISystemGroup`. Like a human, it acts only through `PlayerCommand`s. Difficulty
 presets on `Match` tune it, and an `AIBuildOrder` asset sets what it builds first.
 
 It only runs on maps with bot hints, an `AIMapHintsAuthoring` that the map builder writes. They list each slot's

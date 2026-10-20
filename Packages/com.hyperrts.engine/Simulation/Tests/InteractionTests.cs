@@ -59,14 +59,6 @@ namespace HyperRTS.Simulation.Tests
         {
             var map = Map();
             var footprint = new float2(2f, 2f);
-            var noGrid = default(NavGrid);
-
-            Assert.IsTrue(PlacementMath.IsValid(in map, in noGrid, float3.zero, footprint), "inside, no grid");
-            Assert.IsFalse(PlacementMath.IsValid(in map, in noGrid, new float3(9.5f, 0f, 0f), footprint),
-                "footprint crosses the map edge");
-            Assert.IsFalse(PlacementMath.IsValid(in map, in noGrid, new float3(50f, 0f, 50f), footprint),
-                "outside the map");
-
             var cells = new NativeArray<byte>(400, Allocator.Temp);
             for (var i = 0; i < cells.Length; i++)
             {
@@ -75,6 +67,10 @@ namespace HyperRTS.Simulation.Tests
 
             var grid = new NavGrid { Cells = cells, Size = new int2(20, 20), Min = map.Min, CellSize = 1f };
             Assert.IsTrue(PlacementMath.IsValid(in map, in grid, float3.zero, footprint), "free cells");
+            Assert.IsFalse(PlacementMath.IsValid(in map, in grid, new float3(9.5f, 0f, 0f), footprint),
+                "footprint crosses the map edge");
+            Assert.IsFalse(PlacementMath.IsValid(in map, in grid, new float3(50f, 0f, 50f), footprint),
+                "outside the map");
 
             var blocked = grid.WorldToCell(new float3(0.5f, 0f, 0.5f));
             cells[grid.Index(blocked)] = (byte)NavSurface.Blocked;

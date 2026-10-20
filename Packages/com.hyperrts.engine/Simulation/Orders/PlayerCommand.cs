@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Orders
 {
-    /// <summary>Kinds of <see cref="PlayerCommand"/>.</summary>
+    /// <summary>Kinds of <see cref="PlayerCommand"/>. Values from <see cref="GameFirst"/> up belong to games.</summary>
     public enum CommandType : byte
     {
         None = 0,
@@ -62,6 +62,9 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>The issuing player concedes and is defeated; its units stay on the map.</summary>
         Surrender = 23,
+
+        /// <summary>First value a game may use for its own commands; the engine never defines one from here up.</summary>
+        GameFirst = 128,
     }
 
     /// <summary>

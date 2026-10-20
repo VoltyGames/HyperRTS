@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Units
     /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> (disabled on arrival),
     /// keeps units of the same layer their spacing apart, slides ground units round blockers and never steps
     /// into a cell closed to the agent's layer.
-    /// Steers on XZ; with a <see cref="NavGrid"/>, Y follows the layer's surface (ground, deck or water). Aircraft
+    /// Steers on XZ, and Y follows the layer's surface on the <see cref="NavGrid"/> (ground, deck or water). Aircraft
     /// ignore the grid, climb to their <see cref="Flight"/> altitude (land while <see cref="Docked"/>) and, if they
     /// can't hover, circle when idle.
     /// </summary>
@@ -25,33 +25,28 @@ namespace HyperRTS.Simulation.Units
     [UpdateBefore(typeof(CargoFollowSystem))]
     public partial struct MovementSystem : ISystem
     {
-        private NavGrid _noGrid;
         private EntityQuery _blockers;
         private ComponentLookup<Flight> _flights;
         private ComponentLookup<Docked> _docked;
 
         public void OnCreate(ref SystemState state)
         {
-            _noGrid = NavGrid.Placeholder();
             _flights = state.GetComponentLookup<Flight>(true);
             _docked = state.GetComponentLookup<Docked>(true);
             _blockers = SystemAPI.QueryBuilder().WithPresent<Blocker>().Build();
             state.RequireForUpdate<SpatialIndex>();
+            state.RequireForUpdate<NavGrid>();
         }
-
-        public void OnDestroy(ref SystemState state) => _noGrid.Dispose();
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var hasGrid = SystemAPI.TryGetSingleton<NavGrid>(out var grid) && grid.IsCreated;
             _flights.Update(ref state);
             _docked.Update(ref state);
             new MoveJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
-                Grid = hasGrid ? grid : _noGrid,
-                HasGrid = hasGrid,
+                Grid = SystemAPI.GetSingleton<NavGrid>(),
                 // Asked of the query, not the index, which its builder is still filling.
                 HasBlockers = !_blockers.IsEmptyIgnoreFilter,
                 Flights = _flights,
@@ -67,7 +62,6 @@ namespace HyperRTS.Simulation.Units
         {
             [ReadOnly] public SpatialIndex Index;
             [ReadOnly] public NavGrid Grid;
-            public bool HasGrid;
             public bool HasBlockers;
             [ReadOnly] public ComponentLookup<Flight> Flights;
             [ReadOnly] public ComponentLookup<Docked> DockedLookup;
@@ -122,10 +116,7 @@ namespace HyperRTS.Simulation.Units
                 bool moving, DynamicBuffer<PathWaypoint> waypoints, ref PathState path)
             {
                 transform.Position.xz = Constrain(from, wanted, NavLayers.Surfaces(agent.Layer));
-                if (HasGrid)
-                {
-                    transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
-                }
+                transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
 
                 // Shoved off its line by the crowd, the unit may now face a wall between it and the next corner.
                 var shoved = !transform.Position.xz.Equals(wanted);
@@ -144,7 +135,7 @@ namespace HyperRTS.Simulation.Units
             private readonly void Fly(Entity entity, ref LocalTransform transform, float2 wanted)
             {
                 transform.Position.xz = wanted;
-                var surface = HasGrid ? Grid.SurfaceHeight(transform.Position) : 0f;
+                var surface = Grid.SurfaceHeight(transform.Position);
                 transform.Position.y = Flights.TryGetComponent(entity, out var flight)
                     ? FlightMath.Climb(transform.Position.y, surface, flight, IsLanded(entity), DeltaTime)
                     : surface;
@@ -228,7 +219,7 @@ namespace HyperRTS.Simulation.Units
                     return true;
                 }
 
-                if (!HasGrid || distance > NavTolerances.Crowded(agent.Radius))
+                if (distance > NavTolerances.Crowded(agent.Radius))
                 {
                     return false;
                 }
@@ -239,7 +230,7 @@ namespace HyperRTS.Simulation.Units
             /// <summary>Rejects or slides a move that would enter a closed cell; units already inside may leave.</summary>
             private readonly float2 Constrain(float2 from, float2 to, NavSurface surfaces)
             {
-                if (!HasGrid || IsOpen(to, surfaces) || !IsOpen(from, surfaces))
+                if (IsOpen(to, surfaces) || !IsOpen(from, surfaces))
                 {
                     return to;
                 }

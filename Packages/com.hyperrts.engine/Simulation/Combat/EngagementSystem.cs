@@ -80,7 +80,8 @@ namespace HyperRTS.Simulation.Combat
                 if (!attacking.ValueRO)
                 {
                     // Attack-movers carry their post along, so a defensive leash is measured from where they engage.
-                    if ((order.Type == OrderType.None && !IsMoving(entity)) || order.Type.EngagesWhileMoving())
+                    var standing = order.Type == OrderType.None && !IsMoving(entity);
+                    if (standing || order.Has(OrderTraits.EngagesWhileMoving))
                     {
                         stance.Anchor = transform.Position;
                     }
@@ -164,7 +165,7 @@ namespace HyperRTS.Simulation.Combat
                 // Attack-move heads straight back to its goal: a disabled destination would read as arrival to
                 // MoveOrderSystem if it never saw the engagement. Only idle defenders head home; escorts halt and
                 // EscortSystem picks up the ward again.
-                if (order.Type.IsAttackMove())
+                if (order.Has(OrderTraits.AttackMove))
                 {
                     MoveTo(entity, order.Position);
                 }
