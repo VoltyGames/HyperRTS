@@ -18,12 +18,20 @@ Assert.That(world.Get<LocalTransform>(unit).Position.x, Is.EqualTo(10f).Within(0
 ```
 
 `SpawnUnit` and `SpawnBuilding` build entities the way the bakers do, without a mesh. `MakePrefab` turns one into a
-prefab for producers. `CombatTestKit`, `EconomyTestKit` and `AircraftTestKit` add setup for their area.
+prefab for producers. `CreateMatch` also builds the nav grid and match rules, which systems require.
+
+- Wait on a state with `RunUntil(condition, maxSeconds)` rather than a fixed `Run`; it returns whether the state came.
+- `Own<T>` hands the world a Unity object to destroy on dispose.
+- Kits add setup per area: `CombatTestKit` (`Kill`, `IsIdle`), `EconomyTestKit` (supplies, unit prefabs, producers),
+  `ContainerTestKit`, `AircraftTestKit` and `CueTestKit` (queued cues and type ids).
+- Presentation tests build their world through `PresentationWorldKit`, with players made by `PlayerSetup.Add`.
 
 ## Validation in CI
 
 `ValidationTests.ProjectHasNoValidationErrors` runs every validation rule over the project's prefabs and open
-scenes. A map is only checked while it is open. `ModuleLayoutTests` checks the [module rules](architecture.md#modules).
+scenes. A map is only checked while it is open. `RuleFiresTests` builds a broken case for every rule and checks
+that it reports, so a new rule needs a row there. `ModuleLayoutTests` checks the
+[module rules](architecture.md#modules).
 
 ## Command line
 
