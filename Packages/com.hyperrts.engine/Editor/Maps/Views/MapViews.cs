@@ -5,6 +5,7 @@ using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Report;
+using HyperRTS.Input.Cameras;
 using UnityEditor;
 using UnityEngine;
 
@@ -58,12 +59,17 @@ namespace HyperRTS.Editor.Maps.Views
         /// Renders the views of the open scene to PNGs with the scene's own match camera (so post-processing matches
         /// the game), puts the camera back, and returns the paths.
         /// </summary>
-        public static List<string> Capture(string map, IEnumerable<MapView> views, MapRules rules)
+        public static List<string> Capture(string map, IEnumerable<MapView> views)
         {
             var camera = Camera.main;
             if (camera == null)
             {
                 throw new System.InvalidOperationException($"Map '{map}' has no main camera to capture its views with.");
+            }
+
+            if (!camera.TryGetComponent(out CameraController controller))
+            {
+                throw new System.InvalidOperationException($"Map '{map}' main camera has no CameraController to pitch its views.");
             }
 
             MapSubScenes.Load();
@@ -72,16 +78,15 @@ namespace HyperRTS.Editor.Maps.Views
             var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
             var paths = new List<string>();
             var transform = camera.transform;
-            var (position, rotation, fieldOfView) = (transform.position, transform.rotation, camera.fieldOfView);
+            var (position, rotation) = (transform.position, transform.rotation);
             var mask = camera.overrideSceneCullingMask;
             try
             {
                 // Entities streamed into the editor world carry the editor's scene mask, which a game camera skips.
                 camera.overrideSceneCullingMask = ulong.MaxValue;
-                camera.fieldOfView = rules.viewFieldOfView;
                 foreach (var view in views)
                 {
-                    Aim(camera, view, rules);
+                    Aim(camera, view, controller);
                     var path = Path.Combine(folder, view.Name + ".png");
                     EditorTextures.RenderPng(camera, target, path);
                     paths.Add(path);
@@ -90,7 +95,6 @@ namespace HyperRTS.Editor.Maps.Views
             finally
             {
                 transform.SetPositionAndRotation(position, rotation);
-                camera.fieldOfView = fieldOfView;
                 camera.overrideSceneCullingMask = mask;
                 Object.DestroyImmediate(target);
             }
@@ -98,11 +102,13 @@ namespace HyperRTS.Editor.Maps.Views
             return paths;
         }
 
-        /// <summary>Looks down at the view's focus from its height, at the match camera's pitch.</summary>
-        private static void Aim(Camera camera, MapView view, MapRules rules)
+        /// <summary>Looks down at the view's focus from its height, at the pitch the match camera has there.</summary>
+        private static void Aim(Camera camera, MapView view, CameraController controller)
         {
-            var rotation = Quaternion.Euler(rules.viewPitch, view.Yaw, 0f);
-            var distance = view.Height / Mathf.Sin(rules.viewPitch * Mathf.Deg2Rad);
+            var pitch = CameraController.PitchAt(view.Height, controller.minZoom, controller.maxZoom,
+                controller.pitchAtMinZoom, controller.pitchAtMaxZoom);
+            var rotation = Quaternion.Euler(pitch, view.Yaw, 0f);
+            var distance = view.Height / Mathf.Sin(pitch * Mathf.Deg2Rad);
             var focus = new Vector3(view.Focus.x, 0f, view.Focus.y);
             camera.transform.SetPositionAndRotation(focus - rotation * Vector3.forward * distance, rotation);
         }

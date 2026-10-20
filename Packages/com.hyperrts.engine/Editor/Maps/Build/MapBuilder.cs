@@ -91,7 +91,7 @@ namespace HyperRTS.Editor.Maps.Build
             }
 
             var views = MapViews.For(generation.Layout, generation.Shapes, project.Rules);
-            var files = MapViews.Capture(project.Spec.name, views, project.Rules);
+            var files = MapViews.Capture(project.Spec.name, views);
             var overview = files.Find(f => Path.GetFileNameWithoutExtension(f) == MapViews.OverviewName);
             return MapOverviewPicture.Save(overview, project.Paths.Overview);
         }

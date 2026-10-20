@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.Maps.Views
 
             var name = project.Spec.name;
             var views = MapViews.For(generation.Layout, generation.Shapes, project.Rules);
-            var files = MapViews.Capture(name, views, project.Rules);
+            var files = MapViews.Capture(name, views);
             Debug.Log($"HyperRTS: captured {files.Count} views of '{name}' in {MapReport.ViewsFolder(name)}");
             return files;
         }

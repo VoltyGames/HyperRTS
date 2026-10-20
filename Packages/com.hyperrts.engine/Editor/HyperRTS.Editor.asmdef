@@ -3,6 +3,7 @@
     "rootNamespace": "HyperRTS.Editor",
     "references": [
         "HyperRTS.Simulation",
+        "HyperRTS.Input",
         "HyperRTS.Presentation",
         "HyperRTS.Network",
         "Unity.Collections",
