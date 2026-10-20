@@ -127,6 +127,7 @@ namespace HyperRTS.Simulation.Vision
                 var key = FogMemoryKey.Identify(entity, Ghosts);
                 var hostile = Relations.IsHostile(Viewer, faction.Value);
                 var visible = Sight.Fog.CanSee(Sight.Team, transform.Position, Cloaked.HasEnabled(entity));
+                // A friendly root is seen too, so the memory of a building since captured by a friend goes.
                 if (!hostile || visible)
                 {
                     Seen.Add(key);
