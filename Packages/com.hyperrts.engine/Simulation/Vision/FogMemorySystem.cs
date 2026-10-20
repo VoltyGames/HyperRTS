@@ -9,7 +9,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Keeps a <see cref="LastSeen"/> memory of each enemy <see cref="FogMemory"/> root the local player saw and lost
+    /// Keeps a <see cref="LastSeen"/> memory of each enemy <see cref="RememberedInFog"/> root the local player saw and lost
     /// in the fog, until he sees it alive again or finds its place empty. Cleared on reveal-all, fog off or a viewer
     /// change.
     /// </summary>
@@ -56,7 +56,7 @@ namespace HyperRTS.Simulation.Vision
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Viewer = view.Viewer,
                 Seen = seen,
-                Sightings = SystemAPI.GetComponentLookup<FogSighting>(),
+                Latest = SystemAPI.GetComponentLookup<LatestSeen>(),
                 Cloaked = SystemAPI.GetComponentLookup<Stealthed>(true),
                 Construction = SystemAPI.GetComponentLookup<ConstructionProgress>(true),
                 Ghosts = SystemAPI.GetComponentLookup<GhostInstance>(true),
@@ -84,13 +84,13 @@ namespace HyperRTS.Simulation.Vision
             return view.Active;
         }
 
-        /// <summary>Drops every memory and sighting, for a view that no longer hides anything or belongs to someone else.</summary>
+        /// <summary>Drops every memory and latest, for a view that no longer hides anything or belongs to someone else.</summary>
         public static void Forget(EntityManager entityManager)
         {
             using var memories = new EntityQueryBuilder(Allocator.Temp).WithAll<LastSeen>().Build(entityManager);
             entityManager.DestroyEntity(memories);
-            using var sightings = new EntityQueryBuilder(Allocator.Temp).WithAll<FogSighting>().Build(entityManager);
-            entityManager.RemoveComponent<FogSighting>(sightings);
+            using var latest = new EntityQueryBuilder(Allocator.Temp).WithAll<LatestSeen>().Build(entityManager);
+            entityManager.RemoveComponent<LatestSeen>(latest);
         }
 
         private struct FogSight
@@ -99,16 +99,16 @@ namespace HyperRTS.Simulation.Vision
             public byte Team;
             public EntityCommandBuffer Commands;
 
-            public void Remember(in FogRecord record)
+            public void Remember(in SeenState record)
             {
                 var memory = Commands.CreateEntity();
-                Commands.AddComponent(memory, new LastSeen { Record = record });
+                Commands.AddComponent(memory, new LastSeen { State = record });
             }
         }
 
         /// <summary>Records what the player sees of each enemy root and remembers the ones that just went out of sight.</summary>
         [BurstCompile]
-        [WithAll(typeof(FogMemory))]
+        [WithAll(typeof(RememberedInFog))]
         [WithNone(typeof(Destructible))]
         private partial struct SightJob : IJobEntity
         {
@@ -116,7 +116,7 @@ namespace HyperRTS.Simulation.Vision
             public FactionRelations Relations;
             public byte Viewer;
             public NativeHashSet<FogMemoryKey> Seen;
-            public ComponentLookup<FogSighting> Sightings;
+            public ComponentLookup<LatestSeen> Latest;
             [ReadOnly] public ComponentLookup<Stealthed> Cloaked;
             [ReadOnly] public ComponentLookup<ConstructionProgress> Construction;
             [ReadOnly] public ComponentLookup<GhostInstance> Ghosts;
@@ -132,24 +132,24 @@ namespace HyperRTS.Simulation.Vision
                     Seen.Add(key);
                     if (hostile)
                     {
-                        Record(entity, Sighting(entity, key, info, faction, transform, health));
+                        Record(entity, StateOf(entity, key, info, faction, transform, health));
                     }
 
                     return;
                 }
 
-                if (Sightings.TryGetComponent(entity, out var sighting))
+                if (Latest.TryGetComponent(entity, out var latest))
                 {
-                    Sight.Remember(sighting.Record);
-                    Sight.Commands.RemoveComponent<FogSighting>(entity);
+                    Sight.Remember(latest.State);
+                    Sight.Commands.RemoveComponent<LatestSeen>(entity);
                 }
             }
 
-            private FogRecord Sighting(Entity entity, FogMemoryKey key, in EntityInfo info, in Faction faction,
+            private SeenState StateOf(Entity entity, FogMemoryKey key, in EntityInfo info, in Faction faction,
                 in LocalTransform transform, in Health health)
             {
                 Construction.TryGetComponent(entity, out var progress);
-                return new FogRecord
+                return new SeenState
                 {
                     Key = key,
                     TypeId = info.TypeId,
@@ -160,15 +160,15 @@ namespace HyperRTS.Simulation.Vision
                 };
             }
 
-            private void Record(Entity entity, in FogRecord record)
+            private void Record(Entity entity, in SeenState record)
             {
-                if (Sightings.HasComponent(entity))
+                if (Latest.HasComponent(entity))
                 {
-                    Sightings[entity] = new FogSighting { Record = record };
+                    Latest[entity] = new LatestSeen { State = record };
                     return;
                 }
 
-                Sight.Commands.AddComponent(entity, new FogSighting { Record = record });
+                Sight.Commands.AddComponent(entity, new LatestSeen { State = record });
             }
         }
 
@@ -182,14 +182,14 @@ namespace HyperRTS.Simulation.Vision
         {
             public FogSight Sight;
 
-            private void Execute(Entity entity, in FogSighting sighting)
+            private void Execute(Entity entity, in LatestSeen latest)
             {
-                if (!Sight.Fog.IsVisible(sighting.Record.Transform.Position, Sight.Team))
+                if (!Sight.Fog.IsVisible(latest.State.Transform.Position, Sight.Team))
                 {
-                    Sight.Remember(sighting.Record);
+                    Sight.Remember(latest.State);
                 }
 
-                Sight.Commands.RemoveComponent<FogSighting>(entity);
+                Sight.Commands.RemoveComponent<LatestSeen>(entity);
             }
         }
 
@@ -203,13 +203,13 @@ namespace HyperRTS.Simulation.Vision
 
             private void Execute(Entity entity, ref LastSeen memory)
             {
-                if (Seen.Contains(memory.Record.Key))
+                if (Seen.Contains(memory.State.Key))
                 {
                     Sight.Commands.DestroyEntity(entity);
                     return;
                 }
 
-                var inSight = Sight.Fog.IsVisible(memory.Record.Transform.Position, Sight.Team);
+                var inSight = Sight.Fog.IsVisible(memory.State.Transform.Position, Sight.Team);
                 memory.VisibleFor = inSight ? memory.VisibleFor + DeltaTime : 0f;
                 if (memory.VisibleFor >= Grace)
                 {

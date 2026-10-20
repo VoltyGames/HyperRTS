@@ -61,9 +61,9 @@ A bad flag or a session that can't start logs the reason and quits with exit cod
 on the time limit. In batch mode nothing renders, so the launcher turns vSync off and caps the frame rate at the
 simulation tick rate (60 Hz) instead of spinning.
 
-Without a graphics device (`-nographics`, `PresentationGate.HasGraphics` false) shaders, materials and compute kernels
+Without a graphics device (`-nographics`, `GraphicsSupport.Available` false) shaders, materials and compute kernels
 never load, so presentation stays off: every presentation and input MonoBehaviour derives from `PresentationBehaviour`,
-which disables itself in Awake before OnEnable or an update can run, and `PresentationGateSystem` switches off the
+which disables itself in Awake before OnEnable or an update can run, and `HeadlessModeSystem` switches off the
 `PresentationSystemGroup` of a presented world. A server or headless client only simulates and networks.
 
 The server's Match is a prespawned ghost, and Netcode enables prespawns only once the first client is in game, so

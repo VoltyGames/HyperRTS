@@ -32,19 +32,19 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Prediction_RunsOnlyWhileInGame()
         {
-            using var world = new World("Prediction Gate Test", WorldFlags.GameClient);
+            using var world = new World("In-Game Prediction Test", WorldFlags.GameClient);
             var prediction = world.CreateSystemManaged<PredictedSimulationSystemGroup>();
-            var gate = world.CreateSystem<PredictionGateSystem>();
+            var inGamePrediction = world.CreateSystem<InGamePredictionSystem>();
 
-            gate.Update(world.Unmanaged);
+            inGamePrediction.Update(world.Unmanaged);
             Assert.IsFalse(prediction.Enabled, "No connection in game yet.");
 
             var connection = world.EntityManager.CreateEntity(typeof(NetworkStreamInGame));
-            gate.Update(world.Unmanaged);
+            inGamePrediction.Update(world.Unmanaged);
             Assert.IsTrue(prediction.Enabled, "In game.");
 
             world.EntityManager.DestroyEntity(connection);
-            gate.Update(world.Unmanaged);
+            inGamePrediction.Update(world.Unmanaged);
             Assert.IsFalse(prediction.Enabled, "The connection dropped.");
         }
     }

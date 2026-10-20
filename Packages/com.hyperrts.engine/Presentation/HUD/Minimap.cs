@@ -165,9 +165,9 @@ namespace HyperRTS.Presentation.HUD
             using var memories = _memories.In(view.EntityManager).ToComponentDataArray<LastSeen>(Allocator.Temp);
             foreach (var memory in memories)
             {
-                var color = view.GetColor(memory.Record.Faction);
+                var color = view.GetColor(memory.State.Faction);
                 var shaded = new Color(color.r * MemoryShade, color.g * MemoryShade, color.b * MemoryShade, color.a);
-                AddBlip(memory.Record.Transform.Position.xz, shaded, 3.2f, true);
+                AddBlip(memory.State.Transform.Position.xz, shaded, 3.2f, true);
             }
         }
 

@@ -36,9 +36,9 @@ namespace HyperRTS.Simulation.Tests
             var memory = SingleMemory();
             _world.Run(3f);
 
-            Assert.AreEqual(_world.Get<EntityInfo>(building).TypeId, memory.Record.TypeId);
-            Assert.AreEqual(2, memory.Record.Faction);
-            Assert.AreEqual(BuildingAt, memory.Record.Transform.Position);
+            Assert.AreEqual(_world.Get<EntityInfo>(building).TypeId, memory.State.TypeId);
+            Assert.AreEqual(2, memory.State.Faction);
+            Assert.AreEqual(BuildingAt, memory.State.Transform.Position);
             Assert.AreEqual(1, CountMemories(_world), "the memory stays while its place is in the fog");
         }
 
@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Tests
             MoveScout(float3.zero);
 
             Assert.AreEqual(0, CountMemories(_world));
-            Assert.IsTrue(_world.EntityManager.HasComponent<FogSighting>(building), "seen again, it is sighted anew");
+            Assert.IsTrue(_world.EntityManager.HasComponent<LatestSeen>(building), "seen again, it is sighted anew");
         }
 
         [Test]
@@ -81,7 +81,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick();
 
             Assert.AreEqual(1, CountMemories(_world));
-            Assert.IsFalse(_world.EntityManager.Exists(building), "the sighting released the despawned root");
+            Assert.IsFalse(_world.EntityManager.Exists(building), "the latest released the despawned root");
         }
 
         [Test]
@@ -108,7 +108,7 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.SetComponentData(building, health);
             _world.Run(0.5f);
 
-            Assert.AreEqual(1f, SingleMemory().Record.Health);
+            Assert.AreEqual(1f, SingleMemory().State.Health);
         }
 
         [Test]
@@ -135,7 +135,7 @@ namespace HyperRTS.Simulation.Tests
             MoveScout(FarAway);
 
             Assert.AreEqual(0, CountMemories(_world));
-            Assert.IsFalse(_world.EntityManager.HasComponent<FogSighting>(building));
+            Assert.IsFalse(_world.EntityManager.HasComponent<LatestSeen>(building));
         }
 
         [Test]

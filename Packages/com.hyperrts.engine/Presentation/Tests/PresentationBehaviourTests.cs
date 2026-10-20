@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Tests
             BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
         private static Type[] Behaviours() =>
-            new[] { typeof(PresentationGate).Assembly, Assembly.Load("HyperRTS.Input") }
+            new[] { typeof(GraphicsSupport).Assembly, Assembly.Load("HyperRTS.Input") }
             .SelectMany(assembly => assembly.GetTypes())
             .Where(type => typeof(MonoBehaviour).IsAssignableFrom(type) && type != typeof(PresentationBehaviour))
             .ToArray();

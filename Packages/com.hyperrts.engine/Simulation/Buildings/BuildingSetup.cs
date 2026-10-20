@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Buildings
             writer.Add<BuildingTag>();
             if (rememberedInFog)
             {
-                writer.Add<FogMemory>();
+                writer.Add<RememberedInFog>();
             }
 
             NavSetup.AddObstacle(ref writer, footprint);

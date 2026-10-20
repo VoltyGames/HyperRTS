@@ -77,11 +77,11 @@ and UsePower (the player entity's `Ability` buffer). `AbilitySystem` ticks coold
 | `StealthAuthoring` / `Stealthed` | Reveal time after firing, still-only option; enabled while hidden |
 | `DetectorAuthoring` / `Detector` | Detection radius |
 | `FogHidden`, `LocalFogView` | Hostile roots the local player can't see; who the local player views as (`RevealAll` for replays) |
-| `FogMemory`, `FogSighting`, `LastSeen` | Remembered in the fog (baked on buildings, `rememberedInFog` opts out); latest sighting of a visible enemy root (cleanup, outlives a despawned ghost); a remembered building |
+| `RememberedInFog`, `LatestSeen`, `LastSeen` | Remembered in the fog (baked on buildings, `rememberedInFog` opts out); latest seen state of a visible enemy root (cleanup, outlives a despawned ghost); a remembered building |
 
 `FogOfWarSystem` restamps vision 10 times a second (hills block sight over `TerrainHeight`; fog off still detects).
 `StealthSystem` sets `Stealthed`. `LocalFogViewSystem` tags `FogHidden`, which selection, picking, HUD and rendering
 skip; splash still hits. `Destructible` map structures are never hidden. `FogMemorySystem` (presented worlds) records
-each visible enemy `FogMemory` root and leaves a `LastSeen` memory when it goes out of sight, or its ghost is despawned
+each visible enemy `RememberedInFog` root and leaves a `LastSeen` memory when it goes out of sight, or its ghost is despawned
 there; the memory goes when the building is seen alive (same entity, or same ghost id and spawn tick) or its place has
 been in sight for `Grace` with nothing there. Reveal-all, fog off and a viewer change forget everything.

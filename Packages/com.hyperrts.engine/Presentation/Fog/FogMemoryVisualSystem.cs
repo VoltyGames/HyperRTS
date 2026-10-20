@@ -58,12 +58,12 @@ namespace HyperRTS.Presentation.Fog
             using var memories = _undrawn.ToEntityArray(Allocator.Temp);
             foreach (var memory in memories)
             {
-                var record = entityManager.GetComponentData<LastSeen>(memory).Record;
+                var record = entityManager.GetComponentData<LastSeen>(memory).State;
                 entityManager.AddComponentData(memory, new FogMemoryVisual { Root = Draw(entityManager, registry, record) });
             }
         }
 
-        private Entity Draw(EntityManager entityManager, in PrefabRegistry registry, in FogRecord record)
+        private Entity Draw(EntityManager entityManager, in PrefabRegistry registry, in SeenState record)
         {
             var prefab = registry.Find(record.TypeId);
             if (prefab == Entity.Null)

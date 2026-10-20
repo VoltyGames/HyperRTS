@@ -71,8 +71,8 @@ namespace HyperRTS.Presentation.Effects
             float age, float standing)
         {
             var strength = LoopFade.Strength(age, loop.Duration) * standing;
-            var gated = loop.AboveHealth > 0f && health <= loop.AboveHealth;
-            if (strength <= 0f || gated || !loop.Rig.IsValid())
+            var belowHealth = loop.AboveHealth > 0f && health <= loop.AboveHealth;
+            if (strength <= 0f || belowHealth || !loop.Rig.IsValid())
             {
                 return;
             }

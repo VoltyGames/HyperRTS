@@ -12,7 +12,7 @@ namespace HyperRTS.Network.Replication
     [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
     [UpdateAfter(typeof(GhostSimulationSystemGroup))]
     [UpdateBefore(typeof(PredictedSimulationSystemGroup))]
-    public partial struct PredictionGateSystem : ISystem
+    public partial struct InGamePredictionSystem : ISystem
     {
         public void OnUpdate(ref SystemState state)
         {
