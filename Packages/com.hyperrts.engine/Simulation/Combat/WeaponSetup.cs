@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
+using Unity.Collections;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat
@@ -7,10 +8,12 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>Adds the components that let an entity attack.</summary>
     public static class WeaponSetup
     {
-        public static void Add<TWriter>(ref TWriter writer, in Weapon weapon, Stance stance, float3 anchor)
+        /// <summary>The primary weapon, with poses for it and <paramref name="mounts"/> extra weapons.</summary>
+        public static void Add<TWriter>(ref TWriter writer, in Weapon weapon, Stance stance, float3 anchor, int mounts)
             where TWriter : struct, IEntityWriter
         {
             writer.Add(weapon);
+            writer.AddBuffer<WeaponPose>().Resize(1 + mounts, NativeArrayOptions.ClearMemory);
             writer.Add(new CombatStance { Value = stance, Anchor = anchor });
             writer.Add<AttackTarget>();
             writer.SetEnabled<AttackTarget>(false);

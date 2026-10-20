@@ -15,5 +15,8 @@ namespace HyperRTS.Simulation.Common
 
         /// <summary>Edge to edge distance to the target, refreshed with <see cref="InRange"/>.</summary>
         public float Gap;
+
+        /// <summary>Retreating from an ordered target inside the minimum range; holds fire until clear.</summary>
+        public bool BackingOff;
     }
 }

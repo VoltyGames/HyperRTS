@@ -5,13 +5,16 @@ namespace HyperRTS.Editor.Validation.Rules
 {
     /// <summary>
     /// Projectiles are prefab ghosts, since the server spawns them and clients must see them fly. A mount sharing the
-    /// unit's target hits only what the primary hits, so orders and the AI, which read the primary, stay correct.
+    /// unit's target hits only what the primary hits, so orders and the AI, which read the primary, stay correct. Arcs
+    /// need a projectile to fly.
     /// </summary>
     public sealed class WeaponRule : AuthoringRule<WeaponAuthoring>
     {
         protected override void Check(WeaponAuthoring weapon, ValidationIssues issues)
         {
             CheckProjectile(weapon, weapon.projectilePrefab, "Projectile", issues);
+            CheckFlight(weapon, "The weapon", weapon.trajectory, weapon.arcHeight, weapon.minRange, weapon.range,
+                weapon.projectilePrefab, issues);
             for (var i = 0; i < weapon.extraWeapons.Count; i++)
             {
                 CheckMount(weapon, weapon.extraWeapons[i], $"Extra weapon {i + 1}", issues);
@@ -28,6 +31,8 @@ namespace HyperRTS.Editor.Validation.Rules
             }
 
             CheckProjectile(weapon, slot.projectilePrefab, $"{label} projectile", issues);
+            CheckFlight(weapon, label, slot.trajectory, slot.arcHeight, slot.minRange, slot.range, slot.projectilePrefab,
+                issues);
             if (slot.range <= 0f)
             {
                 issues.Error(weapon, $"{label} has no range.");
@@ -51,6 +56,25 @@ namespace HyperRTS.Editor.Validation.Rules
             CheckPrefabReference(weapon, projectile, $"{label} prefab", issues);
             WarnIfNotGhost(weapon, projectile, $"{label} '{projectile.name}' is not a ghost: clients won't see it fly.",
                 issues);
+        }
+
+        private static void CheckFlight(WeaponAuthoring weapon, string label, Trajectory trajectory, float arcHeight,
+            float minRange, float range, GameObject projectile, ValidationIssues issues)
+        {
+            if (minRange >= range)
+            {
+                issues.Error(weapon, $"{label} has a minimum range {minRange} not below its range {range}.");
+            }
+
+            if (arcHeight < 0f)
+            {
+                issues.Error(weapon, $"{label} has a negative arc height.");
+            }
+
+            if (trajectory != Trajectory.Direct && projectile == null)
+            {
+                issues.Error(weapon, $"{label} flies {trajectory} but has no projectile prefab.");
+            }
         }
 
         private static bool Covers(WeaponTargets primary, WeaponTargets mount) =>

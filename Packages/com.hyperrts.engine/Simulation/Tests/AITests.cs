@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Tests
             _world.SetCost(prefab, _supplies, 10);
             var writer = new EntityManagerWriter(_world.EntityManager, prefab);
             var weapon = new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f, LeashFactor = 1.5f };
-            WeaponSetup.Add(ref writer, weapon, Stance.Aggressive, float3.zero);
+            WeaponSetup.Add(ref writer, weapon, Stance.Aggressive, float3.zero, 0);
             return prefab;
         }
 

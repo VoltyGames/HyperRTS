@@ -37,6 +37,19 @@ namespace HyperRTS.Simulation.Combat
 
         public bool HasMuzzle;
 
+        public Trajectory Trajectory;
+
+        /// <summary>Apex of an arcing shot as a fraction of the launch-to-aim ground distance.</summary>
+        public float ArcHeight;
+
+        /// <summary>Targets closer than this, edge to edge, can't be hit.</summary>
+        public float MinRange;
+
+        /// <summary>A turret aims instead of the hull turning to fire.</summary>
+        public bool Turreted;
+
+        public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
+
         public bool Affects(in BufferLookup<ArmorModifier> armor, Entity target) =>
             MinEffect <= 0f || CombatMath.ArmorMultiplier(armor, target, DamageType) >= MinEffect;
 
@@ -47,5 +60,14 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Where an instant hit comes from, for directional armor.</summary>
         public float3 HitOrigin(in LocalTransform shooter) =>
             HasMuzzle ? shooter.TransformPoint(Muzzle) : shooter.Position;
+
+        /// <summary>Radians above level to fire from <paramref name="from"/> at <paramref name="aim"/>, lobbed if arcing.</summary>
+        public float Elevation(float3 from, float3 aim)
+        {
+            var ground = math.max(math.distance(from.xz, aim.xz), 0.01f);
+            var slope = (aim.y - from.y) / ground;
+            // An arc of apex ArcHeight times the ground distance leaves at a slope of 4 ArcHeight above the chord.
+            return math.atan(Trajectory == Trajectory.Direct ? slope : slope + 4f * ArcHeight);
+        }
     }
 }

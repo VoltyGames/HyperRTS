@@ -11,7 +11,7 @@ queue, so armor, splash and kill credit apply to all of them.
 
 | Type | Role |
 | --- | --- |
-| `WeaponAuthoring` | Range, damage type, cooldown, splash, projectile, muzzle, surface or air targets, extra weapons |
+| `WeaponAuthoring` | Range, minimum range, damage type, cooldown, splash, projectile and trajectory, muzzle, turret, targets, extra weapons |
 | `WeaponMount` | An extra weapon. Server only, rewritten by stats like the primary |
 | `AmmoAuthoring` | Rounds per load. Reloads while docked |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
@@ -27,6 +27,15 @@ unit closes to the longest reach among them. An independent mount picks its own 
 engages aircraft while the gun shoots tanks. `MinEffect` skips targets whose armor blunts the damage, a mount may
 need research and carry rounds that refill while docked, and mount 1 to 3 play the `Fire2` to `Fire4` cues.
 `ShotWriter` fires both kinds of weapon.
+
+A projectile flies by its weapon's `Trajectory`. Direct shots fly straight and home on the target. Ballistic shells
+arc onto the point aimed at launch, `ArcHeight` times the ground distance high, and miss a target that moved. Rockets
+climb, then dive onto the live target. A weapon with `MinRange` never picks targets inside it, drops ones that close
+in, and backs off to mid range when ordered to attack one.
+
+Each weapon has a `WeaponPose`: yaw relative to the hull, pitch and a wrapping shot count, three bytes per weapon that
+clients read to aim turrets and play recoil. `WeaponPoseSystem` aims them at the weapon's target, lifted to the launch
+angle for arcs, and eases idle ones back to centre. A `Turreted` weapon fires without turning the hull.
 
 ### Destruction
 

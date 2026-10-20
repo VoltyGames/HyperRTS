@@ -12,7 +12,8 @@ namespace HyperRTS.Simulation.Tests
     {
         public static Entity AddWeapon(this TestWorld world, Entity entity, Stance stance = Stance.Aggressive,
             float range = 4f, float damage = 25f, float cooldown = 0.5f, Entity projectile = default,
-            UnityObjectRef<DamageType> damageType = default, WeaponTargets targets = WeaponTargets.Surface)
+            UnityObjectRef<DamageType> damageType = default, WeaponTargets targets = WeaponTargets.Surface,
+            Trajectory trajectory = Trajectory.Direct, float arcHeight = 0f, float minRange = 0f, bool turreted = false)
         {
             var weapon = new Weapon
             {
@@ -25,9 +26,13 @@ namespace HyperRTS.Simulation.Tests
                 LeashFactor = 1.5f,
                 DamageType = damageType,
                 Targets = targets,
+                Trajectory = trajectory,
+                ArcHeight = arcHeight,
+                MinRange = minRange,
+                Turreted = turreted,
             };
             var writer = new EntityManagerWriter(world.EntityManager, entity);
-            WeaponSetup.Add(ref writer, weapon, stance, world.Get<LocalTransform>(entity).Position);
+            WeaponSetup.Add(ref writer, weapon, stance, world.Get<LocalTransform>(entity).Position, 0);
             return entity;
         }
 
@@ -49,7 +54,16 @@ namespace HyperRTS.Simulation.Tests
             var mount = WeaponMount.Create(weapon, rounds, reloadTime, requiredResearchTypeId, 1, independent);
             var writer = new EntityManagerWriter(world.EntityManager, entity);
             WeaponSetup.AddMounts(ref writer, new[] { mount });
+            world.EntityManager.GetBuffer<WeaponPose>(entity).Add(default);
             return entity;
+        }
+
+        /// <summary>An empty prefab for weapons that launch projectiles.</summary>
+        public static Entity ProjectilePrefab(this TestWorld world)
+        {
+            var prefab = world.EntityManager.CreateEntity();
+            world.EntityManager.AddComponentData(prefab, LocalTransform.Identity);
+            return world.MakePrefab(prefab);
         }
 
         public static WeaponMount Mount(this TestWorld world, Entity entity) =>

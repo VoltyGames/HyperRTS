@@ -134,8 +134,9 @@ namespace HyperRTS.Simulation.Combat
 
             private Entity Scan(Entity entity, float3 position, in Weapon weapon, byte faction)
             {
-                var finder = new NearestHostile(Relations, Targets, Armor, weapon, faction, position);
-                Index.Query(position, weapon.Range + Targets.Radius(entity), ref finder);
+                var radius = Targets.Radius(entity);
+                var finder = new NearestHostile(Relations, Targets, Armor, weapon, faction, position, radius);
+                Index.Query(position, weapon.Range + radius, ref finder);
                 var found = finder.Best != Entity.Null;
                 return found && CanShoot(entity, position, weapon, finder.Best) ? finder.Best : Entity.Null;
             }
@@ -154,7 +155,7 @@ namespace HyperRTS.Simulation.Combat
 
                 var gap = EntityRadius.EdgeDistance(position, Targets.Radius(entity), Targets.Position(target),
                     Targets.Radius(target));
-                return gap <= weapon.Range;
+                return weapon.Reaches(gap);
             }
         }
 
@@ -175,7 +176,8 @@ namespace HyperRTS.Simulation.Combat
                     {
                         mount.Weapon.CooldownRemaining = mount.Weapon.Cooldown;
                         mount.UseRound();
-                        Shots.Fire(entity, mount.Weapon, WeaponMount.FireSlot(i), mount.Target, faction.Value);
+                        Shots.Fire(entity, mount.Weapon, mount.Pose, WeaponMount.FireSlot(i), mount.Target,
+                            faction.Value);
                     }
 
                     mounts[i] = mount;

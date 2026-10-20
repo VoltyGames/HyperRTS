@@ -5,13 +5,17 @@ What the engine does today, why, and what is still open. Update it when a featur
 ## Status
 
 Done and tested: selection and orders, pathfinding over terrain, water and bridges, economy, bases and production,
-combat with multiple weapons per unit, fog of war and stealth, power, upgrades, veterancy, fields, abilities, status effects, capture, transports,
+combat with multiple weapons per unit, artillery arcs, rockets and minimum range, fog of war and stealth, power, upgrades, veterancy, fields, abilities, status effects, capture, transports,
 aircraft, destruction, skirmish AI, audio, replays and the editor tooling with the Map Editor.
 
 In progress:
 
 - **Multiplayer** works end to end. 500 units cost a client about 0.3 Mbps at 20 Hz snapshots.
 - **Hardening**: no CI, stress scene or performance budgets yet.
+- **Turret visuals**: `WeaponPose` replicates each weapon's yaw, pitch and shot count. Nothing on the client
+  turns turrets or plays recoil from it yet.
+- **Vertex animation**: `HyperRTS/LitTeam` plays VAT clips for instanced infantry. No clip blending or
+  per-instance speed yet. See [vertex animation](modules/client.md#vertex-animation).
 
 ## Decisions
 

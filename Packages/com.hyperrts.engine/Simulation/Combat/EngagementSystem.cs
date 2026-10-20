@@ -12,7 +12,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// Validates and leashes <see cref="AttackTarget"/>s, chases targets out of weapon range and halts once in range.
+    /// Validates and leashes <see cref="AttackTarget"/>s, chases targets out of weapon range, backs off from ordered ones
+    /// inside the minimum range and halts once in range.
     /// Also keeps <see cref="CombatStance.Anchor"/> on idle, unengaged units.
     /// </summary>
     [BurstCompile]
@@ -99,8 +100,15 @@ namespace HyperRTS.Simulation.Combat
                 // An ordered attack chases indefinitely; the stance only governs targets the unit picked itself.
                 var target = attack.Value;
                 var ordered = order.Type == OrderType.Attack && order.Target == target;
-                var reach = Reach(entity, weapon, target);
+                var reach = Reach(entity, weapon, target, out var floor);
                 if (ShouldRelease(entity, transform.Position, weapon, vision, faction, stance, target, ordered, reach))
+                {
+                    Release(entity, order, stance, ref attack, attacking);
+                    return;
+                }
+
+                attack.Gap = Distance(entity, transform.Position, target);
+                if (!ordered && attack.Gap < floor)
                 {
                     Release(entity, order, stance, ref attack, attacking);
                     return;
@@ -111,9 +119,21 @@ namespace HyperRTS.Simulation.Combat
                     stance.Anchor = transform.Position;
                 }
 
-                attack.Gap = Distance(entity, transform.Position, target);
-                attack.InRange = attack.Gap <= reach;
-                if (attack.InRange)
+                Engage(entity, transform.Position, target, ref attack, floor, reach);
+            }
+
+            /// <summary>Halts in range, chases out of it, and backs an ordered unit off a target inside its minimum range.</summary>
+            private void Engage(Entity entity, float3 position, Entity target, ref AttackTarget attack, float floor,
+                float reach)
+            {
+                var middle = 0.5f * (floor + reach);
+                attack.BackingOff = BacksOff(entity, attack, floor, middle);
+                attack.InRange = !attack.BackingOff && attack.Gap >= floor && attack.Gap <= reach;
+                if (attack.BackingOff)
+                {
+                    BackOff(entity, position, target, middle);
+                }
+                else if (attack.Gap <= reach)
                 {
                     Halt(entity);
                 }
@@ -157,10 +177,11 @@ namespace HyperRTS.Simulation.Combat
                 return Distance(entity, origin, target) > CombatMath.AcquireRange(weapon, vision.Value) * weapon.LeashFactor;
             }
 
-            /// <summary>The longest range of the primary and the ready shared-target mounts that can hit the target.</summary>
-            private float Reach(Entity entity, in Weapon weapon, Entity target)
+            /// <summary>Longest range and shortest minimum of the primary and the ready shared-target mounts that can hit it.</summary>
+            private float Reach(Entity entity, in Weapon weapon, Entity target, out float floor)
             {
                 var reach = weapon.Range;
+                floor = weapon.MinRange;
                 if (!Mounts.TryGetBuffer(entity, out var mounts))
                 {
                     return reach;
@@ -171,6 +192,7 @@ namespace HyperRTS.Simulation.Combat
                     if (JoinsAttack(mount, target))
                     {
                         reach = math.max(reach, mount.Weapon.Range);
+                        floor = math.min(floor, mount.Weapon.MinRange);
                     }
                 }
 
@@ -194,6 +216,7 @@ namespace HyperRTS.Simulation.Combat
                 EnabledRefRW<AttackTarget> attacking)
             {
                 attack.InRange = false;
+                attack.BackingOff = false;
                 attacking.ValueRW = false;
 
                 if (!Moves.HasComponent(entity))
@@ -225,6 +248,28 @@ namespace HyperRTS.Simulation.Combat
                     ReachMath.MoveTo(ref Moves.GetRefRW(entity).ValueRW, Moves.GetEnabledRefRW<MoveDestination>(entity),
                         targetPosition, RepathDistance);
                 }
+            }
+
+            /// <summary>Starts inside the minimum range if the unit can move, and keeps on until mid range or arrival.</summary>
+            private bool BacksOff(Entity entity, in AttackTarget attack, float floor, float middle)
+            {
+                if (attack.BackingOff)
+                {
+                    return attack.Gap < middle && IsMoving(entity);
+                }
+
+                return attack.Gap < floor && Moves.HasComponent(entity);
+            }
+
+            /// <summary>Retreats straight away from the target to <paramref name="gap"/> edge to edge.</summary>
+            private void BackOff(Entity entity, float3 position, Entity target, float gap)
+            {
+                var from = Targets.Position(target);
+                var level = new float3(position.x - from.x, 0f, position.z - from.z);
+                var away = math.normalizesafe(level, new float3(0f, 0f, -1f));
+                var goal = from + away * (gap + Targets.Radius(entity) + Targets.Radius(target));
+                ReachMath.MoveTo(ref Moves.GetRefRW(entity).ValueRW, Moves.GetEnabledRefRW<MoveDestination>(entity), goal,
+                    RepathDistance);
             }
 
             private void Halt(Entity entity)

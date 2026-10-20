@@ -18,6 +18,7 @@ namespace HyperRTS.Simulation.Combat
         [ReadOnly] private ComponentLookup<PostTransformMatrix> _stretches;
         private ComponentLookup<Stealth> _stealth;
         private ComponentLookup<Ammo> _ammo;
+        private BufferLookup<WeaponPose> _poses;
         private DamageWriter _damage;
         private CueWriter _cues;
         private EntityCommandBuffer _ecb;
@@ -28,6 +29,7 @@ namespace HyperRTS.Simulation.Combat
             _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
             _stealth = state.GetComponentLookup<Stealth>();
             _ammo = state.GetComponentLookup<Ammo>();
+            _poses = state.GetBufferLookup<WeaponPose>();
             _damage = new DamageWriter(ref state);
             _cues = new CueWriter(ref state);
         }
@@ -39,6 +41,7 @@ namespace HyperRTS.Simulation.Combat
             _stretches.Update(ref state);
             _stealth.Update(ref state);
             _ammo.Update(ref state);
+            _poses.Update(ref state);
             _damage.Update(ref state, damageQueue);
             _cues.Update(ref state, cueQueue);
             _ecb = ecb;
@@ -76,9 +79,14 @@ namespace HyperRTS.Simulation.Combat
             return true;
         }
 
-        public void Fire(Entity shooter, in Weapon weapon, CueSlot slot, Entity target, byte faction)
+        /// <summary>Fires the weapon at <see cref="WeaponPose"/> index <paramref name="pose"/>, counting the shot there.</summary>
+        public void Fire(Entity shooter, in Weapon weapon, byte pose, CueSlot slot, Entity target, byte faction)
         {
             Reveal(shooter);
+            var poses = _poses[shooter];
+            var fired = poses[pose];
+            fired.CountShot();
+            poses[pose] = fired;
             var place = _transforms[shooter];
             var targetPosition = _transforms[target].Position;
             PlayFire(shooter, slot, place, targetPosition, faction);
@@ -117,16 +125,22 @@ namespace HyperRTS.Simulation.Combat
             var origin = weapon.LaunchPoint(place);
             var aim = targetPosition + new float3(0f, weapon.ProjectileHeight, 0f);
 
-            var prefab = weapon.ProjectilePrefab;
-            var projectile = _ecb.Spawn(prefab, _transforms[prefab], _stretches, origin,
-                quaternion.LookRotationSafe(aim - origin, math.up()), faction);
-            _ecb.AddComponent(projectile, new Projectile
+            var flight = new Projectile
             {
                 Speed = weapon.ProjectileSpeed,
                 Height = weapon.ProjectileHeight,
                 ImpactTypeId = _cues.TypeIdFor(shooter, CueSlot.Impact),
                 Hit = CombatMath.Hit(weapon, shooter, faction, origin, target, aim),
-            });
+                Trajectory = weapon.Trajectory,
+                Start = origin,
+                Apex = weapon.ArcHeight * math.distance(origin.xz, aim.xz),
+            };
+            var heading = flight.Arcs ? flight.Heading() : aim - origin;
+
+            var prefab = weapon.ProjectilePrefab;
+            var projectile = _ecb.Spawn(prefab, _transforms[prefab], _stretches, origin,
+                quaternion.LookRotationSafe(heading, math.up()), faction);
+            _ecb.AddComponent(projectile, flight);
         }
     }
 }

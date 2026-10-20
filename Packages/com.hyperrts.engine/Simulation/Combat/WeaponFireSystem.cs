@@ -13,6 +13,7 @@ namespace HyperRTS.Simulation.Combat
     /// Ticks weapon cooldowns and fires at in-range targets: an instant <see cref="DamageEvent"/>, or a launched
     /// <see cref="Projectile"/> when the weapon has a prefab. Unfinished and unpowered buildings stay silent, as do
     /// weapons out of <see cref="Ammo"/>; a shot reveals a stealthed shooter for its <see cref="Stealth.RevealDuration"/>.
+    /// Units turn to face the target unless the weapon is turreted.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -76,7 +77,7 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                if (Units.HasComponent(entity))
+                if (Units.HasComponent(entity) && !weapon.Turreted)
                 {
                     Shots.Face(entity, Shots.Position(target));
                 }
@@ -87,14 +88,14 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 weapon.CooldownRemaining = weapon.Cooldown;
-                Shots.Fire(entity, weapon, CueSlot.Fire, target, faction.Value);
+                Shots.Fire(entity, weapon, 0, CueSlot.Fire, target, faction.Value);
             }
 
             /// <summary>A longer-ranged mount can put the unit in range before the primary reaches.</summary>
             private static bool InReach(in Weapon weapon, in AttackTarget attack, bool attacking)
             {
                 var engaged = attacking && attack.InRange;
-                return engaged && attack.Gap <= weapon.Range;
+                return engaged && weapon.Reaches(attack.Gap);
             }
         }
     }

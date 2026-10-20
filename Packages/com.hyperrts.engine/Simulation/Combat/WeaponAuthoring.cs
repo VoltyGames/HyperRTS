@@ -64,10 +64,26 @@ namespace HyperRTS.Simulation.Combat
         [ShowIf(nameof(projectilePrefab))]
         public float projectileHeight = 1f;
 
+        [Tooltip("Direct flies straight, Ballistic arcs onto where the target stood, Rocket climbs and dives onto it.")]
+        [ShowIf(nameof(projectilePrefab))]
+        public Trajectory trajectory;
+
+        [Tooltip("Arc apex as a fraction of the ground distance to the target.")]
+        [Min(0f)]
+        [ShowIf(nameof(projectilePrefab))]
+        public float arcHeight = 0.25f;
+
         [Header("Targeting")]
         [Tooltip("Firing range in world units, measured edge to edge.")]
         [Min(0.1f)]
         public float range = 6f;
+
+        [Tooltip("Targets closer than this, edge to edge, can't be hit; ordered attacks back off first.")]
+        [Min(0f)]
+        public float minRange;
+
+        [Tooltip("A turret aims at the target, so the hull keeps its heading while firing.")]
+        public bool turreted;
 
         [Tooltip("What the weapon can hit: Surface (ground and naval units, buildings), Air (aircraft), or both.")]
         public WeaponTargets targets;
@@ -128,12 +144,23 @@ namespace HyperRTS.Simulation.Combat
             [Min(0f)]
             public float projectileHeight = 1f;
 
+            [Tooltip("Direct flies straight, Ballistic arcs onto where the target stood, Rocket climbs and dives onto it.")]
+            public Trajectory trajectory;
+
+            [Tooltip("Arc apex as a fraction of the ground distance to the target.")]
+            [Min(0f)]
+            public float arcHeight = 0.25f;
+
             [Tooltip("Child transform shots spawn at; none spawns projectiles above the pivot.")]
             public Transform muzzle;
 
             [Tooltip("Firing range in world units, measured edge to edge.")]
             [Min(0.1f)]
             public float range = 6f;
+
+            [Tooltip("Targets closer than this, edge to edge, can't be hit.")]
+            [Min(0f)]
+            public float minRange;
 
             [Tooltip("What it can hit. Unless independent, only what the primary can hit too.")]
             public WeaponTargets targets;
@@ -180,11 +207,16 @@ namespace HyperRTS.Simulation.Combat
                     LeashFactor = authoring.leashFactor,
                     Targets = authoring.targets,
                     MinEffect = authoring.minEffect,
+                    Trajectory = authoring.trajectory,
+                    ArcHeight = authoring.arcHeight,
+                    MinRange = authoring.minRange,
+                    Turreted = authoring.turreted,
                 };
                 SetMuzzle(ref weapon, authoring.transform, authoring.muzzle);
 
                 var writer = new BakerWriter(this, entity);
-                WeaponSetup.Add(ref writer, weapon, authoring.stance, authoring.transform.position);
+                WeaponSetup.Add(ref writer, weapon, authoring.stance, authoring.transform.position,
+                    authoring.extraWeapons.Count);
                 if (authoring.extraWeapons.Count > 0)
                 {
                     WeaponSetup.AddMounts(ref writer, BakeMounts(authoring));
@@ -228,6 +260,9 @@ namespace HyperRTS.Simulation.Combat
                     ProjectileHeight = slot.projectileHeight,
                     Targets = slot.targets,
                     MinEffect = slot.minEffect,
+                    Trajectory = slot.trajectory,
+                    ArcHeight = slot.arcHeight,
+                    MinRange = slot.minRange,
                 };
                 SetMuzzle(ref weapon, root, slot.muzzle);
                 return weapon;

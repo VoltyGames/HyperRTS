@@ -94,8 +94,10 @@ namespace HyperRTS.Simulation.Combat
                 var range = stance.Value == Stance.HoldPosition
                     ? weapon.Range
                     : CombatMath.AcquireRange(weapon, vision.Value);
-                var finder = new NearestHostile(Relations, Targets, Armor, weapon, faction.Value, transform.Position);
-                Index.Query(transform.Position, range + Targets.Radius(entity), ref finder);
+                var radius = Targets.Radius(entity);
+                var finder = new NearestHostile(Relations, Targets, Armor, weapon, faction.Value, transform.Position,
+                    radius);
+                Index.Query(transform.Position, range + radius, ref finder);
 
                 if (finder.Best != Entity.Null)
                 {

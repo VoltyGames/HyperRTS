@@ -9,7 +9,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// Flies projectiles toward their target (or its last known position once it dies), queues their
+    /// Flies projectiles along their <see cref="Trajectory"/> toward their aim point, queues their
     /// <see cref="DamageEvent"/> and impact <see cref="CueEvent"/> on arrival and destroys them.
     /// </summary>
     [BurstCompile]
@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Combat
                 var target = projectile.Hit.Target;
                 if (Targets.IsAlive(target))
                 {
-                    projectile.Hit.Position = Targets.Position(target) + new float3(0f, projectile.Height, 0f);
+                    projectile.Track(Targets.Position(target), Targets.Radius(target));
                 }
             }
         }
@@ -76,16 +76,11 @@ namespace HyperRTS.Simulation.Combat
             public DamageWriter Damage;
             public CueWriter Cues;
 
-            private void Execute(Entity entity, ref LocalTransform transform, in Projectile projectile)
+            private void Execute(Entity entity, ref LocalTransform transform, ref Projectile projectile)
             {
-                var toTarget = projectile.Hit.Position - transform.Position;
-                var distance = math.length(toTarget);
-                var step = projectile.Speed * DeltaTime;
-
-                if (distance > step)
+                var arrived = projectile.Arcs ? FlyArc(ref transform, ref projectile) : FlyDirect(ref transform, projectile);
+                if (!arrived)
                 {
-                    transform.Position += toTarget / distance * step;
-                    transform.Rotation = quaternion.LookRotationSafe(toTarget, math.up());
                     return;
                 }
 
@@ -94,6 +89,29 @@ namespace HyperRTS.Simulation.Combat
                 Damage.Add(hit);
                 Ecb.DestroyEntity(entity);
                 Cues.AddImpact(projectile.ImpactTypeId, hit, transform.Forward());
+            }
+
+            private bool FlyDirect(ref LocalTransform transform, in Projectile projectile)
+            {
+                var toTarget = projectile.Hit.Position - transform.Position;
+                var distance = math.length(toTarget);
+                var step = projectile.Speed * DeltaTime;
+                if (distance <= step)
+                {
+                    return true;
+                }
+
+                transform.Position += toTarget / distance * step;
+                transform.Rotation = quaternion.LookRotationSafe(toTarget, math.up());
+                return false;
+            }
+
+            private bool FlyArc(ref LocalTransform transform, ref Projectile projectile)
+            {
+                projectile.Advance(DeltaTime);
+                transform.Position = projectile.Position();
+                transform.Rotation = quaternion.LookRotationSafe(projectile.Heading(), math.up());
+                return projectile.Arrived;
             }
         }
     }
