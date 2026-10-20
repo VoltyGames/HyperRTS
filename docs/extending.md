@@ -1,112 +1,97 @@
 # Extending
 
-Writing game code on top of the engine: new mechanics, HUD changes, AI, and wiring a front end. The engine stays
-generic; anything that names your units or rules lives in your game's assemblies.
+How to build a game on the engine: new mechanics, HUD changes, AI and a front end. The engine stays generic, so
+anything that names your units or rules lives in your own assemblies.
 
 ## Game assemblies
 
-Mirror the engine's layering:
+Mirror the engine's layers: a `MyGame.Simulation` on `HyperRTS.Simulation`, then Presentation, Network and Editor
+assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElements out of the simulation assembly.
 
-| Assembly | References | Holds |
-| --- | --- | --- |
-| `MyGame.Simulation` | `HyperRTS.Simulation`, Entities, Collections, Mathematics, Burst, Transforms, `Unity.NetCode` (for `[GhostField]`) | Components, systems, authoring. No Graphics, InputSystem or UIElements |
-| `MyGame.Presentation` | the above + `HyperRTS.Presentation` | HUD panels, visuals |
-| `MyGame.Network` | the above + `HyperRTS.Network` | Game RPCs (lobby) |
-| `MyGame.Editor` | the above + `HyperRTS.Editor` | Validation rules, builders |
-
-- Systems are discovered automatically. Put them in a phase group
-  (`[UpdateInGroup(typeof(CombatSystemGroup))]`), never `SimulationSystemGroup`.
-- A system runs on the server and in single player by default. A client-side one adds
+- Systems are discovered automatically. Put each in a phase group such as `CombatSystemGroup`.
+- Systems run on the server and in single player. A client-side one adds
   `[WorldSystemFilter(SimulationWorlds.Presented)]`.
-- A component the client reads needs `[GhostField]` on the fields that change (`[GhostEnabledBit]` if enableable).
-- Authoring classes derive from `AuthoringBehaviour` so they get the engine inspector and validation.
+- A component the client reads needs `[GhostField]` on the fields that change.
+- Authoring classes derive from `AuthoringBehaviour` to get the engine inspector and validation.
 
 ## Mechanics
 
 | You want | Do |
 | --- | --- |
-| A new behaviour | Component + authoring + Burst `ISystem` in a phase group |
-| A new order (lay mines) | A new `OrderType` value; extend `OrderTypeExtensions` if it should fight on the way, attack-move or use formations. Issue with `OrderWriter.Issue`. A system runs units whose `ActiveOrder` has your type, walks them up with `TargetReach.Approach` (or sets `MoveDestination`), and disables `ActiveOrder` when done |
-| A new command (call reinforcements) | A new `CommandType` value below 64 (`TypeSet` is one bit each). Append to the player's `PlayerCommand` buffer; consume in `OrderSystemGroup`, skipping quiet frames with `PlayerCommands.Any(ref state, players, TypeSet.Single(type))` |
-| Right-click behaviour (jam a radar) | Add `SmartOrderRule.For<TargetComponent>(order, RelationMask.Enemy)` to the unit's `SmartOrderRule` buffer in its baker |
-| React to production, construction or capture | Read `UnitProduced`, `BuildingCompleted` or `OwnerChanged` on the `GameEvents` singleton later in the frame (after `ProductionSystemGroup`) |
-| Change an owner (mind control) | `Ownership.Transfer(ecb, events, entity, from, to)`; queues, targets and upgrades follow |
-| React to deaths (bounty) | In `LifecycleSystemGroup` after `DeathSystem`, query entities with `Dead` enabled; `LastAttacker` says who did it |
-| Deal damage or heal | `DamageWriter` → `DamageEvent` before `DamageSystem`. Negative heals |
-| Ability effects | An ability without built-in effects; read `AbilityActivation` after `AbilitySystem` |
-| Field effects (jamming) | Read the entity's `FieldPresence` |
-| Disable an entity (EMP, stun) | Set a bit from `OfflineReason.Custom` up in its `Offline.Reasons` and clear it when the effect ends; `OfflineSystem` enables `Offline`. Units need `Offline` added (disabled) in their baker |
-| Change a stat | `StatModifier` on a `Stat` with a `StatSource` (Upgrade, Veterancy, Field or Difficulty); `StatSystem` applies it |
-| A player-wide bonus (more income) | Add a `StatModifier` to the player entity's buffer: `Stat.Income` |
-| A sound or effect | `CueWriter.Play(entity, slot, ...)` before the end of the lifecycle phase |
-| Spawn from code | `ecb.Instantiate(prefab)`, set `LocalTransform` and `Faction`. Prefab entities come from authoring references (`PrefabRegistry` by `TypeId`) |
+| A new behaviour | A component, its authoring and a Burst `ISystem` |
+| A new command | A `CommandType` below 64, consumed in `OrderSystemGroup` |
+| Custom right-click | Add a `SmartOrderRule` to the unit in its baker |
+| React to production or capture | Read `GameEvents` after `ProductionSystemGroup` |
+| Change an owner | `Ownership.Transfer` |
+| React to deaths | Query `Dead` entities after `DeathSystem`. `LastAttacker` names the killer |
+| Damage or heal | `DamageWriter`. A negative amount heals |
+| Custom ability effects | Read `AbilityActivation` after `AbilitySystem` |
+| Field effects | Read the entity's `FieldPresence` |
+| Disable an entity | Set a bit from `OfflineReason.Custom` up in `Offline.Reasons`. Units need `Offline` baked, disabled |
+| Change a stat | Add a `StatModifier`. On the player entity it changes player-wide stats such as income |
+| A sound or effect | `CueWriter.Play` before the lifecycle phase ends |
+| Spawn from code | `ecb.Instantiate`. `PrefabRegistry` finds prefabs by `TypeId` |
+
+### A new order
+
+1. Add an `OrderType` value. Extend `OrderTypeExtensions` if it should fight on the way or use formations.
+2. Issue it with `OrderWriter.Issue`.
+3. In a system, move units with that `ActiveOrder` using `TargetReach.Approach` or `MoveDestination`.
+4. Disable `ActiveOrder` when the order is done.
 
 ## Mapping a Generals-style design
 
 | Feature | In HyperRTS |
 | --- | --- |
-| Dozer | Unit + `Builder` |
-| Supply truck, dock | Unit + `Harvester`; `Resource Node`; building + `Resource Drop-Off` |
-| Barracks, War Factory | Building + `Producer`, `Prerequisites` |
-| Power plants | Building **Power** (positive generates, negative draws) |
-| Damage vs armor, weak rear armor | `Damage Type` assets + `Armor`, directional fields |
-| Artillery | `Weapon` splash radius and edge damage |
-| Upgrades, tech unlocks | `UpgradeAuthoring` prefabs in a producer's **Research Options**; list one in a prerequisite to gate units or buildings behind it |
-| Veterancy | `Veterancy` ranks; kills pay `experienceValue` |
-| Oil derricks, tech buildings | Building + `Capturable`; units with `Capturer` |
-| Garrisons, transports | `Container` on the building or vehicle, `Passenger` on the units |
-| General's powers | `Ability` buffer on the player entity (UsePower) |
-| Radar jamming, healing zones | `Area Field` + `FieldPresence` |
-| Aircraft | Unit + `Flight`; `Airfield` pads; `Ammo` |
+| Dozer | Unit with `Builder` |
+| Supply truck and dock | `Harvester`, `Resource Node`, `Resource Drop-Off` |
+| Power plants | Building **Power**: positive generates, negative draws |
+| Weak rear armor | `Armor` facing multipliers |
+| Upgrades, tech unlocks | `UpgradeAuthoring` research, usable as a prerequisite |
+| Oil derricks | `Capturable` building with `ResourceIncome` |
+| Garrisons, transports | `Container` and `Passenger` |
+| General's powers | `Ability` on the player entity |
+| Radar jamming, healing zones | `Area Field` |
+| Aircraft | `Flight`, `Airfield` pads, `Ammo` |
 
 ## HUD
 
-| Change | Do |
-| --- | --- |
-| Add or replace a panel | Derive `HUDPanel` (pass `boxed: false` for a frameless overlay), subclass `HUDController`, override `CreatePanels` and `Add(panel, parent)`. Put the subclass on your HUD prefab |
-| Translate text | Subclass `HUDText`, override `Get(key)` and `Name(key, authored)`, set `HUDText.Current` before the HUD builds (`[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]`). Keys: [modules](modules/client.md#presentation) |
-| Restyle | `HUD.uss` holds layout (positions, sizes, spacing, icon scaling, the disabled state) and `HUDTheme.uss` the look (colours, fonts, borders). Assign your own sheet as `HUDController.themeSheet` to replace the look, overriding layout rules only where your layout differs. Set `HUDController.Theme` to put one class on `hud-root` at runtime (a per-player or per-side theme) |
-| Team colours | Write a `TeamColorOverride` singleton (colour-blind palettes, own / ally / enemy) |
-
-UI: use UI Toolkit for the HUD, menus and world-space UI. uGUI only where a UI needs Animation or Timeline. No
-IMGUI.
+- **Panels:** derive `HUDPanel`, subclass `HUDController` and add panels in `CreatePanels`. Put the subclass on your
+  HUD prefab.
+- **Text:** subclass `HUDText` and set `HUDText.Current` before the HUD builds. Keys are listed in
+  [client](modules/client.md#presentation).
+- **Style:** `HUD.uss` holds layout and `HUDTheme.uss` the look. Assign your own sheet as
+  `HUDController.themeSheet`.
+- **Team colours:** write a `TeamColorOverride` singleton, for example for colour-blind palettes.
 
 ## AI
 
-`SkirmishAISystem` is self-contained and only writes `PlayerCommand`s.
-
-- Tune it with difficulty presets on `Match` and `AIBuildOrder` assets per side.
-- It needs the map's bot hints (`AIMapHintsAuthoring` in the SubScene: expansion order, attack lanes, defence
-  points). The map builder writes them; without them AI players stay idle and `AIMapHintsCheckSystem` logs an error
-  naming the map.
-- Replace it: disable the system (`state.Enabled = false` from a game system, or remove `AIPlayer`) and write your
-  own system that appends `PlayerCommand`s for players with `AIPlayer`.
+`SkirmishAISystem` only writes `PlayerCommand`s. Tune it with difficulty presets on `Match` and `AIBuildOrder`
+assets. It needs the map's bot hints, which the map builder writes. To replace it, disable the system and write your
+own commands for players with `AIPlayer`.
 
 ## Front-end integration
 
-A game shell (menus, lobby, loading) drives a match through these:
+A game shell drives a match through these calls:
 
 | Need | API |
 | --- | --- |
-| Configure players before the map loads | `MatchSetupRequest.Set(MatchSetup)`: per slot open, control, team, colour, name, AI difficulty, side; resource scale; `FogOverride`; `Weather` key |
+| Set players before the map loads | `MatchSetupRequest.Set(MatchSetup)` |
 | Load a single-player map | `NetworkSession.StartLocal(SessionScene.Load(path))` |
-| Host or join with the menu still up | `NetworkSession.StartHost(port, SessionScene.Keep)` / `StartClient(address, port, SessionScene.Keep)`, then every peer `NetworkSession.LoadScene(path)` |
-| Loading progress | `NetworkSession.SceneLoad`; networked matches also wait for `MatchState.Started` |
-| Connection state | Poll `NetworkSession.Status` and `DisconnectReason` from a `MonoBehaviour` update |
-| Read the match from MonoBehaviours | `MatchView.TryGetDefault(out view)`: local player (`HasLocalPlayer` false for observers), relations, match state, colours |
-| Command card buttons | Implement `ICommandSource` and pass it: `new CommandCard(new MyCommands())` in `CreatePanels`. Give entries a `Slot` and `Hotkey` for a grid layout |
-| A HUD panel | Derive `HUDPanel` and add it in `HUDController.CreatePanels`; `NeedsPlayer = false` keeps it for observers |
-| Pause and speed (single player) | `LocalGameSpeed.SetScale`, `Reset` |
-| Escape for a pause menu | Set `InputActionsProvider.FrontEndOwnsCancel`; call `MatchView.CancelInteraction()` first |
-| Block gameplay keys under menus | `InputActionsProvider.Suspend(owner)` / `Resume(owner)` |
-| Camera speed setting | `CameraController.speedMultiplier` |
-| Replays | `ReplayRecorder` in the authoritative world, `ReplaySerializer.Save/Load`, `ReplayViewer.Begin` after loading `Replay.ScenePath` |
+| Host or join from a menu | `NetworkSession.StartHost` or `StartClient`, then `LoadScene` on every peer |
+| Loading and connection state | `NetworkSession.SceneLoad`, `Status`, `DisconnectReason` |
+| Read the match | `MatchView.TryGetDefault` |
+| Command card buttons | An `ICommandSource` passed to `CommandCard` |
+| Pause and speed | `LocalGameSpeed.SetScale` |
+| Own the Escape key | `InputActionsProvider.FrontEndOwnsCancel` and `MatchView.CancelInteraction` |
+| Block gameplay keys | `InputActionsProvider.Suspend` and `Resume` |
+| Replays | `ReplayRecorder`, `ReplaySerializer`, `ReplayViewer` |
 
 ## Editor
 
-- Validation rules: `AuthoringRule<T>`, `ISceneRule` or `IPrefabRule` in an editor assembly. They are discovered
-  and show up in the inspector, **HyperRTS ▸ Tools ▸ Validate**, Play mode and the CI test.
-- Debug layers: subclass `DebugLayer` or `CellDebugLayer`.
-- Scenes from code: `RTSSceneBuilder.Build(RTSSceneSpec)`, the API behind the scene wizard.
+- Validation rules are `AuthoringRule<T>`, `ISceneRule` or `IPrefabRule` classes. They show up in the inspector,
+  **HyperRTS ▸ Tools ▸ Validate** and the CI test.
+- Debug layers subclass `DebugLayer` or `CellDebugLayer`.
+- `RTSSceneBuilder.Build` creates a scene from code.
 
 See [editor](editor.md).

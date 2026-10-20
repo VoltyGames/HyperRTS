@@ -4,59 +4,36 @@
 
 ## Navigation
 
-| Type | Role |
+Units find paths on a grid over the map. Each cell is land, water, deck or blocked. Each unit moves on one layer:
+Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestination`.
+
+| Authoring | Does |
 | --- | --- |
-| `NavAgent`, `NavLayer` | Radius and layer: Ground, Naval, Amphibious, Air |
-| `MoveDestination` | Enableable XZ goal |
-| `PathWaypoint`, `PathState` | Remaining corners; request bookkeeping |
-| `NavGrid`, `NavSurface` | Singleton grid of Land / Water / Deck flags (0 = blocked): `IsWalkable`, `IsAreaFree`, `HasLineOfSight`, `TryFindNearestWalkable`, `HeightFor(layer)` |
-| `NavObstacleAuthoring` / `NavObstacle` | Blocked box, turned with the entity (buildings add their footprint) |
-| `NavAreaAuthoring` / `NavArea` | Box overriding cells: Water, Blocked, or a Deck (bridge) with water below |
-| `NavGround` | How cells get their surface (flooded = water, too steep = blocked); map tools use the same rules |
-| `TerrainHeightAuthoring` / `TerrainHeight` | Baked heightfield: `Height`, `Raycast`; flat y = 0 without one |
-| `PlacementMath`, `PlacementSurface` | Building placement rules for simulation, ghost, rally points and AI |
-| `TargetReach`, `ReachMath` | Walks a unit to a target's footprint (build, repair, capture, board, gather); it parks up to 1.5 cells out |
-| `ViewGround` | Ground points along camera rays (camera, minimap, listener) |
+| `TerrainHeightAuthoring` | A baked heightfield. Without one the ground is flat |
+| `NavObstacleAuthoring` | Blocks a box. Buildings block their footprint |
+| `NavAreaAuthoring` | Marks a box as water, blocked, or a bridge deck with water below |
 
-- `NavGridSystem` classifies cells from terrain, slope and water, stamps areas and obstacles, and bumps a version
-  so units re-path.
-- `PathfindingSystem`: Burst 8-way A* on the agent's layer with line-of-sight smoothing, at most 48 searches a
-  frame. A search stops after `NavGrid.MaxSearchExpansions` cells and heads for the closest one found.
-
-Layers that share a surface flag share cells: ships pass under a deck that tanks cross.
+- Flooded cells become water and steep ones blocked.
+- Pathfinding is Burst A* with smoothing, at most 48 searches a frame.
+- Layers that share a surface share cells, so ships pass under a bridge that tanks cross.
+- `TargetReach` walks a unit up to a target to build, repair, capture, board or gather.
+- `SpatialIndex` answers fast range queries over living entities.
 
 ## Units
 
-`UnitAuthoring`: speed, radius, nav layer, population. `MovementSystem` follows waypoints, separates overlapping
-units, keeps them on their layer's ground, deck or water, and disables `MoveDestination` on arrival.
-
-## Spatial
-
-Part of `Navigation`.
-
-`SpatialIndex`: a uniform-grid hash of living entities with `Faction` + `Health`, rebuilt at the start of the
-movement phase. Query it with a struct `ISpatialVisitor`; `Closest` breaks ties by entity index.
+`UnitAuthoring` sets speed, radius, nav layer and population. Units follow their path, push apart when they
+overlap, and stop on arrival.
 
 ## Air
 
-| Type | Role |
-| --- | --- |
-| `FlightAuthoring` / `Flight` | Makes a unit an aircraft: altitude, climb speed, loiter radius (0 hovers), uses pads |
-| `AirfieldAuthoring` / `LandingPad`, `HomePad` | Pads on a building, one aircraft each; an aircraft's pad |
-| `Docked` | Enableable, replicated: landed on its pad |
-
-An airfield waits for a free pad before producing a pad user. `PadSystem` claims and frees pads and runs
-ReturnToBase; `RearmSystem` sends empty aircraft home and reloads them while docked. Fuel is game code.
+`FlightAuthoring` makes a unit an aircraft with an altitude and a loiter radius. A radius of 0 hovers.
+`AirfieldAuthoring` gives a building landing pads, one aircraft each. An airfield only builds a pad-using aircraft
+when a pad is free. Aircraft with no ammo fly home and reload while docked. Fuel is left to game code.
 
 ## Transport
 
-| Type | Role |
-| --- | --- |
-| `ContainerAuthoring` / `Container`, `Cargo` | Capacity, largest passenger, fire out, passengers survive its death; `Cargo` replicates |
-| `NeutralGarrison` | A neutral building anyone may board; it belongs to its passengers and turns neutral when empty |
-| `PassengerAuthoring` / `Passenger` | Size; stance restored on exit |
-| `Boarding` | `CanBoard`, `Board`, `IsInside` |
+`ContainerAuthoring` lets a vehicle or building carry units with `PassengerAuthoring`. It sets the capacity, the
+largest passenger and whether passengers fire out or survive its death.
 
-A passenger aboard is hidden, out of the spatial index, takes no orders, and fires out or stays passive.
-`BoardingSystem` runs Enter, `CargoFollowSystem` carries passengers, `UnloadSystem` unloads, and
-`ContainerDeathSystem` ejects or kills them when the container dies.
+A passenger is hidden and takes no orders. A neutral garrison building belongs to whoever is inside and turns
+neutral when empty.

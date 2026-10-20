@@ -4,67 +4,41 @@
 
 ## Resources
 
-| Type | Role |
+Players spend resources to build and train. Each resource is a `ResourceType` asset with a name, colour and icon.
+
+| Authoring | Earns by |
 | --- | --- |
-| `ResourceType` (asset) | Name, colour, icon |
-| `ResourceCost`, `ResourceStock`, `ResourceMath` | Price; player stockpile; arithmetic |
-| `ResourceNodeAuthoring` / `ResourceNode` | Neutral deposit, finite or regrowing |
-| `ResourceDropOffAuthoring`, `HarvesterAuthoring` | Where harvesters deposit; capacity, gather rate, trip state |
-| `ResourceIncomeAuthoring` / `ResourceIncome` | Passive income for the owner (a derrick) plus a first-owner bonus; neutral or `Offline` pays nothing |
-| `OccupantIncome`, `ResourceReserve` | Opt-ins: pay per `Cargo` passenger; pay out of a finite reserve |
-| `ReserveRefillAuthoring` | Refills same-owner reserves of a type every interval |
-| `CasualtyIncomeAuthoring` | Pays the owner a share of each dying unit's `ResourceCost` |
+| `HarvesterAuthoring` | Gathering from a `ResourceNodeAuthoring` and delivering to a `ResourceDropOffAuthoring` |
+| `ResourceIncomeAuthoring` | Steady income while owned and online, plus a first-owner bonus |
+| `CasualtyIncomeAuthoring` | A share of each dying unit's cost |
+| `ReserveRefillAuthoring` | Refilling the owner's finite reserves every interval |
+| `DeliverySourceAuthoring` | Carriers that drive in from the map edge and pay on arrival |
 
-`GatherSystem` runs node → fill → drop-off → deposit and moves on when a node runs dry. `ResourceNodeSystem`
-regrows or removes nodes. Refill, income and casualty income count into `PlayerStats` and scale by `Stat.Income`.
-
-**Delivery.** `DeliverySourceAuthoring` on a building sends `Count` carriers (an unarmed unit prefab: a truck, a
-cargo plane) every `Interval` while owned and online. `DeliverySystem` spawns them on the map edge along the ray
-from the centre through the building and moves them to it; a carrier in `ArrivalRange` pays `Amount` and is
-destroyed. Killed carriers pay nothing; a lost source takes its carriers with it.
+Nodes are finite or regrow. Harvesters move on when a node runs dry. A killed delivery carrier pays nothing. Steady
+income, refills and casualty income scale with the player's `Income` stat.
 
 ## Power
 
-Part of `Buildings`.
-
-`BuildingAuthoring.power` adds a `PowerSupply` (+ generates, − draws). `PowerSystem` totals each `PowerGrid` and
-marks consumers `Unpowered` while demand exceeds supply: weapons hold fire, producers slow to
-`MatchRules.LowPowerProductionRate`. `OfflineSystem` then enables `Offline` while any reason holds.
+Part of `Buildings`. A building with positive **Power** generates it, negative draws it. While demand exceeds
+supply, consumers go offline: weapons hold fire and production slows to `MatchRules.LowPowerProductionRate`.
 
 ## Buildings
 
-| Type | Role |
-| --- | --- |
-| `BuildingAuthoring` | Footprint, population, power, starts under construction |
-| `BuilderAuthoring` / `Builder`, `BuildOption` | Build rate and placeable prefabs |
-| `BuildingPlacement`, `BuildingRules` | Surface the footprint needs; `IsAlliedSite`, `NeedsRepair`, `IsSellable` |
-| `FlagMountAuthoring` / `FlagMount` | Flies the owner's flag: the flag's render child at the pole top and how far it drops when lowered |
-
-`PlaceBuildingSystem` validates, charges and spawns a site; `ConstructionSystem` and `RepairSystem` run builders;
-`SellSystem` refunds `MatchRules.SellRefund` (a `NeutralGarrison` is never sellable).
+`BuildingAuthoring` sets the footprint, population, power and whether it starts under construction. A unit with
+`BuilderAuthoring` places sites and builds them up. Builders also repair. Selling refunds `MatchRules.SellRefund`.
+`FlagMountAuthoring` flies the owner's flag.
 
 ## Production
 
-| Type | Role |
-| --- | --- |
-| `ProducerAuthoring` / `Producer`, `ProductionQueueItem`, `RallyPoint` | Training and research queue |
-| `ProducibleAuthoring`, `Producible` | Base of unit, building and research authoring; build time and population |
-| `Prerequisite`, `CompletedBuildings` | Required `TypeId`s, met by a finished building or research |
-| `PurchaseRules` | The one buy rule (orders, placement, AI, HUD): `IsUnlocked`, `CanBuy`, `TryBuy` |
-| `Research`, `CompletedResearch` | Researched once instead of spawned; the player's finished research (replicated by `TypeId`) |
-| `BuildLimitAuthoring` / `BuildLimit` | Cap per player on a type, sites and queue included |
+`ProducerAuthoring` gives a building a training and research queue with a rally point. Units, buildings and research
+share `ProducibleAuthoring`: build time and population.
 
-`ProductionCommandSystem` handles Produce, Cancel and rally points; `ProductionSystem` trains the queue head when
-population allows. `OwnerChangeSystem` refunds a transferred entity's queue to the old owner and clears its orders,
-rally point and selection.
+- A `Prerequisite` is met by a finished building or research.
+- `PurchaseRules` is the one buy rule, shared by orders, placement, the AI and the HUD.
+- `BuildLimitAuthoring` caps how many of a type a player may have, counting sites and queued items.
+- When an entity changes owner, its queue is refunded to the old owner.
 
 ## Capture
 
-| Type | Role |
-| --- | --- |
-| `CapturableAuthoring` / `Capturable`, `CaptureProgress` | Taken over in `captureTime` seconds; progress replicates |
-| `CapturerAuthoring` / `Capturer` | Unit that captures, optionally used up |
-| `CaptureLookup` | `CanCapture`, shared by orders and `CaptureSystem` |
-
-`CaptureSystem` advances progress while capturers are in reach, then transfers the owner. A garrisoned building
-can't be captured.
+Units with `CapturerAuthoring` take over buildings with `CapturableAuthoring` after `captureTime` seconds in reach.
+A capturer can be used up by it. A garrisoned building can't be captured.

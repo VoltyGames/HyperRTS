@@ -4,84 +4,81 @@
 
 ## Combat
 
+A unit with a `Weapon` picks the nearest hostile, closes to range and fires. Every hit goes through one damage
+queue, so armor, splash and kill credit apply to all of them.
+
 | Type | Role |
 | --- | --- |
-| `WeaponAuthoring` / `Weapon` | Range, damage and type, cooldown, splash, friendly fire, projectile, acquire range, `WeaponTargets` (Surface, Air) |
-| `AmmoAuthoring` / `Ammo` | Rounds per load; empty weapons hold fire; reloads while `Docked` |
-| `ArmorAuthoring` / `ArmorModifier`, `ArmorFacing` | Multiplier per `DamageType`; front / side / rear |
-| `DamageWriter`, `DamageQueue` | Every hit and heal (negative) is queued |
-| `CombatStance` | Aggressive, Defensive (returns to anchor), HoldPosition, Passive |
-| `LastAttacker`, `Projectile`, `SpawnOnDeath` | Kill credit; a shot in flight; the wreck spawned on death |
-| `TargetLookup` | `IsValidTarget` (hostile, alive, hittable layer, not stealthed); `IsAttackable` adds `Destructible` scenery for explicit orders |
-| `DestructibleAuthoring` | Marks a building or unit `Destructible`, or makes standalone scenery with health, crush rating, remains and a blocked box |
-| `Crusher` | A vehicle that flattens destructible scenery it drives over |
-| `StretchPartsAuthoring` / `StretchParts`, `PartStretch`, `StretchLayout` | Start cap, end cap and span (sharing one parent under the root) of a prop the map builder stretches: caps move out, only the span scales. A stretched prop carries its `PartStretch`; `DeathSystem` copies it to the remains, whose own parts `StretchPartsSystem` stretches once to match |
-| `ToppleAuthoring` / `Topple`, `FellFrom`, `Felling`, `ToppleMath` | Scenery that falls away from its lethal hit (`DamageSystem` records the fall heading away from the shooter, crusher or blast centre); `DeathSystem` lays the remains along the fall, and `ToppleSystem` (Presentation) shows a seen fall over 1.5 s. The inspector's **Measure from model** (`ToppleMeasure`) sets `trunk` from the LOD0 faces of a chosen trunk material and `lie` from the Destructible's remains |
-| `DamageStagesAuthoring` / `DamageStage` | Child models shown by health fraction, each step with an effect |
-| `ImpactSurfaceSystem` | Sets each `CueSlot.Impact` cue's `ImpactSurface` and `Material` (the target's `HitMaterial`, else `Water`, else the `GroundMaterials` cell under open ground, else `None`); impact marks and `ImpactSurface` live in `Cues` |
-| `SpawnEffectAuthoring` / `SpawnEffect` | Effect played once where an entity appears (a ruin's dust) |
-| `DecayAuthoring` / `Decay` | Remains (a wreck) that wait `lifetime` s, sink `despawnDepth` m over `despawnDuration` s and are destroyed (`DecaySystem`, authoritative worlds; put it on a ghost so clients follow). The wait is a fixed `DespawnStartTime` time, so waiting remains are only read and a static ghost sends nothing. `DespawnProgress` is replicated so clients fade the loop effects |
+| `WeaponAuthoring` | Range, damage type, cooldown, splash, projectile, surface or air targets |
+| `AmmoAuthoring` | Rounds per load. Reloads while docked |
+| `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
+| `DamageWriter` | Queues a hit. A negative amount heals |
+| `CombatStance` | Aggressive, Defensive, HoldPosition or Passive |
+| `LastAttacker` | Who gets the kill credit |
 
-Systems, in order: `AttackOrderSystem` (explicit attacks), `TargetAcquisitionSystem` (idle and moving units pick
-the nearest hostile, every 4th frame each), `EngagementSystem` (chase, stop in range, release), `WeaponFireSystem`
-(instant hit or projectile), `ProjectileSystem`, `CrushSystem` (lethal hit on scenery under a moving crusher) and
-`DamageSystem` (armor × facing × `DamageTaken`, splash falloff over enemies, allies with friendly fire and scenery).
-Turrets that turn on their own are not built in.
+Idle units look for targets every 4th frame. `DamageSystem` applies all damage last in the combat phase. Turrets
+that aim on their own are not built in.
+
+### Destruction
+
+| Type | Role |
+| --- | --- |
+| `DestructibleAuthoring` | Scenery with health and remains. Only explicit attack orders target it |
+| `Crusher` | A vehicle that flattens destructible scenery it drives over |
+| `DamageStagesAuthoring` | Models swapped by health fraction |
+| `ToppleAuthoring` | Scenery that falls away from the hit that killed it |
+| `StretchPartsAuthoring` | A prop the map builder stretches. Only the middle span scales |
+| `DecayAuthoring` | Remains that wait, sink and disappear |
+| `SpawnEffectAuthoring` | An effect played once where an entity appears |
 
 ## Stats
 
-Part of `Common`.
+Part of `Common`. Upgrades, veterancy, fields and difficulty all change stats through one formula, and each source
+can be removed later:
 
-| Type | Role |
-| --- | --- |
-| `StatModifier`, `Stat` | `(base + Add) × (1 + ΣPercent)` for MaxHealth, Damage, Range, FireRate, MoveSpeed, VisionRange, DamageTaken, BuildRate, ProductionSpeed, Income |
-| `StatSource` | Who added a modifier: Upgrade, Veterancy, Field, Difficulty |
-| `BaseStat`, `StatBasesPending`, `StatMath` | Unmodified values; `Evaluate`, `Apply`, `RemoveSource` |
+```text
+value = (base + Add) × (1 + ΣPercent)
+```
 
-`StatBaseSystem` records each entity's bases from its authored components at spawn (first in the order phase);
-`StatSystem` rewrites every live stat from them last in the lifecycle phase, only when the modifier buffer changes
-(`MaxHealth` keeps the health fraction).
+A `StatModifier` names a `Stat`, such as MaxHealth, Damage, Range or Income, and its `StatSource`. `StatSystem`
+recomputes stats at the end of the frame when modifiers change. A `MaxHealth` change keeps the health fraction.
 
 ## Veterancy
 
-`VeterancyAuthoring` sets rank thresholds and bonuses; `ExperienceValue` is what a killer earns. `KillCreditSystem`
-pays the last hostile attacker; `VeterancySystem` promotes and swaps rank modifiers.
+Units gain ranks from kills. `VeterancyAuthoring` sets the thresholds and bonuses. `ExperienceValue` is what killing
+this unit earns, paid to the last hostile attacker.
 
 ## Upgrades
 
-`UpgradeAuthoring` / `UpgradeEffect`: a research prefab with stat bonuses per target type. `UpgradeSystem` applies
-the owner's `CompletedResearch` to matching entities, catches up later spawns, and swaps sets on an owner change.
+An upgrade is a research prefab with `UpgradeAuthoring`: stat bonuses per target type. Once researched, it applies
+to the owner's matching entities, including ones built later.
 
-## Auras
+## Fields
 
-`AreaFieldAuthoring` / `AreaField`: an aura (radius, targets by relation and kind, stat bonuses, heal or damage per
-second). Every 0.25 s `AreaFieldSystem` rewrites each entity's `FieldPresence` (one entry per field name, no
-stacking); games read it for their own effects.
+Part of `Auras`. `AreaFieldAuthoring` makes an aura with a radius, target filter, stat bonuses and heal or damage
+per second. Every 0.25 s, each entity's `FieldPresence` lists the fields it is in. The same field never stacks.
+Games read `FieldPresence` for their own effects.
 
 ## Abilities
 
-| Type | Role |
-| --- | --- |
-| `AbilityAuthoring` / `Ability` | Cooldown ability: target (none, point, entity) and filter, range, required building, built-in effects (spawn, area damage or heal) |
-| `AbilityActivation`, `AbilityEvents` | This frame's uses, for game systems |
+`AbilityAuthoring` gives a unit a cooldown ability. It can target nothing, a point or an entity, and can require a
+building. Built-in effects spawn a prefab or deal area damage or healing. For other effects, a game reads this
+frame's `AbilityActivation`.
 
-`AbilityCommandSystem` handles UseAbility (self-targeted: every ready caster; aimed: the nearest walks into range)
-and UsePower (the player entity's `Ability` buffer). `AbilitySystem` ticks cooldowns and finishes walk-in casts.
+A self-targeted ability fires on every ready caster. An aimed one walks the nearest caster into range. Player
+powers are `Ability` entries on the player entity.
 
 ## Vision
+
+Each team sees what its units see. `FogOfWar` holds visible, explored and detected cells per team.
 
 | Type | Role |
 | --- | --- |
 | `VisionRange` | Sight radius |
-| `FogOfWar` | Singleton grid, one bit per team (1–15) for visible, explored, detected: `CanSee`, `IsHiddenFrom`, `IsCloakedFrom` |
-| `StealthAuthoring` / `Stealthed` | Reveal time after firing, still-only option; enabled while hidden |
-| `DetectorAuthoring` / `Detector` | Detection radius |
-| `FogHidden`, `LocalFogView` | Hostile roots the local player can't see; who the local player views as (`RevealAll` for replays) |
-| `RememberedInFog`, `LatestSeen`, `LastSeen` | Remembered in the fog (baked on buildings, `rememberedInFog` opts out); latest seen state of a visible enemy root (cleanup, outlives a despawned ghost); a remembered building |
+| `StealthAuthoring` | Hidden unless detected. Revealed for a while after firing |
+| `DetectorAuthoring` | Detection radius |
+| `RememberedInFog` | Leaves a last-seen memory when it goes out of sight. On buildings by default |
 
-`FogOfWarSystem` restamps vision 10 times a second (hills block sight over `TerrainHeight`; fog off still detects).
-`StealthSystem` sets `Stealthed`. `LocalFogViewSystem` tags `FogHidden`, which selection, picking, HUD and rendering
-skip; splash still hits. `Destructible` map structures are never hidden. `FogMemorySystem` (presented worlds) records
-each visible enemy `RememberedInFog` root and leaves a `LastSeen` memory when it goes out of sight, or its ghost is despawned
-there; the memory goes when the building is seen alive (same entity, or same ghost id and spawn tick) or its place has
-been in sight for `Grace` with nothing there. Reveal-all, fog off and a viewer change forget everything.
+- Vision updates 10 times a second, and hills block sight.
+- Hidden enemies can't be selected, picked or seen, but splash still hits them.
+- A memory clears when its spot is seen again.

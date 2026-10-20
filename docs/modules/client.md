@@ -1,174 +1,206 @@
 # Client modules
 
-[Modules](../modules.md) ▸ Interaction, Input, Presentation. None of these load on a headless server.
+[Modules](../modules.md) ▸ Interaction, Input, Presentation
+
+Everything a player sees and touches. None of it loads on a headless server, and none of it changes the
+simulation, so two clients may look slightly different.
 
 ## Interaction
 
-UI state that input, HUD and overlays share (`Client/`, namespace `HyperRTS.Client`), created once per presented world.
+UI state that input, the HUD and overlays share, created once per presented world. It lives in `Client/`.
 `DefaultWorld` and `LiveQuery` give MonoBehaviours the presented world and a query that survives world swaps.
 
 | Singleton | Role |
 | --- | --- |
 | `PlacementState` | Building placement: prefab, ghost position, validity |
-| `PendingCommand` | Targeted command waiting for a click (attack-move, patrol, aimed ability) |
-| `PointerState` | `OverUI`: world clicks are ignored |
-| `SelectionDragState`, `CameraFocusRequest` | Marquee; minimap click → camera |
-| `HotkeyPresses` | Keys pressed while gameplay input is live, for command-card hotkeys |
+| `PendingCommand` | A targeted command waiting for a click, such as attack-move or an aimed ability |
+| `PointerState` | Whether the pointer is over UI, so world clicks are ignored |
+| `SelectionDragState` | The selection box being dragged |
+| `CameraFocusRequest` | A minimap click moving the camera |
+| `HotkeyPresses` | Keys pressed this frame, for command-card hotkeys |
 
 ## Input
 
 | Type | Role |
 | --- | --- |
-| `RTSInputActions`, `InputActionsProvider` | Selection, Commands and Camera maps ([bindings](../getting-started.md#play)); the one shared instance, `Suspend` / `Resume`, `FrontEndOwnsCancel` |
-| `SelectionInputSystem` | Mouse gestures → `SelectionInput` |
-| `CommandInputSystem` | Right-click Smart, hotkeys, targeted commands → `PlayerCommand` |
-| `PlacementInputSystem` | Moves the ghost, confirms with `PlaceBuilding` |
-| `WorldPointer` | Cursor → target through `PickRanking`, and the ground point; placement casts for ground only |
-| `CameraController` | Pan, edge scroll, zoom, rotate, map clamp, `FocusOn`, starts at the home base |
+| `RTSInputActions` | The Selection, Commands and Camera action maps. [Bindings](../getting-started.md#play) |
+| `InputActionsProvider` | The one shared actions instance, with `Suspend` and `Resume` |
+| `SelectionInputSystem` | Mouse gestures to `SelectionInput` |
+| `CommandInputSystem` | Right-click, hotkeys and targeted commands to `PlayerCommand` |
+| `PlacementInputSystem` | Moves the placement ghost and confirms it |
+| `WorldPointer` | What the cursor points at, and the ground point |
+| `CameraController` | Pan, edge scroll, zoom, rotate, map bounds. Starts at the home base |
 
-Clicks over the HUD, while placing or while a command is pending never reach selection. A front end that handles
-Escape sets `FrontEndOwnsCancel` and calls `MatchView.CancelInteraction()` first.
+Clicks over the HUD, while placing, or while a command is pending never reach selection. A front end that handles
+Escape itself sets `FrontEndOwnsCancel` and calls `MatchView.CancelInteraction()` first.
 
 ## Presentation
 
-`HUD.prefab`:
+Rendering, HUD, effects and audio. `MatchView` is a once-per-frame read model for MonoBehaviours: local player,
+relations and colours.
 
-| Component | Role |
+### HUD
+
+`HUD.prefab` holds a UI Toolkit HUD. `HUDController` builds its panels from `HUD.uss` for layout and
+`HUDTheme.uss` for looks, and keeps them in sync with the simulation. Games add or replace panels by overriding
+`CreatePanels`.
+
+| Type | Role |
 | --- | --- |
-| `HUDController` | UI Toolkit HUD; builds its `HUDPanel`s from a layout sheet (`HUD.uss`) and a theme sheet (`HUDTheme.uss`) and refreshes them from a `HUDContext` |
 | Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner` |
-| `CommandCard`, `ICommandSource` | Entries from each source: purchases, abilities, stances, unit actions; `Slot` and `Hotkey` per entry |
-| `HUDText` | Every HUD string by key; set `HUDText.Current` to translate (keys below) |
-| `OverlayRenderer` | Instanced rings, health bars, placement ghost, rally markers, and `BuildingOverlays` (capture dial, garrison pips). Your selected units' rings and bars draw through buildings |
-| `FogOfWarRenderer` | Fog projected onto the depth buffer, so terrain and buildings fog where they stand |
+| `ICommandSource` | Adds command-card entries: purchases, abilities, stances, unit actions. Each has a slot and hotkey |
+| `HUDText` | Every HUD string, by key. Set `HUDText.Current` to translate |
+| `OverlayRenderer` | Instanced selection rings, health bars, placement ghost, rally markers, capture dials, garrison pips |
 
-`HUDText` keys: fixed `hud.pop`, `hud.power`, `command.return|unload|sell`, `stance.<stance>`,
-`outcome.victory|defeat|draw`; names `entity.<name>`, `resource.<asset>`, `ability.<name>`, kebab-cased by
-`HUDText.Key` ("War Factory" → `entity.war-factory`).
+`HUDText` keys:
 
-Rendering and effects:
+| Key | Text |
+| --- | --- |
+| `hud.pop`, `hud.power` | Resource bar labels |
+| `command.return`, `command.unload`, `command.sell` | Fixed commands |
+| `stance.<stance>` | Stance names |
+| `outcome.victory`, `outcome.defeat`, `outcome.draw` | Game over banner |
+| `entity.<name>`, `resource.<asset>`, `ability.<name>` | Names, kebab-cased: "War Factory" is `entity.war-factory` |
 
-- **`MatchView`**: once-per-frame read model for MonoBehaviours (local player, relations, colours).
-- **Team colour** (`TeamColors/`): `HyperRTS/LitTeam` is URP Lit that repaints albedo in the owner's colour where
-  `_TeamMask` (R, UV0) and the `_TeamStrip` height band allow. `TeamColorSystem` writes `TeamColor` (alpha 0 =
-  untinted) and `TeamStrip` on an owned entity's render parts. `FactionPalette` holds this client's colours;
-  `TeamColorOverride` swaps them (colour-blind, own / ally / enemy). `TeamColorRule` flags units without it.
-- **Silhouettes**: `UnitSilhouetteFeature` (Render Graph, after the skybox and height fog, game cameras) draws renderers on
-  `UnitRenderingLayer` (8) through cover: LitTeam's `HyperRTSUnitMask` marks visible pixels in stencil, then
-  `HyperRTSSilhouette` paints a team-colour fill and rim where the unit is hidden. `UnitRenderingLayerBakingSystem`
-  puts every rendered part of a `UnitTag` entity on the layer at bake time.
-- **Fog**: `FogVisibilitySystem` turns `FogHidden` and `Inside` into `DisableRendering`. Map buildings never get
-  `FogHidden`, so `BuildingFog.IsHidden` hides their flags, dials and pips under the local fog.
-  `FogMemoryVisualSystem` draws each `LastSeen` memory as a `VisualPrefab` copy of its type (transforms, meshes and
-  material properties only, so nothing picks, selects or counts it), team-coloured through `TeamColorSource`; the
-  minimap shows memories as dimmed squares.
-- **Flags** (`Flags/`): `FlagDisplay.Resolve` picks the shown flag and hoist (an owned building's flag lowers over
-  the first half of a capture and the capturer's rises over the second; a neutral one's rises over the whole).
-  `FlagSystem` writes `FlagState` (flag layer = the shown player's `PlayerSide`, hoist, shown) and `FlagColor` (hoist
-  band). `HyperRTS/Flag` samples the game's flag `Texture2DArray` and waves the `FlagMesh` cloth downwind.
-- **Destruction**: `DamageStageSystem` shows the stage model for the health and bursts its effect rig;
-  `SpawnEffectSystem` bursts spawn effect rigs once (both from the effect pool; a prefab without `EffectRig` logs an
-  error once); `ToppleSystem` tips felled remains (`Felling`) over with ease-in
-  and a damped bounce, or lays them down at once when the fall was out of sight. It writes only their
-  `LocalToWorld` (and their children's) after the transform systems, timed by its own `FallClock`, so the
-  simulation keeps the final pose. `Animation/MachineSystem` poses
-  machine parts.
-- **Environment**: `HyperRTS/Water` (depth colour, refraction, ripples, sky reflection, capped glint; vertex A thins
-  fords, G streaks rapids foam; calm water drifts foam flecks at `_FlowSpeed` and gathers a foam band (`_BankFoamWidth` m,
-  from the depth over the bed slope) at the banks, off under `_TERRAIN_SIMPLE`; needs Depth and Opaque Textures),
-  `HyperRTS/Foliage` (alpha-cut, wind sway, translucency) and `HyperRTS/Bark` (opaque URP Lit: base, normal, optional mask map R metallic G AO A smoothness).
-- **Atmosphere**: `Atmosphere` sits on the root of a weather's atmosphere prefab (with its sun, global post volume,
-  `Wind` and `HeightFog`). On enable it sets the skybox, skybox ambient (`ambientIntensity`), the custom
-  `reflection` cubemap (`reflectionIntensity`), turns Unity fog off, publishes its `wetness` (`Wetness.Publish`; 0 on
-  disable) and updates the environment lighting. A missing skybox or reflection logs an error and applies nothing.
-- **Height fog**: `HeightFog` (on the atmosphere prefab; the last enabled is `HeightFog.Current`) publishes
-  `_HyperRTSFogColor`, `_HyperRTSFogSunColor` (added toward the main light), `_HyperRTSFogParams` (x `density` per
-  metre at `baseHeight`, y `baseHeight` world y, z `heightFalloff` per metre, w `startDistance`) and
-  `_HyperRTSFogShape` (x `maxOpacity`, 0 when none is enabled; y `sunExponent`). `HeightFog.hlsl` integrates
-  density · e^(-falloff · (y - base)) along the view ray from the start distance (`HeightFogAt`, capped at the far
-  plane; a series keeps level rays stable). `HeightFogFeature` (Render Graph, its `shader` set to
-  `Hidden/HyperRTS/HeightFog`) blends it over the opaques and sky from the camera depth texture, after the skybox and
-  screen-space decals and before the silhouettes, in game and scene view perspective cameras only (orthographic
-  captures such as the minimap stay clear). Water applies the same fog and takes it out of its refracted bottom.
-  `HeightFogRule` flags a match scene whose renderers lack the feature or its shader.
-- **Quality knobs**: the game fills one `PresentationQuality` (effects and ground `DetailLevel`, `InteractionQuality`,
-  grass density and distance, row crop density and distance, URP antialiasing, shadow map size) and calls
-  `PresentationQuality.Apply`; `Current` holds the last one, reset to `Default` (full detail) on subsystem
-  registration. Apply writes `EffectDetail.Level`, `TerrainDetail.Level`, `InteractionMap.Quality`,
-  `RowCropRenderer.Density`/`Distance`, `DetailFade` and `CameraAntialiasingMode.Mode` (all read-only outside the
-  engine), sets every active terrain's detail density and distance (and again on every scene load), and has
-  `MainLightShadows` set the active URP asset's shadow map size in memory, never dirtying it and restoring the
-  authored size on quit. `CameraAntialiasing` on a camera follows `CameraAntialiasingMode.Mode`.
-- **Wind**: `Wind` (on the scene's directional `WindZone`) publishes `_HyperRTSWindDirection` (xz downwind),
-  `_HyperRTSWindStrength` (windMain), `_HyperRTSWindGust` (x windPulseMagnitude, y windTurbulence, z gust tiles per
-  metre), `_HyperRTSWindGustMap` (procedural tileable noise), `_HyperRTSWindGustOffset` (xy this frame's scroll in
-  tiles, zw last frame's; it moves downwind windPulseFrequency tiles a second) and `_HyperRTSWindDetail`
-  (the component's `vegetation` `WindDetail`: 0 `None` keeps vegetation still, 1 `Sway`, 2 + `Branches`, 3 +
-  `Flutter`; a climate picks it, flags fly regardless). `Wind.hlsl` turns them into motion; every pass of Foliage and
-  Bark (forward, shadow, depth, depth-normals, motion vectors) uses the same position, and both crossfade LODs.
-  - Foliage with `_TREE_WIND` off (grass, crops, details): sway about the origin with height (`_WindStrength` m per m,
-    `_WindSpeed`) and `_Flutter` m of leaf flutter. On, and always on Bark: tree meshes carry wind data in Unity object
-    space, metres: TEXCOORD2.xy branch pivot xy, TEXCOORD3.x branch pivot z, TEXCOORD3.y card pivot x, TEXCOORD4.xy
-    card pivot yz (TEXCOORD1 unused); COLOR r crown AO, g branch flex (0 at the level-1 branch pivot, 1 at its tip, 0
-    on the trunk), b stiffness (0 limb, 1 twig), a flutter weight (1 on leaf cards). Cards flutter about their pivot
-    (`_CardFlutter` rad), branches turn about theirs (`_BranchSway` rad), and the trunk bends on an (h / `_TreeHeight`)²
-    curve keeping its length (`_WindStrength` m per m). Bark and leaves of one tree need the same `_WindStrength`,
-    `_WindSpeed`, `_BranchSway`, `_TreeHeight` and `_WindScale` (0 = still, for fallen trees).
-- **Interaction maps** (`InteractionMap` on the rig, needs the `Hidden/HyperRTS/Interaction Brush` shader): two
-  render textures over the map rect, faded and stamped on the GPU each frame (`InteractionBrush`: instanced
-  procedural quads; fades go in whole 8-bit steps). `_HyperRTSTrample` (RGBA8, 0.5 m texels on Full): RG travel
-  direction * 0.5 + 0.5, B grass flatten (recovers over 60 s), A crop damage (never recovers). `_HyperRTSTracks`
-  (RG8, 0.2 m texels): R rut depth, G churned soil (fade over 4 min). `_HyperRTSInteractionRect` (x min, z min,
-  1 / width, 1 / depth; zero = no maps, callers skip the reads) and `_HyperRTSTracksTexel` (xy texel counts, zw metres
-  per texel). `InteractionStampSystem`
-  stamps vehicles with `TrackMarks` that are on the ground and not hidden from the local player, seen building
-  footprints (`NavObstacle`) and ground impacts of 3 m splash or more. `InteractionMap.Quality` (Off, Low = half
-  resolution, Full) comes from `PresentationQuality`; Off frees the textures. Presentation only, so clients may differ.
-  `Trample.hlsl` reads them: the terrain darkens ruts, soil and flattened grass and dents its normal along the ruts;
-  Foliage without Tree Wind leans plants flat along the travel direction (`_Trample`: Off, Grass by B, Crop by A),
-  and `TrampleBend` serves any plant shader.
-- **Row crops** (`Environment/RowCrops/`, `RowCropRenderer` added to map scenes by the map tools): a `RowCrop` asset
-  holds a crop's model variants (`RowCropVariant`: full, simple and card meshes, one submesh each, origin at the root,
-  facing +Z), its `HyperRTS/RowCrop` materials, row and plant spacing, jitter, scale and turn ranges, lean (inside and
-  at the field edge), row wander, patch scale, edge margin and the two LOD distances. `RowCropFields` (baked per map) holds a field-id picture (R low byte, G high byte, 1 m texels), each
-  field's lattice (`RowCropField`: origin, along and across axes, crop, seed), the crops and the 16 m tiles holding
-  any. The renderer runs in edit mode too: on `RenderPipelineManager.beginCameraRendering` it culls tiles against that
-  camera's frustum and `RowCropRenderer.Distance` (Game and Scene view cameras of its scene that see its layer;
-  reflection and preview cameras are skipped), and
-  `RowCrops.compute` (`Plant` kernel, one thread per lattice spot of one tile of one field) grows the plants: a spot
-  belongs to the tile it falls in and the field the picture names there (`RowCropLattice` is the same maths in C#),
-  `RowCropRenderer.Density` thins by hash, the trample map's A channel bends crushed plants or drops them, the hash
-  picks the plant's variant (one dispatch per variant), slow value noise makes rows wander together and scale vary in
-  patches, plants lean a few degrees (more where probes 1.5 m out leave the field), and each
-  plant goes into its variant's full, simple or card buffer by camera distance, shrinking away over the last 15 % of the draw
-  distance. The bands are drawn with `Graphics.RenderMeshIndirect` for that camera only (GPU buffers are per renderer, reused by
-  each camera in turn); `RowCrop.shader` reads the plants by
-  `SV_InstanceID` and has forward, shadow, depth, depth-normals and motion-vector passes, lit like Foliage with plant
-  wind. Regrowing every visible tile per camera needs no cache when the camera moves or crops get trampled. Density and
-  distance come from `PresentationQuality`.
-- **Ambient life** (`Environment/Ambient/`): an `AmbientLife` component in the scene (one per climate) configures
-  client-only birds and dust devils; never simulated or networked, so clients may differ. A zero count turns a feature
-  off; an unusable field throws naming it. `BirdFlockSystem` flies `BirdFlock`s (pure, tested): each circles a random
-  anchor inside the `TerrainHeight` extent at its height range (ring pull, separation, noise); an impact `CueEvent` within
-  `scatterRadius` of a flock sends it away, climbing, and after `returnDelay` it settles over an anchor at least
-  150 m away. `BirdRenderer` draws camera-facing quads heading up the screen, one `Graphics.RenderMeshInstanced` per
-  2×2 flipbook frame with `_BaseMap_ST` set per frame (material: GPU Instancing, double-sided, alpha clip, URP Unlit
-  works). `DustDevilSystem` forms a devil every `dustDevilInterval` on `dustDevilGround` within 120 m of the camera's
-  ground focus (`DustDevilSites`, 8 samples), drifts it along `Wind.Downwind` with a sideways wander and streams its
-  rig from the effect pool, easing in and out. Both skip Low effect detail.
-- **Effects playback** (`Effects/`): an `EffectRig` prefab root holds world-space, Hierarchy-scaled child particle systems
-  (`EffectRig.Problems`, shared by the pool and the editor check; a broken rig is an error naming the prefab), `maxDistance`, a `scale` range, `scalePerRadius` and `alignToGround`; author it
-  +Y up, +Z forward (impacts turn +Y to the ground normal). `EffectPool` (owned by `EffectPoolSystem`, ticked
-  first) keeps one DontSave instance per prefab, never instantiating per event. On first use each system's authored bursts and rates are read and its own emission is
-  switched off: `Burst` replays the bursts (timed ones later, at the same pose; sub-emitters still fire), `Stream`
-  emits rate × time + rate over distance along a path with a carried fraction. `EffectDetail.Level` thins particles
-  (Low 0.35, Medium 0.7, High 1); High adds `EffectLight` flashes from 8 shared shadowless lights; Low halves loop
-  range. `EffectPlaybackSystem` bursts seen `CueEvent`s (the type's slot rig, facing `Direction`) and `Impact` cues of
-  shooters with `EntityImpactEffects` (`SurfaceEffects.RigFor` the event's material; on the
-  terrain, facing up or the ground normal). `LoopEffectSystem`, `TrailSystem` and `MotionDustSystem` stream drawn
-  entities (no `DisableRendering`): loops at sockets with health gate and timed fade, trails along the frame's path,
-  dust by ground material and speed / `FullSpeed`. `TypeCatalog<T>` caches each type's effects (and impact marks, sound
-  cues) from its prefab for good, or from an instance until entities with that data change.
-- **Audio**: `SoundPlaybackSystem` plays the `CueQueue`'s sounds through 32 pooled sources; `SoundListener` follows the
-  camera's ground focus.
-- **Minimap**: the baked `MinimapImage`, local fog, blips and the camera view.
+The minimap shows the baked map image, local fog, blips and the camera view.
+
+### Team colour
+
+`HyperRTS/LitTeam` is URP Lit that repaints the albedo in the owner's colour. It paints where the `_TeamMask`
+texture's red channel allows, on UV0, and inside the `TeamStripAuthoring` height band if there is one.
+`FactionPalette` holds this client's colours. `TeamColorOverride` swaps them, for example for colour-blind players
+or own, ally and enemy colours. The validator flags units and buildings without a team colour material.
+
+Units hidden behind cover still show. `UnitSilhouetteFeature`, a URP renderer feature, draws a team-coloured fill
+and rim where a unit is hidden. Every rendered part of a unit is put on rendering layer 8 at bake time for this.
+
+### Fog
+
+Entities hidden by fog, and passengers inside a container, stop rendering. `FogOfWarRenderer` projects the fog onto
+the depth buffer, so terrain and buildings fog where they stand. Map buildings stay visible, but their flags, dials
+and pips hide under the local fog.
+
+A client remembers enemy buildings where it last saw them. The memory is a visual copy of the building, team
+coloured, that nothing can pick, select or count. The minimap shows memories as dimmed squares.
+
+### Flags
+
+Buildings fly their owner's flag. During a capture the owner's flag lowers over the first half and the capturer's
+rises over the second. A neutral building's flag rises over the whole capture. `HyperRTS/Flag` samples the game's
+flag `Texture2DArray`, one layer per `PlayerSide`, and waves the cloth downwind.
+
+### Destruction
+
+An entity shows the damage stage model for its health and bursts that stage's effect. Spawn effects burst once.
+Felled remains, such as trees, tip over with a bounce, or lie down at once if the fall was out of sight. The tipping
+only moves the rendered pose, and the simulation keeps the final one.
+
+### Shaders
+
+| Shader | Use |
+| --- | --- |
+| `HyperRTS/Water` | Depth colour, refraction, ripples, reflection, foam at banks. Needs Depth and Opaque Textures |
+| `HyperRTS/Foliage` | Alpha-cut plants and tree leaves with wind, trample and translucency |
+| `HyperRTS/Bark` | Opaque tree bark with wind. Mask map: R metallic, G AO, A smoothness |
+| `HyperRTS/RowCrop` | GPU-placed field crops. See [row crops](#row-crops) |
+
+Water vertex colours shape the flow: alpha thins fords, green streaks rapids foam.
+
+### Atmosphere
+
+An `Atmosphere` component sits on the root of a weather's atmosphere prefab, together with its sun, post-processing
+volume, `Wind` and `HeightFog`. When enabled it sets the skybox, ambient light, reflection cubemap and wetness, and
+turns Unity fog off. A missing skybox or reflection is an error.
+
+`HeightFog` adds fog that thins with height. `HeightFogFeature` must be on the URP renderer with its shader set to
+`Hidden/HyperRTS/HeightFog`, and the validator checks this. It draws in game and scene view perspective cameras
+only, so orthographic captures such as the minimap stay clear. Custom shaders apply the same fog with `HeightFogAt`
+from `HeightFog.hlsl`, as water does.
+
+### Wind
+
+`Wind` sits on the scene's directional `WindZone` and publishes its strength, gusts and direction to shaders. Its
+`vegetation` setting picks how much plants move: `None`, `Sway`, `Branches` or `Flutter`. Flags fly regardless.
+Every shader pass of Foliage and Bark uses the same wind, so shadows match.
+
+Grass, crops and other details sway about their origin. Trees bend at the trunk, sway their branches and flutter
+their leaf cards. Bark and leaves of one tree need the same `_WindStrength`, `_WindSpeed`, `_BranchSway`,
+`_TreeHeight` and `_WindScale`. Set `_WindScale` to 0 for fallen trees.
+
+Tree meshes for Foliage with **Tree Wind** on, and for Bark, carry wind data in object space, in metres:
+
+| Channel | Data |
+| --- | --- |
+| TEXCOORD2.xy, TEXCOORD3.x | Branch pivot |
+| TEXCOORD3.y, TEXCOORD4.xy | Leaf card pivot |
+| COLOR r | Crown ambient occlusion |
+| COLOR g | Branch flex: 0 at the branch pivot and on the trunk, 1 at the tip |
+| COLOR b | Stiffness: 0 limb, 1 twig |
+| COLOR a | Flutter weight, 1 on leaf cards |
+
+### Interaction maps
+
+Vehicles leave ruts and flatten grass and crops. `InteractionMap` on the rig keeps two GPU textures over the map
+and stamps them each frame. It needs the `Hidden/HyperRTS/Interaction Brush` shader.
+
+| Texture | Channels |
+| --- | --- |
+| `_HyperRTSTrample` | RG travel direction, B flattened grass that recovers over 60 s, A crop damage that never recovers |
+| `_HyperRTSTracks` | R rut depth, G churned soil. Both fade over 4 minutes |
+
+Vehicles with `TrackMarks` stamp while on the ground and visible, as do building footprints and ground impacts with
+3 m splash or more. Shaders read the maps through `Trample.hlsl`. The terrain darkens ruts and flattened grass, and
+Foliage leans plants along the travel direction. The quality setting picks Full, Low at half resolution, or Off,
+which frees the textures.
+
+### Row crops
+
+Fields of crops in rows, placed and drawn on the GPU, so no crop is an object. The map tools add a `RowCropRenderer`
+to each map scene and bake its `RowCropFields`: which field covers each metre, and each field's crop and row
+direction.
+
+A `RowCrop` asset describes one crop: model variants with full, simple and card meshes, materials, row and plant
+spacing, random scale, turn and lean, and two LOD distances. Variant meshes face +Z with the origin at the root.
+
+Each camera regrows the plants of its visible tiles every frame, so trampling and camera moves need no cache.
+Trampled plants bend or disappear. Plants shrink away over the last 15 % of the draw distance. It also runs in edit
+mode.
+
+### Ambient life
+
+An `AmbientLife` component in the scene, one per climate, adds birds and dust devils. They live on the client only,
+so clients may differ. A count of zero turns a feature off. Both are skipped at Low effect detail.
+
+- Bird flocks circle over the map. A nearby impact scatters them, and they settle again at least 150 m away.
+- Dust devils form near the camera on the chosen ground and drift downwind.
+
+### Effects
+
+An `EffectRig` is a prefab whose root holds world-space child particle systems. Author it +Y up and +Z forward.
+Impacts turn +Y to the ground normal. The rig sets a max distance, a scale range, scale per splash radius and ground
+alignment. The validator reports a broken rig, naming the prefab.
+
+`EffectPool` keeps one instance per prefab and replays it for every event, never instantiating per shot. Effects
+play for cues the client can see:
+
+- **Bursts**: fire, death, ability and impact cues. Impacts pick a rig by the surface material that was hit.
+- **Loops**: effects at sockets while health is in range, such as fires on a damaged building.
+- **Trails** along a projectile's path.
+- **Motion dust** by ground material and speed.
+
+| Effect detail | Particles | Extra |
+| --- | --- | --- |
+| Low | 35 % | Loop range halved, no ambient life |
+| Medium | 70 % | |
+| High | 100 % | Light flashes from 8 shared lights |
+
+### Audio
+
+`SoundPlaybackSystem` plays cue sounds through 32 pooled sources. `SoundListener` follows the camera's ground focus.
+
+### Quality
+
+The game fills one `PresentationQuality` and calls `PresentationQuality.Apply`. It covers effect and ground detail,
+interaction maps, grass and row crop density and distance, antialiasing and shadow map size. Apply sets them all,
+and again on each scene load. The shadow map size changes in memory only and is restored on quit. `Current` holds
+the last settings and resets to full detail on play.

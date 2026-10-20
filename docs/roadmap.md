@@ -1,76 +1,57 @@
 # Roadmap
 
-Status of the engine and the work still open. Update it when a feature lands or scope changes.
+What the engine does today, why, and what is still open. Update it when a feature lands.
 
 ## Status
 
-| Area | Status | Notes |
-| --- | :---: | --- |
-| Foundation: assemblies, phase groups, `TestWorld`, demo scene | ✅ | |
-| Selection and input | ✅ | |
-| Commands and orders | ✅ | Smart, queue, stop, hold, attack-move, patrol, escort, repair, capture, enter, unload |
-| Pathfinding and movement | ✅ | Grid A*, formations, terrain height, nav layers, water, bridges |
-| Economy | ✅ | |
-| Bases and production | ✅ | Placement, construction, queues, rally points, prerequisites, repair, sell |
-| Combat | ✅ | Stances, projectiles, splash, damage types, directional armor, ammo |
-| Fog of war, stealth, detection | ✅ | Terrain line of sight |
-| Players, teams, victory | ✅ | |
-| Power, upgrades, veterancy, fields, abilities, capture, transports, aircraft | ✅ | |
-| Skirmish AI | ✅ | Build orders, abilities, five difficulties |
-| Audio | ✅ | Cues, network forwarding, pooled playback, voices |
-| Replays | ✅ | State recording, playback, seek |
-| Multiplayer | 🟡 | Works end to end; 500 units cost a client about 0.3 Mbps at 20 Hz snapshots |
-| Editor tooling | ✅ | Tools window, generators, wizard, templates, validator, catalog, debug overlay, cheats, Map Editor with live preview, JSON map library, maps from specs (terrain, towns, trees, metrics, report) |
-| Destruction | ✅ | Destructible scenery, crushing, damage stages, remains effects, neutral garrisons, bridges that take their deck with them |
-| Hardening | 🟡 | No CI, no stress scene, no performance budgets |
+Done and tested: selection and orders, pathfinding over terrain, water and bridges, economy, bases and production,
+combat, fog of war and stealth, power, upgrades, veterancy, fields, abilities, capture, transports, aircraft,
+destruction, skirmish AI, audio, replays and the editor tooling with the Map Editor.
+
+In progress:
+
+- **Multiplayer** works end to end. 500 units cost a client about 0.3 Mbps at 20 Hz snapshots.
+- **Hardening**: no CI, stress scene or performance budgets yet.
 
 ## Decisions
 
 | Decision | Why |
 | --- | --- |
-| Grid A* + smoothing + separation, no flow fields | Formation slots give every unit its own goal, so a shared field saves little |
-| Server-authoritative Netcode, not lockstep | Burst doesn't promise cross-platform float determinism; Netcode is in the stack; the simulation is headless |
-| Replays record state, not commands | The simulation isn't deterministic and entity indices differ between worlds |
-| One damage queue (`DamageEvent`) | Armor, splash, facing and kill credit apply to every damage source |
-| One stat-modifier buffer (`StatModifier`) | Upgrades, veterancy and fields share one formula and removable sources |
-| Sound events name a prefab type and slot | One queue serves single player and clients |
+| Grid A*, no flow fields | Formation slots give each unit its own goal |
+| Server-authoritative Netcode, not lockstep | Burst float math is not deterministic across platforms |
+| Replays record state, not commands | The simulation is not deterministic |
+| One damage queue | Armor, splash and kill credit apply to every source |
+| One stat-modifier buffer | Every bonus shares one formula and can be removed |
 | Spawns instantiate baked prefabs | Spawned entities render like placed ones |
-| UI Toolkit for all UI (HUD, editor); uGUI only for Animation/Timeline UI; no IMGUI | Unity 6.6 recommendation |
+| UI Toolkit for all UI | Unity 6.6's recommendation. uGUI only for animated UI |
 
 ## Open
 
 ### Frozen until a game uses them
 
-Abilities, aircraft, upgrades, veterancy, stealth and detection, auras, build limits and the delivery and refill
-economy are built and tested, but no shipped content uses them yet. Keep them working; don't extend them until a
-game's units need them. The same goes for ambient polish (birds, dust devils, cloth flags, puddles).
+Abilities, aircraft, upgrades, veterancy, stealth, auras, build limits and deliveries work, but no shipped content
+uses them yet. Keep them working and extend them only when a game needs it.
 
 ### Gameplay
 
 - Moving obstacles, per-area water levels, ramps onto decks.
-- Micro AI (kiting, focus fire); AI scouting, defence, naval and air behaviour; fog-honest difficulties.
-- Upgrades as prerequisites; ability targeting cursor and range preview; cargo slots in the selection panel.
-- Aircraft: turn rates and attack runs, landed aircraft as surface targets, intercept stance, ammo readout.
-- Audio: looping sounds, "under fire" and announcer alerts, batched sound messages.
-- Replays: projectiles, resource nodes, passengers, player stats.
+- Smarter AI: micro, scouting, defence, naval and air play.
+- Ability targeting cursor, aircraft attack runs, announcer alerts.
+- Replays of projectiles, passengers and player stats.
 
 ### Multiplayer
 
-- Ghost importance by distance to the viewer, once snapshots cap in real matches.
-- Command feedback before the server confirms.
-- Observer HUD (minimap, banner and overlays without a local player).
-- Host migration, automatic reconnect.
+- Ghost importance by distance, command feedback before the server confirms, an observer HUD.
+- Host migration and automatic reconnect.
 
 ### Hardening
 
-- CI running EditMode tests and project validation, including closed map scenes.
-- PlayMode tests, a stress scene, per-system budgets with profiler markers.
-- Determinism test.
+- CI running the EditMode tests and project validation, including closed map scenes.
+- PlayMode tests, a stress scene, per-system budgets and a determinism test.
 
 ## Rules
 
-- Generic and data-driven: authoring components and assets over hard-coded values.
-- Burst and job safe: unmanaged components, ECB for structural changes, lookups for cross-entity access,
-  `SystemAPI.Time`.
-- No `UnityEngine.Random` or managed state in the simulation; ties broken by entity index.
-- Check the 500-unit scenario when changing movement, combat or the spatial index.
+- Generic and data-driven: authoring and assets over hard-coded values.
+- Burst safe: unmanaged components, command buffers for structural changes, `SystemAPI.Time`.
+- No `UnityEngine.Random` in the simulation. Break ties by entity index.
+- Check the 500-unit scenario when you change movement, combat or the spatial index.

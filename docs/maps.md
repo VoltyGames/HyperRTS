@@ -1,317 +1,277 @@
 # Maps
 
-A map is a JSON spec (`<Map>.map.json`) that describes land use: farmland, settlements, woods, belts, rivers,
-ravines, roads. The builder lays the land out by rule, then turns it into a scene, a SubScene and a report. The
-look of the land (terrain layers, plants, trees, kits, props) comes from the game's map library. Source:
-`Editor/Maps/`; rendering: `Presentation/Environment/`.
+A map starts as a JSON spec, `<Map>.map.json`, that describes land use: farmland, settlements, woods, rivers,
+ravines and roads. The builder lays the land out by rule and turns it into a scene, a SubScene and a report. You
+say what goes where; the builder makes it look right and keeps it exactly symmetric.
+
+The look of the land comes from the game's [map library](#map-library): terrain layers, plants, trees, kits and
+props. Code lives in `Editor/Maps/` and runtime rendering in `Presentation/Environment/`. For a tour of the code,
+see [map tools](modules/map-tools.md).
 
 ## Overview
 
-```text
-spec ─▶ Preview ─────────────▶ Build ─────────────────────────────────▶ Views
-        seconds, no scene       minutes: scene, SubScene, report         match-camera screenshots
-        .preview.png / .json    terrain, roads, water, minimap, hints    <Map>/*.png
-```
+You edit the spec, preview it in seconds, then build it. A build takes minutes and also captures screenshots from
+the match camera.
 
-| Stage | Entry | Writes |
+| Stage | How to run it | Writes |
 | --- | --- | --- |
-| Edit | Any editor or agent writing the JSON; **HyperRTS ▸ Map Editor** shows it | The spec |
-| Preview | `MapPreview.Run(spec)` or batch `.Preview`; the Map Editor previews on load and when the file changes | Layout image, issues, land figures. No rush times or paths |
-| Build | **Build** on **HyperRTS ▸ Tools ▸ Maps** or in the Map Editor; `MapBuilder.Build(spec)`; batch `.Build` | Scene and SubScene, assets, report, minimap, views |
-| Views | Every build with graphics; **Recapture views** in the Map Editor; `MapViewCapture.Capture(spec)` | `Logs/MapReports/<Map>/*.png` |
+| Edit | Any text editor. **HyperRTS ▸ Map Editor** shows the result | The spec |
+| Preview | The Map Editor, `MapPreview.Run(spec)` or batch `.Preview` | Layout image, issues and land figures |
+| Build | **Build** in the Map Editor or on **HyperRTS ▸ Tools ▸ Maps**, `MapBuilder.Build(spec)` or batch `.Build` | Scene, SubScene, assets, report, minimap, views |
+| Views | Every build with graphics, or **Recapture views** in the Map Editor | Screenshots in `Logs/MapReports/<Map>/` |
 
-Code reference (folders, pipeline stages, land passes): [map tools](modules/map-tools.md).
+A preview needs no scene. It does not measure rush times or attack paths; only a build does.
 
 ## Map Editor
 
-**HyperRTS ▸ Map Editor** shows one spec's authored sector on a top-down canvas; it does not edit. Specs are written
-as JSON (by hand or by an agent), and the editor reloads the file within a second of it changing on disk.
-Double-clicking a `.map.json` in the Project window or **Open** on **HyperRTS ▸ Tools ▸ Maps** opens a spec in it.
-The editing tools (select, point, line and area drawing, snapping, undo) were removed while the spec format still
-changes weekly; the engine tag `map-editor-write-tools` keeps them for when it settles.
+**HyperRTS ▸ Map Editor** shows one spec on a top-down canvas. It is a viewer: you edit the JSON, and the editor
+reloads the file within a second of it changing on disk. Open a spec by double-clicking a `.map.json` or with
+**Open** on **HyperRTS ▸ Tools ▸ Maps**. The editing tools were removed while the spec format still changes
+often; the engine tag `map-editor-write-tools` keeps them.
 
-| Part | Holds |
+| Part | Shows |
 | --- | --- |
-| Toolbar | Spec picker, **Ghosts** (the symmetry copies, faded), **Preview**, **Build** |
-| Feature list (left) | Every feature grouped by kind with counts; click one to select it |
-| Canvas (centre) | The newest preview image under a metre grid, the playable bounds and backdrop edge, the sector edges, every feature and the symmetry ghosts. Click a feature to select it; middle drag or Space+drag pans, the wheel zooms, F fits |
-| Selection (right) | The selected feature's place in the spec, e.g. `roads[3]` |
-| Report panel | The newest preview's or build's issues, the land figures, the last build's metrics, **Open scene** and **Recapture views** |
+| Toolbar | Spec picker, **Ghosts** for the symmetry copies, **Auto preview**, **Preview** and **Build** |
+| Feature list | Every feature grouped by kind. Click one to select it |
+| Canvas | The latest preview under a metre grid, with bounds, sector edges, features and ghosts |
+| Selection | Where the selected feature sits in the spec, such as `roads[3]` |
+| Report panel | Issues, land figures and build metrics, with **Open scene** and **Recapture views** |
 
-An issue that names a feature (the report's `errorFeatures` / `warningFeatures`, index for index with `errors` /
-`warnings`) has **Show**, which selects and frames it. Metrics (rush, attack paths, path search, buildable share and
-resources per base) come from the last build. **Build** asks to save open scenes, builds the map
-(`MapBuildCommands.Build`), reopens the scene that was open and shows the build's report.
+On the canvas, middle-drag or Space+drag pans, the wheel zooms and F fits the map. An issue that names a feature
+has a **Show** button that frames it. **Build** saves open scenes, builds, reopens your scene and shows the report.
 
 ### Authoring rules
 
-- **One sector is authored.** The symmetry copies it into the others. A point outside the authored sector would
-  overlap its own copies; the editor rings it in the warning colour.
-- **Shared features sit on the axis.** A feature with `"shared": true` is placed once, not copied, so a shared
-  point or circle belongs on the mirror axis, or the centre for a rotation.
-- **Array order is the random stream.** Each feature draws from a stream seeded by the map seed, its channel and
-  its index in its list (`MapRandom.Stream`). Deleting or reordering a feature renumbers the later ones of its
-  kind and reshuffles their random detail.
-- **Points sit on a 0.5 m grid.** Team modes need a two-copy symmetry (`rotate-180`, `mirror-x`, `mirror-z`: one
-  sector per team); `ffa` needs `rotate-3` to `rotate-8` (one sector per player).
-- `MapSpecJson` writes specs in the `MapJsonFormat` layout (Newtonsoft-parsed): indented by two spaces, points and
-  short scalar arrays on one line, floats in their shortest form (`0.35`, `20`), so files diff cleanly.
+- **You author one sector.** The symmetry copies it into the others. A point outside the sector would overlap its
+  own copies, so the editor rings it as a warning.
+- **Shared features sit on the axis.** A feature with `"shared": true` is placed once, not copied. Put it on the
+  mirror axis, or at the centre for a rotation.
+- **Array order drives the randomness.** Each feature's random stream is seeded by the map seed and its index in
+  its list. Deleting or reordering a feature reshuffles the detail of later features of its kind.
+- **Points sit on a 0.5 m grid.**
+- **Team modes need a two-copy symmetry**: `rotate-180`, `mirror-x` or `mirror-z`. `ffa` needs `rotate-3` to
+  `rotate-8`, one sector per player.
+
+Specs are saved in one fixed layout, `MapJsonFormat`, so files diff cleanly.
 
 ## Spec format
 
-Unity's `JsonUtility` reads it, so it is flat: one array per feature, points as `{ "x", "z" }` objects. Metres,
-origin at the map centre, X east, Z north, angles clockwise from north.
+The spec is flat: one array per feature type, points as `{ "x", "z" }` objects. Units are metres. The origin is
+the map centre, X points east, Z points north, and angles run clockwise from north.
 
 | Header field | Holds |
 | --- | --- |
-| `name`, `displayName` | The map name, which the spec's file name must match (`<name>.map.json`); the name the game shows |
-| `mode`, `mapType`, `status`, `notes` | `1v1` to `4v4` or `ffa`; `land`; work state; dated notes |
+| `name` | The map name. The file must be named `<name>.map.json` |
+| `displayName` | The name the game shows |
+| `mode` | `1v1` to `4v4`, or `ffa` |
+| `mapType`, `status`, `notes` | `land`; work state; dated notes |
 | `climate` | A library climate key |
-| `weather` | Required: one of the climate's `weathers`; the scene is built and lit with it  |
+| `weather` | Required. One of the climate's weathers. The scene is built and lit with it |
 | `size` | Playable width (X) and depth (Z) |
-| `symmetry` | `rotate-180`, `mirror-x`, `mirror-z`, `rotate-3` to `rotate-8` |
+| `symmetry` | `rotate-180`, `mirror-x`, `mirror-z`, or `rotate-3` to `rotate-8` |
 | `seed` | Seeds every random stream and noise field |
-| `terrain` | `height` (open ground, lowered to world y = 0), `relief` and `reliefScale` (swell), `waterLevel`, `maxHeight`, `resolution`, `backdropWidth` (the backdrop: unplayable land past the playable edge) |
+| `terrain` | `height`, `relief`, `reliefScale`, `waterLevel`, `maxHeight`, `resolution`, `backdropWidth` |
 
-The spec authors **one symmetry sector**; the builder copies it (slots interleave so slots 1 and 2 always face
-each other). `"shared": true` places a feature once, on the axis or centre. Random choices are made in the sector
-and copied, so copies match. Each kind of choice draws from its own seeded stream (`MapRandomChannel`) and noise
-field (`MapNoiseChannel`): a new feature takes a new channel, since changing a channel's value changes every map.
+Base `height` is lowered to world y = 0. The backdrop is unplayable land past the playable edge. Slots interleave
+across the copies, so slots 1 and 2 always face each other.
 
 | Feature | Fields | Builds |
 | --- | --- | --- |
-| `spawns` | `pos`, `yaw` | The slot's spawn: its side's start kit spawns there in the match; the base is levelled and kept clear |
-| `resources` | `pos`, `kind`, `amount`, `shared` | The palette prefab `kind` (a resource node) holding `amount`; random facing |
-| `props` | `pos`, `yaw`, `kind`, `shared` | A palette prefab; one with a pad gets ground round it, one with access a track to the nearest road |
-| `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings`, `shared` | Meandering channel of varying width, banks, floodplain, reeds, water mesh; each crossing (`t`, `kind` bridge or ford, `width`, `prop`) sits at `t` along the river; fords thin the water and streak it with foam (vertex A carries how shallow the bed is, the water material's `_FordAlpha` is the alpha mid-ford; the climate's `fordShallowsWidth` and `fordRapidsLength` set how far the shallows and the foam reach) |
-| `ravines` | `points`, `width`, `depth`, `rim`, `branches`, `wooded`, `shared` | Steep-walled cut with a gentle rim, side gullies and woods in patches |
-| `hills` | `pos`, `radius`, `height`, `flatTop`, `shared` | Smooth rise |
-| `roads` | `points`, `kind`, `shared` | A road class: width, surface, verge (its outer edge wanders ±60 % of its width over about 9 m, so it reads worn), rank, levelled or not |
-| `settlements` | `center`, `radius`, `kind`, `count` | Up to `count` plots along the roads within `radius`, from a settlement kit |
-| `woods` | `points` (polygon), `kind`, `shared` | Woodland kit: canopy, glades, shrubby edge, floor |
-| `belts` | `points` (polyline), `kind`, `shared` | Belt kit: rows of trees and shrubs with gaps |
-| `farmland` | `points` (polygon; empty = all free land), `kind`, `angle`, `shared` | Fields on a grid along `angle`, a crop each, margins, belts and tracks across the field ends |
-| `areas`, `lines`, `scatters` | `points`, `kind`, `spacing` / `count`, `shared` | Exceptions: one surface by hand, a row of trees or props, props at random in a polygon |
+| `spawns` | `pos`, `yaw` | A slot's start position, levelled and kept clear |
+| `resources` | `pos`, `kind`, `amount` | A resource node from the palette |
+| `props` | `pos`, `yaw`, `kind` | A palette prefab, with its ground pad and access track |
+| `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings` | A river with banks, floodplain and reeds |
+| `ravines` | `points`, `width`, `depth`, `rim`, `branches`, `wooded` | A steep cut with side gullies |
+| `hills` | `pos`, `radius`, `height`, `flatTop` | A smooth rise |
+| `roads` | `points`, `kind` | A road of a library road class |
+| `settlements` | `center`, `radius`, `kind`, `count` | Up to `count` plots along the roads within `radius` |
+| `woods` | `points`, `kind` | Canopy, glades, shrubby edge, floor |
+| `belts` | `points`, `kind` | Rows of trees and shrubs with gaps |
+| `farmland` | `points`, `kind`, `angle` | Fields on a grid along `angle`. Empty `points` takes all free land |
+| `areas` | `points`, `kind` | One surface painted by hand |
+| `lines` | `points`, `kind`, `spacing` | A row of trees or props |
+| `scatters` | `points`, `kind`, `count` | Props at random in a polygon |
 
-### Land use and planners
+Every feature except spawns and settlements also takes `shared`. A river crossing has `t` along the river, `kind`
+(`bridge` or `ford`), `width` and `prop`. Fords thin the water and streak it with foam; the climate's
+`fordShallowsWidth` and `fordRapidsLength` set how far.
 
-`MapLand` is a 1 m grid. Each cell is claimed once by a `MapLandRegion` (a `MapLandKind`, a climate surface, a seed
-and a row angle). `MapLandPlanner` runs the land passes (`MapLandPass`) in priority order on a `MapPlanContext`,
-each taking only what earlier ones left:
+## How a map is built
 
-1. water, roads, river banks and floodplain
-2. bases and prop pads, access tracks
-3. ravines, settlements and spec tree rows, spec areas
-4. woods, belts, farmland
-5. meadow on everything left, then `MapSurfacePlanter`: each surface's own lone trees and props (a prop landing in the
-   backdrop goes on the terrain as its `scenery` model, like a backdrop tree, or is left out without one)
-6. `MapDecalPlanner`: each surface's ground decals per hectare of the playable area (kept off props), then one under
-   every placement whose prop names a `groundDecal`, turned with it. They go in `MapGeneration.Decals`
+### Land use
 
-Passes choose at authored-sector points (`Symmetry.InSector`), place in every copy (`MapTreePlanting.Plant`,
-`MapPlacements.AddEverywhere`) and claim land for every copy; raster decisions key on the sector point (`ToSector`).
+The land is a 1 m grid. Each cell is claimed once, by one region with a land kind, a surface and a row angle.
+`MapLandPlanner` runs the land passes in priority order, and each takes only what earlier ones left:
 
-Farmland splits the free land on a grid along `angle` into fields (slivers become margin), picks each crop by the
-kit's weights and lays belts and tracks along the field ends. A track end within the kit's `trackJoinDistance` of a road's edge is
-carried onto the road (`MapFieldTrackLinks`), and a track whose ends still lead nowhere (no road, map edge, base or
-settlement, the same test as the dead-end check in `MapRoadEnds`) is dropped. A settlement (`MapSettlement`, one per
-spec settlement) fits plots along the streets: house on the street, yard, outbuildings, garden, orchard, fences, gate,
-street furniture. The street pipe decides every section first, then keeps only runs of at least `streetPipeMinSections`
-sections, with a `streetPipeArch` over each gap of up to `streetPipeMaxGap` metres (a driveway, a crossing road) inside a
-run (`MapPipeRuns`), stretched along its long side so its ends meet the runs (a placement's `Stretch`, applied by
-`MapPlacementScale`). A prefab with `StretchPartsAuthoring` keeps a uniform scale: its start and end caps move out to
-the stretched ends at their own size and only the span between them scales along the axis (`StretchLayout`); its
-remains need the same component and are stretched to match (`PartStretch`, `StretchPartsSystem`). Any other prefab
-is stretched whole, as a non-uniform local scale its remains keep. Access tracks: props asking for the same road class within the smaller `sharedAccessDistance` of the two
-share one track, from the one nearest a road (`MapAccessGroups`). The report says why a plot didn't fit.
+1. Water, roads, river banks and floodplain.
+2. Bases, prop pads and access tracks.
+3. Ravines, settlements, spec tree rows and spec areas.
+4. Woods, belts and farmland.
+5. Meadow on everything left, then each surface's own lone trees and props.
+6. Ground decals: each surface's decals per hectare, then one under every prop that names a `groundDecal`.
+
+Passes decide at points in the authored sector and place the result in every copy. That keeps maps exactly
+symmetric. A surface prop that lands in the backdrop is drawn as its `scenery` model, or left out without one.
+
+**Farmland** splits free land into fields, picks a crop for each by the kit's weights and lays belts and tracks
+along the field ends. A track end within the kit's `trackJoinDistance` of a road joins it. A track that still
+leads nowhere is dropped.
+
+**Settlements** fit plots along their streets: house, yard, outbuildings, garden, orchard, fences and street
+furniture. The report says why a plot didn't fit. Street pipes arch over driveways and crossings. A stretched
+prefab with `StretchPartsAuthoring` keeps its end caps at their own size, and its remains need the component too.
+
+**Access tracks.** Nearby props asking for the same road class share one track, within their
+`sharedAccessDistance`.
 
 ### Refiners
 
-`MapRefiner` reshapes the authored sector in memory before the copies are made (the file keeps the coarse lines):
-rivers meander (held straight at their ends and crossings), roads become curves, ravines smooth and fork. A road end
-that stops short of another road is joined onto it by `MapRoadJoiner` at 60° or more, highest rank first.
+Before the copies are made, `MapRefiner` reshapes the sector in memory; the file keeps the coarse lines. Rivers
+meander but stay straight at their ends and crossings. Roads become curves. Ravines smooth and fork. A road end
+that stops short of another road is joined onto it at 60° or more.
 
 ### Ground and rendering
 
-- **Heights**: relief, hills, river valleys, ravines. Roads of a levelling class are cut onto embankments; ramps lead
-  to bridge decks.
-- **Edges** (`MapEdgeField`): every surface states its edge style: `edgeWidth` (the blend band, m), `edgeJitter` (how
-  far the line wanders, m; larger jitter also waves more slowly, 6 m to 22 m). A border takes the crisper side's
-  width and jitter, so a ploughed edge stays sharp against a meadow while two meadows blend wide; the style is
-  smoothed over 3 m so it changes without a step where three regions meet. Each land cell knows its distance to the
-  nearest other region and which region that is (`MapEdgeNeighbours`); the jitter is a noise vector that turns with
-  the symmetry, so mirrored borders wander alike. Splat, details and macro all read the border through it.
-- **Splat** (`MapSplatPainter`): each texel blends its border's two surfaces across the band, with each side's edge
-  strip next to the border; the shader's height blend sharpens them; steep ground takes the slope surface.
-- **Details** (`MapDetailPainter`): each surface's plants cover their share, clumped by noise at two scales (crops
-  grow evenly), switching to the other region at the band's middle and to the edge strip's plants inside it; reeds in
-  the shallows. Nothing grows on roads or placed objects.
-- **Macro map** (`MapMacro`, written by `MapMacroPainter`): a light and warmth shift per field and per wood plus a
-  slow gradient across each (averaged over the symmetry copies), blended over the same border band as the splat;
-  noise at 14, 24, 36 and 90 m; hollows (height curvature over 8 m) a little darker and damper; wetness near water
-  and on ravine floors. The climate's `macro` section sets the region tint, gradient and hollow strengths. RGB 0.5
-  is neutral, A is wetness.
-- **Row map** (`MapRowPainter`, `_Rows.png`): one texel per land cell, RG8 linear, bilinear, no mips. RG is the
-  direction of the cell's crop or garden rows (x east, y north) remapped to 0..1, moved through the cell's symmetry
-  copy so mirrored and rotated fields turn too; (0.5, 0.5) where nothing grows in rows. Regions carry rows when the
-  planner gives them an angle (fields, gardens: `MapLandRegion.HasRows`).
-- **Ground materials** (`MapGroundMaterialPainter`, `_GroundMaterials.png`): one texel per land cell, R8, point
-  filter, no mips, readable. Each byte is a `SurfaceMaterial`: the region surface's `impactClass`, on road cells the
-  `impactClass` of the road class that claimed them (carried on its land region, so junctions match the surface),
-  `Water` in river beds. The SubScene's `Ground Materials` object (`GroundMaterialsAuthoring`, at the land's
-  south-west corner) bakes it into the `GroundMaterials` singleton.
-- **Terrain material** (`MapTerrainMaterial`): `HyperRTS/Terrain`, one pass, up to 16 height-blended layers from the
-  climate's texture arrays, the macro and row maps, and per-layer rotation. The climate's `heightBlendDepth` (texel
-  height, 0..1; about 0.06 interlocks borders without speckle) sets how far one layer's texels must stand above
-  another's to win where they mix. Each layer is hex-tiled (Mikkelsen 2022): three cells per pixel, each randomly offset
-  and turned by the layer's `antiTiling` (the fraction of a full turn), blended by texel height. `followsRows` layers
-  (param row 3 w = 0) add the row map's turn to their own `rotation` per pixel, so each field's furrows follow its rows;
-  their hex cells never turn and slide only along the texture's lines, so furrows stay continuous. Normals turn back by
-  the combined rotation. A far albedo sample at `_FarTiling` × the layer tiling fades in between `_FarStart` and
-  `_FarEnd` (camera distance) up to `_FarBlend`. `TerrainDetail.Level` (Presentation) sets the global keywords
-  `_TERRAIN_SIMPLE` (Low: one sample) or `_TERRAIN_NO_FAR` (Medium: hex only); with neither (High, edit mode, map views)
-  the shader does both. Param row 4 x is the layer's `grass` cover (0..1), which `TerrainWetness.hlsl` uses to shed
-  rain: grass darkens toward `_GrassWetness` of bare ground's and pools fewer puddles.
-- **Weather** (`MapEnvironmentWriter`): a `Weather` object whose `WeatherSet` (Presentation) holds every climate
-  weather's key and atmosphere prefab and `defaultKey`, with the spec weather's prefab instanced under it. The
-  prefab's `Atmosphere` sets the sky and ambient as it enables, so the lighting bake reads them; the minimap capture
-  turns its `HeightFog` off. In play, `WeatherSet` swaps the child for the prefab `MatchSetup.Weather` names (empty
-  keeps the default; an unknown key is an error naming it).
-- **Ground colour** (`MapGroundColor`): a top-down picture of the layers' mean albedo by splat weight, tinted by the
-  macro map. Foliage blends into it at its roots.
-- **Ground decals** (`MapDecalWriter`, after `MapPlacementWriter`): a URP `DecalProjector` per decal under the main
-  scene's `Decals` root, centred on the finished ground and projecting along its normal, faces steeper than 50–75°
-  fading out (as the impact marks do). Decals laid by a mirroring copy flip their UVs. The rules' `maxDecals` caps
-  the count: above it the preview and build warn; the land figures and metrics report it.
-- **Road ribbons** (`MapRoadMesh`, `MapRoadMeshWriter`): a mesh lifted a few centimetres over the ground, UV Y in
-  metres along the road. Vertex alpha fades free ends and the lower-ranked end of a junction (`MapRoadFades`); rows
-  over water or under a bridge are left out. Drawn by `HyperRTS/Road`.
+Heights come from relief, hills, river valleys and ravines. Roads of a levelling class sit on embankments, with
+ramps up to bridges.
+
+Every surface sets an `edgeWidth`, the blend band in metres, and an `edgeJitter`, how far the line wanders. Where
+two surfaces meet the crisper one wins, so a ploughed edge stays sharp against a meadow. The jitter turns with the
+symmetry, so mirrored borders wander alike.
+
+| Output | What it is |
+| --- | --- |
+| Splat | Terrain layer weights. Steep ground takes the slope surface |
+| Details | Grass and plants, clumped by noise. Nothing grows on roads or placed objects |
+| Macro map | Light and warmth per field and wood, darker hollows, wetness near water. Set by the climate's `macro` section |
+| Row map | Each cell's crop row direction, turned with its symmetry copy |
+| Ground materials | One `SurfaceMaterial` per cell for impacts and wheel debris, baked into the `GroundMaterials` singleton |
+| Ground colour | The ground's colour from above, so foliage blends in at its roots |
+| Ground decals | A URP `DecalProjector` per decal, fading out on steep faces |
+| Road ribbons | A mesh just above the ground, drawn by `HyperRTS/Road`, with faded free ends |
+| Weather | A `WeatherSet` holding every climate weather, with the spec's weather active |
+
+**Terrain material.** `HyperRTS/Terrain` blends up to 16 layers by texel height. The climate's `heightBlendDepth`
+sets how far one layer must stand above another to win; about 0.06 interlocks borders without speckle. Layers are
+hex-tiled and randomly turned by their `antiTiling` to hide repeats. Layers with `followsRows` turn with the row
+map, so furrows follow each field. Grass layers darken less in rain than bare ground.
+
+`TerrainDetail.Level` sets the shader quality: Low uses `_TERRAIN_SIMPLE`, one sample per layer. Medium uses
+`_TERRAIN_NO_FAR`, hex tiling without the far sample. High sets neither and does both.
+
+**Weather.** In play, `WeatherSet` swaps in the weather `MatchSetup.Weather` names. Empty keeps the default.
 
 ### Checks and measures
 
-- `MapAssetCheck` (climate and palette) and `MapSpecCheck` (size, terrain, amounts and every kind the spec names)
-  run before anything is refined: every layer, tree, plant, decal, surface, road class, kit and palette key resolves, and
-  generated prefabs have display names. Settings honoured only in some places are rejected elsewhere: `maxEdgeDistance`
-  on a kit's or the ravine surface's trees, `besideRoad` on a prop a surface, settlement kit or spec prop places. A bad key is an error that names it and the feature (`MapKeyCheck`). After
-  them, lookups throw (`MapKeys`): a key the checks missed fails loudly instead of being skipped.
-- Road checks warn about dead ends and bends tighter than half the class's curve radius.
-- The nav grid (classified like `NavGridSystem`) gives rush times, attack paths (close a corridor along the shortest
-  path, search again; the paths found before none remains are the count), reach, buildable ground and resources per
-  base.
-- Resources within 2.5 base radii of a base count as its own, finite and renewable apart. A renewable node (its
-  `ResourceNodeAuthoring.regrowthPerSecond` is above 0; `MapPaletteEntry.IsRenewable`) there is an error: main and
-  natural fields run dry. Renewable stacks across the whole map are grouped into fields (`MapFieldClusters`: stacks
-  within 20 m of each other, directly or through a chain, are one field); fewer than the mode's
-  `minRenewableFields` × players is an error. The report stores the fields per player.
-- `MapHintWriter` computes bot hints from that grid and the layout (expansion order per slot, attack lanes between
-  enemy slots, defence points) and bakes them as an `AIMapHintsAuthoring` object in the SubScene. The skirmish AI
-  needs it to play the map.
-- `MapSpecRule` (a scene rule) shows a built map's report errors in **HyperRTS ▸ Tools ▸ Validate**, and flags a
-  map scene whose spec has no report.
+Checks run before anything is refined. `MapAssetCheck` covers the climate and palette, and `MapSpecCheck` covers
+the spec. Every key must resolve, or the error names the key and the feature. Settings that only work in some
+places, such as a prop's `besideRoad`, are rejected elsewhere. After the checks, lookups throw, so a missed key
+fails loudly.
+
+The build then measures the map on the nav grid:
+
+- **Roads.** Warnings for dead ends and bends tighter than half the class's curve radius.
+- **Rush and paths.** Rush times between bases and the number of distinct attack paths.
+- **Bases.** Reach, buildable ground and resources per base. Resources within 2.5 base radii count as the base's.
+- **Renewable resources.** A renewable node among a base's resources is an error, since base fields must run
+  dry. Across the map, stacks within 20 m of each other form one field. Fewer fields than the mode's
+  `minRenewableFields` per player is an error.
+- **Decals.** More than the rules' `maxDecals` is a warning.
+
+`MapHintWriter` turns the grid into bot hints: expansion order, attack lanes and defence points. The skirmish AI
+needs them to play the map. `MapSpecRule` shows a built map's report errors on **HyperRTS ▸ Tools ▸ Validate**.
 
 ### Outputs
 
-| Tool | Writes |
-| --- | --- |
-| Preview (`MapPreview.Run`) | `Logs/MapReports/<Map>.preview.png` (land, trees, props, crossings, bases) and `.preview.json` (issues, land figures) |
-| Build (`MapBuilder.Build`) | In a `Generated/` folder beside the spec: scene and `_Entities` SubScene (gameplay prefabs at `[Generated] …` roots, scenery under `[Generated]`; the build also clears every library prefab instance at the SubScene root, since a prefab whose internal IDs changed drops the instance's name; hand-placed objects go under `[Dressing]`, which is never touched), `_Terrain.asset` and `.mat`, `_Water.asset`, `_Roads.asset`, `_Macro.png`, `_Rows.png`, `_Ground.png`, `_GroundMaterials.png`, `_Minimap.png`, `_Overview.png`, baked lighting, and whatever the game's `IMapBuildHook` adds. Without a graphics device the build skips the lighting bake, minimap and views and keeps the files a graphics build left. In `Logs/MapReports/`: `<Map>.json` and `.png`. Errors before the scene stage stop the build with a report and leave the last good scene alone |
-| Views (`MapViewCapture`, every build) | `Logs/MapReports/<Map>/*.png` from the scene's own match camera: `centre`, `base-N`, `crossing-N`, `settlement-N` (wide and `-close`), `overview`. None without a graphics device |
-| Key reference (`MapKeyReference.Write`) | A Markdown list of every `kind` a spec may name, for the game to write beside its map tooling |
+A preview writes `Logs/MapReports/<Map>.preview.png` and `.preview.json`. A build writes the report to
+`Logs/MapReports/<Map>.json` and `.png`, and everything else to a `Generated/` folder beside the spec:
+
+- the scene and its `_Entities` SubScene
+- terrain, water and road assets
+- the macro, row, ground colour, ground material, minimap and overview images
+- row crop data, if the map has row crops
+- baked lighting, and anything the game's `IMapBuildHook` adds
+
+Generated objects sit under `[Generated]` roots and are replaced on every build. Put hand-placed objects under
+`[Dressing]`, which the build never touches. Errors before the scene stage stop the build and leave the last good
+scene alone.
+
+Without a graphics device, a build skips lighting, minimap and views and keeps the last ones. A map's first build
+needs graphics.
 
 ## Map library
 
-The game's map content is a set of JSON files, one per item, named `<Key>.<type>.json` and kept anywhere under
-`Assets/`. The key is the file name, never a field, and is unique per type (`Stubble` can be a layer, a plant and a
-surface). Unity assets are named by project path. `MapLibrary.Load()` indexes every such file; items are read when
-first asked for. A missing, duplicate or unreadable file throws naming the file.
+The library holds the game's map content as JSON files, one per item, named `<Key>.<type>.json` anywhere under
+`Assets/`. The key is the file name and is unique per type, so `Stubble` can be a layer, a plant and a surface. A
+missing, duplicate or unreadable file throws, naming the file. So does any field the item doesn't read.
 
-| Type | Class | Holds | Names |
-| --- | --- | --- | --- |
-| `layer` | `MapClimateLayer` | A terrain texture layer, how the shader lays it, its map colour, the grass on it | `terrainLayer` |
-| `plant` | `MapClimateDetail` | A terrain detail: instanced mesh prefab or billboard grass texture | `mesh`, `texture` |
-| `tree` | `MapClimateTree` | A terrain tree, optionally an entity version for the playable area | `prefab`, `destructible` |
-| `decal` | `MapClimateDecal` | A ground decal: size range (metres), `randomRotation`, `depth` | `material` |
-| `road` | `MapRoadClass` | Width, surface, `impactClass` (the road's own `SurfaceMaterial`, since its painted surface may differ), verge, rank, levelling and curve radius of a road class | `material`; surface keys |
-| `surface` | `MapClimateSurface` | A ground type: its layer, its `impactClass` (a `SurfaceMaterial` name other than `None`: the debris hits and wheels throw up), the trees, plants and props on it and its `decals` per hectare (a tree with `maxEdgeDistance` grows only that close to the surface's edge, per hectare of that band; not on the ravine surface) | layer, tree, plant, prop, decal keys |
-| `farmland` | `MapFarmlandKit` | Field sizes, crop mix, margins, belts and tracks (`trackJoinDistance`: metres from a road's edge within which a track end joins it) | surface, belt and road keys |
-| `belt` | `MapBeltKit` | Rows of trees with shrubs in the gaps | tree and surface keys |
-| `woodland` | `MapWoodlandKit` | Canopy, shrubby edge, clearings, floor | tree and surface keys |
-| `settlement` | `MapSettlementKit` | Plot layout along a street, street poles and pipe (`streetPipeMinSections` sections, arches over gaps up to `streetPipeMaxGap` m) | prop, surface and tree keys |
-| `prop` | `MapPaletteEntry` | One placeable prefab: flattening, yaw jitter, scale, `besideRoad` (scatters only: puts it on the nearest road's verge, facing along it), `maxTilt` (max tilt with the slope, 0 upright), `buriedDepth` (metres below the ground), the pad surface and access road it gets, `sharedAccessDistance` (metres within which props with the same access share its track; 0 for its own, required 0 without access), a `groundDecal` (with its required `groundDecalSize`) under it | `prefab`, `scenery` (a plain model drawn on the terrain where a surface's prop falls in the backdrop; empty leaves the backdrop bare); surface, road and decal keys |
-| `climate` | `MapClimate` | Ground, slope, shore, floodplain and ravine surfaces, reeds, ford shallows (`fordShallowsWidth`) and fast water (`fordRapidsLength`), draw distances | `surfaces`, `roadClasses`, `farmlandKits`, `beltKits`, `woodlandKits`, `water`, `weathers` (`key` and `atmosphere` prefab each; unique keys); surface and plant keys |
-| `palette` | `MapPalette` | `sides` (`side` 1-255, `startKit` of `key`/`offset`/`yaw`, `buildOrder` path to an `AIBuildOrder` or empty), base radius (exactly one per project). Slot n defaults to `sides[(n - 1) % count]` | `rig`, `startingResources`; prop keys |
-| `rules` | `MapRules` | Rush thresholds, attack paths and renewable fields per player per mode, `maxDecals`, nav cell size and max slope for the built match, corridor width, view camera (exactly one per project) | |
+Each item holds placement data and the paths of its Unity assets. The assets are ordinary files edited in Unity,
+never generated from the JSON.
 
-A field neither the item nor its refs read is an error naming the file. "Names" lists the asset paths and key lists a file holds beside the item's own fields (the ref fields its
-`[MapLibraryItem]` attribute lists, written first in the file), then the kinds of key the item's own fields name.
+| Type | Holds |
+| --- | --- |
+| `layer` | A terrain layer, how the shader lays it, its map colour and grass cover |
+| `plant` | A terrain detail: an instanced mesh or a billboard grass texture |
+| `tree` | Terrain tree `prefabs`, one per variant, and optional entity `destructibles` in the same order |
+| `rowCrop` | A crop grown in 3D rows on fields whose surface names it |
+| `decal` | A ground decal: material, size range, rotation, depth |
+| `road` | A road class: width, surface, `impactClass`, verge, rank, levelling, curve radius |
+| `surface` | A ground type: its layer, `impactClass`, and the trees, plants, props and decals on it |
+| `farmland`, `belt`, `woodland` | Kits for fields, tree belts and woods |
+| `settlement` | Plot layout along a street, street poles and pipe |
+| `prop` | One placeable prefab: flattening, tilt, scale, ground pad, access road, ground decal |
+| `climate` | The surfaces, road classes, kits, water and weathers one climate uses |
+| `palette` | The sides, their start kits and build orders, base radius, match rig. One per project |
+| `rules` | Thresholds per mode, `maxDecals`, match nav settings, view camera. One per project |
 
-What a build gets:
+`impactClass` is a `SurfaceMaterial` name other than `None`. A palette side has a `side` id from 1 to 255, and
+slot n uses `sides[(n - 1) % count]` by default.
 
-- **Climate** (`MapLibrary.Climate`, `MapClimateAssembly`): the surfaces, road classes and kits its file lists, then
-  the terrain layers (at most 16), trees, plants and decals those use, each added the first time it is named. The walk
-  order is fixed (surfaces, belt kits, woodland kits, reeds, settlement orchards, every prop's ground decal), so layer, tree and plant indices
-  change only when the data does.
-- **Palette** (`MapLibrary.Palette`): the palette file plus every `prop` and every `settlement` in the library.
-- **Rules** (`MapLibrary.Rules`): the one rules file.
+A climate pulls in the layers, trees, plants and decals its surfaces and kits use, in a fixed order, so indices
+change only when the data does. A climate holds at most 16 layers. Its terrain texture arrays are generated into a
+`Generated` folder beside its file and rebuilt when a source texture or layer changes.
 
 ### Keys and asset fields
 
-String fields that name another item carry `[MapKey(typeof(...))]` (several types when either fits); spec key
-fields (`climate`, each feature's `kind`) carry it too. String fields that hold an asset path carry
-`[MapAsset(typeof(...))]`. `MapLibraryProblems.Find(root)` lists files that don't index or parse, keys that don't
-resolve and asset paths that don't load; a game test runs it on its library. Items are written by hand (or by an
-agent) in the `MapJsonFormat` layout through `MapLibraryItemFile`: the ref fields first, the `factory` and its
-`params` last, no key field. Nothing caches `MapLibrary`.
-
-### Library assets
-
-An item's JSON holds placement data and the paths of its Unity assets (materials, layers, prefabs); the assets are
-ordinary files edited in Unity, never made from the JSON. A climate's terrain texture arrays (albedo with height in alpha, normals, occlusion and smoothness) are generated
-into a `Generated` folder beside the climate's library file, named after it, and rebuilt only when their source
-textures or the layers change (`MapTerrainTextures`). The source images are read from file and resampled to the
-slice size; mask heights are stretched so every layer blends alike (`MapTerrainSource`).
+A string field that names another item carries `[MapKey(typeof(...))]`. One that holds an asset path carries
+`[MapAsset(typeof(...))]`. `MapLibraryProblems.Find(root)` lists keys that don't resolve and assets that don't
+load. Run it in a test on your library.
 
 ### Adding an item type
 
-1. A class in `Data/` implementing `IMapLibraryItem` (and `IMapKeyed` if things name it), with `[MapKey]` on its
-   key fields.
-2. A `[MapLibraryItem("<type>", "<ref field>"...)]` attribute naming its type and ref fields (new asset paths or key
-   lists go on `MapLibraryRefs` with `[MapAsset]` or `[MapKey]`) and its place in `MapLibrary`'s ordered type list.
-3. Where builds get it: `MapClimateAssembly` for climate content, `MapLibrary.Palette` for palette content.
-4. Its keys checked in `MapAssetCheck` and listed in `MapKeyReference`.
+1. Add a class in `Data/` that implements `IMapLibraryItem`, plus `IMapKeyed` if other items name it.
+2. Give it a `[MapLibraryItem("<type>", ...)]` attribute and add it to `MapLibrary`'s type list.
+3. Hook it into builds through `MapClimateAssembly` or `MapLibrary.Palette`.
+4. Check its keys in `MapAssetCheck` and list them in `MapKeyReference`.
 
 ## Batch and scripted entry points
 
 | Entry | Does |
 | --- | --- |
-| `-executeMethod HyperRTS.Editor.Maps.Tools.MapCommandLine.Build -map <spec>` | Builds one map in batch mode. Exits 0 when the report passes, 1 on report errors, 2 on a crash or a missing `-map` |
-| `...MapCommandLine.Preview -map <spec>` | Previews one map to `Logs/MapReports/`, same exit codes |
-| `-nographics` | No graphics device: the build skips the lighting bake, minimap and views and keeps the files a graphics build left; a map's first build needs graphics |
-| `MapPreview.Run(spec)`, `MapBuilder.Build(spec)`, `MapViewCapture.Capture(spec)` | The same from editor code or an `eval` against a running editor |
-| `MapBuildCommands.Build(spec)`, `.BuildAll()` | What the Map Editor and the Maps page call: save open scenes first, reopen the active scene after |
-| `MapKeyReference.Write(path, MapLibrary.Load())` | Writes the key reference |
+| `-executeMethod HyperRTS.Editor.Maps.Tools.MapCommandLine.Build -map <spec>` | Builds one map |
+| `...MapCommandLine.Preview -map <spec>` | Previews one map |
+| `MapPreview.Run`, `MapBuilder.Build`, `MapViewCapture.Capture` | The same from editor code |
+| `MapBuildCommands.Build(spec)`, `.BuildAll()` | Builds as the editor does, saving and reopening scenes |
+| `MapKeyReference.Write(path, MapLibrary.Load())` | Writes a Markdown list of every `kind` a spec may name |
 
-An agent can edit a spec's JSON while the Map Editor has it open: the editor reloads the file and redraws the
-preview image when a preview run elsewhere rewrites it.
+Batch runs exit with 0 when the report passes, 1 on report errors, and 2 on a crash or a missing `-map`. Add
+`-nographics` to build without lighting, minimap and views.
 
 ## What a game supplies
 
-- A map library: the item files above, with exactly one palette and one rules file, and the Unity assets they name
-  (terrain layers, plant and tree prefabs, road materials, water, weather atmosphere prefabs, prop prefabs, the match rig).
-  A game makes those assets through library factories or a `Generator` (**HyperRTS ▸ Tools ▸ Generate**), and
-  writes the key reference there.
-- Specs, each in its own folder; the build writes into a `Generated/` folder beside it.
-- Optionally an `IMapBuildHook`: called after every build with the spec, paths, report, player count, minimap and
-  overview, e.g. to list the map in the game's menus and build settings.
+- **A map library**: the item files above and the Unity assets they name.
+- **Specs**, each in its own folder.
+- **An `IMapBuildHook`**, optionally. It runs after every build with the spec, report, minimap and overview, for
+  example to list the map in the game's menus.
 
 ## Adding a kind of land use
 
-1. A kit in `Data/` (like `MapFarmlandKit`, keyed through `IMapKeyed`, loaded through `IMapLibraryItem`) held by
-   `MapClimate`, its library type as above, `[MapKey]` on its key fields, its keys checked in `MapAssetCheck` and
-   listed in `MapKeyReference`.
-2. A `MapLandKind` if no existing one fits, and the surfaces it paints.
-3. A `MapLandPass` in `Planning/` that claims land and places things through `MapPlanContext`, symmetric as above.
-4. Its slot in `MapLandPlanner.Plan`, where its priority puts it.
-5. A spec class in `Spec/`, an array on `MapSpec`, its keys checked in `MapSpecCheck`, and a `MapFeatureKind` in
-   `MapFeatureKinds` so the Map Editor lists and draws it.
-6. EditMode tests: the planner's output on a small layout, and a bad key failing loudly.
+1. Add a kit in `Data/`, like `MapFarmlandKit`, held by `MapClimate`. Give it a library type, check its keys in
+   `MapAssetCheck` and list them in `MapKeyReference`.
+2. Add a `MapLandKind` if none fits, and the surfaces it paints.
+3. Add a `MapLandPass` in `Planning/` that claims land through `MapPlanContext`. Decide in the authored sector and
+   place in every copy.
+4. Slot the pass into `MapLandPlanner.Plan` at its priority.
+5. Add a spec class in `Spec/`, an array on `MapSpec`, key checks in `MapSpecCheck`, and a `MapFeatureKind` in
+   `MapFeatureKinds` so the Map Editor shows it.
+6. Write EditMode tests: the planner's output on a small layout, and a bad key failing loudly.

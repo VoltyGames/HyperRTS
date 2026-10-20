@@ -2,98 +2,114 @@
 
 [Modules](../modules.md) ▸ Common, GameEntities, Match, Orders, Commands, Selection
 
+The modules every other module builds on: who owns what, how a match is set up, and how player intent becomes
+unit orders.
+
 ## Common
 
-The base: ownership, identity, health and shared helpers.
+The base tier: ownership, identity, health and shared helpers.
 
 | Type | Role |
 | --- | --- |
-| `Faction` | Owner of an ownable entity: 0 = neutral, up to `Faction.Max` (29). `Faction.Bit` for 32-bit sets |
-| `FactionRelations`, `Relation` | Singleton team per faction: `IsHostile`, `IsAllied`, `GetRelation` (Own, Ally, Enemy, Neutral) |
-| `Player`, `PlayerRegistry` | Player identity (faction, name, colour); faction → player singleton, rebuilt first each frame |
-| `PlayerSide` | The game's army or nation id for a player; it picks the player's start kit and AI build order from the Match's sides |
-| `LocalPlayer`, `Defeated` | The player this client controls; enabled once a player loses |
+| `Faction` | Owner of an entity. 0 is neutral, the maximum is 29 |
+| `FactionRelations` | Singleton with each faction's team. Answers `IsHostile`, `IsAllied` and `GetRelation` |
+| `Player`, `PlayerRegistry` | A player's faction, name and colour. The registry maps faction to player |
+| `PlayerSide` | The game's army or nation id. Picks the player's start kit and AI build order |
+| `LocalPlayer`, `Defeated` | The player this client controls. Enabled once a player loses |
 | `PlayerStats` | Replicated totals: trained, built, delivered, lost, destroyed |
-| `MapSettings` | Singleton: playable bounds, cell sizes, water level, flooding, max slope |
-| `UnitTag`, `BuildingTag` | Movable unit; static structure |
-| `Health`, `Dead` | Hit points; death marker, enabled the frame before destruction |
-| `Inside` | Enabled while a passenger is aboard |
-| `Destructible` | Scenery anyone can wreck (fences, trees, houses, bridges): splash hits it, attack orders may target it, fog never hides it. `Crush` = smallest `Crusher` size that flattens it |
-| `TrackMarks` | Track or tyre width, gauge and rut depth of a vehicle, for the ruts and trampling presentation draws; nothing in the simulation reads it |
-| `ConstructionProgress` | Enableable 0..1; an unfinished building doesn't produce, fire, house population or meet prerequisites |
-| `Offline`, `OfflineReason` | "Out of action" with a reason mask (`UnderConstruction`, `Unpowered`, games from `Custom`); set and cleared per reason with `Offline.Set`. Offline entities don't fire, cast, run fields or produce |
-| `GameEvents` | This frame's `UnitProduced`, `BuildingCompleted`, `OwnerChanged`; cleared first in the order phase |
-| `Ownership.Transfer` | The one way to change an owner: sets `Faction` through the ECB and raises `OwnerChanged` |
-| `AttackTarget` | Enableable current target (here so orders can halt attacks) |
-| `EntityInfo`, `PrefabRegistry` | `TypeId` (hash of the display name), name, icon; singleton `TypeId` → prefab |
-| `IEntityWriter` | Target of the authorings' static `Add…` methods and the shared `*Setup` helpers: `BakerWriter` in bakers, `EntityManagerWriter` in tests |
-| `AuthoringBehaviour`, `[Owner]`, `[RequiresAuthoring]` | Base of all authoring; player dropdown; a required companion |
-| `EnabledExtensions` | `lookup.HasEnabled(entity)` |
+| `MapSettings` | Singleton: playable bounds, cell sizes, water level, max slope |
+| `UnitTag`, `BuildingTag` | A movable unit. A static structure |
+| `Health`, `Dead` | Hit points. `Dead` is enabled the frame before destruction |
+| `Destructible` | Scenery anyone can wreck. Splash hits it and fog never hides it |
+| `ConstructionProgress` | 0 to 1. An unfinished building doesn't produce, fire or count for prerequisites |
+| `Offline` | Out of action, with a reason mask. Games add reasons from `OfflineReason.Custom` |
+| `GameEvents` | This frame's unit produced, building completed and owner changed events |
+| `Ownership.Transfer` | The one way to change an owner. Raises `OwnerChanged` |
+| `EntityInfo`, `PrefabRegistry` | Type id, name and icon. The registry maps type id to prefab |
+| `IEntityWriter` | Writes component sets, so bakers and tests build the same entities |
+| `AuthoringBehaviour` | Base of all authoring components |
+
+An entity's type id is a hash of its display name, so two prefab types must not share a name.
 
 ## GameEntities
 
 | Type | Role |
 | --- | --- |
-| `GameEntityAuthoring` | Base of unit and building authoring: name, icon, owner, health, vision, cost, build time, prerequisites, death spawn, experience, counts for victory |
-| `GameEntitySetup`, `ProducibleBaking` | The shared component set; cost and prerequisite lists |
-| `PlayerSetup` | The player entity's components (stats, population, power, commands, research, stock) |
-| `TeamStripAuthoring` / `TeamStripBand` | Height band (m, model space) where the owner's colour shows, for buildings painted in strips |
+| `GameEntityAuthoring` | Base of unit and building authoring: name, icon, owner, health, vision, cost, build time, prerequisites, death spawn |
+| `PlayerSetup` | The components of a player entity: stats, population, power, commands, research, stock |
+| `TeamStripAuthoring` | Height band where the owner's colour shows, for buildings painted in strips |
 
 ## Match
 
+One `MatchAuthoring` per map sets its size, fog, player slots, sides, AI tuning, replays and join timeout. Each slot
+has a name, team, colour, control type, starting stock, spawn point and side. Slot index + 1 is the player's
+faction.
+
+A side holds a start kit and an AI build order. At match start every player gets its side's kit, spawned around its
+spawn point, and its side's build order. A side the Match doesn't list is an error.
+
 | Type | Role |
 | --- | --- |
-| `MatchAuthoring` | One per map: size, nav and fog cells, fog, player slots, sides, AI tuning, replays, join timeout |
-| `PlayerSlot`, `PlayerControl` | Name, team, colour, control (LocalHuman, AI, Remote), stock, AI difficulty, build order, side, spawn (position, yaw). Index + 1 = faction |
-| `SideContent`, `StartKitItem` | Per side: start kit (prefab, offset right/forward of the spawn, yaw) and AI build order |
-| `MatchSide`, `SideStartItem`, `SideBuildStep`, `PlayerSpawn` | Baked sides on the Match entity; each player's spawn. Kit and build order prefabs are referenced, so they are in the `PrefabRegistry` |
-| `MatchState` | Replicated: `Phase`, winning team, `Started` (every human joined) |
+| `MatchState` | Replicated phase, winning team, and `Started` once every human joined |
 | `MatchRules` | Low-power production rate, sell refund, replays, join timeout |
-| `MatchSetup`, `MatchSetupRequest` | Runtime configuration from a lobby; set the request before the map loads |
-| `LocalGameSpeed` | Single-player pause and speed (`Time.timeScale`) |
-| `VictoryCritical`, `PopulationProvider`, `Population` | Victory flag; population source; used / cap per player |
+| `MatchSetupRequest` | Lobby configuration. Set it before the map loads |
+| `LocalGameSpeed` | Single-player pause and speed |
+| `VictoryCritical` | A player who loses all of these is defeated |
+| `PopulationProvider`, `Population` | Population sources, and used and cap per player |
 
-- `MatchSetupSystem` (first in the order phase) applies `MatchSetup` alike on server and clients: drops closed slots
-  and what they own, sets names, colours, teams and `PlayerSide`, adds `AIPlayer`, scales stock, overrides fog. `MatchSetup.Weather` (empty for the map's own) is read by
-  the scene's `WeatherSet` when it loads, not by a system.
-- `SideContentSystem` (server and single player, after the setup, or at once when the scene plays as baked) gives
-  each player its side's build order (none: an empty one, so the bot trains freely) and spawns its side's kit at its
-  `PlayerSpawn` on the `TerrainHeight`, owned by it. Closed slots get nothing; a side the Match doesn't list (0 too)
-  throws. On the server kits are ordinary server-spawned ghosts; replays claim them like scene entities.
-- `VictorySystem` defeats a player who lost every `VictoryCritical` entity (never one who owned none) and ends the
-  match when one team is left. `SurrenderSystem` handles `CommandType.Surrender`.
-- `PopulationSystem` recounts each frame; delivery carriers are free.
+`MatchSetupRequest` closes slots and removes what they own, sets names, colours, teams and sides, assigns AI, scales
+starting stock and overrides fog. It applies the same way on the server and every client. Its `Weather` is read by
+the scene when it loads. Leave it empty for the map's own weather.
+
+Victory: a player who loses every `VictoryCritical` entity is defeated, and the match ends when one team is left. A
+player who never owned one is never defeated by this.
 
 ## Orders
 
+All player intent is a `PlayerCommand` on the player entity. Units carry orders.
+
 | Type | Role |
 | --- | --- |
-| `PlayerCommand`, `CommandType` | Player intent: Smart, Move, Attack, Gather, Build, Produce, Capture, Enter, UseAbility, Surrender and more; games from `Custom` |
-| `Order`, `OrderType` | A unit's order; `Argument` carries extra data (ability id); games from `Custom` |
-| `ActiveOrder`, `QueuedOrder` | Current order (disabled = idle) and the shift queue |
-| `OrderWriter` | `Issue(unit, order, queue)`, `Stop(unit)` |
-| `PlayerCommands`, `PlayerCommandSubject` | `Any(types)` skips idle frames; `Collect` lists who a command addresses (group, `Unit`, else selection) |
-| `TypeSet` | A bit set of command types (`PlayerCommands.Any`) |
+| `PlayerCommand`, `CommandType` | Player intent: Smart, Move, Attack, Gather, Build, Produce, Capture, Enter, UseAbility, Surrender and more |
+| `Order`, `OrderType` | A unit's order. `Argument` carries extra data such as an ability id |
+| `ActiveOrder`, `QueuedOrder` | The current order and the Shift queue. Disabled `ActiveOrder` means idle |
+| `OrderWriter` | `Issue(unit, order, queue)` and `Stop(unit)` |
+| `PlayerCommands` | Which units a command addresses, and a fast check for idle frames |
 
-`OrderDispatchSystem` starts the next queued order. `MoveOrderSystem` runs Move, AttackMove and Patrol (patrol
-re-queues its leg). `EscortSystem` follows a friendly ward. `PlayerCommandClearSystem` clears commands last.
+Games add command and order types from `Custom`. The engine runs Move, AttackMove, Patrol and Escort. When the active
+order finishes, the next queued one starts.
 
 ## Commands
 
-`UnitCommandSystem` turns unit commands into orders through `OrderResolver`. Smart resolves to the first match:
-hostile the weapon hits → Attack, resource node → Gather, unfinished allied building → Build, damaged one →
-Repair, allied container with room → Enter, capturable → Capture, own airfield → ReturnToBase, else Move. A unit's
-`SmartOrderRule`s (target component + relations → order) come first. Group moves spread into a box `Formation`.
+Unit commands become orders. A Smart command, the default right-click, resolves to the first match:
+
+1. A hostile target the unit's weapon can hit: Attack
+2. A resource node: Gather
+3. An unfinished allied building: Build
+4. A damaged allied building: Repair
+5. An allied container with room: Enter
+6. The unit's own airfield: Return to base
+7. A capturable building: Capture
+8. Anything else: Move
+
+A unit's `SmartOrderRule`s are checked before this list, so a game can add its own. Group moves spread into a box
+formation.
 
 ## Selection
 
 | Type | Role |
 | --- | --- |
-| `Selectable`, `Selected` | Tag on units and buildings; enableable selection (no structural change) |
-| `SelectionInput` | Singleton gesture from input: click (ray + `Pointer`), box, double-click, modifiers, group keys |
-| `ControlGroup` | Group bit mask |
-| `PickRanking` | A visible unit on the ray, else the visible unit within max(10 px, its radius) of the pointer, else the closest hit; used by clicks and `WorldPointer` |
+| `Selectable`, `Selected` | Marks a selectable entity. `Selected` is enableable |
+| `SelectionInput` | The gesture from input: click, box, double-click, modifiers, group keys |
+| `ControlGroup` | The control groups an entity belongs to |
+| `PickRanking` | Which entity a click picks |
 
-`SelectionSystem`: click picks through `PickRanking` (selectable prefabs need a collider), so a unit behind a
-building wins; a box prefers your units, then your buildings; double-click takes every on-screen entity of that
-`TypeId`. Shift adds, Ctrl removes; Ctrl+N stores group N, N recalls it, Shift+N adds it.
+A click prefers a visible unit on the ray, then one within 10 px or its radius of the pointer, then the closest hit.
+So a unit behind a building still wins. Selectable prefabs need a collider.
+
+| Gesture | Selects |
+| --- | --- |
+| Box | Your units, else your buildings |
+| Double-click | Every on-screen entity of that type |
+| Shift / Ctrl | Add to / remove from the selection |
+| Ctrl+N, N, Shift+N | Store group N, recall it, add it to the selection |

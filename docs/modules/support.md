@@ -4,87 +4,66 @@
 
 ## AI
 
-| Type | Role |
-| --- | --- |
-| `AIPlayer`, `AITuning`, `AIDifficultyTuning` | A computer player; think interval, wave size, ability use, income bonus, fog honesty; per difficulty |
-| `AIBuildStep`, `AIPlayerSetup` | Build-order entry (prefab and count); adds `AIPlayer` to a player |
-| `AIPlacement` | Ring search for a building spot around the base |
-| `AIMapHintsAuthoring`, `AIMapHints` | The map's bot hints, written by map builders: per slot the resource fields by distance and defence points; attack lanes between slots |
-| `AIRoutes` | Seeded, integer-only lane choice |
+`SkirmishAISystem` plays computer players. Like a human, it acts only through `PlayerCommand`s. Difficulty
+presets on `Match` tune it, and an `AIBuildOrder` asset sets what it builds first.
 
-`SkirmishAISystem` drives each `AIPlayer` through `PlayerCommand`s, only on maps with hints
-(`AIMapHintsCheckSystem` logs one error otherwise). Each think it:
+It only runs on maps with bot hints, an `AIMapHintsAuthoring` that the map builder writes. They list each slot's
+resource fields, defence points and attack lanes. A map without them logs an error.
 
-1. Starts the first unmet build-order step it can afford (a step at its build limit counts as met).
-2. Finishes abandoned sites and sends idle harvesters to the next field with resources.
-3. Then trains and researches round-robin.
-4. Uses ready abilities and powers on the nearest suitable target.
-5. Once enough combat units idle, attack-moves them along a seeded lane (`AIPlayer.RouteSeed` from
-   `MatchSetup.Seed`, recorded in replays) to the nearest hostile building. With `LimitedByFog` it targets only
-   what its team has seen.
+On each think, an AI player:
 
-To replace it, disable the system and write your own `PlayerCommand`s.
+1. Starts the first unmet build-order step it can afford.
+2. Finishes abandoned sites and sends idle harvesters to work.
+3. Trains units and researches.
+4. Uses ready abilities and powers.
+5. Once enough combat units are idle, attack-moves them along a lane to the nearest hostile building.
+
+The lane is chosen from the match seed, so replays repeat it. To replace the AI, disable the system and write
+your own `PlayerCommand`s.
 
 ## Audio
 
-Part of `Cues`.
-
-| Type | Role |
-| --- | --- |
-| `SoundCue` (asset) | Clips, volume and pitch ranges, max instances, priority, mixer group, 2D / 3D, distance |
-| `EntitySoundsAuthoring` | Cues per `CueSlot`: Fire, Impact, Death, Ability, and owner-only Ready, Select, Move, Attack; games from `Custom` |
-| `SoundRules` | `HasCue`: whether an entity has a sound for a slot |
+Part of `Cues`. `EntitySoundsAuthoring` gives an entity a `SoundCue` asset per cue slot. A `SoundCue` holds clips,
+volume and pitch ranges, priority and 3D settings. Slots are Fire, Impact, Death and Ability, plus the voice slots
+Ready, Select, Move and Attack that only the owner hears. Games add their own slots from `Custom` up.
 
 Sounds play through [cues](#cues). Playback is on the [client](client.md#presentation).
 
 ## Effects
 
-Part of `Cues`.
+Part of `Cues`. Particle rigs that play on cue slots, much like sounds.
 
-| Type | Role |
+| Authoring | Plays |
 | --- | --- |
-| `EntityEffectsAuthoring` / `EntityEffect` | Rig per `CueSlot` (Fire at a `muzzle` socket, Death, Ability; games from `Custom`) |
-| `ImpactEffectsAuthoring` / `EntityImpactEffects` | A weapon's `SurfaceEffects` (rig per `SurfaceMaterial`) where its shots land |
-| `HitMaterialAuthoring` / `HitMaterial` | What a unit, building or tree is made of, for hits on it |
-| `LoopEffectsAuthoring` / `LoopEffect` | Rigs that stream while shown (exhaust, smoke), gated by health and duration, faded as `Decay` remains sink |
-| `EffectTrailAuthoring` / `EffectTrail` | A rig along a projectile's path |
-| `MotionDustAuthoring` / `MotionDust` | Dust by ground material and speed, from a socket |
-| `EffectRules` | `TryGetSocket`: an entity's rig socket for a slot |
+| `EntityEffectsAuthoring` | A rig per cue slot. Fire plays at a `muzzle` socket |
+| `ImpactEffectsAuthoring` | A rig per surface material where a weapon's shots land |
+| `HitMaterialAuthoring` | Sets what an entity is made of, for hits on it |
+| `LoopEffectsAuthoring` | Rigs that stream while shown, such as exhaust or smoke |
+| `EffectTrailAuthoring` | A rig along a projectile's path |
+| `MotionDustAuthoring` | Dust by ground material and speed |
 
-Sockets bake as positions in the root's local space; `EffectSetup` writes all of it and skips unset rigs. Rigs play
-through [cues](#cues), on the client.
+Rigs play through [cues](#cues), on the client.
 
 ## Cues
 
-| Type | Role |
-| --- | --- |
-| `CueSlot` (Common) | What a sound and effect are for; voice slots reach only the owner |
-| `CueWriter`, `CueQueue` / `CueEvent` | This frame's cues (type, slot, owner, position, direction, stealth; impacts also radius, surface, material and the frame-local target); one event when the source has a sound or an effect for the slot (for Impact also impact marks or impact effects), at the effect socket when it has a rig |
-| `CueRules` | `IsVisible` / `IsSeenLocally`: voices reach their owner only, other cues whoever sees the source there, stealth honoured; every consumer uses it |
-| `PackedCue` | One cue in 18 bytes (positions and radius in `QuantizedPosition` steps) for the network and replays |
-| `ImpactMark` (asset), `EntityImpactMark`, `ImpactSurface` | Marks a shooter's shots leave on open ground, and what an impact struck |
+A cue is a one-off event to hear or see: a shot, an impact, a death. Simulation systems write cues with `CueWriter`
+into one queue. Sounds, effects and impact marks all read it, and the network and replays carry it.
 
-`WeaponFireSystem` plays Fire facing the target (and Impact for instant hits), `ProjectileSystem` Impact,
-`DeathCueSystem` Death, `AbilityCueSystem` Ability at the aim point and `ReadyCueSystem` Ready; games append before
-the lifecycle phase ends. `AcknowledgementSystem` plays a selected or commanded unit's voice at most once a second.
-`CueClearSystem` empties the queue each frame. Sound and effect playback, impact marks, craters and birds read the one
-queue (impact consumers take `Slot == Impact`) and each look up their own table, skipping misses.
+- A cue is only queued if its source has a sound or effect for the slot.
+- Voices reach their owner. Other cues reach whoever can see the source. `CueRules` holds this rule.
+- Games append cues before the lifecycle phase ends. The queue is emptied each frame.
+- A unit says a voice line at most once a second.
 
 ## Replays
 
-| Type | Role |
-| --- | --- |
-| `ReplayRecorder` | `Start`, `Snapshot`, `Stop` in the authoritative world |
-| `Replay`, `ReplaySerializer` | Magic and `Version` (2; other versions throw `InvalidDataException`), header (scene, seed, weather, rate, duration, players with control and AI difficulty, result) and samples; GZip file; `ReplaySetup` rebuilds the `MatchSetup` (players, AI slots, seed, weather) for playback |
-| `ReplayViewer`, `ReplayPlayback` | Plays a replay in a local world; HUD singleton (time, speed; writing the time seeks) |
+Replays record what happened, not the commands, because the simulation is not deterministic.
 
-Replays store observed state, not commands: every entity with `EntityInfo` + `Faction` at 10 Hz, keyframes every
-10 s, plus every cue but voices (fire, impact, death, ability...) since the last sample. Playback stops gameplay,
-reveals the fog, matches recorded entities, interpolates transforms and re-queues the cues it passes; a seek queues
-only the impacts of the last 30 s, so marks show without a burst of sound.
+- `ReplayRecorder` samples every game entity at 10 Hz, plus every cue except voices.
+- `ReplaySerializer` saves and loads the file. Other format versions are rejected.
+- `ReplayViewer` plays a replay in a local world with the fog revealed. It can seek.
 
 ## Animation
 
-Map machines (pumpjacks, turbines): `MachineAuthoring` / `MachineClock` on the root (optionally only while owned)
-and `MachinePartAuthoring` on moving children: `Spin`, `Swing` in step with the spin, or `Link` (a connecting rod
-between two transforms). Presentation's `MachineSystem` poses them from the clock.
+Animates map machines such as pumpjacks and wind turbines. Put `MachineAuthoring` on the root and
+`MachinePartAuthoring` on each moving child. A part can `Spin`, `Swing` in step with the spin, or act as a `Link`
+rod between two transforms.
