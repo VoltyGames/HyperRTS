@@ -24,14 +24,10 @@ namespace HyperRTS.Network.Session
         public static AsyncOperation SceneLoad => SessionSceneLoader.Current;
 
         /// <summary>
-        /// Slot (faction) to ask for when joining. Updated to the granted slot when the client world closes, so a
-        /// reconnecting client asks for its old slot.
+        /// The slot, or observer seat, to ask for when joining. Updated to what was granted when the client world
+        /// closes, so a reconnecting client asks for its old one.
         /// </summary>
-        public static byte PreferredFaction { get; set; }
-
-        /// <summary>Join as an observer instead of claiming a slot. Set when an observer's client world closes, so it
-        /// rejoins as one.</summary>
-        public static bool JoinAsObserver { get; set; }
+        public static JoinPreference Preference { get; set; }
 
         /// <summary>This process's identity, sent with every join: the server gives the slot it owns back to it.</summary>
         public static ulong Token { get; private set; } = NewToken();
@@ -69,7 +65,6 @@ namespace HyperRTS.Network.Session
             }
 
             DisposeWorlds(server);
-            _rejoin = default;
             World.DefaultGameObjectInjectionWorld = server;
             SetStatus(NetworkStatus.Connected);
             SessionSceneLoader.Load(scene);
@@ -125,7 +120,6 @@ namespace HyperRTS.Network.Session
         public static void StartLocal(SessionScene scene)
         {
             DisposeWorlds(null);
-            _rejoin = default;
             DefaultWorldInitialization.Initialize("Default World");
             SetStatus(NetworkStatus.Idle);
             SessionSceneLoader.Load(scene);
@@ -155,7 +149,6 @@ namespace HyperRTS.Network.Session
             }
 
             DisposeWorlds(server);
-            _rejoin = default;
             World.DefaultGameObjectInjectionWorld = server;
             StartClientWorld(NetworkEndpoint.LoopbackIpv4.WithPort(port), clientDrivers);
             SessionSceneLoader.Load(scene);
@@ -165,7 +158,11 @@ namespace HyperRTS.Network.Session
         private static void Join(NetworkEndpoint server, INetworkStreamDriverConstructor drivers, SessionScene scene)
         {
             DisposeWorlds(null);
-            _rejoin = drivers == null ? server : default;
+            if (drivers == null)
+            {
+                _rejoin = server;
+            }
+
             StartClientWorld(server, drivers);
             SessionSceneLoader.Load(scene);
         }
@@ -201,7 +198,7 @@ namespace HyperRTS.Network.Session
         {
             var world = ClientServerBootstrap.CreateClientWorld("ClientWorld");
             world.EntityManager.CreateSingleton(SessionWorlds.ClientTickRate());
-            world.EntityManager.CreateSingleton(new JoinPreference { Faction = PreferredFaction, Observe = JoinAsObserver });
+            world.EntityManager.CreateSingleton(Preference);
             world.EntityManager.CreateSingleton(new JoinToken { Value = Token });
             using (var query = SessionWorlds.DriverQuery(world))
             {
@@ -214,10 +211,11 @@ namespace HyperRTS.Network.Session
             SetStatus(NetworkStatus.Connecting);
         }
 
-        /// <summary>Disposes every simulation world but <paramref name="keep"/>.</summary>
+        /// <summary>Disposes every simulation world but <paramref name="keep"/>, and forgets the rejoin endpoint.</summary>
         private static void DisposeWorlds(World keep)
         {
             RememberSlot();
+            _rejoin = default;
             var worlds = new List<World> { World.DefaultGameObjectInjectionWorld };
             worlds.AddRange(ClientServerBootstrap.ServerWorlds);
             worlds.AddRange(ClientServerBootstrap.ClientWorlds);
@@ -240,13 +238,10 @@ namespace HyperRTS.Network.Session
                 return;
             }
 
-            if (!TryRemember(client.EntityManager, out var rejoin))
+            if (TryRemember(client.EntityManager, out var rejoin))
             {
-                return;
+                Preference = rejoin;
             }
-
-            PreferredFaction = rejoin.Faction;
-            JoinAsObserver = rejoin.Observe;
         }
 
         private static bool TryRemember(EntityManager entities, out JoinPreference rejoin)
@@ -269,8 +264,7 @@ namespace HyperRTS.Network.Session
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
-            PreferredFaction = 0;
-            JoinAsObserver = false;
+            Preference = default;
             Token = NewToken();
             _rejoin = default;
             Status = NetworkStatus.Idle;

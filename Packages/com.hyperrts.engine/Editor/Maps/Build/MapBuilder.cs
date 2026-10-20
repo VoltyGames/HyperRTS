@@ -7,9 +7,9 @@ using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Scenes;
 using HyperRTS.Editor.Maps.Views;
+using HyperRTS.Presentation.Common;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace HyperRTS.Editor.Maps.Build
 {
@@ -68,14 +68,11 @@ namespace HyperRTS.Editor.Maps.Build
             return report;
         }
 
-        // Without a graphics device (batch mode with -nographics) nothing renders, so the last lighting and pictures stay.
-        private static bool HasGraphics => SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null;
-
         /// <summary>Bakes the lighting and captures the minimap, or keeps the last minimap without graphics.</summary>
         private static Texture2D Render(MapGeneration generation)
         {
             var paths = generation.Project.Paths;
-            if (HasGraphics)
+            if (GraphicsSupport.Available)
             {
                 MapLightingBaker.Bake(paths);
                 return MapMinimapCapture.Capture(generation.Layout, paths.Minimap);
@@ -88,7 +85,7 @@ namespace HyperRTS.Editor.Maps.Build
         private static Texture2D CaptureViews(MapGeneration generation)
         {
             var project = generation.Project;
-            if (!HasGraphics)
+            if (!GraphicsSupport.Available)
             {
                 return Kept(project.Paths.Name, project.Paths.Overview);
             }

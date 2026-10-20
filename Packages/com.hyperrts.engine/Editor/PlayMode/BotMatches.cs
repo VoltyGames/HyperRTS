@@ -33,21 +33,6 @@ namespace HyperRTS.Editor.PlayMode
         }
 
         [Serializable]
-        private class PlayerResult
-        {
-            public int slot;
-            public int side;
-            public int team;
-            public int unitsBuilt;
-            public int unitsLost;
-            public int unitsKilled;
-            public int buildingsBuilt;
-            public int buildingsLost;
-            public int buildingsDestroyed;
-            public int resourcesGathered;
-        }
-
-        [Serializable]
         private class MatchResult
         {
             public uint seed;
@@ -55,7 +40,7 @@ namespace HyperRTS.Editor.PlayMode
             public bool timedOut;
             public int winningTeam;
             public List<int> winningSides = new();
-            public List<PlayerResult> players = new();
+            public List<ServerReport.PlayerResult> players = new();
         }
 
         [Serializable]
@@ -230,36 +215,15 @@ namespace HyperRTS.Editor.PlayMode
             result.minutes = minutes;
             result.timedOut = timedOut;
             result.winningTeam = timedOut ? 0 : state.WinningTeam;
-            using var query = new EntityQueryBuilder(Allocator.Temp).WithAll<Player, PlayerSide, PlayerStats>()
-                .Build(entityManager);
-            using var players = query.ToEntityArray(Allocator.Temp);
-            PlayWorld.TryGetSingleton(entityManager, out FactionRelations teams);
-            foreach (var player in players)
+            result.players.AddRange(ServerReport.PlayerResult.Read(entityManager));
+            foreach (var player in result.players)
             {
-                var faction = entityManager.GetComponentData<Player>(player).Faction;
-                var side = entityManager.GetComponentData<PlayerSide>(player).Value;
-                var team = teams.GetTeam(faction);
-                var stats = entityManager.GetComponentData<PlayerStats>(player);
-                result.players.Add(new PlayerResult
+                if (player.team == result.winningTeam && result.winningTeam != 0)
                 {
-                    slot = faction,
-                    side = side,
-                    team = team,
-                    unitsBuilt = stats.UnitsBuilt,
-                    unitsLost = stats.UnitsLost,
-                    unitsKilled = stats.UnitsKilled,
-                    buildingsBuilt = stats.BuildingsBuilt,
-                    buildingsLost = stats.BuildingsLost,
-                    buildingsDestroyed = stats.BuildingsDestroyed,
-                    resourcesGathered = stats.ResourcesGathered,
-                });
-                if (team == result.winningTeam && result.winningTeam != 0)
-                {
-                    result.winningSides.Add(side);
+                    result.winningSides.Add(player.side);
                 }
             }
 
-            result.players.Sort((a, b) => a.slot.CompareTo(b.slot));
             Debug.Log($"[HyperRTS] Bot match {_current + 1}: {Describe(result)}");
         }
 

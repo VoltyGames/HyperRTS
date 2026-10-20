@@ -132,7 +132,7 @@ namespace HyperRTS.Simulation.Vision
                     Seen.Add(key);
                     if (hostile)
                     {
-                        Record(entity, StateOf(entity, key, info, faction, transform, health));
+                        Record(entity, CaptureState(entity, key, info, faction, transform, health));
                     }
 
                     return;
@@ -145,7 +145,7 @@ namespace HyperRTS.Simulation.Vision
                 }
             }
 
-            private SeenState StateOf(Entity entity, FogMemoryKey key, in EntityInfo info, in Faction faction,
+            private SeenState CaptureState(Entity entity, FogMemoryKey key, in EntityInfo info, in Faction faction,
                 in LocalTransform transform, in Health health)
             {
                 Construction.TryGetComponent(entity, out var progress);

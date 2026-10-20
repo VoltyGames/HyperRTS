@@ -52,7 +52,8 @@ namespace HyperRTS.Editor.Validation
                 .OrderBy(entry => entry).ToList();
         }
 
-        // Attributes and plain comments may sit between a summary and its declaration.
+        // Attributes and plain comments may sit between a summary and its declaration; an index reads only a closed
+        // <summary>, so an unclosed one counts as none.
         private static bool HasSummary(string[] lines, int declaration)
         {
             var i = declaration - 1;
@@ -61,20 +62,19 @@ namespace HyperRTS.Editor.Validation
                 i--;
             }
 
+            var doc = new List<string>();
             for (; i >= 0 && lines[i].TrimStart().StartsWith("///"); i--)
             {
-                if (lines[i].Contains("<summary>"))
-                {
-                    return true;
-                }
+                doc.Add(lines[i]);
             }
 
-            return false;
+            var text = string.Concat(doc);
+            return text.Contains("<summary>") && text.Contains("</summary>");
         }
 
         private static bool IsAttributeOrComment(string line)
         {
-            if (line.StartsWith("["))
+            if (line.StartsWith("[") && line.EndsWith("]"))
             {
                 return true;
             }

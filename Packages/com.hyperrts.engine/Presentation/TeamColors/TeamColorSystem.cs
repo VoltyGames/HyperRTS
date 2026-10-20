@@ -23,6 +23,7 @@ namespace HyperRTS.Presentation.TeamColors
         private EntityQuery _uncoloredSources;
         private int _playerVersion;
         private int _factionVersion;
+        private int _sourceVersion;
         private int _overrideVersion;
         private FactionPalette _palette;
 
@@ -52,7 +53,7 @@ namespace HyperRTS.Presentation.TeamColors
                 _factionVersion = -1;
             }
 
-            var newWork = HasNewWork(ref state) || !_uncoloredSources.IsEmpty;
+            var newWork = HasNewWork(ref state);
             if (_recolored.IsEmpty && !newWork)
             {
                 return;
@@ -86,24 +87,26 @@ namespace HyperRTS.Presentation.TeamColors
             return true;
         }
 
-        // Entities whose player hasn't arrived only get another try once players or owned entities come or go,
-        // so a faction that never gets a player doesn't cost a pass every frame.
+        // Entities whose player hasn't arrived only get another try once players, owned entities or sources come or
+        // go, so a faction that never gets a player doesn't cost a pass every frame.
         private bool HasNewWork(ref SystemState state)
         {
-            if (_uncolored.IsEmpty)
+            if (_uncolored.IsEmpty && _uncoloredSources.IsEmpty)
             {
                 return false;
             }
 
             var players = state.EntityManager.GetComponentOrderVersion<Player>();
             var owned = state.EntityManager.GetComponentOrderVersion<Faction>();
-            if (players == _playerVersion && owned == _factionVersion)
+            var sources = state.EntityManager.GetComponentOrderVersion<TeamColorSource>();
+            if (players == _playerVersion && owned == _factionVersion && sources == _sourceVersion)
             {
                 return false;
             }
 
             _playerVersion = players;
             _factionVersion = owned;
+            _sourceVersion = sources;
             return true;
         }
 

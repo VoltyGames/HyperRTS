@@ -1,5 +1,5 @@
 ﻿using System;
-using Unity.NetCode;
+using HyperRTS.Network.Players;
 using UnityEngine;
 
 namespace HyperRTS.Network.Session
@@ -11,6 +11,9 @@ namespace HyperRTS.Network.Session
     /// </summary>
     public static class NetworkLauncher
     {
+        /// <summary>Exit code of a command-line player that could not start or report its session.</summary>
+        public const int ErrorCode = 1;
+
         /// <summary>
         /// The scene a command-line session loads when it has no <c>-scene</c>; null reloads the first scene. A game
         /// sets it before the first scene loads, as when it reads the match from its own flag.
@@ -33,7 +36,7 @@ namespace HyperRTS.Network.Session
             catch (ArgumentException exception)
             {
                 Debug.LogError($"[HyperRTS] {exception.Message}");
-                Application.Quit(ServerMonitor.ErrorCode);
+                Application.Quit(ErrorCode);
                 return;
             }
 
@@ -49,7 +52,7 @@ namespace HyperRTS.Network.Session
 
             if (!Start(options))
             {
-                Application.Quit(ServerMonitor.ErrorCode);
+                Application.Quit(ErrorCode);
                 return;
             }
 
@@ -63,7 +66,7 @@ namespace HyperRTS.Network.Session
         {
             var path = options.ScenePath ?? DefaultScene;
             var scene = path != null ? SessionScene.Load(path) : SessionScene.ReloadActive;
-            NetworkSession.JoinAsObserver = options.Observe;
+            NetworkSession.Preference = new JoinPreference { Observe = options.Observe };
             return options.Mode switch
             {
                 LaunchMode.Server => NetworkSession.StartServer(options.Port, scene),
@@ -75,10 +78,8 @@ namespace HyperRTS.Network.Session
         // Nothing renders in batch mode, so an uncapped loop would only spin: one frame per simulation tick.
         private static void CapFrameRate()
         {
-            var rate = new ClientServerTickRate();
-            rate.ResolveDefaults();
             QualitySettings.vSyncCount = 0;
-            Application.targetFrameRate = rate.SimulationTickRate;
+            Application.targetFrameRate = SessionWorlds.ServerTickRate().SimulationTickRate;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

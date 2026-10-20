@@ -35,7 +35,7 @@ namespace HyperRTS.Network.Session
         {
             var options = new LaunchOptions
             {
-                Mode = ModeOf(args),
+                Mode = ReadMode(args),
                 Address = Value(args, "-connect"),
                 Port = PortNumber(args),
                 ScenePath = Value(args, "-scene"),
@@ -67,7 +67,8 @@ namespace HyperRTS.Network.Session
             }
         }
 
-        private static LaunchMode ModeOf(string[] args)
+        /// <exception cref="ArgumentException">More than one of <c>-server</c>, <c>-host</c> and <c>-connect</c>.</exception>
+        public static LaunchMode ReadMode(string[] args)
         {
             var server = Has(args, "-server");
             var host = Has(args, "-host");
@@ -126,7 +127,9 @@ namespace HyperRTS.Network.Session
 
         private static bool Has(string[] args, string flag) => Array.IndexOf(args, flag) >= 0;
 
-        private static string Value(string[] args, string flag)
+        /// <summary>The value after <paramref name="flag"/>, or null without the flag.</summary>
+        /// <exception cref="ArgumentException">The flag has no value after it.</exception>
+        public static string Value(string[] args, string flag)
         {
             var index = Array.IndexOf(args, flag);
             if (index < 0)

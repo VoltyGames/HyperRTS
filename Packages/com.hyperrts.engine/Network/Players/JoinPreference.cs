@@ -2,7 +2,7 @@
 
 namespace HyperRTS.Network.Players
 {
-    /// <summary>Client singleton: the slot to ask for when joining, seeded from <c>NetworkSession.PreferredFaction</c>.</summary>
+    /// <summary>Client singleton: the slot to ask for when joining, seeded from <c>NetworkSession.Preference</c>.</summary>
     public struct JoinPreference : IComponentData
     {
         /// <summary>0 takes any free slot.</summary>

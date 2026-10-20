@@ -51,7 +51,7 @@ runtime data from the game, so it has no menu item or flag.
 | `-server`, `-host`, `-connect <address>` | The session to start; one at most |
 | `-port <n>` | Port to listen on or connect to (default 7979) |
 | `-scene <path>` | Map to load; else `NetworkLauncher.DefaultScene` if the game set it, else the first scene again |
-| `-observe` | Client only: join as an observer (`NetworkSession.JoinAsObserver`) |
+| `-observe` | Client only: join as an observer (`NetworkSession.Preference.Observe`) |
 | `-exit-on-end` | Server only: quit once `MatchState.Phase` is `Ended` |
 | `-time-limit <minutes>` | Server only: quit after that much server time, whatever the match does |
 | `-report <path>` | Server only, with one of the two above: write a `ServerReport` JSON when it quits |
@@ -118,8 +118,8 @@ starts as soon as its player ghosts spawn. It then sets
 1. Once the match is loaded, the client sends `JoinRequest` with its preferred slot and its token.
 2. The server picks the slot with `SlotClaim`: the slot that token owns, else the preferred slot if it was never
    claimed, else the first never-claimed human slot (no `AIPlayer`), else none, which makes the client an observer
-   (faction 0, sees everything). A client that set `NetworkSession.JoinAsObserver` (`JoinPreference.Observe`)
-   always becomes an observer. The server replies with `JoinAccepted`.
+   (faction 0, sees everything). A client whose `NetworkSession.Preference` has `Observe` set always becomes an
+   observer. The server replies with `JoinAccepted`.
 3. The client tags the player ghost of that faction as `LocalPlayer`, so input and HUD work unchanged.
 
 **Identity.** `NetworkSession.Token` is a random non-zero `ulong` made once per process; every client world gets it
@@ -131,8 +131,8 @@ gets the slot and the stale one is disconnected. A join with token 0 owns nothin
 it drops.
 
 **Rejoin.** The client world asks for the slot in its `JoinPreference` singleton, seeded from
-`NetworkSession.PreferredFaction` and `JoinAsObserver`. When a client world closes, both take what it was granted
-(an observer stays an observer), or what it asked for if the server never answered. `NetworkSession.Rejoin(scene)`
+`NetworkSession.Preference`. When a client world closes, it takes what the client was granted (an observer stays an
+observer), or what it asked for if the server never answered. `NetworkSession.Rejoin(scene)`
 starts a client again to the last `StartClient` endpoint (`CanRejoin` says whether there is one). The scene must load
 the map again (`SessionScene.Load`), since a SubScene only streams into worlds that exist when it loads. A relay
 session rejoins through a new allocation the game gets from its service, then `StartRelayClient` with the map scene.

@@ -19,13 +19,14 @@ namespace HyperRTS.Network.Session
     internal sealed class ServerMonitor : MonoBehaviour
     {
         public const int EndedCode = 0;
-        public const int ErrorCode = 1;
         public const int TimedOutCode = 2;
 
         private readonly Stopwatch _clock = Stopwatch.StartNew();
         private readonly string _started = DateTime.UtcNow.ToString("o");
         private LaunchOptions _options;
         private ServerCostSampler _sampler;
+        private World _world;
+        private EntityQuery _matchState;
         private double _matchStart = -1;
         private double _nextSample;
         private int _errors;
@@ -62,7 +63,14 @@ namespace HyperRTS.Network.Session
                 return;
             }
 
-            var hasState = TryGetSingleton(world, out MatchState state);
+            // A query lives as long as its world, so it's made once per server world.
+            if (world != _world)
+            {
+                _world = world;
+                _matchState = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MatchState>());
+            }
+
+            var hasState = _matchState.TryGetSingleton(out MatchState state);
             Sample(world, hasState && state.Started);
             var seconds = world.Time.ElapsedTime;
             if (_options.TimeLimitMinutes > 0f && seconds >= _options.TimeLimitMinutes * 60.0)
@@ -107,7 +115,7 @@ namespace HyperRTS.Network.Session
             var report = Report(world, state, outcome, exitCode);
             if (_options.ReportPath != null && !TryWrite(report))
             {
-                exitCode = ErrorCode;
+                exitCode = NetworkLauncher.ErrorCode;
             }
 
             Debug.Log($"[HyperRTS] Server {outcome} after {report.serverMinutes:F1} min; exit code {exitCode}.");
@@ -128,37 +136,9 @@ namespace HyperRTS.Network.Session
                 winningTeam = state.Phase == MatchPhase.Ended ? state.WinningTeam : 0,
                 errors = _errors,
             };
-            AddPlayers(world.EntityManager, report);
+            report.players.AddRange(ServerReport.PlayerResult.Read(world.EntityManager));
             _sampler?.Summarize(report);
             return report;
-        }
-
-        private static void AddPlayers(EntityManager entityManager, ServerReport report)
-        {
-            using var query = new EntityQueryBuilder(Allocator.Temp).WithAll<Player, PlayerSide, PlayerStats>()
-                .Build(entityManager);
-            using var players = query.ToEntityArray(Allocator.Temp);
-            TryGetSingleton(entityManager.World, out FactionRelations teams);
-            foreach (var player in players)
-            {
-                var faction = entityManager.GetComponentData<Player>(player).Faction;
-                var stats = entityManager.GetComponentData<PlayerStats>(player);
-                report.players.Add(new ServerReport.PlayerResult
-                {
-                    slot = faction,
-                    side = entityManager.GetComponentData<PlayerSide>(player).Value,
-                    team = teams.GetTeam(faction),
-                    unitsBuilt = stats.UnitsBuilt,
-                    unitsLost = stats.UnitsLost,
-                    unitsKilled = stats.UnitsKilled,
-                    buildingsBuilt = stats.BuildingsBuilt,
-                    buildingsLost = stats.BuildingsLost,
-                    buildingsDestroyed = stats.BuildingsDestroyed,
-                    resourcesGathered = stats.ResourcesGathered,
-                });
-            }
-
-            report.players.Sort((a, b) => a.slot.CompareTo(b.slot));
         }
 
         private bool TryWrite(ServerReport report)
@@ -175,12 +155,6 @@ namespace HyperRTS.Network.Session
                 Debug.LogError($"[HyperRTS] Could not write the server report to {_options.ReportPath}: {exception.Message}");
                 return false;
             }
-        }
-
-        private static bool TryGetSingleton<T>(World world, out T value) where T : unmanaged, IComponentData
-        {
-            using var query = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<T>());
-            return query.TryGetSingleton(out value);
         }
     }
 }

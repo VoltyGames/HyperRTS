@@ -1,5 +1,9 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Match;
+using Unity.Collections;
+using Unity.Entities;
 
 namespace HyperRTS.Network.Session
 {
@@ -63,6 +67,38 @@ namespace HyperRTS.Network.Session
             public int buildingsLost;
             public int buildingsDestroyed;
             public int resourcesGathered;
+
+            /// <summary>Every player's result in <paramref name="entityManager"/>'s world, by slot.</summary>
+            public static List<PlayerResult> Read(EntityManager entityManager)
+            {
+                using var query = new EntityQueryBuilder(Allocator.Temp).WithAll<Player, PlayerSide, PlayerStats>()
+                    .Build(entityManager);
+                using var players = query.ToEntityArray(Allocator.Temp);
+                using var relations = entityManager.CreateEntityQuery(ComponentType.ReadOnly<FactionRelations>());
+                relations.TryGetSingleton(out FactionRelations teams);
+                var results = new List<PlayerResult>(players.Length);
+                foreach (var player in players)
+                {
+                    var faction = entityManager.GetComponentData<Player>(player).Faction;
+                    var stats = entityManager.GetComponentData<PlayerStats>(player);
+                    results.Add(new PlayerResult
+                    {
+                        slot = faction,
+                        side = entityManager.GetComponentData<PlayerSide>(player).Value,
+                        team = teams.GetTeam(faction),
+                        unitsBuilt = stats.UnitsBuilt,
+                        unitsLost = stats.UnitsLost,
+                        unitsKilled = stats.UnitsKilled,
+                        buildingsBuilt = stats.BuildingsBuilt,
+                        buildingsLost = stats.BuildingsLost,
+                        buildingsDestroyed = stats.BuildingsDestroyed,
+                        resourcesGathered = stats.ResourcesGathered,
+                    });
+                }
+
+                results.Sort((a, b) => a.slot.CompareTo(b.slot));
+                return results;
+            }
         }
 
         /// <summary>Mean, 95th percentile (nearest rank) and maximum of one sampled value.</summary>
