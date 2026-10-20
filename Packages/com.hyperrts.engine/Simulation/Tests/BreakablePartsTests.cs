@@ -34,6 +34,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(2, house.parts.Length);
             Assert.AreSame(intact.gameObject, house.parts[0].intact, "hierarchy order");
             Assert.AreSame(broken.gameObject, house.parts[0].broken);
+            Assert.AreEqual(Vector3.zero, broken.localScale, "broken parts start hidden");
             Assert.IsNull(house.parts[1].broken, "a missing sibling stays empty for validation to report");
             StringAssert.Contains("needs both", house.Problems()[0]);
         }

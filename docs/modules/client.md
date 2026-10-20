@@ -96,7 +96,8 @@ Felled remains, such as trees, tip over with a bounce, or lie down at once if th
 only moves the rendered pose, and the simulation keeps the final one.
 
 A building with `BreakablePartsAuthoring` lists its parts, each an intact and a broken model. **Find Parts By Name**
-in its context menu fills the list from `<Part>_Intact` children and their `<Part>_Broken` siblings. Health picks
+in its context menu fills the list from `<Part>_Intact` children and their `<Part>_Broken` siblings, which it saves
+hidden at scale 0 so editor views show the standing building. Health picks
 how many break: round(parts x `breakShare` x (1 - health fraction)). The next to break is the intact part nearest the
 latest impact on the building, else the first in bake order, and it bursts the part effect outward from the centre.
 Repair restores the latest broken part first. A building first seen, or changed out of sight, shows its breakage

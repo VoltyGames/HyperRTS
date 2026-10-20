@@ -4,6 +4,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace HyperRTS.Simulation.Combat
 {
@@ -34,7 +35,10 @@ namespace HyperRTS.Simulation.Combat
         [Tooltip("The sections that break. Find Parts By Name in the context menu fills it from X_Intact and X_Broken children.")]
         public Part[] parts = Array.Empty<Part>();
 
-        /// <summary>Lists every <c>X_Intact</c> child with its <c>X_Broken</c> sibling; a missing sibling stays empty.</summary>
+        /// <summary>
+        /// Lists every <c>X_Intact</c> child with its <c>X_Broken</c> sibling, hidden at scale 0; a missing sibling
+        /// stays empty for validation to report.
+        /// </summary>
         [ContextMenu("Find Parts By Name")]
         public void FindPartsByName()
         {
@@ -47,12 +51,16 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 var broken = child.parent.Find(child.name[..^"_Intact".Length] + "_Broken");
+                if (broken != null)
+                {
+                    Record(broken);
+                    broken.localScale = Vector3.zero;
+                }
+
                 found.Add(new Part { intact = child.gameObject, broken = broken != null ? broken.gameObject : null });
             }
 
-#if UNITY_EDITOR
-            UnityEditor.Undo.RecordObject(this, "Find Parts By Name");
-#endif
+            Record(this);
             parts = found.ToArray();
         }
 
@@ -98,9 +106,22 @@ namespace HyperRTS.Simulation.Combat
                 return $"Breakable part {index} on '{name}' uses a model from outside the building.";
             }
 
-            return part.broken.transform.IsChildOf(part.intact.transform)
-                ? $"Breakable part '{part.broken.name}' on '{name}' sits inside '{part.intact.name}' and would hide with it."
-                : null;
+            if (part.broken.transform.IsChildOf(part.intact.transform))
+            {
+                return $"Breakable part '{part.broken.name}' on '{name}' sits inside '{part.intact.name}' and would hide with it.";
+            }
+
+            // Hidden in the prefab so editor views and map captures show the standing building.
+            return part.broken.transform.localScale == Vector3.zero
+                ? null
+                : $"Breakable part '{part.broken.name}' on '{name}' should start hidden at scale 0.";
+        }
+
+        private static void Record(Object target)
+        {
+#if UNITY_EDITOR
+            UnityEditor.Undo.RecordObject(target, "Find Parts By Name");
+#endif
         }
 
         private Bounds LocalBounds(Transform node)
