@@ -13,7 +13,7 @@ commands and receive only the state their team can see. Single player keeps one 
 
 Systems run on the server and in single player by default, so a new gameplay system needs nothing. A system the
 client also needs opts in with `[WorldSystemFilter(SimulationWorlds.Presented)]`, or `SimulationWorlds.All` if the
-server needs it too.
+server needs it too. Systems under `PresentationSystemGroup` already run only in single player and on clients.
 
 ## Starting a match
 

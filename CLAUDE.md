@@ -59,8 +59,10 @@ Graphics, InputSystem or UIElements. A headless server never runs `Client/`. See
 - Component fields are PascalCase, authoring fields camelCase.
 - Acronyms are all caps in identifiers, files and folders: `RTS`, `HUD`, `UI`, `AI`. USS class names stay
   lowercase kebab-case, such as `hud-root`.
-- Systems are `[BurstCompile] partial struct : ISystem` in a phase group from `SystemGroups.cs`. Never put one in
-  `SimulationSystemGroup` directly. Only network plumbing such as join and relevancy sits there.
+- Simulation systems are `[BurstCompile] partial struct : ISystem` in a phase group from `SystemGroups.cs`. Never
+  put one in `SimulationSystemGroup` directly. Only network plumbing such as join, relevancy and lobby sits there.
+- Systems that drive managed objects, such as presentation, input, lobby, one-shot setup and network plumbing, may
+  be `SystemBase` or an `ISystem` without Burst.
 - Per-entity work goes in Burst `IJobEntity` jobs. Use `ScheduleParallel`, or `Schedule` when the job writes other
   entities through a `ComponentLookup`.
 - Components are unmanaged. Use `FixedStringNNBytes` for strings and `UnityObjectRef<T>` for Unity objects. Managed
@@ -69,7 +71,8 @@ Graphics, InputSystem or UIElements. A headless server never runs `Client/`. See
   `EnabledRefRW<T>`. Pair it with `ref T`, never `in T`. Use `WithPresent<T>` to also visit disabled entities.
 - Structural changes go through an `EntityCommandBuffer`, from jobs through
   `EndSimulationEntityCommandBufferSystem`. `ecb.CreateEntity` returns the real entity at record time.
-- Time comes from `SystemAPI.Time`, never `UnityEngine.Time`.
+- Systems take time from `SystemAPI.Time`, never `UnityEngine.Time`. UI and MonoBehaviours may use
+  `UnityEngine.Time`.
 - UI is UI Toolkit everywhere: HUD, menus, world-space UI, inspectors, property drawers, editor windows and
   overlays. Use uGUI only for UI that needs Animation Clips or Timeline. No IMGUI. Scene view `Handles` are the one
   exception, since UI Toolkit has no equivalent. Per-unit markers such as health bars and rings are instanced
@@ -122,6 +125,8 @@ Graphics, InputSystem or UIElements. A headless server never runs `Client/`. See
   `NetworkSession` creates the server and client worlds.
 - Systems default to the server and local worlds. Client-side systems opt in with
   `[WorldSystemFilter(SimulationWorlds.Presented)]`. A component the HUD reads needs `[GhostField]`s.
+- Systems under `PresentationSystemGroup` already default to the presented worlds, local and client, so they need
+  no `[WorldSystemFilter]`.
 - `EntityInfo.TypeId` is a hash of the display name, so two prefab types must never share a name.
 
 ## Docs
@@ -129,8 +134,8 @@ Graphics, InputSystem or UIElements. A headless server never runs `Client/`. See
 | Doc | Covers |
 | --- | --- |
 | [Getting started](docs/getting-started.md) | First skirmish in the editor, controls |
-| [Architecture](docs/architecture.md) | Assemblies, module tiers, the gameplay contract, worlds, frame order |
-| [Modules](docs/modules.md) | Components and systems per module |
+| [Architecture](docs/architecture.md) | Assemblies, module rules, the gameplay contract, worlds, frame order |
+| [Modules](docs/modules.md) | Module tiers, components and systems per module |
 | [Extending](docs/extending.md) | Game code, HUD, AI, front-end integration |
 | [Networking](docs/networking.md) | Sessions, join, commands, replication, fog relevancy |
 | [Editor](docs/editor.md) | Tools window, generators, menus, authoring conventions, validation, debug tools |

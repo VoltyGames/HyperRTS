@@ -10,7 +10,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 
 - Systems are discovered automatically. Put each in a phase group such as `CombatSystemGroup`.
 - Systems run on the server and in single player. A client-side one adds
-  `[WorldSystemFilter(SimulationWorlds.Presented)]`.
+  `[WorldSystemFilter(SimulationWorlds.Presented)]`, unless it sits under `PresentationSystemGroup`.
 - A component the client reads needs `[GhostField]` on the fields that change.
 - Authoring classes derive from `AuthoringBehaviour` to get the engine inspector and validation.
 

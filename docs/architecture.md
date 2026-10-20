@@ -20,14 +20,7 @@ top. A server build leaves out client systems by world filter, not by assembly.
 ## Modules
 
 The simulation is split into modules. Each is one folder with the namespace `HyperRTS.Simulation.<Module>`, and sits
-in a tier:
-
-| Tier | Modules |
-| --- | --- |
-| Base | Common |
-| Foundation | Animation, Navigation, Vision, Selection, Orders, Cues |
-| Gameplay | Combat, Transport, Air, Units, Resources, Production, Upgrades, Buildings, Abilities, Auras, Veterancy, Capture, Match |
-| Orchestration | AI, GameEntities, Commands, Replays |
+in one of the [tiers](modules.md#tiers).
 
 - A module uses its own tier or lower ones, never in a cycle. Put a shared type in `Common` or the lower module.
 - To order two systems, put `[UpdateBefore]` or `[UpdateAfter]` on the one whose module uses the other's.
@@ -56,7 +49,8 @@ in a tier:
 | Client | Client, host | Selection, input, fog view, presentation, HUD |
 
 Systems run in local and server worlds by default. A client-side system adds
-`[WorldSystemFilter(SimulationWorlds.Presented)]`. Single player needs `OverrideAutomaticNetcodeBootstrap` in the
+`[WorldSystemFilter(SimulationWorlds.Presented)]`, unless it sits under `PresentationSystemGroup`, which already
+defaults to the local and client worlds. Single player needs `OverrideAutomaticNetcodeBootstrap` in the
 scene, which `RTSWorld.prefab` carries. `NetworkSession` creates and replaces worlds at runtime. See
 [networking](networking.md).
 

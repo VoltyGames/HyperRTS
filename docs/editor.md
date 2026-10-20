@@ -1,10 +1,8 @@
 # Editor
 
 HyperRTS adds editor tooling for building an RTS inside Unity: a Tools window, generators, creation menus,
-inspectors with live validation and Play-mode debug tools. Map tooling has its own page: [maps](maps.md).
-
-All editor UI is UI Toolkit. Scene view `Handles` are the only IMGUI left, since they have no UI Toolkit
-equivalent.
+inspectors with live validation and Play-mode debug tools. Map tooling has its own page: [maps](maps.md). Editor UI
+follows the [UI rule](../CLAUDE.md#conventions).
 
 ## HyperRTS menu
 
