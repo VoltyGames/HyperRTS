@@ -40,7 +40,7 @@ namespace HyperRTS.Editor.Maps.Data
         public List<MapModeRules> modes = new();
 
         [Header("Views")]
-        [Tooltip("Pitch of the match camera (degrees down from the horizon); map screenshots use it.")]
+        [Tooltip("Pitch of the match camera (degrees down from the horizon); map screenshots use it. Keep it equal to the CameraController pitch at viewHeight.")]
         public float viewPitch = 52f;
 
         [Tooltip("Usual match camera height above the ground (metres).")]

@@ -29,7 +29,7 @@ UI state that input, the HUD and overlays share, created once per presented worl
 | `CommandInputSystem` | Right-click, hotkeys and targeted commands to `PlayerCommand` |
 | `PlacementInputSystem` | Moves the placement ghost and confirms it |
 | `WorldPointer` | What the cursor points at, and the ground point |
-| `CameraController` | Pan, edge scroll, zoom, rotate, map bounds. Starts at the home base |
+| `CameraController` | Pan, edge scroll, eased zoom, rotate, map bounds. Pitch follows zoom height, flatter up close. Starts at the home base |
 
 Clicks over the HUD, while placing, or while a command is pending never reach selection. A front end that handles
 Escape itself sets `FrontEndOwnsCancel` and calls `MatchView.CancelInteraction()` first.

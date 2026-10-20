@@ -48,11 +48,24 @@ namespace HyperRTS.Input.Cameras
         [Tooltip("Farthest zoom (maximum camera height).")]
         public float maxZoom = 50f;
 
+        [Tooltip("Seconds the camera takes to ease to a new zoom height; 0 jumps at once.")]
+        [Min(0f)]
+        public float zoomSmoothTime = 0.12f;
+
+        [Header("Pitch")]
+        [Tooltip("Degrees down from the horizon at the closest zoom; lower looks further toward the horizon.")]
+        [Range(1f, 90f)]
+        public float pitchAtMinZoom = 44f;
+
+        [Tooltip("Degrees down from the horizon at the farthest zoom; pitch runs linearly with height in between.")]
+        [Range(1f, 90f)]
+        public float pitchAtMaxZoom = 60f;
+
         [Header("Default View")]
         [Tooltip("Position the camera resets to (Home key).")]
         public Vector3 defaultPosition = new(0, 35, -50);
 
-        [Tooltip("Rotation the camera resets to (Home key).")]
+        [Tooltip("Rotation the camera resets to (Home key); only its yaw is used, pitch follows the zoom.")]
         public Quaternion defaultRotation = Quaternion.Euler(30, 0, 0);
 
         [Tooltip("Open the match centred on the local player's buildings, if they have any once they join.")]
@@ -73,9 +86,17 @@ namespace HyperRTS.Input.Cameras
             entityManager.CreateEntityQuery(ComponentType.ReadWrite<CameraFocusRequest>()));
 
         private RTSInputActions _actions;
+        private float _yaw;
+        private float _height;
+        private float _targetHeight;
+        private float _zoomVelocity;
 
         /// <summary>Centres the view on a world point, keeping height and rotation.</summary>
-        public void FocusOn(Vector3 worldPoint) => PlaceAt(ClampToMap(worldPoint), transform.position.y);
+        public void FocusOn(Vector3 worldPoint) => PlaceAt(ClampToMap(worldPoint), _height);
+
+        /// <summary>Pitch in degrees down from the horizon at <paramref name="height"/>, linear between the zoom limits.</summary>
+        public static float PitchAt(float height, float minZoom, float maxZoom, float pitchAtMin, float pitchAtMax) =>
+            Mathf.Lerp(pitchAtMin, pitchAtMax, Mathf.InverseLerp(minZoom, maxZoom, height));
 
         protected override void OnAwake()
         {
@@ -101,7 +122,12 @@ namespace HyperRTS.Input.Cameras
         [ContextMenu("Reset View To Default")]
         private void ResetViewToDefault()
         {
-            transform.SetPositionAndRotation(defaultPosition, defaultRotation);
+            var focus = ViewGround.Focus(default, defaultPosition, defaultRotation * Vector3.forward,
+                float.PositiveInfinity);
+            _yaw = defaultRotation.eulerAngles.y;
+            _targetHeight = Mathf.Clamp(defaultPosition.y, minZoom, maxZoom);
+            _zoomVelocity = 0f;
+            PlaceAt(focus, _targetHeight);
         }
 
         private void Update()
@@ -132,22 +158,22 @@ namespace HyperRTS.Input.Cameras
             }
 
             var focus = Focus();
-            var height = transform.position.y;
-            var speed = moveSpeed * speedMultiplier * Mathf.Max(1f, height / Mathf.Max(minZoom, 0.01f));
+            var speed = moveSpeed * speedMultiplier * Mathf.Max(1f, _height / Mathf.Max(minZoom, 0.01f));
             focus += PanDirection() * (speed * Time.unscaledDeltaTime);
 
             var scroll = camera.Zoom.ReadValue<float>();
             if (scroll != 0f)
             {
-                height = Mathf.Clamp(height - Mathf.Sign(scroll) * zoomStep, minZoom, maxZoom);
+                _targetHeight = Mathf.Clamp(_targetHeight - Mathf.Sign(scroll) * zoomStep, minZoom, maxZoom);
             }
 
             if (camera.Rotate.IsPressed())
             {
-                var yaw = camera.Look.ReadValue<Vector2>().x * rotationSpeed * DegreesPerPixel;
-                transform.Rotate(0f, yaw, 0f, Space.World);
+                _yaw += camera.Look.ReadValue<Vector2>().x * rotationSpeed * DegreesPerPixel;
             }
 
+            var height = Mathf.SmoothDamp(_height, _targetHeight, ref _zoomVelocity, zoomSmoothTime,
+                float.PositiveInfinity, Time.unscaledDeltaTime);
             PlaceAt(ClampToMap(focus), height);
         }
 
@@ -182,10 +208,16 @@ namespace HyperRTS.Input.Cameras
         private Vector3 Focus() =>
             ViewGround.Focus(default, transform.position, transform.forward, float.PositiveInfinity);
 
-        /// <summary>Moves the camera so it looks at <paramref name="focus"/> from <paramref name="height"/>.</summary>
+        /// <summary>
+        /// Moves the camera so it looks at <paramref name="focus"/> from <paramref name="height"/>, pitched for that
+        /// height; the focus stays put, so zooming never slides the view.
+        /// </summary>
         private void PlaceAt(Vector3 focus, float height)
         {
             focus.y = 0f;
+            _height = height;
+            var pitch = PitchAt(height, minZoom, maxZoom, pitchAtMinZoom, pitchAtMaxZoom);
+            transform.rotation = Quaternion.Euler(pitch, _yaw, 0f);
             var forward = transform.forward;
 
             // The inverse of Focus: a view ray that never meets the ground looks at the point below the camera.
