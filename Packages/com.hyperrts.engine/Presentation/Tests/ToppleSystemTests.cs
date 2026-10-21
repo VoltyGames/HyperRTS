@@ -42,7 +42,7 @@ namespace HyperRTS.Presentation.Tests
                 _em.GetComponentData<LocalToWorld>(child).Position, 1e-3f);
             Assert.IsTrue(_em.IsComponentEnabled<FallClock>(remains));
 
-            Update((int)math.ceil(ToppleMath.Duration / Step));
+            Update((int)math.ceil(8f / Step));
             Assert.Greater(math.abs(math.dot(Shown(remains).value, final.value)), 0.9999f);
             Assert.IsFalse(_em.IsComponentEnabled<FallClock>(remains));
         }
@@ -62,7 +62,7 @@ namespace HyperRTS.Presentation.Tests
         private Entity SpawnFelled(bool witnessed, out quaternion final)
         {
             var standing = LocalTransform.FromPosition(new float3(2f, 0f, 2f));
-            var topple = new Topple { Trunk = new float3(0f, 1f, 0f), Lie = 0f };
+            var topple = new Topple { Trunk = new float3(0f, 1f, 0f), Height = 15f, Lie = 0f };
             var felling = ToppleMath.Fell(standing, topple, 64, witnessed, out var pose);
             var remains = _em.CreateEntity();
             _em.AddComponentData(remains, pose);

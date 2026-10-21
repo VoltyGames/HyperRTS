@@ -35,6 +35,11 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>Movement in one frame past this is a teleport, not a drive.</summary>
         public const float MaxStep = 5f;
 
+        /// <summary>Half width in metres of the strip one soldier treads, and how far it bends plants and crops.</summary>
+        public const float FootWidth = 0.3f;
+        public const float FootFlatten = 0.4f;
+        public const float FootCropDamage = 0.15f;
+
         public static float TracksTexel(InteractionQuality quality) => quality switch
         {
             InteractionQuality.Full => 0.2f,
@@ -83,6 +88,11 @@ namespace HyperRTS.Presentation.Environment
             tracks.Add(Stamp(center - offset, forward, halfSize, rut));
             tracks.Add(Stamp(center + offset, forward, halfSize, rut));
         }
+
+        /// <summary>A soldier's path this frame: a narrow strip that leans plants along the way, without flattening them.</summary>
+        public static InteractionStamp Footsteps(float2 feet, float2 forward, float stride) =>
+            Stamp(feet - forward * (stride * 0.5f), forward, new float2(FootWidth, FootWidth + stride * 0.5f),
+                new float4(FootFlatten, FootCropDamage, 1f, 0f));
 
         /// <summary>A building's footprint: plants under it stay flat and crops never come back.</summary>
         public static InteractionStamp Footprint(float2 center, float2 size) =>

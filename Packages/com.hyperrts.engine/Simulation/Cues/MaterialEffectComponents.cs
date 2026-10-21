@@ -26,4 +26,13 @@ namespace HyperRTS.Simulation.Cues
         /// <summary>Speed in m/s at which the dust streams at full rate.</summary>
         public float FullSpeed;
     }
+
+    /// <summary>Dust a rotorcraft's downwash raises from the ground under it, by the ground material and its height.</summary>
+    public struct RotorWash : IComponentData
+    {
+        public UnityObjectRef<SurfaceEffects> Effects;
+
+        /// <summary>Metres above the ground from which no dust rises; full dust at the ground.</summary>
+        public float Height;
+    }
 }

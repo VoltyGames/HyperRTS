@@ -44,6 +44,21 @@ namespace HyperRTS.Presentation.Animation
         [Tooltip("Length and width of the ground the body sits on, sampled at the four edges.")]
         public Vector2 footprint = new(6f, 3f);
 
+        [Tooltip("Ground vehicles: degrees the body squats, dives or rolls per m/s² of acceleration.")]
+        public float swayPerAcceleration = 0.6f;
+
+        [Tooltip("Ground vehicles: the most the body sways on its springs, in degrees.")]
+        public float maxSway = 3f;
+
+        [Tooltip("Ground vehicles: how fast the springs bounce, in hertz.")]
+        public float springFrequency = 1.5f;
+
+        [Tooltip("Ground vehicles: spring damping ratio, where 1 settles without overshoot.")]
+        public float springDamping = 0.45f;
+
+        [Tooltip("Ground vehicles: degrees per second a shot rocks the body away from the gun.")]
+        public float recoilKick = 12f;
+
         /// <summary>Primary plus extra weapons, the <c>WeaponPose</c> indices a slot may follow.</summary>
         public int WeaponCount => TryGetComponent<WeaponAuthoring>(out var weapon) ? 1 + weapon.extraWeapons.Count : 0;
 
@@ -78,7 +93,21 @@ namespace HyperRTS.Presentation.Animation
             {
                 yield return $"Tilt root '{tiltRoot.name}' must be a child of '{name}'.";
             }
+
+            if (springFrequency <= 0f || springDamping <= 0f)
+            {
+                yield return "'springFrequency' and 'springDamping' must be above zero.";
+            }
         }
+
+        public Suspension Suspension() => new()
+        {
+            Frequency = springFrequency,
+            Damping = springDamping,
+            PerAcceleration = swayPerAcceleration * Mathf.Deg2Rad,
+            MaxSway = maxSway * Mathf.Deg2Rad,
+            Kick = recoilKick * Mathf.Deg2Rad,
+        };
 
         /// <summary>A part under this rig, never the rig itself: the unit's own transform is the simulation's.</summary>
         public bool IsBelow(Transform part) => part != transform && part.IsChildOf(transform);
@@ -171,6 +200,7 @@ namespace HyperRTS.Presentation.Animation
                     TiltRest = tilt.localRotation,
                     Footprint = authoring.footprint,
                     Aircraft = aircraft,
+                    Suspension = authoring.Suspension(),
                 };
             }
         }

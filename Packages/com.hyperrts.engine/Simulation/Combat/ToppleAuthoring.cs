@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Combat
     [RequiresAuthoring(typeof(DestructibleAuthoring), "a Destructible")]
     public class ToppleAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Trunk direction in the standing model, from its base at the origin to the top.")]
+        [Tooltip("From the trunk's base at the origin to its top in the standing model; its length sets the fall speed.")]
         public Vector3 trunk = Vector3.up;
 
         [Tooltip("Heading in degrees from +Z toward +X that the crown points in the remains model.")]
@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Combat
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 var trunk = math.normalize((float3)authoring.trunk);
-                DestructibleSetup.AddTopple(ref writer, trunk, math.radians(authoring.lie));
+                DestructibleSetup.AddTopple(ref writer, trunk, authoring.trunk.magnitude, math.radians(authoring.lie));
             }
         }
     }

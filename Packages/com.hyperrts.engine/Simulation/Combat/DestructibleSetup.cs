@@ -31,10 +31,10 @@ namespace HyperRTS.Simulation.Combat
         }
 
         /// <summary><paramref name="trunk"/> is a unit vector.</summary>
-        public static void AddTopple<TWriter>(ref TWriter writer, float3 trunk, float lie)
+        public static void AddTopple<TWriter>(ref TWriter writer, float3 trunk, float height, float lie)
             where TWriter : struct, IEntityWriter
         {
-            writer.Add(new Topple { Trunk = trunk, Lie = lie });
+            writer.Add(new Topple { Trunk = trunk, Height = height, Lie = lie });
             writer.Add<FellFrom>();
         }
     }

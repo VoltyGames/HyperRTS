@@ -76,6 +76,7 @@ Part of `Cues`. Particle rigs that play on cue slots, much like sounds.
 | `LoopEffectsAuthoring` | Rigs that stream while shown, such as exhaust or smoke |
 | `EffectTrailAuthoring` | A rig along a projectile's path |
 | `MotionDustAuthoring` | Dust by ground material and speed |
+| `RotorWashAuthoring` | Dust under a low rotorcraft by ground material, thicker lower down |
 
 Rigs play through [cues](#cues), on the client.
 

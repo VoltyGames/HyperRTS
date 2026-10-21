@@ -63,26 +63,19 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Fell_StartsWithTheTrunkWhereItStood_AndEndsAtTheRemainsPose()
         {
-            var standing = LocalTransform.FromPositionRotation(float3.zero, quaternion.RotateY(0.4f));
-            var topple = new Topple { Trunk = math.normalize(new float3(0.1f, 1f, 0f)), Lie = 0.3f };
+            var standing = LocalTransform.FromPositionRotation(float3.zero, quaternion.RotateY(0.4f)).ApplyScale(2f);
+            var topple = new Topple { Trunk = math.normalize(new float3(0.1f, 1f, 0f)), Height = 7f, Lie = 0.3f };
 
             var felling = ToppleMath.Fell(standing, topple, 200, true, out var pose);
 
             var crown = new float3(math.sin(topple.Lie), 0f, math.cos(topple.Lie));
             var upright = ToppleMath.Pose(felling, pose.Rotation, 0f);
             MathAssert.Near(math.rotate(standing.Rotation, topple.Trunk), math.rotate(upright, crown), PoseTolerance);
-            var down = ToppleMath.Pose(felling, pose.Rotation, ToppleMath.Duration);
+            var down = ToppleMath.Pose(felling, pose.Rotation, 1f);
             MathAssert.Near(HeadingByte.Direction(200), math.rotate(down, crown), PoseTolerance);
             MathAssert.Near(math.rotate(pose.Rotation, crown), HeadingByte.Direction(200), PoseTolerance);
-        }
-
-        [Test]
-        public void Progress_EasesIn_ThenBouncesBelowTheGround_AndSettles()
-        {
-            Assert.AreEqual(0f, ToppleMath.Progress(0f));
-            Assert.Less(ToppleMath.Progress(ToppleMath.FallTime * 0.5f), 0.5f, "eases in");
-            Assert.Less(ToppleMath.Progress(ToppleMath.FallTime + 0.05f), 1f, "bounces back up off the ground");
-            Assert.AreEqual(1f, ToppleMath.Progress(ToppleMath.Duration));
+            MathAssert.Near(HeadingByte.Direction(200), felling.Crown, PoseTolerance);
+            Assert.AreEqual(14f, felling.Height, 1e-4f, "scaled with the tree");
         }
 
         [Test]
@@ -121,12 +114,12 @@ namespace HyperRTS.Simulation.Tests
         {
             var entity = _world.EntityManager.CreateEntity();
             standing = LocalTransform.FromPositionRotation(position, quaternion.RotateY(0.5f));
-            topple = new Topple { Trunk = new float3(0f, 1f, 0f), Lie = 0f };
+            topple = new Topple { Trunk = new float3(0f, 1f, 0f), Height = 12f, Lie = 0f };
             _world.EntityManager.AddComponentData(entity, standing);
             var writer = new EntityManagerWriter(_world.EntityManager, entity);
             DestructibleSetup.AddScenery(ref writer, 50f, 0, remains, float2.zero,
                 SceneryId.At(position, standing.Rotation));
-            DestructibleSetup.AddTopple(ref writer, topple.Trunk, topple.Lie);
+            DestructibleSetup.AddTopple(ref writer, topple.Trunk, topple.Height, topple.Lie);
             return entity;
         }
 

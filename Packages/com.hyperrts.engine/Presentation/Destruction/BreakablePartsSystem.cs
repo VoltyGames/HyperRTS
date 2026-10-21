@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
 
 namespace HyperRTS.Presentation.Destruction
 {
@@ -16,11 +15,13 @@ namespace HyperRTS.Presentation.Destruction
     public partial class BreakablePartsSystem : SystemBase
     {
         private EffectPool _pool;
+        private DebrisSystem _debris;
         private ComponentLookup<LocalTransform> _transforms;
 
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
+            _debris = World.GetOrCreateSystemManaged<DebrisSystem>();
             RequireForUpdate<ShownBreakage>();
         }
 
@@ -33,9 +34,9 @@ namespace HyperRTS.Presentation.Destruction
             }
 
             _transforms = SystemAPI.GetComponentLookup<LocalTransform>();
-            foreach (var (health, building, parts, shown, place) in SystemAPI
+            foreach (var (health, building, parts, shown, place, entity) in SystemAPI
                          .Query<RefRO<Health>, RefRO<BreakableParts>, DynamicBuffer<BreakablePart>,
-                             RefRW<ShownBreakage>, RefRO<LocalToWorld>>())
+                             RefRW<ShownBreakage>, RefRO<LocalToWorld>>().WithEntityAccess())
             {
                 // The first frame only sets the look; a loaded or unseen building doesn't replay its damage.
                 var quiet = !shown.ValueRO.Seen;
@@ -53,9 +54,9 @@ namespace HyperRTS.Presentation.Destruction
                 while (shown.ValueRO.Broken < target)
                 {
                     var part = Break(parts, ref shown.ValueRW);
-                    if (!quiet && building.ValueRO.Effect.IsValid())
+                    if (!quiet)
                     {
-                        Play(building.ValueRO.Effect.Value, part, place.ValueRO);
+                        Play(entity, building.ValueRO, part, place.ValueRO);
                     }
                 }
 
@@ -143,10 +144,19 @@ namespace HyperRTS.Presentation.Destruction
             }
         }
 
-        private void Play(GameObject prefab, in BreakablePart part, in LocalToWorld place)
+        /// <summary>The building's break effect and debris, from the part that broke.</summary>
+        private void Play(Entity entity, in BreakableParts building, in BreakablePart part, in LocalToWorld place)
         {
             var position = math.transform(place.Value, part.Centre);
-            _pool.Play(prefab, position, math.mul(place.Rotation, part.EffectFacing));
+            if (building.Effect.IsValid())
+            {
+                _pool.Play(building.Effect.Value, position, math.mul(place.Rotation, part.EffectFacing));
+            }
+
+            if (SystemAPI.HasComponent<Debris>(entity))
+            {
+                _debris.Throw(SystemAPI.GetComponent<Debris>(entity), position, math.rotate(place.Rotation, part.Outward));
+            }
         }
     }
 }

@@ -37,16 +37,19 @@ namespace HyperRTS.Presentation.Animation
         public float3 LastPosition;
         public float3 LastVelocity;
 
-        /// <summary>Current nose-up pitch and right-side-up roll, radians.</summary>
+        /// <summary>Current nose-up pitch and right-side-up roll from the ground or the lean, radians.</summary>
         public float2 Tilt;
+
+        /// <summary>Ground vehicles sway on this over their <see cref="Tilt"/>.</summary>
+        public Suspension Suspension;
 
         /// <summary>Rotation in the unit's frame that raises the nose by x and the right side by y radians.</summary>
         public static quaternion TiltRotation(float2 tilt) =>
             math.mul(quaternion.AxisAngle(math.forward(), tilt.y), quaternion.AxisAngle(math.right(), -tilt.x));
 
-        /// <summary>Local rotation of the tilt root that shows <see cref="Tilt"/> in the unit's frame.</summary>
+        /// <summary>Local rotation of the tilt root that shows <see cref="Tilt"/> and the sway in the unit's frame.</summary>
         public readonly quaternion TiltedRotation() =>
-            math.mul(math.mul(math.inverse(TiltFrame), math.mul(TiltRotation(Tilt), TiltFrame)), TiltRest);
+            math.mul(math.mul(math.inverse(TiltFrame), math.mul(TiltRotation(Tilt + Suspension.Sway), TiltFrame)), TiltRest);
 
         /// <summary>Eases <see cref="Tilt"/> toward <paramref name="target"/>.</summary>
         public void SmoothTilt(float2 target, float deltaTime) =>
@@ -128,13 +131,14 @@ namespace HyperRTS.Presentation.Animation
             Angle += math.clamp(gap, -Rate * deltaTime, Rate * deltaTime);
         }
 
-        /// <summary>Kicks back the full distance when the shot count changes, then eases back over <see cref="Time"/>.</summary>
-        public void Recoil(byte shots, float deltaTime)
+        /// <summary>Kicks back the full distance when the shot count changes, then eases back over <see cref="Time"/>. True on a shot.</summary>
+        public bool Recoil(byte shots, float deltaTime)
         {
             var fired = Seen && shots != LastShots;
             Amount = fired ? Size : math.max(0f, Amount - Size * deltaTime / Time);
             LastShots = shots;
             Seen = true;
+            return fired;
         }
 
         public readonly float3 RecoilPosition(quaternion rotation) => RestPosition + math.rotate(rotation, Axis) * Amount;

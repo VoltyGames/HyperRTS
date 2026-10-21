@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Units;
@@ -12,14 +13,19 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>Gathers this frame's stamps from vehicles, building footprints and wakes the local player sees.</summary>
+    /// <summary>
+    /// Gathers this frame's stamps from vehicles, infantry footsteps, building footprints and wakes the local player
+    /// sees. Footsteps need the full-resolution maps.
+    /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class InteractionStampSystem : SystemBase
     {
         private readonly FramePositions _grounded = new();
         private readonly FramePositions _afloat = new();
+        private readonly FramePositions _walking = new();
         private EntityQuery _vehicles;
+        private EntityQuery _squads;
         private EntityQuery _buildings;
 
         public InteractionStamps Stamps { get; } = new();
@@ -27,6 +33,8 @@ namespace HyperRTS.Presentation.Environment
         protected override void OnCreate()
         {
             _vehicles = SystemAPI.QueryBuilder().WithAll<TrackMarks, LocalToWorld>()
+                .WithNone<FogHidden, DisableRendering>().Build();
+            _squads = SystemAPI.QueryBuilder().WithAll<SquadFigures, SquadFigure, LocalToWorld>()
                 .WithNone<FogHidden, DisableRendering>().Build();
             _buildings = SystemAPI.QueryBuilder().WithAll<BuildingTag, NavObstacle, LocalToWorld>()
                 .WithNone<FogHidden, DisableRendering>().Build();
@@ -39,11 +47,13 @@ namespace HyperRTS.Presentation.Environment
             {
                 _grounded.Forget();
                 _afloat.Forget();
+                _walking.Forget();
                 return;
             }
 
             CompleteDependency();
             AddVehicles();
+            AddFootsteps();
             AddBuildings();
             AddWakes();
         }
@@ -71,6 +81,40 @@ namespace HyperRTS.Presentation.Environment
             }
 
             _grounded.EndFrame();
+        }
+
+        private void AddFootsteps()
+        {
+            if (InteractionMap.Quality != InteractionQuality.Full)
+            {
+                _walking.Forget();
+                return;
+            }
+
+            using var entities = _squads.ToEntityArray(Allocator.Temp);
+            foreach (var squad in entities)
+            {
+                var position = SystemAPI.GetComponent<LocalToWorld>(squad).Position.xz;
+                _walking.Record(squad, position);
+                var step = _walking.TryGetLast(squad, out var last) ? position - last : float2.zero;
+                var stride = math.length(step);
+                if (stride < 1e-3f || stride > InteractionMath.MaxStep)
+                {
+                    continue;
+                }
+
+                foreach (var figure in SystemAPI.GetBuffer<SquadFigure>(squad))
+                {
+                    var walking = figure.State is FigureState.Walk or FigureState.Run;
+                    if (walking)
+                    {
+                        var feet = SystemAPI.GetComponent<LocalToWorld>(figure.Figure).Position.xz;
+                        Stamps.Trample.Add(InteractionMath.Footsteps(feet, step / stride, stride));
+                    }
+                }
+            }
+
+            _walking.EndFrame();
         }
 
         private static bool OnGround(in TerrainHeight terrain, float3 position) =>

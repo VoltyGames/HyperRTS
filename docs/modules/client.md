@@ -103,7 +103,10 @@ Game code plays clips with `VATClip.Play(range, now)`, using `SystemAPI.Time.Ela
 `MotionRigAuthoring` on a unit prefab root moves the model's pivots on the client. Its slots list turrets, barrels
 and launchers that follow a `WeaponPose` index, barrels that recoil per shot, wheels, sprockets and idlers that
 roll, rotors that spin up in flight and down while `Docked`, and a tilt root (the hull) that pitches and rolls with
-the ground under its footprint. On a unit with `FlightAuthoring` the tilt root leans with acceleration instead. **Fill from
+the ground under its footprint. On a unit with `FlightAuthoring` the tilt root leans with acceleration instead.
+Ground vehicles also sway on a `Suspension` spring over the ground tilt: they squat as they speed up, dive as they
+brake, roll out of turns and rock back from each recoil shot, by 1 to 3 degrees. The rig's sway, spring and recoil
+kick fields tune it. **Fill from
 model** finds the parts by their art names: `Hull`, `Turret`, `Barrel`, `Launcher`, `Wheel_L01`, `Sprocket_L`,
 `Idler_L`, `Rotor_Main` and `Rotor_Tail`. It keeps slots it already lists, measures wheel radii and the footprint
 from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon. `MotionRigRule` checks every slot
@@ -146,8 +149,16 @@ flag `Texture2DArray`, one layer per `PlayerSide`, and waves the cloth downwind.
 ### Destruction
 
 An entity shows the damage stage model for its health and bursts that stage's effect. Spawn effects burst once.
-Felled remains, such as trees, tip over with a bounce, or lie down at once if the fall was out of sight. The tipping
-only moves the rendered pose, and the simulation keeps the final one.
+Felled remains, such as trees, tip over as a rod pivoting at the stump, or lie down at once if the fall was out of
+sight. `FallClock` steps the fall at a fixed rate from the `Topple` height, so a 15 m tree takes about 2.5 s and a
+sapling under 1 s, and a crusher at the stump pushes it faster. The canopy bounces it once and it settles. The
+tipping only moves the rendered pose, and the simulation keeps the final one. A felled tree's spawn effect plays
+where the crown lands, as it lands.
+
+`DebrisAuthoring` on a ruin throws a `DebrisSet`'s pieces once when the ruin appears; on a building with breakable
+parts it throws them from each part that breaks. `DebrisSystem` flies them on the client in a pool of 160, bounces
+them off the terrain height, lays them flat and shrinks them away after 10 to 20 s. Medium effects throw 70 % of the
+pieces and Low none. Pieces from one place fly the same on every client.
 
 A building with `BreakablePartsAuthoring` lists its parts, each an intact and a broken model. **Find Parts By Name**
 in its context menu fills the list from `<Part>_Intact` children and their `<Part>_Broken` siblings, which it saves
@@ -212,7 +223,8 @@ the `Hidden/HyperRTS/Interaction Brush` shader.
 | `_HyperRTSTracks` | R rut depth and G churned soil, which fade over 4 minutes. B scorch and A crater depth (up to 2 m), which last the match |
 | `_HyperRTSWake` | R foam, which fades over 5 s |
 
-Vehicles with `TrackMarks` stamp while on the ground and visible, as do building footprints. Every ground impact
+Vehicles with `TrackMarks` stamp while on the ground and visible, as do building footprints. At Full quality each
+walking squad figure leans the plants along its path. Every ground impact
 whose `ImpactMark` has a `craterDepth` or `scorch` stamps a round bowl half the mark's size across, inside a
 slightly wider scorch disc, and flattens the plants over it. Units with a `NavAgent` riding water cells stamp foam
 behind them. A replay seeking back clears the maps, as it clears the decals.
@@ -221,6 +233,10 @@ Shaders read the maps through `Trample.hlsl`. The terrain darkens ruts and flatt
 the crater's slope so the sun lights the bowl, darkens and dampens the bowl's soil, and blackens scorched ground.
 Foliage leans plants along the travel direction, and water reads `SampleWake`. The quality setting picks Full, Low
 at half resolution, or Off, which frees the textures.
+
+`LocalGustSystem` also sends up to 8 radial gusts to `Wind.hlsl`: downwash under a seen rotorcraft within 25 m of
+the ground, and the blast of each seen impact with a splash of 1 m or more, which spreads out and relaxes over about
+a second. Plants lean away from them and tree trunks bend as in wind. Interaction quality Off turns them off.
 
 ### Row crops
 

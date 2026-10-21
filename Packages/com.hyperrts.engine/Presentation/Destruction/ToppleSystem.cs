@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
@@ -12,7 +13,7 @@ namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
     /// Shows felled remains tipping down to the final pose the simulation already gave them, through their rendered
-    /// transform only. Unseen falls show lying down at once.
+    /// transform only. A crushing vehicle's speed pushes the fall on. Unseen falls show lying down at once.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]
@@ -23,7 +24,11 @@ namespace HyperRTS.Presentation.Destruction
         private EntityQuery _fog;
         private EntityQuery _felled;
         private EntityQuery _falling;
+        private EntityQuery _crushers;
         private RenderPose _pose;
+
+        // How far from the stump a crusher counts as the one pushing the tree over.
+        private const float CrushReach = 6f;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -31,6 +36,7 @@ namespace HyperRTS.Presentation.Destruction
             _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
             _felled = SystemAPI.QueryBuilder().WithAll<Felling>().WithAbsent<FallClock>().Build();
             _falling = SystemAPI.QueryBuilder().WithAll<Felling, FallClock, LocalTransform, LocalToWorld>().Build();
+            _crushers = SystemAPI.QueryBuilder().WithAll<Crusher, MotionRig, LocalToWorld>().Build();
             _pose = new RenderPose(ref state);
         }
 
@@ -58,24 +64,45 @@ namespace HyperRTS.Presentation.Destruction
             {
                 var felling = SystemAPI.GetComponent<Felling>(entity);
                 var clock = SystemAPI.GetComponentRW<FallClock>(entity);
-                var started = clock.ValueRO.Time > 0f;
-                var shown = started || (felling.Witnessed && Seen(view, fog, _pose.Position(entity)));
-                clock.ValueRW.Time = shown ? clock.ValueRO.Time + deltaTime : ToppleMath.Duration;
-                var final = _pose.Rotation(entity);
-                if (clock.ValueRO.Time < ToppleMath.Duration)
+                if (!clock.ValueRO.Started)
                 {
-                    _pose.Show(entity, ToppleMath.Pose(felling, final, clock.ValueRO.Time));
+                    var shown = felling.Witnessed && Seen(view, fog, _pose.Position(entity));
+                    if (!shown)
+                    {
+                        SystemAPI.SetComponentEnabled<FallClock>(entity, false);
+                        continue;
+                    }
+
+                    clock.ValueRW = FallClock.Pushed(felling.Height, CrushSpeed(_pose.Position(entity)));
+                }
+
+                clock.ValueRW.Advance(felling.Height, deltaTime);
+                var final = _pose.Rotation(entity);
+                if (!clock.ValueRO.Resting)
+                {
+                    _pose.Show(entity, ToppleMath.Pose(felling, final, clock.ValueRO.Progress));
                     continue;
                 }
 
-                // A tipped one may hold a stale tipped matrix, since the transform systems only redo changed ones.
-                if (started)
-                {
-                    _pose.Show(entity, final);
-                }
-
+                // The tipped matrix is stale, since the transform systems only redo changed ones.
+                _pose.Show(entity, final);
                 SystemAPI.SetComponentEnabled<FallClock>(entity, false);
             }
+        }
+
+        /// <summary>Speed in m/s of the fastest crusher at the stump, or 0 if none is there.</summary>
+        private float CrushSpeed(float3 stump)
+        {
+            using var rigs = _crushers.ToComponentDataArray<MotionRig>(Allocator.Temp);
+            using var places = _crushers.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
+            var speed = 0f;
+            for (var i = 0; i < rigs.Length; i++)
+            {
+                var near = math.distancesq(places[i].Position.xz, stump.xz) < CrushReach * CrushReach;
+                speed = near ? math.max(speed, math.length(rigs[i].LastVelocity.xz)) : speed;
+            }
+
+            return speed;
         }
 
         /// <summary>Fog never hides scenery, but it does hide the fall.</summary>
