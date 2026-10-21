@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
-    /// The named clips and all-frame bounds of one set of vertex animation textures. Import Sidecar fills it from the
+    /// The named clips and all-frame bounds of one set of vertex animation textures. Import Bake Info fills it from the
     /// bake's <c>VAT/&lt;Model&gt;.json</c>; after that the asset is the source and stays editable.
     /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Animation + "VAT Clip Table", fileName = "VATClipTable")]
@@ -38,8 +39,9 @@ namespace HyperRTS.Presentation.Animation
             public VATClipRange Range => new() { StartRow = startRow, FrameCount = frameCount, Fps = fps, Loop = loop };
         }
 
-        [Tooltip("The bake's VAT/<Model>.json, read by Import Sidecar in the context menu.")]
-        public TextAsset sidecar;
+        [Tooltip("The bake's VAT/<Model>.json, read by Import Bake Info in the context menu.")]
+        [FormerlySerializedAs("sidecar")]
+        public TextAsset bakeInfo;
 
         [Tooltip("Texture width: the column count the model's UV1 indexes.")]
         [Min(1)]
@@ -72,26 +74,26 @@ namespace HyperRTS.Presentation.Animation
             throw new KeyNotFoundException($"VAT clip table '{name}' has no clip '{clipName}'.");
         }
 
-        /// <summary>Replaces the layout, clips and bounds with the ones in a sidecar's JSON.</summary>
+        /// <summary>Replaces the layout, clips and bounds with the ones in a bake info file.</summary>
         public void Import(string json)
         {
-            var parsed = VATSidecar.Parse(json, name);
+            var parsed = VATBakeInfo.Parse(json, name);
             width = parsed.width;
             rowsPerFrame = parsed.rowsPerFrame;
-            boundsMin = parsed.Corner(parsed.boundsMin);
-            boundsMax = parsed.Corner(parsed.boundsMax);
+            boundsMin = VATBakeInfo.Corner(parsed.boundsMin);
+            boundsMax = VATBakeInfo.Corner(parsed.boundsMax);
             clips = new List<Clip>(parsed.clips);
         }
 
-        [ContextMenu("Import Sidecar")]
-        private void ImportSidecar()
+        [ContextMenu("Import Bake Info")]
+        private void ImportBakeInfo()
         {
-            if (sidecar == null)
+            if (bakeInfo == null)
             {
-                throw new InvalidOperationException($"VAT clip table '{name}' has no sidecar to import.");
+                throw new InvalidOperationException($"VAT clip table '{name}' has no bake info file to import.");
             }
 
-            Import(sidecar.text);
+            Import(bakeInfo.text);
 #if UNITY_EDITOR
             UnityEditor.EditorUtility.SetDirty(this);
 #endif

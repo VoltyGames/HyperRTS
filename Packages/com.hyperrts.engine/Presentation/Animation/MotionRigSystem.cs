@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Burst;
 using Unity.Collections;
@@ -11,8 +12,8 @@ namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
     /// Poses each <see cref="MotionRig"/>'s children from the interpolated unit: turrets and barrels follow the
-    /// replicated <see cref="WeaponPose"/>, barrels recoil per shot, wheels roll with the ground covered, rotors spool
-    /// with flight and the body tilts with the ground or leans with acceleration.
+    /// replicated <see cref="WeaponPose"/>, barrels recoil per shot, wheels roll with the ground covered,
+    /// rotors spin up with flight and the body tilts with the ground or leans with acceleration.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -66,13 +67,13 @@ namespace HyperRTS.Presentation.Animation
 
                 Tilt(ref rig, place.Position, forward, right, acceleration);
                 var rolled = math.length(moved.xz) * math.sign(math.dot(moved, forward));
-                var docked = Docks.HasComponent(entity) && Docks.IsComponentEnabled(entity);
-                var running = Flights.HasComponent(entity) && !docked;
+                var running = Flights.HasComponent(entity) && !Docks.HasEnabled(entity);
+                Poses.TryGetBuffer(entity, out var poses);
                 for (var i = 0; i < parts.Length; i++)
                 {
                     var part = parts[i];
                     var transform = Transforms[part.Part];
-                    Pose(ref part, ref transform, entity, rolled, running);
+                    Pose(ref part, ref transform, poses, rolled, running);
                     parts[i] = part;
                     Transforms[part.Part] = transform;
                 }
@@ -94,31 +95,34 @@ namespace HyperRTS.Presentation.Animation
                 Transforms[rig.TiltRoot] = transform;
             }
 
-            private void Pose(ref MotionRigPart part, ref LocalTransform transform, Entity entity, float rolled, bool running)
+            private void Pose(ref MotionRigPart part, ref LocalTransform transform, DynamicBuffer<WeaponPose> poses,
+                float rolled, bool running)
             {
+                // Recoil slides along the barrel's current rotation, which an elevation part may own.
+                if (part.Kind == MotionPartKind.Recoil)
+                {
+                    part.Recoil(poses[part.Weapon].Shots, DeltaTime);
+                    transform.Position = part.RecoilPosition(transform.Rotation);
+                    return;
+                }
+
                 switch (part.Kind)
                 {
                     case MotionPartKind.Turret:
-                        part.Traverse(Poses[entity][part.Pose].YawRadians, DeltaTime);
-                        transform.Rotation = part.Rotation;
+                        part.Traverse(poses[part.Weapon].YawRadians, DeltaTime);
                         break;
                     case MotionPartKind.Elevation:
-                        part.Elevate(Poses[entity][part.Pose].PitchRadians, DeltaTime);
-                        transform.Rotation = part.Rotation;
-                        break;
-                    case MotionPartKind.Recoil:
-                        part.Recoil(Poses[entity][part.Pose].Shots, DeltaTime);
-                        transform.Position = part.RecoilPosition(transform.Rotation);
+                        part.Elevate(poses[part.Weapon].PitchRadians, DeltaTime);
                         break;
                     case MotionPartKind.Wheel:
                         part.Roll(rolled);
-                        transform.Rotation = part.Rotation;
                         break;
                     default:
                         part.Spin(running, DeltaTime);
-                        transform.Rotation = part.Rotation;
                         break;
                 }
+
+                transform.Rotation = part.Rotation;
             }
         }
     }

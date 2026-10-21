@@ -41,7 +41,7 @@ Sounds play through [cues](#cues). Playback is on the [client](client.md#audio),
 `EntityLoopsAuthoring` gives an entity continuous sounds driven by replicated state, attached to it in 3D:
 
 - `engineIdle` and `engineMove` crossfade by speed up to `fullSpeed`, and the pitch rises by `pitchRise`.
-- `rotor` spools up over `rotorSpool` seconds while a `Flight` entity is not `Docked`.
+- `rotor` spins up over `rotorSpinUpTime` seconds while a `Flight` entity is not `Docked`.
 - `turretTraverse` plays while any weapon turns.
 - `working` plays while a building is under construction or a producer has a queue.
 - `ambient` always plays.

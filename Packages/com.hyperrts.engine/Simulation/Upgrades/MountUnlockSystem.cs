@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -18,44 +19,78 @@ namespace HyperRTS.Simulation.Upgrades
     public partial struct MountUnlockSystem : ISystem
     {
         private BufferLookup<CompletedResearch> _researched;
+        private BufferTypeHandle<WeaponMount> _mounts;
+        private ComponentTypeHandle<Faction> _factions;
+        private EntityQuery _query;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
             _researched = state.GetBufferLookup<CompletedResearch>(true);
+            _mounts = state.GetBufferTypeHandle<WeaponMount>();
+            _factions = state.GetComponentTypeHandle<Faction>(true);
+            _query = SystemAPI.QueryBuilder().WithAllRW<WeaponMount>().WithAll<Faction>().Build();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _researched.Update(ref state);
-            new UnlockJob
+            _mounts.Update(ref state);
+            _factions.Update(ref state);
+            state.Dependency = new UnlockJob
             {
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 Researched = _researched,
-            }.ScheduleParallel();
+                Mounts = _mounts,
+                Factions = _factions,
+            }.ScheduleParallel(_query, state.Dependency);
         }
 
+        /// <summary>Writes a chunk only when a lock flips, so its change version bumps only then.</summary>
         [BurstCompile]
-        private partial struct UnlockJob : IJobEntity
+        private struct UnlockJob : IJobChunk
         {
             public PlayerRegistry Players;
             [ReadOnly] public BufferLookup<CompletedResearch> Researched;
+            [ReadOnly] public ComponentTypeHandle<Faction> Factions;
+            public BufferTypeHandle<WeaponMount> Mounts;
 
-            private void Execute(DynamicBuffer<WeaponMount> mounts, in Faction faction)
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
             {
-                var known = Researched.TryGetBuffer(Players[faction.Value], out var researched);
-                for (var i = 0; i < mounts.Length; i++)
+                var factions = chunk.GetNativeArray(ref Factions);
+                var accessor = chunk.GetBufferAccessorRO(ref Mounts);
+                var writable = false;
+                for (var e = 0; e < chunk.Count; e++)
                 {
-                    var mount = mounts[i];
-                    if (mount.RequiredResearchTypeId == 0)
+                    var known = Researched.TryGetBuffer(Players[factions[e].Value], out var researched);
+                    var mounts = accessor[e];
+                    for (var i = 0; i < mounts.Length; i++)
                     {
-                        continue;
-                    }
+                        var mount = mounts[i];
+                        if (mount.RequiredResearchTypeId == 0)
+                        {
+                            continue;
+                        }
 
-                    mount.Unlocked = known && ResearchRules.IsDone(researched, mount.RequiredResearchTypeId);
-                    mounts[i] = mount;
+                        var unlocked = known && ResearchRules.IsDone(researched, mount.RequiredResearchTypeId);
+                        if (mount.Unlocked == unlocked)
+                        {
+                            continue;
+                        }
+
+                        if (!writable)
+                        {
+                            accessor = chunk.GetBufferAccessorRW(ref Mounts);
+                            mounts = accessor[e];
+                            writable = true;
+                        }
+
+                        mount.Unlocked = unlocked;
+                        mounts[i] = mount;
+                    }
                 }
             }
         }

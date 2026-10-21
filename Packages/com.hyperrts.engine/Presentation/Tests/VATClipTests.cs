@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.Tests
 {
     public class VATClipTests
     {
-        private const string SidecarJson = @"{
+        private const string BakeInfoJson = @"{
             ""name"": ""Rifleman"",
             ""width"": 1802,
             ""rowsPerFrame"": 2,
@@ -80,7 +80,7 @@ namespace HyperRTS.Presentation.Tests
             var table = ScriptableObject.CreateInstance<VATClipTable>();
             try
             {
-                table.Import(SidecarJson);
+                table.Import(BakeInfoJson);
 
                 var die = table.Range("Die");
                 Assert.AreEqual((30, 21, 24f, false), (die.StartRow, die.FrameCount, die.Fps, die.Loop));
@@ -102,7 +102,7 @@ namespace HyperRTS.Presentation.Tests
             var table = ScriptableObject.CreateInstance<VATClipTable>();
             try
             {
-                var json = SidecarJson.Replace(@"""frameCount"": 21", @"""frameCount"": 0");
+                var json = BakeInfoJson.Replace(@"""frameCount"": 21", @"""frameCount"": 0");
                 Assert.Throws<InvalidDataException>(() => table.Import(json));
             }
             finally

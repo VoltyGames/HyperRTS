@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Combat
 
         public bool HasRounds => MaxRounds == 0 || Rounds > 0;
 
-        /// <summary>A usable mount that runs dry and needs rearming.</summary>
+        /// <summary>A usable mount that runs dry and needs reloading.</summary>
         public bool IsLimited => Enabled && MaxRounds > 0;
 
         public bool Ready => Enabled && HasRounds;
@@ -76,21 +76,8 @@ namespace HyperRTS.Simulation.Combat
         }
 
         /// <summary>Refills one round per <see cref="ReloadTime"/>.</summary>
-        public void Reload(float deltaTime)
-        {
-            if (Rounds >= MaxRounds)
-            {
-                ReloadElapsed = 0f;
-                return;
-            }
-
-            ReloadElapsed += deltaTime;
-            if (ReloadElapsed >= ReloadTime)
-            {
-                ReloadElapsed -= ReloadTime;
-                Rounds++;
-            }
-        }
+        public void Reload(float deltaTime) =>
+            Ammo.Reload(ref Rounds, MaxRounds, ref ReloadElapsed, ReloadTime, deltaTime);
 
         /// <summary>Mount <paramref name="index"/> in the buffer plays Fire2 up, sharing Fire4 past the third.</summary>
         public static CueSlot FireSlot(int index) => (CueSlot)math.min((int)CueSlot.Fire2 + index, (int)CueSlot.Fire4);

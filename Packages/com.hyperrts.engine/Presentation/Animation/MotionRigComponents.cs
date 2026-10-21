@@ -71,7 +71,7 @@ namespace HyperRTS.Presentation.Animation
         }
     }
 
-    /// <summary>One posed child of a <see cref="MotionRig"/>, with its baked rest pose and per-frame state.</summary>
+    /// <summary>One moving child of a <see cref="MotionRig"/>, with its baked rest pose and per-frame state.</summary>
     [InternalBufferCapacity(0)]
     public struct MotionRigPart : IBufferElementData
     {
@@ -79,7 +79,7 @@ namespace HyperRTS.Presentation.Animation
         public MotionPartKind Kind;
 
         /// <summary>The <c>WeaponPose</c> index it follows (turret, elevation, recoil).</summary>
-        public byte Pose;
+        public byte Weapon;
 
         /// <summary>
         /// Local axis a positive angle turns about: up (turret), left (elevation), right (wheel), the rotor axis. A
@@ -97,7 +97,7 @@ namespace HyperRTS.Presentation.Animation
         public float Min;
         public float Max;
 
-        /// <summary>Recoil return or rotor spool seconds.</summary>
+        /// <summary>Recoil return or rotor spin-up seconds.</summary>
         public float Time;
 
         public quaternion RestRotation;
@@ -106,7 +106,7 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Current angle in radians (turret, elevation, wheel, rotor).</summary>
         public float Angle;
 
-        /// <summary>Recoil distance still pushed back, or rotor spool from 0 to 1.</summary>
+        /// <summary>Recoil distance still pushed back, or rotor speed from 0 to 1.</summary>
         public float Amount;
 
         public byte LastShots;
@@ -141,7 +141,7 @@ namespace HyperRTS.Presentation.Animation
 
         public void Roll(float distance) => Angle = Wrap(Angle + distance / Size);
 
-        /// <summary>Spools toward full speed while running, down otherwise, and turns at the spooled speed.</summary>
+        /// <summary>Spins up toward full speed while running, down otherwise, and turns at that speed.</summary>
         public void Spin(bool running, float deltaTime)
         {
             var target = running ? 1f : 0f;

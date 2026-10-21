@@ -50,6 +50,12 @@ namespace HyperRTS.Simulation.Combat
 
         public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
 
+        public bool CoolingDown => CooldownRemaining > 0f;
+
+        public void Tick(float deltaTime) => CooldownRemaining = math.max(0f, CooldownRemaining - deltaTime);
+
+        public void StartCooldown() => CooldownRemaining = Cooldown;
+
         public bool Affects(in BufferLookup<ArmorModifier> armor, Entity target) =>
             MinEffect <= 0f || CombatMath.ArmorMultiplier(armor, target, DamageType) >= MinEffect;
 

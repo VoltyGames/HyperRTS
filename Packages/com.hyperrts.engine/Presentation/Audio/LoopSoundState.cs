@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Audio
 {
-    /// <summary>One entity's loop drivers on the client: smoothed speed, rotor spool and turret traverse.</summary>
+    /// <summary>One entity's loop drivers on the client: smoothed speed, rotor speed and turret traverse.</summary>
     public struct LoopSoundState
     {
         /// <summary>Snapshots move turrets in steps slower than frames, so a turn holds this long between them.</summary>
@@ -16,16 +16,16 @@ namespace HyperRTS.Presentation.Audio
         public float3 LastPosition;
         public bool Seen;
         public float Speed;
-        public float Spool;
+        public float RotorSpeed;
         public float Traverse;
         public uint LastAim;
         public double LastTurn;
 
         /// <summary>
-        /// Advances by one frame: <paramref name="flying"/> spools the rotor, a new <paramref name="aim"/> (any
+        /// Advances by one frame: <paramref name="flying"/> spins the rotor up, a new <paramref name="aim"/> (any
         /// weapon's heading) restarts the traverse hold.
         /// </summary>
-        public void Step(float3 position, bool flying, uint aim, float spoolTime, double now, float deltaTime)
+        public void Step(float3 position, bool flying, uint aim, float spinUpTime, double now, float deltaTime)
         {
             if (deltaTime <= 0f)
             {
@@ -34,7 +34,7 @@ namespace HyperRTS.Presentation.Audio
 
             var moved = Seen ? math.length((position - LastPosition).xz) / deltaTime : 0f;
             Speed = math.lerp(Speed, moved, 1f - math.exp(-deltaTime / SpeedSmoothing));
-            Spool = math.saturate(Spool + (flying ? 1f : -1f) * deltaTime / spoolTime);
+            RotorSpeed = math.saturate(RotorSpeed + (flying ? 1f : -1f) * deltaTime / spinUpTime);
             if (Seen && aim != LastAim)
             {
                 LastTurn = now;
@@ -55,17 +55,17 @@ namespace HyperRTS.Presentation.Audio
         {
             LoopSlot.EngineIdle => 1f - Throttle(tuning),
             LoopSlot.EngineMove => Throttle(tuning),
-            LoopSlot.Rotor => Spool,
+            LoopSlot.Rotor => RotorSpeed,
             LoopSlot.TurretTraverse => Traverse,
             LoopSlot.Working => working ? 1f : 0f,
             _ => 1f,
         };
 
-        /// <summary>Pitch multiplier on the cue's own: engines rise with speed, a rotor with its spool.</summary>
+        /// <summary>Pitch multiplier on the cue's own: engines rise with speed, a rotor with its speed.</summary>
         public readonly float PitchScale(LoopSlot slot, in LoopSoundTuning tuning) => slot switch
         {
             LoopSlot.EngineIdle or LoopSlot.EngineMove => 1f + tuning.PitchRise * Throttle(tuning),
-            LoopSlot.Rotor => math.lerp(0.6f, 1f, Spool),
+            LoopSlot.Rotor => math.lerp(0.6f, 1f, RotorSpeed),
             _ => 1f,
         };
     }

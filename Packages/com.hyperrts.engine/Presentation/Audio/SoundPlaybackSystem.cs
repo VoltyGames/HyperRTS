@@ -22,9 +22,9 @@ namespace HyperRTS.Presentation.Audio
 
         private readonly SoundPool _pool = new(Voices);
         private TypeCatalog<List<(CueSlot Slot, SoundCue Cue)>> _cues;
+        private readonly VoiceBank _voices = new("HyperRTS Sounds", Voices);
+        private readonly ListenerLookup _listeners = new();
         private CueVisibility _visibility;
-        private GameObject _root;
-        private AudioSource[] _sources;
         private AudioListener _listener;
 
         protected override void OnCreate()
@@ -37,23 +37,7 @@ namespace HyperRTS.Presentation.Audio
             RequireForUpdate<PrefabRegistry>();
         }
 
-        // The sources are DontSave, so they outlive scene reloads and must go with the world.
-        protected override void OnDestroy()
-        {
-            if (_root == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                Object.Destroy(_root);
-            }
-            else
-            {
-                Object.DestroyImmediate(_root);
-            }
-        }
+        protected override void OnDestroy() => _voices.Dispose();
 
         protected override void OnUpdate()
         {
@@ -64,10 +48,7 @@ namespace HyperRTS.Presentation.Audio
             }
 
             _visibility.Begin();
-            if (_listener == null)
-            {
-                _listener = Object.FindAnyObjectByType<AudioListener>();
-            }
+            _listener = _listeners.Find();
 
             var registry = SystemAPI.GetSingleton<PrefabRegistry>();
             for (var i = 0; i < sounds.Length; i++)
@@ -100,16 +81,7 @@ namespace HyperRTS.Presentation.Audio
                 return;
             }
 
-            var source = Sources()[voice];
-            source.Stop();
-            source.clip = clip;
-            source.pitch = pitch;
-            source.volume = Random.Range(cue.volume.x, cue.volume.y);
-            source.priority = cue.priority;
-            source.outputAudioMixerGroup = cue.mixerGroup;
-            source.spatialBlend = cue.spatial ? 1f : 0f;
-            source.minDistance = cue.minDistance;
-            source.maxDistance = cue.maxDistance;
+            var source = _voices.Load(voice, cue, clip, pitch);
             source.transform.position = position;
             source.Play();
         }
@@ -153,27 +125,6 @@ namespace HyperRTS.Presentation.Audio
             }
 
             return cues;
-        }
-
-        private AudioSource[] Sources()
-        {
-            if (_root != null)
-            {
-                return _sources;
-            }
-
-            _root = new GameObject("HyperRTS Sounds") { hideFlags = HideFlags.DontSave };
-            _sources = new AudioSource[_pool.Capacity];
-            for (var i = 0; i < _sources.Length; i++)
-            {
-                var voice = new GameObject($"Voice {i}") { hideFlags = HideFlags.DontSave };
-                voice.transform.SetParent(_root.transform);
-                _sources[i] = voice.AddComponent<AudioSource>();
-                _sources[i].playOnAwake = false;
-                _sources[i].rolloffMode = AudioRolloffMode.Linear;
-            }
-
-            return _sources;
         }
     }
 }

@@ -133,9 +133,9 @@ namespace HyperRTS.Simulation.Status
             /// <summary>Replaces the effect's bonuses on <paramref name="target"/> with one copy per stack.</summary>
             private void Grant(Entity target, Entity definition, StatSource source, int stacks)
             {
+                RemoveSource(ref Modifiers, ref TypedModifiers, target, source);
                 if (Modifiers.TryGetBuffer(target, out var modifiers))
                 {
-                    StatMath.RemoveSource(modifiers, source);
                     foreach (var bonus in StatBonuses[definition])
                     {
                         var modifier = bonus.Modifier;
@@ -147,7 +147,6 @@ namespace HyperRTS.Simulation.Status
 
                 if (TypedModifiers.TryGetBuffer(target, out var typed))
                 {
-                    DamageTakenModifier.RemoveSource(typed, source);
                     foreach (var bonus in DamageBonuses[definition])
                     {
                         var modifier = bonus.Modifier;
@@ -190,7 +189,7 @@ namespace HyperRTS.Simulation.Status
                     var status = statuses[i];
                     if (Now >= status.EndsAt)
                     {
-                        Expire(entity, StatSource.Status(status.TypeId));
+                        RemoveSource(ref Modifiers, ref TypedModifiers, entity, StatSource.Status(status.TypeId));
                         statuses.RemoveAt(i);
                         continue;
                     }
@@ -213,18 +212,19 @@ namespace HyperRTS.Simulation.Status
                     }
                 }
             }
+        }
 
-            private void Expire(Entity entity, StatSource source)
+        private static void RemoveSource(ref BufferLookup<StatModifier> modifiers,
+            ref BufferLookup<DamageTakenModifier> typedModifiers, Entity entity, StatSource source)
+        {
+            if (modifiers.TryGetBuffer(entity, out var stats))
             {
-                if (Modifiers.TryGetBuffer(entity, out var modifiers))
-                {
-                    StatMath.RemoveSource(modifiers, source);
-                }
+                StatMath.RemoveSource(stats, source);
+            }
 
-                if (TypedModifiers.TryGetBuffer(entity, out var typed))
-                {
-                    DamageTakenModifier.RemoveSource(typed, source);
-                }
+            if (typedModifiers.TryGetBuffer(entity, out var typed))
+            {
+                DamageTakenModifier.RemoveSource(typed, source);
             }
         }
     }

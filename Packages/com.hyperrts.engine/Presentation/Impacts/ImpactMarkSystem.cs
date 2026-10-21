@@ -10,6 +10,7 @@ using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Impacts
 {
@@ -56,22 +57,7 @@ namespace HyperRTS.Presentation.Impacts
         }
 
         // The projectors are DontSave, so they outlive scene reloads and must go with the world.
-        protected override void OnDestroy()
-        {
-            if (_root == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                Object.Destroy(_root);
-            }
-            else
-            {
-                Object.DestroyImmediate(_root);
-            }
-        }
+        protected override void OnDestroy() => CoreUtils.Destroy(_root);
 
         protected override void OnUpdate()
         {

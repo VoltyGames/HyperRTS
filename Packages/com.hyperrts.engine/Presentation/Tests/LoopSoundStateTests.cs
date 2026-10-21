@@ -10,7 +10,7 @@ namespace HyperRTS.Presentation.Tests
     {
         private const float Frame = 1f / 60f;
 
-        private static readonly LoopSoundTuning Tuning = new() { FullSpeed = 10f, PitchRise = 0.2f, SpoolTime = 2f };
+        private static readonly LoopSoundTuning Tuning = new() { FullSpeed = 10f, PitchRise = 0.2f, SpinUpTime = 2f };
 
         private static void Run(ref LoopSoundState state, float from, float seconds, float speed, bool flying = false,
             uint aim = 0)
@@ -19,7 +19,7 @@ namespace HyperRTS.Presentation.Tests
             for (var t = 0f; t < seconds; t += Frame)
             {
                 position.x += speed * Frame;
-                state.Step(position, flying, aim, Tuning.SpoolTime, from + t, Frame);
+                state.Step(position, flying, aim, Tuning.SpinUpTime, from + t, Frame);
             }
         }
 
@@ -54,10 +54,10 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
-        public void Rotor_SpoolsUpInFlight_AndDownWhenDocked()
+        public void Rotor_SpinsUpInFlight_AndDownWhenDocked()
         {
             var state = Ran(1f, 0f, flying: true);
-            Assert.AreEqual(0.5f, state.Level(LoopSlot.Rotor, Tuning, false), 0.02f, "halfway through a 2 s spool");
+            Assert.AreEqual(0.5f, state.Level(LoopSlot.Rotor, Tuning, false), 0.02f, "halfway through a 2 s spin-up");
 
             Run(ref state, 1f, 2f, 0f, flying: true);
             Assert.AreEqual(1f, state.Level(LoopSlot.Rotor, Tuning, false));

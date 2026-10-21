@@ -21,6 +21,7 @@ namespace HyperRTS.Presentation.Animation
     {
         private const string Keyword = "_VAT";
         private static readonly int PositionsId = Shader.PropertyToID("_VATPositions");
+        private static readonly int NormalsId = Shader.PropertyToID("_VATNormals");
         private static readonly int RowsPerFrameId = Shader.PropertyToID("_VATRowsPerFrame");
 
         // Lightmap indices from here up mean none.
@@ -31,6 +32,15 @@ namespace HyperRTS.Presentation.Animation
 
         [Tooltip("Clip that plays until game code plays another.")]
         public string startClip;
+
+        /// <summary>Turns a LitTeam material's VAT on and points it at a bake's textures and layout.</summary>
+        public static void SetUpMaterial(Material material, Texture positions, Texture normals, int rowsPerFrame)
+        {
+            material.EnableKeyword(Keyword);
+            material.SetTexture(PositionsId, positions);
+            material.SetTexture(NormalsId, normals);
+            material.SetFloat(RowsPerFrameId, rowsPerFrame);
+        }
 
         public static void AddVAT<TWriter>(ref TWriter writer, in VATClipRange start, AABB bounds)
             where TWriter : struct, IEntityWriter

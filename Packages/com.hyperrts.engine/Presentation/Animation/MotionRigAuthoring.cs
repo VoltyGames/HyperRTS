@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
     /// Client-side motion of a unit model's parts: turrets and barrels follow the weapon pose, barrels recoil, wheels
-    /// roll, rotors spool and the body tilts. <see cref="FillFromModel"/> finds the parts by their art names.
+    /// roll, rotors spin up and down and the body tilts. <see cref="FillFromModel"/> finds the parts by their art names.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "Motion Rig")]
     [Icon(HyperRTSIcons.Animation)]
@@ -34,7 +34,7 @@ namespace HyperRTS.Presentation.Animation
         [Tooltip("Road wheels, sprockets and idlers that roll with the ground covered.")]
         public List<WheelSlot> wheels = new();
 
-        [Tooltip("Rotors that spool up in flight and down when docked.")]
+        [Tooltip("Rotors that spin up in flight and down when docked.")]
         public List<RotorSlot> rotors = new();
 
         [Tooltip("The model or hull child that pitches and rolls; none keeps the body level.")]
@@ -86,18 +86,18 @@ namespace HyperRTS.Presentation.Animation
         {
             var parts = GetComponentsInChildren<Transform>(true).Where(IsBelow).ToList();
             Transform Named(string partName) => parts.FirstOrDefault(part => part.name == partName);
-            var launcherPose = WeaponCount > 1 ? 1 : 0;
+            var launcherWeapon = WeaponCount > 1 ? 1 : 0;
 
-            turrets = Kept(turrets, new[] { Named("Turret") }, part => new TurretSlot { part = part });
-            elevations = Kept(elevations, new[] { Named("Barrel"), Named("Launcher") }, part => new ElevationSlot
+            turrets = KeepTuned(turrets, new[] { Named("Turret") }, part => new TurretSlot { part = part });
+            elevations = KeepTuned(elevations, new[] { Named("Barrel"), Named("Launcher") }, part => new ElevationSlot
             {
                 part = part,
-                pose = part.name == "Launcher" ? launcherPose : 0,
+                weapon = part.name == "Launcher" ? launcherWeapon : 0,
             });
-            recoils = Kept(recoils, new[] { Named("Barrel") }, part => new RecoilSlot { part = part });
-            wheels = Kept(wheels, parts.Where(part => WheelName.IsMatch(part.name)),
+            recoils = KeepTuned(recoils, new[] { Named("Barrel") }, part => new RecoilSlot { part = part });
+            wheels = KeepTuned(wheels, parts.Where(part => WheelName.IsMatch(part.name)),
                 part => new WheelSlot { part = part, radius = WheelSlot.MeshRadius(part, transform) });
-            rotors = Kept(rotors, new[] { Named("Rotor_Main"), Named("Rotor_Tail") }, part => new RotorSlot
+            rotors = KeepTuned(rotors, new[] { Named("Rotor_Main"), Named("Rotor_Tail") }, part => new RotorSlot
             {
                 part = part,
                 axis = part.InverseTransformDirection(part.name == "Rotor_Main" ? transform.up : transform.right),
@@ -124,7 +124,7 @@ namespace HyperRTS.Presentation.Animation
         }
 
         // Keeps the tuned slot of a part already listed, so filling again changes nothing.
-        private static List<T> Kept<T>(List<T> slots, IEnumerable<Transform> found, Func<Transform, T> make)
+        private static List<T> KeepTuned<T>(List<T> slots, IEnumerable<Transform> found, Func<Transform, T> make)
             where T : PartSlot =>
             found.Where(part => part != null)
                 .Select(part => slots.FirstOrDefault(slot => slot.part == part) ?? make(part))

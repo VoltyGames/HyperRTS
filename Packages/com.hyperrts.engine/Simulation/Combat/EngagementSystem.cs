@@ -101,13 +101,20 @@ namespace HyperRTS.Simulation.Combat
                 var target = attack.Value;
                 var ordered = order.Type == OrderType.Attack && order.Target == target;
                 var reach = Reach(entity, weapon, target, out var floor);
-                if (ShouldRelease(entity, transform.Position, weapon, vision, faction, stance, target, ordered, reach))
+                if (Loses(entity, weapon, faction, target, ordered))
                 {
                     Release(entity, order, stance, ref attack, attacking);
                     return;
                 }
 
-                attack.Gap = Distance(entity, transform.Position, target);
+                var gap = Targets.Gap(entity, transform.Position, target);
+                if (!ordered && ShouldLeash(entity, transform.Position, weapon, vision, stance, target, gap, reach))
+                {
+                    Release(entity, order, stance, ref attack, attacking);
+                    return;
+                }
+
+                attack.Gap = gap;
                 if (!ordered && attack.Gap < floor)
                 {
                     Release(entity, order, stance, ref attack, attacking);
@@ -143,9 +150,8 @@ namespace HyperRTS.Simulation.Combat
                 }
             }
 
-            /// <summary>Gone, hidden, out of the weapon's reach, out of ammo, or (unless ordered) leashed.</summary>
-            private bool ShouldRelease(Entity entity, float3 position, in Weapon weapon, in VisionRange vision,
-                in Faction faction, in CombatStance stance, Entity target, bool ordered, float reach)
+            /// <summary>Gone, hidden, out of the weapon's reach or out of ammo.</summary>
+            private bool Loses(Entity entity, in Weapon weapon, in Faction faction, Entity target, bool ordered)
             {
                 // Only orders point units at scenery, so an ordered target need only be attackable.
                 var keep = ordered
@@ -156,25 +162,22 @@ namespace HyperRTS.Simulation.Combat
                     return true;
                 }
 
-                if (Ammo.IsEmpty(AmmoLookup, entity))
-                {
-                    return true;
-                }
-
-                return !ordered && ShouldLeash(entity, position, weapon, vision, stance, target, reach);
+                return Ammo.IsEmpty(AmmoLookup, entity);
             }
 
+            /// <summary><paramref name="gap"/> is the edge distance from <paramref name="position"/>.</summary>
             private bool ShouldLeash(Entity entity, float3 position, in Weapon weapon, in VisionRange vision,
-                in CombatStance stance, Entity target, float reach)
+                in CombatStance stance, Entity target, float gap, float reach)
             {
                 if (stance.Value == Stance.HoldPosition || !Moves.HasComponent(entity))
                 {
-                    return Distance(entity, position, target) > reach;
+                    return gap > reach;
                 }
 
                 // Defensive units measure from their post, so a fleeing target can't drag them away.
                 var origin = stance.Value == Stance.Defensive ? stance.Anchor : position;
-                return Distance(entity, origin, target) > CombatMath.AcquireRange(weapon, vision.Value) * weapon.LeashFactor;
+                var leash = CombatMath.AcquireRange(weapon, vision.Value) * weapon.LeashFactor;
+                return Targets.Gap(entity, origin, target) > leash;
             }
 
             /// <summary>Longest range and shortest minimum of the primary and the ready shared-target mounts that can hit it.</summary>
@@ -206,11 +209,8 @@ namespace HyperRTS.Simulation.Combat
                     return false;
                 }
 
-                return Targets.CanHit(target, mount.Weapon.Targets) && mount.Weapon.Affects(Armor, target);
+                return Targets.CanHurt(target, mount.Weapon, Armor);
             }
-
-            private float Distance(Entity entity, float3 position, Entity target) =>
-                EntityRadius.EdgeDistance(position, Targets.Radius(entity), Targets.Position(target), Targets.Radius(target));
 
             private void Release(Entity entity, in Order order, in CombatStance stance, ref AttackTarget attack,
                 EnabledRefRW<AttackTarget> attacking)

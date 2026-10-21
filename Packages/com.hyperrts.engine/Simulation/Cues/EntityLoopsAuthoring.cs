@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace HyperRTS.Simulation.Cues
 {
@@ -30,12 +31,13 @@ namespace HyperRTS.Simulation.Cues
         public float pitchRise = 0.15f;
 
         [Header("Rotor")]
-        [Tooltip("While the aircraft flies; spools down when it docks.")]
+        [Tooltip("While the aircraft flies; spins down when it docks.")]
         public SoundCue rotor;
 
-        [Tooltip("Seconds the rotor takes to spool from still to full, as on the motion rig.")]
+        [Tooltip("Seconds the rotor takes to spin up from still to full, as on the motion rig.")]
         [Min(0.1f)]
-        public float rotorSpool = 4f;
+        [FormerlySerializedAs("rotorSpool")]
+        public float rotorSpinUpTime = 4f;
 
         [Header("Other")]
         [Tooltip("While any weapon turns.")]
@@ -48,10 +50,10 @@ namespace HyperRTS.Simulation.Cues
         public SoundCue ambient;
 
         public static DynamicBuffer<EntityLoopSound> Add<TWriter>(ref TWriter writer, float fullSpeed, float pitchRise,
-            float spoolTime)
+            float spinUpTime)
             where TWriter : struct, IEntityWriter
         {
-            writer.Add(new LoopSoundTuning { FullSpeed = fullSpeed, PitchRise = pitchRise, SpoolTime = spoolTime });
+            writer.Add(new LoopSoundTuning { FullSpeed = fullSpeed, PitchRise = pitchRise, SpinUpTime = spinUpTime });
             return writer.AddBuffer<EntityLoopSound>();
         }
 
@@ -70,7 +72,7 @@ namespace HyperRTS.Simulation.Cues
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 var loops = EntityLoopsAuthoring.Add(ref writer, authoring.fullSpeed, authoring.pitchRise,
-                    authoring.rotorSpool);
+                    authoring.rotorSpinUpTime);
                 EntityLoopsAuthoring.Set(loops, LoopSlot.EngineIdle, authoring.engineIdle);
                 EntityLoopsAuthoring.Set(loops, LoopSlot.EngineMove, authoring.engineMove);
                 EntityLoopsAuthoring.Set(loops, LoopSlot.Rotor, authoring.rotor);

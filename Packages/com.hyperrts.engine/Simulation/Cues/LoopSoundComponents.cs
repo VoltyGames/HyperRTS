@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Cues
         /// <summary>Engine under way, fading in and pitching up with speed.</summary>
         EngineMove = 1,
 
-        /// <summary>Spools up while an aircraft flies and down when it docks.</summary>
+        /// <summary>Spins up while an aircraft flies and down when it docks.</summary>
         Rotor = 2,
 
         /// <summary>While any weapon turns.</summary>
@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Cues
         /// <summary>Extra pitch at full speed, as a fraction.</summary>
         public float PitchRise;
 
-        /// <summary>Seconds the rotor takes to spool from still to full.</summary>
-        public float SpoolTime;
+        /// <summary>Seconds the rotor takes to spin up from still to full.</summary>
+        public float SpinUpTime;
     }
 }

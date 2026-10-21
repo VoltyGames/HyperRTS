@@ -11,6 +11,25 @@ namespace HyperRTS.Simulation.Combat
         public float ReloadTime;
         public float ReloadElapsed;
 
+        public void Reload(float deltaTime) => Reload(ref Current, Max, ref ReloadElapsed, ReloadTime, deltaTime);
+
+        /// <summary>Refills one round per <paramref name="reloadTime"/>; <see cref="WeaponMount"/> shares it.</summary>
+        public static void Reload(ref int rounds, int max, ref float elapsed, float reloadTime, float deltaTime)
+        {
+            if (rounds >= max)
+            {
+                elapsed = 0f;
+                return;
+            }
+
+            elapsed += deltaTime;
+            if (elapsed >= reloadTime)
+            {
+                elapsed -= reloadTime;
+                rounds++;
+            }
+        }
+
         /// <summary>Weapons without ammo never run dry.</summary>
         public static bool IsEmpty(in ComponentLookup<Ammo> lookup, Entity entity) =>
             lookup.TryGetComponent(entity, out var ammo) && ammo.Current <= 0;

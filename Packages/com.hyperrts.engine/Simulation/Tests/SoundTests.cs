@@ -208,6 +208,17 @@ namespace HyperRTS.Simulation.Tests
                 default), "world sounds play for all without fog");
         }
 
+        [Test]
+        public void IsFire_CoversEveryFireSlot_AndNothingElse()
+        {
+            Assert.IsTrue(CueRules.IsFire(CueSlot.Fire));
+            Assert.IsTrue(CueRules.IsFire(CueSlot.Fire2));
+            Assert.IsTrue(CueRules.IsFire(CueSlot.Fire3));
+            Assert.IsTrue(CueRules.IsFire(CueSlot.Fire4));
+            Assert.IsFalse(CueRules.IsFire(CueSlot.Impact));
+            Assert.IsFalse(CueRules.IsFire(CueSlot.Ready));
+        }
+
         private T Single<T>() where T : unmanaged, IComponentData
         {
             using var query = _world.EntityManager.CreateEntityQuery(typeof(T));

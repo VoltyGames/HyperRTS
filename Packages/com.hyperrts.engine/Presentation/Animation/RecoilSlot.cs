@@ -6,7 +6,7 @@ namespace HyperRTS.Presentation.Animation
 {
     /// <summary>A barrel that kicks back along itself on each shot of its weapon.</summary>
     [Serializable]
-    public class RecoilSlot : PosedSlot
+    public class RecoilSlot : WeaponPartSlot
     {
         [Tooltip("Metres it kicks back.")]
         [Min(0f)]
@@ -18,8 +18,7 @@ namespace HyperRTS.Presentation.Animation
 
         public override MotionRigPart Bake(Transform rig, Entity entity)
         {
-            var baked = Rest(entity, MotionPartKind.Recoil);
-            baked.Pose = (byte)pose;
+            var baked = AtRest(entity, MotionPartKind.Recoil);
             baked.Axis = part.InverseTransformDirection(-rig.forward).normalized;
             // Local positions are in the parent's units.
             baked.Size = distance / part.parent.lossyScale.x;

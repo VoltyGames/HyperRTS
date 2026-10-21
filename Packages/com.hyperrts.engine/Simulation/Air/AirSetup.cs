@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.Air
             writer.Add<DropRemains>();
         }
 
-        /// <summary>The aircraft takes a pad at the airfield that builds it and docks there to rearm.</summary>
+        /// <summary>The aircraft takes a pad at the airfield that builds it and docks there to reload.</summary>
         public static void AddPadUser<TWriter>(ref TWriter writer) where TWriter : struct, IEntityWriter
         {
             writer.Add<HomePad>();

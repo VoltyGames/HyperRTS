@@ -2,10 +2,11 @@ using System;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace HyperRTS.Presentation.Animation
 {
-    /// <summary>A rotor that spools up while the unit flies and down when it docks.</summary>
+    /// <summary>A rotor that spins up while the unit flies and down when it docks.</summary>
     [Serializable]
     public class RotorSlot : PartSlot
     {
@@ -18,14 +19,15 @@ namespace HyperRTS.Presentation.Animation
 
         [Tooltip("Seconds from standing to full speed.")]
         [Min(0.01f)]
-        public float spoolTime = 4f;
+        [FormerlySerializedAs("spoolTime")]
+        public float spinUpTime = 4f;
 
         public override MotionRigPart Bake(Transform rig, Entity entity)
         {
-            var baked = Rest(entity, MotionPartKind.Rotor);
+            var baked = AtRest(entity, MotionPartKind.Rotor);
             baked.Axis = axis.normalized;
             baked.Rate = maxRPM * 2f * math.PI / 60f;
-            baked.Time = spoolTime;
+            baked.Time = spinUpTime;
             return baked;
         }
     }

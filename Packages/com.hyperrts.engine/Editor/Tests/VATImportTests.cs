@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Tests
         private const string Positions = Folder + "/VAT/Quad_Pos.exr";
 
         private const string Triangle = "v 0 0 0\nv 1 0 0\nv 1 1 0\nvt 0 0\nvt 1 0\nvt 1 1\nf 1/1 2/2 3/3\n";
-        private const string Sidecar = @"{ ""positions"": ""Quad_Pos.exr"", ""normals"": ""Quad_Nrm.exr"" }";
+        private const string BakeInfo = @"{ ""positions"": ""Quad_Pos.exr"", ""normals"": ""Quad_Nrm.exr"" }";
 
         [TearDown]
         public void DeleteFolder() => AssetDatabase.DeleteAsset(Folder);
@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Tests
         {
             AssetDatabase.CreateFolder("Assets", "_VATImportTests");
             Directory.CreateDirectory(Folder + "/VAT");
-            File.WriteAllText(Folder + "/VAT/Quad.json", Sidecar);
+            File.WriteAllText(Folder + "/VAT/Quad.json", BakeInfo);
             File.WriteAllText(Model, Triangle);
             File.WriteAllBytes(Positions, SixColumnEXR());
             // An OBJ carries no UV1, which the rule reports.

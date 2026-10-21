@@ -35,7 +35,7 @@ namespace HyperRTS.Presentation.Tests
 
             Assert.AreEqual(turret, rig.turrets.Single().part);
             Assert.AreEqual(new[] { barrel, launcher }, rig.elevations.Select(slot => slot.part).ToArray());
-            Assert.AreEqual(new[] { 0, 1 }, rig.elevations.Select(slot => slot.pose).ToArray(), "launcher on the mount");
+            Assert.AreEqual(new[] { 0, 1 }, rig.elevations.Select(slot => slot.weapon).ToArray(), "launcher on the mount");
             Assert.AreEqual(barrel, rig.recoils.Single().part);
             Assert.AreEqual(2, rig.wheels.Count);
             Assert.AreEqual(0.4f, rig.wheels.Single(slot => slot.part == wheel).radius, 1e-4f);
@@ -81,7 +81,7 @@ namespace HyperRTS.Presentation.Tests
             var rig = _unit.AddComponent<MotionRigAuthoring>();
             rig.FillFromModel();
 
-            StringAssert.Contains("weapon pose 0", rig.Problems().Single());
+            StringAssert.Contains("follows weapon 0", rig.Problems().Single());
         }
 
         // A pivot with a cube mesh child of the given size, or an empty one.

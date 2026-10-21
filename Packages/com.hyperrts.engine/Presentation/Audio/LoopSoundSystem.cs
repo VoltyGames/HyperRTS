@@ -29,11 +29,10 @@ namespace HyperRTS.Presentation.Audio
         private readonly List<Entity> _gone = new();
         private readonly float[] _baseVolume = new float[Voices];
         private readonly float[] _basePitch = new float[Voices];
+        private readonly VoiceBank _voices = new("HyperRTS Loops", Voices, loop: true);
+        private readonly ListenerLookup _listener = new();
         private EntityQuery _loops;
         private int _loopsVersion;
-        private GameObject _root;
-        private AudioSource[] _sources;
-        private AudioListener _listener;
 
         protected override void OnCreate()
         {
@@ -41,36 +40,16 @@ namespace HyperRTS.Presentation.Audio
             RequireForUpdate(_loops);
         }
 
-        // The sources are DontSave, so they outlive scene reloads and must go with the world.
-        protected override void OnDestroy()
-        {
-            if (_root == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                Object.Destroy(_root);
-            }
-            else
-            {
-                Object.DestroyImmediate(_root);
-            }
-        }
+        protected override void OnDestroy() => _voices.Dispose();
 
         protected override void OnUpdate()
         {
             CompleteDependency();
-            if (_listener == null)
-            {
-                _listener = Object.FindAnyObjectByType<AudioListener>();
-            }
-
             _mixer.Begin();
-            if (_listener != null)
+            var listener = _listener.Find();
+            if (listener != null)
             {
-                Offer(_listener.transform.position);
+                Offer(listener.transform.position);
             }
 
             _mixer.Resolve();
@@ -91,12 +70,11 @@ namespace HyperRTS.Presentation.Audio
                          .Query<DynamicBuffer<EntityLoopSound>, RefRO<LoopSoundTuning>, RefRO<LocalToWorld>>()
                          .WithNone<DisableRendering, FogHidden, Dead>().WithEntityAccess())
             {
-                var docked = docks.HasComponent(entity) && docks.IsComponentEnabled(entity);
-                var flying = flights.HasComponent(entity) && !docked;
-                var building = sites.HasComponent(entity) && sites.IsComponentEnabled(entity);
+                var flying = flights.HasComponent(entity) && !docks.HasEnabled(entity);
+                var building = sites.HasEnabled(entity);
                 var producing = queues.TryGetBuffer(entity, out var queue) && !queue.IsEmpty;
                 _states.TryGetValue(entity, out var state);
-                state.Step(place.ValueRO.Position, flying, Aim(poses, entity), tuning.ValueRO.SpoolTime, now, deltaTime);
+                state.Step(place.ValueRO.Position, flying, Aim(poses, entity), tuning.ValueRO.SpinUpTime, now, deltaTime);
                 _states[entity] = state;
 
                 Vector3 position = place.ValueRO.Position;
@@ -132,19 +110,14 @@ namespace HyperRTS.Presentation.Audio
 
         private void Play()
         {
-            var sources = Sources();
             foreach (var released in _mixer.Released)
             {
-                sources[released].Stop();
+                _voices[released].Stop();
             }
 
             foreach (var (loop, index, claimed) in _mixer.Winners)
             {
-                var source = sources[index];
-                if (claimed)
-                {
-                    Claim(source, index, loop.Cue);
-                }
+                var source = claimed ? Claim(index, loop.Cue) : _voices[index];
 
                 source.volume = _baseVolume[index] * loop.Level;
                 source.pitch = _basePitch[index] * loop.PitchScale;
@@ -153,24 +126,20 @@ namespace HyperRTS.Presentation.Audio
         }
 
         /// <summary>Starts the cue at a random point, so loops of one type never play in step.</summary>
-        private void Claim(AudioSource source, int index, SoundCue cue)
+        private AudioSource Claim(int index, SoundCue cue)
         {
-            _baseVolume[index] = Random.Range(cue.volume.x, cue.volume.y);
-            _basePitch[index] = Random.Range(cue.pitch.x, cue.pitch.y);
-            source.Stop();
-            source.clip = cue.clips[Random.Range(0, cue.clips.Length)];
-            source.priority = cue.priority;
-            source.outputAudioMixerGroup = cue.mixerGroup;
-            source.spatialBlend = cue.spatial ? 1f : 0f;
-            source.minDistance = cue.minDistance;
-            source.maxDistance = cue.maxDistance;
-            if (source.clip == null)
+            var clip = cue.clips[Random.Range(0, cue.clips.Length)];
+            var source = _voices.Load(index, cue, clip, Random.Range(cue.pitch.x, cue.pitch.y));
+            _baseVolume[index] = source.volume;
+            _basePitch[index] = source.pitch;
+            if (clip == null)
             {
-                return;
+                return source;
             }
 
-            source.time = Random.Range(0f, source.clip.length);
+            source.time = Random.Range(0f, clip.length);
             source.Play();
+            return source;
         }
 
         /// <summary>Forgets the state of entities that no longer exist, once loop entities came or went.</summary>
@@ -196,28 +165,6 @@ namespace HyperRTS.Presentation.Audio
             {
                 _states.Remove(entity);
             }
-        }
-
-        private AudioSource[] Sources()
-        {
-            if (_root != null)
-            {
-                return _sources;
-            }
-
-            _root = new GameObject("HyperRTS Loops") { hideFlags = HideFlags.DontSave };
-            _sources = new AudioSource[Voices];
-            for (var i = 0; i < _sources.Length; i++)
-            {
-                var voice = new GameObject($"Loop {i}") { hideFlags = HideFlags.DontSave };
-                voice.transform.SetParent(_root.transform);
-                _sources[i] = voice.AddComponent<AudioSource>();
-                _sources[i].playOnAwake = false;
-                _sources[i].loop = true;
-                _sources[i].rolloffMode = AudioRolloffMode.Linear;
-            }
-
-            return _sources;
         }
     }
 }

@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void BallisticShell_PeaksAtItsArcHeight()
         {
-            Arm(Trajectory.Ballistic, range: 8f);
+            SpawnShooter(Trajectory.Ballistic, range: 8f);
             _world.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             var peak = float.MinValue;
@@ -43,7 +43,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void BallisticShell_LandsWhereTheTargetStood_EvenIfItMovedAndDied()
         {
-            Arm(Trajectory.Ballistic, range: 8f);
+            SpawnShooter(Trajectory.Ballistic, range: 8f);
             var enemy = _world.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             var path = Fly(flown =>
@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void BallisticShell_MissesATargetThatMovedAway()
         {
-            Arm(Trajectory.Ballistic, range: 8f);
+            SpawnShooter(Trajectory.Ballistic, range: 8f);
             var enemy = _world.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             Fly(flown =>
@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Rocket_ClimbsThenReachesAMovingTarget()
         {
-            Arm(Trajectory.Rocket, range: 12f);
+            SpawnShooter(Trajectory.Rocket, range: 12f);
             var enemy = _world.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             var last = float3.zero;
@@ -94,7 +94,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.Less(_world.GetHealth(enemy), 100f);
         }
 
-        private void Arm(Trajectory trajectory, float range) =>
+        private void SpawnShooter(Trajectory trajectory, float range) =>
             _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: range, cooldown: 100f,
                 projectile: _world.ProjectilePrefab(), trajectory: trajectory, arcHeight: 0.5f);
 

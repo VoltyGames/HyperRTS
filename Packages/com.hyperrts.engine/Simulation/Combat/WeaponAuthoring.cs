@@ -175,7 +175,7 @@ namespace HyperRTS.Simulation.Combat
             [Tooltip("Research the owner must finish before it fires; none fires from the start.")]
             public UpgradeAuthoring requires;
 
-            [Tooltip("Shots before it must rearm while docked; 0 never runs dry.")]
+            [Tooltip("Shots before it must reload while docked; 0 never runs dry.")]
             [Min(0)]
             public int rounds;
 

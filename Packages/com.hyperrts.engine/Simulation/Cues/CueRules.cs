@@ -10,6 +10,9 @@ namespace HyperRTS.Simulation.Cues
             slot is CueSlot.Ready or CueSlot.Select or CueSlot.Move or CueSlot.Attack or CueSlot.AbilityVoice
                 or CueSlot.UnderFire;
 
+        public static bool IsFire(CueSlot slot) =>
+            slot is CueSlot.Fire or CueSlot.Fire2 or CueSlot.Fire3 or CueSlot.Fire4;
+
         public static bool IsAnnouncement(CueSlot slot) =>
             slot is >= CueSlot.AnnounceUnitLost and <= CueSlot.AnnounceUpgradeComplete;
 

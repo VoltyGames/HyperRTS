@@ -24,13 +24,13 @@ namespace HyperRTS.Network.Cues
             var rpc = new CueRpc();
             foreach (var cue in cues)
             {
-                var tier = Tier(cue.Slot);
-                if (quotas[tier] == 0)
+                var priority = Priority(cue.Slot);
+                if (quotas[priority] == 0)
                 {
                     continue;
                 }
 
-                quotas[tier]--;
+                quotas[priority]--;
                 rpc.Cues.Add(PackedCue.Pack(cue));
                 if (rpc.Cues.Length == Capacity)
                 {
@@ -45,31 +45,26 @@ namespace HyperRTS.Network.Cues
             }
         }
 
-        /// <summary>How many cues of each tier fit in <paramref name="budget"/>, most important first.</summary>
+        /// <summary>How many cues of each priority fit in <paramref name="budget"/>, most important first.</summary>
         private static int3 Quotas(NativeArray<CueEvent> cues, int budget)
         {
             var counts = int3.zero;
             foreach (var cue in cues)
             {
-                counts[Tier(cue.Slot)]++;
+                counts[Priority(cue.Slot)]++;
             }
 
             var quotas = int3.zero;
-            for (var tier = 0; tier < 3; tier++)
+            for (var priority = 0; priority < 3; priority++)
             {
-                quotas[tier] = math.min(counts[tier], budget);
-                budget -= quotas[tier];
+                quotas[priority] = math.min(counts[priority], budget);
+                budget -= quotas[priority];
             }
 
             return quotas;
         }
 
         // A battle fires and lands far more shots than anything else, and losing one of them goes unnoticed.
-        private static int Tier(CueSlot slot) => slot switch
-        {
-            CueSlot.Fire or CueSlot.Fire2 or CueSlot.Fire3 or CueSlot.Fire4 => 2,
-            CueSlot.Impact => 1,
-            _ => 0,
-        };
+        private static int Priority(CueSlot slot) => CueRules.IsFire(slot) ? 2 : slot == CueSlot.Impact ? 1 : 0;
     }
 }

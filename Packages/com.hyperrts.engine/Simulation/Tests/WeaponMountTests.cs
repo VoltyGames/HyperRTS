@@ -107,6 +107,54 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void ResearchGatedMount_Relocks_WhenTheResearchIsGone()
+        {
+            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 0f, cooldown: 100f);
+            _world.AddMount(gun, range: 6f, damage: 10f, cooldown: 100f, requiredResearchTypeId: Research);
+            _world.EntityManager.GetBuffer<CompletedResearch>(_world.Player(1))
+                .Add(new CompletedResearch { TypeId = Research });
+            _world.Tick();
+            Assert.IsTrue(_world.Mount(gun).Unlocked);
+
+            _world.EntityManager.GetBuffer<CompletedResearch>(_world.Player(1)).Clear();
+            _world.Tick();
+
+            Assert.IsFalse(_world.Mount(gun).Unlocked);
+        }
+
+        [Test]
+        public void Ammo_RefillsOneRoundPerReloadTime_AndRestsWhenFull()
+        {
+            var ammo = new Ammo { Max = 2, Current = 0, ReloadTime = 0.5f };
+
+            ammo.Reload(0.4f);
+            Assert.AreEqual(0, ammo.Current);
+            ammo.Reload(0.2f);
+            Assert.AreEqual(1, ammo.Current);
+            Assert.AreEqual(0.1f, ammo.ReloadElapsed, 1e-5f, "the overflow carries into the next round");
+
+            ammo.Current = 2;
+            ammo.Reload(0.3f);
+            Assert.AreEqual(0f, ammo.ReloadElapsed, "a full weapon doesn't bank reload time");
+        }
+
+        [Test]
+        public void WeaponCooldown_TicksToZero_AndRestartsAtTheFullCooldown()
+        {
+            var weapon = new Weapon { Cooldown = 1f };
+            Assert.IsFalse(weapon.CoolingDown);
+
+            weapon.StartCooldown();
+            weapon.Tick(0.4f);
+            Assert.IsTrue(weapon.CoolingDown);
+            Assert.AreEqual(0.6f, weapon.CooldownRemaining, 1e-5f);
+
+            weapon.Tick(5f);
+            Assert.IsFalse(weapon.CoolingDown);
+            Assert.AreEqual(0f, weapon.CooldownRemaining, "never goes below zero");
+        }
+
+        [Test]
         public void MountRounds_RunOut_AndRefillWhileDocked()
         {
             var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 0f, cooldown: 100f);

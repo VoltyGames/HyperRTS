@@ -53,7 +53,7 @@ namespace HyperRTS.Presentation.Animation
             return bounds;
         }
 
-        protected MotionRigPart Rest(Entity entity, MotionPartKind kind) => new()
+        protected virtual MotionRigPart AtRest(Entity entity, MotionPartKind kind) => new()
         {
             Part = entity,
             Kind = kind,

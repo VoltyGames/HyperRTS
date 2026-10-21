@@ -17,10 +17,10 @@ namespace HyperRTS.Presentation.Audio
     public partial class AnnouncerSystem : SystemBase
     {
         private readonly AnnouncerQueue _queue = new();
+        private readonly VoiceBank _voice = new("HyperRTS Announcer", 1);
         private CueVisibility _visibility;
         private EntityQuery _voices;
         private EntityQuery _localSide;
-        private AudioSource _source;
 
         protected override void OnCreate()
         {
@@ -33,23 +33,7 @@ namespace HyperRTS.Presentation.Audio
             RequireForUpdate(_localSide);
         }
 
-        // The source is DontSave, so it outlives scene reloads and must go with the world.
-        protected override void OnDestroy()
-        {
-            if (_source == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                Object.Destroy(_source.gameObject);
-            }
-            else
-            {
-                Object.DestroyImmediate(_source.gameObject);
-            }
-        }
+        protected override void OnDestroy() => _voice.Dispose();
 
         protected override void OnUpdate()
         {
@@ -69,8 +53,7 @@ namespace HyperRTS.Presentation.Audio
                 }
             }
 
-            var speaking = _source != null && _source.isPlaying;
-            if (!speaking && _queue.Count > 0)
+            if (!_voice.IsPlaying(0) && _queue.Count > 0)
             {
                 Speak(_queue.Next(now, set.maxWait));
             }
@@ -99,27 +82,11 @@ namespace HyperRTS.Presentation.Audio
                 return;
             }
 
-            var source = Source();
-            source.clip = cue.clips[Random.Range(0, cue.clips.Length)];
-            source.volume = Random.Range(cue.volume.x, cue.volume.y);
-            source.pitch = Random.Range(cue.pitch.x, cue.pitch.y);
-            source.priority = cue.priority;
-            source.outputAudioMixerGroup = cue.mixerGroup;
+            var clip = cue.clips[Random.Range(0, cue.clips.Length)];
+            var source = _voice.Load(0, cue, clip, Random.Range(cue.pitch.x, cue.pitch.y));
+            // Alerts are heard the same wherever the camera is.
+            source.spatialBlend = 0f;
             source.Play();
-        }
-
-        private AudioSource Source()
-        {
-            if (_source != null)
-            {
-                return _source;
-            }
-
-            var root = new GameObject("HyperRTS Announcer") { hideFlags = HideFlags.DontSave };
-            _source = root.AddComponent<AudioSource>();
-            _source.playOnAwake = false;
-            _source.spatialBlend = 0f;
-            return _source;
         }
     }
 }

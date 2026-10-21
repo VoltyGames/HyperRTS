@@ -29,7 +29,7 @@ namespace HyperRTS.Simulation.Air
         [Min(0f)]
         public float loiterRadius;
 
-        [Tooltip("Takes a pad at the Airfield that builds it, flies back to it to rearm (Return order or out of ammo) and docks there.")]
+        [Tooltip("Takes a pad at the Airfield that builds it, flies back to it to reload (Return order or out of ammo) and docks there.")]
         public bool usesLandingPads;
 
         public class Baker : Baker<FlightAuthoring>

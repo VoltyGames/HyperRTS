@@ -90,6 +90,10 @@ namespace HyperRTS.Simulation.Combat
             return CombatMath.CanHit(targets, NavAgent.GetLayer(_agents, target));
         }
 
+        /// <summary>The weapon can hit the target and its damage is worth it (<see cref="Weapon.Affects"/>).</summary>
+        public bool CanHurt(Entity target, in Weapon weapon, in BufferLookup<ArmorModifier> armor) =>
+            CanHit(target, weapon.Targets) && weapon.Affects(armor, target);
+
         /// <summary>Stealthed and outside every detector of the team (see <see cref="FogOfWar.IsHiddenByStealth"/>).</summary>
         // Stealth first, so unstealthed candidates skip the transform lookup.
         public bool IsHiddenByStealth(Entity target, byte team) =>
@@ -103,6 +107,10 @@ namespace HyperRTS.Simulation.Combat
             _fog.CanSee(team, position, _stealthed.HasEnabled(target));
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
+
+        /// <summary>Edge to edge distance with <paramref name="entity"/> standing at <paramref name="position"/>.</summary>
+        public float Gap(Entity entity, float3 position, Entity target) =>
+            EntityRadius.EdgeDistance(position, Radius(entity), Position(target), Radius(target));
 
         /// <summary>Passengers take their container's footprint, so they fire from its edge.</summary>
         public float Radius(Entity entity) =>

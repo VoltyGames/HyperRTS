@@ -112,7 +112,7 @@ namespace HyperRTS.Simulation.Combat
                     return Entity.Null;
                 }
 
-                if (KeepsOwn(entity, position, mount, faction))
+                if (KeepsTarget(entity, position, mount, faction))
                 {
                     return mount.Target;
                 }
@@ -121,15 +121,15 @@ namespace HyperRTS.Simulation.Combat
             }
 
             /// <summary>Its own target is still hostile, unhidden and in its reach.</summary>
-            private bool KeepsOwn(Entity entity, float3 position, in WeaponMount mount, byte faction)
+            private bool KeepsTarget(Entity entity, float3 position, in WeaponMount mount, byte faction)
             {
-                var own = mount.Target;
-                if (own == Entity.Null || !Targets.IsValidTarget(own, faction, Relations))
+                var target = mount.Target;
+                if (target == Entity.Null || !Targets.IsValidTarget(target, faction, Relations))
                 {
                     return false;
                 }
 
-                return CanShoot(entity, position, mount.Weapon, own);
+                return InReach(entity, position, mount.Weapon, target);
             }
 
             private Entity Scan(Entity entity, float3 position, in Weapon weapon, byte faction)
@@ -141,22 +141,11 @@ namespace HyperRTS.Simulation.Combat
                 return found && CanShoot(entity, position, weapon, finder.Best) ? finder.Best : Entity.Null;
             }
 
-            private bool CanShoot(Entity entity, float3 position, in Weapon weapon, Entity target)
-            {
-                if (!Targets.IsAlive(target) || !Targets.CanHit(target, weapon.Targets))
-                {
-                    return false;
-                }
+            private bool CanShoot(Entity entity, float3 position, in Weapon weapon, Entity target) =>
+                Targets.IsAlive(target) && InReach(entity, position, weapon, target);
 
-                if (!weapon.Affects(Armor, target))
-                {
-                    return false;
-                }
-
-                var gap = EntityRadius.EdgeDistance(position, Targets.Radius(entity), Targets.Position(target),
-                    Targets.Radius(target));
-                return weapon.Reaches(gap);
-            }
+            private bool InReach(Entity entity, float3 position, in Weapon weapon, Entity target) =>
+                Targets.CanHurt(target, weapon, Armor) && weapon.Reaches(Targets.Gap(entity, position, target));
         }
 
         [BurstCompile]
@@ -171,10 +160,10 @@ namespace HyperRTS.Simulation.Combat
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
-                    mount.Weapon.CooldownRemaining = math.max(0f, mount.Weapon.CooldownRemaining - DeltaTime);
-                    if (mount.Target != Entity.Null && mount.Weapon.CooldownRemaining <= 0f)
+                    mount.Weapon.Tick(DeltaTime);
+                    if (mount.Target != Entity.Null && !mount.Weapon.CoolingDown)
                     {
-                        mount.Weapon.CooldownRemaining = mount.Weapon.Cooldown;
+                        mount.Weapon.StartCooldown();
                         mount.UseRound();
                         Shots.Fire(entity, mount.Weapon, mount.Pose, WeaponMount.FireSlot(i), mount.Target,
                             faction.Value);

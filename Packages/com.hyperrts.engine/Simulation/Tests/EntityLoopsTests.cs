@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(2, loops.Length);
             Assert.AreEqual(LoopSlot.EngineIdle, loops[0].Slot);
             Assert.AreEqual(LoopSlot.Ambient, loops[1].Slot);
-            Assert.AreEqual(4f, world.EntityManager.GetComponentData<LoopSoundTuning>(entity).SpoolTime);
+            Assert.AreEqual(4f, world.EntityManager.GetComponentData<LoopSoundTuning>(entity).SpinUpTime);
             Object.DestroyImmediate(cue);
         }
     }

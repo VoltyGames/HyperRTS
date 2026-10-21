@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.Audio
         private readonly List<(LoopCandidate Loop, int Source, bool Claimed)> _winners = new();
         private readonly List<int> _released = new();
         private readonly Dictionary<(Entity, LoopSlot), int> _playing = new();
-        private readonly Dictionary<(Entity, LoopSlot), int> _kept = new();
+        private readonly HashSet<(Entity, LoopSlot)> _kept = new();
         private readonly Dictionary<SoundCue, int> _perCue = new();
         private readonly Stack<int> _free = new();
 
@@ -67,7 +67,7 @@ namespace HyperRTS.Presentation.Audio
             _released.Clear();
             foreach (var (key, source) in _playing)
             {
-                if (!_kept.ContainsKey(key))
+                if (!_kept.Contains(key))
                 {
                     _released.Add(source);
                     _free.Push(source);
@@ -78,7 +78,7 @@ namespace HyperRTS.Presentation.Audio
             for (var i = 0; i < _winners.Count; i++)
             {
                 var winner = _winners[i];
-                if (!_kept.TryGetValue(winner.Loop.Key, out var source))
+                if (winner.Source < 0)
                 {
                     winner = (winner.Loop, _free.Pop(), true);
                     _winners[i] = winner;
@@ -111,7 +111,7 @@ namespace HyperRTS.Presentation.Audio
                 var playing = _playing.TryGetValue(loop.Key, out var source);
                 if (playing)
                 {
-                    _kept[loop.Key] = source;
+                    _kept.Add(loop.Key);
                 }
 
                 _winners.Add((loop, playing ? source : -1, false));

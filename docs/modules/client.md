@@ -83,7 +83,7 @@ set is:
 - `<Model>.fbx`: the rest pose. UV1 holds each vertex's texel, u = (column + 0.5) / width and v = row within the
   frame, so Unity may split vertices at seams. A model with `VAT/<Model>.json` beside it imports uncompressed,
   without generated lightmap UVs, and with UV1 kept as 32-bit floats. VAT renderers can't be lightmapped.
-- The position and normal textures the sidecar names: RGBA half float, Unity object space in metres. Each frame
+- The position and normal textures the bake info file names: RGBA half float, Unity object space in metres. Each frame
   takes `rowsPerFrame` rows and every clip is stacked, so frame f's texel is (column, f x rowsPerFrame + v). They
   import exact: linear, point filtered, clamped, no mipmaps or compression.
 - `VAT/<Model>.json`: `positions`, `normals`, `width`, `height`, `rowsPerFrame`, `vertexCount`, `clips` (each with
@@ -91,7 +91,7 @@ set is:
   frame. A looping clip does not repeat its first frame at the end.
 
 Put the textures in the material's VAT slots, set its rows per frame and turn on `_VAT` (the Debug inspector shows
-material keywords). A `VATClipTable` asset imports the sidecar through **Import Sidecar** in its context menu, then
+material keywords). A `VATClipTable` asset imports the bake info file through **Import Bake Info** in its context menu, then
 stays hand-editable. `VATAnimatedAuthoring` beside the renderer bakes its start clip into `VATClip` and widens the
 render bounds to cover every frame. It fails the bake when the material and table disagree.
 
@@ -102,12 +102,12 @@ Game code plays clips with `VATClip.Play(range, now)`, using `SystemAPI.Time.Ela
 
 `MotionRigAuthoring` on a unit prefab root moves the model's pivots on the client. Its slots list turrets, barrels
 and launchers that follow a `WeaponPose` index, barrels that recoil per shot, wheels, sprockets and idlers that
-roll, rotors that spool up in flight and down while `Docked`, and a tilt root (the hull) that pitches and rolls with
+roll, rotors that spin up in flight and down while `Docked`, and a tilt root (the hull) that pitches and rolls with
 the ground under its footprint. With **Aircraft** on, the tilt root leans with acceleration instead. **Fill from
 model** finds the parts by their art names: `Hull`, `Turret`, `Barrel`, `Launcher`, `Wheel_L01`, `Sprocket_L`,
 `Idler_L`, `Rotor_Main` and `Rotor_Tail`. It keeps slots it already lists, measures wheel radii and the footprint
-from the meshes, and gives `Launcher` pose 1 when the unit has an extra weapon. `MotionRigRule` checks every slot
-names a child of the rig and a pose the unit has.
+from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon. `MotionRigRule` checks every slot
+names a child of the rig and a weapon the unit has.
 
 The baker stores a `MotionRig` and a `MotionRigPart` buffer on the root. `MotionRigSystem` runs in
 `PresentationSystemGroup` on the interpolated unit and writes only child `LocalTransform`s, never the ghost root.

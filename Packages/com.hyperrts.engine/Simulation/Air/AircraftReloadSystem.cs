@@ -9,7 +9,7 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Air
 {
     /// <summary>
-    /// The rearm cycle: aircraft whose limited weapons (<see cref="Ammo"/>, mounts with rounds) are all empty get a
+    /// The reload cycle: aircraft whose limited weapons (<see cref="Ammo"/>, mounts with rounds) are all empty get a
     /// Return to Base order, and docked aircraft reload one round per <see cref="Ammo.ReloadTime"/>, each
     /// <see cref="WeaponMount"/> at its own pace. Games refuel and repair docked aircraft the same way.
     /// </summary>
@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Air
     [UpdateInGroup(typeof(OrderSystemGroup))]
     [UpdateAfter(typeof(OrderDispatchSystem))]
     [UpdateBefore(typeof(PadSystem))]
-    public partial struct RearmSystem : ISystem
+    public partial struct AircraftReloadSystem : ISystem
     {
         private OrderWriter _writer;
         private ComponentLookup<Ammo> _ammo;
@@ -104,21 +104,7 @@ namespace HyperRTS.Simulation.Air
         {
             public float DeltaTime;
 
-            private void Execute(ref Ammo ammo)
-            {
-                if (ammo.Current >= ammo.Max)
-                {
-                    ammo.ReloadElapsed = 0f;
-                    return;
-                }
-
-                ammo.ReloadElapsed += DeltaTime;
-                if (ammo.ReloadElapsed >= ammo.ReloadTime)
-                {
-                    ammo.ReloadElapsed -= ammo.ReloadTime;
-                    ammo.Current++;
-                }
-            }
+            private void Execute(ref Ammo ammo) => ammo.Reload(DeltaTime);
         }
 
         [BurstCompile]

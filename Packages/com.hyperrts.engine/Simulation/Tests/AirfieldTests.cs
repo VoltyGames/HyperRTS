@@ -9,7 +9,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Tests
 {
     /// <summary>
-    /// Airfield pads, the rearm cycle (out of ammo or mount rounds, return, dock, reload) and losing or changing
+    /// Airfield pads, the reload cycle (out of ammo or mount rounds, return, dock, reload) and losing or changing
     /// airfields.
     /// </summary>
     public class AirfieldTests

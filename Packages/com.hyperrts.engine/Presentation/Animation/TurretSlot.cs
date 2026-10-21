@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.Animation
 {
     /// <summary>A turret that traverses to its weapon's yaw.</summary>
     [Serializable]
-    public class TurretSlot : PosedSlot
+    public class TurretSlot : WeaponPartSlot
     {
         [Tooltip("Degrees per second it traverses.")]
         [Min(1f)]
@@ -15,8 +15,7 @@ namespace HyperRTS.Presentation.Animation
 
         public override MotionRigPart Bake(Transform rig, Entity entity)
         {
-            var baked = Rest(entity, MotionPartKind.Turret);
-            baked.Pose = (byte)pose;
+            var baked = AtRest(entity, MotionPartKind.Turret);
             baked.Axis = part.InverseTransformDirection(rig.up).normalized;
             baked.Rate = math.radians(traverseSpeed);
             return baked;

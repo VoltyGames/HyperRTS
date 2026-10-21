@@ -93,7 +93,7 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
-        public void Rotor_SpoolsUpInFlight_AndStopsWhenDocked()
+        public void Rotor_SpinsUpInFlight_AndStopsWhenDocked()
         {
             Rig(new MotionRigPart { Kind = MotionPartKind.Rotor, Axis = math.up(), Rate = 10f, Time = 1f });
             _em.AddComponentData(_unit, new Flight { Altitude = 10f });

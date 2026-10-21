@@ -103,19 +103,21 @@ namespace HyperRTS.Simulation.Combat
             private void Execute(DynamicBuffer<DamageEvent> events)
             {
                 var victims = new NativeList<SpatialEntry>(16, Allocator.Temp);
+                var damaged = Damaged[Events];
                 foreach (var hit in events)
                 {
-                    Apply(hit.Target, hit.Amount, hit, hit.Origin);
+                    Apply(hit.Target, hit.Amount, hit, hit.Origin, damaged);
                     if (hit.Radius > 0f)
                     {
-                        Splash(hit, victims);
+                        Splash(hit, victims, damaged);
                     }
                 }
 
                 events.Clear();
             }
 
-            private void Splash(in DamageEvent hit, NativeList<SpatialEntry> victims)
+            private void Splash(in DamageEvent hit, NativeList<SpatialEntry> victims,
+                DynamicBuffer<EntityDamaged> damaged)
             {
                 victims.Clear();
                 var collector = new SplashCollector { Victims = victims };
@@ -130,7 +132,7 @@ namespace HyperRTS.Simulation.Combat
 
                     var gap = EntityRadius.EdgeDistance(victim.Position, victim.Radius, hit.Position, 0f);
                     var amount = hit.Amount * CombatMath.SplashFactor(gap, hit.Radius, hit.EdgeFactor);
-                    Apply(victim.Entity, amount, hit, hit.Position);
+                    Apply(victim.Entity, amount, hit, hit.Position, damaged);
                 }
             }
 
@@ -152,7 +154,8 @@ namespace HyperRTS.Simulation.Combat
             }
 
             /// <summary>A lethal hit fells a <see cref="Topple"/> target away from <paramref name="from"/>.</summary>
-            private void Apply(Entity target, float amount, in DamageEvent hit, float3 from)
+            private void Apply(Entity target, float amount, in DamageEvent hit, float3 from,
+                DynamicBuffer<EntityDamaged> damaged)
             {
                 if (!Health.TryGetComponent(target, out var health) || health.Current <= 0f)
                 {
@@ -170,7 +173,7 @@ namespace HyperRTS.Simulation.Combat
                           StatMath.DamageTaken(Modifiers, target) * TypedMultiplier(target, hit.Type);
                 health.Current = math.max(0f, health.Current - amount);
                 Health[target] = health;
-                Report(target, amount);
+                Report(target, amount, damaged);
                 if (health.Current <= 0f && FallSources.HasComponent(target))
                 {
                     var fall = ToppleMath.Quantize(from, Transforms[target].Position);
@@ -184,7 +187,7 @@ namespace HyperRTS.Simulation.Combat
             }
 
             /// <summary>Armor that soaks the whole hit raises no event.</summary>
-            private void Report(Entity target, float amount)
+            private void Report(Entity target, float amount, DynamicBuffer<EntityDamaged> damaged)
             {
                 if (amount <= 0f || !Factions.TryGetComponent(target, out var owner))
                 {
@@ -193,7 +196,7 @@ namespace HyperRTS.Simulation.Combat
 
                 if (owner.Value != Faction.Neutral)
                 {
-                    Damaged[Events].Add(new EntityDamaged { Entity = target, Faction = owner.Value });
+                    damaged.Add(new EntityDamaged { Entity = target, Faction = owner.Value });
                 }
             }
 

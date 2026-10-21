@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Animation
 
         public override MotionRigPart Bake(Transform rig, Entity entity)
         {
-            var baked = Rest(entity, MotionPartKind.Wheel);
+            var baked = AtRest(entity, MotionPartKind.Wheel);
             baked.Axis = part.InverseTransformDirection(rig.right).normalized;
             baked.Size = radius;
             return baked;

@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat
 {
@@ -69,7 +68,7 @@ namespace HyperRTS.Simulation.Combat
             private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
                 EnabledRefRO<AttackTarget> attacking, in Faction faction)
             {
-                weapon.CooldownRemaining = math.max(0f, weapon.CooldownRemaining - DeltaTime);
+                weapon.Tick(DeltaTime);
 
                 var target = attack.Value;
                 if (!InReach(weapon, attack, attacking.ValueRO) || !Health.IsAlive(HealthLookup, target))
@@ -82,12 +81,12 @@ namespace HyperRTS.Simulation.Combat
                     Shots.Face(entity, Shots.Position(target));
                 }
 
-                if (weapon.CooldownRemaining > 0f || !Shots.TryUseRound(entity))
+                if (weapon.CoolingDown || !Shots.TryUseRound(entity))
                 {
                     return;
                 }
 
-                weapon.CooldownRemaining = weapon.Cooldown;
+                weapon.StartCooldown();
                 Shots.Fire(entity, weapon, 0, CueSlot.Fire, target, faction.Value);
             }
 

@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.Animation
 {
     /// <summary>A barrel or launcher that raises to its weapon's pitch within its limits.</summary>
     [Serializable]
-    public class ElevationSlot : PosedSlot
+    public class ElevationSlot : WeaponPartSlot
     {
         [Tooltip("Degrees per second it elevates.")]
         [Min(1f)]
@@ -21,8 +21,7 @@ namespace HyperRTS.Presentation.Animation
 
         public override MotionRigPart Bake(Transform rig, Entity entity)
         {
-            var baked = Rest(entity, MotionPartKind.Elevation);
-            baked.Pose = (byte)pose;
+            var baked = AtRest(entity, MotionPartKind.Elevation);
             baked.Axis = part.InverseTransformDirection(-rig.right).normalized;
             baked.Rate = math.radians(elevationSpeed);
             baked.Min = math.radians(minElevation);
