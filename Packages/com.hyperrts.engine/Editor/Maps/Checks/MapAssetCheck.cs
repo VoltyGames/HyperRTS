@@ -56,19 +56,7 @@ namespace HyperRTS.Editor.Maps.Checks
             MapWeatherCheck.Check(Climate, Issues);
             Require(Climate.fordShallowsWidth > 0f, $"{name}: fordShallowsWidth {Climate.fordShallowsWidth} must be above 0.");
             Require(Climate.fordRapidsLength > 0f, $"{name}: fordRapidsLength {Climate.fordRapidsLength} must be above 0.");
-            Macro(Climate.macro, name);
-        }
-
-        private void Macro(MapClimateMacro macro, string name)
-        {
-            var values = new (string Field, float Value)[]
-            {
-                ("regionLight", macro.regionLight), ("regionWarmth", macro.regionWarmth),
-                ("gradientLight", macro.gradientLight), ("gradientWarmth", macro.gradientWarmth),
-                ("gradientWavelength", macro.gradientWavelength), ("hollowDarkening", macro.hollowDarkening),
-                ("hollowWetness", macro.hollowWetness),
-            };
-            foreach (var (field, value) in values)
+            foreach (var (field, value) in Climate.macro.Fields())
             {
                 Require(value > 0f, $"{name}: macro {field} {value} must be above 0.");
             }
@@ -128,7 +116,6 @@ namespace HyperRTS.Editor.Maps.Checks
         {
             var name = $"Climate '{Climate.name}'";
             Surface(Climate.groundSurface, $"{name} ground");
-            Surface(Climate.groundVariation, $"{name} ground variation");
             Surface(Climate.baseSurface, $"{name} base");
             Surface(Climate.slopeSurface, $"{name} slope");
             Surface(Climate.shoreSurface, $"{name} shore");
@@ -165,6 +152,7 @@ namespace HyperRTS.Editor.Maps.Checks
             surface.props.ForEach(prop => EntryNotBesideRoad(prop.kind, name));
             surface.decals.ForEach(decal => Decal(decal.decal, name));
             SurfaceEdge(surface, name);
+            surface.patches.ForEach(patch => SurfacePatch(patch, name));
             Require(MapImpactClass.IsValid(surface.impactClass), MapImpactClass.Problem(name, surface.impactClass));
         }
 
@@ -173,6 +161,12 @@ namespace HyperRTS.Editor.Maps.Checks
         {
             Require(surface.edgeWidth > 0f, $"{name}: edgeWidth {surface.edgeWidth} must be above 0 metres.");
             Require(surface.edgeJitter > 0f, $"{name}: edgeJitter {surface.edgeJitter} must be above 0 metres.");
+        }
+
+        private void SurfacePatch(MapSurfacePatch patch, string name)
+        {
+            InClimate(Climate.layers, patch.layer, "patch layer", name);
+            Require(patch.Valid, $"{name}: patch '{patch.layer}' coverage {patch.coverage} must be in 0..1 and size {patch.size} above 0.");
         }
 
         private void RoadClass(MapRoadClass road)

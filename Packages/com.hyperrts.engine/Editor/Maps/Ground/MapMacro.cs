@@ -10,8 +10,8 @@ namespace HyperRTS.Editor.Maps.Ground
     /// <summary>
     /// The terrain's macro colour at a map point. RGB 0.5 is neutral; A is wetness. Fields and woods each get their own
     /// tint and a slow gradient across them (strengths from the climate's <see cref="MapClimateMacro"/>), blended over
-    /// the same border band as the splat; 10–90 m noise breaks up everything; hollows read darker and damper, as do
-    /// river banks and ravine floors.
+    /// the same border band as the splat; soil patches of 20 to 150 m vary light, warmth and moisture within them;
+    /// 10 to 90 m noise breaks up everything; hollows read darker and damper, as do river banks and ravine floors.
     /// </summary>
     public sealed class MapMacro
     {
@@ -30,6 +30,8 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly MapEdgeField _edges;
         private readonly MapNoise _broad;
         private readonly MapNoise _detail;
+        private readonly MapNoise _patches;
+        private readonly MapNoise _moisture;
         private readonly Vector2[] _tint;
         private readonly Vector2[] _gradient;
         private readonly float[] _phase;
@@ -41,6 +43,8 @@ namespace HyperRTS.Editor.Maps.Ground
             _strength = strength;
             _broad = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.MacroTint);
             _detail = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.MacroDetail);
+            _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.MacroPatches);
+            _moisture = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.MacroMoisture);
             (_tint, _gradient, _phase) = (new Vector2[land.Regions.Count], new Vector2[land.Regions.Count], new float[land.Regions.Count]);
             for (var i = 1; i < land.Regions.Count; i++)
             {
@@ -64,9 +68,12 @@ namespace HyperRTS.Editor.Maps.Ground
             var light = 0.5f + tint.x + 0.035f * _broad.Sample(p, 90f) + 0.02f * _detail.Sample(p, 14f) +
                         0.018f * _detail.Sample(p, 36f);
             var warmth = tint.y + 0.012f * _broad.Sample(p, 24f);
+            var (patchLight, patchWarmth, patchWet) = Patch(p);
+            light += patchLight;
+            warmth += patchWarmth;
             var hollow = Hollow(p);
             light -= hollow * _strength.hollowDarkening;
-            var wet = Mathf.Max(Wetness(edge.Region, p), hollow * _strength.hollowWetness);
+            var wet = Mathf.Max(Mathf.Max(Wetness(edge.Region, p), hollow * _strength.hollowWetness), patchWet);
             return new Color(light + warmth, light, light - warmth, wet);
         }
 
@@ -96,6 +103,16 @@ namespace HyperRTS.Editor.Maps.Ground
 
             var swing = new Vector2(_strength.gradientLight, _strength.gradientWarmth);
             return _tint[region] + swing * (wave / _symmetry.Copies.Count);
+        }
+
+        /// <summary>Soil patches: damp ones read darker and cooler, so moisture and colour vary together.</summary>
+        private (float Light, float Warmth, float Wet) Patch(Vector2 p)
+        {
+            var soil = _patches.Sample(p, _strength.patchWavelength);
+            var damp = Mathf.Clamp01(_moisture.Sample(p, _strength.patchWavelength * 0.7f) * 1.6f);
+            var light = _strength.patchLight * (soil - 0.5f * damp);
+            var warmth = _strength.patchWarmth * (0.6f * soil - damp);
+            return (light, warmth, damp * _strength.patchWetness);
         }
 
         /// <summary>0 on flat or convex ground, 1 in a clear hollow.</summary>

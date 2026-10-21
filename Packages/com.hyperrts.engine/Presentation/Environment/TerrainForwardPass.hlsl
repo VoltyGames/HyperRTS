@@ -4,6 +4,7 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainInput.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainLayers.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainMicro.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainWetness.hlsl"
 
@@ -82,14 +83,12 @@ half ApplyInteraction(inout TerrainSurface surface, float2 positionXZ)
     return max(tracks.depth, CRATER_PUDDLE * bowl);
 }
 
-InputData TerrainInputData(TerrainForwardVaryings input, half3 normalTS)
+InputData TerrainInputData(TerrainForwardVaryings input, TerrainPixel pixel, half3 normalTS)
 {
     InputData inputData = (InputData)0;
     inputData.positionWS = input.positionWS;
     inputData.positionCS = input.positionCS;
-    half3 normalWS = TerrainNormalWS(input.uv, input.normalWS);
-    half3 tangentWS = normalize(cross(normalWS, half3(0.0, 0.0, 1.0)));
-    inputData.tangentToWorld = half3x3(tangentWS, cross(tangentWS, normalWS), normalWS);
+    inputData.tangentToWorld = pixel.frame;
     inputData.normalWS = NormalizeNormalPerPixel(TransformTangentToWorld(normalTS, inputData.tangentToWorld));
     inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
 
@@ -129,11 +128,15 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
     )
 {
     ClipHoles(input.uv);
-    TerrainSurface surface = BlendLayers(input.uv, input.positionWS);
+    TerrainPixel pixel = GetTerrainPixel(input.uv, input.positionWS, TerrainNormalWS(input.uv, input.normalWS));
+    TerrainSurface surface = BlendLayers(input.uv, pixel);
+    #ifdef TERRAIN_MICRO
+        ApplyMicro(surface, pixel);
+    #endif
     half dampness = ApplyMacro(surface, input.uv, input.positionWS.xz);
     half rut = ApplyInteraction(surface, input.positionWS.xz);
     ApplyWetness(surface, dampness, rut, input.positionWS.xz);
-    InputData inputData = TerrainInputData(input, surface.normalTS);
+    InputData inputData = TerrainInputData(input, pixel, surface.normalTS);
     SurfaceData surfaceData = TerrainSurfaceData(surface);
     #ifdef _DBUFFER
         ApplyDecalToSurfaceData(input.positionCS, surfaceData, inputData);

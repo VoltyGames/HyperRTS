@@ -58,13 +58,6 @@ namespace HyperRTS.Editor.Maps.Data
         [MapKey(typeof(MapClimateSurface))]
         public string groundSurface;
 
-        [Tooltip("Surface patched into open ground by noise to break up the texture.")]
-        [MapKey(typeof(MapClimateSurface))]
-        public string groundVariation;
-
-        [Range(0f, 1f)]
-        public float variationCoverage = 0.35f;
-
         [Tooltip("Surface of the ground around each base.")]
         [MapKey(typeof(MapClimateSurface))]
         public string baseSurface;

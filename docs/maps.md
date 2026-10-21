@@ -141,9 +141,9 @@ symmetry, so mirrored borders wander alike.
 
 | Output | What it is |
 | --- | --- |
-| Splat | Terrain layer weights. Steep ground takes the slope surface |
+| Splat | Terrain layer weights. Each surface's `patches` paint other layers by symmetric noise (`layer`, `coverage` 0 to 1, `size` in metres). Steep ground takes the slope surface |
 | Details | Grass and plants, clumped by noise. Nothing grows on roads or placed objects |
-| Macro map | Light and warmth per field and wood, darker hollows, wetness near water. Set by the climate's `macro` section |
+| Macro map | 2 texels per metre: light and warmth per field and wood, 20 to 150 m soil patches of light, warmth and moisture, darker hollows, wetness near water. Set by the climate's `macro` section |
 | Row map | Each cell's crop row direction, turned with its symmetry copy |
 | Ground materials | One `SurfaceMaterial` per cell for impacts and wheel debris, baked into the `GroundMaterials` singleton |
 | Ground colour | The ground's colour from above, so foliage blends in at its roots |
@@ -156,8 +156,23 @@ sets how far one layer must stand above another to win; about 0.06 interlocks bo
 hex-tiled and randomly turned by their `antiTiling` to hide repeats. Layers with `followsRows` turn with the row
 map, so furrows follow each field. Grass layers darken less in rain than bare ground.
 
-`TerrainDetail.Level` sets the shader quality: Low uses `_TERRAIN_SIMPLE`, one sample per layer. Medium uses
-`_TERRAIN_NO_FAR`, hex tiling without the far sample. High sets neither and does both.
+Near the camera, a tileable soil grain from `TerrainMicroTexture` adds normal, occlusion and albedo detail at a 0.5 m
+tile, fading out from 24 to 42 m. Rough ground takes it fully and low texels take most of its shadow. The layer of the
+climate's `slopeSurface` is projected sideways on ground steeper than 30 degrees, fully from 42, so ravine walls don't
+stretch. Within 38 m, parallax occlusion marches the most painted layer's height in 8 steps and shifts every layer by
+the one offset, centred on mid height.
+
+`MapTerrainMaterial` writes these strengths on every build. `TerrainDetail.Level` takes a `GroundLevel` and sets the shader quality:
+
+| Level | Keyword | Adds | Texture samples per pixel |
+| --- | --- | --- | --- |
+| Low | `_TERRAIN_SIMPLE` | One sample per layer texture | 8 + 3 per layer |
+| Medium | `_TERRAIN_NO_FAR` | Hex tiling | 8 + 9 per layer |
+| High | `_TERRAIN_NO_PARALLAX` | Far sample, micro detail, triplanar slope layer | 10 + 10 per layer, up to 6 more on steep slopes |
+| Ultra | none | Parallax occlusion | High plus up to 9 within 38 m |
+
+The fixed 8 are the four alphamaps, the row, macro and noise maps and the terrain normal. Edit mode sets no keyword,
+so map captures show Ultra.
 
 **Weather.** In play, `WeatherSet` swaps in the weather `MatchSetup.Weather` names. Empty keeps the default.
 

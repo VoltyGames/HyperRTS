@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Editor.Environment;
 using HyperRTS.Editor.Maps.Data;
 using UnityEditor;
 using UnityEngine;
@@ -23,6 +24,15 @@ namespace HyperRTS.Editor.Maps.Texturing
         private static readonly int MacroMap = Shader.PropertyToID("_MacroMap");
         private static readonly int RowMap = Shader.PropertyToID("_RowMap");
         private static readonly int NoiseMap = Shader.PropertyToID("_NoiseMap");
+        private static readonly int MicroMap = Shader.PropertyToID("_MicroMap");
+
+        /// <summary>Close-up detail every build writes, so a rebuilt material never keeps hand-tuned values.</summary>
+        private static readonly (string Property, float Value)[] Detail =
+        {
+            ("_MicroTiling", 0.5f), ("_MicroNormal", 1.4f), ("_MicroOcclusion", 0.9f), ("_MicroAlbedo", 1.3f),
+            ("_MicroStart", 24f), ("_MicroEnd", 42f), ("_TriplanarStart", 30f), ("_TriplanarFull", 42f),
+            ("_ParallaxDepth", 0.1f), ("_ParallaxEnd", 38f),
+        };
 
         private static readonly int[] Controls =
         {
@@ -54,11 +64,19 @@ namespace HyperRTS.Editor.Maps.Texturing
 
             material.SetTexture(MacroMap, macro);
             material.SetTexture(RowMap, rows);
-            material.SetTexture(NoiseMap, AssetDatabase.LoadAssetAtPath<Texture2D>(NoisePath)
-                ?? throw new InvalidOperationException($"HyperRTS: the terrain noise '{NoisePath}' is missing."));
+            material.SetTexture(NoiseMap, Engine(NoisePath, "terrain noise"));
+            material.SetTexture(MicroMap, Engine(TerrainMicroTexture.Path, "terrain micro detail"));
+            foreach (var (property, value) in Detail)
+            {
+                material.SetFloat(property, value);
+            }
             EditorUtility.SetDirty(material);
             return material;
         }
+
+        private static Texture2D Engine(string path, string role) =>
+            AssetDatabase.LoadAssetAtPath<Texture2D>(path)
+            ?? throw new InvalidOperationException($"HyperRTS: the {role} '{path}' is missing.");
 
         private static void Require(MapClimate climate, TerrainData data, Texture2D macro)
         {

@@ -1,11 +1,7 @@
 // HyperRTS/Terrain hex tiling (Mikkelsen, "Practical Real-Time Hex-Tiling", JCGT 2022), so layers never visibly repeat.
-// _TERRAIN_SIMPLE makes it one plain sample. The far sample is off there and under _TERRAIN_NO_FAR.
+// _TERRAIN_SIMPLE makes it one plain sample.
 #ifndef HYPERRTS_TERRAIN_HEX_TILING_INCLUDED
 #define HYPERRTS_TERRAIN_HEX_TILING_INCLUDED
-
-#if !defined(_TERRAIN_SIMPLE) && !defined(_TERRAIN_NO_FAR)
-    #define TERRAIN_FAR_SAMPLE
-#endif
 
 // Hex grid vertices per tile, as in the paper.
 #define HEX_GRID_SCALE 3.4641016

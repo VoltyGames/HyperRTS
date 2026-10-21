@@ -53,6 +53,70 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
+        public void MacroMap_HasTwoTexelsPerMetre()
+        {
+            var area = new Rect(-375f, -375f, 750f, 750f);
+
+            Assert.AreEqual(1500, MapMacroPainter.Size(area));
+            Assert.AreEqual(0, MapMacroPainter.Size(new Rect(0f, 0f, 101f, 101f)) % 4, "block aligned");
+        }
+
+        [Test]
+        public void Macro_SoilPatchesVaryAField()
+        {
+            var climate = Climate(2f, 1.5f);
+            var layout = MapRoadFixture.Layout(MapRoadFixture.Spec());
+            var land = new MapLand(layout.TerrainBounds);
+            var field = land.Add(new MapLandRegion(MapLandKind.Field, "A", 5));
+            land.ClaimEach(land.Bounds, _ => field);
+            var heights = Flat(layout);
+            var edges = new MapEdgeField(layout, land, climate);
+            var shapes = MapRoadFixture.Shapes(layout, climate);
+            var patched = new MapMacro(layout, land, edges, shapes, heights, climate.macro);
+            var unpatched = Climate(2f, 1.5f).macro;
+            unpatched.patchLight = unpatched.patchWarmth = unpatched.patchWetness = 1e-6f;
+            var plain = new MapMacro(layout, land, edges, shapes, heights, unpatched);
+            var largest = 0f;
+            for (var x = -100f; x < 100f; x += 9.7f)
+            {
+                for (var z = -100f; z < 100f; z += 8.3f)
+                {
+                    var p = new Vector2(x, z);
+                    largest = Mathf.Max(largest, Gap(patched.At(p), plain.At(p)));
+                }
+            }
+
+            Assert.Greater(largest, 0.03f, "soil patches shift light, warmth or moisture across a field");
+        }
+
+        [Test]
+        public void SurfacePatches_PaintTheirLayerSymmetrically()
+        {
+            var climate = Climate(2f, 1.5f);
+            climate.Surface("A").patches.Add(new MapSurfacePatch { layer = "B", coverage = 0.3f, size = 30f });
+            var layout = MapRoadFixture.Layout(MapRoadFixture.Spec());
+            var land = new MapLand(layout.TerrainBounds);
+            var field = land.Add(new MapLandRegion(MapLandKind.Field, "A", 5));
+            land.ClaimEach(land.Bounds, _ => field);
+            var splat = MapSplatPainter.Paint(layout, new MapEdgeField(layout, land, climate), Flat(layout), climate,
+                Resolution);
+            var b = climate.LayerIndex("B");
+            var covered = 0;
+            for (var x = -100f; x < 100f; x += 5.3f)
+            {
+                for (var z = -100f; z < 100f; z += 4.7f)
+                {
+                    var p = new Vector2(x, z);
+                    var here = Weight(splat, layout, p, b);
+                    Assert.AreEqual(here, Weight(splat, layout, -p, b), 0.05f, $"patch at {p} and its copy");
+                    covered += here > 0.5f ? 1 : 0;
+                }
+            }
+
+            Assert.That(covered / (38f * 43f), Is.InRange(0.1f, 0.5f), "patches cover about their share");
+        }
+
+        [Test]
         public void Macro_TintEdgeFollowsTheSplatEdge()
         {
             var climate = Climate(0.5f, 2.5f);
@@ -150,11 +214,12 @@ namespace HyperRTS.Editor.Tests
             var climate = new MapClimate { name = "Test", slopeStart = 30f, slopeFull = 40f };
             MapClimateFixture.AddSurfaces(climate, width, jitter, "Meadow", "A", "B");
 
-            climate.groundSurface = climate.groundVariation = climate.slopeSurface = "Meadow";
+            climate.groundSurface = climate.slopeSurface = "Meadow";
             climate.macro = new MapClimateMacro
             {
                 regionLight = 0.09f, regionWarmth = 0.06f, gradientLight = 0.025f, gradientWarmth = 0.012f,
-                gradientWavelength = 260f, hollowDarkening = 0.045f, hollowWetness = 0.3f,
+                gradientWavelength = 260f, hollowDarkening = 0.045f, hollowWetness = 0.3f, patchWavelength = 140f,
+                patchLight = 0.05f, patchWarmth = 0.03f, patchWetness = 0.25f,
             };
             return climate;
         }

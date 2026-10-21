@@ -5,6 +5,16 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+// TerrainDetail's keywords: Low is _TERRAIN_SIMPLE, Medium _TERRAIN_NO_FAR, High _TERRAIN_NO_PARALLAX, Ultra none.
+#if !defined(_TERRAIN_SIMPLE) && !defined(_TERRAIN_NO_FAR)
+    #define TERRAIN_FAR_SAMPLE
+    #define TERRAIN_MICRO
+    #define TERRAIN_TRIPLANAR
+    #ifndef _TERRAIN_NO_PARALLAX
+        #define TERRAIN_PARALLAX
+    #endif
+#endif
+
 CBUFFER_START(UnityPerMaterial)
     float4 _Control0_TexelSize;
     float _LayerCount;
@@ -24,6 +34,16 @@ CBUFFER_START(UnityPerMaterial)
     half _PuddleCoverage;
     half _PuddleSmoothness;
     float _PuddleNoiseSize;
+    float _MicroTiling;
+    half _MicroNormal;
+    half _MicroOcclusion;
+    half _MicroAlbedo;
+    float _MicroStart;
+    float _MicroEnd;
+    float _TriplanarStart;
+    float _TriplanarFull;
+    float _ParallaxDepth;
+    float _ParallaxEnd;
 CBUFFER_END
 
 CBUFFER_START(_Terrain)
@@ -47,6 +67,7 @@ TEXTURE2D(_Control3);
 TEXTURE2D(_MacroMap);
 TEXTURE2D(_RowMap);
 TEXTURE2D(_NoiseMap);
+TEXTURE2D(_MicroMap);
 TEXTURE2D(_TerrainHolesTexture);
 SAMPLER(sampler_TerrainHolesTexture);
 
@@ -91,6 +112,13 @@ half3 TerrainNormalWS(float2 uv, half3 vertexNormalWS)
     #else
         return normalize(vertexNormalWS);
     #endif
+}
+
+// Terrain tangent space: x east, y north, z along the terrain normal.
+half3x3 TerrainFrame(half3 normalWS)
+{
+    half3 tangentWS = normalize(cross(normalWS, half3(0.0, 0.0, 1.0)));
+    return half3x3(tangentWS, cross(tangentWS, normalWS), normalWS);
 }
 
 void ClipHoles(float2 uv)

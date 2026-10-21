@@ -18,8 +18,8 @@ namespace HyperRTS.Presentation.Rendering
         /// <summary>Particle share, flash lights and loop reach of effects.</summary>
         public DetailLevel Effects;
 
-        /// <summary>Terrain shader detail (hex tiling, far sample).</summary>
-        public DetailLevel Ground;
+        /// <summary>Terrain shader detail (hex tiling, far sample, micro detail, triplanar slopes, parallax).</summary>
+        public GroundLevel Ground;
 
         /// <summary>Ground mark (tracks, trampling) resolution, or Off.</summary>
         public InteractionQuality Interactions;
@@ -45,7 +45,7 @@ namespace HyperRTS.Presentation.Rendering
         public static readonly PresentationQuality Default = new()
         {
             Effects = DetailLevel.High,
-            Ground = DetailLevel.High,
+            Ground = GroundLevel.Ultra,
             Interactions = InteractionQuality.Full,
             DetailDensity = 1f,
             DetailDistance = 150f,

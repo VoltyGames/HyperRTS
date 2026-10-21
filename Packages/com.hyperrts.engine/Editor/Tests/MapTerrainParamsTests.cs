@@ -58,11 +58,18 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void Grass_IsTheLayersAuthoredCover()
+        public void Cover_IsTheLayersAuthoredGrass()
         {
-            var grass = MapTerrainParams.Grass(Layer(false));
+            var cover = MapTerrainParams.Cover(Layer(false), false);
 
-            Assert.AreEqual(0.4f, grass.r, 1e-5f);
+            Assert.AreEqual(0.4f, cover.r, 1e-5f);
+        }
+
+        [Test]
+        public void Cover_MarksOnlyTheSlopeLayerTriplanar()
+        {
+            Assert.AreEqual(1f, MapTerrainParams.Cover(Layer(false), true).g, "the slope layer");
+            Assert.AreEqual(0f, MapTerrainParams.Cover(Layer(false), false).g, "any other layer");
         }
     }
 }

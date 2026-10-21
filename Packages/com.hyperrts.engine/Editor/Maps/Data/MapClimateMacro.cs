@@ -5,8 +5,8 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>
     /// How strongly the terrain's macro map varies a climate's ground (<see cref="Ground.MapMacro"/>): each field's and
-    /// wood's own tint, a slow gradient across it, and darker, damper hollows. Light and warmth are shifts of the
-    /// neutral 0.5 macro colour.
+    /// wood's own tint, a slow gradient across it, soil patches within it, and darker, damper hollows. Light and warmth
+    /// are shifts of the neutral 0.5 macro colour.
     /// </summary>
     [Serializable]
     public sealed class MapClimateMacro
@@ -31,5 +31,27 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Wetness (0..1) of a clear hollow.")]
         public float hollowWetness;
+
+        [Tooltip("Metres across the largest soil patches; the noise adds patches down to an eighth of that.")]
+        public float patchWavelength;
+
+        [Tooltip("Light swing of the soil patches.")]
+        public float patchLight;
+
+        [Tooltip("Warmth swing of the soil patches.")]
+        public float patchWarmth;
+
+        [Tooltip("Wetness (0..1) of the dampest soil patches.")]
+        public float patchWetness;
+
+        /// <summary>Every field by name, each of which must be above 0.</summary>
+        public (string Field, float Value)[] Fields() => new[]
+        {
+            ("regionLight", regionLight), ("regionWarmth", regionWarmth), ("gradientLight", gradientLight),
+            ("gradientWarmth", gradientWarmth), ("gradientWavelength", gradientWavelength),
+            ("hollowDarkening", hollowDarkening), ("hollowWetness", hollowWetness),
+            ("patchWavelength", patchWavelength), ("patchLight", patchLight), ("patchWarmth", patchWarmth),
+            ("patchWetness", patchWetness),
+        };
     }
 }

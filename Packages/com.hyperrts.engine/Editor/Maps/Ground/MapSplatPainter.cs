@@ -1,3 +1,4 @@
+using System.Linq;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
@@ -7,37 +8,46 @@ namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
     /// Paints the terrain layers from the land use: each texel blends the two surfaces of its nearest border across
-    /// that border's band (<see cref="MapEdgeField"/>; the terrain shader's height blend sharpens them naturally); open
-    /// meadow gets patches of its variation, and steep ground its slope surface.
+    /// that border's band (<see cref="MapEdgeField"/>; the terrain shader's height blend sharpens them naturally); each
+    /// surface gets its noise patches of other layers, and steep ground its slope surface.
     /// </summary>
     public sealed class MapSplatPainter
     {
         private readonly MapLayout _layout;
         private readonly MapHeights _heights;
         private readonly MapClimate _climate;
-        private readonly MapNoise _patches;
+        private readonly MapNoise[] _patchNoise;
         private readonly MapEdgeField _edges;
         private readonly int[] _regionLayer;
-        private readonly int _variation;
+        private readonly MapSurfacePatch[][] _regionPatches;
+        private readonly int[][] _regionPatchLayers;
         private readonly int _slope;
-        private readonly int _ground;
 
         private MapSplatPainter(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate)
         {
             _layout = layout;
             _heights = heights;
             _climate = climate;
-            _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SplatPatches);
             _edges = edges;
             _regionLayer = new int[edges.RegionCount];
+            _regionPatches = new MapSurfacePatch[edges.RegionCount][];
+            _regionPatchLayers = new int[edges.RegionCount][];
             for (var i = 0; i < _regionLayer.Length; i++)
             {
-                _regionLayer[i] = climate.LayerIndex(edges.Surface(i).layer);
+                var surface = edges.Surface(i);
+                _regionLayer[i] = climate.LayerIndex(surface.layer);
+                _regionPatches[i] = surface.patches.ToArray();
+                _regionPatchLayers[i] = surface.patches.Select(patch => climate.LayerIndex(patch.layer)).ToArray();
             }
 
-            _variation = climate.SurfaceLayer(climate.groundVariation);
+            // One noise per patch layer, so every surface's patches of a layer agree where surfaces meet.
+            _patchNoise = new MapNoise[climate.layers.Count];
+            for (var i = 0; i < _patchNoise.Length; i++)
+            {
+                _patchNoise[i] = new MapNoise(layout.Symmetry, layout.Spec.seed + 7919 * i, MapNoiseChannel.SplatPatches);
+            }
+
             _slope = climate.SurfaceLayer(climate.slopeSurface);
-            _ground = climate.SurfaceLayer(climate.groundSurface);
         }
 
         /// <summary>Layer weights as Unity's alphamaps want them: [z, x, layer], summing to 1 per texel.</summary>
@@ -77,32 +87,35 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var edge = _edges.Sample(p);
             var share = edge.OwnShare;
-            Layer(weights, _regionLayer[edge.Own], share, edge.Point);
+            Region(weights, edge.Own, share, edge.Point);
             if (share < 1f)
             {
-                Layer(weights, _regionLayer[edge.Other], 1f - share, edge.Point);
+                Region(weights, edge.Other, 1f - share, edge.Point);
             }
         }
 
-        /// <summary>Open ground may turn to its variation.</summary>
-        private void Layer(float[] weights, int layer, float amount, Vector2 p)
+        /// <summary>The region's own layer, with its surface's patches painted over it in order.</summary>
+        private void Region(float[] weights, int region, float amount, Vector2 p)
         {
-            if (layer != _ground)
+            var left = amount;
+            var patches = _regionPatches[region];
+            for (var i = 0; i < patches.Length; i++)
             {
-                weights[layer] += amount;
-                return;
+                var layer = _regionPatchLayers[region][i];
+                var cover = left * Patch(layer, patches[i], p);
+                weights[layer] += cover;
+                left -= cover;
             }
 
-            var patch = Patch(p);
-            weights[_variation] += amount * patch;
-            weights[layer] += amount * (1f - patch);
+            weights[_regionLayer[region]] += left;
         }
 
-        /// <summary>Noise patches covering about <see cref="MapClimate.variationCoverage"/> of open ground.</summary>
-        private float Patch(Vector2 p)
+        /// <summary>Noise patches covering about <see cref="MapSurfacePatch.coverage"/> of the surface.</summary>
+        private float Patch(int layer, MapSurfacePatch patch, Vector2 p)
         {
-            var threshold = 1f - 2f * _climate.variationCoverage;
-            return MapGeometry.Smooth((_patches.Sample(p, 40f) - threshold + 0.15f) / 0.3f);
+            // Measured: map noise sits about 0.2 either side of -0.1, so this threshold leaves roughly the coverage.
+            var threshold = -0.1f + 0.72f * (0.5f - patch.coverage);
+            return MapGeometry.Smooth((_patchNoise[layer].Sample(p, patch.size) - threshold) / 0.16f + 0.5f);
         }
 
         private static void Over(float[] weights, int layer, float alpha)

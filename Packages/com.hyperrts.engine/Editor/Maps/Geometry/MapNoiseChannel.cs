@@ -15,8 +15,12 @@ namespace HyperRTS.Editor.Maps.Geometry
         PlantClumps = 4,
         MacroTint = 6,
 
-        /// <summary>The macro map's 10–40 m light and warmth, finer than <see cref="MacroTint"/>.</summary>
+        /// <summary>The macro map's 10 to 40 m light and warmth, finer than <see cref="MacroTint"/>.</summary>
         MacroDetail = 7,
+
+        /// <summary>The macro map's 20 to 150 m soil patches: light and warmth, then moisture.</summary>
+        MacroPatches = 8,
+        MacroMoisture = 9,
         RiverWidth = 20,
         Banks = 21,
         BaseEdges = 22,

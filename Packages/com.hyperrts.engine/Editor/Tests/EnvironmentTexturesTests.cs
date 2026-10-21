@@ -7,17 +7,22 @@ using Random = Unity.Mathematics.Random;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>The procedural terrain noise and water ripple textures: statistics, unit normals and seamless tiling.</summary>
+    /// <summary>
+    /// The procedural terrain noise, micro detail and water ripple textures: statistics, unit normals and seamless
+    /// tiling.
+    /// </summary>
     public class EnvironmentTexturesTests
     {
         private Vector3[] terrain;
         private Vector3[] ripples;
+        private Color[] micro;
 
         [OneTimeSetUp]
         public void Bake()
         {
             terrain = EnvironmentTextures.TerrainNoise();
             ripples = EnvironmentTextures.RippleNormals();
+            micro = TerrainMicroTexture.Texels();
         }
 
         [TestCase(4f)]
@@ -73,6 +78,37 @@ namespace HyperRTS.Editor.Tests
             var values = ripples.Select(n => n[axis]).ToArray();
 
             AssertTiles(values, EnvironmentTextures.RippleSize);
+        }
+
+        [Test]
+        public void MicroNormalsTiltModestly()
+        {
+            var tilt = micro.Average(t => new Vector2(t.r * 2f - 1f, t.g * 2f - 1f).magnitude);
+
+            Assert.That(tilt, Is.InRange(0.15f, 0.6f), "a grain, not a flat or a jagged surface");
+            Assert.That(micro.Average(t => t.r), Is.EqualTo(0.5f).Within(0.01f));
+            Assert.That(micro.Average(t => t.g), Is.EqualTo(0.5f).Within(0.01f));
+        }
+
+        [Test]
+        public void MicroDarkensOnlyItsGapsAndCentresItsAlbedo()
+        {
+            var open = micro.Count(t => t.b > 0.999f) / (float)micro.Length;
+
+            Assert.That(open, Is.InRange(0.3f, 0.8f), "crests stay unshadowed");
+            Assert.That(micro.Min(t => t.b), Is.GreaterThan(0.3f));
+            Assert.That(micro.Average(t => t.a), Is.EqualTo(0.5f).Within(0.02f));
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        public void MicroTiles(int channel)
+        {
+            var values = micro.Select(t => t[channel]).ToArray();
+
+            AssertTiles(values, TerrainMicroTexture.Size);
         }
 
         /// <summary>The step across each wrap edge is no bigger than a typical step between neighbours inside.</summary>

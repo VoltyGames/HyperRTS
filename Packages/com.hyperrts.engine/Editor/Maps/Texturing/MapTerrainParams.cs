@@ -17,9 +17,10 @@ namespace HyperRTS.Editor.Maps.Texturing
         {
             var texture = SubAsset(material);
             var pixels = new Color[Width * Rows];
+            var slope = climate.SurfaceLayer(climate.slopeSurface);
             for (var i = 0; i < climate.layers.Count; i++)
             {
-                Column(pixels, i, climate.layers[i]);
+                Column(pixels, i, climate.layers[i], i == slope);
             }
 
             texture.SetPixels(pixels);
@@ -28,7 +29,7 @@ namespace HyperRTS.Editor.Maps.Texturing
             return texture;
         }
 
-        private static void Column(Color[] pixels, int layer, MapClimateLayer climateLayer)
+        private static void Column(Color[] pixels, int layer, MapClimateLayer climateLayer, bool slope)
         {
             var terrainLayer = climateLayer.terrainLayer;
             var tint = terrainLayer.diffuseRemapMax;
@@ -38,7 +39,7 @@ namespace HyperRTS.Editor.Maps.Texturing
             pixels[Width + layer] = new Color(tint.x, tint.y, tint.z, climateLayer.macroStrength);
             pixels[2 * Width + layer] = new Color(high.w - low.w, low.w, high.y - low.y, low.y);
             pixels[3 * Width + layer] = Surface(climateLayer);
-            pixels[4 * Width + layer] = Grass(climateLayer);
+            pixels[4 * Width + layer] = Cover(climateLayer, slope);
         }
 
         /// <summary>Row 0: the layer's own UV turn and tiling; row layers add the row map's turn per pixel.</summary>
@@ -61,8 +62,12 @@ namespace HyperRTS.Editor.Maps.Texturing
             return new Color(climateLayer.heightBlend, climateLayer.terrainLayer.normalScale, rotation, acrossRows);
         }
 
-        /// <summary>Row 4: how much the layer is grass cover, in r; the wetness shader sheds rain by it.</summary>
-        public static Color Grass(MapClimateLayer climateLayer) => new(climateLayer.grass, 0f, 0f, 0f);
+        /// <summary>
+        /// Row 4: r how much the layer is grass cover, which sheds rain; g 1 for the slope surface's layer, which
+        /// the shader projects sideways on steep ground.
+        /// </summary>
+        public static Color Cover(MapClimateLayer climateLayer, bool slope) =>
+            new(climateLayer.grass, slope ? 1f : 0f, 0f, 0f);
 
         private static Texture2D SubAsset(Material material)
         {

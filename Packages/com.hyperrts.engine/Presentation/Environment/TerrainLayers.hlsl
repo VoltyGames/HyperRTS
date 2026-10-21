@@ -3,35 +3,16 @@
 #ifndef HYPERRTS_TERRAIN_LAYERS_INCLUDED
 #define HYPERRTS_TERRAIN_LAYERS_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainHexTiling.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainLayerParams.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainPixel.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainTriplanar.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainParallax.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
 
 #define TERRAIN_MAX_LAYERS 16
 #define TERRAIN_MIN_WEIGHT 0.003
 // Layers with less of the blend so far skip their normal and mask samples.
 #define TERRAIN_MIN_SHARE 0.02
-
-struct TerrainLayerParams
-{
-    float2 rotation;   // (cos, sin) of the clockwise UV rotation
-    float2 tiling;     // 1 / tile size (m) along u and v
-    half3 tint;
-    half macro;
-    half4 mask;        // smoothness scale, offset; occlusion scale, offset
-    half heightWeight;
-    half normalStrength;
-    half grass;        // grass cover, which sheds rain
-    float4 hex;        // x hex rotation (fraction of a turn), y 0 for row layers else 1, zw row line direction in UV
-};
-
-struct TerrainPixel
-{
-    float2 xz;
-    float2 dx;
-    float2 dy;
-    half far;          // the far sample's share of albedo
-    float2 rowTurn;    // (cos, sin) that lays u along this pixel's crop rows
-};
 
 struct TerrainBlend
 {
@@ -56,37 +37,6 @@ struct TerrainSurface
     half macro;
     half grass;
 };
-
-TerrainLayerParams LoadLayerParams(uint layer, float2 rowTurn)
-{
-    float4 mapping = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 0));
-    float4 colour = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 1));
-    float4 surface = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 3));
-    TerrainLayerParams params;
-    params.rotation = mapping.xy;
-    params.tiling = mapping.zw;
-    params.tint = colour.rgb;
-    params.macro = colour.a;
-    params.mask = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 2));
-    params.heightWeight = surface.x;
-    params.normalStrength = surface.y;
-    params.grass = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 4)).x;
-    params.hex = float4(surface.zw, 1.0, 0.0);
-    // Row layers add the field's turn to their own, so their lines run along each field's rows. Their own turn
-    // of u, tiled, is where the lines lie in UV, and the only way hex cells may slide.
-    [flatten] if (params.hex.y == 0.0)
-    {
-        params.hex.zw = normalize(params.rotation * params.tiling);
-        params.rotation = RotateUV(params.rotation, rowTurn);
-    }
-
-    return params;
-}
-
-float2 RotateAndTile(float2 xz, TerrainLayerParams params)
-{
-    return RotateUV(xz, params.rotation) * params.tiling;
-}
 
 // The layer's hex-tiled albedo, with the far sample at st mixed in by camera distance.
 half4 LayerAlbedo(inout TerrainHex hex, float2 st, float2 dx, float2 dy, half far)
@@ -128,7 +78,9 @@ void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pi
     float2 dx = RotateAndTile(pixel.dx, params);
     float2 dy = RotateAndTile(pixel.dy, params);
     TerrainHex hex = GetHex(st, dx, dy, layer, params.hex);
-    half4 albedo = LayerAlbedo(hex, st, dx, dy, pixel.far);
+    TerrainSides sides = GetSides(pixel, params, layer);
+    half4 albedo = WithSides(LayerAlbedo(hex, st, dx, dy, pixel.far),
+        TEXTURE2D_ARRAY_ARGS(_AlbedoArray, sampler_AlbedoArray), sides);
 
     // Share = weight x e^(height / depth): equal heights keep the painted blend, taller texels win where layers mix.
     float score = log(weight) + params.heightWeight * (albedo.a - 0.5) / _HeightBlendDepth;
@@ -147,8 +99,9 @@ void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pi
     half2 mask = half2(1.0, 0.0);
     if (share > blend.total * TERRAIN_MIN_SHARE)
     {
-        normal = LayerNormal(hex, params);
-        mask = SampleHex(TEXTURE2D_ARRAY_ARGS(_MaskArray, sampler_AlbedoArray), hex).rg;
+        normal = NormalWithSides(LayerNormal(hex, params), sides, pixel, params.normalStrength);
+        mask = WithSides(SampleHex(TEXTURE2D_ARRAY_ARGS(_MaskArray, sampler_AlbedoArray), hex),
+            TEXTURE2D_ARRAY_ARGS(_MaskArray, sampler_AlbedoArray), sides).rg;
     }
 
     blend.normal += share * normal;
@@ -176,28 +129,22 @@ TerrainSurface ResolveBlend(TerrainBlend blend)
     return surface;
 }
 
-// The row map holds the rows' direction (x east, y north); u then runs along it. Unturned off the fields.
-float2 RowTurn(float2 uv)
+// The layer with the most painted weight, which parallax marches.
+uint DominantLayer(half4 control0, half4 control1, half4 control2, half4 control3, uint count)
 {
-    float2 along = SAMPLE_TEXTURE2D_LOD(_RowMap, sampler_LinearClamp, uv, 0).rg * 2.0 - 1.0;
-    float lengthSq = dot(along, along);
-    along = lengthSq < 0.01 ? float2(1.0, 0.0) : along * rsqrt(max(lengthSq, 1e-6));
-    return float2(along.x, -along.y);
+    uint dominant = 0;
+    half most = 0.0;
+    [loop] for (uint layer = 0; layer < count; layer++)
+    {
+        half weight = LayerWeight(control0, control1, control2, control3, layer);
+        dominant = weight > most ? layer : dominant;
+        most = max(most, weight);
+    }
+
+    return dominant;
 }
 
-TerrainPixel GetTerrainPixel(float2 uv, float3 positionWS)
-{
-    TerrainPixel pixel;
-    pixel.xz = positionWS.xz;
-    pixel.dx = ddx(pixel.xz);
-    pixel.dy = ddy(pixel.xz);
-    float cameraDistance = length(positionWS - GetCameraPositionWS());
-    pixel.far = saturate((cameraDistance - _FarStart) / (_FarEnd - _FarStart)) * _FarBlend;
-    pixel.rowTurn = RowTurn(uv);
-    return pixel;
-}
-
-TerrainSurface BlendLayers(float2 uv, float3 positionWS)
+TerrainSurface BlendLayers(float2 uv, inout TerrainPixel pixel)
 {
     float2 controlUV = ControlUV(uv);
     half4 control0 = SAMPLE_TEXTURE2D(_Control0, sampler_LinearClamp, controlUV);
@@ -205,10 +152,13 @@ TerrainSurface BlendLayers(float2 uv, float3 positionWS)
     half4 control2 = SAMPLE_TEXTURE2D(_Control2, sampler_LinearClamp, controlUV);
     half4 control3 = SAMPLE_TEXTURE2D(_Control3, sampler_LinearClamp, controlUV);
 
-    TerrainPixel pixel = GetTerrainPixel(uv, positionWS);
+    uint count = min((uint)_LayerCount, TERRAIN_MAX_LAYERS);
+    #ifdef TERRAIN_PARALLAX
+        pixel.xz += ParallaxOffset(pixel, DominantLayer(control0, control1, control2, control3, count));
+    #endif
+
     TerrainBlend blend = (TerrainBlend)0;
     blend.maxScore = -1e8;
-    uint count = min((uint)_LayerCount, TERRAIN_MAX_LAYERS);
     [loop] for (uint layer = 0; layer < count; layer++)
     {
         half weight = LayerWeight(control0, control1, control2, control3, layer);

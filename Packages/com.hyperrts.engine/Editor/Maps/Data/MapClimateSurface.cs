@@ -37,6 +37,9 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Ground decals laid on this surface at build time, per hectare.")]
         public List<MapDecalDensity> decals = new();
 
+        [Tooltip("Noise patches of other terrain layers, painted in order over this surface's own.")]
+        public List<MapSurfacePatch> patches = new();
+
         [Header("Edge")]
         [Tooltip("Width of the band over which this surface blends into its neighbour (metres). Where two surfaces meet, the narrower width wins.")]
         public float edgeWidth;

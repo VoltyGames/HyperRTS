@@ -9,13 +9,15 @@
 //                 row 2  smoothness scale, offset; occlusion scale, offset
 //                 row 3  height-blend weight; normal strength; hex rotation strength (0..1 of a full turn);
 //                        0 for row layers (hex cells slide only along their lines), else 1
-//                 row 4  grass cover 0..1 (sheds rain); y, z, w unused
+//                 row 4  grass cover 0..1 (sheds rain); 1 for the slope layer, triplanar on steep ground; z, w unused
 //   _Control0..3  the terrain's alphamaps, four layers each, for _LayerCount layers
 //   _MacroMap     over the whole terrain, linear: RGB tint (0.5 neutral, doubled), A wetness (damp hollows)
 //   _RowMap       over the whole terrain, linear, bilinear, no mips: RG the crop rows' direction (x east, y north)
 //                 remapped to 0..1, (0.5, 0.5) off the fields; row layers lay u along it
+//   _MicroMap     TerrainMicroTexture's tileable soil grain, linear: RG normal xy, B occlusion, A albedo variation
 // One pass binds every layer, so the terrain needs no add-pass or basemap shaders.
-// TerrainDetail sets _TERRAIN_SIMPLE (one sample per texture) or _TERRAIN_NO_FAR (hex, no far sample).
+// TerrainDetail sets _TERRAIN_SIMPLE (one sample per texture), _TERRAIN_NO_FAR (hex, no far sample) or
+// _TERRAIN_NO_PARALLAX (everything but parallax).
 Shader "HyperRTS/Terrain"
 {
     Properties
@@ -32,6 +34,7 @@ Shader "HyperRTS/Terrain"
         [NoScaleOffset] _MacroMap ("Macro Tint (RGB) Wetness (A)", 2D) = "grey" {}
         [NoScaleOffset] _RowMap ("Row Direction (RG)", 2D) = "grey" {}
         [NoScaleOffset] _NoiseMap ("Noise", 2D) = "grey" {}
+        [NoScaleOffset] _MicroMap ("Micro Detail", 2D) = "bump" {}
         _HeightBlendDepth ("Height Blend Depth", Range(0.02, 0.5)) = 0.06
         _FarTiling ("Far Tiling (x layer tiling)", Range(0.05, 1)) = 0.25
         _FarStart ("Far Start (m)", Float) = 40
@@ -48,6 +51,16 @@ Shader "HyperRTS/Terrain"
         _PuddleCoverage ("Puddle Coverage (at full wetness)", Range(0, 1)) = 0.6
         _PuddleSmoothness ("Puddle Smoothness", Range(0, 1)) = 0.95
         _PuddleNoiseSize ("Puddle Noise Size (m)", Float) = 8
+        _MicroTiling ("Micro Detail Tile (m)", Float) = 0.5
+        _MicroNormal ("Micro Detail Normal", Range(0, 2)) = 1.4
+        _MicroOcclusion ("Micro Detail Occlusion", Range(0, 1)) = 0.9
+        _MicroAlbedo ("Micro Detail Albedo", Range(0, 2)) = 1.3
+        _MicroStart ("Micro Detail Full Until (m)", Float) = 24
+        _MicroEnd ("Micro Detail End (m)", Float) = 42
+        _TriplanarStart ("Triplanar Start (degrees)", Range(0, 90)) = 30
+        _TriplanarFull ("Triplanar Full (degrees)", Range(0, 90)) = 42
+        _ParallaxDepth ("Parallax Depth (m)", Range(0, 0.3)) = 0.1
+        _ParallaxEnd ("Parallax End (m)", Float) = 38
         [HideInInspector] _TerrainHolesTexture ("Holes Map (RGB)", 2D) = "white" {}
     }
 
@@ -91,7 +104,7 @@ Shader "HyperRTS/Terrain"
             #pragma multi_compile_fragment _ _SCREEN_SPACE_IRRADIANCE
             #pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
-            #pragma multi_compile_fragment _ _TERRAIN_SIMPLE _TERRAIN_NO_FAR
+            #pragma multi_compile_fragment _ _TERRAIN_SIMPLE _TERRAIN_NO_FAR _TERRAIN_NO_PARALLAX
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Fog.hlsl"
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainForwardPass.hlsl"
