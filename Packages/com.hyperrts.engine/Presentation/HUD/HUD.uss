@@ -9,6 +9,11 @@
     bottom: 0;
 }
 
+.hud-hidden { display: none; }
+
+/* Keeps the element's space, so neighbouring panels don't shift. */
+.hud-invisible { visibility: hidden; }
+
 .hud-panel {
     padding: 8px;
 }

@@ -53,16 +53,16 @@ namespace HyperRTS.Presentation.HUD
         private bool _hasMap;
         private float _nextBlipTime;
 
-        public Minimap() : base("hud-minimap")
+        public Minimap(HUDPanelLayouts layouts) : base(layouts.Minimap)
         {
-            _canvas = HUDElements.Box("hud-minimap__canvas", Root);
-            _fog = new MinimapFog(Layer("hud-minimap__fog"));
-            _blipLayer = Layer("hud-minimap__blips");
+            _canvas = Root.Require<VisualElement>("canvas");
+            _fog = new MinimapFog(Root.Require<VisualElement>("fog"));
+            _blipLayer = Root.Require<VisualElement>("blips");
             _blipLayer.generateVisualContent += PaintBlips;
             _canvas.RegisterCallback<PointerDownEvent>(OnPointerDown);
             _canvas.RegisterCallback<PointerMoveEvent>(OnPointerMove);
             _canvas.RegisterCallback<PointerUpEvent>(OnPointerUp);
-            _viewLayer = Layer("hud-minimap__view");
+            _viewLayer = Root.Require<VisualElement>("view");
             _viewLayer.generateVisualContent += PaintView;
         }
 
@@ -114,13 +114,6 @@ namespace HyperRTS.Presentation.HUD
             obstacle,
             ComponentType.Exclude<FogHidden>(),
             ComponentType.Exclude<Inside>()));
-
-        private VisualElement Layer(string className)
-        {
-            var layer = HUDElements.Box(className, _canvas);
-            layer.pickingMode = PickingMode.Ignore;
-            return layer;
-        }
 
         /// <summary>The scene's map picture, looked up once per match; without one the canvas keeps its plain fill.</summary>
         private void FindImage()

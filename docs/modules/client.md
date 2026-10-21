@@ -44,13 +44,16 @@ relations and colours.
 
 ### HUD
 
-`HUD.prefab` holds a UI Toolkit HUD. `HUDController` builds its panels from `HUD.uss` for layout and
-`HUDTheme.uss` for looks, and keeps them in sync with the simulation. Games add or replace panels by overriding
+`HUD.prefab` holds a UI Toolkit HUD. `HUDController` clones `HUD.uxml`, places its panels in the tree's named
+slots, styles it with `HUD.uss` for layout and `HUDTheme.uss` for looks, and keeps it in sync with the simulation.
+Each panel's shell and row templates are UXML beside its script, gathered in the `HUDPanelLayouts` asset the
+controller hands to every panel. Code fills in only per-frame data. Games add or replace panels by overriding
 `CreatePanels`.
 
 | Type | Role |
 | --- | --- |
-| Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner` |
+| Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner`, each built from a `HUDPanelLayouts` |
+| Elements | `HUDIcon`, `HUDBar`, `CostRow`, `CommandButton`: UXML elements filled through `Bind` or properties |
 | `ICommandSource` | Adds command-card entries: purchases, abilities, stances, unit actions. Each has a slot and hotkey |
 | `HUDText` | Every HUD string, by key. Set `HUDText.Current` to translate |
 | `OverlayRenderer` | Instanced ground markers, health bars, placement ghost, rally markers, capture dials, garrison pips. Colours and sizes come from an `OverlayStyle` asset |

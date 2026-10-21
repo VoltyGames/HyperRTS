@@ -96,7 +96,7 @@ namespace HyperRTS.Presentation.Tests
         public void CommandCard_PlacesSlottedEntriesFirst_AndPressesHotkeys()
         {
             var source = new TestSource();
-            var card = new CommandCard(source);
+            var card = new CommandCard(HUDPanelTests.Layouts, source);
             Refresh();
             card.Refresh(_context);
 

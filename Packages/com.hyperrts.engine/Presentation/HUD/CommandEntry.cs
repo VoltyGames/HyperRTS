@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.HUD
         }
 
         /// <summary>A plain caption button (stances, unit actions).</summary>
-        public CommandEntry(string caption, Action invoke) : this(new CommandButton(caption, invoke), invoke)
+        public CommandEntry(string caption, Action invoke) : this(new CommandButton().Bind(caption, invoke), invoke)
         {
             Button.AddToClassList("hud-command--text");
         }

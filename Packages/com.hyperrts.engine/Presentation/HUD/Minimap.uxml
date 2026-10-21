@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+  <ui:VisualElement class="hud-minimap hud-panel">
+    <ui:VisualElement name="canvas" class="hud-minimap__canvas">
+      <ui:VisualElement name="fog" class="hud-minimap__fog" picking-mode="Ignore" />
+      <ui:VisualElement name="blips" class="hud-minimap__blips" picking-mode="Ignore" />
+      <ui:VisualElement name="view" class="hud-minimap__view" picking-mode="Ignore" />
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

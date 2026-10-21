@@ -17,7 +17,7 @@ namespace HyperRTS.Presentation.HUD
         private int _hash = -1;
 
         /// <summary>The engine's sources, then <paramref name="extra"/>.</summary>
-        public CommandCard(params ICommandSource[] extra) : base("hud-commands")
+        public CommandCard(HUDPanelLayouts layouts, params ICommandSource[] extra) : base(layouts.CommandCard)
         {
             _sources = new List<ICommandSource>
             {
@@ -71,7 +71,7 @@ namespace HyperRTS.Presentation.HUD
                 Root.Add(entry.Button);
             }
 
-            Root.SetShown(Root.childCount > 0);
+            Root.SetInvisible(Root.childCount == 0);
         }
 
         private void PressHotkeys(HUDContext context)

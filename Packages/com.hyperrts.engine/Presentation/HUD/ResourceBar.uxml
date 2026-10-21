@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+  <ui:VisualElement class="hud-topbar hud-panel">
+    <ui:VisualElement name="resources" class="hud-topbar__resources" />
+    <ui:VisualElement class="hud-resource">
+      <ui:Label name="population-name" class="hud-resource__name" />
+      <ui:Label name="population" class="hud-resource__amount" />
+    </ui:VisualElement>
+    <ui:VisualElement name="power-entry" class="hud-resource">
+      <ui:Label name="power-name" class="hud-resource__name" />
+      <ui:Label name="power" class="hud-resource__amount" />
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

@@ -2,32 +2,53 @@ using System;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
     /// <summary>Command card button: a caption, or a prefab's icon, name and cost.</summary>
-    public sealed class CommandButton : Button
+    [UxmlElement]
+    public partial class CommandButton : Button
     {
-        public CommandButton(string caption, Action onClick) : base(onClick)
+        public CommandButton()
         {
-            text = caption;
             AddToClassList("hud-command");
         }
 
-        public static CommandButton ForPrefab(EntityManager entityManager, Entity prefab, Action onClick)
+        public CommandButton Bind(string caption, Action onClick)
         {
-            var button = new CommandButton("", onClick);
-            button.Add(HUDIcon.Create(entityManager, prefab, "hud-command__icon"));
+            text = caption;
+            clicked += onClick;
+            return this;
+        }
+
+        public CommandButton BindPrefab(EntityManager entityManager, Entity prefab, Action onClick)
+        {
+            Bind("", onClick);
+            var icon = AddIcon();
+            icon.Bind(entityManager, prefab);
 
             var name = HUDText.EntityName(entityManager.GetComponentData<EntityInfo>(prefab).Name.ToString());
-            HUDElements.Text(name, "hud-command__name", button);
+            HUDElements.Text(name, "hud-command__name", this);
             if (entityManager.HasBuffer<ResourceCost>(prefab))
             {
-                button.Add(new CostRow(entityManager.GetBuffer<ResourceCost>(prefab, true)));
+                var costs = new CostRow();
+                costs.Bind(entityManager.GetBuffer<ResourceCost>(prefab, true));
+                Add(costs);
             }
 
-            return button;
+            return this;
+        }
+
+        public void AddIcon(Texture2D texture, string name) => AddIcon().Bind(texture, name);
+
+        private HUDIcon AddIcon()
+        {
+            var icon = new HUDIcon();
+            icon.AddToClassList("hud-command__icon");
+            Add(icon);
+            return icon;
         }
     }
 }

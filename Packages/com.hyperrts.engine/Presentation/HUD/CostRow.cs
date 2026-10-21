@@ -5,11 +5,17 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD
 {
     /// <summary>One amount label per cost entry, coloured by resource type.</summary>
-    public sealed class CostRow : VisualElement
+    [UxmlElement]
+    public partial class CostRow : VisualElement
     {
-        public CostRow(DynamicBuffer<ResourceCost> costs)
+        public CostRow()
         {
             AddToClassList("hud-costs");
+        }
+
+        public void Bind(DynamicBuffer<ResourceCost> costs)
+        {
+            Clear();
             foreach (var cost in costs)
             {
                 var label = HUDElements.Text(cost.Amount.ToString(), "hud-costs__amount", this);

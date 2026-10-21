@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+  <ui:VisualElement class="hud-group">
+    <HyperRTS.Presentation.HUD.HUDIcon name="icon" class="hud-group__icon" />
+    <ui:Label name="count" class="hud-group__count" />
+  </ui:VisualElement>
+</ui:UXML>

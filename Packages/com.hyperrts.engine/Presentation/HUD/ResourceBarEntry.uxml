@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+  <ui:VisualElement class="hud-resource">
+    <HyperRTS.Presentation.HUD.HUDIcon name="icon" class="hud-resource__icon" />
+    <ui:Label name="name" class="hud-resource__name" />
+    <ui:Label name="amount" class="hud-resource__amount" />
+  </ui:VisualElement>
+</ui:UXML>

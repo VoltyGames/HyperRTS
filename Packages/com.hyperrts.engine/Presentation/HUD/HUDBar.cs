@@ -3,17 +3,17 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>A track with a fill whose width shows a 0..1 fraction.</summary>
-    public sealed class HUDBar : VisualElement
+    /// <summary>A track with a fill whose width shows a 0 to 1 fraction.</summary>
+    [UxmlElement]
+    public partial class HUDBar : VisualElement
     {
-        private readonly VisualElement _fill;
+        private readonly VisualElement _fill = new();
 
-        public HUDBar(string className, VisualElement parent = null)
+        public HUDBar()
         {
-            AddToClassList(className);
             AddToClassList("hud-bar");
-            _fill = HUDElements.Box("hud-bar__fill", this);
-            parent?.Add(this);
+            _fill.AddToClassList("hud-bar__fill");
+            Add(_fill);
         }
 
         public float Fraction

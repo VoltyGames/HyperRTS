@@ -8,12 +8,15 @@ namespace HyperRTS.Presentation.HUD
     /// <summary>A producer's queue: click a slot to cancel it; the head shows its build progress.</summary>
     public sealed class ProductionQueueView
     {
+        private readonly VisualTreeAsset _slotTemplate;
         private int _signature;
         private HUDBar _headProgress;
 
-        public ProductionQueueView()
+        /// <summary>Fills <paramref name="root"/> with one <paramref name="slotTemplate"/> per queued item.</summary>
+        public ProductionQueueView(VisualElement root, VisualTreeAsset slotTemplate)
         {
-            Root = HUDElements.Box("hud-queue");
+            Root = root;
+            _slotTemplate = slotTemplate;
         }
 
         public VisualElement Root { get; }
@@ -25,7 +28,7 @@ namespace HyperRTS.Presentation.HUD
                 ? entityManager.GetBuffer<ProductionQueueItem>(producer, true).Length
                 : 0;
             var visible = queued > 0 && context.IsOwned(producer);
-            Root.SetVisible(visible);
+            Root.SetHidden(!visible);
             if (!visible)
             {
                 _signature = 0;
@@ -54,19 +57,25 @@ namespace HyperRTS.Presentation.HUD
             for (var i = 0; i < queue.Length; i++)
             {
                 var index = i;
-                var slot = new Button(() => context.Issue(new PlayerCommand
+                var slot = (Button)_slotTemplate.CloneRoot();
+                slot.clicked += () => context.Issue(new PlayerCommand
                 {
                     Type = CommandType.CancelProduction,
                     Unit = producer,
                     Argument = index,
-                }));
-                slot.AddToClassList("hud-slot");
-                slot.Add(HUDIcon.Create(context.EntityManager, queue[i].Prefab, "hud-slot__icon"));
+                });
+                slot.Require<HUDIcon>("icon").Bind(context.EntityManager, queue[i].Prefab);
                 Root.Add(slot);
 
+                // Only the head is in production, so the other slots drop their bar.
+                var progress = slot.Require<HUDBar>("progress");
                 if (i == 0)
                 {
-                    _headProgress = new HUDBar("hud-slot__progress", slot);
+                    _headProgress = progress;
+                }
+                else
+                {
+                    progress.RemoveFromHierarchy();
                 }
             }
         }

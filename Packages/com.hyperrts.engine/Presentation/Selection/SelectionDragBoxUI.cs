@@ -21,23 +21,15 @@ namespace HyperRTS.Presentation.Selection
         private readonly LiveQuery _dragQuery = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<SelectionDragState>()));
 
-        private static readonly string[] Corners = { "tl", "tr", "bl", "br" };
+        [SerializeField]
+        [Tooltip("Marquee and its corner accents (SelectionDragBoxUI.uxml).")]
+        private VisualTreeAsset layout;
 
         // The box sits beside hud-root, so it takes the HUD sheets itself and a game theme restyles it.
         protected override VisualElement Build()
         {
-            var marquee = new VisualElement { pickingMode = PickingMode.Ignore };
+            var marquee = layout.CloneRoot();
             GetComponent<HUDController>().AddSheets(marquee);
-            marquee.AddToClassList("drag-box");
-            marquee.style.display = DisplayStyle.None;
-            foreach (var corner in Corners)
-            {
-                var accent = new VisualElement { pickingMode = PickingMode.Ignore };
-                accent.AddToClassList("drag-box__corner");
-                accent.AddToClassList("drag-box__corner--" + corner);
-                marquee.Add(accent);
-            }
-
             return marquee;
         }
 
@@ -49,14 +41,14 @@ namespace HyperRTS.Presentation.Selection
                 return;
             }
 
-            if (!TryGetDragState(out var drag) || !drag.IsDragging)
+            var dragging = TryGetDragState(out var drag) && drag.IsDragging;
+            marquee.SetHidden(!dragging);
+            if (!dragging)
             {
-                marquee.style.display = DisplayStyle.None;
                 return;
             }
 
             var rect = ScreenToPanelRect(marquee.panel, drag.StartScreen, drag.CurrentScreen);
-            marquee.style.display = DisplayStyle.Flex;
             marquee.style.left = rect.x;
             marquee.style.top = rect.y;
             marquee.style.width = rect.width;

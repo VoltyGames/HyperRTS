@@ -17,6 +17,14 @@ namespace HyperRTS.Presentation.HUD
     public class HUDController : PanelContent
     {
         [SerializeField]
+        [Tooltip("HUD tree (HUD.uxml): hud-root and the named slots panels go in, such as bottom.")]
+        private VisualTreeAsset layout;
+
+        [SerializeField]
+        [Tooltip("UXML shells and row templates of the engine's panels (HUDPanelLayouts).")]
+        private HUDPanelLayouts panelLayouts;
+
+        [SerializeField]
         [Tooltip("HUD layout sheet (HUD.uss): positions, sizes and spacing.")]
         private StyleSheet styleSheet;
 
@@ -51,14 +59,17 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        /// <summary>Adds the panels: the bottom row's go in <paramref name="bottom"/>, the rest on <paramref name="hud"/>.</summary>
-        protected virtual void CreatePanels(VisualElement hud, VisualElement bottom)
+        protected HUDPanelLayouts PanelLayouts => panelLayouts;
+
+        /// <summary>Adds the panels to <paramref name="hud"/>, the HUD.uxml tree, or to its named slots.</summary>
+        protected virtual void CreatePanels(VisualElement hud)
         {
-            Add(new Minimap(), bottom);
-            Add(new SelectionPanel(), bottom);
-            Add(new CommandCard(), bottom);
-            Add(new ResourceBar(), hud);
-            Add(new GameOverBanner(), hud);
+            var bottom = hud.Require<VisualElement>("bottom");
+            Add(new Minimap(panelLayouts), bottom);
+            Add(new SelectionPanel(panelLayouts), bottom);
+            Add(new CommandCard(panelLayouts), bottom);
+            Add(new ResourceBar(panelLayouts), hud);
+            Add(new GameOverBanner(panelLayouts), hud);
         }
 
         protected void Add(HUDPanel panel, VisualElement parent)
@@ -81,20 +92,16 @@ namespace HyperRTS.Presentation.HUD
 
         protected override VisualElement Build()
         {
-            var hud = HUDElements.Box("hud-root");
-            hud.pickingMode = PickingMode.Ignore;
+            var hud = layout.CloneRoot();
             if (_theme != null)
             {
                 hud.AddToClassList(_theme);
             }
 
             AddSheets(hud);
-
-            var bottom = HUDElements.Box("hud-bottom", hud);
-            bottom.pickingMode = PickingMode.Ignore;
             _panels.Clear();
             _pointer.Clear();
-            CreatePanels(hud, bottom);
+            CreatePanels(hud);
             return hud;
         }
 
@@ -106,7 +113,7 @@ namespace HyperRTS.Presentation.HUD
             }
 
             var ready = MatchView.TryGetDefault(out var view) && _context.Refresh(view);
-            Content.SetVisible(ready);
+            Content.SetHidden(!ready);
             if (!ready)
             {
                 return;
@@ -117,7 +124,7 @@ namespace HyperRTS.Presentation.HUD
                 // Observers keep only the panels that need no player; the rest manage their own visibility.
                 if (panel.NeedsPlayer)
                 {
-                    panel.Root.SetVisible(view.HasLocalPlayer);
+                    panel.Root.SetHidden(!view.HasLocalPlayer);
                     if (!view.HasLocalPlayer)
                     {
                         continue;

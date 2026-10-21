@@ -10,31 +10,30 @@ namespace HyperRTS.Presentation.HUD
     {
         private const int MaxGroups = 12;
 
+        private readonly VisualTreeAsset _groupTemplate;
         private readonly VisualElement _single;
-        private readonly VisualElement _iconSlot;
+        private readonly HUDIcon _icon;
         private readonly Label _name;
         private readonly HUDBar _health;
         private readonly Label _healthText;
         private readonly HUDBar _construction;
-        private readonly ProductionQueueView _queue = new();
+        private readonly ProductionQueueView _queue;
         private readonly VisualElement _groups;
         private int _hash = -1;
         private float _shownCurrent = float.NaN;
         private float _shownMax = float.NaN;
 
-        public SelectionPanel() : base("hud-selection")
+        public SelectionPanel(HUDPanelLayouts layouts) : base(layouts.SelectionPanel)
         {
-            _single = HUDElements.Box("hud-single", Root);
-            var header = HUDElements.Box("hud-single__header", _single);
-            _iconSlot = HUDElements.Box("hud-single__icon-slot", header);
-            var details = HUDElements.Box("hud-single__details", header);
-            _name = HUDElements.Text("", "hud-single__name", details);
-            _health = new HUDBar("hud-health", details);
-            _healthText = HUDElements.Text("", "hud-single__caption", details);
-            _construction = new HUDBar("hud-construction", details);
-            _single.Add(_queue.Root);
-
-            _groups = HUDElements.Box("hud-groups", Root);
+            _groupTemplate = layouts.SelectionPanelGroup;
+            _single = Root.Require<VisualElement>("single");
+            _icon = Root.Require<HUDIcon>("icon");
+            _name = Root.Require<Label>("name");
+            _health = Root.Require<HUDBar>("health");
+            _healthText = Root.Require<Label>("health-text");
+            _construction = Root.Require<HUDBar>("construction");
+            _queue = new ProductionQueueView(Root.Require<VisualElement>("queue"), layouts.ProductionQueueSlot);
+            _groups = Root.Require<VisualElement>("groups");
         }
 
         public override void Refresh(HUDContext context)
@@ -46,7 +45,7 @@ namespace HyperRTS.Presentation.HUD
                 Rebuild(context);
             }
 
-            Root.SetShown(selected.Count > 0);
+            Root.SetInvisible(selected.Count == 0);
             if (selected.Count == 1)
             {
                 RefreshSingle(context, selected[0]);
@@ -56,21 +55,16 @@ namespace HyperRTS.Presentation.HUD
         private void Rebuild(HUDContext context)
         {
             var selected = context.Selected;
-            _single.SetVisible(selected.Count == 1);
-            _groups.SetVisible(selected.Count > 1);
+            _single.SetHidden(selected.Count != 1);
+            _groups.SetHidden(selected.Count <= 1);
             if (selected.Count == 1)
             {
                 var entity = selected[0];
                 var entityManager = context.EntityManager;
-                _iconSlot.Clear();
-                var icon = HUDIcon.Create(entityManager, entity, "hud-single__icon");
-                if (entityManager.HasComponent<Faction>(entity))
-                {
-                    var color = context.View.GetColor(entityManager.GetComponentData<Faction>(entity).Value);
-                    icon.style.borderBottomColor = color;
-                }
-
-                _iconSlot.Add(icon);
+                _icon.Bind(entityManager, entity);
+                _icon.style.borderBottomColor = entityManager.HasComponent<Faction>(entity)
+                    ? context.View.GetColor(entityManager.GetComponentData<Faction>(entity).Value)
+                    : new StyleColor(StyleKeyword.Null);
                 _name.text = HUDText.EntityName(entityManager.GetComponentData<EntityInfo>(entity).Name.ToString());
             }
             else if (selected.Count > 1)
@@ -83,8 +77,8 @@ namespace HyperRTS.Presentation.HUD
         {
             var entityManager = context.EntityManager;
             var hasHealth = entityManager.HasComponent<Health>(entity);
-            _health.SetVisible(hasHealth);
-            _healthText.SetVisible(hasHealth);
+            _health.SetHidden(!hasHealth);
+            _healthText.SetHidden(!hasHealth);
             if (hasHealth)
             {
                 var health = entityManager.GetComponentData<Health>(entity);
@@ -98,7 +92,7 @@ namespace HyperRTS.Presentation.HUD
             }
 
             var building = entityManager.HasEnabled<ConstructionProgress>(entity);
-            _construction.SetVisible(building);
+            _construction.SetHidden(!building);
             if (building)
             {
                 _construction.Fraction = entityManager.GetComponentData<ConstructionProgress>(entity).Value;
@@ -128,10 +122,11 @@ namespace HyperRTS.Presentation.HUD
             for (var i = 0; i < representatives.Count && i < MaxGroups; i++)
             {
                 var entity = representatives[i];
-                var tile = HUDElements.Box("hud-group", _groups);
-                tile.Add(HUDIcon.Create(entityManager, entity, "hud-group__icon"));
+                var tile = _groupTemplate.CloneRoot();
+                _groups.Add(tile);
+                tile.Require<HUDIcon>("icon").Bind(entityManager, entity);
                 var typeId = entityManager.GetComponentData<EntityInfo>(entity).TypeId;
-                HUDElements.Text(counts[typeId].ToString(), "hud-group__count", tile);
+                tile.Require<Label>("count").text = counts[typeId].ToString();
             }
         }
     }

@@ -94,8 +94,8 @@ namespace HyperRTS.Presentation.HUD
             var target = ability.Target;
             var id = ability.Id;
             Action invoke = () => Use(context, type, target, id);
-            var button = new CommandButton("", invoke);
-            button.Add(new HUDIcon(ability.Icon.Value, name, "hud-command__icon"));
+            var button = new CommandButton().Bind("", invoke);
+            button.AddIcon(ability.Icon.Value, name);
             HUDElements.Text(name, "hud-command__name", button);
             var countdown = HUDElements.Text("", "hud-command__cooldown", button);
             entries.Add(new CommandEntry(button, invoke));

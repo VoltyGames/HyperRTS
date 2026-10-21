@@ -5,14 +5,10 @@ namespace HyperRTS.Presentation.HUD
     /// <summary>One HUD widget: its element tree, refreshed every frame from the <see cref="HUDContext"/>.</summary>
     public abstract class HUDPanel
     {
-        /// <summary>A boxed panel gets <c>hud-panel</c> as well as <paramref name="className"/>.</summary>
-        protected HUDPanel(string className, bool boxed = true)
+        /// <summary>Builds the panel from its UXML shell; boxed panels carry <c>hud-panel</c> there.</summary>
+        protected HUDPanel(VisualTreeAsset shell)
         {
-            Root = HUDElements.Box(className);
-            if (boxed)
-            {
-                Root.AddToClassList("hud-panel");
-            }
+            Root = shell.CloneRoot();
         }
 
         public VisualElement Root { get; }

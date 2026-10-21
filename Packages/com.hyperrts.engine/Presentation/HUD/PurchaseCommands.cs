@@ -51,7 +51,7 @@ namespace HyperRTS.Presentation.HUD
 
         private void Add(HUDContext context, List<CommandEntry> entries, Entity prefab, System.Action invoke)
         {
-            var button = CommandButton.ForPrefab(context.EntityManager, prefab, invoke);
+            var button = new CommandButton().BindPrefab(context.EntityManager, prefab, invoke);
             _buttons.Add((button, prefab));
             entries.Add(new CommandEntry(button, invoke));
         }

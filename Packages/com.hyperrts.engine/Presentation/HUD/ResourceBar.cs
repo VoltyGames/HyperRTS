@@ -13,6 +13,7 @@ namespace HyperRTS.Presentation.HUD
         private const string FullPopulationClass = "hud-resource__amount--full";
         private const string LowPowerClass = "hud-resource__amount--low-power";
 
+        private readonly VisualTreeAsset _entryTemplate;
         private readonly VisualElement _resources;
         private readonly Label _population;
         private readonly VisualElement _powerEntry;
@@ -23,17 +24,15 @@ namespace HyperRTS.Presentation.HUD
         private Population _shownPopulation = new() { Used = -1 };
         private PowerGrid _shownPower = new() { Produced = -1f };
 
-        public ResourceBar() : base("hud-topbar")
+        public ResourceBar(HUDPanelLayouts layouts) : base(layouts.ResourceBar)
         {
-            _resources = HUDElements.Box("hud-topbar__resources", Root);
-
-            var population = HUDElements.Box("hud-resource", Root);
-            HUDElements.Text(HUDText.Text("hud.pop"), "hud-resource__name", population);
-            _population = HUDElements.Text("", "hud-resource__amount", population);
-
-            _powerEntry = HUDElements.Box("hud-resource", Root);
-            HUDElements.Text(HUDText.Text("hud.power"), "hud-resource__name", _powerEntry);
-            _power = HUDElements.Text("", "hud-resource__amount", _powerEntry);
+            _entryTemplate = layouts.ResourceBarEntry;
+            _resources = Root.Require<VisualElement>("resources");
+            Root.Require<Label>("population-name").text = HUDText.Text("hud.pop");
+            _population = Root.Require<Label>("population");
+            _powerEntry = Root.Require<VisualElement>("power-entry");
+            Root.Require<Label>("power-name").text = HUDText.Text("hud.power");
+            _power = Root.Require<Label>("power");
         }
 
         public override void Refresh(HUDContext context)
@@ -73,17 +72,22 @@ namespace HyperRTS.Presentation.HUD
             {
                 var type = item.Type.Value;
                 var name = HUDText.ResourceName(type);
-                var entry = HUDElements.Box("hud-resource", _resources);
-                if (type.icon != null)
+                var hasIcon = type.icon != null;
+                var entry = _entryTemplate.CloneRoot();
+                _resources.Add(entry);
+
+                var icon = entry.Require<HUDIcon>("icon");
+                icon.SetHidden(!hasIcon);
+                if (hasIcon)
                 {
-                    entry.Add(new HUDIcon(type.icon, name, "hud-resource__icon"));
-                }
-                else
-                {
-                    HUDElements.Text(name.ToUpperInvariant(), "hud-resource__name", entry);
+                    icon.Bind(type.icon, name);
                 }
 
-                var amount = HUDElements.Text("", "hud-resource__amount", entry);
+                var label = entry.Require<Label>("name");
+                label.text = name.ToUpperInvariant();
+                label.SetHidden(hasIcon);
+
+                var amount = entry.Require<Label>("amount");
                 amount.style.color = type.color;
                 _amounts.Add(amount);
                 _shown.Add(int.MinValue);
@@ -103,7 +107,8 @@ namespace HyperRTS.Presentation.HUD
             }
 
             _shownPower = grid;
-            _powerEntry.SetVisible(grid.Produced > 0f || grid.Consumed > 0f);
+            var hasGrid = grid.Produced > 0f || grid.Consumed > 0f;
+            _powerEntry.SetHidden(!hasGrid);
             _power.text = $"{grid.Consumed:0} / {grid.Produced:0}";
             _power.EnableInClassList(LowPowerClass, grid.IsLow);
         }

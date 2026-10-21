@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+  <ui:Button class="hud-slot">
+    <HyperRTS.Presentation.HUD.HUDIcon name="icon" class="hud-slot__icon" />
+    <HyperRTS.Presentation.HUD.HUDBar name="progress" class="hud-slot__progress" />
+  </ui:Button>
+</ui:UXML>

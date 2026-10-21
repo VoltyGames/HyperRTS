@@ -106,6 +106,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a7d9db22018163438e4ea85992d9ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HyperRTS.Presentation::HyperRTS.Presentation.HUD.HUDController
+  layout: {fileID: 9197481963319205126, guid: b81e877ec2ff44f8b70ef32ad153f36a, type: 3}
+  panelLayouts: {fileID: 11400000, guid: 063ced5c8bae4ff58d48995eac9c6741, type: 2}
   styleSheet: {fileID: 7433441132597879392, guid: 16a8ea83ee490604197c9fa840cfc62f, type: 3}
   themeSheet: {fileID: 7433441132597879392, guid: 0089d02251744c059288178ccb210019, type: 3}
 --- !u!114 &8308982075612287877
@@ -120,6 +122,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f82b7a2ca98d14345b260dfe0fb2a6de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HyperRTS.Presentation::HyperRTS.Presentation.Selection.SelectionDragBoxUI
+  layout: {fileID: 9197481963319205126, guid: 0e1376a0431f4f3dacb31d4f381bbd30, type: 3}
 --- !u!114 &1857229174131844793
 MonoBehaviour:
   m_ObjectHideFlags: 0

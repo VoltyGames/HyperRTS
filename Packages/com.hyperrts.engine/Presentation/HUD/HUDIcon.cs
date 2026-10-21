@@ -6,27 +6,30 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD
 {
     /// <summary>An icon texture, or the name's initials on a plain tile when there is none.</summary>
-    public sealed class HUDIcon : VisualElement
+    [UxmlElement]
+    public partial class HUDIcon : VisualElement
     {
-        public HUDIcon(Texture2D texture, string name, string className)
+        private readonly Label _initials;
+
+        public HUDIcon()
         {
-            AddToClassList(className);
             AddToClassList("hud-icon");
-            if (texture != null)
-            {
-                style.backgroundImage = new StyleBackground(texture);
-            }
-            else
-            {
-                HUDElements.Text(Initials(name), "hud-icon__initials", this);
-            }
+            _initials = HUDElements.Text("", "hud-icon__initials", this);
         }
 
-        /// <summary>Icon of a unit or building prefab or instance, from its <see cref="EntityInfo"/>.</summary>
-        public static HUDIcon Create(EntityManager entityManager, Entity entity, string className)
+        public void Bind(Texture2D texture, string name)
+        {
+            var hasTexture = texture != null;
+            style.backgroundImage = hasTexture ? new StyleBackground(texture) : new StyleBackground(StyleKeyword.Null);
+            _initials.text = hasTexture ? "" : Initials(name);
+            _initials.SetHidden(hasTexture);
+        }
+
+        /// <summary>Shows a unit or building prefab or instance, from its <see cref="EntityInfo"/>.</summary>
+        public void Bind(EntityManager entityManager, Entity entity)
         {
             var info = entityManager.GetComponentData<EntityInfo>(entity);
-            return new HUDIcon(info.Icon.Value, HUDText.EntityName(info.Name.ToString()), className);
+            Bind(info.Icon.Value, HUDText.EntityName(info.Name.ToString()));
         }
 
         private static string Initials(string name)
