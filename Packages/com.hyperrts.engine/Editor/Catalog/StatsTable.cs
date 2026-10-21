@@ -13,7 +13,8 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Catalog
 {
     /// <summary>The catalog's stats tab: one row per prefab, with its numbers edited in place.</summary>
-    internal sealed class StatsTable : MultiColumnListView
+    [UxmlElement]
+    public sealed partial class StatsTable : MultiColumnListView
     {
         private const float NameWidth = 140f;
         private const float Narrow = 76f;
@@ -33,9 +34,6 @@ namespace HyperRTS.Editor.Catalog
 
         public StatsTable()
         {
-            AddToClassList("hrts-fill");
-            fixedItemHeight = 22f;
-            showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
             columns.Add(NameColumn());
             foreach (var field in Fields)
             {

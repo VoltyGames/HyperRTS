@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
@@ -17,19 +18,29 @@ namespace HyperRTS.Editor.Common
 
         private const string MatchStateGuid = "37a4b4ac2aee31d42895a37c3d702bed";
 
-        private const string StyleSheetGuid = "0fa35f4436964b3da1f222c72ef6f506";
-
-        /// <summary>Adds the shared editor style sheet (HyperRTSEditor.uss) to a window or inspector root.</summary>
-        public static void AddStyles(VisualElement root)
+        /// <summary>The engine layout named after <paramref name="owner"/> plus <paramref name="part"/>, such as MapsPageRow.uxml.</summary>
+        public static VisualTreeAsset Layout(Type owner, string part = "")
         {
-            var sheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(AssetDatabase.GUIDToAssetPath(StyleSheetGuid));
-            if (sheet == null)
+            var name = owner.Name + part;
+            foreach (var guid in AssetDatabase.FindAssets("t:VisualTreeAsset " + name, new[] { EnginePackage.Folder }))
             {
-                throw new InvalidOperationException("HyperRTS: Editor/Common/HyperRTSEditor.uss is missing.");
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (Path.GetFileNameWithoutExtension(path) == name)
+                {
+                    return AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
+                }
             }
 
-            root.styleSheets.Add(sheet);
+            throw new InvalidOperationException($"HyperRTS: {name}.uxml for {owner.Name} is missing from the engine package.");
         }
+
+        /// <summary>A fresh copy of a row template's one root element, without the template's wrapper.</summary>
+        public static VisualElement CloneRow(this VisualTreeAsset template) => template.Instantiate()[0];
+
+        /// <summary>The element called <paramref name="name"/>, which the layout must have.</summary>
+        public static T Require<T>(this VisualElement root, string name) where T : VisualElement =>
+            root.Q<T>(name) ?? throw new InvalidOperationException(
+                $"HyperRTS: the layout has no {typeof(T).Name} named '{name}'.");
 
         public static GameObject RigPrefab => AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(RigGuid));
 

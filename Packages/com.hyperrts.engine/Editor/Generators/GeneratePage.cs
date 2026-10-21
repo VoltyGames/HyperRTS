@@ -14,49 +14,32 @@ namespace HyperRTS.Editor.Generators
 
         public override VisualElement Build()
         {
-            var root = new VisualElement();
-            EditorAssets.AddStyles(root);
-            var runAll = new Button(GeneratorRunner.RunAll) { text = "Run all" };
-            runAll.AddToClassList("hrts-generate__run-all");
-            root.Add(runAll);
-
+            var root = EditorAssets.Layout(typeof(GeneratePage)).Instantiate();
+            root.Require<Button>("run-all").clicked += GeneratorRunner.RunAll;
+            var groups = root.Require<VisualElement>("groups");
+            var groupTemplate = EditorAssets.Layout(typeof(GeneratePage), "Group");
+            var rowTemplate = EditorAssets.Layout(typeof(GeneratePage), "Row");
             foreach (var group in GeneratorRunner.All().GroupBy(generator => generator.Group))
             {
-                root.Add(Section(group.Key, group));
+                var section = groupTemplate.CloneRow();
+                section.Require<Label>("title").text = group.Key;
+                foreach (var generator in group)
+                {
+                    section.Add(Row(rowTemplate, generator));
+                }
+
+                groups.Add(section);
             }
 
             return root;
         }
 
-        private static VisualElement Section(string title, IGrouping<string, Generator> generators)
+        private static VisualElement Row(VisualTreeAsset template, Generator generator)
         {
-            var section = HubSections.Section(title);
-            foreach (var generator in generators)
-            {
-                section.Add(Row(generator));
-            }
-
-            return section;
-        }
-
-        private static VisualElement Row(Generator generator)
-        {
-            var row = new VisualElement();
-            row.AddToClassList("hrts-generate__row");
-
-            var text = new VisualElement();
-            text.AddToClassList("hrts-row__grow");
-            var name = new Label(generator.Name);
-            name.AddToClassList("hrts-generate__name");
-            text.Add(name);
-            var description = new Label(generator.Description);
-            description.AddToClassList("hrts-generate__description");
-            text.Add(description);
-            row.Add(text);
-
-            var run = new Button(() => GeneratorRunner.Run(generator)) { text = "Run" };
-            run.AddToClassList("hrts-generate__run");
-            row.Add(run);
+            var row = template.CloneRow();
+            row.Require<Label>("name").text = generator.Name;
+            row.Require<Label>("description").text = generator.Description;
+            row.Require<Button>("run").clicked += () => GeneratorRunner.Run(generator);
             return row;
         }
     }

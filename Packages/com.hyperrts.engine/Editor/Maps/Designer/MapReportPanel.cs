@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Views;
-using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.UIElements;
 
@@ -13,45 +15,59 @@ namespace HyperRTS.Editor.Maps.Designer
     /// The Map Editor's report under the inspector: the newest preview's or build's issues (each linked to its
     /// feature), the preview's land figures and the last build's metrics, with Open scene and Recapture views.
     /// </summary>
-    public sealed class MapReportPanel : VisualElement
+    [UxmlElement]
+    public sealed partial class MapReportPanel : VisualElement
     {
-        private readonly MapSpecDocument _document;
-        private readonly Action<MapIssueFeature> _show;
+        private const string Hidden = "hrts-hidden";
+
+        private readonly VisualTreeAsset _issueRow = EditorAssets.Layout(typeof(MapReportPanel), "Issue");
+        private readonly VisualTreeAsset _figureRow = EditorAssets.Layout(typeof(MapReportPanel), "Figure");
         private readonly Label _source;
-        private readonly ScrollView _content;
+        private readonly Label _empty;
+        private readonly VisualElement _issuesSection;
+        private readonly Label _issuesTitle;
+        private readonly VisualElement _issueRows;
+        private readonly Label _noIssues;
+        private readonly VisualElement _landSection;
+        private readonly VisualElement _landRows;
+        private readonly VisualElement _metricsSection;
+        private readonly VisualElement _metricRows;
         private readonly Button _openScene;
         private readonly Button _recapture;
 
+        private MapSpecDocument _document;
         private MapReport _preview;
         private MapReport _build;
         private MapReport _issues;
 
-        public MapReportPanel(MapSpecDocument document, Action<MapIssueFeature> show)
+        public MapReportPanel()
         {
-            _document = document;
-            _show = show;
-            AddToClassList("hrts-map-report");
-            _source = new Label();
-            _source.AddToClassList("hrts-section__title");
-            Add(_source);
-            _content = new ScrollView();
-            _content.AddToClassList("hrts-map-report__content");
-            Add(_content);
-
-            var buttons = new VisualElement();
-            buttons.AddToClassList("hrts-buttons");
-            _openScene = new Button(OpenScene) { text = "Open scene" };
-            _recapture = new Button(Recapture) { text = "Recapture views" };
-            buttons.Add(_openScene);
-            buttons.Add(_recapture);
-            Add(buttons);
+            EditorAssets.Layout(typeof(MapReportPanel)).CloneTree(this);
+            _source = this.Require<Label>("source");
+            _empty = this.Require<Label>("empty");
+            _issuesSection = this.Require<VisualElement>("issues");
+            _issuesTitle = this.Require<Label>("issues-title");
+            _issueRows = this.Require<VisualElement>("issue-rows");
+            _noIssues = this.Require<Label>("no-issues");
+            _landSection = this.Require<VisualElement>("land");
+            _landRows = this.Require<VisualElement>("land-rows");
+            _metricsSection = this.Require<VisualElement>("metrics");
+            _metricRows = this.Require<VisualElement>("metric-rows");
+            _openScene = this.Require<Button>("open-scene");
+            _openScene.clicked += OpenScene;
+            _recapture = this.Require<Button>("recapture");
+            _recapture.clicked += Recapture;
         }
+
+        /// <summary>Asks to select and frame the feature an issue names.</summary>
+        public event Action<MapIssueFeature> ShowFeature;
 
         private string ScenePath => new MapPaths(_document.Path, _document.Spec.name).Scene;
 
-        /// <summary>Reads the reports the last preview and build wrote for the open spec.</summary>
-        public void LoadFromDisk()
+        /// <summary>Follows <paramref name="document"/> and reads the reports its last preview and build wrote.</summary>
+        public void Bind(MapSpecDocument document)
         {
+            _document = document;
             _preview = Current(MapReport.LoadPreview(_document.Spec.name));
             _build = Current(MapReport.Load(_document.Spec.name));
             _issues = Newest(_preview, _build);
@@ -98,31 +114,112 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private void Refresh()
         {
-            _content.Clear();
             var built = File.Exists(ScenePath);
             _openScene.SetEnabled(built);
             _recapture.SetEnabled(built);
+            var land = _preview?.land ?? _build?.land;
+            var showLand = _issues != null && land != null && land.shares.Count > 0;
+            var showMetrics = _issues != null && _build?.metrics != null && _build.Passed;
+            _empty.EnableInClassList(Hidden, _issues != null);
+            _issuesSection.EnableInClassList(Hidden, _issues == null);
+            _landSection.EnableInClassList(Hidden, !showLand);
+            _metricsSection.EnableInClassList(Hidden, !showMetrics);
             if (_issues == null)
             {
                 _source.text = "Report";
-                _content.Add(MapReportSections.Note("No preview or build yet."));
                 return;
             }
 
             var kind = _issues == _build ? "Build" : "Preview";
             _source.text = $"{kind} report, {_issues.built}";
-            _content.Add(MapReportSections.Issues(_issues, _show));
-            var land = _preview?.land ?? _build?.land;
-            if (land != null && land.shares.Count > 0)
+            ShowIssues(_issues);
+            if (showLand)
             {
-                _content.Add(MapReportSections.Land(land));
+                ShowLand(land);
             }
 
-            if (_build?.metrics != null && _build.Passed)
+            if (showMetrics)
             {
-                _content.Add(MapReportSections.Metrics(_build.metrics));
+                ShowMetrics(_build.metrics);
             }
         }
+
+        /// <summary>Errors then warnings. Issues that name a feature get a Show button.</summary>
+        private void ShowIssues(MapReport report)
+        {
+            _issuesTitle.text = $"Issues ({report.errors.Count} errors, {report.warnings.Count} warnings)";
+            _issueRows.Clear();
+            AddIssues(report.errors, report.errorFeatures, HelpBoxMessageType.Error);
+            AddIssues(report.warnings, report.warningFeatures, HelpBoxMessageType.Warning);
+            _noIssues.EnableInClassList(Hidden, report.errors.Count + report.warnings.Count > 0);
+        }
+
+        private void AddIssues(List<string> messages, List<MapIssueFeature> features, HelpBoxMessageType kind)
+        {
+            for (var i = 0; i < messages.Count; i++)
+            {
+                var feature = features[i];
+                var row = _issueRow.CloneRow();
+                var message = row.Require<HelpBox>("message");
+                message.text = messages[i];
+                message.messageType = kind;
+                var show = row.Require<Button>("show");
+                show.tooltip = $"Select and frame {feature}";
+                show.clicked += () => ShowFeature?.Invoke(feature);
+                show.EnableInClassList(Hidden, feature.IsNone);
+                _issueRows.Add(row);
+            }
+        }
+
+        /// <summary>Land use shares and what stands on the land, from a preview or a build.</summary>
+        private void ShowLand(MapLandFigures land)
+        {
+            _landRows.Clear();
+            foreach (var share in land.shares)
+            {
+                AddFigure(_landRows, share.kind, Percent(share.share));
+            }
+
+            AddFigure(_landRows, "Fields", Count(land.fields));
+            AddFigure(_landRows, "Trees", Count(land.trees));
+            AddFigure(_landRows, "Placements", Count(land.placements));
+            AddFigure(_landRows, "Decals", Count(land.decals));
+            AddFigure(_landRows, "Wet decals", Count(land.wetDecals));
+            AddFigure(_landRows, "Entities", Count(land.entities));
+            AddFigure(_landRows, "Crop tiles", Count(land.cropTiles));
+            AddFigure(_landRows, "Crop plants", land.cropPlants.ToString("N0", CultureInfo.InvariantCulture));
+        }
+
+        /// <summary>What a build measured: rush times, attack paths and each base's buildable ground and resources.</summary>
+        private void ShowMetrics(MapMetrics metrics)
+        {
+            _metricRows.Clear();
+            AddFigure(_metricRows, "Rush", $"{Seconds(metrics.minRush)} to {Seconds(metrics.maxRush)}");
+            AddFigure(_metricRows, "Attack paths", Count(metrics.paths));
+            AddFigure(_metricRows, "Path search", $"{metrics.maxExpansions:N0} cells");
+            AddFigure(_metricRows, "Renewable fields", $"{metrics.renewableFieldsPerPlayer:0.#} per player");
+            foreach (var spawn in metrics.spawns)
+            {
+                var text = $"team {spawn.team}, rush {Seconds(spawn.rush)}, buildable {Percent(spawn.buildable)}, "
+                    + $"{spawn.finiteFields} finite fields ({spawn.finiteSupply:N0}), "
+                    + $"{spawn.renewableFields} renewable ({spawn.renewableSupply:N0})";
+                AddFigure(_metricRows, $"Slot {spawn.slot}", text);
+            }
+        }
+
+        private void AddFigure(VisualElement rows, string name, string value)
+        {
+            var row = _figureRow.CloneRow();
+            row.Require<Label>("name").text = name;
+            row.Require<Label>("value").text = value;
+            rows.Add(row);
+        }
+
+        private static string Count(int count) => count.ToString(CultureInfo.InvariantCulture);
+
+        private static string Percent(float share) => share.ToString("P0", CultureInfo.InvariantCulture);
+
+        private static string Seconds(float seconds) => seconds.ToString("0' s'", CultureInfo.InvariantCulture);
 
         private void OpenScene()
         {

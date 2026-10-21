@@ -1,36 +1,31 @@
 using System;
+using HyperRTS.Editor.Common;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>The Map Editor toolbar's preview and build controls: Auto preview, Preview, a busy note and Build.</summary>
-    public sealed class MapPreviewStrip : VisualElement
+    [UxmlElement]
+    public sealed partial class MapPreviewStrip : VisualElement
     {
         private readonly Label _busy;
 
-        public MapPreviewStrip(Action preview, Action build)
+        public MapPreviewStrip()
         {
-            AddToClassList("hrts-map-toolbar__strip");
-            var auto = new ToolbarToggle
-            {
-                text = "Auto preview",
-                value = MapLivePreview.Auto,
-                tooltip = "Preview the map when it opens and whenever its spec file changes.",
-            };
+            EditorAssets.Layout(typeof(MapPreviewStrip)).CloneTree(this);
+            var auto = this.Require<ToolbarToggle>("auto");
+            auto.value = MapLivePreview.Auto;
             auto.RegisterValueChangedCallback(change => MapLivePreview.Auto = change.newValue);
-            Add(auto);
-            Add(new ToolbarButton(preview) { text = "Preview", tooltip = "Preview the map as it is now." });
-
-            _busy = new Label("Previewing...");
-            _busy.AddToClassList("hrts-toolbar-label");
-            _busy.AddToClassList("hrts-map-toolbar__busy");
-            Add(_busy);
-            ShowBusy(false);
-
-            Add(new ToolbarButton(build) { text = "Build", tooltip = "Build the map's scene and show the report." });
+            this.Require<ToolbarButton>("preview").clicked += () => PreviewClicked?.Invoke();
+            this.Require<ToolbarButton>("build").clicked += () => BuildClicked?.Invoke();
+            _busy = this.Require<Label>("busy");
         }
 
-        public void ShowBusy(bool busy) => _busy.style.visibility = busy ? Visibility.Visible : Visibility.Hidden;
+        public event Action PreviewClicked;
+
+        public event Action BuildClicked;
+
+        public void ShowBusy(bool busy) => _busy.EnableInClassList("hrts-invisible", !busy);
     }
 }

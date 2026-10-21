@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -30,25 +31,12 @@ namespace HyperRTS.Editor.Validation
 
         public override VisualElement Build()
         {
-            var root = new VisualElement();
-            var toolbar = new Toolbar();
-            toolbar.Add(new ToolbarButton(Refresh) { text = "Validate" });
-            toolbar.Add(new ToolbarSpacer { flex = true });
-            _counts = new Label();
-            _counts.AddToClassList("hrts-toolbar-label");
-            toolbar.Add(_counts);
-            root.Add(toolbar);
-
-            _empty = new HelpBox("No problems found. Closed SubScenes aren't checked: open them to include their " +
-                                 "content.", HelpBoxMessageType.Info);
-            _empty.AddToClassList("hrts-note");
-            root.Add(_empty);
-
-            var scroll = new ScrollView();
-            scroll.AddToClassList("hrts-fill");
-            _list = new IssueList(Refresh, showContext: true);
-            scroll.Add(_list);
-            root.Add(scroll);
+            var root = EditorAssets.Layout(typeof(ValidatePage)).Instantiate();
+            root.Require<ToolbarButton>("validate").clicked += Refresh;
+            _counts = root.Require<Label>("counts");
+            _empty = root.Require<HelpBox>("empty");
+            _list = root.Require<IssueList>("issues");
+            _list.Fixed += Refresh;
             Refresh();
             return root;
         }
@@ -70,7 +58,7 @@ namespace HyperRTS.Editor.Validation
 
             _counts.text = $"{Count(MessageType.Error)} errors · {Count(MessageType.Warning)} warnings · " +
                            $"{Count(MessageType.Info)} notes";
-            _empty.style.display = _issues.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            _empty.EnableInClassList("hrts-hidden", _issues.Count > 0);
             _list.Show(_issues);
         }
 

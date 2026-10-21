@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="Common/HyperRTSEditor.uss" />
+  <ui:VisualElement class="hrts-note">
+    <ui:Vector2Field name="map-size" label="Map Size" value="200,200" tooltip="Playable area (X by Z); the ground is sized to match." />
+    <ui:SliderInt name="players" label="Players" low-value="1" value="2" show-input-field="true" tooltip="Player 1 is you, the rest are AI on their own teams." />
+    <uie:ObjectField name="starting-base" label="Starting Base" allow-scene-objects="false" tooltip="Optional building prefab placed for every player around the map (a command centre)." />
+    <ui:VisualElement class="hrts-buttons">
+      <ui:Button name="create" text="Create" />
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

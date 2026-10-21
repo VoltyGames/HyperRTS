@@ -1,0 +1,24 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../../Common/HyperRTSEditor.uss" />
+  <ui:Label name="source" class="hrts-section__title" />
+  <ui:ScrollView class="hrts-map-report__content">
+    <ui:Label name="empty" class="hrts-note" text="No preview or build yet." />
+    <ui:VisualElement name="issues" class="hrts-section">
+      <ui:Label name="issues-title" class="hrts-section__title" />
+      <ui:VisualElement name="issue-rows" />
+      <ui:Label name="no-issues" class="hrts-note" text="No issues." />
+    </ui:VisualElement>
+    <ui:VisualElement name="land" class="hrts-section">
+      <ui:Label class="hrts-section__title" text="Land" />
+      <ui:VisualElement name="land-rows" />
+    </ui:VisualElement>
+    <ui:VisualElement name="metrics" class="hrts-section">
+      <ui:Label class="hrts-section__title" text="Metrics (last build)" />
+      <ui:VisualElement name="metric-rows" />
+    </ui:VisualElement>
+  </ui:ScrollView>
+  <ui:VisualElement class="hrts-buttons">
+    <ui:Button name="open-scene" text="Open scene" />
+    <ui:Button name="recapture" text="Recapture views" />
+  </ui:VisualElement>
+</ui:UXML>

@@ -1,4 +1,5 @@
 using System.Text;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.PlayMode.DebugDraw;
 using HyperRTS.Simulation.AI;
@@ -16,8 +17,8 @@ namespace HyperRTS.Editor.PlayMode
     {
         public override VisualElement CreatePanelContent()
         {
-            var root = new VisualElement { style = { minWidth = 180 } };
-            var layers = new VisualElement();
+            var root = EditorAssets.Layout(typeof(DebugOverlay)).Instantiate();
+            var layers = root.Require<VisualElement>("layers");
             foreach (var layer in DebugLayerHost.Layers)
             {
                 layers.Add(Toggle(layer));
@@ -28,13 +29,10 @@ namespace HyperRTS.Editor.PlayMode
             ShowMode(default);
             root.RegisterCallback<AttachToPanelEvent>(_ => EditorApplication.playModeStateChanged += ShowMode);
             root.RegisterCallback<DetachFromPanelEvent>(_ => EditorApplication.playModeStateChanged -= ShowMode);
-            root.Add(layers);
 
-            var ai = new Label { style = { marginTop = 4, whiteSpace = WhiteSpace.Normal } };
-            root.Add(ai);
+            var ai = root.Require<Label>("ai");
             root.schedule.Execute(() => ai.text = AIStatus()).Every(500);
-
-            root.Add(new Button(ToolsWindow.Show<PlayPage>) { text = "Cheats..." });
+            root.Require<Button>("cheats").clicked += ToolsWindow.Show<PlayPage>;
             return root;
         }
 

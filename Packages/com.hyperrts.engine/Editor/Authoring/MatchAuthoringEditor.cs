@@ -1,4 +1,4 @@
-using HyperRTS.Editor.Hub;
+using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
 using UnityEditor;
@@ -21,18 +21,16 @@ namespace HyperRTS.Editor.Authoring
         private static bool _showFogGrid;
 
         private VisualElement _owners;
+        private VisualTreeAsset _ownerRow;
 
-        protected override void BuildFooter(VisualElement root)
+        protected override void BuildFooter(VisualElement footer)
         {
-            var section = HubSections.Section("Open scenes");
-            _owners = new VisualElement();
-            section.Add(_owners);
-
-            section.Add(HubSections.Buttons(
-                GridToggle("Nav Grid", _showNavGrid, value => _showNavGrid = value),
-                GridToggle("Fog Grid", _showFogGrid, value => _showFogGrid = value),
-                new Button(FrameMap) { text = "Frame Map" }));
-            root.Add(section);
+            EditorAssets.Layout(typeof(MatchAuthoringEditor)).CloneTree(footer);
+            _owners = footer.Require<VisualElement>("owners");
+            _ownerRow = EditorAssets.Layout(typeof(MatchAuthoringEditor), "Owner");
+            BindGridToggle(footer.Require<ToolbarToggle>("nav-grid"), _showNavGrid, value => _showNavGrid = value);
+            BindGridToggle(footer.Require<ToolbarToggle>("fog-grid"), _showFogGrid, value => _showFogGrid = value);
+            footer.Require<Button>("frame-map").clicked += FrameMap;
         }
 
         // A full scene scan, so it runs on edits and hierarchy changes, never per frame.
@@ -50,30 +48,23 @@ namespace HyperRTS.Editor.Authoring
             }
         }
 
-        private static VisualElement OwnerRow(Color color, string name, int count)
+        private VisualElement OwnerRow(Color color, string name, int count)
         {
-            var row = new VisualElement();
-            row.AddToClassList("hrts-row");
-            var swatch = new VisualElement();
-            swatch.AddToClassList("hrts-swatch");
-            swatch.style.backgroundColor = color;
-            row.Add(swatch);
-            var label = new Label(name);
-            label.AddToClassList("hrts-row__grow");
-            row.Add(label);
-            row.Add(new Label($"{count} entities"));
+            var row = _ownerRow.CloneRow();
+            row.Require<VisualElement>("swatch").style.backgroundColor = color;
+            row.Require<Label>("name").text = name;
+            row.Require<Label>("count").text = $"{count} entities";
             return row;
         }
 
-        private static ToolbarToggle GridToggle(string text, bool value, System.Action<bool> set)
+        private static void BindGridToggle(ToolbarToggle toggle, bool value, System.Action<bool> set)
         {
-            var toggle = new ToolbarToggle { text = text, value = value };
+            toggle.value = value;
             toggle.RegisterValueChangedCallback(change =>
             {
                 set(change.newValue);
                 SceneView.RepaintAll();
             });
-            return toggle;
         }
 
         private void FrameMap()

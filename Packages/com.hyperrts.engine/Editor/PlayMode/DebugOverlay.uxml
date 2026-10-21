@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <ui:VisualElement class="hrts-debug-overlay">
+    <ui:VisualElement name="layers" />
+    <ui:Label name="ai" class="hrts-debug-overlay__ai" />
+    <ui:Button name="cheats" text="Cheats..." />
+  </ui:VisualElement>
+</ui:UXML>

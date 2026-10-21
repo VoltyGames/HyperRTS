@@ -14,17 +14,18 @@ namespace HyperRTS.Editor.Maps.Designer
         private readonly MapCanvas _canvas;
         private readonly MapFeatureSelection _selection;
         private readonly MapPreviewStrip _strip;
+        private readonly MapReportPanel _panel;
         private readonly MapLivePreview _live;
 
         public MapEditorPreview(MapSpecDocument document, MapCanvas canvas, MapFeatureSelection selection,
-            MapPreviewStrip strip)
+            MapPreviewStrip strip, MapReportPanel panel)
         {
             _document = document;
             _canvas = canvas;
             _selection = selection;
             _strip = strip;
-            Panel = new MapReportPanel(document, Show);
-            Panel.LoadFromDisk();
+            _panel = panel;
+            _panel.Bind(document);
             _live = new MapLivePreview(document);
             _live.Finished += OnFinished;
             _live.BusyChanged += () => _strip.ShowBusy(_live.Busy);
@@ -35,8 +36,6 @@ namespace HyperRTS.Editor.Maps.Designer
             }
         }
 
-        public MapReportPanel Panel { get; }
-
         public void Preview() => _live.Run();
 
         /// <summary>Builds the spec's map from its file (asking to save open scenes first) and shows the build's report.</summary>
@@ -45,7 +44,7 @@ namespace HyperRTS.Editor.Maps.Designer
             var report = MapBuildCommands.Build(_document.Path);
             if (report != null)
             {
-                Panel.ShowBuild(report);
+                _panel.ShowBuild(report);
             }
         }
 
@@ -53,7 +52,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private void OnFinished(MapPreviewResult result)
         {
-            Panel.ShowPreview(result.Report);
+            _panel.ShowPreview(result.Report);
             if (result.Image != null)
             {
                 _canvas.ShowPreview(result.Image);
@@ -61,7 +60,7 @@ namespace HyperRTS.Editor.Maps.Designer
         }
 
         /// <summary>Selects and frames an issue's feature, unless the spec changed since the report and dropped it.</summary>
-        private void Show(MapIssueFeature issueFeature)
+        public void Show(MapIssueFeature issueFeature)
         {
             var kind = MapFeatureKinds.Find(issueFeature.array);
             if (issueFeature.index >= kind.Count(_document.Spec))

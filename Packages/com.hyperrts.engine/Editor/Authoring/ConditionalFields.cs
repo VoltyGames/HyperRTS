@@ -116,6 +116,6 @@ namespace HyperRTS.Editor.Authoring
         }
 
         private static void Apply(VisualElement field, SerializedProperty condition) =>
-            field.style.display = IsMet(condition) ? DisplayStyle.Flex : DisplayStyle.None;
+            field.EnableInClassList("hrts-hidden", !IsMet(condition));
     }
 }

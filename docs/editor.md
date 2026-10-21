@@ -27,8 +27,9 @@ follows the [UI rule](../CLAUDE.md#conventions).
 **New blank scene...** asks for map size, player count and an optional starting base. It builds a scene with
 light, ground, the `RTSWorld` rig and a SubScene holding the `Match`. See [scenes from code](#scenes-from-code).
 
-To add a page, subclass `HubPage` in any editor assembly. Set `Title` and `Order`, build the content in `Build()`
-and drop callbacks in `Release()`. An optional `Badge` shows short text such as an error count.
+To add a page, subclass `HubPage` in any editor assembly. Set `Title` and `Order`, return the content from
+`Build()` and drop callbacks in `Release()`. Engine pages clone their `<Page>.uxml` layout there with
+`EditorAssets.Layout(typeof(Page)).Instantiate()` and wire its elements by name with `Require<T>(name)`. An optional `Badge` shows short text such as an error count.
 `ToolsWindow.Show<TPage>()` opens the window on a page.
 
 ## Generators
@@ -96,8 +97,10 @@ owner's colour.
 
 A component needs its own editor only for extra UI or handles. Subclass `AuthoringEditor` and override
 `BuildHeader`, `BuildFooter` or `Refresh`. For handles, use `GroundHandles.EditBox` or `EditRadius` in
-`OnSceneGUI`; each drag is one undo step. Editor styles live in `Editor/Common/HyperRTSEditor.uss` and are added
-with `EditorAssets.AddStyles(root)`.
+`OnSceneGUI`; each drag is one undo step. Editor layouts are `.uxml` files beside their scripts, and each one
+except row templates links the shared `Editor/Common/HyperRTSEditor.uss` with a `<Style>` tag. `EditorAssets.Layout(type, part)` finds
+`<Type><part>.uxml` in the engine package and throws when it is missing. Rows built from data clone a row template
+such as `MapsPageRow.uxml` with `CloneRow()`. Toggle visibility with the `hrts-hidden` class, not inline styles.
 
 ## Validation
 

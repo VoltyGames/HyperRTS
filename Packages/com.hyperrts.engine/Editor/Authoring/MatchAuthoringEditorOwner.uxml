@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-row">
+    <ui:VisualElement name="swatch" class="hrts-swatch" />
+    <ui:Label name="name" class="hrts-row__grow" />
+    <ui:Label name="count" />
+  </ui:VisualElement>
+</ui:UXML>

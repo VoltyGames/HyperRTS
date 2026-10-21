@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <ui:VisualElement class="hrts-section">
+    <ui:Label class="hrts-section__title" text="Open scenes" />
+    <ui:VisualElement name="owners" />
+    <ui:VisualElement class="hrts-buttons">
+      <uie:ToolbarToggle name="nav-grid" text="Nav Grid" />
+      <uie:ToolbarToggle name="fog-grid" text="Fog Grid" />
+      <ui:Button name="frame-map" text="Frame Map" />
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

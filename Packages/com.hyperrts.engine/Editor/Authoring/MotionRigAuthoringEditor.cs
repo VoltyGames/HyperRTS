@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.Animation;
 using UnityEditor;
 using UnityEngine.UIElements;
@@ -8,8 +9,11 @@ namespace HyperRTS.Editor.Authoring
     [CustomEditor(typeof(MotionRigAuthoring))]
     public class MotionRigAuthoringEditor : AuthoringEditor
     {
-        protected override void BuildFooter(VisualElement root) =>
-            root.Add(new Button(Fill) { text = "Fill from model" });
+        protected override void BuildFooter(VisualElement footer)
+        {
+            EditorAssets.Layout(typeof(MotionRigAuthoringEditor)).CloneTree(footer);
+            footer.Require<Button>("fill").clicked += Fill;
+        }
 
         private void Fill()
         {

@@ -28,27 +28,13 @@ namespace HyperRTS.Editor
         public void CreateGUI()
         {
             var root = rootVisualElement;
-            EditorAssets.AddStyles(root);
-            root.AddToClassList("hrts-note");
-
-            _mapSize = new Vector2Field("Map Size") { value = new Vector2(200f, 200f) };
-            _mapSize.tooltip = "Playable area (X by Z); the ground is sized to match.";
-            _players = new SliderInt("Players", 1, FactionRelations.MaxTeams - 1) { value = 2, showInputField = true };
-            _players.tooltip = "Player 1 is you, the rest are AI on their own teams.";
-            _startingBase = new ObjectField("Starting Base")
-            {
-                objectType = typeof(GameEntityAuthoring),
-                allowSceneObjects = false,
-                tooltip = "Optional building prefab placed for every player around the map (a command centre).",
-            };
-
-            root.Add(_mapSize);
-            root.Add(_players);
-            root.Add(_startingBase);
-            var buttons = new VisualElement();
-            buttons.AddToClassList("hrts-buttons");
-            buttons.Add(new Button(Create) { text = "Create" });
-            root.Add(buttons);
+            EditorAssets.Layout(typeof(RTSSceneWizard)).CloneTree(root);
+            _mapSize = root.Require<Vector2Field>("map-size");
+            _players = root.Require<SliderInt>("players");
+            _players.highValue = FactionRelations.MaxTeams - 1;
+            _startingBase = root.Require<ObjectField>("starting-base");
+            _startingBase.objectType = typeof(GameEntityAuthoring);
+            root.Require<Button>("create").clicked += Create;
         }
 
         private void Create()

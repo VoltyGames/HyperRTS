@@ -7,17 +7,17 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Validation
 {
     /// <summary>Validation issues as help boxes with their quick-fix buttons; used by inspectors and the validator.</summary>
-    public sealed class IssueList : VisualElement
+    [UxmlElement]
+    public sealed partial class IssueList : VisualElement
     {
-        private readonly Action _fixed;
-        private readonly bool _showContext;
+        private readonly VisualTreeAsset _row = EditorAssets.Layout(typeof(IssueList), "Row");
 
-        /// <summary><paramref name="fixed"/> runs after a quick fix; context buttons name and select each issue's object.</summary>
-        public IssueList(Action @fixed, bool showContext)
-        {
-            _fixed = @fixed;
-            _showContext = showContext;
-        }
+        /// <summary>Runs after a quick fix has settled.</summary>
+        public event Action Fixed;
+
+        /// <summary>Gives each issue a button that names and selects its object.</summary>
+        [UxmlAttribute]
+        public bool ShowContext { get; set; }
 
         public void Show(IReadOnlyList<ValidationIssue> issues)
         {
@@ -30,41 +30,29 @@ namespace HyperRTS.Editor.Validation
 
         private VisualElement Row(ValidationIssue issue)
         {
-            var row = new VisualElement();
-            row.AddToClassList("hrts-issue");
-            if (_showContext)
-            {
-                row.Add(ContextButton(issue));
-            }
+            var row = _row.CloneRow();
+            var context = row.Require<Button>("context");
+            context.EnableInClassList("hrts-hidden", !ShowContext);
+            context.text = issue.Context != null ? issue.Context.name : "-";
+            context.clicked += () => EditorAssets.Reveal(issue.Context);
+            context.SetEnabled(issue.Context != null);
 
-            var message = new HelpBox(issue.Message, Kind(issue.Severity));
-            message.AddToClassList("hrts-issue__message");
-            row.Add(message);
+            var message = row.Require<HelpBox>("message");
+            message.text = issue.Message;
+            message.messageType = Kind(issue.Severity);
 
-            if (issue.Fix != null)
-            {
-                var fix = new Button(() => RunFix(issue.Fix)) { text = issue.FixLabel };
-                fix.AddToClassList("hrts-issue__fix");
-                row.Add(fix);
-            }
-
+            var fix = row.Require<Button>("fix");
+            fix.EnableInClassList("hrts-hidden", issue.Fix == null);
+            fix.text = issue.FixLabel;
+            fix.clicked += () => RunFix(issue.Fix);
             return row;
-        }
-
-        private static Button ContextButton(ValidationIssue issue)
-        {
-            var context = issue.Context;
-            var button = new Button(() => EditorAssets.Reveal(context)) { text = context != null ? context.name : "-" };
-            button.AddToClassList("hrts-issue__context");
-            button.SetEnabled(context != null);
-            return button;
         }
 
         // A fix can add, remove or replace objects, so re-validate once it has settled.
         private void RunFix(Action fix)
         {
             fix();
-            EditorApplication.delayCall += () => _fixed();
+            EditorApplication.delayCall += () => Fixed?.Invoke();
         }
 
         private static HelpBoxMessageType Kind(MessageType severity) => severity switch

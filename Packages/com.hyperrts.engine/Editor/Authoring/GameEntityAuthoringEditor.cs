@@ -14,16 +14,15 @@ namespace HyperRTS.Editor.Authoring
     {
         private HelpBox _summary;
 
-        protected override void BuildHeader(VisualElement root)
+        protected override void BuildHeader(VisualElement header)
         {
             if (targets.Length != 1)
             {
                 return;
             }
 
-            _summary = new HelpBox("", HelpBoxMessageType.None);
-            _summary.AddToClassList("hrts-summary");
-            root.Add(_summary);
+            EditorAssets.Layout(typeof(GameEntityAuthoringEditor)).CloneTree(header);
+            _summary = header.Require<HelpBox>("summary");
         }
 
         protected override void Refresh()

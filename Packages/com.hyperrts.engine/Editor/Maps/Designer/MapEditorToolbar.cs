@@ -1,35 +1,41 @@
 using System;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Generation;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Maps.Designer
 {
-    /// <summary>The Map Editor's toolbar: spec picker and the symmetry ghosts toggle.</summary>
-    public sealed class MapEditorToolbar : Toolbar
+    /// <summary>The Map Editor's toolbar: spec picker, the symmetry ghosts toggle and the preview strip.</summary>
+    [UxmlElement]
+    public sealed partial class MapEditorToolbar : Toolbar
     {
-        private readonly PopupField<string> _picker;
+        private readonly DropdownField _picker;
         private readonly ToolbarToggle _ghosts;
 
-        public MapEditorToolbar(Action<string> pick, Action<bool> ghosts)
+        public MapEditorToolbar()
         {
-            var specs = MapPaths.All().OrderBy(MapPaths.MapName).ToList();
-            _picker = new PopupField<string>(specs, -1, Label, Label);
-            _picker.AddToClassList("hrts-map-toolbar__picker");
-            _picker.RegisterValueChangedCallback(evt => pick(evt.newValue));
-            Add(_picker);
+            EditorAssets.Layout(typeof(MapEditorToolbar)).CloneTree(this);
+            _picker = this.Require<DropdownField>("picker");
+            _picker.choices = MapPaths.All().OrderBy(MapPaths.MapName).ToList();
+            _picker.formatSelectedValueCallback = Label;
+            _picker.formatListItemCallback = Label;
+            _picker.SetValueWithoutNotify(null);
+            _picker.RegisterValueChangedCallback(evt => SpecPicked?.Invoke(evt.newValue));
 
-            var spacer = new ToolbarSpacer();
-            spacer.AddToClassList("hrts-fill");
-            Add(spacer);
-
-            _ghosts = new ToolbarToggle { text = "Ghosts", value = true };
-            _ghosts.RegisterValueChangedCallback(evt => ghosts(evt.newValue));
-            Add(_ghosts);
+            _ghosts = this.Require<ToolbarToggle>("ghosts");
+            _ghosts.RegisterValueChangedCallback(evt => GhostsToggled?.Invoke(evt.newValue));
+            Strip = this.Require<MapPreviewStrip>("strip");
         }
 
+        public event Action<string> SpecPicked;
+
+        public event Action<bool> GhostsToggled;
+
         public bool Ghosts => _ghosts.value;
+
+        public MapPreviewStrip Strip { get; }
 
         /// <summary>Shows the open spec in the picker.</summary>
         public void Show(MapSpecDocument document)

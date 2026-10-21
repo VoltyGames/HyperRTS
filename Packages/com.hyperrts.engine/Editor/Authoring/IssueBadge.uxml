@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <ui:Button name="badge" class="hrts-issue-badge__button">
+    <ui:Label name="errors" class="hrts-issue-badge__count hrts-issue-badge__errors" />
+    <ui:Label name="warnings" class="hrts-issue-badge__count hrts-issue-badge__warnings" />
+    <ui:Label name="notes" class="hrts-issue-badge__count hrts-issue-badge__notes" />
+  </ui:Button>
+  <HyperRTS.Editor.Validation.IssueList name="list" class="hrts-hidden" />
+</ui:UXML>

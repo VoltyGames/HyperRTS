@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-tree__node">
+    <ui:Button name="name" class="hrts-tree__name" />
+  </ui:VisualElement>
+</ui:UXML>

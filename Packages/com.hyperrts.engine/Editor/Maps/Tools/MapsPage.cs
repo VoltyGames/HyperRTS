@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.Maps.Designer;
 using HyperRTS.Editor.Maps.Generation;
@@ -17,7 +18,9 @@ namespace HyperRTS.Editor.Maps.Tools
     /// </summary>
     public class MapsPage : HubPage
     {
-        private ScrollView _list;
+        private HelpBox _none;
+        private VisualElement _specs;
+        private VisualTreeAsset _row;
 
         public override string Title => "Maps";
 
@@ -25,17 +28,12 @@ namespace HyperRTS.Editor.Maps.Tools
 
         public override VisualElement Build()
         {
-            var root = new VisualElement();
-            var toolbar = new Toolbar();
-            toolbar.Add(new ToolbarButton(BuildAll) { text = "Build all" });
-            toolbar.Add(new ToolbarButton(RTSSceneWizard.Open) { text = "New blank scene..." });
-            toolbar.Add(new ToolbarSpacer { flex = true });
-            root.Add(toolbar);
-
-            _list = new ScrollView();
-            _list.AddToClassList("hrts-fill");
-            _list.contentContainer.AddToClassList("hrts-page__body");
-            root.Add(_list);
+            var root = EditorAssets.Layout(typeof(MapsPage)).Instantiate();
+            root.Require<ToolbarButton>("build-all").clicked += BuildAll;
+            root.Require<ToolbarButton>("new-scene").clicked += RTSSceneWizard.Open;
+            _none = root.Require<HelpBox>("none");
+            _specs = root.Require<VisualElement>("specs");
+            _row = EditorAssets.Layout(typeof(MapsPage), "Row");
 
             EditorApplication.projectChanged += ShowSpecs;
             ShowSpecs();
@@ -45,50 +43,31 @@ namespace HyperRTS.Editor.Maps.Tools
         public override void Release()
         {
             EditorApplication.projectChanged -= ShowSpecs;
-            _list = null;
+            _specs = null;
         }
 
         private void ShowSpecs()
         {
-            _list.Clear();
+            _specs.Clear();
             var specs = MapPaths.All();
-            if (specs.Length == 0)
-            {
-                var none = new HelpBox("No map specs (*.map.json) in the project. New map... starts one.",
-                    HelpBoxMessageType.Info);
-                none.AddToClassList("hrts-note");
-                _list.Add(none);
-                return;
-            }
-
+            _none.EnableInClassList("hrts-hidden", specs.Length > 0);
             foreach (var spec in specs)
             {
-                _list.Add(SpecRow(spec));
+                _specs.Add(SpecRow(spec));
             }
         }
 
         private VisualElement SpecRow(string specPath)
         {
-            var row = new VisualElement { tooltip = specPath };
-            row.AddToClassList("hrts-row");
+            var row = _row.CloneRow();
+            row.tooltip = specPath;
             var map = MapPaths.MapName(specPath);
-            row.Add(Cell(map, "hrts-map__name"));
-            row.Add(Cell(Summary(specPath), "hrts-map__info"));
-            row.Add(Cell(ReportStatus(map), "hrts-map__status"));
-            var open = new Button(() => MapEditorWindow.Open(specPath)) { text = "Open" };
-            open.AddToClassList("hrts-map__build");
-            row.Add(open);
-            var build = new Button(() => BuildOne(specPath)) { text = "Build" };
-            build.AddToClassList("hrts-map__build");
-            row.Add(build);
+            row.Require<Label>("name").text = map;
+            row.Require<Label>("info").text = Summary(specPath);
+            row.Require<Label>("status").text = ReportStatus(map);
+            row.Require<Button>("open").clicked += () => MapEditorWindow.Open(specPath);
+            row.Require<Button>("build").clicked += () => BuildOne(specPath);
             return row;
-        }
-
-        private static Label Cell(string text, string className)
-        {
-            var label = new Label(text);
-            label.AddToClassList(className);
-            return label;
         }
 
         /// <summary>Mode and size from the spec, or why it doesn't read.</summary>

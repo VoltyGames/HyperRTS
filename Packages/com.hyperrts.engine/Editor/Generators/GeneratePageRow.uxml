@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-generate__row">
+    <ui:VisualElement class="hrts-row__grow">
+      <ui:Label name="name" class="hrts-generate__name" />
+      <ui:Label name="description" class="hrts-generate__description" />
+    </ui:VisualElement>
+    <ui:Button name="run" class="hrts-generate__run" text="Run" />
+  </ui:VisualElement>
+</ui:UXML>

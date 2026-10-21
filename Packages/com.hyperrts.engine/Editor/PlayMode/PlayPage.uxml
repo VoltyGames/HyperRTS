@@ -1,0 +1,40 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <ui:Template name="CheatsSection" src="CheatsSection.uxml" />
+  <ui:ScrollView class="hrts-fill">
+    <ui:VisualElement class="hrts-page__body">
+      <ui:HelpBox name="hint" class="hrts-hint" message-type="Info" text="Enter Play mode to use cheats, networking and recording." />
+      <ui:Instance template="CheatsSection" name="cheats" />
+      <ui:VisualElement class="hrts-section">
+        <ui:Label class="hrts-section__title" text="Network" />
+        <ui:VisualElement class="hrts-buttons">
+          <ui:Button name="host" text="Host" />
+          <ui:Button name="join" text="Join Localhost" />
+          <ui:Button name="server" text="Dedicated Server" />
+          <ui:Button name="stop" text="Stop" />
+        </ui:VisualElement>
+        <ui:Label name="traffic" class="hrts-note" />
+      </ui:VisualElement>
+      <ui:VisualElement class="hrts-section">
+        <ui:Label class="hrts-section__title" text="Bot matches" />
+        <ui:IntegerField name="bot-matches" label="Matches" />
+        <ui:IntegerField name="bot-players" label="Players" />
+        <ui:EnumField name="bot-difficulty" label="Difficulty" />
+        <ui:FloatField name="bot-speed" label="Game speed" />
+        <ui:FloatField name="bot-limit" label="Time limit (min)" />
+        <ui:VisualElement class="hrts-buttons">
+          <ui:Button name="run-bots" text="Run" />
+          <ui:Button name="stop-bots" text="Stop" />
+        </ui:VisualElement>
+        <ui:Label name="bot-status" class="hrts-note" />
+      </ui:VisualElement>
+      <ui:VisualElement class="hrts-section">
+        <ui:Label class="hrts-section__title" text="Replays" />
+        <ui:VisualElement class="hrts-buttons">
+          <ui:Button name="save" text="Save Recording..." />
+          <ui:Button name="play" text="Play Replay..." />
+        </ui:VisualElement>
+      </ui:VisualElement>
+    </ui:VisualElement>
+  </ui:ScrollView>
+</ui:UXML>

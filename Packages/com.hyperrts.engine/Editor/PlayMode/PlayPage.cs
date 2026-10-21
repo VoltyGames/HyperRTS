@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Network.Session;
 using HyperRTS.Simulation.Match;
@@ -33,21 +34,19 @@ namespace HyperRTS.Editor.PlayMode
 
         public override VisualElement Build()
         {
-            var scroll = new ScrollView();
-            scroll.contentContainer.AddToClassList("hrts-page__body");
-            _hint = new HelpBox("Enter Play mode to use cheats, networking and recording.", HelpBoxMessageType.Info);
-            _hint.AddToClassList("hrts-hint");
-            scroll.Add(_hint);
+            var root = EditorAssets.Layout(typeof(PlayPage)).Instantiate();
+            _hint = root.Require<HelpBox>("hint");
+            _cheats = new CheatsSection(root.Require<VisualElement>("cheats"));
+            BindNetwork(root);
+            BindBots(root);
+            _save = root.Require<Button>("save");
+            _save.clicked += ReplayPlayback.SaveRecording;
+            _play = root.Require<Button>("play");
+            _play.clicked += ReplayPlayback.PlayReplay;
 
-            _cheats = new CheatsSection();
-            scroll.Add(_cheats.Root);
-            scroll.Add(NetworkSection());
-            scroll.Add(BotSection());
-            scroll.Add(ReplaySection());
-
-            _poll = scroll.schedule.Execute(Poll).Every(PollMilliseconds);
+            _poll = root.schedule.Execute(Poll).Every(PollMilliseconds);
             Poll();
-            return scroll;
+            return root;
         }
 
         public override void Release()
@@ -57,61 +56,48 @@ namespace HyperRTS.Editor.PlayMode
             _cheats = null;
         }
 
-        private VisualElement NetworkSection()
+        private void BindNetwork(VisualElement root)
         {
-            var section = HubSections.Section("Network");
-            _host = new Button(() => NetworkSession.StartHost()) { text = "Host" };
-            _join = new Button(() => NetworkSession.StartClient("127.0.0.1")) { text = "Join Localhost" };
-            _server = new Button(() => NetworkSession.StartServer()) { text = "Dedicated Server" };
-            _stop = new Button(NetworkSession.Stop) { text = "Stop" };
-            section.Add(HubSections.Buttons(_host, _join, _server, _stop));
-            _traffic = new Label();
-            _traffic.AddToClassList("hrts-note");
-            section.Add(_traffic);
-            return section;
+            _host = root.Require<Button>("host");
+            _host.clicked += () => NetworkSession.StartHost();
+            _join = root.Require<Button>("join");
+            _join.clicked += () => NetworkSession.StartClient("127.0.0.1");
+            _server = root.Require<Button>("server");
+            _server.clicked += () => NetworkSession.StartServer();
+            _stop = root.Require<Button>("stop");
+            _stop.clicked += NetworkSession.Stop;
+            _traffic = root.Require<Label>("traffic");
         }
 
-        private VisualElement BotSection()
+        private void BindBots(VisualElement root)
         {
-            var section = HubSections.Section("Bot matches");
-            var matches = new IntegerField("Matches") { value = _bots.matches };
+            var matches = root.Require<IntegerField>("bot-matches");
+            matches.value = _bots.matches;
             matches.RegisterValueChangedCallback(change => _bots.matches = Math.Max(1, change.newValue));
-            var players = new IntegerField("Players") { value = _bots.players };
+            var players = root.Require<IntegerField>("bot-players");
+            players.value = _bots.players;
             players.RegisterValueChangedCallback(change => _bots.players = Math.Max(2, change.newValue));
-            var difficulty = new EnumField("Difficulty", _bots.difficulty);
+            var difficulty = root.Require<EnumField>("bot-difficulty");
+            difficulty.Init(_bots.difficulty);
             difficulty.RegisterValueChangedCallback(change => _bots.difficulty = (AIDifficulty)change.newValue);
-            var speed = new FloatField("Game speed") { value = _bots.speed };
+            var speed = root.Require<FloatField>("bot-speed");
+            speed.value = _bots.speed;
             speed.RegisterValueChangedCallback(change => _bots.speed = Math.Max(1f, change.newValue));
-            var limit = new FloatField("Time limit (min)") { value = _bots.timeLimitMinutes };
+            var limit = root.Require<FloatField>("bot-limit");
+            limit.value = _bots.timeLimitMinutes;
             limit.RegisterValueChangedCallback(change => _bots.timeLimitMinutes = Math.Max(1f, change.newValue));
-            section.Add(matches);
-            section.Add(players);
-            section.Add(difficulty);
-            section.Add(speed);
-            section.Add(limit);
 
-            _runBots = new Button(() => BotMatches.Start(_bots)) { text = "Run" };
-            _stopBots = new Button(BotMatches.Stop) { text = "Stop" };
-            section.Add(HubSections.Buttons(_runBots, _stopBots));
-            _botStatus = new Label();
-            _botStatus.AddToClassList("hrts-note");
-            section.Add(_botStatus);
-            return section;
-        }
-
-        private VisualElement ReplaySection()
-        {
-            var section = HubSections.Section("Replays");
-            _save = new Button(ReplayPlayback.SaveRecording) { text = "Save Recording..." };
-            _play = new Button(ReplayPlayback.PlayReplay) { text = "Play Replay..." };
-            section.Add(HubSections.Buttons(_save, _play));
-            return section;
+            _runBots = root.Require<Button>("run-bots");
+            _runBots.clicked += () => BotMatches.Start(_bots);
+            _stopBots = root.Require<Button>("stop-bots");
+            _stopBots.clicked += BotMatches.Stop;
+            _botStatus = root.Require<Label>("bot-status");
         }
 
         private void Poll()
         {
             var playing = Application.isPlaying;
-            _hint.style.display = playing ? DisplayStyle.None : DisplayStyle.Flex;
+            _hint.EnableInClassList("hrts-hidden", playing);
             _cheats.Poll();
 
             var running = NetworkSession.IsRunning;
@@ -133,12 +119,12 @@ namespace HyperRTS.Editor.PlayMode
         {
             if (!running || !NetworkStress.TryRead(out var sample))
             {
-                _traffic.style.display = DisplayStyle.None;
+                _traffic.AddToClassList("hrts-hidden");
                 return;
             }
 
             _traffic.text = sample.ToString();
-            _traffic.style.display = DisplayStyle.Flex;
+            _traffic.RemoveFromClassList("hrts-hidden");
         }
     }
 }

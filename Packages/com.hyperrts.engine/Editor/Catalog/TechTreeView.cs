@@ -9,8 +9,10 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Catalog
 {
     /// <summary>Per prefab: what it requires, what makes it, what it makes and what it unlocks.</summary>
-    internal sealed class TechTreeView : VisualElement
+    [UxmlElement]
+    public sealed partial class TechTreeView : VisualElement
     {
+        private readonly VisualTreeAsset _node = EditorAssets.Layout(typeof(TechTreeView), "Node");
         private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _makes = new();
         private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _madeBy = new();
         private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _unlocks = new();
@@ -48,11 +50,10 @@ namespace HyperRTS.Editor.Catalog
 
         private VisualElement Node(GameEntityAuthoring prefab)
         {
-            var node = new VisualElement();
-            node.AddToClassList("hrts-tree__node");
-            var name = new Button(() => EditorAssets.Reveal(prefab.gameObject)) { text = prefab.DisplayName };
-            name.AddToClassList("hrts-tree__name");
-            node.Add(name);
+            var node = _node.CloneRow();
+            var name = node.Require<Button>("name");
+            name.text = prefab.DisplayName;
+            name.clicked += () => EditorAssets.Reveal(prefab.gameObject);
             AddLine(node, "Requires", prefab.prerequisites);
             AddLine(node, "Made by", _madeBy.GetValueOrDefault(prefab));
             AddLine(node, "Makes", _makes.GetValueOrDefault(prefab));

@@ -32,22 +32,20 @@ namespace HyperRTS.Editor.Catalog
 
         public override VisualElement Build()
         {
-            _root = new VisualElement();
-            _root.Add(Toolbar());
+            _root = EditorAssets.Layout(typeof(CatalogPage)).Instantiate();
+            var search = _root.Require<ToolbarSearchField>("search");
+            search.SetValueWithoutNotify(_filter);
+            search.RegisterValueChangedCallback(change =>
+            {
+                _filter = change.newValue;
+                ShowPrefabs();
+            });
 
-            _stats = new StatsTable();
-            _techTree = new TechTreeView();
-            var treeScroll = new ScrollView();
-            treeScroll.AddToClassList("hrts-fill");
-            treeScroll.Add(_techTree);
-
-            _tabs = new TabView();
-            _tabs.AddToClassList("hrts-tabs");
-            _tabs.Add(Tab("Stats", _stats));
-            _treeTab = Tab("Tech Tree", treeScroll);
-            _tabs.Add(_treeTab);
+            _stats = _root.Require<StatsTable>("stats");
+            _techTree = _root.Require<TechTreeView>("tree");
+            _tabs = _root.Require<TabView>("tabs");
+            _treeTab = _root.Require<Tab>("tree-tab");
             _tabs.activeTabChanged += (_, _) => ShowPrefabs();
-            _root.Add(_tabs);
 
             EditorApplication.projectChanged += OnProjectChange;
             ObjectChangeEvents.changesPublished += OnObjectsChanged;
@@ -64,21 +62,6 @@ namespace HyperRTS.Editor.Catalog
             _tabs = null;
             _reloadPending = false;
             _treePending = false;
-        }
-
-        private Toolbar Toolbar()
-        {
-            var toolbar = new Toolbar();
-            toolbar.Add(new ToolbarSpacer { flex = true });
-            var search = new ToolbarSearchField();
-            search.SetValueWithoutNotify(_filter);
-            search.RegisterValueChangedCallback(change =>
-            {
-                _filter = change.newValue;
-                ShowPrefabs();
-            });
-            toolbar.Add(search);
-            return toolbar;
         }
 
         private void OnProjectChange()
@@ -144,14 +127,6 @@ namespace HyperRTS.Editor.Catalog
             }
 
             return prefab.DisplayName.IndexOf(_filter, System.StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        private static Tab Tab(string label, VisualElement content)
-        {
-            var tab = new Tab(label);
-            tab.AddToClassList("hrts-fill");
-            tab.Add(content);
-            return tab;
         }
     }
 }

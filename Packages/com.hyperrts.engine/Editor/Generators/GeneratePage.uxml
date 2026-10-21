@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <ui:Button name="run-all" class="hrts-generate__run-all" text="Run all" />
+  <ui:VisualElement name="groups" />
+</ui:UXML>

@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../../Common/HyperRTSEditor.uss" />
+  <HyperRTS.Editor.Maps.Designer.MapCanvasBackdrop name="image" class="hrts-map-canvas__image" picking-mode="Ignore" />
+  <ui:VisualElement name="overlay" class="hrts-map-canvas__overlay" picking-mode="Ignore" />
+  <ui:Label name="scale" class="hrts-map-canvas__scale" picking-mode="Ignore" />
+  <ui:Label name="error" class="hrts-map-canvas__error" picking-mode="Ignore" />
+</ui:UXML>

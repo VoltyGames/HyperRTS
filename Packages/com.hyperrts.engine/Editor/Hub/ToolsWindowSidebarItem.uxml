@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-sidebar__item">
+    <ui:Label name="title" class="hrts-sidebar__title" />
+    <ui:Label name="badge" class="hrts-badge" />
+  </ui:VisualElement>
+</ui:UXML>

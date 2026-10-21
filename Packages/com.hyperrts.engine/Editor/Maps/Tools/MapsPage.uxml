@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../../Common/HyperRTSEditor.uss" />
+  <uie:Toolbar>
+    <uie:ToolbarButton name="build-all" text="Build all" />
+    <uie:ToolbarButton name="new-scene" text="New blank scene..." />
+    <uie:ToolbarSpacer class="hrts-fill" />
+  </uie:Toolbar>
+  <ui:ScrollView class="hrts-fill">
+    <ui:VisualElement class="hrts-page__body">
+      <ui:HelpBox name="none" class="hrts-note" message-type="Info" text="No map specs (*.map.json) in the project. New map... starts one." />
+      <ui:VisualElement name="specs" />
+    </ui:VisualElement>
+  </ui:ScrollView>
+</ui:UXML>

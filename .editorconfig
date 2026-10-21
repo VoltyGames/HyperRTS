@@ -55,6 +55,13 @@ indent_size = 2
 charset = utf-8
 
 ##########################################
+# XML and Unity UI layouts (UXML): two-space
+##########################################
+[*.{xml,uxml}]
+indent_size = 2
+charset = utf-8
+
+##########################################
 # Unity YAML assets — two-space (do not reformat structurally)
 ##########################################
 [*.{yml,yaml,asset,meta,prefab,unity}]

@@ -36,20 +36,17 @@ namespace HyperRTS.Editor.Hub
         public void CreateGUI()
         {
             var root = rootVisualElement;
-            EditorAssets.AddStyles(root);
+            EditorAssets.Layout(typeof(ToolsWindow)).CloneTree(root);
             _pages = TypeDiscovery.Instances<HubPage>().OrderBy(page => page.Order).ToArray();
             _badges = new string[_pages.Length];
 
-            var split = new VisualElement();
-            split.AddToClassList("hrts-tools");
-            _sidebar = SidebarList.Create(_pages, _badges);
+            _sidebar = root.Require<ListView>("sidebar");
+            var item = EditorAssets.Layout(typeof(ToolsWindow), "SidebarItem");
+            _sidebar.makeItem = item.CloneRow;
+            _sidebar.bindItem = BindSidebarItem;
+            _sidebar.itemsSource = _pages;
             _sidebar.selectedIndicesChanged += _ => ShowSelected();
-            split.Add(_sidebar);
-
-            _content = new VisualElement();
-            _content.AddToClassList("hrts-page-host");
-            split.Add(_content);
-            root.Add(split);
+            _content = root.Require<VisualElement>("content");
 
             root.schedule.Execute(RefreshBadges).Every(BadgeMilliseconds);
             SelectSaved();
@@ -89,6 +86,14 @@ namespace HyperRTS.Editor.Hub
             page.AddToClassList("hrts-page");
             _content.Add(page);
             RefreshBadges();
+        }
+
+        private void BindSidebarItem(VisualElement item, int index)
+        {
+            item.Require<Label>("title").text = _pages[index].Title;
+            var badge = item.Require<Label>("badge");
+            badge.text = _badges[index];
+            badge.EnableInClassList("hrts-hidden", string.IsNullOrEmpty(_badges[index]));
         }
 
         private void ReleaseCurrent()

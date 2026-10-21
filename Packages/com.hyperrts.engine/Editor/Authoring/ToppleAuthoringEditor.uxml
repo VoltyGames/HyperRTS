@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <uie:ObjectField name="trunk-material" label="Trunk material" tooltip="The material of the trunk faces in the standing model&apos;s LOD0." />
+  <ui:Button name="measure" text="Measure from model" />
+  <ui:HelpBox name="error" class="hrts-hidden" message-type="Error" />
+</ui:UXML>

@@ -84,10 +84,6 @@
     display: none;
 }
 
-.hrts-table__number {
-    -unity-text-align: middle-right;
-}
-
 .hrts-tree__node {
     margin: 0 0 6px 0;
     padding: 4px;
@@ -287,6 +283,11 @@
     border-color: rgba(128, 128, 128, 0.4);
 }
 
+.hrts-map-list__group > .unity-foldout__toggle {
+    -unity-font-style: bold;
+    margin: 2px 0 0 3px;
+}
+
 .hrts-map-list__item {
     padding: 1px 4px 1px 16px;
 }
@@ -397,6 +398,20 @@
     color: rgb(255, 200, 60);
 }
 
-.hrts-map-key--missing {
-    color: rgb(255, 110, 100);
+.hrts-debug-overlay {
+    min-width: 180px;
+}
+
+.hrts-debug-overlay__ai {
+    margin-top: 4px;
+    white-space: normal;
+}
+
+/* Last, so a toggle wins over any rule above that sets display or visibility. */
+.hrts-hidden {
+    display: none;
+}
+
+.hrts-invisible {
+    visibility: hidden;
 }

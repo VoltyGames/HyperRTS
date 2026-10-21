@@ -77,6 +77,8 @@ Graphics, InputSystem or UIElements. A headless server never runs `Client/`. See
   overlays. Use uGUI only for UI that needs Animation Clips or Timeline. No IMGUI. Scene view `Handles` are the one
   exception, since UI Toolkit has no equivalent. Per-unit markers such as health bars and rings are instanced
   meshes, not UI.
+- Layout lives in UXML beside its script, same name (`MapsPage.uxml` beside `MapsPage.cs`). Code only looks
+  elements up and wires them, and builds just rows from data (from row templates) and Painter2D drawing.
 - Name a method after what it returns or does, like `TierIndex` or `PlaybackControl`. Never a bare `Of` or `XOf`.
 - Readable predicates: no long multi-line `&&` or `||` chains. Write a block body with an early `return` per rule
   and name intermediate facts with locals. Short one- or two-term `=>` bodies are fine.

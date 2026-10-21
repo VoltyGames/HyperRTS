@@ -6,21 +6,19 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>The Map Editor's left panel: every feature grouped by kind with counts; a click selects it.</summary>
-    public sealed class MapFeatureList : ScrollView
+    [UxmlElement]
+    public sealed partial class MapFeatureList : ScrollView
     {
         private const string ItemClass = "hrts-map-list__item";
         private const string SelectedClass = "hrts-map-list__item--selected";
 
-        private readonly MapFeatureSelection _selection;
+        private MapFeatureSelection _selection;
         private readonly Dictionary<MapFeatureRef, Label> _items = new();
         private readonly HashSet<string> _collapsed = new();
         private string _shape;
 
-        public MapFeatureList(MapFeatureSelection selection)
-        {
-            _selection = selection;
-            AddToClassList("hrts-map-list");
-        }
+        /// <summary>Sets the selection that clicks write and rows show; the window binds it once.</summary>
+        public void Bind(MapFeatureSelection selection) => _selection = selection;
 
         /// <summary>Rebuilds when features were added or removed; otherwise just renames the rows.</summary>
         public void Refresh(MapSpec spec)

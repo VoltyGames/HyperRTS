@@ -18,14 +18,13 @@ namespace HyperRTS.Editor.Authoring
 
         public override VisualElement CreateInspectorGUI()
         {
-            var root = new VisualElement();
-            EditorAssets.AddStyles(root);
-            _issues = new IssueBadge(OnChanged);
-            root.Add(_issues);
-            BuildHeader(root);
-            InspectorElement.FillDefaultInspector(root, serializedObject, this);
+            var root = EditorAssets.Layout(typeof(AuthoringEditor)).Instantiate();
+            _issues = root.Require<IssueBadge>("issues");
+            _issues.Fixed += OnChanged;
+            BuildHeader(root.Require<VisualElement>("header"));
+            InspectorElement.FillDefaultInspector(root.Require<VisualElement>("fields"), serializedObject, this);
             ConditionalFields.Bind(root, serializedObject);
-            BuildFooter(root);
+            BuildFooter(root.Require<VisualElement>("footer"));
 
             // Rules also read sibling components and the hierarchy, so field edits alone don't cover every change.
             root.TrackSerializedObjectValue(serializedObject, _ => OnChanged());
@@ -35,13 +34,13 @@ namespace HyperRTS.Editor.Authoring
             return root;
         }
 
-        /// <summary>Adds elements above the fields.</summary>
-        protected virtual void BuildHeader(VisualElement root)
+        /// <summary>Adds elements to the header above the fields.</summary>
+        protected virtual void BuildHeader(VisualElement header)
         {
         }
 
-        /// <summary>Adds elements below the fields.</summary>
-        protected virtual void BuildFooter(VisualElement root)
+        /// <summary>Adds elements to the footer below the fields.</summary>
+        protected virtual void BuildFooter(VisualElement footer)
         {
         }
 

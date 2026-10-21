@@ -9,17 +9,13 @@ namespace HyperRTS.Editor.Maps.Designer
     /// The map canvas's background: the newest preview image, covering the playable bounds, north up. That is the
     /// one the live preview drew in memory, or the one a preview wrote to disk when that file changes afterwards.
     /// </summary>
-    public sealed class MapCanvasBackdrop : VisualElement
+    [UxmlElement]
+    public sealed partial class MapCanvasBackdrop : VisualElement
     {
         private Texture2D _image;
         private long _diskTicks;
 
-        public MapCanvasBackdrop()
-        {
-            pickingMode = PickingMode.Ignore;
-            AddToClassList("hrts-map-canvas__image");
-            RegisterCallback<DetachFromPanelEvent>(_ => OnDetached());
-        }
+        public MapCanvasBackdrop() => RegisterCallback<DetachFromPanelEvent>(_ => Reset());
 
         /// <summary>Shows an image drawn in memory; the backdrop owns it from now on.</summary>
         public void Show(Texture2D image)
@@ -50,10 +46,10 @@ namespace HyperRTS.Editor.Maps.Designer
             Show(image);
         }
 
-        /// <summary>Drops the image; attached again, the next poll reloads the one on disk.</summary>
-        private void OnDetached()
+        /// <summary>Drops the image, so the next poll reloads the one on disk; used when detached or the map changes.</summary>
+        public void Reset()
         {
-            Release();
+            Show(null);
             _diskTicks = 0L;
         }
 

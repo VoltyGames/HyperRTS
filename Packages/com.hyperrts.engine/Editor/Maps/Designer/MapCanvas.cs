@@ -1,4 +1,5 @@
 ﻿using System;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Symmetry;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -10,14 +11,15 @@ namespace HyperRTS.Editor.Maps.Designer
     /// feature with its symmetry ghosts, and the selection's handles. Middle-drag or Space+drag pans, the wheel
     /// zooms to the cursor, F fits the map, and a left click selects the feature under the cursor.
     /// </summary>
-    public sealed class MapCanvas : VisualElement
+    [UxmlElement]
+    public sealed partial class MapCanvas : VisualElement
     {
         private const float ZoomStep = 1.15f;
         private const long PreviewPollMilliseconds = 1000;
         private const int MiddleButton = 2;
 
-        private readonly MapSpecDocument _document;
-        private readonly MapFeatureSelection _selection;
+        private MapSpecDocument _document;
+        private MapFeatureSelection _selection;
         private readonly MapCanvasView _view = new();
         private readonly MapCanvasBackdrop _image;
         private readonly VisualElement _overlay;
@@ -31,19 +33,15 @@ namespace HyperRTS.Editor.Maps.Designer
         private Vector2 _lastPointer;
         private bool _ghosts = true;
 
-        public MapCanvas(MapSpecDocument document, MapFeatureSelection selection)
+        public MapCanvas()
         {
-            _document = document;
-            _selection = selection;
-            AddToClassList("hrts-map-canvas");
             focusable = true;
-
-            _image = new MapCanvasBackdrop();
-            Add(_image);
-            _overlay = AddChild("hrts-map-canvas__overlay");
+            EditorAssets.Layout(typeof(MapCanvas)).CloneTree(this);
+            _image = this.Require<MapCanvasBackdrop>("image");
+            _overlay = this.Require<VisualElement>("overlay");
             _overlay.generateVisualContent = Paint;
-            _scale = AddLabel("hrts-map-canvas__scale");
-            _error = AddLabel("hrts-map-canvas__error");
+            _scale = this.Require<Label>("scale");
+            _error = this.Require<Label>("error");
 
             RegisterCallback<GeometryChangedEvent>(_ => OnResized());
             RegisterCallback<WheelEvent>(OnWheel);
@@ -53,8 +51,24 @@ namespace HyperRTS.Editor.Maps.Designer
             RegisterCallback<KeyDownEvent>(OnKeyDown);
             RegisterCallback<KeyUpEvent>(OnKeyUp);
             schedule.Execute(LoadPreview).Every(PreviewPollMilliseconds);
-            Refresh();
         }
+
+        /// <summary>Shows <paramref name="document"/>, fitted, with <paramref name="selection"/> drawn and set by clicks.</summary>
+        public void Bind(MapSpecDocument document, MapFeatureSelection selection)
+        {
+            _document = document;
+            _selection = selection;
+            _image.Reset();
+            _fitted = false;
+            Refresh();
+            if (contentRect.width > 0f)
+            {
+                Fit();
+            }
+        }
+
+        // The window shows the canvas only once a document is bound, but polls and layout can run before that.
+        private bool Bound => _document != null;
 
         public bool ShowGhosts
         {
@@ -120,24 +134,13 @@ namespace HyperRTS.Editor.Maps.Designer
             OnViewChanged();
         }
 
-        private VisualElement AddChild(string className)
-        {
-            var child = new VisualElement { pickingMode = PickingMode.Ignore };
-            child.AddToClassList(className);
-            Add(child);
-            return child;
-        }
-
-        private Label AddLabel(string className)
-        {
-            var label = new Label { pickingMode = PickingMode.Ignore };
-            label.AddToClassList(className);
-            Add(label);
-            return label;
-        }
-
         private void Paint(MeshGenerationContext context)
         {
+            if (!Bound)
+            {
+                return;
+            }
+
             var painter = context.painter2D;
             var spec = _document.Spec;
             MapCanvasPainter.DrawGrid(painter, _view, TerrainBounds);
@@ -160,6 +163,11 @@ namespace HyperRTS.Editor.Maps.Designer
         private void OnResized()
         {
             _view.Size = contentRect.size;
+            if (!Bound)
+            {
+                return;
+            }
+
             if (!_fitted)
             {
                 Fit();
@@ -180,7 +188,13 @@ namespace HyperRTS.Editor.Maps.Designer
             _overlay.MarkDirtyRepaint();
         }
 
-        private void LoadPreview() => _image.Poll(_document.MapName);
+        private void LoadPreview()
+        {
+            if (Bound)
+            {
+                _image.Poll(_document.MapName);
+            }
+        }
 
         private void OnWheel(WheelEvent evt)
         {

@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-row">
+    <ui:Label name="name" class="hrts-map-report__name" />
+    <ui:Label name="value" class="hrts-row__grow" />
+  </ui:VisualElement>
+</ui:UXML>

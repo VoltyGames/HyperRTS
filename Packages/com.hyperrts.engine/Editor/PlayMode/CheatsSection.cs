@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Hub;
+using HyperRTS.Editor.Common;
 using HyperRTS.Network.Session;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
@@ -18,35 +18,46 @@ namespace HyperRTS.Editor.PlayMode
     {
         private readonly HelpBox _status;
         private readonly VisualElement _controls;
-        private PopupField<string> _player;
-        private PopupField<string> _prefab;
-        private IntegerField _amount;
-        private IntegerField _perSide;
-        private Button _control;
-        private Toggle _fog;
-        private Slider _speed;
+        private readonly DropdownField _player;
+        private readonly DropdownField _prefab;
+        private readonly IntegerField _amount;
+        private readonly IntegerField _perSide;
+        private readonly Button _control;
+        private readonly Toggle _fog;
+        private readonly Slider _speed;
 
-        public CheatsSection()
+        /// <summary>Wires the controls of a cloned CheatsSection.uxml.</summary>
+        public CheatsSection(VisualElement root)
         {
-            Root = HubSections.Section("Cheats");
-            _status = new HelpBox("", HelpBoxMessageType.Info);
-            _status.AddToClassList("hrts-note");
-            Root.Add(_status);
+            _status = root.Require<HelpBox>("status");
+            _controls = root.Require<VisualElement>("controls");
+            _player = root.Require<DropdownField>("player");
+            _player.choices = new List<string>();
+            _amount = root.Require<IntegerField>("amount");
+            root.Require<Button>("add").clicked += () => Act((manager, player, _) =>
+                Cheats.AddResources(manager, player, _amount.value));
+            _control = root.Require<Button>("control");
+            _control.clicked += () => Act((manager, player, _) => Cheats.MakeLocal(manager, player));
+            root.Require<Button>("instant-build").clicked +=
+                () => Act((manager, _, faction) => Cheats.InstantBuild(manager, faction));
 
-            _controls = new VisualElement();
-            BuildPlayerControls(_controls);
-            BuildWorldControls(_controls);
-            Root.Add(_controls);
+            _fog = root.Require<Toggle>("fog");
+            _fog.RegisterValueChangedCallback(change => Act((manager, _, _) => Cheats.SetFog(manager, change.newValue)));
+            _prefab = root.Require<DropdownField>("prefab");
+            _prefab.choices = new List<string>();
+            root.Require<Button>("at-view").clicked += SpawnAtView;
+            _perSide = root.Require<IntegerField>("per-side");
+            root.Require<Button>("attack").clicked += SpawnArmies;
+            _speed = root.Require<Slider>("speed");
+            _speed.RegisterValueChangedCallback(change => LocalGameSpeed.SetScale(change.newValue));
         }
-
-        public VisualElement Root { get; }
 
         // Cheats change game state, so they go to the server when hosting, not to the client the HUD shows.
         public void Poll()
         {
             var ready = TryGetPlayers(out var manager, out var players, out var message);
             _status.text = message;
-            _status.style.display = string.IsNullOrEmpty(message) ? DisplayStyle.None : DisplayStyle.Flex;
+            _status.EnableInClassList("hrts-hidden", string.IsNullOrEmpty(message));
             _controls.SetEnabled(ready);
             if (!ready)
             {
@@ -58,43 +69,6 @@ namespace HyperRTS.Editor.PlayMode
             _control.SetEnabled(CanControl(manager, SelectedPlayer(players)));
             _fog.SetValueWithoutNotify(Cheats.FogEnabled(manager));
             _speed.SetValueWithoutNotify(LocalGameSpeed.Scale);
-        }
-
-        private void BuildPlayerControls(VisualElement parent)
-        {
-            _player = Popup("Player");
-            parent.Add(_player);
-
-            _amount = new IntegerField("Resources") { value = 1000 };
-            parent.Add(Row(_amount, new Button(() => Act((manager, player, _) =>
-                Cheats.AddResources(manager, player, _amount.value))) { text = "Add" }));
-
-            _control = new Button(() => Act((manager, player, _) => Cheats.MakeLocal(manager, player)))
-            {
-                text = "Control this player",
-            };
-            var instantBuild = new Button(() => Act((manager, _, faction) => Cheats.InstantBuild(manager, faction)))
-            {
-                text = "Instant build",
-            };
-            parent.Add(HubSections.Buttons(instantBuild, _control));
-        }
-
-        private void BuildWorldControls(VisualElement parent)
-        {
-            _fog = new Toggle("Fog of war");
-            _fog.RegisterValueChangedCallback(change => Act((manager, _, _) => Cheats.SetFog(manager, change.newValue)));
-            parent.Add(_fog);
-
-            _prefab = Popup("Spawn");
-            parent.Add(Row(_prefab, new Button(SpawnAtView) { text = "At view" }));
-
-            _perSide = new IntegerField("Armies per side") { value = 250 };
-            parent.Add(Row(_perSide, new Button(SpawnArmies) { text = "Attack" }));
-
-            _speed = new Slider("Game speed", 0f, 4f) { showInputField = true };
-            _speed.RegisterValueChangedCallback(change => LocalGameSpeed.SetScale(change.newValue));
-            parent.Add(_speed);
         }
 
         // Outside Play mode the page's hint explains; inside, only a still-loading SubScene needs a message.
@@ -194,7 +168,7 @@ namespace HyperRTS.Editor.PlayMode
         }
 
         // Polls rebuild the lists; touching the field only on a real change keeps an open dropdown stable.
-        private static void SetChoices(PopupField<string> field, List<string> choices)
+        private static void SetChoices(DropdownField field, List<string> choices)
         {
             if (choices.Count == 0 || choices.SequenceEqual(field.choices))
             {
@@ -204,18 +178,6 @@ namespace HyperRTS.Editor.PlayMode
             var index = field.index >= 0 && field.index < choices.Count ? field.index : 0;
             field.choices = choices;
             field.index = index;
-        }
-
-        private static PopupField<string> Popup(string label) => new(label) { choices = new List<string>() };
-
-        private static VisualElement Row(VisualElement field, Button button)
-        {
-            var row = new VisualElement();
-            row.AddToClassList("hrts-row");
-            field.AddToClassList("hrts-row__grow");
-            row.Add(field);
-            row.Add(button);
-            return row;
         }
     }
 }

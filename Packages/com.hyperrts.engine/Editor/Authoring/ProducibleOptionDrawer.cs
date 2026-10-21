@@ -14,20 +14,12 @@ namespace HyperRTS.Editor.Authoring
     {
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
-            var row = new VisualElement();
-            EditorAssets.AddStyles(row);
-            row.AddToClassList("hrts-option");
-
-            var field = new ObjectField { objectType = OptionType(), allowSceneObjects = false };
-            field.AddToClassList("hrts-option__field");
+            var row = EditorAssets.Layout(typeof(ProducibleOptionDrawer)).Instantiate();
+            var field = row.Require<ObjectField>("option");
+            field.objectType = OptionType();
             field.BindProperty(property);
-            var icon = new Image();
-            icon.AddToClassList("hrts-option__icon");
-            var summary = new Label();
-            summary.AddToClassList("hrts-option__summary");
-            row.Add(field);
-            row.Add(icon);
-            row.Add(summary);
+            var icon = row.Require<Image>("icon");
+            var summary = row.Require<Label>("summary");
 
             void Show(SerializedProperty changed)
             {

@@ -23,11 +23,12 @@ namespace HyperRTS.Editor.Maps.Designer
         private readonly MapFeatureSelection _selection = new();
         private MapSpecDocument _document;
         private MapEditorToolbar _toolbar;
+        private Label _hint;
         private VisualElement _body;
         private MapFeatureList _list;
         private MapCanvas _canvas;
         private MapFeatureInspector _inspector;
-        private MapPreviewStrip _previewStrip;
+        private MapReportPanel _report;
         private MapEditorPreview _preview;
 
         [MenuItem(EditorMenu.MapEditor, false, EditorMenu.MapEditorPriority)]
@@ -51,15 +52,21 @@ namespace HyperRTS.Editor.Maps.Designer
         public void CreateGUI()
         {
             var root = rootVisualElement;
-            EditorAssets.AddStyles(root);
-            root.AddToClassList("hrts-map-editor");
-            _toolbar = new MapEditorToolbar(Load, OnGhostsToggled);
-            root.Add(_toolbar);
-            _previewStrip = new MapPreviewStrip(() => _preview?.Preview(), () => _preview?.Build());
-            _toolbar.Add(_previewStrip);
-            _body = new VisualElement();
-            _body.AddToClassList("hrts-map-editor__body");
-            root.Add(_body);
+            EditorAssets.Layout(typeof(MapEditorWindow)).CloneTree(root);
+            _toolbar = root.Require<MapEditorToolbar>("toolbar");
+            _toolbar.SpecPicked += Load;
+            _toolbar.GhostsToggled += OnGhostsToggled;
+            _toolbar.Strip.PreviewClicked += () => _preview?.Preview();
+            _toolbar.Strip.BuildClicked += () => _preview?.Build();
+            _hint = root.Require<Label>("hint");
+            _body = root.Require<VisualElement>("body");
+            _list = root.Require<MapFeatureList>("features");
+            _list.Bind(_selection);
+            _canvas = root.Require<MapCanvas>("canvas");
+            _canvas.ShowGhosts = _toolbar.Ghosts;
+            _inspector = root.Require<MapFeatureInspector>("inspector");
+            _report = root.Require<MapReportPanel>("report");
+            _report.ShowFeature += feature => _preview?.Show(feature);
             root.schedule.Execute(PollDisk).Every(DiskPollMilliseconds);
 
             if (_document == null && File.Exists(_specPath))
@@ -67,7 +74,7 @@ namespace HyperRTS.Editor.Maps.Designer
                 _document = MapSpecDocument.Open(_specPath);
             }
 
-            BuildBody();
+            ShowDocument();
         }
 
         private void OnEnable() => _selection.Changed += OnSelectionChanged;
@@ -99,54 +106,36 @@ namespace HyperRTS.Editor.Maps.Designer
             _document = MapSpecDocument.Open(specPath);
             _specPath = specPath;
             _selection.Clear();
-            BuildBody();
+            ShowDocument();
         }
 
-        private void BuildBody()
+        private void ShowDocument()
         {
             if (_body == null)
             {
                 return;
             }
 
-            _body.Clear();
             _preview?.Dispose();
             _preview = null;
+            _hint.EnableInClassList("hrts-hidden", _document != null);
+            _body.EnableInClassList("hrts-hidden", _document == null);
             if (_document == null)
             {
-                var hint = new Label("Pick a map spec in the toolbar, or double-click a .map.json file.");
-                hint.AddToClassList("hrts-hint");
-                _body.Add(hint);
                 return;
             }
 
-            _list = new MapFeatureList(_selection);
-            _canvas = new MapCanvas(_document, _selection) { ShowGhosts = _toolbar.Ghosts };
-            _inspector = new MapFeatureInspector();
-            _body.Add(_list);
-            _body.Add(_canvas);
-            _body.Add(SidePanel());
-
+            _canvas.Bind(_document, _selection);
+            _preview = new MapEditorPreview(_document, _canvas, _selection, _toolbar.Strip, _report);
             _document.Changed -= OnDocumentChanged;
             _document.Changed += OnDocumentChanged;
             OnDocumentChanged();
             OnSelectionChanged();
         }
 
-        /// <summary>The inspector over the report panel, whose previews and builds follow the document.</summary>
-        private VisualElement SidePanel()
-        {
-            _preview = new MapEditorPreview(_document, _canvas, _selection, _previewStrip);
-            var side = new VisualElement();
-            side.AddToClassList("hrts-map-editor__side");
-            side.Add(_inspector);
-            side.Add(_preview.Panel);
-            return side;
-        }
-
         private void OnDocumentChanged()
         {
-            if (_canvas == null)
+            if (_document == null)
             {
                 return;
             }
@@ -159,7 +148,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private void OnSelectionChanged()
         {
-            if (_canvas == null)
+            if (_document == null)
             {
                 return;
             }
@@ -171,10 +160,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private void OnGhostsToggled(bool on)
         {
-            if (_canvas != null)
-            {
-                _canvas.ShowGhosts = on;
-            }
+            _canvas.ShowGhosts = on;
         }
 
         private void PollDisk() => _document?.ReloadIfChangedOnDisk();

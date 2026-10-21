@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-row">
+    <ui:Label name="name" class="hrts-map__name" />
+    <ui:Label name="info" class="hrts-map__info" />
+    <ui:Label name="status" class="hrts-map__status" />
+    <ui:Button name="open" class="hrts-map__build" text="Open" />
+    <ui:Button name="build" class="hrts-map__build" text="Build" />
+  </ui:VisualElement>
+</ui:UXML>

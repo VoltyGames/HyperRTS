@@ -15,30 +15,23 @@ namespace HyperRTS.Editor.Authoring
     {
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
-            var row = new VisualElement();
-            EditorAssets.AddStyles(row);
-            row.AddToClassList("hrts-row");
+            var row = EditorAssets.Layout(typeof(OwnerDrawer)).Instantiate();
+            var field = row.Require<DropdownField>("owner");
+            field.label = property.displayName;
+            var swatch = row.Require<VisualElement>("swatch");
 
-            var field = new PopupField<int>(property.displayName, Choices(property.intValue), property.intValue,
-                Label, Label);
-            field.AddToClassList(BaseField<int>.alignedFieldUssClassName);
-            field.AddToClassList("hrts-row__grow");
-            var swatch = new VisualElement();
-            swatch.AddToClassList("hrts-swatch");
-            row.Add(field);
-            row.Add(swatch);
-
+            // Owners run 0 to the last slot, so a choice's index is its owner.
             void Show()
             {
-                field.choices = Choices(property.intValue);
+                field.choices = Choices(property.intValue).ConvertAll(Label);
                 field.showMixedValue = property.hasMultipleDifferentValues;
-                field.SetValueWithoutNotify(property.intValue);
+                field.SetValueWithoutNotify(field.choices[property.intValue]);
                 swatch.style.backgroundColor = SceneMatch.PlayerColor(property.intValue);
             }
 
             field.RegisterValueChangedCallback(change =>
             {
-                property.intValue = change.newValue;
+                property.intValue = field.index;
                 property.serializedObject.ApplyModifiedProperties();
                 Show();
             });

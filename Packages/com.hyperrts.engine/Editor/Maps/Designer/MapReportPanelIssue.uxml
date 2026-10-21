@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-issue">
+    <ui:HelpBox name="message" class="hrts-issue__message" />
+    <ui:Button name="show" class="hrts-map-report__show" text="Show" />
+  </ui:VisualElement>
+</ui:UXML>

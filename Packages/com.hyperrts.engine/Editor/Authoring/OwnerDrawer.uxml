@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <ui:VisualElement class="hrts-row">
+    <ui:DropdownField name="owner" class="unity-base-field__aligned hrts-row__grow" />
+    <ui:VisualElement name="swatch" class="hrts-swatch" />
+  </ui:VisualElement>
+</ui:UXML>

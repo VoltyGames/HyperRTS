@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../../Common/HyperRTSEditor.uss" />
+  <ui:VisualElement class="hrts-map-editor">
+    <HyperRTS.Editor.Maps.Designer.MapEditorToolbar name="toolbar" />
+    <ui:Label name="hint" class="hrts-hint" text="Pick a map spec in the toolbar, or double-click a .map.json file." />
+    <ui:VisualElement name="body" class="hrts-map-editor__body hrts-hidden">
+      <HyperRTS.Editor.Maps.Designer.MapFeatureList name="features" class="hrts-map-list" />
+      <HyperRTS.Editor.Maps.Designer.MapCanvas name="canvas" class="hrts-map-canvas" />
+      <ui:VisualElement class="hrts-map-editor__side">
+        <HyperRTS.Editor.Maps.Designer.MapFeatureInspector name="inspector" class="hrts-map-inspector" />
+        <HyperRTS.Editor.Maps.Designer.MapReportPanel name="report" class="hrts-map-report" />
+      </ui:VisualElement>
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

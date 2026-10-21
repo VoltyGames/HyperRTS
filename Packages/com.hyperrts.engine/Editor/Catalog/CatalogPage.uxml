@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <uie:Toolbar>
+    <uie:ToolbarSpacer class="hrts-fill" />
+    <uie:ToolbarSearchField name="search" />
+  </uie:Toolbar>
+  <ui:TabView name="tabs" class="hrts-tabs">
+    <ui:Tab label="Stats" class="hrts-fill">
+      <HyperRTS.Editor.Catalog.StatsTable name="stats" class="hrts-fill" fixed-item-height="22" show-alternating-row-backgrounds="ContentOnly" />
+    </ui:Tab>
+    <ui:Tab name="tree-tab" label="Tech Tree" class="hrts-fill">
+      <ui:ScrollView class="hrts-fill">
+        <HyperRTS.Editor.Catalog.TechTreeView name="tree" />
+      </ui:ScrollView>
+    </ui:Tab>
+  </ui:TabView>
+</ui:UXML>

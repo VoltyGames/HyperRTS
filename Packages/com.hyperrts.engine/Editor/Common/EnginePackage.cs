@@ -11,15 +11,27 @@ namespace HyperRTS.Editor.Common
         {
             get
             {
+                var package = Info;
+                var embedded = package.source == PackageSource.Embedded;
+                var local = package.source == PackageSource.Local;
+                return embedded || local;
+            }
+        }
+
+        /// <summary>The package's project path, such as <c>Packages/com.hyperrts.engine</c>.</summary>
+        public static string Folder => Info.assetPath;
+
+        private static PackageInfo Info
+        {
+            get
+            {
                 var package = PackageInfo.FindForAssembly(typeof(EnginePackage).Assembly);
                 if (package == null)
                 {
                     throw new InvalidOperationException("HyperRTS: the editor assembly is not inside a package.");
                 }
 
-                var embedded = package.source == PackageSource.Embedded;
-                var local = package.source == PackageSource.Local;
-                return embedded || local;
+                return package;
             }
         }
     }

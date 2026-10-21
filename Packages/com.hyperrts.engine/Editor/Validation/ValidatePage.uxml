@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <uie:Toolbar>
+    <uie:ToolbarButton name="validate" text="Validate" />
+    <uie:ToolbarSpacer class="hrts-fill" />
+    <ui:Label name="counts" class="hrts-toolbar-label" />
+  </uie:Toolbar>
+  <ui:HelpBox name="empty" class="hrts-note" message-type="Info" text="No problems found. Closed SubScenes aren&apos;t checked: open them to include their content." />
+  <ui:ScrollView class="hrts-fill">
+    <HyperRTS.Editor.Validation.IssueList name="issues" show-context="true" />
+  </ui:ScrollView>
+</ui:UXML>
