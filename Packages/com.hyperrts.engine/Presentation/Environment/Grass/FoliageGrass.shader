@@ -43,6 +43,15 @@ Shader "Hidden/HyperRTS/FoliageGrass"
             Name "Foliage"
             Tags { "LightMode" = "UniversalForward" }
 
+            // Stencil bit 64 marks ground cover, so units standing in grass get no LitTeam silhouette through it.
+            Stencil
+            {
+                Ref 64
+                WriteMask 64
+                Comp Always
+                Pass Replace
+            }
+
             HLSLPROGRAM
             #pragma vertex ForwardVert
             #pragma fragment ForwardFrag

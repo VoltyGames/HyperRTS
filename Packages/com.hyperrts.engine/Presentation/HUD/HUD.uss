@@ -274,20 +274,20 @@
 
 .drag-box {
     position: absolute;
-    border-width: 1px;
+    border-width: 2px;
 }
 
-/* A 14px L from two 3px borders, set over the box's 1px edge. */
+/* An 18px L from two 4px borders, set over the box's 2px edge; panel px scale with resolution and UI scale. */
 .drag-box__corner {
     position: absolute;
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
 }
 
-.drag-box__corner--tl, .drag-box__corner--bl { left: -1px; border-left-width: 3px; }
+.drag-box__corner--tl, .drag-box__corner--bl { left: -2px; border-left-width: 4px; }
 
-.drag-box__corner--tr, .drag-box__corner--br { right: -1px; border-right-width: 3px; }
+.drag-box__corner--tr, .drag-box__corner--br { right: -2px; border-right-width: 4px; }
 
-.drag-box__corner--tl, .drag-box__corner--tr { top: -1px; border-top-width: 3px; }
+.drag-box__corner--tl, .drag-box__corner--tr { top: -2px; border-top-width: 4px; }
 
-.drag-box__corner--bl, .drag-box__corner--br { bottom: -1px; border-bottom-width: 3px; }
+.drag-box__corner--bl, .drag-box__corner--br { bottom: -2px; border-bottom-width: 4px; }

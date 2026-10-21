@@ -90,6 +90,8 @@ or own, ally and enemy colours. The validator flags units and buildings without 
 
 Units hidden behind cover still show. `UnitSilhouetteFeature`, a URP renderer feature, draws a team-coloured fill
 and rim where a unit is hidden. Every rendered part of a unit is put on rendering layer 8 at bake time for this.
+Grass and small plants are not cover: `FoliageGrass` marks stencil bit 64 and the silhouette skips those pixels, so a
+unit driving through grass shows no team-coloured patches.
 
 ### Vertex animation
 

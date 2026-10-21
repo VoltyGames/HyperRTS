@@ -173,8 +173,8 @@
 }
 
 .drag-box {
-    background-color: rgba(200, 225, 255, 0.08);
-    border-color: rgba(200, 225, 255, 0.7);
+    background-color: rgba(200, 225, 255, 0.1);
+    border-color: rgba(200, 225, 255, 0.9);
 }
 
 .drag-box__corner {

@@ -14,6 +14,9 @@ Players spend resources to build and train. Each resource is a `ResourceType` as
 | `ReserveRefillAuthoring` | Refilling the owner's finite reserves every interval |
 | `DeliverySourceAuthoring` | Carriers that drive in from the map edge and pay on arrival |
 
+`ResourceStagesAuthoring` on a node swaps child models by the share of its starting amount left, ordered from full
+to nearly spent, and steps back up as a renewable node regrows. `ResourceStageSystem` shows them on the client.
+
 Nodes are finite or regrow. Harvesters move on when a node runs dry. A killed delivery carrier pays nothing. Steady
 income, refills and casualty income scale with the player's `Income` stat.
 

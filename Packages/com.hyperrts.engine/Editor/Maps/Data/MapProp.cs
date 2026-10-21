@@ -50,6 +50,12 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("How far the pad reaches past the footprint (metres).")]
         public float padMargin = 3f;
 
+        [Tooltip("How far the pad's edge wanders in and out (metres).")]
+        public float padWander = 0.8f;
+
+        [Tooltip("Lay the pad as an oval inside its rectangle (trampled ground) rather than a squared yard.")]
+        public bool padRound;
+
         [Tooltip("Road class of an access track run from the pad to the nearest road; empty for none.")]
         [MapKey(typeof(MapRoadClass))]
         public string access;

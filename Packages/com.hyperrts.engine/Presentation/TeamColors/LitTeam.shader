@@ -293,7 +293,8 @@ Shader "HyperRTS/LitTeam"
             ENDHLSL
         }
 
-        // UnitSilhouetteFeature: team colour where something hides the unit. Bit 128 again, so each pixel blends once.
+        // UnitSilhouetteFeature: team colour where something hides the unit, skipping FoliageGrass's ground cover (bit
+        // 64). Inverting the clear bit 128 sets it, so each pixel blends once.
         Pass
         {
             Name "UnitSilhouette"
@@ -305,11 +306,11 @@ Shader "HyperRTS/LitTeam"
             Cull[_Cull]
             Stencil
             {
-                Ref 128
-                ReadMask 128
+                Ref 0
+                ReadMask 192
                 WriteMask 128
-                Comp NotEqual
-                Pass Replace
+                Comp Equal
+                Pass Invert
             }
 
             HLSLPROGRAM

@@ -13,5 +13,8 @@ namespace HyperRTS.Simulation.Resources
 
         /// <summary>Fractional regrowth carried between frames.</summary>
         public float RegrowthAccumulator;
+
+        /// <summary>The share of the starting amount still left, 0 to 1.</summary>
+        public readonly float Remaining => (float)Amount / MaxAmount;
     }
 }
