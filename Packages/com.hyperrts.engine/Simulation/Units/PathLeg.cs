@@ -33,10 +33,11 @@ namespace HyperRTS.Simulation.Units
         public bool HasArrived(float radius) => IsFinal && Distance <= NavTolerances.Arrive(radius);
 
         /// <summary>
-        /// The leg to the first waypoint, or straight to the goal while the search is pending. Without
-        /// <paramref name="driven"/>, <see cref="Remaining"/> stops at the corner and <see cref="CornerTurn"/> is 0.
+        /// The leg to the first waypoint, or straight to the goal while the search is pending. The path's length past
+        /// that waypoint comes cached in <see cref="PathState.LengthPastCorner"/>.
         /// </summary>
-        public static PathLeg Along(float2 position, float2 goal, DynamicBuffer<PathWaypoint> waypoints, bool driven)
+        public static PathLeg Along(float2 position, float2 goal, DynamicBuffer<PathWaypoint> waypoints,
+            in PathState path)
         {
             if (waypoints.Length == 0)
             {
@@ -44,19 +45,8 @@ namespace HyperRTS.Simulation.Units
             }
 
             var corner = waypoints[0].Position.xz;
-            var remaining = math.distance(position, corner);
+            var remaining = math.distance(position, corner) + path.LengthPastCorner;
             var isFinal = waypoints.Length == 1;
-            if (!driven)
-            {
-                // Only Locomotion reads the whole length and the turn, so plain walkers skip the sum and the acos.
-                return new PathLeg(position, corner, 0f, remaining, isFinal);
-            }
-
-            for (var i = 1; i < waypoints.Length; i++)
-            {
-                remaining += math.distance(waypoints[i - 1].Position.xz, waypoints[i].Position.xz);
-            }
-
             var turn = isFinal ? 0f : Turn(corner - position, waypoints[1].Position.xz - corner);
             return new PathLeg(position, corner, turn, remaining, isFinal);
         }

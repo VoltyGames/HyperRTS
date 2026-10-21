@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Destruction
         [Tooltip("Meshes picked at random per piece, such as rubble chunks or a unit cube scaled into a sandbag.")]
         public List<Mesh> meshes = new();
 
-        [Tooltip("Material every piece draws with, usually the prop's own.")]
+        [Tooltip("Material every piece draws with, usually the prop's own, with GPU instancing on.")]
         public Material material;
 
         [Tooltip("Scale per axis applied to the mesh, varied 20 % either way per piece.")]
@@ -36,6 +36,11 @@ namespace HyperRTS.Presentation.Destruction
             if (material == null)
             {
                 return $"Debris set '{name}' has no 'material'.";
+            }
+
+            if (!material.enableInstancing)
+            {
+                return $"Debris set '{name}' material '{material.name}' needs 'Enable GPU Instancing' on, as pieces draw instanced.";
             }
 
             if (meshes.Count == 0 || meshes.Contains(null))

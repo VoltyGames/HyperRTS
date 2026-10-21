@@ -29,9 +29,23 @@ namespace HyperRTS.Simulation.Cues
         /// <summary>Below this many m/s a vehicle creeping or jostled in a crowd raises none.</summary>
         public float MinSpeed;
 
+        /// <summary>Where the entity was drawn last frame, once <see cref="Tracked"/>.</summary>
+        public float3 LastPosition;
+
+        public bool Tracked;
+
         /// <summary>Stream rate from 0 to 1 for the vehicle's driven speed, either way along its facing.</summary>
         public readonly float Strength(float speed) =>
             math.saturate((math.abs(speed) - MinSpeed) / math.max(FullSpeed - MinSpeed, 0.01f));
+
+        /// <summary>Signed m/s of the drawn move along the flat <paramref name="forward"/>; sideways pushes count little.</summary>
+        public float DrawnSpeed(float3 position, float3 forward, float deltaTime)
+        {
+            var moved = Tracked && deltaTime > 0f ? position - LastPosition : float3.zero;
+            LastPosition = position;
+            Tracked = true;
+            return math.dot(moved.xz, math.normalizesafe(forward.xz)) / math.max(deltaTime, 1e-5f);
+        }
     }
 
     /// <summary>Dust a rotorcraft's downwash raises from the ground under it, by the ground material and its height.</summary>

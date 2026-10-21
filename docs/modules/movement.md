@@ -19,8 +19,9 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 - Pathfinding is Burst A* with smoothing, at most 48 searches a frame.
 - A clearance field gives each cell, per layer, the side of the largest open square above it. A unit needs a
   square as wide as its diameter rounded up to whole cells, so a 3.7 m tank on 2 m cells never paths through a
-  one-cell gap. Units one cell wide path as before. The field is rebuilt with every restamp.
+  one-cell gap. Units one cell wide path as before. The field is rebuilt with every restamp, one job per layer.
 - Smoothing and corner skipping keep the unit's radius from closed cells, capped to fit the gap its square fits.
+  A unit that can't see past its next corner looks again only once it enters another cell or the grid changes.
 - Movement holds the whole capsule off closed cells (`NavCapsule`). A unit already overlapping may move or turn
   as long as the summed overlap doesn't grow, so it can always drive or back off. A long hull keeps its facing
   when turning would swing an end into a closed cell.
@@ -45,8 +46,9 @@ circle. `SeparationVisitor` pushes neighbours apart along the line between their
 the larger of their two spacings lies between them (0.6 m by default, less for infantry). Formation slots are
 spaced by the same footprint, so a tank column doesn't pile up nose to tail.
 
-Without more, a unit steps straight at its next corner at full speed and faces where it steps, as infantry do.
-`LocomotionAuthoring` gives a ground vehicle handling, and its `LocomotionState` keeps its speed between frames.
+Every unit follows its path through `Locomotion`. Without its own, a unit gets `Locomotion.Instant`: full speed and
+any facing at once, never reversing, as infantry do. `LocomotionAuthoring` gives a ground vehicle handling, and its
+`LocomotionState` keeps its speed between frames. `PathState` caches the path's length past the next corner.
 Its facing is its rotation, and it moves only along it, so the crowd's push never turns the hull.
 
 | Field | Does |

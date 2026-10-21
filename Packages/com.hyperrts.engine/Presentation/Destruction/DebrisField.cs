@@ -21,6 +21,10 @@ namespace HyperRTS.Presentation.Destruction
         private readonly DebrisPiece[] _pieces = new DebrisPiece[Capacity];
         private readonly DebrisSet[] _sets = new DebrisSet[Capacity];
 
+        // Reused each frame so drawing allocates nothing.
+        private readonly Matrix4x4[] _batch = new Matrix4x4[Capacity];
+        private readonly bool[] _drawn = new bool[Capacity];
+
         public int Count { get; private set; }
 
         public DebrisPiece Piece(int slot) => _pieces[slot];
@@ -56,22 +60,36 @@ namespace HyperRTS.Presentation.Destruction
             }
         }
 
+        /// <summary>Draws every piece, one instanced call per material and mesh pair.</summary>
         public void Draw()
         {
+            System.Array.Clear(_drawn, 0, Capacity);
             for (var slot = 0; slot < Capacity; slot++)
             {
-                var set = _sets[slot];
-                if (set == null)
+                if (_sets[slot] == null || _drawn[slot])
                 {
                     continue;
                 }
 
-                var piece = _pieces[slot];
-                var matrix = Matrix4x4.TRS(piece.Position, piece.Rotation, piece.Size * piece.Shrink);
-                var draw = new RenderParams(set.material) { shadowCastingMode = ShadowCastingMode.On, receiveShadows = true };
-                Graphics.RenderMesh(draw, set.meshes[piece.Mesh], 0, matrix);
+                var material = _sets[slot].material;
+                var mesh = MeshOf(slot);
+                var count = 0;
+                for (var other = slot; other < Capacity; other++)
+                {
+                    var sameBatch = _sets[other] != null && _sets[other].material == material && MeshOf(other) == mesh;
+                    if (sameBatch)
+                    {
+                        _batch[count++] = _pieces[other].Matrix;
+                        _drawn[other] = true;
+                    }
+                }
+
+                var draw = new RenderParams(material) { shadowCastingMode = ShadowCastingMode.On, receiveShadows = true };
+                Graphics.RenderMeshInstanced(draw, mesh, 0, _batch, count);
             }
         }
+
+        private Mesh MeshOf(int slot) => _sets[slot].meshes[_pieces[slot].Mesh];
 
         // An empty slot, else the piece that has lain longest.
         private int FreeSlot()

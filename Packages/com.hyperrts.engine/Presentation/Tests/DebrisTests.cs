@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests
 {
-    /// <summary>Client debris: the bounce integrator, the global cap with its reuse of old pieces, and the quality gate.</summary>
+    /// <summary>Client debris: the bounce integrator, the global cap with its reuse of old pieces, the instancing check and the quality gate.</summary>
     public class DebrisTests
     {
         private const float Frame = 1f / 60f;
@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.Tests
         {
             _set = ScriptableObject.CreateInstance<DebrisSet>();
             _set.meshes = new List<Mesh> { new() };
-            _set.material = new Material(Shader.Find("Hidden/InternalErrorShader"));
+            _set.material = new Material(Shader.Find("Hidden/InternalErrorShader")) { enableInstancing = true };
         }
 
         [TearDown]
@@ -116,6 +116,15 @@ namespace HyperRTS.Presentation.Tests
             {
                 Assert.AreEqual(first.Piece(slot).Velocity, second.Piece(slot).Velocity);
             }
+        }
+
+        [Test]
+        public void Set_WithoutInstancingOnItsMaterial_HasAProblem()
+        {
+            Assert.IsNull(_set.Problem());
+
+            _set.material.enableInstancing = false;
+            StringAssert.Contains("Instancing", _set.Problem());
         }
 
         [Test]

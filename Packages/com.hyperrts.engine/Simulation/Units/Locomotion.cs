@@ -6,7 +6,7 @@ namespace HyperRTS.Simulation.Units
 {
     /// <summary>
     /// How a ground vehicle handles: it speeds up and brakes at set rates, turns at a limited rate and radius,
-    /// pivots if tracked and backs up to goals close behind. Units without it step straight at full speed.
+    /// pivots if tracked and backs up to goals close behind. Units without it move by <see cref="Instant"/>.
     /// </summary>
     public struct Locomotion : IComponentData
     {
@@ -33,6 +33,15 @@ namespace HyperRTS.Simulation.Units
         private const float Unlimited = 1e4f;
         private const float ThreePointLegSeconds = 1.5f;
         private const float ReverseMargin = 1.3f;
+        private const float Instantly = 1e6f;
+
+        /// <summary>Handling of units without their own: full speed and any facing at once, never reversing.</summary>
+        public static Locomotion Instant => new()
+        {
+            Acceleration = Instantly,
+            Braking = Instantly,
+            TurnRate = Instantly,
+        };
 
         /// <summary>How far ahead it may cut to a corner in sight: further when fast or wide-turning.</summary>
         public readonly float LookAhead(float speed, float radius) =>
@@ -48,7 +57,10 @@ namespace HyperRTS.Simulation.Units
             var error = SignedAngle(facing, desired);
             var gear = state.Reverse == IsReverseLeg(ref state, deltaTime) ? 1f : -1f;
             var top = gear > 0f ? topSpeed : ReverseSpeed;
-            var target = gear * TargetSpeed(error, leg, top, radius, LookAhead(state.Speed, radius));
+            // Never past the goal in one frame, which only bites for near-instant braking.
+            var limit = math.min(TargetSpeed(error, leg, top, radius, LookAhead(state.Speed, radius)),
+                leg.Remaining / deltaTime);
+            var target = gear * limit;
             state.Speed = Accelerate(state.Speed, target, deltaTime);
             facing = Turn(facing, error, TurnLimit(state.Speed) * deltaTime);
             return facing * (state.Speed * deltaTime);

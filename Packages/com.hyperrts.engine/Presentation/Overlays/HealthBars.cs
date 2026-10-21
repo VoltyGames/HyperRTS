@@ -24,6 +24,7 @@ namespace HyperRTS.Presentation.Overlays
         private readonly Material _material;
         private OverlayStyle _appliedStyle;
         private float _appliedPixelScale;
+        private int _appliedVersion;
 
         public HealthBars(Mesh billboard, Material material)
         {
@@ -50,7 +51,8 @@ namespace HyperRTS.Presentation.Overlays
             }
 
             var pixelScale = PixelScale(Screen.height, uiScale);
-            if (style != _appliedStyle || pixelScale != _appliedPixelScale)
+            var stale = style != _appliedStyle || style.Version != _appliedVersion || pixelScale != _appliedPixelScale;
+            if (stale)
             {
                 Apply(style, pixelScale);
             }
@@ -60,7 +62,7 @@ namespace HyperRTS.Presentation.Overlays
 
         public void Dispose() => Object.Destroy(_material);
 
-        // Style values are read once per style; edits to the asset in Play mode show after a resolution or UI scale change.
+        // Style values are read once per style version, not every frame.
         private void Apply(OverlayStyle style, float pixelScale)
         {
             _material.SetFloat(PixelScaleId, pixelScale);
@@ -73,6 +75,7 @@ namespace HyperRTS.Presentation.Overlays
             _material.SetColor(MemberPipId, style.memberPip);
             _appliedStyle = style;
             _appliedPixelScale = pixelScale;
+            _appliedVersion = style.Version;
         }
     }
 }

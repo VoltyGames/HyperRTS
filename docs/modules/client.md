@@ -101,7 +101,9 @@ Health bars are screen-aligned quads of a fixed pixel size (reference pixels at 
 above the model's top: a dark backing, a fill cut into segments of `healthPerSegment` (one per member for squads)
 and coloured from healthy to critical, with squad member pips on the left and veterancy rank pips on the right.
 `OverlayRenderer.HealthBars` picks who shows one: everyone, damaged units, or only selected ones. Selected and
-hovered units always do. Both overlays are one instanced draw each through `InstanceDataBatch`.
+hovered units always do. Both overlays are one instanced draw each through `InstanceDataBatch`. The bars set the style's
+material values only when the style, its edit count or the pixel scale changes, so Play mode edits to the asset
+show at once.
 
 ### Team colour
 
@@ -199,7 +201,8 @@ where the crown lands, as it lands.
 `DebrisAuthoring` on a ruin throws a `DebrisSet`'s pieces once when the ruin appears; on a building with breakable
 parts it throws them from each part that breaks. `DebrisSystem` flies them on the client in a pool of 160, bounces
 them off the terrain height, lays them flat and shrinks them away after 10 to 20 s. Medium effects throw 70 % of the
-pieces and Low none. Pieces from one place fly the same on every client.
+pieces and Low none. Pieces from one place fly the same on every client. Pieces draw in one instanced call per material and mesh,
+so a set's material needs GPU instancing on, which the set checks at bake.
 
 A building with `BreakablePartsAuthoring` lists its parts, each an intact and a broken model. **Find Parts By Name**
 in its context menu fills the list from `<Part>_Intact` children and their `<Part>_Broken` siblings, which it saves
@@ -325,7 +328,8 @@ can see:
 - **Bursts**: fire, death, ability and impact cues. Impacts pick a rig by the surface material that was hit.
 - **Loops**: effects at sockets while health is in range, such as fires on a damaged building.
 - **Trails** along a projectile's path.
-- **Motion dust** by ground material and speed.
+- **Motion dust** by ground material and speed, measured from the drawn motion along the facing so it rises on
+  network clients and sideways crowd pushes raise little.
 
 | Effect detail | Particles | Extra |
 | --- | --- | --- |

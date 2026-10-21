@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace HyperRTS.Presentation.Destruction
 {
@@ -37,6 +38,8 @@ namespace HyperRTS.Presentation.Destruction
 
         /// <summary>1 for most of its life, down to 0 as it goes.</summary>
         public readonly float Shrink => math.saturate((Life - Age) / FadeTime);
+
+        public readonly Matrix4x4 Matrix => Matrix4x4.TRS(Position, Rotation, Size * Shrink);
 
         /// <summary>Flies on by <paramref name="deltaTime"/> over terrain <paramref name="ground"/> metres high.</summary>
         public void Step(float deltaTime, float ground)

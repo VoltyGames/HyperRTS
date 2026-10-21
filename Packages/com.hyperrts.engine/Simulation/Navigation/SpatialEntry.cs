@@ -12,11 +12,11 @@ namespace HyperRTS.Simulation.Navigation
         public float Radius;
         public byte Faction;
 
-        /// <summary>False for buildings and blockers.</summary>
+        /// <summary>Has a <see cref="NavAgent"/>, so it moves and crowds other units.</summary>
         public bool IsUnit;
 
-        /// <summary>Has a <see cref="NavAgent"/>, so it crowds other agents; scenery, though a unit here, never does.</summary>
-        public bool IsAgent;
+        /// <summary>Has a <see cref="Common.BuildingTag"/>; destructible scenery is neither this nor a unit.</summary>
+        public bool IsBuilding;
 
         /// <summary>A <see cref="Blocker"/>: units are pushed fully clear of it and it never moves.</summary>
         public bool IsBlocker;

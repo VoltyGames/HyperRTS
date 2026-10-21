@@ -127,6 +127,11 @@ namespace HyperRTS.Presentation.Overlays
         [Tooltip("Rally point marker and line.")]
         public Color rally = new(0.3f, 0.8f, 1f, 0.85f);
 
+        /// <summary>Bumped on every inspector edit, so drawers that cache style values re-read them.</summary>
+        public int Version { get; private set; }
+
+        private void OnValidate() => Version++;
+
         public Color RelationColor(Relation relation) => relation switch
         {
             Relation.Own => own,

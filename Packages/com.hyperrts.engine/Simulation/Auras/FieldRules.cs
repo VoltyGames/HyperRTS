@@ -11,12 +11,32 @@ namespace HyperRTS.Simulation.Auras
         public static bool Affects(FieldTargets affects, byte sourceFaction, in SpatialEntry entry,
             in FactionRelations relations)
         {
-            var kind = entry.IsUnit ? FieldTargets.Units : FieldTargets.Buildings;
-            var relation = entry.Faction == sourceFaction ? FieldTargets.Own
-                : relations.IsAllied(sourceFaction, entry.Faction) ? FieldTargets.Allies
-                : relations.IsHostile(sourceFaction, entry.Faction) ? FieldTargets.Enemies
-                : FieldTargets.Neutral;
-            return (affects & kind) != 0 && (affects & relation) != 0;
+            return (affects & Kind(entry)) != 0 && (affects & Relation(sourceFaction, entry.Faction, relations)) != 0;
+        }
+
+        private static FieldTargets Kind(in SpatialEntry entry)
+        {
+            if (entry.IsUnit)
+            {
+                return FieldTargets.Units;
+            }
+
+            return entry.IsBuilding ? FieldTargets.Buildings : FieldTargets.None;
+        }
+
+        private static FieldTargets Relation(byte source, byte target, in FactionRelations relations)
+        {
+            if (source == target)
+            {
+                return FieldTargets.Own;
+            }
+
+            if (relations.IsAllied(source, target))
+            {
+                return FieldTargets.Allies;
+            }
+
+            return relations.IsHostile(source, target) ? FieldTargets.Enemies : FieldTargets.Neutral;
         }
 
         /// <summary>

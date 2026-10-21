@@ -94,7 +94,7 @@ namespace HyperRTS.Simulation.Navigation
                 var goalMoved = math.distancesq(path.Goal.xz, goal.xz) > Grid.CellSize * Grid.CellSize;
                 if (path.Status == PathStatus.Ready && !goalMoved && path.GridVersion == Grid.Version)
                 {
-                    FollowSmallGoalMove(waypoints, goal, agent.Layer);
+                    FollowSmallGoalMove(ref path, waypoints, goal, agent.Layer);
                     return;
                 }
 
@@ -121,7 +121,7 @@ namespace HyperRTS.Simulation.Navigation
                     // Corners toward an old, distant goal would lead the wrong way while the search waits.
                     if (goalMoved)
                     {
-                        waypoints.Clear();
+                        path.ClearWaypoints(waypoints);
                     }
 
                     path.Status = PathStatus.Requested;
@@ -140,18 +140,18 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             // Re-planning for sub-cell nudges (re-clicks, a creeping chase target) isn't worth a search.
-            private void FollowSmallGoalMove(DynamicBuffer<PathWaypoint> waypoints, float3 goal, NavLayer layer)
+            private void FollowSmallGoalMove(ref PathState path, DynamicBuffer<PathWaypoint> waypoints, float3 goal,
+                NavLayer layer)
             {
                 if (waypoints.Length == 0 || !Grid.IsWalkable(goal, layer))
                 {
                     return;
                 }
 
-                ref var last = ref waypoints.ElementAt(waypoints.Length - 1);
-                var distanceSq = math.distancesq(last.Position.xz, goal.xz);
+                var distanceSq = math.distancesq(waypoints[waypoints.Length - 1].Position.xz, goal.xz);
                 if (distanceSq > 1e-6f && distanceSq <= Grid.CellSize * Grid.CellSize)
                 {
-                    last.Position.xz = goal.xz;
+                    path.MoveLast(waypoints, goal.xz);
                 }
             }
         }
@@ -168,7 +168,7 @@ namespace HyperRTS.Simulation.Navigation
             if (path.Status != PathStatus.None)
             {
                 path.Status = PathStatus.None;
-                waypoints.Clear();
+                path.ClearWaypoints(waypoints);
             }
         }
 
@@ -227,6 +227,7 @@ namespace HyperRTS.Simulation.Navigation
                     Goal = request.Goal,
                     GridVersion = Grid.Version,
                     Status = PathStatus.Ready,
+                    LengthPastCorner = PathState.Measure(waypoints),
                 };
             }
         }

@@ -14,8 +14,8 @@ namespace HyperRTS.Simulation.Units
     /// <summary>
     /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> (disabled on arrival),
     /// keeps units of the same layer their spacing apart, slides ground units round blockers and never pushes a
-    /// footprint into cells closed to the agent (<see cref="NavCapsule.Constrain"/>). Units with
-    /// <see cref="Locomotion"/> drive the path with its handling; the rest step straight at the next corner.
+    /// footprint into cells closed to the agent (<see cref="NavCapsule.Constrain"/>). Every unit drives the path with
+    /// its <see cref="Locomotion"/>; units without one use <see cref="Locomotion.Instant"/>.
     /// Steers on XZ, and Y follows the layer's surface on the <see cref="NavGrid"/> (ground, deck or water). Aircraft
     /// ignore the grid, climb to their <see cref="Flight"/> altitude (land while <see cref="Docked"/>) and, if they
     /// can't hover, circle when idle.
@@ -90,10 +90,11 @@ namespace HyperRTS.Simulation.Units
             {
                 var maxStep = speed.Value * DeltaTime;
                 var heading = float2.zero;
-                var driven = Locomotions.TryGetComponent(entity, out var locomotion);
-                var drive = driven ? States[entity] : default;
+                var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
+                // Instant handling needs no memory between frames, so units without it start each from rest.
+                var remembers = States.TryGetComponent(entity, out var drive);
                 var step = Plan(entity, transform, speed.Value, agent, destination.Value, moving, ref path, waypoints,
-                    locomotion, driven, ref drive, ref heading);
+                    locomotion, ref drive, ref heading);
 
                 var flying = agent.Layer == NavLayer.Air;
                 var from = transform.Position.xz;
@@ -113,7 +114,7 @@ namespace HyperRTS.Simulation.Units
                     Walk(ref transform, from, wanted, agent, axis, moving.ValueRO, waypoints, ref path);
                 }
 
-                if (driven)
+                if (remembers)
                 {
                     drive.Hit(transform.Position.xz - from, step, !transform.Position.xz.Equals(wanted));
                     States[entity] = drive;
@@ -212,71 +213,52 @@ namespace HyperRTS.Simulation.Units
             /// <summary>This frame's step and facing before the crowd and walls have their say.</summary>
             private readonly float2 Plan(Entity entity, in LocalTransform transform, float topSpeed, in NavAgent agent,
                 float3 goal, EnabledRefRW<MoveDestination> moving, ref PathState path,
-                DynamicBuffer<PathWaypoint> waypoints, in Locomotion locomotion, bool driven, ref LocomotionState drive,
+                DynamicBuffer<PathWaypoint> waypoints, in Locomotion locomotion, ref LocomotionState drive,
                 ref float2 heading)
             {
                 var maxStep = topSpeed * DeltaTime;
-                var position = transform.Position.xz;
                 var facing = math.normalize(math.mul(transform.Rotation, math.forward()).xz);
                 var leg = default(PathLeg);
-                if (moving.ValueRO && !Follow(transform.Position, facing, agent, maxStep, locomotion, driven,
-                        drive.Speed, goal, waypoints, out leg))
+                if (moving.ValueRO && !Follow(transform.Position, facing, agent, maxStep, locomotion, drive.Speed, goal,
+                        ref path, waypoints, out leg))
                 {
                     moving.ValueRW = false;
                     path.Status = PathStatus.None;
-                    waypoints.Clear();
+                    path.ClearWaypoints(waypoints);
                 }
 
-                if (driven && !moving.ValueRO)
+                if (moving.ValueRO)
                 {
-                    return locomotion.BrakeToStop(ref drive, facing, DeltaTime);
-                }
-
-                if (driven)
-                {
-                    var step = locomotion.Drive(ref drive, position, ref facing, leg, topSpeed, agent.Radius,
-                        DeltaTime);
+                    var step = locomotion.Drive(ref drive, transform.Position.xz, ref facing, leg, topSpeed,
+                        agent.Radius, DeltaTime);
                     heading = facing;
                     return step;
                 }
 
-                if (agent.Layer == NavLayer.Air && !moving.ValueRO)
-                {
-                    return Loiter(entity, transform.Rotation, maxStep, ref heading);
-                }
-
-                heading = moving.ValueRO ? leg.Direction : float2.zero;
-                return heading * math.min(leg.Distance, maxStep);
+                return agent.Layer == NavLayer.Air
+                    ? Loiter(entity, transform.Rotation, maxStep, ref heading)
+                    : locomotion.BrakeToStop(ref drive, facing, DeltaTime);
             }
 
             /// <summary>Picks the leg to drive; false once the unit has arrived.</summary>
             private readonly bool Follow(float3 position, float2 facing, in NavAgent agent, float maxStep,
-                in Locomotion locomotion, bool driven, float speed, float3 goal, DynamicBuffer<PathWaypoint> waypoints,
-                out PathLeg leg)
+                in Locomotion locomotion, float speed, float3 goal, ref PathState path,
+                DynamicBuffer<PathWaypoint> waypoints, out PathLeg leg)
             {
-                var reach = driven ? locomotion.LookAhead(speed, agent.Radius) : 0f;
-                leg = Steer(position, agent, maxStep, reach, goal, waypoints, driven);
-                return driven
-                    ? !locomotion.HasArrived(leg, position.xz, facing, agent.Radius)
-                    : !leg.HasArrived(agent.Radius);
-            }
-
-            /// <summary>Skips the corners it may cut and returns the leg to the next one.</summary>
-            private readonly PathLeg Steer(float3 position, in NavAgent agent, float maxStep, float reach, float3 goal,
-                DynamicBuffer<PathWaypoint> waypoints, bool driven)
-            {
-                while (waypoints.Length > 1 && CanSkipCorner(position, agent, maxStep, reach, waypoints))
+                var reach = locomotion.LookAhead(speed, agent.Radius);
+                while (waypoints.Length > 1 && CanSkipCorner(position, agent, maxStep, reach, ref path, waypoints))
                 {
-                    waypoints.RemoveAt(0);
+                    path.PassCorner(waypoints);
                 }
 
                 // No corners yet (search pending): head straight for the goal meanwhile.
-                return PathLeg.Along(position.xz, goal.xz, waypoints, driven);
+                leg = PathLeg.Along(position.xz, goal.xz, waypoints, path);
+                return !locomotion.HasArrived(leg, position.xz, facing, agent.Radius);
             }
 
             // A crowd can't all touch the same corner and a vehicle cuts it, so skip it once the next is in sight.
             private readonly bool CanSkipCorner(float3 position, in NavAgent agent, float maxStep, float reach,
-                DynamicBuffer<PathWaypoint> waypoints)
+                ref PathState path, DynamicBuffer<PathWaypoint> waypoints)
             {
                 var distance = math.distance(position.xz, waypoints[0].Position.xz);
                 if (distance <= math.max(agent.Radius * 0.5f, maxStep))
@@ -289,7 +271,20 @@ namespace HyperRTS.Simulation.Units
                     return false;
                 }
 
-                return agent.Access(Grid).HasLineOfSight(position, waypoints[1].Position, true);
+                // Sight only changes as the unit crosses cells, so a failed look isn't repeated within one.
+                var cell = Grid.WorldToCell(position);
+                if (path.IsHiddenFrom(cell, Grid.Version))
+                {
+                    return false;
+                }
+
+                if (agent.Access(Grid).HasLineOfSight(position, waypoints[1].Position, true))
+                {
+                    return true;
+                }
+
+                path.Hide(cell);
+                return false;
             }
         }
     }

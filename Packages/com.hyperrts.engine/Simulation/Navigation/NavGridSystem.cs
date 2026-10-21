@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Navigation
                 state.Dependency = new AreaJob { Grid = grid, Decks = false }.Schedule(_areas, state.Dependency);
                 state.Dependency = new AreaJob { Grid = grid, Decks = true }.Schedule(_areas, state.Dependency);
                 state.Dependency = new ObstacleJob { Grid = grid }.Schedule(_obstacles, state.Dependency);
-                state.Dependency = new ClearanceJob { Grid = grid }.Schedule(state.Dependency);
+                state.Dependency = grid.ScheduleClearance(state.Dependency);
             }
 
             if (restampScenery)
@@ -252,14 +252,6 @@ namespace HyperRTS.Simulation.Navigation
                     }
                 }
             }
-        }
-
-        [BurstCompile]
-        private struct ClearanceJob : IJob
-        {
-            public NavGrid Grid;
-
-            public void Execute() => Grid.BuildClearance();
         }
 
         [BurstCompile]

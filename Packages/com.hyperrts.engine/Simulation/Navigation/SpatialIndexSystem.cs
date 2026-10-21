@@ -127,15 +127,15 @@ namespace HyperRTS.Simulation.Navigation
             private void Execute(Entity entity, in LocalTransform transform, in Faction faction)
             {
                 // Without an agent the default is round, unspaced and on the ground.
-                var isAgent = AgentLookup.TryGetComponent(entity, out var agent);
+                var isUnit = AgentLookup.TryGetComponent(entity, out var agent);
                 var entry = new SpatialEntry
                 {
                     Entity = entity,
                     Position = transform.Position,
                     Radius = EntityRadius.Get(entity, AgentLookup, ObstacleLookup),
                     Faction = faction.Value,
-                    IsUnit = !BuildingLookup.HasComponent(entity),
-                    IsAgent = isAgent,
+                    IsUnit = isUnit,
+                    IsBuilding = BuildingLookup.HasComponent(entity),
                     Layer = agent.Layer,
                     SegmentAxis = agent.SegmentAxis(transform.Rotation),
                     Spacing = agent.Spacing,

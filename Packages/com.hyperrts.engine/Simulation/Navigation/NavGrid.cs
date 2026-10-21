@@ -1,5 +1,7 @@
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
@@ -166,18 +168,29 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public void BuildClearance()
         {
-            var count = Cells.Length;
             for (var slot = 0; slot < ClearanceLayers; slot++)
             {
-                var surfaces = NavLayers.Surfaces((NavLayer)slot);
-                for (var y = Size.y - 1; y >= 0; y--)
+                BuildClearance(slot);
+            }
+        }
+
+        /// <summary>Builds every layer's <see cref="Clearance"/> at once, one worker per layer.</summary>
+        public readonly JobHandle ScheduleClearance(JobHandle dependency) =>
+            new ClearanceJob { Cells = Cells, Clearance = Clearance, Size = Size }
+                .Schedule(ClearanceLayers, 1, dependency);
+
+        /// <summary>Fills one layer's <see cref="Clearance"/>; layers touch disjoint slices, so they may run at once.</summary>
+        public void BuildClearance(int slot)
+        {
+            var offset = slot * Cells.Length;
+            var surfaces = NavLayers.Surfaces((NavLayer)slot);
+            for (var y = Size.y - 1; y >= 0; y--)
+            {
+                for (var x = Size.x - 1; x >= 0; x--)
                 {
-                    for (var x = Size.x - 1; x >= 0; x--)
-                    {
-                        var cell = new int2(x, y);
-                        var side = IsOpen(cell, surfaces) ? 1 + SmallestSquareAbove(slot, cell) : 0;
-                        Clearance[slot * count + Index(cell)] = (byte)math.min(side, byte.MaxValue);
-                    }
+                    var cell = new int2(x, y);
+                    var side = IsOpen(cell, surfaces) ? 1 + SmallestSquareAbove(slot, cell) : 0;
+                    Clearance[offset + Index(cell)] = (byte)math.min(side, byte.MaxValue);
                 }
             }
         }
@@ -196,5 +209,18 @@ namespace HyperRTS.Simulation.Navigation
 
         internal readonly bool IsOpen(int2 cell, NavSurface surfaces) =>
             InBounds(cell) && ((NavSurface)Cells[Index(cell)] & surfaces) != 0;
+
+        /// <summary>One layer per index; each writes only its own slice of the clearance array.</summary>
+        [BurstCompile]
+        private struct ClearanceJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<byte> Cells;
+            [NativeDisableParallelForRestriction] public NativeArray<byte> Clearance;
+            public int2 Size;
+
+            // A grid of just the fields clearance reads keeps the rest out of the job.
+            public void Execute(int slot) =>
+                new NavGrid { Cells = Cells, Clearance = Clearance, Size = Size }.BuildClearance(slot);
+        }
     }
 }
