@@ -1,6 +1,6 @@
 // Grows row crop plants for RowCropBatch: Plant runs one thread per lattice spot of a job, dispatched as
 // (spots / 64, 1, jobs) once per model variant; Count then writes the draw args and clears the counters.
-// Lattice maths, hashes and noise match RowCropLattice.cs.
+// Lattice maths match RowCropLattice.cs; hashes and noise are in Scatter.hlsl.
 #pragma kernel Plant
 #pragma kernel Count
 
@@ -10,6 +10,7 @@ SamplerState sampler_LinearClamp;
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/RowCrops/RowCropInstance.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Scatter.hlsl"
 
 #define CHANNEL_DENSITY 0u
 #define CHANNEL_ACROSS 1u
@@ -58,7 +59,6 @@ StructuredBuffer<RowCropField> _Fields;
 StructuredBuffer<RowCropJob> _Jobs;
 StructuredBuffer<uint> _Capacities; // instances each slot's buffer holds
 Texture2D<float4> _FieldIds;
-Texture2D<float> _Height;
 
 RWStructuredBuffer<uint> _Counters; // plants grown per slot this run
 RWStructuredBuffer<DrawArgs> _Args;
@@ -68,8 +68,6 @@ RWStructuredBuffer<RowCropInstance> _Card;
 
 float4 _FieldArea;   // x min, z min, texels per metre in x and z
 float4 _FieldTexels; // field id texels across and deep
-float4 _HeightArea;  // terrain rect: x min, z min, 1 / size x, 1 / size z
-float4 _HeightScale; // terrain base height, metres per unit sample, heightmap texels across
 float4 _Camera;      // xyz position, w draw distance
 float4 _Sowing;      // row spacing, plant spacing, jitter, yaw jitter (radians)
 float4 _Size;        // min scale, max scale, lod0 distance, lod1 distance
@@ -80,40 +78,6 @@ float _TileSize;
 float _FacesRow;     // 1: plants face along their row; 0: they keep the model's heading (+Z north)
 float _Density;
 uint _Slots;
-
-uint Pcg(uint value)
-{
-    uint state = value * 747796405u + 2891336453u;
-    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
-    return (word >> 22u) ^ word;
-}
-
-uint Hash(int seed, int row, int plant)
-{
-    return Pcg(asuint(seed) ^ Pcg(asuint(row) ^ Pcg(asuint(plant))));
-}
-
-float Unit(uint value)
-{
-    return (value >> 8) * (1.0 / 16777216.0);
-}
-
-float Channel(uint hash, uint channel)
-{
-    return Unit(Pcg(hash + channel * 0x9E3779B9u));
-}
-
-// Smooth value noise from 0 to 1 on an integer grid.
-float Noise(int seed, uint salt, float2 p)
-{
-    int salted = asint(asuint(seed) ^ salt);
-    int2 cell = (int2)floor(p);
-    float2 f = p - floor(p);
-    float2 u = f * f * (3.0 - 2.0 * f);
-    float low = lerp(Unit(Hash(salted, cell.x, cell.y)), Unit(Hash(salted, cell.x + 1, cell.y)), u.x);
-    float high = lerp(Unit(Hash(salted, cell.x, cell.y + 1)), Unit(Hash(salted, cell.x + 1, cell.y + 1)), u.x);
-    return lerp(low, high, u.y);
-}
 
 bool Owns(float2 tileMin, float2 spot)
 {
@@ -131,14 +95,6 @@ uint FieldAt(float2 spot)
 
     float2 bytes = round(_FieldIds.Load(int3(texel, 0)).rg * 255.0);
     return (uint)bytes.x + (uint)bytes.y * 256u;
-}
-
-float GroundHeight(float2 xz)
-{
-    float texels = _HeightScale.z;
-    float2 uv = RectUV(_HeightArea, xz);
-    uv = uv * ((texels - 1.0) / texels) + 0.5 / texels;
-    return _HeightScale.x + _Height.SampleLevel(sampler_LinearClamp, uv, 0) * _HeightScale.y;
 }
 
 // Share of four probes round the spot that fall outside its field.

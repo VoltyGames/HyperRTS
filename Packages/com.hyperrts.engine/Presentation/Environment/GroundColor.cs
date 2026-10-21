@@ -15,8 +15,8 @@ namespace HyperRTS.Presentation.Environment
     [DisallowMultipleComponent]
     public sealed class GroundColor : PresentationBehaviour
     {
-        private static readonly int PictureId = Shader.PropertyToID("_HyperRTSGroundColor");
-        private static readonly int RectId = Shader.PropertyToID("_HyperRTSGroundRect");
+        internal static readonly int PictureId = Shader.PropertyToID("_HyperRTSGroundColor");
+        internal static readonly int RectId = Shader.PropertyToID("_HyperRTSGroundRect");
 
         [Tooltip("Top-down albedo of the ground, north up.")]
         public Texture2D picture;

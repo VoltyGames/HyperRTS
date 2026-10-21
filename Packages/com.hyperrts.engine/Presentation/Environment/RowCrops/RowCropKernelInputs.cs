@@ -1,5 +1,4 @@
 using System;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
@@ -7,16 +6,10 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     /// <summary>What RowCrops.compute reads. The trample map is copied from the globals: compute shaders don't see them.</summary>
     internal sealed class RowCropKernelInputs : IDisposable
     {
-        // Unity heightmaps store 32766 as full height in a 16-bit unorm texture.
-        private const float HeightmapFull = 32766f / 65535f;
-
         private static readonly int FieldsId = Shader.PropertyToID("_Fields");
         private static readonly int FieldIdsId = Shader.PropertyToID("_FieldIds");
         private static readonly int FieldAreaId = Shader.PropertyToID("_FieldArea");
         private static readonly int FieldTexelsId = Shader.PropertyToID("_FieldTexels");
-        private static readonly int HeightId = Shader.PropertyToID("_Height");
-        private static readonly int HeightAreaId = Shader.PropertyToID("_HeightArea");
-        private static readonly int HeightScaleId = Shader.PropertyToID("_HeightScale");
         private static readonly int CameraId = Shader.PropertyToID("_Camera");
         private static readonly int TileSizeId = Shader.PropertyToID("_TileSize");
         private static readonly int DensityId = Shader.PropertyToID("_Density");
@@ -24,21 +17,19 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private readonly RowCropKernels _kernels;
         private readonly RowCropFields _fields;
         private readonly GraphicsBuffer _fieldBuffer;
-        private readonly Terrain _terrain;
+        private readonly TerrainHeightInput _heights;
         private Texture _ids;
-        private Texture _heights;
 
         /// <summary>Uploads the fields and binds what stays fixed while the map is open.</summary>
         public RowCropKernelInputs(RowCropKernels kernels, RowCropFields fields, Terrain terrain)
         {
             _kernels = kernels;
             _fields = fields;
-            _terrain = terrain;
             _fieldBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, fields.fields.Count),
                 RowCropField.Stride);
             _fieldBuffer.SetData(fields.fields);
             SetFields();
-            SetHeights(terrain);
+            _heights = new TerrainHeightInput(kernels.Compute, kernels.Plant, terrain);
         }
 
         /// <summary>
@@ -54,8 +45,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                     return true;
                 }
 
-                var replaced = _ids != _fields.fieldIds || _heights != _terrain.terrainData.heightmapTexture;
-                return replaced;
+                return _ids != _fields.fieldIds || _heights.Stale;
             }
         }
 
@@ -86,19 +76,6 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             compute.SetVector(FieldAreaId, new Vector4(area.xMin, area.yMin, ids.width / area.width, ids.height / area.height));
             compute.SetVector(FieldTexelsId, new Vector4(ids.width, ids.height, 0f, 0f));
             compute.SetFloat(TileSizeId, RowCropFields.TileSize);
-        }
-
-        /// <summary>The heightmap and how to read it: <c>_HeightScale</c> is base height, metres per unit, texels across.</summary>
-        private void SetHeights(Terrain terrain)
-        {
-            var compute = _kernels.Compute;
-            var data = terrain.terrainData;
-            var origin = terrain.GetPosition();
-            var size = data.size;
-            _heights = data.heightmapTexture;
-            compute.SetTexture(_kernels.Plant, HeightId, _heights);
-            compute.SetVector(HeightAreaId, InteractionMath.Rect(new float2(origin.x, origin.z), new float2(size.x, size.z)));
-            compute.SetVector(HeightScaleId, new Vector4(origin.y, size.y / HeightmapFull, data.heightmapResolution, 0f));
         }
     }
 }

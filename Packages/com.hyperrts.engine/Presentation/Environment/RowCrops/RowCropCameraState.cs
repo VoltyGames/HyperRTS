@@ -7,14 +7,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     /// <summary>One camera's crop batches and the view they were last grown for, so a still camera only redraws.</summary>
     internal sealed class RowCropCameraState : IDisposable
     {
-        // Metres the camera may drift before its plants regrow; fades and bands lag by at most this.
-        private const float Step = 0.5f;
-
-        private readonly List<int> _tiles = new();
-        private Vector3Int _cell;
-        private float _density;
-        private float _distance;
-        private bool _grown;
+        private readonly ScatterView _view = new();
 
         public RowCropCameraState(RowCropFields fields, RowCropKernels kernels)
         {
@@ -28,27 +21,12 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         public List<RowCropBatch> Batches { get; } = new();
 
         /// <summary>Whether the batches already hold this view: same spot, settings and visible tiles, and no trample map.</summary>
-        public bool Holds(Vector3 position, float density, float distance, List<int> tiles)
-        {
-            if (!_grown || RowCropKernelInputs.Trampled)
-            {
-                return false;
-            }
-
-            var settings = density == _density && distance == _distance;
-            return settings && Cell(position) == _cell && SameTiles(tiles);
-        }
+        public bool Holds(Vector3 position, float density, float distance, List<int> tiles) =>
+            !RowCropKernelInputs.Trampled && _view.Holds(position, new Vector4(density, distance), tiles);
 
         /// <summary>Records the view the batches were just grown for.</summary>
-        public void Remember(Vector3 position, float density, float distance, List<int> tiles)
-        {
-            _cell = Cell(position);
-            _density = density;
-            _distance = distance;
-            _tiles.Clear();
-            _tiles.AddRange(tiles);
-            _grown = true;
-        }
+        public void Remember(Vector3 position, float density, float distance, List<int> tiles) =>
+            _view.Remember(position, new Vector4(density, distance), tiles);
 
         /// <summary>Whether the batches no longer match the field asset's crops or their models.</summary>
         public bool Stale(RowCropFields fields)
@@ -70,25 +48,5 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         }
 
         public void Dispose() => Batches.ForEach(batch => batch.Dispose());
-
-        private bool SameTiles(List<int> tiles)
-        {
-            if (tiles.Count != _tiles.Count)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < tiles.Count; i++)
-            {
-                if (tiles[i] != _tiles[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private static Vector3Int Cell(Vector3 position) => Vector3Int.RoundToInt(position / Step);
     }
 }

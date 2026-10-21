@@ -27,6 +27,21 @@ float2 RectUV(float4 rect, float2 positionXZ)
     return (positionXZ - rect.xy) * rect.zw;
 }
 
+// Object +Z faces the plant's way, +X to its right, +Y up.
+float3 PlantToWorld(float3 v, float2 facing)
+{
+    float3 forward = float3(facing.x, 0.0, facing.y);
+    float3 right = float3(facing.y, 0.0, -facing.x);
+    return right * v.x + float3(0.0, v.y, 0.0) + forward * v.z;
+}
+
+// Shears height over by a few degrees: close enough to a turn and keeps the root in place.
+float3 LeanOffset(float3 offset, float2 lean)
+{
+    float upright = sqrt(saturate(1.0 - dot(lean, lean)));
+    return float3(offset.x + lean.x * offset.y, offset.y * upright, offset.z + lean.y * offset.y);
+}
+
 // Smooth value noise in [0, 1] on a unit lattice.
 float ValueNoise(float2 p)
 {

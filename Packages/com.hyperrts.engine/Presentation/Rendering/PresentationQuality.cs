@@ -1,17 +1,18 @@
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Environment.Grass;
 using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Simulation.Common;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Presentation.Rendering
 {
     /// <summary>
     /// Every presentation quality knob the game sets from its graphics options, applied together. The knobs it
     /// writes (<see cref="EffectDetail"/>, <see cref="TerrainDetail"/>, <see cref="InteractionMap"/>,
-    /// <see cref="RowCropRenderer"/>, <see cref="CameraAntialiasingMode"/>) are read-only outside the engine.
+    /// <see cref="GrassRenderer"/>, <see cref="RowCropRenderer"/>, <see cref="CameraAntialiasingMode"/>) are read-only
+    /// outside the engine.
     /// </summary>
     public struct PresentationQuality
     {
@@ -24,11 +25,14 @@ namespace HyperRTS.Presentation.Rendering
         /// <summary>Ground mark (tracks, trampling) resolution, or Off.</summary>
         public InteractionQuality Interactions;
 
-        /// <summary>Terrain grass density, 0 to 1, on every active terrain.</summary>
-        public float DetailDensity;
+        /// <summary>Share of grass and small plants grown, above 0 and at most 1.</summary>
+        public float GrassDensity;
 
-        /// <summary>Metres terrain grass is drawn to, published to <see cref="DetailFade"/>.</summary>
-        public float DetailDistance;
+        /// <summary>Metres grass is drawn to.</summary>
+        public float GrassDistance;
+
+        /// <summary>Metres grass casts shadows to, 0 for none.</summary>
+        public float GrassShadowDistance;
 
         /// <summary>Share of row crop plants grown, 0 to 1.</summary>
         public float CropDensity;
@@ -47,8 +51,9 @@ namespace HyperRTS.Presentation.Rendering
             Effects = DetailLevel.High,
             Ground = GroundLevel.Ultra,
             Interactions = InteractionQuality.Full,
-            DetailDensity = 1f,
-            DetailDistance = 150f,
+            GrassDensity = 1f,
+            GrassDistance = 200f,
+            GrassShadowDistance = 40f,
             CropDensity = 1f,
             CropDistance = 300f,
             Antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing,
@@ -58,19 +63,10 @@ namespace HyperRTS.Presentation.Rendering
         /// <summary>The quality last applied.</summary>
         public static PresentationQuality Current { get; private set; } = Default;
 
-        /// <summary>
-        /// Writes every knob, scales every active terrain's grass and sets the shadow map size on the active URP
-        /// asset. Terrains in scenes loaded later get <see cref="Current"/> too.
-        /// </summary>
+        /// <summary>Writes every knob and sets the shadow map size on the active URP asset.</summary>
         public static void Apply(in PresentationQuality quality)
         {
             WriteKnobs(quality);
-            foreach (var terrain in Terrain.activeTerrains)
-            {
-                terrain.detailObjectDensity = quality.DetailDensity;
-                terrain.detailObjectDistance = quality.DetailDistance;
-            }
-
             MainLightShadows.SetResolution(quality.ShadowResolution);
             Current = quality;
         }
@@ -80,13 +76,15 @@ namespace HyperRTS.Presentation.Rendering
             EffectDetail.Level = quality.Effects;
             TerrainDetail.Level = quality.Ground;
             InteractionMap.Quality = quality.Interactions;
-            DetailFade.Publish(quality.DetailDistance);
+            GrassRenderer.Density = quality.GrassDensity;
+            GrassRenderer.Distance = quality.GrassDistance;
+            GrassRenderer.ShadowDistance = quality.GrassShadowDistance;
             RowCropRenderer.Density = quality.CropDensity;
             RowCropRenderer.Distance = quality.CropDistance;
             CameraAntialiasingMode.Mode = quality.Antialiasing;
         }
 
-        // Not shadows or terrains: the URP asset gets its authored size back on quit, and no scene is loaded yet.
+        // Not shadows: the URP asset gets its authored size back on quit.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
@@ -94,11 +92,6 @@ namespace HyperRTS.Presentation.Rendering
             CameraAntialiasingMode.Reset(Default.Antialiasing);
             WriteKnobs(Default);
             Current = Default;
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-            SceneManager.sceneLoaded += OnSceneLoaded;
         }
-
-        // Map terrains are authored at full detail.
-        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode) => Apply(Current);
     }
 }

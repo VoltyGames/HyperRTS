@@ -32,7 +32,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         [Tooltip("The terrain the crops stand on.")]
         public Terrain terrain;
 
-        private readonly Dictionary<Camera, RowCropCameraState> _cameras = new();
+        private readonly CameraStates<RowCropCameraState> _cameras = new();
+        private Func<RowCropCameraState> _newState;
         private readonly List<int> _visible = new();
         private readonly Plane[] _planes = new Plane[6];
         private RowCropKernels _kernels;
@@ -93,18 +94,16 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             _kernels = new RowCropKernels(compute);
             _inputs = new RowCropKernelInputs(_kernels, fields, terrain);
             _tileBounds = RowCropTileBounds.Measure(fields, terrain);
+            _newState ??= NewState;
             _ready = true;
         }
+
+        private RowCropCameraState NewState() => new(fields, _kernels);
 
         private void Release()
         {
             _ready = false;
-            foreach (var state in _cameras.Values)
-            {
-                state.Dispose();
-            }
-
-            _cameras.Clear();
+            _cameras.Dispose();
             _inputs?.Dispose();
             _inputs = null;
         }
@@ -119,12 +118,12 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             }
 #endif
 
-            if (!_ready || !Draws(camera))
+            if (!_ready || !CameraStates<RowCropCameraState>.Draws(camera, gameObject))
             {
                 return;
             }
 
-            var state = State(camera);
+            var state = _cameras.Get(camera, _newState);
             var position = camera.transform.position;
             FindVisible(camera, position);
             if (!state.Holds(position, Density, Distance, _visible))
@@ -136,18 +135,6 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             {
                 batch.Draw(gameObject.layer, camera);
             }
-        }
-
-        /// <summary>
-        /// Game and Scene view cameras that see this layer and this scene. Reflection probes and asset preview cameras
-        /// are skipped: they render other scenes or bake once, and would regrow every crop for nothing.
-        /// </summary>
-        private bool Draws(Camera camera)
-        {
-            var kind = camera.cameraType is CameraType.Game or CameraType.SceneView;
-            var seesLayer = (camera.cullingMask & (1 << gameObject.layer)) != 0;
-            var ownScene = !camera.scene.IsValid() || camera.scene == gameObject.scene;
-            return kind && seesLayer && ownScene;
         }
 
         private void Grow(RowCropCameraState state, Vector3 position)
@@ -162,38 +149,6 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             state.Remember(position, Density, Distance, _visible);
         }
 
-        private RowCropCameraState State(Camera camera)
-        {
-            if (_cameras.TryGetValue(camera, out var state))
-            {
-                return state;
-            }
-
-            ForgetClosedCameras();
-            state = new RowCropCameraState(fields, _kernels);
-            _cameras.Add(camera, state);
-            return state;
-        }
-
-        // Frees the buffers of cameras destroyed since, such as a closed Scene view.
-        private void ForgetClosedCameras()
-        {
-            var closed = new List<Camera>();
-            foreach (var camera in _cameras.Keys)
-            {
-                if (camera == null)
-                {
-                    closed.Add(camera);
-                }
-            }
-
-            foreach (var camera in closed)
-            {
-                _cameras[camera].Dispose();
-                _cameras.Remove(camera);
-            }
-        }
-
 #if UNITY_EDITOR
         // Catches a map rebuild that reshaped the fields or the crops while the scene stayed open.
         private bool Stale()
@@ -204,7 +159,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                 return true;
             }
 
-            foreach (var state in _cameras.Values)
+            foreach (var state in _cameras.All)
             {
                 if (state.Stale(fields))
                 {

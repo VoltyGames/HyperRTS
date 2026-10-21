@@ -14,10 +14,8 @@ namespace HyperRTS.Editor.Maps.Library
     {
         [MapAsset(typeof(TerrainLayer))]
         public string terrainLayer;
-        [MapAsset(typeof(GameObject))]
-        public string mesh;
-        [MapAsset(typeof(Texture2D))]
-        public string texture;
+        [MapAsset(typeof(Mesh))]
+        public List<string> meshes = new();
         [MapAsset(typeof(GameObject))]
         public string prefab;
         [MapAsset(typeof(GameObject))]

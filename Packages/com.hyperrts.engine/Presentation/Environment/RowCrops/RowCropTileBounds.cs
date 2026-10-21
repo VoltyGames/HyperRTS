@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         }
 
         /// <summary>Lowest and highest ground over a tile, from a 3 by 3 grid of samples.</summary>
-        private static (float Low, float High) GroundRange(Rect rect, Terrain terrain)
+        public static (float Low, float High) GroundRange(Rect rect, Terrain terrain)
         {
             var (low, high) = (float.MaxValue, float.MinValue);
             var baseHeight = terrain.GetPosition().y;

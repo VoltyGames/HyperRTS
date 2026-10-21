@@ -1,0 +1,228 @@
+// Scatters grass and small plants for GrassBatch: Scatter runs one thread per lattice cell of a job, a visible tile
+// of one plant, dispatched as (cells / 64, 1, jobs); Count then writes the draw args and clears the counters.
+// The lattice matches GrassJob.cs and the thinning GrassView.cs.
+#pragma kernel Scatter
+#pragma kernel Count
+
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+
+SamplerState sampler_LinearClamp;
+
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Scatter.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Grass/GrassInstance.hlsl"
+
+#define CHANNEL_X 0u
+#define CHANNEL_Z 1u
+#define CHANNEL_DENSITY 2u
+#define CHANNEL_COVER 3u
+#define CHANNEL_KEEP 4u
+#define CHANNEL_VARIANT 5u
+#define CHANNEL_SIZE 6u
+#define CHANNEL_ASPECT 7u
+#define CHANNEL_YAW 8u
+#define CHANNEL_LEAN 9u
+#define CHANNEL_LEAN_TURN 10u
+#define CHANNEL_SHADE 11u
+#define CHANNEL_DITHER 12u // and 13
+#define CLUMP_SALT 0x68E31DA4u
+#define TUFT_SALT 0xB5297A4Du
+#define PATCH_SALT 0x1B56C4E9u
+#define CLUMP_SIZE 3.5    // metres across a clump of one plant
+#define TUFT_SIZE 0.8     // metres across the tufts inside a clump
+#define PATCH_SIZE 9.0    // metres over which plants grow taller or shorter together
+#define COVER_DITHER 0.8  // metres the coverage lookup strays, so patch edges look ragged
+#define GROUND_ALIGN 0.6  // share of the ground's tilt a plant follows
+#define MAX_LEAN 0.3      // sine of the most a plant leans at random, so cards show some top to the RTS camera
+#define NORMAL_STEP 0.75  // metres between the ground normal's height probes
+#define GROUND_REACH 8.0  // metres to the probes of the ground colour round a plant
+#define BANDS 2u          // GrassView.Bands: near casts shadows, far doesn't
+
+struct GrassSowing // GrassSowing.cs, 36 bytes
+{
+    float spacing;
+    float clumping;
+    float2 width;
+    float2 height;
+    int variants;
+    int firstSlot;
+    int seed;
+};
+
+struct GrassJob // GrassJob.cs, 28 bytes
+{
+    float2 tileMin;
+    int plant;
+    int2 first; // first lattice cell that can fall in the tile
+    int2 count; // cells from first
+};
+
+struct GrassSlot // GrassBatch's slot table: where a (plant, variant, band) writes and how many it holds
+{
+    uint offset;
+    uint capacity;
+};
+
+struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes
+{
+    uint indexCount;
+    uint instanceCount;
+    uint startIndex;
+    int baseVertex;
+    uint startInstance;
+};
+
+StructuredBuffer<GrassSowing> _Plants;
+StructuredBuffer<GrassJob> _Jobs;
+StructuredBuffer<GrassSlot> _Slots;
+Texture2DArray<float> _Coverage;
+Texture2D<float4> _Ground;
+
+RWStructuredBuffer<uint> _Counters; // plants grown per slot this run
+RWStructuredBuffer<DrawArgs> _Args;
+RWStructuredBuffer<GrassInstance> _Instances;
+
+float4 _CoverageArea; // x min, z min, 1 / width, 1 / depth
+float4 _GroundArea;   // the same for the ground picture; zero without one
+float4 _Camera;       // xyz position, w draw distance
+float4 _Thinning;     // GrassView: thinning start share, keep at the draw distance, most growth, fade share
+float4 _Shaping;      // x quality density, y shadow distance, z keep edge
+float _TileSize;
+uint _SlotCount;
+
+bool Owns(float2 tileMin, float2 spot)
+{
+    float2 tileMax = tileMin + _TileSize;
+    return all(spot >= tileMin) && all(spot < tileMax);
+}
+
+float Coverage(float2 xz, int layer)
+{
+    float2 uv = (xz - _CoverageArea.xy) * _CoverageArea.zw;
+    return _Coverage.SampleLevel(sampler_LinearClamp, float3(uv, layer), 0);
+}
+
+// Swells and thins the painted coverage in clumps and the tufts inside them; the mean stays about the same.
+float Clumped(float coverage, GrassSowing plant, float2 xz)
+{
+    float clump = Noise(plant.seed, CLUMP_SALT, xz / CLUMP_SIZE);
+    float tuft = Noise(plant.seed, TUFT_SALT, xz / TUFT_SIZE);
+    float swing = (lerp(clump, tuft, 0.4) - 0.5) * 2.8;
+    return saturate(coverage * max(0.0, 1.0 + plant.clumping * swing));
+}
+
+// The ground's tilt the plant follows plus its own lean in a random direction.
+float2 Lean(uint hash, float2 xz)
+{
+    float dx = GroundHeight(xz + float2(NORMAL_STEP, 0.0)) - GroundHeight(xz - float2(NORMAL_STEP, 0.0));
+    float dz = GroundHeight(xz + float2(0.0, NORMAL_STEP)) - GroundHeight(xz - float2(0.0, NORMAL_STEP));
+    float3 normal = normalize(float3(-dx, 2.0 * NORMAL_STEP, -dz));
+    float heading = Channel(hash, CHANNEL_LEAN_TURN) * 6.2831853;
+    return normal.xz * GROUND_ALIGN + float2(cos(heading), sin(heading)) * MAX_LEAN * Channel(hash, CHANNEL_LEAN);
+}
+
+float3 GroundAt(float2 xz)
+{
+    float2 uv = (xz - _GroundArea.xy) * _GroundArea.zw;
+    return _Ground.SampleLevel(sampler_LinearClamp, uv, 0).rgb;
+}
+
+// The ground under the plant over the ground round it, so plants follow its lighter and darker patches.
+float3 GroundPatch(float2 xz)
+{
+    if (_GroundArea.z <= 0.0)
+    {
+        return 1.0;
+    }
+
+    float3 around = GroundAt(xz + float2(GROUND_REACH, 0.0)) + GroundAt(xz - float2(GROUND_REACH, 0.0));
+    around += GroundAt(xz + float2(0.0, GROUND_REACH)) + GroundAt(xz - float2(0.0, GROUND_REACH));
+    return clamp(GroundAt(xz) / max(around * 0.25, 0.02), 0.85, 1.2);
+}
+
+// Share of plants kept at a range, as GrassView.Keep.
+float Keep(float range)
+{
+    float start = _Thinning.x * _Camera.w;
+    return lerp(1.0, _Thinning.y, saturate((range - start) / max(_Camera.w - start, 0.001)));
+}
+
+// Writes at the slot's next index; plants past its capacity are dropped and Count clamps the draw to it.
+void Store(uint slot, GrassInstance grown)
+{
+    uint index;
+    InterlockedAdd(_Counters[slot], 1u, index);
+    GrassSlot target = _Slots[slot];
+    if (index < target.capacity)
+    {
+        _Instances[target.offset + index] = grown;
+    }
+}
+
+[numthreads(64, 1, 1)]
+void Scatter(uint3 id : SV_DispatchThreadID)
+{
+    GrassJob job = _Jobs[id.z];
+    if (id.x >= (uint)(job.count.x * job.count.y))
+    {
+        return;
+    }
+
+    GrassSowing plant = _Plants[job.plant];
+    int2 cell = job.first + int2(id.x % (uint)job.count.x, id.x / (uint)job.count.x);
+    uint hash = Hash(plant.seed, cell.x, cell.y);
+    float2 xz = (cell + float2(Channel(hash, CHANNEL_X), Channel(hash, CHANNEL_Z))) * plant.spacing;
+    if (!Owns(job.tileMin, xz) || Channel(hash, CHANNEL_DENSITY) >= _Shaping.x)
+    {
+        return;
+    }
+
+    float2 dither = (float2(Channel(hash, CHANNEL_DITHER), Channel(hash, CHANNEL_DITHER + 1u)) - 0.5) * COVER_DITHER;
+    float painted = Coverage(xz + dither, job.plant);
+    if (Channel(hash, CHANNEL_COVER) >= Clumped(painted, plant, xz))
+    {
+        return;
+    }
+
+    float3 position = float3(xz.x, GroundHeight(xz), xz.y);
+    float range = length(position - _Camera.xyz);
+    float raw = Keep(range);
+    float keep = raw * (1.0 + _Shaping.z);
+    float pick = Channel(hash, CHANNEL_KEEP);
+    if (range >= _Camera.w || pick >= keep)
+    {
+        return;
+    }
+
+    // Thinned plants shrink away before they go and the rest grow to cover for them; all fade out at the end.
+    float shrink = saturate((keep - pick) / _Shaping.z);
+    float grow = min(rsqrt(raw), _Thinning.z);
+    float fade = saturate((_Camera.w - range) / (_Thinning.w * _Camera.w));
+    float patch = lerp(0.85, 1.15, Noise(plant.seed, PATCH_SALT, xz / PATCH_SIZE));
+    float sparse = lerp(0.7, 1.0, saturate(painted * 1.5));
+    float size = Channel(hash, CHANNEL_SIZE);
+    float scale = shrink * grow * fade * patch * sparse;
+
+    GrassInstance grown;
+    grown.position = position;
+    grown.width = lerp(plant.width.x, plant.width.y, size) * scale;
+    grown.height = lerp(plant.height.x, plant.height.y, lerp(size, Channel(hash, CHANNEL_ASPECT), 0.35)) * scale;
+    grown.yaw = Channel(hash, CHANNEL_YAW) * 6.2831853;
+    grown.lean = Lean(hash, xz);
+    grown.ground = GroundPatch(xz);
+    grown.shade = Channel(hash, CHANNEL_SHADE);
+    uint variants = (uint)plant.variants;
+    uint variant = min((uint)(Channel(hash, CHANNEL_VARIANT) * variants), variants - 1u);
+    uint band = range < _Shaping.y ? 0u : 1u;
+    Store((uint)plant.firstSlot + variant * BANDS + band, grown);
+}
+
+// Draws each slot's grown plants up to its capacity, then zeroes the counters for the next run.
+[numthreads(1, 1, 1)]
+void Count(uint3 id : SV_DispatchThreadID)
+{
+    for (uint slot = 0u; slot < _SlotCount; slot++)
+    {
+        _Args[slot].instanceCount = min(_Counters[slot], _Slots[slot].capacity);
+        _Counters[slot] = 0u;
+    }
+}

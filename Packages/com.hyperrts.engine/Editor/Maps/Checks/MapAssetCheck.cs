@@ -47,7 +47,10 @@ namespace HyperRTS.Editor.Maps.Checks
 
             foreach (var detail in Climate.details)
             {
-                Require(detail.mesh != null || detail.texture != null, $"{name}: detail '{detail.key}' has neither mesh nor texture.");
+                foreach (var problem in detail.Plant().Problems())
+                {
+                    Issues.Error($"{name}: plant '{detail.key}': {problem}.");
+                }
             }
 
             Climate.rowCrops.ForEach(crop => RowCropAssets(crop, name));

@@ -40,14 +40,11 @@ namespace HyperRTS.Editor.Maps.Layout
 
         public MapTerrainSpec Terrain => Spec.terrain;
 
-        /// <summary>Unity lays terrain grass out in patches this many detail texels square.</summary>
-        public const int DetailPatch = 32;
-
         /// <summary>Splat texels per side: about three per metre keep road edges crisp.</summary>
         public int SplatResolution => Mathf.Clamp(Mathf.NextPowerOfTwo(Mathf.CeilToInt(TerrainBounds.width * 2.5f)), 512, 2048);
 
-        /// <summary>Grass and plant texels per side, a whole number of patches.</summary>
-        public int DetailResolution => Mathf.CeilToInt(TerrainBounds.width * 1.25f / DetailPatch) * DetailPatch;
+        /// <summary>Grass coverage texels per side: the kernel's dithered, filtered lookup hides the 0.8 m texels.</summary>
+        public int GrassResolution => Mathf.CeilToInt(TerrainBounds.width * 1.25f);
 
         /// <summary>Ordered by slot.</summary>
         public List<MapSpawn> Spawns { get; } = new();

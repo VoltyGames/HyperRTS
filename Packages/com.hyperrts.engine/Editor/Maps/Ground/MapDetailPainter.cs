@@ -20,15 +20,15 @@ namespace HyperRTS.Editor.Maps.Ground
 
         public const float PropGrassFalloff = 1.5f;
 
-        /// <summary>Coverage per detail prototype as Unity's detail layers want it: [z, x] in 0 to 255.</summary>
-        public static List<int[,]> Paint(MapLayout layout, MapLand land, MapEdgeField edges, MapShapes shapes,
+        /// <summary>Coverage per climate plant over the terrain, <paramref name="resolution"/> texels a side.</summary>
+        public static MapGrassBake Paint(MapLayout layout, MapLand land, MapEdgeField edges, MapShapes shapes,
             MapHeights heights, MapClimate climate, MapClearance clearance, int resolution)
         {
-            var layers = Layers(climate.details.Count, resolution);
+            var area = layout.TerrainBounds;
+            var bake = new MapGrassBake(area, resolution, climate.details.Count);
             var plants = Plants(climate, edges);
             var reed = string.IsNullOrEmpty(climate.reedDetail) ? -1 : climate.DetailIndex(climate.reedDetail);
             var clumps = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.PlantClumps);
-            var area = layout.TerrainBounds;
             var cell = area.size / resolution;
             var water = layout.Terrain.waterLevel;
             for (var i = 0; i < resolution * resolution; i++)
@@ -44,7 +44,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 var height = heights.Height(p);
                 if (reed >= 0)
                 {
-                    layers[reed][z, x] = ToLayer(Reeds(shapes, climate, clumps, p, height, water) * open);
+                    bake.Set(reed, x, z, Reeds(shapes, climate, clumps, p, height, water) * open);
                 }
 
                 if (height < water + 0.15f)
@@ -56,22 +56,11 @@ namespace HyperRTS.Editor.Maps.Ground
                 var cover = Cover(Sown(land, region), clumps, p) * open;
                 foreach (var (detail, coverage) in plants[region])
                 {
-                    layers[detail][z, x] = ToLayer(coverage * cover);
+                    bake.Set(detail, x, z, coverage * cover);
                 }
             }
 
-            return layers;
-        }
-
-        private static List<int[,]> Layers(int count, int resolution)
-        {
-            var layers = new List<int[,]>();
-            for (var d = 0; d < count; d++)
-            {
-                layers.Add(new int[resolution, resolution]);
-            }
-
-            return layers;
+            return bake;
         }
 
         /// <summary>Grass share near placed objects: none on a footprint, full past <see cref="PropGrassFalloff"/>.</summary>
@@ -92,8 +81,6 @@ namespace HyperRTS.Editor.Maps.Ground
             return Mathf.Clamp01(0.55f + 0.45f * clumps.Sample(p, 9f) + 0.3f * clumps.Sample(p, 2.5f));
         }
 
-        private static int ToLayer(float coverage) => Mathf.RoundToInt(Mathf.Clamp01(coverage) * 255f);
-
         /// <summary>Crops are sown evenly: a field's plants keep their cover instead of clumping like wild grass.</summary>
         private static bool Sown(MapLand land, int region) => region > 0 && land.Regions[region].Kind == MapLandKind.Field;
 
@@ -110,7 +97,7 @@ namespace HyperRTS.Editor.Maps.Ground
             return MapGeometry.Smooth((clumps.Sample(p + new Vector2(733f, 211f), 14f) + 0.1f) / 0.4f);
         }
 
-        /// <summary>Per region, the detail prototypes its surface grows and the share of ground each covers.</summary>
+        /// <summary>Per region, the plants its surface grows and the share of ground each covers.</summary>
         private static List<(int, float)>[] Plants(MapClimate climate, MapEdgeField edges)
         {
             var plants = new List<(int, float)>[edges.RegionCount];

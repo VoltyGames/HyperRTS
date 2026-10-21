@@ -142,12 +142,21 @@ symmetry, so mirrored borders wander alike.
 | Output | What it is |
 | --- | --- |
 | Splat | Terrain layer weights. Each surface's `patches` paint other layers by symmetric noise (`layer`, `coverage` 0 to 1, `size` in metres). Steep ground takes the slope surface |
-| Details | Grass and plants, clumped by noise. Nothing grows on roads or placed objects |
+| Grass | A coverage slice per plant in `<Map>_GrassCoverage.asset` and a `GrassField` (`<Map>_Grass.asset`) naming the plants and the 16 m tiles that grow any. Clumped by noise; nothing grows on roads or placed objects |
 | Macro map | 2 texels per metre: light and warmth per field and wood, 20 to 150 m soil patches of light, warmth and moisture, darker hollows, wetness near water. Set by the climate's `macro` section |
 | Row map | Each cell's crop row direction, turned with its symmetry copy |
 | Ground materials | One `SurfaceMaterial` per cell for impacts and wheel debris, baked into the `GroundMaterials` singleton |
 | Ground colour | The ground's colour from above, so foliage blends in at its roots |
 | Ground decals | A URP `DecalProjector` per decal, fading out on steep faces |
+
+**Grass** is drawn by `GrassRenderer`, not terrain details. For each camera `Grass.compute` scatters every visible
+tile's plants on a world-anchored lattice, one cell per plant at full coverage, so plants never swim as the camera
+moves. Noise gathers them into clumps and tufts, and each plant takes a random model, size, yaw and lean, the ground's
+height and tilt, and a tint from the ground picture round it. Plants thin out from 30 % of the draw distance to 30 %
+at its end, the rest grow up to 1.5 times to cover, and thinned plants shrink before they go. Near plants, within the
+grass shadow distance, cast shadows. Draws are `Graphics.RenderMeshIndirect`, one per plant model and band, on a copy
+of the plant's material on `Hidden/HyperRTS/FoliageGrass`, the Foliage passes with an instanced path, so wind and
+trampling work as on any Foliage plant. A camera rescatters only when it moves half a metre or the quality changes.
 | Road ribbons | A mesh just above the ground, drawn by `HyperRTS/Road`, with faded free ends |
 | Weather | A `WeatherSet` holding every climate weather, with the spec's weather active |
 
@@ -226,7 +235,7 @@ never generated from the JSON.
 | Type | Holds |
 | --- | --- |
 | `layer` | A terrain layer, how the shader lays it, its map colour and grass cover |
-| `plant` | A terrain detail: an instanced mesh or a billboard grass texture |
+| `plant` | A grass or small plant: `meshes` (FBX or mesh assets, picked per plant), a `HyperRTS/Foliage` `material`, `width` and `height` scale ranges, `healthy` and `dry` tints, `density` per square metre at full coverage and `clumping` 0 to 1 |
 | `tree` | Terrain tree `prefabs`, one per variant, and optional entity `destructibles` in the same order |
 | `rowCrop` | A crop grown in 3D rows on fields whose surface names it |
 | `decal` | A ground decal: material, size range, rotation, depth |

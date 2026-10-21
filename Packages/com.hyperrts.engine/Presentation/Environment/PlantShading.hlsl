@@ -127,7 +127,7 @@ half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
 {
     half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
     Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
-    // Shadow and cookie only: culling attenuation isn't set for instanced terrain detail draws.
+    // Shadow and cookie only: culling attenuation isn't set for indirect draws.
     half3 direct = sun.color * sun.shadowAttenuation;
     half wrapping = 0.5 * (1.0 - root);
     half wrap = saturate((dot(normal, sun.direction) + wrapping) / (1.0 + wrapping));

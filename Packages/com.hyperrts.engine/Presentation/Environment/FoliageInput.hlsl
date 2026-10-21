@@ -33,8 +33,15 @@ CBUFFER_END
 // PlantShading.hlsl: modelled leaves light the side in view; cards and crowns light both sides alike.
 #define PLANT_TWO_SIDED _TwoSidedLeaves
 
-// x start, y end of plant shrinking (m from camera). Set by DetailFade, zero disables it.
-float4 _HyperRTSDetailFade;
+#if defined(_GRASS_INSTANCES)
+    #include "Packages/com.hyperrts.engine/Presentation/Environment/Grass/GrassInstance.hlsl"
+
+    // Set per draw by GrassBatch: plants come from _GrassInstances from _GrassOffset by SV_InstanceID.
+    StructuredBuffer<GrassInstance> _GrassInstances;
+    int _GrassOffset;
+    half4 _GrassHealthy;
+    half4 _GrassDry;
+#endif
 
 float3 PlantTrample(float3 world, float3 origin)
 {
@@ -59,20 +66,47 @@ struct Attributes
     float2 uv4 : TEXCOORD4;
 #endif
     half4 color : COLOR;
+#if defined(_GRASS_INSTANCES)
+    uint instanceID : SV_InstanceID;
+#endif
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-// Faded and trampled, before wind. Tree wind places nothing: it sways the object-space vertex.
+#if defined(_GRASS_INSTANCES)
+GrassInstance GrassAt(Attributes input)
+{
+    return _GrassInstances[_GrassOffset + input.instanceID];
+}
+
+float2 GrassFacing(GrassInstance grass)
+{
+    return float2(sin(grass.yaw), cos(grass.yaw));
+}
+#endif
+
+// Trampled, before wind. Tree wind places nothing: it sways the object-space vertex.
 float3 PlaceFoliage(Attributes input, out float3 origin)
 {
+#if defined(_GRASS_INSTANCES)
+    GrassInstance grass = GrassAt(input);
+    origin = grass.position;
+    float3 scaled = input.positionOS.xyz * float3(grass.width, grass.height, grass.width);
+    return PlantTrample(origin + LeanOffset(PlantToWorld(scaled, GrassFacing(grass)), grass.lean), origin);
+#elif defined(_TREE_WIND)
     origin = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
-#if defined(_TREE_WIND)
     return input.positionOS.xyz;
 #else
-    float range = _HyperRTSDetailFade.y - _HyperRTSDetailFade.x;
-    float fade = range > 0.0 ? saturate((_HyperRTSDetailFade.y - distance(origin, _WorldSpaceCameraPos)) / range) : 1.0;
-    float3 world = TransformObjectToWorld(input.positionOS.xyz);
-    return PlantTrample(origin + (world - origin) * fade, origin);
+    origin = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
+    return PlantTrample(TransformObjectToWorld(input.positionOS.xyz), origin);
+#endif
+}
+
+half3 FoliageNormal(Attributes input)
+{
+#if defined(_GRASS_INSTANCES)
+    return normalize(PlantToWorld(input.normalOS, GrassFacing(GrassAt(input))));
+#else
+    return TransformObjectToWorldNormal(input.normalOS);
 #endif
 }
 

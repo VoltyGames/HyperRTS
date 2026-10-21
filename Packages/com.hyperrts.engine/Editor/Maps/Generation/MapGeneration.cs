@@ -50,7 +50,7 @@ namespace HyperRTS.Editor.Maps.Generation
         public MapCropBake Crops { get; private set; }
 
         public float[,,] Splat { get; private set; }
-        public List<int[,]> Details { get; private set; }
+        public MapGrassBake Grass { get; private set; }
 
         /// <summary>Props in the backdrop, drawn on the terrain from their scenery models.</summary>
         public List<MapScenery> Scenery { get; private set; }
@@ -126,8 +126,8 @@ namespace HyperRTS.Editor.Maps.Generation
             Level();
             Edges = new MapEdgeField(Layout, Land, climate);
             Splat = MapSplatPainter.Paint(Layout, Edges, Heights, climate, Layout.SplatResolution);
-            Details = MapDetailPainter.Paint(Layout, Land, Edges, Shapes, Heights, climate, Placements.Clearance,
-                Layout.DetailResolution);
+            Grass = MapDetailPainter.Paint(Layout, Land, Edges, Shapes, Heights, climate, Placements.Clearance,
+                Layout.GrassResolution);
             SplitTrees(climate);
         }
 

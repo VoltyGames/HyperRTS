@@ -40,26 +40,11 @@ struct Attributes
     uint instanceID : SV_InstanceID;
 };
 
-// Object +Z faces the plant's way, +X to its right, +Y up.
-float3 PlantToWorld(float3 v, float2 facing)
-{
-    float3 forward = float3(facing.x, 0.0, facing.y);
-    float3 right = float3(facing.y, 0.0, -facing.x);
-    return right * v.x + float3(0.0, v.y, 0.0) + forward * v.z;
-}
-
-// Shears height over by a few degrees: close enough to a turn and keeps the root in place.
-float3 Lean(float3 offset, float2 lean)
-{
-    float upright = sqrt(saturate(1.0 - dot(lean, lean)));
-    return float3(offset.x + lean.x * offset.y, offset.y * upright, offset.z + lean.y * offset.y);
-}
-
 // Placed by its plant, leaned and trampled, before wind.
 float3 PlaceRowCrop(Attributes input, RowCropInstance plant)
 {
     float3 origin = plant.position;
-    float3 world = origin + Lean(PlantToWorld(input.positionOS.xyz * plant.scale, plant.facing), plant.lean);
+    float3 world = origin + LeanOffset(PlantToWorld(input.positionOS.xyz * plant.scale, plant.facing), plant.lean);
     return TrampleBend(world, origin, plant.trampleDirection, plant.bend);
 }
 

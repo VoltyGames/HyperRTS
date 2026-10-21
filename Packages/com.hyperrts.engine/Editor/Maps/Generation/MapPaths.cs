@@ -54,6 +54,12 @@ namespace HyperRTS.Editor.Maps.Generation
         /// <summary>The top-down ground colour foliage blends into at its roots.</summary>
         public string Ground => $"{Generated}/{Name}_Ground.png";
 
+        /// <summary>The plants the grass renderer scatters and the tiles that grow them.</summary>
+        public string Grass => $"{Generated}/{Name}_Grass.asset";
+
+        /// <summary>Each plant's share of the ground, a texture array slice per plant.</summary>
+        public string GrassCoverage => $"{Generated}/{Name}_GrassCoverage.asset";
+
         /// <summary>What each ground cell is made of, baked for hit and wheel debris.</summary>
         public string GroundMaterials => $"{Generated}/{Name}_GroundMaterials.png";
 

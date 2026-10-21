@@ -120,7 +120,6 @@ namespace HyperRTS.Editor.Maps.Data
         public List<MapClimateWeather> weathers = new();
 
         [Header("Distances")]
-        public float detailDistance = 120f;
         public float treeDistance = 600f;
 
         public MapClimateSurface Surface(string key) => MapKeys.Get(surfaces, key, name, "surface");

@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Scenes
 {
-    /// <summary>Writes the generated ground into the map's TerrainData: heights, layers, grass and trees.</summary>
+    /// <summary>Writes the generated ground into the map's TerrainData: heights, layers and trees.</summary>
     public static class MapTerrainWriter
     {
         public static TerrainData Write(MapGeneration generation)
@@ -31,12 +31,9 @@ namespace HyperRTS.Editor.Maps.Scenes
             data.terrainLayers = climate.layers.Select(l => l.terrainLayer).ToArray();
             data.alphamapResolution = splat.GetLength(0);
             data.SetAlphamaps(0, 0, splat);
-            WriteDetails(data, generation.Details, climate);
+            // Grass is the GrassRenderer's: an asset rebuilt in place keeps no terrain details.
+            data.detailPrototypes = System.Array.Empty<DetailPrototype>();
             WriteTrees(data, trees, generation.Scenery, climate, layout);
-            data.wavingGrassAmount = 0.25f;
-            data.wavingGrassSpeed = 0.4f;
-            data.wavingGrassStrength = 0.35f;
-            data.wavingGrassTint = new Color(0.85f, 0.85f, 0.75f);
             EditorUtility.SetDirty(data);
             return data;
         }
@@ -53,40 +50,6 @@ namespace HyperRTS.Editor.Maps.Scenes
             }
 
             return samples;
-        }
-
-        private static void WriteDetails(TerrainData data, List<int[,]> details, MapClimate climate)
-        {
-            var resolution = details.Count > 0 ? details[0].GetLength(0) : MapLayout.DetailPatch;
-            data.SetDetailResolution(resolution, MapLayout.DetailPatch);
-            data.SetDetailScatterMode(DetailScatterMode.CoverageMode);
-            data.detailPrototypes = climate.details.Select(Prototype).ToArray();
-            for (var i = 0; i < details.Count; i++)
-            {
-                data.SetDetailLayer(0, 0, i, details[i]);
-            }
-        }
-
-        private static DetailPrototype Prototype(MapClimateDetail detail)
-        {
-            var mesh = detail.mesh != null;
-            return new DetailPrototype
-            {
-                usePrototypeMesh = mesh,
-                prototype = detail.mesh,
-                prototypeTexture = mesh ? null : detail.texture,
-                renderMode = mesh ? DetailRenderMode.VertexLit : DetailRenderMode.GrassBillboard,
-                useInstancing = mesh,
-                minWidth = detail.width.x,
-                maxWidth = detail.width.y,
-                minHeight = detail.height.x,
-                maxHeight = detail.height.y,
-                healthyColor = detail.healthy,
-                dryColor = detail.dry,
-                noiseSpread = 0.4f,
-                density = detail.density,
-                alignToGround = mesh ? 0.6f : 0f,
-            };
         }
 
         /// <summary>
