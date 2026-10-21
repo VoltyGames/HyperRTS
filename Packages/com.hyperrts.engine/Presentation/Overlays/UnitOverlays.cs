@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -67,9 +68,10 @@ namespace HyperRTS.Presentation.Overlays
                 var radius = EntityRadius.Get(entityManager, entity);
                 if (selected)
                 {
+                    var length = HalfLength(entityManager, entity, radius) * style.ringScale;
                     var size = radius * style.ringScale;
-                    batches.AddRing(relation, Matrix4x4.TRS(
-                        new Vector3(position.x, position.y + RingLift, position.z), Quaternion.identity, new Vector3(size, 1f, size)));
+                    batches.AddRing(relation, Matrix4x4.TRS(new Vector3(position.x, position.y + RingLift, position.z),
+                        Facing(transforms[i]), new Vector3(size, 1f, length)));
                 }
 
                 var top = EntityExtent.Top(entityManager, entity, position, radius) + style.barOffset;
@@ -83,6 +85,13 @@ namespace HyperRTS.Presentation.Overlays
             _depthTested.Draw(materials.DepthTested, materials.DepthTestedFront, style, layer);
             _onTop.Draw(materials.OnTop, materials.OnTopFront, style, layer);
         }
+
+        // Capsule hulls get an ellipse along their facing, so a long truck's ring spans the truck.
+        private static float HalfLength(EntityManager entityManager, Entity entity, float radius) =>
+            entityManager.HasComponent<NavAgent>(entity) ? entityManager.GetComponentData<NavAgent>(entity).HalfLength : radius;
+
+        private static Quaternion Facing(in LocalToWorld transform) =>
+            quaternion.LookRotationSafe(new float3(transform.Forward.x, 0f, transform.Forward.z), math.up());
 
         private NativeHashSet<Entity> SelectedSet(EntityManager entityManager)
         {

@@ -50,7 +50,7 @@ relations and colours.
 | Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner` |
 | `ICommandSource` | Adds command-card entries: purchases, abilities, stances, unit actions. Each has a slot and hotkey |
 | `HUDText` | Every HUD string, by key. Set `HUDText.Current` to translate |
-| `OverlayRenderer` | Instanced selection rings, health bars, placement ghost, rally markers, capture dials, garrison pips |
+| `OverlayRenderer` | Instanced selection rings (an ellipse along a capsule unit's facing), health bars, placement ghost, rally markers, capture dials, garrison pips |
 
 `HUDText` keys:
 
