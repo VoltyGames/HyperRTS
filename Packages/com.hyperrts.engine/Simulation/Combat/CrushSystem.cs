@@ -18,7 +18,8 @@ namespace HyperRTS.Simulation.Combat
     [UpdateBefore(typeof(DamageSystem))]
     public partial struct CrushSystem : ISystem
     {
-        private const float Reach = 0.5f;
+        // Contact slack past the hull, so scenery brushed by a track still goes down.
+        private const float Reach = 0.25f;
         private const float Lethal = 1e6f;
 
         private DamageWriter _damage;
@@ -76,8 +77,10 @@ namespace HyperRTS.Simulation.Combat
                     Crusher = entity,
                     Size = crusher.Size,
                     Position = transform.Position,
+                    Rotation = transform.Rotation,
+                    Agent = agent,
                 };
-                Index.Query(transform.Position, agent.Radius + Reach, ref underfoot);
+                Index.Query(transform.Position, agent.HalfLength + Reach, ref underfoot);
             }
         }
 
@@ -90,12 +93,15 @@ namespace HyperRTS.Simulation.Combat
             public Entity Crusher;
             public int Size;
             public float3 Position;
+            public quaternion Rotation;
+            public NavAgent Agent;
 
             public void Visit(in SpatialEntry entry)
             {
                 var victim = entry.Entity;
                 var crushable = Destructibles.TryGetComponent(victim, out var destructible) && destructible.Crush > 0;
-                if (!crushable || destructible.Crush > Size || !Common.Health.IsAlive(Health, victim))
+                var flattened = crushable && destructible.Crush <= Size && Underneath(entry);
+                if (!flattened || !Common.Health.IsAlive(Health, victim))
                 {
                     return;
                 }
@@ -109,6 +115,9 @@ namespace HyperRTS.Simulation.Combat
                     Amount = Lethal,
                 });
             }
+
+            private readonly bool Underneath(in SpatialEntry entry) =>
+                Agent.FootprintGap(Position.xz, Rotation, entry.Position.xz) <= entry.Radius + Reach;
         }
     }
 }

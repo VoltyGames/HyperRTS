@@ -25,6 +25,13 @@ namespace HyperRTS.Simulation.Cues
 
         /// <summary>Speed in m/s at which the dust streams at full rate.</summary>
         public float FullSpeed;
+
+        /// <summary>Below this many m/s a vehicle creeping or jostled in a crowd raises none.</summary>
+        public const float StillSpeed = 1.5f;
+
+        /// <summary>Stream rate from 0 to 1 for the vehicle's driven speed, either way along its facing.</summary>
+        public readonly float Strength(float speed) =>
+            math.saturate((math.abs(speed) - StillSpeed) / math.max(FullSpeed - StillSpeed, 0.01f));
     }
 
     /// <summary>Dust a rotorcraft's downwash raises from the ground under it, by the ground material and its height.</summary>

@@ -140,7 +140,7 @@ namespace HyperRTS.Simulation.Navigation
         private static float PointRectDistance(float2 point, float2 low, float2 high) =>
             math.distance(point, math.clamp(point, low, high));
 
-        private static float PointSegmentDistance(float2 point, float2 a, float2 b)
+        internal static float PointSegmentDistance(float2 point, float2 a, float2 b)
         {
             var delta = b - a;
             var lengthSq = math.lengthsq(delta);

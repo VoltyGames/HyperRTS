@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
 using NUnit.Framework;
 using Unity.Entities;
@@ -47,6 +48,25 @@ namespace HyperRTS.Simulation.Tests
             using var query = _world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalTransform>(),
                 ComponentType.Exclude<Health>());
             Assert.AreEqual(5f, FindNear(query, new float3(5f, 0f, 0f)).x, 0.01f, "its remains lie where it stood");
+        }
+
+        [Test]
+        public void Crusher_FlattensSceneryUnderItsWholeHull_ButNotBesideIt()
+        {
+            var underNose = SpawnScenery(new float3(1.5f, 0f, 3.5f), 1);
+            var underTail = SpawnScenery(new float3(-1.5f, 0f, -3.5f), 1);
+            var beside = SpawnScenery(new float3(3f, 0f, 0f), 1);
+            var tank = _world.SpawnUnit(1, float3.zero, radius: 1.85f);
+            var agent = _world.EntityManager.GetComponentData<NavAgent>(tank);
+            agent.HullLength = 7.9f;
+            _world.EntityManager.SetComponentData(tank, agent);
+            _world.EntityManager.AddComponentData(tank, new Crusher { Size = 3 });
+
+            _world.Run(0.5f);
+
+            Assert.IsFalse(_world.EntityManager.Exists(underNose), "the hull's front corner reaches past a centre circle");
+            Assert.IsFalse(_world.EntityManager.Exists(underTail), "so does its rear corner");
+            Assert.IsTrue(_world.EntityManager.Exists(beside), "scenery clear of the tracks stands");
         }
 
         [Test]

@@ -48,6 +48,13 @@ namespace HyperRTS.Simulation.Navigation
         public static float2 SegmentAxis(quaternion rotation, float radius, float hullLength) =>
             math.normalizesafe(math.mul(rotation, math.forward()).xz) * HalfSegmentFor(radius, hullLength);
 
+        /// <summary>How far <paramref name="point"/> lies outside the footprint centred at <paramref name="center"/>.</summary>
+        public readonly float FootprintGap(float2 center, quaternion rotation, float2 point)
+        {
+            var axis = SegmentAxis(rotation);
+            return NavCapsule.PointSegmentDistance(point, center - axis, center + axis) - Radius;
+        }
+
         private static float HalfSegmentFor(float radius, float hullLength) => math.max(0f, hullLength * 0.5f - radius);
 
         /// <summary>Entities without an agent (buildings, props) sit on the ground.</summary>
