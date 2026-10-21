@@ -20,8 +20,8 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   one-cell gap. Units one cell wide path as before. The field is rebuilt with every restamp.
 - Smoothing and corner skipping keep the unit's radius from closed cells, capped to fit the gap its square fits.
 - Movement holds the whole capsule off closed cells (`NavCapsule`). A unit already overlapping may move or turn
-  as long as the summed overlap doesn't grow, so it can always drive or back off. Facing still snaps to the
-  heading, except that a long hull keeps its facing when turning would swing an end into a closed cell.
+  as long as the summed overlap doesn't grow, so it can always drive or back off. A long hull keeps its facing
+  when turning would swing an end into a closed cell.
 - A unit walled off from its next corner keeps its path for 0.75 s, then re-plans only the way back to that corner
   and keeps the rest, so it goes on round the side it was taking. An unreachable corner gets a whole new path.
 - Destructible scenery with a crush rating (trees, fences) marks its cell on a scenery layer with that rating. A
@@ -40,6 +40,29 @@ stop on arrival. A unit with a hull length is a capsule that long along its forw
 circle. `SeparationVisitor` pushes neighbours apart along the line between their closest points, half each, until
 the larger of their two spacings lies between them (0.6 m by default, less for infantry). Formation slots are
 spaced by the same footprint, so a tank column doesn't pile up nose to tail.
+
+Without more, a unit steps straight at its next corner at full speed and faces where it steps, as infantry do.
+`LocomotionAuthoring` gives a ground vehicle handling, and its `LocomotionState` keeps its speed between frames.
+Its facing is its rotation, and it moves only along it, so the crowd's push never turns the hull.
+
+| Field | Does |
+| --- | --- |
+| Acceleration, Braking | Speed gained and shed per second |
+| Turn Rate | Fastest the hull turns, in degrees per second |
+| Turn Radius | Tightest circle it drives. The hull turns only as it rolls, at most speed over radius. 0 turns at any speed |
+| Pivots | Stops and turns in place when more than 60 degrees off its heading, as tracked vehicles do |
+| Reverse Speed, Reverse Distance | Backs up to a goal behind it when the path left is at most this long |
+
+- It cuts corners within its look-ahead (twice its radius, half a second of travel and half its turn radius) once
+  the next corner is in sight.
+- It slows to the speed at which its turn rate can hold the arc to its next corner, brakes ahead of sharp
+  corners, and brakes to stop at the goal.
+- A target inside its turning circle can't be reached on any arc, so it shunts: it goes the other way, turning
+  toward the target, until the target is clear of the circle. A goal under the hull inside the circle counts as
+  reached. A shunt that runs into a wall drives the other leg for 1.5 s, as in a three-point turn. So it never
+  orbits.
+- A wall that stops it head-on takes its speed with it. A glancing slide or the crowd's push costs none.
+- `MoveOrderSystem` restarts its stall timer when a unit turns about 20 degrees, so a pivot is never a stall.
 
 `BlockerAuthoring` makes remains such as a wreck solid: a capsule of radius and hull length along its forward that
 never moves. Units take the whole push and are moved fully clear of it where they are headed, so they slide round

@@ -33,6 +33,9 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Where the stall timer last restarted; the unit counts as stalled until it leaves this spot.</summary>
         public float3 StallAnchor;
 
+        /// <summary>Facing when the stall timer restarted, so a vehicle turning in place isn't stalled.</summary>
+        public float2 StallFacing;
+
         public float StallTime;
     }
 }

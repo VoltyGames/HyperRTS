@@ -20,6 +20,22 @@ namespace HyperRTS.Simulation.Units
         public NavLayer Layer;
         public float2 Push;
 
+        public SeparationVisitor(Entity self, float2 position, float2 axis, in NavAgent agent)
+        {
+            Self = self;
+            Position = position;
+            Radius = agent.Radius;
+            SegmentAxis = axis;
+            Spacing = agent.Spacing;
+            Layer = agent.Layer;
+            Push = float2.zero;
+        }
+
+        /// <summary>Where to query round; queries only read XZ.</summary>
+        public readonly float3 Center => new(Position.x, 0f, Position.y);
+
+        public readonly float Reach => Radius + math.length(SegmentAxis) + Spacing;
+
         public void Visit(in SpatialEntry entry)
         {
             var crowds = entry.IsAgent || entry.IsBlocker;

@@ -14,7 +14,8 @@ namespace HyperRTS.Simulation.Units
     /// <summary>
     /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> (disabled on arrival),
     /// keeps units of the same layer their spacing apart, slides ground units round blockers and never pushes a
-    /// footprint into cells closed to the agent (<see cref="NavCapsule.Constrain"/>).
+    /// footprint into cells closed to the agent (<see cref="NavCapsule.Constrain"/>). Units with
+    /// <see cref="Locomotion"/> drive the path with its handling; the rest step straight at the next corner.
     /// Steers on XZ, and Y follows the layer's surface on the <see cref="NavGrid"/> (ground, deck or water). Aircraft
     /// ignore the grid, climb to their <see cref="Flight"/> altitude (land while <see cref="Docked"/>) and, if they
     /// can't hover, circle when idle.
@@ -31,11 +32,15 @@ namespace HyperRTS.Simulation.Units
         private EntityQuery _blockers;
         private ComponentLookup<Flight> _flights;
         private ComponentLookup<Docked> _docked;
+        private ComponentLookup<Locomotion> _locomotions;
+        private ComponentLookup<LocomotionState> _locomotionStates;
 
         public void OnCreate(ref SystemState state)
         {
             _flights = state.GetComponentLookup<Flight>(true);
             _docked = state.GetComponentLookup<Docked>(true);
+            _locomotions = state.GetComponentLookup<Locomotion>(true);
+            _locomotionStates = state.GetComponentLookup<LocomotionState>();
             _blockers = SystemAPI.QueryBuilder().WithPresent<Blocker>().Build();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<NavGrid>();
@@ -46,6 +51,8 @@ namespace HyperRTS.Simulation.Units
         {
             _flights.Update(ref state);
             _docked.Update(ref state);
+            _locomotions.Update(ref state);
+            _locomotionStates.Update(ref state);
             new MoveJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
@@ -54,6 +61,8 @@ namespace HyperRTS.Simulation.Units
                 HasBlockers = !_blockers.IsEmptyIgnoreFilter,
                 Flights = _flights,
                 DockedLookup = _docked,
+                Locomotions = _locomotions,
+                States = _locomotionStates,
                 DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }
@@ -68,6 +77,10 @@ namespace HyperRTS.Simulation.Units
             public bool HasBlockers;
             [ReadOnly] public ComponentLookup<Flight> Flights;
             [ReadOnly] public ComponentLookup<Docked> DockedLookup;
+            [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
+
+            // Each unit writes only its own state.
+            [NativeDisableParallelForRestriction] public ComponentLookup<LocomotionState> States;
             public float DeltaTime;
 
             // `ref`, not `in`: it must share one writable handle with EnabledRefRW.
@@ -77,24 +90,15 @@ namespace HyperRTS.Simulation.Units
             {
                 var maxStep = speed.Value * DeltaTime;
                 var heading = float2.zero;
-                var step = float2.zero;
-                if (moving.ValueRO && !Steer(transform.Position, agent, maxStep, destination.Value, waypoints,
-                        ref heading, ref step))
-                {
-                    moving.ValueRW = false;
-                    path.Status = PathStatus.None;
-                    waypoints.Clear();
-                }
+                var driven = Locomotions.TryGetComponent(entity, out var locomotion);
+                var drive = driven ? States[entity] : default;
+                var step = Plan(entity, transform, speed.Value, agent, destination.Value, moving, ref path, waypoints,
+                    locomotion, driven, ref drive, ref heading);
 
                 var flying = agent.Layer == NavLayer.Air;
-                if (flying && !moving.ValueRO)
-                {
-                    step = Loiter(entity, transform.Rotation, maxStep, ref heading);
-                }
-
                 var from = transform.Position.xz;
                 var axis = agent.SegmentAxis(transform.Rotation);
-                var wanted = from + step + Separation(Crowd(entity, from, axis, agent), agent, maxStep);
+                var wanted = from + step + Separation(new SeparationVisitor(entity, from, axis, agent), maxStep);
                 if (flying)
                 {
                     Fly(entity, ref transform, wanted);
@@ -103,10 +107,16 @@ namespace HyperRTS.Simulation.Units
                 {
                     if (HasBlockers)
                     {
-                        wanted += Clearance(Crowd(entity, wanted, axis, agent), agent);
+                        wanted += Clearance(new SeparationVisitor(entity, wanted, axis, agent));
                     }
 
                     Walk(ref transform, from, wanted, agent, axis, moving.ValueRO, waypoints, ref path);
+                }
+
+                if (driven)
+                {
+                    drive.Hit(transform.Position.xz - from, step, !transform.Position.xz.Equals(wanted));
+                    States[entity] = drive;
                 }
 
                 var turned = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
@@ -185,62 +195,87 @@ namespace HyperRTS.Simulation.Units
 
             private readonly bool IsLanded(Entity entity) => DockedLookup.HasEnabled(entity);
 
-            private readonly float2 Separation(SeparationVisitor separation, in NavAgent agent, float maxStep)
+            private readonly float2 Separation(SeparationVisitor separation, float maxStep)
             {
-                Index.QueryHulls(Center(separation), Reach(agent), ref separation);
+                Index.QueryHulls(separation.Center, separation.Reach, ref separation);
                 var length = math.length(separation.Push);
                 return length > maxStep ? separation.Push * (maxStep / length) : separation.Push;
             }
 
             // Measured where the unit is headed and left unclamped, so it never sinks into a blocker even for a frame.
-            private readonly float2 Clearance(SeparationVisitor clearance, in NavAgent agent)
+            private readonly float2 Clearance(SeparationVisitor clearance)
             {
-                Index.QueryBlockers(Center(clearance), Reach(agent), ref clearance);
+                Index.QueryBlockers(clearance.Center, clearance.Reach, ref clearance);
                 return clearance.Push;
             }
 
-            private static SeparationVisitor Crowd(Entity entity, float2 position, float2 axis, in NavAgent agent) =>
-                new()
-                {
-                    Self = entity,
-                    Position = position,
-                    Radius = agent.Radius,
-                    SegmentAxis = axis,
-                    Spacing = agent.Spacing,
-                    Layer = agent.Layer,
-                };
-
-            // Queries only read XZ.
-            private static float3 Center(in SeparationVisitor visitor) =>
-                new(visitor.Position.x, 0f, visitor.Position.y);
-
-            private static float Reach(in NavAgent agent) => agent.HalfLength + agent.Spacing;
-
-            /// <summary>Steps toward the next corner; false once the final one is reached.</summary>
-            private readonly bool Steer(float3 position, in NavAgent agent, float maxStep, float3 goal,
-                DynamicBuffer<PathWaypoint> waypoints, ref float2 heading, ref float2 step)
+            /// <summary>This frame's step and facing before the crowd and walls have their say.</summary>
+            private readonly float2 Plan(Entity entity, in LocalTransform transform, float topSpeed, in NavAgent agent,
+                float3 goal, EnabledRefRW<MoveDestination> moving, ref PathState path,
+                DynamicBuffer<PathWaypoint> waypoints, in Locomotion locomotion, bool driven, ref LocomotionState drive,
+                ref float2 heading)
             {
-                while (waypoints.Length > 1 && CanSkipCorner(position, agent, maxStep, waypoints))
+                var maxStep = topSpeed * DeltaTime;
+                var position = transform.Position.xz;
+                var facing = math.normalize(math.mul(transform.Rotation, math.forward()).xz);
+                var leg = default(PathLeg);
+                if (moving.ValueRO && !Follow(transform.Position, facing, agent, maxStep, locomotion, driven,
+                        drive.Speed, goal, waypoints, out leg))
+                {
+                    moving.ValueRW = false;
+                    path.Status = PathStatus.None;
+                    waypoints.Clear();
+                }
+
+                if (driven && !moving.ValueRO)
+                {
+                    return locomotion.Coast(ref drive, facing, DeltaTime);
+                }
+
+                if (driven)
+                {
+                    var step = locomotion.Drive(ref drive, position, ref facing, leg, topSpeed, agent.Radius,
+                        DeltaTime);
+                    heading = facing;
+                    return step;
+                }
+
+                if (agent.Layer == NavLayer.Air && !moving.ValueRO)
+                {
+                    return Loiter(entity, transform.Rotation, maxStep, ref heading);
+                }
+
+                heading = moving.ValueRO ? leg.Direction : float2.zero;
+                return heading * math.min(leg.Distance, maxStep);
+            }
+
+            /// <summary>Picks the leg to drive; false once the unit has arrived.</summary>
+            private readonly bool Follow(float3 position, float2 facing, in NavAgent agent, float maxStep,
+                in Locomotion locomotion, bool driven, float speed, float3 goal, DynamicBuffer<PathWaypoint> waypoints,
+                out PathLeg leg)
+            {
+                var reach = driven ? locomotion.LookAhead(speed, agent.Radius) : 0f;
+                leg = Steer(position, agent, maxStep, reach, goal, waypoints);
+                return driven
+                    ? !locomotion.HasArrived(leg, position.xz, facing, agent.Radius)
+                    : !leg.HasArrived(agent.Radius);
+            }
+
+            /// <summary>Skips the corners it may cut and returns the leg to the next one.</summary>
+            private readonly PathLeg Steer(float3 position, in NavAgent agent, float maxStep, float reach, float3 goal,
+                DynamicBuffer<PathWaypoint> waypoints)
+            {
+                while (waypoints.Length > 1 && CanSkipCorner(position, agent, maxStep, reach, waypoints))
                 {
                     waypoints.RemoveAt(0);
                 }
 
                 // No corners yet (search pending): head straight for the goal meanwhile.
-                var target = waypoints.Length > 0 ? waypoints[0].Position.xz : goal.xz;
-                var toTarget = target - position.xz;
-                var distance = math.length(toTarget);
-                if (waypoints.Length <= 1 && distance <= NavTolerances.Arrive(agent.Radius))
-                {
-                    return false;
-                }
-
-                heading = toTarget / distance;
-                step = heading * math.min(distance, maxStep);
-                return true;
+                return PathLeg.Along(position.xz, goal.xz, waypoints);
             }
 
-            // A crowd can't all touch the same corner, so near one, skip it once the next corner is in sight.
-            private readonly bool CanSkipCorner(float3 position, in NavAgent agent, float maxStep,
+            // A crowd can't all touch the same corner and a vehicle cuts it, so skip it once the next is in sight.
+            private readonly bool CanSkipCorner(float3 position, in NavAgent agent, float maxStep, float reach,
                 DynamicBuffer<PathWaypoint> waypoints)
             {
                 var distance = math.distance(position.xz, waypoints[0].Position.xz);
@@ -249,7 +284,7 @@ namespace HyperRTS.Simulation.Units
                     return true;
                 }
 
-                if (distance > NavTolerances.Crowded(agent.Radius))
+                if (distance > math.max(NavTolerances.Crowded(agent.Radius), reach))
                 {
                     return false;
                 }

@@ -22,6 +22,9 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Seconds without real movement before a unit near its goal counts as arrived.</summary>
         public const float StallSeconds = 2f;
 
+        // About 20 degrees of turn restarts the stall timer.
+        private const float TurnedCos = 0.94f;
+
         private ComponentLookup<AttackTarget> _attacks;
 
         [BurstCompile]
@@ -61,17 +64,16 @@ namespace HyperRTS.Simulation.Orders
                     return;
                 }
 
-                var position = transform.Position;
                 if (!driving.ValueRO)
                 {
                     destination.Value = order.Value.Position;
                     moving.ValueRW = true;
                     driving.ValueRW = true;
-                    progress = new MoveOrderState { StallAnchor = position };
+                    progress = Restart(transform);
                     return;
                 }
 
-                var stalled = IsStalled(ref progress, position, order.Value.Position, agent);
+                var stalled = IsStalled(ref progress, transform, order.Value.Position, agent);
 
                 // A disabled destination means locomotion arrived, or got as close as the grid allows.
                 if (!moving.ValueRO || stalled)
@@ -85,12 +87,16 @@ namespace HyperRTS.Simulation.Orders
                 }
             }
 
-            private bool IsStalled(ref MoveOrderState progress, float3 position, float3 goal, in NavAgent agent)
+            private bool IsStalled(ref MoveOrderState progress, in LocalTransform transform, float3 goal,
+                in NavAgent agent)
             {
                 var radius = agent.Radius;
-                if (math.distancesq(position.xz, progress.StallAnchor.xz) > radius * radius * 0.25f)
+                var position = transform.Position;
+                var moved = math.distancesq(position.xz, progress.StallAnchor.xz) > radius * radius * 0.25f;
+                var turned = math.dot(Facing(transform), progress.StallFacing) < TurnedCos;
+                if (moved || turned)
                 {
-                    progress = new MoveOrderState { StallAnchor = position };
+                    progress = Restart(transform);
                     return false;
                 }
 
@@ -99,6 +105,12 @@ namespace HyperRTS.Simulation.Orders
                 var near = math.distance(position.xz, goal.xz) <= NavTolerances.Crowded(agent.HalfLength + agent.Spacing);
                 return near && progress.StallTime >= StallSeconds;
             }
+
+            private static MoveOrderState Restart(in LocalTransform transform) =>
+                new() { StallAnchor = transform.Position, StallFacing = Facing(transform) };
+
+            private static float2 Facing(in LocalTransform transform) =>
+                math.normalizesafe(math.mul(transform.Rotation, math.forward()).xz);
         }
     }
 }
