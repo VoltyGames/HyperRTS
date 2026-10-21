@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Combat
     }
 
     /// <summary>Remains of a <see cref="Topple"/> piece that presentation shows falling. Their transform already holds the final pose.</summary>
-    public struct Felling : IComponentData
+    public struct ToppleFall : IComponentData
     {
         /// <summary>Turns the final crown direction up to where the trunk stood.</summary>
         public quaternion Tilt;
@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Combat
     }
 
     /// <summary>The fall heading (<see cref="ToppleMath"/>) a <see cref="Topple"/> piece's lethal hit gave it.</summary>
-    public struct FellFrom : IComponentData
+    public struct ToppleHeading : IComponentData
     {
         public byte Heading;
     }

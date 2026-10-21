@@ -129,11 +129,11 @@ namespace HyperRTS.Simulation.Units
             private readonly void Walk(ref LocalTransform transform, float2 from, float2 wanted, in NavAgent agent,
                 float2 axis, bool moving, DynamicBuffer<PathWaypoint> waypoints, ref PathState path)
             {
-                var pass = agent.Pass(Grid);
-                transform.Position.xz = new NavCapsule(pass, axis).Constrain(from, wanted);
+                var access = agent.Access(Grid);
+                transform.Position.xz = new NavCapsule(access, axis).Constrain(from, wanted);
                 transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
                 var lost = moving && waypoints.Length > 0 &&
-                           IsWalledOff(pass, from, wanted, transform.Position, waypoints[0].Position);
+                           IsWalledOff(access, from, wanted, transform.Position, waypoints[0].Position);
                 path.Stuck = lost ? path.Stuck + DeltaTime : 0f;
                 if (path.Stuck >= ReplanDelay)
                 {
@@ -151,12 +151,12 @@ namespace HyperRTS.Simulation.Units
                     return true;
                 }
 
-                var capsule = new NavCapsule(agent.Pass(Grid), axis);
+                var capsule = new NavCapsule(agent.Access(Grid), axis);
                 return capsule.CanTurn(transform.Position.xz, agent.SegmentAxis(turned));
             }
 
             /// <summary>A wall stopped the move, and the unit either barely moved or lost sight of its next corner.</summary>
-            private static bool IsWalledOff(in NavPass pass, float2 from, float2 wanted, float3 position, float3 corner)
+            private static bool IsWalledOff(in NavAccess access, float2 from, float2 wanted, float3 position, float3 corner)
             {
                 if (position.xz.Equals(wanted))
                 {
@@ -168,7 +168,7 @@ namespace HyperRTS.Simulation.Units
                     return true;
                 }
 
-                return !pass.HasLineOfSight(position, corner, false);
+                return !access.HasLineOfSight(position, corner, false);
             }
 
             /// <summary>Aircraft go wherever they steer and climb toward their altitude over the surface below.</summary>
@@ -229,7 +229,7 @@ namespace HyperRTS.Simulation.Units
 
                 if (driven && !moving.ValueRO)
                 {
-                    return locomotion.Coast(ref drive, facing, DeltaTime);
+                    return locomotion.BrakeToStop(ref drive, facing, DeltaTime);
                 }
 
                 if (driven)
@@ -289,7 +289,7 @@ namespace HyperRTS.Simulation.Units
                     return false;
                 }
 
-                return agent.Pass(Grid).HasLineOfSight(position, waypoints[1].Position, true);
+                return agent.Access(Grid).HasLineOfSight(position, waypoints[1].Position, true);
             }
         }
     }

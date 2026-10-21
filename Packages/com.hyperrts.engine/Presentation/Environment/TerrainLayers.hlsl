@@ -23,7 +23,7 @@ struct TerrainBlend
     float smoothness;
     float occlusion;
     float height;
-    float macro;
+    float tintStrength;
     float grass;
 };
 
@@ -34,7 +34,7 @@ struct TerrainSurface
     half smoothness;
     half occlusion;
     half height;
-    half macro;
+    half tintStrength;
     half grass;
 };
 
@@ -66,7 +66,7 @@ void FadeBlend(inout TerrainBlend blend, float keep)
     blend.smoothness *= keep;
     blend.occlusion *= keep;
     blend.height *= keep;
-    blend.macro *= keep;
+    blend.tintStrength *= keep;
     blend.grass *= keep;
 }
 
@@ -92,7 +92,7 @@ void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pi
     blend.total += share;
     blend.albedo += share * albedo.rgb * params.tint;
     blend.height += share * albedo.a;
-    blend.macro += share * params.macro;
+    blend.tintStrength += share * params.tintStrength;
     blend.grass += share * params.grass;
 
     half3 normal = half3(0.0, 0.0, 1.0);
@@ -124,7 +124,7 @@ TerrainSurface ResolveBlend(TerrainBlend blend)
     surface.smoothness = blend.smoothness * scale;
     surface.occlusion = blend.occlusion * scale;
     surface.height = blend.height * scale;
-    surface.macro = blend.macro * scale;
+    surface.tintStrength = blend.tintStrength * scale;
     surface.grass = blend.grass * scale;
     return surface;
 }
@@ -171,16 +171,16 @@ TerrainSurface BlendLayers(float2 uv, inout TerrainPixel pixel)
     return ResolveBlend(blend);
 }
 
-// The map's macro tint and world-noise variation (broad light and dark, smaller warm and cool patches), scaled by the
-// layers' macro strength. Returns the macro's dampness for TerrainWetness.hlsl.
-half ApplyMacro(inout TerrainSurface surface, float2 uv, float2 positionXZ)
+// The map's ground tint and world-noise variation (broad light and dark, smaller warm and cool patches), scaled by the
+// layers' tint strength. Returns the tint's dampness for TerrainWetness.hlsl.
+half ApplyGroundTint(inout TerrainSurface surface, float2 uv, float2 positionXZ)
 {
-    half4 macro = SAMPLE_TEXTURE2D(_MacroMap, sampler_LinearClamp, uv);
+    half4 groundTint = SAMPLE_TEXTURE2D(_GroundTintMap, sampler_LinearClamp, uv);
     half2 noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_LinearRepeat, positionXZ / _VariationSize).gb;
     half light = (noise.x - 0.5) * 2.0 * _Variation;
     half warmth = (noise.y - 0.5) * _Variation;
     half3 variation = 1.0 + half3(light + warmth, light, light - warmth);
-    surface.albedo *= lerp(1.0, macro.rgb * 2.0 * variation, surface.macro);
+    surface.albedo *= lerp(1.0, groundTint.rgb * 2.0 * variation, surface.tintStrength);
 
     // The grass cards' dry and green patches, so grass and the ground under it change together.
     [branch] if (surface.grass * _GrassPatches != 0.0)
@@ -189,7 +189,7 @@ half ApplyMacro(inout TerrainSurface surface, float2 uv, float2 positionXZ)
         surface.albedo *= lerp(1.0, 1.0 + patch * half3(1.0, 0.55, 0.15), surface.grass);
     }
 
-    return macro.a;
+    return groundTint.a;
 }
 
 #endif

@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Navigation
         public float3 Goal;
         public float Radius;
         public NavLayer Layer;
-        public byte Scenery;
+        public byte SceneryCrushLimit;
 
         /// <summary>Re-plan only the way to the next corner (<see cref="GridPathfinder.Repair"/>).</summary>
         public bool Repair;

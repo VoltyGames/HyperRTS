@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// Spec lines of a climate tree (a row of poplars along a road, an avenue of oaks): one tree every spacing
     /// metres with a little jitter. Prop lines (poles, fences) are the prop placer's.
     /// </summary>
-    public sealed class MapRowPlanter : MapLandPass
+    public sealed class MapRowPlanter : MapLandStep
     {
         public MapRowPlanter(MapPlanContext context) : base(context)
         {

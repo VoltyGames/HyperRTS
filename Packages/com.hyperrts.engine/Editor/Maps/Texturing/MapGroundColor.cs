@@ -7,8 +7,8 @@ namespace HyperRTS.Editor.Maps.Texturing
 {
     /// <summary>
     /// Bakes the map's top-down ground colour, the picture foliage blends into at its roots: each texel mixes the
-    /// layers' mean albedo by splat weight ([z, x, layer] over the whole terrain), tinted by the macro picture over
-    /// the same area, where RGB 0.5 leaves the ground unchanged (null for no macro).
+    /// layers' mean albedo by splat weight ([z, x, layer] over the whole terrain), tinted by the ground tint over
+    /// the same area, where RGB 0.5 leaves the ground unchanged (null for no tint).
     /// </summary>
     public static class MapGroundColor
     {
@@ -18,11 +18,11 @@ namespace HyperRTS.Editor.Maps.Texturing
         /// <summary>Mean colours are read from a small blit; its mips do the averaging.</summary>
         private const int MeanSize = 64;
 
-        public static Texture2D Write(string path, float[,,] splat, MapClimate climate, Texture2D macro)
+        public static Texture2D Write(string path, float[,,] splat, MapClimate climate, Texture2D groundTint)
         {
             var size = splat.GetLength(0) / Downsample;
             var albedo = LayerAlbedo(climate, splat.GetLength(2));
-            var tint = Read(macro, size);
+            var tint = Read(groundTint, size);
             var pixels = new Color32[size * size];
             for (var z = 0; z < size; z++)
             {

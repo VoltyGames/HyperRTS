@@ -12,9 +12,9 @@ namespace HyperRTS.Editor.Maps.Planning
     /// props and plant trees. Choices are made in the authored sector and copied by the symmetry. Constructors only
     /// keep the context; the work happens in <see cref="Plan"/>, in <see cref="MapLandPlanner"/>'s order.
     /// </summary>
-    public abstract class MapLandPass
+    public abstract class MapLandStep
     {
-        protected MapLandPass(MapPlanContext context) => Context = context;
+        protected MapLandStep(MapPlanContext context) => Context = context;
 
         protected MapPlanContext Context { get; }
 

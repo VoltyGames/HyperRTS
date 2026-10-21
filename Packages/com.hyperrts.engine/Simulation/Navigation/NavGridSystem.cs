@@ -282,7 +282,7 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 var index = Grid.Index(cell);
-                var rating = math.min(destructible.Crush, NavPass.AllScenery - 1);
+                var rating = math.min(destructible.Crush, NavAccess.AllScenery - 1);
                 Grid.Scenery[index] = (byte)math.max((int)Grid.Scenery[index], rating);
             }
         }

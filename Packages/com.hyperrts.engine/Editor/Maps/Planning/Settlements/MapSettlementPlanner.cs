@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
     /// the authored sector and placed and claimed in every copy. Runs after roads, banks, bases, pads and ravines and
     /// before woods, belts and farmland, so it takes only land they left free.
     /// </summary>
-    public sealed class MapSettlementPlanner : MapLandPass
+    public sealed class MapSettlementPlanner : MapLandStep
     {
         public MapSettlementPlanner(MapPlanContext context) : base(context)
         {

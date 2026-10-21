@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Tests
             Write("Plants/Grass.plant.json", "{}");
             Write("Trees/Oak.tree.json", "{\"scale\": {\"x\": 0.9, \"y\": 1.1}}");
             Write("Library/Meadow.surface.json",
-                "{\"layer\": \"Meadow\", \"trees\": [{\"tree\": \"Oak\", \"perHectare\": 10}], \"details\": [{\"detail\": \"Grass\", \"coverage\": 0.5}]}");
+                "{\"layer\": \"Meadow\", \"trees\": [{\"tree\": \"Oak\", \"perHectare\": 10}], \"plants\": [{\"plant\": \"Grass\", \"coverage\": 0.5}]}");
             Write("Library/Stubble.surface.json", "{\"layer\": \"Stubble\"}");
             Write("Library/Lane.road.json", "{\"surface\": \"Meadow\", \"width\": 5}");
             Write("Library/Steppe.climate.json",
@@ -49,7 +49,7 @@ namespace HyperRTS.Editor.Tests
             CollectionAssert.AreEqual(new[] { "Meadow", "Stubble" }, climate.surfaces.Select(s => s.key));
             CollectionAssert.AreEqual(new[] { "Meadow", "Stubble" }, climate.layers.Select(l => l.key));
             CollectionAssert.AreEqual(new[] { "Oak" }, climate.trees.Select(t => t.key));
-            CollectionAssert.AreEqual(new[] { "Grass" }, climate.details.Select(d => d.key));
+            CollectionAssert.AreEqual(new[] { "Grass" }, climate.plants.Select(d => d.key));
             Assert.AreEqual(5f, climate.RoadClass("Lane").width);
             Assert.AreEqual(1.1f, climate.trees[0].scale.y, 1e-5f);
         }

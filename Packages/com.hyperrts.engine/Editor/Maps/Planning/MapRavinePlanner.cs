@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// Ravines (balkas): the steep cut and the grassy rim slope round it, and woods in patches on the floor and lower
     /// walls, as much of it as the spec's <c>wooded</c> share says — never filled to the brim.
     /// </summary>
-    public sealed class MapRavinePlanner : MapLandPass
+    public sealed class MapRavinePlanner : MapLandStep
     {
         private const float WoodedReach = 0.75f;
         private const float PatchSize = 28f;
@@ -68,7 +68,7 @@ namespace HyperRTS.Editor.Maps.Planning
         private void PlantWood(MapRavineSpec spec, int index, MapClimateSurface surface, MapNoise patches)
         {
             var line = new MapLine(MapGeometry.ToVectors(spec.points), spec.width, spec.width * 0.5f);
-            var floor = new MapRavine(line, spec, Context.Shapes.Wobble);
+            var floor = new MapRavine(line, spec, Context.Shapes.EdgeWander);
             var reach = spec.width * 0.5f * WoodedReach;
             var hectares = line.Length * reach * 2f * spec.wooded / 10000f;
             var threshold = Threshold(line, patches, reach, spec.wooded);

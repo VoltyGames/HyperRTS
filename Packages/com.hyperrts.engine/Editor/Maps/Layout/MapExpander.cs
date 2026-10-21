@@ -199,7 +199,7 @@ namespace HyperRTS.Editor.Maps.Layout
                 placed.Reverse();
                 foreach (var crossing in river.Placed.crossings)
                 {
-                    crossing.t = 1f - crossing.t;
+                    crossing.along = 1f - crossing.along;
                 }
             }
         }

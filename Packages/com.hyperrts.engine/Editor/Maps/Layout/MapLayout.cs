@@ -40,8 +40,8 @@ namespace HyperRTS.Editor.Maps.Layout
 
         public MapTerrainSpec Terrain => Spec.terrain;
 
-        /// <summary>Splat texels per side: about three per metre keep road edges crisp.</summary>
-        public int SplatResolution => Mathf.Clamp(Mathf.NextPowerOfTwo(Mathf.CeilToInt(TerrainBounds.width * 2.5f)), 512, 2048);
+        /// <summary>Ground texture texels per side: about three per metre keep road edges crisp.</summary>
+        public int GroundTextureResolution => Mathf.Clamp(Mathf.NextPowerOfTwo(Mathf.CeilToInt(TerrainBounds.width * 2.5f)), 512, 2048);
 
         /// <summary>Grass coverage texels per side: the kernel's dithered, filtered lookup hides the 0.8 m texels.</summary>
         public int GrassResolution => Mathf.CeilToInt(TerrainBounds.width * 1.25f);

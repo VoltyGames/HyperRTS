@@ -6,7 +6,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Tests
 {
     /// <summary>The row lattice split into tiles: every spot grows in exactly one tile, from the threads its job dispatches.</summary>
-    public class RowCropLatticeTests
+    public class RowCropSpotsTests
     {
         private const float RowSpacing = 0.75f;
         private const float PlantSpacing = 0.3f;
@@ -38,8 +38,8 @@ namespace HyperRTS.Presentation.Tests
             {
                 for (var plant = -400; plant <= 400; plant++)
                 {
-                    var spot = RowCropLattice.Spot(field, row, plant, RowSpacing, PlantSpacing);
-                    if (!RowCropLattice.Owns(area, spot))
+                    var spot = RowCropSpots.Spot(field, row, plant, RowSpacing, PlantSpacing);
+                    if (!RowCropSpots.Owns(area, spot))
                     {
                         continue;
                     }
@@ -70,7 +70,7 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void PlantBound_CoversATileOfOneField()
         {
-            var bound = RowCropLattice.PlantBound(Tile, RowSpacing, PlantSpacing);
+            var bound = RowCropSpots.PlantBound(Tile, RowSpacing, PlantSpacing);
             var tile = new Rect(0f, 0f, Tile, Tile);
             for (var angle = 0f; angle < 180f; angle += 11f)
             {
@@ -96,7 +96,7 @@ namespace HyperRTS.Presentation.Tests
             {
                 var row = job.first.x + thread % job.count.x;
                 var plant = job.first.y + thread / job.count.x;
-                if (RowCropLattice.Owns(tile, RowCropLattice.Spot(field, row, plant, RowSpacing, PlantSpacing)))
+                if (RowCropSpots.Owns(tile, RowCropSpots.Spot(field, row, plant, RowSpacing, PlantSpacing)))
                 {
                     grown.Add((row, plant));
                 }

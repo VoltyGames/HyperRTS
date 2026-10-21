@@ -66,16 +66,16 @@ namespace HyperRTS.Simulation.Tests
             var standing = LocalTransform.FromPositionRotation(float3.zero, quaternion.RotateY(0.4f)).ApplyScale(2f);
             var topple = new Topple { Trunk = math.normalize(new float3(0.1f, 1f, 0f)), Height = 7f, Lie = 0.3f };
 
-            var felling = ToppleMath.Fell(standing, topple, 200, true, out var pose);
+            var toppleFall = ToppleMath.Fell(standing, topple, 200, true, out var pose);
 
             var crown = new float3(math.sin(topple.Lie), 0f, math.cos(topple.Lie));
-            var upright = ToppleMath.Pose(felling, pose.Rotation, 0f);
+            var upright = ToppleMath.Pose(toppleFall, pose.Rotation, 0f);
             MathAssert.Near(math.rotate(standing.Rotation, topple.Trunk), math.rotate(upright, crown), PoseTolerance);
-            var down = ToppleMath.Pose(felling, pose.Rotation, 1f);
+            var down = ToppleMath.Pose(toppleFall, pose.Rotation, 1f);
             MathAssert.Near(HeadingByte.Direction(200), math.rotate(down, crown), PoseTolerance);
             MathAssert.Near(math.rotate(pose.Rotation, crown), HeadingByte.Direction(200), PoseTolerance);
-            MathAssert.Near(HeadingByte.Direction(200), felling.Crown, PoseTolerance);
-            Assert.AreEqual(14f, felling.Height, 1e-4f, "scaled with the tree");
+            MathAssert.Near(HeadingByte.Direction(200), toppleFall.Crown, PoseTolerance);
+            Assert.AreEqual(14f, toppleFall.Height, 1e-4f, "scaled with the tree");
         }
 
         [Test]
@@ -91,10 +91,10 @@ namespace HyperRTS.Simulation.Tests
             var fall = ToppleMath.Quantize(float3.zero, standing.Position);
             MathAssert.Near(new float3(1f, 0f, 0f), HeadingByte.Direction(fall), PoseTolerance);
             var expected = ToppleMath.Fell(standing, topple, fall, true, out var pose);
-            var (shown, felling) = FellRemains();
+            var (shown, toppleFall) = FellRemains();
             MathAssert.Near(pose.Position, shown.Position, PoseTolerance);
             Assert.Greater(math.abs(math.dot(pose.Rotation.value, shown.Rotation.value)), 1f - Tolerance, "same pose");
-            Assert.Greater(math.abs(math.dot(expected.Tilt.value, felling.Tilt.value)), 1f - Tolerance, "same fall");
+            Assert.Greater(math.abs(math.dot(expected.Tilt.value, toppleFall.Tilt.value)), 1f - Tolerance, "same fall");
         }
 
         [Test]
@@ -123,15 +123,15 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        private (LocalTransform, Felling) FellRemains()
+        private (LocalTransform, ToppleFall) FellRemains()
         {
-            using var query = _world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<Felling>(),
+            using var query = _world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<ToppleFall>(),
                 ComponentType.ReadOnly<LocalTransform>());
             using var entities = query.ToEntityArray(Allocator.Temp);
             Assert.AreEqual(1, entities.Length, "one felled remains");
             var entity = entities[0];
             return (_world.EntityManager.GetComponentData<LocalTransform>(entity),
-                _world.EntityManager.GetComponentData<Felling>(entity));
+                _world.EntityManager.GetComponentData<ToppleFall>(entity));
         }
     }
 }

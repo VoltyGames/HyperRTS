@@ -11,14 +11,14 @@ namespace HyperRTS.Editor.Maps.Checks
     /// </summary>
     public static class MapStretchPartsCheck
     {
-        public static void Check(MapPaletteEntry entry, MapIssues issues)
+        public static void Check(MapProp entry, MapIssues issues)
         {
             if (entry.prefab == null || !entry.prefab.TryGetComponent<StretchPartsAuthoring>(out var parts))
             {
                 return;
             }
 
-            var name = $"Palette entry '{entry.key}'";
+            var name = $"Prop '{entry.key}'";
             if (Parts(parts, name, issues, out var layout))
             {
                 Axis(entry, parts, layout, name, issues);
@@ -68,7 +68,7 @@ namespace HyperRTS.Editor.Maps.Checks
         }
 
         /// <summary>The planners stretch along the size's long side, so the parts must lie along it too.</summary>
-        private static void Axis(MapPaletteEntry entry, StretchPartsAuthoring parts, StretchLayout layout, string name,
+        private static void Axis(MapProp entry, StretchPartsAuthoring parts, StretchLayout layout, string name,
             MapIssues issues)
         {
             var axis = parts.transform.InverseTransformDirection(parts.startCap.parent.TransformDirection(layout.Axis));

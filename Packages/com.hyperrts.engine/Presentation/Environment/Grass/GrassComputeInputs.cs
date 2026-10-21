@@ -5,7 +5,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Grass
 {
     /// <summary>The Grass compute shader's kernels and what they read. The ground picture is copied from the globals.</summary>
-    internal sealed class GrassKernelInputs : IDisposable
+    internal sealed class GrassComputeInputs : IDisposable
     {
         private static readonly int PlantsId = Shader.PropertyToID("_Plants");
         private static readonly int CoverageId = Shader.PropertyToID("_Coverage");
@@ -23,7 +23,7 @@ namespace HyperRTS.Presentation.Environment.Grass
         private readonly Texture _coverage;
 
         /// <summary>Uploads the plants and binds what stays fixed while the map is open.</summary>
-        public GrassKernelInputs(ComputeShader compute, GrassField field, Terrain terrain)
+        public GrassComputeInputs(ComputeShader compute, GrassField field, Terrain terrain)
         {
             Compute = compute;
             Scatter = compute.FindKernel(nameof(Scatter));
@@ -31,8 +31,8 @@ namespace HyperRTS.Presentation.Environment.Grass
             _field = field;
             _coverage = field.coverage;
             _plants = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, field.plants.Count),
-                GrassSowing.Stride);
-            _plants.SetData(field.Sowings());
+                GrassPlantGpu.Stride);
+            _plants.SetData(field.GpuPlants());
             compute.SetBuffer(Scatter, PlantsId, _plants);
             compute.SetTexture(Scatter, CoverageId, _coverage);
             var area = field.area;

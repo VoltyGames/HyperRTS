@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Data
     /// <summary>A grass or small plant the map's <see cref="GrassRenderer"/> scatters: its models, material and sizes.</summary>
     [Serializable]
     [MapLibraryItem("plant", "meshes", "material")]
-    public sealed class MapClimateDetail : IMapKeyed, IMapLibraryItem
+    public sealed class MapClimatePlant : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]
         public string key;

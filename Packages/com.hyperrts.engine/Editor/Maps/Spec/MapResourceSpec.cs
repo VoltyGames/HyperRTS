@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Spec
     public sealed class MapResourceSpec
     {
         public MapPoint pos;
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public string kind;
         public int amount;
         public bool shared;

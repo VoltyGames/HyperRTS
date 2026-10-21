@@ -8,19 +8,19 @@ namespace HyperRTS.Simulation.Combat
     public static class ToppleMath
     {
         /// <summary>A hit from straight above gives heading 0.</summary>
-        public static byte Quantize(float3 fellFrom, float3 position) => HeadingByte.Encode(position.xz - fellFrom.xz);
+        public static byte Quantize(float3 hitFrom, float3 position) => HeadingByte.Encode(position.xz - hitFrom.xz);
 
         public static LocalTransform RemainsPose(in LocalTransform standing, byte fall, float lie) =>
             standing.WithRotation(quaternion.RotateY(HeadingByte.Radians(fall) - lie));
 
         /// <summary>The remains' final pose and the fall presentation shows on the way.</summary>
-        public static Felling Fell(in LocalTransform standing, in Topple topple, byte fall, bool witnessed,
+        public static ToppleFall Fell(in LocalTransform standing, in Topple topple, byte fall, bool witnessed,
             out LocalTransform pose)
         {
             pose = RemainsPose(standing, fall, topple.Lie);
             var trunk = math.rotate(standing.Rotation, topple.Trunk);
             var crown = HeadingByte.Direction(fall);
-            return new Felling
+            return new ToppleFall
             {
                 Tilt = Rotations.FromTo(crown, trunk),
                 Crown = crown,
@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Combat
         }
 
         /// <summary>The remains' rotation <paramref name="progress"/> of the way from upright (0) to <paramref name="final"/> (1).</summary>
-        public static quaternion Pose(in Felling felling, quaternion final, float progress) =>
-            math.mul(math.slerp(felling.Tilt, quaternion.identity, progress), final);
+        public static quaternion Pose(in ToppleFall toppleFall, quaternion final, float progress) =>
+            math.mul(math.slerp(toppleFall.Tilt, quaternion.identity, progress), final);
     }
 }

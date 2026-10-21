@@ -55,8 +55,8 @@ namespace HyperRTS.Editor.Tests
             {
                 for (var plant = -40; plant <= 40; plant += 7)
                 {
-                    var a = RowCropLattice.Position(west, row, plant, _crop);
-                    var b = RowCropLattice.Position(east, row, plant, _crop);
+                    var a = RowCropSpots.Position(west, row, plant, _crop);
+                    var b = RowCropSpots.Position(east, row, plant, _crop);
                     Assert.AreEqual(-a.x, b.x, 1e-4f);
                     Assert.AreEqual(a.y, b.y, 1e-4f);
                 }

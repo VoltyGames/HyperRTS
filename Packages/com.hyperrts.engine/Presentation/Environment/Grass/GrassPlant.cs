@@ -51,7 +51,7 @@ namespace HyperRTS.Presentation.Environment.Grass
         }
 
         /// <summary>What Grass.compute reads of the plant, the <paramref name="index"/>th of its field.</summary>
-        public GrassSowing Sowing(int index, int firstSlot) => new()
+        public GrassPlantGpu ToGpu(int index, int firstSlot) => new()
         {
             spacing = Spacing,
             clumping = clumping,

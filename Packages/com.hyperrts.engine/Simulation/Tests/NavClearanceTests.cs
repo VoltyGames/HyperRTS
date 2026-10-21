@@ -93,8 +93,8 @@ namespace HyperRTS.Simulation.Tests
         {
             SpawnObstacle(new float3(2.5f, 0f, 0f), new float2(1f, 20f));
             _world.Tick();
-            var pass = new NavAgent { Radius = 0.5f, HullLength = 4f }.Pass(_world.Grid());
-            var capsule = new NavCapsule(pass, new float2(1.5f, 0f));
+            var access = new NavAgent { Radius = 0.5f, HullLength = 4f }.Access(_world.Grid());
+            var capsule = new NavCapsule(access, new float2(1.5f, 0f));
             var from = new float2(-0.5f, 0.5f);
 
             Assert.AreEqual(from, capsule.Constrain(from, new float2(0.2f, 0.5f)),

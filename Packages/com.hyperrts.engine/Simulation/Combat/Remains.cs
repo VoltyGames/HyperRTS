@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Combat
         public bool Stretched;
         public PartStretch Parts;
         public bool PartsStretched;
-        public Felling Felling;
+        public ToppleFall ToppleFall;
         public bool Felled;
 
         public float4x4 StretchMatrix => Stretched ? Stretch.Value : float4x4.identity;
@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Combat
             remains.Felled = lookups.Topples.TryGetComponent(piece, out var topple);
             if (remains.Felled)
             {
-                remains.Felling = ToppleMath.Fell(standing, topple, fall, witnessed, out remains.Transform);
+                remains.ToppleFall = ToppleMath.Fell(standing, topple, fall, witnessed, out remains.Transform);
             }
 
             return remains;

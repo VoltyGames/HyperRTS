@@ -43,7 +43,7 @@ namespace HyperRTS.Editor.Maps.Checks
         protected void Entry(string key, string source) =>
             Require(MapKeys.Contains(Palette.entries, key), $"{source}: '{key}' is not in the palette.");
 
-        /// <summary>A palette entry placed where besideRoad would be ignored: only scatters turn props onto a verge.</summary>
+        /// <summary>A prop placed where besideRoad would be ignored: only scatters turn props onto a verge.</summary>
         protected void NotBesideRoad(string key, string source)
         {
             if (!MapKeys.Contains(Palette.entries, key))

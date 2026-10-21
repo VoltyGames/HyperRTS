@@ -6,7 +6,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
     /// <summary>
-    /// Marches along both sides of each street at the kit's frontage (±jitter), laying a plot rectangle at each step
+    /// Marches along both sides of each street at the kit's frontage (± its width variation), laying a plot rectangle at each step
     /// and keeping the ones the settlement can hold, nearest the centre first. Everything is decided in the authored
     /// sector; land claims and neighbouring plots are checked later, as plots are accepted.
     /// </summary>
@@ -50,8 +50,8 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             var along = 0f;
             while (along < length)
             {
-                var frontage = Mathf.Max(1f, kit.plot.x * Jitter(random));
-                var depth = Mathf.Max(1f, kit.plot.y * Jitter(random));
+                var frontage = Mathf.Max(1f, kit.plot.x * Vary(random));
+                var depth = Mathf.Max(1f, kit.plot.y * Vary(random));
                 if (along + frontage > length)
                 {
                     return;
@@ -101,7 +101,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             return (plot, reason);
         }
 
-        private float Jitter(System.Random random) => 1f + _settlement.Kit.plotJitter * random.Signed();
+        private float Vary(System.Random random) => 1f + _settlement.Kit.plotWidthVariation * random.Signed();
 
         /// <summary>
         /// Why a plot can't be used whatever its neighbours do, or null. Only its street front must lie in the

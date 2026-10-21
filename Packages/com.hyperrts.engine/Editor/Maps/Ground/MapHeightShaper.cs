@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Ground
     {
         private const float BankLift = 0.6f;
         private const float BankDrop = 4f;
-        private const float BankWobble = 1.2f;
+        private const float BankWander = 1.2f;
         private const float RavineFloor = 0.45f;
         private const float RimDrop = 0.12f;
         private const float SwellScale = 0.3f;
@@ -27,14 +27,14 @@ namespace HyperRTS.Editor.Maps.Ground
             var terrain = layout.Terrain;
             var heights = new MapHeights(terrain.resolution, layout.TerrainBounds);
             var relief = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.Relief);
-            var wobble = shapes.Wobble;
+            var edgeWander = shapes.EdgeWander;
             for (var z = 0; z < heights.Resolution; z++)
             {
                 for (var x = 0; x < heights.Resolution; x++)
                 {
                     var p = heights.Position(x, z);
                     var h = terrain.height + Relief(terrain, relief, p) + Hills(layout, p);
-                    h = Rivers(shapes, p, h, terrain.waterLevel, wobble);
+                    h = Rivers(shapes, p, h, terrain.waterLevel, edgeWander);
                     heights[x, z] = Fords(shapes, p, h, terrain.waterLevel);
                 }
             }
@@ -78,7 +78,7 @@ namespace HyperRTS.Editor.Maps.Ground
         /// A parabolic bed below the water, a low bank just above it, then the valley side easing up; the bank's
         /// steepness wanders so one reach has a cut bank and the next a gentle shelving shore.
         /// </summary>
-        private static float Rivers(MapShapes shapes, Vector2 p, float h, float water, MapNoise wobble)
+        private static float Rivers(MapShapes shapes, Vector2 p, float h, float water, MapNoise edgeWander)
         {
             foreach (var river in shapes.Rivers)
             {
@@ -90,9 +90,9 @@ namespace HyperRTS.Editor.Maps.Ground
                     continue;
                 }
 
-                var distance = raw + wobble.Sample(p, 25f) * BankWobble;
+                var distance = raw + edgeWander.Sample(p, 25f) * BankWander;
                 var half = river.HalfWidth(p);
-                var drop = BankDrop * (1f + 0.6f * wobble.Sample(p + new Vector2(91f, 47f), 60f));
+                var drop = BankDrop * (1f + 0.6f * edgeWander.Sample(p + new Vector2(91f, 47f), 60f));
                 float target;
                 if (distance < half)
                 {

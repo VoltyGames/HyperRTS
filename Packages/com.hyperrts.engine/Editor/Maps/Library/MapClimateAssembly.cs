@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Library
             climate.woodlandKits = All<MapWoodlandKit>(library, refs.woodlandKits, refs.file);
             climate.layers = new List<MapClimateLayer>();
             climate.trees = new List<MapClimateTree>();
-            climate.details = new List<MapClimateDetail>();
+            climate.plants = new List<MapClimatePlant>();
             climate.rowCrops = new List<MapClimateRowCrop>();
             climate.decals = new List<MapClimateDecal>();
             new MapClimateAssembly(library, climate).Collect(refs.file);
@@ -49,17 +49,17 @@ namespace HyperRTS.Editor.Maps.Library
             _climate.surfaces.ForEach(Surface);
             _climate.beltKits.ForEach(BeltKit);
             _climate.woodlandKits.ForEach(WoodlandKit);
-            Detail(_climate.reedDetail, climateFile);
+            Plant(_climate.reedPlant, climateFile);
             foreach (var key in _library.Keys<MapSettlementKit>())
             {
                 var kit = _library.Get<MapSettlementKit>(key, null);
                 Tree(kit.orchardTree, File<MapSettlementKit>(key));
             }
 
-            foreach (var key in _library.Keys<MapPaletteEntry>())
+            foreach (var key in _library.Keys<MapProp>())
             {
-                var entry = _library.Get<MapPaletteEntry>(key, null);
-                Add(_climate.decals, entry.groundDecal, File<MapPaletteEntry>(key));
+                var entry = _library.Get<MapProp>(key, null);
+                Add(_climate.decals, entry.groundDecal, File<MapProp>(key));
             }
         }
 
@@ -68,7 +68,7 @@ namespace HyperRTS.Editor.Maps.Library
             var file = File<MapClimateSurface>(surface.key);
             Add(_climate.layers, surface.layer, file);
             surface.trees.ForEach(tree => Tree(tree.tree, file));
-            surface.details.ForEach(detail => Detail(detail.detail, file));
+            surface.plants.ForEach(coverage => Plant(coverage.plant, file));
             Add(_climate.rowCrops, surface.rowCrop, file);
             surface.decals.ForEach(decal => Add(_climate.decals, decal.decal, file));
         }
@@ -89,7 +89,7 @@ namespace HyperRTS.Editor.Maps.Library
 
         private void Tree(string key, string referrer) => Add(_climate.trees, key, referrer);
 
-        private void Detail(string key, string referrer) => Add(_climate.details, key, referrer);
+        private void Plant(string key, string referrer) => Add(_climate.plants, key, referrer);
 
         private void Add<T>(List<T> items, string key, string referrer) where T : class, IMapLibraryItem, IMapKeyed, new()
         {

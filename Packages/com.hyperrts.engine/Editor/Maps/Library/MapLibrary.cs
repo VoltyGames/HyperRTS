@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Library
         private static readonly Type[] Types =
         {
             typeof(MapClimateLayer),
-            typeof(MapClimateDetail),
+            typeof(MapClimatePlant),
             typeof(MapClimateRowCrop),
             typeof(MapClimateTree),
             typeof(MapClimateDecal),
@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Library
             typeof(MapBeltKit),
             typeof(MapWoodlandKit),
             typeof(MapSettlementKit),
-            typeof(MapPaletteEntry),
+            typeof(MapProp),
             typeof(MapClimate),
             typeof(MapPalette),
             typeof(MapRules),
@@ -125,7 +125,7 @@ namespace HyperRTS.Editor.Maps.Library
         public MapPalette Palette()
         {
             var palette = Get<MapPalette>(Single<MapPalette>(), null);
-            palette.entries = Keys<MapPaletteEntry>().Select(key => Get<MapPaletteEntry>(key, null)).ToList();
+            palette.entries = Keys<MapProp>().Select(key => Get<MapProp>(key, null)).ToList();
             palette.settlementKits = Keys<MapSettlementKit>().Select(key => Get<MapSettlementKit>(key, null)).ToList();
             return palette;
         }

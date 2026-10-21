@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
@@ -55,11 +56,13 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         [Tooltip("Metres over which a row's wander turns.")]
         public float wanderLength = 6f;
 
-        [Tooltip("Scale multiplier range over the field's patches, on top of each plant's scale.")]
-        public Vector2 patchScale = new(0.9f, 1.1f);
+        [Tooltip("Scale multiplier range over the field's taller and shorter stretches, on top of each plant's scale.")]
+        [FormerlySerializedAs("patchScale")]
+        public Vector2 growthVariation = new(0.9f, 1.1f);
 
-        [Tooltip("Metres across a patch of taller or shorter plants.")]
-        public float patchSize = 12f;
+        [Tooltip("Metres across a stretch of taller or shorter plants.")]
+        [FormerlySerializedAs("patchSize")]
+        public float growthVariationSize = 12f;
 
         [Tooltip("Bare margin in metres round field edges, roads and placed objects.")]
         public float edgeMargin = 0.6f;
@@ -96,9 +99,10 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                 $"{nameof(edgeLean)} {edgeLean} must be {nameof(lean)} {lean} to 30");
             Require(problems, wander is >= 0f and <= 0.5f, $"{nameof(wander)} {wander} must be 0 to 0.5");
             Require(problems, wanderLength > 0f, $"{nameof(wanderLength)} {wanderLength} must be above 0");
-            Require(problems, patchScale.x > 0f && patchScale.y >= patchScale.x,
-                $"{nameof(patchScale)} {patchScale} must be above 0 with y at least x");
-            Require(problems, patchSize > 0f, $"{nameof(patchSize)} {patchSize} must be above 0");
+            Require(problems, growthVariation.x > 0f && growthVariation.y >= growthVariation.x,
+                $"{nameof(growthVariation)} {growthVariation} must be above 0 with y at least x");
+            Require(problems, growthVariationSize > 0f,
+                $"{nameof(growthVariationSize)} {growthVariationSize} must be above 0");
             Require(problems, edgeMargin >= 0f, $"{nameof(edgeMargin)} {edgeMargin} must not be negative");
             Require(problems, height > 0f, $"{nameof(height)} {height} must be above 0");
             Require(problems, lod0Distance > 0f, $"{nameof(lod0Distance)} {lod0Distance} must be above 0");

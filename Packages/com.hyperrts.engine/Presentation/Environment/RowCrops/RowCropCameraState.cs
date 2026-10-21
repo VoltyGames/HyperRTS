@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     {
         private readonly ScatterView _view = new();
 
-        public RowCropCameraState(RowCropFields fields, RowCropKernels kernels)
+        public RowCropCameraState(RowCropFields fields, RowCropCompute kernels)
         {
             foreach (var crop in fields.crops)
             {
@@ -22,7 +22,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
         /// <summary>Whether the batches already hold this view: same spot, settings and visible tiles, and no trample map.</summary>
         public bool Holds(Vector3 position, float density, float distance, List<int> tiles) =>
-            !RowCropKernelInputs.Trampled && _view.Holds(position, new Vector4(density, distance), tiles);
+            !RowCropComputeInputs.Trampled && _view.Holds(position, new Vector4(density, distance), tiles);
 
         /// <summary>Records the view the batches were just grown for.</summary>
         public void Remember(Vector3 position, float density, float distance, List<int> tiles) =>

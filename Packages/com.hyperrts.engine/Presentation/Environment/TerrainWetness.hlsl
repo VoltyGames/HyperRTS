@@ -1,4 +1,4 @@
-// HyperRTS/Terrain wetness: the macro map's damp hollows, raised by the weather's wetness (Wetness.hlsl).
+// HyperRTS/Terrain wetness: the ground tint map's damp hollows, raised by the weather's wetness (Wetness.hlsl).
 #ifndef HYPERRTS_TERRAIN_WETNESS_INCLUDED
 #define HYPERRTS_TERRAIN_WETNESS_INCLUDED
 

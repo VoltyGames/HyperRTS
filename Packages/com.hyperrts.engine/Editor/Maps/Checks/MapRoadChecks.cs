@@ -66,7 +66,7 @@ namespace HyperRTS.Editor.Maps.Checks
                 }
             }
 
-            var limit = road.Class.curve * BendShare;
+            var limit = road.Class.cornerRadius * BendShare;
             if (tightest >= limit)
             {
                 return;
@@ -75,7 +75,7 @@ namespace HyperRTS.Editor.Maps.Checks
             var sector = layout.Symmetry.ToSector(where, out _);
             if (reported.Add($"bend {sector.x:0},{sector.y:0}"))
             {
-                issues.Warn($"Road '{road.Class.key}' bends with a {tightest:0.#} m radius at {At(sector)}, under half its class radius ({road.Class.curve:0.#} m).",
+                issues.Warn($"Road '{road.Class.key}' bends with a {tightest:0.#} m radius at {At(sector)}, under half its class radius ({road.Class.cornerRadius:0.#} m).",
                     road.Feature);
             }
         }

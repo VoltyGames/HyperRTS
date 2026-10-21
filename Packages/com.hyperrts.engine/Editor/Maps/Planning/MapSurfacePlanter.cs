@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// lands that plant their own trees are skipped. Spots are chosen in the authored sector and copied. Props falling
     /// in the backdrop become scenery when they have a scenery model.
     /// </summary>
-    public sealed class MapSurfacePlanter : MapLandPass
+    public sealed class MapSurfacePlanter : MapLandStep
     {
         private const int PropAttempts = 30;
         private const float RowSpacing = 16f;
@@ -95,7 +95,7 @@ namespace HyperRTS.Editor.Maps.Planning
             }
         }
 
-        private void PlaceInRows(MapLandRegion region, MapPaletteEntry entry, List<int> cells, int wanted,
+        private void PlaceInRows(MapLandRegion region, MapProp entry, List<int> cells, int wanted,
             System.Random random)
         {
             var forward = MapGeometry.Forward(region.RowAngle);
@@ -119,13 +119,13 @@ namespace HyperRTS.Editor.Maps.Planning
             }
         }
 
-        private bool TryPlace(MapPaletteEntry entry, Vector2 spot, float yaw, System.Random random)
+        private bool TryPlace(MapProp entry, Vector2 spot, float yaw, System.Random random)
         {
             var scale = random.Range(entry.scale.x, entry.scale.y);
             var radius = entry.Radius * scale;
             if (!Context.Layout.Bounds.Contains(spot))
             {
-                return entry.scenery != null && TryPlaceScenery(entry.scenery, spot, yaw, scale, radius);
+                return entry.backdropModel != null && TryPlaceScenery(entry.backdropModel, spot, yaw, scale, radius);
             }
 
             var clearance = Context.Placements.Clearance;

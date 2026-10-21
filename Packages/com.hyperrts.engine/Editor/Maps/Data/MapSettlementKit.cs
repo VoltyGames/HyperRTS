@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Data
     /// <summary>
     /// How a settlement type lays out its plots along a street: a house behind the front fence and gate, outbuildings
     /// behind it, a vegetable garden, an orchard or meadow at the back, fences between plots, and street furniture.
-    /// Building and fence keys are palette entries; surfaces and trees are climate keys.
+    /// Building and fence keys are props; surfaces and trees are climate keys.
     /// </summary>
     [Serializable]
     [MapLibraryItem("settlement")]
@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Plot widths vary by up to this share either way.")]
         [Range(0f, 0.4f)]
-        public float plotJitter = 0.15f;
+        public float plotWidthVariation = 0.15f;
 
         [Tooltip("Gap between the road edge and the front fence (metres).")]
         public float frontGap = 2f;
@@ -31,24 +31,24 @@ namespace HyperRTS.Editor.Maps.Data
         public float frontYard = 5f;
 
         [Tooltip("Palette keys of the houses, picked in turn with some shuffling.")]
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public List<string> houses = new();
 
         [Tooltip("Palette keys of outbuildings (summer kitchens, sheds, barns) placed behind the house.")]
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public List<string> outbuildings = new();
 
         [Min(0)]
         public int maxOutbuildings = 2;
 
         [Tooltip("Palette keys of the fence sections along the street, between plots, and the gate.")]
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public string frontFence;
 
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
 
         public string sideFence;
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public string gate;
 
         [Tooltip("Climate surfaces of the yard, the vegetable garden and the back of the plot.")]
@@ -74,11 +74,11 @@ namespace HyperRTS.Editor.Maps.Data
         public List<MapPlotProp> extras = new();
 
         [Tooltip("Palette key of a pipe section run along the plot fronts (gas pipe); empty for none.")]
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public string streetPipe;
 
         [Tooltip("Palette key of the arch that carries the pipe over a driveway or a crossing road; required with a pipe.")]
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public string streetPipeArch;
 
         [Tooltip("Fewest pipe sections in a run; shorter runs are left out. Required (at least 1) with a pipe.")]
@@ -88,7 +88,7 @@ namespace HyperRTS.Editor.Maps.Data
         public float streetPipeMaxGap;
 
         [Tooltip("Palette key of the poles along the street; empty for none.")]
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public string streetPole;
 
         public float poleSpacing = 35f;

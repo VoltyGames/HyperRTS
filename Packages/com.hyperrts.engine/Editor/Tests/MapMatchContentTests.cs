@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Tests
         {
             _prefab = new GameObject("Headquarters");
             _palette = new MapPalette();
-            _palette.entries.Add(new MapPaletteEntry { key = "HQ", prefab = _prefab });
+            _palette.entries.Add(new MapProp { key = "HQ", prefab = _prefab });
             foreach (var id in new[] { 1, 3 })
             {
                 var side = new MapPaletteSide { side = id };

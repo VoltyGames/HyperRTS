@@ -44,7 +44,7 @@ namespace HyperRTS.Editor.Maps.Generation
         public string Water => $"{Generated}/{Name}_Water.asset";
 
         /// <summary>The terrain shader's per-map tint and wetness picture.</summary>
-        public string Macro => $"{Generated}/{Name}_Macro.png";
+        public string GroundTint => $"{Generated}/{Name}_GroundTint.png";
 
         /// <summary>The terrain shader's per-cell crop row direction picture.</summary>
         public string RowMap => $"{Generated}/{Name}_Rows.png";

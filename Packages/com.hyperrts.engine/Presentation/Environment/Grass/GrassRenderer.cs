@@ -42,7 +42,7 @@ namespace HyperRTS.Presentation.Environment.Grass
         private readonly List<int> _visible = new();
         private readonly Plane[] _planes = new Plane[6];
         private Func<GrassCameraState> _newState;
-        private GrassKernelInputs _kernels;
+        private GrassComputeInputs _kernels;
         private Material[] _materials;
         private Bounds[] _tileBounds;
         private bool _ready;
@@ -112,7 +112,7 @@ namespace HyperRTS.Presentation.Environment.Grass
                 return;
             }
 
-            _kernels = new GrassKernelInputs(compute, field, terrain);
+            _kernels = new GrassComputeInputs(compute, field, terrain);
             _materials = field.plants.ConvertAll(Instanced).ToArray();
             _tileBounds = TileBounds();
             _newState ??= NewState;

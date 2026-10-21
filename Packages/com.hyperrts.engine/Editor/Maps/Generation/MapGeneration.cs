@@ -35,7 +35,7 @@ namespace HyperRTS.Editor.Maps.Generation
         public MapPlacements Placements { get; private set; }
         public MapLand Land { get; private set; }
 
-        /// <summary>The land-use borders the splat, grass and macro painters share, so they end on one line.</summary>
+        /// <summary>The land-use borders the ground texture, grass and ground tint painters share, so they end on one line.</summary>
         public MapEdgeField Edges { get; private set; }
 
         public List<MapTree> Trees { get; private set; }
@@ -125,8 +125,8 @@ namespace HyperRTS.Editor.Maps.Generation
             var climate = Project.Climate;
             Level();
             Edges = new MapEdgeField(Layout, Land, climate);
-            Splat = MapSplatPainter.Paint(Layout, Edges, Heights, climate, Layout.SplatResolution);
-            Grass = MapDetailPainter.Paint(Layout, Land, Edges, Shapes, Heights, climate, Placements.Clearance,
+            Splat = MapGroundTexturePainter.Paint(Layout, Edges, Heights, climate, Layout.GroundTextureResolution);
+            Grass = MapPlantPainter.Paint(Layout, Land, Edges, Shapes, Heights, climate, Placements.Clearance,
                 Layout.GrassResolution);
             SplitTrees(climate);
         }
@@ -155,7 +155,7 @@ namespace HyperRTS.Editor.Maps.Generation
 
         private void SplitTrees(MapClimate climate)
         {
-            var entries = new Dictionary<(int, int), MapPaletteEntry>();
+            var entries = new Dictionary<(int, int), MapProp>();
             foreach (var tree in Trees)
             {
                 var species = climate.trees[tree.Species];
@@ -167,7 +167,7 @@ namespace HyperRTS.Editor.Maps.Generation
 
                 if (!entries.TryGetValue((tree.Species, tree.Variant), out var entry))
                 {
-                    entries[(tree.Species, tree.Variant)] = entry = new MapPaletteEntry
+                    entries[(tree.Species, tree.Variant)] = entry = new MapProp
                     {
                         key = species.key, prefab = species.destructibles[tree.Variant], size = Vector2.one * TreeFootprint,
                     };

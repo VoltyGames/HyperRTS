@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Placement
     /// <summary>One palette prefab to instantiate: where, which way, how big and for whom.</summary>
     public sealed class MapPlacement
     {
-        public MapPlacement(MapPaletteEntry entry, Vector2 position, float yaw, float stretch)
+        public MapPlacement(MapProp entry, Vector2 position, float yaw, float stretch)
         {
             Entry = entry;
             Position = position;
@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Placement
             Stretch = stretch;
         }
 
-        public MapPaletteEntry Entry { get; }
+        public MapProp Entry { get; }
 
         public Vector2 Position { get; }
 

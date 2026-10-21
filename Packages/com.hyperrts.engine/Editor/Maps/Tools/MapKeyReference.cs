@@ -67,7 +67,7 @@ namespace HyperRTS.Editor.Maps.Tools
                 .AppendLine("| --- | --- | --- | --- | --- |");
             foreach (var surface in climate.surfaces)
             {
-                var plants = string.Join(", ", surface.details.Select(d => d.detail));
+                var plants = string.Join(", ", surface.plants.Select(d => d.plant));
                 var trees = string.Join(", ", surface.trees.Select(t => $"{t.tree} {t.perHectare}"));
                 text.AppendLine($"| `{surface.key}` | {surface.layer} | {plants} | {surface.rowCrop} | {trees} |");
             }

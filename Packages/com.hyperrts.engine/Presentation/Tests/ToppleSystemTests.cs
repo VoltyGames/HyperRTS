@@ -63,11 +63,11 @@ namespace HyperRTS.Presentation.Tests
         {
             var standing = LocalTransform.FromPosition(new float3(2f, 0f, 2f));
             var topple = new Topple { Trunk = new float3(0f, 1f, 0f), Height = 15f, Lie = 0f };
-            var felling = ToppleMath.Fell(standing, topple, 64, witnessed, out var pose);
+            var toppleFall = ToppleMath.Fell(standing, topple, 64, witnessed, out var pose);
             var remains = _em.CreateEntity();
             _em.AddComponentData(remains, pose);
             _em.AddComponentData(remains, new LocalToWorld { Value = pose.ToMatrix() });
-            _em.AddComponentData(remains, felling);
+            _em.AddComponentData(remains, toppleFall);
             final = pose.Rotation;
             return remains;
         }

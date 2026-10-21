@@ -133,7 +133,7 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
     #ifdef TERRAIN_MICRO
         ApplyMicro(surface, pixel);
     #endif
-    half dampness = ApplyMacro(surface, input.uv, input.positionWS.xz);
+    half dampness = ApplyGroundTint(surface, input.uv, input.positionWS.xz);
     half rut = ApplyInteraction(surface, input.positionWS.xz);
     ApplyWetness(surface, dampness, rut, input.positionWS.xz);
     InputData inputData = TerrainInputData(input, pixel, surface.normalTS);

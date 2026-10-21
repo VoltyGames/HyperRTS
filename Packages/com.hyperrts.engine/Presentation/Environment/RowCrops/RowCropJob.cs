@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         /// <summary>Index into the field asset's fields.</summary>
         public int field;
 
-        /// <summary>The field's lattice spots that can fall in the tile, from <see cref="RowCropLattice.Range"/>.</summary>
+        /// <summary>The field's lattice spots that can fall in the tile, from <see cref="RowCropSpots.Range"/>.</summary>
         public Vector2Int first;
         public Vector2Int count;
 
@@ -22,7 +22,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         {
             tileMin = tile.min;
             this.field = field;
-            (first, count) = RowCropLattice.Range(tile, data, rowSpacing, plantSpacing);
+            (first, count) = RowCropSpots.Range(tile, data, rowSpacing, plantSpacing);
         }
 
         /// <summary>Kernel threads the job needs: one per spot.</summary>

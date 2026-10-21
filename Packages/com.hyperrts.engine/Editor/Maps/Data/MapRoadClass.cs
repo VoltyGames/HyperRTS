@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Maps.Data
         public bool level = true;
 
         [Tooltip("Corner radius the builder rounds the authored polyline to (metres).")]
-        public float curve = 25f;
+        public float cornerRadius = 25f;
 
         string IMapKeyed.Key => key;
 

@@ -30,12 +30,12 @@ namespace HyperRTS.Simulation.Orders
     /// </summary>
     public struct MoveOrderState : IComponentData, IEnableableComponent
     {
-        /// <summary>Where the stall timer last restarted; the unit counts as stalled until it leaves this spot.</summary>
-        public float3 StallAnchor;
+        /// <summary>Where the stuck timer last restarted; the unit counts as stuck until it leaves this spot.</summary>
+        public float3 StuckSpot;
 
-        /// <summary>Facing when the stall timer restarted, so a vehicle turning in place isn't stalled.</summary>
-        public float2 StallFacing;
+        /// <summary>Facing when the stuck timer restarted, so a vehicle turning in place isn't stuck.</summary>
+        public float2 StuckFacing;
 
-        public float StallTime;
+        public float StuckTime;
     }
 }

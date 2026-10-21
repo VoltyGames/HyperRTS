@@ -4,9 +4,9 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Grass
 {
     /// <summary>One plant as Grass.compute reads it (the layout the kernel declares).</summary>
-    public struct GrassSowing
+    public struct GrassPlantGpu
     {
-        public static readonly int Stride = UnsafeUtility.SizeOf<GrassSowing>();
+        public static readonly int Stride = UnsafeUtility.SizeOf<GrassPlantGpu>();
 
         public float spacing;
         public float clumping;

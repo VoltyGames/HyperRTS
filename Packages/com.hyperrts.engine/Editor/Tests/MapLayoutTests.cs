@@ -78,7 +78,7 @@ namespace HyperRTS.Editor.Tests
             spec.rivers.Add(new MapRiverSpec
             {
                 points = new List<MapPoint> { new(-100f, -20f), new(0f, 0f) },
-                crossings = new List<MapCrossingSpec> { new() { t = 0.25f, kind = MapCrossingSpec.Ford } },
+                crossings = new List<MapCrossingSpec> { new() { along =0.25f, kind = MapCrossingSpec.Ford } },
             });
 
             var layout = MapExpander.Expand(spec, new MapIssues());
@@ -86,7 +86,7 @@ namespace HyperRTS.Editor.Tests
             var copy = layout.Rivers[1].Placed;
             Assert.AreEqual(new MapPoint(0f, 0f), copy.points[0], "the copy starts where the authored river ends");
             Assert.AreEqual(new MapPoint(100f, 20f), copy.points[1]);
-            Assert.AreEqual(0.75f, copy.crossings[0].t, 1e-5f, "crossings stay at the same place on the reversed line");
+            Assert.AreEqual(0.75f, copy.crossings[0].along, 1e-5f, "crossings stay at the same place on the reversed line");
         }
     }
 }

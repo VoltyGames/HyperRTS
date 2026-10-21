@@ -62,7 +62,7 @@ namespace HyperRTS.Editor.Tests
         public void ABadAccessEntry_IsAnErrorNamingIt(string access, float distance, string named)
         {
             var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Shed", access = access, sharedAccessDistance = distance });
+            palette.entries.Add(new MapProp { key = "Shed", access = access, sharedAccessDistance = distance });
 
             var issues = CheckAssets(MapRoadFixture.Climate(), palette);
 
@@ -121,7 +121,7 @@ namespace HyperRTS.Editor.Tests
 
             var issues = CheckAssets(climate, new MapPalette());
 
-            foreach (var field in new[] { "fordShallowsWidth", "fordRapidsLength", "trackJoinDistance", "macro regionLight" })
+            foreach (var field in new[] { "fordShallowsWidth", "fordRapidsLength", "trackJoinDistance", "groundTint regionLight" })
             {
                 Assert.IsTrue(issues.Errors.Any(e => e.Contains(field)), $"{field}: {issues}");
             }
@@ -147,7 +147,7 @@ namespace HyperRTS.Editor.Tests
             var climate = MapRoadFixture.Climate();
             climate.surfaces.Single(s => s.key == "Meadow").props.Add(new MapPropDensity { kind = "Milestone" });
             var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Milestone", besideRoad = true });
+            palette.entries.Add(new MapProp { key = "Milestone", besideRoad = true });
 
             var issues = CheckAssets(climate, palette);
 
@@ -162,7 +162,7 @@ namespace HyperRTS.Editor.Tests
             var rules = new MapRules();
             rules.modes.Add(new MapModeRules { mode = spec.mode });
             var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Milestone", besideRoad = true });
+            palette.entries.Add(new MapProp { key = "Milestone", besideRoad = true });
             var issues = new MapIssues();
 
             MapSpecCheck.Check(spec, MapRoadFixture.Climate(), palette, rules, issues);
@@ -203,7 +203,7 @@ namespace HyperRTS.Editor.Tests
             var palette = new MapPalette();
             foreach (var key in entries)
             {
-                palette.entries.Add(new MapPaletteEntry { key = key });
+                palette.entries.Add(new MapProp { key = key });
             }
 
             var issues = new MapIssues();

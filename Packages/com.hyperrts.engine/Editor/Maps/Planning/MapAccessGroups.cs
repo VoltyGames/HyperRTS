@@ -6,7 +6,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// Props sharing one access track: same road class, each within the smaller <see cref="MapPaletteEntry.sharedAccessDistance"/>
+    /// Props sharing one access track: same road class, each within the smaller <see cref="MapProp.sharedAccessDistance"/>
     /// of itself and another in the group.
     /// </summary>
     public static class MapAccessGroups

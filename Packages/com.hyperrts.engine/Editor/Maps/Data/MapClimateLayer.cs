@@ -29,9 +29,9 @@ namespace HyperRTS.Editor.Maps.Data
         [Range(0f, 2f)]
         public float heightBlend = 1f;
 
-        [Tooltip("How much the map's macro tint and the broad brightness variation colour this layer.")]
+        [Tooltip("How much the map's ground tint and the broad brightness variation colour this layer.")]
         [Range(0f, 1f)]
-        public float macroStrength = 1f;
+        public float tintStrength = 1f;
 
         [Tooltip("How far hex tiling may turn each cell of the texture so it never visibly repeats: 1 is any angle, 0 none. Row layers never turn, and their cells shift only along the rows.")]
         [Range(0f, 1f)]

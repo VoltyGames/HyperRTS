@@ -3,7 +3,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// An agent's footprint on the grid: a capsule of <see cref="NavPass.Clearance"/> round its core segment. Keeps
+    /// An agent's footprint on the grid: a capsule of <see cref="NavAccess.Clearance"/> round its core segment. Keeps
     /// moves and turns from pushing it deeper into cells closed to the agent; one already overlapping may always
     /// move or turn without going deeper, so it can never wedge.
     /// </summary>
@@ -12,14 +12,14 @@ namespace HyperRTS.Simulation.Navigation
         // Moves may deepen an overlap by this much, so float noise along a wall never wedges a unit.
         private const float Skin = 0.01f;
 
-        public readonly NavPass Pass;
+        public readonly NavAccess Access;
 
         /// <summary>Half the core segment on XZ; zero for round footprints.</summary>
         public readonly float2 Axis;
 
-        public NavCapsule(in NavPass pass, float2 axis)
+        public NavCapsule(in NavAccess access, float2 axis)
         {
-            Pass = pass;
+            Access = access;
             Axis = axis;
         }
 
@@ -66,25 +66,25 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public float Depth(float2 center, float2 axis)
         {
-            var grid = Pass.Grid;
+            var grid = Access.Grid;
             var a = center + axis;
             var b = center - axis;
-            var min = grid.WorldToCell(math.min(a, b) - Pass.Clearance);
-            var max = grid.WorldToCell(math.max(a, b) + Pass.Clearance);
+            var min = grid.WorldToCell(math.min(a, b) - Access.Clearance);
+            var max = grid.WorldToCell(math.max(a, b) + Access.Clearance);
             var depth = 0f;
             for (var y = min.y; y <= max.y; y++)
             {
                 for (var x = min.x; x <= max.x; x++)
                 {
                     var cell = new int2(x, y);
-                    if (Pass.IsOpen(cell))
+                    if (Access.IsOpen(cell))
                     {
                         continue;
                     }
 
                     var low = grid.Min + (float2)cell * grid.CellSize;
                     var gap = SegmentRectDistance(a, b, low, low + grid.CellSize);
-                    depth += math.max(0f, Pass.Clearance - gap);
+                    depth += math.max(0f, Access.Clearance - gap);
                 }
             }
 

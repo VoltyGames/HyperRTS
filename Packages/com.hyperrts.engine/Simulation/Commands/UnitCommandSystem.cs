@@ -236,7 +236,7 @@ namespace HyperRTS.Simulation.Commands
             {
                 if (_stances.HasComponent(unit))
                 {
-                    _stances[unit] = new CombatStance { Value = stance, Anchor = _transforms[unit].Position };
+                    _stances[unit] = new CombatStance { Value = stance, ReturnPoint = _transforms[unit].Position };
                 }
             }
         }

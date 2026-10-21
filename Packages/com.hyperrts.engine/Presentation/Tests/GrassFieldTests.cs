@@ -39,19 +39,19 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void Slots_RunPlantByPlant_AModelPerBandEach()
         {
-            var sowings = _field.Sowings();
+            var gpuPlants = _field.GpuPlants();
 
             Assert.AreEqual((2 + 3) * GrassView.Bands, _field.SlotCount);
-            Assert.AreEqual(0, sowings[0].firstSlot);
-            Assert.AreEqual(2 * GrassView.Bands, sowings[1].firstSlot);
-            Assert.AreEqual(3, sowings[1].variants);
-            Assert.AreNotEqual(sowings[0].seed, sowings[1].seed);
+            Assert.AreEqual(0, gpuPlants[0].firstSlot);
+            Assert.AreEqual(2 * GrassView.Bands, gpuPlants[1].firstSlot);
+            Assert.AreEqual(3, gpuPlants[1].variants);
+            Assert.AreNotEqual(gpuPlants[0].seed, gpuPlants[1].seed);
         }
 
         [Test]
-        public void Sowing_SpacesCellsForTheDensity()
+        public void GpuPlants_SpaceCellsForTheDensity()
         {
-            Assert.AreEqual(1f / 3f, _field.Sowings()[0].spacing, 1e-5f);
+            Assert.AreEqual(1f / 3f, _field.GpuPlants()[0].spacing, 1e-5f);
             Assert.AreEqual(2f, _field.plants[1].Spacing, 1e-5f);
             Assert.AreEqual(0.8f * 1.2f, _field.plants[0].Tallest, 1e-5f);
         }

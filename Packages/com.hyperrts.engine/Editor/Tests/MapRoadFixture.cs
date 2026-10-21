@@ -42,11 +42,11 @@ namespace HyperRTS.Editor.Tests
             climate.weathers.Add(new MapClimateWeather { key = "Clear" });
             climate.roadClasses.Add(new MapRoadClass
             {
-                key = "Asphalt", width = 8f, surface = "Asphalt", impactClass = "Paved", vergeSurface = "Verge", vergeWidth = 2f, rank = 2, curve = 25f,
+                key = "Asphalt", width = 8f, surface = "Asphalt", impactClass = "Paved", vergeSurface = "Verge", vergeWidth = 2f, rank = 2, cornerRadius = 25f,
             });
             climate.roadClasses.Add(new MapRoadClass
             {
-                key = "Dirt", width = 4f, surface = "Dirt", impactClass = "Soil", vergeSurface = "Verge", vergeWidth = 1f, rank = 0, curve = 10f,
+                key = "Dirt", width = 4f, surface = "Dirt", impactClass = "Soil", vergeSurface = "Verge", vergeWidth = 1f, rank = 0, cornerRadius = 10f,
             });
             return climate;
         }

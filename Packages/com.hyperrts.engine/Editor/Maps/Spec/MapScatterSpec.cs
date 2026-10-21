@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Spec
     public sealed class MapScatterSpec
     {
         public List<MapPoint> points = new();
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public string kind;
         public int count;
         public bool shared;

@@ -36,8 +36,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private Func<RowCropCameraState> _newState;
         private readonly List<int> _visible = new();
         private readonly Plane[] _planes = new Plane[6];
-        private RowCropKernels _kernels;
-        private RowCropKernelInputs _inputs;
+        private RowCropCompute _kernels;
+        private RowCropComputeInputs _inputs;
         private Bounds[] _tileBounds;
         private bool _ready;
 #if UNITY_EDITOR
@@ -91,8 +91,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                 return;
             }
 
-            _kernels = new RowCropKernels(compute);
-            _inputs = new RowCropKernelInputs(_kernels, fields, terrain);
+            _kernels = new RowCropCompute(compute);
+            _inputs = new RowCropComputeInputs(_kernels, fields, terrain);
             _tileBounds = RowCropTileBounds.Measure(fields, terrain);
             _newState ??= NewState;
             _ready = true;

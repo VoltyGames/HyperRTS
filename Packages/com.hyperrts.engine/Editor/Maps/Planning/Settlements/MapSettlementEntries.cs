@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
-    /// <summary>A settlement kit with its keys resolved to palette entries and the orchard tree; empty keys stay null.</summary>
+    /// <summary>A settlement kit with its keys resolved to props and the orchard tree; empty keys stay null.</summary>
     internal sealed class MapSettlementEntries
     {
         public MapSettlementEntries(MapPalette palette, MapClimate climate, MapSettlementKit kit)
@@ -22,24 +22,24 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             OutbuildingDepth = DeepestOutbuilding(kit, Outbuildings);
         }
 
-        public List<MapPaletteEntry> Houses { get; }
+        public List<MapProp> Houses { get; }
 
-        public List<MapPaletteEntry> Outbuildings { get; }
+        public List<MapProp> Outbuildings { get; }
 
-        public List<(MapPaletteEntry Entry, MapPlotProp Prop)> Extras { get; }
+        public List<(MapProp Entry, MapPlotProp Prop)> Extras { get; }
 
-        public MapPaletteEntry FrontFence { get; }
+        public MapProp FrontFence { get; }
 
-        public MapPaletteEntry SideFence { get; }
+        public MapProp SideFence { get; }
 
-        public MapPaletteEntry Gate { get; }
+        public MapProp Gate { get; }
 
-        public MapPaletteEntry Pipe { get; }
+        public MapProp Pipe { get; }
 
         /// <summary>The arch carrying the pipe over a gap; required (and resolved) whenever there is a pipe.</summary>
-        public MapPaletteEntry PipeArch { get; }
+        public MapProp PipeArch { get; }
 
-        public MapPaletteEntry Pole { get; }
+        public MapProp Pole { get; }
 
         /// <summary>Climate tree index of the orchard, -1 for a meadow back.</summary>
         public int OrchardTree { get; }
@@ -47,10 +47,10 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         /// <summary>Extra yard behind the house that outbuildings stand in.</summary>
         public float OutbuildingDepth { get; }
 
-        private static MapPaletteEntry Optional(MapPalette palette, string key) =>
+        private static MapProp Optional(MapPalette palette, string key) =>
             string.IsNullOrEmpty(key) ? null : palette.Entry(key);
 
-        private static float DeepestOutbuilding(MapSettlementKit kit, List<MapPaletteEntry> outbuildings)
+        private static float DeepestOutbuilding(MapSettlementKit kit, List<MapProp> outbuildings)
         {
             if (kit.maxOutbuildings <= 0)
             {

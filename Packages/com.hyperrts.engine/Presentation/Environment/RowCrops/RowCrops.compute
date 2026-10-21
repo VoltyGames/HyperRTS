@@ -1,6 +1,6 @@
 // Grows row crop plants for RowCropBatch: Plant runs one thread per lattice spot of a job, dispatched as
 // (spots / 64, 1, jobs) once per model variant; Count then writes the draw args and clears the counters.
-// Lattice maths match RowCropLattice.cs; hashes and noise are in Scatter.hlsl.
+// Lattice maths match RowCropSpots.cs; hashes and noise are in Scatter.hlsl.
 #pragma kernel Plant
 #pragma kernel Count
 

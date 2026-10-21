@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Texturing
 {
     /// <summary>
     /// Writes a map's HyperRTS/Terrain material for <c>Terrain.materialTemplate</c>: the climate's layer arrays, the
-    /// per-layer parameters, the terrain's alphamaps and the map's macro and row maps.
+    /// per-layer parameters, the terrain's alphamaps and the map's ground tint and row maps.
     /// </summary>
     public static class MapTerrainMaterial
     {
@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Maps.Texturing
         private static readonly int LayerParams = Shader.PropertyToID("_LayerParams");
         private static readonly int LayerCount = Shader.PropertyToID("_LayerCount");
         private static readonly int HeightBlendDepth = Shader.PropertyToID("_HeightBlendDepth");
-        private static readonly int MacroMap = Shader.PropertyToID("_MacroMap");
+        private static readonly int GroundTintMap = Shader.PropertyToID("_GroundTintMap");
         private static readonly int RowMap = Shader.PropertyToID("_RowMap");
         private static readonly int NoiseMap = Shader.PropertyToID("_NoiseMap");
         private static readonly int MicroMap = Shader.PropertyToID("_MicroMap");
@@ -41,12 +41,12 @@ namespace HyperRTS.Editor.Maps.Texturing
         };
 
         /// <summary>
-        /// <paramref name="macro"/> is linear over the whole terrain: RGB tint (0.5 neutral), A wetness.
+        /// <paramref name="groundTint"/> is linear over the whole terrain: RGB tint (0.5 neutral), A wetness.
         /// <paramref name="rows"/> is linear too: RG the row direction remapped to 0..1, (0.5, 0.5) for none.
         /// </summary>
-        public static Material Write(string path, MapClimate climate, TerrainData data, Texture2D macro, Texture2D rows)
+        public static Material Write(string path, MapClimate climate, TerrainData data, Texture2D groundTint, Texture2D rows)
         {
-            Require(climate, data, macro);
+            Require(climate, data, groundTint);
             RequireLinear(rows, "row map");
             var (albedo, normal, mask) = MapTerrainTextures.Ensure(climate);
             var material = LoadOrCreate(path);
@@ -62,7 +62,7 @@ namespace HyperRTS.Editor.Maps.Texturing
                 material.SetTexture(Controls[i], i < alphamaps.Length ? alphamaps[i] : null);
             }
 
-            material.SetTexture(MacroMap, macro);
+            material.SetTexture(GroundTintMap, groundTint);
             material.SetTexture(RowMap, rows);
             material.SetTexture(NoiseMap, Engine(NoisePath, "terrain noise"));
             material.SetTexture(MicroMap, Engine(TerrainMicroTexture.Path, "terrain micro detail"));
@@ -78,7 +78,7 @@ namespace HyperRTS.Editor.Maps.Texturing
             AssetDatabase.LoadAssetAtPath<Texture2D>(path)
             ?? throw new InvalidOperationException($"HyperRTS: the {role} '{path}' is missing.");
 
-        private static void Require(MapClimate climate, TerrainData data, Texture2D macro)
+        private static void Require(MapClimate climate, TerrainData data, Texture2D groundTint)
         {
             if (data.alphamapLayers != climate.layers.Count)
             {
@@ -86,7 +86,7 @@ namespace HyperRTS.Editor.Maps.Texturing
                     $"HyperRTS: '{data.name}' paints {data.alphamapLayers} layers but climate '{climate.name}' has {climate.layers.Count}.");
             }
 
-            RequireLinear(macro, "macro map");
+            RequireLinear(groundTint, "ground tint map");
         }
 
         private static void RequireLinear(Texture2D texture, string role)

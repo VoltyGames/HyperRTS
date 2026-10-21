@@ -126,7 +126,7 @@ namespace HyperRTS.Simulation.Transport
                 }
 
                 var inside = ContainerLookup[container].PassengersFire ? Stance.HoldPosition : Stance.Passive;
-                StanceLookup[entity] = new CombatStance { Value = inside, Anchor = stance.Anchor };
+                StanceLookup[entity] = new CombatStance { Value = inside, ReturnPoint = stance.ReturnPoint };
                 return stance.Value;
             }
         }

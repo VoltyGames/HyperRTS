@@ -54,9 +54,9 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var along = MapGeometry.Forward(region.RowAngle);
             var across = MapGeometry.Right(along);
-            var hash = RowCropLattice.Hash(region.Seed, int.MinValue, int.MaxValue);
-            var phaseAcross = RowCropLattice.Unit(RowCropLattice.Channel(hash, RowCropLattice.AcrossChannel));
-            var phaseAlong = RowCropLattice.Unit(RowCropLattice.Channel(hash, RowCropLattice.AlongChannel));
+            var hash = RowCropSpots.Hash(region.Seed, int.MinValue, int.MaxValue);
+            var phaseAcross = RowCropSpots.Unit(RowCropSpots.Channel(hash, RowCropSpots.AcrossChannel));
+            var phaseAlong = RowCropSpots.Unit(RowCropSpots.Channel(hash, RowCropSpots.AlongChannel));
             var origin = across * (phaseAcross * crop.rowSpacing) + along * (phaseAlong * crop.plantSpacing);
             return new RowCropField
             {

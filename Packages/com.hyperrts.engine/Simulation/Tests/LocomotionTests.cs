@@ -188,7 +188,7 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void Truck_GoalInsideItsTurningCircle_ShuntsInsteadOfOrbiting()
+        public void Truck_GoalInsideItsTurningCircle_MakesAThreePointTurnInsteadOfOrbiting()
         {
             var truck = SpawnTruck(float3.zero);
             var goal = new float3(3f, 0f, 4f);
@@ -211,7 +211,7 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void Truck_ShuntingIntoAWall_DrivesTheOtherLegAndStillArrives()
+        public void Truck_ThreePointTurnIntoAWall_DrivesTheOtherLegAndStillArrives()
         {
             var wall = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(wall, LocalTransform.FromPosition(new float3(0f, 0f, -6f)));

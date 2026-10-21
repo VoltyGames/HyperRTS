@@ -85,19 +85,19 @@ namespace HyperRTS.Simulation.Units
                     HullLength = authoring.hullLength,
                     Spacing = authoring.spacing,
                     Layer = Layer(authoring),
-                    SceneryPass = SceneryPass(authoring),
+                    SceneryCrushLimit = SceneryCrushLimit(authoring),
                 });
             }
 
-            private byte SceneryPass(UnitAuthoring authoring)
+            private byte SceneryCrushLimit(UnitAuthoring authoring)
             {
                 if (authoring.walksThroughScenery)
                 {
-                    return NavPass.AllScenery;
+                    return NavAccess.AllScenery;
                 }
 
                 var crusher = GetComponent<CrusherAuthoring>();
-                return crusher != null ? (byte)Mathf.Clamp(crusher.size, 0, NavPass.AllScenery - 1) : (byte)0;
+                return crusher != null ? (byte)Mathf.Clamp(crusher.size, 0, NavAccess.AllScenery - 1) : (byte)0;
             }
 
             // Flight bakes the Flight component, so its presence alone makes the unit an aircraft.

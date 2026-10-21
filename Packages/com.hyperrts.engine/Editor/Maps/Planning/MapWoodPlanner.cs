@@ -12,9 +12,9 @@ namespace HyperRTS.Editor.Maps.Planning
     /// Spec woods: forest floor under the canopy, a shrubby band round the edge and in glades, canopy trees inside
     /// and shrubs with young trees at the edge, so a wood fades into the open instead of stopping at a wall.
     /// </summary>
-    public sealed class MapWoodPlanner : MapLandPass
+    public sealed class MapWoodPlanner : MapLandStep
     {
-        private const float EdgeWobble = 2.5f;
+        private const float EdgeWander = 2.5f;
         private const float ClearingWavelength = 35f;
         private MapNoise _clearings;
 
@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Maps.Planning
             var threshold = Threshold(kit);
             Land.ForEachIn(MapGeometry.Bounds(polygon), (x, z, p) =>
             {
-                var inside = MapGeometry.SignedDistance(polygon, p) + edges.Sample(p, 10f) * EdgeWobble;
+                var inside = MapGeometry.SignedDistance(polygon, p) + edges.Sample(p, 10f) * EdgeWander;
                 if (inside <= 0f || !Land.IsFree(x, z))
                 {
                     return;

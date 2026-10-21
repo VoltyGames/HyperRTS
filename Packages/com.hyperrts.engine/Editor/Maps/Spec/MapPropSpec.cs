@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Spec
     {
         public MapPoint pos;
         public float yaw;
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public string kind;
         public bool shared;
     }

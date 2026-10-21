@@ -64,7 +64,7 @@ TEXTURE2D(_Control0);
 TEXTURE2D(_Control1);
 TEXTURE2D(_Control2);
 TEXTURE2D(_Control3);
-TEXTURE2D(_MacroMap);
+TEXTURE2D(_GroundTintMap);
 TEXTURE2D(_RowMap);
 TEXTURE2D(_NoiseMap);
 TEXTURE2D(_MicroMap);

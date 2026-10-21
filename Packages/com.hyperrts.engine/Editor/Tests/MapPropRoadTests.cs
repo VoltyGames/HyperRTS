@@ -35,7 +35,7 @@ namespace HyperRTS.Editor.Tests
             var layout = MapRoadFixture.Layout(spec);
             var palette = new MapPalette();
             palette.baseRadius = 15f;
-            palette.entries.Add(new MapPaletteEntry { key = "Pumpjack", size = new Vector2(8f, 16f), pad = "Dirt" });
+            palette.entries.Add(new MapProp { key = "Pumpjack", size = new Vector2(8f, 16f), pad = "Dirt" });
             var shapes = new MapShapes(layout, palette, climate);
             var issues = new MapIssues();
             MapPropPlacer.Place(layout, shapes, palette, climate, issues);

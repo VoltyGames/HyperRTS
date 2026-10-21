@@ -167,7 +167,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             }
         }
 
-        private bool TryExtra(MapPlot plot, MapPaletteEntry entry, MapPlotZone zone)
+        private bool TryExtra(MapPlot plot, MapProp entry, MapPlotZone zone)
         {
             var scale = Scale(entry);
             var radius = entry.Radius * scale;
@@ -224,12 +224,12 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         private bool StreetsideFree(Vector2 position, float radius) =>
             Clearance.IsDry(position, radius) && _settlement.OnVerge(position);
 
-        private void Add(MapPaletteEntry entry, Vector2 position, float yaw, float scale) =>
+        private void Add(MapProp entry, Vector2 position, float yaw, float scale) =>
             _context.Placements.AddEverywhere(entry, position, yaw, scale, 1f);
 
-        private float Scale(MapPaletteEntry entry) => _random.Range(entry.scale.x, entry.scale.y);
+        private float Scale(MapProp entry) => _random.Range(entry.scale.x, entry.scale.y);
 
-        private float Jitter(MapPaletteEntry entry) => entry.yawJitter * _random.Signed();
+        private float Jitter(MapProp entry) => entry.yawJitter * _random.Signed();
 
         /// <summary>A random value in a range; false when the range is empty.</summary>
         private bool Between(float min, float max, out float value)

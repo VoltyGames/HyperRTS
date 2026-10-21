@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>
     /// Validates and leashes <see cref="AttackTarget"/>s, chases targets out of weapon range, backs off from ordered ones
     /// inside the minimum range and halts once in range.
-    /// Also keeps <see cref="CombatStance.Anchor"/> on idle, unengaged units.
+    /// Also keeps <see cref="CombatStance.ReturnPoint"/> on idle, unengaged units.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -91,7 +91,7 @@ namespace HyperRTS.Simulation.Combat
                     var standing = order.Type == OrderType.None && !IsMoving(entity);
                     if (standing || order.Has(OrderTraits.EngagesWhileMoving))
                     {
-                        stance.Anchor = transform.Position;
+                        stance.ReturnPoint = transform.Position;
                     }
 
                     return;
@@ -123,7 +123,7 @@ namespace HyperRTS.Simulation.Combat
 
                 if (ordered)
                 {
-                    stance.Anchor = transform.Position;
+                    stance.ReturnPoint = transform.Position;
                 }
 
                 Engage(entity, transform.Position, target, ref attack, floor, reach);
@@ -175,7 +175,7 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 // Defensive units measure from their post, so a fleeing target can't drag them away.
-                var origin = stance.Value == Stance.Defensive ? stance.Anchor : position;
+                var origin = stance.Value == Stance.Defensive ? stance.ReturnPoint : position;
                 var leash = CombatMath.AcquireRange(weapon, vision.Value) * weapon.LeashFactor;
                 return Targets.Gap(entity, origin, target) > leash;
             }
@@ -233,7 +233,7 @@ namespace HyperRTS.Simulation.Combat
                 }
                 else if (order.Type == OrderType.None && stance.Value == Stance.Defensive)
                 {
-                    MoveTo(entity, stance.Anchor);
+                    MoveTo(entity, stance.ReturnPoint);
                 }
                 else
                 {

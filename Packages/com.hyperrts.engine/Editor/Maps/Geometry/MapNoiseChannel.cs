@@ -9,18 +9,18 @@ namespace HyperRTS.Editor.Maps.Geometry
         Relief = 0,
 
         /// <summary>Ravine walls and river banks, so the carved ground and the land claims follow one edge.</summary>
-        Wobble = 1,
-        SplatPatches = 2,
+        EdgeWander = 1,
+        SurfaceMixes = 2,
         LandEdges = 3,
         PlantClumps = 4,
-        MacroTint = 6,
+        RegionTint = 6,
 
-        /// <summary>The macro map's 10 to 40 m light and warmth, finer than <see cref="MacroTint"/>.</summary>
-        MacroDetail = 7,
+        /// <summary>The ground tint's 10 to 40 m light and warmth, finer than <see cref="RegionTint"/>.</summary>
+        TintDetail = 7,
 
-        /// <summary>The macro map's 20 to 150 m soil patches: light and warmth, then moisture.</summary>
-        MacroPatches = 8,
-        MacroMoisture = 9,
+        /// <summary>The ground tint's 20 to 150 m soil colour: light and warmth, then moisture.</summary>
+        SoilColour = 8,
+        SoilMoisture = 9,
         RiverWidth = 20,
         Banks = 21,
         BaseEdges = 22,

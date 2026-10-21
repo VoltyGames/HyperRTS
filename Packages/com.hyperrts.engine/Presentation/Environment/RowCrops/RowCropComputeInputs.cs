@@ -4,7 +4,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
     /// <summary>What RowCrops.compute reads. The trample map is copied from the globals: compute shaders don't see them.</summary>
-    internal sealed class RowCropKernelInputs : IDisposable
+    internal sealed class RowCropComputeInputs : IDisposable
     {
         private static readonly int FieldsId = Shader.PropertyToID("_Fields");
         private static readonly int FieldIdsId = Shader.PropertyToID("_FieldIds");
@@ -14,14 +14,14 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private static readonly int TileSizeId = Shader.PropertyToID("_TileSize");
         private static readonly int DensityId = Shader.PropertyToID("_Density");
 
-        private readonly RowCropKernels _kernels;
+        private readonly RowCropCompute _kernels;
         private readonly RowCropFields _fields;
         private readonly GraphicsBuffer _fieldBuffer;
         private readonly TerrainHeightInput _heights;
         private Texture _ids;
 
         /// <summary>Uploads the fields and binds what stays fixed while the map is open.</summary>
-        public RowCropKernelInputs(RowCropKernels kernels, RowCropFields fields, Terrain terrain)
+        public RowCropComputeInputs(RowCropCompute kernels, RowCropFields fields, Terrain terrain)
         {
             _kernels = kernels;
             _fields = fields;

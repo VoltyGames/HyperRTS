@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Auto-acquire and chase targets.</summary>
         Aggressive = 0,
 
-        /// <summary>Auto-acquire, chase a short way, then return to <see cref="CombatStance.Anchor"/>.</summary>
+        /// <summary>Auto-acquire, chase a short way, then return to <see cref="CombatStance.ReturnPoint"/>.</summary>
         Defensive = 1,
 
         /// <summary>Fire at targets in range but never move to engage.</summary>
@@ -26,6 +26,6 @@ namespace HyperRTS.Simulation.Combat
         [GhostField] public Stance Value;
 
         /// <summary>Where the unit was when it last became idle; defensive units return here.</summary>
-        public float3 Anchor;
+        public float3 ReturnPoint;
     }
 }

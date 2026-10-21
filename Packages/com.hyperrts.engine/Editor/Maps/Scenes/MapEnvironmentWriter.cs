@@ -33,13 +33,13 @@ namespace HyperRTS.Editor.Maps.Scenes
             TerrainData data)
         {
             var (climate, paths) = (generation.Project.Climate, generation.Project.Paths);
-            var macro = MapMacroPainter.Write(paths.Macro, generation.Layout, generation.Land, generation.Edges,
-                generation.Shapes, generation.Heights, climate.macro);
+            var groundTint = MapGroundTintPainter.Write(paths.GroundTint, generation.Layout, generation.Land, generation.Edges,
+                generation.Shapes, generation.Heights, climate.groundTint);
             var rows = MapRowPainter.Write(paths.RowMap, generation.Land, generation.Layout.Symmetry);
-            var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, macro, rows);
-            var picture = MapGroundColor.Write(paths.Ground, generation.Splat, climate, macro);
+            var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, groundTint, rows);
+            var picture = MapGroundColor.Write(paths.Ground, generation.Splat, climate, groundTint);
             MapCropWriter.Write(paths.RowCrops, paths.RowCropIds, generation.Crops);
-            MapGrassWriter.Write(paths.Grass, paths.GrassCoverage, generation.Grass, climate.details);
+            MapGrassWriter.Write(paths.Grass, paths.GrassCoverage, generation.Grass, climate.plants);
             MapGroundMaterialPainter.Write(paths.GroundMaterials, generation.Land, climate);
             return (material, picture);
         }

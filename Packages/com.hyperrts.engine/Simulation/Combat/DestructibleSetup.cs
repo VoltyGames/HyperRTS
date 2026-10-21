@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Combat
             where TWriter : struct, IEntityWriter
         {
             writer.Add(new Topple { Trunk = trunk, Height = height, Lie = lie });
-            writer.Add<FellFrom>();
+            writer.Add<ToppleHeading>();
         }
     }
 }

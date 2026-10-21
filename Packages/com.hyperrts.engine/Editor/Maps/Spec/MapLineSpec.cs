@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Spec
     public sealed class MapLineSpec
     {
         public List<MapPoint> points = new();
-        [MapKey(typeof(MapClimateTree), typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapClimateTree), typeof(MapProp))]
         public string kind;
         public float spacing = 8f;
         public bool shared;

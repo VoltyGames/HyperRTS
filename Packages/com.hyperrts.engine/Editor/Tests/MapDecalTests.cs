@@ -63,7 +63,7 @@ namespace HyperRTS.Editor.Tests
             var climate = Climate(10f);
             climate.surfaces.Single(s => s.key == "Muddy").decals.Add(new MapDecalDensity { decal = "Tar", perHectare = 1f });
             var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Shed", groundDecal = "Oil" });
+            palette.entries.Add(new MapProp { key = "Shed", groundDecal = "Oil" });
             var issues = new MapIssues();
 
             MapAssetCheck.Check(climate, palette, issues);
@@ -76,7 +76,7 @@ namespace HyperRTS.Editor.Tests
         public void AGroundDecalWithoutASize_IsAnErrorNamingIt()
         {
             var palette = new MapPalette();
-            palette.entries.Add(new MapPaletteEntry { key = "Shed", groundDecal = "Puddle" });
+            palette.entries.Add(new MapProp { key = "Shed", groundDecal = "Puddle" });
             var issues = new MapIssues();
 
             MapAssetCheck.Check(Climate(10f), palette, issues);

@@ -33,7 +33,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             { Shader.PropertyToID("_Full"), Shader.PropertyToID("_Simple"), Shader.PropertyToID("_Card") };
 
         private readonly RowCrop _crop;
-        private readonly RowCropKernels _kernels;
+        private readonly RowCropCompute _kernels;
         private readonly int _variants;
         private readonly Mesh[] _meshes;
         private readonly GraphicsBuffer[] _instances;
@@ -50,7 +50,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private int _maxSpots;
         private bool _resized;
 
-        public RowCropBatch(RowCrop crop, RowCropKernels kernels)
+        public RowCropBatch(RowCrop crop, RowCropCompute kernels)
         {
             _crop = crop;
             _kernels = kernels;
@@ -59,7 +59,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             _instances = new GraphicsBuffer[_meshes.Length];
             _capacities = new uint[_meshes.Length];
             _blocks = new MaterialPropertyBlock[_meshes.Length];
-            _plantBound = RowCropLattice.PlantBound(RowCropFields.TileSize, crop.rowSpacing, crop.plantSpacing);
+            _plantBound = RowCropSpots.PlantBound(RowCropFields.TileSize, crop.rowSpacing, crop.plantSpacing);
             _counters = new GraphicsBuffer(GraphicsBuffer.Target.Structured, _meshes.Length, sizeof(uint));
             _counters.SetData(new uint[_meshes.Length]);
             _capacityBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, _meshes.Length, sizeof(uint));
@@ -124,7 +124,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             }
         }
 
-        /// <summary>Grows the queued tiles into the buffers, once per variant. RowCropKernelInputs binds the shared inputs first.</summary>
+        /// <summary>Grows the queued tiles into the buffers, once per variant. RowCropComputeInputs binds the shared inputs first.</summary>
         public void Generate()
         {
             if (_pending.Count == 0)
@@ -198,7 +198,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             compute.SetVector(SizeId, new Vector4(_crop.scale.x, _crop.scale.y, _crop.lod0Distance, _crop.lod1Distance));
             compute.SetVector(VarietyId, new Vector4(_crop.lean * Mathf.Deg2Rad, _crop.edgeLean * Mathf.Deg2Rad,
                 _crop.wander, 1f / _crop.wanderLength));
-            compute.SetVector(PatchId, new Vector4(_crop.patchScale.x, _crop.patchScale.y, 1f / _crop.patchSize, 0f));
+            var growth = _crop.growthVariation;
+            compute.SetVector(PatchId, new Vector4(growth.x, growth.y, 1f / _crop.growthVariationSize, 0f));
         }
 
         // Grows every slot's buffer to its share of the queued tiles before the kernel writes into it.

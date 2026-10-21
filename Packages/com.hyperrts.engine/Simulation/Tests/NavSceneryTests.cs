@@ -49,10 +49,10 @@ namespace HyperRTS.Simulation.Tests
             return tree;
         }
 
-        private Entity SendAcross(byte sceneryPass, float radius = 0.5f)
+        private Entity SendAcross(byte crushLimit, float radius = 0.5f)
         {
             var unit = _world.SpawnUnit(1, new float3(-5f, 0f, 0.5f), radius: radius);
-            _world.EntityManager.SetComponentData(unit, new NavAgent { Radius = radius, SceneryPass = sceneryPass });
+            _world.EntityManager.SetComponentData(unit, new NavAgent { Radius = radius, SceneryCrushLimit = crushLimit });
             _world.MoveTo(unit, new float3(5f, 0f, 0.5f));
             return unit;
         }
@@ -101,7 +101,7 @@ namespace HyperRTS.Simulation.Tests
         public void Truck_RoutesRoundATreeLine_AndNeverEntersIt()
         {
             var trees = PlantTreeLine();
-            var truck = SendAcross(sceneryPass: 1);
+            var truck = SendAcross(crushLimit: 1);
 
             Assert.Greater(Drive(truck, mayEnterTrees: false), HalfLine, "went round the line's end");
             Assert.AreEqual(trees.Length, Standing(trees));
@@ -111,7 +111,7 @@ namespace HyperRTS.Simulation.Tests
         public void Tank_CrushesStraightThrough_WithoutInvalidatingPaths()
         {
             var trees = PlantTreeLine();
-            var tank = SendAcross(sceneryPass: TreeCrush);
+            var tank = SendAcross(crushLimit: TreeCrush);
             _world.EntityManager.AddComponentData(tank, new Crusher { Size = TreeCrush });
             var version = _world.Grid().Version;
 
@@ -127,7 +127,10 @@ namespace HyperRTS.Simulation.Tests
             PlantTree(new float3(-1.5f, 0f, 0.5f));
             _world.Tick();
             var truck = _world.SpawnUnit(1, new float3(0f, 0f, 0.5f), radius: 1f);
-            _world.EntityManager.SetComponentData(truck, new NavAgent { Radius = 1f, HullLength = 10f, SceneryPass = 1 });
+            _world.EntityManager.SetComponentData(truck, new NavAgent
+            {
+                Radius = 1f, HullLength = 10f, SceneryCrushLimit = 1,
+            });
             _world.EntityManager.SetComponentData(truck,
                 LocalTransform.FromPositionRotation(new float3(0f, 0f, 0.5f), quaternion.LookRotationSafe(math.right(), math.up())));
             var goal = new float3(20f, 0f, 0.5f);
@@ -142,7 +145,7 @@ namespace HyperRTS.Simulation.Tests
         public void Infantry_WalkBetweenTrees_AndLeaveThemStanding()
         {
             var trees = PlantTreeLine();
-            var rifleman = SendAcross(NavPass.AllScenery, radius: 0.4f);
+            var rifleman = SendAcross(NavAccess.AllScenery, radius: 0.4f);
 
             Assert.Less(Drive(rifleman, mayEnterTrees: true), 1f);
             Assert.AreEqual(trees.Length, Standing(trees));

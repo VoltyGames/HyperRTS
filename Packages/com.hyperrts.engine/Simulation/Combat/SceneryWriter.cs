@@ -97,7 +97,7 @@ namespace HyperRTS.Simulation.Combat
 
             if (remains.Felled)
             {
-                ecb.AddComponent(spawned, remains.Felling);
+                ecb.AddComponent(spawned, remains.ToppleFall);
             }
 
             if (!witnessed && _effects.HasComponent(prefab))

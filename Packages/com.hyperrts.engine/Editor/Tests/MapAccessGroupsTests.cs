@@ -18,9 +18,9 @@ namespace HyperRTS.Editor.Tests
             Assert.AreEqual(2, MapAccessGroups.Group(props).Count);
         }
 
-        private static MapPaletteEntry Entry(string key, float distance) =>
+        private static MapProp Entry(string key, float distance) =>
             new() { key = key, access = "Dirt", sharedAccessDistance = distance };
 
-        private static MapPlacement At(MapPaletteEntry entry, float x) => new(entry, new Vector2(x, 0f), 0f, 1f);
+        private static MapPlacement At(MapProp entry, float x) => new(entry, new Vector2(x, 0f), 0f, 1f);
     }
 }

@@ -34,8 +34,8 @@ namespace HyperRTS.Presentation.Destruction
         public void OnCreate(ref SystemState state)
         {
             _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
-            _felled = SystemAPI.QueryBuilder().WithAll<Felling>().WithAbsent<FallClock>().Build();
-            _falling = SystemAPI.QueryBuilder().WithAll<Felling, FallClock, LocalTransform, LocalToWorld>().Build();
+            _felled = SystemAPI.QueryBuilder().WithAll<ToppleFall>().WithAbsent<FallClock>().Build();
+            _falling = SystemAPI.QueryBuilder().WithAll<ToppleFall, FallClock, LocalTransform, LocalToWorld>().Build();
             _crushers = SystemAPI.QueryBuilder().WithAll<Crusher, MotionRig, LocalToWorld>().Build();
             _pose = new RenderPose(ref state);
         }
@@ -62,25 +62,25 @@ namespace HyperRTS.Presentation.Destruction
             using var entities = _falling.ToEntityArray(Allocator.Temp);
             foreach (var entity in entities)
             {
-                var felling = SystemAPI.GetComponent<Felling>(entity);
+                var toppleFall = SystemAPI.GetComponent<ToppleFall>(entity);
                 var clock = SystemAPI.GetComponentRW<FallClock>(entity);
                 if (!clock.ValueRO.Started)
                 {
-                    var shown = felling.Witnessed && Seen(view, fog, _pose.Position(entity));
+                    var shown = toppleFall.Witnessed && Seen(view, fog, _pose.Position(entity));
                     if (!shown)
                     {
                         SystemAPI.SetComponentEnabled<FallClock>(entity, false);
                         continue;
                     }
 
-                    clock.ValueRW = FallClock.Pushed(felling.Height, CrushSpeed(_pose.Position(entity)));
+                    clock.ValueRW = FallClock.Pushed(toppleFall.Height, CrushSpeed(_pose.Position(entity)));
                 }
 
-                clock.ValueRW.Advance(felling.Height, deltaTime);
+                clock.ValueRW.Advance(toppleFall.Height, deltaTime);
                 var final = _pose.Rotation(entity);
                 if (!clock.ValueRO.Resting)
                 {
-                    _pose.Show(entity, ToppleMath.Pose(felling, final, clock.ValueRO.Progress));
+                    _pose.Show(entity, ToppleMath.Pose(toppleFall, final, clock.ValueRO.Progress));
                     continue;
                 }
 

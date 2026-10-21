@@ -28,7 +28,7 @@ namespace HyperRTS.Presentation.Environment.Grass
         private static readonly int DryId = Shader.PropertyToID("_GrassDry");
 
         private readonly GrassField _field;
-        private readonly GrassKernelInputs _kernels;
+        private readonly GrassComputeInputs _kernels;
         private readonly Material[] _materials;
         private readonly Mesh[] _meshes;
         private readonly int[] _plantOf;
@@ -45,7 +45,7 @@ namespace HyperRTS.Presentation.Environment.Grass
         private int _maxCells;
 
         /// <summary>A batch drawing <paramref name="field"/>'s plants with their instanced materials, in plant order.</summary>
-        public GrassBatch(GrassField field, GrassKernelInputs kernels, Material[] materials)
+        public GrassBatch(GrassField field, GrassComputeInputs kernels, Material[] materials)
         {
             _field = field;
             _kernels = kernels;
@@ -121,9 +121,9 @@ namespace HyperRTS.Presentation.Environment.Grass
         {
             _pending.Add(job);
             _maxCells = Mathf.Max(_maxCells, job.Cells);
-            var sowing = _field.plants[job.plant];
+            var plant = _field.plants[job.plant];
             var share = job.Cells * coverage * settings.Density * GrassView.Drawn(range.Near, settings.Distance) /
-                        sowing.meshes.Count;
+                        plant.meshes.Count;
             var first = FirstSlot(job.plant);
             for (var band = 0; band < GrassView.Bands; band++)
             {
@@ -139,14 +139,14 @@ namespace HyperRTS.Presentation.Environment.Grass
                 }
 
                 _bounds[box].Encapsulate(bounds);
-                for (var variant = 0; variant < sowing.meshes.Count; variant++)
+                for (var variant = 0; variant < plant.meshes.Count; variant++)
                 {
                     _expected[first + variant * GrassView.Bands + band] += share;
                 }
             }
         }
 
-        /// <summary>Scatters the queued tiles into the slots. GrassKernelInputs binds the shared inputs first.</summary>
+        /// <summary>Scatters the queued tiles into the slots. GrassComputeInputs binds the shared inputs first.</summary>
         public void Generate()
         {
             Reserve();

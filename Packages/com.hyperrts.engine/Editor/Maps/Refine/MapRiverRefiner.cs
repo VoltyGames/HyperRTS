@@ -61,7 +61,7 @@ namespace HyperRTS.Editor.Maps.Refine
             var holds = new List<float> { 0f, MapGeometry.Length(curve) };
             foreach (var crossing in river.crossings)
             {
-                var place = MapGeometry.PointAlong(authored, crossing.t * length, out _);
+                var place = MapGeometry.PointAlong(authored, crossing.along * length, out _);
                 MapGeometry.DistanceToPolyline(curve, place, out var along);
                 holds.Add(along);
             }
@@ -88,9 +88,9 @@ namespace HyperRTS.Editor.Maps.Refine
             var newLength = MapGeometry.Length(refined);
             foreach (var crossing in river.crossings)
             {
-                var place = MapGeometry.PointAlong(authored, crossing.t * oldLength, out _);
+                var place = MapGeometry.PointAlong(authored, crossing.along * oldLength, out _);
                 MapGeometry.DistanceToPolyline(refined, place, out var along);
-                crossing.t = Mathf.Clamp01(along / newLength);
+                crossing.along = Mathf.Clamp01(along / newLength);
             }
         }
     }

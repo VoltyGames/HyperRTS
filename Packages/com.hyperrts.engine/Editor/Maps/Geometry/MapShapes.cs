@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         public MapShapes(MapLayout layout, MapPalette palette, MapClimate climate)
         {
-            Wobble = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.Wobble);
+            EdgeWander = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.EdgeWander);
             var water = layout.Terrain.waterLevel;
             var overhang = layout.Terrain.backdropWidth + 10f;
             var width = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.RiverWidth);
@@ -52,7 +52,7 @@ namespace HyperRTS.Editor.Maps.Geometry
             {
                 var spec = ravine.Placed;
                 var line = new MapLine(MapGeometry.ToVectors(spec.points), spec.width, spec.width * 0.5f + spec.rim);
-                Ravines.Add(new MapRavine(line, spec, Wobble));
+                Ravines.Add(new MapRavine(line, spec, EdgeWander));
             }
         }
 
@@ -64,8 +64,8 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         public List<MapCrossing> Crossings { get; } = new();
 
-        /// <summary>The noise that wobbles ravine walls and river banks.</summary>
-        public MapNoise Wobble { get; }
+        /// <summary>The noise that makes ravine walls and river banks wander.</summary>
+        public MapNoise EdgeWander { get; }
 
         /// <summary>A road laid by a planner (field or access track).</summary>
         public void AddRoad(MapRoad road) => Roads.Add(road);
@@ -170,7 +170,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         private void AddCrossing(MapRiver river, List<Vector2> authored, MapCrossingSpec spec, float water,
             MapPalette palette)
         {
-            var position = MapGeometry.PointAlong(authored, spec.t * MapGeometry.Length(authored), out var direction);
+            var position = MapGeometry.PointAlong(authored, spec.along * MapGeometry.Length(authored), out var direction);
             river.Pin(position);
 
             // A crossing where a river meets its own copy (the centre) is listed by both copies; keep one.

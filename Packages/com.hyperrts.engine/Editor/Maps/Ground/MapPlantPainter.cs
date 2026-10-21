@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Ground
     /// into clumps by noise at two scales (crops grow evenly); reeds stand in the shallows along the banks. Nothing grows on roads, in
     /// deep water or on placed objects, and it thins in round them.
     /// </summary>
-    public static class MapDetailPainter
+    public static class MapPlantPainter
     {
         private const float ReedDepth = 0.6f;
         private const float ReedReachIntoWater = 1.5f;
@@ -25,9 +25,9 @@ namespace HyperRTS.Editor.Maps.Ground
             MapHeights heights, MapClimate climate, MapClearance clearance, int resolution)
         {
             var area = layout.TerrainBounds;
-            var bake = new MapGrassBake(area, resolution, climate.details.Count);
+            var bake = new MapGrassBake(area, resolution, climate.plants.Count);
             var plants = Plants(climate, edges);
-            var reed = string.IsNullOrEmpty(climate.reedDetail) ? -1 : climate.DetailIndex(climate.reedDetail);
+            var reed = string.IsNullOrEmpty(climate.reedPlant) ? -1 : climate.PlantIndex(climate.reedPlant);
             var clumps = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.PlantClumps);
             var cell = area.size / resolution;
             var water = layout.Terrain.waterLevel;
@@ -54,9 +54,9 @@ namespace HyperRTS.Editor.Maps.Ground
 
                 var region = edges.Sample(p).Region;
                 var cover = Cover(Sown(land, region), clumps, p) * open;
-                foreach (var (detail, coverage) in plants[region])
+                foreach (var (plant, coverage) in plants[region])
                 {
-                    bake.Set(detail, x, z, coverage * cover);
+                    bake.Set(plant, x, z, coverage * cover);
                 }
             }
 
@@ -104,13 +104,13 @@ namespace HyperRTS.Editor.Maps.Ground
             plants[MapLand.Unclaimed] = new List<(int, float)>();
             for (var i = 1; i < plants.Length; i++)
             {
-                plants[i] = Details(climate, edges.Surface(i));
+                plants[i] = Plants(climate, edges.Surface(i));
             }
 
             return plants;
         }
 
-        private static List<(int, float)> Details(MapClimate climate, MapClimateSurface surface) =>
-            surface.details.ConvertAll(entry => (climate.DetailIndex(entry.detail), entry.coverage));
+        private static List<(int, float)> Plants(MapClimate climate, MapClimateSurface surface) =>
+            surface.plants.ConvertAll(entry => (climate.PlantIndex(entry.plant), entry.coverage));
     }
 }

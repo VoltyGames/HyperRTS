@@ -42,11 +42,11 @@ namespace HyperRTS.Presentation.Destruction
                 var prefab = effect.ValueRO.Prefab.IsValid() ? effect.ValueRO.Prefab.Value : null;
                 var position = place.ValueRO.Position;
                 var rotation = place.ValueRO.Rotation;
-                if (SystemAPI.HasComponent<Felling>(entity))
+                if (SystemAPI.HasComponent<ToppleFall>(entity))
                 {
-                    var felling = SystemAPI.GetComponent<Felling>(entity);
-                    position += felling.Crown * felling.Height * CrownShare;
-                    rotation = quaternion.LookRotationSafe(felling.Crown, math.up());
+                    var toppleFall = SystemAPI.GetComponent<ToppleFall>(entity);
+                    position += toppleFall.Crown * toppleFall.Height * CrownShare;
+                    rotation = quaternion.LookRotationSafe(toppleFall.Crown, math.up());
                 }
 
                 _pool.Play(prefab, position, rotation);

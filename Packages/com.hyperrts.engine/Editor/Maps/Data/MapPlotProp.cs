@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Data
     public sealed class MapPlotProp
     {
         [Tooltip("Palette key.")]
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public string kind;
 
         [Tooltip("Chance a plot has one.")]

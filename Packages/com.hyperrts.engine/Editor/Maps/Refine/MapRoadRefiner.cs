@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Refine
             foreach (var road in spec.roads)
             {
                 var roadClass = climate.RoadClass(road.kind);
-                var rounded = MapFillet.Round(MapGeometry.ToVectors(road.points), roadClass.curve, Step);
+                var rounded = MapFillet.Round(MapGeometry.ToVectors(road.points), roadClass.cornerRadius, Step);
                 roads.Add(new MapRefinedRoad(road, roadClass, rounded));
             }
 

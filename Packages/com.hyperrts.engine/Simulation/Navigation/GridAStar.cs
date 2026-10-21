@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>8-directional A* over the anchors a <see cref="NavPass"/> may stand on; diagonals may not cut corners.</summary>
+    /// <summary>8-directional A* over the anchors a <see cref="NavAccess"/> may stand on; diagonals may not cut corners.</summary>
     internal struct GridAStar
     {
         private const float Diagonal = 1.41421356f;
@@ -15,16 +15,16 @@ namespace HyperRTS.Simulation.Navigation
             public bool Closed;
         }
 
-        private readonly NavPass _pass;
+        private readonly NavAccess _access;
         private readonly NavGrid _grid;
         private readonly int2 _goal;
         private NativeHashMap<int, Record> _records;
         private OpenSet _open;
 
-        private GridAStar(in NavPass pass, int2 goal)
+        private GridAStar(in NavAccess access, int2 goal)
         {
-            _pass = pass;
-            _grid = pass.Grid;
+            _access = access;
+            _grid = access.Grid;
             _goal = goal;
             _records = new NativeHashMap<int, Record>(1024, Allocator.Temp);
             _open = new OpenSet(256, Allocator.Temp);
@@ -34,13 +34,13 @@ namespace HyperRTS.Simulation.Navigation
         /// Fills <paramref name="path"/> with anchors from start to goal. When the goal is unreachable it leads to
         /// the explored anchor closest to the goal instead and returns false.
         /// </summary>
-        public static bool Search(in NavPass pass, int2 start, int2 goal, NativeList<int2> path)
+        public static bool Search(in NavAccess access, int2 start, int2 goal, NativeList<int2> path)
         {
-            var search = new GridAStar(pass, goal);
+            var search = new GridAStar(access, goal);
             var last = search.Explore(start);
             search.Reconstruct(last, path);
             search.Dispose();
-            return last == pass.Grid.Index(goal);
+            return last == access.Grid.Index(goal);
         }
 
         /// <summary>Returns the goal's index, or the closest cell to it found within the expansion budget.</summary>
@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         private readonly bool CanStep(int2 from, int2 to) =>
-            _pass.IsAnchorOpen(to) && !_pass.CutsCorner(from, to, _pass.Footprint);
+            _access.IsAnchorOpen(to) && !_access.CutsCorner(from, to, _access.Footprint);
 
         // Octile distance, nudged up slightly so ties favour cells nearer the goal (fewer expansions).
         private readonly float Heuristic(int2 cell)

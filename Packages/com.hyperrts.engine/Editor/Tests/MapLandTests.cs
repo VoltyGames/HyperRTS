@@ -105,7 +105,7 @@ namespace HyperRTS.Editor.Tests
             {
                 points = new List<MapPoint> { new(-100f, -30f), new(-60f, -10f), new(-20f, -25f), new(0f, 0f) },
                 meander = 8f,
-                crossings = new List<MapCrossingSpec> { new() { t = 0.5f, kind = MapCrossingSpec.Ford } },
+                crossings = new List<MapCrossingSpec> { new() { along =0.5f, kind = MapCrossingSpec.Ford } },
             };
             var authored = MapGeometry.ToVectors(river.points);
             var crossing = MapGeometry.PointAlong(authored, 0.5f * MapGeometry.Length(authored), out _);
@@ -116,7 +116,7 @@ namespace HyperRTS.Editor.Tests
             Assert.Greater(refined.Count, authored.Count, "the curve is sampled densely");
             Assert.AreEqual(authored[0], refined[0]);
             Assert.AreEqual(authored[^1], refined[^1], "the end at the centre still meets the copy");
-            var moved = MapGeometry.PointAlong(refined, river.crossings[0].t * MapGeometry.Length(refined), out _);
+            var moved = MapGeometry.PointAlong(refined, river.crossings[0].along * MapGeometry.Length(refined), out _);
             Assert.Less((moved - crossing).magnitude, 2.5f, "the ford stays where it was authored");
         }
 

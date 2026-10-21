@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.Environment.Grass
     {
         private readonly ScatterView _view = new();
 
-        public GrassCameraState(GrassField field, GrassKernelInputs kernels, Material[] materials) =>
+        public GrassCameraState(GrassField field, GrassComputeInputs kernels, Material[] materials) =>
             Batch = new GrassBatch(field, kernels, materials);
 
         public GrassBatch Batch { get; }

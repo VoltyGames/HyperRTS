@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Units
         private const float Crawl = 0.5f;
         private const float LookAheadTime = 0.5f;
         private const float Unlimited = 1e4f;
-        private const float ShuntLegSeconds = 1.5f;
+        private const float ThreePointLegSeconds = 1.5f;
         private const float ReverseMargin = 1.3f;
 
         /// <summary>How far ahead it may cut to a corner in sight: further when fast or wide-turning.</summary>
@@ -43,10 +43,10 @@ namespace HyperRTS.Simulation.Units
             float topSpeed, float radius, float deltaTime)
         {
             state.Reverse = PrefersReverse(state.Reverse, facing, leg, topSpeed);
-            state.Shunting = IsShunting(state.Shunting, position, facing, leg.Corner);
+            state.InThreePointTurn = IsInThreePointTurn(state.InThreePointTurn, position, facing, leg.Corner);
             var desired = state.Reverse ? -leg.Direction : leg.Direction;
             var error = SignedAngle(facing, desired);
-            var gear = state.Reverse == IsShuntGear(ref state, deltaTime) ? 1f : -1f;
+            var gear = state.Reverse == IsReverseLeg(ref state, deltaTime) ? 1f : -1f;
             var top = gear > 0f ? topSpeed : ReverseSpeed;
             var target = gear * TargetSpeed(error, leg, top, radius, LookAhead(state.Speed, radius));
             state.Speed = Accelerate(state.Speed, target, deltaTime);
@@ -55,12 +55,12 @@ namespace HyperRTS.Simulation.Units
         }
 
         /// <summary>Brakes to a stop along its facing once it has nowhere to go.</summary>
-        public readonly float2 Coast(ref LocomotionState state, float2 facing, float deltaTime)
+        public readonly float2 BrakeToStop(ref LocomotionState state, float2 facing, float deltaTime)
         {
             state.Speed = Accelerate(state.Speed, 0f, deltaTime);
             state.Reverse = false;
-            state.Shunting = false;
-            state.ShuntBlocked = 0f;
+            state.InThreePointTurn = false;
+            state.ThreePointTurnBlocked = 0f;
             return facing * (state.Speed * deltaTime);
         }
 
@@ -71,12 +71,12 @@ namespace HyperRTS.Simulation.Units
                 return true;
             }
 
-            // A goal under the hull but inside the turning circle would take a shunt to reach.
+            // A goal under the hull but inside the turning circle would take a three-point turn to reach.
             var underHull = leg.IsFinal && leg.Distance <= radius;
             return underHull && IsInsideTurn(position, facing, leg.Corner, 1f);
         }
 
-        /// <summary>Whether no arc it can drive reaches the target, so it must shunt first.</summary>
+        /// <summary>Whether no arc it can drive reaches the target, so it must make a three-point turn first.</summary>
         public readonly bool IsInsideTurn(float2 position, float2 facing, float2 target, float slack)
         {
             if (Pivots || TurnRadius <= 0f)
@@ -114,16 +114,17 @@ namespace HyperRTS.Simulation.Units
             return angle * math.max(1f / TurnRate, rolling);
         }
 
-        // Keeps shunting a little past the circle's edge, so it doesn't flip gear every frame.
-        private readonly bool IsShunting(bool shunting, float2 position, float2 facing, float2 corner) =>
-            IsInsideTurn(position, facing, corner, shunting ? 1.2f : 1f);
+        // Keeps reversing a little past the circle's edge, so it doesn't flip gear every frame.
+        private readonly bool IsInThreePointTurn(bool turning, float2 position, float2 facing, float2 corner) =>
+            IsInsideTurn(position, facing, corner, turning ? 1.2f : 1f);
 
-        // A shunt that runs into something drives the other leg of the turn for a while, as a three-point turn does.
-        private static bool IsShuntGear(ref LocomotionState state, float deltaTime)
+        // A reversing leg that runs into something drives the other leg of the turn for a while.
+        private static bool IsReverseLeg(ref LocomotionState state, float deltaTime)
         {
-            var hit = state.Shunting && state.Blocked && state.ShuntBlocked <= 0f;
-            state.ShuntBlocked = hit ? ShuntLegSeconds : math.max(0f, state.ShuntBlocked - deltaTime);
-            return state.Shunting && state.ShuntBlocked <= 0f;
+            var hit = state.InThreePointTurn && state.Blocked && state.ThreePointTurnBlocked <= 0f;
+            state.ThreePointTurnBlocked =
+                hit ? ThreePointLegSeconds : math.max(0f, state.ThreePointTurnBlocked - deltaTime);
+            return state.InThreePointTurn && state.ThreePointTurnBlocked <= 0f;
         }
 
         private readonly float TargetSpeed(float error, in PathLeg leg, float top, float radius, float lookAhead)

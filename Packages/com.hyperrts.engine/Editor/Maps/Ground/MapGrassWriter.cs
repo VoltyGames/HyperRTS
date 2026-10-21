@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Maps.Ground
     /// </summary>
     public static class MapGrassWriter
     {
-        public static void Write(string fieldPath, string coveragePath, MapGrassBake bake, List<MapClimateDetail> plants)
+        public static void Write(string fieldPath, string coveragePath, MapGrassBake bake, List<MapClimatePlant> plants)
         {
             if (bake.IsEmpty)
             {

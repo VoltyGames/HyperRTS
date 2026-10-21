@@ -159,7 +159,7 @@ namespace HyperRTS.Simulation.Tests
 
             // About 12 from its post: past a 10 acquire range, inside 1.5 times it.
             var post = new float3(-7f, 0f, 0f);
-            _world.EntityManager.SetComponentData(soldier, new CombatStance { Value = Stance.Defensive, Anchor = post });
+            _world.EntityManager.SetComponentData(soldier, new CombatStance { Value = Stance.Defensive, ReturnPoint = post });
             _world.EntityManager.SetComponentData(soldier, new AttackTarget { Value = enemy });
             _world.EntityManager.SetComponentEnabled<AttackTarget>(soldier, true);
             _world.Tick();

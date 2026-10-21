@@ -18,16 +18,16 @@ namespace HyperRTS.Editor.Maps.Ground
         private const float FarInside = 64f;
 
         private readonly MapLand _land;
-        private readonly MapEdgeJitter _jitter;
+        private readonly MapEdgeWander _wander;
         private readonly MapEdgeNeighbours _neighbours;
         private readonly MapClimateSurface[] _surfaces;
         private readonly float[] _width;
-        private readonly float[] _jitterAmount;
+        private readonly float[] _wanderAmount;
 
         public MapEdgeField(MapLayout layout, MapLand land, MapClimate climate)
         {
             _land = land;
-            _jitter = new MapEdgeJitter(layout);
+            _wander = new MapEdgeWander(layout);
             _neighbours = new MapEdgeNeighbours(land);
             _surfaces = new MapClimateSurface[land.Regions.Count];
             _surfaces[MapLand.Unclaimed] = climate.Surface(climate.groundSurface);
@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Maps.Ground
             }
 
             _width = Style(s => s.edgeWidth);
-            _jitterAmount = Style(s => s.edgeJitter);
+            _wanderAmount = Style(s => s.edgeWander);
         }
 
         /// <summary>The surface a region paints; unclaimed land paints the climate's ground surface.</summary>
@@ -45,10 +45,10 @@ namespace HyperRTS.Editor.Maps.Ground
 
         public int RegionCount => _surfaces.Length;
 
-        /// <summary>The border round a map point, looked up through the edge jitter.</summary>
+        /// <summary>The border round a map point, looked up through the edge wander.</summary>
         public MapEdgeSample Sample(Vector2 point)
         {
-            var at = point + _jitter.Offset(point, Bilinear(_jitterAmount, point));
+            var at = point + _wander.Offset(point, Bilinear(_wanderAmount, point));
             Corners(at, out var x0, out var z0, out var x1, out var z1, out var fx, out var fz);
             var cx = fx < 0.5f ? x0 : x1;
             var cz = fz < 0.5f ? z0 : z1;

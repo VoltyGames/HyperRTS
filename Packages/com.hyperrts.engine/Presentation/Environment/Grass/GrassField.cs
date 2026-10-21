@@ -40,17 +40,17 @@ namespace HyperRTS.Presentation.Environment.Grass
         }
 
         /// <summary>Every plant as Grass.compute reads it, with its first draw slot.</summary>
-        public GrassSowing[] Sowings()
+        public GrassPlantGpu[] GpuPlants()
         {
-            var sowings = new GrassSowing[plants.Count];
+            var gpuPlants = new GrassPlantGpu[plants.Count];
             var slot = 0;
             for (var i = 0; i < plants.Count; i++)
             {
-                sowings[i] = plants[i].Sowing(i, slot);
+                gpuPlants[i] = plants[i].ToGpu(i, slot);
                 slot += plants[i].meshes.Count * GrassView.Bands;
             }
 
-            return sowings;
+            return gpuPlants;
         }
 
         /// <summary>Problems that keep the field from drawing, one per line. Empty when ready.</summary>

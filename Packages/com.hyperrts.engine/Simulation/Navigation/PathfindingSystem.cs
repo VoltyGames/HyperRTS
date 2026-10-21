@@ -135,7 +135,7 @@ namespace HyperRTS.Simulation.Navigation
                     Goal = goal,
                     Radius = agent.Radius,
                     Layer = agent.Layer,
-                    Scenery = agent.SceneryPass,
+                    SceneryCrushLimit = agent.SceneryCrushLimit,
                     Repair = repair,
                     Frame = path.RequestFrame,
                 });
@@ -213,15 +213,15 @@ namespace HyperRTS.Simulation.Navigation
             public void Execute(int index)
             {
                 var request = Requests[index];
-                var pass = new NavPass(Grid, request.Layer, request.Radius, request.Scenery);
+                var access = new NavAccess(Grid, request.Layer, request.Radius, request.SceneryCrushLimit);
                 var waypoints = WaypointLookup[request.Entity];
                 if (request.Repair)
                 {
-                    GridPathfinder.Repair(pass, request, waypoints);
+                    GridPathfinder.Repair(access, request, waypoints);
                 }
                 else
                 {
-                    GridPathfinder.Plan(pass, request.Start, request.Goal, waypoints);
+                    GridPathfinder.Plan(access, request.Start, request.Goal, waypoints);
                 }
 
                 StateLookup[request.Entity] = new PathState

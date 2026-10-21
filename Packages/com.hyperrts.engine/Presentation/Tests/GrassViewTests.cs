@@ -57,7 +57,7 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void Structs_MatchTheKernelsLayouts()
         {
-            Assert.AreEqual(36, GrassSowing.Stride);
+            Assert.AreEqual(36, GrassPlantGpu.Stride);
             Assert.AreEqual(28, GrassJob.Stride);
         }
 

@@ -8,7 +8,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         public static Bounds[] Measure(RowCropFields fields, Terrain terrain)
         {
             var height = 0f;
-            fields.crops.ForEach(crop => height = Mathf.Max(height, crop.height * Mathf.Max(1f, crop.patchScale.y)));
+            fields.crops.ForEach(crop => height = Mathf.Max(height, crop.height * Mathf.Max(1f, crop.growthVariation.y)));
             var bounds = new Bounds[fields.tiles.Count];
             for (var t = 0; t < bounds.Length; t++)
             {

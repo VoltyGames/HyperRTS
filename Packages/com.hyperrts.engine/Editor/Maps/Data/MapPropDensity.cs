@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Data
     public sealed class MapPropDensity
     {
         [Tooltip("Palette key.")]
-        [MapKey(typeof(MapPaletteEntry))]
+        [MapKey(typeof(MapProp))]
         public string kind;
 
         [Min(0f)]

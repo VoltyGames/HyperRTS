@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Maps.Library
         [MapAsset(typeof(GameObject))]
         public string prefab;
         [MapAsset(typeof(GameObject))]
-        public string scenery;
+        public string backdropModel;
         [MapAsset(typeof(GameObject))]
         public List<string> prefabs = new();
         [MapAsset(typeof(GameObject))]

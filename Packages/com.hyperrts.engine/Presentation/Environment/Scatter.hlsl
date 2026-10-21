@@ -1,5 +1,5 @@
 // Hashes, noise and terrain height shared by the plant scatter kernels, RowCrops.compute and Grass.compute.
-// The hashes and noise match RowCropLattice.cs; the heightmap inputs are bound by TerrainHeightInput.cs.
+// The hashes and noise match RowCropSpots.cs; the heightmap inputs are bound by TerrainHeightInput.cs.
 #ifndef HYPERRTS_SCATTER_INCLUDED
 #define HYPERRTS_SCATTER_INCLUDED
 

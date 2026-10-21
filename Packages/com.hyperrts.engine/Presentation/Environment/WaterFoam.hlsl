@@ -63,18 +63,18 @@ half CalmFoam(float2 uv, float shoreDistance)
         half patches = FoamSample(float2(uv.x + 0.37 * _FlowFoamScale, uv.y - drift * 0.85), streakTile * 6.0, dx, dy).x;
         half flow = smoothstep(0.22, 0.5, streak) * smoothstep(0.05, 0.35, patches) * _FlowFoamAmount;
 
-        // The band is at most 1.4 widths wide and the waterline 0.7 m: open water skips the wobble fetch.
+        // The band is at most 1.4 widths wide and the waterline 0.7 m: open water skips the edgeWander fetch.
         half bank = 0.0;
         [branch] if (shoreDistance < max(_BankFoamWidth * 1.4, 0.7))
         {
-            half wobble = FoamSample(float2(0.21, uv.y), float2(1.0, 40.0), float2(0.0, dx.y), float2(0.0, dy.y)).x;
-            float bandWidth = _BankFoamWidth * (0.6 + 0.8 * saturate(wobble * 1.5 + 0.5));
+            half edgeWander = FoamSample(float2(0.21, uv.y), float2(1.0, 40.0), float2(0.0, dx.y), float2(0.0, dy.y)).x;
+            float bandWidth = _BankFoamWidth * (0.6 + 0.8 * saturate(edgeWander * 1.5 + 0.5));
             half band = 1.0 - smoothstep(0.0, bandWidth, shoreDistance);
             half broken = smoothstep(0.0, 0.35, streak) * smoothstep(-0.1, 0.3, patches);
             half waterline = 1.0 - smoothstep(0.2, 0.7, shoreDistance);
 
-            // The phase falls with distance, so crests travel shoreward; the wobble bends them off straight lines.
-            float phase = shoreDistance / _ShoreWaveLength + _Time.y / _ShoreWavePeriod + wobble * 0.6;
+            // The phase falls with distance, so crests travel shoreward; the edgeWander bends them off straight lines.
+            float phase = shoreDistance / _ShoreWaveLength + _Time.y / _ShoreWavePeriod + edgeWander * 0.6;
             half crest = pow(saturate(sin(phase * TWO_PI) * 0.5 + 0.5), 6.0) * band;
             bank = max(max(band * band, waterline * 0.35) * _BankFoamAmount, crest * _ShoreWaveFoam) * broken;
         }

@@ -41,7 +41,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             }
         }
 
-        private void Poles(MapPaletteEntry pole, float spacing, MapRoad road)
+        private void Poles(MapProp pole, float spacing, MapRoad road)
         {
             for (var along = spacing * 0.5f; along < road.Line.Length; along += spacing)
             {
@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         /// Decides every section along the street first, then lays the runs long enough (see <see cref="MapPipeRuns"/>)
         /// and an arch over each short gap inside a run.
         /// </summary>
-        private void Pipes(MapPaletteEntry pipe, MapRoad road)
+        private void Pipes(MapProp pipe, MapRoad road)
         {
             var arch = _settlement.Entries.PipeArch;
             var section = MapSections.Length(pipe);
@@ -130,7 +130,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             return point + MapGeometry.Left(direction) * (side * (road.Width * 0.5f + EdgeOffset));
         }
 
-        private void TryAdd(MapPaletteEntry entry, Vector2 position, Vector2 direction)
+        private void TryAdd(MapProp entry, Vector2 position, Vector2 direction)
         {
             if (CanStand(entry, position))
             {
@@ -139,7 +139,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         }
 
         /// <summary>The spot is in the settlement and the authored sector, clear of the seam, dry, on the verge and free.</summary>
-        private bool CanStand(MapPaletteEntry entry, Vector2 position)
+        private bool CanStand(MapProp entry, Vector2 position)
         {
             if (!InSettlementSector(entry, position))
             {
@@ -152,7 +152,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         }
 
         /// <summary>The spot is in the settlement and the authored sector, at least the entry's reach off the seam.</summary>
-        private bool InSettlementSector(MapPaletteEntry entry, Vector2 position)
+        private bool InSettlementSector(MapProp entry, Vector2 position)
         {
             if (!_settlement.Reaches(position))
             {
@@ -163,7 +163,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             return symmetry.InSector(position) && symmetry.SeamDistance(position) >= entry.Radius;
         }
 
-        private void Add(MapPaletteEntry entry, Vector2 position, Vector2 direction, float stretch) =>
+        private void Add(MapProp entry, Vector2 position, Vector2 direction, float stretch) =>
             _context.Placements.AddEverywhere(entry, position, MapSections.YawAlong(entry, direction), 1f, stretch);
     }
 }

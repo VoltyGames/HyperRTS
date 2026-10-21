@@ -92,7 +92,7 @@ across the copies, so slots 1 and 2 always face each other.
 | `lines` | `points`, `kind`, `spacing` | A row of trees or props |
 | `scatters` | `points`, `kind`, `count` | Props at random in a polygon |
 
-Every feature except spawns and settlements also takes `shared`. A river crossing has `t` along the river, `kind`
+Every feature except spawns and settlements also takes `shared`. A river crossing has `along` (0 to 1 down the river), `kind`
 (`bridge` or `ford`), `width` and `prop`. Fords thin the water and streak it with foam; the climate's
 `fordShallowsWidth` and `fordRapidsLength` set how far.
 
@@ -101,7 +101,7 @@ Every feature except spawns and settlements also takes `shared`. A river crossin
 ### Land use
 
 The land is a 1 m grid. Each cell is claimed once, by one region with a land kind, a surface and a row angle.
-`MapLandPlanner` runs the land passes in priority order, and each takes only what earlier ones left:
+`MapLandPlanner` runs the land steps in priority order, and each takes only what earlier ones left:
 
 1. Water, roads, river banks and floodplain.
 2. Bases, prop pads and access tracks.
@@ -110,8 +110,8 @@ The land is a 1 m grid. Each cell is claimed once, by one region with a land kin
 5. Meadow on everything left, then each surface's own lone trees and props.
 6. Ground decals: each surface's decals per hectare, then one under every prop that names a `groundDecal`.
 
-Passes decide at points in the authored sector and place the result in every copy. That keeps maps exactly
-symmetric. A surface prop that lands in the backdrop is drawn as its `scenery` model, or left out without one.
+Land steps decide at points in the authored sector and place the result in every copy. That keeps maps exactly
+symmetric. A surface prop that lands in the backdrop is drawn as its `backdropModel`, or left out without one.
 
 **Farmland** splits free land into fields, picks a crop for each by the kit's weights and lays belts and tracks
 along the field ends. A track end within the kit's `trackJoinDistance` of a road joins it. A track that still
@@ -135,15 +135,15 @@ that stops short of another road is joined onto it at 60° or more.
 Heights come from relief, hills, river valleys and ravines. Roads of a levelling class sit on embankments, with
 ramps up to bridges.
 
-Every surface sets an `edgeWidth`, the blend band in metres, and an `edgeJitter`, how far the line wanders. Where
-two surfaces meet the crisper one wins, so a ploughed edge stays sharp against a meadow. The jitter turns with the
+Every surface sets an `edgeWidth`, the blend band in metres, and an `edgeWander`, how far the line wanders. Where
+two surfaces meet the crisper one wins, so a ploughed edge stays sharp against a meadow. The wander turns with the
 symmetry, so mirrored borders wander alike.
 
 | Output | What it is |
 | --- | --- |
-| Splat | Terrain layer weights. Each surface's `patches` paint other layers by symmetric noise (`layer`, `coverage` 0 to 1, `size` in metres). Steep ground takes the slope surface |
+| Ground textures | Terrain layer weights. Each surface's `mixes` paint other layers by symmetric noise (`layer`, `coverage` 0 to 1, `size` in metres). Steep ground takes the slope surface |
 | Grass | A coverage slice per plant in `<Map>_GrassCoverage.asset` and a `GrassField` (`<Map>_Grass.asset`) naming the plants and the 16 m tiles that grow any. Clumped by noise; nothing grows on roads or placed objects |
-| Macro map | 2 texels per metre: light and warmth per field and wood, 20 to 150 m soil patches of light, warmth and moisture, darker hollows, wetness near water. Set by the climate's `macro` section |
+| Ground tint | 2 texels per metre: light and warmth per field and wood, 20 to 150 m soil colour in light, warmth and moisture, darker hollows, wetness near water. Set by the climate's `groundTint` section |
 | Row map | Each cell's crop row direction, turned with its symmetry copy |
 | Ground materials | One `SurfaceMaterial` per cell for impacts and wheel debris, baked into the `GroundMaterials` singleton |
 | Ground colour | The ground's colour from above, so foliage blends in at its roots |
@@ -180,7 +180,7 @@ the one offset, centred on mid height.
 | High | `_TERRAIN_NO_PARALLAX` | Far sample, micro detail, triplanar slope layer | 10 + 10 per layer, up to 6 more on steep slopes |
 | Ultra | none | Parallax occlusion | High plus up to 9 within 38 m |
 
-The fixed 8 are the four alphamaps, the row, macro and noise maps and the terrain normal. Edit mode sets no keyword,
+The fixed 8 are the four alphamaps, the row, ground tint and noise maps and the terrain normal. Edit mode sets no keyword,
 so map captures show Ultra.
 
 **Weather.** In play, `WeatherSet` swaps in the weather `MatchSetup.Weather` names. Empty keeps the default.
@@ -213,7 +213,7 @@ A preview writes `Logs/MapReports/<Map>.preview.png` and `.preview.json`. A buil
 
 - the scene and its `_Entities` SubScene
 - terrain, water and road assets
-- the macro, row, ground colour, ground material, minimap and overview images
+- the ground tint, row, ground colour, ground material, minimap and overview images
 - row crop data, if the map has row crops
 - baked lighting, and anything the game's `IMapBuildHook` adds
 
@@ -294,9 +294,9 @@ Batch runs exit with 0 when the report passes, 1 on report errors, and 2 on a cr
 1. Add a kit in `Data/`, like `MapFarmlandKit`, held by `MapClimate`. Give it a library type, check its keys in
    `MapAssetCheck` and list them in `MapKeyReference`.
 2. Add a `MapLandKind` if none fits, and the surfaces it paints.
-3. Add a `MapLandPass` in `Planning/` that claims land through `MapPlanContext`. Decide in the authored sector and
+3. Add a `MapLandStep` in `Planning/` that claims land through `MapPlanContext`. Decide in the authored sector and
    place in every copy.
-4. Slot the pass into `MapLandPlanner.Plan` at its priority.
+4. Slot the step into `MapLandPlanner.Plan` at its priority.
 5. Add a spec class in `Spec/`, an array on `MapSpec`, key checks in `MapSpecCheck`, and a `MapFeatureKind` in
    `MapFeatureKinds` so the Map Editor shows it.
 6. Write EditMode tests: the planner's output on a small layout, and a bad key failing loudly.

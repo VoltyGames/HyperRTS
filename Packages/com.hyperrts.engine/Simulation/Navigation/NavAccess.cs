@@ -7,14 +7,14 @@ namespace HyperRTS.Simulation.Navigation
     /// drives through) and the square <see cref="Footprint"/> it needs. Paths run over anchors, the low corner cell of
     /// that square, so a footprint of one cell paths over plain cells.
     /// </summary>
-    public readonly struct NavPass
+    public readonly struct NavAccess
     {
-        /// <summary>A <see cref="NavAgent.SceneryPass"/> that passes all scenery, as infantry walk between trees.</summary>
+        /// <summary>A <see cref="NavAgent.SceneryCrushLimit"/> that passes all scenery, as infantry walk among trees.</summary>
         public const byte AllScenery = byte.MaxValue;
 
         public readonly NavGrid Grid;
         public readonly NavSurface Surfaces;
-        public readonly byte Scenery;
+        public readonly byte SceneryCrushLimit;
 
         /// <summary>Side of the square of cells the agent needs, from its width.</summary>
         public readonly int Footprint;
@@ -24,18 +24,18 @@ namespace HyperRTS.Simulation.Navigation
 
         private readonly int _slot;
 
-        public NavPass(in NavGrid grid, NavLayer layer, float radius, byte scenery)
+        public NavAccess(in NavGrid grid, NavLayer layer, float radius, byte sceneryCrushLimit)
         {
             Grid = grid;
             Surfaces = NavLayers.Surfaces(layer);
-            Scenery = scenery;
+            SceneryCrushLimit = sceneryCrushLimit;
             Footprint = math.max(1, (int)math.ceil(radius * 2f / grid.CellSize - 1e-3f));
             Clearance = math.min(radius, (Footprint - 0.1f) * grid.CellSize * 0.5f);
             _slot = (int)layer;
         }
 
-        /// <summary>A one-cell pass that only asks a layer's surfaces, for spot searches.</summary>
-        public static NavPass Surface(in NavGrid grid, NavLayer layer) => new(grid, layer, 0f, AllScenery);
+        /// <summary>A one-cell view that only asks a layer's surfaces, for spot searches.</summary>
+        public static NavAccess Surface(in NavGrid grid, NavLayer layer) => new(grid, layer, 0f, AllScenery);
 
         /// <summary>From an anchor to the centre of its footprint square.</summary>
         public float2 Offset => (Footprint - 1) * 0.5f * Grid.CellSize;
@@ -174,12 +174,12 @@ namespace HyperRTS.Simulation.Navigation
                 return false;
             }
 
-            return Scenery == AllScenery || Grid.Scenery[index] <= Scenery;
+            return SceneryCrushLimit == AllScenery || Grid.Scenery[index] <= SceneryCrushLimit;
         }
 
         private bool SceneryFits(int2 anchor, int size)
         {
-            if (Scenery == AllScenery)
+            if (SceneryCrushLimit == AllScenery)
             {
                 return true;
             }
@@ -188,7 +188,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 for (var x = 0; x < size; x++)
                 {
-                    if (Grid.Scenery[Grid.Index(anchor + new int2(x, y))] > Scenery)
+                    if (Grid.Scenery[Grid.Index(anchor + new int2(x, y))] > SceneryCrushLimit)
                     {
                         return false;
                     }

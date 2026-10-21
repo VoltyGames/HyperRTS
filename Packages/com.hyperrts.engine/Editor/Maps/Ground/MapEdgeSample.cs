@@ -4,7 +4,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
-    /// Where a point sits on a land-use border, after the edge jitter: the region it falls in, the region across the
+    /// Where a point sits on a land-use border, after the edge wander: the region it falls in, the region across the
     /// nearest border, its signed distance into its own region and the band the two blend over.
     /// </summary>
     public readonly struct MapEdgeSample
@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Ground
             Width = width;
         }
 
-        /// <summary>Where the land was looked up: the map point moved by the edge jitter.</summary>
+        /// <summary>Where the land was looked up: the map point moved by the edge wander.</summary>
         public Vector2 Point { get; }
 
         public int Own { get; }

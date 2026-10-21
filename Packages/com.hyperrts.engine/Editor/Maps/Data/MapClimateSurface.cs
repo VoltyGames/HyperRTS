@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Maps.Data
         public float treeSpacing = 4f;
 
         [Tooltip("Grass and small plants and the share of the ground each covers.")]
-        public List<MapDetailCoverage> details = new();
+        public List<MapPlantCoverage> plants = new();
 
         [Tooltip("Crop grown in 3D rows on this surface's fields. Empty for none.")]
         [MapKey(typeof(MapClimateRowCrop))]
@@ -37,15 +37,15 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Ground decals laid on this surface at build time, per hectare.")]
         public List<MapDecalDensity> decals = new();
 
-        [Tooltip("Noise patches of other terrain layers, painted in order over this surface's own.")]
-        public List<MapSurfacePatch> patches = new();
+        [Tooltip("Noise-shaped mixes of other terrain layers, painted in order over this surface's own.")]
+        public List<MapSurfaceMix> mixes = new();
 
         [Header("Edge")]
         [Tooltip("Width of the band over which this surface blends into its neighbour (metres). Where two surfaces meet, the narrower width wins.")]
         public float edgeWidth;
 
-        [Tooltip("How far the edge line wanders (metres); larger jitter also waves more slowly. The smaller of the two sides wins.")]
-        public float edgeJitter;
+        [Tooltip("How far the edge line wanders (metres); larger wander also waves more slowly. The smaller of the two sides wins.")]
+        public float edgeWander;
 
         string IMapKeyed.Key => key;
 

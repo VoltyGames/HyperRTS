@@ -13,10 +13,10 @@ namespace HyperRTS.Simulation.Units
         public bool Reverse;
 
         /// <summary>Going the other way to bring a target out of its turning circle, as in a three-point turn.</summary>
-        public bool Shunting;
+        public bool InThreePointTurn;
 
-        /// <summary>Seconds left driving the turn's other leg after the shunt ran into something.</summary>
-        public float ShuntBlocked;
+        /// <summary>Seconds left driving the turn's other leg after the reversing leg ran into something.</summary>
+        public float ThreePointTurnBlocked;
 
         /// <summary>Last frame's move was stopped head-on by a wall.</summary>
         public bool Blocked;

@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Maps.Texturing
             var low = terrainLayer.maskMapRemapMin;
             var high = terrainLayer.maskMapRemapMax;
             pixels[layer] = Mapping(climateLayer);
-            pixels[Width + layer] = new Color(tint.x, tint.y, tint.z, climateLayer.macroStrength);
+            pixels[Width + layer] = new Color(tint.x, tint.y, tint.z, climateLayer.tintStrength);
             pixels[2 * Width + layer] = new Color(high.w - low.w, low.w, high.y - low.y, low.y);
             pixels[3 * Width + layer] = Surface(climateLayer);
             pixels[4 * Width + layer] = Cover(climateLayer, slope);

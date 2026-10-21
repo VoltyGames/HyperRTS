@@ -37,7 +37,7 @@ SamplerState sampler_LinearClamp;
 #define GROUND_REACH 8.0  // metres to the probes of the ground colour round a plant
 #define BANDS 2u          // GrassView.Bands: near casts shadows, far doesn't
 
-struct GrassSowing // GrassSowing.cs, 36 bytes
+struct GrassPlantGpu // GrassPlantGpu.cs, 36 bytes
 {
     float spacing;
     float clumping;
@@ -71,7 +71,7 @@ struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes
     uint startInstance;
 };
 
-StructuredBuffer<GrassSowing> _Plants;
+StructuredBuffer<GrassPlantGpu> _Plants;
 StructuredBuffer<GrassJob> _Jobs;
 StructuredBuffer<GrassSlot> _Slots;
 Texture2DArray<float> _Coverage;
@@ -102,7 +102,7 @@ float Coverage(float2 xz, int layer)
 }
 
 // Swells and thins the painted coverage in clumps and the tufts inside them; the mean stays about the same.
-float Clumped(float coverage, GrassSowing plant, float2 xz)
+float Clumped(float coverage, GrassPlantGpu plant, float2 xz)
 {
     float clump = Noise(plant.seed, CLUMP_SALT, xz / CLUMP_SIZE);
     float tuft = Noise(plant.seed, TUFT_SALT, xz / TUFT_SIZE);
@@ -167,7 +167,7 @@ void Scatter(uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    GrassSowing plant = _Plants[job.plant];
+    GrassPlantGpu plant = _Plants[job.plant];
     int2 cell = job.first + int2(id.x % (uint)job.count.x, id.x / (uint)job.count.x);
     uint hash = Hash(plant.seed, cell.x, cell.y);
     float2 xz = (cell + float2(Channel(hash, CHANNEL_X), Channel(hash, CHANNEL_Z))) * plant.spacing;

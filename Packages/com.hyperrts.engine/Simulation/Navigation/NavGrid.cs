@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Navigation
         public NativeArray<byte> Cells;
 
         /// <summary>
-        /// Smallest <see cref="NavAgent.SceneryPass"/> that drives through each cell's destructible scenery; 0 for none.
+        /// Smallest <see cref="NavAgent.SceneryCrushLimit"/> that drives through each cell's scenery; 0 for none.
         /// </summary>
         public NativeArray<byte> Scenery;
 
@@ -158,7 +158,7 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Closest cell open to the layer by ring distance, up to <paramref name="maxRadius"/> rings out.</summary>
         public readonly bool TryFindNearestWalkable(int2 cell, int maxRadius, out int2 found,
             NavLayer layer = NavLayer.Ground) =>
-            NavPass.Surface(this, layer).TryFindNearest(cell, maxRadius, out found);
+            NavAccess.Surface(this, layer).TryFindNearest(cell, maxRadius, out found);
 
         /// <summary>
         /// Fills each layer's <see cref="Clearance"/>: the side, in cells, of the largest open square whose low corner

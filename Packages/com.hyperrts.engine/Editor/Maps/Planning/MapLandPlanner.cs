@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Planning
     {
         public static void Plan(MapPlanContext context)
         {
-            MapLandPass[] passes =
+            MapLandStep[] passes =
             {
                 new MapWaterPlanner(context),
                 new MapRoadPlanner(context),

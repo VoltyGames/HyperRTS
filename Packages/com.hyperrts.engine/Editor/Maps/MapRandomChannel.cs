@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Maps
         FieldCrops = 40,
         FieldLeftovers = 41,
 
-        /// <summary>A land region's own macro tint, indexed by the region's seed.</summary>
+        /// <summary>A land region's own ground tint, indexed by the region's seed.</summary>
         RegionTints = 42,
     }
 }

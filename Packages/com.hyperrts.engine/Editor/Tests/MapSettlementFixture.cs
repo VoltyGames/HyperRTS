@@ -130,7 +130,7 @@ namespace HyperRTS.Editor.Tests
             palette.entries.Add(Entry("Well", 1.5f, 1.5f));
             var kit = new MapSettlementKit
             {
-                key = "Village", plot = new Vector2(24f, 36f), plotJitter = 0f, frontGap = 2f, frontYard = 5f,
+                key = "Village", plot = new Vector2(24f, 36f), plotWidthVariation = 0f, frontGap = 2f, frontYard = 5f,
                 maxOutbuildings = 1, frontFence = "Fence", sideFence = "Fence", gate = "Gate",
                 yardSurface = "Yard", gardenSurface = "Garden", backSurface = "Orchard", gardenShare = 0.5f,
                 orchardTree = "Apple", orchardSpacing = 3f, streetPipe = "Pipe",
@@ -163,7 +163,7 @@ namespace HyperRTS.Editor.Tests
             return climate;
         }
 
-        private MapPaletteEntry Entry(string key, float width, float depth) =>
+        private MapProp Entry(string key, float width, float depth) =>
             new() { key = key, prefab = Make(new GameObject(key)), size = new Vector2(width, depth) };
 
         private T Make<T>(T made) where T : Object

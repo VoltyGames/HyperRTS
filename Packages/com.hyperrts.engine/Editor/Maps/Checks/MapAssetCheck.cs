@@ -45,11 +45,11 @@ namespace HyperRTS.Editor.Maps.Checks
                 Require(tree.prefabs.Count > 0, $"{name}: tree '{tree.key}' has no prefabs.");
             }
 
-            foreach (var detail in Climate.details)
+            foreach (var plant in Climate.plants)
             {
-                foreach (var problem in detail.Plant().Problems())
+                foreach (var problem in plant.Plant().Problems())
                 {
-                    Issues.Error($"{name}: plant '{detail.key}': {problem}.");
+                    Issues.Error($"{name}: plant '{plant.key}': {problem}.");
                 }
             }
 
@@ -59,9 +59,9 @@ namespace HyperRTS.Editor.Maps.Checks
             MapWeatherCheck.Check(Climate, Issues);
             Require(Climate.fordShallowsWidth > 0f, $"{name}: fordShallowsWidth {Climate.fordShallowsWidth} must be above 0.");
             Require(Climate.fordRapidsLength > 0f, $"{name}: fordRapidsLength {Climate.fordRapidsLength} must be above 0.");
-            foreach (var (field, value) in Climate.macro.Fields())
+            foreach (var (field, value) in Climate.groundTint.Fields())
             {
-                Require(value > 0f, $"{name}: macro {field} {value} must be above 0.");
+                Require(value > 0f, $"{name}: groundTint {field} {value} must be above 0.");
             }
         }
 
@@ -100,7 +100,7 @@ namespace HyperRTS.Editor.Maps.Checks
             {
                 if (entry.prefab == null)
                 {
-                    Issues.Error($"Palette entry '{entry.key}' has no prefab.");
+                    Issues.Error($"Prop '{entry.key}' has no prefab.");
                     continue;
                 }
 
@@ -110,8 +110,8 @@ namespace HyperRTS.Editor.Maps.Checks
                         $"Palette prefab '{entry.prefab.name}' needs a Display Name: generated objects are renamed.");
                 }
 
-                var sceneryEntity = entry.scenery != null && entry.scenery.GetComponentInChildren<AuthoringBehaviour>(true) != null;
-                Require(!sceneryEntity, $"Palette entry '{entry.key}': scenery '{entry.scenery?.name}' must be a plain model, not an entity prefab.");
+                var sceneryEntity = entry.backdropModel != null && entry.backdropModel.GetComponentInChildren<AuthoringBehaviour>(true) != null;
+                Require(!sceneryEntity, $"Prop '{entry.key}': backdrop model '{entry.backdropModel?.name}' must be a plain model, not an entity prefab.");
             }
         }
 
@@ -125,7 +125,7 @@ namespace HyperRTS.Editor.Maps.Checks
             Surface(Climate.floodplainSurface, $"{name} floodplain");
             Surface(Climate.ravineSurface, $"{name} ravine");
             Surface(Climate.ravineRimSurface, $"{name} ravine rim");
-            Optional(Climate.reedDetail, key => InClimate(Climate.details, key, "detail", $"{name} reeds"));
+            Optional(Climate.reedPlant, key => InClimate(Climate.plants, key, "plant", $"{name} reeds"));
             RavineTrees(name);
         }
 
@@ -151,11 +151,11 @@ namespace HyperRTS.Editor.Maps.Checks
             var name = $"surface '{surface.key}'";
             InClimate(Climate.layers, surface.layer, "layer", name);
             surface.trees.ForEach(tree => Tree(tree.tree, name));
-            surface.details.ForEach(detail => InClimate(Climate.details, detail.detail, "detail", name));
+            surface.plants.ForEach(coverage => InClimate(Climate.plants, coverage.plant, "plant", name));
             surface.props.ForEach(prop => EntryNotBesideRoad(prop.kind, name));
             surface.decals.ForEach(decal => Decal(decal.decal, name));
             SurfaceEdge(surface, name);
-            surface.patches.ForEach(patch => SurfacePatch(patch, name));
+            surface.mixes.ForEach(mix => SurfaceMix(mix, name));
             Require(MapImpactClass.IsValid(surface.impactClass), MapImpactClass.Problem(name, surface.impactClass));
         }
 
@@ -163,13 +163,13 @@ namespace HyperRTS.Editor.Maps.Checks
         private void SurfaceEdge(MapClimateSurface surface, string name)
         {
             Require(surface.edgeWidth > 0f, $"{name}: edgeWidth {surface.edgeWidth} must be above 0 metres.");
-            Require(surface.edgeJitter > 0f, $"{name}: edgeJitter {surface.edgeJitter} must be above 0 metres.");
+            Require(surface.edgeWander > 0f, $"{name}: edgeWander {surface.edgeWander} must be above 0 metres.");
         }
 
-        private void SurfacePatch(MapSurfacePatch patch, string name)
+        private void SurfaceMix(MapSurfaceMix mix, string name)
         {
-            InClimate(Climate.layers, patch.layer, "patch layer", name);
-            Require(patch.Valid, $"{name}: patch '{patch.layer}' coverage {patch.coverage} must be in 0..1 and size {patch.size} above 0.");
+            InClimate(Climate.layers, mix.layer, "mix layer", name);
+            Require(mix.Valid, $"{name}: mix '{mix.layer}' coverage {mix.coverage} must be in 0..1 and size {mix.size} above 0.");
         }
 
         private void RoadClass(MapRoadClass road)
@@ -217,9 +217,9 @@ namespace HyperRTS.Editor.Maps.Checks
             Surface(kit.edgeSurface, name);
         }
 
-        private void EntryKeys(MapPaletteEntry entry)
+        private void EntryKeys(MapProp entry)
         {
-            var name = $"palette entry '{entry.key}'";
+            var name = $"prop '{entry.key}'";
             Optional(entry.pad, key => Surface(key, $"{name} pad"));
             Optional(entry.access, key => InClimate(Climate.roadClasses, key, "road class", $"{name} access"));
             SharedAccessDistance(entry, name);
@@ -232,7 +232,7 @@ namespace HyperRTS.Editor.Maps.Checks
         }
 
         /// <summary>A shared access distance only matters for props with an access track.</summary>
-        private void SharedAccessDistance(MapPaletteEntry entry, string name)
+        private void SharedAccessDistance(MapProp entry, string name)
         {
             var distance = entry.sharedAccessDistance;
             Require(distance >= 0f, $"{name}: sharedAccessDistance {distance} must be at least 0.");

@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
     /// farm become the kit's leftover ground. Everything is decided in the authored sector, so every copy of a field
     /// grows the same crop.
     /// </summary>
-    public sealed class MapFarmlandPlanner : MapLandPass
+    public sealed class MapFarmlandPlanner : MapLandStep
     {
         private const float SampleStep = 1f;
         private const float MinRun = 15f;

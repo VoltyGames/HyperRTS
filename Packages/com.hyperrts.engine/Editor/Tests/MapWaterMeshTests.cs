@@ -62,7 +62,7 @@ namespace HyperRTS.Editor.Tests
             spec.rivers.Add(new MapRiverSpec
             {
                 points = new List<MapPoint> { new(-110f, RiverZ), new(110f, RiverZ) }, width = 10f, valleyWidth = 30f,
-                crossings = new List<MapCrossingSpec> { new() { t = 0.5f, kind = MapCrossingSpec.Ford } },
+                crossings = new List<MapCrossingSpec> { new() { along =0.5f, kind = MapCrossingSpec.Ford } },
             });
             var layout = MapExpander.Expand(spec, new MapIssues());
             var climate = new MapClimate { fordShallowsWidth = 6f, fordRapidsLength = 10f };

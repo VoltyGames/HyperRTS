@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Prefab per spec kind (props, resources, bridges, line and scatter props, settlement buildings).")]
         [NonSerialized]
-        public List<MapPaletteEntry> entries = new();
+        public List<MapProp> entries = new();
 
         [Tooltip("Start kit and AI build order per side. Slot n plays sides[(n - 1) % count] when its scene plays as baked.")]
         public List<MapPaletteSide> sides = new();
@@ -41,7 +41,7 @@ namespace HyperRTS.Editor.Maps.Data
         [NonSerialized]
         public List<MapSettlementKit> settlementKits = new();
 
-        public MapPaletteEntry Entry(string key) => MapKeys.Get(entries, key, name, "entry");
+        public MapProp Entry(string key) => MapKeys.Get(entries, key, name, "entry");
 
         public MapSettlementKit SettlementKit(string key) => MapKeys.Get(settlementKits, key, name, "settlement kit");
 

@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Combat
     {
         private ComponentLookup<SpawnOnDeath> _spawnLookup;
         private RemainsLookups _remains;
-        private ComponentLookup<FellFrom> _fellFrom;
+        private ComponentLookup<ToppleHeading> _toppleHeadings;
         private ComponentLookup<DropRemains> _drops;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _spawnLookup = state.GetComponentLookup<SpawnOnDeath>(true);
             _remains = RemainsLookups.Create(ref state);
-            _fellFrom = state.GetComponentLookup<FellFrom>(true);
+            _toppleHeadings = state.GetComponentLookup<ToppleHeading>(true);
             _drops = state.GetComponentLookup<DropRemains>(true);
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _spawnLookup.Update(ref state);
             _remains.Update(ref state);
-            _fellFrom.Update(ref state);
+            _toppleHeadings.Update(ref state);
             _drops.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Combat
             new DeathJob
             {
                 Ecb = ecb.AsParallelWriter(), SpawnLookup = _spawnLookup, RemainsLookups = _remains,
-                FallSources = _fellFrom, Drops = _drops, Groups = _groups, Children = _children,
+                FallSources = _toppleHeadings, Drops = _drops, Groups = _groups, Children = _children,
             }.ScheduleParallel();
         }
 
@@ -60,7 +60,7 @@ namespace HyperRTS.Simulation.Combat
             public EntityCommandBuffer.ParallelWriter Ecb;
             [ReadOnly] public ComponentLookup<SpawnOnDeath> SpawnLookup;
             [ReadOnly] public RemainsLookups RemainsLookups;
-            [ReadOnly] public ComponentLookup<FellFrom> FallSources;
+            [ReadOnly] public ComponentLookup<ToppleHeading> FallSources;
             [ReadOnly] public ComponentLookup<DropRemains> Drops;
             [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
             [ReadOnly] public BufferLookup<Child> Children;
@@ -89,7 +89,7 @@ namespace HyperRTS.Simulation.Combat
             /// </summary>
             private void SpawnRemains(int sortKey, Entity entity, Entity prefab, in LocalTransform transform)
             {
-                // Only Topple pieces carry FellFrom, and only they read the heading.
+                // Only Topple pieces carry ToppleHeading, and only they read the heading.
                 FallSources.TryGetComponent(entity, out var fell);
                 var remains = Remains.FromPiece(entity, transform, fell.Heading, true, RemainsLookups);
                 var spawned = Ecb.Instantiate(sortKey, prefab);
@@ -106,7 +106,7 @@ namespace HyperRTS.Simulation.Combat
 
                 if (remains.Felled)
                 {
-                    Ecb.AddComponent(sortKey, spawned, remains.Felling);
+                    Ecb.AddComponent(sortKey, spawned, remains.ToppleFall);
                 }
 
                 if (Drops.HasComponent(entity))

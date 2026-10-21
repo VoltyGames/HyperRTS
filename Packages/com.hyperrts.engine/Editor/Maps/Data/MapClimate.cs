@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Grass and small plants. Surfaces say where they grow.")]
         [NonSerialized]
-        public List<MapClimateDetail> details = new();
+        public List<MapClimatePlant> plants = new();
 
         [Tooltip("Crops grown in 3D rows. Surfaces say where they grow.")]
         [NonSerialized]
@@ -73,7 +73,7 @@ namespace HyperRTS.Editor.Maps.Data
         [Range(0.02f, 0.5f)]
         public float heightBlendDepth = 0.06f;
 
-        public MapClimateMacro macro = new();
+        public MapClimateGroundTint groundTint = new();
 
         [Header("Rivers and ravines")]
         [Tooltip("Surface of river banks just above the water.")]
@@ -90,8 +90,8 @@ namespace HyperRTS.Editor.Maps.Data
         public float floodplainWidth = 18f;
 
         [Tooltip("Plants of the shallows along the banks, such as reeds. Empty for none.")]
-        [MapKey(typeof(MapClimateDetail))]
-        public string reedDetail;
+        [MapKey(typeof(MapClimatePlant))]
+        public string reedPlant;
 
         [Tooltip("Width of the reed band reaching out from the water's edge (metres).")]
         public float reedWidth = 3f;
@@ -141,7 +141,7 @@ namespace HyperRTS.Editor.Maps.Data
 
         public int TreeIndex(string key) => MapKeys.IndexOf(trees, key, name, "tree");
 
-        public int DetailIndex(string key) => MapKeys.IndexOf(details, key, name, "detail");
+        public int PlantIndex(string key) => MapKeys.IndexOf(plants, key, name, "plant");
 
         public int RowCropIndex(string key) => MapKeys.IndexOf(rowCrops, key, name, "row crop");
 

@@ -7,10 +7,10 @@ namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
     /// The ground round each base, with a wandering edge so it never reads as a stamped circle, and the pads (gravel,
-    /// concrete) under the props whose palette entry asks for one: a rectangle turned with the prop, its edge broken a
+    /// concrete) under the props whose entry asks for one: a rectangle turned with the prop, its edge broken a
     /// little, the way a yard is laid out.
     /// </summary>
-    public sealed class MapBasePlanner : MapLandPass
+    public sealed class MapBasePlanner : MapLandStep
     {
         /// <summary>How far a base's edge wanders in and out, as a share of its radius.</summary>
         private const float BaseWander = 0.18f;

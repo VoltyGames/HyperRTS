@@ -32,7 +32,7 @@ namespace HyperRTS.Editor.Maps.Placement
         }
 
         /// <summary>Places a choice made at an authored-sector point in every copy of the sector.</summary>
-        public void AddEverywhere(MapPaletteEntry entry, Vector2 sectorPoint, float yaw, float scale, float stretch)
+        public void AddEverywhere(MapProp entry, Vector2 sectorPoint, float yaw, float scale, float stretch)
         {
             foreach (var copy in _layout.Symmetry.Copies)
             {
@@ -41,7 +41,7 @@ namespace HyperRTS.Editor.Maps.Placement
         }
 
         /// <summary>Places an authored-space choice in every copy of the feature it belongs to.</summary>
-        public void AddCopies<T>(List<MapCopy<T>> copies, int index, MapPaletteEntry entry, Vector2 position,
+        public void AddCopies<T>(List<MapCopy<T>> copies, int index, MapProp entry, Vector2 position,
             float yaw, float scale, float stretch) where T : class
         {
             foreach (var copy in copies.Where(c => c.Index == index))

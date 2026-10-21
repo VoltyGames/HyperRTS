@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Tests
         public void Pose_ClampsTheTiltBuriesAndMirrorsAcrossX()
         {
             var heights = Heights(p => 0.4f * Mathf.Abs(p.x) + 0.1f * p.y);
-            var entry = new MapPaletteEntry { key = "Rock", size = new Vector2(2f, 2f), maxTilt = 10f, buriedDepth = 0.3f };
+            var entry = new MapProp { key = "Rock", size = new Vector2(2f, 2f), maxTilt = 10f, buriedDepth = 0.3f };
             var left = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(-20f, 5f), 30f, 1f), heights, 0f);
             var right = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(20f, 5f), -30f, 1f), heights, 0f);
 
@@ -49,7 +49,7 @@ namespace HyperRTS.Editor.Tests
         public void Pose_StaysUprightWithoutMaxTilt()
         {
             var heights = Heights(p => 0.5f * p.x);
-            var entry = new MapPaletteEntry { key = "House", size = new Vector2(8f, 8f) };
+            var entry = new MapProp { key = "House", size = new Vector2(8f, 8f) };
             var pose = MapPlacementPose.OnGround(new MapPlacement(entry, Vector2.zero, 0f, 1f), heights, 0f);
 
             Assert.That(Vector3.Angle(Vector3.up, pose.rotation * Vector3.up), Is.LessThan(0.01f));
@@ -63,9 +63,9 @@ namespace HyperRTS.Editor.Tests
             var clearance = new MapClearance(layout, MapRoadFixture.Shapes(layout, climate), 15f);
             clearance.Reserve(new Vector2(10f, 10f), 2f);
 
-            Assert.AreEqual(0f, MapDetailPainter.GrassNearProps(clearance, new Vector2(11.9f, 10f)));
-            Assert.AreEqual(1f, MapDetailPainter.GrassNearProps(clearance, new Vector2(10f, 12f + MapDetailPainter.PropGrassFalloff + 0.01f)));
-            var halfway = MapDetailPainter.GrassNearProps(clearance, new Vector2(12f + MapDetailPainter.PropGrassFalloff * 0.5f, 10f));
+            Assert.AreEqual(0f, MapPlantPainter.GrassNearProps(clearance, new Vector2(11.9f, 10f)));
+            Assert.AreEqual(1f, MapPlantPainter.GrassNearProps(clearance, new Vector2(10f, 12f + MapPlantPainter.PropGrassFalloff + 0.01f)));
+            var halfway = MapPlantPainter.GrassNearProps(clearance, new Vector2(12f + MapPlantPainter.PropGrassFalloff * 0.5f, 10f));
             Assert.AreEqual(0.5f, halfway, 0.01f);
         }
 
@@ -124,7 +124,7 @@ namespace HyperRTS.Editor.Tests
             var (prefab, model) = (new GameObject("Stone"), new GameObject("StoneModel"));
             var issues = new MapIssues();
             var context = MapRoadFixture.Context(MapRoadFixture.Spec(), climate, issues);
-            context.Palette.entries.Add(new MapPaletteEntry { key = "Stone", prefab = prefab, scenery = model, size = Vector2.one });
+            context.Palette.entries.Add(new MapProp { key = "Stone", prefab = prefab, backdropModel = model, size = Vector2.one });
             context.Land.ClaimWhere(context.Land.Bounds, context.Region(MapLandKind.Margin, "Rough"), _ => true);
 
             new MapSurfacePlanter(context).Plan();

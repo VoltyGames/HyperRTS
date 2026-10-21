@@ -9,7 +9,7 @@ struct TerrainLayerParams
     float2 rotation;   // (cos, sin) of the clockwise UV rotation
     float2 tiling;     // 1 / tile size (m) along u and v
     half3 tint;
-    half macro;
+    half tintStrength;
     half4 mask;        // smoothness scale, offset; occlusion scale, offset
     half heightWeight;
     half normalStrength;
@@ -28,7 +28,7 @@ TerrainLayerParams LoadLayerParams(uint layer, float2 rowTurn)
     params.rotation = mapping.xy;
     params.tiling = mapping.zw;
     params.tint = colour.rgb;
-    params.macro = colour.a;
+    params.tintStrength = colour.a;
     params.mask = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 2));
     params.heightWeight = surface.x;
     params.normalStrength = surface.y;

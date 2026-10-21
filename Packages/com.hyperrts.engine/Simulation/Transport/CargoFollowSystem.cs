@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Transport
                     if (Stances.TryGetComponent(entity, out var stance))
                     {
                         var restored = Saved.TryGetComponent(entity, out var saved) ? saved.Value : default;
-                        Stances[entity] = new CombatStance { Value = restored, Anchor = stance.Anchor };
+                        Stances[entity] = new CombatStance { Value = restored, ReturnPoint = stance.ReturnPoint };
                     }
 
                     return;

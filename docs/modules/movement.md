@@ -25,7 +25,7 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 - A unit walled off from its next corner keeps its path for 0.75 s, then re-plans only the way back to that corner
   and keeps the rest, so it goes on round the side it was taking. An unreachable corner gets a whole new path.
 - Destructible scenery with a crush rating (trees, fences) marks its cell on a scenery layer with that rating. A
-  unit drives through scenery rated up to its `SceneryPass`: its `Crusher` size, or all of it with **Walks
+  unit drives through scenery rated up to its `SceneryCrushLimit`: its `Crusher` size, or all of it with **Walks
   Through Scenery** (infantry). Rated higher, scenery blocks it like a closed cell for paths and movement. Felled
   scenery reopens its cell without invalidating paths.
 - Layers that share a surface share cells, so ships pass under a bridge that tanks cross.
@@ -59,12 +59,12 @@ Its facing is its rotation, and it moves only along it, so the crowd's push neve
   the next corner is in sight.
 - It slows to the speed at which its turn rate can hold the arc to its next corner, brakes ahead of sharp
   corners, and brakes to stop at the goal.
-- A target inside its turning circle can't be reached on any arc, so it shunts: it goes the other way, turning
-  toward the target, until the target is clear of the circle. A goal under the hull inside the circle counts as
-  reached. A shunt that runs into a wall drives the other leg for 1.5 s, as in a three-point turn. So it never
+- A target inside its turning circle can't be reached on any arc, so it makes a three-point turn: it goes the
+  other way, turning toward the target, until the target is clear of the circle. A goal under the hull inside the
+  circle counts as reached. A reversing leg that runs into a wall drives the other leg for 1.5 s. So it never
   orbits.
 - A wall that stops it head-on takes its speed with it. A glancing slide or the crowd's push costs none.
-- `MoveOrderSystem` restarts its stall timer when a unit turns about 20 degrees, so a pivot is never a stall.
+- `MoveOrderSystem` restarts its stuck timer when a unit turns about 20 degrees, so a pivot never counts as stuck.
 
 `BlockerAuthoring` makes remains such as a wreck solid: a capsule of radius and hull length along its forward that
 never moves. Units take the whole push and are moved fully clear of it where they are headed, so they slide round

@@ -6,7 +6,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     /// RowCrops.compute's row lattice maths in C# for the CPU and tests. A plant belongs to the one tile its spot falls
     /// in (half-open), and hashing seed and indices makes symmetric copies match.
     /// </summary>
-    public static class RowCropLattice
+    public static class RowCropSpots
     {
         public const uint DensityChannel = 0;
         public const uint AcrossChannel = 1;
@@ -86,11 +86,11 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             return (noise * 2f - 1f) * crop.wander;
         }
 
-        /// <summary>The scale multiplier of the patch a plant grows in.</summary>
-        public static float PatchScale(RowCropField field, int row, int plant, RowCrop crop)
+        /// <summary>The scale multiplier of the stretch of field a plant grows in.</summary>
+        public static float GrowthVariation(RowCropField field, int row, int plant, RowCrop crop)
         {
-            var noise = Noise(field.seed, PatchSalt, Metres(row, plant, crop) / crop.patchSize);
-            return Mathf.Lerp(crop.patchScale.x, crop.patchScale.y, noise);
+            var noise = Noise(field.seed, PatchSalt, Metres(row, plant, crop) / crop.growthVariationSize);
+            return Mathf.Lerp(crop.growthVariation.x, crop.growthVariation.y, noise);
         }
 
         /// <summary>Which of <paramref name="count"/> models a plant draws.</summary>

@@ -93,7 +93,7 @@ namespace HyperRTS.Editor.Maps.Placement
         }
 
         /// <summary>A structure on its own pad must not straddle a road; a road through it reads as a mistake.</summary>
-        private void CheckOffRoad(MapPaletteEntry entry, Vector2 position, MapIssueFeature feature)
+        private void CheckOffRoad(MapProp entry, Vector2 position, MapIssueFeature feature)
         {
             var standsOnPad = entry.flatten || !string.IsNullOrEmpty(entry.pad);
             var halfWidth = Mathf.Min(entry.size.x, entry.size.y) * 0.5f;
@@ -192,7 +192,7 @@ namespace HyperRTS.Editor.Maps.Placement
             return Clearance.IsOffRoad(position, radius) && Clearance.IsFree(position, radius);
         }
 
-        private float Jitter(MapPaletteEntry entry, MapRandomChannel channel, int index)
+        private float Jitter(MapProp entry, MapRandomChannel channel, int index)
         {
             if (entry.yawJitter <= 0f)
             {

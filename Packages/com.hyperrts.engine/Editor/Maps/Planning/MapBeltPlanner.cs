@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// the edges, and breaks where tracks cut through. Plans the spec's belts; farmland lays its field-end belts
     /// through <see cref="PlanLine"/>.
     /// </summary>
-    public sealed class MapBeltPlanner : MapLandPass
+    public sealed class MapBeltPlanner : MapLandStep
     {
         private const float Jitter = 0.25f;
         private const float MinSpacing = 2f;

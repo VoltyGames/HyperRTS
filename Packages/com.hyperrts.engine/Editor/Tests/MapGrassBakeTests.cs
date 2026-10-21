@@ -74,8 +74,8 @@ namespace HyperRTS.Editor.Tests
             const string json = "{\"meshes\": [], \"material\": \"\", \"width\": {\"x\": 0.5, \"y\": 0.7}, " +
                                 "\"height\": {\"x\": 0.2, \"y\": 0.3}, \"density\": 12, \"clumping\": 0.4}";
 
-            var (item, _) = MapLibraryItemFile.Parse(typeof(MapClimateDetail), json, "Grass.plant.json");
-            var plant = ((MapClimateDetail)item).Plant();
+            var (item, _) = MapLibraryItemFile.Parse(typeof(MapClimatePlant), json, "Grass.plant.json");
+            var plant = ((MapClimatePlant)item).Plant();
 
             Assert.AreEqual(new Vector2(0.5f, 0.7f), plant.width);
             Assert.AreEqual(new Vector2(0.2f, 0.3f), plant.height);
@@ -89,7 +89,7 @@ namespace HyperRTS.Editor.Tests
             const string json = "{\"mesh\": \"Assets/Detail_Grass.prefab\", \"texture\": \"\", \"density\": 2}";
 
             var error = Assert.Throws<InvalidOperationException>(() =>
-                MapLibraryItemFile.Parse(typeof(MapClimateDetail), json, "Grass.plant.json"));
+                MapLibraryItemFile.Parse(typeof(MapClimatePlant), json, "Grass.plant.json"));
 
             StringAssert.Contains("'mesh' is not a plant field", error.Message);
         }

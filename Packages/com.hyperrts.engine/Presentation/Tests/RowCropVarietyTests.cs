@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests
 {
-    /// <summary>Per-plant variety from the hash: model choice, lean, row wander and patch scale.</summary>
+    /// <summary>Per-plant variety from the hash: model choice, lean, row wander and growth variation.</summary>
     public class RowCropVarietyTests
     {
         private RowCrop _crop;
@@ -23,8 +23,8 @@ namespace HyperRTS.Presentation.Tests
             {
                 for (var plant = -30; plant < 30; plant++)
                 {
-                    var variant = RowCropLattice.Variant(7, row, plant, used.Length);
-                    Assert.AreEqual(variant, RowCropLattice.Variant(7, row, plant, used.Length));
+                    var variant = RowCropSpots.Variant(7, row, plant, used.Length);
+                    Assert.AreEqual(variant, RowCropSpots.Variant(7, row, plant, used.Length));
                     used[variant]++;
                 }
             }
@@ -40,7 +40,7 @@ namespace HyperRTS.Presentation.Tests
         {
             for (var plant = 0; plant < 200; plant++)
             {
-                Assert.AreEqual(0, RowCropLattice.Variant(3, 1, plant, 1));
+                Assert.AreEqual(0, RowCropSpots.Variant(3, 1, plant, 1));
             }
         }
 
@@ -53,9 +53,9 @@ namespace HyperRTS.Presentation.Tests
             var steps = Mathf.CeilToInt(30f / _crop.plantSpacing);
             for (var plant = 0; plant < steps; plant++)
             {
-                var here = RowCropLattice.Wander(field, 4, plant, _crop);
-                var next = RowCropLattice.Wander(field, 4, plant + 1, _crop);
-                var beside = RowCropLattice.Wander(field, 5, plant, _crop);
+                var here = RowCropSpots.Wander(field, 4, plant, _crop);
+                var next = RowCropSpots.Wander(field, 4, plant + 1, _crop);
+                var beside = RowCropSpots.Wander(field, 5, plant, _crop);
                 Assert.LessOrEqual(Mathf.Abs(here), _crop.wander + 1e-5f);
                 Assert.Less(Mathf.Abs(next - here), 0.025f, "one plant along the row");
                 Assert.Less(Mathf.Abs(beside - here), 0.05f, "the next row wanders with this one");
@@ -63,15 +63,15 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
-        public void PatchScale_StaysInItsRange()
+        public void GrowthVariation_StaysInItsRange()
         {
-            _crop.patchScale = new Vector2(0.8f, 1.2f);
+            _crop.growthVariation = new Vector2(0.8f, 1.2f);
             var field = Field();
             for (var row = 0; row < 40; row++)
             {
                 for (var plant = 0; plant < 40; plant += 3)
                 {
-                    Assert.That(RowCropLattice.PatchScale(field, row, plant, _crop), Is.InRange(0.8f, 1.2f));
+                    Assert.That(RowCropSpots.GrowthVariation(field, row, plant, _crop), Is.InRange(0.8f, 1.2f));
                 }
             }
         }
@@ -87,8 +87,8 @@ namespace HyperRTS.Presentation.Tests
             var widest = 0f;
             for (var plant = 0; plant < 400; plant++)
             {
-                Assert.LessOrEqual(RowCropLattice.Lean(field, 2, plant, _crop, 0f).magnitude, inside);
-                var atEdge = RowCropLattice.Lean(field, 2, plant, _crop, 1f).magnitude;
+                Assert.LessOrEqual(RowCropSpots.Lean(field, 2, plant, _crop, 0f).magnitude, inside);
+                var atEdge = RowCropSpots.Lean(field, 2, plant, _crop, 1f).magnitude;
                 Assert.LessOrEqual(atEdge, edge);
                 widest = Mathf.Max(widest, atEdge);
             }

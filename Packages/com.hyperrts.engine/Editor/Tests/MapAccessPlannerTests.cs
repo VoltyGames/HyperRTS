@@ -32,7 +32,7 @@ namespace HyperRTS.Editor.Tests
             spec.roads.AddRange(roads);
             spec.ravines.AddRange(ravines);
             var context = MapRoadFixture.Context(spec, MapRoadFixture.Climate(), issues);
-            var entry = new MapPaletteEntry
+            var entry = new MapProp
             {
                 key = "Shed", size = new Vector2(6f, 6f), pad = "Dirt", padMargin = 3f, access = access,
                 sharedAccessDistance = 20f,
