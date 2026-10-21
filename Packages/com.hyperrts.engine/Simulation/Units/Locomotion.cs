@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Units
 
         public float ReverseSpeed;
 
-        /// <summary>Longest remaining path it backs along instead of turning round.</summary>
+        /// <summary>Longest path it backs along, only when turning round would clearly take longer.</summary>
         public float ReverseDistance;
 
         private const float PivotAngle = math.PI / 3f;
@@ -32,6 +32,7 @@ namespace HyperRTS.Simulation.Units
         private const float LookAheadTime = 0.5f;
         private const float Unlimited = 1e4f;
         private const float ShuntLegSeconds = 1.5f;
+        private const float ReverseMargin = 1.3f;
 
         /// <summary>How far ahead it may cut to a corner in sight: further when fast or wide-turning.</summary>
         public readonly float LookAhead(float speed, float radius) =>
@@ -41,7 +42,7 @@ namespace HyperRTS.Simulation.Units
         public readonly float2 Drive(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
             float topSpeed, float radius, float deltaTime)
         {
-            state.Reverse = PrefersReverse(state.Reverse, facing, leg);
+            state.Reverse = PrefersReverse(state.Reverse, facing, leg, topSpeed);
             state.Shunting = IsShunting(state.Shunting, position, facing, leg.Corner);
             var desired = state.Reverse ? -leg.Direction : leg.Direction;
             var error = SignedAngle(facing, desired);
@@ -88,7 +89,7 @@ namespace HyperRTS.Simulation.Units
             return math.distance(target, center) < TurnRadius * slack;
         }
 
-        private readonly bool PrefersReverse(bool reversing, float2 facing, in PathLeg leg)
+        private readonly bool PrefersReverse(bool reversing, float2 facing, in PathLeg leg, float topSpeed)
         {
             if (leg.Remaining > ReverseDistance)
             {
@@ -96,7 +97,21 @@ namespace HyperRTS.Simulation.Units
             }
 
             var along = math.dot(facing, leg.Direction);
-            return along < (reversing ? 0.3f : -0.2f);
+            if (along >= (reversing ? 0.3f : -0.2f))
+            {
+                return false;
+            }
+
+            var backing = leg.Remaining / ReverseSpeed;
+            var turningRound = TurnSeconds(math.acos(math.max(-1f, along)), topSpeed) + leg.Remaining / topSpeed;
+            return turningRound > backing * ReverseMargin;
+        }
+
+        // Tracks turn at their rate; wheels also need the arc of their turning circle rolled.
+        private readonly float TurnSeconds(float angle, float topSpeed)
+        {
+            var rolling = Pivots ? 0f : TurnRadius / topSpeed;
+            return angle * math.max(1f / TurnRate, rolling);
         }
 
         // Keeps shunting a little past the circle's edge, so it doesn't flip gear every frame.

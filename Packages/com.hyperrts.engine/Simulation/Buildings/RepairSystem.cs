@@ -98,7 +98,7 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 var position = Reach.Position(target);
-                if (!Reach.Approach(target, transform.Position, agent.Radius, ref destination, moving))
+                if (!Reach.Approach(target, transform, agent, ref destination, moving))
                 {
                     return;
                 }

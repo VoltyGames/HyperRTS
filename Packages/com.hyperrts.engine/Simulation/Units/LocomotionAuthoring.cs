@@ -40,9 +40,9 @@ namespace HyperRTS.Simulation.Units
         [Min(0.1f)]
         public float reverseSpeed = 2.5f;
 
-        [Tooltip("Backs up to a goal behind it at most this far along its path, in metres, instead of turning round.")]
+        [Tooltip("Backs up to a goal at most this far behind, in metres, when turning round would clearly take longer.")]
         [Min(0f)]
-        public float reverseDistance = 25f;
+        public float reverseDistance = 10f;
 
         public Locomotion Locomotion => new()
         {

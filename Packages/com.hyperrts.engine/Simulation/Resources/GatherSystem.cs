@@ -100,8 +100,7 @@ namespace HyperRTS.Simulation.Resources
 
                 if (harvest.Phase == HarvestPhase.Returning)
                 {
-                    Return(ref harvester, ref harvest, ref destination, moving, transform.Position, agent.Radius,
-                        faction.Value);
+                    Return(ref harvester, ref harvest, ref destination, moving, transform, agent, faction.Value);
                     return;
                 }
 
@@ -113,7 +112,7 @@ namespace HyperRTS.Simulation.Resources
 
                 var node = order.Value.Target;
                 var nodePosition = Reach.Position(node);
-                if (Reach.Approach(node, transform.Position, agent.Radius, ref destination, moving))
+                if (Reach.Approach(node, transform, agent, ref destination, moving))
                 {
                     Gather(ref harvester, ref harvest, node, nodePosition);
                 }
@@ -156,9 +155,9 @@ namespace HyperRTS.Simulation.Resources
             }
 
             private void Return(ref Harvester harvester, ref HarvestState harvest, ref MoveDestination destination,
-                EnabledRefRW<MoveDestination> moving, float3 position, float radius, byte faction)
+                EnabledRefRW<MoveDestination> moving, in LocalTransform transform, in NavAgent agent, byte faction)
             {
-                var dropOff = NearestDropOff(position, faction);
+                var dropOff = NearestDropOff(transform.Position, faction);
                 if (harvester.CargoAmount <= 0 || dropOff == Entity.Null)
                 {
                     // Empty-handed goes straight back to work; with no drop-off, wait until one is built.
@@ -167,7 +166,7 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
-                if (!Reach.Approach(dropOff, position, radius, ref destination, moving))
+                if (!Reach.Approach(dropOff, transform, agent, ref destination, moving))
                 {
                     return;
                 }

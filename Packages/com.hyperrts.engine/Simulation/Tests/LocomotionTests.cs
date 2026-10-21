@@ -43,13 +43,13 @@ namespace HyperRTS.Simulation.Tests
         private Entity SpawnTruck(float3 position) => SpawnVehicle(position, TruckRadius, 8f, new Locomotion
         {
             Acceleration = 3f, Braking = 6f, TurnRate = math.radians(40f), TurnRadius = TruckTurnRadius,
-            ReverseSpeed = 3f, ReverseDistance = 15f,
+            ReverseSpeed = 3f, ReverseDistance = 6f,
         });
 
         private Entity SpawnTank(float3 position) => SpawnVehicle(position, TankRadius, 6.9f, new Locomotion
         {
             Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), Pivots = true,
-            ReverseSpeed = 3f, ReverseDistance = 25f,
+            ReverseSpeed = 3f, ReverseDistance = 10f,
         });
 
         // Ticks once so the order is under way before callers wait on arrival.
@@ -65,6 +65,19 @@ namespace HyperRTS.Simulation.Tests
         private float Speed(Entity unit) => _world.Get<LocomotionState>(unit).Speed;
 
         private bool Arrived(Entity unit) => !_world.IsEnabled<MoveDestination>(unit);
+
+        private float SlowestUntilArrived(Entity unit, float cap)
+        {
+            var slowest = 0f;
+            for (var t = 0f; t < cap && !Arrived(unit); t += TestWorld.FrameTime)
+            {
+                _world.Tick();
+                slowest = math.min(slowest, Speed(unit));
+            }
+
+            Assert.IsTrue(Arrived(unit), "arrived");
+            return slowest;
+        }
 
         private static float TurnBetween(float2 a, float2 b) => math.acos(math.clamp(math.dot(a, b), -1f, 1f));
 
@@ -107,7 +120,7 @@ namespace HyperRTS.Simulation.Tests
         public void Tank_BacksUpToAGoalCloseBehind()
         {
             var tank = SpawnTank(float3.zero);
-            var goal = new float3(0f, 0f, -10f);
+            var goal = new float3(0f, 0f, -8f);
             Order(tank, goal);
 
             var slowest = 0f;
@@ -121,6 +134,25 @@ namespace HyperRTS.Simulation.Tests
             Assert.Less(slowest, -2f, "reversed");
             Assert.Greater(math.dot(Facing(tank), new float2(0f, 1f)), 0.98f, "never turned round");
             Assert.Less(math.distance(_world.GetPosition(tank).xz, goal.xz), NavTolerances.Arrive(TankRadius) + 0.1f);
+        }
+
+        [Test]
+        public void Tank_TurnsRound_ForAGoalWellBehind()
+        {
+            var tank = SpawnTank(float3.zero);
+            Order(tank, new float3(0f, 0f, -30f));
+
+            Assert.Greater(SlowestUntilArrived(tank, 20f), -0.1f, "never reversed");
+            Assert.Less(math.dot(Facing(tank), new float2(0f, 1f)), -0.9f, "turned round");
+        }
+
+        [Test]
+        public void Truck_DrivesForwardWithATurn_ToAGoalBehindPastAFewMetres()
+        {
+            var truck = SpawnTruck(float3.zero);
+            Order(truck, new float3(0f, 0f, -15f));
+
+            Assert.Greater(SlowestUntilArrived(truck, 30f), -0.1f, "never reversed");
         }
 
         [Test]

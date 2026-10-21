@@ -35,13 +35,25 @@ namespace HyperRTS.Simulation.Navigation
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
 
-        /// <summary>Walks the unit toward <paramref name="target"/> until in reach, then stops it; true once there.</summary>
-        public bool Approach(Entity target, float3 unit, float unitRadius, ref MoveDestination destination,
+        public LocalTransform Transform(Entity entity) => _transforms[entity];
+
+        /// <summary>Walks the unit toward the target's edge until in reach, then stops it; true once there.</summary>
+        public bool Approach(Entity target, in LocalTransform unit, in NavAgent agent, ref MoveDestination destination,
             EnabledRefRW<MoveDestination> moving)
         {
-            var extents = ReachMath.HalfExtents(_obstacles, target);
-            return ReachMath.Approach(ref destination, moving, unit, unitRadius, Position(target), extents,
+            var axis = agent.SegmentAxis(unit.Rotation);
+            return ReachMath.Approach(ref destination, moving, Footprint(target), unit.Position, axis, agent.Radius,
                 _navCellSize);
+        }
+
+        // Targets without a NavObstacle get the default extent EntityRadius gives them.
+        private NavBox Footprint(Entity target)
+        {
+            var transform = _transforms[target];
+            var size = _obstacles.TryGetComponent(target, out var obstacle)
+                ? obstacle.Size
+                : new float2(EntityRadius.Default * 2f);
+            return new NavBox(transform.Position, transform.Rotation, size);
         }
     }
 }

@@ -93,7 +93,7 @@ namespace HyperRTS.Simulation.Buildings
                     return;
                 }
 
-                if (!Reach.Approach(site, transform.Position, agent.Radius, ref destination, moving))
+                if (!Reach.Approach(site, transform, agent, ref destination, moving))
                 {
                     return;
                 }

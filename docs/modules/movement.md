@@ -29,7 +29,9 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   Through Scenery** (infantry). Rated higher, scenery blocks it like a closed cell for paths and movement. Felled
   scenery reopens its cell without invalidating paths.
 - Layers that share a surface share cells, so ships pass under a bridge that tanks cross.
-- `TargetReach` walks a unit up to a target to build, repair, capture, board or gather.
+- `TargetReach` walks a unit up to a target to build, repair, capture, board or gather. It heads for the point just
+  outside the target's footprint edge nearest the unit, and counts it there when the capsule, hull edge to footprint
+  edge, is within its slack plus a nav cell, so a long truck arriving nose first stops at the wall.
 - `SpatialIndex` answers fast range queries over living entities.
 
 ## Units
@@ -51,7 +53,7 @@ Its facing is its rotation, and it moves only along it, so the crowd's push neve
 | Turn Rate | Fastest the hull turns, in degrees per second |
 | Turn Radius | Tightest circle it drives. The hull turns only as it rolls, at most speed over radius. 0 turns at any speed |
 | Pivots | Stops and turns in place when more than 60 degrees off its heading, as tracked vehicles do |
-| Reverse Speed, Reverse Distance | Backs up to a goal behind it when the path left is at most this long |
+| Reverse Speed, Reverse Distance | Backs up to a goal behind it when the path left is at most this long (about 6 m wheeled, 10 m tracked) and turning round would clearly take longer |
 
 - It cuts corners within its look-ahead (twice its radius, half a second of travel and half its turn radius) once
   the next corner is in sight.

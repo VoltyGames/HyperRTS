@@ -6,45 +6,40 @@ namespace HyperRTS.Simulation.Navigation
     /// <summary>Walk-up helpers for order behaviours that act on a target entity (gather, build, deposit).</summary>
     public static class ReachMath
     {
-        /// <summary>How far a unit's edge may be from the footprint and still be at it, whatever the nav grid.</summary>
+        /// <summary>How far a unit's edge may be from the nearest it can get to a footprint.</summary>
         public const float Slack = 1f;
 
         /// <summary>
-        /// Pathing parks a unit on the centre of the nearest open cell. A footprint blocks every cell it overlaps, so
-        /// that centre can lie up to a cell and a half from its edge.
+        /// Gap from a unit's core segment to a footprint within which it is at it. Closed cells reach up to a cell past
+        /// the footprint and the unit keeps its radius off them, so its edge is allowed a cell more than the slack.
         /// </summary>
-        public const float CellReach = 1.5f;
+        public static float Reach(float unitRadius, float navCellSize) => unitRadius + Slack + navCellSize;
 
-        /// <summary>Targets without a <see cref="NavObstacle"/> get the same default extent as <see cref="EntityRadius"/>.</summary>
-        public static float2 HalfExtents(in ComponentLookup<NavObstacle> obstacles, Entity target) =>
-            obstacles.TryGetComponent(target, out var obstacle) ? obstacle.Size * 0.5f : new float2(EntityRadius.Default);
+        /// <summary>Whether the unit's capsule round <paramref name="unit"/> is at the footprint.</summary>
+        public static bool InReach(in NavBox footprint, float2 unit, float2 axis, float unitRadius,
+            float navCellSize) =>
+            footprint.Gap(unit - axis, unit + axis) <= Reach(unitRadius, navCellSize);
 
-        /// <summary>
-        /// Distance from the target's footprint within which the unit is at it: its own edge within <see cref="Slack"/>,
-        /// or on the nearest open cell of a grid of <paramref name="navCellSize"/> (0 without a grid).
-        /// </summary>
-        public static float Reach(float unitRadius, float navCellSize) =>
-            math.max(unitRadius + Slack, navCellSize * CellReach);
-
-        /// <summary>True when the unit is within <see cref="Reach"/> of the target's XZ footprint box.</summary>
-        public static bool InReach(float3 unit, float unitRadius, float3 target, float2 halfExtents, float navCellSize)
+        /// <summary>Walks toward the footprint's nearest edge until in reach, then stops; true once there.</summary>
+        public static bool Approach(ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
+            in NavBox footprint, float3 unit, float2 axis, float unitRadius, float navCellSize)
         {
-            var outside = math.max(math.abs(unit.xz - target.xz) - halfExtents, 0f);
-            return math.length(outside) <= Reach(unitRadius, navCellSize);
-        }
-
-        /// <summary>Walks toward the target until in reach, then stops; true once there.</summary>
-        public static bool Approach(ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, float3 unit,
-            float unitRadius, float3 target, float2 halfExtents, float navCellSize)
-        {
-            if (!InReach(unit, unitRadius, target, halfExtents, navCellSize))
+            if (InReach(footprint, unit.xz, axis, unitRadius, navCellSize))
             {
-                MoveTo(ref destination, moving, target);
+                moving.ValueRW = false;
+                return true;
+            }
+
+            // A goal already by the footprint stays put, so the path isn't restarted as the nearest edge slides.
+            var goal = destination.Value.xz;
+            if (moving.ValueRO && footprint.Gap(goal, goal) <= Reach(unitRadius, navCellSize))
+            {
                 return false;
             }
 
-            moving.ValueRW = false;
-            return true;
+            var edge = footprint.EdgePoint(unit.xz, unitRadius + Slack * 0.5f);
+            MoveTo(ref destination, moving, new float3(edge.x, unit.y, edge.y));
+            return false;
         }
 
         /// <summary>

@@ -35,5 +35,37 @@ namespace HyperRTS.Simulation.Navigation
             return math.abs(math.dot(offset, Right)) <= Half.x + margin
                    && math.abs(math.dot(offset, Forward)) <= Half.y + margin;
         }
+
+        /// <summary>Gap between the box and the segment from a to b, 0 when they touch.</summary>
+        public float Gap(float2 a, float2 b) => NavCapsule.SegmentRectDistance(Local(a), Local(b), -Half, Half);
+
+        /// <summary>The point <paramref name="offset"/> out from the edge nearest <paramref name="point"/>.</summary>
+        public float2 EdgePoint(float2 point, float offset)
+        {
+            var local = Local(point);
+            var edge = math.clamp(local, -Half, Half);
+            var outward = math.normalizesafe(local - edge);
+            if (outward.Equals(float2.zero))
+            {
+                outward = InsideExit(local);
+                edge = math.select(local, Half * math.sign(outward), outward != 0f);
+            }
+
+            return Center + Right * (edge.x + outward.x * offset) + Forward * (edge.y + outward.y * offset);
+        }
+
+        private float2 Local(float2 point)
+        {
+            var offset = point - Center;
+            return new float2(math.dot(offset, Right), math.dot(offset, Forward));
+        }
+
+        // A point inside leaves by the nearest side.
+        private float2 InsideExit(float2 local)
+        {
+            var room = Half - math.abs(local);
+            var side = math.select(new float2(-1f), new float2(1f), local >= 0f);
+            return room.x < room.y ? new float2(side.x, 0f) : new float2(0f, side.y);
+        }
     }
 }

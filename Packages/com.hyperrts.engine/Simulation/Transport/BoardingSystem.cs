@@ -97,7 +97,7 @@ namespace HyperRTS.Simulation.Transport
                     return;
                 }
 
-                if (!Reach.Approach(container, Reach.Position(entity), agent.Radius, ref destination, moving))
+                if (!Reach.Approach(container, Reach.Transform(entity), agent, ref destination, moving))
                 {
                     return;
                 }

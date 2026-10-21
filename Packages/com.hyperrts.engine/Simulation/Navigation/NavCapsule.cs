@@ -92,7 +92,7 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         // Apart, the nearest points are an end against the box or a box corner against the segment.
-        private static float SegmentRectDistance(float2 a, float2 b, float2 low, float2 high)
+        internal static float SegmentRectDistance(float2 a, float2 b, float2 low, float2 high)
         {
             if (SegmentHitsRect(a, b, low, high))
             {
