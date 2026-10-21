@@ -81,8 +81,7 @@ namespace HyperRTS.Editor.Maps.Tools
             text.AppendLine("| Entry (`props`, `resources`, `lines`, `scatters`, bridges) | Footprint | Kind | Pad | Access |").AppendLine("| --- | --- | --- | --- | --- |");
             foreach (var entry in palette.entries.Where(e => e.prefab != null))
             {
-                var kind = entry.IsGameplay ? "gameplay" : entry.IsEntity ? "destructible" : "scenery";
-                text.AppendLine($"| `{entry.key}` | {entry.size.x} × {entry.size.y} m | {kind} | {entry.pad} | {entry.access} |");
+                text.AppendLine($"| `{entry.key}` | {entry.size.x} × {entry.size.y} m | {Kind(entry)} | {entry.pad} | {entry.access} |");
             }
 
             text.AppendLine().AppendLine("| Settlement kit (`settlements[].kind`) | Plot | Houses | Outbuildings |").AppendLine("| --- | --- | --- | --- |");
@@ -90,6 +89,16 @@ namespace HyperRTS.Editor.Maps.Tools
             {
                 text.AppendLine($"| `{kit.key}` | {kit.plot.x} × {kit.plot.y} m | {string.Join(", ", kit.houses)} | {string.Join(", ", kit.outbuildings)} |");
             }
+        }
+
+        private static string Kind(MapProp entry)
+        {
+            if (entry.IsGameplay)
+            {
+                return "gameplay";
+            }
+
+            return entry.IsEntity ? "destructible" : "scenery";
         }
     }
 }

@@ -92,9 +92,7 @@ namespace HyperRTS.Simulation.Commands
             {
                 CommandType.Smart => ResolveSmart(unit, target, relations),
                 CommandType.Attack => CanForceAttack(unit, target, relations) ? OrderType.Attack : OrderType.Move,
-                // Attack-move clicked on an enemy or on scenery attacks it directly.
-                CommandType.AttackMove => CanForceAttack(unit, target, relations) ? OrderType.Attack
-                    : _weapons.HasComponent(unit) ? OrderType.AttackMove : OrderType.Move,
+                CommandType.AttackMove => ResolveAttackMove(unit, target, relations),
                 CommandType.Patrol => OrderType.Patrol,
                 CommandType.Escort => CanEscort(unit, target, relations) ? OrderType.Escort : OrderType.Move,
                 CommandType.ReturnToBase => _padUsers.HasComponent(unit) ? OrderType.ReturnToBase : OrderType.None,
@@ -105,6 +103,17 @@ namespace HyperRTS.Simulation.Commands
                 CommandType.Enter => CanEnter(unit, target, relations) ? OrderType.Enter : OrderType.Move,
                 _ => OrderType.Move,
             };
+        }
+
+        private OrderType ResolveAttackMove(Entity unit, Entity target, in FactionRelations relations)
+        {
+            // Attack-move clicked on an enemy or on scenery attacks it directly.
+            if (CanForceAttack(unit, target, relations))
+            {
+                return OrderType.Attack;
+            }
+
+            return _weapons.HasComponent(unit) ? OrderType.AttackMove : OrderType.Move;
         }
 
         private OrderType ResolveSmart(Entity unit, Entity target, in FactionRelations relations)

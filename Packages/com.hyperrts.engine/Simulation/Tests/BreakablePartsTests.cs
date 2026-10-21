@@ -118,7 +118,7 @@ namespace HyperRTS.Simulation.Tests
             for (var i = 0; i < parts.Length; i++)
             {
                 var part = parts[i];
-                part.Order = i == 1 ? 0 : i == 0 ? 2 : 1;
+                part.Order = i switch { 0 => 2, 1 => 0, _ => 1 };
                 parts[i] = part;
             }
 

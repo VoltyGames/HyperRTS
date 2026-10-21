@@ -65,6 +65,11 @@ namespace HyperRTS.Network.Cues
         }
 
         // A battle fires and lands far more shots than anything else, and losing one of them goes unnoticed.
-        private static int Priority(CueSlot slot) => slot == CueSlot.Fire ? 2 : slot == CueSlot.Impact ? 1 : 0;
+        private static int Priority(CueSlot slot) => slot switch
+        {
+            CueSlot.Fire => 2,
+            CueSlot.Impact => 1,
+            _ => 0,
+        };
     }
 }

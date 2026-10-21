@@ -35,10 +35,18 @@ namespace HyperRTS.Presentation.Fog
             {
                 for (var i = 0; i < Output.Length; i++)
                 {
-                    Output[i] = (Visible[i] & Mask) != 0 ? (byte)0
-                        : (Explored[i] & Mask) != 0 ? ExploredAlpha
-                        : UnexploredAlpha;
+                    Output[i] = Alpha(i);
                 }
+            }
+
+            private byte Alpha(int i)
+            {
+                if ((Visible[i] & Mask) != 0)
+                {
+                    return 0;
+                }
+
+                return (Explored[i] & Mask) != 0 ? ExploredAlpha : UnexploredAlpha;
             }
         }
     }

@@ -76,6 +76,21 @@ namespace HyperRTS.Editor.Maps.Report
             return pixels;
         }
 
+        private static Color DiscColor(MapPlacement placement)
+        {
+            if (placement.Owner > 0)
+            {
+                return PlayerSlot.Palette[(placement.Owner - 1) % PlayerSlot.Palette.Length];
+            }
+
+            if (placement.Entry.IsResource)
+            {
+                return Resource;
+            }
+
+            return placement.Entry.IsGameplay ? Color.white : SceneryColor;
+        }
+
         private static Texture2D Finish(Color[] pixels, MapLayout layout, MapShapes shapes, List<MapPlacement> placements,
             bool scenery)
         {
@@ -91,9 +106,7 @@ namespace HyperRTS.Editor.Maps.Report
                     continue;
                 }
 
-                var color = placement.Owner > 0 ? PlayerSlot.Palette[(placement.Owner - 1) % PlayerSlot.Palette.Length]
-                    : placement.Entry.IsResource ? Resource : placement.Entry.IsGameplay ? Color.white : SceneryColor;
-                Disc(pixels, layout, placement.Position, Mathf.Max(0.8f, placement.Radius * 0.6f), color);
+                Disc(pixels, layout, placement.Position, Mathf.Max(0.8f, placement.Radius * 0.6f), DiscColor(placement));
             }
 
             var image = new Texture2D(Size, Size, TextureFormat.RGB24, false);

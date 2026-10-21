@@ -23,7 +23,12 @@ namespace HyperRTS.Simulation.Combat
             }
 
             var cosine = math.dot(math.normalize(math.forward(target.Rotation).xz), math.normalize(toOrigin));
-            return cosine >= ArcCosine ? Front : cosine <= -ArcCosine ? Rear : Side;
+            if (cosine >= ArcCosine)
+            {
+                return Front;
+            }
+
+            return cosine <= -ArcCosine ? Rear : Side;
         }
     }
 

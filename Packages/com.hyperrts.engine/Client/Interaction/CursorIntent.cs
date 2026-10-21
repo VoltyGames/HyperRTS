@@ -12,21 +12,17 @@ namespace HyperRTS.Client.Interaction
         public CursorKind Kind;
 
         /// <summary>The scroll cursor pointing along an edge direction from <see cref="ScrollEdge"/>.</summary>
-        public static CursorKind Scroll(int2 edge)
+        public static CursorKind Scroll(int2 edge) => (edge.x, edge.y) switch
         {
-            if (edge.y > 0)
-            {
-                return edge.x < 0 ? CursorKind.ScrollUpLeft : edge.x > 0 ? CursorKind.ScrollUpRight : CursorKind.ScrollUp;
-            }
-
-            if (edge.y < 0)
-            {
-                return edge.x < 0 ? CursorKind.ScrollDownLeft
-                    : edge.x > 0 ? CursorKind.ScrollDownRight : CursorKind.ScrollDown;
-            }
-
-            return edge.x < 0 ? CursorKind.ScrollLeft : CursorKind.ScrollRight;
-        }
+            (< 0, > 0) => CursorKind.ScrollUpLeft,
+            (> 0, > 0) => CursorKind.ScrollUpRight,
+            (_, > 0) => CursorKind.ScrollUp,
+            (< 0, < 0) => CursorKind.ScrollDownLeft,
+            (> 0, < 0) => CursorKind.ScrollDownRight,
+            (_, < 0) => CursorKind.ScrollDown,
+            (< 0, _) => CursorKind.ScrollLeft,
+            _ => CursorKind.ScrollRight,
+        };
 
         /// <summary>The cursor of a targeted command waiting for its click, such as attack-move from a hotkey.</summary>
         public static CursorKind ForPending(CommandType command) => command switch

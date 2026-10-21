@@ -75,7 +75,12 @@ namespace HyperRTS.Presentation.Audio
             {
                 var flying = flights.HasComponent(entity) && !docks.HasEnabled(entity);
                 // A unit with no rig rotor to follow plays its rotor full while flying.
-                var rotor = spins.TryGetComponent(entity, out var spin) ? spin.Amount : flying ? 1f : 0f;
+                var rotor = flying ? 1f : 0f;
+                if (spins.TryGetComponent(entity, out var spin))
+                {
+                    rotor = spin.Amount;
+                }
+
                 var building = sites.HasEnabled(entity);
                 var producing = queues.TryGetBuffer(entity, out var queue) && !queue.IsEmpty;
                 _states.TryGetValue(entity, out var state);

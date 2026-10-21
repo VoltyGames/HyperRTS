@@ -54,7 +54,12 @@ namespace HyperRTS.Simulation.Selection
                 return 0;
             }
 
-            return isUnit ? 2 : isBuilding ? 1 : 0;
+            if (isUnit)
+            {
+                return 2;
+            }
+
+            return isBuilding ? 1 : 0;
         }
     }
 }
