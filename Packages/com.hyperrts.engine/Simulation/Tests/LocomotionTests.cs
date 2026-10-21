@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Entities;
@@ -135,6 +136,23 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(0.5f);
             Assert.AreEqual(0f, Speed(truck), "stopped");
             Assert.Less(math.distance(_world.GetPosition(truck).xz, goal.xz), NavTolerances.Arrive(TruckRadius) + 0.1f);
+        }
+
+        [Test]
+        public void StopOrder_BrakesAtTheBrakingRate_InsteadOfHalting()
+        {
+            var tank = SpawnTank(float3.zero);
+            Order(tank, new float3(0f, 0f, 200f));
+            _world.Run(4f);
+            var cruising = Speed(tank);
+            Assert.Greater(cruising, 7f, "up to speed");
+
+            _world.Command(1, new PlayerCommand { Type = CommandType.Stop, Unit = tank });
+            _world.Run(0.3f);
+            Assert.That(Speed(tank), Is.InRange(cruising - 6f * 0.4f, cruising - 6f * 0.2f), "sheds its braking rate");
+
+            _world.Run(2f);
+            Assert.AreEqual(0f, Speed(tank), "stopped");
         }
 
         [Test]

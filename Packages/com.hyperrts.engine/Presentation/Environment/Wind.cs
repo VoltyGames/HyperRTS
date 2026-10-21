@@ -30,7 +30,7 @@ namespace HyperRTS.Presentation.Environment
         [Min(1f)]
         public float gustSize = 120f;
 
-        [Tooltip("How much trees, grass and crops move in this wind. None keeps them still. Flags still fly.")]
+        [Tooltip("How much trees, grass and crops move in this wind. None keeps them still but for downwash and blasts. Flags still fly.")]
         public WindDetail vegetation = WindDetail.Flutter;
 
         /// <summary>The last published downwind direction on the ground (xz); zero before any Wind has run.</summary>

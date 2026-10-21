@@ -173,10 +173,10 @@ float3 TrunkBend(float3 p, TreeWindSettings s, float3 downwind, float push, Wind
 float3 TreeWindPosition(TreeWindVertex v, TreeWindSettings s, WindFrame frame)
 {
     float3 p = v.positionOS;
+    float3 origin = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
     UNITY_BRANCH
     if (_HyperRTSWindDetail >= 0.5)
     {
-        float3 origin = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
         float3 downwindWS = float3(_HyperRTSWindDirection.x, 0.0, _HyperRTSWindDirection.z);
         float3 downwind = WindSafeNormalize(TransformWorldToObjectDir(downwindWS, false));
         float push = WindPush(origin.xz, frame) * s.scale;
@@ -191,9 +191,9 @@ float3 TreeWindPosition(TreeWindVertex v, TreeWindSettings s, WindFrame frame)
             p = BranchSway(p, v, s, downwind, frame);
         }
         p = TrunkBend(p, s, downwind, push, frame, origin);
-        p = TrunkGust(p, s, origin, frame);
     }
-    return p;
+    // Downwash and blasts bend even vegetation the climate keeps still.
+    return TrunkGust(p, s, origin, frame);
 }
 
 // Plants without wind data sway about their origin with height.
@@ -213,9 +213,8 @@ float3 PlantWindPosition(float3 world, float3 origin, float sway, float speed, f
             float wave = sin(frame.time * 7.0 + dot(world, float3(1.9, 2.3, 1.7)));
             moved += float3(wave, wave * 0.5, -wave) * (flutter * saturate(height * 0.5) * saturate(push * 2.0));
         }
-        moved = GustBend(moved, origin, scale, frame.time);
     }
-    return moved;
+    return GustBend(moved, origin, scale, frame.time);
 }
 
 #endif
