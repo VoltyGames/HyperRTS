@@ -8,8 +8,7 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Shows the <see cref="DamageStage"/> model matching health (others scaled to zero, leaving fog's toggles alone)
-    /// and bursts the stage's rig on entering it.
+    /// Shows the <see cref="DamageStage"/> model matching health and bursts the stage's rig on entering it.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -31,7 +30,7 @@ namespace HyperRTS.Presentation.Destruction
                          .Query<RefRO<Health>, DynamicBuffer<DamageStage>, RefRW<ShownDamageStage>, RefRO<LocalToWorld>>()
                          .WithChangeFilter<Health>())
             {
-                var index = Current(stages, health.ValueRO.Fraction);
+                var index = IModelStage.Pick(stages.AsNativeArray(), health.ValueRO.Fraction);
                 var previous = shown.ValueRO.Index;
                 if (index == previous)
                 {
@@ -39,14 +38,7 @@ namespace HyperRTS.Presentation.Destruction
                 }
 
                 shown.ValueRW.Index = index;
-                for (var i = 0; i < stages.Length; i++)
-                {
-                    if (transforms.TryGetComponent(stages[i].Visual, out var visual))
-                    {
-                        visual.Scale = i == index ? 1f : 0f;
-                        transforms[stages[i].Visual] = visual;
-                    }
-                }
+                IModelStage.Show(stages.AsNativeArray(), index, transforms);
 
                 // The first frame only sets the look; a spawned or loaded wreck doesn't replay its damage.
                 if (previous >= 0 && index > previous && stages[index].Effect.IsValid())
@@ -54,21 +46,6 @@ namespace HyperRTS.Presentation.Destruction
                     _pool.Play(stages[index].Effect.Value, place.ValueRO.Position, place.ValueRO.Rotation);
                 }
             }
-        }
-
-        /// <summary>The most damaged stage whose threshold the health fraction is at or below.</summary>
-        private static int Current(DynamicBuffer<DamageStage> stages, float fraction)
-        {
-            var current = 0;
-            for (var i = 0; i < stages.Length; i++)
-            {
-                if (fraction <= stages[i].Below)
-                {
-                    current = i;
-                }
-            }
-
-            return current;
         }
     }
 }

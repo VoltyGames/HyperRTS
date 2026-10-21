@@ -61,6 +61,24 @@ namespace HyperRTS.Simulation.Navigation
             return !IsBlockOpen(new int2(from.x, to.y), size) || !IsBlockOpen(new int2(to.x, from.y), size);
         }
 
+        /// <summary>
+        /// <see cref="CutsCorner"/> at <see cref="Footprint"/> for a step between two open anchors: each side square
+        /// adds only one cell to the from and to squares, so only those two cells need checking.
+        /// </summary>
+        public bool CutsCornerBetweenOpen(int2 from, int2 to)
+        {
+            var step = to - from;
+            if (step.x == 0 || step.y == 0)
+            {
+                return false;
+            }
+
+            var far = new int2(Footprint - 1);
+            var trailing = from + math.select(far, int2.zero, step > 0);
+            var leading = to + math.select(int2.zero, far, step > 0);
+            return !IsOpen(new int2(trailing.x, leading.y)) || !IsOpen(new int2(leading.x, trailing.y));
+        }
+
         /// <summary>Closest open anchor by ring distance, up to <paramref name="maxRadius"/> rings out.</summary>
         public bool TryFindNearest(int2 anchor, int maxRadius, out int2 found)
         {

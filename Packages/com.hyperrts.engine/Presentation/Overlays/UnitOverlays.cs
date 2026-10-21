@@ -33,11 +33,6 @@ namespace HyperRTS.Presentation.Overlays
             ComponentType.Exclude<FogHidden>(),
             ComponentType.Exclude<Inside>()));
 
-        // Enabled-only, so the loop never asks EntityManager per entity whether it is selected.
-        private readonly LiveQuery _selected = new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<Selected>(),
-            ComponentType.ReadOnly<Health>()));
-
         private readonly LiveQuery _hovered = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<HoveredEntity>()));
 
@@ -54,29 +49,42 @@ namespace HyperRTS.Presentation.Overlays
         public void Gather(MatchView view, OverlayStyle style, HealthBarVisibility visibility, float now)
         {
             var entityManager = view.EntityManager;
-            var query = _living.In(entityManager);
-            using var entities = query.ToEntityArray(Allocator.Temp);
-            using var factions = query.ToComponentDataArray<Faction>(Allocator.Temp);
-            using var healths = query.ToComponentDataArray<Health>(Allocator.Temp);
-            using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
-            using var selection = SelectedSet(entityManager);
+            var handles = new UnitHandles(entityManager);
             _hovered.In(entityManager).TryGetSingleton(out HoveredEntity hovered);
-
-            for (var i = 0; i < entities.Length; i++)
+            using var chunks = _living.In(entityManager).ToArchetypeChunkArray(Allocator.Temp);
+            foreach (var chunk in chunks)
             {
-                var entity = entities[i];
-                var health = healths[i];
-                var focus = new OverlayFocus(selection.Contains(entity), entity == hovered.Value,
-                    health.Current < health.Max);
-                if (focus.ShowsMarker)
+                var entities = chunk.GetNativeArray(handles.Entities);
+                var factions = chunk.GetNativeArray(ref handles.Factions);
+                var healths = chunk.GetNativeArray(ref handles.Healths);
+                var worlds = chunk.GetNativeArray(ref handles.Worlds);
+                for (var i = 0; i < chunk.Count; i++)
                 {
-                    var color = style.RelationColor(view.RelationTo(factions[i].Value));
-                    AddMarker(entityManager, entity, transforms[i], color, focus.Selected, style, now);
-                }
+                    if (handles.IsInside(chunk, i))
+                    {
+                        continue;
+                    }
 
-                if (focus.ShowsBar(visibility))
-                {
-                    AddBar(entityManager, entity, transforms[i].Position, health, style);
+                    var health = healths[i];
+                    var focus = new OverlayFocus(handles.IsSelected(chunk, i), entities[i] == hovered.Value,
+                        health.Current < health.Max);
+                    var showsBar = focus.ShowsBar(visibility);
+                    if (!focus.ShowsMarker && !showsBar)
+                    {
+                        continue;
+                    }
+
+                    var unit = handles.Unit(chunk, i);
+                    if (focus.ShowsMarker)
+                    {
+                        var color = style.RelationColor(view.RelationTo(factions[i].Value));
+                        AddMarker(entityManager, entities[i], unit, worlds[i], color, focus.Selected, style, now);
+                    }
+
+                    if (showsBar)
+                    {
+                        AddBar(entityManager, entities[i], unit, worlds[i].Position, health, style);
+                    }
                 }
             }
 
@@ -95,19 +103,13 @@ namespace HyperRTS.Presentation.Overlays
             _bars.Dispose();
         }
 
-        private void AddMarker(EntityManager entityManager, Entity entity, in LocalToWorld world, Color color,
-            bool selected, OverlayStyle style, float now)
+        private void AddMarker(EntityManager entityManager, Entity entity, in OverlayUnit unit, in LocalToWorld world,
+            Color color, bool selected, OverlayStyle style, float now)
         {
-            var layer = entityManager.HasComponent<NavAgent>(entity)
-                ? entityManager.GetComponentData<NavAgent>(entity).Layer
-                : NavLayer.Ground;
-            var pose = new MarkerPose(world, layer);
-            var footprint = Footprint(entityManager, entity, style.markerMargin);
-            if (footprint.Shape == MarkerShape.Brackets)
-            {
-                pose = pose.AxisAligned();
-            }
-
+            var pose = new MarkerPose(world, unit.Layer);
+            var footprint = unit.IsSquad
+                ? MarkerFootprint.Round(SquadSpread(entityManager, unit), style.markerMargin)
+                : unit.Footprint(style.markerMargin);
             if (selected)
             {
                 var settle = SelectionFades.ScaleAndAlpha(_fades.Elapsed(entity, now), style.selectSeconds,
@@ -123,48 +125,20 @@ namespace HyperRTS.Presentation.Overlays
             _markers.Add(pose, footprint, color, selected, style);
         }
 
-        private void AddBar(EntityManager entityManager, Entity entity, float3 position, in Health health,
-            OverlayStyle style)
+        private void AddBar(EntityManager entityManager, Entity entity, in OverlayUnit unit, float3 position,
+            in Health health, OverlayStyle style)
         {
-            var radius = EntityRadius.Get(entityManager, entity);
-            var rank = entityManager.HasComponent<Experience>(entity)
-                ? entityManager.GetComponentData<Experience>(entity).Rank
-                : 0;
-            var members = 0;
-            var alive = 0;
-            if (entityManager.HasBuffer<SquadFigure>(entity))
-            {
-                members = entityManager.GetBuffer<SquadFigure>(entity, true).Length;
-                alive = SquadFigures.VisibleCount(health, members);
-            }
-
-            var top = EntityExtent.Top(entityManager, entity, position, radius);
-            var bar = new HealthBarData(health, members, alive, rank, radius, style);
+            var alive = unit.IsSquad ? SquadFigures.VisibleCount(health, unit.Members) : 0;
+            var top = EntityExtent.Top(entityManager, entity, position, unit.Radius);
+            var bar = new HealthBarData(health, unit.Members, alive, unit.Rank, unit.Radius, style);
             _bars.Add(new Vector3(position.x, top, position.z), bar, style);
         }
 
-        private static MarkerFootprint Footprint(EntityManager entityManager, Entity entity, float margin)
-        {
-            if (entityManager.HasBuffer<SquadFigure>(entity))
-            {
-                return MarkerFootprint.Round(SquadSpread(entityManager, entity), margin);
-            }
-
-            if (entityManager.HasComponent<NavAgent>(entity))
-            {
-                return MarkerFootprint.Agent(entityManager.GetComponentData<NavAgent>(entity), margin);
-            }
-
-            return entityManager.HasComponent<NavObstacle>(entity)
-                ? MarkerFootprint.Building(entityManager.GetComponentData<NavObstacle>(entity), margin)
-                : MarkerFootprint.Round(EntityRadius.Default, margin);
-        }
-
         // Figures stand round the squad's centre, often past its nav radius, and one circle should take them all in.
-        private static float SquadSpread(EntityManager entityManager, Entity entity)
+        private static float SquadSpread(EntityManager entityManager, in OverlayUnit unit)
         {
-            var spread = EntityRadius.Get(entityManager, entity);
-            foreach (var figure in entityManager.GetBuffer<SquadFigure>(entity, true))
+            var spread = unit.Radius;
+            foreach (var figure in unit.Figures)
             {
                 var offset = entityManager.GetComponentData<LocalTransform>(figure.Figure).Position;
                 spread = math.max(spread, math.length(offset.xz) + FigureRadius);
@@ -173,16 +147,53 @@ namespace HyperRTS.Presentation.Overlays
             return spread;
         }
 
-        private NativeHashSet<Entity> SelectedSet(EntityManager entityManager)
+        // Chunk reads skip the job sync EntityManager.GetComponentData does, so the constructor completes writers first.
+        private struct UnitHandles
         {
-            using var selected = _selected.In(entityManager).ToEntityArray(Allocator.Temp);
-            var set = new NativeHashSet<Entity>(selected.Length, Allocator.Temp);
-            foreach (var entity in selected)
+            public readonly EntityTypeHandle Entities;
+            public ComponentTypeHandle<Faction> Factions;
+            public ComponentTypeHandle<Health> Healths;
+            public ComponentTypeHandle<LocalToWorld> Worlds;
+            private ComponentTypeHandle<Selected> _selected;
+            private ComponentTypeHandle<Inside> _inside;
+            private ComponentTypeHandle<NavAgent> _agents;
+            private ComponentTypeHandle<NavObstacle> _obstacles;
+            private ComponentTypeHandle<Experience> _experience;
+            private BufferTypeHandle<SquadFigure> _figures;
+
+            public UnitHandles(EntityManager entityManager)
             {
-                set.Add(entity);
+                Entities = entityManager.GetEntityTypeHandle();
+                Factions = Read<Faction>(entityManager);
+                Healths = Read<Health>(entityManager);
+                Worlds = Read<LocalToWorld>(entityManager);
+                _selected = Read<Selected>(entityManager);
+                _inside = Read<Inside>(entityManager);
+                _agents = Read<NavAgent>(entityManager);
+                _obstacles = Read<NavObstacle>(entityManager);
+                _experience = Read<Experience>(entityManager);
+                entityManager.CompleteDependencyBeforeRO<SquadFigure>();
+                _figures = entityManager.GetBufferTypeHandle<SquadFigure>(true);
             }
 
-            return set;
+            public bool IsSelected(in ArchetypeChunk chunk, int index) =>
+                chunk.Has(ref _selected) && chunk.IsComponentEnabled(ref _selected, index);
+
+            // The query's Exclude<Inside> keeps whole chunks; an enabled bit has to be checked per entity.
+            public bool IsInside(in ArchetypeChunk chunk, int index) =>
+                chunk.Has(ref _inside) && chunk.IsComponentEnabled(ref _inside, index);
+
+            public OverlayUnit Unit(in ArchetypeChunk chunk, int index) => new(
+                chunk.Has(ref _agents) ? chunk.GetNativeArray(ref _agents)[index] : null,
+                chunk.Has(ref _obstacles) ? chunk.GetNativeArray(ref _obstacles)[index] : null,
+                chunk.Has(ref _experience) ? chunk.GetNativeArray(ref _experience)[index].Rank : 0,
+                chunk.Has(ref _figures) ? chunk.GetBufferAccessor(ref _figures)[index] : default);
+
+            private static ComponentTypeHandle<T> Read<T>(EntityManager entityManager) where T : unmanaged, IComponentData
+            {
+                entityManager.CompleteDependencyBeforeRO<T>();
+                return entityManager.GetComponentTypeHandle<T>(true);
+            }
         }
     }
 }

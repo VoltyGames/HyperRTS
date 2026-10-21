@@ -16,11 +16,8 @@ namespace HyperRTS.Presentation.Environment.Grass
         private const int ThreadGroup = 64;
         private const int MinInstances = 4096;
 
-        private static readonly int JobsId = Shader.PropertyToID("_Jobs");
         private static readonly int SlotsId = Shader.PropertyToID("_Slots");
         private static readonly int SlotCountId = Shader.PropertyToID("_SlotCount");
-        private static readonly int CountersId = Shader.PropertyToID("_Counters");
-        private static readonly int ArgsId = Shader.PropertyToID("_Args");
         private static readonly int InstancesId = Shader.PropertyToID("_Instances");
         private static readonly int GrassInstancesId = Shader.PropertyToID("_GrassInstances");
         private static readonly int GrassOffsetId = Shader.PropertyToID("_GrassOffset");
@@ -31,17 +28,16 @@ namespace HyperRTS.Presentation.Environment.Grass
         private readonly GrassComputeInputs _kernels;
         private readonly Material[] _materials;
         private readonly Mesh[] _meshes;
+        private readonly int[] _firstSlots;
         private readonly int[] _plantOf;
         private readonly float[] _expected;
         private readonly uint[] _table;
         private readonly Bounds[] _bounds;
         private readonly MaterialPropertyBlock[] _blocks;
         private readonly List<GrassJob> _pending = new();
-        private readonly GraphicsBuffer _args;
-        private readonly GraphicsBuffer _counters;
+        private readonly ScatterDraws _draws;
         private readonly GraphicsBuffer _slots;
         private GraphicsBuffer _instances;
-        private GraphicsBuffer _jobs;
         private int _maxCells;
 
         /// <summary>A batch drawing <paramref name="field"/>'s plants with their instanced materials, in plant order.</summary>
@@ -50,18 +46,15 @@ namespace HyperRTS.Presentation.Environment.Grass
             _field = field;
             _kernels = kernels;
             _materials = materials;
-            var count = field.SlotCount;
-            (_meshes, _plantOf) = Slots(field, count);
+            _firstSlots = field.FirstSlots();
+            var count = _firstSlots[field.plants.Count];
+            (_meshes, _plantOf) = Slots(count);
             _expected = new float[count];
             _table = new uint[count * 2];
             _bounds = new Bounds[field.plants.Count * GrassView.Bands];
             _blocks = new MaterialPropertyBlock[count];
-            _counters = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, count), sizeof(uint));
-            _counters.SetData(new uint[Mathf.Max(1, count)]);
+            _draws = new ScatterDraws(_meshes, GrassJob.Stride);
             _slots = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, count), sizeof(uint) * 2);
-            _args = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, Mathf.Max(1, count),
-                GraphicsBuffer.IndirectDrawIndexedArgs.size);
-            _args.SetData(Commands(_meshes));
             _instances = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MinInstances, InstanceStride);
             for (var slot = 0; slot < count; slot++)
             {
@@ -74,38 +67,33 @@ namespace HyperRTS.Presentation.Environment.Grass
         }
 
         /// <summary>Plants the last run drew and the slots that drew any, read back from the GPU for profiling.</summary>
-        public (int Instances, int Draws) Drawn()
-        {
-            var commands = new GraphicsBuffer.IndirectDrawIndexedArgs[_meshes.Length];
-            _args.GetData(commands);
-            var (instances, draws) = (0, 0);
-            foreach (var command in commands)
-            {
-                instances += (int)command.instanceCount;
-                draws += command.instanceCount > 0 ? 1 : 0;
-            }
-
-            return (instances, draws);
-        }
+        public (int Instances, int Draws) Drawn() => _draws.Drawn();
 
         /// <summary>Whether the batch no longer draws the field's plants as they are: other models or materials.</summary>
         public bool Stale()
         {
-            var (meshes, _) = Slots(_field, _field.SlotCount);
-            if (meshes.Length != _meshes.Length || _materials.Length != _field.plants.Count)
+            if (_materials.Length != _field.plants.Count)
             {
                 return true;
             }
 
-            for (var slot = 0; slot < meshes.Length; slot++)
+            // Walks the field's models in slot order without building a new slot table each camera render.
+            var slot = 0;
+            foreach (var plant in _field.plants)
             {
-                if (meshes[slot] != _meshes[slot])
+                foreach (var mesh in plant.meshes)
                 {
-                    return true;
+                    for (var band = 0; band < GrassView.Bands; band++, slot++)
+                    {
+                        if (slot >= _meshes.Length || _meshes[slot] != mesh)
+                        {
+                            return true;
+                        }
+                    }
                 }
             }
 
-            return false;
+            return slot != _meshes.Length;
         }
 
         /// <summary>Forgets the last view's tiles.</summary>
@@ -124,7 +112,7 @@ namespace HyperRTS.Presentation.Environment.Grass
             var plant = _field.plants[job.plant];
             var share = job.Cells * coverage * settings.Density * GrassView.Drawn(range.Near, settings.Distance) /
                         plant.meshes.Count;
-            var first = FirstSlot(job.plant);
+            var first = _firstSlots[job.plant];
             for (var band = 0; band < GrassView.Bands; band++)
             {
                 if (!GrassView.InBand(band, settings.ShadowDistance, range.Near, range.Far))
@@ -155,16 +143,14 @@ namespace HyperRTS.Presentation.Environment.Grass
                 return;
             }
 
-            UploadJobs();
             var compute = _kernels.Compute;
+            _draws.BindGrow(_pending, compute, _kernels.Scatter);
             compute.SetBuffer(_kernels.Scatter, SlotsId, _slots);
-            compute.SetBuffer(_kernels.Scatter, CountersId, _counters);
             compute.SetBuffer(_kernels.Scatter, InstancesId, _instances);
             var groups = Mathf.Max(1, (_maxCells + ThreadGroup - 1) / ThreadGroup);
             compute.Dispatch(_kernels.Scatter, groups, 1, _pending.Count);
             compute.SetBuffer(_kernels.Count, SlotsId, _slots);
-            compute.SetBuffer(_kernels.Count, CountersId, _counters);
-            compute.SetBuffer(_kernels.Count, ArgsId, _args);
+            _draws.BindCount(compute, _kernels.Count);
             compute.SetInt(SlotCountId, _meshes.Length);
             compute.Dispatch(_kernels.Count, 1, 1, 1);
         }
@@ -191,16 +177,14 @@ namespace HyperRTS.Presentation.Environment.Grass
                     shadowCastingMode = band == GrassView.Near ? ShadowCastingMode.On : ShadowCastingMode.Off,
                     motionVectorMode = MotionVectorGenerationMode.Object,
                 };
-                Graphics.RenderMeshIndirect(parameters, _meshes[slot], _args, 1, slot);
+                _draws.Draw(parameters, slot);
             }
         }
 
         public void Dispose()
         {
             _instances.Release();
-            _jobs?.Release();
-            _args.Release();
-            _counters.Release();
+            _draws.Dispose();
             _slots.Release();
         }
 
@@ -231,64 +215,22 @@ namespace HyperRTS.Presentation.Environment.Grass
             _slots.SetData(_table);
         }
 
-        private void UploadJobs()
-        {
-            if (_jobs == null || _jobs.count < _pending.Count)
-            {
-                _jobs?.Release();
-                _jobs = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(64, _pending.Count * 2), GrassJob.Stride);
-            }
-
-            _jobs.SetData(_pending);
-            _kernels.Compute.SetBuffer(_kernels.Scatter, JobsId, _jobs);
-        }
-
-        private int FirstSlot(int plant)
-        {
-            var slot = 0;
-            for (var p = 0; p < plant; p++)
-            {
-                slot += _field.plants[p].meshes.Count * GrassView.Bands;
-            }
-
-            return slot;
-        }
-
         // Slot = the plant's first slot + model * Bands + band, the order of the table, counters and draw commands.
-        private static (Mesh[] Meshes, int[] Plants) Slots(GrassField field, int count)
+        private (Mesh[] Meshes, int[] Plants) Slots(int count)
         {
             var meshes = new Mesh[count];
             var plants = new int[count];
-            var slot = 0;
-            for (var p = 0; p < field.plants.Count; p++)
+            for (var p = 0; p < _field.plants.Count; p++)
             {
-                foreach (var mesh in field.plants[p].meshes)
+                var models = _field.plants[p].meshes;
+                for (var slot = _firstSlots[p]; slot < _firstSlots[p + 1]; slot++)
                 {
-                    for (var band = 0; band < GrassView.Bands; band++, slot++)
-                    {
-                        meshes[slot] = mesh;
-                        plants[slot] = p;
-                    }
+                    meshes[slot] = models[(slot - _firstSlots[p]) / GrassView.Bands];
+                    plants[slot] = p;
                 }
             }
 
             return (meshes, plants);
-        }
-
-        private static GraphicsBuffer.IndirectDrawIndexedArgs[] Commands(Mesh[] meshes)
-        {
-            var commands = new GraphicsBuffer.IndirectDrawIndexedArgs[Mathf.Max(1, meshes.Length)];
-            for (var slot = 0; slot < meshes.Length; slot++)
-            {
-                commands[slot] = new GraphicsBuffer.IndirectDrawIndexedArgs
-                {
-                    indexCountPerInstance = meshes[slot].GetIndexCount(0),
-                    startIndex = meshes[slot].GetIndexStart(0),
-                    baseVertexIndex = meshes[slot].GetBaseVertex(0),
-                };
-            }
-
-            return commands;
         }
     }
 }

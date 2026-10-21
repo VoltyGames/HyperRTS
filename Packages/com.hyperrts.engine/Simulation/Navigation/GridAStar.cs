@@ -123,8 +123,9 @@ namespace HyperRTS.Simulation.Navigation
             }
         }
 
+        // Every expanded anchor was open when pushed, and the start comes from TryFindNearest.
         private readonly bool CanStep(int2 from, int2 to) =>
-            _access.IsAnchorOpen(to) && !_access.CutsCorner(from, to, _access.Footprint);
+            _access.IsAnchorOpen(to) && !_access.CutsCornerBetweenOpen(from, to);
 
         // Octile distance, nudged up slightly so ties favour cells nearer the goal (fewer expansions).
         private readonly float Heuristic(int2 cell)

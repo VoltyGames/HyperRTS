@@ -29,25 +29,40 @@ namespace HyperRTS.Presentation.Environment.Grass
             new(area.xMin + tile.x * TileSize, area.yMin + tile.z * TileSize, TileSize, TileSize);
 
         /// <summary>Draw slots over all plants: one per model and band, in plant order.</summary>
-        public int SlotCount
+        public int SlotCount => FirstSlots()[plants.Count];
+
+        /// <summary>Metres the tallest plant can grow to, thinning's growth included, the height of every tile's culling box.</summary>
+        public float TallestPlant
         {
             get
             {
-                var slots = 0;
-                plants.ForEach(plant => slots += plant.meshes.Count * GrassView.Bands);
-                return slots;
+                // 1.15 is Grass.compute's tallest patch.
+                var height = 0f;
+                plants.ForEach(plant => height = Mathf.Max(height, plant.Tallest * GrassView.MaxGrow * 1.15f));
+                return height;
             }
+        }
+
+        /// <summary>Each plant's first draw slot in plant order, then the slot count: a plant takes one per model and band.</summary>
+        public int[] FirstSlots()
+        {
+            var first = new int[plants.Count + 1];
+            for (var p = 0; p < plants.Count; p++)
+            {
+                first[p + 1] = first[p] + plants[p].meshes.Count * GrassView.Bands;
+            }
+
+            return first;
         }
 
         /// <summary>Every plant as Grass.compute reads it, with its first draw slot.</summary>
         public GrassPlantGpu[] GpuPlants()
         {
+            var first = FirstSlots();
             var gpuPlants = new GrassPlantGpu[plants.Count];
-            var slot = 0;
             for (var i = 0; i < plants.Count; i++)
             {
-                gpuPlants[i] = plants[i].ToGpu(i, slot);
-                slot += plants[i].meshes.Count * GrassView.Bands;
+                gpuPlants[i] = plants[i].ToGpu(i, first[i]);
             }
 
             return gpuPlants;

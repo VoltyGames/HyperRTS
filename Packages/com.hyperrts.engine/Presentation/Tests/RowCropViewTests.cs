@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests
 {
-    /// <summary>Crop tile culling maths: box distances and the distance bands a tile can hold.</summary>
+    /// <summary>The distance bands a crop tile can hold.</summary>
     public class RowCropViewTests
     {
         private RowCrop _crop;
@@ -19,15 +19,6 @@ namespace HyperRTS.Presentation.Tests
 
         [TearDown]
         public void TearDown() => Object.DestroyImmediate(_crop);
-
-        [Test]
-        public void Distances_AreToTheNearestAndFarthestPointOfTheBox()
-        {
-            var bounds = RowCropView.TileBounds(new Rect(100f, 0f, 16f, 16f), 0f, 0f, 2f);
-            var (near, far) = RowCropView.Distances(bounds, new Vector3(0f, 1f, 8f));
-            Assert.AreEqual(100f - RowCropView.Overhang, near, 1e-4f);
-            Assert.Greater(far, 116f);
-        }
 
         [TestCase(0f, 30f, true, false, false, TestName = "Near tile: full meshes only")]
         [TestCase(30f, 50f, true, true, false, TestName = "Across the first switch: full and simple")]

@@ -57,12 +57,18 @@ namespace HyperRTS.Simulation.Cues
         }
 
         public static void AddMotionDust<TWriter>(ref TWriter writer, SurfaceEffects effects, float3 socket,
-            float fullSpeed)
+            float minSpeed, float fullSpeed)
             where TWriter : struct, IEntityWriter
         {
             if (effects != null)
             {
-                writer.Add(new MotionDust { Effects = effects, Socket = socket, FullSpeed = fullSpeed });
+                writer.Add(new MotionDust
+                {
+                    Effects = effects,
+                    Socket = socket,
+                    MinSpeed = minSpeed,
+                    FullSpeed = fullSpeed,
+                });
             }
         }
 

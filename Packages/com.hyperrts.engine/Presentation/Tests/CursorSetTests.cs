@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Tests
         public void SetUp()
         {
             _set = ScriptableObject.CreateInstance<CursorSet>();
-            _set.animations = new[] { Animation(CursorKind.Default, true), Animation(CursorKind.Move, false) };
+            _set.animations = new[] { Animation(CursorKind.Default, true), Animation(CursorKind.Select, false) };
         }
 
         [TearDown]
@@ -23,14 +23,14 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void UnmappedKind_FallsBackToDefault()
         {
-            Assert.AreEqual(CursorKind.Move, _set.Animation(CursorKind.Move).kind);
+            Assert.AreEqual(CursorKind.Select, _set.Animation(CursorKind.Select).kind);
             Assert.AreEqual(CursorKind.Default, _set.Animation(CursorKind.Attack).kind);
         }
 
         [Test]
         public void SetWithoutDefault_Throws()
         {
-            _set.animations = new[] { Animation(CursorKind.Move, true) };
+            _set.animations = new[] { Animation(CursorKind.Select, true) };
 
             Assert.Throws<MissingReferenceException>(() => _set.Animation(CursorKind.Attack));
         }
@@ -39,7 +39,7 @@ namespace HyperRTS.Presentation.Tests
         public void LoopingCursor_Wraps_AndOneShotHoldsItsLastFrame()
         {
             Assert.AreEqual(2, _set.Animation(CursorKind.Default).FrameAt(1.25f, 4));
-            Assert.AreEqual(3, _set.Animation(CursorKind.Move).FrameAt(1.25f, 4));
+            Assert.AreEqual(3, _set.Animation(CursorKind.Select).FrameAt(1.25f, 4));
         }
 
         [TestCase(1f, 32)]

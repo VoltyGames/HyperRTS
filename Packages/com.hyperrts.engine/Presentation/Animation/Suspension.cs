@@ -4,7 +4,7 @@ namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
     /// A ground vehicle's body on its springs: it squats as it speeds up, dives as it brakes, rolls out of turns and
-    /// rocks back from its own shots. Pitch is nose up and roll right side up, in radians.
+    /// rocks back from its own shots. Aircraft have a zero one. Pitch is nose up and roll right side up, in radians.
     /// </summary>
     public struct Suspension
     {

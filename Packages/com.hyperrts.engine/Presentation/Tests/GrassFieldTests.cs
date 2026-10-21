@@ -45,6 +45,7 @@ namespace HyperRTS.Presentation.Tests
             Assert.AreEqual(0, gpuPlants[0].firstSlot);
             Assert.AreEqual(2 * GrassView.Bands, gpuPlants[1].firstSlot);
             Assert.AreEqual(3, gpuPlants[1].variants);
+            CollectionAssert.AreEqual(new[] { 0, 2 * GrassView.Bands, 5 * GrassView.Bands }, _field.FirstSlots());
             Assert.AreNotEqual(gpuPlants[0].seed, gpuPlants[1].seed);
         }
 

@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.Cues
 
         [Tooltip("Metres above the ground from which no dust rises; it thickens toward the ground.")]
         [Min(1f)]
-        public float height = 25f;
+        public float height = RotorWash.DefaultHeight;
 
         public static void AddRotorWash<TWriter>(ref TWriter writer, SurfaceEffects effects, float height)
             where TWriter : struct, IEntityWriter =>

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -9,8 +10,6 @@ namespace HyperRTS.Presentation.Destruction
     /// </summary>
     public struct FallClock : IComponentData, IEnableableComponent
     {
-        public const float Gravity = 9.81f;
-
         /// <summary>Lean in radians a snapped trunk already has when it starts to go.</summary>
         public const float StartLean = 0.1f;
 
@@ -70,7 +69,7 @@ namespace HyperRTS.Presentation.Destruction
         public bool Advance(float height, float deltaTime)
         {
             var wasLanded = Landed;
-            var tipping = 1.5f * Gravity / height;
+            var tipping = 1.5f * FallingRemains.Gravity / height;
             Lag += deltaTime;
             while (Lag >= Step)
             {

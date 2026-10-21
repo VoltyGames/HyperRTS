@@ -52,10 +52,10 @@ namespace HyperRTS.Presentation.Environment.Grass
         public bool Stale => _plants.count != Mathf.Max(1, _field.plants.Count) || _coverage != _field.coverage || _heights.Stale;
 
         /// <summary>Binds one camera's view, the quality knobs and the current ground picture for its dispatches.</summary>
-        public void SetCamera(Vector3 camera, float density, float distance, float shadowDistance)
+        public void SetCamera(Vector3 camera, GrassSettings settings)
         {
-            Compute.SetVector(CameraId, new Vector4(camera.x, camera.y, camera.z, distance));
-            Compute.SetVector(ShapingId, new Vector4(density, shadowDistance, GrassView.KeepEdge, 0f));
+            Compute.SetVector(CameraId, new Vector4(camera.x, camera.y, camera.z, settings.Distance));
+            Compute.SetVector(ShapingId, new Vector4(settings.Density, settings.ShadowDistance, GrassView.KeepEdge, 0f));
             var ground = Shader.GetGlobalTexture(GroundColor.PictureId);
             var rect = Shader.GetGlobalVector(GroundColor.RectId);
             var on = ground != null && rect.z > 0f;

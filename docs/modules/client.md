@@ -77,8 +77,8 @@ The minimap shows the baked map image, local fog, blips and the camera view.
 4. A pending command shows its own cursor: attack-move and patrol AttackMove, rally Rally, unload Unload,
    abilities and powers Target.
 5. Otherwise it asks `OrderResolver` what a right-click on the hovered entity gives each selected unit, so game
-   `SmartOrderRule`s count too. Attack, Capture, Enter (Garrison), Repair, Gather (Supply), Build and Move map to
-   cursors, game orders to Target, and the highest wins in a mixed selection.
+   `SmartOrderRule`s count too. Attack, Capture, Enter (Garrison), Repair, Gather and Build map to cursors,
+   game orders to Target, and the highest wins in a mixed selection. A plain move keeps Default.
 6. With no unit acting, a selectable entity shows Select, ground with only producers selected shows Rally, and
    anything else Default.
 
@@ -91,7 +91,7 @@ shows the world's intent through a display the game hands it. Without one the OS
 
 Selected and hovered entities get a ground marker draped on the terrain heightmap by `GroundMarker.shader`: a
 rounded rectangle round a vehicle's hull, a circle round infantry and squads (wide enough for their figures) and
-corner brackets round a building's box. Selection draws a full line with a soft inner fill and settles in from a
+corner brackets round a building's box, turned with it like its `NavBox`. Selection draws a full line with a soft inner fill and settles in from a
 larger, faded start over `selectSeconds`; hover draws a thinner, translucent line. Colours follow the relation:
 own, ally, enemy, neutral. Markers read `LocalToWorld`, the pose the model is drawn with, so they stay on moving
 units, and they are depth tested, so hulls and plants hide what lies behind them. Ships and bridge traffic keep the
@@ -275,9 +275,9 @@ the crater's slope so the sun lights the bowl, darkens and dampens the bowl's so
 Foliage leans plants along the travel direction, and water reads `SampleWake`. The quality setting picks Full, Low
 at half resolution, or Off, which frees the textures.
 
-`LocalGustSystem` also sends up to 8 radial gusts to `Wind.hlsl`: downwash under a seen rotorcraft within 25 m of
-the ground, and the blast of each seen impact with a splash of 1 m or more, which spreads out and relaxes over about
-a second. Plants lean away from them and tree trunks bend as in wind. Interaction quality Off turns them off.
+`LocalGustSystem` also sends up to 8 radial gusts to `Wind.hlsl`: downwash under a seen rotorcraft within its rotor
+wash height of the ground (25 m without one), and the blast of each seen impact with a splash of 1 m or more, which
+spreads out and relaxes over about a second. Plants lean away from them and tree trunks bend as in wind. Interaction quality Off turns them off.
 
 ### Row crops
 

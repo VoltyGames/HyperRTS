@@ -11,8 +11,6 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>The shader's <c>HYPERRTS_MAX_GUSTS</c>.</summary>
         public const int Max = 8;
 
-        /// <summary>Rotors this high or higher leave the grass alone.</summary>
-        public const float DownwashHeight = 25f;
         public const float DownwashRadius = 8f;
         public const float DownwashSpread = 0.4f;
         public const float DownwashPush = 1f;
@@ -40,10 +38,13 @@ namespace HyperRTS.Presentation.Environment
 
         public readonly float4 Packed => new(Center, Radius, Push);
 
-        /// <summary>Rotors spinning at <paramref name="spin"/> (0 to 1), <paramref name="height"/> metres above the ground.</summary>
-        public static LocalGust Downwash(float2 center, float height, float spin)
+        /// <summary>
+        /// Rotors spinning at <paramref name="spin"/> (0 to 1), <paramref name="height"/> metres above the ground;
+        /// at <paramref name="reach"/> or higher they leave the grass alone.
+        /// </summary>
+        public static LocalGust Downwash(float2 center, float height, float spin, float reach)
         {
-            var near = math.saturate(1f - height / DownwashHeight);
+            var near = math.saturate(1f - height / reach);
             return new LocalGust
             {
                 Center = center,

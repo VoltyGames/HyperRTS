@@ -41,6 +41,17 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         public Rect TileRect(RowCropTile tile) =>
             new(area.xMin + tile.x * TileSize, area.yMin + tile.z * TileSize, TileSize, TileSize);
 
+        /// <summary>Metres the tallest crop can grow to, the height of every tile's culling box.</summary>
+        public float TallestPlant
+        {
+            get
+            {
+                var height = 0f;
+                crops.ForEach(crop => height = Mathf.Max(height, crop.height * Mathf.Max(1f, crop.growthVariation.y)));
+                return height;
+            }
+        }
+
         /// <summary>Problems that keep the fields from drawing, one per line. Empty when ready.</summary>
         public IReadOnlyList<string> Problems()
         {

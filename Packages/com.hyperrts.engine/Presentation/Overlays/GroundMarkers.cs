@@ -14,10 +14,6 @@ namespace HyperRTS.Presentation.Overlays
         // Keeps the shader's corner radius non-zero so its sign can carry the bracket flag.
         private const float MinCorner = 0.01f;
 
-        private static readonly int HeightId = Shader.PropertyToID("_Height");
-        private static readonly int HeightAreaId = Shader.PropertyToID("_HeightArea");
-        private static readonly int HeightScaleId = Shader.PropertyToID("_HeightScale");
-
         private readonly InstanceDataBatch _batch;
         private readonly Material _material;
         private Terrain _terrain;
@@ -67,13 +63,10 @@ namespace HyperRTS.Presentation.Overlays
             }
         }
 
-        // Without a terrain the ground is flat at y = 0, as TerrainHeight has it.
         private void BindFlatGround()
         {
             _terrain = null;
-            _material.SetTexture(HeightId, Texture2D.blackTexture);
-            _material.SetVector(HeightAreaId, new Vector4(0f, 0f, 1f, 1f));
-            _material.SetVector(HeightScaleId, new Vector4(0f, 0f, 1f, 0f));
+            TerrainHeightInput.BindFlat(_material);
         }
     }
 }

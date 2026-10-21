@@ -25,7 +25,8 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>Remains falling to the ground under gravity; removed when they land.</summary>
     public struct FallingRemains : IComponentData
     {
-        private const float Gravity = 9.81f;
+        /// <summary>m/s squared, shared by everything shown falling.</summary>
+        public const float Gravity = 9.81f;
 
         public float Speed;
 

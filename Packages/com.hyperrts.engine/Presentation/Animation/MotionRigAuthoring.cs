@@ -94,7 +94,8 @@ namespace HyperRTS.Presentation.Animation
                 yield return $"Tilt root '{tiltRoot.name}' must be a child of '{name}'.";
             }
 
-            if (springFrequency <= 0f || springDamping <= 0f)
+            var sprung = !TryGetComponent<FlightAuthoring>(out _);
+            if (sprung && (springFrequency <= 0f || springDamping <= 0f))
             {
                 yield return "'springFrequency' and 'springDamping' must be above zero.";
             }
@@ -200,7 +201,8 @@ namespace HyperRTS.Presentation.Animation
                     TiltRest = tilt.localRotation,
                     Footprint = authoring.footprint,
                     Aircraft = aircraft,
-                    Suspension = authoring.Suspension(),
+                    // Aircraft lean instead, so their zero springs never sway or kick.
+                    Suspension = aircraft ? default : authoring.Suspension(),
                 };
             }
         }

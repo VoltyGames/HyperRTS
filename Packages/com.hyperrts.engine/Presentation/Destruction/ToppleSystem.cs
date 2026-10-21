@@ -60,6 +60,9 @@ namespace HyperRTS.Presentation.Destruction
             _pose.Update(ref state);
             var deltaTime = SystemAPI.Time.DeltaTime;
             using var entities = _falling.ToEntityArray(Allocator.Temp);
+            // Filled when the first fall starts this frame; Temp memory goes with the frame.
+            var rigs = default(NativeArray<MotionRig>);
+            var places = default(NativeArray<LocalToWorld>);
             foreach (var entity in entities)
             {
                 var toppleFall = SystemAPI.GetComponent<ToppleFall>(entity);
@@ -73,7 +76,14 @@ namespace HyperRTS.Presentation.Destruction
                         continue;
                     }
 
-                    clock.ValueRW = FallClock.Pushed(toppleFall.Height, CrushSpeed(_pose.Position(entity)));
+                    if (!rigs.IsCreated)
+                    {
+                        rigs = _crushers.ToComponentDataArray<MotionRig>(Allocator.Temp);
+                        places = _crushers.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
+                    }
+
+                    var push = CrushSpeed(rigs, places, _pose.Position(entity));
+                    clock.ValueRW = FallClock.Pushed(toppleFall.Height, push);
                 }
 
                 clock.ValueRW.Advance(toppleFall.Height, deltaTime);
@@ -91,10 +101,8 @@ namespace HyperRTS.Presentation.Destruction
         }
 
         /// <summary>Speed in m/s of the fastest crusher at the stump, or 0 if none is there.</summary>
-        private float CrushSpeed(float3 stump)
+        private static float CrushSpeed(NativeArray<MotionRig> rigs, NativeArray<LocalToWorld> places, float3 stump)
         {
-            using var rigs = _crushers.ToComponentDataArray<MotionRig>(Allocator.Temp);
-            using var places = _crushers.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             var speed = 0f;
             for (var i = 0; i < rigs.Length; i++)
             {

@@ -7,16 +7,18 @@ namespace HyperRTS.Presentation.Tests
     /// <summary>Rotor downwash and blast gusts through the grass, and infantry footsteps.</summary>
     public class LocalGustTests
     {
+        private const float Reach = 25f;
+
         [Test]
         public void Downwash_IsStrongestLow_AndGoneAboveItsHeight()
         {
-            var low = LocalGust.Downwash(float2.zero, 3f, 1f);
-            var high = LocalGust.Downwash(float2.zero, 20f, 1f);
+            var low = LocalGust.Downwash(float2.zero, 3f, 1f, Reach);
+            var high = LocalGust.Downwash(float2.zero, 20f, 1f, Reach);
 
             Assert.Greater(low.Push, high.Push);
             Assert.Greater(high.Radius, low.Radius, "spreads wider from higher up");
-            Assert.AreEqual(0f, LocalGust.Downwash(float2.zero, LocalGust.DownwashHeight, 1f).Push);
-            Assert.AreEqual(0f, LocalGust.Downwash(float2.zero, 3f, 0f).Push, "stopped rotors");
+            Assert.AreEqual(0f, LocalGust.Downwash(float2.zero, Reach, 1f, Reach).Push);
+            Assert.AreEqual(0f, LocalGust.Downwash(float2.zero, 3f, 0f, Reach).Push, "stopped rotors");
         }
 
         [Test]

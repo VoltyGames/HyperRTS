@@ -7,6 +7,8 @@ namespace HyperRTS.Client.Interaction
     /// <summary>Written by the cursor intent system each frame, read by the cursor display.</summary>
     public struct CursorIntent : IComponentData
     {
+        public const int HighestPrecedence = 8;
+
         public CursorKind Kind;
 
         /// <summary>The scroll cursor pointing along an edge direction from <see cref="ScrollEdge"/>.</summary>
@@ -29,10 +31,10 @@ namespace HyperRTS.Client.Interaction
         /// <summary>The cursor of a targeted command waiting for its click, such as attack-move from a hotkey.</summary>
         public static CursorKind ForPending(CommandType command) => command switch
         {
-            CommandType.Move => CursorKind.Move,
+            CommandType.Move => CursorKind.Default,
             CommandType.AttackMove or CommandType.Patrol => CursorKind.AttackMove,
             CommandType.Attack => CursorKind.Attack,
-            CommandType.Gather => CursorKind.Supply,
+            CommandType.Gather => CursorKind.Gather,
             CommandType.Build => CursorKind.Build,
             CommandType.SetRallyPoint => CursorKind.Rally,
             CommandType.Repair => CursorKind.Repair,
@@ -46,10 +48,10 @@ namespace HyperRTS.Client.Interaction
         public static CursorKind ForOrder(OrderType order) => order switch
         {
             OrderType.None => CursorKind.Invalid,
-            OrderType.Move => CursorKind.Move,
+            OrderType.Move => CursorKind.Default,
             OrderType.AttackMove or OrderType.Patrol => CursorKind.AttackMove,
             OrderType.Attack => CursorKind.Attack,
-            OrderType.Gather => CursorKind.Supply,
+            OrderType.Gather => CursorKind.Gather,
             OrderType.Build => CursorKind.Build,
             OrderType.Repair => CursorKind.Repair,
             OrderType.Capture => CursorKind.Capture,
@@ -60,15 +62,14 @@ namespace HyperRTS.Client.Interaction
         /// <summary>When units of a mixed selection would act differently, the cursor of the highest one shows.</summary>
         public static int Precedence(CursorKind kind) => kind switch
         {
-            CursorKind.Attack => 8,
+            CursorKind.Attack => HighestPrecedence,
             CursorKind.Capture => 7,
             CursorKind.Garrison => 6,
             CursorKind.Repair => 5,
-            CursorKind.Supply => 4,
+            CursorKind.Gather => 4,
             CursorKind.Build => 3,
             CursorKind.Target => 2,
             CursorKind.AttackMove => 1,
-            CursorKind.Move => 0,
             _ => -1,
         };
     }

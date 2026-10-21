@@ -34,11 +34,9 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
         private readonly CameraStates<RowCropCameraState> _cameras = new();
         private Func<RowCropCameraState> _newState;
-        private readonly List<int> _visible = new();
-        private readonly Plane[] _planes = new Plane[6];
         private RowCropCompute _kernels;
         private RowCropComputeInputs _inputs;
-        private Bounds[] _tileBounds;
+        private ScatterTiles _tiles;
         private bool _ready;
 #if UNITY_EDITOR
         private bool _dirty;
@@ -93,7 +91,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
             _kernels = new RowCropCompute(compute);
             _inputs = new RowCropComputeInputs(_kernels, fields, terrain);
-            _tileBounds = RowCropTileBounds.Measure(fields, terrain);
+            _tiles = new ScatterTiles(fields.tiles.Count, t => fields.TileRect(fields.tiles[t]), fields.TallestPlant, terrain);
             _newState ??= NewState;
             _ready = true;
         }
@@ -125,8 +123,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
             var state = _cameras.Get(camera, _newState);
             var position = camera.transform.position;
-            FindVisible(camera, position);
-            if (!state.Holds(position, Density, Distance, _visible))
+            _tiles.FindVisible(camera, position, Distance);
+            if (!state.Holds(position, Density, Distance, _tiles.Visible))
             {
                 Grow(state, position);
             }
@@ -146,7 +144,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                 batch.Generate();
             }
 
-            state.Remember(position, Density, Distance, _visible);
+            state.Remember(position, Density, Distance, _tiles.Visible);
         }
 
 #if UNITY_EDITOR
@@ -154,7 +152,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private bool Stale()
         {
             var lost = fields == null || terrain == null || compute == null;
-            if (lost || _inputs.Stale || _tileBounds.Length != fields.tiles.Count)
+            if (lost || _inputs.Stale || _tiles.Count != fields.tiles.Count)
             {
                 return true;
             }
@@ -171,31 +169,14 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         }
 #endif
 
-        /// <summary>Indices of the tiles in a camera's view and draw distance, in tile order.</summary>
-        private void FindVisible(Camera camera, Vector3 position)
-        {
-            _visible.Clear();
-            GeometryUtility.CalculateFrustumPlanes(camera, _planes);
-            for (var t = 0; t < _tileBounds.Length; t++)
-            {
-                var bounds = _tileBounds[t];
-                var near = RowCropView.Distances(bounds, position).Near;
-                var inView = near < Distance && GeometryUtility.TestPlanesAABB(_planes, bounds);
-                if (inView)
-                {
-                    _visible.Add(t);
-                }
-            }
-        }
-
         /// <summary>Hands every visible tile to the batches of the crops growing on it.</summary>
         private void Queue(List<RowCropBatch> batches, Vector3 position)
         {
             batches.ForEach(batch => batch.Begin());
-            foreach (var t in _visible)
+            foreach (var t in _tiles.Visible)
             {
-                var bounds = _tileBounds[t];
-                var (near, far) = RowCropView.Distances(bounds, position);
+                var bounds = _tiles[t];
+                var (near, far) = ScatterTiles.Distances(bounds, position);
                 var tile = fields.tiles[t];
                 var rect = fields.TileRect(tile);
                 for (var f = tile.firstField; f < tile.firstField + tile.fieldCount; f++)

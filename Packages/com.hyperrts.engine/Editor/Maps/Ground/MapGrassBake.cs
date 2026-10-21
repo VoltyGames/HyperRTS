@@ -32,8 +32,6 @@ namespace HyperRTS.Editor.Maps.Ground
         public void Set(int plant, int x, int z, float coverage) =>
             Layers[plant][z * Resolution + x] = (byte)Mathf.RoundToInt(Mathf.Clamp01(coverage) * 255f);
 
-        public float Coverage(int plant, int x, int z) => Layers[plant][z * Resolution + x] / 255f;
-
         /// <summary>Every <see cref="GrassField.TileSize"/> tile that grows any plant, with each plant's mean coverage there.</summary>
         public (List<GrassTile> Tiles, List<GrassTilePlant> Plants) Tiles()
         {

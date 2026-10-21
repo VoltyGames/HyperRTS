@@ -104,11 +104,14 @@ namespace HyperRTS.Presentation.Environment
         {
             // No terrain is a flat world at height 0 (TerrainHeight's default).
             SystemAPI.TryGetSingleton(out TerrainHeight terrain);
-            foreach (var (spin, place) in SystemAPI.Query<RefRO<RotorSpin>, RefRO<LocalToWorld>>()
-                         .WithNone<FogHidden, DisableRendering>())
+            var washes = SystemAPI.GetComponentLookup<RotorWash>(true);
+            foreach (var (spin, place, entity) in SystemAPI.Query<RefRO<RotorSpin>, RefRO<LocalToWorld>>()
+                         .WithNone<FogHidden, DisableRendering>().WithEntityAccess())
             {
                 var position = place.ValueRO.Position;
-                var gust = LocalGust.Downwash(position.xz, position.y - terrain.Height(position.xz), spin.ValueRO.Amount);
+                var reach = washes.TryGetComponent(entity, out var wash) ? wash.Height : RotorWash.DefaultHeight;
+                var height = position.y - terrain.Height(position.xz);
+                var gust = LocalGust.Downwash(position.xz, height, spin.ValueRO.Amount, reach);
                 if (gust.Push > 0f && count < LocalGust.Max)
                 {
                     _packed[count++] = gust.Packed;

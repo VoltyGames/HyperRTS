@@ -14,6 +14,8 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 | `NavAreaAuthoring` | Marks a box as water, blocked, or a bridge deck with water below |
 
 - Flooded cells become water and steep ones blocked.
+- Obstacles restamp the grid only when their footprints change. A building that just changes archetype, such as
+  gaining or losing a fog tag, keeps the grid and every path as they are.
 - Pathfinding is Burst A* with smoothing, at most 48 searches a frame.
 - A clearance field gives each cell, per layer, the side of the largest open square above it. A unit needs a
   square as wide as its diameter rounded up to whole cells, so a 3.7 m tank on 2 m cells never paths through a

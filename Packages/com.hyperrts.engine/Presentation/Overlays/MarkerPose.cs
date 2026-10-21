@@ -31,16 +31,6 @@ namespace HyperRTS.Presentation.Overlays
             Floor = layer == NavLayer.Air ? NoFloor : Position.y - FloorDrop;
         }
 
-        private MarkerPose(float3 position, quaternion facing, float floor)
-        {
-            Position = position;
-            Facing = facing;
-            Floor = floor;
-        }
-
-        /// <summary>Building footprints are world-aligned boxes whatever way the model faces.</summary>
-        public MarkerPose AxisAligned() => new(Position, quaternion.identity, Floor);
-
         /// <summary>Unit grid scaled to the footprint at the floor height; the shader drapes it on the ground.</summary>
         public Matrix4x4 Matrix(in MarkerFootprint footprint) => Matrix4x4.TRS(new Vector3(Position.x, Floor, Position.z), Facing,
             new Vector3(footprint.HalfSize.x * 2f, 1f, footprint.HalfSize.y * 2f));

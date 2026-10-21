@@ -12,9 +12,10 @@ namespace HyperRTS.Simulation.Navigation
     /// <summary>
     /// Builds the <see cref="NavGrid"/> from <see cref="MapSettings"/> (terrain, slope and, when flooding, water
     /// level give each cell its base surface), rebuilding it when the map or <see cref="TerrainHeight"/> changes. Then
-    /// re-stamps every <see cref="NavArea"/> and <see cref="NavObstacle"/> over it whenever any are added, removed or
-    /// change archetype, and rebuilds the clearance field. Destructible scenery is stamped on its own layer, which
-    /// changes without bumping the version. None of them are assumed to move.
+    /// re-stamps every <see cref="NavArea"/> and <see cref="NavObstacle"/> over it whenever areas are added, removed or
+    /// change archetype, or obstacle footprints differ after such a change, and rebuilds the clearance field.
+    /// Destructible scenery is stamped on its own layer, which changes without bumping the version. None of them are
+    /// assumed to move.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]
@@ -28,6 +29,7 @@ namespace HyperRTS.Simulation.Navigation
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
         private int _builtObstacleVersion;
+        private ulong _builtObstacleSignature;
         private int _builtAreaVersion;
         private int _builtSceneryVersion;
 
@@ -68,7 +70,8 @@ namespace HyperRTS.Simulation.Navigation
                 BuildGrid(ref state, map, terrain);
             }
 
-            var obstaclesChanged = OrderChanged<NavObstacle>(ref state, ref _builtObstacleVersion);
+            var obstaclesChanged = OrderChanged<NavObstacle>(ref state, ref _builtObstacleVersion) &&
+                SignatureChanged(ref state);
             var restamp = OrderChanged<NavArea>(ref state, ref _builtAreaVersion) | obstaclesChanged | rebuilt;
             var restampScenery = OrderChanged<Destructible>(ref state, ref _builtSceneryVersion) | rebuilt;
             if (!restamp && !restampScenery)
@@ -97,19 +100,10 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Whether the grid was built from this map and terrain; a new map or late-streamed terrain rebuilds it.</summary>
         private readonly bool SameGround(in MapSettings map, in TerrainHeight terrain)
         {
-            if (!terrain.Blob.Equals(_builtTerrain.Blob))
-            {
-                return false;
-            }
-
             var built = _builtMap;
-            if (!map.SameArea(built) || map.NavCellSize != built.NavCellSize)
-            {
-                return false;
-            }
-
+            var sameArea = map.SameArea(built) && map.NavCellSize == built.NavCellSize;
             var sameWater = map.WaterLevel == built.WaterLevel && map.FloodTerrain == built.FloodTerrain;
-            return sameWater && map.MaxSlope == built.MaxSlope;
+            return terrain.Blob.Equals(_builtTerrain.Blob) && sameArea && sameWater && map.MaxSlope == built.MaxSlope;
         }
 
         /// <summary>True when entities with <typeparamref name="T"/> were added, removed or changed archetype since the last stamp.</summary>
@@ -118,6 +112,21 @@ namespace HyperRTS.Simulation.Navigation
             var version = state.EntityManager.GetComponentOrderVersion<T>();
             var changed = version != built;
             built = version;
+            return changed;
+        }
+
+        /// <summary>Whether obstacle footprints differ from the last stamp, so fog tags alone cost no rebuild.</summary>
+        private bool SignatureChanged(ref SystemState state)
+        {
+            // An order-independent sum, since an archetype move reorders the chunks.
+            var signature = (ulong)_obstacles.CalculateEntityCount();
+            foreach (var (obstacle, transform) in SystemAPI.Query<RefRO<NavObstacle>, RefRO<LocalTransform>>())
+            {
+                signature += obstacle.ValueRO.Hash(transform.ValueRO);
+            }
+
+            var changed = signature != _builtObstacleSignature;
+            _builtObstacleSignature = signature;
             return changed;
         }
 

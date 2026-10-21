@@ -6,13 +6,13 @@ namespace HyperRTS.Simulation.Tests
     /// <summary>Motion dust follows the driven speed, not crowd pushes or creeping.</summary>
     public class MotionDustTests
     {
-        private static readonly MotionDust Dust = new() { FullSpeed = 8f };
+        private static readonly MotionDust Dust = new() { MinSpeed = 1.5f, FullSpeed = 8f };
 
         [Test]
         public void StandingOrCreeping_RaisesNoDust()
         {
             Assert.AreEqual(0f, Dust.Strength(0f));
-            Assert.AreEqual(0f, Dust.Strength(MotionDust.StillSpeed));
+            Assert.AreEqual(0f, Dust.Strength(Dust.MinSpeed));
         }
 
         [Test]

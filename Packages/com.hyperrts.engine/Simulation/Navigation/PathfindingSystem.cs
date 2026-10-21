@@ -133,9 +133,7 @@ namespace HyperRTS.Simulation.Navigation
                     Entity = entity,
                     Start = start,
                     Goal = goal,
-                    Radius = agent.Radius,
-                    Layer = agent.Layer,
-                    SceneryCrushLimit = agent.SceneryCrushLimit,
+                    Agent = agent,
                     Repair = repair,
                     Frame = path.RequestFrame,
                 });
@@ -213,7 +211,7 @@ namespace HyperRTS.Simulation.Navigation
             public void Execute(int index)
             {
                 var request = Requests[index];
-                var access = new NavAccess(Grid, request.Layer, request.Radius, request.SceneryCrushLimit);
+                var access = request.Agent.Access(Grid);
                 var waypoints = WaypointLookup[request.Entity];
                 if (request.Repair)
                 {

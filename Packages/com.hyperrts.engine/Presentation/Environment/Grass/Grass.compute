@@ -62,23 +62,12 @@ struct GrassSlot // GrassBatch's slot table: where a (plant, variant, band) writ
     uint capacity;
 };
 
-struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes
-{
-    uint indexCount;
-    uint instanceCount;
-    uint startIndex;
-    int baseVertex;
-    uint startInstance;
-};
-
 StructuredBuffer<GrassPlantGpu> _Plants;
 StructuredBuffer<GrassJob> _Jobs;
 StructuredBuffer<GrassSlot> _Slots;
 Texture2DArray<float> _Coverage;
 Texture2D<float4> _Ground;
 
-RWStructuredBuffer<uint> _Counters; // plants grown per slot this run
-RWStructuredBuffer<DrawArgs> _Args;
 RWStructuredBuffer<GrassInstance> _Instances;
 
 float4 _CoverageArea; // x min, z min, 1 / width, 1 / depth
@@ -86,14 +75,7 @@ float4 _GroundArea;   // the same for the ground picture; zero without one
 float4 _Camera;       // xyz position, w draw distance
 float4 _Thinning;     // GrassView: thinning start share, keep at the draw distance, most growth, fade share
 float4 _Shaping;      // x quality density, y shadow distance, z keep edge
-float _TileSize;
 uint _SlotCount;
-
-bool Owns(float2 tileMin, float2 spot)
-{
-    float2 tileMax = tileMin + _TileSize;
-    return all(spot >= tileMin) && all(spot < tileMax);
-}
 
 float Coverage(float2 xz, int layer)
 {
@@ -149,10 +131,9 @@ float Keep(float range)
 // Writes at the slot's next index; plants past its capacity are dropped and Count clamps the draw to it.
 void Store(uint slot, GrassInstance grown)
 {
-    uint index;
-    InterlockedAdd(_Counters[slot], 1u, index);
     GrassSlot target = _Slots[slot];
-    if (index < target.capacity)
+    uint index;
+    if (Claim(slot, target.capacity, index))
     {
         _Instances[target.offset + index] = grown;
     }
@@ -216,13 +197,11 @@ void Scatter(uint3 id : SV_DispatchThreadID)
     Store((uint)plant.firstSlot + variant * BANDS + band, grown);
 }
 
-// Draws each slot's grown plants up to its capacity, then zeroes the counters for the next run.
 [numthreads(1, 1, 1)]
 void Count(uint3 id : SV_DispatchThreadID)
 {
     for (uint slot = 0u; slot < _SlotCount; slot++)
     {
-        _Args[slot].instanceCount = min(_Counters[slot], _Slots[slot].capacity);
-        _Counters[slot] = 0u;
+        CloseSlot(slot, _Slots[slot].capacity);
     }
 }

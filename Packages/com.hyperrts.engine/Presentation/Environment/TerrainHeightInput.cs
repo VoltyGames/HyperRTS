@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>Binds a terrain's heightmap to a scatter kernel or a material, as Scatter.hlsl reads it.</summary>
+    /// <summary>Binds a terrain's heightmap to a scatter kernel or a material, as TerrainHeight.hlsl reads it.</summary>
     internal readonly struct TerrainHeightInput
     {
         // Unity heightmaps store 32766 as full height in a 16-bit unorm texture.
@@ -34,6 +34,14 @@ namespace HyperRTS.Presentation.Environment
             material.SetTexture(HeightId, _heights);
             material.SetVector(HeightAreaId, Area(terrain));
             material.SetVector(HeightScaleId, Scale(terrain));
+        }
+
+        /// <summary>Flat ground at y = 0 on a material, for when there is no terrain.</summary>
+        public static void BindFlat(Material material)
+        {
+            material.SetTexture(HeightId, Texture2D.blackTexture);
+            material.SetVector(HeightAreaId, new Vector4(0f, 0f, 1f, 1f));
+            material.SetVector(HeightScaleId, new Vector4(0f, 0f, 1f, 0f));
         }
 
         /// <summary>Whether a map rebuild replaced the heightmap bound to the kernel.</summary>

@@ -157,6 +157,8 @@ at its end, the rest grow up to 1.5 times to cover, and thinned plants shrink be
 grass shadow distance, cast shadows. Draws are `Graphics.RenderMeshIndirect`, one per plant model and band, on a copy
 of the plant's material on `Hidden/HyperRTS/FoliageGrass`, the Foliage passes with an instanced path, so wind and
 trampling work as on any Foliage plant. A camera rescatters only when it moves half a metre or the quality changes.
+Grass and row crops share one scatter layer: `ScatterTiles` culls tiles, `ScatterDraws` holds the indirect draws and
+`Scatter.hlsl` the kernels' hashes, noise and slot counting.
 | Road ribbons | A mesh just above the ground, drawn by `HyperRTS/Road`, with faded free ends |
 | Weather | A `WeatherSet` holding every climate weather, with the spec's weather active |
 

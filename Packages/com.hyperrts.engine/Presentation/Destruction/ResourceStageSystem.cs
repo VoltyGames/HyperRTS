@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using Unity.Transforms;
@@ -6,8 +7,7 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Shows the <see cref="ResourceStage"/> model matching how much of a resource node is left (others scaled to
-    /// zero, leaving fog's toggles alone).
+    /// Shows the <see cref="ResourceStage"/> model matching how much of a resource node is left.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -23,21 +23,14 @@ namespace HyperRTS.Presentation.Destruction
                          .Query<RefRO<ResourceNode>, DynamicBuffer<ResourceStage>, RefRW<ShownResourceStage>>()
                          .WithChangeFilter<ResourceNode>())
             {
-                var index = ResourceStage.Pick(stages.AsNativeArray(), node.ValueRO.Remaining);
+                var index = IModelStage.Pick(stages.AsNativeArray(), node.ValueRO.Remaining);
                 if (index == shown.ValueRO.Index)
                 {
                     continue;
                 }
 
                 shown.ValueRW.Index = index;
-                for (var i = 0; i < stages.Length; i++)
-                {
-                    if (transforms.TryGetComponent(stages[i].Visual, out var visual))
-                    {
-                        visual.Scale = i == index ? 1f : 0f;
-                        transforms[stages[i].Visual] = visual;
-                    }
-                }
+                IModelStage.Show(stages.AsNativeArray(), index, transforms);
             }
         }
     }

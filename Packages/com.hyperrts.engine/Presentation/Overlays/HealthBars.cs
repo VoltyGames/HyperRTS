@@ -22,6 +22,8 @@ namespace HyperRTS.Presentation.Overlays
 
         private readonly InstanceDataBatch _batch;
         private readonly Material _material;
+        private OverlayStyle _appliedStyle;
+        private float _appliedPixelScale;
 
         public HealthBars(Mesh billboard, Material material)
         {
@@ -47,7 +49,21 @@ namespace HyperRTS.Presentation.Overlays
                 return;
             }
 
-            _material.SetFloat(PixelScaleId, PixelScale(Screen.height, uiScale));
+            var pixelScale = PixelScale(Screen.height, uiScale);
+            if (style != _appliedStyle || pixelScale != _appliedPixelScale)
+            {
+                Apply(style, pixelScale);
+            }
+
+            _batch.Draw(_material, layer);
+        }
+
+        public void Dispose() => Object.Destroy(_material);
+
+        // Style values are read once per style; edits to the asset in Play mode show after a resolution or UI scale change.
+        private void Apply(OverlayStyle style, float pixelScale)
+        {
+            _material.SetFloat(PixelScaleId, pixelScale);
             _material.SetFloat(OffsetId, style.barOffset);
             _material.SetColor(BackId, style.healthBack);
             _material.SetColor(HighId, style.healthHigh);
@@ -55,9 +71,8 @@ namespace HyperRTS.Presentation.Overlays
             _material.SetColor(LowId, style.healthLow);
             _material.SetColor(RankPipId, style.rankPip);
             _material.SetColor(MemberPipId, style.memberPip);
-            _batch.Draw(_material, layer);
+            _appliedStyle = style;
+            _appliedPixelScale = pixelScale;
         }
-
-        public void Dispose() => Object.Destroy(_material);
     }
 }

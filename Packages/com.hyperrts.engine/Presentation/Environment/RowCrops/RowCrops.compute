@@ -1,6 +1,6 @@
 // Grows row crop plants for RowCropBatch: Plant runs one thread per lattice spot of a job, dispatched as
 // (spots / 64, 1, jobs) once per model variant; Count then writes the draw args and clears the counters.
-// Lattice maths match RowCropSpots.cs; hashes and noise are in Scatter.hlsl.
+// Lattice maths match RowCropSpots.cs; hashes, noise and slot counting are in Scatter.hlsl.
 #pragma kernel Plant
 #pragma kernel Count
 
@@ -46,22 +46,11 @@ struct RowCropJob // RowCropJob.cs, 28 bytes
     int2 count; // rows and plants from first
 };
 
-struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes
-{
-    uint indexCount;
-    uint instanceCount;
-    uint startIndex;
-    int baseVertex;
-    uint startInstance;
-};
-
 StructuredBuffer<RowCropField> _Fields;
 StructuredBuffer<RowCropJob> _Jobs;
 StructuredBuffer<uint> _Capacities; // instances each slot's buffer holds
 Texture2D<float4> _FieldIds;
 
-RWStructuredBuffer<uint> _Counters; // plants grown per slot this run
-RWStructuredBuffer<DrawArgs> _Args;
 RWStructuredBuffer<RowCropInstance> _Full;
 RWStructuredBuffer<RowCropInstance> _Simple;
 RWStructuredBuffer<RowCropInstance> _Card;
@@ -74,16 +63,9 @@ float4 _Size;        // min scale, max scale, lod0 distance, lod1 distance
 float4 _Variety;     // lean, edge lean (radians), wander metres, 1 / wander length
 float4 _Patch;       // min and max patch scale, 1 / patch size
 float4 _Variant;     // variant grown this dispatch, variant count, its first slot
-float _TileSize;
 float _FacesRow;     // 1: plants face along their row; 0: they keep the model's heading (+Z north)
 float _Density;
 uint _Slots;
-
-bool Owns(float2 tileMin, float2 spot)
-{
-    float2 tileMax = tileMin + _TileSize;
-    return all(spot >= tileMin) && all(spot < tileMax);
-}
 
 uint FieldAt(float2 spot)
 {
@@ -121,8 +103,7 @@ void Store(uint lod, RowCropInstance grown)
 {
     uint slot = (uint)_Variant.z + lod;
     uint index;
-    InterlockedAdd(_Counters[slot], 1u, index);
-    if (index >= _Capacities[slot])
+    if (!Claim(slot, _Capacities[slot], index))
     {
         return;
     }
@@ -212,13 +193,11 @@ void Plant(uint3 id : SV_DispatchThreadID)
     Store(lod, grown);
 }
 
-// Draws each slot's grown plants up to its capacity, then zeroes the counters for the next run.
 [numthreads(1, 1, 1)]
 void Count(uint3 id : SV_DispatchThreadID)
 {
     for (uint slot = 0u; slot < _Slots; slot++)
     {
-        _Args[slot].instanceCount = min(_Counters[slot], _Capacities[slot]);
-        _Counters[slot] = 0u;
+        CloseSlot(slot, _Capacities[slot]);
     }
 }

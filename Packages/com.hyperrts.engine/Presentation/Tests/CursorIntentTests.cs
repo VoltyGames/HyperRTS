@@ -33,11 +33,21 @@ namespace HyperRTS.Presentation.Tests
         public void TearDown() => _world.Dispose();
 
         [Test]
-        public void Tank_OnGround_Moves()
+        public void Tank_OnGround_ShowsDefault()
         {
             Select(Tank(float3.zero));
 
-            Assert.AreEqual(CursorKind.Move, Decide(Entity.Null));
+            Assert.AreEqual(CursorKind.Default, Decide(Entity.Null));
+        }
+
+        [Test]
+        public void TankAndProducer_OnGround_ShowsDefaultNotRally()
+        {
+            Select(Tank(float3.zero));
+            var barracks = _world.SpawnBuilding(1, new float3(10f, 0f, 0f), Footprint);
+            Select(_world.MakeProducer(barracks, new float3(10f, 0f, 4f)));
+
+            Assert.AreEqual(CursorKind.Default, Decide(Entity.Null));
         }
 
         [Test]
@@ -68,12 +78,12 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
-        public void Truck_OnResourceNode_Supplies()
+        public void Truck_OnResourceNode_Gathers()
         {
             Select(_world.MakeHarvester(_world.SpawnUnit(1, float3.zero), 10, 1f));
             var node = _world.SpawnNode(new float3(6f, 0f, 0f), _world.CreateSupplies(), 500);
 
-            Assert.AreEqual(CursorKind.Supply, Decide(node));
+            Assert.AreEqual(CursorKind.Gather, Decide(node));
         }
 
         [Test]

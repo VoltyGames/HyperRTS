@@ -77,7 +77,7 @@ namespace HyperRTS.Presentation.Animation
                 {
                     var part = parts[i];
                     var transform = Transforms[part.Part];
-                    if (Pose(ref part, ref transform, poses, rolled, running) && !rig.Aircraft)
+                    if (Pose(ref part, ref transform, poses, rolled, running))
                     {
                         rig.Suspension.Recoil(poses[part.Weapon].YawRadians);
                     }
@@ -104,10 +104,7 @@ namespace HyperRTS.Presentation.Animation
                     ? MotionRig.LeanTilt(acceleration, forward, right)
                     : rig.GroundTilt(Terrain, position, forward, right);
                 rig.SmoothTilt(target, DeltaTime);
-                if (!rig.Aircraft)
-                {
-                    rig.Suspension.Spring(rig.Suspension.Target(acceleration, forward, right), DeltaTime);
-                }
+                rig.Suspension.Spring(rig.Suspension.Target(acceleration, forward, right), DeltaTime);
 
                 var transform = Transforms[rig.TiltRoot];
                 transform.Rotation = rig.TiltedRotation();

@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Selection;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -12,6 +13,11 @@ namespace HyperRTS.Simulation.Tests
     public class NavigationTests
     {
         private TestWorld _world;
+
+        // Stands in for fog tags, which move enemy buildings between archetypes without changing their footprints.
+        private struct ArchetypeTag : IComponentData
+        {
+        }
 
         [SetUp]
         public void SetUp() => _world = new TestWorld();
@@ -107,6 +113,31 @@ namespace HyperRTS.Simulation.Tests
             Assert.Greater(after.Version, before.Version);
             Assert.IsFalse(after.IsWalkable(site), "buildings under construction block too");
             Assert.IsTrue(after.IsWalkable(site + new float3(2.5f, 0f, 0f)));
+        }
+
+        [Test]
+        public void Grid_KeepsItsVersion_WhenABuildingOnlyChangesArchetype_AndRebuildsWhenItMoves()
+        {
+            _world.CreateMatch(1, 2);
+            var site = new float3(20f, 0f, 20f);
+            var building = _world.SpawnBuilding(2, site, new float2(4f, 4f));
+            _world.Tick();
+            var version = _world.Grid().Version;
+
+            _world.EntityManager.AddComponent<ArchetypeTag>(building);
+            _world.Tick();
+            Assert.AreEqual(version, _world.Grid().Version, "same footprints, so paths stay valid");
+
+            var moved = site + new float3(10f, 0f, 0f);
+            var transform = _world.EntityManager.GetComponentData<LocalTransform>(building);
+            _world.EntityManager.SetComponentData(building, transform.WithPosition(moved));
+            _world.EntityManager.RemoveComponent<ArchetypeTag>(building);
+            _world.Tick();
+
+            var grid = _world.Grid();
+            Assert.Greater(grid.Version, version);
+            Assert.IsTrue(grid.IsWalkable(site));
+            Assert.IsFalse(grid.IsWalkable(moved));
         }
 
         [Test]

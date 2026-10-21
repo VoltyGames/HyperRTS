@@ -42,13 +42,5 @@ namespace HyperRTS.Presentation.Cursors
             _shown = texture;
             Cursor.SetCursor(texture, drawn.hotspot, CursorMode.Auto);
         }
-
-        /// <summary>Hands the pointer back to the operating system.</summary>
-        public void Release()
-        {
-            _animation = null;
-            _shown = null;
-            Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
-        }
     }
 }

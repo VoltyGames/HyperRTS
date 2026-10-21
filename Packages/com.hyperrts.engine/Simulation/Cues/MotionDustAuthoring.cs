@@ -18,6 +18,10 @@ namespace HyperRTS.Simulation.Cues
         [Tooltip("Child transform the dust rises from (behind the rear wheels or tracks); none is the root.")]
         public Transform socket;
 
+        [Tooltip("Below this speed in m/s a vehicle creeping or jostled in a crowd raises none.")]
+        [Min(0f)]
+        public float minSpeed = 1.5f;
+
         [Tooltip("Speed in m/s at which the dust streams at full rate.")]
         [Min(0.1f)]
         public float fullSpeed = 8f;
@@ -34,7 +38,8 @@ namespace HyperRTS.Simulation.Cues
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 var socket = EffectSetup.Socket(authoring.transform, authoring.socket);
-                EffectSetup.AddMotionDust(ref writer, authoring.effects, socket, authoring.fullSpeed);
+                EffectSetup.AddMotionDust(ref writer, authoring.effects, socket, authoring.minSpeed,
+                    authoring.fullSpeed);
             }
         }
     }

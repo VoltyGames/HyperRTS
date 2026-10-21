@@ -57,6 +57,51 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void Unit_AircraftTakesItsAgentsLayerAndRadius()
+        {
+            var unit = new OverlayUnit(new NavAgent { Radius = 2f, Layer = NavLayer.Air }, null, 3, default);
+
+            Assert.AreEqual(NavLayer.Air, unit.Layer);
+            Assert.AreEqual(2f, unit.Radius, 1e-4f);
+            Assert.AreEqual(2f + Margin, unit.Footprint(Margin).HalfSize.x, 1e-4f);
+            Assert.IsFalse(unit.IsSquad);
+            Assert.AreEqual(0, unit.Members);
+        }
+
+        [Test]
+        public void Unit_BuildingIsGroundWithBracketsAndHalfItsLongestSide()
+        {
+            var unit = new OverlayUnit(null, new NavObstacle { Size = new float2(12f, 8f) }, 0, default);
+
+            Assert.AreEqual(NavLayer.Ground, unit.Layer);
+            Assert.AreEqual(6f, unit.Radius, 1e-4f);
+            Assert.AreEqual(MarkerShape.Brackets, unit.Footprint(Margin).Shape);
+        }
+
+        [Test]
+        public void Unit_WithNeitherAgentNorObstacleIsDefaultCircle()
+        {
+            var unit = new OverlayUnit(null, null, 0, default);
+
+            Assert.AreEqual(EntityRadius.Default, unit.Radius, 1e-4f);
+            Assert.AreEqual(MarkerShape.Outline, unit.Footprint(Margin).Shape);
+        }
+
+        [Test]
+        public void Pose_TurnedBuildingTurnsItsBracketsLikeItsNavBox()
+        {
+            var turn = quaternion.RotateY(math.PI / 2f);
+            var world = new LocalToWorld { Value = float4x4.TRS(float3.zero, turn, 1f) };
+
+            var pose = new MarkerPose(world, NavLayer.Ground);
+            var box = new NavBox(float3.zero, turn, new float2(12f, 8f));
+            var right = math.mul(pose.Facing, math.right());
+
+            Assert.AreEqual(box.Right.x, right.x, 1e-3f);
+            Assert.AreEqual(box.Right.y, right.z, 1e-3f);
+        }
+
+        [Test]
         public void Pose_ReadsTheDrawnTransformAndFlattensItsFacing()
         {
             var tilted = quaternion.Euler(0.3f, math.PI / 2f, 0f);

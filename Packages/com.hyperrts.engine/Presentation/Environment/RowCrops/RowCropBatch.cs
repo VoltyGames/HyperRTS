@@ -16,10 +16,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         // Headroom over an even split, as the hash never splits plants between variants exactly evenly.
         private const float VariantSlack = 1.15f;
 
-        private static readonly int JobsId = Shader.PropertyToID("_Jobs");
-        private static readonly int CountersId = Shader.PropertyToID("_Counters");
         private static readonly int CapacitiesId = Shader.PropertyToID("_Capacities");
-        private static readonly int ArgsId = Shader.PropertyToID("_Args");
         private static readonly int SlotsId = Shader.PropertyToID("_Slots");
         private static readonly int SowingId = Shader.PropertyToID("_Sowing");
         private static readonly int FacesRowId = Shader.PropertyToID("_FacesRow");
@@ -42,11 +39,9 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private readonly int[] _needed = new int[RowCropView.Lods];
         private readonly Bounds[] _bands = new Bounds[RowCropView.Lods];
         private readonly List<RowCropJob> _pending = new();
-        private readonly GraphicsBuffer _args;
-        private readonly GraphicsBuffer _counters;
+        private readonly ScatterDraws _draws;
         private readonly GraphicsBuffer _capacityBuffer;
         private readonly int _plantBound;
-        private GraphicsBuffer _jobs;
         private int _maxSpots;
         private bool _resized;
 
@@ -60,12 +55,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             _capacities = new uint[_meshes.Length];
             _blocks = new MaterialPropertyBlock[_meshes.Length];
             _plantBound = RowCropSpots.PlantBound(RowCropFields.TileSize, crop.rowSpacing, crop.plantSpacing);
-            _counters = new GraphicsBuffer(GraphicsBuffer.Target.Structured, _meshes.Length, sizeof(uint));
-            _counters.SetData(new uint[_meshes.Length]);
+            _draws = new ScatterDraws(_meshes, RowCropJob.Stride);
             _capacityBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, _meshes.Length, sizeof(uint));
-            _args = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, _meshes.Length,
-                GraphicsBuffer.IndirectDrawIndexedArgs.size);
-            _args.SetData(Commands(_meshes));
             for (var slot = 0; slot < _meshes.Length; slot++)
             {
                 _blocks[slot] = new MaterialPropertyBlock();
@@ -132,10 +123,9 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                 return;
             }
 
-            UploadJobs();
-            Reserve();
             var compute = _kernels.Compute;
-            compute.SetBuffer(_kernels.Plant, CountersId, _counters);
+            _draws.BindGrow(_pending, compute, _kernels.Plant);
+            Reserve();
             compute.SetBuffer(_kernels.Plant, CapacitiesId, _capacityBuffer);
             SetSowing(compute);
             for (var variant = 0; variant < _variants; variant++)
@@ -143,9 +133,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                 Dispatch(compute, variant);
             }
 
-            compute.SetBuffer(_kernels.Count, CountersId, _counters);
             compute.SetBuffer(_kernels.Count, CapacitiesId, _capacityBuffer);
-            compute.SetBuffer(_kernels.Count, ArgsId, _args);
+            _draws.BindCount(compute, _kernels.Count);
             compute.SetInt(SlotsId, _meshes.Length);
             compute.Dispatch(_kernels.Count, 1, 1, 1);
         }
@@ -173,7 +162,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                     shadowCastingMode = card && !_crop.cardShadows ? ShadowCastingMode.Off : ShadowCastingMode.On,
                     motionVectorMode = MotionVectorGenerationMode.Object,
                 };
-                Graphics.RenderMeshIndirect(parameters, _meshes[slot], _args, 1, slot);
+                _draws.Draw(parameters, slot);
             }
         }
 
@@ -184,9 +173,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                 buffer?.Release();
             }
 
-            _jobs?.Release();
-            _args.Release();
-            _counters.Release();
+            _draws.Dispose();
             _capacityBuffer.Release();
         }
 
@@ -234,18 +221,6 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             compute.Dispatch(_kernels.Plant, groups, 1, _pending.Count);
         }
 
-        private void UploadJobs()
-        {
-            if (_jobs == null || _jobs.count < _pending.Count)
-            {
-                _jobs?.Release();
-                _jobs = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(64, _pending.Count * 2), RowCropJob.Stride);
-            }
-
-            _jobs.SetData(_pending);
-            _kernels.Compute.SetBuffer(_kernels.Plant, JobsId, _jobs);
-        }
-
         private void Resize(int slot, int capacity)
         {
             _instances[slot]?.Release();
@@ -265,22 +240,6 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             }
 
             return meshes;
-        }
-
-        private static GraphicsBuffer.IndirectDrawIndexedArgs[] Commands(Mesh[] meshes)
-        {
-            var commands = new GraphicsBuffer.IndirectDrawIndexedArgs[meshes.Length];
-            for (var slot = 0; slot < meshes.Length; slot++)
-            {
-                commands[slot] = new GraphicsBuffer.IndirectDrawIndexedArgs
-                {
-                    indexCountPerInstance = meshes[slot].GetIndexCount(0),
-                    startIndex = meshes[slot].GetIndexStart(0),
-                    baseVertexIndex = meshes[slot].GetBaseVertex(0),
-                };
-            }
-
-            return commands;
         }
     }
 }

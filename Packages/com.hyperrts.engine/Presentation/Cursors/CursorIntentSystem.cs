@@ -79,7 +79,7 @@ namespace HyperRTS.Presentation.Cursors
         {
             _selectable.Update(ref state);
             var selectable = _selectable.HasComponent(hovered);
-            if (!_localPlayer.TryGetSingleton(out Player local) || !SystemAPI.HasSingleton<FactionRelations>())
+            if (_selected.IsEmpty || !_localPlayer.TryGetSingleton(out Player local) || !SystemAPI.HasSingleton<FactionRelations>())
             {
                 return selectable ? CursorKind.Select : CursorKind.Default;
             }
@@ -90,6 +90,7 @@ namespace HyperRTS.Presentation.Cursors
             var relations = SystemAPI.GetSingleton<FactionRelations>();
             var best = CursorKind.Default;
             var producers = false;
+            var moves = false;
             using var selected = _selected.ToEntityArray(Allocator.Temp);
             foreach (var entity in selected)
             {
@@ -104,11 +105,17 @@ namespace HyperRTS.Presentation.Cursors
                     continue;
                 }
 
-                var kind = CursorIntent.ForOrder(_resolver.Resolve(CommandType.Smart, entity, hovered, relations).Type);
+                var order = _resolver.Resolve(CommandType.Smart, entity, hovered, relations).Type;
+                moves |= order == OrderType.Move;
+                var kind = CursorIntent.ForOrder(order);
                 best = CursorIntent.Precedence(kind) > CursorIntent.Precedence(best) ? kind : best;
+                if (CursorIntent.Precedence(best) == CursorIntent.HighestPrecedence)
+                {
+                    break;
+                }
             }
 
-            return Settle(best, producers, selectable);
+            return Settle(best, producers, moves, selectable);
         }
 
         private bool TakesOrders(ref SystemState state, Entity entity)
@@ -122,9 +129,9 @@ namespace HyperRTS.Presentation.Cursors
         }
 
         // Clicking a selectable entity that no unit acts on selects it, and producers alone set their rally point.
-        private static CursorKind Settle(CursorKind best, bool producers, bool selectable)
+        private static CursorKind Settle(CursorKind best, bool producers, bool moves, bool selectable)
         {
-            var acts = CursorIntent.Precedence(best) > CursorIntent.Precedence(CursorKind.Move);
+            var acts = best != CursorKind.Default;
             if (acts)
             {
                 return best;
@@ -135,12 +142,8 @@ namespace HyperRTS.Presentation.Cursors
                 return CursorKind.Select;
             }
 
-            if (best == CursorKind.Move)
-            {
-                return best;
-            }
-
-            return producers ? CursorKind.Rally : CursorKind.Default;
+            var setsRally = producers && !moves;
+            return setsRally ? CursorKind.Rally : CursorKind.Default;
         }
     }
 }

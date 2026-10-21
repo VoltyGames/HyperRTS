@@ -68,7 +68,7 @@ namespace HyperRTS.Presentation.Rendering
             _second.Clear();
         }
 
-        // A block per chunk: arrays fix their length on first set, and each draw keeps its own values.
+        // A block per chunk keeps each draw's values; arrays fix their length on first set, so each upload is full length.
         private MaterialPropertyBlock Block(int chunk)
         {
             while (_blocks.Count <= chunk)

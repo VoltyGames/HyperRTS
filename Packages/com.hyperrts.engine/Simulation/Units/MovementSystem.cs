@@ -255,7 +255,7 @@ namespace HyperRTS.Simulation.Units
                 out PathLeg leg)
             {
                 var reach = driven ? locomotion.LookAhead(speed, agent.Radius) : 0f;
-                leg = Steer(position, agent, maxStep, reach, goal, waypoints);
+                leg = Steer(position, agent, maxStep, reach, goal, waypoints, driven);
                 return driven
                     ? !locomotion.HasArrived(leg, position.xz, facing, agent.Radius)
                     : !leg.HasArrived(agent.Radius);
@@ -263,7 +263,7 @@ namespace HyperRTS.Simulation.Units
 
             /// <summary>Skips the corners it may cut and returns the leg to the next one.</summary>
             private readonly PathLeg Steer(float3 position, in NavAgent agent, float maxStep, float reach, float3 goal,
-                DynamicBuffer<PathWaypoint> waypoints)
+                DynamicBuffer<PathWaypoint> waypoints, bool driven)
             {
                 while (waypoints.Length > 1 && CanSkipCorner(position, agent, maxStep, reach, waypoints))
                 {
@@ -271,7 +271,7 @@ namespace HyperRTS.Simulation.Units
                 }
 
                 // No corners yet (search pending): head straight for the goal meanwhile.
-                return PathLeg.Along(position.xz, goal.xz, waypoints);
+                return PathLeg.Along(position.xz, goal.xz, waypoints, driven);
             }
 
             // A crowd can't all touch the same corner and a vehicle cuts it, so skip it once the next is in sight.

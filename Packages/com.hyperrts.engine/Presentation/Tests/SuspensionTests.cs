@@ -81,6 +81,17 @@ namespace HyperRTS.Presentation.Tests
             Assert.IsFalse(math.any(math.isnan(springs.Rate)));
         }
 
+        [Test]
+        public void ZeroSprings_NeverSwayOrKick()
+        {
+            var aircraft = default(Suspension);
+            aircraft.Recoil(0f);
+            aircraft.Spring(aircraft.Target(math.forward() * 5f, math.forward(), math.right()), Frame);
+
+            Assert.AreEqual(float2.zero, aircraft.Sway);
+            Assert.AreEqual(float2.zero, aircraft.Rate);
+        }
+
         private static Suspension Springs() => new()
         {
             Frequency = 1.5f,

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat;
 using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Destruction
@@ -5,8 +6,6 @@ namespace HyperRTS.Presentation.Destruction
     /// <summary>One thrown debris piece: a ballistic flight that bounces off the terrain, lies flat, then shrinks away.</summary>
     public struct DebrisPiece
     {
-        public const float Gravity = 9.81f;
-
         /// <summary>Share of the fall speed kept on a bounce, and of the slide and spin.</summary>
         public const float Bounce = 0.35f;
         public const float Friction = 0.55f;
@@ -48,7 +47,7 @@ namespace HyperRTS.Presentation.Destruction
                 return;
             }
 
-            Velocity.y -= Gravity * deltaTime;
+            Velocity.y -= FallingRemains.Gravity * deltaTime;
             Position += Velocity * deltaTime;
             var turn = math.length(Spin) * deltaTime;
             if (turn > 0f)

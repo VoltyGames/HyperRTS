@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Presentation.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -39,12 +38,10 @@ namespace HyperRTS.Presentation.Environment.Grass
         public Terrain terrain;
 
         private readonly CameraStates<GrassCameraState> _cameras = new();
-        private readonly List<int> _visible = new();
-        private readonly Plane[] _planes = new Plane[6];
         private Func<GrassCameraState> _newState;
         private GrassComputeInputs _kernels;
         private Material[] _materials;
-        private Bounds[] _tileBounds;
+        private ScatterTiles _tiles;
         private bool _ready;
 #if UNITY_EDITOR
         private bool _dirty;
@@ -114,7 +111,7 @@ namespace HyperRTS.Presentation.Environment.Grass
 
             _kernels = new GrassComputeInputs(compute, field, terrain);
             _materials = field.plants.ConvertAll(Instanced).ToArray();
-            _tileBounds = TileBounds();
+            _tiles = new ScatterTiles(field.tiles.Count, t => field.TileRect(field.tiles[t]), field.TallestPlant, terrain);
             _newState ??= NewState;
             _ready = true;
         }
@@ -159,13 +156,13 @@ namespace HyperRTS.Presentation.Environment.Grass
             var state = _cameras.Get(camera, _newState);
             var position = camera.transform.position;
             var settings = Settings;
-            FindVisible(camera, position);
-            if (!state.Holds(position, settings, _visible))
+            _tiles.FindVisible(camera, position, settings.Distance);
+            if (!state.Holds(position, settings, _tiles.Visible))
             {
                 Queue(state.Batch, position, settings);
-                _kernels.SetCamera(position, settings.Density, settings.Distance, settings.ShadowDistance);
+                _kernels.SetCamera(position, settings);
                 state.Batch.Generate();
-                state.Remember(position, settings, _visible);
+                state.Remember(position, settings, _tiles.Visible);
             }
 
             state.Batch.Draw(gameObject.layer, camera);
@@ -176,7 +173,7 @@ namespace HyperRTS.Presentation.Environment.Grass
         private bool Stale()
         {
             var lost = field == null || terrain == null || compute == null || shader == null;
-            if (lost || _kernels.Stale || _tileBounds.Length != field.tiles.Count)
+            if (lost || _kernels.Stale || _tiles.Count != field.tiles.Count)
             {
                 return true;
             }
@@ -193,46 +190,14 @@ namespace HyperRTS.Presentation.Environment.Grass
         }
 #endif
 
-        /// <summary>Each tile's box, from the ground under it to the tallest plant grown to cover for thinned ones.</summary>
-        private Bounds[] TileBounds()
-        {
-            var height = 0f;
-            field.plants.ForEach(plant => height = Mathf.Max(height, plant.Tallest * GrassView.MaxGrow * 1.15f));
-            var bounds = new Bounds[field.tiles.Count];
-            for (var t = 0; t < bounds.Length; t++)
-            {
-                var rect = field.TileRect(field.tiles[t]);
-                var (low, high) = RowCropTileBounds.GroundRange(rect, terrain);
-                bounds[t] = RowCropView.TileBounds(rect, low, high, height);
-            }
-
-            return bounds;
-        }
-
-        /// <summary>Indices of the tiles in a camera's view and draw distance, in tile order.</summary>
-        private void FindVisible(Camera camera, Vector3 position)
-        {
-            _visible.Clear();
-            GeometryUtility.CalculateFrustumPlanes(camera, _planes);
-            for (var t = 0; t < _tileBounds.Length; t++)
-            {
-                var bounds = _tileBounds[t];
-                var near = RowCropView.Distances(bounds, position).Near;
-                if (near < Distance && GeometryUtility.TestPlanesAABB(_planes, bounds))
-                {
-                    _visible.Add(t);
-                }
-            }
-        }
-
         /// <summary>Hands every visible tile's plants to the batch.</summary>
         private void Queue(GrassBatch batch, Vector3 position, GrassSettings settings)
         {
             batch.Begin();
-            foreach (var t in _visible)
+            foreach (var t in _tiles.Visible)
             {
-                var bounds = _tileBounds[t];
-                var range = RowCropView.Distances(bounds, position);
+                var bounds = _tiles[t];
+                var range = ScatterTiles.Distances(bounds, position);
                 var tile = field.tiles[t];
                 var rect = field.TileRect(tile);
                 for (var i = tile.firstPlant; i < tile.firstPlant + tile.plantCount; i++)

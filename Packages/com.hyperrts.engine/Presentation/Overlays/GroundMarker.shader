@@ -45,9 +45,7 @@ Shader "HyperRTS/Ground Marker"
                 float _MinLinePixels;
             CBUFFER_END
 
-            TEXTURE2D(_Height);
-            float4 _HeightArea;  // terrain rect: x min, z min, 1 / size x, 1 / size z
-            float4 _HeightScale; // terrain base height, metres per unit sample, heightmap texels across
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainHeight.hlsl"
 
             UNITY_INSTANCING_BUFFER_START(Props)
                 UNITY_DEFINE_INSTANCED_PROP(float4, _Tint)
@@ -68,14 +66,6 @@ Shader "HyperRTS/Ground Marker"
                 nointerpolation float4 tint : TEXCOORD2;
                 nointerpolation float4 marker : TEXCOORD3;
             };
-
-            float GroundHeight(float2 xz)
-            {
-                float texels = _HeightScale.z;
-                float2 uv = (xz - _HeightArea.xy) * _HeightArea.zw;
-                uv = uv * ((texels - 1.0) / texels) + 0.5 / texels;
-                return _HeightScale.x + SAMPLE_TEXTURE2D_LOD(_Height, sampler_LinearClamp, uv, 0).r * _HeightScale.y;
-            }
 
             float RoundedBox(float2 p, float2 halfSize, float radius)
             {

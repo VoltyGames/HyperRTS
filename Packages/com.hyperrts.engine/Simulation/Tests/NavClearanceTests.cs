@@ -104,5 +104,55 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(new float2(-0.6f, 0.5f), capsule.Constrain(from, new float2(-0.6f, 0.5f)),
                 "backing away is free");
         }
+
+        [Test]
+        public void CutsCornerBetweenOpen_MatchesTheFullSideSquareCheck()
+        {
+            SpawnObstacle(new float3(0.5f, 0f, 0.5f), new float2(1f, 1f));
+            SpawnObstacle(new float3(3f, 0f, -2.5f), new float2(2f, 1f));
+            _world.Tick();
+            var grid = _world.Grid();
+            var center = grid.WorldToCell(float3.zero);
+            grid.Scenery[grid.Index(center + new int2(-3, 2))] = 5;
+
+            var cuts = 0;
+            for (var size = 1; size <= 3; size++)
+            {
+                var access = new NavAccess(grid, NavLayer.Ground, size * grid.CellSize * 0.5f, 2);
+                Assert.AreEqual(size, access.Footprint);
+                for (var y = -6; y <= 6; y++)
+                {
+                    for (var x = -6; x <= 6; x++)
+                    {
+                        cuts += CompareDiagonals(access, center + new int2(x, y));
+                    }
+                }
+            }
+
+            grid.Scenery[grid.Index(center + new int2(-3, 2))] = 0;
+            Assert.Greater(cuts, 0, "some steps near the obstacles cut a corner");
+        }
+
+        private static int CompareDiagonals(in NavAccess access, int2 from)
+        {
+            var cuts = 0;
+            for (var dy = -1; dy <= 1; dy += 2)
+            {
+                for (var dx = -1; dx <= 1; dx += 2)
+                {
+                    var to = from + new int2(dx, dy);
+                    if (!access.IsAnchorOpen(from) || !access.IsAnchorOpen(to))
+                    {
+                        continue;
+                    }
+
+                    var expected = access.CutsCorner(from, to, access.Footprint);
+                    Assert.AreEqual(expected, access.CutsCornerBetweenOpen(from, to), $"{from} to {to}");
+                    cuts += expected ? 1 : 0;
+                }
+            }
+
+            return cuts;
+        }
     }
 }

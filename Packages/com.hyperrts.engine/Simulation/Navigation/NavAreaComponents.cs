@@ -1,5 +1,7 @@
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Navigation
 {
@@ -27,5 +29,12 @@ namespace HyperRTS.Simulation.Navigation
     public struct NavObstacle : IComponentData
     {
         public float2 Size;
+
+        /// <summary>A hash of the footprint stamped at <paramref name="transform"/>, to tell when it changed.</summary>
+        public readonly ulong Hash(in LocalTransform transform)
+        {
+            var hash = xxHash3.Hash64(transform) ^ xxHash3.Hash64(this).yx;
+            return ((ulong)hash.x << 32) | hash.y;
+        }
     }
 }

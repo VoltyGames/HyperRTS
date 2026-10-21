@@ -5,7 +5,6 @@ namespace HyperRTS.Client.Interaction
     {
         Default,
         Select,
-        Move,
         AttackMove,
         Attack,
         Target,
@@ -13,7 +12,7 @@ namespace HyperRTS.Client.Interaction
         Garrison,
         Unload,
         Repair,
-        Supply,
+        Gather,
         Build,
         Rally,
         Invalid,
