@@ -8,7 +8,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Destructible scenery, crushing, remains and passive income.</summary>
+    /// <summary>Destructible scenery, crushing, remains (falling ones too) and passive income.</summary>
     public class DestructionTests
     {
         private TestWorld _world;
@@ -47,6 +47,27 @@ namespace HyperRTS.Simulation.Tests
             using var query = _world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalTransform>(),
                 ComponentType.Exclude<Health>());
             Assert.AreEqual(5f, FindNear(query, new float3(5f, 0f, 0f)).x, 0.01f, "its remains lie where it stood");
+        }
+
+        [Test]
+        public void AircraftKilledAtAltitude_ItsRemainsFallToTheGround()
+        {
+            _world.CreateTerrain(_ => 2f);
+            var wreck = _world.MakePrefab(_world.EntityManager.CreateEntity(typeof(LocalTransform)));
+            var aircraft = _world.SpawnAircraft(1, new float3(5f, 2f, 0f));
+            _world.EntityManager.AddComponentData(aircraft, new SpawnOnDeath { Prefab = wreck });
+            _world.Run(1f);
+            Assert.AreEqual(12f, _world.GetPosition(aircraft).y, 1e-3f, "flying");
+
+            _world.EntityManager.SetComponentData(aircraft, new Health { Current = 0f, Max = 100f });
+            _world.Tick(frames: 3);
+            using var falling = _world.All<FallingRemains>();
+            Assert.AreEqual(1, falling.Length);
+            var remains = falling[0];
+            Assert.Greater(_world.GetPosition(remains).y, 10f, "the wreck starts where the aircraft died");
+
+            Assert.IsTrue(_world.RunUntil(() => !_world.EntityManager.HasComponent<FallingRemains>(remains), 3f));
+            Assert.AreEqual(2f, _world.GetPosition(remains).y, 1e-3f, "and lands on the ground");
         }
 
         [Test]

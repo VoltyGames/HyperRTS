@@ -3,14 +3,15 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Air
 {
     /// <summary>
-    /// The rearm cycle: aircraft out of <see cref="Ammo"/> get a Return to Base order, and docked aircraft reload one
-    /// round per <see cref="Ammo.ReloadTime"/>, each <see cref="WeaponMount"/> at its own pace. Games refuel and repair
-    /// docked aircraft the same way.
+    /// The rearm cycle: aircraft whose limited weapons (<see cref="Ammo"/>, mounts with rounds) are all empty get a
+    /// Return to Base order, and docked aircraft reload one round per <see cref="Ammo.ReloadTime"/>, each
+    /// <see cref="WeaponMount"/> at its own pace. Games refuel and repair docked aircraft the same way.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -19,18 +20,24 @@ namespace HyperRTS.Simulation.Air
     public partial struct RearmSystem : ISystem
     {
         private OrderWriter _writer;
+        private ComponentLookup<Ammo> _ammo;
+        private BufferLookup<WeaponMount> _mounts;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _writer = new OrderWriter(ref state);
+            _ammo = state.GetComponentLookup<Ammo>(true);
+            _mounts = state.GetBufferLookup<WeaponMount>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _writer.Update(ref state);
-            new ReturnJob { Writer = _writer }.Schedule();
+            _ammo.Update(ref state);
+            _mounts.Update(ref state);
+            new ReturnJob { Writer = _writer, Ammos = _ammo, Mounts = _mounts }.Schedule();
             new ReloadJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
             new MountReloadJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
         }
@@ -42,10 +49,12 @@ namespace HyperRTS.Simulation.Air
         private partial struct ReturnJob : IJobEntity
         {
             public OrderWriter Writer;
+            [ReadOnly] public ComponentLookup<Ammo> Ammos;
+            [ReadOnly] public BufferLookup<WeaponMount> Mounts;
 
-            private void Execute(Entity entity, in Ammo ammo, in HomePad home)
+            private void Execute(Entity entity, in HomePad home)
             {
-                if (ammo.Current > 0 || home.Airfield == Entity.Null)
+                if (home.Airfield == Entity.Null || !IsSpent(entity))
                 {
                     return;
                 }
@@ -54,6 +63,38 @@ namespace HyperRTS.Simulation.Air
                 {
                     Writer.Issue(entity, new Order { Type = OrderType.ReturnToBase }, false);
                 }
+            }
+
+            /// <summary>Every weapon with limited rounds is empty, and it has at least one.</summary>
+            private bool IsSpent(Entity entity)
+            {
+                var limited = Ammos.TryGetComponent(entity, out var ammo);
+                if (limited && ammo.Current > 0)
+                {
+                    return false;
+                }
+
+                if (!Mounts.TryGetBuffer(entity, out var mounts))
+                {
+                    return limited;
+                }
+
+                foreach (var mount in mounts)
+                {
+                    if (!mount.IsLimited)
+                    {
+                        continue;
+                    }
+
+                    if (mount.HasRounds)
+                    {
+                        return false;
+                    }
+
+                    limited = true;
+                }
+
+                return limited;
             }
         }
 

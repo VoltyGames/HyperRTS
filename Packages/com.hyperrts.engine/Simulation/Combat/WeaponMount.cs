@@ -62,6 +62,9 @@ namespace HyperRTS.Simulation.Combat
 
         public bool HasRounds => MaxRounds == 0 || Rounds > 0;
 
+        /// <summary>A usable mount that runs dry and needs rearming.</summary>
+        public bool IsLimited => Enabled && MaxRounds > 0;
+
         public bool Ready => Enabled && HasRounds;
 
         public void UseRound()

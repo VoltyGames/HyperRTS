@@ -8,7 +8,10 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Airfield pads, the rearm cycle (out of ammo, return, dock, reload) and losing or changing airfields.</summary>
+    /// <summary>
+    /// Airfield pads, the rearm cycle (out of ammo or mount rounds, return, dock, reload) and losing or changing
+    /// airfields.
+    /// </summary>
     public class AirfieldTests
     {
         private static readonly float3 Pad = new(5f, 0f, 0f);
@@ -50,6 +53,33 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(4f);
             Assert.IsFalse(_world.IsEnabled<Docked>(aircraft), "took off again");
             Assert.AreEqual(60f, _world.GetHealth(tank), "and fired its fresh rounds");
+        }
+
+        [Test]
+        public void GunshipWithUnlimitedGun_ReturnsWhenItsMissilesAreSpent_AndReloadsThem()
+        {
+            var (aircraft, tank) = SpawnGunship(missileCooldown: 0.5f);
+
+            Attack(aircraft, tank);
+            Assert.IsTrue(_world.RunUntil(() => Missiles(aircraft) == 0, 6f), "fires both missiles");
+            Assert.IsTrue(_world.RunUntil(() => _world.IsEnabled<Docked>(aircraft), 8f), "flies home on its gun");
+
+            _world.Run(1.5f);
+            Assert.AreEqual(2, Missiles(aircraft), "reloaded while docked");
+        }
+
+        [Test]
+        public void GunshipWithMissilesLeft_KeepsFighting()
+        {
+            var (aircraft, tank) = SpawnGunship(missileCooldown: 100f);
+
+            Attack(aircraft, tank);
+            Assert.IsTrue(_world.RunUntil(() => Missiles(aircraft) == 1, 6f), "fires one missile");
+            var health = _world.GetHealth(tank);
+            _world.Run(2f);
+
+            Assert.AreEqual(OrderType.Attack, _world.Get<ActiveOrder>(aircraft).Value.Type, "stays on target");
+            Assert.Less(_world.GetHealth(tank), health, "its gun keeps firing");
         }
 
         [Test]
@@ -96,6 +126,19 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(aircraft, _world.EntityManager.GetBuffer<LandingPad>(second)[0].Aircraft);
             Assert.Less(math.distance(_world.GetPosition(aircraft).xz, new float2(25f, 0f)), 0.6f);
         }
+
+        /// <summary>An aircraft with an unlimited gun and a two-round missile mount, and a tank to shoot.</summary>
+        private (Entity Aircraft, Entity Tank) SpawnGunship(float missileCooldown)
+        {
+            var airfield = _world.SpawnAirfield(1, float3.zero, Pad);
+            var aircraft = _world.AddWeapon(_world.SpawnAircraft(1, Pad), range: 4f, damage: 1f);
+            _world.AddMount(aircraft, range: 4f, damage: 10f, cooldown: missileCooldown, rounds: 2);
+            _world.AddPadUser(aircraft);
+            _world.EntityManager.SetComponentData(aircraft, new HomePad { Airfield = airfield, Pad = 0 });
+            return (aircraft, _world.SpawnUnit(2, new float3(30f, 0f, 0f), maxHealth: 1000f));
+        }
+
+        private int Missiles(Entity aircraft) => _world.EntityManager.GetBuffer<WeaponMount>(aircraft)[0].Rounds;
 
         private void Attack(Entity unit, Entity target) => _world.Command(1, new PlayerCommand
         {

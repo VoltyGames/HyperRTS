@@ -17,6 +17,33 @@ namespace HyperRTS.Simulation.Combat
         public Entity Prefab;
     }
 
+    /// <summary>Tag: this entity's remains fall to the ground instead of staying where it died (aircraft).</summary>
+    public struct DropRemains : IComponentData
+    {
+    }
+
+    /// <summary>Remains falling to the ground under gravity; removed when they land.</summary>
+    public struct FallingRemains : IComponentData
+    {
+        private const float Gravity = 9.81f;
+
+        public float Speed;
+
+        /// <summary>Drops <paramref name="height"/> one step; true once it reaches <paramref name="ground"/>.</summary>
+        public bool Fall(ref float height, float ground, float deltaTime)
+        {
+            Speed += Gravity * deltaTime;
+            height -= Speed * deltaTime;
+            if (height > ground)
+            {
+                return false;
+            }
+
+            height = ground;
+            return true;
+        }
+    }
+
     /// <summary>Remains that last <see cref="Lifetime"/> seconds, then sink <see cref="DespawnDepth"/> metres and go.</summary>
     public struct Decay : IComponentData
     {

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
 
@@ -6,11 +7,15 @@ namespace HyperRTS.Simulation.Air
     /// <summary>Adds flight and pad use to aircraft and pads to airfields.</summary>
     public static class AirSetup
     {
-        /// <summary>Flies the unit at <paramref name="altitude"/>; its <c>NavAgent</c> must be on the Air layer.</summary>
+        /// <summary>
+        /// Flies the unit at <paramref name="altitude"/>; its <c>NavAgent</c> must be on the Air layer. Its remains
+        /// fall to the ground.
+        /// </summary>
         public static void AddFlight<TWriter>(ref TWriter writer, float altitude, float climbSpeed, float loiterRadius)
             where TWriter : struct, IEntityWriter
         {
             writer.Add(new Flight { Altitude = altitude, ClimbSpeed = climbSpeed, LoiterRadius = loiterRadius });
+            writer.Add<DropRemains>();
         }
 
         /// <summary>The aircraft takes a pad at the airfield that builds it and docks there to rearm.</summary>

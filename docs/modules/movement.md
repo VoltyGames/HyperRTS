@@ -36,7 +36,9 @@ once it starts to sink.
 
 `FlightAuthoring` makes a unit an aircraft with an altitude and a loiter radius. A radius of 0 hovers.
 `AirfieldAuthoring` gives a building landing pads, one aircraft each. An airfield only builds a pad-using aircraft
-when a pad is free. Aircraft with no ammo fly home and reload while docked. Fuel is left to game code.
+when a pad is free. An aircraft flies home once every weapon with limited rounds (its `Ammo` and mounts with
+rounds) is empty, so a gunship with an unlimited gun still returns when its missiles are spent. It reloads while
+docked. Its remains fall to the ground under gravity. Fuel is left to game code.
 
 ## Transport
 

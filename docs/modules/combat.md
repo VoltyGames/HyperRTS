@@ -25,7 +25,8 @@ The primary `Weapon` sets how a unit engages, and orders and the AI read only it
 `WeaponAuthoring.extraWeapons` become `WeaponMount`s that fire at the unit's target when they can hit it, and the
 unit closes to the longest reach among them. An independent mount picks its own target, such as a missile that
 engages aircraft while the gun shoots tanks. `MinEffect` skips targets whose armor blunts the damage, a mount may
-need research and carry rounds that refill while docked, and mount 1 to 3 play the `Fire2` to `Fire4` cues.
+need research and carry rounds that refill while docked (an aircraft goes home when all its limited weapons are
+empty), and mount 1 to 3 play the `Fire2` to `Fire4` cues.
 `ShotWriter` fires both kinds of weapon.
 
 A projectile flies by its weapon's `Trajectory`. Direct shots fly straight and home on the target. Ballistic shells
@@ -48,6 +49,7 @@ angle for arcs, and eases idle ones back to centre. A `Turreted` weapon fires wi
 | `ToppleAuthoring` | Scenery that falls away from the hit that killed it |
 | `StretchPartsAuthoring` | A prop the map builder stretches. Only the middle span scales |
 | `DecayAuthoring` | Remains that wait, sink and disappear |
+| `DropRemains` | Remains that fall to the ground from where the entity died. Aircraft get it with `Flight` |
 | `SpawnEffectAuthoring` | An effect played once where an entity appears |
 
 ## Stats
