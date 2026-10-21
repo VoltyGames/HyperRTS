@@ -103,7 +103,7 @@ Game code plays clips with `VATClip.Play(range, now)`, using `SystemAPI.Time.Ela
 `MotionRigAuthoring` on a unit prefab root moves the model's pivots on the client. Its slots list turrets, barrels
 and launchers that follow a `WeaponPose` index, barrels that recoil per shot, wheels, sprockets and idlers that
 roll, rotors that spin up in flight and down while `Docked`, and a tilt root (the hull) that pitches and rolls with
-the ground under its footprint. With **Aircraft** on, the tilt root leans with acceleration instead. **Fill from
+the ground under its footprint. On a unit with `FlightAuthoring` the tilt root leans with acceleration instead. **Fill from
 model** finds the parts by their art names: `Hull`, `Turret`, `Barrel`, `Launcher`, `Wheel_L01`, `Sprocket_L`,
 `Idler_L`, `Rotor_Main` and `Rotor_Tail`. It keeps slots it already lists, measures wheel radii and the footprint
 from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon. `MotionRigRule` checks every slot
@@ -111,6 +111,8 @@ names a child of the rig and a weapon the unit has.
 
 The baker stores a `MotionRig` and a `MotionRigPart` buffer on the root. `MotionRigSystem` runs in
 `PresentationSystemGroup` on the interpolated unit and writes only child `LocalTransform`s, never the ghost root.
+A rig with rotors also gets a `RotorSpin`, the fastest rotor's speed from 0 to 1, which `LoopSoundSystem` reads
+after it for the rotor loop.
 Like `MachineSystem`, the poses render a frame later, once the transform systems have run.
 
 #### Squad figures

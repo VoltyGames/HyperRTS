@@ -10,23 +10,23 @@ namespace HyperRTS.Presentation.Tests
     {
         private const float Frame = 1f / 60f;
 
-        private static readonly LoopSoundTuning Tuning = new() { FullSpeed = 10f, PitchRise = 0.2f, SpinUpTime = 2f };
+        private static readonly LoopSoundTuning Tuning = new() { FullSpeed = 10f, PitchRise = 0.2f };
 
-        private static void Run(ref LoopSoundState state, float from, float seconds, float speed, bool flying = false,
+        private static void Run(ref LoopSoundState state, float from, float seconds, float speed, float rotor = 0f,
             uint aim = 0)
         {
             var position = state.LastPosition;
             for (var t = 0f; t < seconds; t += Frame)
             {
                 position.x += speed * Frame;
-                state.Step(position, flying, aim, Tuning.SpinUpTime, from + t, Frame);
+                state.Step(position, rotor, aim, from + t, Frame);
             }
         }
 
-        private static LoopSoundState Ran(float seconds, float speed, bool flying = false)
+        private static LoopSoundState Ran(float seconds, float speed, float rotor = 0f)
         {
             var state = new LoopSoundState();
-            Run(ref state, 0f, seconds, speed, flying);
+            Run(ref state, 0f, seconds, speed, rotor);
             return state;
         }
 
@@ -54,16 +54,17 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
-        public void Rotor_SpinsUpInFlight_AndDownWhenDocked()
+        public void Rotor_FollowsTheBladesSpin()
         {
-            var state = Ran(1f, 0f, flying: true);
-            Assert.AreEqual(0.5f, state.Level(LoopSlot.Rotor, Tuning, false), 0.02f, "halfway through a 2 s spin-up");
+            var state = Ran(0.1f, 0f, rotor: 0.5f);
+            Assert.AreEqual(0.5f, state.Level(LoopSlot.Rotor, Tuning, false));
+            Assert.AreEqual(0.8f, state.PitchScale(LoopSlot.Rotor, Tuning), 1e-5f);
 
-            Run(ref state, 1f, 2f, 0f, flying: true);
+            Run(ref state, 0.1f, 0.1f, 0f, rotor: 1f);
             Assert.AreEqual(1f, state.Level(LoopSlot.Rotor, Tuning, false));
             Assert.AreEqual(1f, state.PitchScale(LoopSlot.Rotor, Tuning));
 
-            Run(ref state, 3f, 2.1f, 0f);
+            Run(ref state, 0.2f, 0.1f, 0f);
             Assert.AreEqual(0f, state.Level(LoopSlot.Rotor, Tuning, false));
         }
 

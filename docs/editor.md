@@ -66,9 +66,9 @@ its section of the module reference.
 [DisallowMultipleComponent]
 public class WeaponAuthoring : AuthoringBehaviour
 {
-    [Tooltip("Firing range in world units, measured edge to edge.")]
-    [Min(0.1f)]
-    public float range = 6f;
+    [Tooltip("Distance at which idle units spot enemies; 0 uses the vision range.")]
+    [Min(0f)]
+    public float acquireRange;
 
     private class Baker : Baker<WeaponAuthoring> { ... }
 }
@@ -88,7 +88,8 @@ public class WeaponAuthoring : AuthoringBehaviour
 validation issues; click it for the list and quick fixes. Units and buildings start with a summary line, such as
 "Unit · Weapon, Builder · 12 DPS · 150 Supplies".
 
-`[ShowIf(nameof(field))]` hides a field while a bool is false, a number is 0 or less, or a reference is empty.
+`[ShowIf(nameof(field))]` hides a field while a bool is false, a number is 0 or less, or a reference is empty. It names a sibling, so it also works inside a nested block such as
+`WeaponStats`.
 
 Scene handles show vision, radius, footprints, weapon reach, producer spawn points and the map bounds, in the
 owner's colour.

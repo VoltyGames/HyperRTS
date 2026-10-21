@@ -11,7 +11,8 @@ queue, so armor, splash and kill credit apply to all of them.
 
 | Type | Role |
 | --- | --- |
-| `WeaponAuthoring` | Range, minimum range, damage type, cooldown, splash, projectile and trajectory, muzzle, turret, targets, extra weapons |
+| `WeaponAuthoring` | The primary's `stats`, turret, acquire range, leash, stance and extra weapons |
+| `WeaponStats` | Damage, damage type, cooldown, splash, projectile and trajectory, muzzle, range, minimum range, targets. The primary and each extra weapon carry one |
 | `WeaponMount` | An extra weapon. Server only, rewritten by stats like the primary |
 | `AmmoAuthoring` | Rounds per load. Reloads while docked |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
@@ -26,7 +27,9 @@ The primary `Weapon` sets how a unit engages, and orders and the AI read only it
 unit closes to the longest reach among them. An independent mount picks its own target, such as a missile that
 engages aircraft while the gun shoots tanks. `MinEffect` skips targets whose armor blunts the damage, a mount may
 need research and carry rounds that refill while docked (an aircraft goes home when all its limited weapons are
-empty), and mount 1 to 3 play the `Fire2` to `Fire4` cues.
+empty), and each fires its own Fire cue: the cue's variant is the weapon's pose index, 0 for the primary and 1 up
+for the mounts, which `mountFire` on the sound and effect authoring fills in order. A mount without an entry fires
+silently. `ShotWriter.TryFire` is the fire step both weapon kinds share.
 `ShotWriter` fires both kinds of weapon.
 
 A projectile flies by its weapon's `Trajectory`. Direct shots fly straight and home on the target. Ballistic shells

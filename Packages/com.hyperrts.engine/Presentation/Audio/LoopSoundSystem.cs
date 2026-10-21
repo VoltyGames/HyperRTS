@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
@@ -15,11 +16,12 @@ namespace HyperRTS.Presentation.Audio
 {
     /// <summary>
     /// Plays each shown entity's <see cref="EntityLoopSound"/>s from replicated state, attached to the entity in 3D:
-    /// engines by speed, rotors by flight, turrets while they turn, work and ambient hums. Fogged, dead and distant
+    /// engines by speed, rotors by the rig's <see cref="RotorSpin"/>, turrets while they turn, work and ambient hums. Fogged, dead and distant
     /// entities fall silent, and <see cref="LoopMixer"/> keeps the nearest within each cue's instance limit.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateAfter(typeof(MotionRigSystem))]
     public partial class LoopSoundSystem : SystemBase
     {
         private const int Voices = 24;
@@ -63,6 +65,7 @@ namespace HyperRTS.Presentation.Audio
             var deltaTime = SystemAPI.Time.DeltaTime;
             var flights = SystemAPI.GetComponentLookup<Flight>(true);
             var docks = SystemAPI.GetComponentLookup<Docked>(true);
+            var spins = SystemAPI.GetComponentLookup<RotorSpin>(true);
             var sites = SystemAPI.GetComponentLookup<ConstructionProgress>(true);
             var queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(true);
             var poses = SystemAPI.GetBufferLookup<WeaponPose>(true);
@@ -71,10 +74,12 @@ namespace HyperRTS.Presentation.Audio
                          .WithNone<DisableRendering, FogHidden, Dead>().WithEntityAccess())
             {
                 var flying = flights.HasComponent(entity) && !docks.HasEnabled(entity);
+                // A unit with no rig rotor to follow plays its rotor full while flying.
+                var rotor = spins.TryGetComponent(entity, out var spin) ? spin.Amount : flying ? 1f : 0f;
                 var building = sites.HasEnabled(entity);
                 var producing = queues.TryGetBuffer(entity, out var queue) && !queue.IsEmpty;
                 _states.TryGetValue(entity, out var state);
-                state.Step(place.ValueRO.Position, flying, Aim(poses, entity), tuning.ValueRO.SpinUpTime, now, deltaTime);
+                state.Step(place.ValueRO.Position, rotor, Aim(poses, entity), now, deltaTime);
                 _states[entity] = state;
 
                 Vector3 position = place.ValueRO.Position;

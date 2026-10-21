@@ -5,11 +5,12 @@ namespace HyperRTS.Simulation.Cues
     /// owner (<see cref="CueRules.IsOwnerOnly"/>). <see cref="Impact"/> is where a shot landed: its sound, the shooter's
     /// impact effects and marks. Values from <see cref="GameFirst"/> up belong to games.
     /// </summary>
+    // Retired values 9 to 11 and 15 to 20 stay unused, so recorded slot numbers keep their meaning.
     public enum CueSlot : byte
     {
         None = 0,
 
-        /// <summary>Each shot, at the muzzle.</summary>
+        /// <summary>Each shot, at the muzzle; <see cref="CueEvent.Variant"/> is the weapon's pose index, 0 the primary.</summary>
         Fire = 1,
         Impact = 2,
         Death = 3,
@@ -21,11 +22,6 @@ namespace HyperRTS.Simulation.Cues
         Move = 7,
         Attack = 8,
 
-        /// <summary>Each shot of the first, second and third extra weapon mount, at its muzzle.</summary>
-        Fire2 = 9,
-        Fire3 = 10,
-        Fire4 = 11,
-
         /// <summary>The caster's voice when it uses an ability, beside the world <see cref="Ability"/> sound.</summary>
         AbilityVoice = 12,
 
@@ -36,15 +32,10 @@ namespace HyperRTS.Simulation.Cues
         ProductionDone = 14,
 
         /// <summary>
-        /// Announcer alerts to the owner's player, from <see cref="AnnounceUnitLost"/> to
-        /// <see cref="AnnounceUpgradeComplete"/>. The local <c>AnnouncerSet</c> picks the line, not the source's sounds.
+        /// An announcer alert to the owner's player, its <see cref="AnnouncementKind"/> in
+        /// <see cref="CueEvent.Variant"/>. The local <c>AnnouncerSet</c> picks the line, not the source's sounds.
         /// </summary>
-        AnnounceUnitLost = 15,
-        AnnounceBaseUnderAttack = 16,
-        AnnounceLowPower = 17,
-        AnnounceConstructionComplete = 18,
-        AnnounceUnitReady = 19,
-        AnnounceUpgradeComplete = 20,
+        Announce = 21,
 
         /// <summary>First value a game may use for its own slots; the engine never defines one from here up.</summary>
         GameFirst = 128,

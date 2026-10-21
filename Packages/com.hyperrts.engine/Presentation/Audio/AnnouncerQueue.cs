@@ -9,22 +9,22 @@ namespace HyperRTS.Presentation.Audio
     /// </summary>
     public sealed class AnnouncerQueue
     {
-        private readonly Dictionary<CueSlot, double> _next = new();
+        private readonly Dictionary<AnnouncementKind, double> _next = new();
         private readonly List<(SoundCue Cue, double Queued)> _waiting = new();
 
         public int Count => _waiting.Count;
 
         /// <summary>Queues the set's line for the alert; false when it is silent or still cooling down.</summary>
-        public bool Offer(AnnouncerSet set, CueSlot slot, double now)
+        public bool Offer(AnnouncerSet set, AnnouncementKind kind, double now)
         {
-            var line = set.LineFor(slot);
-            var cooling = _next.TryGetValue(slot, out var next) && now < next;
-            if (line.cue == null || cooling)
+            var silent = !set.TryGetLine(kind, out var line) || line.cue == null;
+            var cooling = _next.TryGetValue(kind, out var next) && now < next;
+            if (silent || cooling)
             {
                 return false;
             }
 
-            _next[slot] = now + line.cooldown;
+            _next[kind] = now + line.cooldown;
             _waiting.Add((line.cue, now));
             return true;
         }

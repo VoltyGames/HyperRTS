@@ -29,7 +29,9 @@ namespace HyperRTS.Simulation.Cues
 
         // Bytes rather than the enums, so the RPC codegen sends one byte each.
         public byte Surface;
-        public byte Material;
+
+        /// <summary>An impact's material, else the cue's <see cref="CueEvent.Variant"/>; impacts never set one.</summary>
+        public byte Detail;
 
         public static PackedCue Pack(in CueEvent cue)
         {
@@ -48,7 +50,7 @@ namespace HyperRTS.Simulation.Cues
                 Yaw = HeadingByte.Encode(direction.xz),
                 PitchFlags = (byte)(flags | (int)math.round(pitch * PitchSteps)),
                 Surface = (byte)cue.Surface,
-                Material = (byte)cue.Material,
+                Detail = cue.Slot == CueSlot.Impact ? (byte)cue.Material : cue.Variant,
             };
         }
 
@@ -58,17 +60,19 @@ namespace HyperRTS.Simulation.Cues
             var pitch = (pitchStep / PitchSteps - 0.5f) * math.PI;
             var level = HeadingByte.Direction(Yaw);
             math.sincos(pitch, out var sinPitch, out var cosPitch);
+            var impact = (CueSlot)Slot == CueSlot.Impact;
             return new CueEvent
             {
                 TypeId = TypeId,
                 Slot = (CueSlot)Slot,
+                Variant = impact ? (byte)0 : Detail,
                 Faction = Faction,
                 Position = QuantizedPosition.Dequantize(X, Y, Z),
                 Direction = new float3(level.x * cosPitch, sinPitch, level.z * cosPitch),
                 Stealthed = (PitchFlags & StealthedBit) != 0,
                 Radius = Radius * QuantizedPosition.Step,
                 Surface = (ImpactSurface)Surface,
-                Material = (SurfaceMaterial)Material,
+                Material = impact ? (SurfaceMaterial)Detail : default,
             };
         }
 
@@ -84,7 +88,7 @@ namespace HyperRTS.Simulation.Cues
             writer.Write(Yaw);
             writer.Write(PitchFlags);
             writer.Write(Surface);
-            writer.Write(Material);
+            writer.Write(Detail);
         }
 
         public static PackedCue Read(BinaryReader reader) => new()
@@ -99,7 +103,7 @@ namespace HyperRTS.Simulation.Cues
             Yaw = reader.ReadByte(),
             PitchFlags = reader.ReadByte(),
             Surface = reader.ReadByte(),
-            Material = reader.ReadByte(),
+            Detail = reader.ReadByte(),
         };
     }
 }

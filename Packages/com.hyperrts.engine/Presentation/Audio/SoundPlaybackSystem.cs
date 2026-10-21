@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
@@ -21,7 +20,7 @@ namespace HyperRTS.Presentation.Audio
         private const int Voices = 32;
 
         private readonly SoundPool _pool = new(Voices);
-        private TypeCatalog<List<(CueSlot Slot, SoundCue Cue)>> _cues;
+        private TypeCatalog<EntitySound[]> _cues;
         private readonly VoiceBank _voices = new("HyperRTS Sounds", Voices);
         private readonly ListenerLookup _listeners = new();
         private CueVisibility _visibility;
@@ -29,7 +28,7 @@ namespace HyperRTS.Presentation.Audio
 
         protected override void OnCreate()
         {
-            _cues = new TypeCatalog<List<(CueSlot Slot, SoundCue Cue)>>(SystemAPI.QueryBuilder()
+            _cues = new TypeCatalog<EntitySound[]>(SystemAPI.QueryBuilder()
                 .WithAll<EntityInfo, EntitySound>().WithOptions(EntityQueryOptions.IncludePrefab).Build(), ReadCues);
             _visibility = new CueVisibility(ref CheckedStateRef);
             RequireForUpdate<CueQueue>();
@@ -56,7 +55,7 @@ namespace HyperRTS.Presentation.Audio
                 var sound = sounds[i];
                 if (_visibility.IsSeen(sound))
                 {
-                    Play(FindCue(registry, sound.TypeId, sound.Slot), sound.Position);
+                    Play(FindCue(registry, sound), sound.Position);
                 }
             }
         }
@@ -96,35 +95,27 @@ namespace HyperRTS.Presentation.Audio
             return (position - _listener.transform.position).sqrMagnitude > cue.maxDistance * cue.maxDistance;
         }
 
-        /// <summary>The slot's cue among the type's, or null.</summary>
-        private SoundCue FindCue(in PrefabRegistry registry, int typeId, CueSlot slot)
+        /// <summary>The cue for the event's slot and variant among its type's, or null.</summary>
+        private SoundCue FindCue(in PrefabRegistry registry, in CueEvent cue)
         {
-            var cues = _cues.Find(EntityManager, registry, typeId);
-            if (cues == null)
+            var sounds = _cues.Find(EntityManager, registry, cue.TypeId);
+            if (sounds == null)
             {
                 return null;
             }
 
-            foreach (var (cueSlot, cue) in cues)
+            foreach (var sound in sounds)
             {
-                if (cueSlot == slot)
+                if (sound.Plays(cue.Slot, cue.Variant))
                 {
-                    return cue;
+                    return sound.Cue.Value;
                 }
             }
 
             return null;
         }
 
-        private static List<(CueSlot Slot, SoundCue Cue)> ReadCues(EntityManager entityManager, Entity source)
-        {
-            var cues = new List<(CueSlot, SoundCue)>();
-            foreach (var sound in entityManager.GetBuffer<EntitySound>(source, true))
-            {
-                cues.Add((sound.Slot, sound.Cue.Value));
-            }
-
-            return cues;
-        }
+        private static EntitySound[] ReadCues(EntityManager entityManager, Entity source) =>
+            entityManager.GetBuffer<EntitySound>(source, true).AsNativeArray().ToArray();
     }
 }

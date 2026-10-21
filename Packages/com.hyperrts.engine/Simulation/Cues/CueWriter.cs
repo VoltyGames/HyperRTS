@@ -47,27 +47,30 @@ namespace HyperRTS.Simulation.Cues
         }
 
         /// <summary>
-        /// Plays <paramref name="source"/>'s cue for the slot (prefab or instance), at its effect socket placed by
-        /// <paramref name="transform"/> when it has a rig; false if it has neither sound nor effect for the slot.
+        /// Plays <paramref name="source"/>'s cue for the slot and variant (prefab or instance), at its effect socket
+        /// placed by <paramref name="transform"/> when it has a rig; false if it has neither sound nor effect for it.
         /// </summary>
-        public bool Play(Entity source, CueSlot slot, in LocalTransform transform, float3 direction, byte faction)
+        public bool Play(Entity source, CueSlot slot, in LocalTransform transform, float3 direction, byte faction,
+            byte variant = 0)
         {
             var position = transform.Position;
-            if (_effects.TryGetBuffer(source, out var effects) && EffectRules.TryGetSocket(effects, slot, out var socket))
+            var rigged = _effects.TryGetBuffer(source, out var effects);
+            if (rigged && EffectRules.TryGetSocket(effects, slot, variant, out var socket))
             {
                 position = transform.TransformPoint(socket);
             }
 
-            return Add(TypeIdFor(source, slot), slot, position, direction, faction, _cloaks.HasEnabled(source));
+            var typeId = TypeIdFor(source, slot, variant);
+            return Add(typeId, slot, position, direction, faction, _cloaks.HasEnabled(source), variant: variant);
         }
 
         /// <summary>
-        /// <paramref name="source"/>'s type id if it has a sound or an effect for the slot (for impacts also marks or
-        /// impact effects), else 0.
+        /// <paramref name="source"/>'s type id if it has a sound or an effect for the slot and variant (for impacts
+        /// also marks or impact effects), else 0.
         /// </summary>
-        public int TypeIdFor(Entity source, CueSlot slot)
+        public int TypeIdFor(Entity source, CueSlot slot, byte variant = 0)
         {
-            if (!HasCue(source, slot))
+            if (!HasCue(source, slot, variant))
             {
                 return 0;
             }
@@ -77,7 +80,7 @@ namespace HyperRTS.Simulation.Cues
 
         /// <summary>Plays the slot's cue of an entity type; a type id of 0 is ignored and returns false.</summary>
         public bool Add(int typeId, CueSlot slot, float3 position, float3 direction, byte faction,
-            bool stealthed = false, float radius = 0f, Entity target = default)
+            bool stealthed = false, float radius = 0f, Entity target = default, byte variant = 0)
         {
             if (typeId == 0)
             {
@@ -86,8 +89,8 @@ namespace HyperRTS.Simulation.Cues
 
             _events[_queue].Add(new CueEvent
             {
-                TypeId = typeId, Slot = slot, Faction = faction, Position = position, Direction = direction,
-                Stealthed = stealthed, Radius = radius, Target = target,
+                TypeId = typeId, Slot = slot, Variant = variant, Faction = faction, Position = position,
+                Direction = direction, Stealthed = stealthed, Radius = radius, Target = target,
             });
             return true;
         }
@@ -96,25 +99,27 @@ namespace HyperRTS.Simulation.Cues
         /// Queues an announcer alert for <paramref name="faction"/>'s player. It needs no sound on the source, since
         /// the listener's announcer picks the line; <paramref name="typeId"/> names the subject, 0 for none.
         /// </summary>
-        public void Announce(CueSlot slot, byte faction, float3 position, int typeId) =>
+        public void Announce(AnnouncementKind kind, byte faction, float3 position, int typeId) =>
             _events[_queue].Add(new CueEvent
             {
-                TypeId = typeId, Slot = slot, Faction = faction, Position = position, Direction = math.forward(),
+                TypeId = typeId, Slot = CueSlot.Announce, Variant = kind.Value, Faction = faction, Position = position,
+                Direction = math.forward(),
             });
 
-        private bool HasCue(Entity source, CueSlot slot)
+        private bool HasCue(Entity source, CueSlot slot, byte variant)
         {
             if (slot == CueSlot.Impact && LeavesImpact(source))
             {
                 return true;
             }
 
-            if (_sounds.TryGetBuffer(source, out var sounds) && SoundRules.HasCue(sounds, slot))
+            if (_sounds.TryGetBuffer(source, out var sounds) && SoundRules.HasCue(sounds, slot, variant))
             {
                 return true;
             }
 
-            return _effects.TryGetBuffer(source, out var effects) && EffectRules.TryGetSocket(effects, slot, out _);
+            var rigged = _effects.TryGetBuffer(source, out var effects);
+            return rigged && EffectRules.TryGetSocket(effects, slot, variant, out _);
         }
 
         private bool LeavesImpact(Entity shooter)

@@ -54,7 +54,7 @@ namespace HyperRTS.Presentation.Selection
         private void Update()
         {
             var marquee = Content;
-            if (marquee?.panel == null)
+            if (marquee == null)
             {
                 return;
             }

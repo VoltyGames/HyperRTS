@@ -57,7 +57,7 @@ namespace HyperRTS.Presentation.Effects
         private GameObject FindRig(in CueEvent effect, in PrefabRegistry registry)
         {
             var set = _catalog.Find(EntityManager, registry, effect.TypeId);
-            if (set == null || !set.TryGet(effect.Slot, out var entry))
+            if (set == null || !set.TryGet(effect.Slot, effect.Variant, out var entry))
             {
                 return null;
             }

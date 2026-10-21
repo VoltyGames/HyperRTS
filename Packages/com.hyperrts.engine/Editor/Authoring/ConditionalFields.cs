@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using HyperRTS.Simulation.Common;
 using UnityEditor;
@@ -12,16 +13,32 @@ namespace HyperRTS.Editor.Authoring
     {
         private const BindingFlags InstanceFields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-        /// <summary>Wires every top-level <c>[ShowIf]</c> field drawn in <paramref name="root"/>.</summary>
+        /// <summary>Wires every <c>[ShowIf]</c> field drawn in <paramref name="root"/>, nested blocks too.</summary>
         public static void Bind(VisualElement root, SerializedObject serializedObject)
         {
             var type = serializedObject.targetObject.GetType();
+            foreach (var (field, condition) in Conditions(type))
+            {
+                BindField(root, serializedObject, type, field, condition);
+            }
+        }
+
+        /// <summary>Each <c>[ShowIf]</c> field's property path with its condition's, which names a sibling field.</summary>
+        public static IEnumerable<(string Field, string Condition)> Conditions(Type type, string prefix = "")
+        {
             foreach (var field in type.GetFields(InstanceFields))
             {
                 var showIf = field.GetCustomAttribute<ShowIfAttribute>();
                 if (showIf != null)
                 {
-                    BindField(root, serializedObject, type, field.Name, showIf.Field);
+                    yield return (prefix + field.Name, prefix + showIf.Field);
+                }
+                else if (IsNestedBlock(field))
+                {
+                    foreach (var nested in Conditions(field.FieldType, $"{prefix}{field.Name}."))
+                    {
+                        yield return nested;
+                    }
                 }
             }
         }
@@ -47,19 +64,55 @@ namespace HyperRTS.Editor.Authoring
             };
         }
 
-        private static void BindField(VisualElement root, SerializedObject serializedObject, Type type, string name,
-            string conditionName)
+        private static bool IsNestedBlock(FieldInfo field)
         {
-            var condition = serializedObject.FindProperty(conditionName) ?? throw new ArgumentException(
-                $"[ShowIf] on {type.Name}.{name} names '{conditionName}', which is not a serialized field.");
-            var field = root.Query<PropertyField>().Where(drawn => drawn.bindingPath == name).First();
-            if (field == null)
+            var type = field.FieldType;
+            if (!type.IsClass || !type.IsDefined(typeof(SerializableAttribute), false))
+            {
+                return false;
+            }
+
+            if (field.IsNotSerialized || typeof(UnityEngine.Object).IsAssignableFrom(type))
+            {
+                return false;
+            }
+
+            return field.IsPublic || field.IsDefined(typeof(UnityEngine.SerializeField), false);
+        }
+
+        private static void BindField(VisualElement root, SerializedObject serializedObject, Type type, string path,
+            string conditionPath)
+        {
+            var condition = serializedObject.FindProperty(conditionPath) ?? throw new ArgumentException(
+                $"[ShowIf] on {type.Name}.{path} names '{conditionPath}', which is not a serialized field.");
+            if (TryTrack(root, path, condition))
             {
                 return;
             }
 
+            // A nested block draws its fields only once the inspector binds, so wait for a layout that has them.
+            EventCallback<GeometryChangedEvent> late = null;
+            late = _ =>
+            {
+                if (TryTrack(root, path, condition))
+                {
+                    root.UnregisterCallback(late);
+                }
+            };
+            root.RegisterCallback(late);
+        }
+
+        private static bool TryTrack(VisualElement root, string path, SerializedProperty condition)
+        {
+            var field = root.Query<PropertyField>().Where(drawn => drawn.bindingPath == path).First();
+            if (field == null)
+            {
+                return false;
+            }
+
             Apply(field, condition);
             field.TrackPropertyValue(condition, changed => Apply(field, changed));
+            return true;
         }
 
         private static void Apply(VisualElement field, SerializedProperty condition) =>

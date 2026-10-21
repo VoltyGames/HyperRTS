@@ -81,13 +81,7 @@ namespace HyperRTS.Simulation.Combat
                     Shots.Face(entity, Shots.Position(target));
                 }
 
-                if (weapon.CoolingDown || !Shots.TryUseRound(entity))
-                {
-                    return;
-                }
-
-                weapon.StartCooldown();
-                Shots.Fire(entity, weapon, 0, CueSlot.Fire, target, faction.Value);
+                Shots.TryFire(entity, ref weapon, 0, target, faction.Value, true);
             }
 
             /// <summary>A longer-ranged mount can put the unit in range before the primary reaches.</summary>

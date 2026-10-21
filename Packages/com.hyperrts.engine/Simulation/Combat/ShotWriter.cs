@@ -79,8 +79,25 @@ namespace HyperRTS.Simulation.Combat
             return true;
         }
 
+        /// <summary>
+        /// The fire step both the primary and the mounts take: off cooldown, spend a round (the shooter's
+        /// <see cref="Ammo"/> when <paramref name="usesShooterAmmo"/>), restart the cooldown and fire.
+        /// </summary>
+        public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction,
+            bool usesShooterAmmo)
+        {
+            if (weapon.CoolingDown || usesShooterAmmo && !TryUseRound(shooter))
+            {
+                return false;
+            }
+
+            weapon.StartCooldown();
+            Fire(shooter, weapon, pose, target, faction);
+            return true;
+        }
+
         /// <summary>Fires the weapon at <see cref="WeaponPose"/> index <paramref name="pose"/>, counting the shot there.</summary>
-        public void Fire(Entity shooter, in Weapon weapon, byte pose, CueSlot slot, Entity target, byte faction)
+        private void Fire(Entity shooter, in Weapon weapon, byte pose, Entity target, byte faction)
         {
             Reveal(shooter);
             var poses = _poses[shooter];
@@ -89,7 +106,7 @@ namespace HyperRTS.Simulation.Combat
             poses[pose] = fired;
             var place = _transforms[shooter];
             var targetPosition = _transforms[target].Position;
-            PlayFire(shooter, slot, place, targetPosition, faction);
+            PlayFire(shooter, pose, place, targetPosition, faction);
             if (weapon.ProjectilePrefab == Entity.Null)
             {
                 var hit = CombatMath.Hit(weapon, shooter, faction, weapon.HitOrigin(place), target, targetPosition);
@@ -103,12 +120,13 @@ namespace HyperRTS.Simulation.Combat
         }
 
         /// <summary>The fire cue faces the target level, the way the shooter turned.</summary>
-        private void PlayFire(Entity shooter, CueSlot slot, in LocalTransform transform, float3 targetPosition,
+        private void PlayFire(Entity shooter, byte pose, in LocalTransform transform, float3 targetPosition,
             byte faction)
         {
             var toward = targetPosition - transform.Position;
             toward.y = 0f;
-            _cues.Play(shooter, slot, transform, math.normalizesafe(toward, transform.Forward()), faction);
+            var direction = math.normalizesafe(toward, transform.Forward());
+            _cues.Play(shooter, CueSlot.Fire, transform, direction, faction, pose);
         }
 
         private void Reveal(Entity shooter)

@@ -209,14 +209,34 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void IsFire_CoversEveryFireSlot_AndNothingElse()
+        public void EachWeapon_PlaysItsOwnFireCue_ByPoseIndex()
         {
-            Assert.IsTrue(CueRules.IsFire(CueSlot.Fire));
-            Assert.IsTrue(CueRules.IsFire(CueSlot.Fire2));
-            Assert.IsTrue(CueRules.IsFire(CueSlot.Fire3));
-            Assert.IsTrue(CueRules.IsFire(CueSlot.Fire4));
-            Assert.IsFalse(CueRules.IsFire(CueSlot.Impact));
-            Assert.IsFalse(CueRules.IsFire(CueSlot.Ready));
+            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, cooldown: 100f);
+            _world.AddMount(gun, range: 6f, cooldown: 100f);
+            var writer = new EntityManagerWriter(_world.EntityManager, gun);
+            var sounds = EntitySoundsAuthoring.Add(ref writer);
+            EntitySoundsAuthoring.Set(sounds, CueSlot.Fire, _cue);
+            EntitySoundsAuthoring.Set(sounds, CueSlot.Fire, _cue, 1);
+            _world.SpawnUnit(2, new float3(4f, 0f, 0f));
+
+            var fired = _world.QueuedOver(1f, CueSlot.Fire).ConvertAll(cue => cue.Variant);
+
+            CollectionAssert.AreEquivalent(new byte[] { 0, 1 }, fired);
+        }
+
+        [Test]
+        public void ExtraWeaponWithoutAFireCue_FiresSilently()
+        {
+            var gun = Voiced(_world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, cooldown: 100f),
+                CueSlot.Fire);
+            _world.AddMount(gun, range: 6f, cooldown: 100f);
+            var enemy = _world.SpawnUnit(2, new float3(4f, 0f, 0f));
+
+            var fired = _world.QueuedOver(1f, CueSlot.Fire);
+
+            Assert.Less(_world.GetHealth(enemy), 75f, "both weapons fired");
+            Assert.AreEqual(1, fired.Count, "the mount doesn't borrow the primary's cue");
+            Assert.AreEqual(0, fired[0].Variant);
         }
 
         private T Single<T>() where T : unmanaged, IComponentData

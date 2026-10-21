@@ -10,15 +10,9 @@ namespace HyperRTS.Simulation.Cues
             slot is CueSlot.Ready or CueSlot.Select or CueSlot.Move or CueSlot.Attack or CueSlot.AbilityVoice
                 or CueSlot.UnderFire;
 
-        public static bool IsFire(CueSlot slot) =>
-            slot is CueSlot.Fire or CueSlot.Fire2 or CueSlot.Fire3 or CueSlot.Fire4;
-
-        public static bool IsAnnouncement(CueSlot slot) =>
-            slot is >= CueSlot.AnnounceUnitLost and <= CueSlot.AnnounceUpgradeComplete;
-
         /// <summary>Voices, production done and announcements speak only to their owner.</summary>
         public static bool IsOwnerOnly(CueSlot slot) =>
-            IsVoice(slot) || IsAnnouncement(slot) || slot == CueSlot.ProductionDone;
+            IsVoice(slot) || slot is CueSlot.Announce or CueSlot.ProductionDone;
 
         /// <summary>A shot that landed on the ground, the only impact that marks or deforms terrain.</summary>
         public static bool IsGroundImpact(in CueEvent cue) =>

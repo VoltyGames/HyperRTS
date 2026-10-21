@@ -24,9 +24,9 @@ namespace HyperRTS.Editor.Catalog
             ("Build s", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.buildTime)),
             ("Vision", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.visionRange)),
             ("Speed", typeof(UnitAuthoring), nameof(UnitAuthoring.moveSpeed)),
-            ("Damage", typeof(WeaponAuthoring), nameof(WeaponAuthoring.damage)),
-            ("Cooldown", typeof(WeaponAuthoring), nameof(WeaponAuthoring.cooldown)),
-            ("Range", typeof(WeaponAuthoring), nameof(WeaponAuthoring.range)),
+            ("Damage", typeof(WeaponAuthoring), Stat(nameof(WeaponAuthoring.WeaponStats.damage))),
+            ("Cooldown", typeof(WeaponAuthoring), Stat(nameof(WeaponAuthoring.WeaponStats.cooldown))),
+            ("Range", typeof(WeaponAuthoring), Stat(nameof(WeaponAuthoring.WeaponStats.range))),
         };
 
         private readonly Dictionary<Component, SerializedObject> _serialized = new();
@@ -146,6 +146,8 @@ namespace HyperRTS.Editor.Catalog
 
             return serialized;
         }
+
+        private static string Stat(string field) => $"{nameof(WeaponAuthoring.stats)}.{field}";
 
         private static string Dps(WeaponAuthoring weapon) => weapon != null ? EntitySummary.Dps(weapon).ToString("0.#") : "-";
 

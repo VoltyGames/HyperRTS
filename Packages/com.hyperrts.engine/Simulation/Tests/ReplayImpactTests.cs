@@ -100,7 +100,7 @@ namespace HyperRTS.Simulation.Tests
         public void Serializer_RoundTripsCues()
         {
             var replay = Record();
-            replay.Cues[0].Material = (byte)SurfaceMaterial.Metal;
+            replay.Cues[0].Detail = (byte)SurfaceMaterial.Metal;
 
             using var memory = new MemoryStream();
             ReplaySerializer.Write(replay, memory);

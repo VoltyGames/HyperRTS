@@ -3,6 +3,7 @@ using HyperRTS.Editor.Templates;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Upgrades;
+using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
 
@@ -22,14 +23,16 @@ namespace HyperRTS.Editor.Tests
         {
             var weapon = Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
             var serialized = new SerializedObject(weapon);
-            Assert.IsFalse(ConditionalFields.IsMet(serialized.FindProperty(nameof(WeaponAuthoring.splashRadius))));
-            Assert.IsFalse(ConditionalFields.IsMet(serialized.FindProperty(nameof(WeaponAuthoring.projectilePrefab))));
+            var splash = Stat(nameof(WeaponAuthoring.WeaponStats.splashRadius));
+            var projectile = Stat(nameof(WeaponAuthoring.WeaponStats.projectilePrefab));
+            Assert.IsFalse(ConditionalFields.IsMet(serialized.FindProperty(splash)));
+            Assert.IsFalse(ConditionalFields.IsMet(serialized.FindProperty(projectile)));
 
-            weapon.splashRadius = 2f;
-            weapon.projectilePrefab = weapon.gameObject;
+            weapon.stats.splashRadius = 2f;
+            weapon.stats.projectilePrefab = weapon.gameObject;
             serialized.Update();
-            Assert.IsTrue(ConditionalFields.IsMet(serialized.FindProperty(nameof(WeaponAuthoring.splashRadius))));
-            Assert.IsTrue(ConditionalFields.IsMet(serialized.FindProperty(nameof(WeaponAuthoring.projectilePrefab))));
+            Assert.IsTrue(ConditionalFields.IsMet(serialized.FindProperty(splash)));
+            Assert.IsTrue(ConditionalFields.IsMet(serialized.FindProperty(projectile)));
         }
 
         [Test]
@@ -38,8 +41,13 @@ namespace HyperRTS.Editor.Tests
             var weapon = Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
             var serialized = new SerializedObject(weapon);
             Assert.Throws<System.ArgumentException>(() =>
-                ConditionalFields.IsMet(serialized.FindProperty(nameof(WeaponAuthoring.targets))));
+                ConditionalFields.IsMet(serialized.FindProperty(Stat(nameof(WeaponAuthoring.WeaponStats.targets)))));
         }
+
+        [Test]
+        public void ShowIfReadsSiblingsInsideNestedStats() =>
+            CollectionAssert.Contains(ConditionalFields.Conditions(typeof(WeaponAuthoring)).ToList(),
+                (Stat(nameof(WeaponAuthoring.WeaponStats.splashEdgeDamage)), Stat(nameof(WeaponAuthoring.WeaponStats.splashRadius))));
 
         [Test]
         public void OptionSummaryShowsCostAndTime()
@@ -57,5 +65,7 @@ namespace HyperRTS.Editor.Tests
 
             Assert.AreEqual("Unit · Weapon · 10 DPS · free", EntitySummary.Line(soldier));
         }
+
+        private static string Stat(string field) => $"{nameof(WeaponAuthoring.stats)}.{field}";
     }
 }

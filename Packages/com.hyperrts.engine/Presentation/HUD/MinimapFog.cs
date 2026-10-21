@@ -7,7 +7,10 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>The local team's fog of war as a minimap layer: dim where explored, dark where never seen.</summary>
+    /// <summary>
+    /// The local team's fog of war as a minimap layer: dim where explored, dark where never seen. Its texture goes
+    /// when the layer leaves its panel, as on a HUD rebuild.
+    /// </summary>
     internal sealed class MinimapFog
     {
         private const byte ExploredAlpha = 110;
@@ -27,6 +30,7 @@ namespace HyperRTS.Presentation.HUD
         {
             _layer = layer;
             _layer.style.unityBackgroundImageTintColor = Color.black;
+            _layer.RegisterCallback<DetachFromPanelEvent>(_ => Release());
         }
 
         public void Refresh(EntityManager entityManager)
@@ -63,6 +67,13 @@ namespace HyperRTS.Presentation.HUD
                 _texture.GetPixelData<byte>(0));
             _texture.Apply(false);
             _version = view.Version;
+        }
+
+        private void Release()
+        {
+            Object.Destroy(_texture);
+            _texture = null;
+            _layer.style.backgroundImage = StyleKeyword.None;
         }
     }
 }

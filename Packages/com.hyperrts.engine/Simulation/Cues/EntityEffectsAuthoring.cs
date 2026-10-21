@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
@@ -29,7 +28,7 @@ namespace HyperRTS.Simulation.Cues
         [Tooltip("When it uses an ability, at the aim point.")]
         public GameObject ability;
 
-        [Tooltip("Each shot of the extra weapons, in order: Fire2, Fire3, then Fire4 for the rest.")]
+        [Tooltip("Each shot of the extra weapons, in order; one without an entry shows nothing.")]
         public List<MountFire> mountFire = new();
 
         /// <summary>The fire rig of one extra weapon.</summary>
@@ -66,8 +65,8 @@ namespace HyperRTS.Simulation.Cues
                         DependsOn(mount.muzzle);
                     }
 
-                    EffectSetup.Set(effects, WeaponMount.FireSlot(i), mount.rig,
-                        EffectSetup.Socket(authoring.transform, mount.muzzle));
+                    EffectSetup.Set(effects, CueSlot.Fire, mount.rig,
+                        EffectSetup.Socket(authoring.transform, mount.muzzle), (byte)(i + 1));
                 }
             }
         }

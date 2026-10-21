@@ -45,6 +45,15 @@ namespace HyperRTS.Simulation.GameEntities
             return baseCooldown / multiplier;
         }
 
+        /// <summary>Rewrites damage, range and cooldown from their bases under the owner's modifiers.</summary>
+        private static void ApplyStats(ref Weapon weapon, DynamicBuffer<StatModifier> modifiers, float baseDamage,
+            float baseRange, float baseCooldown)
+        {
+            weapon.Damage = StatMath.Evaluate(modifiers, Stat.Damage, baseDamage);
+            weapon.Range = StatMath.Evaluate(modifiers, Stat.Range, baseRange);
+            weapon.Cooldown = Cooldown(modifiers, baseCooldown);
+        }
+
         // Entities spawned this frame wait for StatBaseSystem, which marks their modifiers changed once bases exist.
         [BurstCompile]
         [WithChangeFilter(typeof(StatModifier))]
@@ -68,9 +77,9 @@ namespace HyperRTS.Simulation.GameEntities
             private void Execute(ref Weapon weapon, in DynamicBuffer<StatModifier> modifiers,
                 in DynamicBuffer<BaseStat> bases)
             {
-                weapon.Damage = StatMath.Apply(modifiers, bases, Stat.Damage);
-                weapon.Range = StatMath.Apply(modifiers, bases, Stat.Range);
-                weapon.Cooldown = Cooldown(modifiers, StatMath.BaseValue(bases, Stat.FireRate));
+                var range = StatMath.BaseValue(bases, Stat.Range);
+                var cooldown = StatMath.BaseValue(bases, Stat.FireRate);
+                ApplyStats(ref weapon, modifiers, StatMath.BaseValue(bases, Stat.Damage), range, cooldown);
             }
         }
 
@@ -85,9 +94,7 @@ namespace HyperRTS.Simulation.GameEntities
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
-                    mount.Weapon.Damage = StatMath.Evaluate(modifiers, Stat.Damage, mount.BaseDamage);
-                    mount.Weapon.Range = StatMath.Evaluate(modifiers, Stat.Range, mount.BaseRange);
-                    mount.Weapon.Cooldown = Cooldown(modifiers, mount.BaseCooldown);
+                    ApplyStats(ref mount.Weapon, modifiers, mount.BaseDamage, mount.BaseRange, mount.BaseCooldown);
                     mounts[i] = mount;
                 }
             }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
@@ -32,17 +33,15 @@ namespace HyperRTS.Simulation.Tests
         public void TearDown() => _world.Dispose();
 
         private List<CueEvent> Announced(float seconds) =>
-            _world.QueuedOver(seconds).FindAll(cue => CueRules.IsAnnouncement(cue.Slot));
+            _world.QueuedOver(seconds, CueSlot.Announce);
+
+        private List<CueEvent> Announced(float seconds, AnnouncementKind kind) =>
+            Announced(seconds).FindAll(cue => cue.Announcement == kind);
 
         [Test]
         public void Announcements_AreOwnerOnly()
         {
-            for (var slot = CueSlot.AnnounceUnitLost; slot <= CueSlot.AnnounceUpgradeComplete; slot++)
-            {
-                Assert.IsTrue(CueRules.IsOwnerOnly(slot), slot.ToString());
-            }
-
-            Assert.IsFalse(CueRules.IsAnnouncement(CueSlot.UnderFire));
+            Assert.IsTrue(CueRules.IsOwnerOnly(CueSlot.Announce));
         }
 
         [Test]
@@ -65,7 +64,7 @@ namespace HyperRTS.Simulation.Tests
             _world.SpawnBuilding(2, new float3(30f, 0f, 30f), Footprint);
             _world.Kill(unit);
 
-            var lost = Announced(0.5f).FindAll(cue => cue.Slot == CueSlot.AnnounceUnitLost);
+            var lost = Announced(0.5f, AnnouncementKind.UnitLost);
 
             Assert.AreEqual(1, lost.Count);
             Assert.AreEqual(1, lost[0].Faction);
@@ -85,10 +84,10 @@ namespace HyperRTS.Simulation.Tests
                 heard.AddRange(Announced(0.05f));
             }
 
-            Assert.AreEqual(1, heard.FindAll(cue => cue.Slot == CueSlot.AnnounceBaseUnderAttack).Count);
+            Assert.AreEqual(1, heard.FindAll(cue => cue.Announcement == AnnouncementKind.BaseUnderAttack).Count);
             _world.Run(AnnouncementGate.Interval);
             _world.QueueDamage(hit);
-            Assert.AreEqual(CueSlot.AnnounceBaseUnderAttack, Announced(0.05f)[0].Slot, "the gate reopens");
+            Assert.AreEqual(AnnouncementKind.BaseUnderAttack, Announced(0.05f)[0].Announcement, "the gate reopens");
         }
 
         [Test]
@@ -98,7 +97,7 @@ namespace HyperRTS.Simulation.Tests
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, new float3(3f, 0f, 0f)));
             _world.Order(builder, OrderType.Build, site);
 
-            var done = Announced(2f).Find(cue => cue.Slot == CueSlot.AnnounceConstructionComplete);
+            var done = Announced(2f, AnnouncementKind.ConstructionComplete)[0];
 
             Assert.AreEqual(_world.GetTypeId(site), done.TypeId);
         }
@@ -118,9 +117,9 @@ namespace HyperRTS.Simulation.Tests
             var heard = Announced(3f);
 
             Assert.AreEqual(EntityInfo.TypeIdFromName("Tank"),
-                heard.Find(cue => cue.Slot == CueSlot.AnnounceUnitReady).TypeId);
+                heard.Find(cue => cue.Announcement == AnnouncementKind.UnitReady).TypeId);
             Assert.AreEqual(EntityInfo.TypeIdFromName("Armor Plating"),
-                heard.Find(cue => cue.Slot == CueSlot.AnnounceUpgradeComplete).TypeId);
+                heard.Find(cue => cue.Announcement == AnnouncementKind.UpgradeComplete).TypeId);
         }
 
         [Test]
@@ -130,10 +129,28 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsEmpty(Announced(0.5f));
 
             _world.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, power: -10f);
-            var low = Announced(1f).FindAll(cue => cue.Slot == CueSlot.AnnounceLowPower);
+            var low = Announced(1f, AnnouncementKind.LowPower);
 
             Assert.AreEqual(1, low.Count, "once, when it falls short");
             Assert.AreEqual(1, low[0].Faction);
+        }
+
+        [Test]
+        public void FlickeringPower_IsAnnouncedOncePerInterval()
+        {
+            _world.SpawnBuilding(1, float3.zero, Footprint, power: 5f);
+            var drain = _world.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, power: -10f);
+            var low = Announced(0.2f, AnnouncementKind.LowPower);
+            _world.EntityManager.SetComponentData(drain, new PowerSupply { Amount = 0f });
+            low.AddRange(Announced(0.2f, AnnouncementKind.LowPower));
+            _world.EntityManager.SetComponentData(drain, new PowerSupply { Amount = -10f });
+            low.AddRange(Announced(0.2f, AnnouncementKind.LowPower));
+
+            Assert.AreEqual(1, low.Count, "the gate holds the second fall");
+            _world.EntityManager.SetComponentData(drain, new PowerSupply { Amount = 0f });
+            _world.Run(AnnouncementGate.Interval);
+            _world.EntityManager.SetComponentData(drain, new PowerSupply { Amount = -10f });
+            Assert.AreEqual(1, Announced(0.2f, AnnouncementKind.LowPower).Count, "the gate reopens");
         }
 
         private Entity Upgrade(string name)

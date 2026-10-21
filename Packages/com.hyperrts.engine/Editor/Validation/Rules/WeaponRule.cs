@@ -12,9 +12,8 @@ namespace HyperRTS.Editor.Validation.Rules
     {
         protected override void Check(WeaponAuthoring weapon, ValidationIssues issues)
         {
-            CheckProjectile(weapon, weapon.projectilePrefab, "Projectile", issues);
-            CheckFlight(weapon, "The weapon", weapon.trajectory, weapon.arcHeight, weapon.minRange, weapon.range,
-                weapon.projectilePrefab, issues);
+            CheckProjectile(weapon, weapon.stats.projectilePrefab, "Projectile", issues);
+            CheckFlight(weapon, "The weapon", weapon.stats, issues);
             for (var i = 0; i < weapon.extraWeapons.Count; i++)
             {
                 CheckMount(weapon, weapon.extraWeapons[i], $"Extra weapon {i + 1}", issues);
@@ -30,18 +29,17 @@ namespace HyperRTS.Editor.Validation.Rules
                 return;
             }
 
-            CheckProjectile(weapon, slot.projectilePrefab, $"{label} projectile", issues);
-            CheckFlight(weapon, label, slot.trajectory, slot.arcHeight, slot.minRange, slot.range, slot.projectilePrefab,
-                issues);
-            if (slot.range <= 0f)
+            CheckProjectile(weapon, slot.stats.projectilePrefab, $"{label} projectile", issues);
+            CheckFlight(weapon, label, slot.stats, issues);
+            if (slot.stats.range <= 0f)
             {
                 issues.Error(weapon, $"{label} has no range.");
             }
 
-            if (!slot.independent && !Covers(weapon.targets, slot.targets))
+            if (!slot.independent && !Covers(weapon.stats.targets, slot.stats.targets))
             {
-                issues.Error(weapon,
-                    $"{label} hits {slot.targets} but the primary only {weapon.targets}: make it independent.");
+                issues.Error(weapon, $"{label} hits {slot.stats.targets} but the primary only " +
+                    $"{weapon.stats.targets}: make it independent.");
             }
         }
 
@@ -58,22 +56,21 @@ namespace HyperRTS.Editor.Validation.Rules
                 issues);
         }
 
-        private static void CheckFlight(WeaponAuthoring weapon, string label, Trajectory trajectory, float arcHeight,
-            float minRange, float range, GameObject projectile, ValidationIssues issues)
+        private static void CheckFlight(WeaponAuthoring weapon, string label, WeaponAuthoring.WeaponStats stats, ValidationIssues issues)
         {
-            if (minRange >= range)
+            if (stats.minRange >= stats.range)
             {
-                issues.Error(weapon, $"{label} has a minimum range {minRange} not below its range {range}.");
+                issues.Error(weapon, $"{label} has a minimum range {stats.minRange} not below its range {stats.range}.");
             }
 
-            if (arcHeight < 0f)
+            if (stats.arcHeight < 0f)
             {
                 issues.Error(weapon, $"{label} has a negative arc height.");
             }
 
-            if (trajectory != Trajectory.Direct && projectile == null)
+            if (stats.trajectory != Trajectory.Direct && stats.projectilePrefab == null)
             {
-                issues.Error(weapon, $"{label} flies {trajectory} but has no projectile prefab.");
+                issues.Error(weapon, $"{label} flies {stats.trajectory} but has no projectile prefab.");
             }
         }
 

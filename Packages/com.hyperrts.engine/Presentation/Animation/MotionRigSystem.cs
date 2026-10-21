@@ -13,7 +13,7 @@ namespace HyperRTS.Presentation.Animation
     /// <summary>
     /// Poses each <see cref="MotionRig"/>'s children from the interpolated unit: turrets and barrels follow the
     /// replicated <see cref="WeaponPose"/>, barrels recoil per shot, wheels roll with the ground covered,
-    /// rotors spin up with flight and the body tilts with the ground or leans with acceleration.
+    /// rotors spin up with flight into the unit's <see cref="RotorSpin"/>, and the body tilts with the ground or leans with acceleration.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -40,6 +40,7 @@ namespace HyperRTS.Presentation.Animation
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
                 Flights = SystemAPI.GetComponentLookup<Flight>(true),
                 Docks = SystemAPI.GetComponentLookup<Docked>(true),
+                Spins = SystemAPI.GetComponentLookup<RotorSpin>(),
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(),
             }.Schedule(state.Dependency);
         }
@@ -52,6 +53,7 @@ namespace HyperRTS.Presentation.Animation
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
             [ReadOnly] public ComponentLookup<Flight> Flights;
             [ReadOnly] public ComponentLookup<Docked> Docks;
+            public ComponentLookup<RotorSpin> Spins;
             public ComponentLookup<LocalTransform> Transforms;
 
             private void Execute(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts, in LocalToWorld place)
@@ -69,6 +71,7 @@ namespace HyperRTS.Presentation.Animation
                 var rolled = math.length(moved.xz) * math.sign(math.dot(moved, forward));
                 var running = Flights.HasComponent(entity) && !Docks.HasEnabled(entity);
                 Poses.TryGetBuffer(entity, out var poses);
+                var spin = 0f;
                 for (var i = 0; i < parts.Length; i++)
                 {
                     var part = parts[i];
@@ -76,6 +79,12 @@ namespace HyperRTS.Presentation.Animation
                     Pose(ref part, ref transform, poses, rolled, running);
                     parts[i] = part;
                     Transforms[part.Part] = transform;
+                    spin = part.Kind == MotionPartKind.Rotor ? math.max(spin, part.Amount) : spin;
+                }
+
+                if (Spins.HasComponent(entity))
+                {
+                    Spins[entity] = new RotorSpin { Amount = spin };
                 }
             }
 

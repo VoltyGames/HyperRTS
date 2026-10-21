@@ -12,11 +12,12 @@ namespace HyperRTS.Simulation.Cues
             where TWriter : struct, IEntityWriter =>
             writer.AddBuffer<EntityEffect>();
 
-        public static void Set(DynamicBuffer<EntityEffect> effects, CueSlot slot, GameObject rig, float3 socket)
+        public static void Set(DynamicBuffer<EntityEffect> effects, CueSlot slot, GameObject rig, float3 socket,
+            byte variant = 0)
         {
             if (rig != null)
             {
-                effects.Add(new EntityEffect { Slot = slot, Rig = rig, Socket = socket });
+                effects.Add(new EntityEffect { Slot = slot, Variant = variant, Rig = rig, Socket = socket });
             }
         }
 

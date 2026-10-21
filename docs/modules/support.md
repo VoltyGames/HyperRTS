@@ -24,7 +24,9 @@ your own `PlayerCommand`s.
 ## Audio
 
 Part of `Cues`. `EntitySoundsAuthoring` gives an entity a `SoundCue` asset per cue slot. A `SoundCue` holds clips,
-volume and pitch ranges, priority and 3D settings. Games add their own slots from `GameFirst` up.
+volume and pitch ranges, priority and 3D settings. Games add their own slots from `GameFirst` up. A cue's
+`Variant` byte picks among one slot's entries: the weapon for Fire, the kind for Announce. On the wire it shares a
+byte with an impact's material, which only impacts use.
 
 | Slot | Plays | Heard by |
 | --- | --- | --- |
@@ -41,7 +43,8 @@ Sounds play through [cues](#cues). Playback is on the [client](client.md#audio),
 `EntityLoopsAuthoring` gives an entity continuous sounds driven by replicated state, attached to it in 3D:
 
 - `engineIdle` and `engineMove` crossfade by speed up to `fullSpeed`, and the pitch rises by `pitchRise`.
-- `rotor` spins up over `rotorSpinUpTime` seconds while a `Flight` entity is not `Docked`.
+- `rotor` follows the [motion rig](client.md#motion-rig)'s `RotorSpin`, so it stays in step with the blades even
+  while the entity is hidden. Without a rig rotor it plays full while a `Flight` entity is not `Docked`.
 - `turretTraverse` plays while any weapon turns.
 - `working` plays while a building is under construction or a producer has a queue.
 - `ambient` always plays.
@@ -51,9 +54,11 @@ cue play.
 
 ### Announcer
 
-The simulation writes owner-only announcement cues: unit lost, base under attack, low power, construction complete,
-unit ready and upgrade complete. Each player gets at most one of a kind per second. An `AnnouncerSet` asset maps
-each alert to a 2D `SoundCue` with its own cooldown. Base under attack defaults to 30 s.
+The simulation writes owner-only `Announce` cues whose `AnnouncementKind` is unit lost, base under attack, low
+power, construction complete, unit ready or upgrade complete. A game numbers its own kinds from
+`AnnouncementKind.GameFirst` (128) up and writes them with `CueWriter.Announce`. `AnnouncementGate` lets each
+player hear at most one of a kind per second, low power included. An `AnnouncerSet` asset lists a line per kind: a
+2D `SoundCue` with its own cooldown. A kind without a line stays silent. Base under attack defaults to 30 s.
 
 `AnnouncerAuthoring` in the match's subscene picks a set per `PlayerSide`. A game may rewrite the `AnnouncerVoice`
 buffer on a client at runtime, for example for the chosen language. The client queues alerts and speaks them one at

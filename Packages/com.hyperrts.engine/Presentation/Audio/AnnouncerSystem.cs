@@ -47,9 +47,9 @@ namespace HyperRTS.Presentation.Audio
             _visibility.Begin();
             foreach (var cue in SystemAPI.GetSingletonBuffer<CueEvent>(true))
             {
-                if (CueRules.IsAnnouncement(cue.Slot) && _visibility.IsSeen(cue))
+                if (cue.Slot == CueSlot.Announce && _visibility.IsSeen(cue))
                 {
-                    _queue.Offer(set, cue.Slot, now);
+                    _queue.Offer(set, cue.Announcement, now);
                 }
             }
 

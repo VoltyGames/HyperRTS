@@ -9,9 +9,13 @@ namespace HyperRTS.Presentation.HUD
     public abstract class PanelContent : PresentationBehaviour
     {
         private int _uiVersion = -1;
+        private VisualElement _content;
 
-        /// <summary>The built tree; null until the panel first loads.</summary>
-        protected VisualElement Content { get; private set; }
+        /// <summary>
+        /// The built tree; null until the panel first loads and again once a panel swap detaches it, until the reload
+        /// rebuilds it.
+        /// </summary>
+        protected VisualElement Content => _content?.panel != null ? _content : null;
 
         protected abstract VisualElement Build();
 
@@ -38,9 +42,9 @@ namespace HyperRTS.Presentation.HUD
             }
 
             _uiVersion = version;
-            Content?.RemoveFromHierarchy();
-            Content = Build();
-            root.Add(Content);
+            _content?.RemoveFromHierarchy();
+            _content = Build();
+            root.Add(_content);
         }
     }
 }

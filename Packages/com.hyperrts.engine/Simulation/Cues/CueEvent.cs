@@ -13,6 +13,9 @@ namespace HyperRTS.Simulation.Cues
         public int TypeId;
         public CueSlot Slot;
 
+        /// <summary>Which of the slot's cues: a fire cue's weapon pose index, an announcement's kind.</summary>
+        public byte Variant;
+
         /// <summary>Owner of the source; decides who hears and sees it through fog and voice rules.</summary>
         public byte Faction;
 
@@ -36,6 +39,8 @@ namespace HyperRTS.Simulation.Cues
 
         /// <summary>What an impact's shot was aimed at, for <c>ImpactSurfaceSystem</c>; it never leaves the frame.</summary>
         public Entity Target;
+
+        public readonly AnnouncementKind Announcement => new(Variant);
     }
 
     /// <summary>Tags the singleton holding this frame's <see cref="CueEvent"/>s.</summary>

@@ -45,6 +45,17 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(impact.Radius, read.Radius, QuantizedPosition.Step);
             Assert.AreEqual(impact.Surface, read.Surface);
             Assert.AreEqual(impact.Material, read.Material);
+            Assert.AreEqual(0, read.Variant, "impacts carry their material, not a variant");
+        }
+
+        [TestCase(CueSlot.Fire, 3)]
+        [TestCase(CueSlot.Announce, AnnouncementKind.GameFirst + 2)]
+        public void PackUnpack_KeepsTheVariant(CueSlot slot, int variant)
+        {
+            var read = PackedCue.Pack(new CueEvent { Slot = slot, Variant = (byte)variant }).Unpack();
+
+            Assert.AreEqual(variant, read.Variant);
+            Assert.AreEqual(SurfaceMaterial.None, read.Material);
         }
 
         [TestCase(0f, 0f, 1f)]

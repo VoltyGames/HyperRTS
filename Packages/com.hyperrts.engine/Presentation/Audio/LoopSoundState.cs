@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Audio
 {
-    /// <summary>One entity's loop drivers on the client: smoothed speed, rotor speed and turret traverse.</summary>
+    /// <summary>One entity's loop drivers on the client: smoothed speed, the rotor's spin and turret traverse.</summary>
     public struct LoopSoundState
     {
         /// <summary>Snapshots move turrets in steps slower than frames, so a turn holds this long between them.</summary>
@@ -16,16 +16,16 @@ namespace HyperRTS.Presentation.Audio
         public float3 LastPosition;
         public bool Seen;
         public float Speed;
-        public float RotorSpeed;
+        public float Rotor;
         public float Traverse;
         public uint LastAim;
         public double LastTurn;
 
         /// <summary>
-        /// Advances by one frame: <paramref name="flying"/> spins the rotor up, a new <paramref name="aim"/> (any
-        /// weapon's heading) restarts the traverse hold.
+        /// Advances by one frame: <paramref name="rotor"/> is the blades' spin from 0 to 1, a new
+        /// <paramref name="aim"/> (any weapon's heading) restarts the traverse hold.
         /// </summary>
-        public void Step(float3 position, bool flying, uint aim, float spinUpTime, double now, float deltaTime)
+        public void Step(float3 position, float rotor, uint aim, double now, float deltaTime)
         {
             if (deltaTime <= 0f)
             {
@@ -34,7 +34,7 @@ namespace HyperRTS.Presentation.Audio
 
             var moved = Seen ? math.length((position - LastPosition).xz) / deltaTime : 0f;
             Speed = math.lerp(Speed, moved, 1f - math.exp(-deltaTime / SpeedSmoothing));
-            RotorSpeed = math.saturate(RotorSpeed + (flying ? 1f : -1f) * deltaTime / spinUpTime);
+            Rotor = rotor;
             if (Seen && aim != LastAim)
             {
                 LastTurn = now;
@@ -55,7 +55,7 @@ namespace HyperRTS.Presentation.Audio
         {
             LoopSlot.EngineIdle => 1f - Throttle(tuning),
             LoopSlot.EngineMove => Throttle(tuning),
-            LoopSlot.Rotor => RotorSpeed,
+            LoopSlot.Rotor => Rotor,
             LoopSlot.TurretTraverse => Traverse,
             LoopSlot.Working => working ? 1f : 0f,
             _ => 1f,
@@ -65,7 +65,7 @@ namespace HyperRTS.Presentation.Audio
         public readonly float PitchScale(LoopSlot slot, in LoopSoundTuning tuning) => slot switch
         {
             LoopSlot.EngineIdle or LoopSlot.EngineMove => 1f + tuning.PitchRise * Throttle(tuning),
-            LoopSlot.Rotor => math.lerp(0.6f, 1f, RotorSpeed),
+            LoopSlot.Rotor => math.lerp(0.6f, 1f, Rotor),
             _ => 1f,
         };
     }

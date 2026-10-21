@@ -29,12 +29,12 @@ namespace HyperRTS.Presentation.Effects
         /// <summary>Null when the type's shots throw nothing up.</summary>
         public SurfaceEffects Impacts { get; }
 
-        /// <summary>The slot's rig entry; false when the type has none.</summary>
-        public bool TryGet(CueSlot slot, out EntityEffect effect)
+        /// <summary>The slot and variant's rig entry; false when the type has none.</summary>
+        public bool TryGet(CueSlot slot, byte variant, out EntityEffect effect)
         {
             foreach (var entry in _effects)
             {
-                if (entry.Slot == slot)
+                if (entry.Plays(slot, variant))
                 {
                     effect = entry;
                     return true;

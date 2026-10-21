@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
@@ -31,7 +30,7 @@ namespace HyperRTS.Simulation.Cues
         [Tooltip("When it uses an ability.")]
         public SoundCue ability;
 
-        [Tooltip("Each shot of the extra weapons, in order: Fire2, Fire3, then Fire4 for the rest.")]
+        [Tooltip("Each shot of the extra weapons, in order; one without an entry fires silently.")]
         public List<SoundCue> mountFire = new();
 
         [Header("Owner only")]
@@ -65,11 +64,11 @@ namespace HyperRTS.Simulation.Cues
             writer.AddBuffer<EntitySound>();
 
         /// <summary>Unset cues are skipped, so the slot stays silent and writes no events.</summary>
-        public static void Set(DynamicBuffer<EntitySound> sounds, CueSlot slot, SoundCue cue)
+        public static void Set(DynamicBuffer<EntitySound> sounds, CueSlot slot, SoundCue cue, byte variant = 0)
         {
             if (cue != null)
             {
-                sounds.Add(new EntitySound { Slot = slot, Cue = cue });
+                sounds.Add(new EntitySound { Slot = slot, Variant = variant, Cue = cue });
             }
         }
 
@@ -97,7 +96,7 @@ namespace HyperRTS.Simulation.Cues
                 EntitySoundsAuthoring.Set(sounds, CueSlot.UnderFire, authoring.underFire);
                 for (var i = 0; i < authoring.mountFire.Count; i++)
                 {
-                    EntitySoundsAuthoring.Set(sounds, WeaponMount.FireSlot(i), authoring.mountFire[i]);
+                    EntitySoundsAuthoring.Set(sounds, CueSlot.Fire, authoring.mountFire[i], (byte)(i + 1));
                 }
             }
         }

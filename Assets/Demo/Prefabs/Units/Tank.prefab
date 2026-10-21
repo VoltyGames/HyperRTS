@@ -97,12 +97,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 613a300b8a589a84ea6043b43cc7aaaf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HyperRTS.Simulation::HyperRTS.Simulation.Combat.WeaponAuthoring
-  range: 12
-  damage: 40
-  cooldown: 2
-  damageType: {fileID: 11400000, guid: d304c0168082f434cacb505892279d33, type: 2}
-  projectilePrefab: {fileID: 1510177141129425373, guid: c3e6322750073f34aaa3506a06606958, type: 3}
-  projectileSpeed: 30
+  stats:
+    damage: 40
+    cooldown: 2
+    damageType: {fileID: 11400000, guid: d304c0168082f434cacb505892279d33, type: 2}
+    projectilePrefab: {fileID: 1510177141129425373, guid: c3e6322750073f34aaa3506a06606958, type: 3}
+    projectileSpeed: 30
+    range: 12
   acquireRange: 0
   stance: 0
 --- !u!114 &8343036792824820539

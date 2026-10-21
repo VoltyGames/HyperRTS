@@ -102,6 +102,7 @@ namespace HyperRTS.Presentation.Tests
 
             Update(10);
             Assert.AreEqual(1f, Part(0).Amount, 1e-4f);
+            Assert.AreEqual(1f, _em.GetComponentData<RotorSpin>(_unit).Amount, 1e-4f, "the sound follows the blades");
 
             _em.SetComponentEnabled<Docked>(_unit, true);
             Update(10);
@@ -109,6 +110,17 @@ namespace HyperRTS.Presentation.Tests
             Update(3);
             Assert.AreEqual(0f, Part(0).Amount, 1e-4f);
             Assert.AreEqual(stopped, Part(0).Angle, 1e-6f);
+            Assert.AreEqual(0f, _em.GetComponentData<RotorSpin>(_unit).Amount, 1e-4f);
+        }
+
+        [Test]
+        public void OnlyRigsWithARotor_GetARotorSpin()
+        {
+            Rig(new MotionRigPart { Kind = MotionPartKind.Wheel, Axis = math.right(), Size = 0.5f });
+            Assert.IsFalse(_em.HasComponent<RotorSpin>(_unit));
+
+            Rig(new MotionRigPart { Kind = MotionPartKind.Rotor, Axis = math.up(), Rate = 10f, Time = 1f });
+            Assert.IsTrue(_em.HasComponent<RotorSpin>(_unit));
         }
 
         [Test]

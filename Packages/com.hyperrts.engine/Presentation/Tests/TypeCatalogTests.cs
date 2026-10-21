@@ -45,8 +45,8 @@ namespace HyperRTS.Presentation.Tests
 
             var set = _catalog.Find(_entityManager, _registry, TypeId);
             Assert.IsNotNull(set);
-            Assert.IsTrue(set.TryGet(CueSlot.Fire, out _));
-            Assert.IsFalse(set.TryGet(CueSlot.Death, out _));
+            Assert.IsTrue(set.TryGet(CueSlot.Fire, 0, out _));
+            Assert.IsFalse(set.TryGet(CueSlot.Death, 0, out _));
             Assert.IsNull(set.Impacts);
         }
 
@@ -59,7 +59,7 @@ namespace HyperRTS.Presentation.Tests
 
             var set = _catalog.Find(_entityManager, _registry, TypeId);
 
-            Assert.IsTrue(set.TryGet(CueSlot.Death, out _));
+            Assert.IsTrue(set.TryGet(CueSlot.Death, 0, out _));
         }
 
         [Test]

@@ -78,7 +78,7 @@ namespace HyperRTS.Editor.Templates
         public static GameObject DefenseTower()
         {
             var go = Building("Defense Tower", 2f, 4f);
-            go.AddComponent<WeaponAuthoring>().range = 8f;
+            go.AddComponent<WeaponAuthoring>().stats.range = 8f;
             return go;
         }
 

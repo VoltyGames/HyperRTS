@@ -129,7 +129,7 @@ namespace HyperRTS.Editor.Tests
             yield return Row<WeaponRule>("is a scene object", f =>
             {
                 var weapon = f.Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
-                weapon.projectilePrefab = f.Make("Shell");
+                weapon.stats.projectilePrefab = f.Make("Shell");
                 return weapon;
             });
         }

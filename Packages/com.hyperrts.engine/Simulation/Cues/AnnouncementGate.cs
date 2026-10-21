@@ -1,5 +1,4 @@
 using System;
-using HyperRTS.Simulation.Common;
 using Unity.Collections;
 
 namespace HyperRTS.Simulation.Cues
@@ -12,23 +11,20 @@ namespace HyperRTS.Simulation.Cues
     {
         public const float Interval = 1f;
 
-        private const int Kinds = CueSlot.AnnounceUpgradeComplete - CueSlot.AnnounceUnitLost + 1;
+        private NativeHashMap<ushort, double> _next;
 
-        private NativeArray<double> _next;
-
-        public AnnouncementGate(Allocator allocator) =>
-            _next = new NativeArray<double>((Faction.Max + 1) * Kinds, allocator);
+        public AnnouncementGate(Allocator allocator) => _next = new NativeHashMap<ushort, double>(16, allocator);
 
         /// <summary>True, closing the gate for <see cref="Interval"/>, when the faction may hear this kind now.</summary>
-        public bool TryPass(CueSlot slot, byte faction, double now)
+        public bool TryPass(AnnouncementKind kind, byte faction, double now)
         {
-            var index = faction * Kinds + (slot - CueSlot.AnnounceUnitLost);
-            if (now < _next[index])
+            var key = (ushort)(faction << 8 | kind.Value);
+            if (_next.TryGetValue(key, out var next) && now < next)
             {
                 return false;
             }
 
-            _next[index] = now + Interval;
+            _next[key] = now + Interval;
             return true;
         }
 

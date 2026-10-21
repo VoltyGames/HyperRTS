@@ -28,7 +28,7 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Length (x along forward) and width the ground is sampled across.</summary>
         public float2 Footprint;
 
-        /// <summary>Leans from acceleration instead of following the ground.</summary>
+        /// <summary>Leans from acceleration instead of following the ground; baked from the unit's Flight.</summary>
         public bool Aircraft;
 
         /// <summary>Frames seen, up to 2: velocity needs one before it, acceleration two.</summary>
@@ -150,6 +150,15 @@ namespace HyperRTS.Presentation.Animation
         }
 
         private static float Wrap(float angle) => angle - 2f * math.PI * math.round(angle / (2f * math.PI));
+    }
+
+    /// <summary>
+    /// How fast a rig's rotors turn, 0 still to 1 full, written by <c>MotionRigSystem</c> so the rotor sound follows
+    /// the blades. Only rigs with a rotor have it.
+    /// </summary>
+    public struct RotorSpin : IComponentData
+    {
+        public float Amount;
     }
 
     /// <summary>How a <see cref="MotionRigPart"/> moves.</summary>

@@ -40,8 +40,5 @@ namespace HyperRTS.Simulation.Cues
 
         /// <summary>Extra pitch at full speed, as a fraction.</summary>
         public float PitchRise;
-
-        /// <summary>Seconds the rotor takes to spin up from still to full.</summary>
-        public float SpinUpTime;
     }
 }

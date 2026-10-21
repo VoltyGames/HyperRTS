@@ -161,12 +161,10 @@ namespace HyperRTS.Simulation.Combat
                 {
                     var mount = mounts[i];
                     mount.Weapon.Tick(DeltaTime);
-                    if (mount.Target != Entity.Null && !mount.Weapon.CoolingDown)
+                    var aimed = mount.Target != Entity.Null;
+                    if (aimed && Shots.TryFire(entity, ref mount.Weapon, mount.Pose, mount.Target, faction.Value, false))
                     {
-                        mount.Weapon.StartCooldown();
                         mount.UseRound();
-                        Shots.Fire(entity, mount.Weapon, mount.Pose, WeaponMount.FireSlot(i), mount.Target,
-                            faction.Value);
                     }
 
                     mounts[i] = mount;

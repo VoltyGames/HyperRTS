@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Tests
             var cue = ScriptableObject.CreateInstance<SoundCue>();
             var writer = new EntityManagerWriter(world.EntityManager, entity);
 
-            var loops = EntityLoopsAuthoring.Add(ref writer, 8f, 0.15f, 4f);
+            var loops = EntityLoopsAuthoring.Add(ref writer, 8f, 0.15f);
             EntityLoopsAuthoring.Set(loops, LoopSlot.EngineIdle, cue);
             EntityLoopsAuthoring.Set(loops, LoopSlot.Rotor, null);
             EntityLoopsAuthoring.Set(loops, LoopSlot.Ambient, cue);
@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(2, loops.Length);
             Assert.AreEqual(LoopSlot.EngineIdle, loops[0].Slot);
             Assert.AreEqual(LoopSlot.Ambient, loops[1].Slot);
-            Assert.AreEqual(4f, world.EntityManager.GetComponentData<LoopSoundTuning>(entity).SpinUpTime);
+            Assert.AreEqual(0.15f, world.EntityManager.GetComponentData<LoopSoundTuning>(entity).PitchRise);
             Object.DestroyImmediate(cue);
         }
     }

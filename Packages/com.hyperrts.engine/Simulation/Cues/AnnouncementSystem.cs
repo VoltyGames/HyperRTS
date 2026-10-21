@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Cues
 {
     /// <summary>
     /// Turns the frame's gameplay events into announcer alerts for the players they concern: a unit lost, a building
-    /// hit, a building, unit or research finished. Low power is announced by the power module.
+    /// hit, a building, unit or research finished. Low power is announced by the power module, through its own gate.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
@@ -72,19 +72,19 @@ namespace HyperRTS.Simulation.Cues
             {
                 foreach (var unit in produced)
                 {
-                    Announce(CueSlot.AnnounceUnitReady, unit.Faction, unit.Position, unit.Prefab);
+                    Announce(AnnouncementKind.UnitReady, unit.Faction, unit.Position, unit.Prefab);
                 }
 
                 foreach (var building in built)
                 {
                     var position = Transforms[building.Building].Position;
-                    Announce(CueSlot.AnnounceConstructionComplete, building.Faction, position, building.Building);
+                    Announce(AnnouncementKind.ConstructionComplete, building.Faction, position, building.Building);
                 }
 
                 foreach (var research in researched)
                 {
                     var position = Transforms[research.Producer].Position;
-                    Announce(CueSlot.AnnounceUpgradeComplete, research.Faction, position, research.Prefab);
+                    Announce(AnnouncementKind.UpgradeComplete, research.Faction, position, research.Prefab);
                 }
 
                 foreach (var hit in damaged)
@@ -92,17 +92,17 @@ namespace HyperRTS.Simulation.Cues
                     if (Buildings.HasComponent(hit.Entity))
                     {
                         var position = Transforms[hit.Entity].Position;
-                        Announce(CueSlot.AnnounceBaseUnderAttack, hit.Faction, position, hit.Entity);
+                        Announce(AnnouncementKind.BaseUnderAttack, hit.Faction, position, hit.Entity);
                     }
                 }
             }
 
-            private void Announce(CueSlot slot, byte faction, float3 position, Entity subject)
+            private void Announce(AnnouncementKind kind, byte faction, float3 position, Entity subject)
             {
-                if (Gate.TryPass(slot, faction, Now))
+                if (Gate.TryPass(kind, faction, Now))
                 {
                     var typeId = Info.TryGetComponent(subject, out var info) ? info.TypeId : 0;
-                    Cues.Announce(slot, faction, position, typeId);
+                    Cues.Announce(kind, faction, position, typeId);
                 }
             }
         }
@@ -118,9 +118,9 @@ namespace HyperRTS.Simulation.Cues
             private void Execute(in LocalTransform transform, in Faction faction, in EntityInfo info)
             {
                 var owned = faction.Value != Faction.Neutral;
-                if (owned && Gate.TryPass(CueSlot.AnnounceUnitLost, faction.Value, Now))
+                if (owned && Gate.TryPass(AnnouncementKind.UnitLost, faction.Value, Now))
                 {
-                    Cues.Announce(CueSlot.AnnounceUnitLost, faction.Value, transform.Position, info.TypeId);
+                    Cues.Announce(AnnouncementKind.UnitLost, faction.Value, transform.Position, info.TypeId);
                 }
             }
         }

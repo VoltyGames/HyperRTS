@@ -1,6 +1,4 @@
-using HyperRTS.Simulation.Cues;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat
 {
@@ -37,7 +35,7 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Set by the upgrades module once the owner has the required research.</summary>
         public bool Unlocked;
 
-        /// <summary>Index into a per-weapon pose buffer; the primary is 0, mounts 1 up.</summary>
+        /// <summary>Index into the pose buffer, and the fire cue's variant; the primary is 0, mounts 1 up.</summary>
         public byte Pose;
 
         /// <summary>May pick its own target when it can't hit the shared one.</summary>
@@ -78,8 +76,5 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Refills one round per <see cref="ReloadTime"/>.</summary>
         public void Reload(float deltaTime) =>
             Ammo.Reload(ref Rounds, MaxRounds, ref ReloadElapsed, ReloadTime, deltaTime);
-
-        /// <summary>Mount <paramref name="index"/> in the buffer plays Fire2 up, sharing Fire4 past the third.</summary>
-        public static CueSlot FireSlot(int index) => (CueSlot)math.min((int)CueSlot.Fire2 + index, (int)CueSlot.Fire4);
     }
 }

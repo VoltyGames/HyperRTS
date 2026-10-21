@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
@@ -43,9 +44,6 @@ namespace HyperRTS.Presentation.Animation
         [Tooltip("Length and width of the ground the body sits on, sampled at the four edges.")]
         public Vector2 footprint = new(6f, 3f);
 
-        [Tooltip("Leans with acceleration instead of following the ground.")]
-        public bool aircraft;
-
         /// <summary>Primary plus extra weapons, the <c>WeaponPose</c> indices a slot may follow.</summary>
         public int WeaponCount => TryGetComponent<WeaponAuthoring>(out var weapon) ? 1 + weapon.extraWeapons.Count : 0;
 
@@ -54,6 +52,10 @@ namespace HyperRTS.Presentation.Animation
         {
             writer.Add(rig);
             writer.AddBuffer(parts);
+            if (parts.Any(part => part.Kind == MotionPartKind.Rotor))
+            {
+                writer.Add(new RotorSpin());
+            }
         }
 
         /// <summary>Every slot with its part, turrets first so recoil reads the elevated barrel.</summary>
@@ -155,9 +157,10 @@ namespace HyperRTS.Presentation.Animation
             private MotionRig Rig(MotionRigAuthoring authoring)
             {
                 var tilt = authoring.tiltRoot;
+                var aircraft = GetComponent<FlightAuthoring>() != null;
                 if (tilt == null)
                 {
-                    return new MotionRig { TiltRoot = Entity.Null, Aircraft = authoring.aircraft };
+                    return new MotionRig { TiltRoot = Entity.Null, Aircraft = aircraft };
                 }
 
                 DependsOn(tilt);
@@ -167,7 +170,7 @@ namespace HyperRTS.Presentation.Animation
                     TiltFrame = Quaternion.Inverse(authoring.transform.rotation) * tilt.parent.rotation,
                     TiltRest = tilt.localRotation,
                     Footprint = authoring.footprint,
-                    Aircraft = authoring.aircraft,
+                    Aircraft = aircraft,
                 };
             }
         }
