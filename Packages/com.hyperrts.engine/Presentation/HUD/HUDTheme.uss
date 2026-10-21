@@ -171,3 +171,12 @@
 .hud-banner__title--defeat {
     color: rgb(255, 95, 80);
 }
+
+.drag-box {
+    background-color: rgba(200, 225, 255, 0.08);
+    border-color: rgba(200, 225, 255, 0.7);
+}
+
+.drag-box__corner {
+    border-color: rgb(225, 238, 255);
+}

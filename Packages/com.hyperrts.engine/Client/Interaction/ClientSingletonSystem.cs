@@ -21,6 +21,7 @@ namespace HyperRTS.Client.Interaction
             entityManager.CreateSingleton<PendingCommand>();
             entityManager.CreateSingleton<PlacementState>();
             entityManager.CreateSingleton<PointerState>();
+            entityManager.CreateSingleton<HoveredEntity>();
             entityManager.CreateSingleton<CameraFocusRequest>();
             entityManager.CreateSingleton<HotkeyPresses>();
             state.Enabled = false;

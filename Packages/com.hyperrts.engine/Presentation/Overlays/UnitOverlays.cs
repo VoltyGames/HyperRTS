@@ -1,9 +1,13 @@
+using System;
 using HyperRTS.Client.Common;
+using HyperRTS.Client.Interaction;
+using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Veterancy;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
@@ -14,12 +18,13 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>
-    /// Selection rings under selected entities and health bars over selected or damaged ones. The local player's own
-    /// selected units draw on top of scenery so they stay visible behind buildings.
+    /// Ground markers under selected and hovered entities, in relation colours, and health bars over the ones the
+    /// visibility setting picks. Both read the drawn pose, so they stay on moving models.
     /// </summary>
-    public sealed class UnitOverlays
+    public sealed class UnitOverlays : IDisposable
     {
-        private const float RingLift = 0.05f;
+        // Room one standing soldier takes round its own origin.
+        private const float FigureRadius = 0.8f;
 
         private readonly LiveQuery _living = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Health>(),
@@ -33,16 +38,20 @@ namespace HyperRTS.Presentation.Overlays
             ComponentType.ReadOnly<Selected>(),
             ComponentType.ReadOnly<Health>()));
 
-        private readonly UnitOverlayBatches _depthTested;
-        private readonly UnitOverlayBatches _onTop;
+        private readonly LiveQuery _hovered = new(entityManager => entityManager.CreateEntityQuery(
+            ComponentType.ReadOnly<HoveredEntity>()));
 
-        public UnitOverlays(Mesh ring, Mesh billboard)
+        private readonly GroundMarkers _markers;
+        private readonly HealthBars _bars;
+        private readonly SelectionFades _fades = new();
+
+        public UnitOverlays(Mesh grid, Mesh billboard, Material markerMaterial, Material barMaterial)
         {
-            _depthTested = new UnitOverlayBatches(ring, billboard);
-            _onTop = new UnitOverlayBatches(ring, billboard);
+            _markers = new GroundMarkers(grid, markerMaterial);
+            _bars = new HealthBars(billboard, barMaterial);
         }
 
-        public void Gather(MatchView view, OverlayStyle style, Transform camera)
+        public void Gather(MatchView view, OverlayStyle style, HealthBarVisibility visibility, float now)
         {
             var entityManager = view.EntityManager;
             var query = _living.In(entityManager);
@@ -51,47 +60,118 @@ namespace HyperRTS.Presentation.Overlays
             using var healths = query.ToComponentDataArray<Health>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             using var selection = SelectedSet(entityManager);
+            _hovered.In(entityManager).TryGetSingleton(out HoveredEntity hovered);
 
             for (var i = 0; i < entities.Length; i++)
             {
                 var entity = entities[i];
-                var selected = selection.Contains(entity);
-                var damaged = healths[i].Current < healths[i].Max;
-                if (!selected && !damaged)
+                var health = healths[i];
+                var focus = new OverlayFocus(selection.Contains(entity), entity == hovered.Value,
+                    health.Current < health.Max);
+                if (focus.ShowsMarker)
                 {
-                    continue;
+                    var color = style.RelationColor(view.RelationTo(factions[i].Value));
+                    AddMarker(entityManager, entity, transforms[i], color, focus.Selected, style, now);
                 }
 
-                var relation = view.RelationTo(factions[i].Value);
-                var batches = selected && relation == Relation.Own ? _onTop : _depthTested;
-                var position = transforms[i].Position;
-                var radius = EntityRadius.Get(entityManager, entity);
-                if (selected)
+                if (focus.ShowsBar(visibility))
                 {
-                    var length = HalfLength(entityManager, entity, radius) * style.ringScale;
-                    var size = radius * style.ringScale;
-                    batches.AddRing(relation, Matrix4x4.TRS(new Vector3(position.x, position.y + RingLift, position.z),
-                        Facing(transforms[i]), new Vector3(size, 1f, length)));
+                    AddBar(entityManager, entity, transforms[i].Position, health, style);
                 }
-
-                var top = EntityExtent.Top(entityManager, entity, position, radius) + style.barOffset;
-                batches.AddBar(new Vector3(position.x, top, position.z), Mathf.Clamp(radius * 2f, 1f, 4f),
-                    healths[i].Fraction, style.barHeight, camera);
             }
+
+            _fades.EndFrame();
         }
 
-        public void Draw(OverlayMaterials materials, OverlayStyle style, int layer)
+        public void Draw(OverlayStyle style, float uiScale, int layer)
         {
-            _depthTested.Draw(materials.DepthTested, materials.DepthTestedFront, style, layer);
-            _onTop.Draw(materials.OnTop, materials.OnTopFront, style, layer);
+            _markers.Draw(layer);
+            _bars.Draw(style, uiScale, layer);
         }
 
-        // Capsule hulls get an ellipse along their facing, so a long truck's ring spans the truck.
-        private static float HalfLength(EntityManager entityManager, Entity entity, float radius) =>
-            entityManager.HasComponent<NavAgent>(entity) ? entityManager.GetComponentData<NavAgent>(entity).HalfLength : radius;
+        public void Dispose()
+        {
+            _markers.Dispose();
+            _bars.Dispose();
+        }
 
-        private static Quaternion Facing(in LocalToWorld transform) =>
-            quaternion.LookRotationSafe(new float3(transform.Forward.x, 0f, transform.Forward.z), math.up());
+        private void AddMarker(EntityManager entityManager, Entity entity, in LocalToWorld world, Color color,
+            bool selected, OverlayStyle style, float now)
+        {
+            var layer = entityManager.HasComponent<NavAgent>(entity)
+                ? entityManager.GetComponentData<NavAgent>(entity).Layer
+                : NavLayer.Ground;
+            var pose = new MarkerPose(world, layer);
+            var footprint = Footprint(entityManager, entity, style.markerMargin);
+            if (footprint.Shape == MarkerShape.Brackets)
+            {
+                pose = pose.AxisAligned();
+            }
+
+            if (selected)
+            {
+                var settle = SelectionFades.ScaleAndAlpha(_fades.Elapsed(entity, now), style.selectSeconds,
+                    style.selectStartScale);
+                footprint = footprint.Scaled(settle.x);
+                color.a *= settle.y;
+            }
+            else
+            {
+                color.a *= style.hoverOpacity;
+            }
+
+            _markers.Add(pose, footprint, color, selected, style);
+        }
+
+        private void AddBar(EntityManager entityManager, Entity entity, float3 position, in Health health,
+            OverlayStyle style)
+        {
+            var radius = EntityRadius.Get(entityManager, entity);
+            var rank = entityManager.HasComponent<Experience>(entity)
+                ? entityManager.GetComponentData<Experience>(entity).Rank
+                : 0;
+            var members = 0;
+            var alive = 0;
+            if (entityManager.HasBuffer<SquadFigure>(entity))
+            {
+                members = entityManager.GetBuffer<SquadFigure>(entity, true).Length;
+                alive = SquadFigures.VisibleCount(health, members);
+            }
+
+            var top = EntityExtent.Top(entityManager, entity, position, radius);
+            var bar = new HealthBarData(health, members, alive, rank, radius, style);
+            _bars.Add(new Vector3(position.x, top, position.z), bar, style);
+        }
+
+        private static MarkerFootprint Footprint(EntityManager entityManager, Entity entity, float margin)
+        {
+            if (entityManager.HasBuffer<SquadFigure>(entity))
+            {
+                return MarkerFootprint.Round(SquadSpread(entityManager, entity), margin);
+            }
+
+            if (entityManager.HasComponent<NavAgent>(entity))
+            {
+                return MarkerFootprint.Agent(entityManager.GetComponentData<NavAgent>(entity), margin);
+            }
+
+            return entityManager.HasComponent<NavObstacle>(entity)
+                ? MarkerFootprint.Building(entityManager.GetComponentData<NavObstacle>(entity), margin)
+                : MarkerFootprint.Round(EntityRadius.Default, margin);
+        }
+
+        // Figures stand round the squad's centre, often past its nav radius, and one circle should take them all in.
+        private static float SquadSpread(EntityManager entityManager, Entity entity)
+        {
+            var spread = EntityRadius.Get(entityManager, entity);
+            foreach (var figure in entityManager.GetBuffer<SquadFigure>(entity, true))
+            {
+                var offset = entityManager.GetComponentData<LocalTransform>(figure.Figure).Position;
+                spread = math.max(spread, math.length(offset.xz) + FigureRadius);
+            }
+
+            return spread;
+        }
 
         private NativeHashSet<Entity> SelectedSet(EntityManager entityManager)
         {

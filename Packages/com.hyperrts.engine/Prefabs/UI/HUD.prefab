@@ -120,9 +120,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f82b7a2ca98d14345b260dfe0fb2a6de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HyperRTS.Presentation::HyperRTS.Presentation.Selection.SelectionDragBoxUI
-  fillColor: {r: 0.3, g: 0.7, b: 1, a: 0.15}
-  borderColor: {r: 0.3, g: 0.7, b: 1, a: 0.8}
-  borderThickness: 1
 --- !u!114 &1857229174131844793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -136,21 +133,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HyperRTS.Presentation::HyperRTS.Presentation.Overlays.OverlayRenderer
   material: {fileID: 2100000, guid: c72c31e76c744d44f93690a3a1a3241d, type: 2}
-  style:
-    ownRing: {r: 0.25, g: 1, b: 0.35, a: 0.9}
-    enemyRing: {r: 1, g: 0.25, b: 0.2, a: 0.9}
-    neutralRing: {r: 1, g: 0.9, b: 0.25, a: 0.9}
-    ringScale: 1.25
-    healthBack: {r: 0, g: 0, b: 0, a: 0.65}
-    healthHigh: {r: 0.3, g: 0.95, b: 0.3, a: 1}
-    healthMid: {r: 1, g: 0.85, b: 0.2, a: 1}
-    healthLow: {r: 1, g: 0.25, b: 0.2, a: 1}
-    barHeight: 0.18
-    barOffset: 0.5
-    placementValid: {r: 0.25, g: 1, b: 0.35, a: 0.35}
-    placementInvalid: {r: 1, g: 0.2, b: 0.2, a: 0.35}
-    ghostHeight: 1.5
-    rally: {r: 0.3, g: 0.8, b: 1, a: 0.85}
+  markerMaterial: {fileID: 2100000, guid: a576fc03c4a297e4b97b319604ada90b, type: 2}
+  barMaterial: {fileID: 2100000, guid: 2458414bc018d0b4bb849b0c4dab0c1d, type: 2}
+  style: {fileID: 11400000, guid: 01a965cfa6df9584e90b583a45354d30, type: 2}
 --- !u!114 &1018059024188759155
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -164,6 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HyperRTS.Presentation::HyperRTS.Presentation.Fog.FogOfWarRenderer
   material: {fileID: 2100000, guid: c5906ef258c68f44aa768e908213cda1, type: 2}
-  height: 0.05
+  heightRange: {x: -50, y: 250}
+  borderReach: 300
   exploredOpacity: 0.5
   unexploredOpacity: 0.85

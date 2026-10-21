@@ -271,3 +271,23 @@
 .hud-banner__title {
     padding: 12px 64px;
 }
+
+.drag-box {
+    position: absolute;
+    border-width: 1px;
+}
+
+/* A 14px L from two 3px borders, set over the box's 1px edge. */
+.drag-box__corner {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+}
+
+.drag-box__corner--tl, .drag-box__corner--bl { left: -1px; border-left-width: 3px; }
+
+.drag-box__corner--tr, .drag-box__corner--br { right: -1px; border-right-width: 3px; }
+
+.drag-box__corner--tl, .drag-box__corner--tr { top: -1px; border-top-width: 3px; }
+
+.drag-box__corner--bl, .drag-box__corner--br { bottom: -1px; border-bottom-width: 3px; }

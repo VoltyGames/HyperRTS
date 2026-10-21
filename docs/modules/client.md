@@ -16,6 +16,7 @@ UI state that input, the HUD and overlays share, created once per presented worl
 | `PendingCommand` | A targeted command waiting for a click, such as attack-move or an aimed ability |
 | `PointerState` | Whether the pointer is over UI, so world clicks are ignored |
 | `SelectionDragState` | The selection box being dragged |
+| `HoveredEntity` | The commandable entity under the pointer, written by `HoverInputSystem` |
 | `CameraFocusRequest` | A minimap click moving the camera |
 | `HotkeyPresses` | Keys pressed this frame, for command-card hotkeys |
 
@@ -50,7 +51,7 @@ relations and colours.
 | Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner` |
 | `ICommandSource` | Adds command-card entries: purchases, abilities, stances, unit actions. Each has a slot and hotkey |
 | `HUDText` | Every HUD string, by key. Set `HUDText.Current` to translate |
-| `OverlayRenderer` | Instanced selection rings (an ellipse along a capsule unit's facing), health bars, placement ghost, rally markers, capture dials, garrison pips |
+| `OverlayRenderer` | Instanced ground markers, health bars, placement ghost, rally markers, capture dials, garrison pips. Colours and sizes come from an `OverlayStyle` asset |
 
 `HUDText` keys:
 
@@ -63,6 +64,22 @@ relations and colours.
 | `entity.<name>`, `resource.<asset>`, `ability.<name>` | Names, kebab-cased: "War Factory" is `entity.war-factory` |
 
 The minimap shows the baked map image, local fog, blips and the camera view.
+
+### Unit overlays
+
+Selected and hovered entities get a ground marker draped on the terrain heightmap by `GroundMarker.shader`: a
+rounded rectangle round a vehicle's hull, a circle round infantry and squads (wide enough for their figures) and
+corner brackets round a building's box. Selection draws a full line with a soft inner fill and settles in from a
+larger, faded start over `selectSeconds`; hover draws a thinner, translucent line. Colours follow the relation:
+own, ally, enemy, neutral. Markers read `LocalToWorld`, the pose the model is drawn with, so they stay on moving
+units, and they are depth tested, so hulls and plants hide what lies behind them. Ships and bridge traffic keep the
+marker no more than 2 m below them, and aircraft mark the ground.
+
+Health bars are screen-aligned quads of a fixed pixel size (reference pixels at 1080p times `OverlayRenderer.UIScale`)
+above the model's top: a dark backing, a fill cut into segments of `healthPerSegment` (one per member for squads)
+and coloured from healthy to critical, with squad member pips on the left and veterancy rank pips on the right.
+`OverlayRenderer.HealthBars` picks who shows one: everyone, damaged units, or only selected ones. Selected and
+hovered units always do. Both overlays are one instanced draw each through `InstanceDataBatch`.
 
 ### Team colour
 

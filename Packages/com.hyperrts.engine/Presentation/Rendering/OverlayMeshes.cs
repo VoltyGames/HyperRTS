@@ -11,6 +11,32 @@ namespace HyperRTS.Presentation.Rendering
         /// <summary>1x1 quad on the XY plane, centred; rotate by the camera rotation to face it.</summary>
         public static Mesh Billboard() => Quad("Billboard", (x, y) => new Vector3(x, y, 0f));
 
+        /// <summary>1x1 grid of <paramref name="cells"/> squares a side on the XZ plane, centred, for draping on terrain.</summary>
+        public static Mesh Grid(int cells)
+        {
+            var side = cells + 1;
+            var vertices = new Vector3[side * side];
+            for (var i = 0; i < vertices.Length; i++)
+            {
+                vertices[i] = new Vector3((float)(i % side) / cells - 0.5f, 0f, (float)(i / side) / cells - 0.5f);
+            }
+
+            var triangles = new int[cells * cells * 6];
+            for (var cell = 0; cell < cells * cells; cell++)
+            {
+                var corner = cell / cells * side + cell % cells;
+                var t = cell * 6;
+                triangles[t] = corner;
+                triangles[t + 1] = corner + side;
+                triangles[t + 2] = corner + 1;
+                triangles[t + 3] = corner + 1;
+                triangles[t + 4] = corner + side;
+                triangles[t + 5] = corner + side + 1;
+            }
+
+            return Build("Grid", vertices, triangles);
+        }
+
         /// <summary>Flat ring of outer radius 1 on the XZ plane.</summary>
         public static Mesh Ring(int segments, float innerRadius)
         {

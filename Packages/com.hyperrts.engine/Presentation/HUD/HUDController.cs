@@ -71,6 +71,14 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
+        /// <summary>Styles a sibling of <c>hud-root</c> on the same panel with the HUD's layout and theme sheets.</summary>
+        public void AddSheets(VisualElement element)
+        {
+            // The theme goes second so its rules win over layout ones of equal specificity.
+            element.styleSheets.Add(styleSheet);
+            element.styleSheets.Add(themeSheet);
+        }
+
         protected override VisualElement Build()
         {
             var hud = HUDElements.Box("hud-root");
@@ -80,9 +88,7 @@ namespace HyperRTS.Presentation.HUD
                 hud.AddToClassList(_theme);
             }
 
-            // The theme goes second so its rules win over layout ones of equal specificity.
-            hud.styleSheets.Add(styleSheet);
-            hud.styleSheets.Add(themeSheet);
+            AddSheets(hud);
 
             var bottom = HUDElements.Box("hud-bottom", hud);
             bottom.pickingMode = PickingMode.Ignore;

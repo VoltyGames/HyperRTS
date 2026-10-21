@@ -10,44 +10,34 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.Selection
 {
-    /// <summary>Drag-box marquee drawn from <see cref="SelectionDragState"/>.</summary>
+    /// <summary>Drag-box marquee with corner accents, placed from <see cref="SelectionDragState"/>.</summary>
     [AddComponentMenu(HyperRTSMenu.Rig + "Selection Drag Box UI")]
     [Icon(HyperRTSIcons.Selection)]
     [HelpURL(HyperRTSDocs.Selection)]
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(HUDController))]
     public class SelectionDragBoxUI : PanelContent
     {
-        [Header("Drag Box")]
-        [SerializeField]
-        [Tooltip("Fill colour of the drag selection box.")]
-        private Color fillColor = new(0.3f, 0.7f, 1f, 0.15f);
-
-        [SerializeField]
-        [Tooltip("Border colour of the drag selection box.")]
-        private Color borderColor = new(0.3f, 0.7f, 1f, 0.8f);
-
-        [SerializeField]
-        [Tooltip("Border thickness in pixels.")]
-        private float borderThickness = 1f;
-
         private readonly LiveQuery _dragQuery = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<SelectionDragState>()));
 
+        private static readonly string[] Corners = { "tl", "tr", "bl", "br" };
+
+        // The box sits beside hud-root, so it takes the HUD sheets itself and a game theme restyles it.
         protected override VisualElement Build()
         {
             var marquee = new VisualElement { pickingMode = PickingMode.Ignore };
-            var style = marquee.style;
-            style.position = Position.Absolute;
-            style.display = DisplayStyle.None;
-            style.backgroundColor = fillColor;
-            style.borderTopWidth = borderThickness;
-            style.borderBottomWidth = borderThickness;
-            style.borderLeftWidth = borderThickness;
-            style.borderRightWidth = borderThickness;
-            style.borderTopColor = borderColor;
-            style.borderBottomColor = borderColor;
-            style.borderLeftColor = borderColor;
-            style.borderRightColor = borderColor;
+            GetComponent<HUDController>().AddSheets(marquee);
+            marquee.AddToClassList("drag-box");
+            marquee.style.display = DisplayStyle.None;
+            foreach (var corner in Corners)
+            {
+                var accent = new VisualElement { pickingMode = PickingMode.Ignore };
+                accent.AddToClassList("drag-box__corner");
+                accent.AddToClassList("drag-box__corner--" + corner);
+                marquee.Add(accent);
+            }
+
             return marquee;
         }
 
