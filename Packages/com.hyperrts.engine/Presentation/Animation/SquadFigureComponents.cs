@@ -16,12 +16,6 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Seconds figures keep firing after the primary weapon's last shot.</summary>
         public const float FireHold = 0.6f;
 
-        public VATClipRange Idle;
-        public VATClipRange Walk;
-        public VATClipRange Run;
-        public VATClipRange Fire;
-        public VATClipRange Die;
-
         /// <summary>Horizontal speed in m/s from which figures run instead of walk.</summary>
         public float RunSpeed;
 
@@ -83,6 +77,16 @@ namespace HyperRTS.Presentation.Animation
 
             return speed >= WalkSpeed ? FigureState.Walk : FigureState.Idle;
         }
+    }
+
+    /// <summary>One figure's idle, walk, run, fire and die clips, from its own VAT table.</summary>
+    public struct FigureClips
+    {
+        public VATClipRange Idle;
+        public VATClipRange Walk;
+        public VATClipRange Run;
+        public VATClipRange Fire;
+        public VATClipRange Die;
 
         public readonly VATClipRange Clip(FigureState state) => state switch
         {
@@ -111,6 +115,9 @@ namespace HyperRTS.Presentation.Animation
     public struct SquadFigure : IBufferElementData
     {
         public Entity Figure;
+
+        /// <summary>Figures baked separately keep their own tables, so each carries its own clip ranges.</summary>
+        public FigureClips Clips;
 
         /// <summary>The figure's own uniform scale, restored when it shows again.</summary>
         public float Scale;

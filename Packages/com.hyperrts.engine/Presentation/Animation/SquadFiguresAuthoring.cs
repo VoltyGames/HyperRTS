@@ -24,7 +24,7 @@ namespace HyperRTS.Presentation.Animation
         [Tooltip("The figures, children of this unit's model, in the order they stay: the last one falls first.")]
         public List<VATAnimatedAuthoring> figures = new();
 
-        [Tooltip("Clip in the figures' table played standing still.")]
+        [Tooltip("Clip played standing still, looked up in each figure's own table.")]
         public string idleClip = "Idle";
 
         [Tooltip("Clip played moving slower than the run speed.")]
@@ -60,53 +60,59 @@ namespace HyperRTS.Presentation.Animation
             }
         }
 
-        /// <summary>The figures' shared clip table; fails when a figure is missing or uses another.</summary>
-        public VATClipTable Table()
+        /// <summary>
+        /// Each figure's clips from its own table by this squad's clip names; fails when a figure, its table or one
+        /// of the five clips is missing.
+        /// </summary>
+        public FigureClips[] Clips()
         {
             if (figures.Count == 0)
             {
                 throw new InvalidOperationException($"Squad Figures on '{name}' lists no figures.");
             }
 
-            var table = figures[0] != null ? figures[0].clips : null;
-            foreach (var figure in figures)
+            var clips = new FigureClips[figures.Count];
+            for (var i = 0; i < figures.Count; i++)
             {
-                if (figure == null || figure.clips != table)
+                var figure = figures[i];
+                if (figure == null || figure.clips == null)
                 {
-                    throw new InvalidOperationException(
-                        $"Squad Figures on '{name}' needs every figure set and sharing one clip table.");
+                    throw new InvalidOperationException($"Squad Figures on '{name}' needs every figure set with a clip table.");
                 }
+
+                clips[i] = Clips(figure.clips);
             }
 
-            return table;
+            return clips;
         }
 
-        public SquadFigures Squad(VATClipTable table) => new()
+        public SquadFigures Squad() => new() { RunSpeed = runSpeed, DieHold = dieHold };
+
+        private FigureClips Clips(VATClipTable table) => new()
         {
             Idle = table.Range(idleClip),
             Walk = table.Range(walkClip),
             Run = table.Range(runClip),
             Fire = table.Range(fireClip),
             Die = table.Range(dieClip),
-            RunSpeed = runSpeed,
-            DieHold = dieHold,
         };
 
         public class Baker : Baker<SquadFiguresAuthoring>
         {
             public override void Bake(SquadFiguresAuthoring authoring)
             {
-                var table = authoring.Table();
-                DependsOn(table);
+                var clips = authoring.Clips();
                 var entities = new List<SquadFigure>();
-                foreach (var figure in authoring.figures)
+                for (var i = 0; i < clips.Length; i++)
                 {
+                    var figure = authoring.figures[i];
+                    DependsOn(figure.clips);
                     var entity = GetEntity(figure, TransformUsageFlags.Dynamic);
-                    entities.Add(new SquadFigure { Figure = entity, Scale = figure.transform.localScale.x });
+                    entities.Add(new SquadFigure { Figure = entity, Scale = figure.transform.localScale.x, Clips = clips[i] });
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                AddSquad(ref writer, authoring.Squad(table), entities);
+                AddSquad(ref writer, authoring.Squad(), entities);
             }
         }
     }

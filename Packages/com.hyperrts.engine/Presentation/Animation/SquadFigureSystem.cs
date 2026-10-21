@@ -55,13 +55,13 @@ namespace HyperRTS.Presentation.Animation
                     var next = figure.Next(i < visible, living, Now);
                     if (next != figure.State)
                     {
-                        Show(ref figure, next, squad);
+                        Show(ref figure, next, squad.DieHold);
                         figures[i] = figure;
                     }
                 }
             }
 
-            private void Show(ref SquadFigure figure, FigureState next, in SquadFigures squad)
+            private void Show(ref SquadFigure figure, FigureState next, float dieHold)
             {
                 var hidden = next == FigureState.Hidden;
                 Transforms.GetRefRW(figure.Figure).ValueRW.Scale = hidden ? 0f : figure.Scale;
@@ -73,10 +73,10 @@ namespace HyperRTS.Presentation.Animation
 
                 if (next == FigureState.Die)
                 {
-                    figure.HideAt = Now + squad.DieHold;
+                    figure.HideAt = Now + dieHold;
                 }
 
-                var clip = squad.Clip(next);
+                var clip = figure.Clips.Clip(next);
                 Clips[figure.Figure] = VATClip.Started(clip, figure.StartTime(clip, Now));
             }
         }

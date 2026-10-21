@@ -116,8 +116,10 @@ Like `MachineSystem`, the poses render a frame later, once the transform systems
 #### Squad figures
 
 `SquadFiguresAuthoring` on a squad unit draws it as hand-placed VAT figures: children of its `Model`, each with
-`VATAnimatedAuthoring` and one shared clip table, listed in the order they stay. It names the idle, walk, run, fire
-and die clips, the run speed and how long a fallen figure stays down. `SquadFigureSystem` shows ceil(figures x
+`VATAnimatedAuthoring`, listed in the order they stay. It names the idle, walk, run, fire and die clips, the run
+speed and how long a fallen figure stays down. Each figure looks those names up in its own clip table, so figures
+baked separately (another VAT width, other rows) mix in one squad; the bake fails when a table lacks one of the
+five. Each `SquadFigure` carries its own `FigureClips`. `SquadFigureSystem` shows ceil(figures x
 health fraction), at least one while alive. A figure health drops plays die once, then scales to zero after the
 hold, leaving fog's rendering toggles alone. A squad spawned damaged hides its lost figures without the fall. The
 rest walk or run by the unit's horizontal speed and fire for 0.6 s after each change of the primary weapon's

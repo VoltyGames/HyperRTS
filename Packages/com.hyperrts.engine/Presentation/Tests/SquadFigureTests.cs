@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
@@ -6,10 +7,14 @@ using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests
 {
-    /// <summary>Squad figures on a hand-made four-figure squad: health drops figures, motion and shots pick clips.</summary>
+    /// <summary>
+    /// Squad figures on a hand-made four-figure squad: health drops figures, motion and shots pick clips, and figures
+    /// from separate tables play their own clips.
+    /// </summary>
     public class SquadFigureTests
     {
         private const float Step = 0.1f;
@@ -117,6 +122,71 @@ namespace HyperRTS.Presentation.Tests
             Assert.AreNotEqual(Clip(1).Value.w, Clip(2).Value.w);
         }
 
+        [Test]
+        public void MixedTableSquad_PlaysEachFiguresOwnClips()
+        {
+            _em.GetBuffer<SquadFigure>(_squad).ElementAt(1).Clips = Clips(100);
+
+            Update();
+            Assert.IsTrue(Clip(0).Plays(Range(0, true)));
+            Assert.IsTrue(Clip(1).Plays(Range(100, true)));
+
+            Move(5f);
+            Assert.IsTrue(Clip(0).Plays(Range(20, true)));
+            Assert.IsTrue(Clip(1).Plays(Range(120, true)));
+        }
+
+        [Test]
+        public void Authoring_ResolvesClipsFromEachFiguresOwnTable()
+        {
+            var root = new GameObject("Squad");
+            try
+            {
+                var squad = root.AddComponent<SquadFiguresAuthoring>();
+                squad.figures.Add(Figure(root, 0, 64));
+                squad.figures.Add(Figure(root, 100, 128));
+
+                var clips = squad.Clips();
+
+                Assert.AreEqual(Range(20, true), clips[0].Run);
+                Assert.AreEqual(Range(120, true), clips[1].Run);
+                Assert.AreEqual(Range(140, false), clips[1].Die);
+
+                squad.figures[1].clips.clips.RemoveAt(4);
+                Assert.Throws<KeyNotFoundException>(() => squad.Clips());
+            }
+            finally
+            {
+                foreach (var figure in root.GetComponentsInChildren<VATAnimatedAuthoring>())
+                {
+                    Object.DestroyImmediate(figure.clips);
+                }
+
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        // A figure baked on its own: its table's width and rows differ but its clip names match the squad's.
+        private static VATAnimatedAuthoring Figure(GameObject root, int offset, int width)
+        {
+            var table = ScriptableObject.CreateInstance<VATClipTable>();
+            table.width = width;
+            string[] names = { "Idle", "Walk", "Run", "Fire", "Die" };
+            for (var i = 0; i < names.Length; i++)
+            {
+                table.clips.Add(new VATClipTable.Clip
+                {
+                    name = names[i], startRow = offset + i * 10, frameCount = 10, fps = 10f, loop = i < 4,
+                });
+            }
+
+            var figure = new GameObject($"Figure {offset}");
+            figure.transform.SetParent(root.transform);
+            var authoring = figure.AddComponent<VATAnimatedAuthoring>();
+            authoring.clips = table;
+            return authoring;
+        }
+
         private Entity Squad(int count)
         {
             _figures = new Entity[count];
@@ -126,7 +196,7 @@ namespace HyperRTS.Presentation.Tests
                 _figures[i] = _em.CreateEntity();
                 _em.AddComponentData(_figures[i], LocalTransform.Identity);
                 _em.AddComponentData(_figures[i], VATClip.Started(Range(0, true), 0f));
-                figures[i] = new SquadFigure { Figure = _figures[i], Scale = 1f };
+                figures[i] = new SquadFigure { Figure = _figures[i], Scale = 1f, Clips = Clips(0) };
             }
 
             var squad = _em.CreateEntity();
@@ -134,19 +204,19 @@ namespace HyperRTS.Presentation.Tests
             _em.AddComponentData(squad, new LocalToWorld { Value = float4x4.identity });
             _em.AddBuffer<WeaponPose>(squad).Add(default);
             var writer = new EntityManagerWriter(_em, squad);
-            var setup = new SquadFigures
-            {
-                Idle = Range(0, true),
-                Walk = Range(10, true),
-                Run = Range(20, true),
-                Fire = Range(30, true),
-                Die = Range(40, false),
-                RunSpeed = 3f,
-                DieHold = DieHold,
-            };
+            var setup = new SquadFigures { RunSpeed = 3f, DieHold = DieHold };
             SquadFiguresAuthoring.AddSquad(ref writer, setup, figures);
             return squad;
         }
+
+        private static FigureClips Clips(int offset) => new()
+        {
+            Idle = Range(offset, true),
+            Walk = Range(offset + 10, true),
+            Run = Range(offset + 20, true),
+            Fire = Range(offset + 30, true),
+            Die = Range(offset + 40, false),
+        };
 
         private static VATClipRange Range(int startRow, bool loop) =>
             new() { StartRow = startRow, FrameCount = 10, Fps = 10f, Loop = loop };
