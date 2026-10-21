@@ -92,6 +92,16 @@ namespace HyperRTS.Simulation.Cues
             return true;
         }
 
+        /// <summary>
+        /// Queues an announcer alert for <paramref name="faction"/>'s player. It needs no sound on the source, since
+        /// the listener's announcer picks the line; <paramref name="typeId"/> names the subject, 0 for none.
+        /// </summary>
+        public void Announce(CueSlot slot, byte faction, float3 position, int typeId) =>
+            _events[_queue].Add(new CueEvent
+            {
+                TypeId = typeId, Slot = slot, Faction = faction, Position = position, Direction = math.forward(),
+            });
+
         private bool HasCue(Entity source, CueSlot slot)
         {
             if (slot == CueSlot.Impact && LeavesImpact(source))

@@ -6,21 +6,28 @@ namespace HyperRTS.Simulation.Cues
     /// <summary>Who gets a cue, shared by the simulation, the network and playback.</summary>
     public static class CueRules
     {
-        /// <summary>Voices (produced, select, move, attack) speak only to their owner.</summary>
         public static bool IsVoice(CueSlot slot) =>
-            slot is CueSlot.Ready or CueSlot.Select or CueSlot.Move or CueSlot.Attack;
+            slot is CueSlot.Ready or CueSlot.Select or CueSlot.Move or CueSlot.Attack or CueSlot.AbilityVoice
+                or CueSlot.UnderFire;
+
+        public static bool IsAnnouncement(CueSlot slot) =>
+            slot is >= CueSlot.AnnounceUnitLost and <= CueSlot.AnnounceUpgradeComplete;
+
+        /// <summary>Voices, production done and announcements speak only to their owner.</summary>
+        public static bool IsOwnerOnly(CueSlot slot) =>
+            IsVoice(slot) || IsAnnouncement(slot) || slot == CueSlot.ProductionDone;
 
         /// <summary>A shot that landed on the ground, the only impact that marks or deforms terrain.</summary>
         public static bool IsGroundImpact(in CueEvent cue) =>
             cue.Slot == CueSlot.Impact && cue.Surface == ImpactSurface.Ground;
 
         /// <summary>
-        /// Voices reach their owner only; everything else reaches whoever could see its source there, by the same
+        /// Owner-only cues reach their owner; everything else reaches whoever could see its source there, by the same
         /// fog and stealth rule as entities. Without a fog grid every non-voice cue does.
         /// </summary>
         public static bool IsVisible(in CueEvent cue, byte viewer, in FogOfWar fog, in FactionRelations relations)
         {
-            if (IsVoice(cue.Slot))
+            if (IsOwnerOnly(cue.Slot))
             {
                 return cue.Faction == viewer;
             }
@@ -34,13 +41,13 @@ namespace HyperRTS.Simulation.Cues
         }
 
         /// <summary>
-        /// Whether the local player gets the cue: their own voices, and every other cue while the fog view is
+        /// Whether the local player gets the cue: their own owner-only cues, and every other cue while the fog view is
         /// inactive (no fog, or everything revealed).
         /// </summary>
         public static bool IsSeenLocally(in CueEvent cue, in LocalFogView view, in FogOfWar fog,
             in FactionRelations relations)
         {
-            if (IsVoice(cue.Slot))
+            if (IsOwnerOnly(cue.Slot))
             {
                 return cue.Faction == view.Viewer;
             }

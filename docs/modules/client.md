@@ -277,6 +277,7 @@ can see:
 ### Audio
 
 `SoundPlaybackSystem` plays cue sounds through 32 pooled sources. `SoundListener` follows the camera's ground focus.
+`LoopSoundSystem` plays entity loops through 24 more, and `AnnouncerSystem` speaks alerts through one 2D source.
 
 ### Quality
 

@@ -8,7 +8,9 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Cues
 {
-    /// <summary>Sound cues a unit or building plays when it fires, dies, is produced or answers its owner.</summary>
+    /// <summary>
+    /// Sound cues a unit or building plays when it fires, dies, is produced, finishes production or answers its owner.
+    /// </summary>
     [AddComponentMenu(HyperRTSMenu.Audio + "Entity Sounds")]
     [Icon(HyperRTSIcons.Audio)]
     [HelpURL(HyperRTSDocs.Audio)]
@@ -32,7 +34,16 @@ namespace HyperRTS.Simulation.Cues
         [Tooltip("Each shot of the extra weapons, in order: Fire2, Fire3, then Fire4 for the rest.")]
         public List<SoundCue> mountFire = new();
 
-        [Header("Voice (owner only)")]
+        [Header("Owner only")]
+        [Tooltip("At this producer when a unit or research in its queue finishes.")]
+        public SoundCue productionDone;
+
+        [Tooltip("Voice: when it uses an ability.")]
+        public SoundCue abilityVoice;
+
+        [Tooltip("Voice: when it takes damage after a quiet spell, throttled per unit and per player.")]
+        public SoundCue underFire;
+
         [Tooltip("When it is produced or its construction finishes.")]
         public SoundCue ready;
 
@@ -44,6 +55,10 @@ namespace HyperRTS.Simulation.Cues
 
         [Tooltip("When the owner orders it to attack.")]
         public SoundCue attack;
+
+        /// <summary>Call before <see cref="Add{TWriter}"/>: the under fire voice remembers the last hit.</summary>
+        public static void AddUnderFire<TWriter>(ref TWriter writer) where TWriter : struct, IEntityWriter =>
+            writer.Add<UnderFireVoice>();
 
         public static DynamicBuffer<EntitySound> Add<TWriter>(ref TWriter writer)
             where TWriter : struct, IEntityWriter =>
@@ -63,6 +78,11 @@ namespace HyperRTS.Simulation.Cues
             public override void Bake(EntitySoundsAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                if (authoring.underFire != null)
+                {
+                    EntitySoundsAuthoring.AddUnderFire(ref writer);
+                }
+
                 var sounds = EntitySoundsAuthoring.Add(ref writer);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Fire, authoring.fire);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Impact, authoring.impact);
@@ -72,6 +92,9 @@ namespace HyperRTS.Simulation.Cues
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Select, authoring.select);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Move, authoring.move);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Attack, authoring.attack);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.ProductionDone, authoring.productionDone);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.AbilityVoice, authoring.abilityVoice);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.UnderFire, authoring.underFire);
                 for (var i = 0; i < authoring.mountFire.Count; i++)
                 {
                     EntitySoundsAuthoring.Set(sounds, WeaponMount.FireSlot(i), authoring.mountFire[i]);

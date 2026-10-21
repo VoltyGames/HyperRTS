@@ -23,6 +23,8 @@ namespace HyperRTS.Simulation.Combat
         private BufferLookup<DamageTakenModifier> _typedModifiers;
         private ComponentLookup<Destructible> _destructibles;
         private ComponentLookup<FellFrom> _fellFrom;
+        private ComponentLookup<Faction> _factions;
+        private BufferLookup<EntityDamaged> _damaged;
 
         public void OnCreate(ref SystemState state)
         {
@@ -35,11 +37,14 @@ namespace HyperRTS.Simulation.Combat
             _typedModifiers = state.GetBufferLookup<DamageTakenModifier>(true);
             _destructibles = state.GetComponentLookup<Destructible>(true);
             _fellFrom = state.GetComponentLookup<FellFrom>();
+            _factions = state.GetComponentLookup<Faction>(true);
+            _damaged = state.GetBufferLookup<EntityDamaged>();
 
             var queue = state.EntityManager.CreateEntity(typeof(DamageQueue), typeof(DamageEvent));
             state.EntityManager.SetName(queue, "DamageQueue");
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<GameEvents>();
         }
 
         [BurstCompile]
@@ -54,6 +59,8 @@ namespace HyperRTS.Simulation.Combat
             _typedModifiers.Update(ref state);
             _destructibles.Update(ref state);
             _fellFrom.Update(ref state);
+            _factions.Update(ref state);
+            _damaged.Update(ref state);
 
             new ResolveJob
             {
@@ -68,6 +75,9 @@ namespace HyperRTS.Simulation.Combat
                 TypedModifiers = _typedModifiers,
                 Destructibles = _destructibles,
                 FallSources = _fellFrom,
+                Factions = _factions,
+                Damaged = _damaged,
+                Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
         }
 
@@ -86,6 +96,9 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public BufferLookup<DamageTakenModifier> TypedModifiers;
             [ReadOnly] public ComponentLookup<Destructible> Destructibles;
             public ComponentLookup<FellFrom> FallSources;
+            [ReadOnly] public ComponentLookup<Faction> Factions;
+            public BufferLookup<EntityDamaged> Damaged;
+            public Entity Events;
 
             private void Execute(DynamicBuffer<DamageEvent> events)
             {
@@ -157,6 +170,7 @@ namespace HyperRTS.Simulation.Combat
                           StatMath.DamageTaken(Modifiers, target) * TypedMultiplier(target, hit.Type);
                 health.Current = math.max(0f, health.Current - amount);
                 Health[target] = health;
+                Report(target, amount);
                 if (health.Current <= 0f && FallSources.HasComponent(target))
                 {
                     var fall = ToppleMath.Quantize(from, Transforms[target].Position);
@@ -166,6 +180,20 @@ namespace HyperRTS.Simulation.Combat
                 if (Attackers.HasComponent(target) && hit.SourceFaction != 0)
                 {
                     Attackers[target] = new LastAttacker { Source = hit.Source, Faction = hit.SourceFaction };
+                }
+            }
+
+            /// <summary>Armor that soaks the whole hit raises no event.</summary>
+            private void Report(Entity target, float amount)
+            {
+                if (amount <= 0f || !Factions.TryGetComponent(target, out var owner))
+                {
+                    return;
+                }
+
+                if (owner.Value != Faction.Neutral)
+                {
+                    Damaged[Events].Add(new EntityDamaged { Entity = target, Faction = owner.Value });
                 }
             }
 

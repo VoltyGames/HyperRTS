@@ -6,7 +6,7 @@ What the engine does today, why, and what is still open. Update it when a featur
 
 Done and tested: selection and orders, pathfinding over terrain, water and bridges, economy, bases and production,
 combat with multiple weapons per unit, artillery arcs, rockets and minimum range, fog of war and stealth, power, upgrades, veterancy, fields, abilities, status effects, capture, transports,
-aircraft with rearming of every limited weapon and wrecks that fall, destruction, skirmish AI, audio, replays and the editor tooling with the Map Editor.
+aircraft with rearming of every limited weapon and wrecks that fall, destruction, skirmish AI, audio with entity loops and announcer alerts, replays and the editor tooling with the Map Editor.
 
 In progress:
 
@@ -42,7 +42,7 @@ uses them yet. Keep them working and extend them only when a game needs it.
 
 - Moving obstacles, per-area water levels, ramps onto decks.
 - Smarter AI: micro, scouting, defence, naval and air play.
-- Ability targeting cursor, aircraft attack runs, announcer alerts.
+- Ability targeting cursor, aircraft attack runs.
 - Replays of projectiles, passengers and player stats.
 
 ### Multiplayer

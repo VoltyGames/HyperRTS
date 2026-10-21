@@ -8,7 +8,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Abilities
 {
-    /// <summary>Plays each <see cref="AbilityActivation"/>'s ability cue at the aim point.</summary>
+    /// <summary>
+    /// Plays each <see cref="AbilityActivation"/>'s ability cue at the aim point, and the caster's owner-only ability
+    /// voice at the caster.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
     [UpdateAfter(typeof(AbilitySystem))]
@@ -49,6 +52,16 @@ namespace HyperRTS.Simulation.Abilities
                     var aim = LocalTransform.FromPositionRotation(cast.Position,
                         quaternion.LookRotationSafe(direction, math.up()));
                     Cues.Play(cast.Caster, CueSlot.Ability, aim, direction, cast.Faction);
+                    Speak(cast);
+                }
+            }
+
+            /// <summary>Player support powers have no body to speak from.</summary>
+            private void Speak(in AbilityActivation cast)
+            {
+                if (Transforms.TryGetComponent(cast.Caster, out var caster))
+                {
+                    Cues.Play(cast.Caster, CueSlot.AbilityVoice, caster, caster.Forward(), cast.Faction);
                 }
             }
 

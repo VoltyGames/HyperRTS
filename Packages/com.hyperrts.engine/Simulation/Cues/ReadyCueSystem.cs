@@ -7,7 +7,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Cues
 {
-    /// <summary>Plays the Ready cue for every unit produced and building completed this frame.</summary>
+    /// <summary>
+    /// Plays the Ready cue for every unit produced and building completed this frame, and the producer's
+    /// ProductionDone cue for every unit or research it finished.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup), OrderLast = true)]
     public partial struct ReadyCueSystem : ISystem
@@ -39,12 +42,19 @@ namespace HyperRTS.Simulation.Cues
             public CueWriter Cues;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
 
-            private void Execute(in DynamicBuffer<UnitProduced> units, in DynamicBuffer<BuildingCompleted> buildings)
+            private void Execute(in DynamicBuffer<UnitProduced> units, in DynamicBuffer<BuildingCompleted> buildings,
+                in DynamicBuffer<ResearchCompleted> researched)
             {
                 foreach (var produced in units)
                 {
                     var spawn = LocalTransform.FromPosition(produced.Position);
                     Cues.Play(produced.Prefab, CueSlot.Ready, spawn, spawn.Forward(), produced.Faction);
+                    Done(produced.Producer, produced.Faction);
+                }
+
+                foreach (var research in researched)
+                {
+                    Done(research.Producer, research.Faction);
                 }
 
                 foreach (var completed in buildings)
@@ -52,6 +62,12 @@ namespace HyperRTS.Simulation.Cues
                     var building = Transforms[completed.Building];
                     Cues.Play(completed.Building, CueSlot.Ready, building, building.Forward(), completed.Faction);
                 }
+            }
+
+            private void Done(Entity producer, byte faction)
+            {
+                var place = Transforms[producer];
+                Cues.Play(producer, CueSlot.ProductionDone, place, place.Forward(), faction);
             }
         }
     }

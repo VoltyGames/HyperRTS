@@ -32,6 +32,7 @@ namespace HyperRTS.Simulation.Production
         private BufferLookup<LandingPad> _padLookup;
         private ComponentLookup<HomePad> _padUserLookup;
         private BufferLookup<UnitProduced> _producedLookup;
+        private BufferLookup<ResearchCompleted> _researchedLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -48,6 +49,7 @@ namespace HyperRTS.Simulation.Production
             _padLookup = state.GetBufferLookup<LandingPad>(true);
             _padUserLookup = state.GetComponentLookup<HomePad>(true);
             _producedLookup = state.GetBufferLookup<UnitProduced>();
+            _researchedLookup = state.GetBufferLookup<ResearchCompleted>();
             state.RequireForUpdate<GameEvents>();
             state.RequireForUpdate<MatchRules>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -67,6 +69,7 @@ namespace HyperRTS.Simulation.Production
             _padLookup.Update(ref state);
             _padUserLookup.Update(ref state);
             _producedLookup.Update(ref state);
+            _researchedLookup.Update(ref state);
 
             var allocator = state.WorldUpdateAllocator;
             new ProduceJob
@@ -88,6 +91,7 @@ namespace HyperRTS.Simulation.Production
                 PadLookup = _padLookup,
                 PadUserLookup = _padUserLookup,
                 Produced = _producedLookup,
+                Researched = _researchedLookup,
                 Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
         }
@@ -114,6 +118,7 @@ namespace HyperRTS.Simulation.Production
             [ReadOnly] public BufferLookup<LandingPad> PadLookup;
             [ReadOnly] public ComponentLookup<HomePad> PadUserLookup;
             public BufferLookup<UnitProduced> Produced;
+            public BufferLookup<ResearchCompleted> Researched;
             public Entity Events;
 
             private void Execute(Entity entity, ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
@@ -148,7 +153,7 @@ namespace HyperRTS.Simulation.Production
 
                 if (ResearchLookup.HasComponent(prefab))
                 {
-                    RecordResearch(faction.Value, queue[0]);
+                    RecordResearch(entity, faction.Value, queue[0]);
                 }
                 else
                 {
@@ -166,8 +171,13 @@ namespace HyperRTS.Simulation.Production
                 producer.Elapsed = 0f;
             }
 
-            private void RecordResearch(byte faction, ProductionQueueItem item)
+            private void RecordResearch(Entity producer, byte faction, ProductionQueueItem item)
             {
+                Researched[Events].Add(new ResearchCompleted
+                {
+                    Producer = producer, Prefab = item.Prefab, Faction = faction,
+                });
+
                 if (CompletedResearchLookup.TryGetBuffer(Players[faction], out var researched))
                 {
                     researched.Add(new CompletedResearch { Prefab = item.Prefab, TypeId = item.TypeId });

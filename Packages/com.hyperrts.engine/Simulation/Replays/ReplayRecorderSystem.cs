@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Replays
     /// <summary>
     /// While a <see cref="ReplayRecording"/> exists, samples every gameplay entity at its rate after the frame's
     /// gameplay ran: a keyframe every few seconds, deltas of what changed in between, and every cue since the last
-    /// sample but the owner-only voices. Starts one itself when <see cref="MatchRules.RecordReplay"/> is set.
+    /// sample but the owner-only ones. Starts one itself when <see cref="MatchRules.RecordReplay"/> is set.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
@@ -58,14 +58,14 @@ namespace HyperRTS.Simulation.Replays
         }
 
         /// <summary>
-        /// Cues play between samples, so every frame's are kept for the next sample. Voices are skipped: they answer
-        /// one player's clicks, which a spectator doesn't make.
+        /// Cues play between samples, so every frame's are kept for the next sample. Owner-only cues are skipped: they
+        /// speak to one player, and a spectator is none of them.
         /// </summary>
         private void RecordCues(ref SystemState state, ReplayStream stream)
         {
             foreach (var cue in SystemAPI.GetSingletonBuffer<CueEvent>(true))
             {
-                if (!CueRules.IsVoice(cue.Slot))
+                if (!CueRules.IsOwnerOnly(cue.Slot))
                 {
                     stream.Cues.Add(PackedCue.Pack(cue));
                 }

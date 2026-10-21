@@ -24,10 +24,40 @@ your own `PlayerCommand`s.
 ## Audio
 
 Part of `Cues`. `EntitySoundsAuthoring` gives an entity a `SoundCue` asset per cue slot. A `SoundCue` holds clips,
-volume and pitch ranges, priority and 3D settings. Slots are Fire, Impact, Death and Ability, plus the voice slots
-Ready, Select, Move and Attack that only the owner hears. Games add their own slots from `Custom` up.
+volume and pitch ranges, priority and 3D settings. Games add their own slots from `GameFirst` up.
 
-Sounds play through [cues](#cues). Playback is on the [client](client.md#presentation).
+| Slot | Plays | Heard by |
+| --- | --- | --- |
+| Fire, Impact, Death, Ability | Each shot, where it lands, on death, on an ability at the aim point | Whoever sees it |
+| ProductionDone | At the producer when a unit or research finishes | Owner |
+| Ready, Select, Move, Attack | Voice when produced or built, selected, ordered | Owner |
+| AbilityVoice | Voice at the caster when it uses an ability | Owner |
+| UnderFire | Voice when hit after 10 s unhurt, at most once per 5 s per player | Owner |
+
+Sounds play through [cues](#cues). Playback is on the [client](client.md#audio), and the server plays nothing.
+
+### Loops
+
+`EntityLoopsAuthoring` gives an entity continuous sounds driven by replicated state, attached to it in 3D:
+
+- `engineIdle` and `engineMove` crossfade by speed up to `fullSpeed`, and the pitch rises by `pitchRise`.
+- `rotor` spools up over `rotorSpool` seconds while a `Flight` entity is not `Docked`.
+- `turretTraverse` plays while any weapon turns.
+- `working` plays while a building is under construction or a producer has a queue.
+- `ambient` always plays.
+
+Loops fall silent when the entity dies, hides in fog or leaves the cue's range. Only the nearest `maxInstances` of a
+cue play.
+
+### Announcer
+
+The simulation writes owner-only announcement cues: unit lost, base under attack, low power, construction complete,
+unit ready and upgrade complete. Each player gets at most one of a kind per second. An `AnnouncerSet` asset maps
+each alert to a 2D `SoundCue` with its own cooldown. Base under attack defaults to 30 s.
+
+`AnnouncerAuthoring` in the match's subscene picks a set per `PlayerSide`. A game may rewrite the `AnnouncerVoice`
+buffer on a client at runtime, for example for the chosen language. The client queues alerts and speaks them one at
+a time. The lowest cue priority goes first, and lines that wait longer than `maxWait` are dropped.
 
 ## Effects
 
@@ -50,7 +80,8 @@ A cue is a one-off event to hear or see: a shot, an impact, a death. Simulation 
 into one queue. Sounds, effects and impact marks all read it, and the network and replays carry it.
 
 - A cue is only queued if its source has a sound or effect for the slot.
-- Voices reach their owner. Other cues reach whoever can see the source. `CueRules` holds this rule.
+- Voices, production done and announcements reach their owner. Other cues reach whoever can see the source.
+  `CueRules` holds this rule.
 - Games append cues before the lifecycle phase ends. The queue is emptied each frame.
 - A unit says a voice line at most once a second.
 
@@ -58,7 +89,7 @@ into one queue. Sounds, effects and impact marks all read it, and the network an
 
 Replays record what happened, not the commands, because the simulation is not deterministic.
 
-- `ReplayRecorder` samples every game entity at 10 Hz, plus every cue except voices.
+- `ReplayRecorder` samples every game entity at 10 Hz, plus every cue except owner-only ones.
 - `ReplaySerializer` saves and loads the file. Other format versions are rejected.
 - `ReplayViewer` plays a replay in a local world with the fog revealed. It can seek.
 

@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Common
         public void OnCreate(ref SystemState state)
         {
             var events = state.EntityManager.CreateEntity(typeof(GameEvents), typeof(UnitProduced),
-                typeof(BuildingCompleted), typeof(OwnerChanged));
+                typeof(BuildingCompleted), typeof(OwnerChanged), typeof(ResearchCompleted), typeof(EntityDamaged));
             state.EntityManager.SetName(events, "GameEvents");
         }
 
@@ -25,11 +25,14 @@ namespace HyperRTS.Simulation.Common
         private partial struct ClearJob : IJobEntity
         {
             private void Execute(DynamicBuffer<UnitProduced> produced, DynamicBuffer<BuildingCompleted> completed,
-                DynamicBuffer<OwnerChanged> ownerChanges)
+                DynamicBuffer<OwnerChanged> ownerChanges, DynamicBuffer<ResearchCompleted> researched,
+                DynamicBuffer<EntityDamaged> damaged)
             {
                 produced.Clear();
                 completed.Clear();
                 ownerChanges.Clear();
+                researched.Clear();
+                damaged.Clear();
             }
         }
     }
