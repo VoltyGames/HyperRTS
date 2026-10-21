@@ -24,6 +24,8 @@ namespace HyperRTS.Client.Interaction
             entityManager.CreateSingleton<HoveredEntity>();
             entityManager.CreateSingleton<CameraFocusRequest>();
             entityManager.CreateSingleton<HotkeyPresses>();
+            entityManager.CreateSingleton<ScrollEdge>();
+            entityManager.CreateSingleton<CursorIntent>();
             state.Enabled = false;
         }
     }

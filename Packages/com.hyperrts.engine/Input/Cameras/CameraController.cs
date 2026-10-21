@@ -5,6 +5,7 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Input.Cameras
@@ -85,6 +86,9 @@ namespace HyperRTS.Input.Cameras
         private readonly LiveQuery _focusRequest = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadWrite<CameraFocusRequest>()));
 
+        private readonly LiveQuery _scrollEdge = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadWrite<ScrollEdge>()));
+
         private RTSInputActions _actions;
         private float _yaw;
         private float _height;
@@ -154,6 +158,7 @@ namespace HyperRTS.Input.Cameras
             // A disabled Point reads (0, 0), the bottom-left corner, and would edge scroll behind a menu.
             if (!camera.enabled)
             {
+                PublishEdge(int2.zero);
                 return;
             }
 
@@ -188,20 +193,25 @@ namespace HyperRTS.Input.Cameras
 
         private Vector2 EdgeDirection()
         {
-            if (!edgeScrolling || !Application.isFocused)
+            var edge = int2.zero;
+            if (edgeScrolling && Application.isFocused)
             {
-                return Vector2.zero;
+                var screen = new float2(Screen.width, Screen.height);
+                edge = ScrollEdge.At(_actions.Camera.Point.ReadValue<Vector2>(), screen, edgeSize);
             }
 
-            var pointer = _actions.Camera.Point.ReadValue<Vector2>();
-            if (pointer.x < 0f || pointer.y < 0f || pointer.x > Screen.width || pointer.y > Screen.height)
-            {
-                return Vector2.zero;
-            }
+            PublishEdge(edge);
+            return new Vector2(edge.x, edge.y);
+        }
 
-            var x = pointer.x <= edgeSize ? -1f : pointer.x >= Screen.width - edgeSize ? 1f : 0f;
-            var y = pointer.y <= edgeSize ? -1f : pointer.y >= Screen.height - edgeSize ? 1f : 0f;
-            return new Vector2(x, y);
+        /// <summary>Tells the cursor which edge is scrolling.</summary>
+        private void PublishEdge(int2 edge)
+        {
+            var hasWorld = DefaultWorld.TryGetEntityManager(out var entityManager);
+            if (hasWorld && _scrollEdge.In(entityManager).TryGetSingletonEntity<ScrollEdge>(out var singleton))
+            {
+                entityManager.SetComponentData(singleton, new ScrollEdge { Direction = edge });
+            }
         }
 
         /// <summary>The y = 0 ground point the camera looks at; zoom and panning keep the camera relative to it.</summary>

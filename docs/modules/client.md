@@ -19,6 +19,8 @@ UI state that input, the HUD and overlays share, created once per presented worl
 | `HoveredEntity` | The commandable entity under the pointer, written by `HoverInputSystem` |
 | `CameraFocusRequest` | A minimap click moving the camera |
 | `HotkeyPresses` | Keys pressed this frame, for command-card hotkeys |
+| `ScrollEdge` | The screen edge the pointer is scrolling against, written by `CameraController` |
+| `CursorIntent` | The cursor to show, a `CursorKind`, written by `CursorIntentSystem` |
 
 ## Input
 
@@ -64,6 +66,26 @@ relations and colours.
 | `entity.<name>`, `resource.<asset>`, `ability.<name>` | Names, kebab-cased: "War Factory" is `entity.war-factory` |
 
 The minimap shows the baked map image, local fog, blips and the camera view.
+
+### Cursors
+
+`CursorIntentSystem` picks the `CursorKind` each frame, first match wins:
+
+1. A scroll edge shows the matching Scroll cursor.
+2. The pointer over UI shows Default.
+3. Building placement shows Build, or Invalid on blocked ground.
+4. A pending command shows its own cursor: attack-move and patrol AttackMove, rally Rally, unload Unload,
+   abilities and powers Target.
+5. Otherwise it asks `OrderResolver` what a right-click on the hovered entity gives each selected unit, so game
+   `SmartOrderRule`s count too. Attack, Capture, Enter (Garrison), Repair, Gather (Supply), Build and Move map to
+   cursors, game orders to Target, and the highest wins in a mixed selection.
+6. With no unit acting, a selectable entity shows Select, ground with only producers selected shows Rally, and
+   anything else Default.
+
+`CursorSet` is a ScriptableObject with one `CursorAnimation` per kind: fps, loop, and frames plus hotspot at each
+pixel size. Default is required and stands in for a kind left out. `CursorDisplay` animates the hardware cursor
+with `Cursor.SetCursor` and picks the drawn size closest to `baseSize` times its `Scale`. `CursorDisplaySystem`
+shows the world's intent through a display the game hands it. Without one the OS pointer stays.
 
 ### Unit overlays
 
