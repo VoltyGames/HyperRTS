@@ -13,8 +13,8 @@ namespace HyperRTS.Simulation.Units
 {
     /// <summary>
     /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> (disabled on arrival),
-    /// keeps units of the same layer their spacing apart, slides ground units round blockers and never steps
-    /// into a cell closed to the agent's layer.
+    /// keeps units of the same layer their spacing apart, slides ground units round blockers and never pushes a
+    /// footprint into cells closed to the agent (<see cref="NavCapsule.Constrain"/>).
     /// Steers on XZ, and Y follows the layer's surface on the <see cref="NavGrid"/> (ground, deck or water). Aircraft
     /// ignore the grid, climb to their <see cref="Flight"/> altitude (land while <see cref="Docked"/>) and, if they
     /// can't hover, circle when idle.
@@ -25,6 +25,9 @@ namespace HyperRTS.Simulation.Units
     [UpdateBefore(typeof(CargoFollowSystem))]
     public partial struct MovementSystem : ISystem
     {
+        /// <summary>Seconds a unit stays walled off or out of sight of its corner before it re-plans the way there.</summary>
+        public const float ReplanDelay = 0.75f;
+
         private EntityQuery _blockers;
         private ComponentLookup<Flight> _flights;
         private ComponentLookup<Docked> _docked;
@@ -103,32 +106,59 @@ namespace HyperRTS.Simulation.Units
                         wanted += Clearance(Crowd(entity, wanted, axis, agent), agent);
                     }
 
-                    Walk(ref transform, from, wanted, agent, moving.ValueRO, waypoints, ref path);
+                    Walk(ref transform, from, wanted, agent, axis, moving.ValueRO, waypoints, ref path);
                 }
 
-                if (math.any(heading != 0f))
+                var turned = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
+                if (math.any(heading != 0f) && (flying || CanTurn(transform, agent, axis, turned)))
                 {
-                    transform.Rotation = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
+                    transform.Rotation = turned;
                 }
             }
 
             private readonly void Walk(ref LocalTransform transform, float2 from, float2 wanted, in NavAgent agent,
-                bool moving, DynamicBuffer<PathWaypoint> waypoints, ref PathState path)
+                float2 axis, bool moving, DynamicBuffer<PathWaypoint> waypoints, ref PathState path)
             {
-                transform.Position.xz = Constrain(from, wanted, NavLayers.Surfaces(agent.Layer));
+                var pass = agent.Pass(Grid);
+                transform.Position.xz = new NavCapsule(pass, axis).Constrain(from, wanted);
                 transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
-
-                // Shoved off its line by the crowd, the unit may now face a wall between it and the next corner.
-                var shoved = !transform.Position.xz.Equals(wanted);
-                if (!moving || !shoved || waypoints.Length == 0)
-                {
-                    return;
-                }
-
-                if (!Grid.HasLineOfSight(transform.Position, waypoints[0].Position, 0f, agent.Layer))
+                var lost = moving && waypoints.Length > 0 &&
+                           IsWalledOff(pass, from, wanted, transform.Position, waypoints[0].Position);
+                path.Stuck = lost ? path.Stuck + DeltaTime : 0f;
+                if (path.Stuck >= ReplanDelay)
                 {
                     path.Status = PathStatus.None;
+                    path.Repair = true;
+                    path.Stuck = 0f;
                 }
+            }
+
+            // Facing snaps to the heading, so a long hull mustn't swing an end into a closed cell; it moves on unturned.
+            private readonly bool CanTurn(in LocalTransform transform, in NavAgent agent, float2 axis, quaternion turned)
+            {
+                if (agent.HalfSegment <= 0f)
+                {
+                    return true;
+                }
+
+                var capsule = new NavCapsule(agent.Pass(Grid), axis);
+                return capsule.CanTurn(transform.Position.xz, agent.SegmentAxis(turned));
+            }
+
+            /// <summary>A wall stopped the move, and the unit either barely moved or lost sight of its next corner.</summary>
+            private static bool IsWalledOff(in NavPass pass, float2 from, float2 wanted, float3 position, float3 corner)
+            {
+                if (position.xz.Equals(wanted))
+                {
+                    return false;
+                }
+
+                if (math.distancesq(from, position.xz) < math.distancesq(from, wanted) * 0.01f)
+                {
+                    return true;
+                }
+
+                return !pass.HasLineOfSight(position, corner, false);
             }
 
             /// <summary>Aircraft go wherever they steer and climb toward their altitude over the surface below.</summary>
@@ -224,27 +254,8 @@ namespace HyperRTS.Simulation.Units
                     return false;
                 }
 
-                return Grid.HasLineOfSight(position, waypoints[1].Position, Grid.Clearance(agent.Radius), agent.Layer);
+                return agent.Pass(Grid).HasLineOfSight(position, waypoints[1].Position, true);
             }
-
-            /// <summary>Rejects or slides a move that would enter a closed cell; units already inside may leave.</summary>
-            private readonly float2 Constrain(float2 from, float2 to, NavSurface surfaces)
-            {
-                if (IsOpen(to, surfaces) || !IsOpen(from, surfaces))
-                {
-                    return to;
-                }
-
-                if (IsOpen(new float2(to.x, from.y), surfaces))
-                {
-                    return new float2(to.x, from.y);
-                }
-
-                return IsOpen(new float2(from.x, to.y), surfaces) ? new float2(from.x, to.y) : from;
-            }
-
-            private readonly bool IsOpen(float2 position, NavSurface surfaces) =>
-                Grid.IsOpen(Grid.WorldToCell(position), surfaces);
         }
     }
 }

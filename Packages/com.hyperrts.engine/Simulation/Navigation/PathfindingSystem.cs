@@ -98,11 +98,23 @@ namespace HyperRTS.Simulation.Navigation
                     return;
                 }
 
-                Request(entity, ref path, waypoints, transform.Position, goal, agent, goalMoved);
+                var repair = CanRepair(path, waypoints, goalMoved);
+                Request(entity, ref path, waypoints, transform.Position, goal, agent, goalMoved, repair);
+            }
+
+            // A repair keeps the old corners, so they must still lead to this goal over this grid.
+            private readonly bool CanRepair(in PathState path, DynamicBuffer<PathWaypoint> waypoints, bool goalMoved)
+            {
+                if (!path.Repair || goalMoved || waypoints.Length == 0)
+                {
+                    return false;
+                }
+
+                return path.GridVersion == Grid.Version;
             }
 
             private void Request(Entity entity, ref PathState path, DynamicBuffer<PathWaypoint> waypoints, float3 start,
-                float3 goal, in NavAgent agent, bool goalMoved)
+                float3 goal, in NavAgent agent, bool goalMoved, bool repair)
             {
                 if (path.Status != PathStatus.Requested)
                 {
@@ -123,6 +135,8 @@ namespace HyperRTS.Simulation.Navigation
                     Goal = goal,
                     Radius = agent.Radius,
                     Layer = agent.Layer,
+                    Scenery = agent.SceneryPass,
+                    Repair = repair,
                     Frame = path.RequestFrame,
                 });
             }
@@ -199,7 +213,17 @@ namespace HyperRTS.Simulation.Navigation
             public void Execute(int index)
             {
                 var request = Requests[index];
-                GridPathfinder.Plan(Grid, request, WaypointLookup[request.Entity]);
+                var pass = new NavPass(Grid, request.Layer, request.Radius, request.Scenery);
+                var waypoints = WaypointLookup[request.Entity];
+                if (request.Repair)
+                {
+                    GridPathfinder.Repair(pass, request, waypoints);
+                }
+                else
+                {
+                    GridPathfinder.Plan(pass, request.Start, request.Goal, waypoints);
+                }
+
                 StateLookup[request.Entity] = new PathState
                 {
                     Goal = request.Goal,

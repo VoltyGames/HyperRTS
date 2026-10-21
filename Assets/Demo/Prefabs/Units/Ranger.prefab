@@ -82,6 +82,7 @@ MonoBehaviour:
   prerequisites: []
   moveSpeed: 5.5
   radius: 0.4
+  walksThroughScenery: 1
   population: 1
 --- !u!114 &6823712193438021732
 MonoBehaviour:

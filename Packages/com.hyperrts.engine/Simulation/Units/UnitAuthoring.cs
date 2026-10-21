@@ -44,6 +44,9 @@ namespace HyperRTS.Simulation.Units
         [Tooltip("Surface the unit moves on: Ground (land and decks), Naval (water) or Amphibious (both). A Flight component makes it Air.")]
         public NavLayer navLayer;
 
+        [Tooltip("Walks between destructible scenery (trees, fences) as infantry do. Otherwise scenery blocks it unless a Crusher flattens it.")]
+        public bool walksThroughScenery;
+
         /// <summary>Vehicles' gap: they stop short of touching, as crews keep their distance.</summary>
         public const float DefaultSpacing = 0.6f;
 
@@ -82,7 +85,19 @@ namespace HyperRTS.Simulation.Units
                     HullLength = authoring.hullLength,
                     Spacing = authoring.spacing,
                     Layer = Layer(authoring),
+                    SceneryPass = SceneryPass(authoring),
                 });
+            }
+
+            private byte SceneryPass(UnitAuthoring authoring)
+            {
+                if (authoring.walksThroughScenery)
+                {
+                    return NavPass.AllScenery;
+                }
+
+                var crusher = GetComponent<CrusherAuthoring>();
+                return crusher != null ? (byte)Mathf.Clamp(crusher.size, 0, NavPass.AllScenery - 1) : (byte)0;
             }
 
             // Flight bakes the Flight component, so its presence alone makes the unit an aircraft.

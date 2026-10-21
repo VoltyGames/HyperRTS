@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Units
 
         public void Visit(in SpatialEntry entry)
         {
-            var crowds = entry.IsUnit || entry.IsBlocker;
+            var crowds = entry.IsAgent || entry.IsBlocker;
             if (!crowds || entry.Entity == Self)
             {
                 return;

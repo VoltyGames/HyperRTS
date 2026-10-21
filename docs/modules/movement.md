@@ -15,13 +15,27 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 
 - Flooded cells become water and steep ones blocked.
 - Pathfinding is Burst A* with smoothing, at most 48 searches a frame.
+- A clearance field gives each cell, per layer, the side of the largest open square above it. A unit needs a
+  square as wide as its diameter rounded up to whole cells, so a 3.7 m tank on 2 m cells never paths through a
+  one-cell gap. Units one cell wide path as before. The field is rebuilt with every restamp.
+- Smoothing and corner skipping keep the unit's radius from closed cells, capped to fit the gap its square fits.
+- Movement holds the whole capsule off closed cells (`NavCapsule`). A unit already overlapping may move or turn
+  as long as the summed overlap doesn't grow, so it can always drive or back off. Facing still snaps to the
+  heading, except that a long hull keeps its facing when turning would swing an end into a closed cell.
+- A unit walled off from its next corner keeps its path for 0.75 s, then re-plans only the way back to that corner
+  and keeps the rest, so it goes on round the side it was taking. An unreachable corner gets a whole new path.
+- Destructible scenery with a crush rating (trees, fences) marks its cell on a scenery layer with that rating. A
+  unit drives through scenery rated up to its `SceneryPass`: its `Crusher` size, or all of it with **Walks
+  Through Scenery** (infantry). Rated higher, scenery blocks it like a closed cell for paths and movement. Felled
+  scenery reopens its cell without invalidating paths.
 - Layers that share a surface share cells, so ships pass under a bridge that tanks cross.
 - `TargetReach` walks a unit up to a target to build, repair, capture, board or gather.
 - `SpatialIndex` answers fast range queries over living entities.
 
 ## Units
 
-`UnitAuthoring` sets speed, radius, hull length, spacing, nav layer and population. Units follow their path and
+`UnitAuthoring` sets speed, radius, hull length, spacing, nav layer, whether it walks through scenery, and
+population. Units follow their path and
 stop on arrival. A unit with a hull length is a capsule that long along its forward and two radii wide; 0 keeps a
 circle. `SeparationVisitor` pushes neighbours apart along the line between their closest points, half each, until
 the larger of their two spacings lies between them (0.6 m by default, less for infantry). Formation slots are

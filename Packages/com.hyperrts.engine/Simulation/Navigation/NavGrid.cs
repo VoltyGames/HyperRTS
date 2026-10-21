@@ -16,7 +16,18 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public const int MaxSearchExpansions = 20000;
 
+        /// <summary>Layers with a <see cref="Clearance"/> field: ground, naval and amphibious, by layer value.</summary>
+        public const int ClearanceLayers = 3;
+
         public NativeArray<byte> Cells;
+
+        /// <summary>
+        /// Smallest <see cref="NavAgent.SceneryPass"/> that drives through each cell's destructible scenery; 0 for none.
+        /// </summary>
+        public NativeArray<byte> Scenery;
+
+        /// <summary>Per layer, then per cell: see <see cref="BuildClearance"/>. Scenery never counts as closed here.</summary>
+        public NativeArray<byte> Clearance;
 
         /// <summary>Surface height of <see cref="NavSurface.Deck"/> cells; other entries are unused.</summary>
         public NativeArray<float> DeckHeights;
@@ -30,14 +41,34 @@ namespace HyperRTS.Simulation.Navigation
         public float2 Min;
         public float CellSize;
 
-        /// <summary>Bumped on every rebuild so paths can be revalidated.</summary>
+        /// <summary>Bumped whenever cells close or open, so paths revalidate; scenery changes alone don't bump it.</summary>
         public int Version;
 
         public readonly bool IsCreated => Cells.IsCreated;
 
+        /// <summary>A blank grid with every layer allocated; the caller fills the cells and disposes it.</summary>
+        public static NavGrid Create(int2 size, float2 min, float cellSize, in TerrainHeight terrain, float waterLevel)
+        {
+            var count = size.x * size.y;
+            return new NavGrid
+            {
+                Cells = new NativeArray<byte>(count, Allocator.Persistent),
+                Scenery = new NativeArray<byte>(count, Allocator.Persistent),
+                Clearance = new NativeArray<byte>(count * ClearanceLayers, Allocator.Persistent),
+                DeckHeights = new NativeArray<float>(count, Allocator.Persistent),
+                Terrain = terrain,
+                WaterLevel = waterLevel,
+                Size = size,
+                Min = min,
+                CellSize = cellSize,
+            };
+        }
+
         public void Dispose()
         {
             Cells.Dispose();
+            Scenery.Dispose();
+            Clearance.Dispose();
             DeckHeights.Dispose();
         }
 
@@ -53,9 +84,6 @@ namespace HyperRTS.Simulation.Navigation
         public readonly int Index(int2 cell) => cell.y * Size.x + cell.x;
 
         public readonly int2 Cell(int index) => new(index % Size.x, index / Size.x);
-
-        /// <summary>Line-of-sight clearance for an agent, capped so it fits through a single-cell gap.</summary>
-        public readonly float Clearance(float radius) => math.min(radius, CellSize * 0.45f);
 
         public readonly NavSurface Surface(int2 cell) =>
             InBounds(cell) ? (NavSurface)Cells[Index(cell)] : NavSurface.Blocked;
@@ -129,111 +157,44 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Closest cell open to the layer by ring distance, up to <paramref name="maxRadius"/> rings out.</summary>
         public readonly bool TryFindNearestWalkable(int2 cell, int maxRadius, out int2 found,
-            NavLayer layer = NavLayer.Ground)
-        {
-            var surfaces = NavLayers.Surfaces(layer);
-            cell = math.clamp(cell, 0, Size - 1);
-            found = cell;
-            if (IsOpen(cell, surfaces))
-            {
-                return true;
-            }
-
-            for (var r = 1; r <= maxRadius; r++)
-            {
-                var best = int.MaxValue;
-                for (var i = -r; i <= r; i++)
-                {
-                    Consider(cell, new int2(i, -r), surfaces, ref best, ref found);
-                    Consider(cell, new int2(i, r), surfaces, ref best, ref found);
-                    Consider(cell, new int2(-r, i), surfaces, ref best, ref found);
-                    Consider(cell, new int2(r, i), surfaces, ref best, ref found);
-                }
-
-                if (best != int.MaxValue)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+            NavLayer layer = NavLayer.Ground) =>
+            NavPass.Surface(this, layer).TryFindNearest(cell, maxRadius, out found);
 
         /// <summary>
-        /// True when a straight move stays on cells open to the layer without cutting closed corners. A non-zero
-        /// clearance also tests two parallel lines that far to each side, so smoothed paths keep off walls.
+        /// Fills each layer's <see cref="Clearance"/>: the side, in cells, of the largest open square whose low corner
+        /// is the cell, so a footprint k cells wide fits wherever it is at least k.
         /// </summary>
-        public readonly bool HasLineOfSight(float3 from, float3 to, float clearance, NavLayer layer = NavLayer.Ground)
+        public void BuildClearance()
         {
-            var surfaces = NavLayers.Surfaces(layer);
-            var delta = to.xz - from.xz;
-            var length = math.length(delta);
-            if (clearance <= 0f || length < 1e-4f)
+            var count = Cells.Length;
+            for (var slot = 0; slot < ClearanceLayers; slot++)
             {
-                return IsSegmentClear(from.xz, to.xz, surfaces);
+                var surfaces = NavLayers.Surfaces((NavLayer)slot);
+                for (var y = Size.y - 1; y >= 0; y--)
+                {
+                    for (var x = Size.x - 1; x >= 0; x--)
+                    {
+                        var cell = new int2(x, y);
+                        var side = IsOpen(cell, surfaces) ? 1 + SmallestSquareAbove(slot, cell) : 0;
+                        Clearance[slot * count + Index(cell)] = (byte)math.min(side, byte.MaxValue);
+                    }
+                }
             }
-
-            var side = new float2(-delta.y, delta.x) / length * clearance;
-            if (!IsSegmentClear(from.xz, to.xz, surfaces))
-            {
-                return false;
-            }
-
-            var leftClear = IsSegmentClear(from.xz + side, to.xz + side, surfaces);
-            return leftClear && IsSegmentClear(from.xz - side, to.xz - side, surfaces);
         }
+
+        // A square grows past its neighbours' only as far as the smallest of the three it overlaps.
+        private readonly int SmallestSquareAbove(int slot, int2 cell)
+        {
+            var right = ClearanceAt(slot, cell + new int2(1, 0));
+            var up = ClearanceAt(slot, cell + new int2(0, 1));
+            return math.min(math.min(right, up), ClearanceAt(slot, cell + 1));
+        }
+
+        /// <summary>A layer's <see cref="Clearance"/> at a cell; zero off the grid.</summary>
+        public readonly int ClearanceAt(int slot, int2 cell) =>
+            InBounds(cell) ? Clearance[slot * Cells.Length + Index(cell)] : 0;
 
         internal readonly bool IsOpen(int2 cell, NavSurface surfaces) =>
             InBounds(cell) && ((NavSurface)Cells[Index(cell)] & surfaces) != 0;
-
-        /// <summary>A diagonal step needs both side cells open, or it would slip between two closed ones.</summary>
-        internal readonly bool CutsCorner(int2 from, int2 to, NavSurface surfaces)
-        {
-            if (from.x == to.x || from.y == to.y)
-            {
-                return false;
-            }
-
-            return !IsOpen(new int2(from.x, to.y), surfaces) || !IsOpen(new int2(to.x, from.y), surfaces);
-        }
-
-        private readonly void Consider(int2 center, int2 offset, NavSurface surfaces, ref int best, ref int2 found)
-        {
-            var distance = offset.x * offset.x + offset.y * offset.y;
-            if (distance < best && IsOpen(center + offset, surfaces))
-            {
-                best = distance;
-                found = center + offset;
-            }
-        }
-
-        private readonly bool IsSegmentClear(float2 from, float2 to, NavSurface surfaces)
-        {
-            // Quarter-cell samples are fine enough at unit scale and far simpler than an exact grid walk.
-            var steps = math.max(1, (int)math.ceil(math.distance(from, to) / (CellSize * 0.25f)));
-            var previous = WorldToCell(from);
-            if (!IsOpen(previous, surfaces))
-            {
-                return false;
-            }
-
-            for (var i = 1; i <= steps; i++)
-            {
-                var cell = WorldToCell(math.lerp(from, to, i / (float)steps));
-                if (cell.Equals(previous))
-                {
-                    continue;
-                }
-
-                if (!IsOpen(cell, surfaces) || CutsCorner(previous, cell, surfaces))
-                {
-                    return false;
-                }
-
-                previous = cell;
-            }
-
-            return true;
-        }
     }
 }

@@ -4,70 +4,87 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>Turns a start and goal into smoothed <see cref="PathWaypoint"/>s over a <see cref="NavGrid"/>.</summary>
+    /// <summary>Turns a start and goal into smoothed <see cref="PathWaypoint"/>s over a <see cref="NavPass"/>.</summary>
     internal static class GridPathfinder
     {
         /// <summary>How far (in cells) to look for open ground around a blocked start or goal.</summary>
         public const int NearestSearchRadius = 32;
 
-        public static void Plan(in NavGrid grid, in PathRequest request, DynamicBuffer<PathWaypoint> waypoints)
+        /// <summary>
+        /// Re-plans only the way to the next corner and keeps the corners after it, so a shoved unit goes on round
+        /// the side it was taking. A corner it can no longer reach gets a whole new path.
+        /// </summary>
+        public static void Repair(in NavPass pass, in PathRequest request, DynamicBuffer<PathWaypoint> waypoints)
+        {
+            var corner = waypoints[0].Position;
+            var rest = new NativeList<PathWaypoint>(waypoints.Length, Allocator.Temp);
+            for (var i = 1; i < waypoints.Length; i++)
+            {
+                rest.Add(waypoints[i]);
+            }
+
+            if (Plan(pass, request.Start, corner, waypoints))
+            {
+                waypoints.AddRange(rest.AsArray());
+            }
+            else
+            {
+                Plan(pass, request.Start, request.Goal, waypoints);
+            }
+
+            rest.Dispose();
+        }
+
+        /// <summary>Fills the waypoints; false when the goal can't be reached and they end short of it.</summary>
+        public static bool Plan(in NavPass pass, float3 start, float3 goal, DynamicBuffer<PathWaypoint> waypoints)
         {
             waypoints.Clear();
-            var start = request.Start;
-            var goal = request.Goal;
-            var layer = request.Layer;
-            if (!TryFindOpenEnds(grid, request, out var from, out var to))
+            var startAnchor = pass.AnchorAt(start);
+            var goalAnchor = pass.AnchorAt(goal);
+            var foundStart = pass.TryFindNearest(startAnchor, NearestSearchRadius, out var from);
+            if (!foundStart || !pass.TryFindNearest(goalAnchor, NearestSearchRadius, out var to))
             {
                 Add(waypoints, goal, start.y);
-                return;
+                return false;
             }
 
             // A unit inside a blocked cell (a building placed on it) first steps out to open ground.
             var origin = start;
-            if (!from.Equals(grid.WorldToCell(start)))
+            if (!from.Equals(startAnchor))
             {
-                origin = grid.CellCenter(from);
+                origin = pass.AnchorCenter(from);
                 Add(waypoints, origin, start.y);
             }
 
-            var end = to.Equals(grid.WorldToCell(goal)) ? goal : grid.CellCenter(to);
-            var clearance = grid.Clearance(request.Radius);
-            if (from.Equals(to) || grid.HasLineOfSight(origin, end, clearance, layer))
+            var end = to.Equals(goalAnchor) ? goal : pass.AnchorCenter(to);
+            if (from.Equals(to) || pass.HasLineOfSight(origin, end, true))
             {
                 Add(waypoints, end, start.y);
-                return;
+                return true;
             }
 
             var cells = new NativeList<int2>(64, Allocator.Temp);
-            if (!GridAStar.Search(grid, layer, from, to, cells))
+            var reached = GridAStar.Search(pass, from, to, cells);
+            if (!reached)
             {
-                end = grid.CellCenter(cells[cells.Length - 1]);
+                end = pass.AnchorCenter(cells[cells.Length - 1]);
             }
 
-            Smooth(grid, layer, origin, end, clearance, cells, waypoints, start.y);
+            Smooth(pass, origin, end, cells, waypoints, start.y);
             cells.Dispose();
-        }
-
-        /// <summary>The open cells nearest the start and the goal; false if either has none within reach.</summary>
-        private static bool TryFindOpenEnds(in NavGrid grid, in PathRequest request, out int2 from, out int2 to)
-        {
-            var startCell = grid.WorldToCell(request.Start);
-            var goalCell = grid.WorldToCell(request.Goal);
-            var foundStart = grid.TryFindNearestWalkable(startCell, NearestSearchRadius, out from, request.Layer);
-            var foundGoal = grid.TryFindNearestWalkable(goalCell, NearestSearchRadius, out to, request.Layer);
-            return foundStart && foundGoal;
+            return reached;
         }
 
         // Greedy string pulling: keep a corner only when the anchor can't see the point after it.
-        private static void Smooth(in NavGrid grid, NavLayer layer, float3 origin, float3 end, float clearance,
-            NativeList<int2> cells, DynamicBuffer<PathWaypoint> waypoints, float y)
+        private static void Smooth(in NavPass pass, float3 origin, float3 end, NativeList<int2> cells,
+            DynamicBuffer<PathWaypoint> waypoints, float y)
         {
             var anchor = origin;
             for (var i = 1; i < cells.Length - 1; i++)
             {
-                var point = grid.CellCenter(cells[i]);
-                var next = i + 1 == cells.Length - 1 ? end : grid.CellCenter(cells[i + 1]);
-                if (!grid.HasLineOfSight(anchor, next, clearance, layer))
+                var point = pass.AnchorCenter(cells[i]);
+                var next = i + 1 == cells.Length - 1 ? end : pass.AnchorCenter(cells[i + 1]);
+                if (!pass.HasLineOfSight(anchor, next, true))
                 {
                     Add(waypoints, point, y);
                     anchor = point;

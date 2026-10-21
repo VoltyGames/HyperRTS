@@ -8,7 +8,6 @@ using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -51,22 +50,16 @@ namespace HyperRTS.Editor.Tests
         private static MapNavGrid Field(Func<float2, bool> blocked)
         {
             var size = new int2(200, 80);
-            var cells = new NativeArray<byte>(size.x * size.y, Allocator.Persistent);
             var min = new float2(-100f, -40f);
-            for (var i = 0; i < cells.Length; i++)
+            var grid = NavGrid.Create(size, min, 1f, default, 0f);
+            for (var i = 0; i < grid.Cells.Length; i++)
             {
                 var center = min + new float2(i % size.x, i / size.x) + 0.5f;
-                cells[i] = (byte)(blocked(center) ? NavSurface.Blocked : NavSurface.Land);
+                grid.Cells[i] = (byte)(blocked(center) ? NavSurface.Blocked : NavSurface.Land);
             }
 
-            return MapNavGrid.Wrap(new NavGrid
-            {
-                Cells = cells,
-                DeckHeights = new NativeArray<float>(cells.Length, Allocator.Persistent),
-                Size = size,
-                Min = min,
-                CellSize = 1f,
-            });
+            grid.BuildClearance();
+            return MapNavGrid.Wrap(grid);
         }
 
         private static MapSpawn Spawn(int slot, int team, float x, float z) => new(new Vector2(x, z), 0f, slot, team, 0);

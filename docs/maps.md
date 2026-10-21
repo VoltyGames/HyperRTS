@@ -195,7 +195,8 @@ fails loudly.
 The build then measures the map on the nav grid:
 
 - **Roads.** Warnings for dead ends and bends tighter than half the class's curve radius.
-- **Rush and paths.** Rush times between bases and the number of distinct attack paths.
+- **Rush and paths.** Rush times between bases and the number of distinct attack paths, for a unit one cell
+  wide that walks through scenery, as infantry do. Tanks crush trees, so they share those lanes.
 - **Bases.** Reach, buildable ground and resources per base. Resources within 2.5 base radii count as the base's.
 - **Renewable resources.** A renewable node among a base's resources is an error, since base fields must run
   dry. Across the map, stacks within 20 m of each other form one field. Fewer fields than the mode's

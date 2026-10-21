@@ -15,6 +15,9 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>False for buildings and blockers.</summary>
         public bool IsUnit;
 
+        /// <summary>Has a <see cref="NavAgent"/>, so it crowds other agents; scenery, though a unit here, never does.</summary>
+        public bool IsAgent;
+
         /// <summary>A <see cref="Blocker"/>: units are pushed fully clear of it and it never moves.</summary>
         public bool IsBlocker;
 

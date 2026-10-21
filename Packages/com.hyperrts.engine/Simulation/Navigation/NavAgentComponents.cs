@@ -19,6 +19,12 @@ namespace HyperRTS.Simulation.Navigation
 
         public NavLayer Layer;
 
+        /// <summary>
+        /// Highest <see cref="Common.Destructible.Crush"/> rating of scenery it drives through, such as its crusher size;
+        /// <see cref="NavPass.AllScenery"/> walks between everything. Scenery rated above it blocks it.
+        /// </summary>
+        public byte SceneryPass;
+
         /// <summary>Half the capsule's core segment: zero for round footprints.</summary>
         public readonly float HalfSegment => HalfSegmentFor(Radius, HullLength);
 
@@ -31,6 +37,9 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public readonly float2 SlotSpacing =>
             new float2(Radius * 2f, HalfLength * 2f) * 1.25f + Spacing;
+
+        /// <summary>What this agent may enter on the grid.</summary>
+        public readonly NavPass Pass(in NavGrid grid) => new(grid, Layer, Radius, SceneryPass);
 
         /// <summary>The core segment's half on the XZ plane, along the unit's facing.</summary>
         public readonly float2 SegmentAxis(quaternion rotation) => SegmentAxis(rotation, Radius, HullLength);

@@ -13,7 +13,8 @@ namespace HyperRTS.Simulation.Navigation
     /// Builds the <see cref="NavGrid"/> from <see cref="MapSettings"/> (terrain, slope and, when flooding, water
     /// level give each cell its base surface), rebuilding it when the map or <see cref="TerrainHeight"/> changes. Then
     /// re-stamps every <see cref="NavArea"/> and <see cref="NavObstacle"/> over it whenever any are added, removed or
-    /// change archetype. Areas and obstacles are assumed not to move.
+    /// change archetype, and rebuilds the clearance field. Destructible scenery is stamped on its own layer, which
+    /// changes without bumping the version. None of them are assumed to move.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]
@@ -22,17 +23,21 @@ namespace HyperRTS.Simulation.Navigation
     {
         private EntityQuery _obstacles;
         private EntityQuery _areas;
+        private EntityQuery _scenery;
         private NativeArray<byte> _base;
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
         private int _builtObstacleVersion;
         private int _builtAreaVersion;
+        private int _builtSceneryVersion;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().Build();
             _areas = SystemAPI.QueryBuilder().WithAll<NavArea, LocalTransform>().Build();
+            _scenery = SystemAPI.QueryBuilder().WithAll<Destructible, LocalTransform>()
+                .WithNone<NavObstacle, NavAgent>().Build();
             state.RequireForUpdate<MapSettings>();
         }
 
@@ -63,19 +68,30 @@ namespace HyperRTS.Simulation.Navigation
                 BuildGrid(ref state, map, terrain);
             }
 
-            var restamp = AreasChanged(ref state);
-            if (!rebuilt && !restamp)
+            var obstaclesChanged = OrderChanged<NavObstacle>(ref state, ref _builtObstacleVersion);
+            var restamp = OrderChanged<NavArea>(ref state, ref _builtAreaVersion) | obstaclesChanged | rebuilt;
+            var restampScenery = OrderChanged<Destructible>(ref state, ref _builtSceneryVersion) | rebuilt;
+            if (!restamp && !restampScenery)
             {
                 return;
             }
 
             ref var grid = ref SystemAPI.GetSingletonRW<NavGrid>().ValueRW;
-            grid.Version++;
+            if (restamp)
+            {
+                grid.Version++;
+                state.Dependency = new ResetJob { Base = _base, Cells = grid.Cells }.Schedule(state.Dependency);
+                state.Dependency = new AreaJob { Grid = grid, Decks = false }.Schedule(_areas, state.Dependency);
+                state.Dependency = new AreaJob { Grid = grid, Decks = true }.Schedule(_areas, state.Dependency);
+                state.Dependency = new ObstacleJob { Grid = grid }.Schedule(_obstacles, state.Dependency);
+                state.Dependency = new ClearanceJob { Grid = grid }.Schedule(state.Dependency);
+            }
 
-            state.Dependency = new ResetJob { Base = _base, Cells = grid.Cells }.Schedule(state.Dependency);
-            state.Dependency = new AreaJob { Grid = grid, Decks = false }.Schedule(_areas, state.Dependency);
-            state.Dependency = new AreaJob { Grid = grid, Decks = true }.Schedule(_areas, state.Dependency);
-            state.Dependency = new ObstacleJob { Grid = grid }.Schedule(_obstacles, state.Dependency);
+            if (restampScenery)
+            {
+                state.Dependency = new ClearSceneryJob { Scenery = grid.Scenery }.Schedule(state.Dependency);
+                state.Dependency = new SceneryJob { Grid = grid }.Schedule(_scenery, state.Dependency);
+            }
         }
 
         /// <summary>Whether the grid was built from this map and terrain; a new map or late-streamed terrain rebuilds it.</summary>
@@ -96,14 +112,12 @@ namespace HyperRTS.Simulation.Navigation
             return sameWater && map.MaxSlope == built.MaxSlope;
         }
 
-        /// <summary>True when areas or obstacles were added, removed or changed archetype since the last stamp.</summary>
-        private bool AreasChanged(ref SystemState state)
+        /// <summary>True when entities with <typeparamref name="T"/> were added, removed or changed archetype since the last stamp.</summary>
+        private static bool OrderChanged<T>(ref SystemState state, ref int built) where T : unmanaged, IComponentData
         {
-            var obstacles = state.EntityManager.GetComponentOrderVersion<NavObstacle>();
-            var areas = state.EntityManager.GetComponentOrderVersion<NavArea>();
-            var changed = obstacles != _builtObstacleVersion || areas != _builtAreaVersion;
-            _builtObstacleVersion = obstacles;
-            _builtAreaVersion = areas;
+            var version = state.EntityManager.GetComponentOrderVersion<T>();
+            var changed = version != built;
+            built = version;
             return changed;
         }
 
@@ -113,16 +127,7 @@ namespace HyperRTS.Simulation.Navigation
             var cellSize = math.max(0.1f, map.NavCellSize);
             var size = math.max(1, (int2)math.ceil(map.Size / cellSize));
             var count = size.x * size.y;
-            var grid = new NavGrid
-            {
-                Cells = new NativeArray<byte>(count, Allocator.Persistent),
-                DeckHeights = new NativeArray<float>(count, Allocator.Persistent),
-                Terrain = terrain,
-                WaterLevel = map.WaterLevel,
-                Size = size,
-                Min = map.Min,
-                CellSize = cellSize,
-            };
+            var grid = NavGrid.Create(size, map.Min, cellSize, terrain, map.WaterLevel);
             ReplaceGrid(ref state, ref grid);
 
             if (_base.IsCreated)
@@ -237,6 +242,48 @@ namespace HyperRTS.Simulation.Navigation
                         }
                     }
                 }
+            }
+        }
+
+        [BurstCompile]
+        private struct ClearanceJob : IJob
+        {
+            public NavGrid Grid;
+
+            public void Execute() => Grid.BuildClearance();
+        }
+
+        [BurstCompile]
+        private struct ClearSceneryJob : IJob
+        {
+            public NativeArray<byte> Scenery;
+
+            public void Execute()
+            {
+                for (var i = 0; i < Scenery.Length; i++)
+                {
+                    Scenery[i] = 0;
+                }
+            }
+        }
+
+        /// <summary>Single-threaded: scenery sharing a cell keeps the sturdiest rating. Each piece fills its own cell.</summary>
+        [BurstCompile]
+        private partial struct SceneryJob : IJobEntity
+        {
+            public NavGrid Grid;
+
+            private void Execute(in Destructible destructible, in LocalTransform transform)
+            {
+                var cell = Grid.WorldToCell(transform.Position);
+                if (destructible.Crush <= 0 || !Grid.InBounds(cell))
+                {
+                    return;
+                }
+
+                var index = Grid.Index(cell);
+                var rating = math.min(destructible.Crush, NavPass.AllScenery - 1);
+                Grid.Scenery[index] = (byte)math.max((int)Grid.Scenery[index], rating);
             }
         }
     }

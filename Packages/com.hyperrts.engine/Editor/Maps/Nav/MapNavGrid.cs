@@ -33,16 +33,7 @@ namespace HyperRTS.Editor.Maps.Nav
             var terrain = TerrainHeightAuthoring.Sample(terrainData, terrainOrigin, Allocator.Persistent);
             var cellSize = rules.navCellSize;
             var size = math.max(1, (int2)math.ceil(new float2(bounds.width, bounds.height) / cellSize));
-            var grid = new NavGrid
-            {
-                Cells = new NativeArray<byte>(size.x * size.y, Allocator.Persistent),
-                DeckHeights = new NativeArray<float>(size.x * size.y, Allocator.Persistent),
-                Terrain = terrain,
-                WaterLevel = waterLevel,
-                Size = size,
-                Min = new float2(bounds.xMin, bounds.yMin),
-                CellSize = cellSize,
-            };
+            var grid = NavGrid.Create(size, new float2(bounds.xMin, bounds.yMin), cellSize, terrain, waterLevel);
 
             var gradient = NavGround.MaxGradient(rules.maxSlope);
             for (var i = 0; i < grid.Cells.Length; i++)
@@ -54,6 +45,7 @@ namespace HyperRTS.Editor.Maps.Nav
             var roots = entities.GetRootGameObjects();
             StampAreas(grid, roots);
             StampObstacles(grid, roots);
+            grid.BuildClearance();
             return new MapNavGrid(grid, terrain);
         }
 

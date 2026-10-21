@@ -23,5 +23,11 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Frame of the pending request; older requests are served first.</summary>
         public uint RequestFrame;
+
+        /// <summary>Seconds the unit has been walled off or out of sight of its next corner.</summary>
+        public float Stuck;
+
+        /// <summary>Set when <see cref="Stuck"/> runs out: the next search re-plans only the way to that corner.</summary>
+        public bool Repair;
     }
 }
