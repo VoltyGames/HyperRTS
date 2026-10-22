@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
 using Unity.Mathematics;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment
@@ -11,7 +12,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class InteractionMap : PresentationBehaviour
+    public sealed partial class InteractionMap : PresentationBehaviour
     {
         [SerializeField]
         [Tooltip("The " + InteractionBrush.ShaderName + " shader the maps are drawn with.")]
@@ -24,6 +25,7 @@ namespace HyperRTS.Presentation.Environment
         private float _wakeCarry;
 
         /// <summary>Map resolution, or Off. Written by <see cref="Rendering.PresentationQuality.Apply"/>.</summary>
+        [AutoStaticsCleanup]
         public static InteractionQuality Quality { get; internal set; } = PresentationQuality.Default.Interactions;
 
         protected override void OnAwake() => _brush = new InteractionBrush(brush);

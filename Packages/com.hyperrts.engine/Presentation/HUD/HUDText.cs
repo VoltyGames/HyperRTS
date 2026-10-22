@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Resources;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.HUD
@@ -10,8 +11,9 @@ namespace HyperRTS.Presentation.HUD
     /// Every string the HUD shows, by stable key. This base is the engine's English; a game subclasses it to translate
     /// and sets <see cref="Current"/> before the HUD builds.
     /// </summary>
-    public class HUDText
+    public partial class HUDText
     {
+        [NoAutoStaticsCleanup]
         private static readonly Dictionary<string, string> English = new()
         {
             ["hud.pop"] = "POP",
@@ -29,6 +31,7 @@ namespace HyperRTS.Presentation.HUD
             ["outcome.ended"] = "MATCH OVER",
         };
 
+        [AutoStaticsCleanup]
         public static HUDText Current { get; set; } = new();
 
         /// <summary>Text of a fixed HUD key (hud.*, command.*, stance.*, outcome.*).</summary>
@@ -85,8 +88,5 @@ namespace HyperRTS.Presentation.HUD
 
             return key.ToString();
         }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => Current = new HUDText();
     }
 }

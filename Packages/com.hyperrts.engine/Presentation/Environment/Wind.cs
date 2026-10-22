@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -15,7 +16,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class Wind : PresentationBehaviour
+    public sealed partial class Wind : PresentationBehaviour
     {
         private const int GustMapSize = 128;
 
@@ -34,6 +35,7 @@ namespace HyperRTS.Presentation.Environment
         public WindDetail vegetation = WindDetail.Flutter;
 
         /// <summary>The last published downwind direction on the ground (xz); zero before any Wind has run.</summary>
+        [AutoStaticsCleanup]
         public static Vector3 Downwind { get; private set; }
 
         private WindZone _zone;
@@ -46,9 +48,6 @@ namespace HyperRTS.Presentation.Environment
             _gustMap = WindGust.CreateMap(GustMapSize);
             Shader.SetGlobalTexture(GustMapId, _gustMap);
         }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => Downwind = Vector3.zero;
 
         private void Update()
         {

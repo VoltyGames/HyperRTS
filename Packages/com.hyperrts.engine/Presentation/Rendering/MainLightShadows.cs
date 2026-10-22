@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -11,6 +12,7 @@ namespace HyperRTS.Presentation.Rendering
     /// </summary>
     public static class MainLightShadows
     {
+        [NoAutoStaticsCleanup]
         private static readonly Dictionary<UniversalRenderPipelineAsset, int> Authored = new();
 
         /// <summary>Sets the shadow map size (a power of two, 256 to 8192) on the active pipeline asset.</summary>
@@ -41,12 +43,6 @@ namespace HyperRTS.Presentation.Rendering
                 }
             }
 
-            Authored.Clear();
-        }
-
-        internal static void Reset()
-        {
-            Application.quitting -= Restore;
             Authored.Clear();
         }
     }

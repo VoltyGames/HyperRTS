@@ -3,6 +3,7 @@ using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.Environment.Grass;
 using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Simulation.Common;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -14,7 +15,7 @@ namespace HyperRTS.Presentation.Rendering
     /// <see cref="GrassRenderer"/>, <see cref="RowCropRenderer"/>, <see cref="CameraAntialiasingMode"/>) are read-only
     /// outside the engine.
     /// </summary>
-    public struct PresentationQuality
+    public partial struct PresentationQuality
     {
         /// <summary>Particle share, flash lights and loop reach of effects.</summary>
         public DetailLevel Effects;
@@ -61,6 +62,7 @@ namespace HyperRTS.Presentation.Rendering
         };
 
         /// <summary>The quality last applied.</summary>
+        [AutoStaticsCleanup]
         public static PresentationQuality Current { get; private set; } = Default;
 
         /// <summary>Writes every knob and sets the shadow map size on the active URP asset.</summary>
@@ -82,16 +84,6 @@ namespace HyperRTS.Presentation.Rendering
             RowCropRenderer.Density = quality.CropDensity;
             RowCropRenderer.Distance = quality.CropDistance;
             CameraAntialiasingMode.Mode = quality.Antialiasing;
-        }
-
-        // Not shadows: the URP asset gets its authored size back on quit.
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
-        {
-            MainLightShadows.Reset();
-            CameraAntialiasingMode.Reset(Default.Antialiasing);
-            WriteKnobs(Default);
-            Current = Default;
         }
     }
 }

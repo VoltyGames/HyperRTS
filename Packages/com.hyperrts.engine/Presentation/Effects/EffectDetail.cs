@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
+using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Presentation.Effects
 {
@@ -7,8 +8,9 @@ namespace HyperRTS.Presentation.Effects
     /// Effect detail, written by <see cref="PresentationQuality.Apply"/>. Low thins particles and keeps loops near
     /// the camera; only High adds flash lights.
     /// </summary>
-    public static class EffectDetail
+    public static partial class EffectDetail
     {
+        [AutoStaticsCleanup]
         public static DetailLevel Level { get; internal set; } = PresentationQuality.Default.Effects;
 
         /// <summary>The share of authored particles emitted at the current level.</summary>

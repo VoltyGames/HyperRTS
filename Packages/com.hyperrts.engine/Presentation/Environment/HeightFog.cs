@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment
@@ -13,7 +14,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class HeightFog : PresentationBehaviour
+    public sealed partial class HeightFog : PresentationBehaviour
     {
         private static readonly int ColorId = Shader.PropertyToID("_HyperRTSFogColor");
         private static readonly int SunColorId = Shader.PropertyToID("_HyperRTSFogSunColor");
@@ -50,6 +51,7 @@ namespace HyperRTS.Presentation.Environment
         public float sunExponent = 8f;
 
         /// <summary>The fog in effect; null when none is enabled, and the fog pass then draws nothing.</summary>
+        [AutoStaticsCleanup]
         public static HeightFog Current { get; private set; }
 
         private void OnEnable()
@@ -87,13 +89,7 @@ namespace HyperRTS.Presentation.Environment
         }
 
         // Zero opacity leaves transparent shaders that apply the fog unfogged.
+        [OnEnteringPlayMode]
         private static void Clear() => Shader.SetGlobalVector(ShapeId, Vector4.zero);
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
-        {
-            Current = null;
-            Clear();
-        }
     }
 }

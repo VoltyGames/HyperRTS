@@ -117,9 +117,10 @@ Graphics, InputSystem or UIElements. A headless server never runs `Client/`. See
 
 ## Gotchas
 
-- Enter Play Mode skips domain reload, so statics survive between sessions. Reset runtime statics with
-  `[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]` or keep the state in ECS. Treat `UAC*` analyzer
-  diagnostics as errors.
+- Enter Play Mode skips domain reload, so statics survive between sessions. Mark session state
+  `[AutoStaticsCleanup]` and immutable tables `[NoAutoStaticsCleanup]`. Put side effects such as shader globals or
+  disposal in an `[OnEnteringPlayMode]` method. Types that use them are `partial`. Or keep the state in ECS. Treat
+  `UAC*` diagnostics and Project Auditor's Domain Reload (`UAL*`) findings as errors.
 - Entities built through `IEntityWriter` in tests have no mesh. Rendered spawns instantiate baked prefabs.
 - SubScene entities stream in over the first frames. Guard on singletons with `RequireForUpdate`, and never treat
   "nothing exists yet" as a game state. `VictorySystem` shows how.

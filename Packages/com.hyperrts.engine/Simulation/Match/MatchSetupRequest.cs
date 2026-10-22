@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Simulation.Match
 {
@@ -6,8 +6,9 @@ namespace HyperRTS.Simulation.Match
     /// Hands a <see cref="MatchSetup"/> from menu code, which runs before the match worlds and scene exist, to every
     /// world that loads the match. It stays set until cleared, so a host's server and client worlds both read it.
     /// </summary>
-    public static class MatchSetupRequest
+    public static partial class MatchSetupRequest
     {
+        [AutoStaticsCleanup]
         private static MatchSetup? _pending;
 
         public static void Set(in MatchSetup setup) => _pending = setup;
@@ -19,8 +20,5 @@ namespace HyperRTS.Simulation.Match
             setup = _pending.GetValueOrDefault();
             return _pending.HasValue;
         }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => _pending = null;
     }
 }

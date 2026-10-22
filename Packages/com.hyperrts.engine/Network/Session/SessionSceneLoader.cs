@@ -1,11 +1,13 @@
-﻿using UnityEngine;
+﻿using Unity.Scripting.LifecycleManagement;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Network.Session
 {
     /// <summary>Loads the scene a session start asked for, so its SubScene streams into the session's worlds.</summary>
-    internal static class SessionSceneLoader
+    internal static partial class SessionSceneLoader
     {
+        [AutoStaticsCleanup]
         public static AsyncOperation Current { get; private set; }
 
         public static void Load(SessionScene scene)
@@ -33,8 +35,5 @@ namespace HyperRTS.Network.Session
             return SceneManager.LoadSceneAsync(path, LoadSceneMode.Single);
 #endif
         }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => Current = null;
     }
 }

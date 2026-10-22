@@ -6,6 +6,7 @@ using Unity.Entities;
 using Unity.NetCode;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 [assembly: InternalsVisibleTo("HyperRTS.Simulation.Tests")]
@@ -16,7 +17,7 @@ namespace HyperRTS.Network.Session
     /// Starts and stops a networked match: replaces the single-player world with server and/or client worlds and
     /// loads a scene (by default the active one, see <see cref="SessionScene"/>) so its SubScene streams into them.
     /// </summary>
-    public static class NetworkSession
+    public static partial class NetworkSession
     {
         public const ushort DefaultPort = 7979;
 
@@ -30,21 +31,26 @@ namespace HyperRTS.Network.Session
         /// The slot, or observer seat, to ask for when joining. Updated to what was granted when the client world
         /// closes, so a reconnecting client asks for its old one.
         /// </summary>
+        [NoAutoStaticsCleanup]
         public static JoinPreference Preference { get; set; }
 
         /// <summary>This process's identity, sent with every join: the server gives the slot it owns back to it.</summary>
+        [NoAutoStaticsCleanup]
         public static ulong Token { get; private set; } = NewToken();
 
         /// <summary>Whether <see cref="Rejoin"/> has a direct endpoint: the last session was a direct join.</summary>
         public static bool CanRejoin => _rejoin.IsValid;
 
+        [NoAutoStaticsCleanup]
         private static NetworkEndpoint _rejoin;
 
         public static bool IsRunning => ClientServerBootstrap.ServerWorld != null || ClientServerBootstrap.ClientWorld != null;
 
+        [NoAutoStaticsCleanup]
         public static NetworkStatus Status { get; private set; }
 
         /// <summary>Why the connection closed, while <see cref="Status"/> is <see cref="NetworkStatus.Disconnected"/>.</summary>
+        [NoAutoStaticsCleanup]
         public static NetworkStreamDisconnectReason DisconnectReason { get; private set; }
 
         /// <summary>Server and client in this process, as for custom lobbies and LAN games.</summary>
@@ -264,7 +270,7 @@ namespace HyperRTS.Network.Session
         // Never 0, which a join request sends when it owns no slot.
         private static ulong NewToken() => BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0) | 1;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        [OnEnteringPlayMode]
         internal static void ResetStatics()
         {
             Preference = default;

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,10 +10,13 @@ namespace HyperRTS.Input
     /// user, so one system stopping never switches off a map another still reads. Menus and rebinding
     /// <see cref="Suspend"/> every map until they <see cref="Resume"/>.
     /// </summary>
-    public static class InputActionsProvider
+    public static partial class InputActionsProvider
     {
+        [AutoStaticsCleanup]
         private static readonly Dictionary<InputActionMap, int> Users = new();
+        [AutoStaticsCleanup]
         private static readonly HashSet<object> Suspenders = new();
+        [NoAutoStaticsCleanup]
         private static RTSInputActions _actions;
 
         public static RTSInputActions Actions => _actions ??= new RTSInputActions();
@@ -23,6 +27,7 @@ namespace HyperRTS.Input
         /// Set by a front end that owns Escape (and cancels through <c>MatchView.CancelInteraction</c>), so the input
         /// systems ignore Commands/Cancel. Off by default: the engine cancels placement and targeting itself.
         /// </summary>
+        [AutoStaticsCleanup]
         public static bool FrontEndOwnsCancel { get; set; }
 
         /// <summary>Commands/Cancel this frame, unless <see cref="FrontEndOwnsCancel"/>.</summary>
@@ -82,12 +87,9 @@ namespace HyperRTS.Input
             }
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
+        [OnEnteringPlayMode]
+        private static void DisposeActions()
         {
-            Users.Clear();
-            Suspenders.Clear();
-            FrontEndOwnsCancel = false;
             _actions?.Dispose();
             _actions = null;
         }

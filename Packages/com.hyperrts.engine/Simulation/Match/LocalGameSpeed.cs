@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Unity.Scripting.LifecycleManagement;
+using UnityEngine;
 
 namespace HyperRTS.Simulation.Match
 {
@@ -6,10 +7,12 @@ namespace HyperRTS.Simulation.Match
     /// Game speed and pause for single-player matches, through <see cref="Time.timeScale"/>. Networked matches run on
     /// the server's tick and must not use it. Camera and HUD run on unscaled time, so they keep working while paused.
     /// </summary>
-    public static class LocalGameSpeed
+    public static partial class LocalGameSpeed
     {
+        [AutoStaticsCleanup]
         private static float _scale = 1f;
 
+        [AutoStaticsCleanup]
         public static bool IsPaused { get; private set; }
 
         /// <summary>Speed while not paused.</summary>
@@ -41,12 +44,5 @@ namespace HyperRTS.Simulation.Match
         }
 
         private static void Apply() => Time.timeScale = IsPaused ? 0f : _scale;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
-        {
-            _scale = 1f;
-            IsPaused = false;
-        }
     }
 }

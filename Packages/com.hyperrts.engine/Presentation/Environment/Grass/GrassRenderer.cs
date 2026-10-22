@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
@@ -19,10 +20,13 @@ namespace HyperRTS.Presentation.Environment.Grass
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class GrassRenderer : PresentationBehaviour
+    public sealed partial class GrassRenderer : PresentationBehaviour
     {
+        [AutoStaticsCleanup]
         private static float _density = PresentationQuality.Default.GrassDensity;
+        [AutoStaticsCleanup]
         private static float _distance = PresentationQuality.Default.GrassDistance;
+        [AutoStaticsCleanup]
         private static float _shadowDistance = PresentationQuality.Default.GrassShadowDistance;
 
         [Tooltip("The baked plants this map grows.")]

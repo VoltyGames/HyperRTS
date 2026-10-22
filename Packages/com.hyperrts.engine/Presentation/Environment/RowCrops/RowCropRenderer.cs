@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Rendering;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -18,9 +19,11 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class RowCropRenderer : PresentationBehaviour
+    public sealed partial class RowCropRenderer : PresentationBehaviour
     {
+        [AutoStaticsCleanup]
         private static float _density = PresentationQuality.Default.CropDensity;
+        [AutoStaticsCleanup]
         private static float _distance = PresentationQuality.Default.CropDistance;
 
         [Tooltip("The baked fields this map grows.")]

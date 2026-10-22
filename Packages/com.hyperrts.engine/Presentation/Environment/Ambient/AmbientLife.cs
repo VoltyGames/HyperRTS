@@ -3,6 +3,7 @@ using System;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Cues;
 using Unity.Mathematics;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Ambient
@@ -15,7 +16,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class AmbientLife : PresentationBehaviour
+    public sealed partial class AmbientLife : PresentationBehaviour
     {
         // Graphics.RenderMeshInstanced draws at most this many instances per call.
         private const int MaxBirds = 1023;
@@ -69,6 +70,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
         public float dustDevilSpeed = 3f;
 
         /// <summary>The enabled instance in the loaded scenes, or null.</summary>
+        [AutoStaticsCleanup]
         public static AmbientLife Active { get; private set; }
 
         public BirdSettings Birds => new()
@@ -117,8 +119,5 @@ namespace HyperRTS.Presentation.Environment.Ambient
                 throw new InvalidOperationException($"AmbientLife '{name}': {field} {problem}.");
             }
         }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => Active = null;
     }
 }

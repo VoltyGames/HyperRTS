@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -9,7 +10,7 @@ namespace HyperRTS.Presentation.Environment
     /// The terrain shader's detail level, as global keywords. No keyword means Ultra, so edit mode and map view
     /// captures, which run without the game, render the full ground.
     /// </summary>
-    public static class TerrainDetail
+    public static partial class TerrainDetail
     {
         /// <summary>Low: one sample per layer texture, no far sample.</summary>
         public const string SimpleKeyword = "_TERRAIN_SIMPLE";
@@ -23,6 +24,8 @@ namespace HyperRTS.Presentation.Environment
         private static readonly GlobalKeyword Simple = GlobalKeyword.Create(SimpleKeyword);
         private static readonly GlobalKeyword NoFar = GlobalKeyword.Create(NoFarKeyword);
         private static readonly GlobalKeyword NoParallax = GlobalKeyword.Create(NoParallaxKeyword);
+
+        [AutoStaticsCleanup]
         private static GroundLevel _level = PresentationQuality.Default.Ground;
 
         /// <summary>Written by <see cref="PresentationQuality.Apply"/>.</summary>
@@ -48,5 +51,9 @@ namespace HyperRTS.Presentation.Environment
             GroundLevel.Ultra => null,
             _ => throw new System.ArgumentOutOfRangeException(nameof(level), level, "HyperRTS: unknown ground level."),
         };
+
+        // Global keywords outlive Play mode in the editor.
+        [OnEnteringPlayMode]
+        private static void ResetKeywords() => Level = PresentationQuality.Default.Ground;
     }
 }

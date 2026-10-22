@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Common
@@ -15,8 +16,9 @@ namespace HyperRTS.Presentation.Common
     /// Main-thread view of the match from the local player's side, or an observer's when this world has no local
     /// player; shared by MonoBehaviour presenters.
     /// </summary>
-    public sealed class MatchView
+    public sealed partial class MatchView
     {
+        [AutoStaticsCleanup]
         private static MatchView _default;
 
         private readonly Color[] _factionColors = new Color[byte.MaxValue + 1];
@@ -179,8 +181,5 @@ namespace HyperRTS.Presentation.Common
 
             return change;
         }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => _default = null;
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
@@ -7,6 +8,7 @@ namespace HyperRTS.Presentation.HUD
     /// <summary>Knows whether the pointer is over a HUD panel, without reading device input directly.</summary>
     public sealed class HUDPointerTracker
     {
+        [NoAutoStaticsCleanup]
         private static readonly Predicate<VisualElement> NotShown = panel => !IsShown(panel);
 
         private readonly HashSet<VisualElement> _hovered = new();

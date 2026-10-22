@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Cues;
 using Unity.Entities;
+using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Presentation.Audio
 {
@@ -14,6 +15,7 @@ namespace HyperRTS.Presentation.Audio
         /// <summary>Quieter than this is silent, so the loop gives its source back.</summary>
         public const float MinLevel = 0.001f;
 
+        [NoAutoStaticsCleanup]
         private static readonly Comparison<LoopCandidate> Nearest = (a, b) => a.DistanceSq.CompareTo(b.DistanceSq);
 
         private readonly List<LoopCandidate> _candidates = new();

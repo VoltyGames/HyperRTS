@@ -1,5 +1,6 @@
 ﻿using System;
 using HyperRTS.Network.Players;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Network.Session
@@ -9,7 +10,7 @@ namespace HyperRTS.Network.Session
     /// <c>-connect &lt;address&gt;</c> [<c>-observe</c>], with optional <c>-port</c> and <c>-scene</c>. A server may add
     /// <c>-exit-on-end</c>, <c>-time-limit &lt;minutes&gt;</c> and <c>-report &lt;path&gt;</c>. Player builds only.
     /// </summary>
-    public static class NetworkLauncher
+    public static partial class NetworkLauncher
     {
         /// <summary>Exit code of a command-line player that could not start or report its session.</summary>
         public const int ErrorCode = 1;
@@ -18,6 +19,7 @@ namespace HyperRTS.Network.Session
         /// The scene a command-line session loads when it has no <c>-scene</c>; null reloads the first scene. A game
         /// sets it before the first scene loads, as when it reads the match from its own flag.
         /// </summary>
+        [AutoStaticsCleanup]
         public static string DefaultScene { get; set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -81,8 +83,5 @@ namespace HyperRTS.Network.Session
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = SessionWorlds.ServerTickRate().SimulationTickRate;
         }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => DefaultScene = null;
     }
 }
