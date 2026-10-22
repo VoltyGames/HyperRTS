@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
@@ -65,6 +66,25 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(_world.IsInside(a) && _world.IsInside(b));
             Assert.IsFalse(_world.IsInside(c), "no room left");
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(c), "the order ends when full");
+        }
+
+        [Test]
+        public void Infantry_BoardsALongHull_FromBehind()
+        {
+            var carrier = _world.SpawnUnit(1, float3.zero, radius: 1.5f);
+            _world.EntityManager.SetComponentData(carrier, LocalTransform.FromPositionRotation(float3.zero,
+                quaternion.RotateY(math.PI * 0.5f)));
+            var agent = _world.Get<NavAgent>(carrier);
+            agent.HullLength = 7f;
+            _world.EntityManager.SetComponentData(carrier, agent);
+            var writer = new EntityManagerWriter(_world.EntityManager, carrier);
+            TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
+            var rider = Passenger(new float3(-12f, 0f, 0f));
+
+            _world.Enter(rider, carrier);
+            _world.Run(5f);
+
+            Assert.IsTrue(_world.IsInside(rider), "boards at the rear of the hull");
         }
 
         [Test]

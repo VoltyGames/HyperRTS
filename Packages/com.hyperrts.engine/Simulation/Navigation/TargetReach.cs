@@ -14,12 +14,14 @@ namespace HyperRTS.Simulation.Navigation
     {
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
         [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
+        [ReadOnly] private ComponentLookup<NavAgent> _agents;
         private float _navCellSize;
 
         public TargetReach(ref SystemState state)
         {
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _obstacles = state.GetComponentLookup<NavObstacle>(true);
+            _agents = state.GetComponentLookup<NavAgent>(true);
             _navCellSize = 0f;
         }
 
@@ -27,6 +29,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             _transforms.Update(ref state);
             _obstacles.Update(ref state);
+            _agents.Update(ref state);
             _navCellSize = map.NavCellSize;
         }
 
@@ -46,14 +49,22 @@ namespace HyperRTS.Simulation.Navigation
                 _navCellSize);
         }
 
-        // Targets without a NavObstacle get the default extent EntityRadius gives them.
+        // Units such as transports reach by their hull's box; footprintless targets such as nodes by EntityRadius.
         private NavBox Footprint(Entity target)
         {
             var transform = _transforms[target];
-            var size = _obstacles.TryGetComponent(target, out var obstacle)
-                ? obstacle.Size
-                : new float2(EntityRadius.Default * 2f);
-            return new NavBox(transform.Position, transform.Rotation, size);
+            if (_obstacles.TryGetComponent(target, out var obstacle))
+            {
+                return new NavBox(transform.Position, transform.Rotation, obstacle.Size);
+            }
+
+            if (_agents.TryGetComponent(target, out var agent))
+            {
+                var hull = new float2(agent.Radius, agent.HalfLength) * 2f;
+                return new NavBox(transform.Position, transform.Rotation, hull);
+            }
+
+            return new NavBox(transform.Position, transform.Rotation, new float2(EntityRadius.Default * 2f));
         }
     }
 }

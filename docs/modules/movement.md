@@ -34,7 +34,8 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 - Layers that share a surface share cells, so ships pass under a bridge that tanks cross.
 - `TargetReach` walks a unit up to a target to build, repair, capture, board or gather. It heads for the point just
   outside the target's footprint edge nearest the unit, and counts it there when the capsule, hull edge to footprint
-  edge, is within its slack plus a nav cell, so a long truck arriving nose first stops at the wall.
+  edge, is within its slack plus a nav cell, so a long truck arriving nose first stops at the wall. A building's
+  footprint is its `NavObstacle` and a unit's, such as a transport, the box round its `NavAgent` hull.
 - `SpatialIndex` answers fast range queries over living entities.
 
 ## Units
