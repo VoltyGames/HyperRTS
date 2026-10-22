@@ -16,15 +16,28 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 - Flooded cells become water and steep ones blocked.
 - Obstacles restamp the grid only when their footprints change. A building that just changes archetype, such as
   gaining or losing a fog tag, keeps the grid and every path as they are.
-- Pathfinding is Burst A* with smoothing, at most 48 searches a frame.
+- Each restamp records the box of cells it changed (`NavChanges`). A path re-plans only when one of its legs passes
+  within its unit's diameter plus a cell of a changed box, so a building placed across the map leaves it alone. A
+  path that ended short of its goal re-plans on any change, and one older than 64 restamps always does.
+- Pathfinding is Burst A* with smoothing. Searches run oldest request first until the frame has expanded 40,000
+  cells (looking along a straight path counts its length); the rest wait a frame. A* keeps its records in flat
+  arrays sized to the grid and reused, each search stamping them with its own generation.
+- Every restamp labels connected regions per layer for footprints 1 to 4 cells wide (`NavRegions`). A goal the
+  start's region can't reach snaps to the nearest open ground it can, within 64 cells, so a click across a river
+  stops on this bank. With none that near, the move ends where the unit stands, with no search.
+  `NavGrid.IsReachable(agent, from, to)` asks the same of any two points. Regions leave scenery out, and wider
+  footprints read the 4-cell regions, which may promise a way that is too narrow.
 - A clearance field gives each cell, per layer, the side of the largest open square above it. A unit needs a
   square as wide as its diameter rounded up to whole cells, so a 3.7 m tank on 2 m cells never paths through a
   one-cell gap. Units one cell wide path as before. The field is rebuilt with every restamp, one job per layer.
 - Smoothing and corner skipping keep the unit's radius from closed cells, capped to fit the gap its square fits.
-  A unit that can't see past its next corner looks again only once it enters another cell or the grid changes.
+  Line of sight walks every cell the line crosses (Amanatides and Woo) and checks the closed cells near each against
+  that clearance exactly, so no gap slips between samples. A unit that can't see past its next corner looks again
+  only once it enters another cell or the grid changes.
 - Movement holds the whole capsule off closed cells (`NavCapsule`). A unit already overlapping may move or turn
-  as long as the summed overlap doesn't grow, so it can always drive or back off. A long hull keeps its facing
-  when turning would swing an end into a closed cell.
+  as long as the summed overlap doesn't grow, so it can always drive or back off. A move into a wall slides along
+  it, round the wall's normal taken from how the overlap grows, so rotated buildings and diagonal walls never snag
+  it. A long hull keeps its facing when turning would swing an end into a closed cell.
 - A unit that stops getting on keeps its path for 0.75 s, then re-plans only the way back to its next corner and
   keeps the rest, so it goes on round the side it was taking. An unreachable corner gets a whole new path.
 - Destructible scenery with a crush rating (trees, fences) marks its cell on a scenery layer with that rating. A
@@ -36,6 +49,11 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   outside the target's footprint edge nearest the unit, and counts it there when the capsule, hull edge to footprint
   edge, is within its slack plus a nav cell, so a long truck arriving nose first stops at the wall. A building's
   footprint is its `NavObstacle` and a unit's, such as a transport, the box round its `NavAgent` hull.
+- The extra cell stays: a footprint closes every cell it overlaps, and a rotated one's closed cells are no box, so
+  one cell bounds them without asking the grid.
+- A walk-up whose move locomotion ends by itself short of the target, given up or at the end of a path that can't
+  get there, is `WalkUp.Stuck`, and build, repair, capture, board and gather finish their order. A target that moved
+  off is walked to again. A new order clears the last one's `Arrival`.
 - `SpatialIndex` answers fast range queries over living entities.
 
 ## Units
@@ -44,8 +62,10 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 population. Units follow their path and
 stop on arrival. A unit with a hull length is a capsule that long along its forward and two radii wide; 0 keeps a
 circle. `SeparationVisitor` pushes neighbours apart along the line between their closest points, half each, until
-the larger of their two spacings lies between them (0.6 m by default, less for infantry). Formation slots are
-spaced by the same footprint, so a tank column doesn't pile up nose to tail.
+the larger of their two spacings lies between them (0.6 m by default, less for infantry). Each formation slot is
+sized by its own unit's footprint, so a tank column doesn't pile up nose to tail and infantry beside it stay close.
+A row is as deep as its deepest member. A slot in a building or off the unit's ground moves to the nearest spot the
+unit fits and can reach; one only across water or a wall is left to the pathfinder's snap into the unit's region.
 
 - An idle parked unit steps aside for a moving unit of its own side (`GivingWay`): it shares the push and moves
   out of the mover's lane, toward the mover's left head-on, so a unit in a one-unit gap or on a bridge makes way.
@@ -61,8 +81,10 @@ spaced by the same footprint, so a tank column doesn't pile up nose to tail.
   at the goal again.
 - `MoveProgress` is the one stuck measure. Progress is the path left shrinking by the arrival tolerance or the hull
   turning about 20 degrees, so a pivot or a three-point turn counts. Without progress for 0.75 s the way to the
-  next corner is re-planned, and again every 0.75 s. After 3 s the unit gives up. A new path is measured afresh
-  but the clock runs on.
+  next corner is re-planned, then after waits doubling up to 6 s. A unit gives up after 3 s only within four radii
+  of its path's end, where the goal is taken. Farther out a jam is traffic, so a column queued at a bridge keeps
+  its order. A goal it can't reach snaps into its region, so it stops there. A new path is measured afresh but the
+  clock runs on.
 
 Every unit follows its path through `Locomotion`. Without its own, a unit gets `Locomotion.Instant`: full speed and
 any facing at once, never reversing, as infantry do. `LocomotionAuthoring` gives a ground vehicle handling, and its
@@ -88,9 +110,10 @@ Its facing is its rotation, and it moves only along it, so the crowd's push neve
 - A wall that stops it head-on takes its speed with it. A glancing slide or the crowd's push costs none.
 
 `BlockerAuthoring` makes remains such as a wreck solid: a capsule of radius and hull length along its forward that
-never moves. Units take the whole push and are moved fully clear of it where they are headed, so they slide round
-it. It doesn't close nav cells, so a unit beside a tank as it dies is never trapped. A `Decay` wreck stops blocking
-once it starts to sink.
+never moves. It closes the land cells it covers, so paths go round it and `NavCapsule` keeps units out, and nothing
+can be built on it. Water and decks stay, so ships pass under a wreck on a bridge. A unit caught in its cells as it
+appears drives out, since its path first steps out to open ground and `NavCapsule` lets it move while its overlap
+shrinks. A `Decay` wreck stops blocking once it starts to sink, and its cells open again.
 
 ## Air
 
