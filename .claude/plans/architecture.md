@@ -19,7 +19,7 @@ documentation: update or delete items as they land.
 - `RTSSceneBuilder.Build(RTSSceneSpec)` behind the scene wizard.
 - Captured entities drop old upgrades by source kind, even when the old owner is gone.
 - Phase A (E1, E4–E9):
-  - `TypeSet` (256 types) replaces 64-bit command masks; `OrderTraits.Register` for custom orders;
+  - `TypeSet` (256 types) replaces 64-bit command masks; `OrderTraitTable.Register` for custom orders;
     `SmartOrderRule` buffer for game right-click behaviour.
   - `TargetReach` shared by build, repair, capture, board and gather.
   - `Offline` + `OfflineReason` (construction, power, game reasons such as EMP) replaces six filters.
