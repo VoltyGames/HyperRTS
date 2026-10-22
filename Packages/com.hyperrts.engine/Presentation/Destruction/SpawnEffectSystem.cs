@@ -13,7 +13,6 @@ namespace HyperRTS.Presentation.Destruction
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    [UpdateAfter(typeof(ToppleSystem))]
     public partial class SpawnEffectSystem : SystemBase
     {
         private EffectPool _pool;
@@ -55,7 +54,18 @@ namespace HyperRTS.Presentation.Destruction
 
         private bool Falling(Entity entity)
         {
-            var clocked = SystemAPI.HasComponent<FallClock>(entity) && SystemAPI.IsComponentEnabled<FallClock>(entity);
+            if (!SystemAPI.HasComponent<ToppleFall>(entity))
+            {
+                return false;
+            }
+
+            // ToppleSystem clocks the fall from the frame after the remains spawn.
+            if (!SystemAPI.HasComponent<FallClock>(entity))
+            {
+                return true;
+            }
+
+            var clocked = SystemAPI.IsComponentEnabled<FallClock>(entity);
             return clocked && !SystemAPI.GetComponent<FallClock>(entity).Landed;
         }
     }

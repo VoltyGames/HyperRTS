@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Destruction;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -29,33 +30,32 @@ namespace HyperRTS.Presentation.Tests
         public void TearDown() => _world.Dispose();
 
         [Test]
-        public void WitnessedFall_TipsTheRenderedPoseOverTime_ThenRestsInTheFinalPose()
+        public void WitnessedFall_TurnsTheModelOverTime_ThenRestsItInTheFinalPose()
         {
             var remains = SpawnFelled(true, out var final);
-            var child = AddChild(remains, new float3(0f, 3f, 0f));
+            var model = AddModel(remains, new float3(0f, 3f, 0f));
 
             Update(1);
-            var midway = Shown(remains);
+            var midway = math.mul(final, Pose(model).Rotation);
             Assert.Less(math.abs(math.dot(midway.value, final.value)), 0.99f, "still near upright");
             Assert.AreEqual(final, _em.GetComponentData<LocalTransform>(remains).Rotation, "simulation pose untouched");
-            MathAssert.Near(math.transform(_em.GetComponentData<LocalToWorld>(remains).Value, new float3(0f, 3f, 0f)),
-                _em.GetComponentData<LocalToWorld>(child).Position, 1e-3f);
+            MathAssert.Near(math.rotate(Pose(model).Rotation, new float3(0f, 3f, 0f)), Pose(model).Position, 1e-3f);
             Assert.IsTrue(_em.IsComponentEnabled<FallClock>(remains));
 
             Update((int)math.ceil(8f / Step));
-            Assert.Greater(math.abs(math.dot(Shown(remains).value, final.value)), 0.9999f);
+            Assert.AreEqual(LocalTransform.FromPosition(new float3(0f, 3f, 0f)), Pose(model), "back at rest exactly");
             Assert.IsFalse(_em.IsComponentEnabled<FallClock>(remains));
         }
 
         [Test]
         public void UnseenFall_ShowsLyingDownAtOnce()
         {
-            var remains = SpawnFelled(false, out var final);
-            var standing = _em.GetComponentData<LocalToWorld>(remains).Value;
+            var remains = SpawnFelled(false, out _);
+            var model = AddModel(remains, new float3(0f, 3f, 0f));
 
             Update(1);
 
-            Assert.AreEqual(standing, _em.GetComponentData<LocalToWorld>(remains).Value, "rendered as simulated");
+            Assert.AreEqual(LocalTransform.FromPosition(new float3(0f, 3f, 0f)), Pose(model), "rendered as simulated");
             Assert.IsFalse(_em.IsComponentEnabled<FallClock>(remains));
         }
 
@@ -66,22 +66,23 @@ namespace HyperRTS.Presentation.Tests
             var toppleFall = ToppleMath.Fell(standing, topple, 64, witnessed, out var pose);
             var remains = _em.CreateEntity();
             _em.AddComponentData(remains, pose);
-            _em.AddComponentData(remains, new LocalToWorld { Value = pose.ToMatrix() });
             _em.AddComponentData(remains, toppleFall);
             final = pose.Rotation;
             return remains;
         }
 
-        private Entity AddChild(Entity parent, float3 offset)
+        /// <summary>A model under the remains, linked as a fresh instance is, before any Child buffer exists.</summary>
+        private Entity AddModel(Entity remains, float3 offset)
         {
-            var child = _em.CreateEntity();
-            _em.AddComponentData(child, LocalTransform.FromPosition(offset));
-            _em.AddComponentData(child, new LocalToWorld { Value = float4x4.identity });
-            _em.AddBuffer<Child>(parent).Add(new Child { Value = child });
-            return child;
+            var model = _em.CreateEntity();
+            _em.AddComponentData(model, LocalTransform.FromPosition(offset));
+            _em.AddComponentData(model, new Parent { Value = remains });
+            _em.AddBuffer<LinkedEntityGroup>(remains).AddRange(new NativeArray<LinkedEntityGroup>(
+                new LinkedEntityGroup[] { remains, model }, Allocator.Temp));
+            return model;
         }
 
-        private quaternion Shown(Entity entity) => _em.GetComponentData<LocalToWorld>(entity).Rotation;
+        private LocalTransform Pose(Entity entity) => _em.GetComponentData<LocalTransform>(entity);
 
         private void Update(int frames)
         {

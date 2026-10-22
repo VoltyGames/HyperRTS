@@ -1,31 +1,34 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Animation;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Shows felled remains tipping down to the final pose the simulation already gave them, through their rendered
-    /// transform only. A crushing vehicle's speed pushes the fall on. Unseen falls show lying down at once.
+    /// Shows felled remains tipping down to the final pose the simulation already gave them, by turning their child
+    /// models about the stump. A crushing vehicle's speed pushes the fall on. Unseen falls show lying down at once.
     /// </summary>
+    // Children turn inside the root's scale and stretch, which stay as simulated.
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]
-    [UpdateInGroup(typeof(PresentationSystemGroup))]
-    [UpdateBefore(typeof(UpdatePresentationSystemGroup))]
+    [UpdateInGroup(typeof(PoseSystemGroup))]
     public partial struct ToppleSystem : ISystem
     {
         private EntityQuery _fog;
         private EntityQuery _felled;
         private EntityQuery _falling;
         private EntityQuery _crushers;
-        private RenderPose _pose;
+        private ComponentLookup<LocalTransform> _transforms;
+        private ComponentLookup<Parent> _parents;
+        private BufferLookup<LinkedEntityGroup> _linked;
+        private BufferLookup<Child> _children;
 
         // How far from the stump a crusher counts as the one pushing the tree over.
         private const float CrushReach = 6f;
@@ -35,9 +38,12 @@ namespace HyperRTS.Presentation.Destruction
         {
             _fog = SystemAPI.QueryBuilder().WithAll<FogOfWar>().Build();
             _felled = SystemAPI.QueryBuilder().WithAll<ToppleFall>().WithAbsent<FallClock>().Build();
-            _falling = SystemAPI.QueryBuilder().WithAll<ToppleFall, FallClock, LocalTransform, LocalToWorld>().Build();
+            _falling = SystemAPI.QueryBuilder().WithAll<ToppleFall, FallClock, FallPart, LocalTransform>().Build();
             _crushers = SystemAPI.QueryBuilder().WithAll<Crusher, MotionRig, LocalToWorld>().Build();
-            _pose = new RenderPose(ref state);
+            _transforms = state.GetComponentLookup<LocalTransform>();
+            _parents = state.GetComponentLookup<Parent>(true);
+            _linked = state.GetBufferLookup<LinkedEntityGroup>(true);
+            _children = state.GetBufferLookup<Child>(true);
         }
 
         [BurstCompile]
@@ -45,7 +51,7 @@ namespace HyperRTS.Presentation.Destruction
         {
             if (!_felled.IsEmpty)
             {
-                state.EntityManager.AddComponent<FallClock>(_felled);
+                state.EntityManager.AddComponent(_felled, new ComponentTypeSet(typeof(FallClock), typeof(FallPart)));
             }
 
             // The clock's enable bit ends the work, so resting remains don't keep the fog synced.
@@ -57,60 +63,104 @@ namespace HyperRTS.Presentation.Destruction
             var view = SystemAPI.TryGetSingleton(out LocalFogView local) ? local : default;
             state.CompleteDependency();
             _fog.TryGetSingleton(out FogOfWar fog);
-            _pose.Update(ref state);
+            _transforms.Update(ref state);
+            _parents.Update(ref state);
+            _linked.Update(ref state);
+            _children.Update(ref state);
             var deltaTime = SystemAPI.Time.DeltaTime;
             using var entities = _falling.ToEntityArray(Allocator.Temp);
-            // Filled when the first fall starts this frame; Temp memory goes with the frame.
-            var rigs = default(NativeArray<MotionRig>);
-            var places = default(NativeArray<LocalToWorld>);
+            var crushers = new Crushers();
             foreach (var entity in entities)
             {
                 var toppleFall = SystemAPI.GetComponent<ToppleFall>(entity);
                 var clock = SystemAPI.GetComponentRW<FallClock>(entity);
-                if (!clock.ValueRO.Started)
+                var parts = SystemAPI.GetBuffer<FallPart>(entity);
+                if (!clock.ValueRO.Started && !Start(entity, toppleFall, ref clock.ValueRW, parts, ref crushers, view, fog))
                 {
-                    var shown = toppleFall.Witnessed && Seen(view, fog, _pose.Position(entity));
-                    if (!shown)
-                    {
-                        SystemAPI.SetComponentEnabled<FallClock>(entity, false);
-                        continue;
-                    }
-
-                    if (!rigs.IsCreated)
-                    {
-                        rigs = _crushers.ToComponentDataArray<MotionRig>(Allocator.Temp);
-                        places = _crushers.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
-                    }
-
-                    var push = CrushSpeed(rigs, places, _pose.Position(entity));
-                    clock.ValueRW = FallClock.Pushed(toppleFall.Height, push);
-                }
-
-                clock.ValueRW.Advance(toppleFall.Height, deltaTime);
-                var final = _pose.Rotation(entity);
-                if (!clock.ValueRO.Resting)
-                {
-                    _pose.Show(entity, ToppleMath.Pose(toppleFall, final, clock.ValueRO.Progress));
+                    SystemAPI.SetComponentEnabled<FallClock>(entity, false);
                     continue;
                 }
 
-                // The tipped matrix is stale, since the transform systems only redo changed ones.
-                _pose.Show(entity, final);
-                SystemAPI.SetComponentEnabled<FallClock>(entity, false);
+                clock.ValueRW.Advance(toppleFall.Height, deltaTime);
+                var resting = clock.ValueRO.Resting;
+                Turn(entity, toppleFall, clock.ValueRO.Progress, resting, parts);
+                SystemAPI.SetComponentEnabled<FallClock>(entity, !resting);
             }
         }
 
-        /// <summary>Speed in m/s of the fastest crusher at the stump, or 0 if none is there.</summary>
-        private static float CrushSpeed(NativeArray<MotionRig> rigs, NativeArray<LocalToWorld> places, float3 stump)
+        /// <summary>Starts a seen fall, pushed by any crusher at the stump; false when nobody saw it.</summary>
+        private bool Start(Entity remains, in ToppleFall toppleFall, ref FallClock clock, DynamicBuffer<FallPart> parts,
+            ref Crushers crushers, in LocalFogView view, in FogOfWar fog)
         {
-            var speed = 0f;
-            for (var i = 0; i < rigs.Length; i++)
+            var stump = _transforms[remains].Position;
+            var shown = toppleFall.Witnessed && Seen(view, fog, stump);
+            if (!shown)
             {
-                var near = math.distancesq(places[i].Position.xz, stump.xz) < CrushReach * CrushReach;
-                speed = near ? math.max(speed, math.length(rigs[i].LastVelocity.xz)) : speed;
+                return false;
             }
 
-            return speed;
+            crushers.Fill(_crushers);
+            clock = FallClock.Pushed(toppleFall.Height, crushers.Speed(stump));
+            RecordParts(remains, parts);
+            return true;
+        }
+
+        /// <summary>The remains' direct children at rest, found through the group since a fresh instance has no Child buffer.</summary>
+        private void RecordParts(Entity remains, DynamicBuffer<FallPart> parts)
+        {
+            var group = new NativeList<Entity>(Allocator.Temp);
+            RenderHierarchy.Collect(remains, _linked, _children, group);
+            foreach (var member in group)
+            {
+                var direct = _parents.TryGetComponent(member, out var parent) && parent.Value == remains;
+                if (direct)
+                {
+                    parts.Add(new FallPart { Part = member, Rest = _transforms[member] });
+                }
+            }
+        }
+
+        /// <summary>Turns the children so the remains show <see cref="ToppleMath.Pose"/>; resting puts them back exactly.</summary>
+        private void Turn(Entity remains, in ToppleFall toppleFall, float progress, bool resting, DynamicBuffer<FallPart> parts)
+        {
+            var final = _transforms[remains].Rotation;
+            var turn = resting ? quaternion.identity : math.mul(math.inverse(final), ToppleMath.Pose(toppleFall, final, progress));
+            foreach (var part in parts)
+            {
+                _transforms[part.Part] = part.Turned(turn);
+            }
+        }
+
+        /// <summary>Crushers' rigs and places, read once the first fall of a frame starts.</summary>
+        private struct Crushers
+        {
+            private NativeArray<MotionRig> _rigs;
+            private NativeArray<LocalToWorld> _places;
+
+            public void Fill(EntityQuery query)
+            {
+                if (_rigs.IsCreated)
+                {
+                    return;
+                }
+
+                // Temp memory goes with the frame.
+                _rigs = query.ToComponentDataArray<MotionRig>(Allocator.Temp);
+                _places = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
+            }
+
+            /// <summary>Speed in m/s of the fastest crusher at the stump, or 0 if none is there.</summary>
+            public readonly float Speed(float3 stump)
+            {
+                var speed = 0f;
+                for (var i = 0; i < _rigs.Length; i++)
+                {
+                    var near = math.distancesq(_places[i].Position.xz, stump.xz) < CrushReach * CrushReach;
+                    speed = near ? math.max(speed, math.length(_rigs[i].LastVelocity.xz)) : speed;
+                }
+
+                return speed;
+            }
         }
 
         /// <summary>Fog never hides scenery, but it does hide the fall.</summary>
