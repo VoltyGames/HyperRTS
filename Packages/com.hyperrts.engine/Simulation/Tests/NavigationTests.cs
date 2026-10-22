@@ -98,6 +98,29 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void Formation_IntoABuilding_PutsEverySlotOnOpenGround()
+        {
+            _world.CreateMatch(1, 2);
+            var goal = new float3(10f, 0f, 0f);
+            _world.SpawnBuilding(2, goal, new float2(8f, 8f));
+            _world.Tick();
+            var units = new Entity[4];
+            for (var i = 0; i < units.Length; i++)
+            {
+                units[i] = _world.SpawnUnit(1, new float3(-10f, 0f, i * 1.5f));
+            }
+
+            Move(goal, units);
+            _world.Tick();
+
+            foreach (var unit in units)
+            {
+                var slot = _world.Get<ActiveOrder>(unit).Value.Position;
+                Assert.IsTrue(_world.Grid().IsWalkable(slot), "the slot moved out of the building");
+            }
+        }
+
+        [Test]
         public void Grid_RebuildsWhenBuildingIsAdded()
         {
             _world.CreateMatch(1, 2);

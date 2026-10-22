@@ -6,15 +6,17 @@ namespace HyperRTS.Simulation.Commands
 {
     /// <summary>
     /// Box formation around a goal, facing the group's travel direction. Units keep their relative places:
-    /// the front-most units take the front row, and each row is filled left to right.
+    /// the front-most units take the front row, and each row is filled left to right. Each unit gets a slot its own
+    /// size, and a row is as deep as its deepest member.
     /// </summary>
     public static class Formation
     {
         /// <summary>
-        /// Writes one goal per unit into <paramref name="slots"/> (same index as its position), <paramref name="spacing"/>
-        /// apart across (x) and along (y) the travel direction.
+        /// Writes one goal per unit into <paramref name="slots"/> (same index as its position), each taking its
+        /// <paramref name="spacings"/> across (x) and along (y) the travel direction.
         /// </summary>
-        public static void Assign(NativeArray<float3> positions, float3 goal, float2 spacing, NativeArray<float3> slots)
+        public static void Assign(NativeArray<float3> positions, float3 goal, NativeArray<float2> spacings,
+            NativeArray<float3> slots)
         {
             var count = positions.Length;
             if (count == 1)
@@ -39,16 +41,37 @@ namespace HyperRTS.Simulation.Commands
             }
 
             order.Sort(new ByKey { Keys = keys });
+            var depth = 0f;
+            for (var row = 0; row < rows; row++)
+            {
+                depth += RowDepth(order, row, columns, spacings);
+            }
+
+            var front = depth * 0.5f;
             for (var row = 0; row < rows; row++)
             {
                 var start = row * columns;
                 var members = order.GetSubArray(start, math.min(columns, count - start));
-                var center = goal.xz + forward * (((rows - 1) * 0.5f - row) * spacing.y);
-                PlaceRow(positions, members, keys, new float3(center.x, goal.y, center.y), right, spacing.x, slots);
+                var rowDepth = RowDepth(order, row, columns, spacings);
+                var center = goal.xz + forward * (front - rowDepth * 0.5f);
+                front -= rowDepth;
+                PlaceRow(positions, members, keys, new float3(center.x, goal.y, center.y), right, spacings, slots);
             }
 
             order.Dispose();
             keys.Dispose();
+        }
+
+        private static float RowDepth(NativeArray<int> order, int row, int columns, NativeArray<float2> spacings)
+        {
+            var depth = 0f;
+            var end = math.min(order.Length, (row + 1) * columns);
+            for (var k = row * columns; k < end; k++)
+            {
+                depth = math.max(depth, spacings[order[k]].y);
+            }
+
+            return depth;
         }
 
         private static float2 TravelDirection(NativeArray<float3> positions, float3 goal)
@@ -63,17 +86,22 @@ namespace HyperRTS.Simulation.Commands
         }
 
         private static void PlaceRow(NativeArray<float3> positions, NativeArray<int> members, NativeArray<float> keys,
-            float3 center, float2 right, float spacing, NativeArray<float3> slots)
+            float3 center, float2 right, NativeArray<float2> spacings, NativeArray<float3> slots)
         {
+            var width = 0f;
             for (var k = 0; k < members.Length; k++)
             {
                 keys[members[k]] = math.dot(positions[members[k]].xz, right);
+                width += spacings[members[k]].x;
             }
 
             members.Sort(new ByKey { Keys = keys });
+            var left = -width * 0.5f;
             for (var k = 0; k < members.Length; k++)
             {
-                var slot = center.xz + right * ((k - (members.Length - 1) * 0.5f) * spacing);
+                var span = spacings[members[k]].x;
+                var slot = center.xz + right * (left + span * 0.5f);
+                left += span;
                 slots[members[k]] = new float3(slot.x, center.y, slot.y);
             }
         }

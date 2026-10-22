@@ -15,7 +15,8 @@ namespace HyperRTS.Simulation.Commands
 {
     /// <summary>
     /// Turns unit <see cref="PlayerCommand"/>s into orders for the commanded unit or the player's selected units.
-    /// Ground moves of several units are spread into a <see cref="Formation"/>; a patrol also queues the leg back to
+    /// Ground moves of several units are spread into a <see cref="Formation"/>, each slot moved to the nearest spot its
+    /// unit fits on the <see cref="NavGrid"/>; a patrol also queues the leg back to
     /// where each unit stands or its queue ends. Producers are not handled here.
     /// </summary>
     [BurstCompile]
@@ -51,6 +52,7 @@ namespace HyperRTS.Simulation.Commands
             state.RequireForUpdate<PlayerCommand>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<MapSettings>();
+            state.RequireForUpdate<NavGrid>();
         }
 
         [BurstCompile]
@@ -72,6 +74,7 @@ namespace HyperRTS.Simulation.Commands
 
             var relations = SystemAPI.GetSingleton<FactionRelations>();
             var map = SystemAPI.GetSingleton<MapSettings>();
+            var grid = SystemAPI.GetSingleton<NavGrid>();
             var subjects = new NativeList<Entity>(64, Allocator.Temp);
             foreach (var each in issued)
             {
@@ -82,7 +85,7 @@ namespace HyperRTS.Simulation.Commands
 
                 var command = each.Command;
                 command.Position = map.Clamp(command.Position);
-                Execute(command, subjects.AsArray(), relations, map);
+                Execute(command, subjects.AsArray(), relations, map, grid);
             }
         }
 
@@ -110,7 +113,7 @@ namespace HyperRTS.Simulation.Commands
         }
 
         private void Execute(in PlayerCommand command, NativeArray<Entity> subjects, in FactionRelations relations,
-            in MapSettings map)
+            in MapSettings map, in NavGrid grid)
         {
             if (TryApplyDirectly(command, subjects))
             {
@@ -140,7 +143,7 @@ namespace HyperRTS.Simulation.Commands
                 }
             }
 
-            IssueFormation(command, movers.AsArray(), moveOrders.AsArray(), map);
+            IssueFormation(command, movers.AsArray(), moveOrders.AsArray(), map, grid);
             movers.Dispose();
             moveOrders.Dispose();
         }
@@ -166,7 +169,7 @@ namespace HyperRTS.Simulation.Commands
         }
 
         private void IssueFormation(in PlayerCommand command, NativeArray<Entity> movers, NativeArray<Order> orders,
-            in MapSettings map)
+            in MapSettings map, in NavGrid grid)
         {
             if (movers.Length == 0)
             {
@@ -174,20 +177,20 @@ namespace HyperRTS.Simulation.Commands
             }
 
             var positions = new NativeArray<float3>(movers.Length, Allocator.Temp);
+            var spacings = new NativeArray<float2>(movers.Length, Allocator.Temp);
             var slots = new NativeArray<float3>(movers.Length, Allocator.Temp);
-            var spacing = float2.zero;
             for (var i = 0; i < movers.Length; i++)
             {
                 positions[i] = _transforms[movers[i]].Position;
-                spacing = math.max(spacing, SlotSpacing(movers[i]));
+                spacings[i] = Agent(movers[i]).SlotSpacing;
             }
 
-            Formation.Assign(positions, command.Position, spacing, slots);
+            Formation.Assign(positions, command.Position, spacings, slots);
             _lastGroup++;
             for (var i = 0; i < movers.Length; i++)
             {
                 var order = orders[i];
-                order.Position = map.Clamp(slots[i]);
+                order.Position = Fit(movers[i], map.Clamp(slots[i]), grid);
                 order.Group = _lastGroup;
                 if (order.Type == OrderType.Patrol)
                 {
@@ -200,13 +203,34 @@ namespace HyperRTS.Simulation.Commands
             }
 
             positions.Dispose();
+            spacings.Dispose();
             slots.Dispose();
         }
 
-        private float2 SlotSpacing(Entity unit)
+        private NavAgent Agent(Entity unit) =>
+            _agents.TryGetComponent(unit, out var own) ? own : new NavAgent { Radius = EntityRadius.Default };
+
+        /// <summary>The nearest spot to the slot the unit fits and can reach, so no slot lands in a building.</summary>
+        private float3 Fit(Entity unit, float3 slot, in NavGrid grid)
         {
-            var agent = _agents.TryGetComponent(unit, out var own) ? own : new NavAgent { Radius = EntityRadius.Default };
-            return agent.SlotSpacing;
+            var agent = Agent(unit);
+            // Aircraft fly over everything.
+            if (agent.Layer == NavLayer.Air)
+            {
+                return slot;
+            }
+
+            var access = agent.Access(grid);
+            var anchor = access.AnchorAt(slot);
+            if (!access.TryFindNearest(anchor, GridPathfinder.NearestSearchRadius, out var found) || found.Equals(anchor))
+            {
+                return slot;
+            }
+
+            // Ground the unit can't reach is left to the pathfinder, which snaps the goal into the unit's region.
+            var center = access.AnchorCenter(found);
+            var fitted = new float3(center.x, slot.y, center.z);
+            return grid.IsReachable(agent, _transforms[unit].Position, fitted) ? fitted : slot;
         }
 
         /// <summary>
