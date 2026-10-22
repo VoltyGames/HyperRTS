@@ -12,13 +12,12 @@ namespace HyperRTS.Editor.Maps.Nav
     public static class MapPathfinder
     {
         /// <summary>The shortest walkable path, or null when the goal can't be reached.</summary>
-        public static MapPath Find(MapNavGrid nav, int2 start, int2 goal) => Find(nav.Grid, start, goal);
+        public static MapPath Find(MapNavGrid nav, int2 start, int2 goal) => Find(ref nav.Search, nav.Grid, start, goal);
 
         /// <summary><see cref="Find(MapNavGrid, int2, int2)"/> on a grid with its own cells, such as corridors closed.</summary>
-        internal static MapPath Find(in NavGrid grid, int2 start, int2 goal)
+        internal static MapPath Find(ref GridAStar search, in NavGrid grid, int2 start, int2 goal)
         {
             var access = NavAccess.Surface(grid, NavLayer.Ground);
-            var search = new GridAStar(grid.Cells.Length, Allocator.Persistent);
             var cells = new NativeList<int2>(256, Allocator.Persistent);
             try
             {
@@ -28,7 +27,6 @@ namespace HyperRTS.Editor.Maps.Nav
             finally
             {
                 cells.Dispose();
-                search.Dispose();
             }
         }
 

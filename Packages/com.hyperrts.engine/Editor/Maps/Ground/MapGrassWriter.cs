@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Presentation.Environment.Grass;
 using UnityEditor;
@@ -22,12 +23,7 @@ namespace HyperRTS.Editor.Maps.Ground
             }
 
             var coverage = WriteCoverage(coveragePath, bake);
-            var field = AssetDatabase.LoadAssetAtPath<GrassField>(fieldPath);
-            if (field == null)
-            {
-                field = ScriptableObject.CreateInstance<GrassField>();
-                AssetDatabase.CreateAsset(field, fieldPath);
-            }
+            var field = EditorAssets.LoadOrCreate<GrassField>(fieldPath);
 
             var (tiles, tilePlants) = bake.Tiles();
             field.coverage = coverage;

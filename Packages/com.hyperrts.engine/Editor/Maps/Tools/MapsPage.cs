@@ -79,7 +79,7 @@ namespace HyperRTS.Editor.Maps.Tools
                 var spec = MapSpecJson.Read(File.ReadAllText(specPath));
                 return $"{spec.mode}  {spec.size.x:0}×{spec.size.z:0} m";
             }
-            catch (Exception exception) when (exception is ArgumentException || exception is FormatException)
+            catch (InvalidOperationException exception)
             {
                 return "Unreadable: " + exception.Message;
             }

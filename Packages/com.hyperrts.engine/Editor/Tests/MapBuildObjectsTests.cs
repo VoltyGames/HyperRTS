@@ -48,7 +48,7 @@ namespace HyperRTS.Editor.Tests
             try
             {
                 var buildObjects = new MapBuildObjects(Record);
-                var owned = scene.GetRootGameObjects().Where(buildObjects.IsOwned).Select(root => root.name).ToList();
+                var owned = buildObjects.Owned(scene.GetRootGameObjects()).Select(root => root.name).ToList();
 
                 // The name override pointed at the old root ID, so the instance is back to the prefab's name.
                 CollectionAssert.AreEqual(new[] { "Prop" }, owned);

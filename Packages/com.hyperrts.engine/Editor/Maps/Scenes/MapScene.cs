@@ -113,12 +113,9 @@ namespace HyperRTS.Editor.Maps.Scenes
                 }
             }
 
-            foreach (var root in entities.GetRootGameObjects())
+            foreach (var root in buildObjects.Owned(entities.GetRootGameObjects()))
             {
-                if (buildObjects.IsOwned(root))
-                {
-                    Object.DestroyImmediate(root);
-                }
+                Object.DestroyImmediate(root);
             }
         }
 

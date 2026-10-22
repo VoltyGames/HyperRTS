@@ -27,21 +27,9 @@ namespace HyperRTS.Editor.Maps.Library
         {
             var (item, refs) = Create(type);
             refs.file = file;
-            JToken root;
-            try
-            {
-                root = MapJsonFormat.Parse(json);
-                JsonUtility.FromJsonOverwrite(json, item);
-                JsonUtility.FromJsonOverwrite(json, refs);
-            }
-            catch (Exception e) when (e is ArgumentException or FormatException or InvalidOperationException)
-            {
-                throw new InvalidOperationException($"HyperRTS: map library file '{file}' is not valid JSON: {e.Message}", e);
-            }
-
-            RequireVersion(root, file);
             var name = MapLibraryItemAttribute.Require(type).Name;
-            MapJsonFormat.RejectUnknown(root, MapJsonFormat.Parse(ToJson(type, item, refs)), name, $"map library file '{file}'");
+            var root = MapJsonFormat.ReadInto(json, name, $"map library file '{file}'", () => ToTree(type, item, refs), item, refs);
+            RequireVersion(root, file);
             return (item, refs);
         }
 
@@ -58,7 +46,9 @@ namespace HyperRTS.Editor.Maps.Library
         public static void Write(string file, Type type, object item, MapLibraryRefs refs) =>
             File.WriteAllText(file, ToJson(type, item, refs));
 
-        public static string ToJson(Type type, object item, MapLibraryRefs refs)
+        public static string ToJson(Type type, object item, MapLibraryRefs refs) => MapJsonFormat.Write(ToTree(type, item, refs));
+
+        private static JObject ToTree(Type type, object item, MapLibraryRefs refs)
         {
             var refsJson = (JObject)MapJsonFormat.Parse(JsonUtility.ToJson(refs));
             var root = new JObject { ["version"] = Version };
@@ -72,7 +62,7 @@ namespace HyperRTS.Editor.Maps.Library
                 root.Add(property.Name, property.Value);
             }
 
-            return MapJsonFormat.Write(root);
+            return root;
         }
     }
 }

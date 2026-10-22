@@ -18,12 +18,7 @@ namespace HyperRTS.Editor.Maps.Ground
             }
 
             var picture = WritePicture(picturePath, bake);
-            var fields = AssetDatabase.LoadAssetAtPath<RowCropFields>(assetPath);
-            if (fields == null)
-            {
-                fields = ScriptableObject.CreateInstance<RowCropFields>();
-                AssetDatabase.CreateAsset(fields, assetPath);
-            }
+            var fields = EditorAssets.LoadOrCreate<RowCropFields>(assetPath);
 
             fields.fieldIds = picture;
             fields.area = bake.Area;

@@ -18,14 +18,19 @@ namespace HyperRTS.Editor.Maps.Nav
     public sealed class MapNavGrid : IDisposable
     {
         private TerrainHeight _terrain;
+        private GridAStar _search;
 
         private MapNavGrid(NavGrid grid, TerrainHeight terrain)
         {
             Grid = grid;
             _terrain = terrain;
+            _search = new GridAStar(grid.Cells.Length, Allocator.Persistent);
         }
 
         public NavGrid Grid { get; private set; }
+
+        /// <summary>One A* reused by every path search on this grid and its corridor-closed copies.</summary>
+        internal ref GridAStar Search => ref _search;
 
         public static MapNavGrid Build(Scene entities, TerrainData terrainData, Vector3 terrainOrigin, Rect bounds,
             float waterLevel, MapRules rules)
@@ -64,6 +69,7 @@ namespace HyperRTS.Editor.Maps.Nav
         public void Dispose()
         {
             Grid.Dispose();
+            _search.Dispose();
             if (_terrain.IsCreated)
             {
                 _terrain.Blob.Dispose();

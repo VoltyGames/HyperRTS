@@ -27,14 +27,14 @@ namespace HyperRTS.Editor.Maps.Scenes
             _recorded = new HashSet<string>(lines, StringComparer.Ordinal);
         }
 
-        public bool IsOwned(GameObject root)
+        /// <summary>The roots among <paramref name="roots"/> this build owns, in their order.</summary>
+        public List<GameObject> Owned(IReadOnlyList<GameObject> roots)
         {
-            if (root.name.StartsWith(MapScene.Generated, StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            return PrefabUtility.IsOutermostPrefabInstanceRoot(root) && _recorded.Contains(InstanceId(root));
+            var instances = roots.Where(root => !IsGenerated(root) && PrefabUtility.IsOutermostPrefabInstanceRoot(root))
+                .ToList();
+            var ids = InstanceIds(instances);
+            var recorded = new HashSet<GameObject>(instances.Where((_, i) => _recorded.Contains(ids[i])));
+            return roots.Where(root => IsGenerated(root) || recorded.Contains(root)).ToList();
         }
 
         /// <summary>Records a prefab instance this build made.</summary>
@@ -43,16 +43,23 @@ namespace HyperRTS.Editor.Maps.Scenes
         /// <summary>Writes the record. Save the scene first, since unsaved objects have no ID yet.</summary>
         public void Save()
         {
-            var ids = _made.Select(InstanceId).OrderBy(id => id, StringComparer.Ordinal);
+            var ids = InstanceIds(_made).OrderBy(id => id, StringComparer.Ordinal);
             File.WriteAllLines(_file, ids);
             AssetDatabase.ImportAsset(_file);
         }
 
-        private static string InstanceId(GameObject root)
+        private static bool IsGenerated(GameObject root) => root.name.StartsWith(MapScene.Generated, StringComparison.Ordinal);
+
+        // Batched, since each GetGlobalObjectIdSlow call is slow on its own.
+        private static string[] InstanceIds(IReadOnlyList<GameObject> roots)
         {
-            Object instance = PrefabUtility.GetPrefabInstanceHandle(root)
-                ?? throw new ArgumentException($"HyperRTS: '{root.name}' is not a prefab instance.", nameof(root));
-            return GlobalObjectId.GetGlobalObjectIdSlow(instance).ToString();
+            var instances = roots.Select(Handle).ToArray();
+            var ids = new GlobalObjectId[instances.Length];
+            GlobalObjectId.GetGlobalObjectIdsSlow(instances, ids);
+            return ids.Select(id => id.ToString()).ToArray();
         }
+
+        private static Object Handle(GameObject root) => PrefabUtility.GetPrefabInstanceHandle(root)
+            ?? throw new ArgumentException($"HyperRTS: '{root.name}' is not a prefab instance.", nameof(root));
     }
 }

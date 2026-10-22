@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Json
 {
@@ -52,6 +53,43 @@ namespace HyperRTS.Editor.Maps.Json
             var output = new StringBuilder();
             Append(output, token, 0);
             return output.Append('\n').ToString();
+        }
+
+        /// <summary>
+        /// Overwrites <paramref name="target"/> from <paramref name="json"/> and rejects any field its own round trip
+        /// lacks; see <see cref="ReadInto(string, string, string, Func{JToken}, object[])"/>.
+        /// </summary>
+        public static JToken ReadInto(string json, object target, string what, string source) =>
+            ReadInto(json, what, source, () => Parse(JsonUtility.ToJson(target)), target);
+
+        /// <summary>
+        /// Overwrites each of <paramref name="targets"/> from <paramref name="json"/>, then rejects any field the tree
+        /// <paramref name="known"/> builds from them lacks. Every problem throws an <see cref="InvalidOperationException"/>
+        /// naming <paramref name="source"/>. Returns the parsed root.
+        /// </summary>
+        public static JToken ReadInto(string json, string what, string source, Func<JToken> known, params object[] targets)
+        {
+            JToken root;
+            try
+            {
+                root = Parse(json);
+                foreach (var target in targets)
+                {
+                    JsonUtility.FromJsonOverwrite(json, target);
+                }
+            }
+            catch (Exception e) when (e is ArgumentException or FormatException or InvalidOperationException)
+            {
+                throw new InvalidOperationException($"HyperRTS: {source} is not valid JSON: {e.Message}", e);
+            }
+
+            if (root is not JObject)
+            {
+                throw new InvalidOperationException($"HyperRTS: {source} must be a JSON object, not {root.Type}.");
+            }
+
+            RejectUnknown(root, known(), what, source);
+            return root;
         }
 
         /// <summary>

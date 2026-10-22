@@ -18,15 +18,13 @@ namespace HyperRTS.Editor.Maps.Library
 
         private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
         {
-            var files = imported.Concat(moved).Where(IsLibraryFile).ToList();
-            var movedAssets = moved.Any(path => !IsLibraryFile(path));
-            if (movedAssets)
+            Pending.UnionWith(imported.Concat(moved).Where(IsLibraryFile));
+            var movedGuids = moved.Where(path => !IsLibraryFile(path)).Select(path => AssetDatabase.AssetPathToGUID(path)).ToList();
+            if (movedGuids.Count > 0)
             {
-                var library = MapLibrary.Load();
-                files.AddRange(MapLibrary.ItemTypes.SelectMany(type => library.Keys(type).Select(key => library.FilePath(type, key))));
+                Pending.UnionWith(LinkingFiles(movedGuids));
             }
 
-            Pending.UnionWith(files);
             if (Pending.Count == 0 || _queued)
             {
                 return;
@@ -39,14 +37,39 @@ namespace HyperRTS.Editor.Maps.Library
 
         private static bool IsLibraryFile(string path) => MapLibrary.ParseFile(path).Type != null;
 
+        /// <summary>The library files whose text names one of <paramref name="guids"/>.</summary>
+        private static IEnumerable<string> LinkingFiles(IReadOnlyList<string> guids)
+        {
+            var library = MapLibrary.Load();
+            var files = MapLibrary.ItemTypes.SelectMany(type => library.Keys(type).Select(key => library.FilePath(type, key)));
+            return files.Where(file => NamesAny(File.ReadAllText(file), guids)).ToList();
+        }
+
+        private static bool NamesAny(string text, IReadOnlyList<string> guids) =>
+            guids.Any(guid => text.Contains(guid, StringComparison.Ordinal));
+
         private static void SyncPending()
         {
             _queued = false;
             var files = Pending.ToList();
             Pending.Clear();
-            foreach (var file in files.Where(Sync))
+            var changed = files.Where(Sync).ToList();
+            if (changed.Count == 0)
             {
-                AssetDatabase.ImportAsset(file);
+                return;
+            }
+
+            AssetDatabase.StartAssetEditing();
+            try
+            {
+                foreach (var file in changed)
+                {
+                    AssetDatabase.ImportAsset(file);
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
             }
         }
 

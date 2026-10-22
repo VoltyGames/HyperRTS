@@ -1,4 +1,3 @@
-using System;
 using HyperRTS.Editor.Maps.Json;
 using UnityEngine;
 
@@ -10,14 +9,8 @@ namespace HyperRTS.Editor.Maps.Spec
         /// <summary>A field the spec doesn't read throws naming its path.</summary>
         public static MapSpec Read(string json)
         {
-            var spec = JsonUtility.FromJson<MapSpec>(json);
-            if (spec == null)
-            {
-                throw new FormatException("Map spec JSON is empty.");
-            }
-
-            var known = MapJsonFormat.Parse(JsonUtility.ToJson(spec));
-            MapJsonFormat.RejectUnknown(MapJsonFormat.Parse(json), known, "map spec", "map spec");
+            var spec = new MapSpec();
+            MapJsonFormat.ReadInto(json, spec, "map spec", "map spec");
             return spec;
         }
 

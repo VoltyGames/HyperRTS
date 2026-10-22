@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.Maps.Nav
             {
                 while (paths.Count < max)
                 {
-                    var path = MapPathfinder.Find(grid, start, goal);
+                    var path = MapPathfinder.Find(ref nav.Search, grid, start, goal);
                     if (path == null)
                     {
                         break;
