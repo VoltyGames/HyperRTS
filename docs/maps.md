@@ -232,7 +232,8 @@ needs graphics.
 The library holds the game's map content as JSON files, one per item, named `<Key>.<type>.json` anywhere under
 `Assets/`. The key is the file name and is unique per type, so `Stubble` can be a layer, a plant and a surface. A
 missing, duplicate or unreadable file throws, naming the file. So does any field the item doesn't read, at any
-depth, and a file whose `version` is not the current one, 2.
+depth, and a file whose `version` is not 1. Formats stay at 1 until the first release: a change migrates every
+file.
 
 Each item holds placement data and links to its Unity assets. The assets are ordinary files edited in Unity,
 never generated from the JSON. A link is `{ "path": "Assets/...", "guid": "..." }` and loads by GUID, so moving

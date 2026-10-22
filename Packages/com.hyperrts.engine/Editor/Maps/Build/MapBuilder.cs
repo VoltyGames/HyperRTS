@@ -44,8 +44,8 @@ namespace HyperRTS.Editor.Maps.Build
             AssetDatabase.SaveAssets();
             var overview = CaptureViews(generation);
             Log(report);
-            var result = new MapBuildResult(project.Spec, project.Paths, report, generation.Layout.Spawns.Count, minimap,
-                overview);
+            var result = new MapBuildResult(project.Spec, project.Paths, project.Climate, report,
+                generation.Layout.Spawns.Count, minimap, overview);
             foreach (var hook in TypeDiscovery.Instances<IMapBuildHook>())
             {
                 hook.OnBuilt(result);

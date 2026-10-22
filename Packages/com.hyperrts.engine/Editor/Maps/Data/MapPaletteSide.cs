@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("AI Build Order asset of the side's bots; empty trains freely.")]
         [MapAsset(typeof(AIBuildOrder))]
-        public string buildOrder;
+        public MapAssetRef buildOrder = new();
 
         [NonSerialized]
         public AIBuildOrder buildOrderAsset;

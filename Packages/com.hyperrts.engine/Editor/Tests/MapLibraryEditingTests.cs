@@ -49,14 +49,20 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void Files_PutTheTypesRefsFirstIndentedByTwoSpaces()
+        public void Files_PutTheVersionAndTheTypesRefsFirstIndentedByTwoSpaces()
         {
             var layer = new MapClimateLayer { rotation = 90f };
-            var refs = new MapLibraryRefs { terrainLayer = "Assets/Meadow.terrainlayer", prefab = "Assets/Unused.prefab" };
+            var refs = new MapLibraryRefs
+            {
+                terrainLayer = new MapAssetRef { path = "Assets/Meadow.terrainlayer", guid = "0123" },
+                prefab = new MapAssetRef { path = "Assets/Unused.prefab" },
+            };
 
             var json = MapLibraryItemFile.ToJson(typeof(MapClimateLayer), layer, refs);
 
-            StringAssert.StartsWith("{\n  \"terrainLayer\": \"Assets/Meadow.terrainlayer\",\n  \"mapColor\": {\n    \"r\":", json);
+            const string head = "{\n  \"version\": 1,\n  \"terrainLayer\": {\n    \"path\": \"Assets/Meadow.terrainlayer\",\n"
+                + "    \"guid\": \"0123\"\n  },\n  \"mapColor\": {\n    \"r\":";
+            StringAssert.StartsWith(head, json);
             StringAssert.Contains("\n  \"rotation\": 90,\n", json);
             StringAssert.EndsWith("\n}\n", json);
             Assert.IsFalse(json.Contains("prefab"));
@@ -87,7 +93,15 @@ namespace HyperRTS.Editor.Tests
         {
             var file = Path.Combine(_root, path);
             Directory.CreateDirectory(Path.GetDirectoryName(file));
-            File.WriteAllText(file, json);
+            File.WriteAllText(file, MapLibrary.ParseFile(path).Type == null ? json : Versioned(json));
+        }
+
+        /// <summary>Library fixtures carry the version real files do.</summary>
+        private static string Versioned(string json)
+        {
+            var rest = json[1..].TrimStart();
+            var separator = rest.StartsWith('}') ? string.Empty : ", ";
+            return $"{{\"version\": {MapLibraryItemFile.Version}{separator}{rest}";
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Linq;
 using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Spec;
 using NUnit.Framework;
 using UnityEngine;
@@ -178,7 +179,7 @@ namespace HyperRTS.Editor.Tests
             var side = new MapPaletteSide { side = 2 };
             side.startKit.Add(new MapStartItem { key = "Bunker" });
             palette.sides.Add(side);
-            palette.sides.Add(new MapPaletteSide { side = 2, buildOrder = "Assets/Missing.asset" });
+            palette.sides.Add(new MapPaletteSide { side = 2, buildOrder = new MapAssetRef { path = "Assets/Missing.asset" } });
 
             var issues = CheckAssets(MapRoadFixture.Climate(), palette);
 

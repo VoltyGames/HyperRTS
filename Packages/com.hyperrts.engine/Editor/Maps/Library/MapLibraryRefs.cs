@@ -2,38 +2,37 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Presentation.Environment.RowCrops;
-using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Maps.Library
 {
-    /// <summary>The asset paths and key lists a library file names, read from the same JSON as the item.</summary>
+    /// <summary>The asset links and key lists a library file names, read from the same JSON as the item.</summary>
     [Serializable]
     public sealed class MapLibraryRefs
     {
         [MapAsset(typeof(TerrainLayer))]
-        public string terrainLayer;
+        public MapAssetRef terrainLayer = new();
         [MapAsset(typeof(Mesh))]
-        public List<string> meshes = new();
+        public List<MapAssetRef> meshes = new();
         [MapAsset(typeof(GameObject))]
-        public string prefab;
+        public MapAssetRef prefab = new();
         [MapAsset(typeof(GameObject))]
-        public string backdropModel;
+        public MapAssetRef backdropModel = new();
         [MapAsset(typeof(GameObject))]
-        public List<string> prefabs = new();
+        public List<MapAssetRef> prefabs = new();
         [MapAsset(typeof(GameObject))]
-        public List<string> destructibles = new();
+        public List<MapAssetRef> destructibles = new();
         [MapAsset(typeof(Material))]
-        public string material;
+        public MapAssetRef material = new();
         [MapAsset(typeof(Material))]
-        public string water;
+        public MapAssetRef water = new();
         [MapAsset(typeof(GameObject))]
-        public string rig;
+        public MapAssetRef rig = new();
         [MapAsset(typeof(RowCrop))]
-        public string crop;
-        public List<MapResourcePath> startingResources = new();
-        public List<MapWeatherPath> weathers = new();
+        public MapAssetRef crop = new();
+        public List<MapResourceRef> startingResources = new();
+        public List<MapWeatherRef> weathers = new();
 
         [MapKey(typeof(MapClimateSurface))]
         public List<string> surfaces = new();
@@ -50,34 +49,33 @@ namespace HyperRTS.Editor.Maps.Library
         [NonSerialized]
         public string file;
 
-        /// <summary>Null for an empty path, which the map checks report. A path of the wrong type throws.</summary>
-        public T Asset<T>(string path, string field) where T : Object
+        /// <summary>Null for an empty link, which the map checks report. A broken link throws.</summary>
+        public T Asset<T>(MapAssetRef link, string field) where T : Object
         {
-            if (string.IsNullOrEmpty(path))
+            if (link.IsEmpty)
             {
                 return null;
             }
 
-            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+            var asset = (T)link.Load(typeof(T), out var problem);
             return asset != null
                 ? asset
-                : throw new InvalidOperationException(
-                    $"HyperRTS: map library file '{file}': {field} '{path}' is not a {typeof(T).Name} asset.");
+                : throw new InvalidOperationException($"HyperRTS: map library file '{file}': {field} {problem}.");
         }
 
-        /// <summary>An empty or wrong-typed path throws naming its index.</summary>
-        public List<T> Assets<T>(List<string> paths, string field) where T : Object
+        /// <summary>An empty or broken link throws naming its index.</summary>
+        public List<T> Assets<T>(List<MapAssetRef> links, string field) where T : Object
         {
             var assets = new List<T>();
-            for (var i = 0; i < paths.Count; i++)
+            for (var i = 0; i < links.Count; i++)
             {
                 var name = $"{field}[{i}]";
-                if (string.IsNullOrEmpty(paths[i]))
+                if (links[i].IsEmpty)
                 {
                     throw new InvalidOperationException($"HyperRTS: map library file '{file}': {name} is empty.");
                 }
 
-                assets.Add(Asset<T>(paths[i], name));
+                assets.Add(Asset<T>(links[i], name));
             }
 
             return assets;

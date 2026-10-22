@@ -22,9 +22,9 @@ namespace HyperRTS.Editor.Maps.Scenes
                 foreach (var key in library.Keys(type))
                 {
                     var (_, refs) = MapLibraryItemFile.Read(type, library.FilePath(type, key));
-                    AddPath(paths, refs.prefab);
-                    refs.prefabs.ForEach(path => AddPath(paths, path));
-                    refs.destructibles.ForEach(path => AddPath(paths, path));
+                    AddPath(paths, refs.prefab.path);
+                    refs.prefabs.ForEach(link => AddPath(paths, link.path));
+                    refs.destructibles.ForEach(link => AddPath(paths, link.path));
                 }
             }
 

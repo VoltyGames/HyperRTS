@@ -4,8 +4,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
-    /// Marks a string field that holds a project asset path, so editors show an object field of
-    /// <see cref="Type"/> and write the picked asset's path back.
+    /// Marks a <see cref="MapAssetRef"/> field with the asset <see cref="Type"/> it must link to, so checks and
+    /// editors know what to load.
     /// </summary>
     [AttributeUsage(AttributeTargets.Field)]
     public sealed class MapAssetAttribute : PropertyAttribute

@@ -71,7 +71,7 @@ namespace HyperRTS.Editor.Tests
         [Test]
         public void PlantFiles_NameTheirModelsAndMaterial_AndBecomeRendererPlants()
         {
-            const string json = "{\"meshes\": [], \"material\": \"\", \"width\": {\"x\": 0.5, \"y\": 0.7}, " +
+            const string json = "{\"version\": 1, \"meshes\": [], \"material\": {}, \"width\": {\"x\": 0.5, \"y\": 0.7}, " +
                                 "\"height\": {\"x\": 0.2, \"y\": 0.3}, \"density\": 12, \"clumping\": 0.4}";
 
             var (item, _) = MapLibraryItemFile.Parse(typeof(MapClimatePlant), json, "Grass.plant.json");
@@ -86,7 +86,7 @@ namespace HyperRTS.Editor.Tests
         [Test]
         public void PlantFiles_InTheOldPrefabFormat_AreRejectedByName()
         {
-            const string json = "{\"mesh\": \"Assets/Detail_Grass.prefab\", \"texture\": \"\", \"density\": 2}";
+            const string json = "{\"version\": 1, \"mesh\": \"Assets/Detail_Grass.prefab\", \"texture\": \"\", \"density\": 2}";
 
             var error = Assert.Throws<InvalidOperationException>(() =>
                 MapLibraryItemFile.Parse(typeof(MapClimatePlant), json, "Grass.plant.json"));

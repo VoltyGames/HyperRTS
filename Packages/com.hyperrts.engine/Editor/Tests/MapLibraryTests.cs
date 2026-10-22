@@ -78,7 +78,7 @@ namespace HyperRTS.Editor.Tests
         public void PaletteSides_ReadTheirKitsAndBuildOrders()
         {
             Write("Library/Game.palette.json",
-                "{\"sides\": [{\"side\": 3, \"startKit\": [{\"key\": \"Shed\", \"offset\": {\"x\": 2, \"y\": 5}, \"yaw\": 90}], \"buildOrder\": \"\"}]}");
+                "{\"sides\": [{\"side\": 3, \"startKit\": [{\"key\": \"Shed\", \"offset\": {\"x\": 2, \"y\": 5}, \"yaw\": 90}], \"buildOrder\": {}}]}");
 
             var side = MapLibrary.Load(_root).Palette().sides.Single();
 
@@ -98,6 +98,36 @@ namespace HyperRTS.Editor.Tests
 
             StringAssert.Contains("'startKit' is not a palette field", error.Message);
             StringAssert.Contains("Game.palette.json", error.Message);
+        }
+
+        [Test]
+        public void AFileWithoutTheVersion_ThrowsNamingIt()
+        {
+            File.WriteAllText(Path.Combine(_root, "Library/Game.palette.json"), "{\"baseRadius\": 12}");
+
+            var error = Assert.Throws<InvalidOperationException>(() => MapLibrary.Load(_root).Palette());
+
+            StringAssert.Contains("has version none, but the library reads version 1", error.Message);
+        }
+
+        [Test]
+        public void AnAssetLinkWrittenAsAPath_ThrowsNamingTheField()
+        {
+            Write("Library/Game.palette.json", "{\"rig\": \"Assets/Rig.prefab\"}");
+
+            var error = Assert.Throws<InvalidOperationException>(() => MapLibrary.Load(_root).Palette());
+
+            StringAssert.Contains("'rig' must be an object", error.Message);
+        }
+
+        [Test]
+        public void ANestedFieldTheItemDoesNotRead_ThrowsNamingItsPath()
+        {
+            Write("Library/Game.palette.json", "{\"sides\": [{\"sied\": 3}]}");
+
+            var error = Assert.Throws<InvalidOperationException>(() => MapLibrary.Load(_root).Palette());
+
+            StringAssert.Contains("'sides[0].sied' is not a palette field", error.Message);
         }
 
         [Test]
@@ -143,7 +173,15 @@ namespace HyperRTS.Editor.Tests
         {
             var file = Path.Combine(_root, path);
             Directory.CreateDirectory(Path.GetDirectoryName(file));
-            File.WriteAllText(file, json);
+            File.WriteAllText(file, MapLibrary.ParseFile(path).Type == null ? json : Versioned(json));
+        }
+
+        /// <summary>Library fixtures carry the version real files do.</summary>
+        private static string Versioned(string json)
+        {
+            var rest = json[1..].TrimStart();
+            var separator = rest.StartsWith('}') ? string.Empty : ", ";
+            return $"{{\"version\": {MapLibraryItemFile.Version}{separator}{rest}";
         }
     }
 }
