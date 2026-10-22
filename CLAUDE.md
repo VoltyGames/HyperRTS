@@ -121,6 +121,7 @@ Graphics, InputSystem or UIElements. A headless server never runs `Client/`. See
   `[AutoStaticsCleanup]` and immutable tables `[NoAutoStaticsCleanup]`. Put side effects such as shader globals or
   disposal in an `[OnEnteringPlayMode]` method. Types that use them are `partial`. Or keep the state in ECS. Treat
   `UAC*` diagnostics and Project Auditor's Domain Reload (`UAL*`) findings as errors.
+- A serialized `Dictionary<K, V>` needs `[SerializeField]` even on a public field, or Unity skips it.
 - Entities built through `IEntityWriter` in tests have no mesh. Rendered spawns instantiate baked prefabs.
 - SubScene entities stream in over the first frames. Guard on singletons with `RequireForUpdate`, and never treat
   "nothing exists yet" as a game state. `VictorySystem` shows how.

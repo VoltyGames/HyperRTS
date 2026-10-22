@@ -187,11 +187,11 @@ namespace HyperRTS.Editor.Maps.Scenes
             var go = scene.CreateChild("Weather").gameObject;
             var set = go.AddComponent<WeatherSet>();
             set.defaultKey = key;
-            set.entries = climate.weathers.ConvertAll(weather => new WeatherEntry
+            foreach (var weather in climate.weathers)
             {
-                key = weather.key,
-                atmosphere = weather.atmosphere,
-            });
+                set.atmospheres.Add(weather.key, weather.atmosphere);
+            }
+
             PrefabUtility.InstantiatePrefab(climate.Weather(key).atmosphere, go.transform);
         }
 

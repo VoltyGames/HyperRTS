@@ -20,7 +20,10 @@ namespace HyperRTS.Presentation.Environment
         [Tooltip("Key of the weather the scene was built with; its atmosphere is this object's child.")]
         public string defaultKey;
 
-        public List<WeatherEntry> entries = new();
+        // Dictionaries serialize only with [SerializeField], even when public.
+        [SerializeField]
+        [Tooltip("Each weather's atmosphere prefab, by key.")]
+        public Dictionary<string, GameObject> atmospheres = new();
 
         private string _currentKey;
 
@@ -49,15 +52,12 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>The atmosphere prefab of <paramref name="key"/>; an unknown key throws naming it.</summary>
         public GameObject Find(string key)
         {
-            foreach (var entry in entries)
+            if (atmospheres.TryGetValue(key, out var atmosphere))
             {
-                if (entry.key == key)
-                {
-                    return entry.atmosphere;
-                }
+                return atmosphere;
             }
 
-            var known = string.Join(", ", entries.ConvertAll(entry => entry.key));
+            var known = string.Join(", ", atmospheres.Keys);
             throw new InvalidOperationException(
                 $"HyperRTS: weather '{key}' is not one of this map's weathers ({known}).");
         }

@@ -20,15 +20,19 @@ namespace HyperRTS.Presentation.Tests
             _overcast = new GameObject("Overcast");
             _set = _go.AddComponent<WeatherSet>();
             _set.defaultKey = "Clear";
-            _set.entries.Add(new WeatherEntry { key = "Clear", atmosphere = new GameObject("Clear") });
-            _set.entries.Add(new WeatherEntry { key = "Overcast", atmosphere = _overcast });
+            _set.atmospheres.Add("Clear", new GameObject("Clear"));
+            _set.atmospheres.Add("Overcast", _overcast);
             new GameObject("Default").transform.SetParent(_go.transform);
         }
 
         [TearDown]
         public void TearDown()
         {
-            _set.entries.ForEach(entry => Object.DestroyImmediate(entry.atmosphere));
+            foreach (var atmosphere in _set.atmospheres.Values)
+            {
+                Object.DestroyImmediate(atmosphere);
+            }
+
             Object.DestroyImmediate(_go);
         }
 
