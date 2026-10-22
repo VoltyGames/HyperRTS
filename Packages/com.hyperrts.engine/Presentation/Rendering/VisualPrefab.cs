@@ -2,6 +2,7 @@ using System;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Rendering;
+using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Rendering
 {
@@ -58,7 +59,10 @@ namespace HyperRTS.Presentation.Rendering
                 return true;
             }
 
-            if (managed.Namespace is "Unity.Rendering" or "Unity.Entities.Graphics" or "Unity.Transforms")
+            // Matched by the packages' assemblies through their types, so a namespace rename can't strip a renderer.
+            var rendering = managed.Assembly == typeof(MaterialMeshInfo).Assembly;
+            var transform = managed.Assembly == typeof(LocalTransform).Assembly;
+            if (rendering || transform)
             {
                 return true;
             }
