@@ -6,6 +6,7 @@ using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Upgrades;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Combat
@@ -99,6 +100,33 @@ namespace HyperRTS.Simulation.Combat
             [ShowIf(nameof(projectilePrefab))]
             public float arcHeight = 0.25f;
 
+            [Header("Aim")]
+            [Tooltip("Part the muzzle traverses about, such as the turret; none traverses about the unit's pivot.")]
+            public Transform turret;
+
+            [Tooltip("Part the muzzle elevates about, such as the barrel; none raises only the aim, not the muzzle.")]
+            public Transform barrel;
+
+            [Tooltip("Degrees per second the weapon traverses; a turreted weapon fires once it has turned onto the target.")]
+            [Min(1f)]
+            public float traverseSpeed = 40f;
+
+            [Tooltip("Degrees per second the weapon elevates.")]
+            [Min(1f)]
+            public float elevationSpeed = 25f;
+
+            [Tooltip("Lowest elevation in degrees (negative is depression).")]
+            [Range(-90f, 0f)]
+            public float minElevation = -10f;
+
+            [Tooltip("Highest elevation in degrees.")]
+            [Range(0f, 90f)]
+            public float maxElevation = 20f;
+
+            [Tooltip("Degrees off target, per axis, a turret may fire at.")]
+            [Min(0.1f)]
+            public float aimTolerance = 2f;
+
             [Header("Targeting")]
             [Tooltip("Firing range in world units, measured edge to edge.")]
             [Min(0.1f)]
@@ -140,15 +168,27 @@ namespace HyperRTS.Simulation.Combat
                     Trajectory = trajectory,
                     ArcHeight = arcHeight,
                     MinRange = minRange,
+                    TraverseRate = math.radians(traverseSpeed),
+                    ElevationRate = math.radians(elevationSpeed),
+                    MinPitch = math.radians(minElevation),
+                    MaxPitch = math.radians(maxElevation),
+                    AimTolerance = math.radians(aimTolerance),
                 };
                 if (muzzle != null)
                 {
-                    baker.DependsOn(muzzle);
-                    weapon.Muzzle = EffectSetup.Socket(root, muzzle);
+                    weapon.Muzzle = Pivot(baker, root, muzzle);
                     weapon.HasMuzzle = true;
                 }
 
+                weapon.TurretPivot = turret != null ? Pivot(baker, root, turret) : float3.zero;
+                weapon.BarrelPivot = barrel != null ? Pivot(baker, root, barrel) : weapon.Muzzle;
                 return weapon;
+            }
+
+            private static float3 Pivot(IBaker baker, Transform root, Transform part)
+            {
+                baker.DependsOn(part);
+                return EffectSetup.Socket(root, part);
             }
         }
 

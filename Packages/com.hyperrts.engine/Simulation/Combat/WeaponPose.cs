@@ -12,11 +12,10 @@ namespace HyperRTS.Simulation.Combat
     [InternalBufferCapacity(1)]
     public struct WeaponPose : IBufferElementData
     {
-        /// <summary>Signed 0.75 degree steps reach -96 to 95 degrees, enough for the clamp below.</summary>
+        /// <summary>Signed 0.75 degree steps reach -96 to 95 degrees.</summary>
         private const float PitchStep = 0.75f * math.TORADIANS;
 
-        private const float MinPitch = -30f * math.TORADIANS;
-        private const float MaxPitch = 80f * math.TORADIANS;
+        private const float YawStep = 2f * math.PI / HeadingByte.Steps;
 
         /// <summary>Heading relative to the hull in <see cref="HeadingByte"/> steps; 0 points straight ahead.</summary>
         [GhostField] public byte Yaw;
@@ -27,26 +26,30 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Wraps; clients play a shot each time it changes.</summary>
         [GhostField] public byte Shots;
 
-        public float YawRadians => (sbyte)Yaw * (2f * math.PI / HeadingByte.Steps);
+        /// <summary>The server's exact yaw and pitch in radians, which the bytes round for clients.</summary>
+        [GhostField(SendData = false)] public float YawAngle;
+        [GhostField(SendData = false)] public float PitchAngle;
+
+        public float YawRadians => (sbyte)Yaw * YawStep;
 
         public float PitchRadians => (sbyte)Pitch * PitchStep;
 
-        /// <summary>Points at <paramref name="localDirection"/> (in the hull's space) at <paramref name="elevation"/> radians.</summary>
-        public void Aim(float3 localDirection, float elevation)
+        /// <summary>Turns the shortest way toward <paramref name="angles"/> by at most <paramref name="steps"/> radians per axis.</summary>
+        public void Turn(float2 angles, float2 steps)
         {
-            Yaw = HeadingByte.Encode(localDirection.xz);
-            Pitch = (byte)(sbyte)math.round(math.clamp(elevation, MinPitch, MaxPitch) / PitchStep);
+            var gap = new float2(Wrap(angles.x - YawAngle), angles.y - PitchAngle);
+            YawAngle = Wrap(YawAngle + math.clamp(gap.x, -steps.x, steps.x));
+            PitchAngle += math.clamp(gap.y, -steps.y, steps.y);
+            Yaw = (byte)((int)math.round(YawAngle / YawStep) & (HeadingByte.Steps - 1));
+            Pitch = (byte)(sbyte)math.round(PitchAngle / PitchStep);
         }
 
-        /// <summary>Eases back to straight ahead and level by at most <paramref name="steps"/> per axis.</summary>
-        public void Settle(int steps)
-        {
-            Yaw = Toward((sbyte)Yaw, steps);
-            Pitch = Toward((sbyte)Pitch, steps);
-        }
+        /// <summary>Radians between this pose and <paramref name="angles"/> on each axis.</summary>
+        public readonly float2 Gap(float2 angles) =>
+            math.abs(new float2(Wrap(angles.x - YawAngle), angles.y - PitchAngle));
 
         public void CountShot() => Shots = (byte)(Shots + 1);
 
-        private static byte Toward(int value, int steps) => (byte)(sbyte)(value - math.clamp(value, -steps, steps));
+        private static float Wrap(float angle) => angle - 2f * math.PI * math.round(angle / (2f * math.PI));
     }
 }

@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
@@ -13,7 +14,8 @@ namespace HyperRTS.Simulation.Tests
         public static Entity AddWeapon(this TestWorld world, Entity entity, Stance stance = Stance.Aggressive,
             float range = 4f, float damage = 25f, float cooldown = 0.5f, Entity projectile = default,
             UnityObjectRef<DamageType> damageType = default, WeaponTargets targets = WeaponTargets.Surface,
-            Trajectory trajectory = Trajectory.Direct, float arcHeight = 0f, float minRange = 0f, bool turreted = false)
+            Trajectory trajectory = Trajectory.Direct, float arcHeight = 0f, float minRange = 0f, bool turreted = false,
+            float traverseSpeed = 360f)
         {
             var weapon = new Weapon
             {
@@ -31,6 +33,7 @@ namespace HyperRTS.Simulation.Tests
                 MinRange = minRange,
                 Turreted = turreted,
             };
+            Aim(ref weapon, traverseSpeed);
             var writer = new EntityManagerWriter(world.EntityManager, entity);
             WeaponSetup.Add(ref writer, weapon, stance, world.Get<LocalTransform>(entity).Position, 0);
             return entity;
@@ -51,11 +54,22 @@ namespace HyperRTS.Simulation.Tests
                 Targets = targets,
                 MinEffect = minEffect,
             };
+            Aim(ref weapon, 360f);
             var mount = WeaponMount.Create(weapon, rounds, reloadTime, requiredResearchTypeId, 1, independent);
             var writer = new EntityManagerWriter(world.EntityManager, entity);
             WeaponSetup.AddMounts(ref writer, new[] { mount });
             world.EntityManager.GetBuffer<WeaponPose>(entity).Add(default);
             return entity;
+        }
+
+        /// <summary>Quick turning, wide limits and a tight tolerance, so poses settle within a test's first second.</summary>
+        private static void Aim(ref Weapon weapon, float traverseSpeed)
+        {
+            weapon.TraverseRate = math.radians(traverseSpeed);
+            weapon.ElevationRate = math.radians(360f);
+            weapon.MinPitch = math.radians(-30f);
+            weapon.MaxPitch = math.radians(80f);
+            weapon.AimTolerance = math.radians(1f);
         }
 
         /// <summary>An empty prefab for weapons that launch projectiles.</summary>

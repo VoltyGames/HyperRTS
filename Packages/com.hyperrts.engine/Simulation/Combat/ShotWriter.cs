@@ -80,13 +80,18 @@ namespace HyperRTS.Simulation.Combat
         }
 
         /// <summary>
-        /// The fire step both the primary and the mounts take: off cooldown, spend a round (the shooter's
-        /// <see cref="Ammo"/> when <paramref name="usesShooterAmmo"/>), restart the cooldown and fire.
+        /// The fire step both the primary and the mounts take: off cooldown, a turret on target, spend a round (the
+        /// shooter's <see cref="Ammo"/> when <paramref name="usesShooterAmmo"/>), restart the cooldown and fire.
         /// </summary>
         public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction,
             bool usesShooterAmmo)
         {
-            if (weapon.CoolingDown || usesShooterAmmo && !TryUseRound(shooter))
+            if (weapon.CoolingDown || !Aimed(shooter, weapon, pose, target))
+            {
+                return false;
+            }
+
+            if (usesShooterAmmo && !TryUseRound(shooter))
             {
                 return false;
             }
@@ -94,6 +99,19 @@ namespace HyperRTS.Simulation.Combat
             weapon.StartCooldown();
             Fire(shooter, weapon, pose, target, faction);
             return true;
+        }
+
+        /// <summary>A hull-fixed weapon fires as the hull faces; a turret once its pose points at the target.</summary>
+        private bool Aimed(Entity shooter, in Weapon weapon, byte pose, Entity target)
+        {
+            if (!weapon.Turreted)
+            {
+                return true;
+            }
+
+            var aimed = _poses[shooter][pose];
+            var aim = _transforms[target].Position + new float3(0f, weapon.ProjectileHeight, 0f);
+            return weapon.Aligned(aimed, weapon.AimAngles(_transforms[shooter], aimed, aim));
         }
 
         /// <summary>Fires the weapon at <see cref="WeaponPose"/> index <paramref name="pose"/>, counting the shot there.</summary>
@@ -109,13 +127,15 @@ namespace HyperRTS.Simulation.Combat
             PlayFire(shooter, pose, place, targetPosition, faction);
             if (weapon.ProjectilePrefab == Entity.Null)
             {
-                var hit = CombatMath.Hit(weapon, shooter, faction, weapon.HitOrigin(place), target, targetPosition);
+                var origin = weapon.HitOrigin(place, fired);
+                var hit = CombatMath.Hit(weapon, shooter, faction, origin, target, targetPosition);
                 _damage.Add(hit);
-                _cues.AddImpact(_cues.TypeIdFor(shooter, CueSlot.Impact), hit, place.Forward());
+                var along = math.normalizesafe(targetPosition - origin, place.Forward());
+                _cues.AddImpact(_cues.TypeIdFor(shooter, CueSlot.Impact), hit, along);
             }
             else
             {
-                Launch(shooter, weapon, place, target, targetPosition, faction);
+                Launch(shooter, weapon, fired, place, target, targetPosition, faction);
             }
         }
 
@@ -137,10 +157,10 @@ namespace HyperRTS.Simulation.Combat
             }
         }
 
-        private void Launch(Entity shooter, in Weapon weapon, in LocalTransform place, Entity target,
-            float3 targetPosition, byte faction)
+        private void Launch(Entity shooter, in Weapon weapon, in WeaponPose pose, in LocalTransform place,
+            Entity target, float3 targetPosition, byte faction)
         {
-            var origin = weapon.LaunchPoint(place);
+            var origin = weapon.LaunchPoint(place, pose);
             var aim = targetPosition + new float3(0f, weapon.ProjectileHeight, 0f);
 
             var flight = new Projectile

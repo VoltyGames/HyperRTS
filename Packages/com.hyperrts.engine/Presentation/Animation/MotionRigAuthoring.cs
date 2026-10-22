@@ -113,7 +113,7 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>A part under this rig, never the rig itself: the unit's own transform is the simulation's.</summary>
         public bool IsBelow(Transform part) => part != transform && part.IsChildOf(transform);
 
-        /// <summary>Fills the slots from parts named Turret, Barrel, Launcher, Wheel_L01, Rotor_Main, Hull and so on.</summary>
+        /// <summary>Fills the slots, and the weapons' turret and barrel pivots, from parts named Turret, Barrel, Launcher, Wheel_L01, Rotor_Main, Hull and so on.</summary>
         public void FillFromModel()
         {
             var parts = GetComponentsInChildren<Transform>(true).Where(IsBelow).ToList();
@@ -135,6 +135,7 @@ namespace HyperRTS.Presentation.Animation
                 axis = part.InverseTransformDirection(part.name == "Rotor_Main" ? transform.up : transform.right),
             });
 
+            FillWeaponPivots();
             tiltRoot = Named("Hull") ?? ModelRoot();
             if (tiltRoot != null)
             {
@@ -153,6 +154,36 @@ namespace HyperRTS.Presentation.Animation
             }
 
             return part;
+        }
+
+        // Shots leave from the muzzle turned about these parts, so each weapon's pivots follow its slots.
+        private void FillWeaponPivots()
+        {
+            if (!TryGetComponent<WeaponAuthoring>(out var weapon))
+            {
+                return;
+            }
+
+            var stats = weapon.extraWeapons.Select(slot => slot.stats).Prepend(weapon.stats).ToList();
+            for (var index = 0; index < stats.Count; index++)
+            {
+                var barrel = elevations.FirstOrDefault(slot => slot.weapon == index)?.part;
+                stats[index].barrel = barrel;
+                stats[index].turret = Turret(index, barrel);
+            }
+        }
+
+        // A weapon turns with its own turret slot, else with the turret its barrel sits on.
+        private Transform Turret(int weapon, Transform barrel)
+        {
+            var own = turrets.FirstOrDefault(slot => slot.weapon == weapon);
+            if (own != null)
+            {
+                return own.part;
+            }
+
+            var carrying = barrel != null ? turrets.FirstOrDefault(slot => barrel.IsChildOf(slot.part)) : null;
+            return carrying?.part;
         }
 
         // Keeps the tuned slot of a part already listed, so filling again changes nothing.

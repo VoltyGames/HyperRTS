@@ -42,22 +42,25 @@ namespace HyperRTS.Presentation.Tests
             Assert.IsEmpty(rig.rotors);
             Assert.AreEqual(hull, rig.tiltRoot);
             Assert.AreEqual(new Vector2(7f, 3f), rig.footprint);
+            Assert.AreEqual((turret, barrel), (weapon.stats.turret, weapon.stats.barrel), "the gun's pivots");
+            var mount = weapon.extraWeapons[0].stats;
+            Assert.AreEqual((turret, launcher), (mount.turret, mount.barrel), "the launcher turns with the turret it sits on");
             CollectionAssert.IsEmpty(rig.Problems());
         }
 
         [Test]
         public void FillFromModel_AgainKeepsTunedSlots()
         {
-            var turret = Pivot("Turret", Pivot("Hull", _unit.transform, Vector3.one));
+            var barrel = Pivot("Barrel", Pivot("Hull", _unit.transform, Vector3.one));
             _unit.AddComponent<WeaponAuthoring>();
             var rig = _unit.AddComponent<MotionRigAuthoring>();
             rig.FillFromModel();
-            rig.turrets[0].traverseSpeed = 12f;
+            rig.recoils[0].distance = 0.8f;
 
             rig.FillFromModel();
 
-            Assert.AreEqual(turret, rig.turrets.Single().part);
-            Assert.AreEqual(12f, rig.turrets[0].traverseSpeed);
+            Assert.AreEqual(barrel, rig.recoils.Single().part);
+            Assert.AreEqual(0.8f, rig.recoils[0].distance);
         }
 
         [Test]

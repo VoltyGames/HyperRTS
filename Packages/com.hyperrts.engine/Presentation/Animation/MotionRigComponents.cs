@@ -78,6 +78,9 @@ namespace HyperRTS.Presentation.Animation
     [InternalBufferCapacity(0)]
     public struct MotionRigPart : IBufferElementData
     {
+        /// <summary>Seconds for a turret or barrel to close most of the gap to the replicated pose.</summary>
+        public const float FollowTime = 0.08f;
+
         public Entity Part;
         public MotionPartKind Kind;
 
@@ -90,15 +93,11 @@ namespace HyperRTS.Presentation.Animation
         /// </summary>
         public float3 Axis;
 
-        /// <summary>Radians per second (turret, elevation, rotor at full speed).</summary>
+        /// <summary>Rotor radians per second at full speed.</summary>
         public float Rate;
 
         /// <summary>Wheel radius or recoil distance.</summary>
         public float Size;
-
-        /// <summary>Elevation limits in radians.</summary>
-        public float Min;
-        public float Max;
 
         /// <summary>Recoil return or rotor spin-up seconds.</summary>
         public float Time;
@@ -117,19 +116,11 @@ namespace HyperRTS.Presentation.Animation
 
         public readonly quaternion Rotation => math.mul(RestRotation, quaternion.AxisAngle(Axis, Angle));
 
-        /// <summary>Turns the shortest way toward <paramref name="yaw"/> at <see cref="Rate"/>.</summary>
-        public void Traverse(float yaw, float deltaTime)
-        {
-            var gap = Wrap(yaw - Angle);
-            Angle = Wrap(Angle + math.clamp(gap, -Rate * deltaTime, Rate * deltaTime));
-        }
+        /// <summary>Eases the shortest way toward the simulated <paramref name="yaw"/>, which already turns at the weapon's rate.</summary>
+        public void Traverse(float yaw, float deltaTime) => Angle = Wrap(Angle + Wrap(yaw - Angle) * Follow(deltaTime));
 
-        /// <summary>Elevates toward <paramref name="pitch"/>, held within the limits, at <see cref="Rate"/>.</summary>
-        public void Elevate(float pitch, float deltaTime)
-        {
-            var gap = math.clamp(pitch, Min, Max) - Angle;
-            Angle += math.clamp(gap, -Rate * deltaTime, Rate * deltaTime);
-        }
+        /// <summary>Eases toward the simulated <paramref name="pitch"/>, which already keeps the weapon's limits.</summary>
+        public void Elevate(float pitch, float deltaTime) => Angle += (pitch - Angle) * Follow(deltaTime);
 
         /// <summary>Kicks back the full distance when the shot count changes, then eases back over <see cref="Time"/>. True on a shot.</summary>
         public bool Recoil(byte shots, float deltaTime)
@@ -152,6 +143,8 @@ namespace HyperRTS.Presentation.Animation
             Amount += math.clamp(target - Amount, -deltaTime / Time, deltaTime / Time);
             Angle = Wrap(Angle + Rate * Amount * deltaTime);
         }
+
+        private static float Follow(float deltaTime) => 1f - math.exp(-deltaTime / FollowTime);
 
         private static float Wrap(float angle) => angle - 2f * math.PI * math.round(angle / (2f * math.PI));
     }

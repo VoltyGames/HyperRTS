@@ -85,6 +85,42 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(0, Pose(turret, 0).Yaw, "the idle turret came back to centre");
         }
 
+        [Test]
+        public void Turret_FiresOnlyAfterTurningOntoTheTarget_AtItsRate()
+        {
+            var turret = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, cooldown: 0.1f, turreted: true,
+                traverseSpeed: 90f);
+            var enemy = _world.SpawnUnit(2, new float3(4f, 0f, 0f), maxHealth: 1000f);
+
+            _world.Run(0.8f);
+            Assert.AreEqual(1000f, _world.GetHealth(enemy), "still turning a quarter turn at 90 degrees a second");
+            Assert.That(Pose(turret, 0).YawAngle, Is.InRange(math.radians(60f), math.radians(80f)));
+
+            _world.Run(0.5f);
+            Assert.Less(_world.GetHealth(enemy), 1000f, "fires once on target");
+        }
+
+        [Test]
+        public void TraversedTurret_FiresFromItsTurnedMuzzle()
+        {
+            var turret = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 8f, cooldown: 100f,
+                projectile: _world.ProjectilePrefab(), turreted: true);
+            var weapon = _world.Get<Weapon>(turret);
+            weapon.Muzzle = new float3(0f, 1f, 3f);
+            weapon.HasMuzzle = true;
+            weapon.TurretPivot = new float3(0f, 1f, 0f);
+            weapon.BarrelPivot = weapon.Muzzle;
+            _world.EntityManager.SetComponentData(turret, weapon);
+            _world.SpawnUnit(2, new float3(7f, 0f, 0f));
+
+            using var projectiles = _world.EntityManager.CreateEntityQuery(typeof(Projectile));
+            Assert.IsTrue(_world.RunUntil(() => !projectiles.IsEmpty, 2f), "the turret fired");
+
+            // The muzzle 3 m ahead of the turret ring swung a quarter turn to the right.
+            var start = projectiles.GetSingleton<Projectile>().Start;
+            MathAssert.Near(new float3(3f, 1f, 0f), start, 0.1f);
+        }
+
         private WeaponPose Pose(Entity entity, int index) => _world.EntityManager.GetBuffer<WeaponPose>(entity)[index];
 
         private float3 Forward(Entity entity) => _world.Get<LocalTransform>(entity).Forward();

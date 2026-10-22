@@ -1,12 +1,13 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.HUD;
+using HyperRTS.Simulation.Common;
 using UnityEditor;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Authoring
 {
-    /// <summary>Motion rig inspector with a button that fills the slots from the model's part names.</summary>
+    /// <summary>Motion rig inspector with a button that fills the slots, and the weapons' pivots, from the model's part names.</summary>
     [CustomEditor(typeof(MotionRigAuthoring))]
     public class MotionRigAuthoringEditor : AuthoringEditor
     {
@@ -19,9 +20,13 @@ namespace HyperRTS.Editor.Authoring
         private void Fill()
         {
             var rig = (MotionRigAuthoring)target;
-            Undo.RecordObject(rig, "Fill Motion Rig");
+            var filled = rig.GetComponents<AuthoringBehaviour>();
+            Undo.RecordObjects(filled, "Fill Motion Rig");
             rig.FillFromModel();
-            EditorUtility.SetDirty(rig);
+            foreach (var authoring in filled)
+            {
+                EditorUtility.SetDirty(authoring);
+            }
         }
     }
 }

@@ -45,8 +45,23 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Targets closer than this, edge to edge, can't be hit.</summary>
         public float MinRange;
 
-        /// <summary>A turret aims instead of the hull turning to fire.</summary>
+        /// <summary>A turret aims instead of the hull turning to fire, and fires once it is on target.</summary>
         public bool Turreted;
+
+        /// <summary>Radians per second the pose turns and raises.</summary>
+        public float TraverseRate;
+        public float ElevationRate;
+
+        /// <summary>Elevation limits in radians, within the pose's -96 to 95 degrees.</summary>
+        public float MinPitch;
+        public float MaxPitch;
+
+        /// <summary>Radians off target, per axis, a turret may fire at.</summary>
+        public float AimTolerance;
+
+        /// <summary>Points in the shooter's space the muzzle traverses and elevates about.</summary>
+        public float3 TurretPivot;
+        public float3 BarrelPivot;
 
         public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
 
@@ -59,13 +74,36 @@ namespace HyperRTS.Simulation.Combat
         public bool Affects(in BufferLookup<ArmorModifier> armor, Entity target) =>
             MinEffect <= 0f || CombatMath.ArmorMultiplier(armor, target, DamageType) >= MinEffect;
 
-        /// <summary>Where a projectile starts: the muzzle, else <see cref="ProjectileHeight"/> above the pivot.</summary>
-        public float3 LaunchPoint(in LocalTransform shooter) =>
-            HasMuzzle ? shooter.TransformPoint(Muzzle) : shooter.Position + new float3(0f, ProjectileHeight, 0f);
+        /// <summary>Where a projectile starts: the posed muzzle, else <see cref="ProjectileHeight"/> above the pivot.</summary>
+        public float3 LaunchPoint(in LocalTransform shooter, in WeaponPose pose) =>
+            HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose)) : shooter.Position + new float3(0f, ProjectileHeight, 0f);
 
         /// <summary>Where an instant hit comes from, for directional armor.</summary>
-        public float3 HitOrigin(in LocalTransform shooter) =>
-            HasMuzzle ? shooter.TransformPoint(Muzzle) : shooter.Position;
+        public float3 HitOrigin(in LocalTransform shooter, in WeaponPose pose) =>
+            HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose)) : shooter.Position;
+
+        /// <summary>The muzzle raised about the barrel pivot, then turned about the turret pivot.</summary>
+        public float3 PosedMuzzle(in WeaponPose pose)
+        {
+            var raised = BarrelPivot + math.rotate(quaternion.AxisAngle(math.right(), -pose.PitchAngle), Muzzle - BarrelPivot);
+            return TurretPivot + math.rotate(quaternion.AxisAngle(math.up(), pose.YawAngle), raised - TurretPivot);
+        }
+
+        /// <summary>Yaw and pitch that point the posed weapon at <paramref name="aim"/>; a hull-fixed weapon keeps yaw 0.</summary>
+        public float2 AimAngles(in LocalTransform shooter, in WeaponPose pose, float3 aim)
+        {
+            var from = LaunchPoint(shooter, pose);
+            var local = math.rotate(math.inverse(shooter.Rotation), aim - from);
+            var yaw = Turreted ? math.atan2(local.x, local.z) : 0f;
+            return new float2(yaw, math.clamp(Elevation(from, aim), MinPitch, MaxPitch));
+        }
+
+        /// <summary>Turns <paramref name="pose"/> toward <paramref name="angles"/> at the traverse and elevation rates.</summary>
+        public void Turn(ref WeaponPose pose, float2 angles, float deltaTime) =>
+            pose.Turn(angles, new float2(TraverseRate, ElevationRate) * deltaTime);
+
+        /// <summary>The pose points within <see cref="AimTolerance"/> of <paramref name="angles"/> on both axes.</summary>
+        public bool Aligned(in WeaponPose pose, float2 angles) => math.all(pose.Gap(angles) <= AimTolerance);
 
         /// <summary>Radians above level to fire from <paramref name="from"/> at <paramref name="aim"/>, lobbed if arcing.</summary>
         public float Elevation(float3 from, float3 aim)

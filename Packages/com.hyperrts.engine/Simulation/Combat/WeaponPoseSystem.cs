@@ -9,17 +9,16 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// Points each <see cref="WeaponPose"/> at its weapon's target: the primary at the <see cref="AttackTarget"/>,
-    /// mounts at their own. Arcing weapons pitch up to their launch angle; idle weapons ease back to centre.
+    /// Turns each <see cref="WeaponPose"/> toward its weapon's target at the weapon's traverse and elevation rates:
+    /// the primary at the <see cref="AttackTarget"/>, mounts at their own. Arcing weapons pitch up to their launch
+    /// angle; idle weapons turn back to centre. Runs before firing, so turrets fire once on target.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
-    [UpdateAfter(typeof(MountFireSystem))]
+    [UpdateAfter(typeof(EngagementSystem))]
+    [UpdateBefore(typeof(WeaponFireSystem))]
     public partial struct WeaponPoseSystem : ISystem
     {
-        /// <summary>Yaw degrees per second an idle weapon turns back to centre.</summary>
-        public const float SettleRate = 90f;
-
         private ComponentLookup<LocalTransform> _transforms;
         private BufferLookup<WeaponMount> _mounts;
 
@@ -35,12 +34,11 @@ namespace HyperRTS.Simulation.Combat
         {
             _transforms.Update(ref state);
             _mounts.Update(ref state);
-            var degrees = SettleRate * SystemAPI.Time.DeltaTime;
             new PoseJob
             {
                 Transforms = _transforms,
                 Mounts = _mounts,
-                SettleSteps = math.max(1, (int)(degrees * HeadingByte.Steps / 360f)),
+                DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }
 
@@ -50,7 +48,7 @@ namespace HyperRTS.Simulation.Combat
         {
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             [ReadOnly] public BufferLookup<WeaponMount> Mounts;
-            public int SettleSteps;
+            public float DeltaTime;
 
             private void Execute(Entity entity, DynamicBuffer<WeaponPose> poses, in Weapon weapon,
                 in AttackTarget attack, EnabledRefRO<AttackTarget> attacking)
@@ -73,17 +71,13 @@ namespace HyperRTS.Simulation.Combat
                 Entity target)
             {
                 var pose = poses[index];
+                var angles = new float2(0f, math.clamp(0f, weapon.MinPitch, weapon.MaxPitch));
                 if (Transforms.TryGetComponent(target, out var aimed))
                 {
-                    var from = weapon.LaunchPoint(hull);
-                    var aim = aimed.Position + new float3(0f, weapon.ProjectileHeight, 0f);
-                    pose.Aim(math.rotate(math.inverse(hull.Rotation), aim - from), weapon.Elevation(from, aim));
-                }
-                else
-                {
-                    pose.Settle(SettleSteps);
+                    angles = weapon.AimAngles(hull, pose, aimed.Position + new float3(0f, weapon.ProjectileHeight, 0f));
                 }
 
+                weapon.Turn(ref pose, angles, DeltaTime);
                 poses[index] = pose;
             }
         }

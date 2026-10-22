@@ -47,13 +47,13 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
-        public void Turret_TraversesToThePoseYaw_AtItsRate()
+        public void Turret_EasesToThePoseYaw()
         {
-            var part = Rig(new MotionRigPart { Kind = MotionPartKind.Turret, Axis = math.up(), Rate = math.radians(90f) });
+            var part = Rig(new MotionRigPart { Kind = MotionPartKind.Turret, Axis = math.up() });
             SetPose(new WeaponPose { Yaw = 64 });
 
-            Update(5);
-            Assert.AreEqual(math.radians(45f), Part(0).Angle, 1e-4f, "half way after half a second");
+            Update(1);
+            Assert.That(Part(0).Angle, Is.InRange(0.1f, math.radians(90f) - 0.01f), "on its way after a frame");
 
             Update(10);
             Assert.AreEqual(math.radians(90f), Part(0).Angle, 1e-4f);

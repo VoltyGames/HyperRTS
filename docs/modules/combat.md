@@ -11,8 +11,8 @@ queue, so armor, splash and kill credit apply to all of them.
 
 | Type | Role |
 | --- | --- |
-| `WeaponAuthoring` | The primary's `stats`, turret, acquire range, leash, stance and extra weapons |
-| `WeaponStats` | Damage, damage type, cooldown, splash, projectile and trajectory, muzzle, range, minimum range, targets. The primary and each extra weapon carry one |
+| `WeaponAuthoring` | The primary's `stats`, turreted, acquire range, leash, stance and extra weapons |
+| `WeaponStats` | Damage, damage type, cooldown, splash, projectile and trajectory, muzzle, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets. The primary and each extra weapon carry one |
 | `WeaponMount` | An extra weapon. Server only, rewritten by stats like the primary |
 | `AmmoAuthoring` | Rounds per load. Reloads while docked |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
@@ -38,8 +38,11 @@ climb, then dive onto the live target. A weapon with `MinRange` never picks targ
 in, and backs off to mid range when ordered to attack one.
 
 Each weapon has a `WeaponPose`: yaw relative to the hull, pitch and a wrapping shot count, three bytes per weapon that
-clients read to aim turrets and play recoil. `WeaponPoseSystem` aims them at the weapon's target, lifted to the launch
-angle for arcs, and eases idle ones back to centre. A `Turreted` weapon fires without turning the hull.
+clients read to aim turrets and play recoil. `WeaponPoseSystem` turns them toward the weapon's target at the
+weapon's traverse and elevation speeds, within its elevation limits and lifted to the launch angle for arcs, and turns
+idle ones back to centre. It runs before firing. A `Turreted` weapon, and every extra weapon, fires without turning
+the hull and only once its pose is within `aimTolerance` of the target. Shots leave from the muzzle turned by the
+pose: raised about the weapon's `barrel` and traversed about its `turret`, so directional armor sees the real origin.
 
 ### Destruction
 

@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Combat
         public static WeaponMount Create(in Weapon weapon, int rounds, float reloadTime, int requiredResearchTypeId,
             byte pose, bool independent) => new()
         {
-            Weapon = weapon,
+            Weapon = Turned(weapon),
             BaseDamage = weapon.Damage,
             BaseRange = weapon.Range,
             BaseCooldown = weapon.Cooldown,
@@ -55,6 +55,13 @@ namespace HyperRTS.Simulation.Combat
             Pose = pose,
             Independent = independent,
         };
+
+        /// <summary>A mount aims with its own pose, never the hull, so it fires once that pose is on target.</summary>
+        private static Weapon Turned(Weapon weapon)
+        {
+            weapon.Turreted = true;
+            return weapon;
+        }
 
         public bool Enabled => RequiredResearchTypeId == 0 || Unlocked;
 
