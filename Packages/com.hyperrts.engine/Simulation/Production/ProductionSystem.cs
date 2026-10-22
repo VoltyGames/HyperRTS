@@ -229,7 +229,8 @@ namespace HyperRTS.Simulation.Production
 
                 if (rally && OrderLookup.HasComponent(prefab))
                 {
-                    var order = new Order { Type = OrderType.Move, Position = rallyPosition };
+                    // Past OrderWriter, so the traits MoveOrderSystem runs it by are stamped here.
+                    var order = new Order { Type = OrderType.Move, Position = rallyPosition }.WithTypeTraits();
                     Ecb.SetComponent(unit, new ActiveOrder { Value = order });
                     Ecb.SetComponentEnabled<ActiveOrder>(unit, true);
                 }

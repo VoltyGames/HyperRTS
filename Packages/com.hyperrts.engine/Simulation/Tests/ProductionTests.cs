@@ -212,7 +212,7 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void RallyPoint_GivesNewUnitAMoveOrder()
+        public void RallyPoint_SendsTheNewUnitThere()
         {
             var prefab = _world.UnitPrefab(_supplies, 0, buildTime: 0.5f);
             var producer = _world.SpawnProducer(prefab);
@@ -232,6 +232,9 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(_world.IsEnabled<ActiveOrder>(unit));
             Assert.AreEqual(OrderType.Move, _world.Get<ActiveOrder>(unit).Value.Type);
             Assert.AreEqual(rally, _world.Get<ActiveOrder>(unit).Value.Position);
+
+            Assert.IsTrue(_world.RunUntil(() => !_world.IsEnabled<ActiveOrder>(unit), 10f), "the move finished");
+            Assert.Less(math.distance(_world.GetPosition(unit).xz, rally.xz), 0.5f, "drove to the rally point");
         }
 
         [Test]
