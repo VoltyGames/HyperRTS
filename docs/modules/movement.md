@@ -61,18 +61,28 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 `UnitAuthoring` sets speed, radius, hull length, spacing, nav layer, whether it walks through scenery, and
 population. Units follow their path and
 stop on arrival. A unit with a hull length is a capsule that long along its forward and two radii wide; 0 keeps a
-circle. `SeparationVisitor` pushes neighbours apart along the line between their closest points, half each, until
-the larger of their two spacings lies between them (0.6 m by default, less for infantry). Each formation slot is
+circle. A moving unit steers round its neighbours with ORCA local avoidance (`AvoidanceVisitor`): of the nearest 8
+units within reach, each gives a half-plane of velocities that stay clear for 1.5 s, and a linear program picks the
+one closest to the step `Locomotion` planned. A capsule counts as the circle at its closest point to the other's, so
+hulls side by side keep their true gap. Velocities are last frame's (`Velocity`). The chosen velocity goes back to
+`Locomotion` as the heading and speed to drive, so a vehicle turns at its rate and radius rather than sliding
+sideways, and brakes rather than turning round when told to back off. A unit dead ahead, coming at it or standing,
+is passed on the right, so a head-on pair both keep right instead of braking. Layers that can't block each other
+ignore each other, aircraft included. `SeparationVisitor` stays as the overlap fallback: it pushes neighbours apart
+along the line between their closest points, half each, until the larger of their two spacings lies between them
+(0.6 m by default, less for infantry). Each formation slot is
 sized by its own unit's footprint, so a tank column doesn't pile up nose to tail and infantry beside it stay close.
 A row is as deep as its deepest member. A slot in a building or off the unit's ground moves to the nearest spot the
 unit fits and can reach; one only across water or a wall is left to the pathfinder's snap into the unit's region.
 
-- An idle parked unit steps aside for a moving unit of its own side (`GivingWay`): it shares the push and moves
-  out of the mover's lane, toward the mover's left head-on, so a unit in a one-unit gap or on a bridge makes way.
-  It stays where it was pushed.
-- A busy parked unit (one with an order, a target, a pad or Hold Position) and an enemy hold their ground. The
-  mover takes the whole push and steers round them, keeping right head-on, or waits against one standing on its
-  goal. So a truck never shoves a dozer that is building.
+- Two movers share the avoiding half each.
+- An idle parked unit steps aside for a moving unit of its own side (`GivingWay`): the mover avoids it by half, and
+  it shares the push and moves out of the mover's lane, toward the mover's left head-on, so a unit in a one-unit
+  gap or on a bridge makes way. It stays where it was pushed.
+- A busy parked unit (one with an order, a target, a pad or Hold Position) and an enemy hold their ground. To the
+  mover it is a fixed obstacle: it takes the whole avoiding and the whole push, so a truck never shoves a dozer that
+  is building. A unit standing on the mover's goal and an arrived groupmate are not avoided, so the mover waits
+  against the one and arrives by touching the other.
 - A formation move gives its units one group (`MoveDestination.Group`). A unit touching an arrived groupmate that
   lies toward its goal has arrived too, so arrival passes through a crowded group by contact.
 - A move ends by itself at the goal, against an arrived groupmate, or when the unit stops getting on. Then

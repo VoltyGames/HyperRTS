@@ -24,6 +24,7 @@ namespace HyperRTS.Simulation.Navigation
         private ComponentLookup<BuildingTag> _buildingLookup;
         private ComponentLookup<MoveDestination> _movingLookup;
         private ComponentLookup<Arrival> _arrivalLookup;
+        private ComponentLookup<Velocity> _velocityLookup;
 
         public void OnCreate(ref SystemState state)
         {
@@ -33,6 +34,7 @@ namespace HyperRTS.Simulation.Navigation
             _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
             _movingLookup = state.GetComponentLookup<MoveDestination>(true);
             _arrivalLookup = state.GetComponentLookup<Arrival>(true);
+            _velocityLookup = state.GetComponentLookup<Velocity>(true);
 
             state.EntityManager.CreateSingleton(new SpatialIndex
             {
@@ -76,6 +78,7 @@ namespace HyperRTS.Simulation.Navigation
             _buildingLookup.Update(ref state);
             _movingLookup.Update(ref state);
             _arrivalLookup.Update(ref state);
+            _velocityLookup.Update(ref state);
 
             state.Dependency = new IndexJob
             {
@@ -87,6 +90,7 @@ namespace HyperRTS.Simulation.Navigation
                 BuildingLookup = _buildingLookup,
                 MovingLookup = _movingLookup,
                 ArrivalLookup = _arrivalLookup,
+                VelocityLookup = _velocityLookup,
             }.ScheduleParallel(_indexed, state.Dependency);
         }
 
@@ -101,12 +105,14 @@ namespace HyperRTS.Simulation.Navigation
             [ReadOnly] public ComponentLookup<BuildingTag> BuildingLookup;
             [ReadOnly] public ComponentLookup<MoveDestination> MovingLookup;
             [ReadOnly] public ComponentLookup<Arrival> ArrivalLookup;
+            [ReadOnly] public ComponentLookup<Velocity> VelocityLookup;
 
             private void Execute(Entity entity, in LocalTransform transform, in Faction faction)
             {
-                // Without an agent or a destination it is round, unspaced, on the ground and in no group.
+                // Without an agent or a destination it is round, unspaced, still, on the ground and in no group.
                 var isUnit = AgentLookup.TryGetComponent(entity, out var agent);
                 MovingLookup.TryGetComponent(entity, out var destination);
+                VelocityLookup.TryGetComponent(entity, out var velocity);
                 var entry = new SpatialEntry
                 {
                     Entity = entity,
@@ -118,6 +124,7 @@ namespace HyperRTS.Simulation.Navigation
                     IsArrived = ArrivalLookup.HasEnabled(entity),
                     Group = destination.Group,
                     Facing = math.normalizesafe(math.mul(transform.Rotation, math.forward()).xz),
+                    Velocity = velocity.Value,
                     IsBuilding = BuildingLookup.HasComponent(entity),
                     Layer = agent.Layer,
                     SegmentAxis = agent.SegmentAxis(transform.Rotation),

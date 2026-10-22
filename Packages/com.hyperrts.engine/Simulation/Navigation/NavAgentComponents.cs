@@ -80,6 +80,12 @@ namespace HyperRTS.Simulation.Navigation
         public bool Stalled;
     }
 
+    /// <summary>How far a unit moved on XZ last frame, in metres per second, for neighbours avoiding it.</summary>
+    public struct Velocity : IComponentData
+    {
+        public float2 Value;
+    }
+
     /// <summary>Remaining corners of a unit's path, nearest first.</summary>
     [InternalBufferCapacity(8)]
     public struct PathWaypoint : IBufferElementData

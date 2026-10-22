@@ -49,14 +49,35 @@ namespace HyperRTS.Simulation.Units
 
         /// <summary>Accelerates and turns toward the leg, returning this frame's step along the new facing.</summary>
         public readonly float2 Drive(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
-            float topSpeed, float radius, float deltaTime)
+            float topSpeed, float radius, float deltaTime) =>
+            Follow(ref state, position, ref facing, leg, topSpeed, topSpeed, radius, deltaTime);
+
+        /// <summary>
+        /// Drives toward the avoidance <paramref name="velocity"/> instead of the leg, no faster than it, turning only
+        /// as the hull can. A vehicle told to go back brakes on the leg instead of turning round.
+        /// </summary>
+        public readonly float2 Steer(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
+            float2 velocity, float topSpeed, float radius, float deltaTime)
+        {
+            var travel = state.Reverse ? -facing : facing;
+            if (TurnRate < Instantly && math.dot(velocity, travel) < 0f)
+            {
+                return Follow(ref state, position, ref facing, leg, topSpeed, 0f, radius, deltaTime);
+            }
+
+            var steered = leg.Toward(position, velocity);
+            return Follow(ref state, position, ref facing, steered, topSpeed, math.length(velocity), radius, deltaTime);
+        }
+
+        private readonly float2 Follow(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
+            float topSpeed, float cap, float radius, float deltaTime)
         {
             state.Reverse = PrefersReverse(state.Reverse, facing, leg, topSpeed);
             state.InThreePointTurn = IsInThreePointTurn(state.InThreePointTurn, position, facing, leg.Corner);
             var desired = state.Reverse ? -leg.Direction : leg.Direction;
             var error = SignedAngle(facing, desired);
             var gear = state.Reverse == IsReverseLeg(ref state, deltaTime) ? 1f : -1f;
-            var top = gear > 0f ? topSpeed : ReverseSpeed;
+            var top = math.min(gear > 0f ? topSpeed : ReverseSpeed, cap);
             // Never past the goal in one frame, which only bites for near-instant braking.
             var limit = math.min(TargetSpeed(error, leg, top, radius, LookAhead(state.Speed, radius)),
                 leg.Remaining / deltaTime);

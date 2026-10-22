@@ -72,6 +72,7 @@ namespace HyperRTS.Simulation.Units
             writer.Add<Arrival>();
             writer.SetEnabled<Arrival>(false);
             writer.Add<MoveProgress>();
+            writer.Add<Velocity>();
         }
 
         public class Baker : Baker<UnitAuthoring>

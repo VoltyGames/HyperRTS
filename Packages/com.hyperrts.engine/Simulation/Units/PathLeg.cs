@@ -30,6 +30,10 @@ namespace HyperRTS.Simulation.Units
             IsFinal = isFinal;
         }
 
+        /// <summary>The same leg bent to head along <paramref name="velocity"/>, as avoidance steers it.</summary>
+        public PathLeg Toward(float2 position, float2 velocity) =>
+            new(position, position + math.normalizesafe(velocity) * Distance, CornerTurn, Remaining, IsFinal);
+
         public bool HasArrived(float radius) => IsFinal && Distance <= NavTolerances.Arrive(radius);
 
         /// <summary>
