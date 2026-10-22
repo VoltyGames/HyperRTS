@@ -108,7 +108,7 @@ namespace HyperRTS.Presentation.Animation
                     var figure = authoring.figures[i];
                     DependsOn(figure.clips);
                     var entity = GetEntity(figure, TransformUsageFlags.Dynamic);
-                    entities.Add(new SquadFigure { Figure = entity, Scale = figure.transform.localScale.x, Clips = clips[i] });
+                    entities.Add(new SquadFigure { Figure = entity, Clips = clips[i] });
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));

@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -106,7 +106,7 @@ namespace HyperRTS.Presentation.Environment
             SystemAPI.TryGetSingleton(out TerrainHeight terrain);
             var washes = SystemAPI.GetComponentLookup<RotorWash>(true);
             foreach (var (spin, place, entity) in SystemAPI.Query<RefRO<RotorSpin>, RefRO<LocalToWorld>>()
-                         .WithNone<FogHidden, DisableRendering>().WithEntityAccess())
+                         .WithNone<FogHidden, Inside>().WithEntityAccess())
             {
                 var position = place.ValueRO.Position;
                 var reach = washes.TryGetComponent(entity, out var wash) ? wash.Height : RotorWash.DefaultHeight;

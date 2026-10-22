@@ -5,84 +5,54 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Rendering;
-using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Fog
 {
-    /// <summary>
-    /// Mirrors <see cref="FogHidden"/> and passengers being <see cref="Inside"/> onto rendering; structural changes
-    /// only on state flips.
-    /// </summary>
-    // The root's own DisableRendering records what was applied, so each job visits only roots that flipped.
+    /// <summary>Hides roots that are <see cref="FogHidden"/> or riding <see cref="Inside"/> a container, with all their parts.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateBefore(typeof(EntitiesGraphicsSystem))]
     public partial struct FogVisibilitySystem : ISystem
     {
+        private RenderSwitch _switch;
+
         [BurstCompile]
-        public void OnCreate(ref SystemState state)
-        {
-            state.RequireForUpdate<BeginPresentationEntityCommandBufferSystem.Singleton>();
-        }
+        public void OnCreate(ref SystemState state) => _switch = new RenderSwitch(ref state);
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var toggler = new RenderToggler
+            _switch.Update(ref state);
+            state.Dependency = new SyncJob
             {
-                Linked = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true),
-                Children = SystemAPI.GetBufferLookup<Child>(true),
-                Commands = SystemAPI.GetSingleton<BeginPresentationEntityCommandBufferSystem.Singleton>()
-                    .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-            };
-
-            state.Dependency = new HideJob { Toggler = toggler }.ScheduleParallel(state.Dependency);
-            state.Dependency = new RevealJob { Toggler = toggler }.ScheduleParallel(state.Dependency);
+                Switch = _switch,
+                Fog = SystemAPI.GetComponentLookup<FogHidden>(true),
+                Inside = SystemAPI.GetComponentLookup<Inside>(true),
+            }.Schedule(state.Dependency);
         }
 
-        private struct RenderToggler
+        [BurstCompile]
+        [WithAll(typeof(EntityInfo), typeof(HiddenBy))]
+        private partial struct SyncJob : IJobEntity
         {
-            [ReadOnly] public BufferLookup<LinkedEntityGroup> Linked;
-            [ReadOnly] public BufferLookup<Child> Children;
-            public EntityCommandBuffer.ParallelWriter Commands;
+            public RenderSwitch Switch;
+            [ReadOnly] public ComponentLookup<FogHidden> Fog;
+            [ReadOnly] public ComponentLookup<Inside> Inside;
 
-            public void Set(int sortKey, Entity root, bool hide)
+            private void Execute(Entity entity)
             {
-                var targets = new NativeList<Entity>(Allocator.Temp);
-                RenderHierarchy.Collect(root, Linked, Children, targets);
-                foreach (var target in targets)
+                var aboard = Inside.HasComponent(entity) && Inside.IsComponentEnabled(entity);
+                Sync(entity, HideReason.Fog, Fog.HasComponent(entity));
+                Sync(entity, HideReason.Inside, aboard);
+            }
+
+            private void Sync(Entity entity, HideReason reason, bool hide)
+            {
+                if (Switch.IsHidden(entity, reason) != hide)
                 {
-                    if (hide)
-                    {
-                        Commands.AddComponent<DisableRendering>(sortKey, target);
-                    }
-                    else
-                    {
-                        Commands.RemoveComponent<DisableRendering>(sortKey, target);
-                    }
+                    Switch.SetGroup(entity, reason, hide);
                 }
             }
-        }
-
-        // WithAny matches an enableable Inside only while it is enabled.
-        [BurstCompile]
-        [WithAll(typeof(EntityInfo))]
-        [WithAny(typeof(FogHidden), typeof(Inside))]
-        [WithNone(typeof(DisableRendering))]
-        private partial struct HideJob : IJobEntity
-        {
-            public RenderToggler Toggler;
-
-            private void Execute([ChunkIndexInQuery] int sortKey, Entity entity) => Toggler.Set(sortKey, entity, true);
-        }
-
-        [BurstCompile]
-        [WithAll(typeof(EntityInfo), typeof(DisableRendering))]
-        [WithNone(typeof(FogHidden), typeof(Inside))]
-        private partial struct RevealJob : IJobEntity
-        {
-            public RenderToggler Toggler;
-
-            private void Execute([ChunkIndexInQuery] int sortKey, Entity entity) => Toggler.Set(sortKey, entity, false);
         }
     }
 }

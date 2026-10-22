@@ -1,11 +1,11 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Animation;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -17,7 +17,6 @@ namespace HyperRTS.Presentation.Effects
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    [UpdateAfter(typeof(MotionRigSystem))]
     public partial class RotorWashSystem : SystemBase
     {
         private readonly EffectStreams _streams = new();
@@ -39,7 +38,7 @@ namespace HyperRTS.Presentation.Effects
             _streams.BeginFrame();
             foreach (var (wash, spin, place, entity) in SystemAPI
                          .Query<RefRO<RotorWash>, RefRO<RotorSpin>, RefRO<LocalToWorld>>()
-                         .WithNone<DisableRendering, FogHidden>().WithEntityAccess())
+                         .WithNone<FogHidden, Inside>().WithEntityAccess())
             {
                 var position = place.ValueRO.Position;
                 var below = new float3(position.x, terrain.Height(position.xz), position.z);

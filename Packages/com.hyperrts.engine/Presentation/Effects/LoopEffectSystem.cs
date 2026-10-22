@@ -3,9 +3,9 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Effects
@@ -45,7 +45,7 @@ namespace HyperRTS.Presentation.Effects
             var decays = SystemAPI.GetComponentLookup<Decay>(true);
             _streams.BeginFrame();
             foreach (var (loops, place, entity) in SystemAPI.Query<DynamicBuffer<LoopEffect>, RefRO<LocalToWorld>>()
-                         .WithNone<DisableRendering>().WithEntityAccess())
+                         .WithNone<FogHidden, Inside>().WithEntityAccess())
             {
                 if (!_firstSeen.TryGetValue(entity, out var seen))
                 {

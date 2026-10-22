@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Fog;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Presentation.TeamColors;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
@@ -139,44 +140,67 @@ namespace HyperRTS.Presentation.Tests
         public void Fog_StopsRenderingHiddenRoots_UntilTheyAreRevealed()
         {
             var enemy = Spawn(2, float3.zero);
-            var child = _em.CreateEntity(typeof(MaterialMeshInfo));
-            _em.AddBuffer<LinkedEntityGroup>(enemy).AddRange(new NativeArray<LinkedEntityGroup>(
-                new LinkedEntityGroup[] { enemy, child }, Allocator.Temp));
+            var child = Part(enemy);
             var own = Spawn(1, float3.zero);
             _em.AddComponent<FogHidden>(enemy);
 
             Run(_fog);
-            Assert.IsTrue(_em.HasComponent<DisableRendering>(enemy));
-            Assert.IsTrue(_em.HasComponent<DisableRendering>(child));
-            Assert.IsFalse(_em.HasComponent<DisableRendering>(own));
+            Assert.IsFalse(Drawn(enemy));
+            Assert.IsFalse(Drawn(child));
+            Assert.IsTrue(Drawn(own));
 
             _em.RemoveComponent<FogHidden>(enemy);
             Run(_fog);
-            Assert.IsFalse(_em.HasComponent<DisableRendering>(enemy));
-            Assert.IsFalse(_em.HasComponent<DisableRendering>(child));
+            Assert.IsTrue(Drawn(enemy));
+            Assert.IsTrue(Drawn(child));
         }
 
         [Test]
         public void Fog_HidesAPassengerInside_AndShowsItAgainOnceOut()
         {
             var passenger = Spawn(1, float3.zero);
-            var child = _em.CreateEntity(typeof(MaterialMeshInfo));
-            _em.AddBuffer<LinkedEntityGroup>(passenger).AddRange(new NativeArray<LinkedEntityGroup>(
-                new LinkedEntityGroup[] { passenger, child }, Allocator.Temp));
+            var child = Part(passenger);
             _em.AddComponentData(passenger, new Inside { Container = Entity.Null });
 
             Run(_fog);
-            Assert.IsTrue(_em.HasComponent<DisableRendering>(child), "aboard: not drawn");
+            Assert.IsFalse(Drawn(child), "aboard: not drawn");
 
             _em.SetComponentEnabled<Inside>(passenger, false);
             Run(_fog);
-            Assert.IsFalse(_em.HasComponent<DisableRendering>(passenger));
-            Assert.IsFalse(_em.HasComponent<DisableRendering>(child), "out again: drawn");
+            Assert.IsTrue(Drawn(passenger));
+            Assert.IsTrue(Drawn(child), "out again: drawn");
         }
+
+        [Test]
+        public void Fog_Reveal_KeepsAPartHiddenForAnotherReason()
+        {
+            var enemy = Spawn(2, float3.zero);
+            var stage = Part(enemy);
+            _em.SetComponentData(stage, new HiddenBy { Reasons = HideReason.Stage });
+            _em.SetComponentEnabled<MaterialMeshInfo>(stage, false);
+            _em.AddComponent<FogHidden>(enemy);
+            Run(_fog);
+
+            _em.RemoveComponent<FogHidden>(enemy);
+            Run(_fog);
+            Assert.IsTrue(Drawn(enemy));
+            Assert.IsFalse(Drawn(stage), "still not the stage on screen");
+        }
+
+        /// <summary>A mesh in <paramref name="root"/>'s group, as baking leaves it.</summary>
+        private Entity Part(Entity root)
+        {
+            var part = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
+            _em.AddBuffer<LinkedEntityGroup>(root).AddRange(new NativeArray<LinkedEntityGroup>(
+                new LinkedEntityGroup[] { root, part }, Allocator.Temp));
+            return part;
+        }
+
+        private bool Drawn(Entity entity) => _em.IsComponentEnabled<MaterialMeshInfo>(entity);
 
         private Entity Spawn(byte faction, float3 position)
         {
-            var entity = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(EntityInfo));
+            var entity = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(EntityInfo), typeof(HiddenBy));
             _em.AddComponentData(entity, new Faction { Value = faction });
             _em.AddComponentData(entity, new LocalToWorld { Value = float4x4.Translate(position) });
             return entity;

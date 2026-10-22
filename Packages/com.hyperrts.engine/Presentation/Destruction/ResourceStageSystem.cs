@@ -1,9 +1,10 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Resources;
 using Unity.Burst;
 using Unity.Entities;
-using Unity.Transforms;
+using Unity.Rendering;
 
 namespace HyperRTS.Presentation.Destruction
 {
@@ -12,19 +13,27 @@ namespace HyperRTS.Presentation.Destruction
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateBefore(typeof(EntitiesGraphicsSystem))]
     [BurstCompile]
     public partial struct ResourceStageSystem : ISystem
     {
-        public void OnCreate(ref SystemState state) => state.RequireForUpdate<ShownResourceStage>();
+        private RenderSwitch _switch;
+
+        [BurstCompile]
+        public void OnCreate(ref SystemState state)
+        {
+            _switch = new RenderSwitch(ref state);
+            state.RequireForUpdate<ShownResourceStage>();
+        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             state.CompleteDependency();
-            var transforms = SystemAPI.GetComponentLookup<LocalTransform>();
-            foreach (var (node, stages, shown) in SystemAPI
+            _switch.Update(ref state);
+            foreach (var (node, stages, shown, entity) in SystemAPI
                          .Query<RefRO<ResourceNode>, DynamicBuffer<ResourceStage>, RefRW<ShownResourceStage>>()
-                         .WithChangeFilter<ResourceNode>())
+                         .WithChangeFilter<ResourceNode>().WithEntityAccess())
             {
                 var index = IModelStage.Pick(stages.AsNativeArray(), node.ValueRO.Remaining);
                 if (index == shown.ValueRO.Index)
@@ -33,7 +42,7 @@ namespace HyperRTS.Presentation.Destruction
                 }
 
                 shown.ValueRW.Index = index;
-                IModelStage.Show(stages.AsNativeArray(), index, transforms);
+                _switch.ShowStage(entity, stages.AsNativeArray(), index);
             }
         }
     }

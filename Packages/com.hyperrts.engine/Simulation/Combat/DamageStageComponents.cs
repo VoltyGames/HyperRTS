@@ -1,6 +1,5 @@
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Transforms;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Combat
@@ -29,20 +28,6 @@ namespace HyperRTS.Simulation.Combat
             }
 
             return current;
-        }
-
-        /// <summary>Shows stage <paramref name="index"/> and scales the others to zero, leaving fog's toggles alone.</summary>
-        static void Show<T>(NativeArray<T> stages, int index, ComponentLookup<LocalTransform> transforms)
-            where T : unmanaged, IModelStage
-        {
-            for (var i = 0; i < stages.Length; i++)
-            {
-                if (transforms.TryGetComponent(stages[i].Visual, out var visual))
-                {
-                    visual.Scale = i == index ? 1f : 0f;
-                    transforms[stages[i].Visual] = visual;
-                }
-            }
         }
     }
 

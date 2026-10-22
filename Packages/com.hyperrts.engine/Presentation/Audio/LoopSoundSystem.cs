@@ -8,7 +8,6 @@ using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
-using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -21,7 +20,6 @@ namespace HyperRTS.Presentation.Audio
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    [UpdateAfter(typeof(MotionRigSystem))]
     public partial class LoopSoundSystem : SystemBase
     {
         private const int Voices = 24;
@@ -71,7 +69,7 @@ namespace HyperRTS.Presentation.Audio
             var poses = SystemAPI.GetBufferLookup<WeaponPose>(true);
             foreach (var (loops, tuning, place, entity) in SystemAPI
                          .Query<DynamicBuffer<EntityLoopSound>, RefRO<LoopSoundTuning>, RefRO<LocalToWorld>>()
-                         .WithNone<DisableRendering, FogHidden, Dead>().WithEntityAccess())
+                         .WithNone<FogHidden, Inside, Dead>().WithEntityAccess())
             {
                 var flying = flights.HasComponent(entity) && !docks.HasEnabled(entity);
                 // A unit with no rig rotor to follow plays its rotor full while flying.

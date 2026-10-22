@@ -1,10 +1,12 @@
 using HyperRTS.Presentation.Destruction;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Tests
@@ -109,6 +111,7 @@ namespace HyperRTS.Presentation.Tests
                 BoundsExtents = new float3(4.5f, 1.5f, 4.5f),
             });
             _em.AddComponentData(house, new ShownBreakage());
+            _em.AddBuffer<Child>(house);
             var sides = new[]
             {
                 new float3(4f, 1f, 0f), new float3(-4f, 1f, 0f), new float3(0f, 1f, 4f), new float3(0f, 1f, -4f),
@@ -118,8 +121,8 @@ namespace HyperRTS.Presentation.Tests
             {
                 parts[i] = new BreakablePart
                 {
-                    Intact = Child(),
-                    Broken = Child(),
+                    Intact = Piece(house),
+                    Broken = Piece(house),
                     Centre = sides[i],
                     Outward = math.normalize(new float3(sides[i].x, 0f, sides[i].z)),
                 };
@@ -134,11 +137,13 @@ namespace HyperRTS.Presentation.Tests
             return house;
         }
 
-        private Entity Child()
+        /// <summary>A piece mesh under the house, as a SubScene building has it.</summary>
+        private Entity Piece(Entity house)
         {
-            var child = _em.CreateEntity();
-            _em.AddComponentData(child, LocalTransform.Identity);
-            return child;
+            var piece = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
+            _em.AddComponentData(piece, new Parent { Value = house });
+            _em.GetBuffer<Child>(house).Add(new Child { Value = piece });
+            return piece;
         }
 
         private void SetHealth(Entity house, float fraction) =>
@@ -148,8 +153,8 @@ namespace HyperRTS.Presentation.Tests
 
         private void AssertBroken(in BreakablePart part, bool broken)
         {
-            Assert.AreEqual(broken ? 0f : 1f, _em.GetComponentData<LocalTransform>(part.Intact).Scale, "intact scale");
-            Assert.AreEqual(broken ? 1f : 0f, _em.GetComponentData<LocalTransform>(part.Broken).Scale, "broken scale");
+            Assert.AreEqual(!broken, _em.IsComponentEnabled<MaterialMeshInfo>(part.Intact), "intact drawn");
+            Assert.AreEqual(broken, _em.IsComponentEnabled<MaterialMeshInfo>(part.Broken), "broken drawn");
         }
     }
 }

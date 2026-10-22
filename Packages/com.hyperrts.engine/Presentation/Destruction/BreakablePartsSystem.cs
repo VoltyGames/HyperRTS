@@ -1,27 +1,31 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Destruction
 {
-    /// <summary>Breaks <see cref="BreakablePart"/>s to match health, by scale to leave fog's toggles alone.</summary>
+    /// <summary>Breaks <see cref="BreakablePart"/>s to match health.</summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateBefore(typeof(EntitiesGraphicsSystem))]
     public partial class BreakablePartsSystem : SystemBase
     {
         private EffectPool _pool;
         private DebrisSystem _debris;
-        private ComponentLookup<LocalTransform> _transforms;
+        private RenderSwitch _switch;
 
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
             _debris = World.GetOrCreateSystemManaged<DebrisSystem>();
+            _switch = new RenderSwitch(ref CheckedStateRef);
             RequireForUpdate<ShownBreakage>();
         }
 
@@ -33,7 +37,7 @@ namespace HyperRTS.Presentation.Destruction
                 RecordHits(cues);
             }
 
-            _transforms = SystemAPI.GetComponentLookup<LocalTransform>();
+            _switch.Update(ref CheckedStateRef);
             foreach (var (health, building, parts, shown, place, entity) in SystemAPI
                          .Query<RefRO<Health>, RefRO<BreakableParts>, DynamicBuffer<BreakablePart>,
                              RefRW<ShownBreakage>, RefRO<LocalToWorld>>().WithEntityAccess())
@@ -44,7 +48,7 @@ namespace HyperRTS.Presentation.Destruction
                 {
                     foreach (var part in parts)
                     {
-                        Show(part);
+                        Show(entity, part);
                     }
 
                     shown.ValueRW.Seen = true;
@@ -53,7 +57,7 @@ namespace HyperRTS.Presentation.Destruction
                 var target = building.ValueRO.TargetBroken(parts.Length, health.ValueRO.Fraction);
                 while (shown.ValueRO.Broken < target)
                 {
-                    var part = Break(parts, ref shown.ValueRW);
+                    var part = Break(entity, parts, ref shown.ValueRW);
                     if (!quiet)
                     {
                         Play(entity, building.ValueRO, part, place.ValueRO);
@@ -62,7 +66,7 @@ namespace HyperRTS.Presentation.Destruction
 
                 while (shown.ValueRO.Broken > target)
                 {
-                    Restore(parts, ref shown.ValueRW);
+                    Restore(entity, parts, ref shown.ValueRW);
                 }
             }
         }
@@ -108,40 +112,31 @@ namespace HyperRTS.Presentation.Destruction
             return false;
         }
 
-        private BreakablePart Break(DynamicBuffer<BreakablePart> parts, ref ShownBreakage shown)
+        private BreakablePart Break(Entity building, DynamicBuffer<BreakablePart> parts, ref ShownBreakage shown)
         {
             var next = shown.NextToBreak(parts.AsNativeArray());
             var part = parts[next];
             part.Order = ++shown.Broken;
             parts[next] = part;
-            Show(part);
+            Show(building, part);
             return part;
         }
 
-        private void Restore(DynamicBuffer<BreakablePart> parts, ref ShownBreakage shown)
+        private void Restore(Entity building, DynamicBuffer<BreakablePart> parts, ref ShownBreakage shown)
         {
             var latest = shown.LatestBroken(parts.AsNativeArray());
             var part = parts[latest];
             part.Order = 0;
             parts[latest] = part;
             shown.Broken--;
-            Show(part);
+            Show(building, part);
         }
 
-        private void Show(in BreakablePart part)
+        private void Show(Entity building, in BreakablePart part)
         {
             var broken = part.Order > 0;
-            SetScale(part.Intact, broken ? 0f : 1f);
-            SetScale(part.Broken, broken ? 1f : 0f);
-        }
-
-        private void SetScale(Entity entity, float scale)
-        {
-            if (_transforms.TryGetComponent(entity, out var transform))
-            {
-                transform.Scale = scale;
-                _transforms[entity] = transform;
-            }
+            _switch.SetBranch(building, part.Intact, HideReason.Part, broken);
+            _switch.SetBranch(building, part.Broken, HideReason.Part, !broken);
         }
 
         /// <summary>The building's break effect and debris, from the part that broke.</summary>

@@ -1,7 +1,11 @@
+using System;
 using HyperRTS.Presentation.Destruction;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Resources;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Entities;
+using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Tests
@@ -57,21 +61,27 @@ namespace HyperRTS.Presentation.Tests
             AssertOnlyShown(visuals, 0);
         }
 
+        /// <summary>A pile whose stage models each hold a child mesh, linked as an instantiated prefab is.</summary>
         private Entity Pile(int amount, out Entity[] visuals)
         {
-            var pile = _em.CreateEntity();
+            var pile = _em.CreateEntity(typeof(HiddenBy));
             _em.AddComponentData(pile, new ResourceNode { Amount = amount, MaxAmount = 300 });
             _em.AddComponentData(pile, new ShownResourceStage { Index = -1 });
-            _em.AddBuffer<ResourceStage>(pile);
+            var stages = new ResourceStage[Thresholds.Length];
+            var group = new NativeList<LinkedEntityGroup>(Allocator.Temp) { pile };
             visuals = new Entity[Thresholds.Length];
             for (var i = 0; i < Thresholds.Length; i++)
             {
-                visuals[i] = _em.CreateEntity();
-                _em.AddComponentData(visuals[i], LocalTransform.Identity);
-                // Creating the visual moves chunks, so the buffer is fetched again.
-                _em.GetBuffer<ResourceStage>(pile).Add(new ResourceStage { Below = Thresholds[i], Visual = visuals[i] });
+                visuals[i] = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
+                var mesh = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
+                _em.AddComponentData(mesh, new Parent { Value = visuals[i] });
+                stages[i] = new ResourceStage { Below = Thresholds[i], Visual = visuals[i] };
+                group.Add(visuals[i]);
+                group.Add(mesh);
             }
 
+            _em.AddBuffer<ResourceStage>(pile).AddRange(new NativeArray<ResourceStage>(stages, Allocator.Temp));
+            _em.AddBuffer<LinkedEntityGroup>(pile).AddRange(group.AsArray());
             return pile;
         }
 
@@ -86,7 +96,15 @@ namespace HyperRTS.Presentation.Tests
         {
             for (var i = 0; i < visuals.Length; i++)
             {
-                Assert.AreEqual(i == shown ? 1f : 0f, _em.GetComponentData<LocalTransform>(visuals[i]).Scale, $"stage {i}");
+                Assert.AreEqual(i == shown, _em.IsComponentEnabled<MaterialMeshInfo>(visuals[i]), $"stage {i}");
+            }
+
+            using var query = _em.CreateEntityQuery(typeof(Parent));
+            using var meshes = query.ToEntityArray(Allocator.Temp);
+            foreach (var mesh in meshes)
+            {
+                var stage = Array.IndexOf(visuals, _em.GetComponentData<Parent>(mesh).Value);
+                Assert.AreEqual(stage == shown, _em.IsComponentEnabled<MaterialMeshInfo>(mesh), $"stage {stage} child");
             }
         }
     }

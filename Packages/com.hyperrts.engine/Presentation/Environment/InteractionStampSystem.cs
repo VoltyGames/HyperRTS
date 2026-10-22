@@ -8,7 +8,6 @@ using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Environment
@@ -33,11 +32,11 @@ namespace HyperRTS.Presentation.Environment
         protected override void OnCreate()
         {
             _vehicles = SystemAPI.QueryBuilder().WithAll<TrackMarks, LocalToWorld>()
-                .WithNone<FogHidden, DisableRendering>().Build();
+                .WithNone<FogHidden, Inside>().Build();
             _squads = SystemAPI.QueryBuilder().WithAll<SquadFigures, SquadFigure, LocalToWorld>()
-                .WithNone<FogHidden, DisableRendering>().Build();
+                .WithNone<FogHidden, Inside>().Build();
             _buildings = SystemAPI.QueryBuilder().WithAll<BuildingTag, NavObstacle, LocalToWorld>()
-                .WithNone<FogHidden, DisableRendering>().Build();
+                .WithNone<FogHidden, Inside>().Build();
         }
 
         protected override void OnUpdate()
@@ -153,7 +152,7 @@ namespace HyperRTS.Presentation.Environment
             }
 
             foreach (var (agent, transform, entity) in SystemAPI.Query<RefRO<NavAgent>, RefRO<LocalToWorld>>()
-                         .WithNone<FogHidden, DisableRendering>().WithEntityAccess())
+                         .WithNone<FogHidden, Inside>().WithEntityAccess())
             {
                 var position = transform.ValueRO.Position;
                 if (!InWater(grid, position))

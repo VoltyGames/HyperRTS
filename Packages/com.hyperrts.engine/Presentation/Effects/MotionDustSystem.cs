@@ -1,8 +1,9 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Effects
@@ -33,7 +34,7 @@ namespace HyperRTS.Presentation.Effects
             _streams.BeginFrame();
             foreach (var (dust, place, entity) in SystemAPI
                          .Query<RefRW<MotionDust>, RefRO<LocalToWorld>>()
-                         .WithNone<DisableRendering>().WithEntityAccess())
+                         .WithNone<FogHidden, Inside>().WithEntityAccess())
             {
                 var speed = dust.ValueRW.DrawnSpeed(place.ValueRO.Position, place.ValueRO.Forward, deltaTime);
                 var socket = math.transform(place.ValueRO.Value, dust.ValueRO.Socket);

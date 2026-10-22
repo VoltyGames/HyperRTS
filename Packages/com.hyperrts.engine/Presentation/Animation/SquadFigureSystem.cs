@@ -1,35 +1,45 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
     /// Shows one <see cref="SquadFigure"/> per share of health and plays each the clip for the squad's motion and
-    /// firing. Hidden figures scale to zero, leaving fog's rendering toggles alone.
+    /// firing.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateBefore(typeof(EntitiesGraphicsSystem))]
     public partial struct SquadFigureSystem : ISystem
     {
+        private RenderSwitch _switch;
+
         [BurstCompile]
-        public void OnCreate(ref SystemState state) => state.RequireForUpdate<SquadFigures>();
+        public void OnCreate(ref SystemState state)
+        {
+            _switch = new RenderSwitch(ref state);
+            state.RequireForUpdate<SquadFigures>();
+        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _switch.Update(ref state);
             state.Dependency = new SquadJob
             {
                 Now = (float)SystemAPI.Time.ElapsedTime,
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
                 Clips = SystemAPI.GetComponentLookup<VATClip>(),
-                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(),
+                Switch = _switch,
             }.Schedule(state.Dependency);
         }
 
@@ -40,7 +50,7 @@ namespace HyperRTS.Presentation.Animation
             public float DeltaTime;
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
             public ComponentLookup<VATClip> Clips;
-            public ComponentLookup<LocalTransform> Transforms;
+            public RenderSwitch Switch;
 
             private void Execute(Entity entity, ref SquadFigures squad, DynamicBuffer<SquadFigure> figures,
                 in Health health, in LocalToWorld place)
@@ -55,16 +65,16 @@ namespace HyperRTS.Presentation.Animation
                     var next = figure.Next(i < visible, living, Now);
                     if (next != figure.State)
                     {
-                        Show(ref figure, next, squad.DieHold);
+                        Show(entity, ref figure, next, squad.DieHold);
                         figures[i] = figure;
                     }
                 }
             }
 
-            private void Show(ref SquadFigure figure, FigureState next, float dieHold)
+            private void Show(Entity squad, ref SquadFigure figure, FigureState next, float dieHold)
             {
                 var hidden = next == FigureState.Hidden;
-                Transforms.GetRefRW(figure.Figure).ValueRW.Scale = hidden ? 0f : figure.Scale;
+                Switch.SetBranch(squad, figure.Figure, HideReason.Figure, hidden);
                 figure.State = next;
                 if (hidden)
                 {

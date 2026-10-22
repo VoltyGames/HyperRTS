@@ -119,9 +119,6 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Figures baked separately keep their own tables, so each carries its own clip ranges.</summary>
         public FigureClips Clips;
 
-        /// <summary>The figure's own uniform scale, restored when it shows again.</summary>
-        public float Scale;
-
         /// <summary>0 to 1: how far into each looping clip this figure starts, so loops don't play in step.</summary>
         public float Phase;
 

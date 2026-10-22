@@ -1,7 +1,8 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Vision;
 using Unity.Entities;
-using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Effects
@@ -26,7 +27,7 @@ namespace HyperRTS.Presentation.Effects
             var deltaTime = SystemAPI.Time.DeltaTime;
             _streams.BeginFrame();
             foreach (var (trail, place, entity) in SystemAPI.Query<RefRO<EffectTrail>, RefRO<LocalToWorld>>()
-                         .WithNone<DisableRendering>().WithEntityAccess())
+                         .WithNone<FogHidden, Inside>().WithEntityAccess())
             {
                 var prefab = trail.ValueRO.Rig.IsValid() ? trail.ValueRO.Rig.Value : null;
                 var state = _pool.Step(_streams, prefab, entity, 0, place.ValueRO.Position);
