@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A grass or small plant the map's <see cref="GrassRenderer"/> scatters: its models, material and sizes.</summary>
     [Serializable]
-    [MapLibraryItem("plant", "meshes", "material")]
+    [MapLibraryItem("plant", "meshes", "material", "card")]
     public sealed class MapClimatePlant : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]
@@ -22,10 +22,14 @@ namespace HyperRTS.Editor.Maps.Data
         [NonSerialized]
         public Material material;
 
-        [Tooltip("Random horizontal scale range of the models.")]
+        [Tooltip("A card plant's measured size, which width and height scale. Empty for modelled plants.")]
+        [NonSerialized]
+        public MapPlantCard card;
+
+        [Tooltip("Random horizontal scale range of the models, times the card width for a card plant.")]
         public Vector2 width = new(0.85f, 1.15f);
 
-        [Tooltip("Random vertical scale range of the models.")]
+        [Tooltip("Random vertical scale range of the models, times the card height for a card plant.")]
         public Vector2 height = new(0.85f, 1.15f);
 
         public Color healthy = Color.white;
@@ -45,6 +49,8 @@ namespace HyperRTS.Editor.Maps.Data
             this.key = key;
             meshes = refs.Assets<Mesh>(refs.meshes, "meshes");
             material = refs.Asset<Material>(refs.material, "material");
+            var cardFile = refs.Asset<TextAsset>(refs.card, "card");
+            card = cardFile == null ? null : MapPlantCard.Read(cardFile);
         }
 
         /// <summary>The plant as the renderer draws it.</summary>
@@ -53,8 +59,8 @@ namespace HyperRTS.Editor.Maps.Data
             name = key,
             meshes = new List<Mesh>(meshes),
             material = material,
-            width = width,
-            height = height,
+            width = card == null ? width : width * card.width,
+            height = card == null ? height : height * card.height,
             healthy = healthy,
             dry = dry,
             density = density,

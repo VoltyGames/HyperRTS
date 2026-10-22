@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Tests
 {
     /// <summary>
     /// Painted grass coverage becomes a texture array slice per plant and a tile summary of the plants each tile
-    /// grows, and plant files name their models and material.
+    /// grows, and plant files name their models, material and card size.
     /// </summary>
     public class MapGrassBakeTests
     {
@@ -81,6 +81,45 @@ namespace HyperRTS.Editor.Tests
             Assert.AreEqual(new Vector2(0.2f, 0.3f), plant.height);
             Assert.AreEqual(12f, plant.density);
             Assert.AreEqual(0.4f, plant.clumping);
+        }
+
+        [Test]
+        public void CardPlants_ScaleTheirMeasuredCardSize()
+        {
+            const string json = "{\"version\": 1, \"width\": {\"x\": 0.8, \"y\": 1.2}, \"height\": {\"x\": 0.5, \"y\": 1}}";
+            var (item, _) = MapLibraryItemFile.Parse(typeof(MapClimatePlant), json, "Grass.plant.json");
+            var plant = (MapClimatePlant)item;
+            var card = new TextAsset("{\"width\": 0.5, \"height\": 0.2}");
+            try
+            {
+                plant.card = MapPlantCard.Read(card);
+                var drawn = plant.Plant();
+
+                Assert.AreEqual(0.4f, drawn.width.x, 1e-6f);
+                Assert.AreEqual(0.6f, drawn.width.y, 1e-6f);
+                Assert.AreEqual(0.1f, drawn.height.x, 1e-6f);
+                Assert.AreEqual(0.2f, drawn.height.y, 1e-6f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(card);
+            }
+        }
+
+        [TestCase("{\"width\": 0.5, \"hieght\": 0.2}", "'hieght' is not a plant card field")]
+        [TestCase("{\"width\": 0.5}", "needs a width and height above 0")]
+        public void PlantCards_WithATypoOrNoSize_FailNamingIt(string json, string message)
+        {
+            var card = new TextAsset(json);
+            try
+            {
+                var error = Assert.Throws<InvalidOperationException>(() => MapPlantCard.Read(card));
+                StringAssert.Contains(message, error.Message);
+            }
+            finally
+            {
+                Object.DestroyImmediate(card);
+            }
         }
 
         [Test]
