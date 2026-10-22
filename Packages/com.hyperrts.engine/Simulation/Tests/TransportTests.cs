@@ -194,7 +194,7 @@ namespace HyperRTS.Simulation.Tests
 
         [TestCase(true)]
         [TestCase(false)]
-        public void ContainerDeath_EjectsOrKillsPassengers(bool survive)
+        public void ContainerDeath_EjectsOrKillsPassengers_InTheSameFrame(bool survive)
         {
             var bunker = Bunker(float3.zero, survive: survive);
             var rifle = Passenger(new float3(6f, 0f, 0f));
@@ -202,7 +202,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(2f);
 
             _world.Kill(bunker);
-            _world.Tick(frames: 3);
+            _world.Tick();
 
             Assert.IsFalse(_world.EntityManager.Exists(bunker));
             Assert.AreEqual(survive, _world.EntityManager.Exists(rifle));

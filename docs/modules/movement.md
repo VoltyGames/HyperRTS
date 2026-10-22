@@ -89,7 +89,8 @@ docked. Its remains fall to the ground under gravity. Fuel is left to game code.
 ## Transport
 
 `ContainerAuthoring` lets a vehicle or building carry units with `PassengerAuthoring`. It sets the capacity, the
-largest passenger and whether passengers fire out or survive its death.
+largest passenger and whether passengers fire out or survive its death. They get out or die in the frame the
+container dies, and dying passengers credit its killer.
 
 A passenger is hidden and takes no orders. A neutral garrison building belongs to whoever is inside and turns
 neutral when empty.

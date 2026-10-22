@@ -8,10 +8,13 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Transport
 {
-    /// <summary>When a container dies its passengers get out, or die with it when it doesn't let them survive.</summary>
+    /// <summary>
+    /// When a container dies its passengers get out, or die with it when it doesn't let them survive. Runs before
+    /// <see cref="DeathSystem"/> so they leave or die in the same frame, with kill credit to the container's killer.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
-    [UpdateAfter(typeof(DeathSystem))]
+    [UpdateBefore(typeof(DeathSystem))]
     public partial struct ContainerDeathSystem : ISystem
     {
         private CargoExit _exit;
@@ -31,7 +34,7 @@ namespace HyperRTS.Simulation.Transport
         }
 
         [BurstCompile]
-        [WithAll(typeof(Dead))]
+        [WithAll(typeof(Health))]
         private partial struct EvacuateJob : IJobEntity
         {
             public CargoExit Exit;
@@ -39,7 +42,7 @@ namespace HyperRTS.Simulation.Transport
 
             private void Execute(Entity entity, in Container container, DynamicBuffer<Cargo> cargo)
             {
-                if (cargo.IsEmpty)
+                if (cargo.IsEmpty || !Exit.IsDestroyed(entity))
                 {
                     return;
                 }
