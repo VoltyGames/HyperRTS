@@ -7,7 +7,7 @@ using Unity.Netcode;
 
 namespace HyperRTS.Network.Common
 {
-    /// <summary>Server: regroups the in-game connections into <see cref="FactionConnections"/> before the senders.</summary>
+    /// <summary>Server: regroups the in-game remote connections into <see cref="FactionConnections"/> before the senders.</summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
@@ -28,8 +28,9 @@ namespace HyperRTS.Network.Common
         public void OnUpdate(ref SystemState state)
         {
             _connections.Clear();
-            foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>().WithAll<NetworkStreamInGame>()
-                         .WithEntityAccess())
+            // A host's own connection has no stream: its world already holds every event.
+            foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>()
+                         .WithAll<NetworkStreamInGame, NetworkStreamConnection>().WithEntityAccess())
             {
                 _connections.Add(ConnectionPlayers.Faction(ref state, connection), connection);
             }

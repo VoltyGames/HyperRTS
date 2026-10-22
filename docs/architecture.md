@@ -45,8 +45,9 @@ in one of the [tiers](modules.md#tiers).
 | World | Exists in | Runs |
 | --- | --- | --- |
 | Local | Single player, replays | Everything |
-| Server | Dedicated server, host | Gameplay, AI, commands, relevancy |
-| Client | Client, host | Selection, input, fog view, presentation, HUD |
+| Host | A player-hosted match | Everything a server and a client run, but `[RemoteClientOnly]` systems |
+| Server | Dedicated server | Gameplay, AI, commands, relevancy |
+| Client | A joining player | Selection, input, fog view, presentation, HUD |
 
 Systems run in local and server worlds by default. A client-side system adds
 `[WorldSystemFilter(SimulationWorlds.Presented)]`, unless it sits under `PresentationSystemGroup`, which already

@@ -118,8 +118,9 @@ namespace HyperRTS.Network.Scenery
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var changes = new NativeList<SceneryChange>(Allocator.Temp);
-            foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>().WithAll<NetworkStreamInGame>()
-                         .WithEntityAccess())
+            // A host's own connection has no stream: its world simulates the scenery itself.
+            foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>()
+                         .WithAll<NetworkStreamInGame, NetworkStreamConnection>().WithEntityAccess())
             {
                 var team = relations.GetTeam(ConnectionPlayers.Faction(ref state, connection));
                 if (SystemAPI.HasComponent<ScenerySynced>(connection))

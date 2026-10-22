@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Network.Common;
 using HyperRTS.Simulation.Combat;
 using Unity.Burst;
 using Unity.Entities;
@@ -12,6 +13,7 @@ namespace HyperRTS.Network.Replication
     /// result without its <see cref="SpawnEffect"/>, so nobody gets dust from a collapse they never saw.
     /// </summary>
     [BurstCompile]
+    [RemoteClientOnly]
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial struct LateSpawnEffectSystem : ISystem

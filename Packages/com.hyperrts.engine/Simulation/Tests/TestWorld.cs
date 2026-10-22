@@ -56,6 +56,13 @@ namespace HyperRTS.Simulation.Tests
             DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(World, systems);
         }
 
+        /// <summary>Wraps a world built elsewhere, such as a netcode host, for the setup helpers; its owner ticks it.</summary>
+        public TestWorld(World world)
+        {
+            MatchSetupRequest.Clear();
+            World = world;
+        }
+
         public EntityManager EntityManager => World.EntityManager;
 
         public void Dispose()

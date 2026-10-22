@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Network.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
@@ -12,6 +13,7 @@ namespace HyperRTS.Network.Replication
     /// fills the references back in from the client's own prefabs and assets whenever a snapshot changes them.
     /// Games resolve their own <see cref="IPrefabReference"/> buffers the same way with <see cref="PrefabReferences"/>.
     /// </summary>
+    [RemoteClientOnly]
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial class ReferenceResolveSystem : SystemBase

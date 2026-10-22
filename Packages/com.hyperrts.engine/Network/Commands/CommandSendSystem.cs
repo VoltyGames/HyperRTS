@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Network.Common;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
@@ -11,6 +12,7 @@ namespace HyperRTS.Network.Commands
 {
     /// <summary>Sends the local player's commands to the server, which runs them; clients never execute them.</summary>
     [BurstCompile]
+    [RemoteClientOnly]
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderLast = true)]
     public partial struct CommandSendSystem : ISystem

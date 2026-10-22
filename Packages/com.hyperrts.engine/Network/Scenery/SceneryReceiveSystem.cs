@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Network.Common;
 using HyperRTS.Simulation.Combat;
 using Unity.Burst;
 using Unity.Collections;
@@ -9,6 +10,7 @@ namespace HyperRTS.Network.Scenery
 {
     /// <summary>Client: applies the server's scenery changes to the local map. Changes for scenery not yet streamed in wait.</summary>
     [BurstCompile]
+    [RemoteClientOnly]
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial struct SceneryReceiveSystem : ISystem

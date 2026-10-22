@@ -8,21 +8,36 @@ commands and receive only the state their team can see. Single player keeps one 
 | World | Runs | Created by |
 | --- | --- | --- |
 | Local | Everything, in single player | The default world |
-| Server | Gameplay, AI, commands, relevancy | `NetworkSession.StartServer` or `StartHost` |
-| Client | Selection, input, fog view, presentation, HUD | `NetworkSession.StartClient` or `StartHost` |
+| Host | Server and client in one world, for a player-hosted match | `NetworkSession.StartHost` |
+| Server | Gameplay, AI, commands, relevancy | `NetworkSession.StartServer` |
+| Client | Selection, input, fog view, presentation, HUD | `NetworkSession.StartClient` |
 
 Systems run on the server and in single player by default, so a new gameplay system needs nothing. A system the
 client also needs opts in with `[WorldSystemFilter(SimulationWorlds.Presented)]`, or `SimulationWorlds.All` if the
 server needs it too. Systems under `PresentationSystemGroup` already run only in single player and on clients.
 
+## Host
+
+A host is one Netcode single-world host: it serves remote clients and is the local player's client, like the local
+world with networking on top. It holds every ghost, so its player sees state as single player does: presentation
+fog hides enemies, commands go straight onto the player entity and cues play from the world's own queue.
+
+- Its player's connection is Netcode's `LocalConnection`, which has no `NetworkStreamConnection`. `ServerJoinSystem`
+  seats it from the world's `JoinPreference` and `JoinToken`, without a request.
+- Systems marked `[RemoteClientOnly]` mirror a remote server, so the host world leaves them out: command sending,
+  cue and scenery receiving, prefab reference resolving, late spawn effects, prediction toggling and the status
+  system.
+- Cue, scenery and fog relevancy senders only serve connections with a `NetworkStreamConnection`.
+- A host reads `Connected` once it listens, like a dedicated server.
+
 ## Starting a match
 
-`NetworkSession` replaces the local world with client and server worlds, then loads a scene so its SubScene
-streams into them.
+`NetworkSession` replaces the local world with a host, server or client world, then loads a scene so its SubScene
+streams into it.
 
 | Call | Starts |
 | --- | --- |
-| `StartHost(port)` | Server and client in one process |
+| `StartHost(port)` | A host world: server and local player in one world |
 | `StartServer(port)` | A dedicated server with no local player |
 | `StartClient(address, port)` | A client joining a server |
 | `StartRelayHost`, `StartRelayClient` | The same over a [relay](#relay) |
@@ -101,7 +116,7 @@ NetworkSession.StartRelayHost(allocation.ToRelayServerData("dtls"));
 NetworkSession.StartRelayClient(joinAllocation.ToRelayServerData("dtls"));
 ```
 
-The host's own client joins over IPC, so the host never pays the relay round trip. A relay other than Unity Relay,
+The host's own player is part of the host world, so it never pays the relay round trip. A relay other than Unity Relay,
 such as Steam Networking Sockets, plugs in as its own `INetworkStreamDriverConstructor`. Keep it in the game: the
 engine ships no third-party SDK.
 
@@ -168,7 +183,7 @@ A new component the HUD or overlays read needs `[GhostField]` on the fields that
 The server ticks at 60 Hz and sends snapshots at `NetworkSession.SnapshotRate`, 20 Hz. Netcode fills each snapshot
 up to about 1.4 KB and sends the longest-waiting ghosts first. A full snapshot makes updates older, not bigger.
 
-Measured on a 400 m map, host and client in the Editor, with 500 tanks from the Play page's **Armies** cheat:
+Measured on a 400 m map, a server and a client world in the Editor, with 500 tanks from the Play page's **Armies** cheat:
 
 | Case | Snapshot rate | Client receives | Unit update age |
 | --- | --- | --- | --- |
@@ -204,8 +219,8 @@ The server never plays sounds or effects. Every transient event, such as a shot,
 ## Physics
 
 Clicks raycast against Unity Physics, which Netcode only steps inside the prediction loop. The Match object needs
-`NetCodePhysicsConfig` set to **Always Run**, and the validator offers the fix. The server never raycasts, so its
-physics stays off.
+`NetCodePhysicsConfig` set to **Always Run**, and the validator offers the fix. A dedicated server never raycasts, so
+its physics stays off. A host keeps it on for its player's clicks.
 
 ## Limits
 

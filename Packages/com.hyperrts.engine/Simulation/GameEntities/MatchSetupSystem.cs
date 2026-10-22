@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.GameEntities
                 state.EntityManager.SetComponentData(setupEntity, setup);
             }
 
-            if (setup.ClosedFactions != 0 && !state.WorldUnmanaged.IsClient())
+            if (setup.ClosedFactions != 0 && SimulationWorlds.IsAuthoritative(state.WorldUnmanaged))
             {
                 RemoveClosed(ref state, setup.ClosedFactions);
             }

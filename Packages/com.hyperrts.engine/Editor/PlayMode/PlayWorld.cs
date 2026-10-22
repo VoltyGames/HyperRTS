@@ -12,11 +12,11 @@ namespace HyperRTS.Editor.PlayMode
     {
         private static readonly Dictionary<World, Dictionary<Type, EntityQuery>> Singletons = new();
 
-        /// <summary>The world that owns game state: the server when one runs, else the single-player world. Cheats write here.</summary>
+        /// <summary>The world that owns game state: the host or server when one runs, else the single-player world. Cheats write here.</summary>
         public static bool TryGetAuthoritative(out EntityManager entityManager) =>
             TryGet(SimulationWorlds.Authoritative, out entityManager);
 
-        /// <summary>The world the local player looks at: the client when one runs, else the single-player world.</summary>
+        /// <summary>The world the local player looks at: the host or client when one runs, else the single-player world.</summary>
         public static bool TryGetPresented(out EntityManager entityManager) =>
             TryGet(SimulationWorlds.Presented, out entityManager);
 
@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.PlayMode
             return query.TryGetSingleton(out value);
         }
 
-        // The local world only remains as a fallback: a session replaces it with server and client worlds.
+        // The local world only remains as a fallback: a session replaces it with a host, server or client world.
         private static World Find(WorldSystemFilterFlags roles)
         {
             World local = null;
@@ -74,6 +74,11 @@ namespace HyperRTS.Editor.PlayMode
             if (!world.IsCreated || world.IsThinClient())
             {
                 return 0;
+            }
+
+            if (world.IsHost())
+            {
+                return WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.ClientSimulation;
             }
 
             if (world.IsServer())

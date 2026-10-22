@@ -14,7 +14,7 @@ using UnityEngine;
 namespace HyperRTS.Network.Session
 {
     /// <summary>
-    /// Starts and stops a networked match: replaces the single-player world with server and/or client worlds and
+    /// Starts and stops a networked match: replaces the single-player world with a host, server or client world and
     /// loads a scene (by default the active one, see <see cref="SessionScene"/>) so its SubScene streams into them.
     /// </summary>
     public static partial class NetworkSession
@@ -53,32 +53,21 @@ namespace HyperRTS.Network.Session
         [NoAutoStaticsCleanup]
         public static NetworkStreamDisconnectReason DisconnectReason { get; private set; }
 
-        /// <summary>Server and client in this process, as for custom lobbies and LAN games.</summary>
+        /// <summary>One world that serves remote clients and plays the local player, as for custom lobbies and LAN games.</summary>
         public static bool StartHost(ushort port = DefaultPort, SessionScene scene = default) =>
-            Host(port, null, null, scene);
+            Host(port, null, scene);
 
         /// <summary>
-        /// Player-hosted match over a relay allocation the game obtained (Unity Relay, Steam, its own backend):
-        /// remote players join through the relay, the local player over IPC.
+        /// Player-hosted match over a relay allocation the game obtained (Unity Relay, Steam, its own backend): remote
+        /// players join through the relay.
         /// </summary>
         public static bool StartRelayHost(RelayServerData hostRelay, ushort port = DefaultPort,
             SessionScene scene = default) =>
-            Host(port, new RelayDriverConstructor(hostRelay), new RelayDriverConstructor(default), scene);
+            Host(port, new RelayDriverConstructor(hostRelay), scene);
 
         /// <summary>Dedicated server: no local player. A port that can't be opened changes nothing and returns false.</summary>
-        public static bool StartServer(ushort port = DefaultPort, SessionScene scene = default)
-        {
-            if (!TryListen(port, null, out var server))
-            {
-                return false;
-            }
-
-            DisposeWorlds(server);
-            World.DefaultGameObjectInjectionWorld = server;
-            SetStatus(NetworkStatus.Connected);
-            SessionSceneLoader.Load(scene);
-            return true;
-        }
+        public static bool StartServer(ushort port = DefaultPort, SessionScene scene = default) =>
+            Listen(SessionWorlds.CreateServer(), port, null, scene);
 
         public static bool StartClient(string address, ushort port = DefaultPort, SessionScene scene = default)
         {
@@ -149,17 +138,21 @@ namespace HyperRTS.Network.Session
             DisconnectReason = reason;
         }
 
-        private static bool Host(ushort port, INetworkStreamDriverConstructor serverDrivers,
-            INetworkStreamDriverConstructor clientDrivers, SessionScene scene)
+        private static bool Host(ushort port, INetworkStreamDriverConstructor drivers, SessionScene scene) =>
+            Listen(SessionWorlds.CreateHost(SessionWorlds.HostSystems()), port, drivers, scene);
+
+        /// <summary>Opens the port on a new world that replaces the running ones; on failure they stay untouched.</summary>
+        private static bool Listen(NetcodeWorld world, ushort port, INetworkStreamDriverConstructor drivers,
+            SessionScene scene)
         {
-            if (!TryListen(port, serverDrivers, out var server))
+            if (!SessionWorlds.TryListen(world, port, drivers))
             {
                 return false;
             }
 
-            DisposeWorlds(server);
-            World.DefaultGameObjectInjectionWorld = server;
-            StartClientWorld(NetworkEndpoint.LoopbackIpv4.WithPort(port), clientDrivers);
+            DisposeWorlds(world);
+            World.DefaultGameObjectInjectionWorld = world;
+            SetStatus(NetworkStatus.Connected);
             SessionSceneLoader.Load(scene);
             return true;
         }
@@ -172,55 +165,11 @@ namespace HyperRTS.Network.Session
                 _rejoin = server;
             }
 
-            StartClientWorld(server, drivers);
-            SessionSceneLoader.Load(scene);
-        }
-
-        /// <summary>
-        /// Creates a server world and opens the port, next to the running worlds; on failure the new world is gone
-        /// again and nothing else changed.
-        /// </summary>
-        private static bool TryListen(ushort port, INetworkStreamDriverConstructor drivers, out NetcodeWorld world)
-        {
-            // Sessions listen and connect themselves, on the port and drivers they were given.
-            ClientServerBootstrap.AutoConnectPort = 0;
-            world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
-            world.EntityManager.CreateSingleton(SessionWorlds.ServerTickRate());
-            SessionWorlds.DisablePhysics(world);
-            bool listening;
-            using (var query = SessionWorlds.DriverQuery(world))
-            {
-                ref var driver = ref query.GetSingletonRW<NetworkStreamDriver>().ValueRW;
-                SessionWorlds.UseDrivers(world, ref driver, drivers);
-                listening = driver.Listen(NetworkEndpoint.AnyIpv4.WithPort(port));
-            }
-
-            if (!listening)
-            {
-                Debug.LogError($"[HyperRTS] Could not listen on port {port}.");
-                world.Dispose();
-                world = null;
-            }
-
-            return listening;
-        }
-
-        private static void StartClientWorld(NetworkEndpoint server, INetworkStreamDriverConstructor drivers)
-        {
-            ClientServerBootstrap.AutoConnectPort = 0;
-            var world = ClientServerBootstrap.CreateClientWorld("ClientWorld");
-            world.EntityManager.CreateSingleton(SessionWorlds.ClientTickRate());
-            world.EntityManager.CreateSingleton(Preference);
-            world.EntityManager.CreateSingleton(new JoinToken { Value = Token });
-            using (var query = SessionWorlds.DriverQuery(world))
-            {
-                ref var driver = ref query.GetSingletonRW<NetworkStreamDriver>().ValueRW;
-                SessionWorlds.UseDrivers(world, ref driver, drivers);
-                driver.Connect(world.EntityManager, server);
-            }
-
+            var world = SessionWorlds.CreateClient(SessionWorlds.ClientSystems());
+            SessionWorlds.Connect(world, server, drivers);
             World.DefaultGameObjectInjectionWorld = world;
             SetStatus(NetworkStatus.Connecting);
+            SessionSceneLoader.Load(scene);
         }
 
         /// <summary>Disposes every simulation world but <paramref name="keep"/>, and forgets the rejoin endpoint.</summary>

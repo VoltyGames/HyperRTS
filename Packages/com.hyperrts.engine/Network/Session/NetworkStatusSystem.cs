@@ -1,9 +1,11 @@
+using HyperRTS.Network.Common;
 using Unity.Entities;
 using Unity.Netcode;
 
 namespace HyperRTS.Network.Session
 {
     /// <summary>Publishes this client's Netcode connection events to <see cref="NetworkSession.Status"/>.</summary>
+    [RemoteClientOnly]
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct NetworkStatusSystem : ISystem

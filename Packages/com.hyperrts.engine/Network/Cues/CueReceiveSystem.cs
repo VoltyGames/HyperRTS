@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Network.Common;
 using HyperRTS.Simulation.Cues;
 using Unity.Burst;
 using Unity.Entities;
@@ -8,6 +9,7 @@ namespace HyperRTS.Network.Cues
 {
     /// <summary>Client: unpacks the server's cue batches into local <see cref="CueEvent"/>s, so playback reads one buffer.</summary>
     [BurstCompile]
+    [RemoteClientOnly]
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     [UpdateAfter(typeof(CueClearSystem))]

@@ -124,8 +124,13 @@ Graphics, InputSystem or UIElements. A headless server never runs `Client/`. See
 - Entities built through `IEntityWriter` in tests have no mesh. Rendered spawns instantiate baked prefabs.
 - SubScene entities stream in over the first frames. Guard on singletons with `RequireForUpdate`, and never treat
   "nothing exists yet" as a game state. `VictorySystem` shows how.
-- Keep `OverrideAutomaticNetcodeBootstrap`, on `RTSWorld.prefab`, in scenes. Single player is one local world, and
-  `NetworkSession` creates the server and client worlds.
+- Keep `OverrideAutomaticNetcodeBootstrap`, on `RTSWorld.prefab`, in scenes. `NetworkSession` makes the worlds:
+  - single player is one local world;
+  - a host is one Netcode single-world host, server and client at once;
+  - a dedicated server is a server world, and a joining player a client world.
+- A client system that mirrors a remote server's state, such as sending commands or receiving cues, carries
+  `[RemoteClientOnly]`, so a host world leaves it out. Senders skip connections without `NetworkStreamConnection`,
+  which is the host's own player.
 - Systems default to the server and local worlds. Client-side systems opt in with
   `[WorldSystemFilter(SimulationWorlds.Presented)]`. A component the HUD reads needs `[GhostField]`s.
 - Systems under `PresentationSystemGroup` already default to the presented worlds, local and client, so they need

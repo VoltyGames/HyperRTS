@@ -82,8 +82,9 @@ namespace HyperRTS.Network.Relevancy
         private NativeList<Viewer> Viewers(ref SystemState state)
         {
             var viewers = new NativeList<Viewer>(8, Allocator.Temp);
+            // A host's own connection has no stream: its world holds every ghost, and presentation fog hides enemies.
             foreach (var (id, link) in SystemAPI.Query<RefRO<NetworkId>, RefRO<ConnectionPlayer>>()
-                         .WithAll<NetworkStreamInGame>())
+                         .WithAll<NetworkStreamInGame, NetworkStreamConnection>())
             {
                 var faction = SystemAPI.GetComponent<Player>(link.ValueRO.Player).Faction;
                 viewers.Add(new Viewer { NetworkId = id.ValueRO.Value, Faction = faction });

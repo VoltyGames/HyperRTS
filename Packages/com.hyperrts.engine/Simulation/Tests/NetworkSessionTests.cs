@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Relay driver choice, the lobby-facing connection status and rejoin guards, without opening sockets.</summary>
+    /// <summary>Relay drivers, the lobby-facing connection status and rejoin guards, without opening sockets.</summary>
     public class NetworkSessionTests
     {
         // Session statics outlive Play mode in the editor; start each test as a fresh player would.
@@ -24,21 +24,13 @@ namespace HyperRTS.Simulation.Tests
         public void ConnectionStateMapsToStatus(ConnectionState.State state, NetworkStatus expected) =>
             Assert.AreEqual(expected, NetworkStatusSystem.ToStatus(state));
 
-        [TestCase(WorldFlags.GameServer, true, new[] { TransportType.IPC, TransportType.Socket },
-            TestName = "RelayServerListensOverIPCAndRelay")]
-        [TestCase(WorldFlags.GameClient, true, new[] { TransportType.Socket },
-            TestName = "RelayClientJoinsThroughTheRelay")]
-        [TestCase(WorldFlags.GameClient, false, new[] { TransportType.IPC },
-            TestName = "HostClientWithoutRelayDataUsesIPC")]
-        public void DriverStore_UsesTheExpectedTransports(WorldFlags flags, bool relay, TransportType[] expected)
+        [TestCase(WorldFlags.GameServer | WorldFlags.GameClient, TestName = "RelayHostListensOnTheRelayOnly")]
+        [TestCase(WorldFlags.GameClient, TestName = "RelayClientJoinsThroughTheRelay")]
+        public void DriverStore_HasOneRelaySocket(WorldFlags flags)
         {
-            var store = Build(flags, relay ? FakeRelay() : default);
-            Assert.AreEqual(expected.Length, store.DriversCount);
-            for (var i = 0; i < expected.Length; i++)
-            {
-                Assert.AreEqual(expected[i], store.GetDriverType(store.FirstDriver + i));
-            }
-
+            var store = Build(flags, FakeRelay());
+            Assert.AreEqual(1, store.DriversCount);
+            Assert.AreEqual(TransportType.Socket, store.GetDriverType(store.FirstDriver));
             store.Dispose();
         }
 
@@ -56,13 +48,13 @@ namespace HyperRTS.Simulation.Tests
         private static NetworkDriverStore Build(WorldFlags flags, RelayServerData relay)
         {
             ClientServerBootstrap.AutoConnectPort = 0;
-            using var world = flags == WorldFlags.GameServer
-                ? ClientServerBootstrap.CreateServerWorld("Relay Test")
-                : ClientServerBootstrap.CreateClientWorld("Relay Test");
+            using var world = flags == WorldFlags.GameClient
+                ? ClientServerBootstrap.CreateClientWorld("Relay Test")
+                : ClientServerBootstrap.CreateSingleWorldHost("Relay Test");
             var constructor = new RelayDriverConstructor(relay);
             var store = new NetworkDriverStore();
             var netDebug = new NetDebug { LogLevel = NetDebug.LogLevelType.Error };
-            if (flags == WorldFlags.GameServer)
+            if (world.IsServer())
             {
                 constructor.CreateServerDriver(world, ref store, netDebug);
             }

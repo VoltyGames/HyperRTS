@@ -8,7 +8,8 @@ namespace HyperRTS.Network.Players
 {
     /// <summary>
     /// Binds joining connections to human slots (observers when none is left or they asked to watch) and frees the
-    /// slot of a dropped connection, keeping it for its owner's token so only the owner can reconnect to it.
+    /// slot of a dropped connection, keeping it for its owner's token so only the owner can reconnect to it. A host's
+    /// own <see cref="LocalConnection"/> joins here too, and its reply reaches the same world.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
@@ -20,31 +21,51 @@ namespace HyperRTS.Network.Players
         {
             // Network ids are reused, so drops are cleared before this tick's joins can claim one again.
             ReleaseDropped(ref state);
-            var requests = SystemAPI.QueryBuilder().WithAll<JoinRequest, ReceiveRpcCommandRequest>().Build();
             var players = SystemAPI.QueryBuilder().WithAll<Player, PlayerConnection>().Build();
-            if (requests.IsEmpty || players.IsEmpty)
+            if (players.IsEmpty)
             {
                 return;
             }
 
+            JoinHost(ref state);
+            var requests = SystemAPI.QueryBuilder().WithAll<JoinRequest, ReceiveRpcCommandRequest>().Build();
             foreach (var request in requests.ToEntityArray(Allocator.Temp))
             {
-                Join(ref state, request);
+                var connection = state.EntityManager.GetComponentData<ReceiveRpcCommandRequest>(request).SourceConnection;
+                Join(ref state, connection, state.EntityManager.GetComponentData<JoinRequest>(request));
                 state.EntityManager.DestroyEntity(request);
             }
         }
 
-        /// <summary>Binds the sender to a slot; repeats from a connection already in game can't claim more.</summary>
-        private void Join(ref SystemState state, Entity request)
+        /// <summary>A host's own player joins without a request, asking for what its session prefers.</summary>
+        private void JoinHost(ref SystemState state)
+        {
+            var seating = SystemAPI.QueryBuilder().WithAll<LocalConnection>().WithNone<NetworkStreamInGame>().Build();
+            if (seating.IsEmpty)
+            {
+                return;
+            }
+
+            var connection = seating.GetSingletonEntity();
+            var preference = SystemAPI.GetSingleton<JoinPreference>();
+            var wanted = new JoinRequest
+            {
+                Faction = preference.Faction,
+                Observe = preference.Observe,
+                Token = SystemAPI.GetSingleton<JoinToken>().Value,
+            };
+            Join(ref state, connection, wanted);
+        }
+
+        /// <summary>Binds the connection to a slot; repeats from a connection already in game can't claim more.</summary>
+        private void Join(ref SystemState state, Entity connection, JoinRequest wanted)
         {
             var entityManager = state.EntityManager;
-            var connection = entityManager.GetComponentData<ReceiveRpcCommandRequest>(request).SourceConnection;
             if (!entityManager.Exists(connection) || entityManager.HasComponent<NetworkStreamInGame>(connection))
             {
                 return;
             }
 
-            var wanted = entityManager.GetComponentData<JoinRequest>(request);
             var networkId = entityManager.GetComponentData<NetworkId>(connection).Value;
             var slot = wanted.Observe ? Entity.Null : Claim(ref state, wanted, networkId);
             byte faction = 0;

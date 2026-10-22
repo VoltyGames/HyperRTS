@@ -7,7 +7,8 @@ namespace HyperRTS.Network.Players
 {
     /// <summary>
     /// Asks for a slot once the match has loaded, then tags the player ghost of the granted slot as the
-    /// <see cref="LocalPlayer"/> that input and HUD read.
+    /// <see cref="LocalPlayer"/> that input and HUD read. On a host, <see cref="ServerJoinSystem"/> seats the
+    /// player instead of a request.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
@@ -22,7 +23,9 @@ namespace HyperRTS.Network.Players
 
         private void RequestJoin(ref SystemState state)
         {
-            var connections = SystemAPI.QueryBuilder().WithAll<NetworkId>().WithNone<NetworkStreamInGame>().Build();
+            // A host's own connection has no stream: ServerJoinSystem seats it directly.
+            var connections = SystemAPI.QueryBuilder().WithAll<NetworkId, LocalConnection, NetworkStreamConnection>()
+                .WithNone<NetworkStreamInGame>().Build();
             var matchLoaded = !SystemAPI.QueryBuilder().WithAll<Player, Prefab>()
                 .WithOptions(EntityQueryOptions.IncludePrefab).Build().IsEmpty;
             if (connections.IsEmpty || !matchLoaded)
@@ -43,7 +46,7 @@ namespace HyperRTS.Network.Players
                     Observe = preference.Observe,
                     Token = token.Value,
                 });
-                entityManager.AddComponent<SendRpcCommandRequest>(request);
+                entityManager.AddComponentData(request, new SendRpcCommandRequest { TargetConnection = connection });
             }
         }
 
