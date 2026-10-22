@@ -13,8 +13,8 @@ namespace HyperRTS.Simulation.Replays
     {
         private const int Magic = 0x4C505248; // "HRPL"
 
-        /// <summary>Bumped on every format change; files of any other version are rejected.</summary>
-        public const int Version = 3;
+        /// <summary>Stays 1 until the first release; files of any other version are rejected.</summary>
+        public const int Version = 1;
 
         /// <summary>Most elements reserved before any are read; larger lists grow as data arrives.</summary>
         private const int PreallocateLimit = 4096;

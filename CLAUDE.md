@@ -83,8 +83,8 @@ Graphics, InputSystem or UIElements. A headless server never runs `Client/`. See
 - Readable predicates: no long multi-line `&&` or `||` chains. Write a block body with an early `return` per rule
   and name intermediate facts with locals. Short one- or two-term `=>` bodies are fine.
 - No fallback code: no defaults for missing data, no readers for old formats, no compatibility overloads. Require
-  the data the design guarantees and fail loudly with a message naming the bad key. A format change bumps its
-  version and rejects older ones. Tests set up what the real pipeline provides.
+  the data the design guarantees and fail loudly with a message naming the bad key. Until the first release
+  every format stays at version 1: a change migrates the data in place. Tests set up what the real pipeline provides.
 
 ## Comments
 
