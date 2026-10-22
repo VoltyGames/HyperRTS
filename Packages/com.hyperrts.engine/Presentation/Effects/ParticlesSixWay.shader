@@ -52,6 +52,7 @@ Shader "HyperRTS/ParticlesSixWay"
             #include "Packages/com.hyperrts.engine/Presentation/Effects/SixWayInput.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Effects/SixWayLighting.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/HeightFog.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Fog/FogOfWar.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/EyeDepth.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Effects/SixWayPass.hlsl"
             ENDHLSL

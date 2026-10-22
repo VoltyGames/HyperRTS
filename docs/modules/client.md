@@ -159,10 +159,11 @@ from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon
 names a child of the rig and a weapon the unit has.
 
 The baker stores a `MotionRig` and a `MotionRigPart` buffer on the root. `MotionRigSystem` runs in
-`PresentationSystemGroup` on the interpolated unit and writes only child `LocalTransform`s, never the ghost root.
+`PoseSystemGroup` on the interpolated unit and writes only child `LocalTransform`s, never the ghost root.
 A rig with rotors also gets a `RotorSpin`, the fastest rotor's speed from 0 to 1, which `LoopSoundSystem` reads
 after it for the rotor loop.
-Like `MachineSystem`, the poses render a frame later, once the transform systems have run.
+`PoseSystemGroup` runs first in `TransformSystemGroup` on presented worlds, so rig, machine and fall poses render the
+same frame as the unit. Machine links still aim at last frame's matrices.
 
 #### Squad figures
 
@@ -171,11 +172,25 @@ Like `MachineSystem`, the poses render a frame later, once the transform systems
 speed and how long a fallen figure stays down. Each figure looks those names up in its own clip table, so figures
 baked separately (another VAT width, other rows) mix in one squad; the bake fails when a table lacks one of the
 five. Each `SquadFigure` carries its own `FigureClips`. `SquadFigureSystem` shows ceil(figures x
-health fraction), at least one while alive. A figure health drops plays die once, then scales to zero after the
-hold, leaving fog's rendering toggles alone. A squad spawned damaged hides its lost figures without the fall. The
+health fraction), at least one while alive. A figure health drops plays die once, then hides after the hold. A
+squad spawned damaged hides its lost figures without the fall. The
 rest walk or run by the unit's horizontal speed and fire for 0.6 s after each change of the primary weapon's
 `WeaponPose.Shots`. A figure gets a new `VATClip` only when its state changes, and looping clips start at a
 per-figure phase so the squad doesn't move in step.
+
+### Visibility
+
+A mesh draws while its `HiddenBy` has no `HideReason`. Baking gives every mesh and gameplay root one.
+`RenderSwitch` sets a reason on a root's group or on one branch of it and flips `MaterialMeshInfo`'s enable bit, so
+hiding moves no chunks and leaves no zero-scale matrices. The reasons are:
+
+- `Fog` and `Inside`, from `FogVisibilitySystem`, on the whole group;
+- `Stage`, on every damage or resource stage model but the one on screen;
+- `Part`, on the intact or broken piece of a breakable part;
+- `Figure`, on a squad figure out of play.
+
+Each reason has its own bit, so revealing a unit never redraws a model another reason hides. Effects, sounds and
+grass stamps that skip unseen units test `FogHidden` and `Inside` on the root.
 
 ### Fog
 
@@ -198,7 +213,8 @@ An entity shows the damage stage model for its health and bursts that stage's ef
 Felled remains, such as trees, tip over as a rod pivoting at the stump, or lie down at once if the fall was out of
 sight. `FallClock` steps the fall at a fixed rate from the `Topple` height, so a 15 m tree takes about 2.5 s and a
 sapling under 1 s, and a crusher at the stump pushes it faster. The canopy bounces it once and it settles. The
-tipping only moves the rendered pose, and the simulation keeps the final one. A felled tree's spawn effect plays
+tipping turns the remains' child models about the stump, recorded at rest in a `FallPart` buffer, and the root
+keeps the simulation's final pose. A felled tree's spawn effect plays
 where the crown lands, as it lands.
 
 `DebrisAuthoring` on a ruin throws a `DebrisSet`'s pieces once when the ruin appears; on a building with breakable
@@ -209,7 +225,8 @@ so a set's material needs GPU instancing on, which the set checks at bake.
 
 A building with `BreakablePartsAuthoring` lists its parts, each an intact and a broken model. **Find Parts By Name**
 in its context menu fills the list from `<Part>_Intact` children and their `<Part>_Broken` siblings, which it saves
-hidden at scale 0 so editor views show the standing building. Health picks
+hidden at scale 0 so editor views show the standing building. `BreakablePartsBakingSystem` bakes them back at full
+size, hidden. Health picks
 how many break: round(parts x `breakShare` x (1 - health fraction)). The next to break is the intact part nearest the
 latest impact on the building, else the first in bake order, and it bursts the part effect outward from the centre.
 Repair restores the latest broken part first. A building first seen, or changed out of sight, shows its breakage
@@ -340,6 +357,11 @@ can see:
 | Medium | 70 % | |
 | High | 100 % | Light flashes from 8 shared lights |
 
+Effect materials use the engine's particle shaders so transparent smoke and flames take height fog and fog of war
+like the ground beneath them. `HyperRTS/Particles` and `HyperRTS/ParticlesUnlit` are URP's Simple Lit and Unlit
+particles with the same properties and inspector. Additive particles fade to black under fog, the rest toward the
+fog colour. `HyperRTS/ParticlesSixWay` lights smoke from six baked directions.
+
 ### Audio
 
 `SoundPlaybackSystem` plays cue sounds through 32 pooled sources. `SoundListener` follows the camera's ground focus.
@@ -348,6 +370,7 @@ can see:
 ### Quality
 
 The game fills one `PresentationQuality` and calls `PresentationQuality.Apply`. It covers effect and ground detail,
-interaction maps, grass and row crop density and distance, antialiasing and shadow map size. Apply sets them all,
-and again on each scene load. The shadow map size changes in memory only and is restored on quit. `Current` holds
-the last settings and resets to full detail on play.
+interaction maps, grass and row crop density and distance, and render scale. Apply sets them all, and again on each
+scene load. Shadows and the other pipeline features come from the game's quality levels, each with its own URP
+asset, so the game sets the quality level before Apply, which writes render scale onto that level's asset.
+`Current` holds the last settings and resets to full detail on play.
