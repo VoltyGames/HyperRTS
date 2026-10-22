@@ -51,7 +51,8 @@ namespace HyperRTS.Presentation.Destruction
         {
             if (!_felled.IsEmpty)
             {
-                state.EntityManager.AddComponent(_felled, new ComponentTypeSet(typeof(FallClock), typeof(FallPart)));
+                var parts = new ComponentTypeSet(ComponentType.ReadWrite<FallClock>(), ComponentType.ReadWrite<FallPart>());
+                state.EntityManager.AddComponent(_felled, parts);
             }
 
             // The clock's enable bit ends the work, so resting remains don't keep the fog synced.
