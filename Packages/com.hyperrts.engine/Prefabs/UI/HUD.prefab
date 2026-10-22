@@ -153,8 +153,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85613e2031e7f9644a515c5adc8d66c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HyperRTS.Presentation::HyperRTS.Presentation.Fog.FogOfWarRenderer
-  material: {fileID: 2100000, guid: c5906ef258c68f44aa768e908213cda1, type: 2}
-  heightRange: {x: -50, y: 250}
-  borderReach: 300
+  color: {r: 0.02, g: 0.03, b: 0.05, a: 1}
+  borderOpacity: 0.65
+  borderFade: 6
   exploredOpacity: 0.5
   unexploredOpacity: 0.85

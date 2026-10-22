@@ -194,9 +194,12 @@ grass stamps that skip unseen units test `FogHidden` and `Inside` on the root.
 
 ### Fog
 
-Entities hidden by fog, and passengers inside a container, stop rendering. `FogOfWarRenderer` projects the fog onto
-the depth buffer, so terrain and buildings fog where they stand. Map buildings stay visible, but their flags, dials
-and pips hide under the local fog.
+Entities hidden by fog, and passengers inside a container, stop rendering. `FogOfWarRenderer` publishes the local
+fog grid and its colour as shader globals. `FogOfWarFeature`, on the URP renderer with its shader set to
+`Hidden/HyperRTS/FogOfWar`, blends it full screen from the depth buffer before the transparents, so terrain and
+buildings fog where they stand while health bars, markers and the placement ghost stay clear. Water and particles
+apply it themselves with `FogOfWarAt` from `FogOfWar.hlsl`. Map buildings stay visible, but their flags, dials and
+pips hide under the local fog.
 
 A client remembers enemy buildings where it last saw them. The memory is a visual copy of the building, team
 coloured, that nothing can pick, select or count. The minimap shows memories as dimmed squares.

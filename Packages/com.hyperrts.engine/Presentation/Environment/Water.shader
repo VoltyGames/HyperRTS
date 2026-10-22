@@ -126,6 +126,7 @@ Shader "HyperRTS/Water"
             #include "WaterFoam.hlsl"
             #include "WaterReflection.hlsl"
             #include "HeightFog.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Fog/FogOfWar.hlsl"
 
             struct Attributes
             {
@@ -262,6 +263,7 @@ Shader "HyperRTS/Water"
                 color = lerp(color, _FoamColor.rgb * (sun.color * sun.shadowAttenuation * 0.6 + 0.4), foam);
                 half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(shoreDepth / _ShoreFadeDepth), foam);
                 color = ApplyHeightFog(color, fog);
+                color = ApplyFogOfWar(color, FogOfWarAt(input.positionWS));
                 return half4(color, alpha);
             }
             ENDHLSL

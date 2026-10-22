@@ -2,38 +2,42 @@ using HyperRTS.Client.Common;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
+using Unity.Scripting.LifecycleManagement;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Fog
 {
     /// <summary>
-    /// Draws the fog-of-war grid over everything in view (terrain, trees, buildings) as a box around the map that
-    /// the shader projects onto the depth buffer, re-uploading the grid only when it changes.
+    /// Publishes the fog-of-war grid and its look as shader globals for <see cref="FogOfWarFeature"/> and the
+    /// transparents that fog themselves, re-uploading the grid only when it changes.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Rig + "Fog of War Renderer")]
     [Icon(HyperRTSIcons.Vision)]
     [HelpURL(HyperRTSDocs.Vision)]
     [DisallowMultipleComponent]
-    public class FogOfWarRenderer : PresentationBehaviour
+    public partial class FogOfWarRenderer : PresentationBehaviour
     {
-        private static readonly int FogTexId = Shader.PropertyToID("_FogTex");
-        private static readonly int FogRectId = Shader.PropertyToID("_FogRect");
+        private static readonly int TextureId = Shader.PropertyToID("_HyperRTSFogOfWar");
+        private static readonly int RectId = Shader.PropertyToID("_HyperRTSFogOfWarRect");
+        private static readonly int ColorId = Shader.PropertyToID("_HyperRTSFogOfWarColor");
+        private static readonly int BorderId = Shader.PropertyToID("_HyperRTSFogOfWarBorder");
 
         [SerializeField]
-        [Tooltip("Material using the HyperRTS/Fog Of War shader.")]
-        private Material material;
+        [Tooltip("Fog colour; alpha scales every opacity below.")]
+        private Color color = new(0.02f, 0.03f, 0.05f, 1f);
 
         [SerializeField]
-        [Tooltip("Lowest and highest ground the fog box covers (world Y).")]
-        private Vector2 heightRange = new(-50f, 250f);
+        [Range(0f, 1f)]
+        [Tooltip("Opacity over scenery beyond the playable edge.")]
+        private float borderOpacity = 0.65f;
 
         [SerializeField]
-        [Tooltip("How far past the map the box reaches, dimming scenery beyond the playable edge (metres).")]
-        private float borderReach = 300f;
+        [Min(0.01f)]
+        [Tooltip("Metres past the edge the border opacity fades in over.")]
+        private float borderFade = 6f;
 
         [SerializeField]
         [Range(0f, 1f)]
@@ -49,38 +53,47 @@ namespace HyperRTS.Presentation.Fog
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<FogOfWar>()));
         private readonly LiveQuery _localView = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalFogView>()));
-        private MaterialPropertyBlock _properties;
         private Texture2D _texture;
-        private Mesh _box;
         private int _version = -1;
+
+        /// <summary>Whether a fog of war is published, so the full-screen pass has something to draw.</summary>
+        public static bool Shown => Shader.GetGlobalVector(ColorId).w > 0f;
 
         private void LateUpdate()
         {
-            if (material == null || !MatchView.TryGetDefault(out var match))
+            if (!TryReadFog(out var entityManager, out var fog, out var view))
             {
-                return;
-            }
-
-            var entityManager = match.EntityManager;
-            var hasView = _localView.In(entityManager).TryGetSingleton(out LocalFogView view);
-            if (!hasView || !view.Active)
-            {
-                return;
-            }
-
-            var query = _fogQuery.In(entityManager);
-            if (!query.TryGetSingleton(out FogOfWar fog))
-            {
+                Hide();
                 return;
             }
 
             if (view.Version != _version || _texture == null)
             {
-                query.CompleteDependency();
+                _fogQuery.In(entityManager).CompleteDependency();
                 Upload(fog, view);
             }
 
-            Draw(fog);
+            Publish(fog);
+        }
+
+        private bool TryReadFog(out EntityManager entityManager, out FogOfWar fog, out LocalFogView view)
+        {
+            entityManager = default;
+            fog = default;
+            view = default;
+            if (!MatchView.TryGetDefault(out var match))
+            {
+                return false;
+            }
+
+            entityManager = match.EntityManager;
+            var hasView = _localView.In(entityManager).TryGetSingleton(out view);
+            if (!hasView || !view.Active)
+            {
+                return false;
+            }
+
+            return _fogQuery.In(entityManager).TryGetSingleton(out fog);
         }
 
         private void Upload(in FogOfWar fog, in LocalFogView view)
@@ -103,40 +116,25 @@ namespace HyperRTS.Presentation.Fog
             _version = view.Version;
         }
 
-        private void Draw(in FogOfWar fog)
+        private void Publish(in FogOfWar fog)
         {
-            // Unity null check, not ??=: a recompile in Play mode leaves a fake-null mesh that ??= keeps.
-            if (_box == null)
-            {
-                _box = OverlayMeshes.Box();
-            }
-
             var area = new Vector2(fog.Size.x * fog.CellSize, fog.Size.y * fog.CellSize);
-            _properties ??= new MaterialPropertyBlock();
-            _properties.SetTexture(FogTexId, _texture);
-            _properties.SetVector(FogRectId, new Vector4(fog.Min.x, fog.Min.y, area.x, area.y));
-
-            var size = new Vector3(area.x + borderReach * 2f, heightRange.y - heightRange.x, area.y + borderReach * 2f);
-            var bottom = new Vector3(fog.Min.x + area.x * 0.5f, heightRange.x, fog.Min.y + area.y * 0.5f);
-            var parameters = new RenderParams(material)
-            {
-                matProps = _properties,
-                shadowCastingMode = ShadowCastingMode.Off,
-                receiveShadows = false,
-                layer = gameObject.layer,
-            };
-            Graphics.RenderMesh(parameters, _box, 0, Matrix4x4.TRS(bottom, Quaternion.identity, size));
+            Shader.SetGlobalTexture(TextureId, _texture);
+            Shader.SetGlobalVector(RectId, new Vector4(fog.Min.x, fog.Min.y, area.x, area.y));
+            Shader.SetGlobalColor(ColorId, color);
+            Shader.SetGlobalVector(BorderId, new Vector4(borderOpacity, borderFade, 0f, 0f));
         }
+
+        // Zero alpha turns the fog off in the pass and in every transparent that applies it.
+        [OnEnteringPlayMode]
+        private static void Hide() => Shader.SetGlobalColor(ColorId, Color.clear);
 
         private static byte ToByte(float opacity) => (byte)Mathf.RoundToInt(Mathf.Clamp01(opacity) * 255f);
 
         protected override void OnDestroyed()
         {
+            Hide();
             DestroyTexture();
-            if (_box != null)
-            {
-                Destroy(_box);
-            }
         }
 
         private void DestroyTexture()
