@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
-using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
@@ -11,12 +10,11 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Fires a weapon from a job: the fire cue, an instant hit or a launched <see cref="Projectile"/>, and the stealth
-    /// reveal. Hull-fixed shooters aim by asking movement to turn them (<see cref="FacingGoal"/>). Use from one thread.
+    /// reveal. Use from one thread.
     /// </summary>
     public struct ShotWriter
     {
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
-        private ComponentLookup<FacingGoal> _facingGoals;
         [ReadOnly] private ComponentLookup<PostTransformMatrix> _stretches;
         private ComponentLookup<Stealth> _stealth;
         private ComponentLookup<Ammo> _ammo;
@@ -28,7 +26,6 @@ namespace HyperRTS.Simulation.Combat
         public ShotWriter(ref SystemState state) : this()
         {
             _transforms = state.GetComponentLookup<LocalTransform>(true);
-            _facingGoals = state.GetComponentLookup<FacingGoal>();
             _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
             _stealth = state.GetComponentLookup<Stealth>();
             _ammo = state.GetComponentLookup<Ammo>();
@@ -41,7 +38,6 @@ namespace HyperRTS.Simulation.Combat
         public void Update(ref SystemState state, Entity damageQueue, Entity cueQueue, EntityCommandBuffer ecb)
         {
             _transforms.Update(ref state);
-            _facingGoals.Update(ref state);
             _stretches.Update(ref state);
             _stealth.Update(ref state);
             _ammo.Update(ref state);
@@ -49,25 +45,6 @@ namespace HyperRTS.Simulation.Combat
             _damage.Update(ref state, damageQueue);
             _cues.Update(ref state, cueQueue);
             _ecb = ecb;
-        }
-
-        public float3 Position(Entity entity) => _transforms[entity].Position;
-
-        /// <summary>Asks the hull to turn level toward the target; true once it faces it within <paramref name="tolerance"/>.</summary>
-        public bool Face(Entity shooter, float3 targetPosition, float tolerance)
-        {
-            var transform = _transforms[shooter];
-            var direction = math.normalizesafe((targetPosition - transform.Position).xz);
-            // A target straight overhead lies on every heading.
-            if (direction.Equals(float2.zero))
-            {
-                return true;
-            }
-
-            _facingGoals[shooter] = new FacingGoal { Direction = direction };
-            _facingGoals.SetComponentEnabled(shooter, true);
-            var forward = math.normalizesafe(math.mul(transform.Rotation, math.forward()).xz);
-            return math.dot(forward, direction) >= math.cos(tolerance);
         }
 
         /// <summary>Spends one of the shooter's <see cref="Ammo"/> rounds; shooters without ammo never run dry.</summary>
@@ -118,7 +95,7 @@ namespace HyperRTS.Simulation.Combat
             }
 
             var aimed = _poses[shooter][pose];
-            var aim = _transforms[target].Position + new float3(0f, weapon.ProjectileHeight, 0f);
+            var aim = weapon.AimPoint(_transforms[target].Position);
             return weapon.Aligned(aimed, weapon.AimAngles(_transforms[shooter], aimed, aim));
         }
 
@@ -169,7 +146,7 @@ namespace HyperRTS.Simulation.Combat
             Entity target, float3 targetPosition, byte faction)
         {
             var origin = weapon.LaunchPoint(place, pose);
-            var aim = targetPosition + new float3(0f, weapon.ProjectileHeight, 0f);
+            var aim = weapon.AimPoint(targetPosition);
 
             var flight = new Projectile
             {

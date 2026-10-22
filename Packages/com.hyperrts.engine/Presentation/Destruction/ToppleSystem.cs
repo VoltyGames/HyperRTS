@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Combat;
@@ -17,7 +16,6 @@ namespace HyperRTS.Presentation.Destruction
     /// </summary>
     // Children turn inside the root's scale and stretch, which stay as simulated.
     [BurstCompile]
-    [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PoseSystemGroup))]
     public partial struct ToppleSystem : ISystem
     {

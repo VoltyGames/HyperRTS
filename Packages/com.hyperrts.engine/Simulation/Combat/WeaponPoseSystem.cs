@@ -71,10 +71,11 @@ namespace HyperRTS.Simulation.Combat
                 Entity target)
             {
                 var pose = poses[index];
-                var angles = new float2(0f, math.clamp(0f, weapon.MinPitch, weapon.MaxPitch));
+                // Authoring keeps level inside every pitch range, so rest is straight ahead and level.
+                var angles = float2.zero;
                 if (Transforms.TryGetComponent(target, out var aimed))
                 {
-                    angles = weapon.AimAngles(hull, pose, aimed.Position + new float3(0f, weapon.ProjectileHeight, 0f));
+                    angles = weapon.AimAngles(hull, pose, weapon.AimPoint(aimed.Position));
                 }
 
                 weapon.Turn(ref pose, angles, DeltaTime);

@@ -98,16 +98,12 @@ namespace HyperRTS.Simulation.Transport
                 }
 
                 var walk = Reach.Approach(container, Reach.Transform(entity), agent, ref destination, moving, arrived);
-                if (walk == WalkUp.Walking)
+                if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;
                 }
 
                 ActiveOrder.Finish(busy, moving);
-                if (walk == WalkUp.Stuck)
-                {
-                    return;
-                }
 
                 Boarding.Board(entity, container, Settle(entity, container));
                 QueueLookup[entity].Clear();

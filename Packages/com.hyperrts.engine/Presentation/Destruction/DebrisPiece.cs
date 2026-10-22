@@ -34,6 +34,9 @@ namespace HyperRTS.Presentation.Destruction
         public float Life;
         public bool Resting;
 
+        /// <summary>The matrix it was last drawn with, for motion vectors.</summary>
+        public Matrix4x4 Drawn;
+
         public readonly bool Gone => Age >= Life;
 
         /// <summary>1 for most of its life, down to 0 as it goes.</summary>

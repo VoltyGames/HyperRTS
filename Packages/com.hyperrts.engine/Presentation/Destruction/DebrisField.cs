@@ -23,7 +23,6 @@ namespace HyperRTS.Presentation.Destruction
 
         // Reused each frame so drawing allocates nothing.
         private readonly DebrisInstance[] _batch = new DebrisInstance[Capacity];
-        private readonly Matrix4x4[] _previous = new Matrix4x4[Capacity];
         private readonly bool[] _drawn = new bool[Capacity];
 
         public int Count { get; private set; }
@@ -40,7 +39,7 @@ namespace HyperRTS.Presentation.Destruction
                 Count += _sets[slot] == null ? 1 : 0;
                 _sets[slot] = set;
                 _pieces[slot] = Launch(set, center, outward, radius, ref random);
-                _previous[slot] = _pieces[slot].Matrix;
+                _pieces[slot].Drawn = _pieces[slot].Matrix;
             }
         }
 
@@ -81,9 +80,10 @@ namespace HyperRTS.Presentation.Destruction
                     var sameBatch = _sets[other] != null && _sets[other].material == material && PieceMesh(other) == mesh;
                     if (sameBatch)
                     {
-                        var matrix = _pieces[other].Matrix;
-                        _batch[count++] = new DebrisInstance { objectToWorld = matrix, prevObjectToWorld = _previous[other] };
-                        _previous[other] = matrix;
+                        ref var piece = ref _pieces[other];
+                        var matrix = piece.Matrix;
+                        _batch[count++] = new DebrisInstance { objectToWorld = matrix, prevObjectToWorld = piece.Drawn };
+                        piece.Drawn = matrix;
                         _drawn[other] = true;
                     }
                 }

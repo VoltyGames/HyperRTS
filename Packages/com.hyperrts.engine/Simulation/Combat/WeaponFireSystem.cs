@@ -1,10 +1,13 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
@@ -24,6 +27,8 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<Health> _health;
         private ComponentLookup<UnitTag> _units;
         private ComponentLookup<Inside> _inside;
+        private ComponentLookup<LocalTransform> _transforms;
+        private ComponentLookup<FacingGoal> _facingGoals;
         private ShotWriter _shots;
 
         [BurstCompile]
@@ -32,6 +37,8 @@ namespace HyperRTS.Simulation.Combat
             _health = state.GetComponentLookup<Health>(true);
             _units = state.GetComponentLookup<UnitTag>(true);
             _inside = state.GetComponentLookup<Inside>(true);
+            _transforms = state.GetComponentLookup<LocalTransform>(true);
+            _facingGoals = state.GetComponentLookup<FacingGoal>();
             _shots = new ShotWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<CueQueue>();
@@ -44,6 +51,8 @@ namespace HyperRTS.Simulation.Combat
             _health.Update(ref state);
             _units.Update(ref state);
             _inside.Update(ref state);
+            _transforms.Update(ref state);
+            _facingGoals.Update(ref state);
             _shots.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
                 SystemAPI.GetSingletonEntity<CueQueue>(),
                 SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
@@ -56,6 +65,8 @@ namespace HyperRTS.Simulation.Combat
                 HealthLookup = _health,
                 Units = _units,
                 InsideLookup = _inside,
+                Transforms = _transforms,
+                FacingGoals = _facingGoals,
                 Shots = _shots,
             }.Schedule();
         }
@@ -69,6 +80,8 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<UnitTag> Units;
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
+            [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
+            public ComponentLookup<FacingGoal> FacingGoals;
             public ShotWriter Shots;
 
             private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
@@ -84,12 +97,29 @@ namespace HyperRTS.Simulation.Combat
 
                 // A garrisoned passenger fires out of any side of its building without turning.
                 var turnsHull = Units.HasComponent(entity) && !weapon.Turreted && !InsideLookup.HasEnabled(entity);
-                if (turnsHull && !Shots.Face(entity, Shots.Position(target), weapon.AimTolerance))
+                if (turnsHull && !Face(entity, Transforms[target].Position, weapon.AimTolerance))
                 {
                     return;
                 }
 
                 Shots.TryFire(entity, ref weapon, 0, target, faction.Value, true);
+            }
+
+            /// <summary>Turns the hull level toward the target; true once it faces it within <paramref name="tolerance"/>.</summary>
+            private bool Face(Entity shooter, float3 targetPosition, float tolerance)
+            {
+                var transform = Transforms[shooter];
+                var direction = math.normalizesafe((targetPosition - transform.Position).xz);
+                // A target straight overhead lies on every heading.
+                if (direction.Equals(float2.zero))
+                {
+                    return true;
+                }
+
+                FacingGoals[shooter] = new FacingGoal { Direction = direction };
+                FacingGoals.SetComponentEnabled(shooter, true);
+                var forward = math.normalizesafe(math.mul(transform.Rotation, math.forward()).xz);
+                return math.dot(forward, direction) >= math.cos(tolerance);
             }
 
             /// <summary>A longer-ranged mount can put the unit in range before the primary reaches.</summary>

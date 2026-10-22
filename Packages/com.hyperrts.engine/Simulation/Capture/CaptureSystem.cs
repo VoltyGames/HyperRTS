@@ -102,13 +102,7 @@ namespace HyperRTS.Simulation.Capture
                 }
 
                 var walk = Reach.Approach(target, transform, agent, ref destination, moving, arrived);
-                if (walk == WalkUp.Stuck)
-                {
-                    ActiveOrder.Finish(busy, moving);
-                    return;
-                }
-
-                if (walk == WalkUp.Walking)
+                if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;
                 }

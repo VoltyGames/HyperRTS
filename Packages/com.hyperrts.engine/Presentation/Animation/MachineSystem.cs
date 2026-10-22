@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Common;
 using Unity.Burst;
@@ -14,7 +13,6 @@ namespace HyperRTS.Presentation.Animation
     /// step with the spin, and links that sit on one point aiming at another. Links read last frame's transforms.
     /// </summary>
     [BurstCompile]
-    [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PoseSystemGroup))]
     public partial struct MachineSystem : ISystem
     {

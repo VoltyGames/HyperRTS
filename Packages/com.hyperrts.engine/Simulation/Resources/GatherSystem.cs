@@ -100,9 +100,8 @@ namespace HyperRTS.Simulation.Resources
 
                 if (harvest.Phase == HarvestPhase.Returning)
                 {
-                    var walk = Return(ref harvester, ref harvest, ref destination, moving, arrived, transform, agent,
+                    Return(ref harvester, ref harvest, ref destination, busy, moving, arrived, transform, agent,
                         faction.Value);
-                    FinishIfStuck(walk, busy, moving);
                     return;
                 }
 
@@ -115,19 +114,9 @@ namespace HyperRTS.Simulation.Resources
                 var node = order.Value.Target;
                 var nodePosition = Reach.Position(node);
                 var toNode = Reach.Approach(node, transform, agent, ref destination, moving, arrived);
-                FinishIfStuck(toNode, busy, moving);
-                if (toNode == WalkUp.Reached)
+                if (!ActiveOrder.StopsShort(toNode, busy, moving))
                 {
                     Gather(ref harvester, ref harvest, node, nodePosition);
-                }
-            }
-
-            private static void FinishIfStuck(WalkUp walk, EnabledRefRW<ActiveOrder> busy,
-                EnabledRefRW<MoveDestination> moving)
-            {
-                if (walk == WalkUp.Stuck)
-                {
-                    ActiveOrder.Finish(busy, moving);
                 }
             }
 
@@ -167,9 +156,9 @@ namespace HyperRTS.Simulation.Resources
                 }
             }
 
-            private WalkUp Return(ref Harvester harvester, ref HarvestState harvest, ref MoveDestination destination,
-                EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived, in LocalTransform transform,
-                in NavAgent agent, byte faction)
+            private void Return(ref Harvester harvester, ref HarvestState harvest, ref MoveDestination destination,
+                EnabledRefRW<ActiveOrder> busy, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
+                in LocalTransform transform, in NavAgent agent, byte faction)
             {
                 var dropOff = NearestDropOff(transform.Position, faction);
                 if (harvester.CargoAmount <= 0 || dropOff == Entity.Null)
@@ -177,13 +166,13 @@ namespace HyperRTS.Simulation.Resources
                     // Empty-handed goes straight back to work; with no drop-off, wait until one is built.
                     harvest.Phase = harvester.CargoAmount <= 0 ? HarvestPhase.Gathering : harvest.Phase;
                     moving.ValueRW = false;
-                    return WalkUp.Walking;
+                    return;
                 }
 
                 var walk = Reach.Approach(dropOff, transform, agent, ref destination, moving, arrived);
-                if (walk != WalkUp.Reached)
+                if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
-                    return walk;
+                    return;
                 }
 
                 var player = Players[faction];
@@ -191,7 +180,6 @@ namespace HyperRTS.Simulation.Resources
                 ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, harvester.CargoType, delivered);
                 harvester.CargoAmount = 0;
                 harvest.Phase = HarvestPhase.Gathering;
-                return walk;
             }
 
             private bool IsHarvestable(Entity node) =>

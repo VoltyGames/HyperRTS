@@ -49,12 +49,21 @@ namespace HyperRTS.Presentation.Rendering
             }
         }
 
+        /// <summary>Fills <paramref name="parts"/> with <paramref name="root"/>'s parts, for several branch switches.</summary>
+        public void Collect(Entity root, NativeList<Entity> parts) => RenderHierarchy.Collect(root, _linked, _children, parts);
+
         /// <summary>Sets <paramref name="reason"/> on <paramref name="branch"/> and the parts of <paramref name="root"/> under it.</summary>
         // Walks the root's group, since a fresh instance's branch has no Child buffer until the transform systems run.
         public void SetBranch(Entity root, Entity branch, HideReason reason, bool hide)
         {
             var parts = new NativeList<Entity>(Allocator.Temp);
-            RenderHierarchy.Collect(root, _linked, _children, parts);
+            Collect(root, parts);
+            SetBranch(parts, branch, reason, hide);
+        }
+
+        /// <summary>Sets <paramref name="reason"/> on <paramref name="branch"/> and the collected parts under it.</summary>
+        public void SetBranch(NativeList<Entity> parts, Entity branch, HideReason reason, bool hide)
+        {
             foreach (var part in parts)
             {
                 if (IsUnder(part, branch))
@@ -67,9 +76,11 @@ namespace HyperRTS.Presentation.Rendering
         /// <summary>Shows <paramref name="root"/>'s stage <paramref name="index"/> and hides its other stages.</summary>
         public void ShowStage<T>(Entity root, NativeArray<T> stages, int index) where T : unmanaged, IModelStage
         {
+            var parts = new NativeList<Entity>(Allocator.Temp);
+            Collect(root, parts);
             for (var i = 0; i < stages.Length; i++)
             {
-                SetBranch(root, stages[i].Visual, HideReason.Stage, i != index);
+                SetBranch(parts, stages[i].Visual, HideReason.Stage, i != index);
             }
         }
 

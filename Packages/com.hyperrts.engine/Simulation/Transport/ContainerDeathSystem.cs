@@ -35,6 +35,7 @@ namespace HyperRTS.Simulation.Transport
 
         [BurstCompile]
         [WithAll(typeof(Health))]
+        [WithChangeFilter(typeof(Health))]
         private partial struct EvacuateJob : IJobEntity
         {
             public CargoExit Exit;
@@ -42,7 +43,7 @@ namespace HyperRTS.Simulation.Transport
 
             private void Execute(Entity entity, in Container container, DynamicBuffer<Cargo> cargo)
             {
-                if (cargo.IsEmpty || !Exit.IsDestroyed(entity))
+                if (cargo.IsEmpty || Exit.IsAlive(entity))
                 {
                     return;
                 }

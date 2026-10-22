@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Transport
         }
 
         /// <summary>Health reads through the writable lookup, so a job using this can't also take Health.</summary>
-        public bool IsDestroyed(Entity container) => _health[container].Current <= 0f;
+        public bool IsAlive(Entity container) => Health.IsAlive(_health, container);
 
         /// <summary>Lets out passenger <paramref name="slot"/> (or all for -1).</summary>
         public void Unload(Entity container, DynamicBuffer<Cargo> cargo, int slot, in NavGrid grid)

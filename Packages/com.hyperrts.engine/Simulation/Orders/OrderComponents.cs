@@ -14,6 +14,17 @@ namespace HyperRTS.Simulation.Orders
             busy.ValueRW = false;
             moving.ValueRW = false;
         }
+
+        /// <summary>True until the walk reaches its target; a stuck walk also finishes the order.</summary>
+        public static bool StopsShort(WalkUp walk, EnabledRefRW<ActiveOrder> busy, EnabledRefRW<MoveDestination> moving)
+        {
+            if (walk == WalkUp.Stuck)
+            {
+                Finish(busy, moving);
+            }
+
+            return walk != WalkUp.Reached;
+        }
     }
 
     /// <summary>Shift-queued orders, promoted to <see cref="ActiveOrder"/> one at a time.</summary>

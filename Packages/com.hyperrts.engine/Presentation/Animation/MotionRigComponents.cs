@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -117,7 +118,8 @@ namespace HyperRTS.Presentation.Animation
         public readonly quaternion Rotation => math.mul(RestRotation, quaternion.AxisAngle(Axis, Angle));
 
         /// <summary>Eases the shortest way toward the simulated <paramref name="yaw"/>, which already turns at the weapon's rate.</summary>
-        public void Traverse(float yaw, float deltaTime) => Angle = Wrap(Angle + Wrap(yaw - Angle) * Follow(deltaTime));
+        public void Traverse(float yaw, float deltaTime) =>
+            Angle = HeadingByte.Wrap(Angle + HeadingByte.Wrap(yaw - Angle) * Follow(deltaTime));
 
         /// <summary>Eases toward the simulated <paramref name="pitch"/>, which already keeps the weapon's limits.</summary>
         public void Elevate(float pitch, float deltaTime) => Angle += (pitch - Angle) * Follow(deltaTime);
@@ -134,19 +136,17 @@ namespace HyperRTS.Presentation.Animation
 
         public readonly float3 RecoilPosition(quaternion rotation) => RestPosition + math.rotate(rotation, Axis) * Amount;
 
-        public void Roll(float distance) => Angle = Wrap(Angle + distance / Size);
+        public void Roll(float distance) => Angle = HeadingByte.Wrap(Angle + distance / Size);
 
         /// <summary>Spins up toward full speed while running, down otherwise, and turns at that speed.</summary>
         public void Spin(bool running, float deltaTime)
         {
             var target = running ? 1f : 0f;
             Amount += math.clamp(target - Amount, -deltaTime / Time, deltaTime / Time);
-            Angle = Wrap(Angle + Rate * Amount * deltaTime);
+            Angle = HeadingByte.Wrap(Angle + Rate * Amount * deltaTime);
         }
 
         private static float Follow(float deltaTime) => 1f - math.exp(-deltaTime / FollowTime);
-
-        private static float Wrap(float angle) => angle - 2f * math.PI * math.round(angle / (2f * math.PI));
     }
 
     /// <summary>

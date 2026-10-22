@@ -78,6 +78,9 @@ namespace HyperRTS.Simulation.Combat
         public float3 LaunchPoint(in LocalTransform shooter, in WeaponPose pose) =>
             HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose)) : shooter.Position + new float3(0f, ProjectileHeight, 0f);
 
+        /// <summary>Where the weapon aims on a target standing at <paramref name="target"/>.</summary>
+        public float3 AimPoint(float3 target) => target + new float3(0f, ProjectileHeight, 0f);
+
         /// <summary>Where an instant hit comes from, for directional armor.</summary>
         public float3 HitOrigin(in LocalTransform shooter, in WeaponPose pose) =>
             HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose)) : shooter.Position;

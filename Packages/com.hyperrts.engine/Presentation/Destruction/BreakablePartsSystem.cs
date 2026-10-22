@@ -4,6 +4,7 @@ using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;
@@ -135,8 +136,10 @@ namespace HyperRTS.Presentation.Destruction
         private void Show(Entity building, in BreakablePart part)
         {
             var broken = part.Order > 0;
-            _switch.SetBranch(building, part.Intact, HideReason.Part, broken);
-            _switch.SetBranch(building, part.Broken, HideReason.Part, !broken);
+            var pieces = new NativeList<Entity>(Allocator.Temp);
+            _switch.Collect(building, pieces);
+            _switch.SetBranch(pieces, part.Intact, HideReason.Part, broken);
+            _switch.SetBranch(pieces, part.Broken, HideReason.Part, !broken);
         }
 
         /// <summary>The building's break effect and debris, from the part that broke.</summary>

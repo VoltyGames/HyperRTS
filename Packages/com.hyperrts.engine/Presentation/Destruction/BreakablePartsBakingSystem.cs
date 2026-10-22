@@ -30,7 +30,7 @@ namespace HyperRTS.Presentation.Destruction
         public void OnUpdate(ref SystemState state)
         {
             state.CompleteDependency();
-            var broken = BrokenPieces(ref state);
+            var broken = ScaleUpBrokenPieces(ref state);
             if (broken.IsEmpty)
             {
                 return;
@@ -51,8 +51,8 @@ namespace HyperRTS.Presentation.Destruction
             }
         }
 
-        /// <summary>Every building's broken pieces, back at full scale.</summary>
-        private NativeHashSet<Entity> BrokenPieces(ref SystemState state)
+        /// <summary>Sets every building's broken pieces back to full scale and returns them.</summary>
+        private NativeHashSet<Entity> ScaleUpBrokenPieces(ref SystemState state)
         {
             var transforms = SystemAPI.GetComponentLookup<LocalTransform>();
             var pieces = new NativeHashSet<Entity>(64, Allocator.Temp);
