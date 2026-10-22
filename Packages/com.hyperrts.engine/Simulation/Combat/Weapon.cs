@@ -56,7 +56,7 @@ namespace HyperRTS.Simulation.Combat
         public float MinPitch;
         public float MaxPitch;
 
-        /// <summary>Radians off target, per axis, a turret may fire at.</summary>
+        /// <summary>Radians off target, per axis, a turret or a hull-fixed weapon's hull may fire at.</summary>
         public float AimTolerance;
 
         /// <summary>Points in the shooter's space the muzzle traverses and elevates about.</summary>

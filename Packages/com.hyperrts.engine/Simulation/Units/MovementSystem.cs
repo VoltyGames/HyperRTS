@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Units
 
         [BurstCompile]
         [WithNone(typeof(Inside))]
-        [WithPresent(typeof(MoveDestination), typeof(Arrival))]
+        [WithPresent(typeof(MoveDestination), typeof(Arrival), typeof(FacingGoal))]
         private partial struct MoveJob : IJobEntity
         {
             [ReadOnly] public SpatialIndex Index;
@@ -92,7 +92,8 @@ namespace HyperRTS.Simulation.Units
             private void Execute(Entity entity, ref LocalTransform transform, in MovementSpeed speed, in NavAgent agent,
                 in Faction faction, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
                 ref PathState path, DynamicBuffer<PathWaypoint> waypoints, ref MoveProgress progress,
-                ref Arrival arrival, EnabledRefRW<Arrival> arrived, ref Velocity velocity)
+                ref Arrival arrival, EnabledRefRW<Arrival> arrived, ref Velocity velocity, ref FacingGoal aim,
+                EnabledRefRW<FacingGoal> aiming)
             {
                 var maxStep = speed.Value * DeltaTime;
                 var heading = float2.zero;
@@ -106,6 +107,14 @@ namespace HyperRTS.Simulation.Units
                 var avoiding = new AvoidanceVisitor(entity, from, axis, agent, faction.Value, destination, GivingWay);
                 var step = Plan(entity, transform, speed.Value, agent, destination.Value, moving, ref path, waypoints,
                     locomotion, ref drive, ref heading, ref avoiding, velocity.Value);
+                // A parked unit turns its hull to a hull-fixed weapon's target at its own turn rate.
+                if (!moving.ValueRO && aiming.ValueRO && math.all(heading == 0f))
+                {
+                    var facing = math.normalize(math.mul(transform.Rotation, math.forward()).xz);
+                    heading = locomotion.TurnToward(facing, aim.Direction, DeltaTime);
+                }
+
+                aiming.ValueRW = false;
 
                 var flying = agent.Layer == NavLayer.Air;
                 var crowd = new SeparationVisitor(entity, from, axis, agent, faction.Value, wasMoving, destination,
@@ -139,11 +148,12 @@ namespace HyperRTS.Simulation.Units
                 velocity.Value = (transform.Position.xz - from) / DeltaTime;
             }
 
+            // A long hull mustn't swing an end into a closed cell; it moves on unturned.
             private readonly void Face(ref LocalTransform transform, in NavAgent agent, float2 axis, float2 heading,
                 bool flying)
             {
                 var turned = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
-                if (math.any(heading != 0f) && (flying || CanTurn(transform, agent, axis, turned)))
+                if (math.any(heading != 0f) && (flying || agent.CanTurn(Grid, transform.Position.xz, axis, turned)))
                 {
                     transform.Rotation = turned;
                 }
@@ -180,18 +190,6 @@ namespace HyperRTS.Simulation.Units
                     arrived.ValueRW = true;
                     arrival.Stalled = stalled;
                 }
-            }
-
-            // Facing snaps to the heading, so a long hull mustn't swing an end into a closed cell; it moves on unturned.
-            private readonly bool CanTurn(in LocalTransform transform, in NavAgent agent, float2 axis, quaternion turned)
-            {
-                if (agent.HalfSegment <= 0f)
-                {
-                    return true;
-                }
-
-                var capsule = new NavCapsule(agent.Access(Grid), axis);
-                return capsule.CanTurn(transform.Position.xz, agent.SegmentAxis(turned));
             }
 
             /// <summary>Aircraft go wherever they steer and climb toward their altitude over the surface below.</summary>

@@ -87,6 +87,10 @@ namespace HyperRTS.Simulation.Units
             return facing * (state.Speed * deltaTime);
         }
 
+        /// <summary>Turns the standing hull toward <paramref name="direction"/> at its turn rate, as when aiming.</summary>
+        public readonly float2 TurnToward(float2 facing, float2 direction, float deltaTime) =>
+            Turn(facing, SignedAngle(facing, direction), TurnRate * deltaTime);
+
         /// <summary>Brakes to a stop along its facing once it has nowhere to go.</summary>
         public readonly float2 BrakeToStop(ref LocomotionState state, float2 facing, float deltaTime)
         {

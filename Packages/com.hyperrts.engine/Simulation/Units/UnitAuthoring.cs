@@ -73,6 +73,8 @@ namespace HyperRTS.Simulation.Units
             writer.SetEnabled<Arrival>(false);
             writer.Add<MoveProgress>();
             writer.Add<Velocity>();
+            writer.Add<FacingGoal>();
+            writer.SetEnabled<FacingGoal>(false);
         }
 
         public class Baker : Baker<UnitAuthoring>

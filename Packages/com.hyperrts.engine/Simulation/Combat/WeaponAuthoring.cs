@@ -123,7 +123,7 @@ namespace HyperRTS.Simulation.Combat
             [Range(0f, 90f)]
             public float maxElevation = 20f;
 
-            [Tooltip("Degrees off target, per axis, a turret may fire at.")]
+            [Tooltip("Degrees off target, per axis, a turret may fire at. A unit's hull-fixed weapon fires once the hull is this close.")]
             [Min(0.1f)]
             public float aimTolerance = 2f;
 

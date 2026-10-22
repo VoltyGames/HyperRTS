@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
@@ -10,11 +11,12 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Fires a weapon from a job: the fire cue, an instant hit or a launched <see cref="Projectile"/>, and the stealth
-    /// reveal. Owns the one writable transform lookup, so shooters turn through it too. Use from one thread.
+    /// reveal. Hull-fixed shooters aim by asking movement to turn them (<see cref="FacingGoal"/>). Use from one thread.
     /// </summary>
     public struct ShotWriter
     {
-        private ComponentLookup<LocalTransform> _transforms;
+        [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
+        private ComponentLookup<FacingGoal> _facingGoals;
         [ReadOnly] private ComponentLookup<PostTransformMatrix> _stretches;
         private ComponentLookup<Stealth> _stealth;
         private ComponentLookup<Ammo> _ammo;
@@ -25,7 +27,8 @@ namespace HyperRTS.Simulation.Combat
 
         public ShotWriter(ref SystemState state) : this()
         {
-            _transforms = state.GetComponentLookup<LocalTransform>();
+            _transforms = state.GetComponentLookup<LocalTransform>(true);
+            _facingGoals = state.GetComponentLookup<FacingGoal>();
             _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
             _stealth = state.GetComponentLookup<Stealth>();
             _ammo = state.GetComponentLookup<Ammo>();
@@ -38,6 +41,7 @@ namespace HyperRTS.Simulation.Combat
         public void Update(ref SystemState state, Entity damageQueue, Entity cueQueue, EntityCommandBuffer ecb)
         {
             _transforms.Update(ref state);
+            _facingGoals.Update(ref state);
             _stretches.Update(ref state);
             _stealth.Update(ref state);
             _ammo.Update(ref state);
@@ -49,17 +53,21 @@ namespace HyperRTS.Simulation.Combat
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
 
-        /// <summary>Turns the shooter level toward the target.</summary>
-        public void Face(Entity shooter, float3 targetPosition)
+        /// <summary>Asks the hull to turn level toward the target; true once it faces it within <paramref name="tolerance"/>.</summary>
+        public bool Face(Entity shooter, float3 targetPosition, float tolerance)
         {
             var transform = _transforms[shooter];
-            var direction = targetPosition - transform.Position;
-            direction.y = 0f;
-            if (math.lengthsq(direction) > 1e-6f)
+            var direction = math.normalizesafe((targetPosition - transform.Position).xz);
+            // A target straight overhead lies on every heading.
+            if (direction.Equals(float2.zero))
             {
-                transform.Rotation = quaternion.LookRotationSafe(direction, math.up());
-                _transforms[shooter] = transform;
+                return true;
             }
+
+            _facingGoals[shooter] = new FacingGoal { Direction = direction };
+            _facingGoals.SetComponentEnabled(shooter, true);
+            var forward = math.normalizesafe(math.mul(transform.Rotation, math.forward()).xz);
+            return math.dot(forward, direction) >= math.cos(tolerance);
         }
 
         /// <summary>Spends one of the shooter's <see cref="Ammo"/> rounds; shooters without ammo never run dry.</summary>

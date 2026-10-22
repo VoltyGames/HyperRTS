@@ -55,6 +55,17 @@ namespace HyperRTS.Simulation.Navigation
             return NavCapsule.PointSegmentDistance(point, center - axis, center + axis) - Radius;
         }
 
+        /// <summary>Whether the hull may turn to <paramref name="turned"/> without swinging an end into a closed cell.</summary>
+        public readonly bool CanTurn(in NavGrid grid, float2 center, float2 axis, quaternion turned)
+        {
+            if (HalfSegment <= 0f)
+            {
+                return true;
+            }
+
+            return new NavCapsule(Access(grid), axis).CanTurn(center, SegmentAxis(turned));
+        }
+
         private static float HalfSegmentFor(float radius, float hullLength) => math.max(0f, hullLength * 0.5f - radius);
 
         /// <summary>Entities without an agent (buildings, props) sit on the ground.</summary>
@@ -78,6 +89,15 @@ namespace HyperRTS.Simulation.Navigation
     public struct Arrival : IComponentData, IEnableableComponent
     {
         public bool Stalled;
+    }
+
+    /// <summary>
+    /// Set and enable to turn a parked unit toward <see cref="Direction"/> on XZ, as a hull-fixed weapon aims.
+    /// Movement turns it through its locomotion and disables it each frame.
+    /// </summary>
+    public struct FacingGoal : IComponentData, IEnableableComponent
+    {
+        public float2 Direction;
     }
 
     /// <summary>How far a unit moved on XZ last frame, in metres per second, for neighbours avoiding it.</summary>

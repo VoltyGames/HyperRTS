@@ -41,8 +41,11 @@ Each weapon has a `WeaponPose`: yaw relative to the hull, pitch and a wrapping s
 clients read to aim turrets and play recoil. `WeaponPoseSystem` turns them toward the weapon's target at the
 weapon's traverse and elevation speeds, within its elevation limits and lifted to the launch angle for arcs, and turns
 idle ones back to centre. It runs before firing. A `Turreted` weapon, and every extra weapon, fires without turning
-the hull and only once its pose is within `aimTolerance` of the target. Shots leave from the muzzle turned by the
-pose: raised about the weapon's `barrel` and traversed about its `turret`, so directional armor sees the real origin.
+the hull and only once its pose is within `aimTolerance` of the target. A unit's hull-fixed primary weapon sets a
+`FacingGoal` instead, and movement turns the parked hull toward it at its `Locomotion` turn rate, never swinging a long
+hull into a closed cell. The weapon fires once the hull is within `aimTolerance` of the target. Buildings never turn.
+Shots leave from the muzzle turned by the pose: raised about the weapon's `barrel` and traversed about its `turret`,
+so directional armor sees the real origin.
 
 ### Destruction
 

@@ -12,7 +12,8 @@ namespace HyperRTS.Simulation.Combat
     /// Ticks weapon cooldowns and fires at in-range targets: an instant <see cref="DamageEvent"/>, or a launched
     /// <see cref="Projectile"/> when the weapon has a prefab. Unfinished and unpowered buildings stay silent, as do
     /// weapons out of <see cref="Ammo"/>; a shot reveals a stealthed shooter for its <see cref="Stealth.RevealDuration"/>.
-    /// Units turn to face the target unless the weapon is turreted, and a turret fires once its pose is on target.
+    /// A unit without a turreted weapon turns its hull to the target through movement and fires once it faces it. A
+    /// turret fires once its pose is on target. Buildings never turn.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -76,9 +77,10 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                if (Units.HasComponent(entity) && !weapon.Turreted)
+                var turnsHull = Units.HasComponent(entity) && !weapon.Turreted;
+                if (turnsHull && !Shots.Face(entity, Shots.Position(target), weapon.AimTolerance))
                 {
-                    Shots.Face(entity, Shots.Position(target));
+                    return;
                 }
 
                 Shots.TryFire(entity, ref weapon, 0, target, faction.Value, true);
