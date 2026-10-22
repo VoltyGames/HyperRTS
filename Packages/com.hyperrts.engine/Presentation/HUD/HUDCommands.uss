@@ -1,9 +1,9 @@
 /* Command card and tooltip layout, imported by HUD.uss. The look is in HUDTheme.uss. */
 
-/* Five 72px cards a row with 2px margins, three rows, inside the panel's padding and border. */
+/* Five 72px cards a row with 2px margins and exactly three rows: a set height, since a wrapping row measures taller. */
 .hud-commands {
     width: 398px;
-    min-height: 246px;
+    height: 246px;
     flex-direction: row;
     flex-wrap: wrap;
     align-content: flex-start;
