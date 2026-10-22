@@ -1,4 +1,4 @@
-// URP 17.6 Lit (minus GBuffer, so Forward or Forward+) with the albedo repainted in _TeamColor.
+// URP Lit (minus GBuffer, so Forward or Forward+) with the albedo repainted in _TeamColor.
 //   _TeamColor  linear RGB, A how much shows (0 untinted, so neutral needs no special case)
 //   _TeamMask   R where team colour goes, on UV0
 //   _TeamStrip  x bottom, y top of the band (object-space metres) the mask applies in
@@ -134,7 +134,9 @@ Shader "HyperRTS/LitTeam"
             #pragma shader_feature_local_fragment _SPECULAR_SETUP
 
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
-            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile _ _LIGHT_FALLOFF_QUADRATIC
             #pragma multi_compile _ EVALUATE_SH_MIXED EVALUATE_SH_VERTEX
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
@@ -147,7 +149,8 @@ Shader "HyperRTS/LitTeam"
             #pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #pragma multi_compile _ _LIGHT_LAYERS
-            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
+            #pragma multi_compile_fragment _ _CLUSTER_LIGHT_LOOP
+            #pragma multi_compile _ _EXPOSURE
             #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
 
@@ -369,7 +372,7 @@ Shader "HyperRTS/LitTeam"
             #pragma shader_feature_local_vertex _ADD_PRECOMPUTED_VELOCITY
             #pragma shader_feature_local_vertex _VAT
             #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamInput.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ObjectMotionVectors.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/ObjectMotionVectors.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamVAT.hlsl"
             ENDHLSL
         }

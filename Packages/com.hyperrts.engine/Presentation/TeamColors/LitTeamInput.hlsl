@@ -1,6 +1,6 @@
-// HyperRTS/LitTeam inputs: URP Lit's material properties (mirrors URP 17.6 LitInput.hlsl) plus the team colour, its
-// mask, its height band and the vertex animation clip. Every LitTeam pass includes this, so the SRP Batcher sees one
-// UnityPerMaterial layout.
+// HyperRTS/LitTeam inputs: URP Lit's material properties and accessors (laid out like URP's LitInput.hlsl) plus the
+// team colour, its mask, its height band and the vertex animation clip. Every LitTeam pass includes this, so the SRP
+// Batcher sees one UnityPerMaterial layout.
 #ifndef HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 #define HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 // URP's LitForwardPass includes "LitInput.hlsl" itself; its guard keeps this file's declarations the only ones.
@@ -9,15 +9,20 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceInput.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceData.hlsl"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/DebugMipmapStreamingMacros.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/NormalMap.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/DetailMap.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/ParallaxMap.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/MetallicSpecGloss.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/AlphaBlend.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/OcclusionMap.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/ClearCoat.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/Emission.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/ParallaxMapping.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
-#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/DebugMipmapStreamingMacros.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/SurfaceType.hlsl"
-
-#if defined(_DETAIL_MULX2) || defined(_DETAIL_SCALED)
-#define _DETAIL
-#endif
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Macros.hlsl"
 
 CBUFFER_START(UnityPerMaterial)
 float4 _BaseMap_ST;
@@ -126,6 +131,9 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
 
 #endif
 
+TEXTURE2D(_BaseMap);            SAMPLER(sampler_BaseMap);
+TEXTURE2D(_BumpMap);            SAMPLER(sampler_BumpMap);
+TEXTURE2D(_EmissionMap);        SAMPLER(sampler_EmissionMap);
 TEXTURE2D(_ParallaxMap);        SAMPLER(sampler_ParallaxMap);
 TEXTURE2D(_OcclusionMap);       SAMPLER(sampler_OcclusionMap);
 TEXTURE2D(_DetailMask);         SAMPLER(sampler_DetailMask);
@@ -135,6 +143,37 @@ TEXTURE2D(_MetallicGlossMap);   SAMPLER(sampler_MetallicGlossMap);
 TEXTURE2D(_SpecGlossMap);       SAMPLER(sampler_SpecGlossMap);
 TEXTURE2D(_ClearCoatMap);       SAMPLER(sampler_ClearCoatMap);
 TEXTURE2D(_TeamMask);           SAMPLER(sampler_TeamMask);
+UNITY_TEXTURE_STREAMING_DEBUG_VARS_FOR_TEX(_BaseMap);
+
+// URP's Utils headers declare these and build every feature on them.
+half4 GetBaseColor()            { return _BaseColor; }
+half4 GetSpecColor()            { return _SpecColor; }
+half4 GetEmissionColor()        { return _EmissionColor; }
+half GetCutoff()                { return _Cutoff; }
+half GetSmoothness()            { return _Smoothness; }
+half GetMetallic()              { return _Metallic; }
+half GetBumpScale()             { return _BumpScale; }
+half GetParallax()              { return _Parallax; }
+half GetOcclusionStrength()     { return _OcclusionStrength; }
+half GetClearCoatMask()         { return _ClearCoatMask; }
+half GetClearCoatSmoothness()   { return _ClearCoatSmoothness; }
+half GetDetailAlbedoMapScale()  { return _DetailAlbedoMapScale; }
+half GetDetailNormalMapScale()  { return _DetailNormalMapScale; }
+float4 GetBaseMapST()           { return _BaseMap_ST; }
+float4 GetBaseMapTexelSize()    { return _BaseMap_TexelSize; }
+float4 GetDetailAlbedoMapST()   { return _DetailAlbedoMap_ST; }
+
+half4 SampleBaseMap(float2 uv)          { return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv); }
+half4 SampleBumpMap(float2 uv)          { return SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uv); }
+half4 SampleEmissionMap(float2 uv)      { return SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, uv); }
+half4 SampleParallaxMap(float2 uv)      { return SAMPLE_TEXTURE2D(_ParallaxMap, sampler_ParallaxMap, uv); }
+half4 SampleOcclusionMap(float2 uv)     { return SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, uv); }
+half4 SampleDetailMask(float2 uv)       { return SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, uv); }
+half4 SampleDetailAlbedoMap(float2 uv)  { return SAMPLE_TEXTURE2D(_DetailAlbedoMap, sampler_DetailAlbedoMap, uv); }
+half4 SampleDetailNormalMap(float2 uv)  { return SAMPLE_TEXTURE2D(_DetailNormalMap, sampler_DetailNormalMap, uv); }
+half4 SampleMetallicGlossMap(float2 uv) { return SAMPLE_TEXTURE2D(_MetallicGlossMap, sampler_MetallicGlossMap, uv); }
+half4 SampleSpecGlossMap(float2 uv)     { return SAMPLE_TEXTURE2D(_SpecGlossMap, sampler_SpecGlossMap, uv); }
+half4 SampleClearCoatMap(float2 uv)     { return SAMPLE_TEXTURE2D(_ClearCoatMap, sampler_ClearCoatMap, uv); }
 
 #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamSurface.hlsl"
 

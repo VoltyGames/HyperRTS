@@ -6,9 +6,11 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceInput.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceData.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/DebugMipmapStreamingMacros.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/NormalMap.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/DetailMap.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/SurfaceType.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Wind.hlsl"
 
@@ -29,9 +31,22 @@ float _WindScale;
 UNITY_TEXTURE_STREAMING_DEBUG_VARS;
 CBUFFER_END
 
+TEXTURE2D(_BaseMap);    SAMPLER(sampler_BaseMap);
+TEXTURE2D(_BumpMap);    SAMPLER(sampler_BumpMap);
 // HDRP mask layout: R metallic, G occlusion, A smoothness.
-TEXTURE2D(_MaskMap);
-SAMPLER(sampler_MaskMap);
+TEXTURE2D(_MaskMap);    SAMPLER(sampler_MaskMap);
+UNITY_TEXTURE_STREAMING_DEBUG_VARS_FOR_TEX(_BaseMap);
+
+// URP's Utils headers and pass files declare these.
+half4 GetBaseColor()            { return _BaseColor; }
+half GetCutoff()                { return _Cutoff; }
+half GetBumpScale()             { return _BumpScale; }
+half4 SampleBaseMap(float2 uv)  { return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv); }
+half4 SampleBumpMap(float2 uv)  { return SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uv); }
+
+// Bark has no detail map, so LitDepthNormalsPass's calls behind UseDetailMap() compile away.
+half4 SampleDetailMask(float2 uv);
+float4 GetDetailAlbedoMapST();
 
 // Own vertex struct: URP Lit's Attributes would read TEXCOORD1/2 as lightmap UVs.
 struct BarkAttributes
@@ -58,11 +73,11 @@ float3 BarkWindPosition(BarkAttributes input, WindFrame frame)
 inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfaceData)
 {
     outSurfaceData = (SurfaceData)0;
-    half4 albedo = SampleAlbedoAlpha(uv, TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap)) * _BaseColor;
+    half4 albedo = SampleBaseMap(uv) * GetBaseColor();
     outSurfaceData.albedo = albedo.rgb;
     outSurfaceData.alpha = 1.0;
     outSurfaceData.specular = half3(0.0, 0.0, 0.0);
-    outSurfaceData.normalTS = SampleNormal(uv, TEXTURE2D_ARGS(_BumpMap, sampler_BumpMap), _BumpScale);
+    outSurfaceData.normalTS = SampleNormal(uv);
 
 #if defined(_MASKMAP)
     half4 mask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, uv);
