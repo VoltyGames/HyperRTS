@@ -1,12 +1,16 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Navigation;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>Drops <see cref="FallingRemains"/> to the ground under gravity and leaves them lying there.</summary>
+    /// <summary>
+    /// Drops <see cref="FallingRemains"/> under gravity onto the <see cref="NavGrid"/> surface (ground, water or deck)
+    /// and leaves them lying there.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     [UpdateAfter(typeof(DeathSystem))]
@@ -16,17 +20,16 @@ namespace HyperRTS.Simulation.Combat
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<FallingRemains>();
+            state.RequireForUpdate<NavGrid>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            // Without a heightfield the default one reads flat ground at y = 0.
-            SystemAPI.TryGetSingleton(out TerrainHeight terrain);
             new FallJob
             {
-                Terrain = terrain,
+                Grid = SystemAPI.GetSingleton<NavGrid>(),
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
@@ -36,14 +39,14 @@ namespace HyperRTS.Simulation.Combat
         [BurstCompile]
         private partial struct FallJob : IJobEntity
         {
-            public TerrainHeight Terrain;
+            [ReadOnly] public NavGrid Grid;
             public float DeltaTime;
             public EntityCommandBuffer.ParallelWriter Ecb;
 
             private void Execute([ChunkIndexInQuery] int sortKey, Entity entity, ref LocalTransform transform,
                 ref FallingRemains falling)
             {
-                var ground = Terrain.Height(transform.Position.xz);
+                var ground = Grid.SurfaceHeight(transform.Position);
                 if (falling.Fall(ref transform.Position.y, ground, DeltaTime))
                 {
                     Ecb.RemoveComponent<FallingRemains>(sortKey, entity);

@@ -52,7 +52,7 @@ angle for arcs, and eases idle ones back to centre. A `Turreted` weapon fires wi
 | `ToppleAuthoring` | Scenery that falls away from the hit that killed it |
 | `StretchPartsAuthoring` | A prop the map builder stretches. Only the middle span scales |
 | `DecayAuthoring` | Remains that wait, sink and disappear |
-| `DropRemains` | Remains that fall to the ground from where the entity died. Aircraft get it with `Flight` |
+| `DropRemains` | Remains that fall from where the entity died onto the nav grid surface: ground, water or deck. Aircraft get it with `Flight` |
 | `SpawnEffectAuthoring` | An effect played once where an entity appears |
 
 ## Stats
