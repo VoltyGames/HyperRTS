@@ -13,21 +13,25 @@
 #define BUILD_ORDER_INPUT
 #endif
 
-#define BUILD_DROP_SLICE 0.05
-#define BUILD_DROP_HEIGHT 0.5
-
-// -1 while the piece's turn hasn't come, else the metres it still has to fall.
+// -1 while the piece's turn hasn't come, else the metres it still has to fall. A material sets how far and over how
+// much progress, so a one-piece wall panel can be lowered across the build where a hall's pieces drop in quickly.
 float BuildPieceDrop(float order, float progress)
 {
-    // Turns end BUILD_DROP_SLICE early so the last piece lands exactly at 1.
-    float reach = order * (1.0 - BUILD_DROP_SLICE);
+    // Turns end one slice early so the last piece lands exactly at 1.
+    float reach = order * (1.0 - _BuildDropSlice);
     if (progress < reach)
     {
         return -1.0;
     }
 
-    float fall = 1.0 - saturate((progress - reach) / BUILD_DROP_SLICE);
-    return BUILD_DROP_HEIGHT * fall * fall;
+    // Slabs and beds are laid where they stand; only what is lifted into place drops.
+    if (order < _BuildDropFrom)
+    {
+        return 0.0;
+    }
+
+    float fall = 1.0 - saturate((progress - reach) / _BuildDropSlice);
+    return _BuildDropHeight * fall * fall;
 }
 
 bool BuildShowsWhole(float2 buildOrder)

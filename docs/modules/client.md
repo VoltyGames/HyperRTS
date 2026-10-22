@@ -182,9 +182,11 @@ Structure materials on `HyperRTS/LitTeam` turn on the `_BUILD` keyword, and the 
 its `ConstructionProgress`. `BuildRevealSystem` copies the progress to `_BuildProgress` on every mesh under the
 building and takes it off when construction completes. UV3 holds each piece's build order: x from 0 (first) to 1
 (last), y 1 where the mesh has build data, with UV1 and UV2 blank if unused. A piece appears once progress reaches
-its turn and drops its last 0.5 m into place. Pieces not reached yet collapse in the vertex stage to the object
-origin, so every pass, shadows included, skips them without alpha clipping. Meshes without UV3 data, materials
-without `_BUILD` and finished buildings draw as authored.
+its turn and drops into place: `_BuildDropHeight` metres (0.5 by default) over `_BuildDropSlice` of the progress (0.05).
+A one-piece model such as a wall panel sets a long slice and a big height, so it is lowered across most of its build.
+Pieces whose order is below `_BuildDropFrom` (0 by default) are laid in place, as slabs and beds are.
+Pieces not reached yet collapse in the vertex stage to the object origin, so every pass, shadows included, skips them
+without alpha clipping. Meshes without UV3 data, materials without `_BUILD` and finished buildings draw as authored.
 
 ### Building lights
 

@@ -25,6 +25,9 @@ Shader "HyperRTS/LitTeam"
         [Header(Construction)]
         [Toggle(_BUILD)] _Build("Build Piece By Piece (UV3)", Float) = 0
         _BuildProgress("Build Progress", Range(0, 1)) = 1
+        _BuildDropHeight("Build Drop Height (m)", Float) = 0.5
+        _BuildDropSlice("Build Drop Slice (of progress)", Range(0.01, 1)) = 0.05
+        _BuildDropFrom("Build Drop From (order; earlier pieces appear in place)", Range(0, 1)) = 0
 
         _WorkflowMode("WorkflowMode", Float) = 1.0
 
