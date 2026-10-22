@@ -110,7 +110,7 @@ namespace HyperRTS.Simulation.Status
 
                 var definition = Definitions[request.Definition];
                 var typeId = Infos[request.Definition].TypeId;
-                var index = IndexOf(statuses, typeId);
+                var index = FindStatus(statuses, typeId);
                 if (index < 0)
                 {
                     statuses.Add(new ActiveStatus { TypeId = typeId });
@@ -156,7 +156,7 @@ namespace HyperRTS.Simulation.Status
                 }
             }
 
-            private static int IndexOf(DynamicBuffer<ActiveStatus> statuses, int typeId)
+            private static int FindStatus(DynamicBuffer<ActiveStatus> statuses, int typeId)
             {
                 for (var i = 0; i < statuses.Length; i++)
                 {

@@ -11,9 +11,9 @@ namespace HyperRTS.Editor.Maps.Data
         public static bool Contains<T>(IReadOnlyList<T> items, string key) where T : IMapKeyed => Find(items, key) >= 0;
 
         public static T Get<T>(IReadOnlyList<T> items, string key, string owner, string what) where T : IMapKeyed =>
-            items[IndexOf(items, key, owner, what)];
+            items[RequireIndex(items, key, owner, what)];
 
-        public static int IndexOf<T>(IReadOnlyList<T> items, string key, string owner, string what) where T : IMapKeyed
+        public static int RequireIndex<T>(IReadOnlyList<T> items, string key, string owner, string what) where T : IMapKeyed
         {
             var index = Find(items, key);
             return index >= 0

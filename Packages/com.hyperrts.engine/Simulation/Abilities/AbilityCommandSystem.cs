@@ -140,7 +140,7 @@ namespace HyperRTS.Simulation.Abilities
             }
 
             var abilities = SystemAPI.GetBuffer<Ability>(caster);
-            var index = AbilityRules.IndexOf(abilities, command.Argument);
+            var index = AbilityRules.FindAbility(abilities, command.Argument);
             return index >= 0 && IsUsable(abilities[index], faction, command, context) ? index : -1;
         }
 
@@ -185,7 +185,7 @@ namespace HyperRTS.Simulation.Abilities
             }
 
             var abilities = SystemAPI.GetBuffer<Ability>(player);
-            var index = AbilityRules.IndexOf(abilities, command.Argument);
+            var index = AbilityRules.FindAbility(abilities, command.Argument);
             if (index < 0 || !IsUsable(abilities[index], faction, command, context))
             {
                 return;

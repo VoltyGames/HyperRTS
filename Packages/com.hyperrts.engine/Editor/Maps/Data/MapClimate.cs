@@ -135,15 +135,15 @@ namespace HyperRTS.Editor.Maps.Data
         /// <summary>The terrain layer a surface paints.</summary>
         public int SurfaceLayer(string surface) => LayerIndex(Surface(surface).layer);
 
-        public int LayerIndex(string key) => MapKeys.IndexOf(layers, key, name, "layer");
+        public int LayerIndex(string key) => MapKeys.RequireIndex(layers, key, name, "layer");
 
         public MapClimateDecal Decal(string key) => MapKeys.Get(decals, key, name, "decal");
 
-        public int TreeIndex(string key) => MapKeys.IndexOf(trees, key, name, "tree");
+        public int TreeIndex(string key) => MapKeys.RequireIndex(trees, key, name, "tree");
 
-        public int PlantIndex(string key) => MapKeys.IndexOf(plants, key, name, "plant");
+        public int PlantIndex(string key) => MapKeys.RequireIndex(plants, key, name, "plant");
 
-        public int RowCropIndex(string key) => MapKeys.IndexOf(rowCrops, key, name, "row crop");
+        public int RowCropIndex(string key) => MapKeys.RequireIndex(rowCrops, key, name, "row crop");
 
         public bool HasTree(string key) => MapKeys.Contains(trees, key);
 

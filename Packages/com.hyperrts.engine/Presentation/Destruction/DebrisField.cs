@@ -72,11 +72,11 @@ namespace HyperRTS.Presentation.Destruction
                 }
 
                 var material = _sets[slot].material;
-                var mesh = MeshOf(slot);
+                var mesh = PieceMesh(slot);
                 var count = 0;
                 for (var other = slot; other < Capacity; other++)
                 {
-                    var sameBatch = _sets[other] != null && _sets[other].material == material && MeshOf(other) == mesh;
+                    var sameBatch = _sets[other] != null && _sets[other].material == material && PieceMesh(other) == mesh;
                     if (sameBatch)
                     {
                         _batch[count++] = _pieces[other].Matrix;
@@ -89,7 +89,7 @@ namespace HyperRTS.Presentation.Destruction
             }
         }
 
-        private Mesh MeshOf(int slot) => _sets[slot].meshes[_pieces[slot].Mesh];
+        private Mesh PieceMesh(int slot) => _sets[slot].meshes[_pieces[slot].Mesh];
 
         // An empty slot, else the piece that has lain longest.
         private int FreeSlot()

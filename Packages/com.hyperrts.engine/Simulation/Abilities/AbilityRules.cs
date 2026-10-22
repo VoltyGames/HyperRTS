@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Abilities
     /// <summary>Lookup, targeting and range rules shared by ability commands and casting.</summary>
     public static class AbilityRules
     {
-        public static int IndexOf(DynamicBuffer<Ability> abilities, int id)
+        public static int FindAbility(DynamicBuffer<Ability> abilities, int id)
         {
             for (var i = 0; i < abilities.Length; i++)
             {

@@ -112,7 +112,7 @@ namespace HyperRTS.Simulation.Abilities
                 }
 
                 var faction = Factions[entity].Value;
-                var index = AbilityRules.IndexOf(abilities, order.Value.Argument);
+                var index = AbilityRules.FindAbility(abilities, order.Value.Argument);
                 var target = order.Value.Target;
                 if (index < 0 || !IsUsable(abilities[index], target, faction))
                 {

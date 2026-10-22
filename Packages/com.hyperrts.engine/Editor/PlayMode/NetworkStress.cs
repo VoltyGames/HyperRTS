@@ -152,7 +152,7 @@ namespace HyperRTS.Editor.PlayMode
             }
 
             // Spawning is structural, so the command buffer is fetched once the batch exists.
-            var commands = entityManager.GetBuffer<PlayerCommand>(PlayerOf(entityManager, home.Faction));
+            var commands = entityManager.GetBuffer<PlayerCommand>(FindPlayer(entityManager, home.Faction));
             foreach (var unit in spawned)
             {
                 commands.Add(new PlayerCommand { Type = CommandType.AttackMove, Unit = unit, Position = enemy.Position });
@@ -206,7 +206,7 @@ namespace HyperRTS.Editor.PlayMode
             return farthest > 0f;
         }
 
-        private static Entity PlayerOf(EntityManager entityManager, byte faction)
+        private static Entity FindPlayer(EntityManager entityManager, byte faction)
         {
             foreach (var player in Cheats.Players(entityManager))
             {

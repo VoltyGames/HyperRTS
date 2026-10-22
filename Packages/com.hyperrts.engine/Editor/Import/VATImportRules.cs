@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Import
             var file = Path.GetFileName(path);
             foreach (var json in Directory.GetFiles(folder, "*" + VATBakeInfo.Extension))
             {
-                var (positions, normals) = TexturesOf(json);
+                var (positions, normals) = ReadTextures(json);
                 if (positions == file || normals == file)
                 {
                     return true;
@@ -47,7 +47,7 @@ namespace HyperRTS.Editor.Import
             return false;
         }
 
-        private static (string Positions, string Normals) TexturesOf(string json)
+        private static (string Positions, string Normals) ReadTextures(string json)
         {
             var written = File.GetLastWriteTimeUtc(json);
             if (!Named.TryGetValue(json, out var named) || named.Written != written)

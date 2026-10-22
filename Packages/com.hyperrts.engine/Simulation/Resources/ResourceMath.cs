@@ -11,13 +11,13 @@ namespace HyperRTS.Simulation.Resources
 
         public static int GetAmount(NativeArray<ResourceStock> stock, UnityObjectRef<ResourceType> type)
         {
-            var index = IndexOf(stock, type);
+            var index = FindStock(stock, type);
             return index >= 0 ? stock[index].Amount : 0;
         }
 
         public static void Add(DynamicBuffer<ResourceStock> stock, UnityObjectRef<ResourceType> type, int amount)
         {
-            var index = IndexOf(stock.AsNativeArray(), type);
+            var index = FindStock(stock.AsNativeArray(), type);
             if (index >= 0)
             {
                 stock.ElementAt(index).Amount += amount;
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Resources
         {
             foreach (var item in cost)
             {
-                var index = IndexOf(stock, item.Type);
+                var index = FindStock(stock, item.Type);
                 if (index < 0)
                 {
                     continue;
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Resources
             return total;
         }
 
-        private static int IndexOf(NativeArray<ResourceStock> stock, UnityObjectRef<ResourceType> type)
+        private static int FindStock(NativeArray<ResourceStock> stock, UnityObjectRef<ResourceType> type)
         {
             for (var i = 0; i < stock.Length; i++)
             {
