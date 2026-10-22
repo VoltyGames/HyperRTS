@@ -6,7 +6,7 @@ using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Input.Cameras;
-using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Views
@@ -82,8 +82,8 @@ namespace HyperRTS.Editor.Maps.Views
             var mask = camera.overrideSceneCullingMask;
             try
             {
-                // Entities streamed into the editor world carry the editor's scene mask, which a game camera skips.
-                camera.overrideSceneCullingMask = ulong.MaxValue;
+                // The SubScene streaming system stamps editor-world entities with the default editor scene mask.
+                camera.overrideSceneCullingMask = EditorSceneManager.DefaultSceneCullingMask;
                 foreach (var view in views)
                 {
                     Aim(camera, view, controller);
