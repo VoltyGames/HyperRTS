@@ -23,6 +23,7 @@ namespace HyperRTS.Simulation.Combat
     {
         private ComponentLookup<Health> _health;
         private ComponentLookup<UnitTag> _units;
+        private ComponentLookup<Inside> _inside;
         private ShotWriter _shots;
 
         [BurstCompile]
@@ -30,6 +31,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _health = state.GetComponentLookup<Health>(true);
             _units = state.GetComponentLookup<UnitTag>(true);
+            _inside = state.GetComponentLookup<Inside>(true);
             _shots = new ShotWriter(ref state);
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<CueQueue>();
@@ -41,6 +43,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _health.Update(ref state);
             _units.Update(ref state);
+            _inside.Update(ref state);
             _shots.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
                 SystemAPI.GetSingletonEntity<CueQueue>(),
                 SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
@@ -52,6 +55,7 @@ namespace HyperRTS.Simulation.Combat
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 HealthLookup = _health,
                 Units = _units,
+                InsideLookup = _inside,
                 Shots = _shots,
             }.Schedule();
         }
@@ -64,6 +68,7 @@ namespace HyperRTS.Simulation.Combat
             public float DeltaTime;
             [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<UnitTag> Units;
+            [ReadOnly] public ComponentLookup<Inside> InsideLookup;
             public ShotWriter Shots;
 
             private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
@@ -77,7 +82,8 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                var turnsHull = Units.HasComponent(entity) && !weapon.Turreted;
+                // A garrisoned passenger fires out of any side of its building without turning.
+                var turnsHull = Units.HasComponent(entity) && !weapon.Turreted && !InsideLookup.HasEnabled(entity);
                 if (turnsHull && !Shots.Face(entity, Shots.Position(target), weapon.AimTolerance))
                 {
                     return;
