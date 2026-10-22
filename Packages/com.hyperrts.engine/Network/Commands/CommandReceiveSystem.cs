@@ -63,6 +63,7 @@ namespace HyperRTS.Network.Commands
                 Queue = rpc.Queue,
                 Argument = rpc.Argument,
                 Position = rpc.Position,
+                End = rpc.End,
                 Target = rpc.TargetScenery != 0 ? FindScenery(ref state, rpc.TargetScenery) : rpc.Target,
                 Prefab = prefabs.Find(rpc.PrefabTypeId),
             };

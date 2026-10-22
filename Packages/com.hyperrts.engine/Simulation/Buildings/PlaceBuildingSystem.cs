@@ -14,8 +14,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>
-    /// Consumes <see cref="CommandType.PlaceBuilding"/>: validates the spot, charges the cost, drops a construction
-    /// site and gives the commanded builders a Build order on it.
+    /// Consumes <see cref="CommandType.PlaceBuilding"/> and <see cref="CommandType.PlaceLine"/>: validates each spot,
+    /// charges the cost, drops construction sites and gives the commanded builders Build orders on them.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -46,7 +46,8 @@ namespace HyperRTS.Simulation.Buildings
         {
             var selected = SystemAPI.QueryBuilder().WithAll<Builder, BuildOption, Faction, Selected>()
                 .WithNone<Dead>().Build();
-            _commands = new CommandReader(ref state, TypeSet.Single(CommandType.PlaceBuilding), selected);
+            var types = TypeSet.Single(CommandType.PlaceBuilding).With(CommandType.PlaceLine);
+            _commands = new CommandReader(ref state, types, selected);
             _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
@@ -91,15 +92,17 @@ namespace HyperRTS.Simulation.Buildings
                     buyers.Add(request.Faction, buyer);
                 }
 
-                if (!TryPlace(ref state, request, buyer, ecb, sites, out var order))
+                var orders = new NativeList<Order>(Allocator.Temp);
+                if (request.Command.Type == CommandType.PlaceLine)
                 {
-                    continue;
+                    PlaceLine(ref state, request, buyer, ecb, sites, builders, orders);
+                }
+                else if (TryPlace(ref state, request, buyer, ecb, sites, out var order))
+                {
+                    orders.Add(order);
                 }
 
-                foreach (var builder in builders)
-                {
-                    assignments.Add(new Assignment { Builder = builder, Order = order, Queue = request.Command.Queue });
-                }
+                Assign(assignments, builders, orders, request.Command.Queue);
             }
 
             ecb.Playback(state.EntityManager);
@@ -109,6 +112,19 @@ namespace HyperRTS.Simulation.Buildings
             foreach (var assignment in assignments)
             {
                 _orders.Issue(assignment.Builder, assignment.Order, assignment.Queue);
+            }
+        }
+
+        /// <summary>The first order follows the command's queue flag; the rest queue behind it.</summary>
+        private static void Assign(NativeList<Assignment> assignments, NativeList<Entity> builders,
+            NativeList<Order> orders, bool queue)
+        {
+            foreach (var builder in builders)
+            {
+                for (var i = 0; i < orders.Length; i++)
+                {
+                    assignments.Add(new Assignment { Builder = builder, Order = orders[i], Queue = queue || i > 0 });
+                }
             }
         }
 
@@ -137,20 +153,28 @@ namespace HyperRTS.Simulation.Buildings
                 return false;
             }
 
-            buyer.AddPurchase(state.EntityManager, prefab);
-            var building = SpawnSite(ref state, prefab, center, request.Faction, ecb);
-            sites.Add(new Site { Center = center, Footprint = footprint });
-            order = new Order { Type = OrderType.Build, Target = building, Position = center };
+            order = Raise(ref state, request, buyer, ecb, sites, center, footprint, quaternion.identity);
             return true;
         }
 
+        /// <summary>Counts the bought site against the buyer, spawns it and returns the Build order on it.</summary>
+        private Order Raise(ref SystemState state, in IssuedCommand request, in Buyer buyer, EntityCommandBuffer ecb,
+            NativeList<Site> sites, float3 center, float2 footprint, quaternion turn)
+        {
+            var prefab = request.Command.Prefab;
+            buyer.AddPurchase(state.EntityManager, prefab);
+            var building = SpawnSite(ref state, prefab, center, turn, request.Faction, ecb);
+            sites.Add(new Site { Center = center, Footprint = footprint });
+            return new Order { Type = OrderType.Build, Target = building, Position = center };
+        }
+
         /// <summary>An unbuilt instance of <paramref name="prefab"/>; builders raise it through Build orders.</summary>
-        private Entity SpawnSite(ref SystemState state, Entity prefab, float3 center, byte faction,
+        private Entity SpawnSite(ref SystemState state, Entity prefab, float3 center, quaternion turn, byte faction,
             EntityCommandBuffer ecb)
         {
             var transform = SystemAPI.GetComponent<LocalTransform>(prefab);
             var building = ecb.Spawn(prefab, transform, SystemAPI.GetComponentLookup<PostTransformMatrix>(true),
-                center, transform.Rotation, faction);
+                center, math.mul(turn, transform.Rotation), faction);
             ecb.SetComponent(building, new ConstructionProgress { Value = 0f });
             ecb.SetComponentEnabled<ConstructionProgress>(building, true);
             // Offline from the first frame, before OfflineSystem sees the site.
@@ -165,6 +189,12 @@ namespace HyperRTS.Simulation.Buildings
             var result = new NativeList<Entity>(Allocator.Temp);
             var prefab = request.Command.Prefab;
             if (!IsPlaceable(ref state, prefab))
+            {
+                return result;
+            }
+
+            var isLine = request.Command.Type == CommandType.PlaceLine;
+            if (isLine && !SystemAPI.HasComponent<LinePlacement>(prefab))
             {
                 return result;
             }
@@ -211,7 +241,8 @@ namespace HyperRTS.Simulation.Buildings
             var transforms = _obstacles.ToComponentDataArray<LocalTransform>(Allocator.Temp);
             for (var i = 0; i < obstacles.Length; i++)
             {
-                if (Overlaps(center, footprint, transforms[i].Position, obstacles[i].Size))
+                var extent = obstacles[i].Extent(transforms[i].Rotation);
+                if (Overlaps(center, footprint, transforms[i].Position, extent))
                 {
                     return true;
                 }

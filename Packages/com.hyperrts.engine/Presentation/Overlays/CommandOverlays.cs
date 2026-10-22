@@ -2,6 +2,7 @@ using HyperRTS.Client.Common;
 using HyperRTS.Client.Interaction;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Production;
@@ -14,7 +15,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Overlays
 {
-    /// <summary>Building placement ghost and rally markers of the local player's selected producers.</summary>
+    /// <summary>Building placement ghost, one box per segment of a line, and rally markers of selected producers.</summary>
     public sealed class CommandOverlays
     {
         private const float RallyRadius = 0.6f;
@@ -46,13 +47,20 @@ namespace HyperRTS.Presentation.Overlays
         public void Gather(MatchView view, OverlayStyle style)
         {
             var entityManager = view.EntityManager;
-            var placing = _placement.In(entityManager).TryGetSingleton(out PlacementState placement) && placement.Active;
-            if (placing && entityManager.HasComponent<NavObstacle>(placement.Prefab))
+            var placement = _placement.In(entityManager);
+            var placing = placement.TryGetSingleton(out PlacementState state) && state.Active;
+            if (placing && entityManager.HasComponent<LinePlacement>(state.Prefab))
             {
-                var footprint = entityManager.GetComponentData<NavObstacle>(placement.Prefab).Size;
-                var size = new Vector3(footprint.x, style.ghostHeight, footprint.y);
-                (placement.Valid ? _validGhosts : _invalidGhosts).Add(
-                    Matrix4x4.TRS(placement.Position, Quaternion.identity, size));
+                var segments = entityManager.GetBuffer<PlacementSegment>(placement.GetSingletonEntity(), true);
+                foreach (var segment in segments)
+                {
+                    AddGhost(segment.Center, segment.Footprint, segment.Valid, style);
+                }
+            }
+            else if (placing && entityManager.HasComponent<NavObstacle>(state.Prefab))
+            {
+                var footprint = entityManager.GetComponentData<NavObstacle>(state.Prefab).Size;
+                AddGhost(state.Position, footprint, state.Valid, style);
             }
 
             var query = _rallies.In(entityManager);
@@ -74,6 +82,12 @@ namespace HyperRTS.Presentation.Overlays
             _invalidGhosts.Draw(material, style.placementInvalid, layer);
             _rallyRings.Draw(material, style.rally, layer);
             _rallyLines.Draw(material, style.rally, layer);
+        }
+
+        private void AddGhost(float3 center, float2 footprint, bool valid, OverlayStyle style)
+        {
+            var size = new Vector3(footprint.x, style.ghostHeight, footprint.y);
+            (valid ? _validGhosts : _invalidGhosts).Add(Matrix4x4.TRS(center, Quaternion.identity, size));
         }
 
         private void AddRally(float3 from, float3 to)

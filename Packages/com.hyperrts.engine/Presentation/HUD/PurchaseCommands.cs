@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.HUD
 {
     /// <summary>
     /// Build, train and research cards, showing why the purchase rules refuse one, what the selected producers have
-    /// queued and whether low power slows them.
+    /// queued and whether low power slows them. A builder's advanced options go on the card's second page.
     /// </summary>
     public sealed class PurchaseCommands : ICommandSource
     {
@@ -19,17 +19,23 @@ namespace HyperRTS.Presentation.HUD
         {
             _options.Clear();
             var builds = new List<Entity>();
+            var advancedBuilds = new List<Entity>();
             var products = new List<Entity>();
             var entityManager = context.EntityManager;
             foreach (var entity in owned)
             {
-                Collect<BuildOption>(entityManager, entity, builds);
+                CollectBuilds(entityManager, entity, builds, advancedBuilds);
                 Collect<ProductionOption>(entityManager, entity, products);
             }
 
             foreach (var prefab in builds)
             {
                 Add(context, entries, prefab, new List<Entity>(), () => context.StartPlacement(prefab));
+            }
+
+            foreach (var prefab in advancedBuilds)
+            {
+                Add(context, entries, prefab, new List<Entity>(), () => context.StartPlacement(prefab)).Page = 1;
             }
 
             foreach (var prefab in products)
@@ -62,13 +68,15 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        private void Add(HUDContext context, List<CommandEntry> entries, Entity prefab, List<Entity> producers,
-            System.Action invoke)
+        private CommandEntry Add(HUDContext context, List<CommandEntry> entries, Entity prefab,
+            List<Entity> producers, System.Action invoke)
         {
             var button = new CommandButton().BindPrefab(context.EntityManager, prefab, invoke);
             button.Description = tooltip => Describe(context, prefab, tooltip);
             _options.Add(new Option(button, prefab, producers));
-            entries.Add(new CommandEntry(button, invoke));
+            var entry = new CommandEntry(button, invoke);
+            entries.Add(entry);
+            return entry;
         }
 
         /// <summary>Name, description, cost, build time, population, power and missing prerequisites.</summary>
@@ -128,6 +136,26 @@ namespace HyperRTS.Presentation.HUD
             }
 
             return producers;
+        }
+
+        // The first builder to list a prefab decides its page, so a mixed selection shows each option once.
+        private static void CollectBuilds(EntityManager entityManager, Entity entity, List<Entity> builds,
+            List<Entity> advancedBuilds)
+        {
+            if (!entityManager.HasBuffer<BuildOption>(entity))
+            {
+                return;
+            }
+
+            foreach (var option in entityManager.GetBuffer<BuildOption>(entity, true))
+            {
+                var listed = option.Prefab == Entity.Null || builds.Contains(option.Prefab)
+                             || advancedBuilds.Contains(option.Prefab);
+                if (!listed)
+                {
+                    (option.Advanced ? advancedBuilds : builds).Add(option.Prefab);
+                }
+            }
         }
 
         private static void Collect<T>(EntityManager entityManager, Entity entity, List<Entity> prefabs)

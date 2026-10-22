@@ -69,6 +69,18 @@ namespace HyperRTS.Presentation.HUD
             return this;
         }
 
+        /// <summary>A caption card with a chevron that turns the command card's page (More, Back).</summary>
+        public CommandButton BindPage(string caption, HUDGlyphShape chevron, Action onClick)
+        {
+            _onClick = onClick;
+            AddToClassList("hud-command--page");
+            var glyph = new HUDGlyph(chevron);
+            glyph.AddToClassList("hud-command__chevron");
+            Add(glyph);
+            HUDElements.Text(caption, "hud-command__caption", this).pickingMode = PickingMode.Ignore;
+            return this;
+        }
+
         /// <summary>A build, train or research card; the caller sets its <see cref="Description"/>.</summary>
         public CommandButton BindPrefab(EntityManager entityManager, Entity prefab, Action onClick)
         {
@@ -78,13 +90,12 @@ namespace HyperRTS.Presentation.HUD
             _sweep = new HUDSweep();
             _sweep.AddToClassList("hud-command__sweep");
             Add(_sweep);
-            var padlock = new HUDGlyph(HUDGlyphShape.Padlock);
-            padlock.AddToClassList("hud-command__lock");
-            Add(padlock);
-
             var badges = new VisualElement { pickingMode = PickingMode.Ignore };
             badges.AddToClassList("hud-command__badges");
             Add(badges);
+            var padlock = new HUDGlyph(HUDGlyphShape.Padlock);
+            padlock.AddToClassList("hud-command__lock");
+            badges.Add(padlock);
             _count = HUDElements.Text("", "hud-command__count", badges);
             _unpowered = new HUDGlyph(HUDGlyphShape.Lightning);
             _unpowered.AddToClassList("hud-command__unpowered");
@@ -150,7 +161,8 @@ namespace HyperRTS.Presentation.HUD
             _limit.text = max == 0 ? "" : $"{count}/{max}";
         }
 
-        private void Press()
+        /// <summary>What a click does: nothing while a purchase rule refuses it.</summary>
+        public void Press()
         {
             if (!IsRefused)
             {

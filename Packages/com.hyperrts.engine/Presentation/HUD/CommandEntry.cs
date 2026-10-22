@@ -25,6 +25,9 @@ namespace HyperRTS.Presentation.HUD
         /// <summary>Grid position, lowest first; entries without one follow in the order their sources added them.</summary>
         public int Slot { get; set; } = -1;
 
+        /// <summary>0 for the first page, 1 for the second behind a More card (a builder's advanced options).</summary>
+        public int Page { get; set; }
+
         /// <summary>A letter or digit that presses the button while it is enabled; '\0' for none.</summary>
         public char Hotkey { get; set; }
     }

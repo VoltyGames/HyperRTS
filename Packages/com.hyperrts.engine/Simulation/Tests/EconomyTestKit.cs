@@ -69,6 +69,18 @@ namespace HyperRTS.Simulation.Tests
             return unit;
         }
 
+        /// <summary>Adds second-page options to a builder made by <see cref="MakeBuilder"/>.</summary>
+        public static Entity AddAdvancedBuildOptions(this TestWorld world, Entity builder, params Entity[] options)
+        {
+            var buffer = world.EntityManager.GetBuffer<BuildOption>(builder);
+            foreach (var option in options)
+            {
+                buffer.Add(new BuildOption { Prefab = option, Advanced = true });
+            }
+
+            return builder;
+        }
+
         public static Entity MakeProducer(this TestWorld world, Entity building, float3 spawnOffset,
             params Entity[] options)
         {
@@ -127,6 +139,12 @@ namespace HyperRTS.Simulation.Tests
             world.Command(world.Get<Faction>(builder).Value, new PlayerCommand
             {
                 Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position,
+            });
+
+        public static void PlaceLine(this TestWorld world, Entity builder, Entity prefab, float3 start, float3 end) =>
+            world.Command(world.Get<Faction>(builder).Value, new PlayerCommand
+            {
+                Type = CommandType.PlaceLine, Unit = builder, Prefab = prefab, Position = start, End = end,
             });
 
         public static void SetBuildTime(this TestWorld world, Entity entity, float seconds, int population = 1) =>

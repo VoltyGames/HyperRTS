@@ -63,6 +63,9 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>The issuing player concedes and is defeated; its units stay on the map.</summary>
         Surrender = 23,
 
+        /// <summary>Place a line of <see cref="PlayerCommand.Prefab"/> from Position to <see cref="PlayerCommand.End"/>.</summary>
+        PlaceLine = 24,
+
         /// <summary>First value a game may use for its own commands; the engine never defines one from here up.</summary>
         GameFirst = 128,
     }
@@ -86,6 +89,10 @@ namespace HyperRTS.Simulation.Orders
 
         public Entity Target;
         public float3 Position;
+
+        /// <summary>Where a <see cref="CommandType.PlaceLine"/> drag ended.</summary>
+        public float3 End;
+
         public Entity Prefab;
 
         /// <summary>Shift: append to the order queue instead of replacing it.</summary>

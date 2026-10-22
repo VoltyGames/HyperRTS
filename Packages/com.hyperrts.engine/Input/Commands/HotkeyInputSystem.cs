@@ -1,11 +1,15 @@
 using HyperRTS.Client.Interaction;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 using UnityEngine.InputSystem;
 
 namespace HyperRTS.Input.Commands
 {
-    /// <summary>Records the letters and digits pressed this frame into <see cref="HotkeyPresses"/> for HUD hotkeys.</summary>
+    /// <summary>
+    /// Records the letters and digits pressed this frame into <see cref="HotkeyPresses"/> for HUD hotkeys, and turns
+    /// the command card back to its first page on Escape.
+    /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial class HotkeyInputSystem : SystemBase
@@ -24,7 +28,16 @@ namespace HyperRTS.Input.Commands
             }
 
             SystemAPI.SetSingleton(presses);
+            if (InputActionsProvider.CancelPressed && !IsInteracting())
+            {
+                SystemAPI.SetSingleton(new CommandCardPage());
+            }
         }
+
+        // Escape cancels a placement or targeted order before it turns the command card back to its first page.
+        private bool IsInteracting() =>
+            SystemAPI.GetSingleton<PlacementState>().Active
+            || SystemAPI.GetSingleton<PendingCommand>().Type != CommandType.None;
 
         private static void Collect(Keyboard keyboard, Key first, Key last, char firstChar, ref HotkeyPresses presses)
         {

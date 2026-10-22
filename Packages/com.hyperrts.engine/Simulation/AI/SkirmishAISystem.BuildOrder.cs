@@ -33,6 +33,12 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
+                // The AI doesn't plan wall lines yet.
+                if (SystemAPI.HasComponent<LinePlacement>(step.Prefab))
+                {
+                    continue;
+                }
+
                 counts.TryGetValue(SystemAPI.GetComponent<EntityInfo>(step.Prefab).TypeId, out var owned);
                 var wanted = SystemAPI.HasComponent<Research>(step.Prefab) ? math.min(step.Count, 1) : step.Count;
                 if (owned >= wanted)

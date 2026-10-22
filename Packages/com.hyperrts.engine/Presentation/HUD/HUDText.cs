@@ -23,6 +23,8 @@ namespace HyperRTS.Presentation.HUD
             ["command.return"] = "Return",
             ["command.unload"] = "Unload",
             ["command.sell"] = "Sell",
+            ["command.more"] = "More",
+            ["command.back"] = "Back",
             ["stance.aggressive"] = "Aggressive",
             ["stance.defensive"] = "Defensive",
             ["stance.hold-position"] = "Hold",

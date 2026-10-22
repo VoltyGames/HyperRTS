@@ -34,6 +34,9 @@ namespace HyperRTS.Simulation.Buildings
         [Tooltip("Enemies who saw it keep seeing it where they last did once it is in the fog.")]
         public bool rememberedInFog = true;
 
+        [Tooltip("Placed by dragging a line of segments, for walls. Footprint X is each segment's length.")]
+        public bool placedInLines;
+
         public override float Radius => EntityRadius.Get(new NavObstacle { Size = footprint });
 
         public class Baker : Baker<BuildingAuthoring>
@@ -47,6 +50,10 @@ namespace HyperRTS.Simulation.Buildings
                 BuildingSetup.Add(ref writer, authoring.footprint, authoring.populationProvided,
                     !authoring.startsUnderConstruction, authoring.power, authoring.placementSurface,
                     authoring.rememberedInFog);
+                if (authoring.placedInLines)
+                {
+                    writer.Add<LinePlacement>();
+                }
             }
         }
     }

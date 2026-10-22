@@ -30,6 +30,7 @@ namespace HyperRTS.Presentation.HUD
         private readonly LiveQuery _placement = Singleton<PlacementState>();
         private readonly LiveQuery _cameraFocus = Singleton<CameraFocusRequest>();
         private readonly LiveQuery _hotkeys = Singleton<HotkeyPresses>();
+        private readonly LiveQuery _commandPage = Singleton<CommandCardPage>();
         private readonly LiveQuery _registry = Singleton<PrefabRegistry>();
 
         private readonly LiveQuery _queues = new(entityManager =>
@@ -89,6 +90,13 @@ namespace HyperRTS.Presentation.HUD
         /// <summary>The letters and digits pressed last frame while gameplay input was live; none without the singleton.</summary>
         public HotkeyPresses Hotkeys =>
             _hotkeys.In(EntityManager).TryGetSingleton(out HotkeyPresses presses) ? presses : default;
+
+        /// <summary>The command card page that shows: 0 for the first, 1 for a builder's advanced options.</summary>
+        public int CommandPage =>
+            _commandPage.In(EntityManager).TryGetSingleton(out CommandCardPage page) ? page.Page : 0;
+
+        public void ShowCommandPage(int page) =>
+            Write(_commandPage, new CommandCardPage { Page = (byte)page });
 
         public PurchaseRefusal FindRefusal(Entity prefab, in Buyer buyer) =>
             PurchaseRules.FindRefusal(EntityManager, prefab, buyer, Stock.AsNativeArray());

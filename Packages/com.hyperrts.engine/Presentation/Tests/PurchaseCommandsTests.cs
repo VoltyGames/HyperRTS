@@ -166,6 +166,21 @@ namespace HyperRTS.Presentation.Tests
             Assert.AreEqual("Requires Factory", warning.text);
         }
 
+        [Test]
+        public void AdvancedBuildOptions_GoOnTheSecondPage_OncePerPrefab()
+        {
+            var depot = _world.UnitPrefab(_supplies, 10, name: "Depot");
+            var airfield = _world.UnitPrefab(_supplies, 10, name: "Airfield");
+            var first = _world.AddAdvancedBuildOptions(_world.MakeBuilder(_world.SpawnUnit(1, Far), depot), airfield);
+            var second = _world.MakeBuilder(_world.SpawnUnit(1, Far), airfield);
+            Refresh();
+
+            var entries = new List<CommandEntry>();
+            new PurchaseCommands().Build(_context, new[] { first, second }, entries);
+
+            CollectionAssert.AreEqual(new[] { 0, 1 }, entries.Select(entry => entry.Page));
+        }
+
         private void Require(Entity prefab, string type) =>
             EntityManager.GetBuffer<Prerequisite>(prefab)
                 .Add(new Prerequisite { TypeId = EntityInfo.TypeIdFromName(type) });

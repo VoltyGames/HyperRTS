@@ -29,6 +29,23 @@
     padding: 2px 4px;
 }
 
+/* Fills the grid so the page card lands in the last slot. */
+.hud-command--blank {
+    visibility: hidden;
+}
+
+.hud-command__chevron {
+    width: 20px;
+    height: 20px;
+    margin-bottom: 4px;
+}
+
+.hud-command__caption {
+    padding: 0;
+    margin: 0;
+    -unity-text-align: middle-center;
+}
+
 /* Two classes, to beat .hud-icon's scale-to-fit. */
 .hud-command .hud-command__icon {
     position: absolute;
@@ -47,14 +64,14 @@
     bottom: 0;
 }
 
+/* A small badge, so the greyed picture still shows; the padding is its dark backing. */
 .hud-command__lock {
     display: none;
-    position: absolute;
-    left: 50%;
-    top: 44%;
-    width: 22px;
-    height: 26px;
-    translate: -50% -50%;
+    width: 14px;
+    height: 14px;
+    padding: 2px;
+    margin-bottom: 2px;
+    border-radius: 3px;
 }
 
 .hud-command--locked .hud-command__lock {

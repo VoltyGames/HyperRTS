@@ -60,6 +60,7 @@ namespace HyperRTS.Network.Commands
                 Queue = command.Queue,
                 Argument = command.Argument,
                 Position = command.Position,
+                End = command.End,
                 Target = command.Target,
                 TargetScenery = SceneryTarget(ref state, command.Target),
                 PrefabTypeId = EntityInfo.GetTypeId(state.EntityManager, command.Prefab),

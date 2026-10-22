@@ -19,6 +19,7 @@ namespace HyperRTS.Network.Commands
         public bool Queue;
         public int Argument;
         public float3 Position;
+        public float3 End;
         public Entity Target;
 
         /// <summary>A map scenery target's <c>SceneryId</c>: scenery isn't a ghost, so <see cref="Target"/> can't carry it.</summary>

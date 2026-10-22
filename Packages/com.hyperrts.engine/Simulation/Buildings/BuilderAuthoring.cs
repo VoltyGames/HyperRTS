@@ -16,6 +16,9 @@ namespace HyperRTS.Simulation.Buildings
         [Tooltip("Building prefabs this unit can place.")]
         public List<BuildingAuthoring> buildOptions = new();
 
+        [Tooltip("Building prefabs on the command card's second page, behind a More card.")]
+        public List<BuildingAuthoring> advancedBuildOptions = new();
+
         [Tooltip("Construction speed multiplier; several builders on one site add up.")]
         [Min(0.01f)]
         public float buildRate = 1f;
@@ -33,11 +36,21 @@ namespace HyperRTS.Simulation.Buildings
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 var options = BuilderAuthoring.Add(ref writer, authoring.buildRate);
-                foreach (var option in authoring.buildOptions)
+                AddOptions(options, authoring.buildOptions, false);
+                AddOptions(options, authoring.advancedBuildOptions, true);
+            }
+
+            private void AddOptions(DynamicBuffer<BuildOption> options, List<BuildingAuthoring> buildings,
+                bool advanced)
+            {
+                foreach (var building in buildings)
                 {
-                    if (option != null)
+                    if (building != null)
                     {
-                        options.Add(new BuildOption { Prefab = GetEntity(option, TransformUsageFlags.Dynamic) });
+                        options.Add(new BuildOption
+                        {
+                            Prefab = GetEntity(building, TransformUsageFlags.Dynamic), Advanced = advanced,
+                        });
                     }
                 }
             }

@@ -164,6 +164,16 @@
 
 .hud-command__lock {
     color: rgb(228, 232, 238);
+    background-color: rgba(0, 0, 0, 0.75);
+}
+
+.hud-command__chevron {
+    color: rgb(228, 232, 238);
+}
+
+.hud-command__caption {
+    font-size: 12px;
+    -unity-font-style: bold;
 }
 
 .hud-command__unpowered {

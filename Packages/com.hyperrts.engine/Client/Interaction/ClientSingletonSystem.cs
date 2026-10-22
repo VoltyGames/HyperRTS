@@ -19,11 +19,13 @@ namespace HyperRTS.Client.Interaction
             var entityManager = state.EntityManager;
             entityManager.CreateSingleton<SelectionDragState>();
             entityManager.CreateSingleton<PendingCommand>();
-            entityManager.CreateSingleton<PlacementState>();
+            var placement = entityManager.CreateSingleton<PlacementState>();
+            entityManager.AddBuffer<PlacementSegment>(placement);
             entityManager.CreateSingleton<PointerState>();
             entityManager.CreateSingleton<HoveredEntity>();
             entityManager.CreateSingleton<CameraFocusRequest>();
             entityManager.CreateSingleton<HotkeyPresses>();
+            entityManager.CreateSingleton<CommandCardPage>();
             entityManager.CreateSingleton<ScrollEdge>();
             entityManager.CreateSingleton<CursorIntent>();
             state.Enabled = false;

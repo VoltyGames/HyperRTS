@@ -24,12 +24,31 @@ income, refills and casualty income scale with the player's `Income` stat.
 
 Part of `Buildings`. A building with positive **Power** generates it, negative draws it. While demand exceeds
 supply, consumers go offline: weapons hold fire and production slows to `MatchRules.LowPowerProductionRate`.
+`Offline` replicates, so every client can stop machines and dim [lights](client.md#building-lights) with it.
 
 ## Buildings
 
 `BuildingAuthoring` sets the footprint, population, power and whether it starts under construction. A unit with
-`BuilderAuthoring` places sites and builds them up. Builders also repair. Selling refunds `MatchRules.SellRefund`.
+`BuilderAuthoring` places sites and builds them up; its `advancedBuildOptions` go on the command card's second page.
+Builders also repair. Selling refunds `MatchRules.SellRefund`.
 `FlagMountAuthoring` flies the owner's flag.
+
+### Line placement
+
+A building with `placedInLines` set, such as a wall, is placed by dragging: press at the start, drag, release to
+confirm. `PlacementLine` lays segments along the nearer grid axis, X or Z, each one footprint X long. A line along Z
+turns each segment a quarter, so its footprint swaps. Diagonal lines are not supported yet. The ghost draws every
+segment, valid or not by the same `PlacementMath` rules, and `PlacementState.ValidSegments` gives the HUD the
+line's total cost.
+
+The command is `PlaceLine`, sent as a start, an end and a prefab. `PlaceBuildingSystem` rebuilds the same line and
+places each free segment from the start as its own construction site, charged per segment. It skips blocked
+segments and stops at the first one the player can't afford or its `BuildLimit` refuses. The builders get Build
+orders on the sites from the end nearer them, the rest shift-queued. The skirmish AI skips line buildings for now.
+
+`ModelVariantsAuthoring` lists variant child models. Presentation shows one, picked by a hash of the position, so a
+wall doesn't repeat one panel and every client shows the same. A variant lists all its children, damage stage
+models included.
 
 `ConstructionSiteAuthoring` dresses a building while it is built. Its `site` child (fencing, crane, pallets, work
 lights) shows only under construction. Its work rig streams from the site's `Work_01` onward empties while progress
@@ -49,6 +68,8 @@ share `ProducibleAuthoring`: build time and population.
   through `OrderWriter` the next frame.
 - Every queued prefab needs `Producible` and every player `Population`.
 - When an entity changes owner, its queue is refunded to the old owner.
+- `Producer.Released` counts the units a producer has released and replicates to every client, which opens its
+  [production doors](support.md#animation).
 
 ## Capture
 

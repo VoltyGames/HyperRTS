@@ -12,7 +12,7 @@ UI state that input, the HUD and overlays share, created once per presented worl
 
 | Singleton | Role |
 | --- | --- |
-| `PlacementState` | Building placement: prefab, ghost position, validity |
+| `PlacementState` | Building placement: prefab, ghost position, validity, a line's drag start. Its `PlacementSegment` buffer holds a line's ghost segments |
 | `PendingCommand` | A targeted command waiting for a click, such as attack-move or an aimed ability |
 | `PointerState` | Whether the pointer is over UI, so world clicks are ignored |
 | `SelectionDragState` | The selection box being dragged |
@@ -30,7 +30,7 @@ UI state that input, the HUD and overlays share, created once per presented worl
 | `InputActionsProvider` | The one shared actions instance, with `Suspend` and `Resume` |
 | `SelectionInputSystem` | Mouse gestures to `SelectionInput` |
 | `CommandInputSystem` | Right-click, hotkeys and targeted commands to `PlayerCommand` |
-| `PlacementInputSystem` | Moves the placement ghost and confirms it |
+| `PlacementInputSystem` | Moves the placement ghost and confirms it, or drags and releases a [line](economy.md#line-placement) |
 | `WorldPointer` | What the cursor points at, and the ground point |
 | `CameraController` | Pan, edge scroll, eased zoom, rotate, map bounds. Pitch follows zoom height, flatter up close. Starts at the home base |
 
@@ -64,6 +64,7 @@ to every panel and keeps it in sync with the simulation. Code fills in only per-
 | --- | --- |
 | `hud.pop`, `hud.power` | Resource bar labels |
 | `command.return`, `command.unload`, `command.sell` | Fixed commands |
+| `command.more`, `command.back` | Command card page cards |
 | `stance.<stance>` | Stance names |
 | `outcome.victory`, `outcome.defeat`, `outcome.draw` | Game over banner |
 | `tooltip.build-time`, `tooltip.population`, `tooltip.power`, `tooltip.requires`, `tooltip.seconds` | Tooltip labels |
@@ -79,7 +80,7 @@ strip along the bottom. Its name is in the tooltip. Caption buttons (stances, un
 | Class | When | Look |
 | --- | --- | --- |
 | `hud-command--unaffordable` | `CannotAfford` | Cost in the warning colour, picture dimmed |
-| `hud-command--locked` | `MissingPrerequisite` | Greyscale, dark, padlock badge |
+| `hud-command--locked` | `MissingPrerequisite` | Greyscale, dark, a small padlock badge top right |
 | `hud-command--maxed` | `AtLimit` | Dimmed, the `count/max` badge in the warning colour |
 | `hud-command--researched` | `Researched` | Greyscale |
 | `hud-command--queued` | The selected producers have it queued | Count badge; the head shows a clockwise sweep |
@@ -87,6 +88,14 @@ strip along the bottom. Its name is in the tooltip. Caption buttons (stances, un
 A lightning badge marks an option whose producer is offline for low power. A refused card ignores presses and
 hotkeys but still shows its tooltip: name, description, cost, build time, population, power and each missing
 prerequisite in the warning colour. The tooltip shows on hover and on keyboard or gamepad focus, above the card.
+
+The card has one level of paging, as in StarCraft II, so grid positions and hotkeys stay put. A `CommandEntry` with
+`Page` 1 goes on the second page: `PurchaseCommands` puts a builder's advanced options (`BuildOption.Advanced`) there,
+and every other source's entries stay on the first. When a second page exists, a More card with a chevron takes the
+last of the 15 slots, after blank fillers, and opens it; there a Back card takes the same slot. Escape, a right click
+on the card or a new selection turns back. The page is the `CommandCardPage` client singleton, so Escape reaches it
+through `HotkeyInputSystem` or, for a front end that owns Escape, `MatchView.CancelInteraction`, which first cancels
+a placement or targeted order.
 
 The minimap shows the baked map image, local fog, blips and the camera view.
 
@@ -174,6 +183,14 @@ its turn and drops its last 0.5 m into place. Pieces not reached yet collapse in
 origin, so every pass, shadows included, skips them without alpha clipping. Meshes without UV3 data, materials
 without `_BUILD` and finished buildings draw as authored.
 
+### Building lights
+
+`_LightsOn` on `HyperRTS/LitTeam` multiplies emission, from 0 dark to 1 lit, and defaults to 1, so other meshes
+glow as authored. `BuildingLightsSystem` writes it to every mesh under a building from its replicated `Offline`
+state: dark while offline or under construction, lit otherwise. Each change flickers for
+`BuildingLights.FlickerSeconds` before settling. A building first seen takes its state without a flicker. Windows,
+floodlights and mast lights glow from the emission map, so they go dark on low power.
+
 ### Motion rig
 
 `MotionRigAuthoring` on a unit prefab root moves the model's pivots on the client. Its slots list turrets, barrels
@@ -218,7 +235,9 @@ hiding moves no chunks and leaves no zero-scale matrices. The reasons are:
 - `Fog` and `Inside`, from `FogVisibilitySystem`, on the whole group;
 - `Stage`, on every damage or resource stage model but the one on screen;
 - `Part`, on the intact or broken piece of a breakable part;
-- `Figure`, on a squad figure out of play.
+- `Figure`, on a squad figure out of play;
+- `Site`, on a finished building's construction site dressing;
+- `Variant`, on every [model variant](economy.md#line-placement) but the picked one, from `ModelVariantSystem`.
 
 Each reason has its own bit, so revealing a unit never redraws a model another reason hides. Effects, sounds and
 grass stamps that skip unseen units test `FogHidden` and `Inside` on the root.

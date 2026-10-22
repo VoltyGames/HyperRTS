@@ -21,6 +21,9 @@ namespace HyperRTS.Presentation.Rendering
 
         /// <summary>A finished building's construction site dressing.</summary>
         Site = 1 << 5,
+
+        /// <summary>A model variant other than the one picked for this entity.</summary>
+        Variant = 1 << 6,
     }
 
     /// <summary>

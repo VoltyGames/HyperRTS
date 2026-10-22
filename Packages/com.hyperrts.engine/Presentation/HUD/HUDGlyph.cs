@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>A vector badge (padlock, lightning) drawn in the element's text colour, so it needs no art file.</summary>
+    /// <summary>A vector badge (padlock, lightning, chevron) drawn in the element's text colour, so it needs no art file.</summary>
     [UxmlElement]
     public partial class HUDGlyph : VisualElement
     {
@@ -12,6 +12,9 @@ namespace HyperRTS.Presentation.HUD
         {
             new(0.62f, 0f), new(0.22f, 0.56f), new(0.48f, 0.56f), new(0.36f, 1f), new(0.8f, 0.4f), new(0.54f, 0.4f),
         };
+
+        private static readonly Vector2[] ChevronRight = { new(0.3f, 0.1f), new(0.7f, 0.5f), new(0.3f, 0.9f) };
+        private static readonly Vector2[] ChevronLeft = { new(0.7f, 0.1f), new(0.3f, 0.5f), new(0.7f, 0.9f) };
 
         private HUDGlyphShape _shape;
 
@@ -50,12 +53,25 @@ namespace HyperRTS.Presentation.HUD
             var painter = context.painter2D;
             painter.fillColor = resolvedStyle.color;
             painter.strokeColor = resolvedStyle.color;
-            if (_shape == HUDGlyphShape.Padlock)
+            switch (_shape)
             {
-                PaintPadlock(painter, box);
-                return;
+                case HUDGlyphShape.Padlock:
+                    PaintPadlock(painter, box);
+                    break;
+                case HUDGlyphShape.Lightning:
+                    PaintBolt(painter, box);
+                    break;
+                case HUDGlyphShape.ChevronRight:
+                    PaintChevron(painter, box, ChevronRight);
+                    break;
+                case HUDGlyphShape.ChevronLeft:
+                    PaintChevron(painter, box, ChevronLeft);
+                    break;
             }
+        }
 
+        private static void PaintBolt(Painter2D painter, Rect box)
+        {
             painter.BeginPath();
             painter.MoveTo(Point(box, Bolt[0]));
             for (var i = 1; i < Bolt.Length; i++)
@@ -65,6 +81,18 @@ namespace HyperRTS.Presentation.HUD
 
             painter.ClosePath();
             painter.Fill();
+        }
+
+        private static void PaintChevron(Painter2D painter, Rect box, Vector2[] points)
+        {
+            painter.lineWidth = Mathf.Max(2f, box.width * 0.16f);
+            painter.lineJoin = LineJoin.Round;
+            painter.lineCap = LineCap.Round;
+            painter.BeginPath();
+            painter.MoveTo(Point(box, points[0]));
+            painter.LineTo(Point(box, points[1]));
+            painter.LineTo(Point(box, points[2]));
+            painter.Stroke();
         }
 
         private static void PaintPadlock(Painter2D painter, Rect box)
@@ -97,5 +125,7 @@ namespace HyperRTS.Presentation.HUD
     {
         Padlock,
         Lightning,
+        ChevronRight,
+        ChevronLeft,
     }
 }

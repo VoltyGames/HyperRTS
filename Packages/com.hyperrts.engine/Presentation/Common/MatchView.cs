@@ -33,6 +33,7 @@ namespace HyperRTS.Presentation.Common
         private EntityQuery _match;
         private EntityQuery _placement;
         private EntityQuery _pending;
+        private EntityQuery _commandPage;
 
         public EntityManager EntityManager { get; private set; }
         public bool IsReady { get; private set; }
@@ -107,8 +108,9 @@ namespace HyperRTS.Presentation.Common
         public bool IsLocalDefeated() => HasLocalPlayer && EntityManager.HasEnabled<Defeated>(LocalPlayer);
 
         /// <summary>
-        /// Cancels a building placement or a targeted command waiting for a click; false when neither was pending.
-        /// For a front end that owns Escape (<c>InputActionsProvider.FrontEndOwnsCancel</c>).
+        /// Cancels a building placement or a targeted command waiting for a click, else turns the command card back to
+        /// its first page; false when there was nothing to undo. For a front end that owns Escape
+        /// (<c>InputActionsProvider.FrontEndOwnsCancel</c>).
         /// </summary>
         public bool CancelInteraction()
         {
@@ -124,7 +126,18 @@ namespace HyperRTS.Presentation.Common
                 _pending.SetSingleton(new PendingCommand());
             }
 
-            return placing || targeting;
+            if (placing || targeting)
+            {
+                return true;
+            }
+
+            var paged = _commandPage.TryGetSingleton(out CommandCardPage page) && page.Page > 0;
+            if (paged)
+            {
+                _commandPage.SetSingleton(new CommandCardPage());
+            }
+
+            return paged;
         }
 
         private void Bind(World world)
@@ -140,6 +153,7 @@ namespace HyperRTS.Presentation.Common
             _match = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MatchState>());
             _placement = EntityManager.CreateEntityQuery(ComponentType.ReadWrite<PlacementState>());
             _pending = EntityManager.CreateEntityQuery(ComponentType.ReadWrite<PendingCommand>());
+            _commandPage = EntityManager.CreateEntityQuery(ComponentType.ReadWrite<CommandCardPage>());
         }
 
         private void RefreshColors()
