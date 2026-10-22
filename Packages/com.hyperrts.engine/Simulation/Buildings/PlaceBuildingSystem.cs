@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Buildings
 
         private void PlaceAll(ref SystemState state, NativeList<IssuedCommand> requests)
         {
-            // Played back right away so the Build orders below can target the real site entities.
+            // Played back right away so the sites exist before builders read the Build orders below.
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var sites = new NativeList<Site>(Allocator.Temp);
             var assignments = new NativeList<Assignment>(Allocator.Temp);
