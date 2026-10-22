@@ -113,6 +113,39 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void Column_QueuedAtAChoke_FarFromItsGoals_KeepsItsOrders()
+        {
+            // A lane one cell wide, z 0 to 1, from x -15 to 15, too long to go round, shut by an enemy standing in it.
+            SpawnObstacle(new float3(0f, 0f, 2f), new float2(30f, 2f));
+            SpawnObstacle(new float3(0f, 0f, -1f), new float2(30f, 2f));
+            _world.Tick();
+            var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 0.5f), radius: 0.4f);
+            var column = new Entity[3];
+            for (var i = 0; i < column.Length; i++)
+            {
+                column[i] = _world.SpawnUnit(1, new float3(-18f - i * 1.5f, 0f, 0.5f), radius: 0.4f);
+                var goal = new float3(25f + i * 2f, 0f, 0.5f);
+                _world.Issue(column[i], new Order { Type = OrderType.Move, Position = goal });
+            }
+
+            _world.Run(MoveProgress.GiveUpSeconds * 2f);
+            foreach (var unit in column)
+            {
+                Assert.IsTrue(_world.IsEnabled<ActiveOrder>(unit), "still queued, not given up");
+            }
+
+            _world.EntityManager.SetComponentData(enemy, LocalTransform.FromPosition(new float3(0f, 0f, 30f)));
+            var done = _world.RunUntil(() => System.Array.TrueForAll(column, u => !_world.IsEnabled<ActiveOrder>(u)),
+                30f);
+
+            Assert.IsTrue(done, "the column went through once the lane cleared");
+            foreach (var unit in column)
+            {
+                Assert.Greater(_world.GetPosition(unit).x, 20f, "reached its goal");
+            }
+        }
+
+        [Test]
         public void Group_SharingAGoal_ArrivesByTouch_WithoutStalling()
         {
             var goal = new float3(8f, 0f, 0f);
