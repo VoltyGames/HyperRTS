@@ -100,13 +100,14 @@ InputData TerrainInputData(TerrainForwardVaryings input, TerrainPixel pixel, hal
 
     inputData.vertexLighting = input.vertexLight;
     inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
-    inputData.shadowMask = half4(1.0, 1.0, 1.0, 1.0);
 
-    #if defined(_SCREEN_SPACE_IRRADIANCE)
-        inputData.bakedGI = SAMPLE_GI(_ScreenSpaceIrradiance, input.positionCS.xy, inputData.normalWS);
-    #else
-        inputData.bakedGI = SampleSHPixel(input.vertexSH, inputData.normalWS);
-    #endif
+    GIParams giParams = (GIParams)0;
+    giParams.vertexSH = input.vertexSH;
+    giParams.positionWS = inputData.positionWS;
+    giParams.normalWS = inputData.normalWS;
+    giParams.viewDirWS = inputData.viewDirectionWS;
+    giParams.positionSS = input.positionCS.xy;
+    InitializeBakedGI(giParams, inputData.bakedGI, inputData.shadowMask);
     return inputData;
 }
 

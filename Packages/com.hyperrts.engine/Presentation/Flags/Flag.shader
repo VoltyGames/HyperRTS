@@ -72,9 +72,7 @@ Shader "HyperRTS/Flag"
             half4 Frag(Varyings input, FRONT_FACE_TYPE face : FRONT_FACE_SEMANTIC) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
-                half3 texel = SAMPLE_TEXTURE2D_ARRAY(_FlagArray, sampler_FlagArray, input.uv, _FlagState.x).rgb;
-                half band = step(input.uv.x, _BandWidth) * _FlagColor.a;
-                half3 albedo = lerp(texel, _FlagColor.rgb, band);
+                half3 albedo = FlagAlbedo(input.uv);
 
                 half3 normal = normalize(input.normalWS) * IS_FRONT_VFACE(face, 1.0, -1.0);
                 Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
@@ -208,6 +206,24 @@ Shader "HyperRTS/Flag"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 return DepthNormalOutput(normalize(input.normalWS) * IS_FRONT_VFACE(face, 1.0, -1.0));
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Meta"
+            Tags { "LightMode" = "Meta" }
+
+            HLSLPROGRAM
+            #pragma vertex MetaPassVertex
+            #pragma fragment MetaPassFragment
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+
+            // GI bakes per material, so it sees the material's flag and band, not each entity's.
+            half3 MetaAlbedo(float2 uv0)
+            {
+                return FlagAlbedo(uv0);
             }
             ENDHLSL
         }

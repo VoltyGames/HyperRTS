@@ -136,5 +136,24 @@ Shader "HyperRTS/Foliage"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/FoliagePasses.hlsl"
             ENDHLSL
         }
+
+        Pass
+        {
+            Name "Meta"
+            Tags { "LightMode" = "Meta" }
+
+            HLSLPROGRAM
+            #pragma vertex MetaPassVertex
+            #pragma fragment MetaPassFragment
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/FoliageInput.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+
+            // Per-plant tint and root ground colour are per vertex, so only the texture and material tint reach GI.
+            half3 MetaAlbedo(float2 uv0)
+            {
+                return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, TRANSFORM_TEX(uv0, _BaseMap)).rgb * _BaseColor.rgb;
+            }
+            ENDHLSL
+        }
     }
 }

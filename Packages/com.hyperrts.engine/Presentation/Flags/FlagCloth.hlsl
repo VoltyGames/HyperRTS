@@ -48,6 +48,13 @@ struct Attributes
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
+half3 FlagAlbedo(float2 uv)
+{
+    half3 texel = SAMPLE_TEXTURE2D_ARRAY(_FlagArray, sampler_FlagArray, uv, _FlagState.x).rgb;
+    half band = step(uv.x, _BandWidth) * _FlagColor.a;
+    return lerp(texel, _FlagColor.rgb, band);
+}
+
 struct Cloth
 {
     float3 positionWS;

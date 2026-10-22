@@ -53,6 +53,53 @@ Shader "HyperRTS/Water"
             "IgnoreProjector" = "True"
         }
 
+        HLSLINCLUDE
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+        TEXTURE2D(_NormalMap);
+        SAMPLER(sampler_NormalMap);
+
+        CBUFFER_START(UnityPerMaterial)
+            half4 _ShallowColor;
+            half4 _DeepColor;
+            float _DepthRange;
+            float _Clarity;
+            float4 _NormalMap_ST;
+            float _RippleSize;
+            half _RippleStrength;
+            float _RippleFadeStart;
+            float _RippleFadeEnd;
+            half _RippleStrengthFar;
+            float _FlowSpeed;
+            half _Smoothness;
+            half _Refraction;
+            half _GlintStrength;
+            half _GlintPeak;
+            float _GlintFadeStart;
+            float _GlintFadeEnd;
+            float _ShoreFadeDepth;
+            half4 _FoamColor;
+            half _FordAlpha;
+            float _RapidsFoamWidth;
+            float _RapidsFoamLength;
+            half _FlowFoamAmount;
+            float _FlowFoamScale;
+            float _BankFoamWidth;
+            half _BankFoamAmount;
+            half _ShoreWaveFoam;
+            float _ShoreWaveLength;
+            float _ShoreWavePeriod;
+            half _ShoreLap;
+            half _WakeFoam;
+            half _WakeRipple;
+            half _ReflectionStrength;
+            half _ReflectionFloor;
+            float _ReflectionDistance;
+            float _ReflectionThickness;
+            half _ReflectionDistortion;
+        CBUFFER_END
+        ENDHLSL
+
         Pass
         {
             Name "Water"
@@ -70,54 +117,10 @@ Shader "HyperRTS/Water"
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #pragma multi_compile_fragment _ _TERRAIN_SIMPLE
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/EyeDepth.hlsl"
-
-            TEXTURE2D(_NormalMap);
-            SAMPLER(sampler_NormalMap);
-
-            CBUFFER_START(UnityPerMaterial)
-                half4 _ShallowColor;
-                half4 _DeepColor;
-                float _DepthRange;
-                float _Clarity;
-                float4 _NormalMap_ST;
-                float _RippleSize;
-                half _RippleStrength;
-                float _RippleFadeStart;
-                float _RippleFadeEnd;
-                half _RippleStrengthFar;
-                float _FlowSpeed;
-                half _Smoothness;
-                half _Refraction;
-                half _GlintStrength;
-                half _GlintPeak;
-                float _GlintFadeStart;
-                float _GlintFadeEnd;
-                float _ShoreFadeDepth;
-                half4 _FoamColor;
-                half _FordAlpha;
-                float _RapidsFoamWidth;
-                float _RapidsFoamLength;
-                half _FlowFoamAmount;
-                float _FlowFoamScale;
-                float _BankFoamWidth;
-                half _BankFoamAmount;
-                half _ShoreWaveFoam;
-                float _ShoreWaveLength;
-                float _ShoreWavePeriod;
-                half _ShoreLap;
-                half _WakeFoam;
-                half _WakeRipple;
-                half _ReflectionStrength;
-                half _ReflectionFloor;
-                float _ReflectionDistance;
-                float _ReflectionThickness;
-                half _ReflectionDistortion;
-            CBUFFER_END
 
             #include "Trample.hlsl"
             #include "WaterFoam.hlsl"
@@ -260,6 +263,26 @@ Shader "HyperRTS/Water"
                 half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(shoreDepth / _ShoreFadeDepth), foam);
                 color = ApplyHeightFog(color, fog);
                 return half4(color, alpha);
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Meta"
+            Tags { "LightMode" = "Meta" }
+
+            Cull Off
+
+            HLSLPROGRAM
+            #pragma vertex MetaPassVertex
+            #pragma fragment MetaPassFragment
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+
+            // Surface Cache GI asks every renderer for albedo, transparent or not; deep water is what bounces light.
+            half3 MetaAlbedo(float2 uv0)
+            {
+                return _DeepColor.rgb;
             }
             ENDHLSL
         }

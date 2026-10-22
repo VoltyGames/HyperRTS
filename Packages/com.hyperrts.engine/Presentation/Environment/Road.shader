@@ -37,6 +37,38 @@ Shader "HyperRTS/Road"
             "IgnoreProjector" = "True"
         }
 
+        HLSLINCLUDE
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+        TEXTURE2D(_BaseMap);
+        SAMPLER(sampler_BaseMap);
+        TEXTURE2D(_BumpMap);
+        SAMPLER(sampler_BumpMap);
+        TEXTURE2D(_MaskMap);
+        SAMPLER(sampler_MaskMap);
+        TEXTURE2D(_NoiseMap);
+        SAMPLER(sampler_NoiseMap);
+
+        CBUFFER_START(UnityPerMaterial)
+            half4 _Tint;
+            half _BumpScale;
+            half _Smoothness;
+            float _TileLength;
+            half _EdgeWidth;
+            half _EdgeNoise;
+            float _NoiseSize;
+            half _WetDarkening;
+            half _WetSmoothness;
+            half _PuddleCoverage;
+            half _PuddleSmoothness;
+            float _PuddleNoiseSize;
+            half _RutOffset;
+            half _RutWidth;
+            half _RutPuddles;
+            half _EdgePuddles;
+        CBUFFER_END
+        ENDHLSL
+
         Pass
         {
             Name "Road"
@@ -56,6 +88,8 @@ Shader "HyperRTS/Road"
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_IRRADIANCE
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_REFLECTION
             #pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #pragma multi_compile _ _LIGHT_LAYERS
@@ -63,38 +97,9 @@ Shader "HyperRTS/Road"
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Wetness.hlsl"
-
-            TEXTURE2D(_BaseMap);
-            SAMPLER(sampler_BaseMap);
-            TEXTURE2D(_BumpMap);
-            SAMPLER(sampler_BumpMap);
-            TEXTURE2D(_MaskMap);
-            SAMPLER(sampler_MaskMap);
-            TEXTURE2D(_NoiseMap);
-            SAMPLER(sampler_NoiseMap);
-
-            CBUFFER_START(UnityPerMaterial)
-                half4 _Tint;
-                half _BumpScale;
-                half _Smoothness;
-                float _TileLength;
-                half _EdgeWidth;
-                half _EdgeNoise;
-                float _NoiseSize;
-                half _WetDarkening;
-                half _WetSmoothness;
-                half _PuddleCoverage;
-                half _PuddleSmoothness;
-                float _PuddleNoiseSize;
-                half _RutOffset;
-                half _RutWidth;
-                half _RutPuddles;
-                half _EdgePuddles;
-            CBUFFER_END
 
             struct Attributes
             {
@@ -216,6 +221,27 @@ Shader "HyperRTS/Road"
                 #endif
                 half4 color = UniversalFragmentPBR(inputData, surface);
                 return half4(color.rgb, surface.alpha);
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Meta"
+            Tags { "LightMode" = "Meta" }
+
+            Cull Off
+
+            HLSLPROGRAM
+            #pragma target 4.5
+            #pragma vertex MetaPassVertex
+            #pragma fragment MetaPassFragment
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+
+            // One tile across the quad: the road's V runs in metres, so GI sees the tile's mean colour.
+            half3 MetaAlbedo(float2 uv0)
+            {
+                return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv0).rgb * _Tint.rgb;
             }
             ENDHLSL
         }
