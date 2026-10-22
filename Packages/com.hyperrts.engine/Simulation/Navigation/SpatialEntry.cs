@@ -15,6 +15,9 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Has a <see cref="NavAgent"/>, so it moves and crowds other units.</summary>
         public bool IsUnit;
 
+        /// <summary>Its <see cref="MoveDestination"/> is enabled; a parked unit holds its ground against it.</summary>
+        public bool IsMoving;
+
         /// <summary>Has a <see cref="Common.BuildingTag"/>; destructible scenery is neither this nor a unit.</summary>
         public bool IsBuilding;
 

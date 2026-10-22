@@ -23,6 +23,7 @@ namespace HyperRTS.Simulation.Navigation
         private ComponentLookup<NavAgent> _agentLookup;
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<BuildingTag> _buildingLookup;
+        private ComponentLookup<MoveDestination> _movingLookup;
 
         public void OnCreate(ref SystemState state)
         {
@@ -31,6 +32,7 @@ namespace HyperRTS.Simulation.Navigation
             _agentLookup = state.GetComponentLookup<NavAgent>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
+            _movingLookup = state.GetComponentLookup<MoveDestination>(true);
 
             state.EntityManager.CreateSingleton(new SpatialIndex
             {
@@ -76,6 +78,7 @@ namespace HyperRTS.Simulation.Navigation
             _agentLookup.Update(ref state);
             _obstacleLookup.Update(ref state);
             _buildingLookup.Update(ref state);
+            _movingLookup.Update(ref state);
 
             var input = state.Dependency;
             var indexed = new IndexJob
@@ -86,6 +89,7 @@ namespace HyperRTS.Simulation.Navigation
                 AgentLookup = _agentLookup,
                 ObstacleLookup = _obstacleLookup,
                 BuildingLookup = _buildingLookup,
+                MovingLookup = _movingLookup,
             }.ScheduleParallel(_indexed, input);
             state.Dependency = JobHandle.CombineDependencies(indexed, IndexBlockers(ref state, ref index, input));
         }
@@ -123,6 +127,7 @@ namespace HyperRTS.Simulation.Navigation
             [ReadOnly] public ComponentLookup<NavAgent> AgentLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<BuildingTag> BuildingLookup;
+            [ReadOnly] public ComponentLookup<MoveDestination> MovingLookup;
 
             private void Execute(Entity entity, in LocalTransform transform, in Faction faction)
             {
@@ -135,6 +140,7 @@ namespace HyperRTS.Simulation.Navigation
                     Radius = EntityRadius.Get(entity, AgentLookup, ObstacleLookup),
                     Faction = faction.Value,
                     IsUnit = isUnit,
+                    IsMoving = MovingLookup.HasEnabled(entity),
                     IsBuilding = BuildingLookup.HasComponent(entity),
                     Layer = agent.Layer,
                     SegmentAxis = agent.SegmentAxis(transform.Rotation),

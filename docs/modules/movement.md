@@ -43,7 +43,9 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 population. Units follow their path and
 stop on arrival. A unit with a hull length is a capsule that long along its forward and two radii wide; 0 keeps a
 circle. `SeparationVisitor` pushes neighbours apart along the line between their closest points, half each, until
-the larger of their two spacings lies between them (0.6 m by default, less for infantry). Formation slots are
+the larger of their two spacings lies between them (0.6 m by default, less for infantry). A parked unit holds its
+ground against a moving one: the mover takes the whole push and steers round it, keeping right head-on, or waits
+against it when it stands on the mover's goal. Formation slots are
 spaced by the same footprint, so a tank column doesn't pile up nose to tail.
 
 Every unit follows its path through `Locomotion`. Without its own, a unit gets `Locomotion.Instant`: full speed and

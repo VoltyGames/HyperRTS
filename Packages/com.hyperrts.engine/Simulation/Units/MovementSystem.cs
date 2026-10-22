@@ -93,13 +93,16 @@ namespace HyperRTS.Simulation.Units
                 var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
                 // Instant handling needs no memory between frames, so units without it start each from rest.
                 var remembers = States.TryGetComponent(entity, out var drive);
+                // Read before arrival can clear it, as the index saw it, so both sides of a contact agree.
+                var wasMoving = moving.ValueRO;
                 var step = Plan(entity, transform, speed.Value, agent, destination.Value, moving, ref path, waypoints,
                     locomotion, ref drive, ref heading);
 
                 var flying = agent.Layer == NavLayer.Air;
                 var from = transform.Position.xz;
                 var axis = agent.SegmentAxis(transform.Rotation);
-                var wanted = from + step + Separation(new SeparationVisitor(entity, from, axis, agent), maxStep);
+                var crowd = new SeparationVisitor(entity, from, axis, agent, wasMoving, step, destination.Value.xz);
+                var wanted = from + step + Separation(crowd, maxStep);
                 if (flying)
                 {
                     Fly(entity, ref transform, wanted);
@@ -108,7 +111,8 @@ namespace HyperRTS.Simulation.Units
                 {
                     if (HasBlockers)
                     {
-                        wanted += Clearance(new SeparationVisitor(entity, wanted, axis, agent));
+                        crowd.Position = wanted;
+                        wanted += Clearance(crowd);
                     }
 
                     Walk(ref transform, from, wanted, agent, axis, moving.ValueRO, waypoints, ref path);

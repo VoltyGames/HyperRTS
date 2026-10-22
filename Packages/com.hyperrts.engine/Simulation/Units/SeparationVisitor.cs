@@ -5,10 +5,11 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// Sums how far a unit must move to stop crowding neighbouring units (half each, as both move). Blockers are
+    /// Sums how far a unit must move to stop crowding neighbouring units (half each, as both move). Footprints are
     /// capsules (circles when the segment is zero) and must stay the larger of the two spacings apart, pushed along
-    /// the line between their closest points. A blocker (a wreck) takes no share and pushes the unit fully
-    /// clear. Units on layers that never share a surface (a ship under a bridge, a tank on it) ignore each other.
+    /// the line between their closest points. A blocker (a wreck) or a parked unit holds its ground against a
+    /// moving one, which takes the whole push and steers round a parked unit unless it stands on the goal. Units on
+    /// layers that never share a surface (a ship under a bridge, a tank on it) ignore each other.
     /// </summary>
     internal struct SeparationVisitor : ISpatialVisitor
     {
@@ -18,9 +19,13 @@ namespace HyperRTS.Simulation.Units
         public float2 SegmentAxis;
         public float Spacing;
         public NavLayer Layer;
+        public bool Moving;
+        public float2 Step;
+        public float2 Goal;
         public float2 Push;
 
-        public SeparationVisitor(Entity self, float2 position, float2 axis, in NavAgent agent)
+        public SeparationVisitor(Entity self, float2 position, float2 axis, in NavAgent agent, bool moving,
+            float2 step, float2 goal)
         {
             Self = self;
             Position = position;
@@ -28,6 +33,9 @@ namespace HyperRTS.Simulation.Units
             SegmentAxis = axis;
             Spacing = agent.Spacing;
             Layer = agent.Layer;
+            Moving = moving;
+            Step = step;
+            Goal = goal;
             Push = float2.zero;
         }
 
@@ -58,10 +66,49 @@ namespace HyperRTS.Simulation.Units
             }
 
             var distance = math.sqrt(distanceSq);
-            // A blocker never moves, so the unit takes the whole push.
-            var share = entry.IsBlocker ? 1f : 0.5f;
-            Push += Direction(offset, distance, entry) * ((reach - distance) * share);
+            var direction = Direction(offset, distance, entry);
+            var overlap = reach - distance;
+            if (entry.IsBlocker)
+            {
+                Push += direction * overlap;
+                return;
+            }
+
+            if (entry.IsMoving == Moving)
+            {
+                Push += direction * (overlap * 0.5f);
+                return;
+            }
+
+            // Only the mover gives way, so a truck can't shove a parked dozer.
+            if (Moving)
+            {
+                Push += direction * overlap + Deflection(direction, entry);
+            }
         }
+
+        /// <summary>Turns the part of the step that runs into a parked unit along its side, keeping right head-on.</summary>
+        private readonly float2 Deflection(float2 direction, in SpatialEntry entry)
+        {
+            var into = -math.dot(Step, direction);
+            if (into <= 0f || IsGoalTaken(entry))
+            {
+                return float2.zero;
+            }
+
+            var side = new float2(-direction.y, direction.x);
+            var lean = math.dot(side, Step);
+            if (math.abs(lean) < 1e-6f)
+            {
+                lean = math.dot(side, new float2(Step.y, -Step.x));
+            }
+
+            return side * (math.sign(lean) * into);
+        }
+
+        // Going round a unit parked on the goal would circle it forever, so the mover waits against it instead.
+        private readonly bool IsGoalTaken(in SpatialEntry entry) =>
+            math.distance(Goal, entry.Position.xz) < entry.HullReach + Radius;
 
         /// <summary>From the other unit's segment to this one's, between their closest points.</summary>
         private readonly float2 ClosestOffset(float2 other, float2 otherAxis)
