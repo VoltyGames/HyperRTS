@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Generation;
@@ -17,7 +18,6 @@ namespace HyperRTS.Editor.Maps.Designer
     public sealed class MapEditorWindow : EditorWindow
     {
         private const string WindowTitle = "Map Editor";
-        private const long DiskPollMilliseconds = 1000;
 
         [SerializeField] private string _specPath;
 
@@ -68,7 +68,6 @@ namespace HyperRTS.Editor.Maps.Designer
             _inspector = root.Require<MapFeatureInspector>("inspector");
             _report = root.Require<MapReportPanel>("report");
             _report.ShowFeature += feature => _preview?.Show(feature);
-            root.schedule.Execute(PollDisk).Every(DiskPollMilliseconds);
 
             if (_document == null && File.Exists(_specPath))
             {
@@ -164,6 +163,16 @@ namespace HyperRTS.Editor.Maps.Designer
             _canvas.ShowGhosts = on;
         }
 
-        private void PollDisk() => _document?.ReloadIfChangedOnDisk();
+        /// <summary>Reloads the shown spec when it is among <paramref name="imported"/>.</summary>
+        public void OnImported(string[] imported)
+        {
+            if (_document == null || Array.IndexOf(imported, _document.Path) < 0)
+            {
+                return;
+            }
+
+            // After the import, since the reload starts a live preview that loads library assets.
+            EditorApplication.delayCall += () => _document?.Reload();
+        }
     }
 }

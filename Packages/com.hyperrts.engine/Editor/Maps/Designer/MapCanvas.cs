@@ -16,7 +16,6 @@ namespace HyperRTS.Editor.Maps.Designer
     public sealed partial class MapCanvas : VisualElement
     {
         private const float ZoomStep = 1.15f;
-        private const long PreviewPollMilliseconds = 1000;
         private const int MiddleButton = 2;
 
         private MapSpecDocument _document;
@@ -57,7 +56,7 @@ namespace HyperRTS.Editor.Maps.Designer
             var first = _document == null;
             _document = document;
             _selection = selection;
-            _image.Reset();
+            _image.Follow(_document.MapName);
             _fitted = false;
             if (first)
             {
@@ -68,12 +67,11 @@ namespace HyperRTS.Editor.Maps.Designer
             OnResized();
         }
 
-        // Painting, layout and polling read the document, so they start with the first one.
+        // Painting and layout read the document, so they start with the first one.
         private void StartDrawing()
         {
             _overlay.generateVisualContent = Paint;
             RegisterCallback<GeometryChangedEvent>(_ => OnResized());
-            schedule.Execute(LoadPreview).Every(PreviewPollMilliseconds);
         }
 
         public bool ShowGhosts
@@ -105,7 +103,7 @@ namespace HyperRTS.Editor.Maps.Designer
             }
         }
 
-        /// <summary>Re-reads the spec's symmetry and preview and redraws; call after any document change.</summary>
+        /// <summary>Re-reads the spec's symmetry and redraws; call after any document change.</summary>
         public void Refresh()
         {
             try
@@ -119,7 +117,6 @@ namespace HyperRTS.Editor.Maps.Designer
                 _error.text = exception.Message;
             }
 
-            LoadPreview();
             OnViewChanged();
         }
 
@@ -183,8 +180,6 @@ namespace HyperRTS.Editor.Maps.Designer
             _scale.text = $"Grid {MapCanvasPainter.GridStep(_view):0.#} m";
             _overlay.MarkDirtyRepaint();
         }
-
-        private void LoadPreview() => _image.Poll(_document.MapName);
 
         private void OnWheel(WheelEvent evt)
         {

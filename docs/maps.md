@@ -25,9 +25,9 @@ A preview needs no scene. It does not measure rush times or attack paths; only a
 ## Map Editor
 
 **HyperRTS ▸ Map Editor** shows one spec on a top-down canvas. It is a viewer: you edit the JSON, and the editor
-reloads the file within a second of it changing on disk. Open a spec by double-clicking a `.map.json` or with
-**Open** on **HyperRTS ▸ Tools ▸ Maps**. The editing tools were removed while the spec format still changes
-often; the engine tag `map-editor-write-tools` keeps them.
+reloads the file when Unity imports it, and the canvas when a preview rewrites its image. Open a spec by
+double-clicking a `.map.json` or with **Open** on **HyperRTS ▸ Tools ▸ Maps**. The editing tools were removed
+while the spec format still changes often; the engine tag `map-editor-write-tools` keeps them.
 
 | Part | Shows |
 | --- | --- |

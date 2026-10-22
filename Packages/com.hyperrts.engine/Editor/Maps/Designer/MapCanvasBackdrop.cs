@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading;
 using HyperRTS.Editor.Maps.Report;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -13,9 +14,15 @@ namespace HyperRTS.Editor.Maps.Designer
     public sealed partial class MapCanvasBackdrop : VisualElement
     {
         private Texture2D _image;
+        private string _path;
         private long _diskTicks;
+        private FileSystemWatcher _watcher;
 
-        public MapCanvasBackdrop() => RegisterCallback<DetachFromPanelEvent>(_ => Reset());
+        public MapCanvasBackdrop()
+        {
+            RegisterCallback<AttachToPanelEvent>(_ => Start());
+            RegisterCallback<DetachFromPanelEvent>(_ => Stop());
+        }
 
         /// <summary>Shows an image drawn in memory; the backdrop owns it from now on.</summary>
         public void Show(Texture2D image)
@@ -25,11 +32,52 @@ namespace HyperRTS.Editor.Maps.Designer
             style.backgroundImage = _image;
         }
 
-        /// <summary>Loads the map's preview image from disk when that file changed since it was last read.</summary>
-        public void Poll(string mapName)
+        /// <summary>Shows the map's preview image from disk, and again each time a preview rewrites it.</summary>
+        public void Follow(string mapName)
         {
-            var path = MapReport.ImagePath(mapName + MapReport.PreviewSuffix);
-            var ticks = File.Exists(path) ? File.GetLastWriteTimeUtc(path).Ticks : 0L;
+            _path = MapReport.ImagePath(mapName + MapReport.PreviewSuffix);
+            Start();
+        }
+
+        private void Start()
+        {
+            Stop();
+            if (_path == null)
+            {
+                return;
+            }
+
+            LoadFromDisk();
+            // Logs/ is outside the asset database, so no import event reports the preview.
+            Directory.CreateDirectory(MapReport.Folder);
+            var main = SynchronizationContext.Current;
+            var watcher = new FileSystemWatcher(MapReport.Folder, Path.GetFileName(_path));
+            watcher.Changed += (_, _) => main.Post(_ => OnWritten(watcher), null);
+            watcher.Created += (_, _) => main.Post(_ => OnWritten(watcher), null);
+            watcher.EnableRaisingEvents = true;
+            _watcher = watcher;
+        }
+
+        // Events arrive on a worker thread and may land after the watcher stopped.
+        private void OnWritten(FileSystemWatcher watcher)
+        {
+            if (watcher == _watcher)
+            {
+                LoadFromDisk();
+            }
+        }
+
+        private void Stop()
+        {
+            _watcher?.Dispose();
+            _watcher = null;
+            _diskTicks = 0L;
+            Show(null);
+        }
+
+        private void LoadFromDisk()
+        {
+            var ticks = File.Exists(_path) ? File.GetLastWriteTimeUtc(_path).Ticks : 0L;
             if (ticks == _diskTicks)
             {
                 return;
@@ -40,17 +88,10 @@ namespace HyperRTS.Editor.Maps.Designer
             if (ticks != 0L)
             {
                 image = new Texture2D(2, 2) { hideFlags = HideFlags.HideAndDontSave };
-                image.LoadImage(File.ReadAllBytes(path));
+                image.LoadImage(File.ReadAllBytes(_path));
             }
 
             Show(image);
-        }
-
-        /// <summary>Drops the image, so the next poll reloads the one on disk; used when detached or the map changes.</summary>
-        public void Reset()
-        {
-            Show(null);
-            _diskTicks = 0L;
         }
 
         private void Release()

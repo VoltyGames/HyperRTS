@@ -74,7 +74,7 @@ Inside the playable area, trees with entity versions become placements. The rest
 
 | Folder | Holds |
 | --- | --- |
-| `Designer/` | The read-only **HyperRTS ▸ Map Editor**. `MapSpecDocument` reloads the spec when its file changes |
+| `Designer/` | The read-only **HyperRTS ▸ Map Editor**. `MapSpecImport` reloads the spec on import; the canvas watches its preview image |
 | `Tools/` | The **Tools ▸ Maps** page, `MapBuildCommands`, `MapCommandLine`, `MapKeyReference`, `MapSpecRule` |
 
 ## Extending
