@@ -36,8 +36,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 for (var x = min.x; x <= max.x; x++)
                 {
-                    var low = grid.Min + new float2(x, y) * grid.CellSize;
-                    if (NavCapsule.SegmentRectDistance(center - axis, center + axis, low, low + grid.CellSize) < Radius)
+                    if (grid.CellGap(new int2(x, y), center - axis, center + axis) < Radius)
                     {
                         var index = grid.Index(new int2(x, y));
                         grid.Cells[index] = (byte)((NavSurface)grid.Cells[index] & ~NavSurface.Land);

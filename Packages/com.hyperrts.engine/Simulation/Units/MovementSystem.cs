@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Units
     /// <summary>
     /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> and, when the move ends by
     /// itself, disables it and enables <see cref="Arrival"/>. <see cref="MoveProgress"/> repairs the path and gives
-    /// up when the unit stops getting on. A mover steers round its neighbours (<see cref="AvoidanceVisitor"/>), units
+    /// up when the unit stops getting on. A mover steers round its neighbours (<see cref="CrowdVisitor"/>), units
     /// of the same layer are pushed their spacing apart, and no footprint enters cells closed to the agent
     /// (<see cref="NavCapsule.Constrain"/>), wrecks' cells included. Every unit drives with its
     /// <see cref="Locomotion"/>, or <see cref="Locomotion.Instant"/> without one, avoidance included.
@@ -103,23 +103,23 @@ namespace HyperRTS.Simulation.Units
                 // Read before arrival can clear it, as the index saw it, so both sides of a contact agree.
                 var wasMoving = moving.ValueRO;
                 var from = transform.Position.xz;
-                var axis = agent.SegmentAxis(transform.Rotation);
-                var avoiding = new AvoidanceVisitor(entity, from, axis, agent, faction.Value, destination, GivingWay);
-                var step = Plan(entity, transform, speed.Value, agent, destination.Value, moving, ref path, waypoints,
-                    locomotion, ref drive, ref heading, ref avoiding, velocity.Value);
+                var facing = math.normalizesafe(transform.Forward().xz);
+                var axis = facing * agent.HalfSegment;
+                var crowd = new CrowdVisitor(entity, from, axis, agent, faction.Value, wasMoving, destination,
+                    GivingWay);
+                Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
+                var step = Plan(entity, transform, facing, speed.Value, agent, destination.Value, moving, ref path,
+                    waypoints, locomotion, ref drive, ref heading, crowd, velocity.Value);
                 // A parked unit turns its hull to a hull-fixed weapon's target at its own turn rate.
                 if (!moving.ValueRO && aiming.ValueRO && math.all(heading == 0f))
                 {
-                    var facing = math.normalize(math.mul(transform.Rotation, math.forward()).xz);
                     heading = locomotion.TurnToward(facing, aim.Direction, DeltaTime);
                 }
 
                 aiming.ValueRW = false;
 
                 var flying = agent.Layer == NavLayer.Air;
-                var crowd = new SeparationVisitor(entity, from, axis, agent, faction.Value, wasMoving, destination,
-                    GivingWay);
-                var wanted = from + step + Separation(ref crowd, maxStep);
+                var wanted = from + step + Separation(crowd.Push, maxStep);
                 var stalled = false;
                 if (flying)
                 {
@@ -129,7 +129,8 @@ namespace HyperRTS.Simulation.Units
                 {
                     Walk(ref transform, from, wanted, agent, axis);
                     stalled = moving.ValueRO && !crowd.ReachedGroup &&
-                              progress.HasGivenUp(transform, agent, destination.Value, waypoints, ref path, DeltaTime);
+                              progress.HasGivenUp(transform.Position.xz, facing, agent, destination.Value, waypoints, ref path,
+                                  DeltaTime);
                 }
 
                 if (moving.ValueRO && (crowd.ReachedGroup || stalled))
@@ -216,21 +217,20 @@ namespace HyperRTS.Simulation.Units
 
             private readonly bool IsLanded(Entity entity) => GivingWay.IsLanded(entity);
 
-            private readonly float2 Separation(ref SeparationVisitor crowd, float maxStep)
+            private static float2 Separation(float2 push, float maxStep)
             {
-                Index.QueryHulls(crowd.Center, crowd.Reach, ref crowd);
-                var length = math.length(crowd.Push);
-                return length > maxStep ? crowd.Push * (maxStep / length) : crowd.Push;
+                var length = math.length(push);
+                return length > maxStep ? push * (maxStep / length) : push;
             }
 
             /// <summary>This frame's step and facing before the crowd and walls have their say.</summary>
-            private readonly float2 Plan(Entity entity, in LocalTransform transform, float topSpeed, in NavAgent agent,
+            private readonly float2 Plan(Entity entity, in LocalTransform transform, float2 facing, float topSpeed,
+                in NavAgent agent,
                 float3 goal, EnabledRefRW<MoveDestination> moving, ref PathState path,
                 DynamicBuffer<PathWaypoint> waypoints, in Locomotion locomotion, ref LocomotionState drive,
-                ref float2 heading, ref AvoidanceVisitor avoiding, float2 velocity)
+                ref float2 heading, in CrowdVisitor crowd, float2 velocity)
             {
                 var maxStep = topSpeed * DeltaTime;
-                var facing = math.normalize(math.mul(transform.Rotation, math.forward()).xz);
                 var leg = default(PathLeg);
                 if (moving.ValueRO && !Follow(transform.Position, facing, agent, maxStep, locomotion, drive.Speed, goal,
                         ref path, waypoints, out leg))
@@ -244,7 +244,7 @@ namespace HyperRTS.Simulation.Units
                     heading = facing;
                     var step = locomotion.Drive(ref drive, transform.Position.xz, ref heading, leg, topSpeed,
                         agent.Radius, DeltaTime);
-                    if (!Avoid(ref avoiding, velocity, step, topSpeed, drive, out var chosen))
+                    if (!Avoid(crowd, velocity, step, topSpeed, drive, out var chosen))
                     {
                         return step;
                     }
@@ -261,7 +261,7 @@ namespace HyperRTS.Simulation.Units
             }
 
             /// <summary>The velocity nearest the planned step that keeps clear of neighbours, when it differs.</summary>
-            private readonly bool Avoid(ref AvoidanceVisitor avoiding, float2 velocity, float2 step, float topSpeed,
+            private readonly bool Avoid(in CrowdVisitor crowd, float2 velocity, float2 step, float topSpeed,
                 in LocomotionState drive, out float2 chosen)
             {
                 var planned = step / DeltaTime;
@@ -272,7 +272,7 @@ namespace HyperRTS.Simulation.Units
                     return false;
                 }
 
-                chosen = avoiding.Avoid(Index, velocity, planned, topSpeed, DeltaTime);
+                chosen = crowd.Avoid(velocity, planned, topSpeed, DeltaTime);
                 return math.distancesq(chosen, planned) > SteerThreshold;
             }
 

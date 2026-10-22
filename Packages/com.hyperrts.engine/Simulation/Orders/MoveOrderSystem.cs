@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Orders
 
             private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 EnabledRefRW<MoveOrderState> driving, ref MoveDestination destination,
-                EnabledRefRW<MoveDestination> moving, ref Arrival arrival, EnabledRefRW<Arrival> arrived,
+                EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
                 DynamicBuffer<QueuedOrder> queue)
             {
                 var type = order.Value.Type;

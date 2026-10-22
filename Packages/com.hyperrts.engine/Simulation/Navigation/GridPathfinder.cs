@@ -27,15 +27,14 @@ namespace HyperRTS.Simulation.Navigation
                 rest.Add(waypoints[i]);
             }
 
-            var layer = request.Agent.Layer;
-            var reached = Plan(ref search, access, layer, request.Start, corner, waypoints, ref work);
+            var reached = Plan(ref search, access, request.Start, corner, waypoints, ref work);
             if (reached)
             {
                 waypoints.AddRange(rest.AsArray());
             }
             else
             {
-                reached = Plan(ref search, access, layer, request.Start, request.Goal, waypoints, ref work);
+                reached = Plan(ref search, access, request.Start, request.Goal, waypoints, ref work);
             }
 
             rest.Dispose();
@@ -46,7 +45,7 @@ namespace HyperRTS.Simulation.Navigation
         /// Fills the waypoints; false when they end short of the goal. A goal the start's region can't reach snaps to
         /// the nearest ground it can, or the unit stays where it is. Adds the cells it looked at to the work.
         /// </summary>
-        public static bool Plan(ref GridAStar search, in NavAccess access, NavLayer layer, float3 start, float3 goal,
+        public static bool Plan(ref GridAStar search, in NavAccess access, float3 start, float3 goal,
             DynamicBuffer<PathWaypoint> waypoints, ref int work)
         {
             waypoints.Clear();
@@ -66,8 +65,7 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             var goalAnchor = access.AnchorAt(goal);
-            var region = access.Grid.Region(layer, access.Footprint, from);
-            if (!TryFindReachable(access, layer, region, goalAnchor, out var to))
+            if (!access.TryFindNearest(goalAnchor, ReachableSearchRadius, access.Region(from), out var to))
             {
                 if (waypoints.Length == 0)
                 {
@@ -105,50 +103,6 @@ namespace HyperRTS.Simulation.Navigation
             cells.Dispose();
             return reached;
         }
-
-        /// <summary>Closest open anchor to the goal, by ring distance, in the given region.</summary>
-        private static bool TryFindReachable(in NavAccess access, NavLayer layer, int region, int2 goal, out int2 found)
-        {
-            goal = math.clamp(goal, 0, access.Grid.Size - 1);
-            found = goal;
-            if (IsOpenIn(access, layer, region, goal))
-            {
-                return true;
-            }
-
-            for (var r = 1; r <= ReachableSearchRadius; r++)
-            {
-                var best = int.MaxValue;
-                for (var i = -r; i <= r; i++)
-                {
-                    Consider(access, layer, region, goal, new int2(i, -r), ref best, ref found);
-                    Consider(access, layer, region, goal, new int2(i, r), ref best, ref found);
-                    Consider(access, layer, region, goal, new int2(-r, i), ref best, ref found);
-                    Consider(access, layer, region, goal, new int2(r, i), ref best, ref found);
-                }
-
-                if (best != int.MaxValue)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static void Consider(in NavAccess access, NavLayer layer, int region, int2 center, int2 offset,
-            ref int best, ref int2 found)
-        {
-            var distance = offset.x * offset.x + offset.y * offset.y;
-            if (distance < best && IsOpenIn(access, layer, region, center + offset))
-            {
-                best = distance;
-                found = center + offset;
-            }
-        }
-
-        private static bool IsOpenIn(in NavAccess access, NavLayer layer, int region, int2 anchor) =>
-            access.Grid.Region(layer, access.Footprint, anchor) == region && access.IsAnchorOpen(anchor);
 
         // Greedy string pulling: keep a corner only when the anchor can't see the point after it.
         private static void Smooth(in NavAccess access, float3 origin, float3 end, NativeList<int2> cells,

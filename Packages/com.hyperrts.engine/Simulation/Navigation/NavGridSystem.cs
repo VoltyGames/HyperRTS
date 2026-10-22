@@ -175,8 +175,10 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             _base = new NativeArray<byte>(count, Allocator.Persistent);
-            var classify = new ClassifyJob { Grid = grid, Base = _base, Flood = map.FloodTerrain };
-            classify.MaxGradient = NavGround.MaxGradient(map.MaxSlope);
+            var classify = new ClassifyJob
+            {
+                Grid = grid, Base = _base, Flood = map.FloodTerrain, MaxGradient = NavGround.MaxGradient(map.MaxSlope),
+            };
             state.Dependency = classify.Schedule(count, 1024, state.Dependency);
         }
 

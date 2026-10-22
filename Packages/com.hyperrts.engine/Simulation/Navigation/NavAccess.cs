@@ -22,6 +22,9 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Distance kept from closed cells: the radius, capped to fit through a gap of the footprint's width.</summary>
         public readonly float Clearance;
 
+        // Region filter that takes an open anchor in any region.
+        private const int AnyRegion = -1;
+
         private readonly int _slot;
 
         public NavAccess(in NavGrid grid, NavLayer layer, float radius, byte sceneryCrushLimit)
@@ -49,6 +52,9 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Whether the agent's whole footprint square, anchored at the cell, is open.</summary>
         public bool IsAnchorOpen(int2 anchor) => IsBlockOpen(anchor, Footprint);
+
+        /// <summary>The connected region of an anchor at this layer and footprint; 0 when closed or off the grid.</summary>
+        public int Region(int2 anchor) => Grid.Regions.Label(Grid, _slot, Footprint, anchor);
 
         /// <summary>A diagonal step needs both side squares open, or it would slip between two closed ones.</summary>
         public bool CutsCorner(int2 from, int2 to, int size)
@@ -80,11 +86,15 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>Closest open anchor by ring distance, up to <paramref name="maxRadius"/> rings out.</summary>
-        public bool TryFindNearest(int2 anchor, int maxRadius, out int2 found)
+        public bool TryFindNearest(int2 anchor, int maxRadius, out int2 found) =>
+            TryFindNearest(anchor, maxRadius, AnyRegion, out found);
+
+        /// <summary>The same search, keeping only anchors in <paramref name="region"/>.</summary>
+        public bool TryFindNearest(int2 anchor, int maxRadius, int region, out int2 found)
         {
             anchor = math.clamp(anchor, 0, Grid.Size - 1);
             found = anchor;
-            if (IsAnchorOpen(anchor))
+            if (IsOpenIn(region, anchor))
             {
                 return true;
             }
@@ -94,10 +104,10 @@ namespace HyperRTS.Simulation.Navigation
                 var best = int.MaxValue;
                 for (var i = -r; i <= r; i++)
                 {
-                    Consider(anchor, new int2(i, -r), ref best, ref found);
-                    Consider(anchor, new int2(i, r), ref best, ref found);
-                    Consider(anchor, new int2(-r, i), ref best, ref found);
-                    Consider(anchor, new int2(r, i), ref best, ref found);
+                    Consider(region, anchor, new int2(i, -r), ref best, ref found);
+                    Consider(region, anchor, new int2(i, r), ref best, ref found);
+                    Consider(region, anchor, new int2(-r, i), ref best, ref found);
+                    Consider(region, anchor, new int2(r, i), ref best, ref found);
                 }
 
                 if (best != int.MaxValue)
@@ -168,7 +178,7 @@ namespace HyperRTS.Simulation.Navigation
                 for (var x = 0; x < side; x++)
                 {
                     var near = corner + new int2(x, y);
-                    if (!IsOpen(near) && Gap(near, from, to) < clearance - NavCapsule.Skin)
+                    if (!IsOpen(near) && Grid.CellGap(near, from, to) < clearance - NavCapsule.Skin)
                     {
                         return false;
                     }
@@ -176,12 +186,6 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             return true;
-        }
-
-        private float Gap(int2 cell, float2 from, float2 to)
-        {
-            var low = Grid.Min + (float2)cell * Grid.CellSize;
-            return NavCapsule.SegmentRectDistance(from, to, low, low + Grid.CellSize);
         }
 
         private bool IsBlockOpen(int2 cell, int size)
@@ -230,14 +234,17 @@ namespace HyperRTS.Simulation.Navigation
             return true;
         }
 
-        private void Consider(int2 center, int2 offset, ref int best, ref int2 found)
+        private void Consider(int region, int2 center, int2 offset, ref int best, ref int2 found)
         {
             var distance = offset.x * offset.x + offset.y * offset.y;
-            if (distance < best && IsAnchorOpen(center + offset))
+            if (distance < best && IsOpenIn(region, center + offset))
             {
                 best = distance;
                 found = center + offset;
             }
         }
+
+        private bool IsOpenIn(int region, int2 anchor) =>
+            (region == AnyRegion || Region(anchor) == region) && IsAnchorOpen(anchor);
     }
 }

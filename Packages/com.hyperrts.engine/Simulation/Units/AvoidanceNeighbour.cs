@@ -3,7 +3,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// A unit an <see cref="AvoidanceVisitor"/> keeps clear of, as a circle at the closest point of its capsule to the
+    /// A unit a <see cref="CrowdVisitor"/> mover keeps clear of, as a circle at the closest point of its capsule to the
     /// mover's, and the ORCA half-plane that does it.
     /// </summary>
     internal struct AvoidanceNeighbour

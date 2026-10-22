@@ -93,6 +93,13 @@ namespace HyperRTS.Simulation.Navigation
         public readonly float3 CellCenter(int2 cell) =>
             new(Min.x + (cell.x + 0.5f) * CellSize, 0f, Min.y + (cell.y + 0.5f) * CellSize);
 
+        /// <summary>The distance from segment ab to the cell's square.</summary>
+        public readonly float CellGap(int2 cell, float2 a, float2 b)
+        {
+            var low = Min + (float2)cell * CellSize;
+            return NavCapsule.SegmentRectDistance(a, b, low, low + CellSize);
+        }
+
         public readonly bool InBounds(int2 cell) => math.all(cell >= 0 & cell < Size);
 
         public readonly int Index(int2 cell) => cell.y * Size.x + cell.x;
@@ -191,8 +198,7 @@ namespace HyperRTS.Simulation.Navigation
                 return false;
             }
 
-            var footprint = access.Footprint;
-            return Region(agent.Layer, footprint, start) == Region(agent.Layer, footprint, access.AnchorAt(to));
+            return access.Region(start) == access.Region(access.AnchorAt(to));
         }
 
         public readonly int Region(NavLayer layer, int footprint, int2 anchor) =>

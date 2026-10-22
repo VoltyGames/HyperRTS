@@ -113,6 +113,7 @@ namespace HyperRTS.Simulation.Navigation
                 var isUnit = AgentLookup.TryGetComponent(entity, out var agent);
                 MovingLookup.TryGetComponent(entity, out var destination);
                 VelocityLookup.TryGetComponent(entity, out var velocity);
+                var facing = math.normalizesafe(transform.Forward().xz);
                 var entry = new SpatialEntry
                 {
                     Entity = entity,
@@ -123,11 +124,11 @@ namespace HyperRTS.Simulation.Navigation
                     IsMoving = MovingLookup.HasEnabled(entity),
                     IsArrived = ArrivalLookup.HasEnabled(entity),
                     Group = destination.Group,
-                    Facing = math.normalizesafe(math.mul(transform.Rotation, math.forward()).xz),
+                    Facing = facing,
                     Velocity = velocity.Value,
                     IsBuilding = BuildingLookup.HasComponent(entity),
                     Layer = agent.Layer,
-                    SegmentAxis = agent.SegmentAxis(transform.Rotation),
+                    SegmentAxis = facing * agent.HalfSegment,
                     Spacing = agent.Spacing,
                 };
                 entry.AddTo(Writer, Oversized, CellSize);

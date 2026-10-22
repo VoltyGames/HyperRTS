@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Units
 {
@@ -43,14 +42,12 @@ namespace HyperRTS.Simulation.Units
         public bool IsTracking;
 
         /// <summary>Measures the path left and asks for a repair when due; true once the unit gives up.</summary>
-        public bool HasGivenUp(in LocalTransform transform, in NavAgent agent, float3 goal,
+        public bool HasGivenUp(float2 position, float2 facing, in NavAgent agent, float3 goal,
             DynamicBuffer<PathWaypoint> waypoints, ref PathState path, float deltaTime)
         {
-            var position = transform.Position.xz;
             var remaining = waypoints.Length > 0
                 ? math.distance(position, waypoints[0].Position.xz) + path.LengthPastCorner
                 : math.distance(position, goal.xz);
-            var facing = math.normalizesafe(math.mul(transform.Rotation, math.forward()).xz);
             var margin = NavTolerances.Arrive(agent.Radius);
             if (Track(remaining, facing, path.Status, margin, deltaTime) && waypoints.Length > 0)
             {
@@ -66,7 +63,7 @@ namespace HyperRTS.Simulation.Units
         {
             if (!IsTracking)
             {
-                this = new MoveProgress { IsTracking = true };
+                IsTracking = true;
                 Restart(remaining, facing, status);
                 return false;
             }

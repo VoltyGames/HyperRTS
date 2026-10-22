@@ -29,8 +29,7 @@ namespace HyperRTS.Simulation.Orders
             _queue.Update(ref state);
             _halt.Update(ref state);
             _inside.Update(ref state);
-            _traits = new EntityQueryBuilder(Allocator.Temp).WithAll<OrderTraitTable>().Build(ref state)
-                .GetSingleton<OrderTraitTable>();
+            _traits = state.GetEntityQuery(ComponentType.ReadOnly<OrderTraitTable>()).GetSingleton<OrderTraitTable>();
         }
 
         /// <summary>The traits table, for callers that branch on how an order runs.</summary>

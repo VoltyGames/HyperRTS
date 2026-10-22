@@ -267,8 +267,7 @@ namespace HyperRTS.Simulation.Navigation
                 var waypoints = WaypointLookup[request.Entity];
                 var reached = request.Repair
                     ? GridPathfinder.Repair(ref Search, access, request, waypoints, ref work)
-                    : GridPathfinder.Plan(ref Search, access, request.Agent.Layer, request.Start, request.Goal,
-                        waypoints, ref work);
+                    : GridPathfinder.Plan(ref Search, access, request.Start, request.Goal, waypoints, ref work);
 
                 StateLookup[request.Entity] = new PathState
                 {

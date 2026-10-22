@@ -61,14 +61,14 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 `UnitAuthoring` sets speed, radius, hull length, spacing, nav layer, whether it walks through scenery, and
 population. Units follow their path and
 stop on arrival. A unit with a hull length is a capsule that long along its forward and two radii wide; 0 keeps a
-circle. A moving unit steers round its neighbours with ORCA local avoidance (`AvoidanceVisitor`): of the nearest 8
+circle. A moving unit steers round its neighbours with ORCA local avoidance (`CrowdVisitor`): of the nearest 8
 units within reach, each gives a half-plane of velocities that stay clear for 1.5 s, and a linear program picks the
 one closest to the step `Locomotion` planned. A capsule counts as the circle at its closest point to the other's, so
 hulls side by side keep their true gap. Velocities are last frame's (`Velocity`). The chosen velocity goes back to
 `Locomotion` as the heading and speed to drive, so a vehicle turns at its rate and radius rather than sliding
 sideways, and brakes rather than turning round when told to back off. A unit dead ahead, coming at it or standing,
 is passed on the right, so a head-on pair both keep right instead of braking. Layers that can't block each other
-ignore each other, aircraft included. `SeparationVisitor` stays as the overlap fallback: it pushes neighbours apart
+ignore each other, aircraft included. The same query feeds the overlap fallback, which pushes neighbours apart
 along the line between their closest points, half each, until the larger of their two spacings lies between them
 (0.6 m by default, less for infantry). Each formation slot is
 sized by its own unit's footprint, so a tank column doesn't pile up nose to tail and infantry beside it stay close.

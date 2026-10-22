@@ -132,9 +132,7 @@ namespace HyperRTS.Simulation.Navigation
                         continue;
                     }
 
-                    var low = grid.Min + (float2)cell * grid.CellSize;
-                    var gap = SegmentRectDistance(a, b, low, low + grid.CellSize);
-                    depth += math.max(0f, Access.Clearance - gap);
+                    depth += math.max(0f, Access.Clearance - grid.CellGap(cell, a, b));
                 }
             }
 
