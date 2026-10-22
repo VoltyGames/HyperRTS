@@ -155,6 +155,7 @@ namespace HyperRTS.Simulation.Production
                     var unit = Spawn(prefab, position, transform, faction, hasRally.ValueRO, rally.Position);
                     DockOnPad(unit, entity, pad);
                     SpawnedPopulation[faction.Value] += producible.Population;
+                    producer.Released++;
                     Produced[Events].Add(new UnitProduced
                     {
                         Producer = entity, Prefab = prefab, Faction = faction.Value, Position = position,

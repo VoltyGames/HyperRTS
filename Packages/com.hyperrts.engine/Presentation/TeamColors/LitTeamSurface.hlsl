@@ -28,7 +28,7 @@ inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfa
     outSurfaceData.smoothness = specGloss.a;
     outSurfaceData.normalTS = SampleNormal(uv);
     outSurfaceData.occlusion = SampleOcclusion(uv);
-    outSurfaceData.emission = SampleEmission(uv);
+    outSurfaceData.emission = SampleEmission(uv) * _LightsOn;
 
     half2 clearCoatMaskSmoothness = SampleClearCoat(uv);
     outSurfaceData.clearCoatMask       = clearCoatMaskSmoothness.r;

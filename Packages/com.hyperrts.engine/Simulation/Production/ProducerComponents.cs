@@ -15,6 +15,9 @@ namespace HyperRTS.Simulation.Production
 
         /// <summary>Seconds of work done on the head of the queue.</summary>
         [GhostField] public float Elapsed;
+
+        /// <summary>Units released so far; every client sees it rise, so doors open for enemies too.</summary>
+        [GhostField] public uint Released;
     }
 
     /// <summary>A unit prefab a producer can train.</summary>

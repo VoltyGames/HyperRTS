@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Netcode;
 
 namespace HyperRTS.Simulation.Common
 {
@@ -7,9 +8,11 @@ namespace HyperRTS.Simulation.Common
     /// only slows it). <see cref="Reasons"/> says why; each source sets and clears its own reason with <see cref="Set"/>,
     /// and <c>OfflineSystem</c> keeps the enabled state in step.
     /// </summary>
+    [GhostEnabledBit]
     public struct Offline : IComponentData, IEnableableComponent
     {
-        public OfflineReason Reasons;
+        /// <summary>Replicated so clients can stop machines and dim lights on low power.</summary>
+        [GhostField] public OfflineReason Reasons;
 
         /// <summary>Offline for any reason other than <paramref name="ignored"/>.</summary>
         public readonly bool HasReasonOtherThan(OfflineReason ignored) => (Reasons & ~ignored) != 0;

@@ -169,6 +169,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(1, _world.Get<Faction>(units[0]).Value);
             Assert.AreEqual(0, _world.QueueLength(producer));
             Assert.AreEqual(1, _world.Get<PlayerStats>(_world.Player(1)).UnitsBuilt);
+            Assert.AreEqual(1u, _world.Get<Producer>(producer).Released, "every client sees the release");
         }
 
         [Test]

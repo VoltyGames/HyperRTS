@@ -4,8 +4,9 @@
 //   _TeamStrip  x bottom, y top of the band (object-space metres) the mask applies in
 //   _VAT        keyword: vertices come from _VATPositions and _VATNormals at _VATClip, texel in UV1 (LitTeamVAT.hlsl)
 //   _BUILD      keyword (structures only): pieces appear in their UV3 build order up to _BuildProgress (LitTeamBuild.hlsl)
+//   _LightsOn   emission multiplier, 0 dark to 1 lit (structures go dark while offline)
 // TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), BuildRevealSystem writes _BuildProgress,
-// game code writes VATClip.
+// BuildingLightsSystem writes _LightsOn, game code writes VATClip.
 Shader "HyperRTS/LitTeam"
 {
     Properties
@@ -56,6 +57,7 @@ Shader "HyperRTS/LitTeam"
         _OcclusionMap("Occlusion", 2D) = "white" {}
 
         [HDR] _EmissionColor("Color", Color) = (0,0,0)
+        _LightsOn("Lights On", Range(0, 1)) = 1
         _EmissionMap("Emission", 2D) = "white" {}
 
         _DetailMask("Detail Mask", 2D) = "white" {}

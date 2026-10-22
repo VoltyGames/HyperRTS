@@ -10,6 +10,42 @@ namespace HyperRTS.Simulation.Animation
 
         /// <summary>Stands still while neutral: a captured derrick starts pumping.</summary>
         public bool OwnedOnly;
+
+        public MachineRun Run;
+
+        /// <summary>The building whose power or queue <see cref="Run"/> reads.</summary>
+        public Entity Building;
+
+        /// <summary>Seconds to ease from a stop to full speed, and back.</summary>
+        public float RampSeconds;
+
+        /// <summary>Linear progress from stopped (0) to full speed (1).</summary>
+        public float Ramp;
+
+        /// <summary>Set by the first frame, which snaps <see cref="Ramp"/>: no spin-up when first seen.</summary>
+        public bool Started;
+
+        /// <summary>Eases the speed toward running or stopped and moves the clock by it.</summary>
+        public void Advance(bool runs, float deltaTime)
+        {
+            var target = runs ? 1f : 0f;
+            var step = deltaTime / RampSeconds;
+            Ramp = Started ? Ramp + math.clamp(target - Ramp, -step, step) : target;
+            Started = true;
+            Time += deltaTime * math.smoothstep(0f, 1f, Ramp);
+        }
+    }
+
+    /// <summary>When a machine runs.</summary>
+    public enum MachineRun : byte
+    {
+        Always = 0,
+
+        /// <summary>While its building is complete and not Offline (a radar antenna stops on low power).</summary>
+        Powered = 1,
+
+        /// <summary>While its building's queue has work it isn't halted on (a crane over the line).</summary>
+        Producing = 2,
     }
 
     /// <summary>A moving piece of a machine, posed every frame from its machine's clock.</summary>
@@ -18,16 +54,16 @@ namespace HyperRTS.Simulation.Animation
         public Entity Machine;
         public MachineMotion Motion;
 
-        /// <summary>Local rotation axis (Spin, Swing).</summary>
+        /// <summary>Local rotation axis (Spin, Swing), or the direction it slides along (Slide).</summary>
         public float3 Axis;
 
         /// <summary>Degrees per second of the cycle; a swing completes one rock per 360°.</summary>
         public float Speed;
 
-        /// <summary>Swing: largest angle either way of <see cref="Offset"/>, degrees.</summary>
+        /// <summary>Swing: largest angle either way of <see cref="Offset"/>, degrees; Slide: metres.</summary>
         public float Amplitude;
 
-        /// <summary>Swing: the angle (degrees from rest) it rocks about; a beam at rest at one end of its stroke needs one.</summary>
+        /// <summary>Swing: the angle (degrees from rest) it rocks about. Slide: metres along the axis.</summary>
         public float Offset;
 
         /// <summary>Degrees added to the cycle, to set parts relative to each other.</summary>
@@ -37,8 +73,9 @@ namespace HyperRTS.Simulation.Animation
         public Entity Follow;
         public Entity Aim;
 
-        /// <summary>The baked local rotation the motion starts from.</summary>
+        /// <summary>The baked local pose the motion starts from.</summary>
         public quaternion Rest;
+        public float3 RestPosition;
     }
 
     /// <summary>How a <see cref="MachinePart"/> moves.</summary>
@@ -52,5 +89,8 @@ namespace HyperRTS.Simulation.Animation
 
         /// <summary>Sits on one point and aims its up axis at another (a connecting rod).</summary>
         Link = 2,
+
+        /// <summary>Travels to and fro along its axis in step with the spin (a crane on its rail).</summary>
+        Slide = 3,
     }
 }

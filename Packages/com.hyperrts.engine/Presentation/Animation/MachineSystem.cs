@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Production;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -9,8 +10,9 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
-    /// Runs machine clocks (paused while an owned-only machine is neutral) and poses their parts: spins, swings in
-    /// step with the spin, and links that sit on one point aiming at another. Links read last frame's transforms.
+    /// Runs machine clocks, easing them to a stop while a machine shouldn't run (neutral, or its building offline or
+    /// idle), and poses their parts: spins, swings and slides in step with the spin, and links that sit on one point
+    /// aiming at another. Links read last frame's transforms.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PoseSystemGroup))]
@@ -26,6 +28,8 @@ namespace HyperRTS.Presentation.Animation
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Factions = SystemAPI.GetComponentLookup<Faction>(true),
+                Offlines = SystemAPI.GetComponentLookup<Offline>(true),
+                Queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(true),
             }.ScheduleParallel(state.Dependency);
             state.Dependency = new PartJob
             {
@@ -39,13 +43,28 @@ namespace HyperRTS.Presentation.Animation
         {
             public float DeltaTime;
             [ReadOnly] public ComponentLookup<Faction> Factions;
+            [ReadOnly] public ComponentLookup<Offline> Offlines;
+            [ReadOnly] public BufferLookup<ProductionQueueItem> Queues;
 
             private void Execute(Entity entity, ref MachineClock clock)
             {
                 var owned = Factions.TryGetComponent(entity, out var faction) && faction.Value != Faction.Neutral;
-                if (!clock.OwnedOnly || owned)
+                clock.Advance((!clock.OwnedOnly || owned) && Runs(clock), DeltaTime);
+            }
+
+            private bool Runs(in MachineClock clock)
+            {
+                var building = clock.Building;
+                var offline = Offlines.HasEnabled(building) ? Offlines[building].Reasons : OfflineReason.None;
+                switch (clock.Run)
                 {
-                    clock.Time += DeltaTime;
+                    case MachineRun.Powered:
+                        return offline == OfflineReason.None;
+                    case MachineRun.Producing:
+                        var halted = (offline & ~OfflineReason.Unpowered) != 0;
+                        return !halted && Queues.TryGetBuffer(building, out var queue) && !queue.IsEmpty;
+                    default:
+                        return true;
                 }
             }
         }
@@ -72,6 +91,10 @@ namespace HyperRTS.Presentation.Animation
                     case MachineMotion.Swing:
                         var angle = math.radians(part.Offset + part.Amplitude * math.sin(cycle));
                         transform.Rotation = math.mul(part.Rest, quaternion.AxisAngle(part.Axis, angle));
+                        break;
+                    case MachineMotion.Slide:
+                        var travel = part.Offset + part.Amplitude * math.sin(cycle);
+                        transform.Position = part.RestPosition + part.Axis * travel;
                         break;
                     default:
                         Link(ref transform, part, parent.Value);

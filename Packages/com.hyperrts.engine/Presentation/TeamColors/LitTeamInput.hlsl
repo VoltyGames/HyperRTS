@@ -37,6 +37,7 @@ float4 _VATClip;
 float4 _VATPositions_TexelSize;
 float _VATRowsPerFrame;
 float _BuildProgress;
+half _LightsOn;
 half _Cutoff;
 half _Smoothness;
 half _Metallic;
@@ -61,6 +62,7 @@ UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
     UNITY_DOTS_INSTANCED_PROP(float4, _TeamStrip)
     UNITY_DOTS_INSTANCED_PROP(float4, _VATClip)
     UNITY_DOTS_INSTANCED_PROP(float , _BuildProgress)
+    UNITY_DOTS_INSTANCED_PROP(float , _LightsOn)
     UNITY_DOTS_INSTANCED_PROP(float , _Cutoff)
     UNITY_DOTS_INSTANCED_PROP(float , _Smoothness)
     UNITY_DOTS_INSTANCED_PROP(float , _Metallic)
@@ -81,6 +83,7 @@ static float4 unity_DOTS_Sampled_TeamColor;
 static float4 unity_DOTS_Sampled_TeamStrip;
 static float4 unity_DOTS_Sampled_VATClip;
 static float  unity_DOTS_Sampled_BuildProgress;
+static float  unity_DOTS_Sampled_LightsOn;
 static float  unity_DOTS_Sampled_Cutoff;
 static float  unity_DOTS_Sampled_Smoothness;
 static float  unity_DOTS_Sampled_Metallic;
@@ -101,6 +104,7 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
     unity_DOTS_Sampled_TeamStrip            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TeamStrip);
     unity_DOTS_Sampled_VATClip              = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _VATClip);
     unity_DOTS_Sampled_BuildProgress        = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _BuildProgress);
+    unity_DOTS_Sampled_LightsOn             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _LightsOn);
     unity_DOTS_Sampled_Cutoff               = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Cutoff);
     unity_DOTS_Sampled_Smoothness           = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Smoothness);
     unity_DOTS_Sampled_Metallic             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Metallic);
@@ -123,6 +127,7 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
 #define _TeamStrip              unity_DOTS_Sampled_TeamStrip
 #define _VATClip                unity_DOTS_Sampled_VATClip
 #define _BuildProgress          unity_DOTS_Sampled_BuildProgress
+#define _LightsOn               unity_DOTS_Sampled_LightsOn
 #define _Cutoff                 unity_DOTS_Sampled_Cutoff
 #define _Smoothness             unity_DOTS_Sampled_Smoothness
 #define _Metallic               unity_DOTS_Sampled_Metallic

@@ -5,26 +5,26 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Animation
 {
-    /// <summary>A moving child of a Machine: a spinning crank, a rocking beam or a rod linking the two.</summary>
+    /// <summary>A moving child of a Machine: a spinning crank, a rocking beam, a sliding crane or a rod.</summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "Machine Part")]
     [Icon(HyperRTSIcons.Animation)]
     [HelpURL(HyperRTSDocs.Animation)]
     [DisallowMultipleComponent]
     public class MachinePartAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Spin about the axis, Swing to and fro about it, or Link one point to another.")]
+        [Tooltip("Spin about the axis, Swing to and fro about it, Slide along it, or Link one point to another.")]
         public MachineMotion motion;
 
-        [Tooltip("Local axis for Spin and Swing.")]
+        [Tooltip("Local axis for Spin and Swing, or the direction for Slide.")]
         public Vector3 axis = Vector3.right;
 
         [Tooltip("Degrees per second of the machine's cycle; give every part of one machine the same speed.")]
         public float speed = 45f;
 
-        [Tooltip("Swing: largest angle either way of the offset (degrees).")]
+        [Tooltip("Swing: largest angle either way of the offset (degrees). Slide: the same in metres.")]
         public float amplitude = 15f;
 
-        [Tooltip("Swing: the angle it rocks about, in degrees from its modelled pose.")]
+        [Tooltip("Swing: the angle it rocks about, in degrees from its modelled pose. Slide: metres along the axis.")]
         public float offset;
 
         [Tooltip("Degrees added to the cycle, to time this part against the others.")]
@@ -60,6 +60,7 @@ namespace HyperRTS.Simulation.Animation
                     Follow = link && authoring.follow != null ? GetEntity(authoring.follow, TransformUsageFlags.Dynamic) : Entity.Null,
                     Aim = link && authoring.aim != null ? GetEntity(authoring.aim, TransformUsageFlags.Dynamic) : Entity.Null,
                     Rest = GetComponent<Transform>().localRotation,
+                    RestPosition = GetComponent<Transform>().localPosition,
                 });
             }
         }
