@@ -99,10 +99,39 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.AreEqual(from, capsule.Constrain(from, new float2(0.2f, 0.5f)),
                 "the centre is open, but the nose would enter the wall");
-            Assert.AreEqual(new float2(-0.5f, 1.5f), capsule.Constrain(from, new float2(0.2f, 1.5f)),
-                "a slanted move slides along it");
+            var slid = capsule.Constrain(from, new float2(0.2f, 1.5f));
+            Assert.Less(math.distance(new float2(-0.5f, 1.5f), slid), 1e-3f, "a slanted move slides along it");
             Assert.AreEqual(new float2(-0.6f, 0.5f), capsule.Constrain(from, new float2(-0.6f, 0.5f)),
                 "backing away is free");
+        }
+
+        [Test]
+        public void Capsule_PushedIntoADiagonalWall_SlidesAlongIt()
+        {
+            // A wall along x = z, stamped as a staircase of cells.
+            var wall = SpawnObstacle(float3.zero, new float2(1f, 40f));
+            _world.EntityManager.SetComponentData(wall,
+                LocalTransform.FromPositionRotation(float3.zero, quaternion.RotateY(math.PI * 0.25f)));
+            _world.Tick();
+            // Two cells wide, so it rides the step corners rather than sitting in the notches between them.
+            var capsule = new NavCapsule(new NavAgent { Radius = 1f }.Access(_world.Grid()), float2.zero);
+            var along = math.normalize(new float2(1f, 1f));
+            var move = 0.2f * new float2(math.cos(math.radians(20f)), math.sin(math.radians(20f)));
+
+            var position = new float2(-4f, 4.3f);
+            var start = math.dot(position, along);
+            var deepest = 0f;
+            for (var i = 0; i < 100; i++)
+            {
+                position = capsule.Constrain(position, position + move);
+                deepest = math.max(deepest, capsule.Depth(position, float2.zero));
+            }
+
+            // Pushed 25 degrees into it, nearly all the move along it is kept; sliding on one axis keeps under 85 %.
+            var ideal = 100f * math.dot(move, along);
+            Assert.Greater(math.dot(position, along) - start, ideal * 0.9f, $"slid along it, ending at {position}");
+            Assert.Less(position.x, position.y, "on its own side");
+            Assert.Less(deepest, 0.05f, "and never sank into it");
         }
 
         [Test]

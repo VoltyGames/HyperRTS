@@ -110,64 +110,78 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>
-        /// True when a straight move stays on open cells without cutting closed corners. A wide test also keeps
-        /// <see cref="Clearance"/> from closed cells, with parallel lines under a cell apart so none slips between.
+        /// True when a straight move stays on open cells without cutting a closed corner. A wide test also keeps
+        /// <see cref="Clearance"/> from every closed cell, less the capsule's skin.
         /// </summary>
         public bool HasLineOfSight(float3 from, float3 to, bool wide)
         {
-            var delta = to.xz - from.xz;
-            var length = math.length(delta);
-            if (!IsSegmentClear(from.xz, to.xz))
+            var clearance = wide ? Clearance : 0f;
+            var start = (from.xz - Grid.Min) / Grid.CellSize;
+            var delta = (to.xz - Grid.Min) / Grid.CellSize - start;
+            var cell = (int2)math.floor(start);
+            var crossings = math.csum(math.abs((int2)math.floor(start + delta) - cell));
+            var step = (int2)math.sign(delta);
+
+            // Amanatides and Woo: the line's parameter per cell crossed, and where it next crosses each axis.
+            var still = delta == 0f;
+            var span = math.select(1f / math.abs(delta), float.PositiveInfinity, still);
+            var toEdge = math.select((float2)cell + 1f - start, start - cell, delta < 0f);
+            var next = math.select(toEdge * span, float.PositiveInfinity, still);
+            var clear = IsSightClear(cell, from.xz, to.xz, clearance);
+            for (var i = 0; clear && i < crossings; i++)
+            {
+                // Through a corner exactly it crosses both axes, and both cells beside the corner must be clear too.
+                var axis = new bool2(next.x <= next.y, next.y <= next.x);
+                if (math.all(axis))
+                {
+                    clear = IsSightClear(cell + new int2(step.x, 0), from.xz, to.xz, clearance) &&
+                            IsSightClear(cell + new int2(0, step.y), from.xz, to.xz, clearance);
+                    i++;
+                }
+
+                cell += math.select(int2.zero, step, axis);
+                next += math.select(float2.zero, span, axis);
+                clear = clear && IsSightClear(cell, from.xz, to.xz, clearance);
+            }
+
+            return clear;
+        }
+
+        // Exact: only cells within reach of a crossed cell can come within the clearance of the segment.
+        private bool IsSightClear(int2 cell, float2 from, float2 to, float clearance)
+        {
+            if (!IsOpen(cell))
             {
                 return false;
             }
 
-            if (!wide || length < 1e-4f)
+            var reach = (int)math.ceil(clearance / Grid.CellSize);
+            var corner = cell - reach;
+            var side = reach * 2 + 1;
+            if (reach == 0 || (SceneryCrushLimit == AllScenery && Grid.ClearanceAt(_slot, corner) >= side))
             {
                 return true;
             }
 
-            var side = new float2(-delta.y, delta.x) / length;
-            var gaps = math.max(2, (int)math.ceil(Clearance * 2f / (Grid.CellSize * 0.9f)));
-            for (var i = 0; i <= gaps; i++)
+            for (var y = 0; y < side; y++)
             {
-                var offset = side * math.lerp(-Clearance, Clearance, i / (float)gaps);
-                if (!IsSegmentClear(from.xz + offset, to.xz + offset))
+                for (var x = 0; x < side; x++)
                 {
-                    return false;
+                    var near = corner + new int2(x, y);
+                    if (!IsOpen(near) && Gap(near, from, to) < clearance - NavCapsule.Skin)
+                    {
+                        return false;
+                    }
                 }
             }
 
             return true;
         }
 
-        private bool IsSegmentClear(float2 from, float2 to)
+        private float Gap(int2 cell, float2 from, float2 to)
         {
-            // Quarter-cell samples are fine enough at unit scale and far simpler than an exact grid walk.
-            var steps = math.max(1, (int)math.ceil(math.distance(from, to) / (Grid.CellSize * 0.25f)));
-            var previous = Grid.WorldToCell(from);
-            if (!IsOpen(previous))
-            {
-                return false;
-            }
-
-            for (var i = 1; i <= steps; i++)
-            {
-                var cell = Grid.WorldToCell(math.lerp(from, to, i / (float)steps));
-                if (cell.Equals(previous))
-                {
-                    continue;
-                }
-
-                if (!IsOpen(cell) || CutsCorner(previous, cell, 1))
-                {
-                    return false;
-                }
-
-                previous = cell;
-            }
-
-            return true;
+            var low = Grid.Min + (float2)cell * Grid.CellSize;
+            return NavCapsule.SegmentRectDistance(from, to, low, low + Grid.CellSize);
         }
 
         private bool IsBlockOpen(int2 cell, int size)

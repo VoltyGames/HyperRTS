@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Navigation
     public readonly struct NavCapsule
     {
         // Moves may deepen an overlap by this much, so float noise along a wall never wedges a unit.
-        private const float Skin = 0.01f;
+        internal const float Skin = 0.01f;
 
         public readonly NavAccess Access;
 
@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Navigation
             Axis = axis;
         }
 
-        /// <summary>Rejects or slides a move that would push the capsule deeper into closed cells.</summary>
+        /// <summary>Slides a move that would push the capsule deeper into closed cells along the wall, or rejects it.</summary>
         public float2 Constrain(float2 from, float2 to)
         {
             if (to.Equals(from))
@@ -43,14 +43,64 @@ namespace HyperRTS.Simulation.Navigation
                 return to;
             }
 
-            var slideX = new float2(to.x, from.y);
-            if (Depth(slideX, Axis) <= allowed)
+            return Slide(from, to, allowed);
+        }
+
+        /// <summary>
+        /// Keeps the part of the move along the wall, round its normal where the move would hit it. Along a staircase of
+        /// cells the slide climbs each step's corner, so it steps back out by what it sank, never more than the move.
+        /// </summary>
+        private float2 Slide(float2 from, float2 to, float allowed)
+        {
+            var normal = WallNormal(to);
+            var into = math.dot(to - from, normal);
+            if (into >= 0f)
             {
-                return slideX;
+                return SlideAlongAxis(from, to, allowed);
             }
 
-            var slideZ = new float2(from.x, to.y);
-            return Depth(slideZ, Axis) <= allowed ? slideZ : from;
+            var slid = to - normal * into;
+            var budget = math.length(to - from);
+            var probe = Access.Grid.CellSize * 0.01f;
+            for (var i = 0; i < 3; i++)
+            {
+                var depth = Depth(slid, Axis);
+                if (depth <= allowed)
+                {
+                    return slid;
+                }
+
+                // Newton step back to the depth it started at, so the skin never compounds along a wall.
+                var rate = math.max(0.1f, (depth - Depth(slid + normal * probe, Axis)) / probe);
+                var push = math.min((depth - (allowed - Skin)) / rate, budget);
+                slid += normal * push;
+                budget -= push;
+            }
+
+            return SlideAlongAxis(from, to, allowed);
+        }
+
+        // Where the wall's normal says nothing useful, as wedged in a concave corner, one axis of the move may still go.
+        private float2 SlideAlongAxis(float2 from, float2 to, float allowed)
+        {
+            var alongX = new float2(to.x, from.y);
+            if (Depth(alongX, Axis) <= allowed)
+            {
+                return alongX;
+            }
+
+            var alongZ = new float2(from.x, to.y);
+            return Depth(alongZ, Axis) <= allowed ? alongZ : from;
+        }
+
+        // Depth grows into the wall, so its downhill is the outward normal. Sampled half a cell out, a staircase of
+        // cells reads as the slope it stands for.
+        private float2 WallNormal(float2 at)
+        {
+            var h = Access.Grid.CellSize * 0.5f;
+            var dx = Depth(at + new float2(h, 0f), Axis) - Depth(at - new float2(h, 0f), Axis);
+            var dz = Depth(at + new float2(0f, h), Axis) - Depth(at - new float2(0f, h), Axis);
+            return -math.normalizesafe(new float2(dx, dz));
         }
 
         /// <summary>Whether turning in place to <paramref name="axis"/> keeps both ends out of closed cells.</summary>
