@@ -47,6 +47,15 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void LineCost_IsAPassThroughRowInTheHUDTree()
+        {
+            var lineCost = new LineCost(Layouts.Root.CloneRoot().Require<CostRow>("line-cost"));
+
+            Assert.IsFalse(lineCost.BlocksPointer);
+            Assert.IsTrue(lineCost.NeedsPlayer);
+        }
+
+        [Test]
         public void RowTemplates_HaveTheNamedElements()
         {
             var layouts = Layouts;

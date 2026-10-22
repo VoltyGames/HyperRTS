@@ -215,6 +215,14 @@
     padding: 12px 64px;
 }
 
+/* Line cost, above and right of the dragged line's end */
+
+.hud-line-cost {
+    position: absolute;
+    translate: 0 -100%;
+    padding: 2px 6px;
+}
+
 .drag-box {
     position: absolute;
     border-width: 2px;

@@ -30,11 +30,12 @@ namespace HyperRTS.Simulation.Resources
         public static bool CanAfford(DynamicBuffer<ResourceStock> stock, DynamicBuffer<ResourceCost> cost) =>
             CanAfford(stock.AsNativeArray(), cost);
 
-        public static bool CanAfford(NativeArray<ResourceStock> stock, DynamicBuffer<ResourceCost> cost)
+        /// <summary>Whether the stock covers <paramref name="count"/> of the cost, e.g. every segment of a line.</summary>
+        public static bool CanAfford(NativeArray<ResourceStock> stock, DynamicBuffer<ResourceCost> cost, int count = 1)
         {
             foreach (var item in cost)
             {
-                if (GetAmount(stock, item.Type) < item.Amount)
+                if (GetAmount(stock, item.Type) < item.Amount * count)
                 {
                     return false;
                 }

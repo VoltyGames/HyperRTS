@@ -266,6 +266,15 @@
     color: rgb(255, 95, 80);
 }
 
+.hud-line-cost {
+    background-color: rgba(8, 10, 14, 0.75);
+    border-radius: 4px;
+}
+
+.hud-line-cost .hud-costs__amount {
+    font-size: 14px;
+}
+
 .drag-box {
     background-color: rgba(200, 225, 255, 0.1);
     border-color: rgba(200, 225, 255, 0.9);

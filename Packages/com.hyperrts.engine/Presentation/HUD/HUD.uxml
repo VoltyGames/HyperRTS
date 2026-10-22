@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
   <ui:VisualElement name="hud" class="hud-root" picking-mode="Ignore">
     <ui:VisualElement name="bottom" class="hud-bottom" picking-mode="Ignore" />
+    <HyperRTS.Presentation.HUD.CostRow name="line-cost" class="hud-line-cost" picking-mode="Ignore" />
   </ui:VisualElement>
 </ui:UXML>

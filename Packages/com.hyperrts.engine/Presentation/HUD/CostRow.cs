@@ -18,13 +18,14 @@ namespace HyperRTS.Presentation.HUD
             AddToClassList("hud-costs");
         }
 
-        public void Bind(DynamicBuffer<ResourceCost> costs)
+        /// <summary>Shows <paramref name="count"/> times each cost, e.g. a whole line of segments.</summary>
+        public void Bind(DynamicBuffer<ResourceCost> costs, int count = 1)
         {
             Clear();
             _amounts.Clear();
             foreach (var cost in costs)
             {
-                var label = HUDElements.Text(cost.Amount.ToString(), "hud-costs__amount", this);
+                var label = HUDElements.Text((cost.Amount * count).ToString(), "hud-costs__amount", this);
                 _amounts.Add((label, cost.Type.Value));
                 Paint(label, cost.Type.Value);
             }

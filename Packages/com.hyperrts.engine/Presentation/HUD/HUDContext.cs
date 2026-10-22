@@ -91,6 +91,10 @@ namespace HyperRTS.Presentation.HUD
         public HotkeyPresses Hotkeys =>
             _hotkeys.In(EntityManager).TryGetSingleton(out HotkeyPresses presses) ? presses : default;
 
+        /// <summary>The building being placed; inactive without the singleton.</summary>
+        public PlacementState Placement =>
+            _placement.In(EntityManager).TryGetSingleton(out PlacementState placement) ? placement : default;
+
         /// <summary>The command card page that shows: 0 for the first, 1 for a builder's advanced options.</summary>
         public int CommandPage =>
             _commandPage.In(EntityManager).TryGetSingleton(out CommandCardPage page) ? page.Page : 0;

@@ -165,6 +165,17 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(0, SitePositions().Length);
         }
 
+        [Test]
+        public void CanAfford_ScalesTheSegmentCostByTheLine()
+        {
+            var prefab = WallPrefab(300);
+            var stock = _world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1)).AsNativeArray();
+            var cost = _world.EntityManager.GetBuffer<ResourceCost>(prefab);
+
+            Assert.IsTrue(ResourceMath.CanAfford(stock, cost, 3));
+            Assert.IsFalse(ResourceMath.CanAfford(stock, cost, 4));
+        }
+
         private struct AlongLine : IComparer<float3>
         {
             public int Compare(float3 a, float3 b) => a.x != b.x ? a.x.CompareTo(b.x) : a.z.CompareTo(b.z);

@@ -11,6 +11,12 @@ namespace HyperRTS.Presentation.HUD
             Root = shell.CloneRoot();
         }
 
+        /// <summary>Drives an element the HUD tree already holds.</summary>
+        protected HUDPanel(VisualElement root)
+        {
+            Root = root;
+        }
+
         public VisualElement Root { get; }
 
         /// <summary>Whether world clicks under the panel are ignored (false for pass-through overlays).</summary>

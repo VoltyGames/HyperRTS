@@ -52,7 +52,7 @@ to every panel and keeps it in sync with the simulation. Code fills in only per-
 
 | Type | Role |
 | --- | --- |
-| Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner`, each built from a `HUDPanelLayouts` |
+| Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner`, each built from a `HUDPanelLayouts`; `LineCost` drives the `line-cost` row in `HUD.uxml` |
 | Elements | `HUDIcon`, `HUDBar`, `CostRow`, `CommandButton`, `HUDTooltip`, `HUDSweep`, `HUDGlyph`, `HUDFade`: UXML elements filled through `Bind` or properties |
 | `ICommandSource` | Adds command-card entries: purchases, abilities, stances, unit actions. Each has a slot and hotkey |
 | `HUDText` | Every HUD string, by key. Set `HUDText.Current` to translate |
@@ -74,6 +74,9 @@ to every panel and keeps it in sync with the simulation. Code fills in only per-
 The command card is a grid of 72 px cards, five a row, laid out in `HUDCommands.uss`. A build, train, research or
 ability card is a picture: the icon fills the button, scaled and cropped, with the hotkey top left and the cost in a
 strip along the bottom. Its name is in the tooltip. Caption buttons (stances, unload, sell) stay text.
+
+While a line is dragged, `LineCost` shows its total, `ValidSegments` times the per-segment cost, above and right of
+the line's end. It turns `hud-costs--short`, the unaffordable card's colour, when the stock can't cover it.
 
 `PurchaseCommands` asks `PurchaseRules.FindRefusal` why a purchase is refused and shows it as a class on the card:
 
