@@ -4,7 +4,8 @@ using HyperRTS.Presentation.Environment.Grass;
 using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Simulation.Common;
 using Unity.Scripting.LifecycleManagement;
-using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Presentation.Rendering
 {
@@ -39,9 +40,6 @@ namespace HyperRTS.Presentation.Rendering
         /// <summary>Metres row crops are drawn to.</summary>
         public float CropDistance;
 
-        /// <summary>Main light shadow map size, a power of two from 256 to 8192.</summary>
-        public int ShadowResolution;
-
         /// <summary>Share of the screen resolution the cameras render at, above 0 and at most 1.</summary>
         public float RenderScale;
 
@@ -56,7 +54,6 @@ namespace HyperRTS.Presentation.Rendering
             GrassShadowDistance = 40f,
             CropDensity = 1f,
             CropDistance = 300f,
-            ShadowResolution = 2048,
             RenderScale = 1f,
         };
 
@@ -64,13 +61,26 @@ namespace HyperRTS.Presentation.Rendering
         [AutoStaticsCleanup]
         public static PresentationQuality Current { get; private set; } = Default;
 
-        /// <summary>Writes every knob and sets the shadow map size and render scale on the active URP asset.</summary>
+        /// <summary>
+        /// Writes every knob and the render scale. Shadows and the rest of the pipeline come from the quality level's
+        /// URP asset, so set the quality level first.
+        /// </summary>
         public static void Apply(in PresentationQuality quality)
         {
             WriteKnobs(quality);
-            PipelineAssetQuality.SetShadowResolution(quality.ShadowResolution);
-            PipelineAssetQuality.SetRenderScale(quality.RenderScale);
+            ActivePipeline().renderScale = quality.RenderScale;
             Current = quality;
+        }
+
+        // Render scale is the one pipeline value URP reads live from the asset; no camera or volume carries it.
+        private static UniversalRenderPipelineAsset ActivePipeline()
+        {
+            if (GraphicsSettings.currentRenderPipeline is not UniversalRenderPipelineAsset asset)
+            {
+                throw new System.InvalidOperationException("HyperRTS: the active render pipeline isn't URP.");
+            }
+
+            return asset;
         }
 
         private static void WriteKnobs(in PresentationQuality quality)
