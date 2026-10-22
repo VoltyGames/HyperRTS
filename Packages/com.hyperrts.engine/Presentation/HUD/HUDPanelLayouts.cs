@@ -4,10 +4,14 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>The UXML shells and row templates of the engine's HUD panels, handed to each panel by the HUD.</summary>
+    /// <summary>The HUD tree and the UXML shells and row templates of the engine's HUD panels, handed to each panel by the HUD.</summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Rig + "HUD Panel Layouts", fileName = "HUDPanelLayouts")]
     public sealed class HUDPanelLayouts : ScriptableObject
     {
+        [SerializeField]
+        [Tooltip("HUD tree (HUD.uxml): hud-root and the named slots panels go in, such as bottom.")]
+        private VisualTreeAsset root;
+
         [SerializeField]
         [Tooltip("Top bar shell (ResourceBar.uxml).")]
         private VisualTreeAsset resourceBar;
@@ -40,6 +44,12 @@ namespace HyperRTS.Presentation.HUD
         [Tooltip("Minimap shell with its fog, blip and view layers (Minimap.uxml).")]
         private VisualTreeAsset minimap;
 
+        [SerializeField]
+        [Tooltip("Drag-box marquee and its corner accents (SelectionDragBoxUI.uxml).")]
+        private VisualTreeAsset selectionDragBoxUI;
+
+        public VisualTreeAsset Root => root;
+
         public VisualTreeAsset ResourceBar => resourceBar;
 
         public VisualTreeAsset ResourceBarEntry => resourceBarEntry;
@@ -55,5 +65,7 @@ namespace HyperRTS.Presentation.HUD
         public VisualTreeAsset GameOverBanner => gameOverBanner;
 
         public VisualTreeAsset Minimap => minimap;
+
+        public VisualTreeAsset SelectionDragBoxUI => selectionDragBoxUI;
     }
 }

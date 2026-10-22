@@ -58,8 +58,8 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 ## HUD
 
 - **Panels:** derive `HUDPanel` with a UXML shell beside it, subclass `HUDController` and add panels in
-  `CreatePanels`, into the slots `HUD.uxml` names such as `bottom`. Engine panels take `PanelLayouts`. Put the
-  subclass on your HUD prefab.
+  `CreatePanels`, into the slots the `PanelLayouts.Root` tree names such as `bottom`. Engine panels take
+  `PanelLayouts`. Put the subclass on your HUD prefab.
 - **Text:** subclass `HUDText` and set `HUDText.Current` before the HUD builds. Keys are listed in
   [client](modules/client.md#presentation).
 - **Style:** `HUD.uss` holds layout and `HUDTheme.uss` the look. Assign your own sheet as

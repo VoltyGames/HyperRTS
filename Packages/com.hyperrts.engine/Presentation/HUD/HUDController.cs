@@ -17,11 +17,7 @@ namespace HyperRTS.Presentation.HUD
     public class HUDController : PanelContent
     {
         [SerializeField]
-        [Tooltip("HUD tree (HUD.uxml): hud-root and the named slots panels go in, such as bottom.")]
-        private VisualTreeAsset layout;
-
-        [SerializeField]
-        [Tooltip("UXML shells and row templates of the engine's panels (HUDPanelLayouts).")]
+        [Tooltip("HUD tree, panel shells and row templates (HUDPanelLayouts).")]
         private HUDPanelLayouts panelLayouts;
 
         [SerializeField]
@@ -59,7 +55,7 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        protected HUDPanelLayouts PanelLayouts => panelLayouts;
+        public HUDPanelLayouts PanelLayouts => panelLayouts;
 
         /// <summary>Adds the panels to <paramref name="hud"/>, the HUD.uxml tree, or to its named slots.</summary>
         protected virtual void CreatePanels(VisualElement hud)
@@ -92,7 +88,7 @@ namespace HyperRTS.Presentation.HUD
 
         protected override VisualElement Build()
         {
-            var hud = layout.CloneRoot();
+            var hud = panelLayouts.Root.CloneRoot();
             if (_theme != null)
             {
                 hud.AddToClassList(_theme);

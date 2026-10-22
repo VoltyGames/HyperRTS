@@ -21,15 +21,12 @@ namespace HyperRTS.Presentation.Selection
         private readonly LiveQuery _dragQuery = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<SelectionDragState>()));
 
-        [SerializeField]
-        [Tooltip("Marquee and its corner accents (SelectionDragBoxUI.uxml).")]
-        private VisualTreeAsset layout;
-
         // The box sits beside hud-root, so it takes the HUD sheets itself and a game theme restyles it.
         protected override VisualElement Build()
         {
-            var marquee = layout.CloneRoot();
-            GetComponent<HUDController>().AddSheets(marquee);
+            var hud = GetComponent<HUDController>();
+            var marquee = hud.PanelLayouts.SelectionDragBoxUI.CloneRoot();
+            hud.AddSheets(marquee);
             return marquee;
         }
 

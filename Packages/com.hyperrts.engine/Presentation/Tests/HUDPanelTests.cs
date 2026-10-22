@@ -9,7 +9,6 @@ namespace HyperRTS.Presentation.Tests
     public class HUDPanelTests
     {
         private const string LayoutsGuid = "063ced5c8bae4ff58d48995eac9c6741";
-        private const string HUDLayoutGuid = "b81e877ec2ff44f8b70ef32ad153f36a";
 
         /// <summary>The engine's shipped panel templates.</summary>
         internal static HUDPanelLayouts Layouts =>
@@ -70,8 +69,7 @@ namespace HyperRTS.Presentation.Tests
         [Test]
         public void HUDLayout_HasBottomSlot()
         {
-            var layout = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(AssetDatabase.GUIDToAssetPath(HUDLayoutGuid));
-            var hud = layout.CloneRoot();
+            var hud = Layouts.Root.CloneRoot();
 
             Assert.IsTrue(hud.ClassListContains("hud-root"));
             hud.Require<VisualElement>("bottom");

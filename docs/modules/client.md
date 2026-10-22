@@ -44,10 +44,10 @@ relations and colours.
 
 ### HUD
 
-`HUD.prefab` holds a UI Toolkit HUD. `HUDController` clones `HUD.uxml`, places its panels in the tree's named
-slots, styles it with `HUD.uss` for layout and `HUDTheme.uss` for looks, and keeps it in sync with the simulation.
-Each panel's shell and row templates are UXML beside its script, gathered in the `HUDPanelLayouts` asset the
-controller hands to every panel. Code fills in only per-frame data. Games add or replace panels by overriding
+`HUD.prefab` holds a UI Toolkit HUD. Its `HUDPanelLayouts` asset gathers the HUD tree (`HUD.uxml`), each panel's
+shell and row templates (UXML beside each script) and the drag box. `HUDController` clones the tree, places its
+panels in the tree's named slots, styles it with `HUD.uss` for layout and `HUDTheme.uss` for looks, hands the asset
+to every panel and keeps it in sync with the simulation. Code fills in only per-frame data. Games add or replace panels by overriding
 `CreatePanels`.
 
 | Type | Role |

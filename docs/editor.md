@@ -162,7 +162,7 @@ Cheats act on the authoritative world, through the normal game systems. Using on
 | --- | --- |
 | `Prefabs/RTSWorld.prefab` | Camera with `CameraController`, the HUD, `OverrideAutomaticNetcodeBootstrap` |
 | `Prefabs/MatchState.prefab` | The ghost replicating `MatchState`. One per map SubScene |
-| `Prefabs/UI/HUD.prefab` | `PanelRenderer` with `HUDController` (`HUD.uxml`, `HUDPanelLayouts`), overlays, fog and the drag box |
+| `Prefabs/UI/HUD.prefab` | `PanelRenderer` with `HUDController` (`HUDPanelLayouts`), overlays, fog and the drag box |
 
 The HUD uses `PanelRenderer`, which has no `rootVisualElement`. Get the root through `RegisterUIReloadCallback`
 and build idempotently, since the callback can fire more than once. `PanelContent` does this for you.
