@@ -10,12 +10,15 @@ namespace HyperRTS.Presentation.Rendering
     public sealed class HeightFogPass : ScriptableRenderPass
     {
         private readonly Material material;
+        private HeightFog fog;
+
+        // Whether this camera draws the fog, else it only clears the globals for its transparents.
+        private bool drawn;
 
         private sealed class PassData
         {
             public Material Material;
             public HeightFog Fog;
-            public bool Drawn;
         }
 
         // After the skybox and screen-space decals so they fog too, and before the unit silhouettes so those stay crisp.
@@ -26,42 +29,49 @@ namespace HyperRTS.Presentation.Rendering
             profilingSampler = new ProfilingSampler("Height Fog");
         }
 
-        // Whether this camera draws the fog, else it only clears the globals for its transparents.
-        private bool drawn;
-
-        public void Setup(HeightFog fog, CameraType type, bool orthographic)
+        public void Setup(HeightFog fog, bool drawn)
         {
-            // Orthographic cameras are top-down captures such as the minimap.
-            var fogged = type == CameraType.Game || type == CameraType.SceneView;
-            drawn = fog.IsActive() && fogged && !orthographic;
+            this.fog = fog;
+            this.drawn = drawn;
             ConfigureInput(drawn ? ScriptableRenderPassInput.Depth : ScriptableRenderPassInput.None);
         }
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
-            var resources = frameData.Get<UniversalResourceData>();
-            using var builder = renderGraph.AddRasterRenderPass<PassData>("Height Fog", out var data, profilingSampler);
-            data.Material = material;
-            data.Fog = VolumeManager.instance.stack.GetComponent<HeightFog>();
-            data.Drawn = drawn;
             if (drawn)
             {
-                builder.UseTexture(resources.cameraDepthTexture);
+                RecordDraw(renderGraph, frameData.Get<UniversalResourceData>());
             }
+            else
+            {
+                RecordClear(renderGraph);
+            }
+        }
 
+        private void RecordDraw(RenderGraph renderGraph, UniversalResourceData resources)
+        {
+            using var builder = renderGraph.AddRasterRenderPass<PassData>("Height Fog", out var data, profilingSampler);
+            data.Material = material;
+            data.Fog = fog;
+            builder.UseTexture(resources.cameraDepthTexture);
             builder.SetRenderAttachment(resources.activeColorTexture, 0, AccessFlags.ReadWrite);
             builder.AllowGlobalStateModification(true);
             builder.AllowPassCulling(false);
-            builder.SetRenderFunc(static (PassData pass, RasterGraphContext context) => Render(pass, context.cmd));
+            builder.SetRenderFunc(static (PassData pass, RasterGraphContext context) =>
+            {
+                pass.Fog.Publish(context.cmd, true);
+                context.cmd.DrawProcedural(Matrix4x4.identity, pass.Material, 0, MeshTopology.Triangles, 3);
+            });
         }
 
-        private static void Render(PassData pass, RasterCommandBuffer cmd)
+        // No attachment, so a camera without fog doesn't load and store its colour just to clear the globals.
+        private void RecordClear(RenderGraph renderGraph)
         {
-            pass.Fog.Publish(cmd, pass.Drawn);
-            if (pass.Drawn)
-            {
-                cmd.DrawProcedural(Matrix4x4.identity, pass.Material, 0, MeshTopology.Triangles, 3);
-            }
+            using var builder = renderGraph.AddComputePass<PassData>("Height Fog Clear", out var data, profilingSampler);
+            data.Fog = fog;
+            builder.AllowGlobalStateModification(true);
+            builder.AllowPassCulling(false);
+            builder.SetRenderFunc(static (PassData pass, ComputeGraphContext context) => pass.Fog.Publish(context.cmd, false));
         }
     }
 }

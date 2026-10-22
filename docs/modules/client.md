@@ -199,7 +199,7 @@ Entities hidden by fog, and passengers inside a container, stop rendering. `FogO
 fog grid and its colour as shader globals. `FogOfWarFeature`, on the URP renderer with its shader set to
 `Hidden/HyperRTS/FogOfWar`, blends it full screen from the depth buffer before the transparents, so terrain and
 buildings fog where they stand while health bars, markers and the placement ghost stay clear. Water and particles
-apply it themselves with `FogOfWarAt` from `FogOfWar.hlsl`. Map buildings stay visible, but their flags, dials and
+apply it themselves through `SceneFog.hlsl`. Map buildings stay visible, but their flags, dials and
 pips hide under the local fog.
 
 A client remembers enemy buildings where it last saw them. The memory is a visual copy of the building, team
@@ -256,8 +256,8 @@ fog off. A missing skybox or reflection is an error.
 `HeightFog` is a Volume override for fog that thins with height, so weathers blend it through their profiles.
 `HeightFogFeature` must be on the URP renderer with its shader set to `Hidden/HyperRTS/HeightFog`, and the validator
 checks this. Its pass publishes the camera's blended fog as shader globals and draws it in game and scene view
-perspective cameras only, so orthographic captures such as the minimap stay clear. Custom shaders apply the same
-fog with `HeightFogAt` from `HeightFog.hlsl`, as water and particles do.
+perspective cameras only, so orthographic captures such as the minimap stay clear. Transparent shaders apply both
+fogs in the full-screen order with `SceneFogAt` and `ApplySceneFog` from `SceneFog.hlsl`, as water and particles do.
 
 ### Wind
 

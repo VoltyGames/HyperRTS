@@ -11,6 +11,7 @@
 #endif
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Wetness.hlsl"
@@ -99,11 +100,10 @@ half3 PlantVertexLights(float3 positionWS, float4 positionCS, half3 normalWS)
 {
     half3 lighting = half3(0.0, 0.0, 0.0);
     #if defined(_ADDITIONAL_LIGHTS)
-        // LIGHT_LOOP_BEGIN reads the cluster from a variable named inputData; the screen UV is URP's positionNDC.
-        InputData inputData = (InputData)0;
-        inputData.positionWS = positionWS;
+        // The screen UV is URP's positionNDC.
         float4 ndc = positionCS * 0.5;
-        inputData.normalizedScreenSpaceUV = (float2(ndc.x, ndc.y * _ProjectionParams.x) + ndc.w) / positionCS.w;
+        float2 screenUV = (float2(ndc.x, ndc.y * _ProjectionParams.x) + ndc.w) / positionCS.w;
+        InputData inputData = LightLoopInput(positionWS, screenUV);
         half3 view = GetWorldSpaceNormalizeViewDir(positionWS);
         half3 normal = normalize(normalWS);
         uint lightCount = GetAdditionalLightsCount();
@@ -169,10 +169,7 @@ half3 PlantAdditionalLights(ForwardVaryings input, half3 normal, half3 view, hal
     #if defined(PLANT_VERTEX_LIGHTS)
         lighting = input.vertexLight * input.tint.a;
     #elif defined(_ADDITIONAL_LIGHTS)
-        // LIGHT_LOOP_BEGIN reads the cluster from a variable named inputData.
-        InputData inputData = (InputData)0;
-        inputData.positionWS = input.positionWS;
-        inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
+        InputData inputData = LightLoopInput(input.positionWS, GetNormalizedScreenSpaceUV(input.positionCS));
         uint lightCount = GetAdditionalLightsCount();
         LIGHT_LOOP_BEGIN(lightCount)
             Light light = GetAdditionalLight(lightIndex, input.positionWS);
@@ -181,20 +178,6 @@ half3 PlantAdditionalLights(ForwardVaryings input, half3 normal, half3 view, hal
         LIGHT_LOOP_END
     #endif
     return lighting;
-}
-
-// Surface Cache GI where it runs, else the ambient probe.
-half3 PlantAmbient(ForwardVaryings input, half3 normal, half3 view)
-{
-    GIParams giParams = (GIParams)0;
-    giParams.positionWS = input.positionWS;
-    giParams.normalWS = normal;
-    giParams.viewDirWS = view;
-    giParams.positionSS = input.positionCS.xy;
-    URP_LIGHT_ACCUM3 ambient;
-    half4 shadowMask;
-    InitializeBakedGI(giParams, ambient, shadowMask);
-    return ambient;
 }
 
 // Wrapped sun, translucency and glint, all dimmed by the crown occlusion; the root gets plain up-facing light.
@@ -215,7 +198,7 @@ half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
 
     half3 lit = direct * PlantDiffuse(normal, sun.direction, view, crown, root);
     lit += PlantAdditionalLights(input, normal, view, root);
-    half3 ambient = PlantAmbient(input, normal, view) * occlusion;
+    half3 ambient = SurfaceCacheAmbient(input.positionWS, normal, view, input.positionCS.xy) * occlusion;
     return albedo * (lit + ambient) + glint * crown * direct;
 }
 

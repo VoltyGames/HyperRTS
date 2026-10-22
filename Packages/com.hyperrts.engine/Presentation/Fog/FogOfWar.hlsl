@@ -25,9 +25,4 @@ half4 FogOfWarAt(float3 positionWS)
     return half4(_HyperRTSFogOfWarColor.rgb, opacity * _HyperRTSFogOfWarColor.a);
 }
 
-half3 ApplyFogOfWar(half3 color, half4 fog)
-{
-    return lerp(color, fog.rgb, fog.a);
-}
-
 #endif

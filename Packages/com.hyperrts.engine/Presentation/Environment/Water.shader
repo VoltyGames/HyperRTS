@@ -125,8 +125,7 @@ Shader "HyperRTS/Water"
             #include "Trample.hlsl"
             #include "WaterFoam.hlsl"
             #include "WaterReflection.hlsl"
-            #include "HeightFog.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Fog/FogOfWar.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneFog.hlsl"
 
             struct Attributes
             {
@@ -232,8 +231,8 @@ Shader "HyperRTS/Water"
                 }
 
                 // The opaque texture already holds the height fog; take it out so the water fogs it once.
-                half4 fog = HeightFogAt(input.positionWS);
-                half3 bottom = RemoveHeightFog(SampleSceneColor(refracted), fog);
+                SceneFog fog = SceneFogAt(input.positionWS);
+                half3 bottom = RemoveHeightFog(SampleSceneColor(refracted), fog.height);
                 half3 tint = lerp(_ShallowColor.rgb, _DeepColor.rgb, saturate(depth / _DepthRange)) * CloudShade(input.positionWS);
                 half3 body = lerp(tint, bottom * _ShallowColor.rgb * 1.8, exp(-depth / _Clarity));
 
@@ -251,7 +250,7 @@ Shader "HyperRTS/Water"
                     scene = ScreenReflection(input.positionWS, reflect(-view, mirror), input.positionCS.xy);
                 }
 
-                half3 reflection = lerp(sky, RemoveHeightFog(scene.rgb, fog), scene.a * _ReflectionStrength);
+                half3 reflection = lerp(sky, RemoveHeightFog(scene.rgb, fog.height), scene.a * _ReflectionStrength);
                 half3 color = lerp(body, reflection, fresnel);
                 color += Glint(sun, normalWS, view, color, cameraDistance);
 
@@ -262,8 +261,7 @@ Shader "HyperRTS/Water"
                 half foam = max(rapids, calm);
                 color = lerp(color, _FoamColor.rgb * (sun.color * sun.shadowAttenuation * 0.6 + 0.4), foam);
                 half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(shoreDepth / _ShoreFadeDepth), foam);
-                color = ApplyHeightFog(color, fog);
-                color = ApplyFogOfWar(color, FogOfWarAt(input.positionWS));
+                color = ApplySceneFog(color, fog);
                 return half4(color, alpha);
             }
             ENDHLSL

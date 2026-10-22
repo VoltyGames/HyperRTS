@@ -45,11 +45,6 @@ half4 HeightFogAt(float3 positionWS)
     return half4(color, amount);
 }
 
-half3 ApplyHeightFog(half3 color, half4 fog)
-{
-    return lerp(color, fog.rgb, fog.a);
-}
-
 // Undoes fog already in a colour, for transparents that sample the fogged opaque texture and fog again.
 half3 RemoveHeightFog(half3 color, half4 fog)
 {

@@ -3,6 +3,7 @@
 #define HYPERRTS_FLAG_FORWARD_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
 
 struct Varyings
 {
@@ -38,10 +39,7 @@ half3 FlagAdditionalLights(Varyings input, half3 normal)
 {
     half3 lighting = half3(0.0, 0.0, 0.0);
     #if defined(_ADDITIONAL_LIGHTS)
-        // LIGHT_LOOP_BEGIN reads the cluster from a variable named inputData.
-        InputData inputData = (InputData)0;
-        inputData.positionWS = input.positionWS;
-        inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
+        InputData inputData = LightLoopInput(input.positionWS, GetNormalizedScreenSpaceUV(input.positionCS));
         uint lightCount = GetAdditionalLightsCount();
         LIGHT_LOOP_BEGIN(lightCount)
             Light light = GetAdditionalLight(lightIndex, input.positionWS);
@@ -51,17 +49,10 @@ half3 FlagAdditionalLights(Varyings input, half3 normal)
     return lighting;
 }
 
-// Surface Cache GI where it runs, else the ambient probe.
 half3 FlagAmbient(Varyings input, half3 normal)
 {
-    GIParams giParams = (GIParams)0;
-    giParams.positionWS = input.positionWS;
-    giParams.normalWS = normal;
-    giParams.viewDirWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
-    giParams.positionSS = input.positionCS.xy;
-    URP_LIGHT_ACCUM3 ambient;
-    half4 shadowMask;
-    InitializeBakedGI(giParams, ambient, shadowMask);
+    half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
+    half3 ambient = SurfaceCacheAmbient(input.positionWS, normal, view, input.positionCS.xy);
 
     #if defined(_SCREEN_SPACE_OCCLUSION)
         float2 screenUV = GetNormalizedScreenSpaceUV(input.positionCS);

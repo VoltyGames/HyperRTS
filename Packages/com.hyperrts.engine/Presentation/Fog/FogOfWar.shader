@@ -22,6 +22,7 @@ Shader "Hidden/HyperRTS/FogOfWar"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneDepth.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Fog/FogOfWar.hlsl"
 
             half4 Frag(Varyings input) : SV_Target
@@ -33,9 +34,8 @@ Shader "Hidden/HyperRTS/FogOfWar"
                     clip(depth - 1e-6);
                 #else
                     clip(1.0 - 1e-6 - depth);
-                    depth = lerp(UNITY_NEAR_CLIP_VALUE, 1.0, depth);
                 #endif
-                return FogOfWarAt(ComputeWorldSpacePosition(uv, depth, UNITY_MATRIX_I_VP));
+                return FogOfWarAt(ReconstructWorldPosition(uv, depth));
             }
             ENDHLSL
         }

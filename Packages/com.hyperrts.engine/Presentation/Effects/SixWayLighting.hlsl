@@ -1,4 +1,4 @@
-// Six-way light map shading from the sun, clustered lights and the ambient probe. Needs URP Lighting.hlsl first.
+// Six-way light map shading from the sun, clustered lights and the ambient probe. Needs URP Lighting.hlsl and SceneLighting.hlsl first.
 #ifndef HYPERRTS_SIX_WAY_LIGHTING_INCLUDED
 #define HYPERRTS_SIX_WAY_LIGHTING_INCLUDED
 
@@ -37,10 +37,7 @@ half3 SixWayAdditionalLights(float3 positionWS, float2 screenUV, half3x3 basis, 
 {
     half3 lighting = half3(0.0h, 0.0h, 0.0h);
     #if defined(_ADDITIONAL_LIGHTS)
-        // LIGHT_LOOP_BEGIN reads the cluster from a variable named inputData.
-        InputData inputData = (InputData)0;
-        inputData.positionWS = positionWS;
-        inputData.normalizedScreenSpaceUV = screenUV;
+        InputData inputData = LightLoopInput(positionWS, screenUV);
         uint lightCount = GetAdditionalLightsCount();
         LIGHT_LOOP_BEGIN(lightCount)
             Light light = GetAdditionalLight(lightIndex, positionWS);

@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Rendering;
@@ -15,9 +16,14 @@ namespace HyperRTS.Presentation.Fog
     public partial struct FogVisibilitySystem : ISystem
     {
         private RenderSwitch _switch;
+        private EntityQuery _roots;
 
         [BurstCompile]
-        public void OnCreate(ref SystemState state) => _switch = new RenderSwitch(ref state);
+        public void OnCreate(ref SystemState state)
+        {
+            _switch = new RenderSwitch(ref state);
+            _roots = SystemAPI.QueryBuilder().WithAll<EntityInfo, HiddenBy>().Build();
+        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
@@ -26,24 +32,39 @@ namespace HyperRTS.Presentation.Fog
             state.Dependency = new SyncJob
             {
                 Switch = _switch,
-                Fog = SystemAPI.GetComponentLookup<FogHidden>(true),
-                Inside = SystemAPI.GetComponentLookup<Inside>(true),
-            }.Schedule(state.Dependency);
+                Entities = SystemAPI.GetEntityTypeHandle(),
+                Fog = SystemAPI.GetComponentTypeHandle<FogHidden>(true),
+                Inside = SystemAPI.GetComponentTypeHandle<Inside>(true),
+                LastSystemVersion = state.LastSystemVersion,
+            }.Schedule(_roots, state.Dependency);
         }
 
+        // Gaining or losing FogHidden moves a root to another chunk, so only reordered or boarded chunks can flip.
         [BurstCompile]
-        [WithAll(typeof(EntityInfo), typeof(HiddenBy))]
-        private partial struct SyncJob : IJobEntity
+        private struct SyncJob : IJobChunk
         {
             public RenderSwitch Switch;
-            [ReadOnly] public ComponentLookup<FogHidden> Fog;
-            [ReadOnly] public ComponentLookup<Inside> Inside;
+            [ReadOnly] public EntityTypeHandle Entities;
+            [ReadOnly] public ComponentTypeHandle<FogHidden> Fog;
+            [ReadOnly] public ComponentTypeHandle<Inside> Inside;
+            public uint LastSystemVersion;
 
-            private void Execute(Entity entity)
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
-                var aboard = Inside.HasComponent(entity) && Inside.IsComponentEnabled(entity);
-                Sync(entity, HideReason.Fog, Fog.HasComponent(entity));
-                Sync(entity, HideReason.Inside, aboard);
+                if (!chunk.DidOrderChange(LastSystemVersion) && !chunk.DidChange(ref Inside, LastSystemVersion))
+                {
+                    return;
+                }
+
+                var entities = chunk.GetNativeArray(Entities);
+                var fogged = chunk.Has(ref Fog);
+                var carried = chunk.Has(ref Inside);
+                for (var i = 0; i < chunk.Count; i++)
+                {
+                    var aboard = carried && chunk.IsComponentEnabled(ref Inside, i);
+                    Sync(entities[i], HideReason.Fog, fogged);
+                    Sync(entities[i], HideReason.Inside, aboard);
+                }
             }
 
             private void Sync(Entity entity, HideReason reason, bool hide)

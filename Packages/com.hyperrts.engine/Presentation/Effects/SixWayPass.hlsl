@@ -1,5 +1,5 @@
 // Vertex and fragment programs of ParticlesSixWay.shader. Needs SixWayInput.hlsl, SixWayLighting.hlsl,
-// HeightFog.hlsl, FogOfWar.hlsl and EyeDepth.hlsl first.
+// SceneFog.hlsl and EyeDepth.hlsl first.
 #ifndef HYPERRTS_SIX_WAY_PASS_INCLUDED
 #define HYPERRTS_SIX_WAY_PASS_INCLUDED
 
@@ -67,10 +67,9 @@ half4 SixWayFrag(SixWayVaryings input) : SV_Target
         + SixWayAdditionalLights(input.positionWS, screenUV, basis, maps)
         + SixWayAmbient(input, basis, maps);
 
-    half4 fog = HeightFogAt(input.positionWS);
-    half4 war = FogOfWarAt(input.positionWS);
-    half3 smoke = ApplyFogOfWar(ApplyHeightFog(input.color.rgb * light, fog), war) * alpha;
-    half3 glow = SixWayEmission(emissionMap, input.blendAndEmission.y) * (fade * (1.0h - fog.a) * (1.0h - war.a));
+    SceneFog fog = SceneFogAt(input.positionWS);
+    half3 smoke = ApplySceneFog(input.color.rgb * light, fog) * alpha;
+    half3 glow = SixWayEmission(emissionMap, input.blendAndEmission.y) * (fade * (1.0h - fog.height.a) * (1.0h - fog.war.a));
     return half4(smoke + glow, alpha);
 }
 

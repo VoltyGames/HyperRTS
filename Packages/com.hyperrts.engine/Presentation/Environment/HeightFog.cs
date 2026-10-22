@@ -44,7 +44,7 @@ namespace HyperRTS.Presentation.Environment
         public bool IsActive() => active && density.value > 0f && maxOpacity.value > 0f;
 
         /// <summary>Sets the fog globals in linear colour; a hidden fog has zero opacity so transparents that apply it stay clear.</summary>
-        public void Publish(RasterCommandBuffer cmd, bool shown)
+        public void Publish(IBaseCommandBuffer cmd, bool shown)
         {
             cmd.SetGlobalVector(ColorId, color.value.linear);
             cmd.SetGlobalVector(SunColorId, sunColor.value.linear);

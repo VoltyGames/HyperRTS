@@ -2,8 +2,7 @@
 #ifndef HYPERRTS_PARTICLES_FOG_INCLUDED
 #define HYPERRTS_PARTICLES_FOG_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/HeightFog.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Fog/FogOfWar.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneFog.hlsl"
 
 static const half AdditiveBlend = 2.0h;
 
@@ -26,7 +25,7 @@ half3 FogParticleLayer(half3 color, half alpha, half4 fog)
         fog.rgb *= alpha;
     }
 
-    return lerp(color, fog.rgb, fog.a);
+    return ApplyFog(color, fog);
 }
 
 half4 FogParticle(half4 color, float3 positionWS)
@@ -37,8 +36,9 @@ half4 FogParticle(half4 color, float3 positionWS)
         return color;
     }
 
-    color.rgb = FogParticleLayer(color.rgb, color.a, HeightFogAt(positionWS));
-    color.rgb = FogParticleLayer(color.rgb, color.a, FogOfWarAt(positionWS));
+    SceneFog fog = SceneFogAt(positionWS);
+    color.rgb = FogParticleLayer(color.rgb, color.a, fog.height);
+    color.rgb = FogParticleLayer(color.rgb, color.a, fog.war);
     return color;
 }
 
