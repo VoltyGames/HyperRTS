@@ -11,8 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Input.Commands
 {
     /// <summary>
-    /// Drives building placement mode: moves the snapped ghost and confirms it as a PlaceBuilding command, or for a line
-    /// prefab drags the line from press to release and sends it as a PlaceLine command.
+    /// Drives building placement mode: moves and turns the snapped ghost and confirms it as a PlaceBuilding command, or
+    /// for a line prefab drags the line from press to release and sends it as a PlaceLine command.
     /// </summary>
     // After CommandInputSystem, so a cancelling right-click can't also become a smart command this frame.
     [WorldSystemFilter(SimulationWorlds.Presented)]
@@ -69,6 +69,12 @@ namespace HyperRTS.Input.Commands
                 return;
             }
 
+            if (commands.RotateBuilding.WasPressedThisFrame())
+            {
+                placement.Turn = (byte)((placement.Turn + 1) % PlacementMath.Turns);
+                SystemAPI.SetSingleton(placement);
+            }
+
             if (!aimed)
             {
                 return;
@@ -86,7 +92,8 @@ namespace HyperRTS.Input.Commands
         private void MoveGhost(ref PlacementState placement, float3 ground)
         {
             var map = SystemAPI.GetSingleton<MapSettings>();
-            var footprint = SystemAPI.GetComponent<NavObstacle>(placement.Prefab).Size;
+            var size = SystemAPI.GetComponent<NavObstacle>(placement.Prefab).Size;
+            var footprint = PlacementMath.Turned(size, placement.Turn);
             var surface = BuildingPlacement.GetSurface(EntityManager, placement.Prefab);
             var grid = SystemAPI.GetSingleton<NavGrid>();
             CompleteDependency();
@@ -168,6 +175,7 @@ namespace HyperRTS.Input.Commands
                 Type = CommandType.PlaceBuilding,
                 Prefab = placement.Prefab,
                 Position = placement.Position,
+                Turn = placement.Turn,
                 Queue = queue,
             });
 

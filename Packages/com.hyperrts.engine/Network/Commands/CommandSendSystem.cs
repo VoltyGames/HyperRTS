@@ -54,17 +54,10 @@ namespace HyperRTS.Network.Commands
         private CommandRpc ToRpc(ref SystemState state, in PlayerCommand command,
             DynamicBuffer<PlayerCommandSubject> listed, byte faction)
         {
-            var rpc = new CommandRpc
-            {
-                Type = (byte)command.Type,
-                Queue = command.Queue,
-                Argument = command.Argument,
-                Position = command.Position,
-                End = command.End,
-                Target = command.Target,
-                TargetScenery = SceneryTarget(ref state, command.Target),
-                PrefabTypeId = EntityInfo.GetTypeId(state.EntityManager, command.Prefab),
-            };
+            var rpc = CommandRpc.From(command);
+            rpc.Target = command.Target;
+            rpc.TargetScenery = SceneryTarget(ref state, command.Target);
+            rpc.PrefabTypeId = EntityInfo.GetTypeId(state.EntityManager, command.Prefab);
 
             // A commanded unit goes as is; a selection only sends this player's own units.
             var isSingle = command.Unit != Entity.Null;

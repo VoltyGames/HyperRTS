@@ -132,9 +132,15 @@ namespace HyperRTS.Simulation.Buildings
             NativeList<Site> sites, out Order order)
         {
             order = default;
+            var turn = request.Command.Turn;
+            if (turn >= PlacementMath.Turns)
+            {
+                return false;
+            }
+
             var prefab = request.Command.Prefab;
             var map = SystemAPI.GetSingleton<MapSettings>();
-            var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
+            var footprint = PlacementMath.Turned(SystemAPI.GetComponent<NavObstacle>(prefab).Size, turn);
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var grid = SystemAPI.GetSingleton<NavGrid>();
             if (!PlacementMath.Resolve(map, grid, request.Command.Position, footprint, surface, out var center))
@@ -153,7 +159,7 @@ namespace HyperRTS.Simulation.Buildings
                 return false;
             }
 
-            order = Raise(ref state, request, buyer, ecb, sites, center, footprint, quaternion.identity);
+            order = Raise(ref state, request, buyer, ecb, sites, center, footprint, PlacementMath.Facing(turn));
             return true;
         }
 

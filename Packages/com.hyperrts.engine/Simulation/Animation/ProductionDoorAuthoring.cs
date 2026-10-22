@@ -23,6 +23,10 @@ namespace HyperRTS.Simulation.Animation
         [Tooltip("Degrees it turns about the axis to open; 0 for a door that only moves.")]
         public float openAngle;
 
+        [Tooltip("Own-axis scale when open, as a factor of the shut scale. A roll-up curtain pivoted at its top opens at "
+            + "(1, 0.05, 1) and coils up toward the pivot.")]
+        public Vector3 openScale = Vector3.one;
+
         [Tooltip("Seconds to open, and again to close.")]
         [Min(0.1f)]
         public float moveSeconds = 1.5f;
@@ -30,6 +34,8 @@ namespace HyperRTS.Simulation.Animation
         [Tooltip("Seconds it stays open while the unit drives out.")]
         [Min(0f)]
         public float holdSeconds = 3f;
+
+        private bool Scales => openScale != Vector3.one;
 
         public class Baker : Baker<ProductionDoorAuthoring>
         {
@@ -42,15 +48,21 @@ namespace HyperRTS.Simulation.Animation
                 }
 
                 var rest = GetComponent<Transform>();
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                // A non-uniform scale needs a PostTransformMatrix, which LocalTransform alone can't carry.
+                var flags = authoring.Scales
+                    ? TransformUsageFlags.Dynamic | TransformUsageFlags.NonUniformScale
+                    : TransformUsageFlags.Dynamic;
+                var writer = new BakerWriter(this, GetEntity(flags));
                 writer.Add(new ProductionDoor
                 {
                     Building = GetEntity(producer, TransformUsageFlags.Dynamic),
                     OpenOffset = authoring.openOffset,
                     OpenRotation = quaternion.AxisAngle(authoring.openAxis.normalized,
                         math.radians(authoring.openAngle)),
+                    OpenScale = authoring.openScale,
                     RestPosition = rest.localPosition,
                     RestRotation = rest.localRotation,
+                    RestScale = rest.localScale,
                     MoveSeconds = math.max(authoring.moveSeconds, 0.1f),
                     HoldSeconds = authoring.holdSeconds,
                     Elapsed = float.MaxValue,

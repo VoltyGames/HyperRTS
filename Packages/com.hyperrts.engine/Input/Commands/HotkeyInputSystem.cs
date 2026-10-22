@@ -20,8 +20,10 @@ namespace HyperRTS.Input.Commands
         {
             var presses = new HotkeyPresses();
             var keyboard = Keyboard.current;
-            // Menus and rebinding suspend gameplay input; hotkeys stay quiet behind them too.
-            if (keyboard != null && !InputActionsProvider.IsSuspended)
+            // Menus and rebinding suspend gameplay input; hotkeys stay quiet behind them too, and while placing, whose
+            // keys (rotate) would otherwise also press a card.
+            var placing = SystemAPI.GetSingleton<PlacementState>().Active;
+            if (keyboard != null && !InputActionsProvider.IsSuspended && !placing)
             {
                 Collect(keyboard, Key.A, Key.Z, 'A', ref presses);
                 Collect(keyboard, Key.Digit1, Key.Digit0, '1', ref presses);

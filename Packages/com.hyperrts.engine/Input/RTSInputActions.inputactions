@@ -319,6 +319,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "RotateBuilding",
+                    "type": "Button",
+                    "id": "3f6d2a91-7c4e-4b8a-9e15-2d7b0c6a4f38",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Queue",
                     "type": "Button",
                     "id": "4079f724-fb04-55f5-a9e1-f5eb1dfa2a64",
@@ -423,6 +432,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Escort",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b81e4c07-5a3d-4f62-8c9e-61f0a2d7e5b4",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RotateBuilding",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

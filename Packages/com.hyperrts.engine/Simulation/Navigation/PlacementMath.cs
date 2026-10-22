@@ -6,6 +6,18 @@ namespace HyperRTS.Simulation.Navigation
     /// <summary>Building placement rules shared by the ghost preview, the authoritative placement command and the AI.</summary>
     public static class PlacementMath
     {
+        /// <summary>Quarter turns a placed building can take, so turn values run 0 to 3.</summary>
+        public const int Turns = 4;
+
+        /// <summary>
+        /// Yaw of a building placed at <paramref name="turn"/>. Turn 0 points its front (+Z) at the match camera,
+        /// which looks along +Z; each turn adds a quarter clockwise seen from above.
+        /// </summary>
+        public static quaternion Facing(int turn) => quaternion.RotateY(math.PI * (1f + 0.5f * turn));
+
+        /// <summary>The footprint's world X and Z at <paramref name="turn"/>: odd turns swap them.</summary>
+        public static float2 Turned(float2 footprint, int turn) => turn % 2 == 1 ? footprint.yx : footprint;
+
         /// <summary>Snaps a footprint centre so its edges land on nav cell boundaries.</summary>
         public static float3 Snap(in MapSettings map, float3 position, float2 footprint)
         {

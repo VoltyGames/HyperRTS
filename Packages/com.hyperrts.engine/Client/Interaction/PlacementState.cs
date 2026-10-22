@@ -15,6 +15,9 @@ namespace HyperRTS.Client.Interaction
         /// <summary>Snapped ghost centre under the cursor; for a line, the drag's current end.</summary>
         public float3 Position;
 
+        /// <summary>Quarter turns of a single building from its default facing; lines ignore it.</summary>
+        public byte Turn;
+
         /// <summary>For a line, any segment is valid.</summary>
         public bool Valid;
 

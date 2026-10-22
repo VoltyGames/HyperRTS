@@ -33,6 +33,15 @@ supply, consumers go offline: weapons hold fire and production slows to `MatchRu
 Builders also repair. Selling refunds `MatchRules.SellRefund`.
 `FlagMountAuthoring` flies the owner's flag.
 
+### Facing
+
+A placed building's front is its prefab's +Z: doors, the producer's `spawnOffset` and the units it releases. By
+default it faces the match camera, toward -Z. While placing, the rebindable `RotateBuilding` action (R) turns the
+ghost a quarter clockwise per press, a low mark off the ghost shows its front, and an odd turn swaps the footprint's X and Z. `PlaceBuilding` carries the turn,
+0 to 3, in `PlayerCommand.Turn`. The server refuses any other value and places at `PlacementMath.Facing`. Children,
+work points and the spawn point turn with the building. The skirmish AI places at turn 0, line placement keeps its
+own turn, and map buildings keep their authored rotation.
+
 ### Line placement
 
 A building with `placedInLines` set, such as a wall, is placed by dragging: press at the start, drag, release to

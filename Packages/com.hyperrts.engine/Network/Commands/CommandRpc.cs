@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Orders;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -20,6 +21,7 @@ namespace HyperRTS.Network.Commands
         public int Argument;
         public float3 Position;
         public float3 End;
+        public byte Turn;
         public Entity Target;
 
         /// <summary>A map scenery target's <c>SceneryId</c>: scenery isn't a ghost, so <see cref="Target"/> can't carry it.</summary>
@@ -29,5 +31,27 @@ namespace HyperRTS.Network.Commands
 
         [GhostFixedListCapacity(Capacity = MaxSubjects)]
         public FixedList4096Bytes<Entity> Subjects;
+
+        /// <summary>The plain fields of <paramref name="command"/>; the sender resolves entities and the prefab.</summary>
+        public static CommandRpc From(in PlayerCommand command) => new()
+        {
+            Type = (byte)command.Type,
+            Queue = command.Queue,
+            Argument = command.Argument,
+            Position = command.Position,
+            End = command.End,
+            Turn = command.Turn,
+        };
+
+        /// <summary>The plain fields back as a command; the receiver resolves entities and the prefab.</summary>
+        public readonly PlayerCommand ToCommand() => new()
+        {
+            Type = (CommandType)Type,
+            Queue = Queue,
+            Argument = Argument,
+            Position = Position,
+            End = End,
+            Turn = Turn,
+        };
     }
 }

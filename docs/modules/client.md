@@ -12,7 +12,7 @@ UI state that input, the HUD and overlays share, created once per presented worl
 
 | Singleton | Role |
 | --- | --- |
-| `PlacementState` | Building placement: prefab, ghost position, validity, a line's drag start. Its `PlacementSegment` buffer holds a line's ghost segments |
+| `PlacementState` | Building placement: prefab, ghost position, quarter turn, validity, a line's drag start. Its `PlacementSegment` buffer holds a line's ghost segments |
 | `PendingCommand` | A targeted command waiting for a click, such as attack-move or an aimed ability |
 | `PointerState` | Whether the pointer is over UI, so world clicks are ignored |
 | `SelectionDragState` | The selection box being dragged |
@@ -30,7 +30,7 @@ UI state that input, the HUD and overlays share, created once per presented worl
 | `InputActionsProvider` | The one shared actions instance, with `Suspend` and `Resume` |
 | `SelectionInputSystem` | Mouse gestures to `SelectionInput` |
 | `CommandInputSystem` | Right-click, hotkeys and targeted commands to `PlayerCommand` |
-| `PlacementInputSystem` | Moves the placement ghost and confirms it, or drags and releases a [line](economy.md#line-placement) |
+| `PlacementInputSystem` | Moves and [turns](economy.md#facing) the placement ghost and confirms it, or drags and releases a [line](economy.md#line-placement) |
 | `WorldPointer` | What the cursor points at, and the ground point |
 | `CameraController` | Pan, edge scroll, eased zoom, rotate, map bounds. Pitch follows zoom height, flatter up close. Starts at the home base |
 
@@ -56,7 +56,7 @@ to every panel and keeps it in sync with the simulation. Code fills in only per-
 | Elements | `HUDIcon`, `HUDBar`, `CostRow`, `CommandButton`, `HUDTooltip`, `HUDSweep`, `HUDGlyph`, `HUDFade`: UXML elements filled through `Bind` or properties |
 | `ICommandSource` | Adds command-card entries: purchases, abilities, stances, unit actions. Each has a slot and hotkey |
 | `HUDText` | Every HUD string, by key. Set `HUDText.Current` to translate |
-| `OverlayRenderer` | Instanced ground markers, health bars, placement ghost, rally markers, capture dials, garrison pips. Colours and sizes come from an `OverlayStyle` asset |
+| `OverlayRenderer` | Instanced ground markers, health bars, placement ghost with a front mark, rally markers, capture dials, garrison pips. Colours and sizes come from an `OverlayStyle` asset |
 
 `HUDText` keys:
 

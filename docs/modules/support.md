@@ -111,7 +111,9 @@ only during production). The clock eases to a stop and back over `rampSeconds` r
 first seen mid-match starts at the speed it should have.
 
 `ProductionDoorAuthoring` on a child of a producer opens that door for each unit the producer releases: it moves by
-`openOffset` and turns `openAngle` about `openAxis`, eased over `moveSeconds`, holds for `holdSeconds`, then closes.
+`openOffset`, turns `openAngle` about `openAxis` and scales by `openScale`, eased over `moveSeconds`, holds for
+`holdSeconds`, then closes. A roll-up curtain pivoted at the top of its opening sets `openScale` to (1, 0.05, 1) and
+coils up toward the pivot; a scaling door bakes a `PostTransformMatrix`.
 `ProductionDoorSystem` reads `Producer.Released`, a replicated count of released units, so every client sees it,
 enemies included. The owner-only production cue can't drive it. A building first seen mid-match adopts the count
 without opening, and a release while the door closes sends it back up from where it stands.

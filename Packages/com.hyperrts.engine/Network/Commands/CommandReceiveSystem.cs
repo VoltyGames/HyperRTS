@@ -57,16 +57,9 @@ namespace HyperRTS.Network.Commands
         private void Apply(ref SystemState state, Entity player, in CommandRpc rpc, in PrefabRegistry prefabs)
         {
             var faction = SystemAPI.GetComponent<Player>(player).Faction;
-            var command = new PlayerCommand
-            {
-                Type = (CommandType)rpc.Type,
-                Queue = rpc.Queue,
-                Argument = rpc.Argument,
-                Position = rpc.Position,
-                End = rpc.End,
-                Target = rpc.TargetScenery != 0 ? FindScenery(ref state, rpc.TargetScenery) : rpc.Target,
-                Prefab = prefabs.Find(rpc.PrefabTypeId),
-            };
+            var command = rpc.ToCommand();
+            command.Target = rpc.TargetScenery != 0 ? FindScenery(ref state, rpc.TargetScenery) : rpc.Target;
+            command.Prefab = prefabs.Find(rpc.PrefabTypeId);
 
             if (rpc.Subjects.Length == 1)
             {

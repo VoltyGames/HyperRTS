@@ -12,12 +12,14 @@ namespace HyperRTS.Simulation.Animation
     {
         public Entity Building;
 
-        /// <summary>Open pose relative to the rest pose: a local translation and a local rotation.</summary>
+        /// <summary>Open pose relative to the rest pose: a local translation, rotation and scale factor.</summary>
         public float3 OpenOffset;
         public quaternion OpenRotation;
+        public float3 OpenScale;
 
         public float3 RestPosition;
         public quaternion RestRotation;
+        public float3 RestScale;
 
         /// <summary>Seconds to open, and again to close.</summary>
         public float MoveSeconds;
@@ -62,12 +64,17 @@ namespace HyperRTS.Simulation.Animation
             Elapsed += deltaTime;
         }
 
+        private readonly float Eased => math.smoothstep(0f, 1f, Openness);
+
         /// <summary>Eased pose between rest and open.</summary>
         public readonly void Pose(ref LocalTransform transform)
         {
-            var eased = math.smoothstep(0f, 1f, Openness);
+            var eased = Eased;
             transform.Position = RestPosition + OpenOffset * eased;
             transform.Rotation = math.mul(RestRotation, math.slerp(quaternion.identity, OpenRotation, eased));
         }
+
+        /// <summary>Eased non-uniform scale between rest and open, about the door's own pivot.</summary>
+        public readonly float4x4 Stretch() => float4x4.Scale(RestScale * math.lerp(1f, OpenScale, Eased));
     }
 }

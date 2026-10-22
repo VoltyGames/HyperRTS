@@ -7,7 +7,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Animation
 {
-    /// <summary>Opens each <see cref="ProductionDoor"/> when its producer's release count rises, and poses it.</summary>
+    /// <summary>Opens each <see cref="ProductionDoor"/> when its producer's release count rises, and poses and scales it.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PoseSystemGroup))]
     public partial struct ProductionDoorSystem : ISystem
@@ -23,6 +23,7 @@ namespace HyperRTS.Presentation.Animation
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Producers = SystemAPI.GetComponentLookup<Producer>(true),
             }.ScheduleParallel(state.Dependency);
+            state.Dependency = new StretchJob().ScheduleParallel(state.Dependency);
         }
 
         [BurstCompile]
@@ -41,6 +42,14 @@ namespace HyperRTS.Presentation.Animation
                 door.Advance(producer.Released, DeltaTime);
                 door.Pose(ref transform);
             }
+        }
+
+        /// <summary>Only doors baked with a scale pose carry a <see cref="PostTransformMatrix"/>.</summary>
+        [BurstCompile]
+        private partial struct StretchJob : IJobEntity
+        {
+            private void Execute(ref PostTransformMatrix stretch, in ProductionDoor door) =>
+                stretch.Value = door.Stretch();
         }
     }
 }

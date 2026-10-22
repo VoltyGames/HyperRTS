@@ -9,7 +9,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Tests
 {
-    /// <summary>Production doors open per released unit, hold, close, and skip releases from before first sight.</summary>
+    /// <summary>
+    /// Production doors open per released unit, hold, close, roll up by scale, and skip releases from before first
+    /// sight.
+    /// </summary>
     public class ProductionDoorTests
     {
         private const float Step = 0.1f;
@@ -82,6 +85,36 @@ namespace HyperRTS.Presentation.Tests
             Assert.AreEqual(Rest, Position(door));
         }
 
+        [Test]
+        public void RollUpDoor_ScalesItsHeightTowardThePivot_AndBack()
+        {
+            var building = Building(0);
+            var door = Door(building);
+            var rest = new float3(2f, 3f, 1f);
+            var roll = _em.GetComponentData<ProductionDoor>(door);
+            roll.OpenOffset = float3.zero;
+            roll.OpenScale = new float3(1f, 0.05f, 1f);
+            roll.RestScale = rest;
+            _em.SetComponentData(door, roll);
+            _em.AddComponentData(door, new PostTransformMatrix { Value = float4x4.Scale(rest) });
+            Run(Step);
+
+            Release(building);
+            Run(0.5f);
+            Assert.Less(Height(door), rest.y);
+            Assert.Greater(Height(door), rest.y * 0.05f, "eases rather than snapping");
+
+            Run(1f);
+            Assert.AreEqual(rest.y * 0.05f, Height(door), 1e-4f, "rolled up");
+            Assert.AreEqual(rest.x, _em.GetComponentData<PostTransformMatrix>(door).Value.c0.x, 1e-4f, "width kept");
+            Assert.AreEqual(Rest, Position(door), "rolls in place");
+
+            Run(5f);
+            Assert.AreEqual(rest.y, Height(door), 1e-4f, "rolled back down");
+        }
+
+        private float Height(Entity door) => _em.GetComponentData<PostTransformMatrix>(door).Value.c1.y;
+
         private void Release(Entity building)
         {
             var producer = _em.GetComponentData<Producer>(building);
@@ -105,8 +138,10 @@ namespace HyperRTS.Presentation.Tests
                 Building = building,
                 OpenOffset = Lift,
                 OpenRotation = quaternion.identity,
+                OpenScale = new float3(1f),
                 RestPosition = Rest,
                 RestRotation = quaternion.identity,
+                RestScale = new float3(1f),
                 MoveSeconds = 1f,
                 HoldSeconds = 3f,
                 Elapsed = float.MaxValue,
