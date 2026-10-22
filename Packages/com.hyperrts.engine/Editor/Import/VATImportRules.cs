@@ -9,9 +9,9 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Editor.Import
 {
     /// <summary>
-    /// Import settings of vertex animation texture sets. A model is a VAT model when <c>VAT/&lt;Model&gt;.json</c> sits
-    /// beside it, and its UV1 must reach the GPU as full floats. The textures that bake info names are read texel for
-    /// texel, so they stay exact.
+    /// Import settings of vertex animation texture sets. A model is a VAT model when
+    /// <c>VAT/&lt;Model&gt;.vat.json</c> sits beside it, and its UV1 must reach the GPU as full floats. The textures
+    /// that bake info names are read texel for texel, so they stay exact.
     /// </summary>
     public sealed class VATImportRules : AssetPostprocessor
     {
@@ -35,7 +35,7 @@ namespace HyperRTS.Editor.Import
             }
 
             var file = Path.GetFileName(path);
-            foreach (var json in Directory.GetFiles(folder, "*.json"))
+            foreach (var json in Directory.GetFiles(folder, "*" + VATBakeInfo.Extension))
             {
                 var (positions, normals) = TexturesOf(json);
                 if (positions == file || normals == file)

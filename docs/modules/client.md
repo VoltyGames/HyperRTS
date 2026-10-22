@@ -127,14 +127,14 @@ infantry draw as instanced static meshes. Every pass, shadows and silhouettes in
 set is:
 
 - `<Model>.fbx`: the rest pose. UV1 holds each vertex's texel, u = (column + 0.5) / width and v = row within the
-  frame, so Unity may split vertices at seams. A model with `VAT/<Model>.json` beside it imports uncompressed,
+  frame, so Unity may split vertices at seams. A model with `VAT/<Model>.vat.json` beside it imports uncompressed,
   without generated lightmap UVs, and with UV1 kept as 32-bit floats. VAT renderers can't be lightmapped.
 - The position and normal textures the bake info file names: RGBA half float, Unity object space in metres. Each frame
   takes `rowsPerFrame` rows and every clip is stacked, so frame f's texel is (column, f x rowsPerFrame + v). They
   import exact: linear, point filtered, clamped, no mipmaps or compression.
-- `VAT/<Model>.json`: `positions`, `normals`, `width`, `height`, `rowsPerFrame`, `vertexCount`, `clips` (each with
-  `name`, `startRow` as its first frame, `frameCount`, `fps` and `loop`), `boundsMin` and `boundsMax` over every
-  frame. A looping clip does not repeat its first frame at the end.
+- `VAT/<Model>.vat.json`: `positions`, `normals`, `width`, `height`, `rowsPerFrame`, `vertexCount`, `clips`
+  (each with `name`, `startRow` as its first frame, `frameCount`, `fps` and `loop`), `boundsMin` and `boundsMax`
+  over every frame. A looping clip does not repeat its first frame at the end.
 
 Put the textures in the material's VAT slots, set its rows per frame and turn on `_VAT` (the Debug inspector shows
 material keywords). A `VATClipTable` asset imports the bake info file through **Import Bake Info** in its context menu, then

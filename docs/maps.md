@@ -240,7 +240,7 @@ never generated from the JSON.
 | `layer` | A terrain layer, how the shader lays it, its map colour and grass cover |
 | `plant` | A grass or small plant: `meshes` (FBX or mesh assets, picked per plant), a `HyperRTS/Foliage` `material`, `width` and `height` scale ranges, `healthy` and `dry` tints, `density` per square metre at full coverage and `clumping` 0 to 1 |
 | `tree` | Terrain tree `prefabs`, one per variant, and optional entity `destructibles` in the same order |
-| `rowCrop` | A crop grown in 3D rows on fields whose surface names it |
+| `crop` | A crop grown in 3D rows on fields whose surface names it |
 | `decal` | A ground decal: material, size range, rotation, depth |
 | `road` | A road class: width, surface, `impactClass`, verge, rank, levelling, curve radius |
 | `surface` | A ground type: its layer, `impactClass`, and the trees, plants, props and decals on it |

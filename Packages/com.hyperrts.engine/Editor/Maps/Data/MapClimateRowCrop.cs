@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A crop grown in 3D rows on the fields of the surfaces that name it.</summary>
     [Serializable]
-    [MapLibraryItem("rowCrop", "crop")]
+    [MapLibraryItem("crop", "crop")]
     public sealed class MapClimateRowCrop : IMapKeyed, IMapLibraryItem
     {
         [NonSerialized]

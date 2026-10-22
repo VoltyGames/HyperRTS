@@ -5,13 +5,14 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
-    /// A VAT bake info file, <c>VAT/&lt;Model&gt;.json</c> beside its model: the textures it names, their layout,
+    /// A VAT bake info file, <c>VAT/&lt;Model&gt;.vat.json</c> beside its model: the textures it names, their layout,
     /// the clips and the all-frame bounds. Keys it does not list are ignored.
     /// </summary>
     [Serializable]
     public class VATBakeInfo
     {
         public const string Folder = "VAT";
+        public const string Extension = ".vat.json";
 
         public string name;
         public string positions;
@@ -26,7 +27,7 @@ namespace HyperRTS.Presentation.Animation
 
         /// <summary>The bake info file a model at <paramref name="modelPath"/> would have.</summary>
         public static string PathFor(string modelPath) =>
-            Path.Combine(Path.GetDirectoryName(modelPath) ?? "", Folder, Path.GetFileNameWithoutExtension(modelPath) + ".json")
+            Path.Combine(Path.GetDirectoryName(modelPath) ?? "", Folder, Path.GetFileNameWithoutExtension(modelPath) + Extension)
                 .Replace('\\', '/');
 
         /// <summary>Parses and checks a bake info file; throws naming the first bad key.</summary>

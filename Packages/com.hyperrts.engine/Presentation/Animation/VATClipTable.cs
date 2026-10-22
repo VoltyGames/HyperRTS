@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
     /// The named clips and all-frame bounds of one set of vertex animation textures. Import Bake Info fills it from the
-    /// bake's <c>VAT/&lt;Model&gt;.json</c>; after that the asset is the source and stays editable.
+    /// bake's <c>VAT/&lt;Model&gt;.vat.json</c>; after that the asset is the source and stays editable.
     /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Animation + "VAT Clip Table", fileName = "VATClipTable")]
     [HelpURL(HyperRTSDocs.Presentation)]
@@ -39,7 +39,7 @@ namespace HyperRTS.Presentation.Animation
             public VATClipRange Range => new() { StartRow = startRow, FrameCount = frameCount, Fps = fps, Loop = loop };
         }
 
-        [Tooltip("The bake's VAT/<Model>.json, read by Import Bake Info in the context menu.")]
+        [Tooltip("The bake's VAT/<Model>.vat.json, read by Import Bake Info in the context menu.")]
         [FormerlySerializedAs("sidecar")]
         public TextAsset bakeInfo;
 

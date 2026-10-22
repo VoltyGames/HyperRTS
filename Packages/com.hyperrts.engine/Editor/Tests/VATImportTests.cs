@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Tests
         {
             AssetDatabase.CreateFolder("Assets", "_VATImportTests");
             Directory.CreateDirectory(Folder + "/VAT");
-            File.WriteAllText(Folder + "/VAT/Quad.json", BakeInfo);
+            File.WriteAllText(Folder + "/VAT/Quad.vat.json", BakeInfo);
             File.WriteAllText(Model, Triangle);
             File.WriteAllBytes(Positions, SixColumnEXR());
             // An OBJ carries no UV1, which the rule reports.
