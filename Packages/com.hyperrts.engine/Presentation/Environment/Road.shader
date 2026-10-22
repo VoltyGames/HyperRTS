@@ -33,6 +33,7 @@ Shader "HyperRTS/Road"
         {
             "RenderPipeline" = "UniversalPipeline"
             "RenderType" = "Transparent"
+            // Opaque queue so renderer sortingOrder (the road class rank) stacks overlaps. MapRoadMeshTests pins it.
             "Queue" = "Geometry+10"
             "IgnoreProjector" = "True"
         }

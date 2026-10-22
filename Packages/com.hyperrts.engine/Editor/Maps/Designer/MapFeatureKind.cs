@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
     /// One feature list of <see cref="MapSpec"/> as the Map Editor sees it: label, geometry, the fields holding its
-    /// position, points and radius, and its colour. Fields are resolved by reflection and must exist.
+    /// position, points and radius, and its colour. Callers name fields with <c>nameof</c>, so they always exist.
     /// </summary>
     public sealed class MapFeatureKind
     {
@@ -37,8 +37,9 @@ namespace HyperRTS.Editor.Maps.Designer
             _position = Require(positionField, typeof(MapPoint));
             _points = Require(pointsField, typeof(List<MapPoint>));
             _radius = Require(radiusField, typeof(float));
-            _shared = Optional("shared", typeof(bool));
-            _kind = Optional("kind", typeof(string));
+            // Every spec class that has these names them alike.
+            _shared = Optional(nameof(MapPropSpec.shared), typeof(bool));
+            _kind = Optional(nameof(MapPropSpec.kind), typeof(string));
         }
 
         /// <summary>The list field on <see cref="MapSpec"/> (spawns, roads...).</summary>
@@ -50,17 +51,17 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public Color Color { get; }
 
-        public static MapFeatureKind Point(string field, string label, Color color, string position = "pos") =>
+        public static MapFeatureKind Point(string field, string label, Color color, string position) =>
             new(field, label, MapFeatureGeometry.Point, color, position, null, null);
 
         public static MapFeatureKind Circle(string field, string label, Color color, string position, string radius) =>
             new(field, label, MapFeatureGeometry.Circle, color, position, null, radius);
 
-        public static MapFeatureKind Polyline(string field, string label, Color color) =>
-            new(field, label, MapFeatureGeometry.Polyline, color, null, "points", null);
+        public static MapFeatureKind Polyline(string field, string label, Color color, string points) =>
+            new(field, label, MapFeatureGeometry.Polyline, color, null, points, null);
 
-        public static MapFeatureKind Polygon(string field, string label, Color color) =>
-            new(field, label, MapFeatureGeometry.Polygon, color, null, "points", null);
+        public static MapFeatureKind Polygon(string field, string label, Color color, string points) =>
+            new(field, label, MapFeatureGeometry.Polygon, color, null, points, null);
 
         public int Count(MapSpec spec) => List(spec).Count;
 

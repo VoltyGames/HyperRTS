@@ -4,10 +4,11 @@ using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Meshes;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>Road ribbons: UV and tangent layout, alpha fades, terrain conforming, breaks, and which ends fade.</summary>
+    /// <summary>Road ribbons: UV and tangent layout, alpha fades, terrain conforming, breaks, which ends fade, and draw order.</summary>
     public class MapRoadMeshTests
     {
         private const int Columns = 5;
@@ -29,6 +30,17 @@ namespace HyperRTS.Editor.Tests
 
         private static MapRoad North() =>
             MapRoadFixture.RoadShape(Asphalt, false, new Vector2(0f, -30f), new Vector2(0f, 30f));
+
+        [Test]
+        public void RoadShader_DrawsInTheOpaquePassAfterTerrain()
+        {
+            // URP sorts opaques by sorting order before queue, so the class rank on each renderer stacks overlapping roads.
+            var road = Shader.Find("HyperRTS/Road").renderQueue;
+            var terrain = Shader.Find("HyperRTS/Terrain").renderQueue;
+
+            Assert.That(road, Is.GreaterThan(terrain), "roads blend over the finished terrain");
+            Assert.That(road, Is.LessThanOrEqualTo((int)RenderQueue.GeometryLast), "sorting order only leads in the opaque pass");
+        }
 
         [Test]
         public void Uvs_RunZeroToOneAcross_AndMetresAlong()
