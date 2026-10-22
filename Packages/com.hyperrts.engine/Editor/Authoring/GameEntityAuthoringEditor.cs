@@ -1,5 +1,6 @@
 using System;
 using HyperRTS.Editor.Common;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.GameEntities;
 using UnityEditor;
 using UnityEngine;

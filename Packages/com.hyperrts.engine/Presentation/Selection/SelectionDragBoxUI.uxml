@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
-  <ui:VisualElement class="drag-box hud-hidden" picking-mode="Ignore">
+  <ui:VisualElement class="drag-box hrts-hidden" picking-mode="Ignore">
     <ui:VisualElement class="drag-box__corner drag-box__corner--tl" picking-mode="Ignore" />
     <ui:VisualElement class="drag-box__corner drag-box__corner--tr" picking-mode="Ignore" />
     <ui:VisualElement class="drag-box__corner drag-box__corner--bl" picking-mode="Ignore" />

@@ -99,8 +99,9 @@ A component needs its own editor only for extra UI or handles. Subclass `Authori
 `BuildHeader`, `BuildFooter` or `Refresh`. For handles, use `GroundHandles.EditBox` or `EditRadius` in
 `OnSceneGUI`; each drag is one undo step. Editor layouts are `.uxml` files beside their scripts, and each one
 except row templates links the shared `Editor/Common/HyperRTSEditor.uss` with a `<Style>` tag. `EditorAssets.Layout(type, part)` finds
-`<Type><part>.uxml` in the engine package and throws when it is missing. Rows built from data clone a row template
-such as `MapsPageRow.uxml` with `CloneRow()`. Toggle visibility with the `hrts-hidden` class, not inline styles.
+`<Type><part>.uxml` in the engine package, caches it and throws when it is missing. Rows built from data clone a row
+template such as `MapsPageRow.uxml` with `CloneRoot()`. Toggle visibility with `SetHidden` and `SetInvisible` from
+`HUDElements`, which set the `hrts-hidden` and `hrts-invisible` classes, not inline styles.
 
 ## Validation
 

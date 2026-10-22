@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>Command card button: a caption, or a prefab's icon, name and cost.</summary>
+    /// <summary>Command card button: a caption, an ability's icon and name, or a prefab's icon, name and cost.</summary>
     [UxmlElement]
     public partial class CommandButton : Button
     {
@@ -23,14 +23,19 @@ namespace HyperRTS.Presentation.HUD
             return this;
         }
 
+        public CommandButton Bind(Texture2D icon, string name, Action onClick)
+        {
+            clicked += onClick;
+            AddIcon().Bind(icon, name);
+            AddName(name);
+            return this;
+        }
+
         public CommandButton BindPrefab(EntityManager entityManager, Entity prefab, Action onClick)
         {
-            Bind("", onClick);
-            var icon = AddIcon();
-            icon.Bind(entityManager, prefab);
-
-            var name = HUDText.EntityName(entityManager.GetComponentData<EntityInfo>(prefab).Name.ToString());
-            HUDElements.Text(name, "hud-command__name", this);
+            clicked += onClick;
+            AddIcon().Bind(entityManager, prefab);
+            AddName(HUDText.EntityName(entityManager.GetComponentData<EntityInfo>(prefab).Name.ToString()));
             if (entityManager.HasBuffer<ResourceCost>(prefab))
             {
                 var costs = new CostRow();
@@ -41,8 +46,6 @@ namespace HyperRTS.Presentation.HUD
             return this;
         }
 
-        public void AddIcon(Texture2D texture, string name) => AddIcon().Bind(texture, name);
-
         private HUDIcon AddIcon()
         {
             var icon = new HUDIcon();
@@ -50,5 +53,7 @@ namespace HyperRTS.Presentation.HUD
             Add(icon);
             return icon;
         }
+
+        private void AddName(string name) => HUDElements.Text(name, "hud-command__name", this);
     }
 }

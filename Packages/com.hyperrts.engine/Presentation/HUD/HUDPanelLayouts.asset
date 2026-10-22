@@ -16,7 +16,7 @@ MonoBehaviour:
   resourceBarEntry: {fileID: 9197481963319205126, guid: 25a6b27cd9ef4139aab3867f9bd3f3b1, type: 3}
   selectionPanel: {fileID: 9197481963319205126, guid: 411148954e914c6ca7f0f4a38c599d5b, type: 3}
   selectionPanelGroup: {fileID: 9197481963319205126, guid: e12ae06ab4e54fa99cf107e752893fc9, type: 3}
-  productionQueueSlot: {fileID: 9197481963319205126, guid: 09c7be826d9e4e8086150ec7df5a7ab3, type: 3}
+  productionQueueViewSlot: {fileID: 9197481963319205126, guid: 09c7be826d9e4e8086150ec7df5a7ab3, type: 3}
   commandCard: {fileID: 9197481963319205126, guid: 3279fcafd6104d55a5cf19fa37fc3612, type: 3}
   gameOverBanner: {fileID: 9197481963319205126, guid: 854d94f7aeeb4a4b8bc0fe71513b9cb8, type: 3}
   minimap: {fileID: 9197481963319205126, guid: fbbca0431b8f4cf7adef773f72d68610, type: 3}

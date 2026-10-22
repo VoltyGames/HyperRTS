@@ -21,18 +21,10 @@ namespace HyperRTS.Editor.Common
         /// <summary>The package's project path, such as <c>Packages/com.hyperrts.engine</c>.</summary>
         public static string Folder => Info.assetPath;
 
-        private static PackageInfo Info
-        {
-            get
-            {
-                var package = PackageInfo.FindForAssembly(typeof(EnginePackage).Assembly);
-                if (package == null)
-                {
-                    throw new InvalidOperationException("HyperRTS: the editor assembly is not inside a package.");
-                }
+        private static PackageInfo _info;
 
-                return package;
-            }
-        }
+        // A package change reloads the domain, so the lookup never goes stale.
+        private static PackageInfo Info => _info ??= PackageInfo.FindForAssembly(typeof(EnginePackage).Assembly)
+            ?? throw new InvalidOperationException("HyperRTS: the editor assembly is not inside a package.");
     }
 }

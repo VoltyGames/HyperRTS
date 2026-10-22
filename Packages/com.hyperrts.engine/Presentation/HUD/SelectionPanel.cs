@@ -32,7 +32,7 @@ namespace HyperRTS.Presentation.HUD
             _health = Root.Require<HUDBar>("health");
             _healthText = Root.Require<Label>("health-text");
             _construction = Root.Require<HUDBar>("construction");
-            _queue = new ProductionQueueView(Root.Require<VisualElement>("queue"), layouts.ProductionQueueSlot);
+            _queue = new ProductionQueueView(Root.Require<VisualElement>("queue"), layouts.ProductionQueueViewSlot);
             _groups = Root.Require<VisualElement>("groups");
         }
 

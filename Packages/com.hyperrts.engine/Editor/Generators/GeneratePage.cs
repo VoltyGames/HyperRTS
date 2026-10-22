@@ -1,6 +1,7 @@
 using System.Linq;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
+using HyperRTS.Presentation.HUD;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Generators
@@ -21,7 +22,7 @@ namespace HyperRTS.Editor.Generators
             var rowTemplate = EditorAssets.Layout(typeof(GeneratePage), "Row");
             foreach (var group in GeneratorRunner.All().GroupBy(generator => generator.Group))
             {
-                var section = groupTemplate.CloneRow();
+                var section = groupTemplate.CloneRoot();
                 section.Require<Label>("title").text = group.Key;
                 foreach (var generator in group)
                 {
@@ -36,7 +37,7 @@ namespace HyperRTS.Editor.Generators
 
         private static VisualElement Row(VisualTreeAsset template, Generator generator)
         {
-            var row = template.CloneRow();
+            var row = template.CloneRoot();
             row.Require<Label>("name").text = generator.Name;
             row.Require<Label>("description").text = generator.Description;
             row.Require<Button>("run").clicked += () => GeneratorRunner.Run(generator);

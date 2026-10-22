@@ -61,7 +61,7 @@ namespace HyperRTS.Presentation.Tests
             group.Require<HUDIcon>("icon");
             group.Require<Label>("count");
 
-            var slot = layouts.ProductionQueueSlot.CloneRoot();
+            var slot = layouts.ProductionQueueViewSlot.CloneRoot();
             Assert.IsInstanceOf<Button>(slot);
             slot.Require<HUDIcon>("icon");
             slot.Require<HUDBar>("progress");

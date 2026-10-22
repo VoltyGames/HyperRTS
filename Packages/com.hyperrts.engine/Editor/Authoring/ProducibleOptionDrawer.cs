@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Production;
 using UnityEditor;
 using UnityEditor.UIElements;

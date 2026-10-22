@@ -1,5 +1,6 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.Animation;
+using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEngine.UIElements;
 

@@ -1,4 +1,5 @@
 using HyperRTS.Editor.Common;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Combat;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -29,7 +30,7 @@ namespace HyperRTS.Editor.Authoring
         private void Measure()
         {
             var topple = (ToppleAuthoring)target;
-            _error.AddToClassList("hrts-hidden");
+            _error.SetHidden(true);
             try
             {
                 Undo.RecordObject(topple, "Measure Topple");
@@ -39,7 +40,7 @@ namespace HyperRTS.Editor.Authoring
             catch (System.InvalidOperationException problem)
             {
                 _error.text = problem.Message;
-                _error.RemoveFromClassList("hrts-hidden");
+                _error.SetHidden(false);
             }
         }
     }

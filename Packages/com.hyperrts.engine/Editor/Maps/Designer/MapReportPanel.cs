@@ -6,6 +6,7 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Views;
+using HyperRTS.Presentation.HUD;
 using UnityEditor.SceneManagement;
 using UnityEngine.UIElements;
 
@@ -18,13 +19,11 @@ namespace HyperRTS.Editor.Maps.Designer
     [UxmlElement]
     public sealed partial class MapReportPanel : VisualElement
     {
-        private const string Hidden = "hrts-hidden";
-
         private readonly VisualTreeAsset _issueRow = EditorAssets.Layout(typeof(MapReportPanel), "Issue");
         private readonly VisualTreeAsset _figureRow = EditorAssets.Layout(typeof(MapReportPanel), "Figure");
         private readonly Label _source;
         private readonly Label _empty;
-        private readonly VisualElement _issuesSection;
+        private readonly VisualElement _report;
         private readonly Label _issuesTitle;
         private readonly VisualElement _issueRows;
         private readonly Label _noIssues;
@@ -45,7 +44,7 @@ namespace HyperRTS.Editor.Maps.Designer
             EditorAssets.Layout(typeof(MapReportPanel)).CloneTree(this);
             _source = this.Require<Label>("source");
             _empty = this.Require<Label>("empty");
-            _issuesSection = this.Require<VisualElement>("issues");
+            _report = this.Require<VisualElement>("report");
             _issuesTitle = this.Require<Label>("issues-title");
             _issueRows = this.Require<VisualElement>("issue-rows");
             _noIssues = this.Require<Label>("no-issues");
@@ -117,18 +116,20 @@ namespace HyperRTS.Editor.Maps.Designer
             var built = File.Exists(ScenePath);
             _openScene.SetEnabled(built);
             _recapture.SetEnabled(built);
-            var land = _preview?.land ?? _build?.land;
-            var showLand = _issues != null && land != null && land.shares.Count > 0;
-            var showMetrics = _issues != null && _build?.metrics != null && _build.Passed;
-            _empty.EnableInClassList(Hidden, _issues != null);
-            _issuesSection.EnableInClassList(Hidden, _issues == null);
-            _landSection.EnableInClassList(Hidden, !showLand);
-            _metricsSection.EnableInClassList(Hidden, !showMetrics);
-            if (_issues == null)
+            var hasReport = _issues != null;
+            _empty.SetHidden(hasReport);
+            _report.SetHidden(!hasReport);
+            if (!hasReport)
             {
                 _source.text = "Report";
                 return;
             }
+
+            var land = _preview?.land ?? _build?.land;
+            var showLand = land != null && land.shares.Count > 0;
+            var showMetrics = _build?.metrics != null && _build.Passed;
+            _landSection.SetHidden(!showLand);
+            _metricsSection.SetHidden(!showMetrics);
 
             var kind = _issues == _build ? "Build" : "Preview";
             _source.text = $"{kind} report, {_issues.built}";
@@ -151,7 +152,7 @@ namespace HyperRTS.Editor.Maps.Designer
             _issueRows.Clear();
             AddIssues(report.errors, report.errorFeatures, HelpBoxMessageType.Error);
             AddIssues(report.warnings, report.warningFeatures, HelpBoxMessageType.Warning);
-            _noIssues.EnableInClassList(Hidden, report.errors.Count + report.warnings.Count > 0);
+            _noIssues.SetHidden(report.errors.Count + report.warnings.Count > 0);
         }
 
         private void AddIssues(List<string> messages, List<MapIssueFeature> features, HelpBoxMessageType kind)
@@ -159,14 +160,14 @@ namespace HyperRTS.Editor.Maps.Designer
             for (var i = 0; i < messages.Count; i++)
             {
                 var feature = features[i];
-                var row = _issueRow.CloneRow();
+                var row = _issueRow.CloneRoot();
                 var message = row.Require<HelpBox>("message");
                 message.text = messages[i];
                 message.messageType = kind;
                 var show = row.Require<Button>("show");
                 show.tooltip = $"Select and frame {feature}";
                 show.clicked += () => ShowFeature?.Invoke(feature);
-                show.EnableInClassList(Hidden, feature.IsNone);
+                show.SetHidden(feature.IsNone);
                 _issueRows.Add(row);
             }
         }
@@ -209,7 +210,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private void AddFigure(VisualElement rows, string name, string value)
         {
-            var row = _figureRow.CloneRow();
+            var row = _figureRow.CloneRoot();
             row.Require<Label>("name").text = name;
             row.Require<Label>("value").text = value;
             rows.Add(row);

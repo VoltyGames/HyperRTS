@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Common;
 using HyperRTS.Network.Session;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
@@ -57,7 +57,7 @@ namespace HyperRTS.Editor.PlayMode
         {
             var ready = TryGetPlayers(out var manager, out var players, out var message);
             _status.text = message;
-            _status.EnableInClassList("hrts-hidden", string.IsNullOrEmpty(message));
+            _status.SetHidden(string.IsNullOrEmpty(message));
             _controls.SetEnabled(ready);
             if (!ready)
             {

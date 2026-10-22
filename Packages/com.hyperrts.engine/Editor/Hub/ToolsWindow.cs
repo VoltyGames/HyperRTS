@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using HyperRTS.Editor.Common;
+using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEngine.UIElements;
 
@@ -42,7 +43,7 @@ namespace HyperRTS.Editor.Hub
 
             _sidebar = root.Require<ListView>("sidebar");
             var item = EditorAssets.Layout(typeof(ToolsWindow), "SidebarItem");
-            _sidebar.makeItem = item.CloneRow;
+            _sidebar.makeItem = item.CloneRoot;
             _sidebar.bindItem = BindSidebarItem;
             _sidebar.itemsSource = _pages;
             _sidebar.selectedIndicesChanged += _ => ShowSelected();
@@ -93,7 +94,7 @@ namespace HyperRTS.Editor.Hub
             item.Require<Label>("title").text = _pages[index].Title;
             var badge = item.Require<Label>("badge");
             badge.text = _badges[index];
-            badge.EnableInClassList("hrts-hidden", string.IsNullOrEmpty(_badges[index]));
+            badge.SetHidden(string.IsNullOrEmpty(_badges[index]));
         }
 
         private void ReleaseCurrent()

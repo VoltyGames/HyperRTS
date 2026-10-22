@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Production;
@@ -50,7 +51,7 @@ namespace HyperRTS.Editor.Catalog
 
         private VisualElement Node(GameEntityAuthoring prefab)
         {
-            var node = _node.CloneRow();
+            var node = _node.CloneRoot();
             var name = node.Require<Button>("name");
             name.text = prefab.DisplayName;
             name.clicked += () => EditorAssets.Reveal(prefab.gameObject);

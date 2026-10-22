@@ -2,6 +2,7 @@ using System.Text;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.PlayMode.DebugDraw;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;

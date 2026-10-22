@@ -26,7 +26,7 @@ namespace HyperRTS.Presentation.HUD
 
         [SerializeField]
         [Tooltip("One production queue slot (ProductionQueueViewSlot.uxml).")]
-        private VisualTreeAsset productionQueueSlot;
+        private VisualTreeAsset productionQueueViewSlot;
 
         [SerializeField]
         [Tooltip("Command card shell (CommandCard.uxml).")]
@@ -48,7 +48,7 @@ namespace HyperRTS.Presentation.HUD
 
         public VisualTreeAsset SelectionPanelGroup => selectionPanelGroup;
 
-        public VisualTreeAsset ProductionQueueSlot => productionQueueSlot;
+        public VisualTreeAsset ProductionQueueViewSlot => productionQueueViewSlot;
 
         public VisualTreeAsset CommandCard => commandCard;
 

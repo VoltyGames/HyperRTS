@@ -6,6 +6,7 @@ using HyperRTS.Editor.Maps.Designer;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Spec;
+using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -50,7 +51,7 @@ namespace HyperRTS.Editor.Maps.Tools
         {
             _specs.Clear();
             var specs = MapPaths.All();
-            _none.EnableInClassList("hrts-hidden", specs.Length > 0);
+            _none.SetHidden(specs.Length > 0);
             foreach (var spec in specs)
             {
                 _specs.Add(SpecRow(spec));
@@ -59,7 +60,7 @@ namespace HyperRTS.Editor.Maps.Tools
 
         private VisualElement SpecRow(string specPath)
         {
-            var row = _row.CloneRow();
+            var row = _row.CloneRoot();
             row.tooltip = specPath;
             var map = MapPaths.MapName(specPath);
             row.Require<Label>("name").text = map;

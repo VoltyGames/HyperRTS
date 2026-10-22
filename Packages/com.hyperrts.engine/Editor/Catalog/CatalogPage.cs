@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.GameEntities;
 using UnityEditor;

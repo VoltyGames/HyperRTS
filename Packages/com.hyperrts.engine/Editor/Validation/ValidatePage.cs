@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
+using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -58,7 +59,7 @@ namespace HyperRTS.Editor.Validation
 
             _counts.text = $"{Count(MessageType.Error)} errors · {Count(MessageType.Warning)} warnings · " +
                            $"{Count(MessageType.Info)} notes";
-            _empty.EnableInClassList("hrts-hidden", _issues.Count > 0);
+            _empty.SetHidden(_issues.Count > 0);
             _list.Show(_issues);
         }
 

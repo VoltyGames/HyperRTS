@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Validation;
+using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEngine.UIElements;
 
@@ -12,8 +13,6 @@ namespace HyperRTS.Editor.Authoring
     [UxmlElement]
     public sealed partial class IssueBadge : VisualElement
     {
-        private const string Hidden = "hrts-hidden";
-
         private readonly Button _badge;
         private readonly Label _errors;
         private readonly Label _warnings;
@@ -38,7 +37,7 @@ namespace HyperRTS.Editor.Authoring
 
         public void Show(IReadOnlyList<ValidationIssue> issues)
         {
-            EnableInClassList(Hidden, issues.Count == 0);
+            this.SetHidden(issues.Count == 0);
             SetCount(_errors, Tally(issues, MessageType.Error), "error");
             SetCount(_warnings, Tally(issues, MessageType.Warning), "warning");
             SetCount(_notes, Tally(issues, MessageType.Info), "note");
@@ -56,7 +55,7 @@ namespace HyperRTS.Editor.Authoring
         private void Toggle()
         {
             _expanded = !_expanded;
-            _list.EnableInClassList(Hidden, !_expanded);
+            _list.SetHidden(!_expanded);
             _badge.EnableInClassList("hrts-issue-badge__button--open", _expanded);
         }
 
@@ -66,7 +65,7 @@ namespace HyperRTS.Editor.Authoring
         private static void SetCount(Label label, int count, string noun)
         {
             label.text = CountText(count, noun);
-            label.EnableInClassList(Hidden, count == 0);
+            label.SetHidden(count == 0);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using HyperRTS.Editor.Common;
+using HyperRTS.Presentation.HUD;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
@@ -26,6 +27,6 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public event Action BuildClicked;
 
-        public void ShowBusy(bool busy) => _busy.EnableInClassList("hrts-invisible", !busy);
+        public void ShowBusy(bool busy) => _busy.SetInvisible(!busy);
     }
 }

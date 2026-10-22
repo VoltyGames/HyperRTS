@@ -1,6 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../../Common/HyperRTSEditor.uss" />
   <ui:Label name="none" class="hrts-note" text="Select a feature on the map or in the list." />
-  <ui:Label name="title" class="hrts-section__title" />
-  <ui:Label name="path" selectable="true" />
+  <ui:VisualElement name="details">
+    <ui:Label name="title" class="hrts-section__title" />
+    <ui:Label name="path" selectable="true" />
+  </ui:VisualElement>
 </ui:UXML>

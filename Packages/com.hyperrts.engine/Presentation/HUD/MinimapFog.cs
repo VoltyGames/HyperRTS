@@ -39,11 +39,11 @@ namespace HyperRTS.Presentation.HUD
             var query = _fogQuery.In(entityManager);
             if (!hasView || !view.Active || !query.TryGetSingleton(out FogOfWar fog))
             {
-                _layer.style.display = DisplayStyle.None;
+                _layer.SetHidden(true);
                 return;
             }
 
-            _layer.style.display = DisplayStyle.Flex;
+            _layer.SetHidden(false);
             if (view.Version == _version && _texture != null)
             {
                 return;

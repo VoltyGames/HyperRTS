@@ -8,6 +8,7 @@ namespace HyperRTS.Presentation.HUD
     /// <summary>A producer's queue: click a slot to cancel it; the head shows its build progress.</summary>
     public sealed class ProductionQueueView
     {
+        private readonly VisualElement _root;
         private readonly VisualTreeAsset _slotTemplate;
         private int _signature;
         private HUDBar _headProgress;
@@ -15,11 +16,9 @@ namespace HyperRTS.Presentation.HUD
         /// <summary>Fills <paramref name="root"/> with one <paramref name="slotTemplate"/> per queued item.</summary>
         public ProductionQueueView(VisualElement root, VisualTreeAsset slotTemplate)
         {
-            Root = root;
+            _root = root;
             _slotTemplate = slotTemplate;
         }
-
-        public VisualElement Root { get; }
 
         public void Refresh(HUDContext context, Entity producer)
         {
@@ -28,7 +27,7 @@ namespace HyperRTS.Presentation.HUD
                 ? entityManager.GetBuffer<ProductionQueueItem>(producer, true).Length
                 : 0;
             var visible = queued > 0 && context.IsOwned(producer);
-            Root.SetHidden(!visible);
+            _root.SetHidden(!visible);
             if (!visible)
             {
                 _signature = 0;
@@ -53,7 +52,7 @@ namespace HyperRTS.Presentation.HUD
 
         private void Rebuild(HUDContext context, Entity producer, DynamicBuffer<ProductionQueueItem> queue)
         {
-            Root.Clear();
+            _root.Clear();
             for (var i = 0; i < queue.Length; i++)
             {
                 var index = i;
@@ -65,17 +64,13 @@ namespace HyperRTS.Presentation.HUD
                     Argument = index,
                 });
                 slot.Require<HUDIcon>("icon").Bind(context.EntityManager, queue[i].Prefab);
-                Root.Add(slot);
+                _root.Add(slot);
 
-                // Only the head is in production, so the other slots drop their bar.
                 var progress = slot.Require<HUDBar>("progress");
+                progress.SetHidden(i != 0);
                 if (i == 0)
                 {
                     _headProgress = progress;
-                }
-                else
-                {
-                    progress.RemoveFromHierarchy();
                 }
             }
         }

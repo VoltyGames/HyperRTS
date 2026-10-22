@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
-  <ui:VisualElement class="hud-banner hud-hidden" picking-mode="Ignore">
+  <ui:VisualElement class="hud-banner hrts-hidden" picking-mode="Ignore">
     <ui:Label name="title" class="hud-banner__title" picking-mode="Ignore" />
   </ui:VisualElement>
 </ui:UXML>

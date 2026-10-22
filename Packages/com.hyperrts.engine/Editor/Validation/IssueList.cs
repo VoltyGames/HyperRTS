@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
+using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEngine.UIElements;
 
@@ -30,9 +31,9 @@ namespace HyperRTS.Editor.Validation
 
         private VisualElement Row(ValidationIssue issue)
         {
-            var row = _row.CloneRow();
+            var row = _row.CloneRoot();
             var context = row.Require<Button>("context");
-            context.EnableInClassList("hrts-hidden", !ShowContext);
+            context.SetHidden(!ShowContext);
             context.text = issue.Context != null ? issue.Context.name : "-";
             context.clicked += () => EditorAssets.Reveal(issue.Context);
             context.SetEnabled(issue.Context != null);
@@ -42,7 +43,7 @@ namespace HyperRTS.Editor.Validation
             message.messageType = Kind(issue.Severity);
 
             var fix = row.Require<Button>("fix");
-            fix.EnableInClassList("hrts-hidden", issue.Fix == null);
+            fix.SetHidden(issue.Fix == null);
             fix.text = issue.FixLabel;
             fix.clicked += () => RunFix(issue.Fix);
             return row;

@@ -1,4 +1,5 @@
 using HyperRTS.Editor.Common;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
 using UnityEditor;
@@ -50,7 +51,7 @@ namespace HyperRTS.Editor.Authoring
 
         private VisualElement OwnerRow(Color color, string name, int count)
         {
-            var row = _ownerRow.CloneRow();
+            var row = _ownerRow.CloneRoot();
             row.Require<VisualElement>("swatch").style.backgroundColor = color;
             row.Require<Label>("name").text = name;
             row.Require<Label>("count").text = $"{count} entities";

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -116,6 +117,6 @@ namespace HyperRTS.Editor.Authoring
         }
 
         private static void Apply(VisualElement field, SerializedProperty condition) =>
-            field.EnableInClassList("hrts-hidden", !IsMet(condition));
+            field.SetHidden(!IsMet(condition));
     }
 }

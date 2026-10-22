@@ -1,4 +1,5 @@
 using HyperRTS.Editor.Common;
+using HyperRTS.Presentation.HUD;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Maps.Designer
@@ -7,9 +8,8 @@ namespace HyperRTS.Editor.Maps.Designer
     [UxmlElement]
     public sealed partial class MapFeatureInspector : VisualElement
     {
-        private const string Hidden = "hrts-hidden";
-
         private readonly Label _none;
+        private readonly VisualElement _details;
         private readonly Label _title;
         private readonly Label _path;
 
@@ -17,15 +17,15 @@ namespace HyperRTS.Editor.Maps.Designer
         {
             EditorAssets.Layout(typeof(MapFeatureInspector)).CloneTree(this);
             _none = this.Require<Label>("none");
+            _details = this.Require<VisualElement>("details");
             _title = this.Require<Label>("title");
             _path = this.Require<Label>("path");
         }
 
         public void Show(MapFeatureRef feature)
         {
-            _none.EnableInClassList(Hidden, !feature.IsNone);
-            _title.EnableInClassList(Hidden, feature.IsNone);
-            _path.EnableInClassList(Hidden, feature.IsNone);
+            _none.SetHidden(!feature.IsNone);
+            _details.SetHidden(feature.IsNone);
             if (feature.IsNone)
             {
                 return;

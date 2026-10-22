@@ -1,6 +1,7 @@
 using System.IO;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Generation;
+using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
@@ -118,8 +119,8 @@ namespace HyperRTS.Editor.Maps.Designer
 
             _preview?.Dispose();
             _preview = null;
-            _hint.EnableInClassList("hrts-hidden", _document != null);
-            _body.EnableInClassList("hrts-hidden", _document == null);
+            _hint.SetHidden(_document != null);
+            _body.SetHidden(_document == null);
             if (_document == null)
             {
                 return;

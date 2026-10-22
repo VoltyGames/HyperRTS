@@ -2,6 +2,7 @@ using System;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Network.Session;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Match;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -97,7 +98,7 @@ namespace HyperRTS.Editor.PlayMode
         private void Poll()
         {
             var playing = Application.isPlaying;
-            _hint.EnableInClassList("hrts-hidden", playing);
+            _hint.SetHidden(playing);
             _cheats.Poll();
 
             var running = NetworkSession.IsRunning;
@@ -119,12 +120,12 @@ namespace HyperRTS.Editor.PlayMode
         {
             if (!running || !NetworkStress.TryRead(out var sample))
             {
-                _traffic.AddToClassList("hrts-hidden");
+                _traffic.SetHidden(true);
                 return;
             }
 
             _traffic.text = sample.ToString();
-            _traffic.RemoveFromClassList("hrts-hidden");
+            _traffic.SetHidden(false);
         }
     }
 }

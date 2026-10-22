@@ -18,10 +18,25 @@ namespace HyperRTS.Editor.Common
 
         private const string MatchStateGuid = "37a4b4ac2aee31d42895a37c3d702bed";
 
+        private static readonly Dictionary<string, VisualTreeAsset> Layouts = new();
+
         /// <summary>The engine layout named after <paramref name="owner"/> plus <paramref name="part"/>, such as MapsPageRow.uxml.</summary>
         public static VisualTreeAsset Layout(Type owner, string part = "")
         {
             var name = owner.Name + part;
+            if (Layouts.TryGetValue(name, out var cached) && cached != null)
+            {
+                return cached;
+            }
+
+            var layout = FindLayout(name) ?? throw new InvalidOperationException(
+                $"HyperRTS: {name}.uxml for {owner.Name} is missing from the engine package.");
+            Layouts[name] = layout;
+            return layout;
+        }
+
+        private static VisualTreeAsset FindLayout(string name)
+        {
             foreach (var guid in AssetDatabase.FindAssets("t:VisualTreeAsset " + name, new[] { EnginePackage.Folder }))
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
@@ -31,16 +46,8 @@ namespace HyperRTS.Editor.Common
                 }
             }
 
-            throw new InvalidOperationException($"HyperRTS: {name}.uxml for {owner.Name} is missing from the engine package.");
+            return null;
         }
-
-        /// <summary>A fresh copy of a row template's one root element, without the template's wrapper.</summary>
-        public static VisualElement CloneRow(this VisualTreeAsset template) => template.Instantiate()[0];
-
-        /// <summary>The element called <paramref name="name"/>, which the layout must have.</summary>
-        public static T Require<T>(this VisualElement root, string name) where T : VisualElement =>
-            root.Q<T>(name) ?? throw new InvalidOperationException(
-                $"HyperRTS: the layout has no {typeof(T).Name} named '{name}'.");
 
         public static GameObject RigPrefab => AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(RigGuid));
 
