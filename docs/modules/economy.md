@@ -31,6 +31,12 @@ supply, consumers go offline: weapons hold fire and production slows to `MatchRu
 `BuilderAuthoring` places sites and builds them up. Builders also repair. Selling refunds `MatchRules.SellRefund`.
 `FlagMountAuthoring` flies the owner's flag.
 
+`ConstructionSiteAuthoring` dresses a building while it is built. Its `site` child (fencing, crane, pallets, work
+lights) shows only under construction. Its work rig streams from the site's `Work_01` onward empties while progress
+rose within the last half second, so it stops when the builders leave. Its complete effect plays once when a client
+sees a construction it watched finish; a building first seen complete plays nothing. The owner already hears
+`AnnouncementKind.ConstructionComplete`. Pieces rising one by one are the [build reveal](client.md#build-reveal).
+
 ## Production
 
 `ProducerAuthoring` gives a building a training and research queue with a rally point. Units, buildings and research

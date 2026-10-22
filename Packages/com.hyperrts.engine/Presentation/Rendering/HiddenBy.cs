@@ -18,6 +18,9 @@ namespace HyperRTS.Presentation.Rendering
 
         /// <summary>A squad figure out of play.</summary>
         Figure = 1 << 4,
+
+        /// <summary>A finished building's construction site dressing.</summary>
+        Site = 1 << 5,
     }
 
     /// <summary>

@@ -1,17 +1,26 @@
 // HyperRTS/LitTeam vertex animation textures. With _VAT on, each pass's vertex function takes its pose from
 // _VATPositions and _VATNormals at the instance's _VATClip and the global _VATTime. UV1 holds each vertex's texel:
 // u = (column + 0.5) / width, v = row within the frame, so it survives Unity splitting vertices on import.
+// The wrappers then apply the construction reveal (LitTeamBuild.hlsl).
 // Include it after the pass file: it wraps whichever pass vertex function that file defined.
 #ifndef HYPERRTS_LIT_TEAM_VAT_INCLUDED
 #define HYPERRTS_LIT_TEAM_VAT_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamInput.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamBuild.hlsl"
 
 // Passes whose Attributes lack TEXCOORD1 take it as a separate input.
 #ifdef _VAT
 #define VAT_INDEX_INPUT , float2 vatIndex : TEXCOORD1
 #else
 #define VAT_INDEX_INPUT
+#endif
+
+// Instanced properties are only readable once the DOTS property cache is set up.
+#if defined(_VAT) || defined(_BUILD)
+#define LIT_TEAM_SETUP_INSTANCE(input) UNITY_SETUP_INSTANCE_ID(input)
+#else
+#define LIT_TEAM_SETUP_INSTANCE(input)
 #endif
 
 // Mirrors VATClip.FrameAt on the C# side: x frame, y next frame, z blend.
@@ -50,55 +59,69 @@ void ApplyVAT(float2 vatIndex, inout float3 positionOS, inout float3 normalOS)
     normalOS = normalize(VAT_LOAD(_VATNormals, vatIndex, frame));
 }
 
-// The instance's _VATClip is only readable once its DOTS property cache is set up, so each wrapper does that first.
 // The forward pass reads UV1 as URP's static lightmap UV, which VAT renderers never use.
 #if defined(UNIVERSAL_FORWARD_LIT_PASS_INCLUDED)
-Varyings LitTeamForwardVertex(Attributes input)
+Varyings LitTeamForwardVertex(Attributes input BUILD_ORDER_INPUT)
 {
+    LIT_TEAM_SETUP_INSTANCE(input);
 #ifdef _VAT
-    UNITY_SETUP_INSTANCE_ID(input);
     ApplyVAT(input.staticLightmapUV, input.positionOS.xyz, input.normalOS);
+#endif
+#ifdef _BUILD
+    ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
 #endif
     return LitPassVertex(input);
 }
 #elif defined(UNIVERSAL_SHADOW_CASTER_PASS_INCLUDED)
-Varyings LitTeamShadowVertex(Attributes input VAT_INDEX_INPUT)
+Varyings LitTeamShadowVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 {
+    LIT_TEAM_SETUP_INSTANCE(input);
 #ifdef _VAT
-    UNITY_SETUP_INSTANCE_ID(input);
     ApplyVAT(vatIndex, input.positionOS.xyz, input.normalOS);
+#endif
+#ifdef _BUILD
+    ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
 #endif
     return ShadowPassVertex(input);
 }
 #elif defined(UNIVERSAL_DEPTH_ONLY_PASS_INCLUDED)
-Varyings LitTeamDepthOnlyVertex(Attributes input VAT_INDEX_INPUT)
+Varyings LitTeamDepthOnlyVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 {
+    LIT_TEAM_SETUP_INSTANCE(input);
 #ifdef _VAT
-    UNITY_SETUP_INSTANCE_ID(input);
 #if defined(REQUIRES_TANGENT_SPACE_VIEW_DIR_INTERPOLATOR)
     ApplyVAT(vatIndex, input.position.xyz, input.normalOS);
 #else
     input.position.xyz = VATPosition(vatIndex);
 #endif
 #endif
+#ifdef _BUILD
+    input.position.xyz = BuildPosition(buildOrder, input.position.xyz);
+#endif
     return DepthOnlyVertex(input);
 }
 #elif defined(UNIVERSAL_FORWARD_LIT_DEPTH_NORMALS_PASS_INCLUDED)
-Varyings LitTeamDepthNormalsVertex(Attributes input VAT_INDEX_INPUT)
+Varyings LitTeamDepthNormalsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 {
+    LIT_TEAM_SETUP_INSTANCE(input);
 #ifdef _VAT
-    UNITY_SETUP_INSTANCE_ID(input);
     ApplyVAT(vatIndex, input.positionOS.xyz, input.normal);
+#endif
+#ifdef _BUILD
+    ApplyBuild(buildOrder, input.positionOS.xyz, input.normal);
 #endif
     return DepthNormalsVertex(input);
 }
 #elif defined(UNIVERSAL_OBJECT_MOTION_VECTORS_INCLUDED)
 // Previous and current pose read the same frame, so only the transform's motion shows.
-Varyings LitTeamMotionVectorsVertex(Attributes input VAT_INDEX_INPUT)
+Varyings LitTeamMotionVectorsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 {
+    LIT_TEAM_SETUP_INSTANCE(input);
 #ifdef _VAT
-    UNITY_SETUP_INSTANCE_ID(input);
     input.position.xyz = VATPosition(vatIndex);
+#endif
+#ifdef _BUILD
+    input.position.xyz = BuildPosition(buildOrder, input.position.xyz);
 #endif
     return vert(input);
 }

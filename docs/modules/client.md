@@ -144,6 +144,16 @@ render bounds to cover every frame. It fails the bake when the material and tabl
 Game code plays clips with `VATClip.Play(range, now)`, using `SystemAPI.Time.ElapsedTime` as `now`.
 `VATClockSystem` feeds the same clock to the shader, so pausing and replay speed apply to the animation.
 
+### Build reveal
+
+Structure materials on `HyperRTS/LitTeam` turn on the `_BUILD` keyword, and the model then rises piece by piece with
+its `ConstructionProgress`. `BuildRevealSystem` copies the progress to `_BuildProgress` on every mesh under the
+building and takes it off when construction completes. UV3 holds each piece's build order: x from 0 (first) to 1
+(last), y 1 where the mesh has build data, with UV1 and UV2 blank if unused. A piece appears once progress reaches
+its turn and drops its last 0.5 m into place. Pieces not reached yet collapse in the vertex stage to the object
+origin, so every pass, shadows included, skips them without alpha clipping. Meshes without UV3 data, materials
+without `_BUILD` and finished buildings draw as authored.
+
 ### Motion rig
 
 `MotionRigAuthoring` on a unit prefab root moves the model's pivots on the client. Its slots list turrets, barrels

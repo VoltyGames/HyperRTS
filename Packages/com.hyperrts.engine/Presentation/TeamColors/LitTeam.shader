@@ -3,7 +3,9 @@
 //   _TeamMask   R where team colour goes, on UV0
 //   _TeamStrip  x bottom, y top of the band (object-space metres) the mask applies in
 //   _VAT        keyword: vertices come from _VATPositions and _VATNormals at _VATClip, texel in UV1 (LitTeamVAT.hlsl)
-// TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), game code writes VATClip.
+//   _BUILD      keyword (structures only): pieces appear in their UV3 build order up to _BuildProgress (LitTeamBuild.hlsl)
+// TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), BuildRevealSystem writes _BuildProgress,
+// game code writes VATClip.
 Shader "HyperRTS/LitTeam"
 {
     Properties
@@ -18,6 +20,10 @@ Shader "HyperRTS/LitTeam"
         [NoScaleOffset] _VATNormals("VAT Normals", 2D) = "black" {}
         _VATClip("VAT Clip (start frame, frames, fps, start time)", Vector) = (0, 1, 1, 0)
         _VATRowsPerFrame("VAT Rows Per Frame", Float) = 1
+
+        [Header(Construction)]
+        [Toggle(_BUILD)] _Build("Build Piece By Piece (UV3)", Float) = 0
+        _BuildProgress("Build Progress", Range(0, 1)) = 1
 
         _WorkflowMode("WorkflowMode", Float) = 1.0
 
@@ -115,6 +121,7 @@ Shader "HyperRTS/LitTeam"
             #pragma vertex LitTeamForwardVertex
             #pragma fragment LitTeamPassFragment
             #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
 
             #pragma shader_feature_local _NORMALMAP
@@ -191,6 +198,7 @@ Shader "HyperRTS/LitTeam"
             #pragma vertex LitTeamShadowVertex
             #pragma fragment ShadowPassFragment
             #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
@@ -219,6 +227,7 @@ Shader "HyperRTS/LitTeam"
             #pragma vertex LitTeamDepthOnlyVertex
             #pragma fragment DepthOnlyFragment
             #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma shader_feature_local _PARALLAXMAP
@@ -245,6 +254,7 @@ Shader "HyperRTS/LitTeam"
             #pragma vertex LitTeamDepthNormalsVertex
             #pragma fragment DepthNormalsFragment
             #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
             #pragma shader_feature_local _NORMALMAP
             #pragma shader_feature_local _PARALLAXMAP
@@ -289,6 +299,7 @@ Shader "HyperRTS/LitTeam"
             #pragma vertex SilhouetteVertex
             #pragma fragment UnitMaskFragment
             #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
             #pragma multi_compile_instancing
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
@@ -321,6 +332,7 @@ Shader "HyperRTS/LitTeam"
             #pragma vertex SilhouetteVertex
             #pragma fragment SilhouetteFragment
             #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
             #pragma multi_compile_instancing
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
@@ -371,6 +383,7 @@ Shader "HyperRTS/LitTeam"
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #pragma shader_feature_local_vertex _ADD_PRECOMPUTED_VELOCITY
             #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _BUILD
             #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/ObjectMotionVectors.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamVAT.hlsl"

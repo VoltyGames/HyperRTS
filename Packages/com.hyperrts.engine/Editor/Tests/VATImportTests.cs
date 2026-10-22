@@ -42,13 +42,15 @@ namespace HyperRTS.Editor.Tests
         }
 
         [Test]
-        public void LitTeamVertexStagesCompileWithAndWithoutVAT()
+        public void LitTeamVertexStagesCompileWithAndWithoutVATAndBuild()
         {
             var shader = Shader.Find("HyperRTS/LitTeam");
 
             Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader));
             Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT"));
             Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT", "DOTS_INSTANCING_ON"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BUILD", "DOTS_INSTANCING_ON"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT", "_BUILD"));
         }
 
         private static byte[] SixColumnEXR()
