@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using HyperRTS.Editor.Maps.Scenes;
 using NUnit.Framework;
@@ -10,49 +11,47 @@ using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>A build still owns its SubScene instances after their library prefab's internal IDs change.</summary>
-    public class MapOwnedObjectsTests
+    /// <summary>A build owns its recorded SubScene instances after their prefab's internal IDs change, and nothing it didn't make.</summary>
+    public class MapBuildObjectsTests
     {
-        private const string Folder = "Assets/MapOwnedObjectsTest";
+        private const string Folder = "Assets/MapBuildObjectsTest";
         private const string Prefab = Folder + "/Prop.prefab";
         private const string Other = Folder + "/Other.prefab";
         private const string ScenePath = Folder + "/Entities.unity";
+        private const string Record = Folder + "/Entities_BuildObjects.txt";
 
         [SetUp]
-        public void SetUp() => AssetDatabase.CreateFolder("Assets", "MapOwnedObjectsTest");
+        public void SetUp() => AssetDatabase.CreateFolder("Assets", "MapBuildObjectsTest");
 
         [TearDown]
         public void TearDown() => AssetDatabase.DeleteAsset(Folder);
 
         [Test]
-        public void LibraryInstanceThatLostItsGeneratedNameIsStillOwned()
+        public void RecordedInstanceThatLostItsGeneratedNameIsStillOwned_AndAnUnrecordedOneIsNot()
         {
             SavePrefab(Prefab, "Child");
             SavePrefab(Other, "Child");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            var generated = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(Prefab), scene);
-            MapScene.NameGenerated(generated, "Prop 1");
+            var made = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
+            made.name = $"{MapScene.Generated} Prop 1";
             PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(Other), scene);
             SceneManager.MoveGameObjectToScene(new GameObject(MapScene.Dressing), scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
+            var record = new MapBuildObjects(Record);
+            record.Add(made);
+            record.Save();
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             RenumberFileIds(Prefab);
             scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             try
             {
-                var library = new HashSet<string> { Prefab };
-                var owned = new List<string>();
-                foreach (var root in scene.GetRootGameObjects())
-                {
-                    if (MapOwnedObjects.IsOwned(root, library))
-                    {
-                        owned.Add($"{root.name} {PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(root)}");
-                    }
-                }
+                var buildObjects = new MapBuildObjects(Record);
+                var owned = scene.GetRootGameObjects().Where(buildObjects.IsOwned).Select(root => root.name).ToList();
 
                 // The name override pointed at the old root ID, so the instance is back to the prefab's name.
-                CollectionAssert.AreEqual(new[] { $"Prop {Prefab}" }, owned);
+                CollectionAssert.AreEqual(new[] { "Prop" }, owned);
             }
             finally
             {

@@ -26,11 +26,10 @@ namespace HyperRTS.Editor.Maps.Scenes
                 counts[key] = counts.TryGetValue(key, out var count) ? count + 1 : 1;
                 var name = $"{key} {counts[key]}";
                 var instance = placement.IsEntity
-                    ? (GameObject)PrefabUtility.InstantiatePrefab(placement.Entry.prefab, scene.Entities)
+                    ? scene.CreateEntityInstance(placement.Entry.prefab, name)
                     : (GameObject)PrefabUtility.InstantiatePrefab(placement.Entry.prefab, scenery);
                 if (placement.IsEntity)
                 {
-                    MapScene.NameGenerated(instance, name);
                     Configure(instance, placement);
                 }
                 else

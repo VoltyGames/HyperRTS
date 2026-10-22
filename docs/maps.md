@@ -220,8 +220,9 @@ A preview writes `Logs/MapReports/<Map>.preview.png` and `.preview.json`. A buil
 - row crop data, if the map has row crops
 - baked lighting, and anything the game's `IMapBuildHook` adds
 
-Generated objects sit under `[Generated]` roots and are replaced on every build. Put hand-placed objects under
-`[Dressing]`, which the build never touches. Errors before the scene stage stop the build and leave the last good
+Generated objects sit under `[Generated]` roots and are replaced on every build. The SubScene's prefab instances
+are also listed in `Generated/<Map>_BuildObjects.txt`, so a build still finds them if a prefab change drops their
+name. Put hand-placed objects under `[Dressing]`, which the build never touches. Errors before the scene stage stop the build and leave the last good
 scene alone.
 
 Without a graphics device, a build skips lighting, minimap and views and keeps the last ones. A map's first build

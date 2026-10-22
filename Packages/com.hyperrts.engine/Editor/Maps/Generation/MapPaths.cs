@@ -78,6 +78,9 @@ namespace HyperRTS.Editor.Maps.Generation
 
         public string Lighting => $"{Generated}/{Name}_Lighting.lighting";
 
+        /// <summary>The SubScene prefab instances the last build made, which the next one deletes.</summary>
+        public string BuildObjects => $"{Generated}/{Name}_BuildObjects.txt";
+
         /// <summary>Creates the <see cref="Generated"/> folder before the first output is written.</summary>
         public void EnsureGenerated()
         {

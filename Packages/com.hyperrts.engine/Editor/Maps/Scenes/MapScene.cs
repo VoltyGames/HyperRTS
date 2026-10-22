@@ -1,7 +1,6 @@
 using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Maps.Generation;
-using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Match;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -13,18 +12,21 @@ namespace HyperRTS.Editor.Maps.Scenes
     /// <summary>
     /// A map's scene and SubScene open for a build, cleared of what the last build generated and with the match set
     /// up. Generated content lives under the main scene's <c>[Generated]</c> root and in the SubScene roots
-    /// <see cref="MapOwnedObjects"/> names; <c>[Dressing]</c> is never touched.
+    /// <see cref="MapBuildObjects"/> owns. <c>[Dressing]</c> is never touched.
     /// </summary>
     public sealed class MapScene
     {
         public const string Generated = "[Generated]";
         public const string Dressing = "[Dressing]";
 
-        private MapScene(Scene main, Scene entities, Transform root)
+        private readonly MapBuildObjects _buildObjects;
+
+        private MapScene(Scene main, Scene entities, Transform root, MapBuildObjects buildObjects)
         {
             Main = main;
             Entities = entities;
             Root = root;
+            _buildObjects = buildObjects;
         }
 
         /// <summary>The scene with the terrain and scenery, active.</summary>
@@ -55,13 +57,14 @@ namespace HyperRTS.Editor.Maps.Scenes
             var main = EditorSceneManager.OpenScene(paths.Scene, OpenSceneMode.Single);
             var entities = EditorSceneManager.OpenScene(paths.SubScene, OpenSceneMode.Additive);
             SceneManager.SetActiveScene(main);
-            Clear(main, entities);
+            var buildObjects = new MapBuildObjects(paths.BuildObjects);
+            Clear(main, entities, buildObjects);
             var root = new GameObject(Generated).transform;
             SceneManager.MoveGameObjectToScene(root.gameObject, main);
             EnsureDressing(main);
             EnsureDressing(entities);
             ConfigureMatch(entities, generation);
-            return new MapScene(main, entities, root);
+            return new MapScene(main, entities, root, buildObjects);
         }
 
         /// <summary>A SubScene object the build owns, at the scene root (entities must not have a parent).</summary>
@@ -80,8 +83,14 @@ namespace HyperRTS.Editor.Maps.Scenes
             return child;
         }
 
-        /// <summary>Names a generated SubScene object so the next build clears it.</summary>
-        public static void NameGenerated(GameObject entity, string name) => entity.name = $"{Generated} {name}";
+        /// <summary>A SubScene instance of <paramref name="prefab"/> at the scene root, recorded so the next build clears it.</summary>
+        public GameObject CreateEntityInstance(GameObject prefab, string name)
+        {
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, Entities);
+            instance.name = $"{Generated} {name}";
+            _buildObjects.Add(instance);
+            return instance;
+        }
 
         public void SaveMain() => EditorSceneManager.SaveScene(Main);
 
@@ -89,11 +98,12 @@ namespace HyperRTS.Editor.Maps.Scenes
         public void SaveAndCloseEntities()
         {
             EditorSceneManager.SaveScene(Entities);
+            _buildObjects.Save();
             EditorSceneManager.SaveScene(Main);
             EditorSceneManager.CloseScene(Entities, true);
         }
 
-        private static void Clear(Scene main, Scene entities)
+        private static void Clear(Scene main, Scene entities, MapBuildObjects buildObjects)
         {
             foreach (var root in main.GetRootGameObjects())
             {
@@ -103,10 +113,9 @@ namespace HyperRTS.Editor.Maps.Scenes
                 }
             }
 
-            var libraryPrefabs = MapOwnedObjects.LibraryPrefabs(MapLibrary.Load());
             foreach (var root in entities.GetRootGameObjects())
             {
-                if (MapOwnedObjects.IsOwned(root, libraryPrefabs))
+                if (buildObjects.IsOwned(root))
                 {
                     Object.DestroyImmediate(root);
                 }
