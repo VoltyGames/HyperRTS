@@ -1,10 +1,12 @@
 using HyperRTS.Presentation.TeamColors;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
 using Unity.Rendering;
+using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Tests
 {
@@ -73,6 +75,24 @@ namespace HyperRTS.Presentation.Tests
             Run(BuildingLights.FlickerSeconds + Step);
 
             Assert.AreEqual(1f, Lights(meshes[0]));
+        }
+
+        [Test]
+        public void SiteDressing_KeepsItsWorkLightsOn_WhileTheBuildingIsDark()
+        {
+            var building = Building(OfflineReason.UnderConstruction, out var meshes, out _);
+            var siteMesh = _em.CreateEntity(typeof(MaterialMeshInfo));
+            var site = _em.CreateEntity();
+            _em.AddBuffer<Child>(site).Add(new Child { Value = siteMesh });
+            var group = _em.GetBuffer<LinkedEntityGroup>(building);
+            group.Add(site);
+            group.Add(siteMesh);
+            _em.AddComponentData(building, new ConstructionSite { Visual = site });
+
+            Run(1f);
+
+            Assert.AreEqual(0f, Lights(meshes[0]));
+            Assert.IsFalse(_em.HasComponent<LightsOn>(siteMesh));
         }
 
         private float Lights(Entity mesh) => _em.GetComponentData<LightsOn>(mesh).Value;
