@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Cues;
 using Unity.Collections;
 using Unity.Mathematics;
-using Unity.NetCode;
+using Unity.Netcode;
 
 namespace HyperRTS.Network.Cues
 {

@@ -6,7 +6,7 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using Unity.Burst;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 
 namespace HyperRTS.Network.Commands
 {

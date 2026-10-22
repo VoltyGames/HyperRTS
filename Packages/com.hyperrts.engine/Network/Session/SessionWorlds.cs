@@ -1,5 +1,6 @@
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
+using Unity.Netcode.NetcodeTime;
 using Unity.Physics.Systems;
 
 namespace HyperRTS.Network.Session
@@ -38,7 +39,7 @@ namespace HyperRTS.Network.Session
             world.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>());
 
         // Netcode builds its default drivers with the world; a relay session swaps them before listening or connecting.
-        public static void UseDrivers(World world, ref NetworkStreamDriver driver, INetworkStreamDriverConstructor drivers)
+        public static void UseDrivers(NetcodeWorld world, ref NetworkStreamDriver driver, INetworkStreamDriverConstructor drivers)
         {
             if (drivers == null)
             {

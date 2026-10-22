@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 using Unity.Transforms;
 
 namespace HyperRTS.Network.Relevancy

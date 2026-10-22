@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Production;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.NetCode;
+using Unity.Netcode;
 
 namespace HyperRTS.Simulation.Tests
 {

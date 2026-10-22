@@ -2,7 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Cues;
 using Unity.Burst;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 
 namespace HyperRTS.Network.Cues
 {

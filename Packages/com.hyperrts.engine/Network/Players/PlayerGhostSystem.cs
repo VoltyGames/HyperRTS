@@ -3,7 +3,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 
 namespace HyperRTS.Network.Players
 {

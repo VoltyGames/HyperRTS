@@ -1,5 +1,5 @@
 using System.Linq;
-using Unity.NetCode;
+using Unity.Netcode;
 using Unity.Scenes;
 using UnityEngine;
 

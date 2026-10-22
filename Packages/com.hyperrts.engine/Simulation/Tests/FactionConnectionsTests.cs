@@ -3,7 +3,7 @@ using HyperRTS.Network.Cues;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 
 namespace HyperRTS.Simulation.Tests
 {

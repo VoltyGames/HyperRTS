@@ -2,7 +2,8 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using Unity.Burst;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
+using Unity.Netcode.NetcodeTime;
 
 namespace HyperRTS.Network.Replication
 {

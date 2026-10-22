@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Unity.NetCode;
+using Unity.Netcode;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;

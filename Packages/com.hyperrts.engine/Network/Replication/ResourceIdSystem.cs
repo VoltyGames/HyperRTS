@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 
 namespace HyperRTS.Network.Replication
 {

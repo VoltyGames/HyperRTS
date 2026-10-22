@@ -8,7 +8,7 @@ using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Upgrades;
-using Unity.NetCode;
+using Unity.Netcode;
 using UnityEditor;
 using UnityEngine;
 

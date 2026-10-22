@@ -5,7 +5,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 using Unity.Profiling;
 
 namespace HyperRTS.Network.Session

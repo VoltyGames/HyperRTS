@@ -1,6 +1,6 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Match;
-using Unity.NetCode;
+using Unity.Netcode;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Validation.Rules
@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Validation.Rules
     {
         protected override void Check(MatchAuthoring match, ValidationIssues issues)
         {
-            var hasConfig = match.TryGetComponent<NetCodePhysicsConfig>(out var config);
+            var hasConfig = match.TryGetComponent<NetcodePhysicsConfig>(out var config);
             if (hasConfig && config.PhysicGroupRunMode == PhysicGroupRunMode.AlwaysRun)
             {
                 return;
@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Validation.Rules
                 {
                     var target = hasConfig
                         ? config
-                        : Undo.AddComponent<NetCodePhysicsConfig>(match.gameObject);
+                        : Undo.AddComponent<NetcodePhysicsConfig>(match.gameObject);
                     EditorUndo.Record(target, "Always Run Physics",
                         () => target.PhysicGroupRunMode = PhysicGroupRunMode.AlwaysRun);
                 });

@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 using HyperRTS.Network.Session;
 using NUnit.Framework;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 using Unity.Networking.Transport.Relay;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -55,7 +55,10 @@ namespace HyperRTS.Simulation.Tests
 
         private static NetworkDriverStore Build(WorldFlags flags, RelayServerData relay)
         {
-            using var world = new World("Relay Test", flags);
+            ClientServerBootstrap.AutoConnectPort = 0;
+            using var world = flags == WorldFlags.GameServer
+                ? ClientServerBootstrap.CreateServerWorld("Relay Test")
+                : ClientServerBootstrap.CreateClientWorld("Relay Test");
             var constructor = new RelayDriverConstructor(relay);
             var store = new NetworkDriverStore();
             var netDebug = new NetDebug { LogLevel = NetDebug.LogLevelType.Error };

@@ -1,4 +1,4 @@
-﻿using Unity.NetCode;
+﻿using Unity.Netcode;
 
 namespace HyperRTS.Network.Players
 {

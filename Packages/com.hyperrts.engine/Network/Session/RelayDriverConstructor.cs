@@ -1,5 +1,4 @@
-using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 using Unity.Networking.Transport.Relay;
 
 namespace HyperRTS.Network.Session
@@ -14,13 +13,13 @@ namespace HyperRTS.Network.Session
 
         public RelayDriverConstructor(RelayServerData relay) => _relay = relay;
 
-        public void CreateServerDriver(World world, ref NetworkDriverStore driverStore, NetDebug netDebug)
+        public void CreateServerDriver(NetcodeWorld world, ref NetworkDriverStore driverStore, NetDebug netDebug)
         {
             var relay = _relay;
             DefaultDriverBuilder.RegisterServerDriver(world, ref driverStore, netDebug, ref relay);
         }
 
-        public void CreateClientDriver(World world, ref NetworkDriverStore driverStore, NetDebug netDebug)
+        public void CreateClientDriver(NetcodeWorld world, ref NetworkDriverStore driverStore, NetDebug netDebug)
         {
             var settings = DefaultDriverBuilder.GetNetworkClientSettings();
             if (!_relay.Endpoint.IsValid)

@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Combat;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Abilities

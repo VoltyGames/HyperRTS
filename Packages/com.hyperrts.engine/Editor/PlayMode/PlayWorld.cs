@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode

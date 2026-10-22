@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using HyperRTS.Network.Players;
 using Unity.Entities;
-using Unity.NetCode;
+using Unity.Netcode;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using Unity.Scripting.LifecycleManagement;
@@ -180,8 +180,10 @@ namespace HyperRTS.Network.Session
         /// Creates a server world and opens the port, next to the running worlds; on failure the new world is gone
         /// again and nothing else changed.
         /// </summary>
-        private static bool TryListen(ushort port, INetworkStreamDriverConstructor drivers, out World world)
+        private static bool TryListen(ushort port, INetworkStreamDriverConstructor drivers, out NetcodeWorld world)
         {
+            // Sessions listen and connect themselves, on the port and drivers they were given.
+            ClientServerBootstrap.AutoConnectPort = 0;
             world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
             world.EntityManager.CreateSingleton(SessionWorlds.ServerTickRate());
             SessionWorlds.DisablePhysics(world);
@@ -205,6 +207,7 @@ namespace HyperRTS.Network.Session
 
         private static void StartClientWorld(NetworkEndpoint server, INetworkStreamDriverConstructor drivers)
         {
+            ClientServerBootstrap.AutoConnectPort = 0;
             var world = ClientServerBootstrap.CreateClientWorld("ClientWorld");
             world.EntityManager.CreateSingleton(SessionWorlds.ClientTickRate());
             world.EntityManager.CreateSingleton(Preference);

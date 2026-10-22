@@ -1,7 +1,7 @@
 using System;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.NetCode;
+using Unity.Netcode;
 
 namespace HyperRTS.Simulation.Vision
 {
