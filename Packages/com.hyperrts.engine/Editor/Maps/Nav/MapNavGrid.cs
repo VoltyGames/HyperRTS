@@ -12,8 +12,8 @@ using UnityEngine.SceneManagement;
 namespace HyperRTS.Editor.Maps.Nav
 {
     /// <summary>
-    /// The nav grid a built map gives the simulation, made in the editor: the baked terrain classified like
-    /// <c>NavGridSystem</c>, then the SubScene's nav areas, obstacles and building footprints stamped on top.
+    /// The nav grid a built map gives the simulation, made in the editor with the runtime's stamps: the baked terrain
+    /// classified, then the SubScene's nav areas, obstacles and building footprints stamped on top.
     /// </summary>
     public sealed class MapNavGrid : IDisposable
     {
@@ -38,14 +38,13 @@ namespace HyperRTS.Editor.Maps.Nav
             var gradient = NavGround.MaxGradient(rules.maxSlope);
             for (var i = 0; i < grid.Cells.Length; i++)
             {
-                var center = grid.CellCenter(grid.Cell(i)).xz;
-                grid.Cells[i] = (byte)NavGround.Classify(terrain, center, cellSize, waterLevel, true, gradient);
+                grid.Cells[i] = (byte)grid.GroundSurface(i, true, gradient);
             }
 
             var roots = entities.GetRootGameObjects();
             StampAreas(grid, roots);
             StampObstacles(grid, roots);
-            grid.BuildClearance();
+            grid.BuildAccess();
             return new MapNavGrid(grid, terrain);
         }
 
@@ -71,23 +70,15 @@ namespace HyperRTS.Editor.Maps.Nav
             }
         }
 
+        // Decks go last, so they span water areas, as NavGridSystem stamps them.
         private static void StampAreas(NavGrid grid, GameObject[] roots)
         {
-            var areas = roots.SelectMany(r => r.GetComponentsInChildren<NavAreaAuthoring>(true)).ToList();
-            foreach (var decks in new[] { false, true })
+            var areas = roots.SelectMany(r => r.GetComponentsInChildren<NavAreaAuthoring>(true));
+            foreach (var area in areas.OrderBy(a => a.kind == NavAreaKind.Deck))
             {
-                foreach (var area in areas.Where(a => (a.kind == NavAreaKind.Deck) == decks))
-                {
-                    var transform = area.transform;
-                    Stamp(grid, transform, area.size, index =>
-                    {
-                        grid.Cells[index] = (byte)NavGround.Stamp(area.kind, (NavSurface)grid.Cells[index]);
-                        if (decks)
-                        {
-                            grid.DeckHeights[index] = transform.position.y;
-                        }
-                    });
-                }
+                var transform = area.transform;
+                grid.StampArea(new NavBox(transform.position, transform.rotation, area.size), area.kind,
+                    transform.position.y);
             }
         }
 
@@ -100,23 +91,7 @@ namespace HyperRTS.Editor.Maps.Nav
                 .Select(b => (b.transform, b.footprint)));
             foreach (var (transform, size) in boxes)
             {
-                Stamp(grid, transform, size, index => grid.Cells[index] = (byte)NavSurface.Blocked);
-            }
-        }
-
-        private static void Stamp(NavGrid grid, Transform transform, Vector2 size, Action<int> stamp)
-        {
-            var box = new NavBox(transform.position, transform.rotation, size);
-            grid.GetBoxArea(box, out var min, out var max);
-            for (var y = min.y; y <= max.y; y++)
-            {
-                for (var x = min.x; x <= max.x; x++)
-                {
-                    if (grid.InBox(box, new int2(x, y)))
-                    {
-                        stamp(grid.Index(new int2(x, y)));
-                    }
-                }
+                grid.StampArea(new NavBox(transform.position, transform.rotation, size), NavAreaKind.Blocked, 0f);
             }
         }
     }

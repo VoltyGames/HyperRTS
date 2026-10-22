@@ -64,7 +64,7 @@ Inside the playable area, trees with entity versions become placements. The rest
 | `Texturing/` | The `HyperRTS/Terrain` material and its layer texture arrays |
 | `Meshes/` | Road ribbons and river meshes |
 | `Scenes/` | `MapScene` and the writers for terrain, environment, placements, decals, lighting and minimap |
-| `Nav/` | `MapNavGrid`, the runtime nav grid built in the editor, and path search |
+| `Nav/` | `MapNavGrid` builds the runtime nav grid with the runtime's stamps (`NavGrid.StampArea`). `MapPathfinder` runs the runtime `GridAStar` without its budget, so rush times and attack paths match in-game pathing |
 | `Hints/` | `MapHintWriter`: bot hints from the nav grid |
 | `Report/` | `MapMeasurer`, `MapReport` and the overview image |
 | `Views/` | `MapViews`: match-camera screenshots |

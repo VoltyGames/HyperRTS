@@ -1,11 +1,12 @@
 using System;
+using HyperRTS.Simulation.Navigation;
 using Unity.Mathematics;
 
 namespace HyperRTS.Editor.Maps.Nav
 {
     /// <summary>
-    /// Walking distance from one cell to every cell of a nav grid in a single pass (8-way, the corner rule of
-    /// <see cref="MapPathfinder"/>), for ranking many targets by how far they are to walk.
+    /// Walking distance from one cell to every cell of a nav grid in a single pass, by the step rules of
+    /// <see cref="GridAStar"/>, for ranking many targets by how far they are to walk.
     /// </summary>
     public static class MapWalkField
     {
@@ -26,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Nav
                     continue;
                 }
 
-                Relax(nav, grid.Cell(index), cost, distance, heap);
+                Relax(NavAccess.Surface(grid, NavLayer.Ground), grid.Cell(index), cost, distance, heap);
             }
 
             for (var i = 0; i < distance.Length; i++)
@@ -37,21 +38,20 @@ namespace HyperRTS.Editor.Maps.Nav
             return distance;
         }
 
-        private static void Relax(MapNavGrid nav, int2 cell, float cost, float[] distance, MapHeap heap)
+        private static void Relax(in NavAccess access, int2 cell, float cost, float[] distance, MapHeap heap)
         {
-            var grid = nav.Grid;
             for (var dy = -1; dy <= 1; dy++)
             {
                 for (var dx = -1; dx <= 1; dx++)
                 {
                     var next = cell + new int2(dx, dy);
-                    if ((dx == 0 && dy == 0) || !MapStep.CanStep(nav, cell, next, null))
+                    if ((dx == 0 && dy == 0) || !GridAStar.CanStep(access, cell, next))
                     {
                         continue;
                     }
 
-                    var nextCost = cost + MapStep.Cost(cell, next);
-                    var index = grid.Index(next);
+                    var nextCost = cost + GridAStar.StepCost(cell, next);
+                    var index = access.Grid.Index(next);
                     if (nextCost < distance[index])
                     {
                         distance[index] = nextCost;

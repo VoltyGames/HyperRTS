@@ -1,143 +1,181 @@
+using System;
 using Unity.Collections;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>8-directional A* over the anchors a <see cref="NavAccess"/> may stand on; diagonals may not cut corners.</summary>
-    internal struct GridAStar
+    /// <summary>
+    /// 8-directional A* over the anchors a <see cref="NavAccess"/> may stand on; diagonals may not cut corners.
+    /// Records live in flat arrays sized to the grid and are reused, each search stamping them with its generation.
+    /// </summary>
+    public struct GridAStar : IDisposable
     {
-        private const float Diagonal = 1.41421356f;
+        public const float Diagonal = 1.41421356f;
 
-        private struct Record
-        {
-            public int Parent;
-            public float Cost;
-            public bool Closed;
-        }
-
-        private readonly NavAccess _access;
-        private readonly NavGrid _grid;
-        private readonly int2 _goal;
-        private NativeHashMap<int, Record> _records;
+        private NativeArray<int> _parents;
+        private NativeArray<float> _costs;
+        private NativeArray<uint> _reached;
+        private NativeArray<uint> _closed;
+        private NativeReference<uint> _generation;
         private OpenSet _open;
+        private uint _stamp;
 
-        private GridAStar(in NavAccess access, int2 goal)
+        public GridAStar(int cells, Allocator allocator)
         {
-            _access = access;
-            _grid = access.Grid;
-            _goal = goal;
-            _records = new NativeHashMap<int, Record>(1024, Allocator.Temp);
-            _open = new OpenSet(256, Allocator.Temp);
+            _parents = new NativeArray<int>(cells, allocator, NativeArrayOptions.UninitializedMemory);
+            _costs = new NativeArray<float>(cells, allocator, NativeArrayOptions.UninitializedMemory);
+            _reached = new NativeArray<uint>(cells, allocator);
+            _closed = new NativeArray<uint>(cells, allocator);
+            _generation = new NativeReference<uint>(allocator);
+            _open = new OpenSet(256, allocator);
+            _stamp = 0;
         }
+
+        public readonly bool IsCreated => _parents.IsCreated;
+
+        /// <summary>Cells the records cover; a grid of another size needs a new search.</summary>
+        public readonly int Cells => _parents.Length;
 
         /// <summary>
-        /// Fills <paramref name="path"/> with anchors from start to goal. When the goal is unreachable it leads to
-        /// the explored anchor closest to the goal instead and returns false.
+        /// Fills <paramref name="path"/> with anchors from start to goal, expanding at most <paramref name="budget"/>
+        /// cells. When the goal is out of reach it leads to the explored anchor closest to the goal and returns false.
         /// </summary>
-        public static bool Search(in NavAccess access, int2 start, int2 goal, NativeList<int2> path)
+        public bool Search(in NavAccess access, int2 start, int2 goal, int budget, NativeList<int2> path,
+            out int expansions)
         {
-            var search = new GridAStar(access, goal);
-            var last = search.Explore(start);
-            search.Reconstruct(last, path);
-            search.Dispose();
+            NextGeneration();
+            var last = Explore(access, start, goal, budget, out expansions);
+            Reconstruct(access.Grid, last, path);
             return last == access.Grid.Index(goal);
         }
 
-        /// <summary>Returns the goal's index, or the closest cell to it found within the expansion budget.</summary>
-        private int Explore(int2 start)
+        /// <summary>Whether an agent may step between neighbouring anchors.</summary>
+        public static bool CanStep(in NavAccess access, int2 from, int2 to) =>
+            access.IsAnchorOpen(to) && !access.CutsCornerBetweenOpen(from, to);
+
+        /// <summary>Octile distance, nudged up slightly so ties favour cells nearer the goal (fewer expansions).</summary>
+        public static float Heuristic(int2 cell, int2 goal)
         {
-            var goalIndex = _grid.Index(_goal);
-            var best = _grid.Index(start);
-            var bestHeuristic = Heuristic(start);
-            _records[best] = new Record { Parent = -1 };
+            var d = math.abs(goal - cell);
+            return (math.cmax(d) + (Diagonal - 1f) * math.cmin(d)) * 1.001f;
+        }
+
+        public static float StepCost(int2 from, int2 to) => from.x != to.x && from.y != to.y ? Diagonal : 1f;
+
+        public void Dispose()
+        {
+            _parents.Dispose();
+            _costs.Dispose();
+            _reached.Dispose();
+            _closed.Dispose();
+            _generation.Dispose();
+            _open.Dispose();
+        }
+
+        // Wrapping round would make stale stamps look current, so the records start over.
+        private void NextGeneration()
+        {
+            _stamp = _generation.Value + 1;
+            if (_stamp == 0)
+            {
+                for (var i = 0; i < _reached.Length; i++)
+                {
+                    _reached[i] = 0;
+                    _closed[i] = 0;
+                }
+
+                _stamp = 1;
+            }
+
+            _generation.Value = _stamp;
+            _open.Clear();
+        }
+
+        private int Explore(in NavAccess access, int2 start, int2 goal, int budget, out int expansions)
+        {
+            var grid = access.Grid;
+            var goalIndex = grid.Index(goal);
+            var best = grid.Index(start);
+            var bestHeuristic = Heuristic(start, goal);
+            Reach(best, -1, 0f);
             _open.Push(best, bestHeuristic);
 
-            for (var expansions = 0; expansions < NavGrid.MaxSearchExpansions && _open.TryPop(out var current);)
+            expansions = 0;
+            while (expansions < budget && _open.TryPop(out var current))
             {
-                var record = _records[current];
-                if (record.Closed)
+                if (_closed[current] == _stamp)
                 {
                     continue;
                 }
 
-                record.Closed = true;
-                _records[current] = record;
+                _closed[current] = _stamp;
                 if (current == goalIndex)
                 {
                     return current;
                 }
 
-                var cell = _grid.Cell(current);
-                var heuristic = Heuristic(cell);
+                var cell = grid.Cell(current);
+                var heuristic = Heuristic(cell, goal);
                 if (heuristic < bestHeuristic)
                 {
                     bestHeuristic = heuristic;
                     best = current;
                 }
 
-                Expand(cell, record.Cost);
+                Expand(access, cell, goal);
                 expansions++;
             }
 
             return best;
         }
 
-        private void Expand(int2 cell, float cost)
+        // Every expanded anchor was open when pushed, and the start comes from TryFindNearest.
+        private void Expand(in NavAccess access, int2 cell, int2 goal)
         {
-            var parent = _grid.Index(cell);
+            var parent = access.Grid.Index(cell);
+            var cost = _costs[parent];
             for (var dy = -1; dy <= 1; dy++)
             {
                 for (var dx = -1; dx <= 1; dx++)
                 {
                     var next = cell + new int2(dx, dy);
-                    if ((dx == 0 && dy == 0) || !CanStep(cell, next))
+                    if ((dx == 0 && dy == 0) || !CanStep(access, cell, next))
                     {
                         continue;
                     }
 
-                    var diagonal = dx != 0 && dy != 0;
-                    var nextCost = cost + (diagonal ? Diagonal : 1f);
-                    var index = _grid.Index(next);
-                    if (_records.TryGetValue(index, out var existing) && (existing.Closed || existing.Cost <= nextCost))
+                    var nextCost = cost + StepCost(cell, next);
+                    var index = access.Grid.Index(next);
+                    if (_closed[index] == _stamp || (_reached[index] == _stamp && _costs[index] <= nextCost))
                     {
                         continue;
                     }
 
-                    _records[index] = new Record { Parent = parent, Cost = nextCost };
-                    _open.Push(index, nextCost + Heuristic(next));
+                    Reach(index, parent, nextCost);
+                    _open.Push(index, nextCost + Heuristic(next, goal));
                 }
             }
         }
 
-        private void Reconstruct(int last, NativeList<int2> path)
+        private void Reach(int index, int parent, float cost)
+        {
+            _reached[index] = _stamp;
+            _parents[index] = parent;
+            _costs[index] = cost;
+        }
+
+        private readonly void Reconstruct(in NavGrid grid, int last, NativeList<int2> path)
         {
             path.Clear();
-            for (var index = last; index >= 0; index = _records[index].Parent)
+            for (var index = last; index >= 0; index = _parents[index])
             {
-                path.Add(_grid.Cell(index));
+                path.Add(grid.Cell(index));
             }
 
             for (int i = 0, j = path.Length - 1; i < j; i++, j--)
             {
                 (path[i], path[j]) = (path[j], path[i]);
             }
-        }
-
-        // Every expanded anchor was open when pushed, and the start comes from TryFindNearest.
-        private readonly bool CanStep(int2 from, int2 to) =>
-            _access.IsAnchorOpen(to) && !_access.CutsCornerBetweenOpen(from, to);
-
-        // Octile distance, nudged up slightly so ties favour cells nearer the goal (fewer expansions).
-        private readonly float Heuristic(int2 cell)
-        {
-            var d = math.abs(_goal - cell);
-            return (math.cmax(d) + (Diagonal - 1f) * math.cmin(d)) * 1.001f;
-        }
-
-        private void Dispose()
-        {
-            _records.Dispose();
-            _open.Dispose();
         }
     }
 }

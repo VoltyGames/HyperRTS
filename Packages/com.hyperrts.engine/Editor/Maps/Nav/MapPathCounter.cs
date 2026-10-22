@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using HyperRTS.Simulation.Navigation;
+using Unity.Collections;
 using Unity.Mathematics;
 
 namespace HyperRTS.Editor.Maps.Nav
@@ -12,72 +14,65 @@ namespace HyperRTS.Editor.Maps.Nav
         public static List<MapPath> Count(MapNavGrid nav, int2 start, int2 goal, float corridorWidth, float baseRadius,
             int max)
         {
+            // Corridors close cells of a copy, so the map's own grid stays as built.
             var grid = nav.Grid;
-            var closed = new bool[grid.Cells.Length];
+            grid.Cells = new NativeArray<byte>(nav.Grid.Cells, Allocator.Persistent);
             var paths = new List<MapPath>();
             var corridor = (int)math.ceil(corridorWidth * 0.5f / grid.CellSize);
             var keepOpen = baseRadius / grid.CellSize;
-            while (paths.Count < max)
+            try
             {
-                var path = MapPathfinder.Find(nav, start, goal, closed);
-                if (path == null)
+                while (paths.Count < max)
                 {
-                    break;
-                }
-
-                paths.Add(path);
-                foreach (var cell in path.Cells)
-                {
-                    if (math.distance(cell, start) > keepOpen && math.distance(cell, goal) > keepOpen)
+                    var path = MapPathfinder.Find(grid, start, goal);
+                    if (path == null)
                     {
-                        Close(grid.Size, closed, cell, corridor);
+                        break;
+                    }
+
+                    paths.Add(path);
+                    foreach (var cell in path.Cells)
+                    {
+                        if (math.distance(cell, start) > keepOpen && math.distance(cell, goal) > keepOpen)
+                        {
+                            Close(grid, cell, corridor);
+                        }
                     }
                 }
+            }
+            finally
+            {
+                grid.Cells.Dispose();
             }
 
             return paths;
         }
 
-        /// <summary>Every cell reachable by ground from <paramref name="start"/>, by the pathfinders' step rules.</summary>
+        /// <summary>Every cell reachable by ground from <paramref name="start"/>: its region one cell wide.</summary>
         public static bool[] Flood(MapNavGrid nav, int2 start)
         {
             var grid = nav.Grid;
+            var region = grid.Region(NavLayer.Ground, 1, start);
             var reached = new bool[grid.Cells.Length];
-            var queue = new Queue<int2>();
-            reached[grid.Index(start)] = true;
-            queue.Enqueue(start);
-            while (queue.Count > 0)
+            for (var i = 0; i < reached.Length; i++)
             {
-                var cell = queue.Dequeue();
-                for (var dy = -1; dy <= 1; dy++)
-                {
-                    for (var dx = -1; dx <= 1; dx++)
-                    {
-                        var next = cell + new int2(dx, dy);
-                        if (!grid.InBounds(next) || reached[grid.Index(next)] || !MapStep.CanStep(nav, cell, next, null))
-                        {
-                            continue;
-                        }
-
-                        reached[grid.Index(next)] = true;
-                        queue.Enqueue(next);
-                    }
-                }
+                reached[i] = region != 0 && grid.Region(NavLayer.Ground, 1, grid.Cell(i)) == region;
             }
 
+            reached[grid.Index(start)] = true;
             return reached;
         }
 
-        private static void Close(int2 size, bool[] closed, int2 center, int radius)
+        private static void Close(NavGrid grid, int2 center, int radius)
         {
             for (var y = -radius; y <= radius; y++)
             {
                 for (var x = -radius; x <= radius; x++)
                 {
                     var cell = center + new int2(x, y);
-                    if (x * x + y * y <= radius * radius && math.all(cell >= 0 & cell < size))
+                    if (x * x + y * y <= radius * radius && grid.InBounds(cell))
                     {
-                        closed[cell.y * size.x + cell.x] = true;
+                        grid.Cells[grid.Index(cell)] = (byte)NavSurface.Blocked;
                     }
                 }
             }

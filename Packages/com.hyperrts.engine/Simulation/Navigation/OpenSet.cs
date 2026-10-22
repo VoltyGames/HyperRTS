@@ -17,6 +17,8 @@ namespace HyperRTS.Simulation.Navigation
 
         public void Dispose() => _heap.Dispose();
 
+        public void Clear() => _heap.Clear();
+
         public void Push(int cell, float cost)
         {
             _heap.Add(new Node { Cell = cell, Cost = cost });

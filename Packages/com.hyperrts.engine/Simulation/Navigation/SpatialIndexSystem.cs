@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 
@@ -11,7 +10,7 @@ namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
     /// Rebuilds the <see cref="SpatialIndex"/> from every living entity with health and an owner, except passengers
-    /// inside a container, and its blocker grid from every enabled <see cref="Blocker"/>.
+    /// inside a container.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup), OrderFirst = true)]
@@ -20,7 +19,6 @@ namespace HyperRTS.Simulation.Navigation
         public const float CellSize = 8f;
 
         private EntityQuery _indexed;
-        private EntityQuery _blockers;
         private ComponentLookup<NavAgent> _agentLookup;
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<BuildingTag> _buildingLookup;
@@ -30,7 +28,6 @@ namespace HyperRTS.Simulation.Navigation
         public void OnCreate(ref SystemState state)
         {
             _indexed = SystemAPI.QueryBuilder().WithAll<LocalTransform, Faction, Health>().WithNone<Dead, Inside>().Build();
-            _blockers = SystemAPI.QueryBuilder().WithAll<LocalTransform, Blocker>().Build();
             _agentLookup = state.GetComponentLookup<NavAgent>(true);
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
@@ -42,8 +39,6 @@ namespace HyperRTS.Simulation.Navigation
                 Cells = new NativeParallelMultiHashMap<int, SpatialEntry>(1024, Allocator.Persistent),
                 CellSize = CellSize,
                 Oversized = new NativeList<SpatialEntry>(16, Allocator.Persistent),
-                Blockers = new NativeParallelMultiHashMap<int, SpatialEntry>(64, Allocator.Persistent),
-                WideBlockers = new NativeList<SpatialEntry>(4, Allocator.Persistent),
             }, "SpatialIndex");
         }
 
@@ -54,8 +49,6 @@ namespace HyperRTS.Simulation.Navigation
             {
                 index.ValueRW.Cells.Dispose();
                 index.ValueRW.Oversized.Dispose();
-                index.ValueRW.Blockers.Dispose();
-                index.ValueRW.WideBlockers.Dispose();
             }
         }
 
@@ -84,8 +77,7 @@ namespace HyperRTS.Simulation.Navigation
             _movingLookup.Update(ref state);
             _arrivalLookup.Update(ref state);
 
-            var input = state.Dependency;
-            var indexed = new IndexJob
+            state.Dependency = new IndexJob
             {
                 Writer = index.Cells.AsParallelWriter(),
                 Oversized = index.Oversized.AsParallelWriter(),
@@ -95,32 +87,7 @@ namespace HyperRTS.Simulation.Navigation
                 BuildingLookup = _buildingLookup,
                 MovingLookup = _movingLookup,
                 ArrivalLookup = _arrivalLookup,
-            }.ScheduleParallel(_indexed, input);
-            state.Dependency = JobHandle.CombineDependencies(indexed, IndexBlockers(ref state, ref index, input));
-        }
-
-        // Writes only the blocker containers, so it runs alongside IndexJob.
-        private JobHandle IndexBlockers(ref SystemState state, ref SpatialIndex index, JobHandle input)
-        {
-            var count = _blockers.CalculateEntityCountWithoutFiltering();
-            index.Blockers.Clear();
-            index.WideBlockers.Clear();
-            if (index.Blockers.Capacity < count)
-            {
-                index.Blockers.Capacity = count;
-            }
-
-            if (index.WideBlockers.Capacity < count)
-            {
-                index.WideBlockers.Capacity = count;
-            }
-
-            return new BlockerJob
-            {
-                Writer = index.Blockers.AsParallelWriter(),
-                Wide = index.WideBlockers.AsParallelWriter(),
-                CellSize = index.CellSize,
-            }.ScheduleParallel(_blockers, input);
+            }.ScheduleParallel(_indexed, state.Dependency);
         }
 
         [BurstCompile]
@@ -157,28 +124,6 @@ namespace HyperRTS.Simulation.Navigation
                     Spacing = agent.Spacing,
                 };
                 entry.AddTo(Writer, Oversized, CellSize);
-            }
-        }
-
-        [BurstCompile]
-        private partial struct BlockerJob : IJobEntity
-        {
-            public NativeParallelMultiHashMap<int, SpatialEntry>.ParallelWriter Writer;
-            public NativeList<SpatialEntry>.ParallelWriter Wide;
-            public float CellSize;
-
-            private void Execute(Entity entity, in LocalTransform transform, in Blocker blocker)
-            {
-                var entry = new SpatialEntry
-                {
-                    Entity = entity,
-                    Position = transform.Position,
-                    Radius = blocker.Radius,
-                    IsBlocker = true,
-                    Layer = NavLayer.Ground,
-                    SegmentAxis = blocker.SegmentAxis(transform.Rotation),
-                };
-                entry.AddTo(Writer, Wide, CellSize);
             }
         }
     }

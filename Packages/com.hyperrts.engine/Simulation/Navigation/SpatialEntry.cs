@@ -30,9 +30,6 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Has a <see cref="Common.BuildingTag"/>; destructible scenery is neither this nor a unit.</summary>
         public bool IsBuilding;
 
-        /// <summary>A <see cref="Blocker"/>: units are pushed fully clear of it and it never moves.</summary>
-        public bool IsBlocker;
-
         /// <summary>The <see cref="NavAgent"/> layer; Ground for entities without one.</summary>
         public NavLayer Layer;
 

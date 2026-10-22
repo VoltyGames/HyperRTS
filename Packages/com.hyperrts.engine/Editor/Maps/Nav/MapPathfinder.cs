@@ -1,90 +1,48 @@
-using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Navigation;
+using Unity.Collections;
 using Unity.Mathematics;
 
 namespace HyperRTS.Editor.Maps.Nav
 {
     /// <summary>
-    /// Unbudgeted 8-way A* for map metrics, with the runtime's heuristic and corner rule, plus closed cells (the
-    /// corridors already counted as attack paths).
+    /// The runtime's A* (<see cref="GridAStar"/>) without its budget, over ground one cell wide, so map metrics such
+    /// as rush times and attack paths match in-game pathing.
     /// </summary>
     public static class MapPathfinder
     {
         /// <summary>The shortest walkable path, or null when the goal can't be reached.</summary>
-        public static MapPath Find(MapNavGrid nav, int2 start, int2 goal, bool[] closed = null)
+        public static MapPath Find(MapNavGrid nav, int2 start, int2 goal) => Find(nav.Grid, start, goal);
+
+        /// <summary><see cref="Find(MapNavGrid, int2, int2)"/> on a grid with its own cells, such as corridors closed.</summary>
+        internal static MapPath Find(in NavGrid grid, int2 start, int2 goal)
         {
-            var grid = nav.Grid;
-            var cost = new float[grid.Cells.Length];
-            Array.Fill(cost, float.PositiveInfinity);
-            var parent = new int[grid.Cells.Length];
-            var done = new bool[grid.Cells.Length];
-            var startIndex = grid.Index(start);
-            cost[startIndex] = 0f;
-            parent[startIndex] = -1;
-            var open = new MapHeap();
-            open.Push(MapStep.Heuristic(start, goal), startIndex);
-            var goalIndex = grid.Index(goal);
-            var expansions = 0;
-            while (open.Count > 0)
+            var access = NavAccess.Surface(grid, NavLayer.Ground);
+            var search = new GridAStar(grid.Cells.Length, Allocator.Persistent);
+            var cells = new NativeList<int2>(256, Allocator.Persistent);
+            try
             {
-                var (_, current) = open.Pop();
-                if (done[current])
-                {
-                    continue;
-                }
-
-                done[current] = true;
-                if (current == goalIndex)
-                {
-                    return Build(nav, parent, goalIndex, cost[goalIndex], expansions);
-                }
-
-                expansions++;
-                Expand(nav, grid.Cell(current), goal, closed, cost, parent, open);
+                var reached = search.Search(access, start, goal, int.MaxValue, cells, out var expansions);
+                return reached ? Build(grid, cells, expansions) : null;
             }
-
-            return null;
-        }
-
-        private static void Expand(MapNavGrid nav, int2 cell, int2 goal, bool[] closed, float[] cost, int[] parent,
-            MapHeap open)
-        {
-            var grid = nav.Grid;
-            var currentIndex = grid.Index(cell);
-            for (var dy = -1; dy <= 1; dy++)
+            finally
             {
-                for (var dx = -1; dx <= 1; dx++)
-                {
-                    var next = cell + new int2(dx, dy);
-                    if ((dx == 0 && dy == 0) || !MapStep.CanStep(nav, cell, next, closed))
-                    {
-                        continue;
-                    }
-
-                    var index = grid.Index(next);
-                    var nextCost = cost[currentIndex] + MapStep.Cost(cell, next);
-                    if (cost[index] <= nextCost)
-                    {
-                        continue;
-                    }
-
-                    cost[index] = nextCost;
-                    parent[index] = currentIndex;
-                    open.Push(nextCost + MapStep.Heuristic(next, goal), index);
-                }
+                cells.Dispose();
+                search.Dispose();
             }
         }
 
-        private static MapPath Build(MapNavGrid nav, int[] parent, int goal, float cost, int expansions)
+        private static MapPath Build(in NavGrid grid, NativeList<int2> cells, int expansions)
         {
-            var cells = new List<int2>();
-            for (var index = goal; index >= 0; index = parent[index])
+            var path = new List<int2>(cells.Length);
+            var length = 0f;
+            for (var i = 0; i < cells.Length; i++)
             {
-                cells.Add(nav.Grid.Cell(index));
+                path.Add(cells[i]);
+                length += i > 0 ? GridAStar.StepCost(cells[i - 1], cells[i]) : 0f;
             }
 
-            cells.Reverse();
-            return new MapPath(cells, cost * nav.Grid.CellSize, expansions);
+            return new MapPath(path, length * grid.CellSize, expansions);
         }
     }
 }

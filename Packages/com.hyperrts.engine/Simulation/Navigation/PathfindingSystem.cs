@@ -10,18 +10,21 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Plans <see cref="PathWaypoint"/>s for units whose <see cref="MoveDestination"/> is new, moved by more than a
-    /// cell, or whose grid changed. Searches are capped per frame, oldest request first, to bound the frame cost.
-    /// Aircraft (<see cref="NavLayer.Air"/>) never search: they fly straight.
+    /// Plans <see cref="PathWaypoint"/>s for units whose <see cref="MoveDestination"/> is new or moved by more than a
+    /// cell, or whose path passes near cells the grid changed (<see cref="NavChanges"/>). Searches run oldest request
+    /// first until the frame's expansion budget is spent. Aircraft (<see cref="NavLayer.Air"/>) never search: they fly
+    /// straight.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
     [UpdateAfter(typeof(NavGridSystem))]
     public partial struct PathfindingSystem : ISystem
     {
-        public const int MaxSearchesPerFrame = 48;
+        /// <summary>Cells all of a frame's searches may expand or look along; the last search started may run past it.</summary>
+        public const int MaxExpansionsPerFrame = NavGrid.MaxSearchExpansions * 2;
 
         private EntityQuery _agents;
+        private GridAStar _search;
         private BufferLookup<PathWaypoint> _waypointLookup;
         private ComponentLookup<PathState> _stateLookup;
         private uint _frame;
@@ -39,11 +42,24 @@ namespace HyperRTS.Simulation.Navigation
             state.RequireForUpdate<NavGrid>();
         }
 
+        public void OnDestroy(ref SystemState state)
+        {
+            state.CompleteDependency();
+            if (_search.IsCreated)
+            {
+                _search.Dispose();
+            }
+        }
+
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _frame++;
             var grid = SystemAPI.GetSingleton<NavGrid>();
+            if (_search.Cells != grid.Cells.Length)
+            {
+                FitSearch(ref state, grid.Cells.Length);
+            }
 
             var requests = new NativeList<PathRequest>(_agents.CalculateEntityCount(), Allocator.TempJob);
             state.Dependency = new EvaluateJob
@@ -52,18 +68,30 @@ namespace HyperRTS.Simulation.Navigation
                 Grid = grid,
                 Frame = _frame,
             }.ScheduleParallel(_agents, state.Dependency);
-            state.Dependency = new SelectJob { Requests = requests }.Schedule(state.Dependency);
 
             _waypointLookup.Update(ref state);
             _stateLookup.Update(ref state);
             state.Dependency = new SearchJob
             {
-                Requests = requests.AsDeferredJobArray(),
+                Requests = requests,
                 Grid = grid,
+                Search = _search,
                 WaypointLookup = _waypointLookup,
                 StateLookup = _stateLookup,
-            }.Schedule(requests, 1, state.Dependency);
+            }.Schedule(state.Dependency);
             requests.Dispose(state.Dependency);
+        }
+
+        // The records are sized to the grid, so a rebuilt grid of another size needs new ones.
+        private void FitSearch(ref SystemState state, int cells)
+        {
+            if (_search.IsCreated)
+            {
+                state.CompleteDependency();
+                _search.Dispose();
+            }
+
+            _search = new GridAStar(cells, Allocator.Persistent);
         }
 
         /// <summary>Drops paths of stopped units and queues searches for stale ones.</summary>
@@ -92,6 +120,13 @@ namespace HyperRTS.Simulation.Navigation
 
                 var goal = destination.Value;
                 var goalMoved = math.distancesq(path.Goal.xz, goal.xz) > Grid.CellSize * Grid.CellSize;
+                if (path.Status == PathStatus.Ready && !goalMoved && path.GridVersion != Grid.Version &&
+                    !IsNearChange(path, waypoints, transform.Position, agent))
+                {
+                    path.GridVersion = Grid.Version;
+                    path.IsHidden = false;
+                }
+
                 if (path.Status == PathStatus.Ready && !goalMoved && path.GridVersion == Grid.Version)
                 {
                     FollowSmallGoalMove(ref path, waypoints, goal, agent.Layer);
@@ -100,6 +135,31 @@ namespace HyperRTS.Simulation.Navigation
 
                 var repair = CanRepair(path, waypoints, goalMoved);
                 Request(entity, ref path, waypoints, transform.Position, goal, agent, goalMoved, repair);
+            }
+
+            // Legs keep the radius from closed cells, so a change over a footprint away leaves them valid.
+            private readonly bool IsNearChange(in PathState path, DynamicBuffer<PathWaypoint> waypoints,
+                float3 position, in NavAgent agent)
+            {
+                if (path.IsShort || !Grid.Changes.Covers(path.GridVersion, Grid.Version))
+                {
+                    return true;
+                }
+
+                var margin = agent.Radius * 2f + Grid.CellSize;
+                var from = position.xz;
+                for (var i = 0; i < waypoints.Length; i++)
+                {
+                    var to = waypoints[i].Position.xz;
+                    if (Grid.Changes.Touches(Grid, path.GridVersion, from, to, margin))
+                    {
+                        return true;
+                    }
+
+                    from = to;
+                }
+
+                return false;
             }
 
             // A repair keeps the old corners, so they must still lead to this goal over this grid.
@@ -172,24 +232,6 @@ namespace HyperRTS.Simulation.Navigation
             }
         }
 
-        /// <summary>Keeps the oldest requests up to the per-frame budget; the rest wait for a later frame.</summary>
-        [BurstCompile]
-        private struct SelectJob : IJob
-        {
-            public NativeList<PathRequest> Requests;
-
-            public void Execute()
-            {
-                if (Requests.Length <= MaxSearchesPerFrame)
-                {
-                    return;
-                }
-
-                Requests.Sort(new OldestFirst());
-                Requests.Resize(MaxSearchesPerFrame, NativeArrayOptions.UninitializedMemory);
-            }
-        }
-
         private struct OldestFirst : IComparer<PathRequest>
         {
             public int Compare(PathRequest a, PathRequest b)
@@ -199,34 +241,41 @@ namespace HyperRTS.Simulation.Navigation
             }
         }
 
-        // Requests name distinct entities, so parallel writes through the lookups never collide.
+        /// <summary>Serves the oldest requests until the frame's budget is spent; the rest wait for a later frame.</summary>
         [BurstCompile]
-        private struct SearchJob : IJobParallelForDefer
+        private struct SearchJob : IJob
         {
-            [ReadOnly] public NativeArray<PathRequest> Requests;
+            public NativeList<PathRequest> Requests;
             [ReadOnly] public NavGrid Grid;
-            [NativeDisableParallelForRestriction] public BufferLookup<PathWaypoint> WaypointLookup;
-            [NativeDisableParallelForRestriction] public ComponentLookup<PathState> StateLookup;
+            public GridAStar Search;
+            public BufferLookup<PathWaypoint> WaypointLookup;
+            public ComponentLookup<PathState> StateLookup;
 
-            public void Execute(int index)
+            public void Execute()
             {
-                var request = Requests[index];
+                Requests.Sort(new OldestFirst());
+                var work = 0;
+                for (var i = 0; i < Requests.Length && work < MaxExpansionsPerFrame; i++)
+                {
+                    Serve(Requests[i], ref work);
+                }
+            }
+
+            private void Serve(in PathRequest request, ref int work)
+            {
                 var access = request.Agent.Access(Grid);
                 var waypoints = WaypointLookup[request.Entity];
-                if (request.Repair)
-                {
-                    GridPathfinder.Repair(access, request, waypoints);
-                }
-                else
-                {
-                    GridPathfinder.Plan(access, request.Start, request.Goal, waypoints);
-                }
+                var reached = request.Repair
+                    ? GridPathfinder.Repair(ref Search, access, request, waypoints, ref work)
+                    : GridPathfinder.Plan(ref Search, access, request.Agent.Layer, request.Start, request.Goal,
+                        waypoints, ref work);
 
                 StateLookup[request.Entity] = new PathState
                 {
                     Goal = request.Goal,
                     GridVersion = Grid.Version,
                     Status = PathStatus.Ready,
+                    IsShort = !reached,
                     LengthPastCorner = PathState.Measure(waypoints),
                 };
             }

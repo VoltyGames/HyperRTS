@@ -28,8 +28,13 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public NativeArray<byte> Scenery;
 
-        /// <summary>Per layer, then per cell: see <see cref="BuildClearance"/>. Scenery never counts as closed here.</summary>
+        /// <summary>Per layer, then per cell: see <see cref="BuildClearance(int)"/>. Scenery never counts as closed here.</summary>
         public NativeArray<byte> Clearance;
+
+        /// <summary>Which anchors connect, per layer and footprint, for <see cref="IsReachable"/>.</summary>
+        public NavRegions Regions;
+
+        public NavChanges Changes;
 
         /// <summary>Surface height of <see cref="NavSurface.Deck"/> cells; other entries are unused.</summary>
         public NativeArray<float> DeckHeights;
@@ -43,7 +48,10 @@ namespace HyperRTS.Simulation.Navigation
         public float2 Min;
         public float CellSize;
 
-        /// <summary>Bumped whenever cells close or open, so paths revalidate; scenery changes alone don't bump it.</summary>
+        /// <summary>
+        /// Bumped whenever cells close or open, so paths near the <see cref="Changes"/> revalidate; scenery changes
+        /// alone don't bump it.
+        /// </summary>
         public int Version;
 
         public readonly bool IsCreated => Cells.IsCreated;
@@ -58,6 +66,8 @@ namespace HyperRTS.Simulation.Navigation
                 Scenery = new NativeArray<byte>(count, Allocator.Persistent),
                 Clearance = new NativeArray<byte>(count * ClearanceLayers, Allocator.Persistent),
                 DeckHeights = new NativeArray<float>(count, Allocator.Persistent),
+                Regions = NavRegions.Create(count, Allocator.Persistent),
+                Changes = NavChanges.Create(count, Allocator.Persistent),
                 Terrain = terrain,
                 WaterLevel = waterLevel,
                 Size = size,
@@ -72,6 +82,8 @@ namespace HyperRTS.Simulation.Navigation
             Scenery.Dispose();
             Clearance.Dispose();
             DeckHeights.Dispose();
+            Regions.Dispose();
+            Changes.Dispose();
         }
 
         public readonly int2 WorldToCell(float3 position) => WorldToCell(position.xz);
@@ -163,23 +175,83 @@ namespace HyperRTS.Simulation.Navigation
             NavAccess.Surface(this, layer).TryFindNearest(cell, maxRadius, out found);
 
         /// <summary>
-        /// Fills each layer's <see cref="Clearance"/>: the side, in cells, of the largest open square whose low corner
-        /// is the cell, so a footprint k cells wide fits wherever it is at least k.
+        /// Whether an agent could path between two points: their anchors share a region, scenery aside. A start in
+        /// closed cells counts from the open ground it would step out to. Aircraft reach everywhere.
         /// </summary>
-        public void BuildClearance()
+        public readonly bool IsReachable(in NavAgent agent, float3 from, float3 to)
+        {
+            if (agent.Layer == NavLayer.Air)
+            {
+                return true;
+            }
+
+            var access = agent.Access(this);
+            if (!access.TryFindNearest(access.AnchorAt(from), GridPathfinder.NearestSearchRadius, out var start))
+            {
+                return false;
+            }
+
+            var footprint = access.Footprint;
+            return Region(agent.Layer, footprint, start) == Region(agent.Layer, footprint, access.AnchorAt(to));
+        }
+
+        public readonly int Region(NavLayer layer, int footprint, int2 anchor) =>
+            Regions.Label(this, (int)layer, footprint, anchor);
+
+        /// <summary>The surface the ground alone gives a cell (<see cref="NavGround.Classify"/>).</summary>
+        public readonly NavSurface GroundSurface(int index, bool flood, float maxGradient) =>
+            NavGround.Classify(Terrain, CellCenter(Cell(index)).xz, CellSize, WaterLevel, flood, maxGradient);
+
+        /// <summary>
+        /// Lays a nav area over the cells under its box, as obstacles do with <see cref="NavAreaKind.Blocked"/>. Decks
+        /// go after the other areas, so they span water, and record their height.
+        /// </summary>
+        public void StampArea(in NavBox box, NavAreaKind kind, float height)
+        {
+            GetBoxArea(box, out var min, out var max);
+            for (var y = min.y; y <= max.y; y++)
+            {
+                for (var x = min.x; x <= max.x; x++)
+                {
+                    var cell = new int2(x, y);
+                    if (!InBox(box, cell))
+                    {
+                        continue;
+                    }
+
+                    var index = Index(cell);
+                    Cells[index] = (byte)NavGround.Stamp(kind, (NavSurface)Cells[index]);
+                    if (kind == NavAreaKind.Deck)
+                    {
+                        DeckHeights[index] = height;
+                    }
+                }
+            }
+        }
+
+        /// <summary>Builds what paths read from the cells: every layer's <see cref="Clearance"/>, then the <see cref="Regions"/>.</summary>
+        public void BuildAccess()
         {
             for (var slot = 0; slot < ClearanceLayers; slot++)
             {
                 BuildClearance(slot);
             }
+
+            Regions.Build(this);
         }
 
-        /// <summary>Builds every layer's <see cref="Clearance"/> at once, one worker per layer.</summary>
-        public readonly JobHandle ScheduleClearance(JobHandle dependency) =>
-            new ClearanceJob { Cells = Cells, Clearance = Clearance, Size = Size }
+        /// <summary><see cref="BuildAccess"/> on workers, one per layer and then one per region slice.</summary>
+        public readonly JobHandle ScheduleAccess(JobHandle dependency)
+        {
+            var clearance = new ClearanceJob { Cells = Cells, Clearance = Clearance, Size = Size }
                 .Schedule(ClearanceLayers, 1, dependency);
+            return Regions.Schedule(this, clearance);
+        }
 
-        /// <summary>Fills one layer's <see cref="Clearance"/>; layers touch disjoint slices, so they may run at once.</summary>
+        /// <summary>
+        /// Fills one layer's <see cref="Clearance"/>: the side, in cells, of the largest open square whose low corner is
+        /// the cell, so a footprint k cells wide fits wherever it is at least k. Layers touch disjoint slices.
+        /// </summary>
         public void BuildClearance(int slot)
         {
             var offset = slot * Cells.Length;

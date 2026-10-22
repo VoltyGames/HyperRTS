@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Units
     /// <summary>
     /// Sums how far a unit must move to stop crowding neighbouring units (half each, as both move). Footprints are
     /// capsules (circles when the segment is zero) and must stay the larger of the two spacings apart, pushed along
-    /// the line between their closest points. A blocker (a wreck) or a busy or enemy parked unit holds its ground
+    /// the line between their closest points. A busy or enemy parked unit holds its ground
     /// against a mover, which takes the whole push and steers round it unless it stands on the goal. An idle parked
     /// unit of the mover's side shares the push and steps out of the mover's lane (<see cref="GivingWay"/>). Units
     /// on layers that never share a surface (a ship under a bridge, a tank on it) ignore each other.
@@ -57,8 +57,7 @@ namespace HyperRTS.Simulation.Units
 
         public void Visit(in SpatialEntry entry)
         {
-            var crowds = entry.IsUnit || entry.IsBlocker;
-            if (!crowds || entry.Entity == Self)
+            if (!entry.IsUnit || entry.Entity == Self)
             {
                 return;
             }
@@ -79,12 +78,6 @@ namespace HyperRTS.Simulation.Units
             var distance = math.sqrt(distanceSq);
             var direction = Direction(offset, distance, entry);
             var overlap = reach - distance;
-            if (entry.IsBlocker)
-            {
-                Push += direction * overlap;
-                return;
-            }
-
             ReachedGroup |= Moving && IsArrivedGroupmate(entry);
             if (entry.IsMoving == Moving)
             {

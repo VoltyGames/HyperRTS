@@ -8,13 +8,15 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Blockers (wrecks): units are pushed fully clear, the wreck never moves, a sinking one lets them by.</summary>
+    /// <summary>Blockers (wrecks) close their land cells: paths go round, units never enter, a sinking one opens them.</summary>
     public class BlockerTests
     {
         private const float WreckRadius = 1.85f;
         private const float WreckLength = 6.9f;
         private const float UnitRadius = 0.5f;
-        private const float Reach = WreckRadius + UnitRadius;
+
+        // A unit's clearance from closed cells is a little under its radius.
+        private const float Reach = WreckRadius + UnitRadius - 0.1f;
 
         private TestWorld _world;
 
@@ -46,49 +48,73 @@ namespace HyperRTS.Simulation.Tests
             return unit;
         }
 
-        [Test]
-        public void UnitInsideWreck_IsPushedFullyClear_AndTheWreckStays()
+        private float Gap(Entity unit)
         {
-            var wreck = SpawnWreck();
-            var unit = _world.SpawnUnit(1, new float3(1f, 0f, 0.5f), radius: UnitRadius);
-
-            _world.Tick();
-
-            Assert.AreEqual(Reach, _world.GetPosition(unit).x, 0.01f, "out to the wreck's side in one frame");
-            Assert.AreEqual(0.5f, _world.GetPosition(unit).z, 0.01f, "never pushed along the hull");
-            Assert.AreEqual(float3.zero, _world.GetPosition(wreck), "the wreck never moves");
+            var half = WreckLength * 0.5f - WreckRadius;
+            var position = _world.GetPosition(unit);
+            return math.distance(position.xz, new float2(0f, math.clamp(position.z, -half, half)));
         }
 
         [Test]
-        public void UnitDrivingIntoWreck_NeverEntersIt()
+        public void Wreck_ClosesTheLandItCovers()
+        {
+            SpawnWreck();
+            _world.Tick();
+
+            var grid = _world.Grid();
+            Assert.IsFalse(grid.IsWalkable(new float3(0f, 0f, 3f)), "under the hull");
+            Assert.IsFalse(grid.IsWalkable(new float3(-1.5f, 0f, 0f)), "under its side");
+            Assert.IsTrue(grid.IsWalkable(new float3(-2.5f, 0f, 0f)), "beside it");
+        }
+
+        [Test]
+        public void UnitDrivingAtWreck_GoesRound_NeverEnteringIt()
         {
             var wreck = SpawnWreck();
             var unit = DriveAcross(new float3(-10f, 0f, 1f));
 
-            for (var frame = 0; frame < 150; frame++)
+            for (var frame = 0; frame < 300; frame++)
             {
                 _world.Tick();
-                Assert.LessOrEqual(_world.GetPosition(unit).x, -Reach + 0.01f, $"inside the wreck at frame {frame}");
+                Assert.GreaterOrEqual(Gap(unit), Reach, $"inside the wreck at frame {frame}");
             }
 
+            Assert.AreEqual(10f, _world.GetPosition(unit).x, 0.5f, "it went round to the goal");
             Assert.AreEqual(float3.zero, _world.GetPosition(wreck), "the wreck never moves");
         }
 
         [Test]
-        public void SinkingWreck_NoLongerBlocks()
+        public void UnitCaughtByANewWreck_DrivesOut()
+        {
+            SpawnWreck();
+            var unit = DriveAcross(new float3(1f, 0f, 0.5f));
+
+            _world.Run(6f);
+
+            Assert.AreEqual(10f, _world.GetPosition(unit).x, 0.5f, "it backed out of the closed cells and went on");
+        }
+
+        [Test]
+        public void SinkingWreck_OpensItsCells()
         {
             var wreck = SpawnWreck();
             var writer = new EntityManagerWriter(_world.EntityManager, wreck);
             DecayAuthoring.Add(ref writer, "wreck", 2.5f, 30f, 3f);
-            var unit = DriveAcross(new float3(-10f, 0f, 1f));
+            _world.Tick();
+            Assert.IsFalse(_world.Grid().IsWalkable(float3.zero), "it blocks while it waits");
 
-            _world.Run(2f);
-            Assert.AreEqual(-Reach, _world.GetPosition(unit).x, 0.01f, "held at the wreck while it waits");
-
-            _world.Run(4f);
-
+            _world.Run(3f);
             Assert.IsFalse(_world.IsEnabled<Blocker>(wreck), "it stops blocking once it sinks");
-            Assert.AreEqual(10f, _world.GetPosition(unit).x, 0.5f, "the unit drove through");
+            Assert.IsTrue(_world.Grid().IsWalkable(float3.zero), "its cells open again");
+
+            var unit = DriveAcross(new float3(-10f, 0f, 0f));
+            for (var frame = 0; frame < 150; frame++)
+            {
+                _world.Tick();
+                Assert.AreEqual(0f, _world.GetPosition(unit).z, 0.2f, $"left the straight line at frame {frame}");
+            }
+
+            Assert.AreEqual(10f, _world.GetPosition(unit).x, 0.5f, "the unit drove straight through");
         }
     }
 }

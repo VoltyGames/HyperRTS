@@ -27,6 +27,9 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Set when the unit stops getting on: the next search re-plans only the way to its next corner.</summary>
         public bool Repair;
 
+        /// <summary>The path ends short of the goal, so any grid change re-plans it in case the way opened.</summary>
+        public bool IsShort;
+
         /// <summary>Path length from the first <see cref="PathWaypoint"/> to the last, kept as corners change.</summary>
         public float LengthPastCorner;
 

@@ -58,7 +58,7 @@ namespace HyperRTS.Editor.Tests
                 grid.Cells[i] = (byte)(blocked(center) ? NavSurface.Blocked : NavSurface.Land);
             }
 
-            grid.BuildClearance();
+            grid.BuildAccess();
             return MapNavGrid.Wrap(grid);
         }
 

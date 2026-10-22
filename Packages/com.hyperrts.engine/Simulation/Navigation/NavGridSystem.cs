@@ -10,12 +10,10 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Builds the <see cref="NavGrid"/> from <see cref="MapSettings"/> (terrain, slope and, when flooding, water
-    /// level give each cell its base surface), rebuilding it when the map or <see cref="TerrainHeight"/> changes. Then
-    /// re-stamps every <see cref="NavArea"/> and <see cref="NavObstacle"/> over it whenever areas are added, removed or
-    /// change archetype, or obstacle footprints differ after such a change, and rebuilds the clearance field.
-    /// Destructible scenery is stamped on its own layer, which changes without bumping the version. None of them are
-    /// assumed to move.
+    /// Builds the <see cref="NavGrid"/> from <see cref="MapSettings"/> and <see cref="TerrainHeight"/>, then re-stamps
+    /// every <see cref="NavArea"/>, <see cref="NavObstacle"/> and enabled <see cref="Blocker"/> when areas or
+    /// footprints change, records where cells changed and rebuilds clearance and regions. Destructible scenery has its
+    /// own layer, which changes without bumping the version. None of them are assumed to move.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]
@@ -25,11 +23,14 @@ namespace HyperRTS.Simulation.Navigation
         private EntityQuery _obstacles;
         private EntityQuery _areas;
         private EntityQuery _scenery;
+        private EntityQuery _blockers;
         private NativeArray<byte> _base;
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
         private int _builtObstacleVersion;
-        private ulong _builtObstacleSignature;
+        private int _builtBlockerVersion;
+        private int _builtBlockerCount;
+        private ulong _builtFootprintSignature;
         private int _builtAreaVersion;
         private int _builtSceneryVersion;
 
@@ -40,6 +41,7 @@ namespace HyperRTS.Simulation.Navigation
             _areas = SystemAPI.QueryBuilder().WithAll<NavArea, LocalTransform>().Build();
             _scenery = SystemAPI.QueryBuilder().WithAll<Destructible, LocalTransform>()
                 .WithNone<NavObstacle, NavAgent>().Build();
+            _blockers = SystemAPI.QueryBuilder().WithAll<Blocker, LocalTransform>().Build();
             state.RequireForUpdate<MapSettings>();
         }
 
@@ -70,9 +72,8 @@ namespace HyperRTS.Simulation.Navigation
                 BuildGrid(ref state, map, terrain);
             }
 
-            var obstaclesChanged = OrderChanged<NavObstacle>(ref state, ref _builtObstacleVersion) &&
-                SignatureChanged(ref state);
-            var restamp = OrderChanged<NavArea>(ref state, ref _builtAreaVersion) | obstaclesChanged | rebuilt;
+            var footprintsChanged = FootprintsMayDiffer(ref state) && SignatureChanged(ref state);
+            var restamp = OrderChanged<NavArea>(ref state, ref _builtAreaVersion) | footprintsChanged | rebuilt;
             var restampScenery = OrderChanged<Destructible>(ref state, ref _builtSceneryVersion) | rebuilt;
             if (!restamp && !restampScenery)
             {
@@ -82,19 +83,43 @@ namespace HyperRTS.Simulation.Navigation
             ref var grid = ref SystemAPI.GetSingletonRW<NavGrid>().ValueRW;
             if (restamp)
             {
-                grid.Version++;
-                state.Dependency = new ResetJob { Base = _base, Cells = grid.Cells }.Schedule(state.Dependency);
-                state.Dependency = new AreaJob { Grid = grid, Decks = false }.Schedule(_areas, state.Dependency);
-                state.Dependency = new AreaJob { Grid = grid, Decks = true }.Schedule(_areas, state.Dependency);
-                state.Dependency = new ObstacleJob { Grid = grid }.Schedule(_obstacles, state.Dependency);
-                state.Dependency = grid.ScheduleClearance(state.Dependency);
+                Restamp(ref state, ref grid, rebuilt);
             }
 
             if (restampScenery)
             {
-                state.Dependency = new ClearSceneryJob { Scenery = grid.Scenery }.Schedule(state.Dependency);
+                state.Dependency = new ClearSceneryJob { Scenery = grid.Scenery }
+                    .Schedule(grid.Scenery.Length, 4096, state.Dependency);
                 state.Dependency = new SceneryJob { Grid = grid }.Schedule(_scenery, state.Dependency);
             }
+        }
+
+        private void Restamp(ref SystemState state, ref NavGrid grid, bool rebuilt)
+        {
+            grid.Version++;
+            if (rebuilt)
+            {
+                grid.Changes.Since = grid.Version + 1;
+            }
+
+            var dependency = new ResetJob { Base = _base, Cells = grid.Cells, Previous = grid.Changes.Previous }
+                .Schedule(state.Dependency);
+            dependency = new AreaJob { Grid = grid, Decks = false }.Schedule(_areas, dependency);
+            dependency = new AreaJob { Grid = grid, Decks = true }.Schedule(_areas, dependency);
+            dependency = new ObstacleJob { Grid = grid }.Schedule(_obstacles, dependency);
+            dependency = new BlockerJob { Grid = grid }.Schedule(_blockers, dependency);
+            dependency = new ChangeJob { Grid = grid }.Schedule(dependency);
+            state.Dependency = grid.ScheduleAccess(dependency);
+        }
+
+        // Footprints only differ after an add, removal or archetype change, or a blocker turning off as it sinks.
+        private bool FootprintsMayDiffer(ref SystemState state)
+        {
+            var count = _blockers.CalculateEntityCount();
+            var toggled = count != _builtBlockerCount;
+            _builtBlockerCount = count;
+            return OrderChanged<NavObstacle>(ref state, ref _builtObstacleVersion) |
+                   OrderChanged<Blocker>(ref state, ref _builtBlockerVersion) | toggled;
         }
 
         /// <summary>Whether the grid was built from this map and terrain; a new map or late-streamed terrain rebuilds it.</summary>
@@ -115,18 +140,23 @@ namespace HyperRTS.Simulation.Navigation
             return changed;
         }
 
-        /// <summary>Whether obstacle footprints differ from the last stamp, so fog tags alone cost no rebuild.</summary>
+        /// <summary>Whether obstacle and blocker footprints differ from the last stamp, so fog tags alone cost no rebuild.</summary>
         private bool SignatureChanged(ref SystemState state)
         {
             // An order-independent sum, since an archetype move reorders the chunks.
-            var signature = (ulong)_obstacles.CalculateEntityCount();
+            var signature = (ulong)_obstacles.CalculateEntityCount() + ((ulong)_builtBlockerCount << 32);
             foreach (var (obstacle, transform) in SystemAPI.Query<RefRO<NavObstacle>, RefRO<LocalTransform>>())
             {
                 signature += obstacle.ValueRO.Hash(transform.ValueRO);
             }
 
-            var changed = signature != _builtObstacleSignature;
-            _builtObstacleSignature = signature;
+            foreach (var (blocker, transform) in SystemAPI.Query<RefRO<Blocker>, RefRO<LocalTransform>>())
+            {
+                signature += blocker.ValueRO.Hash(transform.ValueRO);
+            }
+
+            var changed = signature != _builtFootprintSignature;
+            _builtFootprintSignature = signature;
             return changed;
         }
 
@@ -145,13 +175,9 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             _base = new NativeArray<byte>(count, Allocator.Persistent);
-            state.Dependency = new ClassifyJob
-            {
-                Grid = grid,
-                Base = _base,
-                Flood = map.FloodTerrain,
-                MaxGradient = NavGround.MaxGradient(map.MaxSlope),
-            }.Schedule(count, 1024, state.Dependency);
+            var classify = new ClassifyJob { Grid = grid, Base = _base, Flood = map.FloodTerrain };
+            classify.MaxGradient = NavGround.MaxGradient(map.MaxSlope);
+            state.Dependency = classify.Schedule(count, 1024, state.Dependency);
         }
 
         private void ReplaceGrid(ref SystemState state, ref NavGrid grid)
@@ -169,7 +195,6 @@ namespace HyperRTS.Simulation.Navigation
             current.ValueRW = grid;
         }
 
-        /// <summary>Gives each cell the surface the ground alone makes (<see cref="NavGround"/>).</summary>
         [BurstCompile]
         private struct ClassifyJob : IJobParallelFor
         {
@@ -178,21 +203,30 @@ namespace HyperRTS.Simulation.Navigation
             public bool Flood;
             public float MaxGradient;
 
-            public void Execute(int index)
-            {
-                var center = Grid.CellCenter(Grid.Cell(index)).xz;
-                Base[index] = (byte)NavGround.Classify(Grid.Terrain, center, Grid.CellSize, Grid.WaterLevel, Flood,
-                    MaxGradient);
-            }
+            public void Execute(int index) => Base[index] = (byte)Grid.GroundSurface(index, Flood, MaxGradient);
         }
 
+        /// <summary>Keeps the last stamp to compare with, then starts again from the ground.</summary>
         [BurstCompile]
         private struct ResetJob : IJob
         {
             [ReadOnly] public NativeArray<byte> Base;
             public NativeArray<byte> Cells;
+            public NativeArray<byte> Previous;
 
-            public void Execute() => Cells.CopyFrom(Base);
+            public void Execute()
+            {
+                Previous.CopyFrom(Cells);
+                Cells.CopyFrom(Base);
+            }
+        }
+
+        [BurstCompile]
+        private struct ChangeJob : IJob
+        {
+            public NavGrid Grid;
+
+            public void Execute() => Grid.Changes.Record(Grid);
         }
 
         /// <summary>Single-threaded: overlapping areas write the same cells. Decks go last so they span water areas.</summary>
@@ -204,29 +238,10 @@ namespace HyperRTS.Simulation.Navigation
 
             private void Execute(in NavArea area, in LocalTransform transform)
             {
-                if ((area.Kind == NavAreaKind.Deck) != Decks)
+                if ((area.Kind == NavAreaKind.Deck) == Decks)
                 {
-                    return;
-                }
-
-                var box = new NavBox(transform.Position, transform.Rotation, area.Size);
-                Grid.GetBoxArea(box, out var min, out var max);
-                for (var y = min.y; y <= max.y; y++)
-                {
-                    for (var x = min.x; x <= max.x; x++)
-                    {
-                        if (!Grid.InBox(box, new int2(x, y)))
-                        {
-                            continue;
-                        }
-
-                        var index = Grid.Index(new int2(x, y));
-                        Grid.Cells[index] = (byte)NavGround.Stamp(area.Kind, (NavSurface)Grid.Cells[index]);
-                        if (Decks)
-                        {
-                            Grid.DeckHeights[index] = transform.Position.y;
-                        }
-                    }
+                    var box = new NavBox(transform.Position, transform.Rotation, area.Size);
+                    Grid.StampArea(box, area.Kind, transform.Position.y);
                 }
             }
         }
@@ -240,32 +255,25 @@ namespace HyperRTS.Simulation.Navigation
             private void Execute(in NavObstacle obstacle, in LocalTransform transform)
             {
                 var box = new NavBox(transform.Position, transform.Rotation, obstacle.Size);
-                Grid.GetBoxArea(box, out var min, out var max);
-                for (var y = min.y; y <= max.y; y++)
-                {
-                    for (var x = min.x; x <= max.x; x++)
-                    {
-                        if (Grid.InBox(box, new int2(x, y)))
-                        {
-                            Grid.Cells[Grid.Index(new int2(x, y))] = (byte)NavSurface.Blocked;
-                        }
-                    }
-                }
+                Grid.StampArea(box, NavAreaKind.Blocked, 0f);
             }
         }
 
+        /// <summary>Single-threaded: blockers may share cells. Disabled ones are skipped.</summary>
         [BurstCompile]
-        private struct ClearSceneryJob : IJob
+        private partial struct BlockerJob : IJobEntity
+        {
+            public NavGrid Grid;
+
+            private void Execute(in Blocker blocker, in LocalTransform transform) => blocker.Stamp(ref Grid, transform);
+        }
+
+        [BurstCompile]
+        private struct ClearSceneryJob : IJobParallelFor
         {
             public NativeArray<byte> Scenery;
 
-            public void Execute()
-            {
-                for (var i = 0; i < Scenery.Length; i++)
-                {
-                    Scenery[i] = 0;
-                }
-            }
+            public void Execute(int index) => Scenery[index] = 0;
         }
 
         /// <summary>Single-threaded: scenery sharing a cell keeps the sturdiest rating. Each piece fills its own cell.</summary>

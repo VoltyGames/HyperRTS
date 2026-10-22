@@ -14,8 +14,8 @@ namespace HyperRTS.Simulation.Units
     /// <summary>
     /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> and, when the move ends by
     /// itself, disables it and enables <see cref="Arrival"/>. <see cref="MoveProgress"/> repairs the path and gives
-    /// up when the unit stops getting on. Keeps units of the same layer their spacing apart, slides ground units round
-    /// blockers and never pushes a footprint into cells closed to the agent (<see cref="NavCapsule.Constrain"/>).
+    /// up when the unit stops getting on. Keeps units of the same layer their spacing apart and never pushes a
+    /// footprint into cells closed to the agent (<see cref="NavCapsule.Constrain"/>), wrecks' cells included.
     /// Every unit drives the path with its <see cref="Locomotion"/>, or <see cref="Locomotion.Instant"/> without one.
     /// Steers on XZ, and Y follows the layer's surface on the <see cref="NavGrid"/> (ground, deck or water). Aircraft
     /// ignore the grid, climb to their <see cref="Flight"/> altitude (land while <see cref="Docked"/>) and, if they
@@ -27,7 +27,6 @@ namespace HyperRTS.Simulation.Units
     [UpdateBefore(typeof(CargoFollowSystem))]
     public partial struct MovementSystem : ISystem
     {
-        private EntityQuery _blockers;
         private ComponentLookup<Flight> _flights;
         private GivingWay _givingWay;
         private ComponentLookup<Locomotion> _locomotions;
@@ -39,7 +38,6 @@ namespace HyperRTS.Simulation.Units
             _givingWay = new GivingWay(ref state);
             _locomotions = state.GetComponentLookup<Locomotion>(true);
             _locomotionStates = state.GetComponentLookup<LocomotionState>();
-            _blockers = SystemAPI.QueryBuilder().WithPresent<Blocker>().Build();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<NavGrid>();
         }
@@ -57,8 +55,6 @@ namespace HyperRTS.Simulation.Units
             {
                 Index = index,
                 Grid = grid,
-                // Asked of the query, not the index, which its builder is still filling.
-                HasBlockers = !_blockers.IsEmptyIgnoreFilter,
                 Flights = _flights,
                 GivingWay = _givingWay,
                 Locomotions = _locomotions,
@@ -74,7 +70,6 @@ namespace HyperRTS.Simulation.Units
         {
             [ReadOnly] public SpatialIndex Index;
             [ReadOnly] public NavGrid Grid;
-            public bool HasBlockers;
             [ReadOnly] public ComponentLookup<Flight> Flights;
             public GivingWay GivingWay;
             [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
@@ -112,7 +107,6 @@ namespace HyperRTS.Simulation.Units
                 }
                 else
                 {
-                    wanted = Clear(crowd, wanted);
                     Walk(ref transform, from, wanted, agent, axis);
                     stalled = moving.ValueRO && !crowd.ReachedGroup &&
                               progress.HasGivenUp(transform, agent, destination.Value, waypoints, ref path, DeltaTime);
@@ -148,20 +142,6 @@ namespace HyperRTS.Simulation.Units
             {
                 transform.Position.xz = new NavCapsule(agent.Access(Grid), axis).Constrain(from, wanted);
                 transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
-            }
-
-            // Measured where the unit is headed and left unclamped, so it never sinks into a blocker even for a frame.
-            private readonly float2 Clear(SeparationVisitor crowd, float2 wanted)
-            {
-                if (!HasBlockers)
-                {
-                    return wanted;
-                }
-
-                crowd.Position = wanted;
-                crowd.Push = float2.zero;
-                Index.QueryBlockers(crowd.Center, crowd.Reach, ref crowd);
-                return wanted + crowd.Push;
             }
 
             private static void Halt(EnabledRefRW<MoveDestination> moving, ref PathState path,
