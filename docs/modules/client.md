@@ -220,7 +220,7 @@ without effects. It is presentation only: the simulation never reads it.
 | Shader | Use |
 | --- | --- |
 | `HyperRTS/Water` | Depth colour, refraction, ripples, screen-space scene reflection over the sky, foam and swells at banks, unit wakes (`SampleWake`). Needs Depth and Opaque Textures |
-| `HyperRTS/Foliage` | Alpha-cut plants and tree leaves with wind, trample, translucency and dry and green patches |
+| `HyperRTS/Foliage` | Alpha-cut plants and tree leaves with wind, trample, translucency and dry and green patches. Lit by the sun, Forward+ point and spot lights (per vertex on scattered grass) and Surface Cache GI |
 | `HyperRTS/Bark` | Opaque tree bark with wind. Mask map: R metallic, G AO, A smoothness |
 | `HyperRTS/RowCrop` | GPU-placed field crops. See [row crops](#row-crops) |
 

@@ -46,6 +46,8 @@ Shader "HyperRTS/RowCrop"
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_IRRADIANCE
+            #pragma multi_compile_fragment _ _CLUSTER_LIGHT_LOOP
             #include "Packages/com.hyperrts.engine/Presentation/Environment/RowCrops/RowCropPasses.hlsl"
             ENDHLSL
         }

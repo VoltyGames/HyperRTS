@@ -1,5 +1,6 @@
 // Shading shared by HyperRTS/Foliage and HyperRTS/RowCrop. Include after the shader's input file, which declares
 // _BaseMap, the UnityPerMaterial shading properties and PLANT_TWO_SIDED; its passes place the vertices.
+// PLANT_VERTEX_LIGHTS lights point and spot lights per vertex instead of per pixel.
 #ifndef HYPERRTS_PLANT_SHADING_INCLUDED
 #define HYPERRTS_PLANT_SHADING_INCLUDED
 
@@ -31,6 +32,9 @@ struct ForwardVaryings
     half3 normalWS : TEXCOORD2;
     half4 tint : TEXCOORD3; // rgb per-plant shade, a crown occlusion
     half4 ground : TEXCOORD4; // rgb ground colour over texture mean brightness, a root blend
+    #if defined(PLANT_VERTEX_LIGHTS)
+        half3 vertexLight : TEXCOORD5;
+    #endif
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
@@ -81,6 +85,39 @@ void PlantCrossFade(float4 positionCS)
 #endif
 }
 
+// Wrapped light on the facing side plus light through the leaf toward the eye; the root wraps and passes none.
+half PlantDiffuse(half3 normal, half3 toLight, half3 view, half crown, half root)
+{
+    half wrapping = 0.5 * (1.0 - root);
+    half wrap = saturate((dot(normal, toLight) + wrapping) / (1.0 + wrapping));
+    half through = pow(saturate(dot(-toLight, view)), 4.0) * _Translucency * crown * (1.0 - root);
+    return wrap * crown + through;
+}
+
+// Per vertex for ground cover: its blades are small next to a light's reach and its cutout overdraw costs the most.
+half3 PlantVertexLights(float3 positionWS, float4 positionCS, half3 normalWS)
+{
+    half3 lighting = half3(0.0, 0.0, 0.0);
+    #if defined(_ADDITIONAL_LIGHTS)
+        // LIGHT_LOOP_BEGIN reads the cluster from a variable named inputData; the screen UV is URP's positionNDC.
+        InputData inputData = (InputData)0;
+        inputData.positionWS = positionWS;
+        float4 ndc = positionCS * 0.5;
+        inputData.normalizedScreenSpaceUV = (float2(ndc.x, ndc.y * _ProjectionParams.x) + ndc.w) / positionCS.w;
+        half3 view = GetWorldSpaceNormalizeViewDir(positionWS);
+        half3 normal = normalize(normalWS);
+        uint lightCount = GetAdditionalLightsCount();
+        LIGHT_LOOP_BEGIN(lightCount)
+            Light light = GetAdditionalLight(lightIndex, positionWS);
+            // The side in view is only known per pixel, so both sides light alike.
+            half3 facing = dot(normal, light.direction) >= 0.0 ? normal : -normal;
+            half diffuse = PlantDiffuse(facing, light.direction, view, 1.0, 0.0);
+            lighting += light.color * (light.distanceAttenuation * diffuse);
+        LIGHT_LOOP_END
+    #endif
+    return lighting;
+}
+
 ForwardVaryings PlantForwardVaryings(float3 positionWS, float3 origin, float2 uv, float height, half3 normalWS, half4 tint)
 {
     ForwardVaryings output = (ForwardVaryings)0;
@@ -90,6 +127,9 @@ ForwardVaryings PlantForwardVaryings(float3 positionWS, float3 origin, float2 uv
     output.normalWS = normalWS;
     output.tint = tint;
     output.ground = RootGround(origin);
+    #if defined(PLANT_VERTEX_LIGHTS)
+        output.vertexLight = PlantVertexLights(positionWS, output.positionCS, normalWS);
+    #endif
     return output;
 }
 
@@ -122,6 +162,41 @@ half3 PlantNormal(half3 normalWS, bool front, half root)
     return normalize(lerp(normalize(normalWS) * side, half3(0.0, 1.0, 0.0), skyward));
 }
 
+// Unshadowed point and spot lights, so fires and explosion flashes light the plants round them.
+half3 PlantAdditionalLights(ForwardVaryings input, half3 normal, half3 view, half root)
+{
+    half3 lighting = half3(0.0, 0.0, 0.0);
+    #if defined(PLANT_VERTEX_LIGHTS)
+        lighting = input.vertexLight * input.tint.a;
+    #elif defined(_ADDITIONAL_LIGHTS)
+        // LIGHT_LOOP_BEGIN reads the cluster from a variable named inputData.
+        InputData inputData = (InputData)0;
+        inputData.positionWS = input.positionWS;
+        inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
+        uint lightCount = GetAdditionalLightsCount();
+        LIGHT_LOOP_BEGIN(lightCount)
+            Light light = GetAdditionalLight(lightIndex, input.positionWS);
+            half diffuse = PlantDiffuse(normal, light.direction, view, input.tint.a, root);
+            lighting += light.color * (light.distanceAttenuation * diffuse);
+        LIGHT_LOOP_END
+    #endif
+    return lighting;
+}
+
+// Surface Cache GI where it runs, else the ambient probe.
+half3 PlantAmbient(ForwardVaryings input, half3 normal, half3 view)
+{
+    GIParams giParams = (GIParams)0;
+    giParams.positionWS = input.positionWS;
+    giParams.normalWS = normal;
+    giParams.viewDirWS = view;
+    giParams.positionSS = input.positionCS.xy;
+    URP_LIGHT_ACCUM3 ambient;
+    half4 shadowMask;
+    InitializeBakedGI(giParams, ambient, shadowMask);
+    return ambient;
+}
+
 // Wrapped sun, translucency and glint, all dimmed by the crown occlusion; the root gets plain up-facing light.
 half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
 {
@@ -129,10 +204,7 @@ half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
     Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
     // Shadow and cookie only: culling attenuation isn't set for indirect draws.
     half3 direct = sun.color * sun.shadowAttenuation;
-    half wrapping = 0.5 * (1.0 - root);
-    half wrap = saturate((dot(normal, sun.direction) + wrapping) / (1.0 + wrapping));
     half crown = input.tint.a;
-    half through = pow(saturate(dot(-sun.direction, view)), 4.0) * _Translucency * crown * (1.0 - root);
     half3 halfway = normalize(sun.direction + view);
     half glint = pow(saturate(dot(normal, halfway)), exp2(_Smoothness * 10.0 + 1.0)) * _Smoothness;
 
@@ -141,8 +213,10 @@ half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
         occlusion *= GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(input.positionCS)).indirectAmbientOcclusion;
     #endif
 
-    half3 ambient = SampleSH(normal) * occlusion;
-    return albedo * (direct * (wrap * crown + through) + ambient) + glint * crown * direct;
+    half3 lit = direct * PlantDiffuse(normal, sun.direction, view, crown, root);
+    lit += PlantAdditionalLights(input, normal, view, root);
+    half3 ambient = PlantAmbient(input, normal, view) * occlusion;
+    return albedo * (lit + ambient) + glint * crown * direct;
 }
 
 half4 ForwardFrag(ForwardVaryings input, bool front : SV_IsFrontFace) : SV_Target
