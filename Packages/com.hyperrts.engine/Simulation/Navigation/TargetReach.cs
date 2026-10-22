@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Navigation
                 _navCellSize);
         }
 
-        // Units such as transports reach by their hull's box; footprintless targets such as nodes by EntityRadius.
+        // A unit such as a transport is reached by the box round its hull, a footprintless node by EntityRadius.
         private NavBox Footprint(Entity target)
         {
             var transform = _transforms[target];
