@@ -94,6 +94,10 @@ PanelRenderer:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_Position: 0
+  m_GenerateAccessibilityHierarchy: 1
+  m_TrackScreenSpacePosition: 0
+  m_ScreenSpaceOffsetX: 0
+  m_ScreenSpaceOffsetY: 0
 --- !u!114 &2895401363073924767
 MonoBehaviour:
   m_ObjectHideFlags: 0
