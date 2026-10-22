@@ -226,6 +226,14 @@ namespace HyperRTS.Simulation.Tests
         public void Command(byte faction, PlayerCommand command) =>
             EntityManager.GetBuffer<PlayerCommand>(Player(faction)).Add(command);
 
+        /// <summary>Gives the unit an order through <see cref="OrderWriter"/>, as the command systems do.</summary>
+        public void Issue(Entity unit, in Order order, bool queue = false)
+        {
+            var system = World.GetOrCreateSystem<TestOrderSystem>();
+            World.Unmanaged.GetUnsafeSystemRef<TestOrderSystem>(system)
+                .Issue(ref World.Unmanaged.ResolveSystemStateRef(system), unit, order, queue);
+        }
+
         public Entity SpawnUnit(byte faction, float3 position, float speed = 5f, float radius = 0.5f,
             float maxHealth = 100f, string name = "Unit")
         {

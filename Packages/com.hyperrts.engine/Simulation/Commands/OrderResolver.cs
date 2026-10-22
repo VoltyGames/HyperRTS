@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.Commands
             _entityManager = state.EntityManager;
         }
 
-        /// <summary>The order type and traits the unit gets; callers fill in where and what it acts on.</summary>
+        /// <summary>The order type the unit gets; callers fill in where and what it acts on.</summary>
         public Order Resolve(CommandType command, Entity unit, Entity target, in FactionRelations relations)
         {
             if (command == CommandType.Smart && TryRule(unit, target, relations, out var ruled))
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Commands
                 return ruled;
             }
 
-            return new Order { Type = ResolveType(command, unit, target, relations) }.WithTypeTraits();
+            return new Order { Type = ResolveType(command, unit, target, relations) };
         }
 
         private OrderType ResolveType(CommandType command, Entity unit, Entity target, in FactionRelations relations)
@@ -171,7 +171,7 @@ namespace HyperRTS.Simulation.Commands
                 var type = TypeManager.GetTypeIndexFromStableTypeHash(rule.TargetComponent);
                 if (_entityManager.HasComponent(target, ComponentType.FromTypeIndex(type)))
                 {
-                    order = new Order { Type = rule.Order, Traits = rule.Traits }.WithTypeTraits();
+                    order = new Order { Type = rule.Order };
                     return true;
                 }
             }

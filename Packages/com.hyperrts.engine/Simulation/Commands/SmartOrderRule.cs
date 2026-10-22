@@ -14,18 +14,14 @@ namespace HyperRTS.Simulation.Commands
     {
         public OrderType Order;
 
-        /// <summary>Traits of a game order; engine orders take the engine's own.</summary>
-        public OrderTraits Traits;
-
         /// <summary>Stable type hash of the component the target must have, so baked rules survive type reordering.</summary>
         public ulong TargetComponent;
 
         public RelationMask Relations;
 
-        public static SmartOrderRule For<TTarget>(OrderType order, OrderTraits traits, RelationMask relations) => new()
+        public static SmartOrderRule For<TTarget>(OrderType order, RelationMask relations) => new()
         {
             Order = order,
-            Traits = traits,
             TargetComponent = TypeManager.GetTypeInfo<TTarget>().StableTypeHash,
             Relations = relations,
         };

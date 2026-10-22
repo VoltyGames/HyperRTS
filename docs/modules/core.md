@@ -72,13 +72,17 @@ All player intent is a `PlayerCommand` on the player entity. Units carry orders.
 | Type | Role |
 | --- | --- |
 | `PlayerCommand`, `CommandType` | Player intent: Smart, Move, Attack, Gather, Build, Produce, Capture, Enter, UseAbility, Surrender and more |
-| `Order`, `OrderType`, `OrderTraits` | A unit's order and how it runs. `Argument` carries extra data such as an ability id |
+| `Order`, `OrderType` | A unit's order. `Argument` carries extra data such as an ability id |
+| `OrderTraits`, `OrderTraitTable` | How an order runs, read from its type. A singleton: fixed for engine types, registered for game ones |
 | `ActiveOrder`, `QueuedOrder` | The current order and the Shift queue. Disabled `ActiveOrder` means idle |
-| `OrderWriter` | `Issue(unit, order, queue)`, which stamps engine order traits, and `Stop(unit)` |
+| `OrderWriter` | `Issue(unit, order, queue)`, which rejects a game type with no registered traits, and `Stop(unit)` |
 | `CommandReader` | This frame's commands of some types from undefeated players, and the owned units each addresses |
 
-Games add command and order types from `GameFirst` (128) up, with their own order traits. The engine runs Move, AttackMove, Patrol and Escort. When the active
-order finishes, the next queued one starts.
+Games add command and order types from `GameFirst` (128) up and register each order type's traits in
+`OrderTraitTable`. `Formation` spreads a group into slots, `MovesToPosition` hands the order to `MoveOrderSystem`,
+`Loops` sends a finished order to the back of the queue, and `AttackMove` and `EngagesWhileMoving` set how combat
+treats it. The engine runs Move, AttackMove, Patrol and Escort. When the active order finishes, the next queued one
+starts.
 
 ## Commands
 

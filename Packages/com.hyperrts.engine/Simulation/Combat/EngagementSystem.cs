@@ -55,11 +55,14 @@ namespace HyperRTS.Simulation.Combat
             _mounts.Update(ref state);
             _armor.Update(ref state);
 
+            var traits = SystemAPI.GetSingleton<OrderTraitTable>();
+
             new EngageJob
             {
                 Targets = _targets,
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Orders = _orders,
+                Traits = traits,
                 Moves = _moves,
                 AmmoLookup = _ammo,
                 Mounts = _mounts,
@@ -74,6 +77,7 @@ namespace HyperRTS.Simulation.Combat
             public TargetLookup Targets;
             public FactionRelations Relations;
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
+            public OrderTraitTable Traits;
             [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
             [ReadOnly] public BufferLookup<WeaponMount> Mounts;
             [ReadOnly] public BufferLookup<ArmorModifier> Armor;
@@ -89,7 +93,7 @@ namespace HyperRTS.Simulation.Combat
                 {
                     // Attack-movers carry their post along, so a defensive leash is measured from where they engage.
                     var standing = order.Type == OrderType.None && !IsMoving(entity);
-                    if (standing || order.Has(OrderTraits.EngagesWhileMoving))
+                    if (standing || Traits.Has(order.Type, OrderTraits.EngagesWhileMoving))
                     {
                         stance.ReturnPoint = transform.Position;
                     }
@@ -227,7 +231,7 @@ namespace HyperRTS.Simulation.Combat
                 // Attack-move heads straight back to its goal: a disabled destination would read as arrival to
                 // MoveOrderSystem if it never saw the engagement. Only idle defenders head home; escorts halt and
                 // EscortSystem picks up the ward again.
-                if (order.Has(OrderTraits.AttackMove))
+                if (Traits.Has(order.Type, OrderTraits.AttackMove))
                 {
                     MoveTo(entity, order.Position);
                 }

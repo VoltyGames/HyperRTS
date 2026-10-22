@@ -10,9 +10,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
-    /// Runs Move, AttackMove and Patrol orders: points locomotion at the order goal while combat isn't engaged, and
-    /// completes the order on arrival or when the unit has been stuck close to its goal (crowded formations). A finished
-    /// patrol leg goes to the back of the queue, so a unit with other legs queued loops through them.
+    /// Runs orders with <see cref="OrderTraits.MovesToPosition"/>: points locomotion at the order goal while combat
+    /// isn't engaged, and completes the order on arrival or when the unit has been stuck close to its goal (crowded
+    /// formations). A finished <see cref="OrderTraits.Loops"/> order goes to the back of the queue.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -37,7 +37,13 @@ namespace HyperRTS.Simulation.Orders
         public void OnUpdate(ref SystemState state)
         {
             _attacks.Update(ref state);
-            new MoveOrderJob { Attacks = _attacks, DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
+            var traits = SystemAPI.GetSingleton<OrderTraitTable>();
+            new MoveOrderJob
+            {
+                Attacks = _attacks,
+                Traits = traits,
+                DeltaTime = SystemAPI.Time.DeltaTime,
+            }.ScheduleParallel();
         }
 
         [BurstCompile]
@@ -45,6 +51,7 @@ namespace HyperRTS.Simulation.Orders
         private partial struct MoveOrderJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<AttackTarget> Attacks;
+            public OrderTraitTable Traits;
             public float DeltaTime;
 
             private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
@@ -52,7 +59,8 @@ namespace HyperRTS.Simulation.Orders
                 EnabledRefRW<MoveDestination> moving, in LocalTransform transform, in NavAgent agent,
                 DynamicBuffer<QueuedOrder> queue)
             {
-                if (!order.Value.Has(OrderTraits.Formation))
+                var type = order.Value.Type;
+                if (!Traits.Has(type, OrderTraits.MovesToPosition))
                 {
                     return;
                 }
@@ -80,7 +88,7 @@ namespace HyperRTS.Simulation.Orders
                 {
                     ActiveOrder.Finish(busy, moving);
                     driving.ValueRW = false;
-                    if (order.Value.Type == OrderType.Patrol && queue.Length > 0)
+                    if (Traits.Has(type, OrderTraits.Loops) && queue.Length > 0)
                     {
                         queue.Add(new QueuedOrder { Value = order.Value });
                     }

@@ -14,7 +14,13 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Attack-moves toward <see cref="Order.Position"/>, which units head back to after each fight.</summary>
         AttackMove = 2,
 
-        /// <summary>Walks to <see cref="Order.Position"/>: groups spread into a formation and the move order runs it.</summary>
+        /// <summary>A group given the order spreads into formation slots around <see cref="Order.Position"/>.</summary>
         Formation = 4,
+
+        /// <summary><see cref="MoveOrderSystem"/> takes the unit to <see cref="Order.Position"/> and finishes it there.</summary>
+        MovesToPosition = 8,
+
+        /// <summary>A finished order goes to the back of the queue, so the unit loops through its legs.</summary>
+        Loops = 16,
     }
 }

@@ -116,11 +116,7 @@ namespace HyperRTS.Simulation.Tests
             var enemy = _world.SpawnUnit(2, new float3(25f, 0f, 0f), speed: 2f);
             _world.EntityManager.SetComponentData(enemy, new MoveDestination { Value = new float3(80f, 0f, 0f) });
             _world.EntityManager.SetComponentEnabled<MoveDestination>(enemy, true);
-            _world.EntityManager.SetComponentData(soldier, new ActiveOrder
-            {
-                Value = new Order { Type = OrderType.Attack, Target = enemy },
-            });
-            _world.EntityManager.SetComponentEnabled<ActiveOrder>(soldier, true);
+            _world.Issue(soldier, new Order { Type = OrderType.Attack, Target = enemy });
 
             _world.RunUntil(() => !_world.EntityManager.Exists(enemy) && _world.IsIdle(soldier), 15f);
 

@@ -31,4 +31,10 @@ namespace HyperRTS.Simulation.Production
     {
         public float3 Position;
     }
+
+    /// <summary>A new unit's move to the rally point, issued by <see cref="RallyOrderSystem"/>.</summary>
+    public struct RallyOrder : IComponentData
+    {
+        public float3 Position;
+    }
 }

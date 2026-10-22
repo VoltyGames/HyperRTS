@@ -1,3 +1,4 @@
+using System;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
@@ -11,6 +12,7 @@ namespace HyperRTS.Simulation.Orders
         private BufferLookup<QueuedOrder> _queue;
         private OrderHalt _halt;
         [ReadOnly] private ComponentLookup<Inside> _inside;
+        private OrderTraitTable _traits;
 
         public OrderWriter(ref SystemState state)
         {
@@ -18,6 +20,7 @@ namespace HyperRTS.Simulation.Orders
             _queue = state.GetBufferLookup<QueuedOrder>();
             _halt = new OrderHalt(ref state);
             _inside = state.GetComponentLookup<Inside>(true);
+            _traits = default;
         }
 
         public void Update(ref SystemState state)
@@ -26,7 +29,12 @@ namespace HyperRTS.Simulation.Orders
             _queue.Update(ref state);
             _halt.Update(ref state);
             _inside.Update(ref state);
+            _traits = new EntityQueryBuilder(Allocator.Temp).WithAll<OrderTraitTable>().Build(ref state)
+                .GetSingleton<OrderTraitTable>();
         }
+
+        /// <summary>The traits table, for callers that branch on how an order runs.</summary>
+        public readonly OrderTraitTable Traits => _traits;
 
         /// <summary>Passengers inside a container take no orders until they get out.</summary>
         public bool CanReceiveOrders(Entity unit) => _active.HasComponent(unit) && !_inside.HasEnabled(unit);
@@ -54,27 +62,28 @@ namespace HyperRTS.Simulation.Orders
             return true;
         }
 
-        /// <summary>
-        /// Replaces current orders, or appends when <paramref name="queue"/> and the unit is busy. A game order
-        /// (<see cref="OrderType.GameFirst"/> up) brings its own <see cref="Order.Traits"/>.
-        /// </summary>
+        /// <summary>Replaces current orders, or appends when <paramref name="queue"/> and the unit is busy.</summary>
         public void Issue(Entity unit, in Order order, bool queue)
         {
+            if (!_traits.IsRegistered(order.Type))
+            {
+                throw new InvalidOperationException("HyperRTS: a game order type has no traits in OrderTraitTable.");
+            }
+
             if (!CanReceiveOrders(unit))
             {
                 return;
             }
 
-            var stamped = order.WithTypeTraits();
             var pending = _queue[unit];
             if (queue && (_active.IsComponentEnabled(unit) || pending.Length > 0))
             {
-                pending.Add(new QueuedOrder { Value = stamped });
+                pending.Add(new QueuedOrder { Value = order });
                 return;
             }
 
             Interrupt(unit);
-            _active[unit] = new ActiveOrder { Value = stamped };
+            _active[unit] = new ActiveOrder { Value = order };
             _active.SetComponentEnabled(unit, true);
         }
 

@@ -48,16 +48,18 @@ namespace HyperRTS.Simulation.Tests
             var unit = _world.SpawnUnit(1, float3.zero);
             _world.AddWeapon(unit);
             var enemy = _world.SpawnUnit(2, new float3(3f, 0f, 0f));
+            var goal = new float3(-10f, 0f, 0f);
+            _world.Issue(unit, new Order { Type = OrderType.Move, Position = new float3(5f, 0f, 0f) });
+            _world.Issue(unit, new Order { Type = OrderType.Move, Position = goal }, true);
+            // The first move finishes, leaving the queued one, and the idle unit picks up a target.
+            _world.EntityManager.SetComponentEnabled<ActiveOrder>(unit, false);
             _world.EntityManager.SetComponentData(unit, new AttackTarget { Value = enemy });
             _world.EntityManager.SetComponentEnabled<AttackTarget>(unit, true);
-            var goal = new float3(-10f, 0f, 0f);
-            _world.EntityManager.GetBuffer<QueuedOrder>(unit)
-                .Add(new QueuedOrder { Value = new Order { Type = OrderType.Move, Position = goal } });
 
             _world.World.GetExistingSystem<OrderDispatchSystem>().Update(_world.World.Unmanaged);
 
             Assert.IsTrue(_world.IsEnabled<ActiveOrder>(unit));
-            Assert.AreEqual(OrderType.Move, _world.Get<ActiveOrder>(unit).Value.Type);
+            Assert.AreEqual(goal, _world.Get<ActiveOrder>(unit).Value.Position);
             Assert.IsFalse(_world.IsEnabled<AttackTarget>(unit), "the queued move isn't held back by the old target");
         }
 
@@ -66,9 +68,8 @@ namespace HyperRTS.Simulation.Tests
         {
             var unit = _world.SpawnUnit(1, float3.zero);
             var goal = new Order { Type = OrderType.Move, Position = new float3(20f, 0f, 0f) };
-            _world.EntityManager.SetComponentData(unit, new ActiveOrder { Value = goal });
-            _world.EntityManager.SetComponentEnabled<ActiveOrder>(unit, true);
-            _world.EntityManager.GetBuffer<QueuedOrder>(unit).Add(new QueuedOrder { Value = goal });
+            _world.Issue(unit, goal);
+            _world.Issue(unit, goal, true);
             _world.EntityManager.SetComponentEnabled<MoveDestination>(unit, true);
             var events = _world.EntityManager.CreateEntityQuery(typeof(GameEvents)).GetSingletonEntity();
             _world.EntityManager.GetBuffer<OwnerChanged>(events)
@@ -239,7 +240,7 @@ namespace HyperRTS.Simulation.Tests
             var rule = OrderType.Capture;
             var unit = SpawnSelected(float3.zero);
             _world.EntityManager.AddBuffer<SmartOrderRule>(unit)
-                .Add(SmartOrderRule.For<UnitTag>(rule, OrderTraits.None, RelationMask.Enemy));
+                .Add(SmartOrderRule.For<UnitTag>(rule, RelationMask.Enemy));
             var enemy = _world.SpawnUnit(2, new float3(10f, 0f, 0f));
             var friend = _world.SpawnUnit(1, new float3(-10f, 0f, 0f));
 

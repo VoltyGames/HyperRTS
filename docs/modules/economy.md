@@ -39,6 +39,9 @@ share `ProducibleAuthoring`: build time and population.
 - A `Prerequisite` is met by a finished building or research.
 - `PurchaseRules` is the one buy rule, shared by orders, placement, the AI and the HUD.
 - `BuildLimitAuthoring` caps how many of a type a player may have, counting sites and queued items.
+- A unit trained with a rally point set spawns with a `RallyOrder`, which `RallyOrderSystem` issues as a Move
+  through `OrderWriter` the next frame.
+- Every queued prefab needs `Producible` and every player `Population`.
 - When an entity changes owner, its queue is refunded to the old owner.
 
 ## Capture

@@ -2,7 +2,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Orders;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -25,7 +24,6 @@ namespace HyperRTS.Simulation.Production
         private ComponentLookup<Producible> _producibleLookup;
         private ComponentLookup<LocalTransform> _transformLookup;
         private ComponentLookup<PostTransformMatrix> _stretchLookup;
-        private ComponentLookup<ActiveOrder> _orderLookup;
         private ComponentLookup<Research> _researchLookup;
         private ComponentLookup<Offline> _offlineLookup;
         private BufferLookup<CompletedResearch> _completedResearchLookup;
@@ -42,7 +40,6 @@ namespace HyperRTS.Simulation.Production
             _producibleLookup = state.GetComponentLookup<Producible>(true);
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _stretchLookup = state.GetComponentLookup<PostTransformMatrix>(true);
-            _orderLookup = state.GetComponentLookup<ActiveOrder>(true);
             _researchLookup = state.GetComponentLookup<Research>(true);
             _offlineLookup = state.GetComponentLookup<Offline>(true);
             _completedResearchLookup = state.GetBufferLookup<CompletedResearch>();
@@ -62,7 +59,6 @@ namespace HyperRTS.Simulation.Production
             _producibleLookup.Update(ref state);
             _transformLookup.Update(ref state);
             _stretchLookup.Update(ref state);
-            _orderLookup.Update(ref state);
             _researchLookup.Update(ref state);
             _offlineLookup.Update(ref state);
             _completedResearchLookup.Update(ref state);
@@ -84,7 +80,6 @@ namespace HyperRTS.Simulation.Production
                 ProducibleLookup = _producibleLookup,
                 TransformLookup = _transformLookup,
                 StretchLookup = _stretchLookup,
-                OrderLookup = _orderLookup,
                 ResearchLookup = _researchLookup,
                 OfflineLookup = _offlineLookup,
                 CompletedResearchLookup = _completedResearchLookup,
@@ -111,7 +106,6 @@ namespace HyperRTS.Simulation.Production
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<PostTransformMatrix> StretchLookup;
-            [ReadOnly] public ComponentLookup<ActiveOrder> OrderLookup;
             [ReadOnly] public ComponentLookup<Research> ResearchLookup;
             [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
             public BufferLookup<CompletedResearch> CompletedResearchLookup;
@@ -131,7 +125,7 @@ namespace HyperRTS.Simulation.Production
                 }
 
                 var prefab = queue[0].Prefab;
-                var producible = ProducibleLookup.TryGetComponent(prefab, out var data) ? data : default;
+                var producible = ProducibleLookup[prefab];
                 if (!HasRoomFor(faction.Value, producible.Population) || !TryReservePad(entity, prefab, out var pad))
                 {
                     return;
@@ -186,11 +180,7 @@ namespace HyperRTS.Simulation.Production
 
             private bool HasRoomFor(byte faction, int population)
             {
-                if (!PopulationLookup.TryGetComponent(Players[faction], out var current))
-                {
-                    return true;
-                }
-
+                var current = PopulationLookup[Players[faction]];
                 current.Used += SpawnedPopulation[faction];
                 return current.HasRoomFor(population);
             }
@@ -227,12 +217,9 @@ namespace HyperRTS.Simulation.Production
                 var unit = Ecb.Spawn(prefab, TransformLookup[prefab], StretchLookup, position, producer.Rotation,
                     faction.Value);
 
-                if (rally && OrderLookup.HasComponent(prefab))
+                if (rally)
                 {
-                    // Past OrderWriter, so the traits MoveOrderSystem runs it by are stamped here.
-                    var order = new Order { Type = OrderType.Move, Position = rallyPosition }.WithTypeTraits();
-                    Ecb.SetComponent(unit, new ActiveOrder { Value = order });
-                    Ecb.SetComponentEnabled<ActiveOrder>(unit, true);
+                    Ecb.AddComponent(unit, new RallyOrder { Position = rallyPosition });
                 }
 
                 return unit;

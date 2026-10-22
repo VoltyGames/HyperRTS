@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Orders
 {
-    /// <summary>Order kinds. Values from <see cref="GameFirst"/> up belong to games, which set their traits.</summary>
+    /// <summary>Order kinds. Values from <see cref="GameFirst"/> up belong to games, which register their traits.</summary>
     public enum OrderType : byte
     {
         None = 0,
@@ -30,42 +30,14 @@ namespace HyperRTS.Simulation.Orders
         GameFirst = 128,
     }
 
-    /// <summary>One unit instruction: where to go and/or which entity to act on.</summary>
+    /// <summary>One unit instruction: where to go and/or which entity to act on. Its traits come from its type.</summary>
     public struct Order
     {
         public OrderType Type;
-
-        /// <summary>How the order runs; <see cref="OrderWriter"/> stamps it for engine types.</summary>
-        public OrderTraits Traits;
-
         public float3 Position;
         public Entity Target;
 
         /// <summary>Order-specific value, e.g. the ability id of <see cref="OrderType.UseAbility"/>.</summary>
         public int Argument;
-
-        public readonly bool Has(OrderTraits traits) => (Traits & traits) != 0;
-
-        /// <summary>This order with its engine traits; a game type keeps the traits its issuer set.</summary>
-        public readonly Order WithTypeTraits()
-        {
-            if (Type >= OrderType.GameFirst)
-            {
-                return this;
-            }
-
-            var order = this;
-            order.Traits = EngineTraits(Type);
-            return order;
-        }
-
-        private static OrderTraits EngineTraits(OrderType type) => type switch
-        {
-            OrderType.Move => OrderTraits.Formation,
-            OrderType.AttackMove or OrderType.Patrol =>
-                OrderTraits.Formation | OrderTraits.AttackMove | OrderTraits.EngagesWhileMoving,
-            OrderType.Escort => OrderTraits.EngagesWhileMoving,
-            _ => OrderTraits.None,
-        };
     }
 }

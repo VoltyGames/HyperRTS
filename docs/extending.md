@@ -35,8 +35,9 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 ### A new order
 
 1. Pick an `OrderType` value from `GameFirst` (128) up in your own code. The engine never defines one there.
-2. Issue it with `OrderWriter.Issue`, setting `Order.Traits`: `EngagesWhileMoving`, `AttackMove` or `Formation`,
-   which the move order then runs. A `SmartOrderRule` carries the same traits.
+2. Register its traits once from a system update with `OrderTraitTable.Register`: `EngagesWhileMoving`,
+   `AttackMove`, `Formation`, `MovesToPosition` (the move order runs it) or `Loops`. `OrderWriter.Issue` rejects
+   a game type with none registered.
 3. In a system, move units with that `ActiveOrder` using `TargetReach.Approach` or `MoveDestination`.
 4. Disable `ActiveOrder` when the order is done.
 

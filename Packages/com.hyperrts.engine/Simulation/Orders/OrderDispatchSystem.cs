@@ -11,7 +11,12 @@ namespace HyperRTS.Simulation.Orders
     {
         private OrderHalt _halt;
 
-        public void OnCreate(ref SystemState state) => _halt = new OrderHalt(ref state);
+        public void OnCreate(ref SystemState state)
+        {
+            _halt = new OrderHalt(ref state);
+            // Created here so every world that runs orders has it before any system updates.
+            state.EntityManager.CreateSingleton(OrderTraitTable.Create(), "OrderTraitTable");
+        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)

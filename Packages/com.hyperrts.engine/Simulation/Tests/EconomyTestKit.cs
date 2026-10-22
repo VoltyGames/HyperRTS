@@ -117,11 +117,8 @@ namespace HyperRTS.Simulation.Tests
         public static int GetResources(this TestWorld world, byte faction, ResourceType type) =>
             ResourceMath.GetAmount(world.EntityManager.GetBuffer<ResourceStock>(world.Player(faction)), type);
 
-        public static void Order(this TestWorld world, Entity unit, OrderType type, Entity target)
-        {
-            world.EntityManager.SetComponentData(unit, new ActiveOrder { Value = new Order { Type = type, Target = target } });
-            world.EntityManager.SetComponentEnabled<ActiveOrder>(unit, true);
-        }
+        public static void Order(this TestWorld world, Entity unit, OrderType type, Entity target) =>
+            world.Issue(unit, new Order { Type = type, Target = target });
 
         public static void Produce(this TestWorld world, byte faction, Entity producer, Entity prefab) =>
             world.Command(faction, new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });

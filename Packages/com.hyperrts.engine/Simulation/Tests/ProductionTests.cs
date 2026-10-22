@@ -227,6 +227,8 @@ namespace HyperRTS.Simulation.Tests
                 _world.Tick();
             }
 
+            // RallyOrderSystem gives the move the frame after the spawn.
+            _world.Tick();
             Assert.IsTrue(_world.IsEnabled<RallyPoint>(producer));
             var unit = _world.All<UnitTag>()[0];
             Assert.IsTrue(_world.IsEnabled<ActiveOrder>(unit));

@@ -52,12 +52,15 @@ namespace HyperRTS.Simulation.Combat
             _armor.Update(ref state);
             _frame++;
 
+            var traits = SystemAPI.GetSingleton<OrderTraitTable>();
+
             new AcquireJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Targets = _targets,
                 Orders = _orders,
+                Traits = traits,
                 AmmoLookup = _ammo,
                 Armor = _armor,
                 Slot = (int)(_frame % ScanInterval),
@@ -73,6 +76,7 @@ namespace HyperRTS.Simulation.Combat
             public FactionRelations Relations;
             public TargetLookup Targets;
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
+            public OrderTraitTable Traits;
             [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
             [ReadOnly] public BufferLookup<ArmorModifier> Armor;
             public int Slot;
@@ -118,7 +122,7 @@ namespace HyperRTS.Simulation.Combat
                     return true;
                 }
 
-                return Orders[entity].Value.Has(OrderTraits.EngagesWhileMoving);
+                return Traits.Has(Orders[entity].Value.Type, OrderTraits.EngagesWhileMoving);
             }
         }
     }

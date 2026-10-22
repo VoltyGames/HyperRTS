@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.Commands
                     continue;
                 }
 
-                if (order.Has(OrderTraits.Formation))
+                if (_writer.Traits.Has(order.Type, OrderTraits.Formation))
                 {
                     movers.Add(unit);
                     moveOrders.Add(order);
@@ -220,7 +220,7 @@ namespace HyperRTS.Simulation.Commands
                 }
 
                 // Only ground moves end at their Position; other orders end wherever their target is.
-                if (last.Has(OrderTraits.Formation))
+                if (_writer.Traits.Has(last.Type, OrderTraits.MovesToPosition))
                 {
                     start = last.Position;
                 }

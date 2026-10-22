@@ -22,6 +22,7 @@ prefab for producers. `CreateMatch` also builds the nav grid and match rules, wh
 
 - Wait on a state with `RunUntil(condition, maxSeconds)` rather than a fixed `Run`; it returns whether the state came.
 - `Own<T>` hands the world a Unity object to destroy on dispose.
+- Give a unit an order with `Issue(unit, order, queue)`, which goes through `OrderWriter` like the game does.
 - Kits add setup per area: `CombatTestKit` (`Kill`, `IsIdle`), `EconomyTestKit` (supplies, unit prefabs, producers),
   `ContainerTestKit`, `AircraftTestKit` and `CueTestKit` (queued cues and type ids).
 - Presentation tests build their world through `PresentationWorldKit`, with players made by `PlayerSetup.Add`.

@@ -1,3 +1,4 @@
+using System;
 using HyperRTS.Simulation.Commands;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
@@ -8,7 +9,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Order behaviour as data: engine traits, game orders with their own traits, command type sets.</summary>
+    /// <summary>Order behaviour as data: traits by order type, registered game orders, command type sets.</summary>
     public class OrderTraitsTests
     {
         private const OrderType GameOrder = OrderType.GameFirst + 2;
@@ -40,39 +41,54 @@ namespace HyperRTS.Simulation.Tests
             Type = CommandType.Smart, Position = _world.GetPosition(target), Target = target,
         });
 
-        [Test]
-        public void EngineOrders_TakeTheEngineTraits_WhateverTheIssuerSet()
+        private void Register(OrderType type, OrderTraits traits)
         {
-            var unit = SpawnSelected(float3.zero);
-            _world.EntityManager.AddBuffer<SmartOrderRule>(unit)
-                .Add(SmartOrderRule.For<UnitTag>(OrderType.Capture, OrderTraits.EngagesWhileMoving, RelationMask.Enemy));
-            var enemy = _world.SpawnUnit(2, new float3(10f, 0f, 0f));
-
-            SmartOn(enemy);
-            RunCommands();
-            Assert.AreEqual(OrderTraits.None, _world.Get<ActiveOrder>(unit).Value.Traits, "capture has no traits");
-
-            _world.Command(1, new PlayerCommand { Type = CommandType.Move, Position = new float3(-10f, 0f, 0f) });
-            RunCommands();
-            Assert.AreEqual(OrderTraits.Formation, _world.Get<ActiveOrder>(unit).Value.Traits);
+            using var query = _world.EntityManager.CreateEntityQuery(typeof(OrderTraitTable));
+            query.GetSingletonRW<OrderTraitTable>().ValueRW.Register(type, traits);
         }
 
         [Test]
-        public void GameOrder_KeepsItsTraits_AndAFormationOneWalksLikeAMove()
+        public void EngineOrders_TakeTheirTraitsFromTheType()
         {
+            var table = _world.Singleton<OrderTraitTable>();
+            var walks = OrderTraits.Formation | OrderTraits.MovesToPosition;
+
+            Assert.AreEqual(walks, table.Traits(OrderType.Move));
+            Assert.IsTrue(table.Has(OrderType.Patrol, OrderTraits.Loops), "patrol legs loop");
+            Assert.IsFalse(table.Has(OrderType.AttackMove, OrderTraits.Loops));
+            Assert.AreEqual(OrderTraits.EngagesWhileMoving, table.Traits(OrderType.Escort));
+            Assert.AreEqual(OrderTraits.None, table.Traits(OrderType.Capture));
+        }
+
+        [Test]
+        public void GameOrder_TakesItsRegisteredTraits_AndAMovingOneWalksLikeAMove()
+        {
+            Register(GameOrder, OrderTraits.Formation | OrderTraits.MovesToPosition);
             var unit = SpawnSelected(float3.zero);
             _world.EntityManager.AddBuffer<SmartOrderRule>(unit)
-                .Add(SmartOrderRule.For<UnitTag>(GameOrder, OrderTraits.Formation, RelationMask.Enemy));
+                .Add(SmartOrderRule.For<UnitTag>(GameOrder, RelationMask.Enemy));
             var enemy = _world.SpawnUnit(2, new float3(10f, 0f, 0f));
 
             SmartOn(enemy);
             RunCommands();
-            var order = _world.Get<ActiveOrder>(unit).Value;
-            Assert.AreEqual(GameOrder, order.Type);
-            Assert.AreEqual(OrderTraits.Formation, order.Traits);
+            Assert.AreEqual(GameOrder, _world.Get<ActiveOrder>(unit).Value.Type);
 
             _world.Run(1f);
-            Assert.Greater(_world.GetPosition(unit).x, 2f, "the move order runs a formation trait");
+            Assert.Greater(_world.GetPosition(unit).x, 2f, "the move order runs a game order that moves to its position");
+        }
+
+        [Test]
+        public void GameOrder_WithoutRegisteredTraits_FailsToIssue()
+        {
+            var unit = _world.SpawnUnit(1, float3.zero);
+
+            Assert.Throws<InvalidOperationException>(() => _world.Issue(unit, new Order { Type = GameOrder }));
+        }
+
+        [Test]
+        public void EngineOrder_CannotBeRegistered()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => Register(OrderType.Capture, OrderTraits.Formation));
         }
 
         [Test]
