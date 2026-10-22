@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.Resources
         /// <summary>Single-threaded: harvesters drain shared nodes and stockpiles.</summary>
         [BurstCompile]
         [WithNone(typeof(Dead))]
-        [WithPresent(typeof(MoveDestination))]
+        [WithPresent(typeof(MoveDestination), typeof(Arrival))]
         private partial struct GatherJob : IJobEntity
         {
             public float DeltaTime;
@@ -91,7 +91,7 @@ namespace HyperRTS.Simulation.Resources
 
             private void Execute(ref Harvester harvester, ref HarvestState harvest, ref ActiveOrder order,
                 EnabledRefRW<ActiveOrder> busy, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
-                in LocalTransform transform, in NavAgent agent, in Faction faction)
+                EnabledRefRW<Arrival> arrived, in LocalTransform transform, in NavAgent agent, in Faction faction)
             {
                 if (!busy.ValueRO || order.Value.Type != OrderType.Gather)
                 {
@@ -100,7 +100,9 @@ namespace HyperRTS.Simulation.Resources
 
                 if (harvest.Phase == HarvestPhase.Returning)
                 {
-                    Return(ref harvester, ref harvest, ref destination, moving, transform, agent, faction.Value);
+                    var walk = Return(ref harvester, ref harvest, ref destination, moving, arrived, transform, agent,
+                        faction.Value);
+                    FinishIfStuck(walk, busy, moving);
                     return;
                 }
 
@@ -112,9 +114,20 @@ namespace HyperRTS.Simulation.Resources
 
                 var node = order.Value.Target;
                 var nodePosition = Reach.Position(node);
-                if (Reach.Approach(node, transform, agent, ref destination, moving))
+                var toNode = Reach.Approach(node, transform, agent, ref destination, moving, arrived);
+                FinishIfStuck(toNode, busy, moving);
+                if (toNode == WalkUp.Reached)
                 {
                     Gather(ref harvester, ref harvest, node, nodePosition);
+                }
+            }
+
+            private static void FinishIfStuck(WalkUp walk, EnabledRefRW<ActiveOrder> busy,
+                EnabledRefRW<MoveDestination> moving)
+            {
+                if (walk == WalkUp.Stuck)
+                {
+                    ActiveOrder.Finish(busy, moving);
                 }
             }
 
@@ -154,8 +167,9 @@ namespace HyperRTS.Simulation.Resources
                 }
             }
 
-            private void Return(ref Harvester harvester, ref HarvestState harvest, ref MoveDestination destination,
-                EnabledRefRW<MoveDestination> moving, in LocalTransform transform, in NavAgent agent, byte faction)
+            private WalkUp Return(ref Harvester harvester, ref HarvestState harvest, ref MoveDestination destination,
+                EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived, in LocalTransform transform,
+                in NavAgent agent, byte faction)
             {
                 var dropOff = NearestDropOff(transform.Position, faction);
                 if (harvester.CargoAmount <= 0 || dropOff == Entity.Null)
@@ -163,12 +177,13 @@ namespace HyperRTS.Simulation.Resources
                     // Empty-handed goes straight back to work; with no drop-off, wait until one is built.
                     harvest.Phase = harvester.CargoAmount <= 0 ? HarvestPhase.Gathering : harvest.Phase;
                     moving.ValueRW = false;
-                    return;
+                    return WalkUp.Walking;
                 }
 
-                if (!Reach.Approach(dropOff, transform, agent, ref destination, moving))
+                var walk = Reach.Approach(dropOff, transform, agent, ref destination, moving, arrived);
+                if (walk != WalkUp.Reached)
                 {
-                    return;
+                    return walk;
                 }
 
                 var player = Players[faction];
@@ -176,6 +191,7 @@ namespace HyperRTS.Simulation.Resources
                 ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, harvester.CargoType, delivered);
                 harvester.CargoAmount = 0;
                 harvest.Phase = HarvestPhase.Gathering;
+                return walk;
             }
 
             private bool IsHarvestable(Entity node) =>

@@ -70,7 +70,7 @@ namespace HyperRTS.Simulation.Capture
         /// <summary>Single-threaded so several capturers can work on one building.</summary>
         [BurstCompile]
         [WithNone(typeof(Dead))]
-        [WithPresent(typeof(MoveDestination))]
+        [WithPresent(typeof(MoveDestination), typeof(Arrival))]
         private partial struct CaptureJob : IJobEntity
         {
             public float DeltaTime;
@@ -85,8 +85,8 @@ namespace HyperRTS.Simulation.Capture
             public Entity Events;
 
             private void Execute(Entity entity, in Capturer capturer, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
-                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in LocalTransform transform,
-                in NavAgent agent)
+                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
+                in LocalTransform transform, in NavAgent agent)
             {
                 if (!busy.ValueRO || order.Value.Type != OrderType.Capture)
                 {
@@ -101,7 +101,14 @@ namespace HyperRTS.Simulation.Capture
                     return;
                 }
 
-                if (!Reach.Approach(target, transform, agent, ref destination, moving))
+                var walk = Reach.Approach(target, transform, agent, ref destination, moving, arrived);
+                if (walk == WalkUp.Stuck)
+                {
+                    ActiveOrder.Finish(busy, moving);
+                    return;
+                }
+
+                if (walk == WalkUp.Walking)
                 {
                     return;
                 }

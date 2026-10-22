@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Buildings
         /// <summary>Single-threaded so several builders can add to one site.</summary>
         [BurstCompile]
         [WithNone(typeof(Dead))]
-        [WithPresent(typeof(MoveDestination))]
+        [WithPresent(typeof(MoveDestination), typeof(Arrival))]
         private partial struct BuildJob : IJobEntity
         {
             public float DeltaTime;
@@ -78,8 +78,8 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
 
             private void Execute(in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
-                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in LocalTransform transform,
-                in NavAgent agent, in Faction faction)
+                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
+                in LocalTransform transform, in NavAgent agent, in Faction faction)
             {
                 if (!busy.ValueRO || order.Value.Type != OrderType.Build)
                 {
@@ -93,7 +93,14 @@ namespace HyperRTS.Simulation.Buildings
                     return;
                 }
 
-                if (!Reach.Approach(site, transform, agent, ref destination, moving))
+                var walk = Reach.Approach(site, transform, agent, ref destination, moving, arrived);
+                if (walk == WalkUp.Stuck)
+                {
+                    ActiveOrder.Finish(busy, moving);
+                    return;
+                }
+
+                if (walk == WalkUp.Walking)
                 {
                     return;
                 }

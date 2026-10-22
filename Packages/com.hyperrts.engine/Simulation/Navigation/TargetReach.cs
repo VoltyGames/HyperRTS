@@ -40,13 +40,13 @@ namespace HyperRTS.Simulation.Navigation
 
         public LocalTransform Transform(Entity entity) => _transforms[entity];
 
-        /// <summary>Walks the unit toward the target's edge until in reach, then stops it; true once there.</summary>
-        public bool Approach(Entity target, in LocalTransform unit, in NavAgent agent, ref MoveDestination destination,
-            EnabledRefRW<MoveDestination> moving)
+        /// <summary>Walks the unit toward the target's edge until in reach, then stops it.</summary>
+        public WalkUp Approach(Entity target, in LocalTransform unit, in NavAgent agent, ref MoveDestination destination,
+            EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived)
         {
             var axis = agent.SegmentAxis(unit.Rotation);
-            return ReachMath.Approach(ref destination, moving, Footprint(target), unit.Position, axis, agent.Radius,
-                _navCellSize);
+            return ReachMath.Approach(ref destination, moving, arrived, Footprint(target), unit.Position, axis,
+                agent.Radius, _navCellSize);
         }
 
         // A unit such as a transport is reached by the box round its hull, a footprintless node by EntityRadius.

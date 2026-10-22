@@ -86,6 +86,32 @@ namespace HyperRTS.Simulation.Tests
             Assert.Greater(slowest, -0.5f, "the round trips drive forward");
         }
 
+        [Test]
+        public void Builder_WalledOffFromItsSite_GivesUpTheOrder()
+        {
+            // A ring of walls round the site, 4 m clear of it, with no way in.
+            var site = _world.SpawnBuilding(1, new float3(20f, 0f, 0f), new float2(4f, 4f), complete: false,
+                buildTime: 60f);
+            SpawnWall(new float3(20f, 0f, 7f), new float2(16f, 2f));
+            SpawnWall(new float3(20f, 0f, -7f), new float2(16f, 2f));
+            SpawnWall(new float3(13f, 0f, 0f), new float2(2f, 12f));
+            SpawnWall(new float3(27f, 0f, 0f), new float2(2f, 12f));
+            var dozer = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero));
+            _world.Order(dozer, OrderType.Build, site);
+
+            Assert.IsTrue(_world.RunUntil(() => !_world.IsEnabled<ActiveOrder>(dozer), 20f), "the order finished");
+            Assert.IsFalse(_world.IsEnabled<MoveDestination>(dozer), "and the walk with it");
+            Assert.AreEqual(0f, _world.Get<ConstructionProgress>(site).Value, "nothing was built");
+        }
+
+        private void SpawnWall(float3 center, float2 size)
+        {
+            var wall = _world.EntityManager.CreateEntity();
+            _world.EntityManager.AddComponentData(wall, LocalTransform.FromPosition(center));
+            var writer = new EntityManagerWriter(_world.EntityManager, wall);
+            NavSetup.AddObstacle(ref writer, size);
+        }
+
         private Entity SpawnTruck(float3 position)
         {
             var truck = _world.SpawnUnit(1, position, speed: 8f, radius: TruckRadius);

@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Buildings
         /// <summary>Single-threaded: every heal appends to the one damage queue.</summary>
         [BurstCompile]
         [WithNone(typeof(Dead))]
-        [WithPresent(typeof(MoveDestination))]
+        [WithPresent(typeof(MoveDestination), typeof(Arrival))]
         private partial struct RepairJob : IJobEntity
         {
             public float DeltaTime;
@@ -82,8 +82,8 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<ConstructionProgress> SiteLookup;
 
             private void Execute(Entity entity, in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
-                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in LocalTransform transform,
-                in NavAgent agent, in Faction faction)
+                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
+                in LocalTransform transform, in NavAgent agent, in Faction faction)
             {
                 if (!busy.ValueRO || order.Value.Type != OrderType.Repair)
                 {
@@ -98,7 +98,14 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 var position = Reach.Position(target);
-                if (!Reach.Approach(target, transform, agent, ref destination, moving))
+                var walk = Reach.Approach(target, transform, agent, ref destination, moving, arrived);
+                if (walk == WalkUp.Stuck)
+                {
+                    ActiveOrder.Finish(busy, moving);
+                    return;
+                }
+
+                if (walk == WalkUp.Walking)
                 {
                     return;
                 }

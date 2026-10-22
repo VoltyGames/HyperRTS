@@ -20,26 +20,38 @@ namespace HyperRTS.Simulation.Navigation
             float navCellSize) =>
             footprint.Gap(unit - axis, unit + axis) <= Reach(unitRadius, navCellSize);
 
-        /// <summary>Walks toward the footprint's nearest edge until in reach, then stops; true once there.</summary>
-        public static bool Approach(ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
-            in NavBox footprint, float3 unit, float2 axis, float unitRadius, float navCellSize)
+        /// <summary>
+        /// Walks toward the footprint's nearest edge until in reach, then stops. A walk that locomotion ended by
+        /// itself (its <see cref="Arrival"/>) short of a goal still by the footprint is stuck.
+        /// </summary>
+        public static WalkUp Approach(ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
+            EnabledRefRW<Arrival> arrived, in NavBox footprint, float3 unit, float2 axis, float unitRadius,
+            float navCellSize)
         {
             if (InReach(footprint, unit.xz, axis, unitRadius, navCellSize))
             {
                 moving.ValueRW = false;
-                return true;
+                arrived.ValueRW = false;
+                return WalkUp.Reached;
             }
 
             // A goal already by the footprint stays put, so the path isn't restarted as the nearest edge slides.
             var goal = destination.Value.xz;
-            if (moving.ValueRO && footprint.Gap(goal, goal) <= Reach(unitRadius, navCellSize))
+            var isGoalByFootprint = footprint.Gap(goal, goal) <= Reach(unitRadius, navCellSize);
+            if (isGoalByFootprint && arrived.ValueRO && !moving.ValueRO)
             {
-                return false;
+                return WalkUp.Stuck;
+            }
+
+            if (isGoalByFootprint && moving.ValueRO)
+            {
+                return WalkUp.Walking;
             }
 
             var edge = footprint.EdgePoint(unit.xz, unitRadius + Slack * 0.5f);
             MoveTo(ref destination, moving, new float3(edge.x, unit.y, edge.y));
-            return false;
+            arrived.ValueRW = false;
+            return WalkUp.Walking;
         }
 
         /// <summary>
