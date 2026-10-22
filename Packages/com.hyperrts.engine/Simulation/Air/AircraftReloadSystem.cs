@@ -9,8 +9,8 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Air
 {
     /// <summary>
-    /// The reload cycle: aircraft whose limited weapons (<see cref="Ammo"/>, mounts with rounds) are all empty get a
-    /// Return to Base order, and docked aircraft reload one round per <see cref="Ammo.ReloadTime"/>, each
+    /// The reload cycle: aircraft whose limited weapons (<see cref="Ammo"/>, mounts with rounds) run empty get one
+    /// Return to Base order, which the player may override, and docked aircraft reload one round per <see cref="Ammo.ReloadTime"/>, each
     /// <see cref="WeaponMount"/> at its own pace. Games refuel and repair docked aircraft the same way.
     /// </summary>
     [BurstCompile]
@@ -52,13 +52,20 @@ namespace HyperRTS.Simulation.Air
             [ReadOnly] public ComponentLookup<Ammo> Ammos;
             [ReadOnly] public BufferLookup<WeaponMount> Mounts;
 
-            private void Execute(Entity entity, in HomePad home)
+            private void Execute(Entity entity, ref HomePad home)
             {
-                if (home.Airfield == Entity.Null || !IsSpent(entity))
+                if (!IsSpent(entity))
+                {
+                    home.Recalled = false;
+                    return;
+                }
+
+                if (home.Airfield == Entity.Null || home.Recalled)
                 {
                     return;
                 }
 
+                home.Recalled = true;
                 if (!Writer.IsExecuting(entity, OrderType.ReturnToBase))
                 {
                     Writer.Issue(entity, new Order { Type = OrderType.ReturnToBase }, false);

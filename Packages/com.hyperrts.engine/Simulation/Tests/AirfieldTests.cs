@@ -56,6 +56,28 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void SpentAircraft_IsSentHomeOnce_ThenObeysPlayerOrders()
+        {
+            var airfield = _world.SpawnAirfield(1, float3.zero, Pad);
+            var aircraft = _world.AddWeapon(_world.SpawnAircraft(1, Pad), range: 4f, damage: 10f);
+            _world.AddPadUser(aircraft, rounds: 1);
+            _world.EntityManager.SetComponentData(aircraft, new HomePad { Airfield = airfield, Pad = 0 });
+            var tank = _world.SpawnUnit(2, new float3(30f, 0f, 0f));
+
+            Attack(aircraft, tank);
+            Assert.IsTrue(_world.RunUntil(() => _world.Get<Ammo>(aircraft).Current == 0, 6f), "fires its round");
+            _world.Tick();
+            Assert.AreEqual(OrderType.ReturnToBase, _world.Get<ActiveOrder>(aircraft).Value.Type, "sent home");
+
+            var away = new float3(-40f, 0f, 0f);
+            _world.Command(1, new PlayerCommand { Type = CommandType.Move, Unit = aircraft, Position = away });
+            _world.Run(2f);
+
+            Assert.AreEqual(OrderType.Move, _world.Get<ActiveOrder>(aircraft).Value.Type, "the player's move holds");
+            Assert.IsFalse(_world.IsEnabled<Docked>(aircraft));
+        }
+
+        [Test]
         public void GunshipWithUnlimitedGun_ReturnsWhenItsMissilesAreSpent_AndReloadsThem()
         {
             var (aircraft, tank) = SpawnGunship(missileCooldown: 0.5f);

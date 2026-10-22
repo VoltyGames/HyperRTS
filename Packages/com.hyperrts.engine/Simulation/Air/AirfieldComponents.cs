@@ -33,6 +33,9 @@ namespace HyperRTS.Simulation.Air
     {
         public Entity Airfield;
         public int Pad;
+
+        /// <summary>Sent home once on running dry, so player orders hold until it has rounds again.</summary>
+        public bool Recalled;
     }
 
     /// <summary>
