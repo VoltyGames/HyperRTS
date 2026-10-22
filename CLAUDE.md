@@ -107,7 +107,7 @@ Graphics, InputSystem or UIElements. A headless server never runs `Client/`. See
 ## Run and test
 
 - Play `Assets/Demo/Scenes/SampleScene.unity`. Its entities bake from a SubScene. Inspect them in
-  **Window ▸ Entities**.
+  the Hierarchy window, which lists entity worlds beside GameObjects; filter with `t:` and a component name.
 - EditMode tests live in `HyperRTS.Simulation.Tests`, `HyperRTS.Presentation.Tests` and `HyperRTS.Editor.Tests`.
   Simulation tests use `TestWorld` and run end to end through the systems.
 - A new authoring rule is an `AuthoringRule<T>` in `Editor/Validation/Rules/`. The inspector,
