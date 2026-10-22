@@ -5,15 +5,13 @@ using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Simulation.Common;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Presentation.Rendering
 {
     /// <summary>
     /// Every presentation quality knob the game sets from its graphics options, applied together. The knobs it
     /// writes (<see cref="EffectDetail"/>, <see cref="TerrainDetail"/>, <see cref="InteractionMap"/>,
-    /// <see cref="GrassRenderer"/>, <see cref="RowCropRenderer"/>, <see cref="CameraAntialiasingMode"/>) are read-only
-    /// outside the engine.
+    /// <see cref="GrassRenderer"/>, <see cref="RowCropRenderer"/>) are read-only outside the engine.
     /// </summary>
     public partial struct PresentationQuality
     {
@@ -41,10 +39,11 @@ namespace HyperRTS.Presentation.Rendering
         /// <summary>Metres row crops are drawn to.</summary>
         public float CropDistance;
 
-        public AntialiasingMode Antialiasing;
-
         /// <summary>Main light shadow map size, a power of two from 256 to 8192.</summary>
         public int ShadowResolution;
+
+        /// <summary>Share of the screen resolution the cameras render at, above 0 and at most 1.</summary>
+        public float RenderScale;
 
         /// <summary>The full-detail knobs a session starts with, before the game applies its options.</summary>
         public static readonly PresentationQuality Default = new()
@@ -57,19 +56,20 @@ namespace HyperRTS.Presentation.Rendering
             GrassShadowDistance = 40f,
             CropDensity = 1f,
             CropDistance = 300f,
-            Antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing,
             ShadowResolution = 2048,
+            RenderScale = 1f,
         };
 
         /// <summary>The quality last applied.</summary>
         [AutoStaticsCleanup]
         public static PresentationQuality Current { get; private set; } = Default;
 
-        /// <summary>Writes every knob and sets the shadow map size on the active URP asset.</summary>
+        /// <summary>Writes every knob and sets the shadow map size and render scale on the active URP asset.</summary>
         public static void Apply(in PresentationQuality quality)
         {
             WriteKnobs(quality);
-            MainLightShadows.SetResolution(quality.ShadowResolution);
+            PipelineAssetQuality.SetShadowResolution(quality.ShadowResolution);
+            PipelineAssetQuality.SetRenderScale(quality.RenderScale);
             Current = quality;
         }
 
@@ -83,7 +83,6 @@ namespace HyperRTS.Presentation.Rendering
             GrassRenderer.ShadowDistance = quality.GrassShadowDistance;
             RowCropRenderer.Density = quality.CropDensity;
             RowCropRenderer.Distance = quality.CropDistance;
-            CameraAntialiasingMode.Mode = quality.Antialiasing;
         }
     }
 }
