@@ -54,6 +54,46 @@ namespace HyperRTS.Editor.Maps.Json
             return output.Append('\n').ToString();
         }
 
+        /// <summary>
+        /// Throws on a field, at any depth, that <paramref name="known"/> (the round trip of what was read) lacks or
+        /// reads in another shape: JsonUtility drops both silently, so a typo or an old format would vanish.
+        /// </summary>
+        public static void RejectUnknown(JToken read, JToken known, string what, string source, string at = "")
+        {
+            var reshaped = known is JContainer && read.Type != known.Type && read.Type != JTokenType.Null;
+            if (reshaped)
+            {
+                var shape = known is JObject ? "an object" : "a list";
+                throw new InvalidOperationException($"HyperRTS: {source}: '{at}' must be {shape}, not {read.Type}.");
+            }
+
+            if (read is JArray array && known is JArray knownArray)
+            {
+                for (var i = 0; i < Math.Min(array.Count, knownArray.Count); i++)
+                {
+                    RejectUnknown(array[i], knownArray[i], what, source, $"{at}[{i}]");
+                }
+
+                return;
+            }
+
+            if (read is not JObject obj || known is not JObject knownObj)
+            {
+                return;
+            }
+
+            foreach (var property in obj.Properties())
+            {
+                var path = at.Length == 0 ? property.Name : $"{at}.{property.Name}";
+                if (!knownObj.TryGetValue(property.Name, out var value))
+                {
+                    throw new InvalidOperationException($"HyperRTS: {source}: '{path}' is not a {what} field.");
+                }
+
+                RejectUnknown(property.Value, value, what, source, path);
+            }
+        }
+
         private static void Append(StringBuilder output, JToken token, int depth)
         {
             var inline = Inline(token);

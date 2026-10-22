@@ -51,6 +51,16 @@ namespace HyperRTS.Editor.Tests
             Assert.Throws<System.FormatException>(() => MapJsonFormat.Format("{\"a\": [1, 2}"));
         }
 
+        [Test]
+        public void ANestedFieldTheSpecDoesNotRead_ThrowsNamingItsPath()
+        {
+            const string json = "{\"name\": \"Typo\", \"hills\": [{\"radius\": 5}, {\"raduis\": 5}]}";
+
+            var error = Assert.Throws<System.InvalidOperationException>(() => MapSpecJson.Read(json));
+
+            StringAssert.Contains("'hills[1].raduis' is not a map spec field", error.Message);
+        }
+
         /// <summary>Asserts a spec's JSON loads, writes and reloads to the same content, and rewrites identically.</summary>
         public static void AssertRoundTrips(string json, string name)
         {

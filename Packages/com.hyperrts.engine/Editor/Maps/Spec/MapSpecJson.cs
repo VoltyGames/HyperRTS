@@ -7,6 +7,7 @@ namespace HyperRTS.Editor.Maps.Spec
     /// <summary>Reads and writes <c>&lt;Map&gt;.map.json</c>, laid out by <see cref="MapJsonFormat"/>.</summary>
     public static class MapSpecJson
     {
+        /// <summary>A field the spec doesn't read throws naming its path.</summary>
         public static MapSpec Read(string json)
         {
             var spec = JsonUtility.FromJson<MapSpec>(json);
@@ -15,6 +16,8 @@ namespace HyperRTS.Editor.Maps.Spec
                 throw new FormatException("Map spec JSON is empty.");
             }
 
+            var known = MapJsonFormat.Parse(JsonUtility.ToJson(spec));
+            MapJsonFormat.RejectUnknown(MapJsonFormat.Parse(json), known, "map spec", "map spec");
             return spec;
         }
 
