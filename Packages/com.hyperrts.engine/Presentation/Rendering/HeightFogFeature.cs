@@ -5,7 +5,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Presentation.Rendering
 {
-    /// <summary>Draws the scene's <see cref="HeightFog"/> in game and scene view perspective cameras.</summary>
+    /// <summary>Draws the Volume-blended <see cref="HeightFog"/> in game and scene view perspective cameras.</summary>
     public sealed class HeightFogFeature : ScriptableRendererFeature
     {
         public const string ShaderName = "Hidden/HyperRTS/HeightFog";
@@ -28,22 +28,16 @@ namespace HyperRTS.Presentation.Rendering
             pass = new HeightFogPass(material);
         }
 
+        // Every camera gets the pass, so one that draws no fog still clears it for its transparents.
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (pass == null || HeightFog.Current == null)
+            if (pass == null)
             {
                 return;
             }
 
-            // Orthographic cameras are top-down captures such as the minimap.
-            var camera = renderingData.cameraData.camera;
-            var type = renderingData.cameraData.cameraType;
-            var drawn = type == CameraType.Game || type == CameraType.SceneView;
-            if (!drawn || camera.orthographic)
-            {
-                return;
-            }
-
+            var fog = VolumeManager.instance.stack.GetComponent<HeightFog>();
+            pass.Setup(fog, renderingData.cameraData.cameraType, renderingData.cameraData.camera.orthographic);
             renderer.EnqueuePass(pass);
         }
 

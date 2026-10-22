@@ -249,13 +249,14 @@ Water vertex colours shape the flow: alpha thins fords, green streaks rapids foa
 ### Atmosphere
 
 An `Atmosphere` component sits on the root of a weather's atmosphere prefab, together with its sun, post-processing
-volume, `Wind` and `HeightFog`. When enabled it sets the skybox, ambient light, reflection cubemap and wetness, and
-turns Unity fog off. A missing skybox or reflection is an error.
+volume and `Wind`. When enabled it sets the skybox, ambient light, reflection cubemap and wetness, and turns Unity
+fog off. A missing skybox or reflection is an error.
 
-`HeightFog` adds fog that thins with height. `HeightFogFeature` must be on the URP renderer with its shader set to
-`Hidden/HyperRTS/HeightFog`, and the validator checks this. It draws in game and scene view perspective cameras
-only, so orthographic captures such as the minimap stay clear. Custom shaders apply the same fog with `HeightFogAt`
-from `HeightFog.hlsl`, as water does.
+`HeightFog` is a Volume override for fog that thins with height, so weathers blend it through their profiles.
+`HeightFogFeature` must be on the URP renderer with its shader set to `Hidden/HyperRTS/HeightFog`, and the validator
+checks this. Its pass publishes the camera's blended fog as shader globals and draws it in game and scene view
+perspective cameras only, so orthographic captures such as the minimap stay clear. Custom shaders apply the same
+fog with `HeightFogAt` from `HeightFog.hlsl`, as water and particles do.
 
 ### Wind
 
