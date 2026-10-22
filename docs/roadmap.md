@@ -29,7 +29,7 @@ In progress:
 | One damage queue | Armor, splash and kill credit apply to every source |
 | One stat-modifier buffer | Every bonus shares one formula and can be removed |
 | Spawns instantiate baked prefabs | Spawned entities render like placed ones |
-| UI Toolkit for all UI | Unity 6.6's recommendation. The rule is in [conventions](../CLAUDE.md#conventions) |
+| UI Toolkit for all UI | Unity's recommendation. The rule is in [conventions](../CLAUDE.md#conventions) |
 
 ## Open
 
