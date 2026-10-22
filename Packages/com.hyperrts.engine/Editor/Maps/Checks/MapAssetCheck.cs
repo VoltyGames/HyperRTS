@@ -55,6 +55,7 @@ namespace HyperRTS.Editor.Maps.Checks
 
             Climate.rowCrops.ForEach(crop => RowCropAssets(crop, name));
             Climate.decals.ForEach(decal => DecalAssets(decal, name));
+            Require(Climate.terrain != null, $"{name} has no terrain material.");
             Require(Climate.water != null, $"{name} has no water material.");
             MapWeatherCheck.Check(Climate, Issues);
             Require(Climate.fordShallowsWidth > 0f, $"{name}: fordShallowsWidth {Climate.fordShallowsWidth} must be above 0.");

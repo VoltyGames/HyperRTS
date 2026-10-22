@@ -174,7 +174,9 @@ climate's `slopeSurface` is projected sideways on ground steeper than 30 degrees
 stretch. Within 38 m, parallax occlusion marches the most painted layer's height in 8 steps and shifts every layer by
 the one offset, centred on mid height.
 
-`MapTerrainMaterial` writes these strengths on every build. `TerrainDetail.Level` takes a `GroundLevel` and sets the shader quality:
+These strengths live on the climate's `terrain` base material. Each map's terrain material is a Material Variant of it
+that `MapTerrainMaterial` writes, overriding only the layer arrays and the map's own textures. `TerrainDetail.Level`
+takes a `GroundLevel` and sets the shader quality:
 
 | Level | Keyword | Adds | Texture samples per pixel |
 | --- | --- | --- | --- |
@@ -254,7 +256,7 @@ links it. An unused link is `{ "path": "", "guid": "" }`.
 | `farmland`, `belt`, `woodland` | Kits for fields, tree belts and woods |
 | `settlement` | Plot layout along a street, street poles and pipe |
 | `prop` | One placeable prefab: flattening, tilt, scale, ground pad, access road, ground decal |
-| `climate` | The surfaces, road classes, kits, water and weathers one climate uses |
+| `climate` | The surfaces, road classes, kits, terrain and water materials and weathers one climate uses |
 | `palette` | The sides, their start kits and build orders, base radius, match rig. One per project |
 | `rules` | Thresholds per mode, `maxDecals`, match nav settings, view camera. One per project |
 

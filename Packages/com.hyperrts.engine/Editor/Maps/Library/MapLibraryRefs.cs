@@ -26,11 +26,15 @@ namespace HyperRTS.Editor.Maps.Library
         [MapAsset(typeof(Material))]
         public MapAssetRef material = new();
         [MapAsset(typeof(Material))]
+        public MapAssetRef terrain = new();
+        [MapAsset(typeof(Material))]
         public MapAssetRef water = new();
         [MapAsset(typeof(GameObject))]
         public MapAssetRef rig = new();
         [MapAsset(typeof(RowCrop))]
         public MapAssetRef crop = new();
+        [MapAsset(typeof(TextAsset))]
+        public MapAssetRef card = new();
         public List<MapResourceRef> startingResources = new();
         public List<MapWeatherRef> weathers = new();
 

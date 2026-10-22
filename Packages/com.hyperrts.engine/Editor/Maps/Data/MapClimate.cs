@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A landscape kit named by a spec's <c>climate</c>, read from the library's <c>&lt;Key&gt;.climate.json</c>.</summary>
     [Serializable]
-    [MapLibraryItem("climate", "surfaces", "roadClasses", "farmlandKits", "beltKits", "woodlandKits", "water", "weathers")]
+    [MapLibraryItem("climate", "surfaces", "roadClasses", "farmlandKits", "beltKits", "woodlandKits", "terrain", "water", "weathers")]
     public sealed class MapClimate : IMapLibraryItem
     {
         [NonSerialized]
@@ -110,7 +110,11 @@ namespace HyperRTS.Editor.Maps.Data
         [MapKey(typeof(MapClimateSurface))]
         public string ravineRimSurface;
 
-        [Header("Water and sky")]
+        [Header("Materials and sky")]
+        [Tooltip("HyperRTS/Terrain base material with the climate's detail and wetness values. Map terrain materials are variants of it.")]
+        [NonSerialized]
+        public Material terrain;
+
         [Tooltip("Material of river surfaces. The mesh's V coordinate runs downstream in metres.")]
         [NonSerialized]
         public Material water;
@@ -153,6 +157,7 @@ namespace HyperRTS.Editor.Maps.Data
         {
             name = key;
             file = refs.file;
+            terrain = refs.Asset<Material>(refs.terrain, "terrain");
             water = refs.Asset<Material>(refs.water, "water");
             weathers = refs.weathers.ConvertAll(weather => new MapClimateWeather
             {
