@@ -52,7 +52,8 @@ has a **Show** button that frames it. **Build** saves open scenes, builds, reope
 - **Team modes need a two-copy symmetry**: `rotate-180`, `mirror-x` or `mirror-z`. `ffa` needs `rotate-3` to
   `rotate-8`, one sector per player.
 
-Specs are saved in one fixed layout, `MapJsonFormat`, so files diff cleanly.
+Specs are saved in one fixed layout, `MapJsonFormat`, so files diff cleanly. A field the spec doesn't read, at any
+depth, fails the load with its path, such as `hills[1].raduis`.
 
 ## Spec format
 
@@ -145,7 +146,7 @@ symmetry, so mirrored borders wander alike.
 | Grass | A coverage slice per plant in `<Map>_GrassCoverage.asset` and a `GrassField` (`<Map>_Grass.asset`) naming the plants and the 16 m tiles that grow any. Clumped by noise; nothing grows on roads or placed objects |
 | Ground tint | 2 texels per metre: light and warmth per field and wood, 20 to 150 m soil colour in light, warmth and moisture, darker hollows, wetness near water. Set by the climate's `groundTint` section |
 | Row map | Each cell's crop row direction, turned with its symmetry copy |
-| Ground materials | One `SurfaceMaterial` per cell for impacts and wheel debris, baked into the `GroundMaterials` singleton |
+| Ground materials | A `GroundMaterialMap` asset (`<Map>_GroundMaterials.asset`) holding one `SurfaceMaterial` byte per cell for impacts and wheel debris, baked into the `GroundMaterials` singleton |
 | Ground colour | The ground's colour from above, so foliage blends in at its roots |
 | Ground decals | A URP `DecalProjector` per decal, fading out on steep faces |
 
@@ -230,10 +231,14 @@ needs graphics.
 
 The library holds the game's map content as JSON files, one per item, named `<Key>.<type>.json` anywhere under
 `Assets/`. The key is the file name and is unique per type, so `Stubble` can be a layer, a plant and a surface. A
-missing, duplicate or unreadable file throws, naming the file. So does any field the item doesn't read.
+missing, duplicate or unreadable file throws, naming the file. So does any field the item doesn't read, at any
+depth, and a file whose `version` is not the current one, 2.
 
-Each item holds placement data and the paths of its Unity assets. The assets are ordinary files edited in Unity,
-never generated from the JSON.
+Each item holds placement data and links to its Unity assets. The assets are ordinary files edited in Unity,
+never generated from the JSON. A link is `{ "path": "Assets/...", "guid": "..." }` and loads by GUID, so moving
+or renaming an asset never breaks it. `MapLibraryRefSync` keeps the pair in step: saving a file fills in the GUIDs
+of the paths it names, so to relink, edit the path, and moving an asset writes its new path into every file that
+links it. An unused link is `{ "path": "", "guid": "" }`.
 
 | Type | Holds |
 | --- | --- |
@@ -260,8 +265,8 @@ change only when the data does. A climate holds at most 16 layers. Its terrain t
 
 ### Keys and asset fields
 
-A string field that names another item carries `[MapKey(typeof(...))]`. One that holds an asset path carries
-`[MapAsset(typeof(...))]`. `MapLibraryProblems.Find(root)` lists keys that don't resolve and assets that don't
+A string field that names another item carries `[MapKey(typeof(...))]`. A `MapAssetRef` field carries
+`[MapAsset(typeof(...))]` with the asset type it links. `MapLibraryProblems.Find(root)` lists keys that don't resolve and assets that don't
 load. Run it in a test on your library.
 
 ### Adding an item type

@@ -1,7 +1,10 @@
+using System;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -38,5 +41,34 @@ namespace HyperRTS.Simulation.Tests
         [TestCase(12f, 24f)]
         public void At_IsNoneOffTheMap(float x, float z) =>
             Assert.AreEqual(SurfaceMaterial.None, _materials.At(new float2(x, z)));
+
+        [Test]
+        public void MapAsset_BakesItsCellsAtTheCorner()
+        {
+            var map = Map(2, 1, (byte)SurfaceMaterial.Mud, (byte)SurfaceMaterial.Paved);
+            var baked = map.Bake(new float2(-4f, 0f), Allocator.Persistent);
+
+            Assert.AreEqual(SurfaceMaterial.Mud, baked.At(new float2(-3f, 1f)));
+            Assert.AreEqual(SurfaceMaterial.Paved, baked.At(new float2(-1f, 1f)));
+            Assert.AreEqual(SurfaceMaterial.None, baked.At(new float2(0.5f, 1f)));
+            baked.Blob.Dispose();
+            Object.DestroyImmediate(map);
+        }
+
+        [Test]
+        public void MapAsset_WithTheWrongCellCount_IsAnError()
+        {
+            var map = Map(3, 2, (byte)SurfaceMaterial.Soil);
+            var error = Assert.Throws<InvalidOperationException>(() => map.Bake(float2.zero, Allocator.Persistent));
+            StringAssert.Contains("holds 1 cells, not 3 x 2", error.Message);
+            Object.DestroyImmediate(map);
+        }
+
+        private static GroundMaterialMap Map(int width, int height, params byte[] cells)
+        {
+            var map = ScriptableObject.CreateInstance<GroundMaterialMap>();
+            (map.width, map.height, map.spacing, map.cells) = (width, height, 2f, cells);
+            return map;
+        }
     }
 }

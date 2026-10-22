@@ -2,7 +2,6 @@ using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
-using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Meshes;
 using HyperRTS.Editor.Maps.Texturing;
 using HyperRTS.Presentation.Environment;
@@ -61,18 +60,17 @@ namespace HyperRTS.Editor.Maps.Scenes
             CreateDecks(scene, generation.Shapes, layout.GroundLevel);
         }
 
-        // Loaded by path because opening the scene unloads the picture WriteGround saved.
+        // Loaded by path because opening the scene unloads the grid WriteGround saved.
         private static void CreateGroundMaterials(MapScene scene, MapGeneration generation)
         {
             var path = generation.Project.Paths.GroundMaterials;
-            var map = AssetDatabase.LoadAssetAtPath<Texture2D>(path)
+            var map = AssetDatabase.LoadAssetAtPath<GroundMaterialMap>(path)
                 ?? throw new System.InvalidOperationException($"HyperRTS: the ground material map '{path}' is missing.");
             var land = generation.Land.Bounds;
             var go = scene.CreateEntityObject("Ground Materials");
             go.transform.position = new Vector3(land.xMin, 0f, land.yMin);
             var materials = go.AddComponent<GroundMaterialsAuthoring>();
             materials.map = map;
-            materials.spacing = MapLand.CellSize;
         }
 
         /// <summary>Points the scene's minimap at a picture of the map.</summary>

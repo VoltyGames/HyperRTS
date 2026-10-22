@@ -4,7 +4,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Cues
 {
-    /// <summary>Singleton map of the ground's <see cref="SurfaceMaterial"/>, baked from the map's ground class image.</summary>
+    /// <summary>Singleton map of the ground's <see cref="SurfaceMaterial"/>, baked from the map's <see cref="GroundMaterialMap"/>.</summary>
     public struct GroundMaterials : IComponentData
     {
         public BlobAssetReference<GroundMaterialsBlob> Blob;

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Simulation.Cues;
@@ -9,7 +8,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
-    /// Paints one R8 <see cref="SurfaceMaterial"/> per land cell: the region's surface, a road region's class, or
+    /// Paints one <see cref="SurfaceMaterial"/> per land cell: the region's surface, a road region's class, or
     /// water.
     /// </summary>
     public sealed class MapGroundMaterialPainter
@@ -24,32 +23,21 @@ namespace HyperRTS.Editor.Maps.Ground
             (_land, _climate) = (land, climate);
         }
 
-        // Point-filtered and uncompressed so every texel stays an exact enum value; readable for the baker.
-        public static Texture2D Write(string path, MapLand land, MapClimate climate)
+        /// <summary>Saves the painted grid to <paramref name="path"/>, keeping the asset's GUID across rebuilds.</summary>
+        public static GroundMaterialMap Write(string path, MapLand land, MapClimate climate)
         {
-            var cells = Paint(land, climate);
-            var pixels = new Color32[cells.Length];
-            for (var i = 0; i < cells.Length; i++)
+            var map = AssetDatabase.LoadAssetAtPath<GroundMaterialMap>(path);
+            if (map == null)
             {
-                pixels[i] = new Color32(cells[i], 0, 0, 255);
+                map = ScriptableObject.CreateInstance<GroundMaterialMap>();
+                AssetDatabase.CreateAsset(map, path);
             }
 
-            return EditorTextures.WritePng(path, land.Width, land.Height, TextureFormat.R8, pixels, importer =>
-            {
-                importer.textureType = TextureImporterType.Default;
-                importer.sRGBTexture = false;
-                importer.mipmapEnabled = false;
-                importer.filterMode = FilterMode.Point;
-                importer.wrapMode = TextureWrapMode.Clamp;
-                importer.npotScale = TextureImporterNPOTScale.None;
-                importer.alphaSource = TextureImporterAlphaSource.None;
-                importer.textureCompression = TextureImporterCompression.Uncompressed;
-                importer.isReadable = true;
-                importer.maxTextureSize = 16384;
-                var platform = importer.GetDefaultPlatformTextureSettings();
-                platform.format = TextureImporterFormat.R8;
-                importer.SetPlatformTextureSettings(platform);
-            });
+            (map.width, map.height, map.spacing) = (land.Width, land.Height, MapLand.CellSize);
+            map.cells = Paint(land, climate);
+            EditorUtility.SetDirty(map);
+            AssetDatabase.SaveAssetIfDirty(map);
+            return map;
         }
 
         /// <summary>
