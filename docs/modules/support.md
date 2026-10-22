@@ -1,6 +1,6 @@
 # Support modules
 
-[Modules](../modules.md) ▸ AI, Cues, Replays, Animation
+[Modules](../modules.md) ▸ AI, Cues, Replays, Animation, Strategic assets
 
 ## AI
 
@@ -117,3 +117,22 @@ coils up toward the pivot; a scaling door bakes a `PostTransformMatrix`.
 `ProductionDoorSystem` reads `Producer.Released`, a replicated count of released units, so every client sees it,
 enemies included. The owner-only production cue can't drive it. A building first seen mid-match adopts the count
 without opening, and a release while the door closes sends it back up from where it stands.
+
+## Strategic assets
+
+Part of `Airdrops`. `StrategicAssetAuthoring` on a building turns one of its `AbilityAuthoring` entries, named by
+`ability`, into a strategic asset. That entry targets a point, has range 0 and starts on cooldown: its cooldown is
+the charge, about 300 s. The owner fires it from the command card like any building ability.
+
+- `AbilitySystem` pauses the charge while the building is offline. `StrategicAssetSystem` starts it over for a new
+  owner and holds it while `MatchRules.StrategicAssets` is off. `MatchSetup.StrategicAssets` sets that rule: on by
+  default, and the game turns it off for ranked 1v1.
+- Each player's `StrategicCharge` (has an asset, seconds left, duration) replicates on the player ghost, so every
+  client shows the map-wide countdown. Losing the building clears it.
+- Firing sends the `aircraft` in from the owner's map edge on a `DropRoute`. It carries `StealthAuthoring` and loses
+  its stealth `revealSeconds` before the drop, so fighters and SAMs can engage it. Shot down first, the strike is
+  lost.
+- Over the target it drops a `BombLoad`: `count` guided bombs, homing projectiles from the `bomb` prefab that seek
+  enemy structures within `zoneRadius`, nearest first, and fall in a line along the run when there are none. Each
+  enemy weapon or mount that can hit air, is not offline and reaches the target removes one bomb, down to
+  `maxReduction` (half) of the stick.

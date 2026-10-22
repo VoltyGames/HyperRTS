@@ -67,6 +67,7 @@ namespace HyperRTS.Presentation.HUD
             Add(new ResourceBar(panelLayouts), hud);
             Add(new GameOverBanner(panelLayouts), hud);
             Add(new LineCost(hud.Require<CostRow>("line-cost")), hud);
+            Add(new StrategicCountdowns(hud.Require<VisualElement>("strategic-countdowns")), hud);
         }
 
         protected void Add(HUDPanel panel, VisualElement parent)

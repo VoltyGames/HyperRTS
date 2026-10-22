@@ -19,5 +19,8 @@ namespace HyperRTS.Simulation.Match
 
         /// <summary>Networked matches: seconds the server waits for every human slot to join before starting anyway.</summary>
         public float JoinTimeout;
+
+        /// <summary>Strategic assets charge and fire; off holds every charge (ranked 1v1 by default).</summary>
+        public bool StrategicAssets;
     }
 }

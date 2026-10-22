@@ -34,5 +34,33 @@ namespace HyperRTS.Simulation.Common
 
         public readonly float3 Clamp(float3 position) =>
             new(math.clamp(position.x, Min.x, Max.x), position.y, math.clamp(position.z, Min.y, Max.y));
+
+        /// <summary>The point on the playable area's edge nearest <paramref name="position"/>, at its height.</summary>
+        public readonly float3 NearestEdgePoint(float3 position)
+        {
+            var point = Clamp(position);
+            var toMin = point.xz - Min;
+            var toMax = Max - point.xz;
+            var nearest = math.cmin(math.min(toMin, toMax));
+            if (nearest == toMin.x)
+            {
+                return new float3(Min.x, point.y, point.z);
+            }
+
+            if (nearest == toMax.x)
+            {
+                return new float3(Max.x, point.y, point.z);
+            }
+
+            return new float3(point.x, point.y, nearest == toMin.y ? Min.y : Max.y);
+        }
+
+        /// <summary>Distance from <paramref name="from"/>, inside the area, along unit XZ <paramref name="direction"/> to the edge.</summary>
+        public readonly float DistanceToEdge(float3 from, float2 direction)
+        {
+            var toMax = (Max - from.xz) / direction;
+            var toMin = (Min - from.xz) / direction;
+            return math.cmin(math.max(toMax, toMin));
+        }
     }
 }

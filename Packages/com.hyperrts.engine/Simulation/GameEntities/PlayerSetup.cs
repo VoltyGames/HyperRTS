@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
@@ -22,6 +23,7 @@ namespace HyperRTS.Simulation.GameEntities
             writer.Add<PlayerStats>();
             writer.Add(new Population { Cap = populationCap });
             writer.Add<PowerGrid>();
+            writer.Add<StrategicCharge>();
             writer.Add<Defeated>();
             writer.SetEnabled<Defeated>(false);
             writer.AddBuffer<PlayerCommand>();

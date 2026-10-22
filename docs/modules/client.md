@@ -63,6 +63,7 @@ to every panel and keeps it in sync with the simulation. Code fills in only per-
 | Key | Text |
 | --- | --- |
 | `hud.pop`, `hud.power` | Resource bar labels |
+| `hud.strategic-ready` | A charged strategic asset in the countdowns |
 | `command.return`, `command.unload`, `command.sell` | Fixed commands |
 | `command.more`, `command.back` | Command card page cards |
 | `stance.<stance>` | Stance names |
@@ -99,6 +100,10 @@ last of the 15 slots, after blank fillers, and opens it; there a Back card takes
 on the card or a new selection turns back. The page is the `CommandCardPage` client singleton, so Escape reaches it
 through `HotkeyInputSystem` or, for a front end that owns Escape, `MatchView.CancelInteraction`, which first cancels
 a placement or targeted order.
+
+`StrategicCountdowns` fills the `strategic-countdowns` slot at the top centre of `HUD.uxml` with a row per player
+holding a [strategic asset](support.md#strategic-assets): the name and `m:ss` to the charge, or `hud.strategic-ready`,
+in the owner's colour. Observers see it too.
 
 The minimap shows the baked map image, local fog, blips and the camera view.
 
@@ -198,7 +203,7 @@ floodlights and mast lights glow from the emission map, so they go dark on low p
 
 ### Motion rig
 
-`MotionRigAuthoring` on a unit prefab root moves the model's pivots on the client. Its slots list turrets, barrels
+`MotionRigAuthoring` on a unit or building prefab root moves the model's pivots on the client. Its slots list turrets, barrels
 and launchers that ease onto a `WeaponPose` index, barrels that recoil per shot, wheels, sprockets and idlers that
 roll, rotors that spin up in flight and down while `Docked`, and a tilt root (the hull) that pitches and rolls with
 the ground under its footprint. On a unit with `FlightAuthoring` the tilt root leans with acceleration instead.
@@ -207,8 +212,9 @@ brake, roll out of turns and rock back from each recoil shot, by 1 to 3 degrees.
 kick fields tune it. **Fill from
 model** finds the parts by their art names: `Hull`, `Turret`, `Barrel`, `Launcher`, `Wheel_L01`, `Sprocket_L`,
 `Idler_L`, `Rotor_Main` and `Rotor_Tail`. It keeps slots it already lists, measures wheel radii and the footprint
-from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon. `MotionRigRule` checks every slot
-names a child of the rig and a weapon the unit has. Traverse and elevation rates and limits are weapon data, so the
+from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon or an interceptor. It also fills the
+weapons' and the interceptor's turret and barrel pivots. A building's body never tilts, so it gets no tilt root.
+`MotionRigRule` checks every slot names a child of the rig and a weapon the unit has. Traverse and elevation rates and limits are weapon data, so the
 rig only smooths the simulated pose.
 
 The baker stores a `MotionRig` and a `MotionRigPart` buffer on the root. `MotionRigSystem` runs in

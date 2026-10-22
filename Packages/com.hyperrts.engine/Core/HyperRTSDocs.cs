@@ -13,6 +13,7 @@ namespace HyperRTS.Core
         public const string Abilities = Pages + "combat.md#abilities";
         public const string AI = Pages + "support.md#ai";
         public const string Air = Pages + "movement.md#air";
+        public const string Airdrops = Pages + "economy.md#airdrops";
         public const string Animation = Pages + "support.md#animation";
         public const string Audio = Pages + "support.md#audio";
         public const string Buildings = Pages + "economy.md#buildings";
@@ -28,6 +29,7 @@ namespace HyperRTS.Core
         public const string Resources = Pages + "economy.md#resources";
         public const string Selection = Pages + "core.md#selection";
         public const string Status = Pages + "combat.md#status-effects";
+        public const string StrategicAssets = Pages + "support.md#strategic-assets";
         public const string Transport = Pages + "movement.md#transport";
         public const string Units = Pages + "movement.md#units";
         public const string Upgrades = Pages + "combat.md#upgrades";

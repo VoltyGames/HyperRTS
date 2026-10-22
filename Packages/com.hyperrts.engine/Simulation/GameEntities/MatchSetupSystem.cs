@@ -107,6 +107,9 @@ namespace HyperRTS.Simulation.GameEntities
 
             entityManager.SetComponentData(match, relations);
             ApplyFog(entityManager, match, setup.Fog);
+            var rules = entityManager.GetComponentData<MatchRules>(match);
+            rules.StrategicAssets = setup.StrategicAssets;
+            entityManager.SetComponentData(match, rules);
         }
 
         private static void ApplySlot(EntityManager entityManager, Entity player, in SlotSetup slot,

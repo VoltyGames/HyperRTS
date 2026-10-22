@@ -161,6 +161,7 @@ namespace HyperRTS.Simulation.Tests
             EntityManager.AddComponentData(match, new MatchRules
             {
                 LowPowerProductionRate = 0.5f, SellRefund = 0.5f, ExperiencePerCost = 0.1f, JoinTimeout = 60f,
+                StrategicAssets = true,
             });
 
             var relations = new FactionRelations();

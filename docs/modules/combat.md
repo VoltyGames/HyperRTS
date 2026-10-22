@@ -12,7 +12,7 @@ queue, so armor, splash and kill credit apply to all of them.
 | Type | Role |
 | --- | --- |
 | `WeaponAuthoring` | The primary's `stats`, turreted, acquire range, leash, stance and extra weapons |
-| `WeaponStats` | Damage, damage type, cooldown, splash, projectile and trajectory, muzzle, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets. The primary and each extra weapon carry one |
+| `WeaponStats` | Damage, damage type, cooldown, splash, projectile, trajectory and projectile kind, muzzle, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets. The primary and each extra weapon carry one |
 | `WeaponMount` | An extra weapon. Server only, rewritten by stats like the primary |
 | `AmmoAuthoring` | Rounds per load. Reloads while docked |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
@@ -43,9 +43,31 @@ weapon's traverse and elevation speeds, within its elevation limits and lifted t
 idle ones back to centre. It runs before firing. A `Turreted` weapon, and every extra weapon, fires without turning
 the hull and only once its pose is within `aimTolerance` of the target. A unit's hull-fixed primary weapon sets a
 `FacingGoal` instead, and movement turns the parked hull toward it at its `Locomotion` turn rate, never swinging a long
-hull into a closed cell. The weapon fires once the hull is within `aimTolerance` of the target. Buildings never turn.
+hull into a closed cell. The weapon fires once the hull is within `aimTolerance` of the target. Buildings never turn,
+so a building's weapon always bakes as turreted and its `Turret` and `Barrel` follow the pose like a unit's.
 Shots leave from the muzzle turned by the pose: raised about the weapon's `barrel` and traversed about its `turret`,
 so directional armor sees the real origin.
+
+### Interception
+
+`InterceptorAuthoring` lets a building or unit shoot down hostile projectiles in flight, such as a C-RAM gun or a SAM
+battery. It engages the nearest hostile projectile inside its `radius` whose `ProjectileKind` it lists: Shell,
+Rocket, Missile or Bomb, which the firing weapon's `projectileKind` sets (None is never engaged). Drones are units, so
+interceptors ignore them.
+
+| Field | Role |
+| --- | --- |
+| `radius`, `kinds` | What it engages, measured from the pivot in 3D |
+| `engagementsPerSecond`, `killChance` | How often it engages, and the chance each engagement kills |
+| `muzzle`, `turret`, `barrel`, `aimSpeed`, elevation limits, `aimTolerance` | Aim, like a weapon's |
+| `rounds`, `reloadTime` | Optional stock, one round refilled per `reloadTime` while online |
+
+`InterceptorSystem` runs after the weapons and before `ProjectileSystem`. Its `WeaponPose` sits after the weapons
+(index 0 on an entity with no weapon), so a `MotionRigAuthoring` turret or launcher follows it, and it engages once
+that pose is within `aimTolerance`. Each engagement plays its Fire cue toward the target, with the pose index as the
+variant, for the tracer burst. A kill marks the projectile `Intercepted`, so it stops flying and never lands, and
+plays the interceptor's Impact cue where it died as the airburst, classed as an `Air` surface. A miss lets it fly on.
+The roll is seeded by shooter, target and engagement count. An `Offline` or dead interceptor does nothing.
 
 ### Destruction
 

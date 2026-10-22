@@ -138,6 +138,7 @@ namespace HyperRTS.Simulation.Match
                     ExperiencePerCost = authoring.experiencePerCost,
                     RecordReplay = authoring.recordReplay,
                     JoinTimeout = authoring.joinTimeout,
+                    StrategicAssets = true,
                 });
 
                 if (authoring.players.Count > Faction.Max)

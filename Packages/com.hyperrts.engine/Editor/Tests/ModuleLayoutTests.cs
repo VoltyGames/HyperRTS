@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Tests
             new[]
             {
                 "Combat", "Transport", "Air", "Units", "Resources", "Production", "Upgrades", "Buildings", "Abilities",
-                "Auras", "Veterancy", "Capture", "Match", "Status",
+                "Auras", "Veterancy", "Capture", "Match", "Status", "Airdrops",
             },
             new[] { "AI", "GameEntities", "Commands", "Replays" },
         };

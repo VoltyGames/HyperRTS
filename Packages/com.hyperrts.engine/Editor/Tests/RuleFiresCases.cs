@@ -6,6 +6,7 @@ using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Rules;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Abilities;
+using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
@@ -43,6 +44,10 @@ namespace HyperRTS.Editor.Tests
                 abilities.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", damage = 1f });
                 return abilities;
             });
+            yield return Row<AirdropReceiverRule>("no aircraft prefab", f =>
+                f.Add<AirdropReceiverAuthoring>(EntityTemplates.Building()));
+            yield return Row<StrategicAssetRule>("no aircraft prefab", f =>
+                f.Add<StrategicAssetAuthoring>(EntityTemplates.Building()));
             yield return Row<AreaFieldRule>("Affects nobody", f =>
             {
                 var field = f.Add<AreaFieldAuthoring>(EntityTemplates.Building());

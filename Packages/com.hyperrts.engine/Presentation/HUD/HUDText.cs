@@ -20,6 +20,7 @@ namespace HyperRTS.Presentation.HUD
         {
             ["hud.pop"] = "POP",
             ["hud.power"] = "PWR",
+            ["hud.strategic-ready"] = "READY",
             ["command.return"] = "Return",
             ["command.unload"] = "Unload",
             ["command.sell"] = "Sell",

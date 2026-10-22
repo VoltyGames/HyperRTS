@@ -17,6 +17,9 @@ namespace HyperRTS.Simulation.Match
 
         public FogOverride Fog;
 
+        /// <summary>Copied to <see cref="MatchRules.StrategicAssets"/>.</summary>
+        public bool StrategicAssets;
+
         /// <summary>The map weather's key the scene switches to when it loads; empty keeps the map's own.</summary>
         public FixedString32Bytes Weather;
 
@@ -31,7 +34,7 @@ namespace HyperRTS.Simulation.Match
 
         public bool Applied;
 
-        public static MatchSetup Create() => new() { StartingResourceScale = 1f };
+        public static MatchSetup Create() => new() { StartingResourceScale = 1f, StrategicAssets = true };
 
         public readonly bool IsOpen(byte faction) =>
             faction >= 1 && faction <= Slots.Length && Slots[faction - 1].Open;
