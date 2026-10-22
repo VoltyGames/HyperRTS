@@ -228,14 +228,8 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                // Attack-move heads straight back to its goal: a disabled destination would read as arrival to
-                // MoveOrderSystem if it never saw the engagement. Only idle defenders head home; escorts halt and
-                // EscortSystem picks up the ward again.
-                if (Traits.Has(order.Type, OrderTraits.AttackMove))
-                {
-                    MoveTo(entity, order.Position);
-                }
-                else if (order.Type == OrderType.None && stance.Value == Stance.Defensive)
+                // Only idle defenders head home. Moves and escorts halt, and their order systems pick up again.
+                if (order.Type == OrderType.None && stance.Value == Stance.Defensive)
                 {
                     MoveTo(entity, stance.ReturnPoint);
                 }

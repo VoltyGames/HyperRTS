@@ -12,10 +12,11 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> (disabled on arrival),
-    /// keeps units of the same layer their spacing apart, slides ground units round blockers and never pushes a
-    /// footprint into cells closed to the agent (<see cref="NavCapsule.Constrain"/>). Every unit drives the path with
-    /// its <see cref="Locomotion"/>; units without one use <see cref="Locomotion.Instant"/>.
+    /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> and, when the move ends by
+    /// itself, disables it and enables <see cref="Arrival"/>. <see cref="MoveProgress"/> repairs the path and gives
+    /// up when the unit stops getting on. Keeps units of the same layer their spacing apart, slides ground units round
+    /// blockers and never pushes a footprint into cells closed to the agent (<see cref="NavCapsule.Constrain"/>).
+    /// Every unit drives the path with its <see cref="Locomotion"/>, or <see cref="Locomotion.Instant"/> without one.
     /// Steers on XZ, and Y follows the layer's surface on the <see cref="NavGrid"/> (ground, deck or water). Aircraft
     /// ignore the grid, climb to their <see cref="Flight"/> altitude (land while <see cref="Docked"/>) and, if they
     /// can't hover, circle when idle.
@@ -26,19 +27,16 @@ namespace HyperRTS.Simulation.Units
     [UpdateBefore(typeof(CargoFollowSystem))]
     public partial struct MovementSystem : ISystem
     {
-        /// <summary>Seconds a unit stays walled off or out of sight of its corner before it re-plans the way there.</summary>
-        public const float ReplanDelay = 0.75f;
-
         private EntityQuery _blockers;
         private ComponentLookup<Flight> _flights;
-        private ComponentLookup<Docked> _docked;
+        private GivingWay _givingWay;
         private ComponentLookup<Locomotion> _locomotions;
         private ComponentLookup<LocomotionState> _locomotionStates;
 
         public void OnCreate(ref SystemState state)
         {
             _flights = state.GetComponentLookup<Flight>(true);
-            _docked = state.GetComponentLookup<Docked>(true);
+            _givingWay = new GivingWay(ref state);
             _locomotions = state.GetComponentLookup<Locomotion>(true);
             _locomotionStates = state.GetComponentLookup<LocomotionState>();
             _blockers = SystemAPI.QueryBuilder().WithPresent<Blocker>().Build();
@@ -50,17 +48,19 @@ namespace HyperRTS.Simulation.Units
         public void OnUpdate(ref SystemState state)
         {
             _flights.Update(ref state);
-            _docked.Update(ref state);
+            _givingWay.Update(ref state);
             _locomotions.Update(ref state);
             _locomotionStates.Update(ref state);
+            var index = SystemAPI.GetSingleton<SpatialIndex>();
+            var grid = SystemAPI.GetSingleton<NavGrid>();
             new MoveJob
             {
-                Index = SystemAPI.GetSingleton<SpatialIndex>(),
-                Grid = SystemAPI.GetSingleton<NavGrid>(),
+                Index = index,
+                Grid = grid,
                 // Asked of the query, not the index, which its builder is still filling.
                 HasBlockers = !_blockers.IsEmptyIgnoreFilter,
                 Flights = _flights,
-                DockedLookup = _docked,
+                GivingWay = _givingWay,
                 Locomotions = _locomotions,
                 States = _locomotionStates,
                 DeltaTime = SystemAPI.Time.DeltaTime,
@@ -69,24 +69,25 @@ namespace HyperRTS.Simulation.Units
 
         [BurstCompile]
         [WithNone(typeof(Inside))]
-        [WithPresent(typeof(MoveDestination))]
+        [WithPresent(typeof(MoveDestination), typeof(Arrival))]
         private partial struct MoveJob : IJobEntity
         {
             [ReadOnly] public SpatialIndex Index;
             [ReadOnly] public NavGrid Grid;
             public bool HasBlockers;
             [ReadOnly] public ComponentLookup<Flight> Flights;
-            [ReadOnly] public ComponentLookup<Docked> DockedLookup;
+            public GivingWay GivingWay;
             [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
 
             // Each unit writes only its own state.
             [NativeDisableParallelForRestriction] public ComponentLookup<LocomotionState> States;
             public float DeltaTime;
 
-            // `ref`, not `in`: it must share one writable handle with EnabledRefRW.
+            // `ref`, not `in`: each must share one writable handle with its EnabledRefRW.
             private void Execute(Entity entity, ref LocalTransform transform, in MovementSpeed speed, in NavAgent agent,
-                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, ref PathState path,
-                DynamicBuffer<PathWaypoint> waypoints)
+                in Faction faction, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
+                ref PathState path, DynamicBuffer<PathWaypoint> waypoints, ref MoveProgress progress,
+                ref Arrival arrival, EnabledRefRW<Arrival> arrived)
             {
                 var maxStep = speed.Value * DeltaTime;
                 var heading = float2.zero;
@@ -101,29 +102,40 @@ namespace HyperRTS.Simulation.Units
                 var flying = agent.Layer == NavLayer.Air;
                 var from = transform.Position.xz;
                 var axis = agent.SegmentAxis(transform.Rotation);
-                var crowd = new SeparationVisitor(entity, from, axis, agent, wasMoving, step, destination.Value.xz);
-                var wanted = from + step + Separation(crowd, maxStep);
+                var crowd = new SeparationVisitor(entity, from, axis, agent, faction.Value, wasMoving, step,
+                    destination, GivingWay);
+                var wanted = from + step + Separation(ref crowd, maxStep);
+                var stalled = false;
                 if (flying)
                 {
                     Fly(entity, ref transform, wanted);
                 }
                 else
                 {
-                    if (HasBlockers)
-                    {
-                        crowd.Position = wanted;
-                        wanted += Clearance(crowd);
-                    }
-
-                    Walk(ref transform, from, wanted, agent, axis, moving.ValueRO, waypoints, ref path);
+                    wanted = Clear(crowd, wanted);
+                    Walk(ref transform, from, wanted, agent, axis);
+                    stalled = moving.ValueRO && !crowd.ReachedGroup &&
+                              progress.HasGivenUp(transform, agent, destination.Value, waypoints, ref path, DeltaTime);
                 }
 
+                if (moving.ValueRO && (crowd.ReachedGroup || stalled))
+                {
+                    Halt(moving, ref path, waypoints);
+                }
+
+                Report(wasMoving, moving.ValueRO, stalled, ref arrival, arrived, ref progress);
                 if (remembers)
                 {
                     drive.Hit(transform.Position.xz - from, step, !transform.Position.xz.Equals(wanted));
                     States[entity] = drive;
                 }
 
+                Face(ref transform, agent, axis, heading, flying);
+            }
+
+            private readonly void Face(ref LocalTransform transform, in NavAgent agent, float2 axis, float2 heading,
+                bool flying)
+            {
                 var turned = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
                 if (math.any(heading != 0f) && (flying || CanTurn(transform, agent, axis, turned)))
                 {
@@ -132,19 +144,49 @@ namespace HyperRTS.Simulation.Units
             }
 
             private readonly void Walk(ref LocalTransform transform, float2 from, float2 wanted, in NavAgent agent,
-                float2 axis, bool moving, DynamicBuffer<PathWaypoint> waypoints, ref PathState path)
+                float2 axis)
             {
-                var access = agent.Access(Grid);
-                transform.Position.xz = new NavCapsule(access, axis).Constrain(from, wanted);
+                transform.Position.xz = new NavCapsule(agent.Access(Grid), axis).Constrain(from, wanted);
                 transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
-                var lost = moving && waypoints.Length > 0 &&
-                           IsWalledOff(access, from, wanted, transform.Position, waypoints[0].Position);
-                path.Stuck = lost ? path.Stuck + DeltaTime : 0f;
-                if (path.Stuck >= ReplanDelay)
+            }
+
+            // Measured where the unit is headed and left unclamped, so it never sinks into a blocker even for a frame.
+            private readonly float2 Clear(SeparationVisitor crowd, float2 wanted)
+            {
+                if (!HasBlockers)
                 {
-                    path.Status = PathStatus.None;
-                    path.Repair = true;
-                    path.Stuck = 0f;
+                    return wanted;
+                }
+
+                crowd.Position = wanted;
+                crowd.Push = float2.zero;
+                Index.QueryBlockers(crowd.Center, crowd.Reach, ref crowd);
+                return wanted + crowd.Push;
+            }
+
+            private static void Halt(EnabledRefRW<MoveDestination> moving, ref PathState path,
+                DynamicBuffer<PathWaypoint> waypoints)
+            {
+                moving.ValueRW = false;
+                path.Status = PathStatus.None;
+                path.ClearWaypoints(waypoints);
+            }
+
+            /// <summary>A move that just ended arrived or stalled; the next one measures progress afresh.</summary>
+            private static void Report(bool wasMoving, bool isMoving, bool stalled, ref Arrival arrival,
+                EnabledRefRW<Arrival> arrived, ref MoveProgress progress)
+            {
+                if (isMoving)
+                {
+                    arrived.ValueRW = false;
+                    return;
+                }
+
+                progress.IsTracking = false;
+                if (wasMoving)
+                {
+                    arrived.ValueRW = true;
+                    arrival.Stalled = stalled;
                 }
             }
 
@@ -158,22 +200,6 @@ namespace HyperRTS.Simulation.Units
 
                 var capsule = new NavCapsule(agent.Access(Grid), axis);
                 return capsule.CanTurn(transform.Position.xz, agent.SegmentAxis(turned));
-            }
-
-            /// <summary>A wall stopped the move, and the unit either barely moved or lost sight of its next corner.</summary>
-            private static bool IsWalledOff(in NavAccess access, float2 from, float2 wanted, float3 position, float3 corner)
-            {
-                if (position.xz.Equals(wanted))
-                {
-                    return false;
-                }
-
-                if (math.distancesq(from, position.xz) < math.distancesq(from, wanted) * 0.01f)
-                {
-                    return true;
-                }
-
-                return !access.HasLineOfSight(position, corner, false);
             }
 
             /// <summary>Aircraft go wherever they steer and climb toward their altitude over the surface below.</summary>
@@ -198,20 +224,13 @@ namespace HyperRTS.Simulation.Units
                 return heading * maxStep;
             }
 
-            private readonly bool IsLanded(Entity entity) => DockedLookup.HasEnabled(entity);
+            private readonly bool IsLanded(Entity entity) => GivingWay.IsLanded(entity);
 
-            private readonly float2 Separation(SeparationVisitor separation, float maxStep)
+            private readonly float2 Separation(ref SeparationVisitor crowd, float maxStep)
             {
-                Index.QueryHulls(separation.Center, separation.Reach, ref separation);
-                var length = math.length(separation.Push);
-                return length > maxStep ? separation.Push * (maxStep / length) : separation.Push;
-            }
-
-            // Measured where the unit is headed and left unclamped, so it never sinks into a blocker even for a frame.
-            private readonly float2 Clearance(SeparationVisitor clearance)
-            {
-                Index.QueryBlockers(clearance.Center, clearance.Reach, ref clearance);
-                return clearance.Push;
+                Index.QueryHulls(crowd.Center, crowd.Reach, ref crowd);
+                var length = math.length(crowd.Push);
+                return length > maxStep ? crowd.Push * (maxStep / length) : crowd.Push;
             }
 
             /// <summary>This frame's step and facing before the crowd and walls have their say.</summary>
@@ -226,9 +245,7 @@ namespace HyperRTS.Simulation.Units
                 if (moving.ValueRO && !Follow(transform.Position, facing, agent, maxStep, locomotion, drive.Speed, goal,
                         ref path, waypoints, out leg))
                 {
-                    moving.ValueRW = false;
-                    path.Status = PathStatus.None;
-                    path.ClearWaypoints(waypoints);
+                    Halt(moving, ref path, waypoints);
                 }
 
                 if (moving.ValueRO)
@@ -250,45 +267,10 @@ namespace HyperRTS.Simulation.Units
                 DynamicBuffer<PathWaypoint> waypoints, out PathLeg leg)
             {
                 var reach = locomotion.LookAhead(speed, agent.Radius);
-                while (waypoints.Length > 1 && CanSkipCorner(position, agent, maxStep, reach, ref path, waypoints))
-                {
-                    path.PassCorner(waypoints);
-                }
-
+                path.SkipCorners(Grid, agent, position, math.max(agent.Radius * 0.5f, maxStep), reach, waypoints);
                 // No corners yet (search pending): head straight for the goal meanwhile.
                 leg = PathLeg.Along(position.xz, goal.xz, waypoints, path);
                 return !locomotion.HasArrived(leg, position.xz, facing, agent.Radius);
-            }
-
-            // A crowd can't all touch the same corner and a vehicle cuts it, so skip it once the next is in sight.
-            private readonly bool CanSkipCorner(float3 position, in NavAgent agent, float maxStep, float reach,
-                ref PathState path, DynamicBuffer<PathWaypoint> waypoints)
-            {
-                var distance = math.distance(position.xz, waypoints[0].Position.xz);
-                if (distance <= math.max(agent.Radius * 0.5f, maxStep))
-                {
-                    return true;
-                }
-
-                if (distance > math.max(NavTolerances.Crowded(agent.Radius), reach))
-                {
-                    return false;
-                }
-
-                // Sight only changes as the unit crosses cells, so a failed look isn't repeated within one.
-                var cell = Grid.WorldToCell(position);
-                if (path.IsHiddenFrom(cell, Grid.Version))
-                {
-                    return false;
-                }
-
-                if (agent.Access(Grid).HasLineOfSight(position, waypoints[1].Position, true))
-                {
-                    return true;
-                }
-
-                path.Hide(cell);
-                return false;
             }
         }
     }

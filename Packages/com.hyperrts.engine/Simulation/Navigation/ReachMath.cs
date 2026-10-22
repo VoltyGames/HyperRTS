@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Navigation
                 return;
             }
 
-            destination.Value = goal;
+            destination = new MoveDestination { Value = goal };
             moving.ValueRW = true;
         }
     }

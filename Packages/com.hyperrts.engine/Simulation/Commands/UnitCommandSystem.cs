@@ -33,6 +33,9 @@ namespace HyperRTS.Simulation.Commands
         private ComponentLookup<NavAgent> _agents;
         private ComponentLookup<CombatStance> _stances;
 
+        // Last formation group handed out; 0 means no group.
+        private int _lastGroup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -180,10 +183,12 @@ namespace HyperRTS.Simulation.Commands
             }
 
             Formation.Assign(positions, command.Position, spacing, slots);
+            _lastGroup++;
             for (var i = 0; i < movers.Length; i++)
             {
                 var order = orders[i];
                 order.Position = map.Clamp(slots[i]);
+                order.Group = _lastGroup;
                 if (order.Type == OrderType.Patrol)
                 {
                     IssuePatrol(movers[i], order, positions[i], command.Queue);

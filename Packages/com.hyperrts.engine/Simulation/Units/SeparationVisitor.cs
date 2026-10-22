@@ -7,9 +7,10 @@ namespace HyperRTS.Simulation.Units
     /// <summary>
     /// Sums how far a unit must move to stop crowding neighbouring units (half each, as both move). Footprints are
     /// capsules (circles when the segment is zero) and must stay the larger of the two spacings apart, pushed along
-    /// the line between their closest points. A blocker (a wreck) or a parked unit holds its ground against a
-    /// moving one, which takes the whole push and steers round a parked unit unless it stands on the goal. Units on
-    /// layers that never share a surface (a ship under a bridge, a tank on it) ignore each other.
+    /// the line between their closest points. A blocker (a wreck) or a busy or enemy parked unit holds its ground
+    /// against a mover, which takes the whole push and steers round it unless it stands on the goal. An idle parked
+    /// unit of the mover's side shares the push and steps out of the mover's lane (<see cref="GivingWay"/>). Units
+    /// on layers that never share a surface (a ship under a bridge, a tank on it) ignore each other.
     /// </summary>
     internal struct SeparationVisitor : ISpatialVisitor
     {
@@ -19,13 +20,19 @@ namespace HyperRTS.Simulation.Units
         public float2 SegmentAxis;
         public float Spacing;
         public NavLayer Layer;
+        public byte Faction;
         public bool Moving;
         public float2 Step;
         public float2 Goal;
+        public int Group;
+        public GivingWay Rule;
         public float2 Push;
 
-        public SeparationVisitor(Entity self, float2 position, float2 axis, in NavAgent agent, bool moving,
-            float2 step, float2 goal)
+        /// <summary>A mover touched an arrived groupmate lying toward its goal, so it has arrived too.</summary>
+        public bool ReachedGroup;
+
+        public SeparationVisitor(Entity self, float2 position, float2 axis, in NavAgent agent, byte faction,
+            bool moving, float2 step, in MoveDestination destination, in GivingWay rule)
         {
             Self = self;
             Position = position;
@@ -33,10 +40,14 @@ namespace HyperRTS.Simulation.Units
             SegmentAxis = axis;
             Spacing = agent.Spacing;
             Layer = agent.Layer;
+            Faction = faction;
             Moving = moving;
             Step = step;
-            Goal = goal;
+            Goal = destination.Value.xz;
+            Group = destination.Group;
+            Rule = rule;
             Push = float2.zero;
+            ReachedGroup = false;
         }
 
         /// <summary>Where to query round; queries only read XZ.</summary>
@@ -74,17 +85,49 @@ namespace HyperRTS.Simulation.Units
                 return;
             }
 
+            ReachedGroup |= Moving && IsArrivedGroupmate(entry);
             if (entry.IsMoving == Moving)
+            {
+                Push += direction * (overlap * 0.5f);
+            }
+            else if (Moving)
+            {
+                PushPast(direction, overlap, entry);
+            }
+            else if (Rule.Yields(Self, Faction, entry.Faction))
+            {
+                Push += StepAside(direction, entry) * (overlap * 0.5f);
+            }
+        }
+
+        // Only the mover gives way to a busy or enemy unit, so a truck can't shove a dozer that is building.
+        private void PushPast(float2 direction, float overlap, in SpatialEntry entry)
+        {
+            if (Rule.Yields(entry.Entity, entry.Faction, Faction))
             {
                 Push += direction * (overlap * 0.5f);
                 return;
             }
 
-            // Only the mover gives way, so a truck can't shove a parked dozer.
-            if (Moving)
+            Push += direction * overlap + Deflection(direction, entry);
+        }
+
+        /// <summary>Away from the mover and out of its lane, toward its left head-on, as it keeps right.</summary>
+        private readonly float2 StepAside(float2 direction, in SpatialEntry mover)
+        {
+            var left = new float2(-mover.Facing.y, mover.Facing.x);
+            var side = math.dot(Position - mover.Position.xz, left) < 0f ? -left : left;
+            return math.normalizesafe(direction + side);
+        }
+
+        private readonly bool IsArrivedGroupmate(in SpatialEntry entry)
+        {
+            if (Group == 0 || entry.Group != Group || !entry.IsArrived || entry.IsMoving)
             {
-                Push += direction * overlap + Deflection(direction, entry);
+                return false;
             }
+
+            return math.dot(entry.Position.xz - Position, Goal - Position) > 0f;
         }
 
         /// <summary>Turns the part of the step that runs into a parked unit along its side, keeping right head-on.</summary>

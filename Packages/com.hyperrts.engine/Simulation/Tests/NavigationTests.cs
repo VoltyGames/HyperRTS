@@ -98,41 +98,6 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void MovingUnit_DrivesRoundAParkedOneHeadOn_WithoutShovingIt()
-        {
-            _world.CreateMatch(1, 2);
-            var parked = _world.SpawnUnit(1, float3.zero);
-            var unit = _world.SpawnUnit(1, new float3(-8f, 0f, 0f));
-            var goal = new float3(8f, 0f, 0f);
-            Move(goal, unit);
-
-            var shoved = 0f;
-            for (var t = 0f; t < 6f; t += TestWorld.FrameTime)
-            {
-                _world.Tick();
-                shoved = math.max(shoved, math.length(_world.GetPosition(parked).xz));
-            }
-
-            Assert.AreEqual(0f, shoved, 1e-4f, "the parked unit held its ground");
-            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 0.2f, "went round it");
-        }
-
-        [Test]
-        public void MovingUnit_WaitsAgainstAUnitParkedOnItsGoal()
-        {
-            _world.CreateMatch(1, 2);
-            var goal = new float3(8f, 0f, 0f);
-            var parked = _world.SpawnUnit(1, goal);
-            var unit = _world.SpawnUnit(1, float3.zero);
-            Move(goal, unit);
-            _world.Run(6f);
-
-            Assert.IsFalse(_world.IsEnabled<ActiveOrder>(unit), "the crowded move completed");
-            Assert.AreEqual(goal.x, _world.GetPosition(parked).x, 1e-4f, "never shoved off the goal");
-            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 1.5f, "waited beside it, not circling");
-        }
-
-        [Test]
         public void Grid_RebuildsWhenBuildingIsAdded()
         {
             _world.CreateMatch(1, 2);

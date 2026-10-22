@@ -24,10 +24,7 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Frame of the pending request; older requests are served first.</summary>
         public uint RequestFrame;
 
-        /// <summary>Seconds the unit has been walled off or out of sight of its next corner.</summary>
-        public float Stuck;
-
-        /// <summary>Set when <see cref="Stuck"/> runs out: the next search re-plans only the way to that corner.</summary>
+        /// <summary>Set when the unit stops getting on: the next search re-plans only the way to its next corner.</summary>
         public bool Repair;
 
         /// <summary>Path length from the first <see cref="PathWaypoint"/> to the last, kept as corners change.</summary>
@@ -60,6 +57,52 @@ namespace HyperRTS.Simulation.Navigation
             HiddenFrom = cell;
             IsHidden = true;
         }
+
+        /// <summary>
+        /// Passes corners within <paramref name="touch"/>, and nearer ones once the next is in sight: a crowd can't all
+        /// touch the same corner and a vehicle cuts it.
+        /// </summary>
+        public void SkipCorners(in NavGrid grid, in NavAgent agent, float3 position, float touch, float reach,
+            DynamicBuffer<PathWaypoint> waypoints)
+        {
+            while (waypoints.Length > 1 && CanSkipCorner(grid, agent, position, touch, reach, waypoints))
+            {
+                PassCorner(waypoints);
+            }
+        }
+
+        private bool CanSkipCorner(in NavGrid grid, in NavAgent agent, float3 position, float touch, float reach,
+            DynamicBuffer<PathWaypoint> waypoints)
+        {
+            var distance = math.distance(position.xz, waypoints[0].Position.xz);
+            if (distance <= touch)
+            {
+                return true;
+            }
+
+            if (distance > math.max(CornerSkipRange(agent.Radius), reach))
+            {
+                return false;
+            }
+
+            // Sight only changes as the unit crosses cells, so a failed look isn't repeated within one.
+            var cell = grid.WorldToCell(position);
+            if (IsHiddenFrom(cell, grid.Version))
+            {
+                return false;
+            }
+
+            if (agent.Access(grid).HasLineOfSight(position, waypoints[1].Position, true))
+            {
+                return true;
+            }
+
+            Hide(cell);
+            return false;
+        }
+
+        // Only corners this near are skipped, so a unit keeps to its smoothed path rather than cutting across.
+        private static float CornerSkipRange(float radius) => radius * 4f + 1f;
 
         /// <summary>Drops the first waypoint, keeping <see cref="LengthPastCorner"/> in step.</summary>
         public void PassCorner(DynamicBuffer<PathWaypoint> waypoints)

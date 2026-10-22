@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Tests
             var transform = _world.Get<LocalTransform>(unit);
             transform.Position = new float3(-2f, 0f, 12f);
             _world.EntityManager.SetComponentData(unit, transform);
-            _world.Run(MovementSystem.ReplanDelay * 0.5f);
+            _world.Run(MoveProgress.RepairSeconds * 0.5f);
 
             Assert.AreEqual(PathStatus.Ready, _world.Get<PathState>(unit).Status, "no re-plan the moment it is walled");
             Assert.AreEqual(corner, FirstCorner(unit), "still heading for the same corner");

@@ -66,6 +66,18 @@ namespace HyperRTS.Simulation.Navigation
     public struct MoveDestination : IComponentData, IEnableableComponent
     {
         public float3 Value;
+
+        /// <summary>Formation move it belongs to, 0 for none: touching an arrived groupmate is arrival.</summary>
+        public int Group;
+    }
+
+    /// <summary>
+    /// Enabled when locomotion ended the move by itself, at the goal or against an arrived groupmate, or
+    /// <see cref="Stalled"/> when it stopped making progress. Disabled while a move runs.
+    /// </summary>
+    public struct Arrival : IComponentData, IEnableableComponent
+    {
+        public bool Stalled;
     }
 
     /// <summary>Remaining corners of a unit's path, nearest first.</summary>

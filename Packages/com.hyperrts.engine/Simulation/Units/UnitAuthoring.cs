@@ -69,6 +69,9 @@ namespace HyperRTS.Simulation.Units
             writer.AddBuffer<QueuedOrder>();
             writer.Add<MoveOrderState>();
             writer.SetEnabled<MoveOrderState>(false);
+            writer.Add<Arrival>();
+            writer.SetEnabled<Arrival>(false);
+            writer.Add<MoveProgress>();
         }
 
         public class Baker : Baker<UnitAuthoring>

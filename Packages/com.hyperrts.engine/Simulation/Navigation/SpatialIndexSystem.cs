@@ -4,6 +4,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Navigation
@@ -24,6 +25,7 @@ namespace HyperRTS.Simulation.Navigation
         private ComponentLookup<NavObstacle> _obstacleLookup;
         private ComponentLookup<BuildingTag> _buildingLookup;
         private ComponentLookup<MoveDestination> _movingLookup;
+        private ComponentLookup<Arrival> _arrivalLookup;
 
         public void OnCreate(ref SystemState state)
         {
@@ -33,6 +35,7 @@ namespace HyperRTS.Simulation.Navigation
             _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
             _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
             _movingLookup = state.GetComponentLookup<MoveDestination>(true);
+            _arrivalLookup = state.GetComponentLookup<Arrival>(true);
 
             state.EntityManager.CreateSingleton(new SpatialIndex
             {
@@ -79,6 +82,7 @@ namespace HyperRTS.Simulation.Navigation
             _obstacleLookup.Update(ref state);
             _buildingLookup.Update(ref state);
             _movingLookup.Update(ref state);
+            _arrivalLookup.Update(ref state);
 
             var input = state.Dependency;
             var indexed = new IndexJob
@@ -90,6 +94,7 @@ namespace HyperRTS.Simulation.Navigation
                 ObstacleLookup = _obstacleLookup,
                 BuildingLookup = _buildingLookup,
                 MovingLookup = _movingLookup,
+                ArrivalLookup = _arrivalLookup,
             }.ScheduleParallel(_indexed, input);
             state.Dependency = JobHandle.CombineDependencies(indexed, IndexBlockers(ref state, ref index, input));
         }
@@ -128,11 +133,13 @@ namespace HyperRTS.Simulation.Navigation
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<BuildingTag> BuildingLookup;
             [ReadOnly] public ComponentLookup<MoveDestination> MovingLookup;
+            [ReadOnly] public ComponentLookup<Arrival> ArrivalLookup;
 
             private void Execute(Entity entity, in LocalTransform transform, in Faction faction)
             {
-                // Without an agent the default is round, unspaced and on the ground.
+                // Without an agent or a destination it is round, unspaced, on the ground and in no group.
                 var isUnit = AgentLookup.TryGetComponent(entity, out var agent);
+                MovingLookup.TryGetComponent(entity, out var destination);
                 var entry = new SpatialEntry
                 {
                     Entity = entity,
@@ -141,6 +148,9 @@ namespace HyperRTS.Simulation.Navigation
                     Faction = faction.Value,
                     IsUnit = isUnit,
                     IsMoving = MovingLookup.HasEnabled(entity),
+                    IsArrived = ArrivalLookup.HasEnabled(entity),
+                    Group = destination.Group,
+                    Facing = math.normalizesafe(math.mul(transform.Rotation, math.forward()).xz),
                     IsBuilding = BuildingLookup.HasComponent(entity),
                     Layer = agent.Layer,
                     SegmentAxis = agent.SegmentAxis(transform.Rotation),

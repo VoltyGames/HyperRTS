@@ -20,7 +20,11 @@ namespace HyperRTS.Simulation.Tests
         private TestWorld _world;
 
         [SetUp]
-        public void SetUp() => _world = new TestWorld();
+        public void SetUp()
+        {
+            _world = new TestWorld();
+            _world.CreateMatch(1, 2);
+        }
 
         [TearDown]
         public void TearDown() => _world.Dispose();
@@ -80,7 +84,6 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void TankColumn_MoveOrder_CompletesWithoutHullsOverlapping()
         {
-            _world.CreateMatch(1, 2);
             var tanks = new Entity[4];
             for (var i = 0; i < tanks.Length; i++)
             {

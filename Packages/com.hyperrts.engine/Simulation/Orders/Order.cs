@@ -39,5 +39,8 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>Order-specific value, e.g. the ability id of <see cref="OrderType.UseAbility"/>.</summary>
         public int Argument;
+
+        /// <summary>Formation move it belongs to, 0 for none; the group's units arrive together.</summary>
+        public int Group;
     }
 }

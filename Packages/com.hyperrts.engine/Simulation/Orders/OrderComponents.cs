@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Orders
 {
@@ -25,17 +24,10 @@ namespace HyperRTS.Simulation.Orders
     }
 
     /// <summary>
-    /// Progress of a Move/AttackMove order. Enabled once the order has pointed locomotion at its goal; disabled
-    /// whenever the order changes or combat takes over, so the goal is re-applied afterwards.
+    /// Enabled once a move order has pointed locomotion at its goal; disabled whenever the order changes or combat
+    /// takes over, so the goal is re-applied afterwards.
     /// </summary>
     public struct MoveOrderState : IComponentData, IEnableableComponent
     {
-        /// <summary>Where the stuck timer last restarted; the unit counts as stuck until it leaves this spot.</summary>
-        public float3 StuckSpot;
-
-        /// <summary>Facing when the stuck timer restarted, so a vehicle turning in place isn't stuck.</summary>
-        public float2 StuckFacing;
-
-        public float StuckTime;
     }
 }

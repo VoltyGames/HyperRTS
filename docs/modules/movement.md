@@ -25,8 +25,8 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 - Movement holds the whole capsule off closed cells (`NavCapsule`). A unit already overlapping may move or turn
   as long as the summed overlap doesn't grow, so it can always drive or back off. A long hull keeps its facing
   when turning would swing an end into a closed cell.
-- A unit walled off from its next corner keeps its path for 0.75 s, then re-plans only the way back to that corner
-  and keeps the rest, so it goes on round the side it was taking. An unreachable corner gets a whole new path.
+- A unit that stops getting on keeps its path for 0.75 s, then re-plans only the way back to its next corner and
+  keeps the rest, so it goes on round the side it was taking. An unreachable corner gets a whole new path.
 - Destructible scenery with a crush rating (trees, fences) marks its cell on a scenery layer with that rating. A
   unit drives through scenery rated up to its `SceneryCrushLimit`: its `Crusher` size, or all of it with **Walks
   Through Scenery** (infantry). Rated higher, scenery blocks it like a closed cell for paths and movement. Felled
@@ -44,10 +44,25 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 population. Units follow their path and
 stop on arrival. A unit with a hull length is a capsule that long along its forward and two radii wide; 0 keeps a
 circle. `SeparationVisitor` pushes neighbours apart along the line between their closest points, half each, until
-the larger of their two spacings lies between them (0.6 m by default, less for infantry). A parked unit holds its
-ground against a moving one: the mover takes the whole push and steers round it, keeping right head-on, or waits
-against it when it stands on the mover's goal. Formation slots are
+the larger of their two spacings lies between them (0.6 m by default, less for infantry). Formation slots are
 spaced by the same footprint, so a tank column doesn't pile up nose to tail.
+
+- An idle parked unit steps aside for a moving unit of its own side (`GivingWay`): it shares the push and moves
+  out of the mover's lane, toward the mover's left head-on, so a unit in a one-unit gap or on a bridge makes way.
+  It stays where it was pushed.
+- A busy parked unit (one with an order, a target, a pad or Hold Position) and an enemy hold their ground. The
+  mover takes the whole push and steers round them, keeping right head-on, or waits against one standing on its
+  goal. So a truck never shoves a dozer that is building.
+- A formation move gives its units one group (`MoveDestination.Group`). A unit touching an arrived groupmate that
+  lies toward its goal has arrived too, so arrival passes through a crowded group by contact.
+- A move ends by itself at the goal, against an arrived groupmate, or when the unit stops getting on. Then
+  `MoveDestination` is disabled and `Arrival` enabled, with `Stalled` set when it gave up. `MoveOrderSystem`
+  finishes its order on `Arrival`. If anything else halts the unit, such as combat letting go, it points the unit
+  at the goal again.
+- `MoveProgress` is the one stuck measure. Progress is the path left shrinking by the arrival tolerance or the hull
+  turning about 20 degrees, so a pivot or a three-point turn counts. Without progress for 0.75 s the way to the
+  next corner is re-planned, and again every 0.75 s. After 3 s the unit gives up. A new path is measured afresh
+  but the clock runs on.
 
 Every unit follows its path through `Locomotion`. Without its own, a unit gets `Locomotion.Instant`: full speed and
 any facing at once, never reversing, as infantry do. `LocomotionAuthoring` gives a ground vehicle handling, and its
@@ -68,10 +83,9 @@ Its facing is its rotation, and it moves only along it, so the crowd's push neve
   corners, and brakes to stop at the goal.
 - A target inside its turning circle can't be reached on any arc, so it makes a three-point turn: it goes the
   other way, turning toward the target, until the target is clear of the circle. A goal under the hull inside the
-  circle counts as reached. A reversing leg that runs into a wall drives the other leg for 1.5 s. So it never
-  orbits.
+  circle counts as reached. A reversing leg that runs into a wall drives the other leg for 1.5 s, a manoeuvre
+  timer rather than a stuck test. So it never orbits.
 - A wall that stops it head-on takes its speed with it. A glancing slide or the crowd's push costs none.
-- `MoveOrderSystem` restarts its stuck timer when a unit turns about 20 degrees, so a pivot never counts as stuck.
 
 `BlockerAuthoring` makes remains such as a wreck solid: a capsule of radius and hull length along its forward that
 never moves. Units take the whole push and are moved fully clear of it where they are headed, so they slide round
