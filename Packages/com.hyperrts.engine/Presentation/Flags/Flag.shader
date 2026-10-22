@@ -21,6 +21,7 @@ Shader "HyperRTS/Flag"
             "RenderPipeline" = "UniversalPipeline"
             "RenderType" = "Opaque"
             "Queue" = "Geometry"
+            "AlwaysRenderMotionVectors" = "true"
         }
 
         Cull Off
@@ -61,7 +62,7 @@ Shader "HyperRTS/Flag"
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
-                Cloth cloth = FlagCloth(input.positionOS.xyz, input.uv);
+                Cloth cloth = FlagCloth(input.positionOS.xyz, input.uv, _TimeParameters.x);
                 output.positionWS = cloth.positionWS;
                 output.positionCS = TransformWorldToHClip(cloth.positionWS);
                 output.uv = input.uv;
@@ -118,7 +119,7 @@ Shader "HyperRTS/Flag"
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
-                Cloth cloth = FlagCloth(input.positionOS.xyz, input.uv);
+                Cloth cloth = FlagCloth(input.positionOS.xyz, input.uv, _TimeParameters.x);
                 output.positionCS = ShadowCasterPositionCS(cloth.positionWS, cloth.normalWS);
                 return output;
             }
@@ -156,7 +157,7 @@ Shader "HyperRTS/Flag"
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
-                output.positionCS = TransformWorldToHClip(FlagCloth(input.positionOS.xyz, input.uv).positionWS);
+                output.positionCS = TransformWorldToHClip(FlagCloth(input.positionOS.xyz, input.uv, _TimeParameters.x).positionWS);
                 return output;
             }
 
@@ -196,7 +197,7 @@ Shader "HyperRTS/Flag"
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
-                Cloth cloth = FlagCloth(input.positionOS.xyz, input.uv);
+                Cloth cloth = FlagCloth(input.positionOS.xyz, input.uv, _TimeParameters.x);
                 output.positionCS = TransformWorldToHClip(cloth.positionWS);
                 output.normalWS = cloth.normalWS;
                 return output;
@@ -206,6 +207,50 @@ Shader "HyperRTS/Flag"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 return DepthNormalOutput(normalize(input.normalWS) * IS_FRONT_VFACE(face, 1.0, -1.0));
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "MotionVectors"
+            Tags { "LightMode" = "MotionVectors" }
+
+            ColorMask RG
+
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment Frag
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ DOTS_INSTANCING_ON
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float4 positionCSNoJitter : TEXCOORD0;
+                float4 previousPositionCSNoJitter : TEXCOORD1;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            Varyings Vert(Attributes input)
+            {
+                Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                float3 now = FlagCloth(input.positionOS.xyz, input.uv, _TimeParameters.x).positionWS;
+                float3 last = FlagCloth(input.positionOS.xyz, input.uv, _LastTimeParameters.x).positionWS;
+                output.positionCS = TransformWorldToHClip(now);
+                output.positionCSNoJitter = mul(_NonJitteredViewProjMatrix, float4(now, 1.0));
+                output.previousPositionCSNoJitter = mul(_PrevViewProjMatrix, float4(last, 1.0));
+                return output;
+            }
+
+            float4 Frag(Varyings input) : SV_Target
+            {
+                UNITY_SETUP_INSTANCE_ID(input);
+                return float4(CalcNdcMotionVectorFromCsPositions(input.positionCSNoJitter, input.previousPositionCSNoJitter), 0.0, 0.0);
             }
             ENDHLSL
         }

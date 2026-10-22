@@ -22,7 +22,8 @@ namespace HyperRTS.Presentation.Destruction
         private readonly DebrisSet[] _sets = new DebrisSet[Capacity];
 
         // Reused each frame so drawing allocates nothing.
-        private readonly Matrix4x4[] _batch = new Matrix4x4[Capacity];
+        private readonly DebrisInstance[] _batch = new DebrisInstance[Capacity];
+        private readonly Matrix4x4[] _previous = new Matrix4x4[Capacity];
         private readonly bool[] _drawn = new bool[Capacity];
 
         public int Count { get; private set; }
@@ -39,6 +40,7 @@ namespace HyperRTS.Presentation.Destruction
                 Count += _sets[slot] == null ? 1 : 0;
                 _sets[slot] = set;
                 _pieces[slot] = Launch(set, center, outward, radius, ref random);
+                _previous[slot] = _pieces[slot].Matrix;
             }
         }
 
@@ -79,12 +81,19 @@ namespace HyperRTS.Presentation.Destruction
                     var sameBatch = _sets[other] != null && _sets[other].material == material && PieceMesh(other) == mesh;
                     if (sameBatch)
                     {
-                        _batch[count++] = _pieces[other].Matrix;
+                        var matrix = _pieces[other].Matrix;
+                        _batch[count++] = new DebrisInstance { objectToWorld = matrix, prevObjectToWorld = _previous[other] };
+                        _previous[other] = matrix;
                         _drawn[other] = true;
                     }
                 }
 
-                var draw = new RenderParams(material) { shadowCastingMode = ShadowCastingMode.On, receiveShadows = true };
+                var draw = new RenderParams(material)
+                {
+                    shadowCastingMode = ShadowCastingMode.On,
+                    receiveShadows = true,
+                    motionVectorMode = MotionVectorGenerationMode.Object,
+                };
                 Graphics.RenderMeshInstanced(draw, mesh, 0, _batch, count);
             }
         }

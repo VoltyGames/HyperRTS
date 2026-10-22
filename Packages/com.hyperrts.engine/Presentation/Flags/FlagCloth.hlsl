@@ -72,7 +72,8 @@ float3 Downwind()
 }
 
 // Streams downwind from the pole top, sliding down as it is lowered and shrinking to nothing while hidden.
-Cloth FlagCloth(float3 positionOS, float2 uv)
+// Takes the time so motion vectors can pose last frame's cloth.
+Cloth FlagCloth(float3 positionOS, float2 uv, float time)
 {
     float4x4 objectToWorld = GetObjectToWorldMatrix();
     float3 origin = float3(objectToWorld._m03, objectToWorld._m13, objectToWorld._m23);
@@ -81,7 +82,7 @@ Cloth FlagCloth(float3 positionOS, float2 uv)
 
     float along = positionOS.x;
     float k = TWO_PI / _WaveLength;
-    float phase = along * k - _Time.y * _WaveSpeed * (0.6 + strength) + dot(origin.xz, float2(0.37, 0.23));
+    float phase = along * k - time * _WaveSpeed * (0.6 + strength) + dot(origin.xz, float2(0.37, 0.23));
     float amplitude = _WaveAmplitude * (0.5 + strength) * uv.x;
     float ripple = amplitude * sin(phase);
     float slope = amplitude * k * cos(phase);
