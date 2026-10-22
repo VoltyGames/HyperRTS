@@ -11,10 +11,11 @@ namespace HyperRTS.Simulation.Status
     /// <summary>
     /// Applies queued <see cref="StatusRequest"/>s, expires effects and deals their damage over time. An effect's
     /// bonuses use its type id as their source, so stacking rewrites them and expiry removes them. Runs before
-    /// <c>StatSystem</c>, which is last in the group, so stat changes land the same frame.
+    /// <see cref="DamageSystem"/>, so damage over time lands before deaths are marked.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(LifecycleSystemGroup))]
+    [UpdateInGroup(typeof(CombatSystemGroup))]
+    [UpdateBefore(typeof(DamageSystem))]
     public partial struct StatusEffectSystem : ISystem
     {
         private ComponentLookup<StatusEffectDefinition> _definitions;

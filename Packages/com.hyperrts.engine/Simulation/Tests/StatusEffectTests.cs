@@ -151,6 +151,20 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void DamageOverTime_LandsInTheFrameItTicks()
+        {
+            var target = _world.SpawnUnit(2, float3.zero, speed: 0f);
+            var burn = Effect("Burn", new StatusEffectDefinition
+            {
+                Duration = 5f, MaxStacks = 1, DamagePerSecond = 10f, DamageType = _bullet,
+            });
+
+            Apply(target, burn);
+
+            Assert.Less(_world.GetHealth(target), 100f, "the first tick hurts in the frame the effect applies");
+        }
+
+        [Test]
         public void EntityAbility_AppliesItsStatusEffect_ToTheTarget()
         {
             var marked = Marked(duration: 10f);

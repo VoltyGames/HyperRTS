@@ -100,8 +100,9 @@ name, and its bonuses use that id as their source.
 
 Game code applies one with `StatusEffectWriter.Apply`, and an entity-targeted ability applies its `statusEffect`
 on use. `StatusEffectSystem` applies the queue on the server, refreshes or stacks effects already active, expires
-them and credits damage over time to whoever applied the effect. Each effect is an `ActiveStatus` entry, and
-clients get only its type id and end time for the HUD.
+them and credits damage over time to whoever applied the effect. It runs just before `DamageSystem`, so an
+ability's effect applies in the frame it is cast and damage over time lands in the frame it ticks. Each effect is
+an `ActiveStatus` entry, and clients get only its type id and end time for the HUD.
 
 `DamageTakenModifier`, in `Combat`, scales hits of one damage type on top of the unfiltered `DamageTaken` stat.
 

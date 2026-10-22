@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Abilities
     [UpdateInGroup(typeof(CombatSystemGroup))]
     [UpdateAfter(typeof(EngagementSystem))]
     [UpdateBefore(typeof(DamageSystem))]
+    [UpdateBefore(typeof(StatusEffectSystem))]
     public partial struct AbilitySystem : ISystem
     {
         private EntityQuery _completed;
