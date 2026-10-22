@@ -13,14 +13,14 @@ namespace HyperRTS.Presentation.Tests
 
         private PresentationWorldKit _kit;
         private EntityManager _em;
-        private ResourceStageSystem _system;
+        private SystemHandle _system;
 
         [SetUp]
         public void SetUp()
         {
             _kit = new PresentationWorldKit("Resource Stage Tests");
             _em = _kit.EntityManager;
-            _system = _kit.World.CreateSystemManaged<ResourceStageSystem>();
+            _system = _kit.World.CreateSystem<ResourceStageSystem>();
         }
 
         [TearDown]
@@ -36,7 +36,7 @@ namespace HyperRTS.Presentation.Tests
         {
             var pile = Pile(amount, out var visuals);
 
-            _system.Update();
+            _system.Update(_kit.World.Unmanaged);
 
             Assert.AreEqual(expected, _em.GetComponentData<ShownResourceStage>(pile).Index);
             AssertOnlyShown(visuals, expected);
@@ -46,14 +46,14 @@ namespace HyperRTS.Presentation.Tests
         public void Gathering_StepsDown_AndRegrowth_StepsBackUp()
         {
             var pile = Pile(300, out var visuals);
-            _system.Update();
+            _system.Update(_kit.World.Unmanaged);
 
             SetAmount(pile, 90);
-            _system.Update();
+            _system.Update(_kit.World.Unmanaged);
             AssertOnlyShown(visuals, 2);
 
             SetAmount(pile, 250);
-            _system.Update();
+            _system.Update(_kit.World.Unmanaged);
             AssertOnlyShown(visuals, 0);
         }
 

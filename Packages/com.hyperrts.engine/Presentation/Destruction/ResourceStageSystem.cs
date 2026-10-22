@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Resources;
+using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;
 
@@ -11,13 +12,15 @@ namespace HyperRTS.Presentation.Destruction
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    public partial class ResourceStageSystem : SystemBase
+    [BurstCompile]
+    public partial struct ResourceStageSystem : ISystem
     {
-        protected override void OnCreate() => RequireForUpdate<ShownResourceStage>();
+        public void OnCreate(ref SystemState state) => state.RequireForUpdate<ShownResourceStage>();
 
-        protected override void OnUpdate()
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
         {
-            CompleteDependency();
+            state.CompleteDependency();
             var transforms = SystemAPI.GetComponentLookup<LocalTransform>();
             foreach (var (node, stages, shown) in SystemAPI
                          .Query<RefRO<ResourceNode>, DynamicBuffer<ResourceStage>, RefRW<ShownResourceStage>>()
