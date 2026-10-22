@@ -47,6 +47,7 @@ namespace HyperRTS.Presentation.Animation
         }
 
         [BurstCompile]
+        [WithAll(typeof(LocalTransform))]
         private partial struct RigJob : IJobEntity
         {
             public float DeltaTime;
@@ -57,9 +58,10 @@ namespace HyperRTS.Presentation.Animation
             public ComponentLookup<RotorSpin> Spins;
             public ComponentLookup<LocalTransform> Transforms;
 
-            // Rig roots are top-level, so their LocalTransform is this frame's world pose before any matrix is built.
-            private void Execute(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts, in LocalTransform place)
+            // Roots are top-level, so LocalTransform is this frame's pose; read by lookup, since a parameter would alias it.
+            private void Execute(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts)
             {
+                var place = Transforms[entity];
                 var facing = place.Forward();
                 var forward = math.normalizesafe(new float3(facing.x, 0f, facing.z), math.forward());
                 var right = math.cross(math.up(), forward);
