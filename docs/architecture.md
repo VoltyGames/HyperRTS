@@ -68,6 +68,7 @@ Only network plumbing such as join and relevancy sits there.
 | `CombatSystemGroup` | Fog, targeting, weapons, abilities, fields. `DamageSystem` last |
 | `ProductionSystemGroup` | Construction, repair, capture, gathering, production, upgrades, boarding |
 | `LifecycleSystemGroup` | Death, victory, veterancy. Stats, replay recording and cue sending last |
+| `PoseSystemGroup` | Presented worlds, first in `TransformSystemGroup`: rig, machine and falling tree poses |
 | `PresentationSystemGroup` | Team colours, fog visibility, sound playback |
 
 - A system that reads `PlayerCommand`s must be in `OrderSystemGroup`.

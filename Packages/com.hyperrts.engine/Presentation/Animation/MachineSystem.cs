@@ -15,7 +15,7 @@ namespace HyperRTS.Presentation.Animation
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]
-    [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateInGroup(typeof(PoseSystemGroup))]
     public partial struct MachineSystem : ISystem
     {
         [BurstCompile]

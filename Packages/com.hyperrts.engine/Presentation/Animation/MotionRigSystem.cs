@@ -17,7 +17,7 @@ namespace HyperRTS.Presentation.Animation
     /// acceleration. Ground vehicles also sway on their <see cref="Suspension"/>.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(PresentationSystemGroup))]
+    [UpdateInGroup(typeof(PoseSystemGroup))]
     public partial struct MotionRigSystem : ISystem
     {
         [BurstCompile]
@@ -57,9 +57,11 @@ namespace HyperRTS.Presentation.Animation
             public ComponentLookup<RotorSpin> Spins;
             public ComponentLookup<LocalTransform> Transforms;
 
-            private void Execute(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts, in LocalToWorld place)
+            // Rig roots are top-level, so their LocalTransform is this frame's world pose before any matrix is built.
+            private void Execute(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts, in LocalTransform place)
             {
-                var forward = math.normalizesafe(new float3(place.Forward.x, 0f, place.Forward.z), math.forward());
+                var facing = place.Forward();
+                var forward = math.normalizesafe(new float3(facing.x, 0f, facing.z), math.forward());
                 var right = math.cross(math.up(), forward);
                 var moved = rig.Frames > 0 ? place.Position - rig.LastPosition : float3.zero;
                 var velocity = moved / DeltaTime;

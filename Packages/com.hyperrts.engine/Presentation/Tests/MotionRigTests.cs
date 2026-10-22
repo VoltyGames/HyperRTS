@@ -151,7 +151,7 @@ namespace HyperRTS.Presentation.Tests
             part.RestRotation = quaternion.identity;
 
             _unit = _em.CreateEntity();
-            _em.AddComponentData(_unit, new LocalToWorld { Value = float4x4.Translate(_position) });
+            _em.AddComponentData(_unit, LocalTransform.FromPosition(_position));
             _em.AddBuffer<WeaponPose>(_unit).Add(default);
             var writer = new EntityManagerWriter(_em, _unit);
             MotionRigAuthoring.AddRig(ref writer, new MotionRig { TiltFrame = quaternion.identity, TiltRest = quaternion.identity },
@@ -182,7 +182,7 @@ namespace HyperRTS.Presentation.Tests
 
         private void MoveTo(float3 position)
         {
-            _em.SetComponentData(_unit, new LocalToWorld { Value = float4x4.Translate(position) });
+            _em.SetComponentData(_unit, LocalTransform.FromPosition(position));
             Update(1);
         }
 
