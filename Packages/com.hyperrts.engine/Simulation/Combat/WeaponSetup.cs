@@ -8,12 +8,12 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>Adds the components that let an entity attack.</summary>
     public static class WeaponSetup
     {
-        /// <summary>The primary weapon, with poses for it and <paramref name="mounts"/> extra weapons.</summary>
-        public static void Add<TWriter>(ref TWriter writer, in Weapon weapon, Stance stance, float3 returnPoint, int mounts)
-            where TWriter : struct, IEntityWriter
+        /// <summary>The primary weapon, with poses for it and <paramref name="extraPoses"/> mounts and interceptors.</summary>
+        public static void Add<TWriter>(ref TWriter writer, in Weapon weapon, Stance stance, float3 returnPoint,
+            int extraPoses) where TWriter : struct, IEntityWriter
         {
             writer.Add(weapon);
-            writer.AddBuffer<WeaponPose>().Resize(1 + mounts, NativeArrayOptions.ClearMemory);
+            writer.AddBuffer<WeaponPose>().Resize(1 + extraPoses, NativeArrayOptions.ClearMemory);
             writer.Add(new CombatStance { Value = stance, ReturnPoint = returnPoint });
             writer.Add<AttackTarget>();
             writer.SetEnabled<AttackTarget>(false);

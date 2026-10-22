@@ -1,5 +1,6 @@
 using System.Linq;
 using HyperRTS.Presentation.Animation;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using NUnit.Framework;
 using UnityEngine;
@@ -75,6 +76,28 @@ namespace HyperRTS.Presentation.Tests
 
             Assert.AreEqual(model, rig.tiltRoot);
             Assert.AreEqual(new Vector2(7f, 3f), rig.footprint);
+        }
+
+        [Test]
+        public void FillFromModel_OnABuilding_AimsTheInterceptorAfterTheWeapon_AndNeverTilts()
+        {
+            var turret = Pivot("Turret", Pivot("Hull", _unit.transform, Vector3.one));
+            var launcher = Pivot("Launcher", turret);
+            _unit.AddComponent<BuildingAuthoring>();
+            _unit.AddComponent<WeaponAuthoring>();
+            var interceptor = _unit.AddComponent<InterceptorAuthoring>();
+            var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+            rig.FillFromModel();
+
+            Assert.AreEqual(1, interceptor.Pose);
+            Assert.AreEqual(1, rig.elevations.Single(slot => slot.part == launcher).weapon, "the launcher follows it");
+            Assert.AreEqual((turret, launcher), (interceptor.turret, interceptor.barrel));
+            Assert.IsNull(rig.tiltRoot);
+            CollectionAssert.IsEmpty(rig.Problems());
+
+            rig.tiltRoot = turret;
+            StringAssert.Contains("never tilts", rig.Problems().Single());
         }
 
         [Test]

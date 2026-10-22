@@ -18,6 +18,9 @@ namespace HyperRTS.Simulation.Combat
         public Entity ProjectilePrefab;
         public float ProjectileSpeed;
 
+        /// <summary>What interceptors see its projectiles as.</summary>
+        public ProjectileKind ProjectileKind;
+
         /// <summary>Height above the shooter's and target's pivots that projectiles fly at; 0 flies pivot to pivot.</summary>
         public float ProjectileHeight;
 

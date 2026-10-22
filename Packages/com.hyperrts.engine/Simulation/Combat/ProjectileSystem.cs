@@ -78,6 +78,11 @@ namespace HyperRTS.Simulation.Combat
 
             private void Execute(Entity entity, ref LocalTransform transform, ref Projectile projectile)
             {
+                if (projectile.Intercepted)
+                {
+                    return;
+                }
+
                 var arrived = projectile.Arcs ? FlyArc(ref transform, ref projectile) : FlyDirect(ref transform, projectile);
                 if (!arrived)
                 {

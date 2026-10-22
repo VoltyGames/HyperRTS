@@ -21,6 +21,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<BuildingTag> _buildings;
         private ComponentLookup<NavAgent> _agents;
         private ComponentLookup<HitMaterial> _materials;
+        private ComponentLookup<Projectile> _projectiles;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -28,6 +29,7 @@ namespace HyperRTS.Simulation.Combat
             _buildings = state.GetComponentLookup<BuildingTag>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
             _materials = state.GetComponentLookup<HitMaterial>(true);
+            _projectiles = state.GetComponentLookup<Projectile>(true);
             state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<NavGrid>();
         }
@@ -38,12 +40,14 @@ namespace HyperRTS.Simulation.Combat
             _buildings.Update(ref state);
             _agents.Update(ref state);
             _materials.Update(ref state);
+            _projectiles.Update(ref state);
             var hasGround = SystemAPI.TryGetSingleton<GroundMaterials>(out var ground);
             new ClassifyJob
             {
                 Buildings = _buildings,
                 Agents = _agents,
                 Materials = _materials,
+                Projectiles = _projectiles,
                 Grid = SystemAPI.GetSingleton<NavGrid>(),
                 Ground = ground,
                 HasGround = hasGround,
@@ -57,6 +61,7 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<BuildingTag> Buildings;
             [ReadOnly] public ComponentLookup<NavAgent> Agents;
             [ReadOnly] public ComponentLookup<HitMaterial> Materials;
+            [ReadOnly] public ComponentLookup<Projectile> Projectiles;
             [ReadOnly] public NavGrid Grid;
             public GroundMaterials Ground;
             public bool HasGround;
@@ -84,7 +89,9 @@ namespace HyperRTS.Simulation.Combat
                     return ImpactSurface.Structure;
                 }
 
-                if (NavAgent.GetLayer(Agents, impact.Target) == NavLayer.Air)
+                // A projectile shot down in flight bursts in the air.
+                var airborne = Projectiles.HasComponent(impact.Target);
+                if (airborne || NavAgent.GetLayer(Agents, impact.Target) == NavLayer.Air)
                 {
                     return ImpactSurface.Air;
                 }

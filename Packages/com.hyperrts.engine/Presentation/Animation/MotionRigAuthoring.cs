@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
@@ -12,8 +13,9 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
-    /// Client-side motion of a unit model's parts: turrets and barrels follow the weapon pose, barrels recoil, wheels
-    /// roll, rotors spin up and down and the body tilts. <see cref="FillFromModel"/> finds the parts by their art names.
+    /// Client-side motion of a unit or building model's parts: turrets and barrels follow the weapon or interceptor
+    /// pose, barrels recoil, wheels roll, rotors spin up and down and a unit's body tilts. <see cref="FillFromModel"/>
+    /// finds the parts by their art names.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "Motion Rig")]
     [Icon(HyperRTSIcons.Animation)]
@@ -38,7 +40,7 @@ namespace HyperRTS.Presentation.Animation
         [Tooltip("Rotors that spin up in flight and down when docked.")]
         public List<RotorSlot> rotors = new();
 
-        [Tooltip("The model or hull child that pitches and rolls; none keeps the body level.")]
+        [Tooltip("The model or hull child that pitches and rolls; none keeps the body level, as on buildings.")]
         public Transform tiltRoot;
 
         [Tooltip("Length and width of the ground the body sits on, sampled at the four edges.")]
@@ -59,8 +61,14 @@ namespace HyperRTS.Presentation.Animation
         [Tooltip("Ground vehicles: degrees per second a shot rocks the body away from the gun.")]
         public float recoilKick = 12f;
 
-        /// <summary>Primary plus extra weapons, the <c>WeaponPose</c> indices a slot may follow.</summary>
-        public int WeaponCount => TryGetComponent<WeaponAuthoring>(out var weapon) ? 1 + weapon.extraWeapons.Count : 0;
+        /// <summary>Primary and extra weapons, then an interceptor: the <c>WeaponPose</c> indices a slot may follow.</summary>
+        public int WeaponCount => Weapons() + (TryGetComponent<InterceptorAuthoring>(out _) ? 1 : 0);
+
+        /// <summary>A building stands on levelled ground and never moves, so its body never tilts.</summary>
+        private bool IsBuilding => TryGetComponent<BuildingAuthoring>(out _);
+
+        private int Weapons() =>
+            TryGetComponent<WeaponAuthoring>(out var weapon) ? 1 + weapon.extraWeapons.Count : 0;
 
         public static void AddRig<TWriter>(ref TWriter writer, in MotionRig rig, IReadOnlyList<MotionRigPart> parts)
             where TWriter : struct, IEntityWriter
@@ -92,6 +100,11 @@ namespace HyperRTS.Presentation.Animation
             if (tiltRoot != null && !IsBelow(tiltRoot))
             {
                 yield return $"Tilt root '{tiltRoot.name}' must be a child of '{name}'.";
+            }
+
+            if (tiltRoot != null && IsBuilding)
+            {
+                yield return $"Building '{name}' never tilts; clear its tilt root.";
             }
 
             var sprung = !TryGetComponent<FlightAuthoring>(out _);
@@ -136,7 +149,8 @@ namespace HyperRTS.Presentation.Animation
             });
 
             FillWeaponPivots();
-            tiltRoot = Named("Hull") ?? ModelRoot();
+            FillInterceptorPivots();
+            tiltRoot = IsBuilding ? null : Named("Hull") ?? ModelRoot();
             if (tiltRoot != null)
             {
                 var size = PartSlot.MeshBounds(tiltRoot, transform).size;
@@ -171,6 +185,17 @@ namespace HyperRTS.Presentation.Animation
                 stats[index].barrel = barrel;
                 stats[index].turret = Turret(index, barrel);
             }
+        }
+
+        private void FillInterceptorPivots()
+        {
+            if (!TryGetComponent<InterceptorAuthoring>(out var interceptor))
+            {
+                return;
+            }
+
+            interceptor.barrel = elevations.FirstOrDefault(slot => slot.weapon == interceptor.Pose)?.part;
+            interceptor.turret = Turret(interceptor.Pose, interceptor.barrel);
         }
 
         // A weapon turns with its own turret slot, else with the turret its barrel sits on.

@@ -155,6 +155,7 @@ namespace HyperRTS.Simulation.Combat
                 ImpactTypeId = _cues.TypeIdFor(shooter, CueSlot.Impact),
                 Hit = CombatMath.Hit(weapon, shooter, faction, origin, target, aim),
                 Trajectory = weapon.Trajectory,
+                Kind = weapon.ProjectileKind,
                 Start = origin,
                 Apex = weapon.ArcHeight * math.distance(origin.xz, aim.xz),
             };

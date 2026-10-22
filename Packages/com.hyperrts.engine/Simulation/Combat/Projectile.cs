@@ -22,6 +22,12 @@ namespace HyperRTS.Simulation.Combat
 
         public Trajectory Trajectory;
 
+        /// <summary>What an <see cref="Interceptor"/> sees it as.</summary>
+        public ProjectileKind Kind;
+
+        /// <summary>Shot down this frame: it stops flying and never lands.</summary>
+        public bool Intercepted;
+
         /// <summary>Launch point of an arcing shot.</summary>
         public float3 Start;
 

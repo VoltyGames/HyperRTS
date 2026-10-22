@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.GameEntities;
@@ -26,7 +27,7 @@ namespace HyperRTS.Simulation.Combat
         public WeaponStats stats = new();
 
         [Header("Engagement")]
-        [Tooltip("A turret aims at the target, so the hull keeps its heading while firing.")]
+        [Tooltip("A turret aims at the target, so the hull keeps its heading while firing. Buildings always aim a turret.")]
         public bool turreted;
 
         [Tooltip("Distance at which idle units spot enemies; 0 uses the vision range.")]
@@ -43,6 +44,9 @@ namespace HyperRTS.Simulation.Combat
         [Header("Extra weapons")]
         [Tooltip("Weapons mounted beside the primary; each plays its own Fire cue by weapon index.")]
         public List<WeaponSlot> extraWeapons = new();
+
+        /// <summary>A building never turns, so its weapon always aims a turret.</summary>
+        public bool AimsTurret => turreted || TryGetComponent<BuildingAuthoring>(out _);
 
         /// <summary>What one weapon deals and how it reaches; the primary and every extra weapon carry one.</summary>
         [Serializable]
@@ -99,6 +103,10 @@ namespace HyperRTS.Simulation.Combat
             [Min(0f)]
             [ShowIf(nameof(projectilePrefab))]
             public float arcHeight = 0.25f;
+
+            [Tooltip("What interceptors see the projectile as; None is never shot down.")]
+            [ShowIf(nameof(projectilePrefab))]
+            public ProjectileKind projectileKind;
 
             [Header("Aim")]
             [Tooltip("Part the muzzle traverses about, such as the turret; none traverses about the unit's pivot.")]
@@ -162,6 +170,7 @@ namespace HyperRTS.Simulation.Combat
                         ? baker.GetEntity(projectilePrefab, TransformUsageFlags.Dynamic)
                         : Entity.Null,
                     ProjectileSpeed = projectileSpeed,
+                    ProjectileKind = projectileKind,
                     ProjectileHeight = projectileHeight,
                     Targets = targets,
                     MinEffect = minEffect,
@@ -185,7 +194,8 @@ namespace HyperRTS.Simulation.Combat
                 return weapon;
             }
 
-            private static float3 Pivot(IBaker baker, Transform root, Transform part)
+            /// <summary>Where <paramref name="part"/> sits in <paramref name="root"/>'s space; interceptors aim about these too.</summary>
+            internal static float3 Pivot(IBaker baker, Transform root, Transform part)
             {
                 baker.DependsOn(part);
                 return EffectSetup.Socket(root, part);
@@ -222,11 +232,12 @@ namespace HyperRTS.Simulation.Combat
                 var weapon = authoring.stats.Bake(this, authoring.transform);
                 weapon.AcquireRange = authoring.acquireRange;
                 weapon.LeashFactor = authoring.leashFactor;
-                weapon.Turreted = authoring.turreted;
+                weapon.Turreted = authoring.AimsTurret;
 
                 var writer = new BakerWriter(this, entity);
+                var interceptorPoses = GetComponent<InterceptorAuthoring>() != null ? 1 : 0;
                 WeaponSetup.Add(ref writer, weapon, authoring.stance, authoring.transform.position,
-                    authoring.extraWeapons.Count);
+                    authoring.extraWeapons.Count + interceptorPoses);
                 if (authoring.extraWeapons.Count > 0)
                 {
                     WeaponSetup.AddMounts(ref writer, BakeMounts(authoring));

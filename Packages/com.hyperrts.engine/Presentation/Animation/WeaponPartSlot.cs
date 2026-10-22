@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.Animation
     [Serializable]
     public abstract class WeaponPartSlot : PartSlot
     {
-        [Tooltip("Weapon it follows: 0 is the primary weapon, 1 and up the extra weapons in order.")]
+        [Tooltip("Weapon it follows: 0 is the primary weapon, 1 and up the extra weapons in order, then the interceptor.")]
         [FormerlySerializedAs("pose")]
         [Min(0)]
         public int weapon;
@@ -22,7 +22,7 @@ namespace HyperRTS.Presentation.Animation
                 return problem;
             }
 
-            return $"Part '{part.name}' follows weapon {weapon}, but the unit has {rig.WeaponCount} weapons.";
+            return $"Part '{part.name}' follows weapon {weapon}, but '{rig.name}' has {rig.WeaponCount}.";
         }
 
         protected override MotionRigPart AtRest(Entity entity, MotionPartKind kind)

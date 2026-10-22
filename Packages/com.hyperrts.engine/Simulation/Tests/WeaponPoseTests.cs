@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using NUnit.Framework;
@@ -7,7 +8,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Replicated weapon poses: aim per weapon, launch angles, shot counts, settling and turreted hulls.</summary>
+    /// <summary>Replicated weapon poses: aim per weapon, launch angles, shot counts, settling, turreted hulls and buildings.</summary>
     public class WeaponPoseTests
     {
         /// <summary>One yaw step.</summary>
@@ -119,6 +120,48 @@ namespace HyperRTS.Simulation.Tests
             // The muzzle 3 m ahead of the turret ring swung a quarter turn to the right.
             var start = projectiles.GetSingleton<Projectile>().Start;
             MathAssert.Near(new float3(3f, 1f, 0f), start, 0.1f);
+        }
+
+        [Test]
+        public void BuildingWeapon_AimsItsTurret_AndFiresOnceOnTarget()
+        {
+            var model = new UnityEngine.GameObject("Tower");
+            try
+            {
+                var authoring = model.AddComponent<WeaponAuthoring>();
+                model.AddComponent<BuildingAuthoring>();
+                Assert.IsTrue(authoring.AimsTurret, "a building never turns, so its weapon aims a turret");
+
+                var tower = _world.AddWeapon(_world.SpawnBuilding(1, float3.zero, new float2(2f, 2f)), range: 6f,
+                    cooldown: 0.1f, turreted: authoring.AimsTurret, traverseSpeed: 90f);
+                var enemy = _world.SpawnUnit(2, new float3(-4f, 0f, 0f), maxHealth: 1000f);
+
+                _world.Run(0.5f);
+                Assert.AreEqual(1000f, _world.GetHealth(enemy), "still traversing");
+
+                _world.Run(1f);
+                Assert.AreEqual(-0.5f * math.PI, Pose(tower, 0).YawRadians, YawTolerance);
+                Assert.Less(_world.GetHealth(enemy), 1000f);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(model);
+            }
+        }
+
+        [Test]
+        public void Launch_GivesTheProjectileItsWeaponsKind()
+        {
+            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 8f, cooldown: 100f,
+                projectile: _world.ProjectilePrefab(), trajectory: Trajectory.Rocket);
+            var weapon = _world.Get<Weapon>(gun);
+            weapon.ProjectileKind = ProjectileKind.Rocket;
+            _world.EntityManager.SetComponentData(gun, weapon);
+            _world.SpawnUnit(2, new float3(7f, 0f, 0f));
+
+            using var projectiles = _world.EntityManager.CreateEntityQuery(typeof(Projectile));
+            Assert.IsTrue(_world.RunUntil(() => !projectiles.IsEmpty, 2f), "the gun fired");
+            Assert.AreEqual(ProjectileKind.Rocket, projectiles.GetSingleton<Projectile>().Kind);
         }
 
         private WeaponPose Pose(Entity entity, int index) => _world.EntityManager.GetBuffer<WeaponPose>(entity)[index];
