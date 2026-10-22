@@ -11,20 +11,39 @@ namespace HyperRTS.Simulation.Production
     /// </summary>
     public static class PurchaseRules
     {
-        public static bool IsUnlocked(EntityManager entityManager, Entity prefab, in Buyer buyer)
+        /// <summary>What locks <paramref name="prefab"/> whatever the price, or <see cref="PurchaseRefusal.None"/>.</summary>
+        public static PurchaseRefusal FindLock(EntityManager entityManager, Entity prefab, in Buyer buyer)
         {
             if (!ResearchRules.CanQueue(entityManager, buyer.Research, buyer.QueuedResearch, prefab))
             {
-                return false;
+                return PurchaseRefusal.Researched;
             }
 
             if (buyer.Counts.AtLimit(entityManager, prefab))
             {
-                return false;
+                return PurchaseRefusal.AtLimit;
             }
 
             var required = entityManager.GetBuffer<Prerequisite>(prefab, true);
-            return buyer.Buildings.MeetsPrerequisites(required, buyer.Faction, buyer.Research);
+            var met = buyer.Buildings.MeetsPrerequisites(required, buyer.Faction, buyer.Research);
+            return met ? PurchaseRefusal.None : PurchaseRefusal.MissingPrerequisite;
+        }
+
+        public static bool IsUnlocked(EntityManager entityManager, Entity prefab, in Buyer buyer) =>
+            FindLock(entityManager, prefab, buyer) == PurchaseRefusal.None;
+
+        /// <summary>Why a purchase is refused, for the HUD: a lock wins over the price.</summary>
+        public static PurchaseRefusal FindRefusal(EntityManager entityManager, Entity prefab, in Buyer buyer,
+            NativeArray<ResourceStock> stock)
+        {
+            var refusal = FindLock(entityManager, prefab, buyer);
+            if (refusal != PurchaseRefusal.None)
+            {
+                return refusal;
+            }
+
+            var cost = entityManager.GetBuffer<ResourceCost>(prefab, true);
+            return ResourceMath.CanAfford(stock, cost) ? PurchaseRefusal.None : PurchaseRefusal.CannotAfford;
         }
 
         /// <summary>Checks without paying, against a live stockpile or a copy a planner deducts from (the AI).</summary>

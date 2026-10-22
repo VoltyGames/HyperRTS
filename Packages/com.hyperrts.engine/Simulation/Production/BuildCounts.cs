@@ -41,9 +41,14 @@ namespace HyperRTS.Simulation.Production
                 return false;
             }
 
-            var max = entityManager.GetComponentData<BuildLimit>(prefab).Max;
+            return Count(entityManager, prefab) >= entityManager.GetComponentData<BuildLimit>(prefab).Max;
+        }
+
+        /// <summary>How many of <paramref name="prefab"/>'s type the player has, standing or queued; 0 if unlimited.</summary>
+        public readonly int Count(EntityManager entityManager, Entity prefab)
+        {
             _counts.TryGetValue(EntityInfo.GetTypeId(entityManager, prefab), out var count);
-            return count >= max;
+            return count;
         }
 
         /// <summary>Counts one more <paramref name="prefab"/> bought this frame, if it is limited.</summary>

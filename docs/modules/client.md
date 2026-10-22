@@ -53,7 +53,7 @@ to every panel and keeps it in sync with the simulation. Code fills in only per-
 | Type | Role |
 | --- | --- |
 | Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner`, each built from a `HUDPanelLayouts` |
-| Elements | `HUDIcon`, `HUDBar`, `CostRow`, `CommandButton`: UXML elements filled through `Bind` or properties |
+| Elements | `HUDIcon`, `HUDBar`, `CostRow`, `CommandButton`, `HUDTooltip`, `HUDSweep`, `HUDGlyph`, `HUDFade`: UXML elements filled through `Bind` or properties |
 | `ICommandSource` | Adds command-card entries: purchases, abilities, stances, unit actions. Each has a slot and hotkey |
 | `HUDText` | Every HUD string, by key. Set `HUDText.Current` to translate |
 | `OverlayRenderer` | Instanced ground markers, health bars, placement ghost, rally markers, capture dials, garrison pips. Colours and sizes come from an `OverlayStyle` asset |
@@ -66,7 +66,27 @@ to every panel and keeps it in sync with the simulation. Code fills in only per-
 | `command.return`, `command.unload`, `command.sell` | Fixed commands |
 | `stance.<stance>` | Stance names |
 | `outcome.victory`, `outcome.defeat`, `outcome.draw` | Game over banner |
+| `tooltip.build-time`, `tooltip.population`, `tooltip.power`, `tooltip.requires`, `tooltip.seconds` | Tooltip labels |
 | `entity.<name>`, `resource.<asset>`, `ability.<name>` | Names, kebab-cased: "War Factory" is `entity.war-factory` |
+| `entity.<name>.description` | Optional tooltip line under the name; `HUDText.Description` returns null when there is none |
+
+The command card is a grid of 72 px cards, five a row, laid out in `HUDCommands.uss`. A build, train, research or
+ability card is a picture: the icon fills the button, scaled and cropped, with the hotkey top left and the cost in a
+strip along the bottom. Its name is in the tooltip. Caption buttons (stances, unload, sell) stay text.
+
+`PurchaseCommands` asks `PurchaseRules.FindRefusal` why a purchase is refused and shows it as a class on the card:
+
+| Class | When | Look |
+| --- | --- | --- |
+| `hud-command--unaffordable` | `CannotAfford` | Cost in the warning colour, picture dimmed |
+| `hud-command--locked` | `MissingPrerequisite` | Greyscale, dark, padlock badge |
+| `hud-command--maxed` | `AtLimit` | Dimmed, the `count/max` badge in the warning colour |
+| `hud-command--researched` | `Researched` | Greyscale |
+| `hud-command--queued` | The selected producers have it queued | Count badge; the head shows a clockwise sweep |
+
+A lightning badge marks an option whose producer is offline for low power. A refused card ignores presses and
+hotkeys but still shows its tooltip: name, description, cost, build time, population, power and each missing
+prerequisite in the warning colour. The tooltip shows on hover and on keyboard or gamepad focus, above the card.
 
 The minimap shows the baked map image, local fog, blips and the camera view.
 

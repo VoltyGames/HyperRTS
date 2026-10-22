@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
@@ -8,6 +10,9 @@ namespace HyperRTS.Presentation.HUD
     [UxmlElement]
     public partial class CostRow : VisualElement
     {
+        private readonly List<(Label Amount, ResourceType Type)> _amounts = new();
+        private bool _short;
+
         public CostRow()
         {
             AddToClassList("hud-costs");
@@ -16,15 +21,36 @@ namespace HyperRTS.Presentation.HUD
         public void Bind(DynamicBuffer<ResourceCost> costs)
         {
             Clear();
+            _amounts.Clear();
             foreach (var cost in costs)
             {
                 var label = HUDElements.Text(cost.Amount.ToString(), "hud-costs__amount", this);
-                var type = cost.Type.Value;
-                if (type != null)
-                {
-                    label.style.color = type.color;
-                }
+                _amounts.Add((label, cost.Type.Value));
+                Paint(label, cost.Type.Value);
             }
+        }
+
+        /// <summary>Swaps the resource colours for the sheet's <c>hud-costs--short</c> one while the player can't pay.</summary>
+        public void MarkShort(bool isShort)
+        {
+            if (isShort == _short)
+            {
+                return;
+            }
+
+            _short = isShort;
+            EnableInClassList("hud-costs--short", isShort);
+            foreach (var (amount, type) in _amounts)
+            {
+                Paint(amount, type);
+            }
+        }
+
+        // Inline resource colours would beat the sheet, so a short row clears them.
+        private void Paint(Label amount, ResourceType type)
+        {
+            var colored = type != null && !_short;
+            amount.style.color = colored ? new StyleColor(type.color) : new StyleColor(StyleKeyword.Null);
         }
     }
 }

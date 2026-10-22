@@ -30,6 +30,7 @@ namespace HyperRTS.Presentation.HUD
         private readonly LiveQuery _placement = Singleton<PlacementState>();
         private readonly LiveQuery _cameraFocus = Singleton<CameraFocusRequest>();
         private readonly LiveQuery _hotkeys = Singleton<HotkeyPresses>();
+        private readonly LiveQuery _registry = Singleton<PrefabRegistry>();
 
         private readonly LiveQuery _queues = new(entityManager =>
             ResearchRules.QueueQuery(Allocator.Temp).Build(entityManager));
@@ -89,8 +90,71 @@ namespace HyperRTS.Presentation.HUD
         public HotkeyPresses Hotkeys =>
             _hotkeys.In(EntityManager).TryGetSingleton(out HotkeyPresses presses) ? presses : default;
 
-        public bool CanBuy(Entity prefab, in Buyer buyer) => 
-            PurchaseRules.CanBuy(EntityManager, prefab, buyer, Stock.AsNativeArray());
+        public PurchaseRefusal FindRefusal(Entity prefab, in Buyer buyer) =>
+            PurchaseRules.FindRefusal(EntityManager, prefab, buyer, Stock.AsNativeArray());
+
+        /// <summary>Adds the prefabs of <paramref name="prefab"/>'s unmet prerequisites to <paramref name="missing"/>.</summary>
+        public void FindMissingPrerequisites(Entity prefab, in Buyer buyer, List<Entity> missing)
+        {
+            if (!_registry.In(EntityManager).TryGetSingleton(out PrefabRegistry registry))
+            {
+                return;
+            }
+
+            foreach (var prerequisite in EntityManager.GetBuffer<Prerequisite>(prefab, true))
+            {
+                var required = registry.Find(prerequisite.TypeId);
+                var unmet = !buyer.Buildings.IsMet(buyer.Faction, prerequisite.TypeId, buyer.Research);
+                if (unmet && required != Entity.Null)
+                {
+                    missing.Add(required);
+                }
+            }
+        }
+
+        /// <summary>
+        /// How many <paramref name="prefab"/> the <paramref name="producers"/> have queued, and the furthest one in work.
+        /// </summary>
+        public QueuedOption FindQueued(IReadOnlyList<Entity> producers, Entity prefab)
+        {
+            var count = 0;
+            var progress = QueuedOption.Idle;
+            foreach (var producer in producers)
+            {
+                var queue = EntityManager.GetBuffer<ProductionQueueItem>(producer, true);
+                for (var i = 0; i < queue.Length; i++)
+                {
+                    if (queue[i].Prefab != prefab)
+                    {
+                        continue;
+                    }
+
+                    count++;
+                    if (i == 0)
+                    {
+                        progress = math.max(progress, HeadProgress(producer, prefab));
+                    }
+                }
+            }
+
+            return new QueuedOption(count, progress);
+        }
+
+        /// <summary>Share of <paramref name="prefab"/>, at the head of <paramref name="producer"/>'s queue, built.</summary>
+        public float HeadProgress(Entity producer, Entity prefab)
+        {
+            var elapsed = EntityManager.GetComponentData<Producer>(producer).Elapsed;
+            var buildTime = EntityManager.HasComponent<Producible>(prefab)
+                ? EntityManager.GetComponentData<Producible>(prefab).BuildTime
+                : 0f;
+            return buildTime > 0f ? math.saturate(elapsed / buildTime) : 1f;
+        }
+
+        /// <summary>True while <paramref name="entity"/> is offline because its owner's power is low.</summary>
+        public bool IsUnpowered(Entity entity) =>
+            EntityManager.HasComponent<Offline>(entity)
+            && EntityManager.IsComponentEnabled<Offline>(entity)
+            && (EntityManager.GetComponentData<Offline>(entity).Reasons & OfflineReason.Unpowered) != 0;
 
         /// <summary>Starts targeting a command; the input layer issues it on the next world click.</summary>
         public void BeginTargeting(CommandType type, int argument) =>

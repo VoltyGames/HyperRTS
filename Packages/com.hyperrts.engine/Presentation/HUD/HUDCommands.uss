@@ -1,0 +1,168 @@
+/* Command card and tooltip layout, imported by HUD.uss. The look is in HUDTheme.uss. */
+
+/* Five 72px cards a row with 2px margins, three rows, inside the panel's padding and border. */
+.hud-commands {
+    width: 398px;
+    min-height: 246px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+}
+
+.hud-command {
+    width: 72px;
+    height: 72px;
+    margin: 2px;
+    padding: 0;
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    white-space: normal;
+}
+
+.hud-command:disabled {
+    opacity: 0.4;
+}
+
+.hud-command--text {
+    height: 34px;
+    padding: 2px 4px;
+}
+
+/* Two classes, to beat .hud-icon's scale-to-fit. */
+.hud-command .hud-command__icon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.hud-command__sweep {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.hud-command__lock {
+    display: none;
+    position: absolute;
+    left: 50%;
+    top: 44%;
+    width: 22px;
+    height: 26px;
+    translate: -50% -50%;
+}
+
+.hud-command--locked .hud-command__lock {
+    display: flex;
+}
+
+.hud-command__badges {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    align-items: flex-end;
+}
+
+.hud-command__count {
+    min-width: 16px;
+    padding: 0 3px;
+    margin: 0;
+    -unity-text-align: middle-center;
+}
+
+.hud-command__unpowered {
+    width: 11px;
+    height: 15px;
+    margin-top: 2px;
+}
+
+.hud-command__cooldown {
+    position: absolute;
+    top: 3px;
+    right: 5px;
+}
+
+.hud-command__hotkey {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+}
+
+/* Only on cards without a picture, where the initials alone can't tell options apart. */
+.hud-command__name {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: 18px;
+    padding: 0;
+    margin: 0;
+    -unity-text-align: lower-center;
+    white-space: normal;
+}
+
+.hud-command__strip {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 24px;
+    padding: 0 4px 1px 3px;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.hud-command__limit {
+    padding: 0;
+    margin: 0;
+}
+
+.hud-costs {
+    flex-direction: row;
+}
+
+.hud-costs__amount {
+    padding: 0 2px;
+}
+
+/* Tooltip, above the right edge of the panel that owns it */
+
+.hud-tooltip {
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    width: 280px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+}
+
+.hud-tooltip__title,
+.hud-tooltip__line {
+    padding: 0;
+    margin: 0;
+    white-space: normal;
+}
+
+.hud-tooltip__line {
+    margin-top: 3px;
+}
+
+.hud-tooltip__costs {
+    margin: 4px 0 2px -2px;
+}
+
+.hud-tooltip__stat {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.hud-tooltip__stat-name,
+.hud-tooltip__stat-value {
+    padding: 0;
+    margin: 0;
+}

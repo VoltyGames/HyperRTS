@@ -119,18 +119,75 @@
     font-size: 11px;
 }
 
+/* Solid, so a transparent icon reads as well as a full-bleed one. */
+.hud-command--picture {
+    background-color: rgb(34, 40, 48);
+}
+
 .hud-command:hover {
     background-color: rgba(255, 255, 255, 0.14);
     border-color: rgba(120, 200, 255, 0.7);
+}
+
+.hud-command--picture:hover {
+    background-color: rgb(46, 54, 64);
 }
 
 .hud-command:active {
     background-color: rgba(120, 200, 255, 0.25);
 }
 
-.hud-command--active {
+.hud-command--active,
+.hud-command--queued {
     border-color: rgb(110, 220, 120);
     background-color: rgba(110, 220, 120, 0.18);
+}
+
+.hud-command--unaffordable .hud-command__icon {
+    opacity: 0.75;
+}
+
+.hud-command--locked .hud-command__icon,
+.hud-command--researched .hud-command__icon {
+    filter: grayscale(1);
+    opacity: 0.4;
+}
+
+.hud-command--maxed .hud-command__icon {
+    opacity: 0.5;
+}
+
+.hud-command--maxed .hud-command__limit,
+.hud-costs--short .hud-costs__amount {
+    color: rgb(255, 95, 80);
+}
+
+.hud-command__lock {
+    color: rgb(228, 232, 238);
+}
+
+.hud-command__unpowered {
+    color: rgb(255, 210, 80);
+}
+
+.hud-command__sweep {
+    --sweep-color: rgba(0, 0, 0, 0.55);
+}
+
+.hud-command__strip {
+    --fade-color: rgba(0, 0, 0, 0.85);
+}
+
+.hud-command__count {
+    font-size: 12px;
+    -unity-font-style: bold;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 3px;
+}
+
+.hud-command__limit {
+    font-size: 10px;
+    -unity-font-style: bold;
 }
 
 .hud-command__cooldown {
@@ -152,6 +209,33 @@
 .hud-costs__amount {
     font-size: 10px;
     -unity-font-style: bold;
+}
+
+/* Tooltip */
+
+.hud-tooltip {
+    background-color: rgba(12, 16, 22, 0.94);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.hud-tooltip__title {
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.hud-tooltip__line {
+    color: rgb(190, 198, 210);
+}
+
+.hud-tooltip__line--warning {
+    color: rgb(255, 95, 80);
+}
+
+.hud-tooltip__stat-name {
+    color: rgb(150, 160, 175);
 }
 
 /* Game over */

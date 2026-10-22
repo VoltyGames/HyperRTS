@@ -47,7 +47,7 @@ namespace HyperRTS.Presentation.HUD
                 Rebuild(context, producer, queue);
             }
 
-            _headProgress.Fraction = HeadProgress(entityManager, producer, queue[0].Prefab);
+            _headProgress.Fraction = context.HeadProgress(producer, queue[0].Prefab);
         }
 
         private void Rebuild(HUDContext context, Entity producer, DynamicBuffer<ProductionQueueItem> queue)
@@ -73,15 +73,6 @@ namespace HyperRTS.Presentation.HUD
                     _headProgress = progress;
                 }
             }
-        }
-
-        private static float HeadProgress(EntityManager entityManager, Entity producer, Entity prefab)
-        {
-            var elapsed = entityManager.GetComponentData<Producer>(producer).Elapsed;
-            var buildTime = entityManager.HasComponent<Producible>(prefab)
-                ? entityManager.GetComponentData<Producible>(prefab).BuildTime
-                : 0f;
-            return buildTime > 0f ? elapsed / buildTime : 1f;
         }
     }
 }

@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Text;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
+using Unity.Entities;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
@@ -29,12 +31,17 @@ namespace HyperRTS.Presentation.HUD
             ["outcome.defeat"] = "DEFEAT",
             ["outcome.draw"] = "DRAW",
             ["outcome.ended"] = "MATCH OVER",
+            ["tooltip.build-time"] = "Build time",
+            ["tooltip.population"] = "Population",
+            ["tooltip.power"] = "Power",
+            ["tooltip.requires"] = "Requires",
+            ["tooltip.seconds"] = "s",
         };
 
         [AutoStaticsCleanup]
         public static HUDText Current { get; set; } = new();
 
-        /// <summary>Text of a fixed HUD key (hud.*, command.*, stance.*, outcome.*).</summary>
+        /// <summary>Text of a fixed HUD key (hud.*, command.*, stance.*, outcome.*, tooltip.*).</summary>
         public virtual string Get(string key) => English[key];
 
         /// <summary>
@@ -43,10 +50,26 @@ namespace HyperRTS.Presentation.HUD
         /// </summary>
         public virtual string Name(string key, string authored) => authored;
 
+        /// <summary>Optional text of a content key such as entity.war-factory.description; null when there is none.</summary>
+        public virtual string Description(string key) => null;
+
         public static string Text(string key) => Current.Get(key);
 
         /// <summary>A unit, building or upgrade by its <c>EntityInfo.Name</c>: entity.command-center.</summary>
         public static string EntityName(string name) => Current.Name(Key("entity", name), name);
+
+        public static string EntityName(EntityManager entityManager, Entity entity) =>
+            EntityName(entityManager.GetComponentData<EntityInfo>(entity).Name.ToString());
+
+        /// <summary>The tooltip line under a unit's or building's name, keyed entity.war-factory.description.</summary>
+        public static string EntityDescription(EntityManager entityManager, Entity entity)
+        {
+            var name = entityManager.GetComponentData<EntityInfo>(entity).Name.ToString();
+            return Current.Description(Key("entity", name) + ".description");
+        }
+
+        /// <summary>Whole seconds with the unit: "12 s".</summary>
+        public static string Seconds(float seconds) => $"{Mathf.CeilToInt(seconds)} {Text("tooltip.seconds")}";
 
         public static string AbilityName(string name) => Current.Name(Key("ability", name), name);
 

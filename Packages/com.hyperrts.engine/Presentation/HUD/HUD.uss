@@ -1,6 +1,8 @@
 /* HyperRTS in-game HUD layout: positions, sizes, spacing on an 8px rhythm, icon scaling and disabled state. The look
    is in HUDTheme.uss. */
 
+@import url("HUDCommands.uss");
+
 .hud-root {
     position: absolute;
     left: 0;
@@ -196,70 +198,6 @@
     position: absolute;
     right: 2px;
     bottom: 0;
-    padding: 0 2px;
-}
-
-/* Command card */
-
-.hud-commands {
-    width: 264px;
-    min-height: 120px;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-content: flex-start;
-}
-
-.hud-command {
-    width: 80px;
-    height: 72px;
-    margin: 3px;
-    padding: 3px;
-    align-items: center;
-    justify-content: flex-start;
-    white-space: normal;
-}
-
-.hud-command:disabled {
-    opacity: 0.4;
-}
-
-.hud-command--text {
-    height: 32px;
-    justify-content: center;
-}
-
-.hud-command__icon {
-    width: 36px;
-    height: 36px;
-}
-
-.hud-command__cooldown {
-    position: absolute;
-    top: 3px;
-    right: 5px;
-}
-
-.hud-command__hotkey {
-    position: absolute;
-    top: 3px;
-    left: 5px;
-}
-
-.hud-command__name {
-    padding: 0;
-    margin-top: 2px;
-    -unity-text-align: middle-center;
-    overflow: hidden;
-    max-width: 72px;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.hud-costs {
-    flex-direction: row;
-}
-
-.hud-costs__amount {
     padding: 0 2px;
 }
 

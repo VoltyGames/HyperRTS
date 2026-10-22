@@ -2,18 +2,22 @@ using System.Collections.Generic;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
+using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>Build, train and research buttons, greyed out while the purchase rules refuse them.</summary>
+    /// <summary>
+    /// Build, train and research cards, showing why the purchase rules refuse one, what the selected producers have
+    /// queued and whether low power slows them.
+    /// </summary>
     public sealed class PurchaseCommands : ICommandSource
     {
-        private readonly List<(CommandButton Button, Entity Prefab)> _buttons = new();
+        private readonly List<Option> _options = new();
 
         public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
         {
-            _buttons.Clear();
+            _options.Clear();
             var builds = new List<Entity>();
             var products = new List<Entity>();
             var entityManager = context.EntityManager;
@@ -25,35 +29,105 @@ namespace HyperRTS.Presentation.HUD
 
             foreach (var prefab in builds)
             {
-                Add(context, entries, prefab, () => context.StartPlacement(prefab));
+                Add(context, entries, prefab, new List<Entity>(), () => context.StartPlacement(prefab));
             }
 
             foreach (var prefab in products)
             {
-                Add(context, entries, prefab,
+                Add(context, entries, prefab, FindProducers(entityManager, owned, prefab),
                     () => context.Issue(new PlayerCommand { Type = CommandType.Produce, Prefab = prefab }));
             }
         }
 
         public void Refresh(HUDContext context)
         {
-            if (_buttons.Count == 0)
+            if (_options.Count == 0)
             {
                 return;
             }
 
+            var entityManager = context.EntityManager;
             var buyer = context.SnapshotBuyer();
-            foreach (var (button, prefab) in _buttons)
+            foreach (var option in _options)
             {
-                button.SetEnabled(context.CanBuy(prefab, buyer));
+                var button = option.Button;
+                button.ShowRefusal(context.FindRefusal(option.Prefab, buyer));
+                button.ShowQueue(context.FindQueued(option.Producers, option.Prefab));
+                button.ShowUnpowered(option.Producers.Exists(context.IsUnpowered));
+                if (entityManager.HasComponent<BuildLimit>(option.Prefab))
+                {
+                    button.ShowLimit(buyer.Counts.Count(entityManager, option.Prefab),
+                        entityManager.GetComponentData<BuildLimit>(option.Prefab).Max);
+                }
             }
         }
 
-        private void Add(HUDContext context, List<CommandEntry> entries, Entity prefab, System.Action invoke)
+        private void Add(HUDContext context, List<CommandEntry> entries, Entity prefab, List<Entity> producers,
+            System.Action invoke)
         {
             var button = new CommandButton().BindPrefab(context.EntityManager, prefab, invoke);
-            _buttons.Add((button, prefab));
+            button.Description = tooltip => Describe(context, prefab, tooltip);
+            _options.Add(new Option(button, prefab, producers));
             entries.Add(new CommandEntry(button, invoke));
+        }
+
+        /// <summary>Name, description, cost, build time, population, power and missing prerequisites.</summary>
+        private static void Describe(HUDContext context, Entity prefab, HUDTooltip tooltip)
+        {
+            var entityManager = context.EntityManager;
+            tooltip.AddTitle(HUDText.EntityName(entityManager, prefab));
+            var description = HUDText.EntityDescription(entityManager, prefab);
+            if (description != null)
+            {
+                tooltip.AddLine(description);
+            }
+
+            if (entityManager.HasBuffer<ResourceCost>(prefab))
+            {
+                tooltip.AddCosts(entityManager.GetBuffer<ResourceCost>(prefab, true));
+            }
+
+            if (entityManager.HasComponent<Producible>(prefab))
+            {
+                var producible = entityManager.GetComponentData<Producible>(prefab);
+                tooltip.AddStat(HUDText.Text("tooltip.build-time"), HUDText.Seconds(producible.BuildTime));
+                if (producible.Population > 0)
+                {
+                    tooltip.AddStat(HUDText.Text("tooltip.population"), producible.Population.ToString());
+                }
+            }
+
+            if (entityManager.HasComponent<PowerSupply>(prefab))
+            {
+                var power = entityManager.GetComponentData<PowerSupply>(prefab).Amount;
+                tooltip.AddStat(HUDText.Text("tooltip.power"), power.ToString("+0;-0;0"));
+            }
+
+            var missing = new List<Entity>();
+            context.FindMissingPrerequisites(prefab, context.SnapshotBuyer(), missing);
+            foreach (var required in missing)
+            {
+                tooltip.AddWarning($"{HUDText.Text("tooltip.requires")} {HUDText.EntityName(entityManager, required)}");
+            }
+        }
+
+        private static List<Entity> FindProducers(EntityManager entityManager, IReadOnlyList<Entity> owned,
+            Entity prefab)
+        {
+            var producers = new List<Entity>();
+            foreach (var entity in owned)
+            {
+                var offers = entityManager.HasBuffer<ProductionQueueItem>(entity)
+                             && entityManager.HasBuffer<ProductionOption>(entity)
+                             && ProductionRules.HasOption(entityManager.GetBuffer<ProductionOption>(entity, true),
+                                 prefab);
+                if (offers)
+                {
+                    producers.Add(entity);
+                }
+            }
+
+            return producers;
         }
 
         private static void Collect<T>(EntityManager entityManager, Entity entity, List<Entity> prefabs)
@@ -71,6 +145,22 @@ namespace HyperRTS.Presentation.HUD
                     prefabs.Add(option.Prefab);
                 }
             }
+        }
+
+        private readonly struct Option
+        {
+            public Option(CommandButton button, Entity prefab, List<Entity> producers)
+            {
+                Button = button;
+                Prefab = prefab;
+                Producers = producers;
+            }
+
+            public CommandButton Button { get; }
+            public Entity Prefab { get; }
+
+            /// <summary>Selected producers that offer it; none for a building a builder places.</summary>
+            public List<Entity> Producers { get; }
         }
     }
 }

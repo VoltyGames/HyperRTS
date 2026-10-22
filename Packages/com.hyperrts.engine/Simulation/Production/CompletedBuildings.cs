@@ -46,8 +46,7 @@ namespace HyperRTS.Simulation.Production
         {
             foreach (var prerequisite in required)
             {
-                var met = Owns(faction, prerequisite.TypeId) || ResearchRules.IsDone(research, prerequisite.TypeId);
-                if (!met)
+                if (!IsMet(faction, prerequisite.TypeId, research))
                 {
                     return false;
                 }
@@ -55,6 +54,10 @@ namespace HyperRTS.Simulation.Production
 
             return true;
         }
+
+        /// <summary>True when <paramref name="faction"/> has a completed building or finished research of it.</summary>
+        public bool IsMet(byte faction, int typeId, DynamicBuffer<CompletedResearch> research) =>
+            Owns(faction, typeId) || ResearchRules.IsDone(research, typeId);
 
         /// <summary>True when <paramref name="faction"/> owns a completed building of type <paramref name="typeId"/>.</summary>
         public bool Owns(byte faction, int typeId)

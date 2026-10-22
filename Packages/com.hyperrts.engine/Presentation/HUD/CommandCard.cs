@@ -7,13 +7,15 @@ namespace HyperRTS.Presentation.HUD
     /// <summary>
     /// Actions for the owned part of the selection, gathered from <see cref="ICommandSource"/>s: by default building,
     /// training and research, abilities and support powers, stances, and return, unload and sell. Games add their own
-    /// sources, whose entries can take grid slots and hotkeys.
+    /// sources, whose entries can take grid slots and hotkeys. Hovering or focusing a button shows its tooltip above
+    /// the card.
     /// </summary>
     public sealed class CommandCard : HUDPanel
     {
         private readonly List<ICommandSource> _sources;
         private readonly List<CommandEntry> _entries = new();
         private readonly List<Entity> _owned = new();
+        private readonly HUDTooltip _tooltip = new();
         private int _hash = -1;
 
         /// <summary>The engine's sources, then <paramref name="extra"/>.</summary>
@@ -39,12 +41,14 @@ namespace HyperRTS.Presentation.HUD
                 source.Refresh(context);
             }
 
+            _tooltip.Refresh();
             PressHotkeys(context);
         }
 
         private void Rebuild(HUDContext context)
         {
             Root.Clear();
+            _tooltip.Forget();
             _entries.Clear();
             _owned.Clear();
             foreach (var entity in context.Selected)
@@ -69,9 +73,11 @@ namespace HyperRTS.Presentation.HUD
                 }
 
                 Root.Add(entry.Button);
+                _tooltip.Track(entry.Button);
             }
 
-            Root.SetInvisible(Root.childCount == 0);
+            Root.SetInvisible(_entries.Count == 0);
+            Root.Add(_tooltip);
         }
 
         private void PressHotkeys(HUDContext context)
@@ -85,7 +91,7 @@ namespace HyperRTS.Presentation.HUD
             foreach (var entry in _entries)
             {
                 var pressed = entry.Hotkey != '\0' && hotkeys.Contains(entry.Hotkey);
-                if (pressed && entry.Button.enabledInHierarchy)
+                if (pressed && entry.Button.CanPress)
                 {
                     entry.Invoke();
                 }
