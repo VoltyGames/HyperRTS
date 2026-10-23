@@ -212,7 +212,8 @@ brake, roll out of turns and rock back from each recoil shot, by 1 to 3 degrees.
 kick fields tune it. **Fill from
 model** finds the parts by their art names: `Hull`, `Turret`, `Barrel`, `Launcher`, `Wheel_L01`, `Sprocket_L`,
 `Idler_L`, `Rotor_Main` and `Rotor_Tail`. It keeps slots it already lists, measures wheel radii and the footprint
-from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon or an interceptor. It also fills the
+from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon or an interceptor. Numbered parts
+aim their own weapon: `Turret_01` and `Launcher_01` weapon 0, `Turret_02` and `Launcher_02` weapon 1. It also fills the
 weapons' and the interceptor's turret and barrel pivots. A building's body never tilts, so it gets no tilt root.
 `MotionRigRule` checks every slot names a child of the rig and a weapon the unit has. Traverse and elevation rates and limits are weapon data, so the
 rig only smooths the simulated pose.

@@ -25,6 +25,9 @@ namespace HyperRTS.Presentation.Animation
     {
         private static readonly Regex WheelName = new(@"^(Wheel_[LR]\d+|Sprocket_[LR]|Idler_[LR])$");
 
+        // Turret_02 and Launcher_02 aim weapon 1, for a mount or interceptor on a launcher of its own.
+        private static readonly Regex NumberedName = new(@"^(Turret|Launcher)_(\d\d)$");
+
         [Tooltip("Parts that turn to the weapon's yaw.")]
         public List<TurretSlot> turrets = new();
 
@@ -133,12 +136,19 @@ namespace HyperRTS.Presentation.Animation
             Transform Named(string partName) => parts.FirstOrDefault(part => part.name == partName);
             var launcherWeapon = WeaponCount > 1 ? 1 : 0;
 
-            turrets = KeepTuned(turrets, new[] { Named("Turret") }, part => new TurretSlot { part = part });
-            elevations = KeepTuned(elevations, new[] { Named("Barrel"), Named("Launcher") }, part => new ElevationSlot
+            var turretParts = parts.Where(part => NumberedName.Match(part.name).Groups[1].Value == "Turret");
+            var launcherParts = parts.Where(part => NumberedName.Match(part.name).Groups[1].Value == "Launcher");
+            turrets = KeepTuned(turrets, turretParts.Prepend(Named("Turret")), part => new TurretSlot
             {
                 part = part,
-                weapon = part.name == "Launcher" ? launcherWeapon : 0,
+                weapon = NumberedWeapon(part, 0),
             });
+            elevations = KeepTuned(elevations, launcherParts.Prepend(Named("Launcher")).Prepend(Named("Barrel")),
+                part => new ElevationSlot
+                {
+                    part = part,
+                    weapon = NumberedWeapon(part, part.name == "Launcher" ? launcherWeapon : 0),
+                });
             recoils = KeepTuned(recoils, new[] { Named("Barrel") }, part => new RecoilSlot { part = part });
             wheels = KeepTuned(wheels, parts.Where(part => WheelName.IsMatch(part.name)),
                 part => new WheelSlot { part = part, radius = WheelSlot.MeshRadius(part, transform) });
@@ -156,6 +166,12 @@ namespace HyperRTS.Presentation.Animation
                 var size = PartSlot.MeshBounds(tiltRoot, transform).size;
                 footprint = new Vector2(size.z, size.x);
             }
+        }
+
+        private static int NumberedWeapon(Transform part, int unnumbered)
+        {
+            var match = NumberedName.Match(part.name);
+            return match.Success ? int.Parse(match.Groups[2].Value) - 1 : unnumbered;
         }
 
         // A model whose only root node is the hull imports with the hull folded into the model object.

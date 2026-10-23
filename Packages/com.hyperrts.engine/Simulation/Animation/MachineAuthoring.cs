@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Animation
         [Tooltip("Run only while a player owns it (a captured derrick pumps, a neutral one stands still).")]
         public bool runsWhenOwned = true;
 
-        [Tooltip("Always, while its building is complete and powered, or while its building is producing.")]
+        [Tooltip("Always, while its building is complete and powered, while it is producing, or while it is firing.")]
         public MachineRun runs;
 
         [Tooltip("Seconds to ease from a stop to full speed, and back.")]

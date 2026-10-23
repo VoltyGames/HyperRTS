@@ -105,10 +105,11 @@ Animates machines such as pumpjacks, wind turbines, radar antennas and cranes. P
 `MachinePartAuthoring` on each moving child. A part can `Spin`, `Swing` in step with the spin, `Slide` to and fro
 along its axis (a crane on its rail, amplitude in metres), or act as a `Link` rod between two transforms.
 
-A machine's `runs` says when its clock turns: `Always`, `Powered` while its building is complete and not `Offline`
-(a radar stops on low power), or `Producing` while its building's queue has work that isn't halted (a crane runs
-only during production). The clock eases to a stop and back over `rampSeconds` rather than snapping. A machine
-first seen mid-match starts at the speed it should have.
+A machine's `runs` says when its clock turns: `Always`, `Powered` while its building is complete and not `Offline` (a
+radar stops on low power), `Producing` while its building's queue has work that isn't halted (a crane runs only during
+production), or `Firing` for a second after any of its building's weapons or interceptor fired (a gatling's barrels),
+read from the replicated `WeaponPose` shot counts. The clock eases to a stop and back over `rampSeconds` rather than
+snapping. A machine first seen mid-match starts at the speed it should have.
 
 `ProductionDoorAuthoring` on a child of a producer opens that door for each unit the producer releases: it moves by
 `openOffset`, turns `openAngle` about `openAxis` and scales by `openScale`, eased over `moveSeconds`, holds for

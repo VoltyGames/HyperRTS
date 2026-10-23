@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Animation;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using Unity.Burst;
@@ -30,6 +31,7 @@ namespace HyperRTS.Presentation.Animation
                 Factions = SystemAPI.GetComponentLookup<Faction>(true),
                 Offlines = SystemAPI.GetComponentLookup<Offline>(true),
                 Queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(true),
+                Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
             }.ScheduleParallel(state.Dependency);
             state.Dependency = new PartJob
             {
@@ -45,14 +47,15 @@ namespace HyperRTS.Presentation.Animation
             [ReadOnly] public ComponentLookup<Faction> Factions;
             [ReadOnly] public ComponentLookup<Offline> Offlines;
             [ReadOnly] public BufferLookup<ProductionQueueItem> Queues;
+            [ReadOnly] public BufferLookup<WeaponPose> Poses;
 
             private void Execute(Entity entity, ref MachineClock clock)
             {
                 var owned = Factions.TryGetComponent(entity, out var faction) && faction.Value != Faction.Neutral;
-                clock.Advance((!clock.OwnedOnly || owned) && Runs(clock), DeltaTime);
+                clock.Advance((!clock.OwnedOnly || owned) && Runs(ref clock), DeltaTime);
             }
 
-            private bool Runs(in MachineClock clock)
+            private bool Runs(ref MachineClock clock)
             {
                 var building = clock.Building;
                 var offline = Offlines.HasEnabled(building) ? Offlines[building].Reasons : OfflineReason.None;
@@ -63,9 +66,26 @@ namespace HyperRTS.Presentation.Animation
                     case MachineRun.Producing:
                         var halted = (offline & ~OfflineReason.Unpowered) != 0;
                         return !halted && Queues.TryGetBuffer(building, out var queue) && !queue.IsEmpty;
+                    case MachineRun.Firing:
+                        return clock.Fired(Shots(building), DeltaTime);
                     default:
                         return true;
                 }
+            }
+
+            // Any weapon or interceptor shot changes the sum, which wraps like each count.
+            private byte Shots(Entity building)
+            {
+                byte shots = 0;
+                if (Poses.TryGetBuffer(building, out var poses))
+                {
+                    foreach (var pose in poses)
+                    {
+                        shots += pose.Shots;
+                    }
+                }
+
+                return shots;
             }
         }
 

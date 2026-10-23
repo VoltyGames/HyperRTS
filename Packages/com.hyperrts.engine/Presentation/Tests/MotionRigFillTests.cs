@@ -101,6 +101,27 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void FillFromModel_GivesNumberedTurretsAndLaunchersTheirOwnWeapon()
+        {
+            var first = Pivot("Turret_01", _unit.transform, Vector3.one);
+            var firstLauncher = Pivot("Launcher_01", first);
+            var second = Pivot("Turret_02", _unit.transform, Vector3.one);
+            var secondLauncher = Pivot("Launcher_02", second);
+            _unit.AddComponent<BuildingAuthoring>();
+            var weapon = _unit.AddComponent<WeaponAuthoring>();
+            var interceptor = _unit.AddComponent<InterceptorAuthoring>();
+            var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+            rig.FillFromModel();
+
+            Assert.AreEqual(new[] { 0, 1 }, rig.turrets.Select(slot => slot.weapon).ToArray());
+            Assert.AreEqual(new[] { 0, 1 }, rig.elevations.Select(slot => slot.weapon).ToArray());
+            Assert.AreEqual((first, firstLauncher), (weapon.stats.turret, weapon.stats.barrel), "the weapon's pivots");
+            Assert.AreEqual((second, secondLauncher), (interceptor.turret, interceptor.barrel), "the interceptor's pivots");
+            CollectionAssert.IsEmpty(rig.Problems());
+        }
+
+        [Test]
         public void Problems_NameAPoseTheUnitLacks()
         {
             Pivot("Turret", _unit.transform, Vector3.one);

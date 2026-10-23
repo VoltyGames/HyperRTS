@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Animation;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using NUnit.Framework;
@@ -10,7 +11,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Tests
 {
-    /// <summary>Machines run always, while their building is powered or while it produces, easing in and out.</summary>
+    /// <summary>Machines run always, while their building is powered, produces or fires, easing in and out.</summary>
     public class MachineRunTests
     {
         private const float Step = 0.1f;
@@ -100,6 +101,29 @@ namespace HyperRTS.Presentation.Tests
             before = Clock(machine).Time;
             Run(1f);
             Assert.AreEqual(before, Clock(machine).Time, 1e-5f, "halted production stops it");
+        }
+
+        [Test]
+        public void Firing_RunsForASecondAfterEachShot()
+        {
+            var building = Building();
+            var poses = _em.AddBuffer<WeaponPose>(building);
+            poses.Add(new WeaponPose { Shots = 7 });
+            var machine = Machine(MachineRun.Firing, building);
+            Run(1f);
+            Assert.AreEqual(0f, Clock(machine).Time, "a count already there when first seen is no shot");
+
+            var shot = _em.GetBuffer<WeaponPose>(building);
+            var pose = shot[0];
+            pose.CountShot();
+            shot[0] = pose;
+            Run(0.5f);
+            Assert.Greater(Clock(machine).Time, 0f, "spins up on a shot");
+
+            Run(MachineClock.FiringSeconds + 1f);
+            var before = Clock(machine).Time;
+            Run(1f);
+            Assert.AreEqual(before, Clock(machine).Time, 1e-5f, "stopped once the shots end");
         }
 
         [Test]

@@ -25,6 +25,35 @@ namespace HyperRTS.Simulation.Animation
         /// <summary>Set by the first frame, which snaps <see cref="Ramp"/>: no spin-up when first seen.</summary>
         public bool Started;
 
+        /// <summary>Wrapping sum of the building's weapon shot counts when last seen, for <see cref="MachineRun.Firing"/>.</summary>
+        public byte Shots;
+
+        /// <summary>Seconds since <see cref="Shots"/> last changed.</summary>
+        public float SinceShot;
+
+        /// <summary>Seconds a Firing machine keeps running after its building's last shot.</summary>
+        public const float FiringSeconds = 1f;
+
+        /// <summary>Takes the building's shot count this frame and says whether it fired within <see cref="FiringSeconds"/>.</summary>
+        public bool Fired(byte shots, float deltaTime)
+        {
+            if (!Started)
+            {
+                SinceShot = FiringSeconds;
+            }
+            else if (shots != Shots)
+            {
+                SinceShot = 0f;
+            }
+            else
+            {
+                SinceShot += deltaTime;
+            }
+
+            Shots = shots;
+            return SinceShot < FiringSeconds;
+        }
+
         /// <summary>Eases the speed toward running or stopped and moves the clock by it.</summary>
         public void Advance(bool runs, float deltaTime)
         {
@@ -46,6 +75,9 @@ namespace HyperRTS.Simulation.Animation
 
         /// <summary>While its building's queue has work it isn't halted on (a crane over the line).</summary>
         Producing = 2,
+
+        /// <summary>While its building fired a weapon or interceptor in the last second (a gatling's barrels).</summary>
+        Firing = 3,
     }
 
     /// <summary>A moving piece of a machine, posed every frame from its machine's clock.</summary>
