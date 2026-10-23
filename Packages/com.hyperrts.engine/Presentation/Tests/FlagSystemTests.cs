@@ -84,6 +84,22 @@ namespace HyperRTS.Presentation.Tests
             Assert.AreEqual(1f, _em.GetComponentData<FlagState>(own).Value.z);
         }
 
+        [Test]
+        public void BuildingUnderConstruction_HidesItsFlag_UntilComplete()
+        {
+            var flag = Building(1, out var building);
+            _em.AddComponentData(building, new ConstructionProgress { Value = 0.5f });
+
+            Run();
+
+            Assert.AreEqual(0f, _em.GetComponentData<FlagState>(flag).Value.z);
+
+            _em.SetComponentEnabled<ConstructionProgress>(building, false);
+            Run();
+
+            Assert.AreEqual(1f, _em.GetComponentData<FlagState>(flag).Value.z);
+        }
+
         private Entity Building(byte owner, out Entity building)
         {
             var flag = _em.CreateEntity(typeof(FlagState), typeof(FlagColor));

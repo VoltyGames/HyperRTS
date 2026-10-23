@@ -268,8 +268,9 @@ coloured, that nothing can pick, select or count. The minimap shows memories as 
 ### Flags
 
 Buildings fly their owner's flag. During a capture the owner's flag lowers over the first half and the capturer's
-rises over the second. A neutral building's flag rises over the whole capture. `HyperRTS/Flag` samples the game's
-flag `Texture2DArray`, one layer per `PlayerSide`, and waves the cloth downwind.
+rises over the second. A neutral building's flag rises over the whole capture. A building under construction flies
+no flag until it is complete. `HyperRTS/Flag` samples the game's flag `Texture2DArray`, one layer per `PlayerSide`,
+and waves the cloth downwind.
 
 ### Destruction
 
@@ -411,7 +412,8 @@ the camera position once a frame, in `EffectPoolSystem`, for every range check. 
 can see:
 
 - **Bursts**: fire, death, ability and impact cues. Impacts pick a rig by the surface material that was hit.
-- **Loops**: effects at sockets while health is in range, such as fires on a damaged building.
+- **Loops**: effects at sockets while health is in range, such as fires on a damaged building. A building
+  under construction streams none.
 - **Trails** along a projectile's path.
 - **Motion dust** by ground material and speed, measured from the drawn motion along the facing so it rises on
   network clients and sideways crowd pushes raise little.

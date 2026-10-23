@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Flags
 {
     /// <summary>
     /// Shows each <see cref="FlagMount"/>'s flag: whose (the shown faction's <see cref="PlayerSide"/> picks the flag),
-    /// how high, its team band, and nothing where the building is fogged for the local player.
+    /// how high, its team band, and nothing where the building is fogged for the local player or still being built.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -41,6 +41,7 @@ namespace HyperRTS.Presentation.Flags
             var layers = Layers(state.WorldUpdateAllocator);
             var colors = _palette.Build(state.WorldUpdateAllocator);
             var progress = SystemAPI.GetComponentLookup<CaptureProgress>(true);
+            var building = SystemAPI.GetComponentLookup<ConstructionProgress>(true);
             var states = SystemAPI.GetComponentLookup<FlagState>();
             var bands = SystemAPI.GetComponentLookup<FlagColor>();
             state.CompleteDependency();
@@ -53,7 +54,8 @@ namespace HyperRTS.Presentation.Flags
                 var shown = FlagDisplay.Resolve(owner, capture, out var hoist);
                 var position = place.ValueRO.Position;
                 var fogged = hasFog && BuildingFog.IsHidden(in view, in fog, in relations, owner, position);
-                var visible = shown != Faction.Neutral && !fogged;
+                var unfinished = building.HasComponent(entity) && building.IsComponentEnabled(entity);
+                var visible = shown != Faction.Neutral && !fogged && !unfinished;
                 var next = new float4(layers[shown], hoist, visible ? 1f : 0f, mount.ValueRO.Drop);
                 if (math.any(states[flag].Value != next))
                 {
