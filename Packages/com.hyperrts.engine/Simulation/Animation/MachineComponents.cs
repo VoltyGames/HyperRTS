@@ -108,6 +108,25 @@ namespace HyperRTS.Simulation.Animation
         /// <summary>The baked local pose the motion starts from.</summary>
         public quaternion Rest;
         public float3 RestPosition;
+
+        /// <summary>
+        /// Downwind: the pose turned about <see cref="Axis"/> so its local forward, plus <see cref="Offset"/> degrees,
+        /// points along <paramref name="downwind"/>, given in the parent's space. No wind keeps the rest pose.
+        /// </summary>
+        public readonly quaternion FacingDownwind(float3 downwind)
+        {
+            var axis = math.rotate(Rest, Axis);
+            var forward = math.rotate(Rest, math.forward());
+            var want = downwind - axis * math.dot(downwind, axis);
+            var have = forward - axis * math.dot(forward, axis);
+            if (math.lengthsq(want) < 1e-6f || math.lengthsq(have) < 1e-6f)
+            {
+                return Rest;
+            }
+
+            var angle = math.atan2(math.dot(math.cross(have, want), axis), math.dot(have, want));
+            return math.mul(Rest, quaternion.AxisAngle(Axis, angle + math.radians(Offset)));
+        }
     }
 
     /// <summary>How a <see cref="MachinePart"/> moves.</summary>
@@ -124,5 +143,8 @@ namespace HyperRTS.Simulation.Animation
 
         /// <summary>Travels to and fro along its axis in step with the spin (a crane on its rail).</summary>
         Slide = 3,
+
+        /// <summary>Turns about its axis to point downwind with the scene's wind (a windsock).</summary>
+        Downwind = 4,
     }
 }

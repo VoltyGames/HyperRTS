@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Environment;
 using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
@@ -13,7 +14,7 @@ namespace HyperRTS.Presentation.Animation
     /// <summary>
     /// Runs machine clocks, easing them to a stop while a machine shouldn't run (neutral, or its building offline or
     /// idle), and poses their parts: spins, swings and slides in step with the spin, and links that sit on one point
-    /// aiming at another. Links read last frame's transforms.
+    /// aiming at another, and parts that turn downwind. Links read last frame's transforms.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PoseSystemGroup))]
@@ -22,7 +23,7 @@ namespace HyperRTS.Presentation.Animation
         [BurstCompile]
         public void OnCreate(ref SystemState state) => state.RequireForUpdate<MachineClock>();
 
-        [BurstCompile]
+        // Not Burst: it reads the managed wind.
         public void OnUpdate(ref SystemState state)
         {
             state.Dependency = new ClockJob
@@ -37,6 +38,7 @@ namespace HyperRTS.Presentation.Animation
             {
                 Clocks = SystemAPI.GetComponentLookup<MachineClock>(true),
                 Places = SystemAPI.GetComponentLookup<LocalToWorld>(true),
+                Downwind = (float3)Wind.Downwind,
             }.ScheduleParallel(state.Dependency);
         }
 
@@ -94,6 +96,7 @@ namespace HyperRTS.Presentation.Animation
         {
             [ReadOnly] public ComponentLookup<MachineClock> Clocks;
             [ReadOnly] public ComponentLookup<LocalToWorld> Places;
+            public float3 Downwind;
 
             private void Execute(ref LocalTransform transform, in MachinePart part, in Parent parent)
             {
@@ -115,6 +118,13 @@ namespace HyperRTS.Presentation.Animation
                     case MachineMotion.Slide:
                         var travel = part.Offset + part.Amplitude * math.sin(cycle);
                         transform.Position = part.RestPosition + part.Axis * travel;
+                        break;
+                    case MachineMotion.Downwind:
+                        if (Places.TryGetComponent(parent.Value, out var frame))
+                        {
+                            transform.Rotation = part.FacingDownwind(math.rotate(math.inverse(frame.Rotation), Downwind));
+                        }
+
                         break;
                     default:
                         Link(ref transform, part, parent.Value);

@@ -103,7 +103,8 @@ Replays record what happened, not the commands, because the simulation is not de
 
 Animates machines such as pumpjacks, wind turbines, radar antennas and cranes. Put `MachineAuthoring` on the root and
 `MachinePartAuthoring` on each moving child. A part can `Spin`, `Swing` in step with the spin, `Slide` to and fro
-along its axis (a crane on its rail, amplitude in metres), or act as a `Link` rod between two transforms.
+along its axis (a crane on its rail, amplitude in metres), act as a `Link` rod between two transforms, or turn
+`Downwind` about its axis so its forward, plus `offset` degrees, follows the scene's `Wind` (a windsock).
 
 A machine's `runs` says when its clock turns: `Always`, `Powered` while its building is complete and not `Offline` (a
 radar stops on low power), `Producing` while its building's queue has work that isn't halted (a crane runs only during

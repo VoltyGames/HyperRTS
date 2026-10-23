@@ -145,6 +145,18 @@ namespace HyperRTS.Presentation.Tests
             Assert.AreEqual(5f, _em.GetComponentData<LocalTransform>(crane).Position.y, 1e-4f);
         }
 
+        [Test]
+        public void Downwind_TurnsAboutItsAxisToPointWithTheWind()
+        {
+            var sock = new MachinePart { Motion = MachineMotion.Downwind, Axis = math.up(), Rest = quaternion.identity };
+
+            var pointing = math.rotate(sock.FacingDownwind(new float3(1f, 0.3f, 0f)), math.forward());
+
+            Assert.AreEqual(1f, pointing.x, 1e-4f);
+            Assert.AreEqual(0f, pointing.y, 1e-4f, "stays level");
+            Assert.AreEqual(quaternion.identity, sock.FacingDownwind(float3.zero), "no wind keeps the rest pose");
+        }
+
         private Entity Building()
         {
             var building = _em.CreateEntity();
