@@ -8,19 +8,12 @@ namespace HyperRTS.Presentation.HUD
     /// picture under it uncovers as the work completes.
     /// </summary>
     [UxmlElement]
-    public partial class HUDSweep : VisualElement
+    public partial class HUDSweep : HUDPaintedElement
     {
-        private static readonly CustomStyleProperty<Color> ColorProperty = new("--sweep-color");
-
-        private Color _color = new(0f, 0f, 0f, 0.6f);
         private float _fraction;
 
-        public HUDSweep()
+        public HUDSweep() : base("--sweep-color", new Color(0f, 0f, 0f, 0.6f))
         {
-            AddToClassList("hud-sweep");
-            pickingMode = PickingMode.Ignore;
-            generateVisualContent += Paint;
-            RegisterCallback<CustomStyleResolvedEvent>(OnStyleResolved);
         }
 
         /// <summary>0 to 1; repaints only when it changes.</summary>
@@ -40,16 +33,7 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        private void OnStyleResolved(CustomStyleResolvedEvent evt)
-        {
-            if (evt.customStyle.TryGetValue(ColorProperty, out var color))
-            {
-                _color = color;
-                MarkDirtyRepaint();
-            }
-        }
-
-        private void Paint(MeshGenerationContext context)
+        protected override void Paint(MeshGenerationContext context)
         {
             var rect = contentRect;
             if (_fraction >= 1f || rect.width <= 0f)
@@ -61,7 +45,7 @@ namespace HyperRTS.Presentation.HUD
             var centre = rect.center;
             var radius = rect.size.magnitude * 0.5f;
             var painter = context.painter2D;
-            painter.fillColor = _color;
+            painter.fillColor = PaintColor;
             painter.BeginPath();
             painter.MoveTo(centre);
             painter.Arc(centre, radius, Angle.Degrees(-90f + 360f * _fraction), Angle.Degrees(270f));

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Client.Common;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;
@@ -11,9 +12,11 @@ namespace HyperRTS.Presentation.HUD
     /// <summary>The map-wide strategic asset countdowns: one row per player holding one, in the owner's colour.</summary>
     public sealed class StrategicCountdowns : HUDPanel
     {
-        private readonly List<Label> _rows = new();
-        private World _world;
-        private EntityQuery _charges;
+        private readonly List<Row> _rows = new();
+
+        private readonly LiveQuery _charges = new(entityManager => entityManager.CreateEntityQuery(
+            ComponentType.ReadOnly<Player>(),
+            ComponentType.ReadOnly<StrategicCharge>()));
 
         public StrategicCountdowns(VisualElement root)
             : base(root)
@@ -26,53 +29,70 @@ namespace HyperRTS.Presentation.HUD
 
         public override void Refresh(HUDContext context)
         {
-            var entityManager = context.EntityManager;
-            if (_world != entityManager.World)
-            {
-                _world = entityManager.World;
-                _charges = entityManager.CreateEntityQuery(ComponentType.ReadOnly<Player>(),
-                    ComponentType.ReadOnly<StrategicCharge>());
-            }
-
-            using var players = _charges.ToComponentDataArray<Player>(Allocator.Temp);
-            using var charges = _charges.ToComponentDataArray<StrategicCharge>(Allocator.Temp);
+            var query = _charges.In(context.EntityManager);
+            using var players = query.ToComponentDataArray<Player>(Allocator.Temp);
+            using var charges = query.ToComponentDataArray<StrategicCharge>(Allocator.Temp);
             var shown = 0;
             for (var i = 0; i < players.Length; i++)
             {
                 if (charges[i].HasAsset)
                 {
-                    Show(Row(shown++), players[i], charges[i], context);
+                    FindRow(shown++).Show(players[i], charges[i], context);
                 }
             }
 
             for (var i = 0; i < _rows.Count; i++)
             {
-                _rows[i].SetHidden(i >= shown);
+                _rows[i].Label.SetHidden(i >= shown);
             }
         }
 
-        private Label Row(int index)
+        private Row FindRow(int index)
         {
             if (index == _rows.Count)
             {
-                _rows.Add(HUDElements.Text("", "hud-countdowns__row", Root));
+                _rows.Add(new Row(HUDElements.Text("", "hud-countdowns__row", Root)));
             }
 
             return _rows[index];
         }
 
-        private static void Show(Label row, in Player player, in StrategicCharge charge, HUDContext context)
+        /// <summary>One countdown line, rewritten only when its player, whole second or readiness changes.</summary>
+        private sealed class Row
         {
-            var time = charge.IsReady ? HUDText.Text("hud.strategic-ready") : Clock(charge.Remaining);
-            row.text = $"{player.Name}  {time}";
-            row.style.color = context.View.GetColor(player.Faction);
-            row.EnableInClassList("hud-countdowns__row--ready", charge.IsReady);
-        }
+            private int _faction = -1;
+            private int _seconds = -1;
+            private bool _ready;
 
-        private static string Clock(float seconds)
-        {
-            var whole = Mathf.CeilToInt(seconds);
-            return $"{whole / 60}:{whole % 60:00}";
+            public Row(Label label)
+            {
+                Label = label;
+            }
+
+            public Label Label { get; }
+
+            public void Show(in Player player, in StrategicCharge charge, HUDContext context)
+            {
+                var seconds = Mathf.CeilToInt(charge.Remaining);
+                var samePlayer = player.Faction == _faction;
+                var unchanged = samePlayer && charge.IsReady == _ready && (charge.IsReady || seconds == _seconds);
+                if (unchanged)
+                {
+                    return;
+                }
+
+                if (!samePlayer)
+                {
+                    _faction = player.Faction;
+                    Label.style.color = context.View.GetColor(player.Faction);
+                }
+
+                _seconds = seconds;
+                _ready = charge.IsReady;
+                var time = charge.IsReady ? HUDText.Text("hud.strategic-ready") : $"{seconds / 60}:{seconds % 60:00}";
+                Label.text = $"{player.Name}  {time}";
+                Label.EnableInClassList("hud-countdowns__row--ready", charge.IsReady);
+            }
         }
     }
 }

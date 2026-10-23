@@ -25,7 +25,6 @@ namespace HyperRTS.Presentation.HUD
         public HUDGlyph(HUDGlyphShape shape)
         {
             _shape = shape;
-            AddToClassList("hud-glyph");
             pickingMode = PickingMode.Ignore;
             generateVisualContent += Paint;
             RegisterCallback<CustomStyleResolvedEvent>(_ => MarkDirtyRepaint());

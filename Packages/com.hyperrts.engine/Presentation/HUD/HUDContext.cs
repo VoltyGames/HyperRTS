@@ -124,34 +124,6 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        /// <summary>
-        /// How many <paramref name="prefab"/> the <paramref name="producers"/> have queued, and the furthest one in work.
-        /// </summary>
-        public QueuedOption FindQueued(IReadOnlyList<Entity> producers, Entity prefab)
-        {
-            var count = 0;
-            var progress = QueuedOption.Idle;
-            foreach (var producer in producers)
-            {
-                var queue = EntityManager.GetBuffer<ProductionQueueItem>(producer, true);
-                for (var i = 0; i < queue.Length; i++)
-                {
-                    if (queue[i].Prefab != prefab)
-                    {
-                        continue;
-                    }
-
-                    count++;
-                    if (i == 0)
-                    {
-                        progress = math.max(progress, HeadProgress(producer, prefab));
-                    }
-                }
-            }
-
-            return new QueuedOption(count, progress);
-        }
-
         /// <summary>Share of <paramref name="prefab"/>, at the head of <paramref name="producer"/>'s queue, built.</summary>
         public float HeadProgress(Entity producer, Entity prefab)
         {
@@ -164,8 +136,7 @@ namespace HyperRTS.Presentation.HUD
 
         /// <summary>True while <paramref name="entity"/> is offline because its owner's power is low.</summary>
         public bool IsUnpowered(Entity entity) =>
-            EntityManager.HasComponent<Offline>(entity)
-            && EntityManager.IsComponentEnabled<Offline>(entity)
+            EntityManager.HasEnabled<Offline>(entity)
             && (EntityManager.GetComponentData<Offline>(entity).Reasons & OfflineReason.Unpowered) != 0;
 
         /// <summary>Starts targeting a command; the input layer issues it on the next world click.</summary>

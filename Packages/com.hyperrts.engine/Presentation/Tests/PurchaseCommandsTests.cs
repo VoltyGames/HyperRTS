@@ -97,21 +97,25 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
-        public void FindQueued_CountsEveryCopy_AndTakesTheFurthestHead()
+        public void Card_CountsEveryQueuedCopy_AndSweepsTheFurthestHead()
         {
             var tank = _world.UnitPrefab(_supplies, 10, buildTime: 10f, name: "Tank");
             var jeep = _world.UnitPrefab(_supplies, 10, buildTime: 10f, name: "Jeep");
-            var first = Queue(_world.SpawnProducer(tank), 2.5f, tank, tank, jeep);
-            var second = Queue(_world.SpawnProducer(tank), 5f, tank);
+            var first = Queue(SpawnProducer(tank, jeep), 2.5f, tank, tank, jeep);
+            var second = Queue(SpawnProducer(tank, jeep), 5f, tank);
             Refresh();
 
-            var tanks = _context.FindQueued(new[] { first, second }, tank);
-            var jeeps = _context.FindQueued(new[] { first, second }, jeep);
+            var source = new PurchaseCommands();
+            var entries = new List<CommandEntry>();
+            source.Build(_context, new[] { first, second }, entries);
+            source.Refresh(_context);
+            var tanks = entries[0].Button;
+            var jeeps = entries[1].Button;
 
-            Assert.AreEqual(3, tanks.Count);
-            Assert.AreEqual(0.5f, tanks.Progress, 1e-5f);
-            Assert.AreEqual(1, jeeps.Count);
-            Assert.IsFalse(jeeps.InWork, "queued behind a tank");
+            Assert.AreEqual("3", tanks.Q<Label>(className: "hud-command__count").text);
+            Assert.AreEqual(0.5f, tanks.Q<HUDSweep>().Fraction, 1e-5f);
+            Assert.AreEqual("1", jeeps.Q<Label>(className: "hud-command__count").text);
+            Assert.IsTrue(jeeps.Q<HUDSweep>().ClassListContains("hrts-hidden"), "queued behind a tank");
         }
 
         [Test]
@@ -180,6 +184,10 @@ namespace HyperRTS.Presentation.Tests
 
             CollectionAssert.AreEqual(new[] { 0, 1 }, entries.Select(entry => entry.Page));
         }
+
+        private Entity SpawnProducer(params Entity[] options) =>
+            _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), new float3(0f, 0f, -4f),
+                options);
 
         private void Require(Entity prefab, string type) =>
             EntityManager.GetBuffer<Prerequisite>(prefab)

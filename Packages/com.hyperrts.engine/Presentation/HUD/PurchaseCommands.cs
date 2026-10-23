@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.HUD
 {
@@ -14,10 +15,18 @@ namespace HyperRTS.Presentation.HUD
     public sealed class PurchaseCommands : ICommandSource
     {
         private readonly List<Option> _options = new();
+        private readonly List<Entity> _producers = new();
+        private readonly HashSet<(Entity Producer, Entity Prefab)> _offers = new();
+        private readonly HashSet<Entity> _unpowered = new();
+        private readonly Dictionary<Entity, QueuedOption> _queued = new();
+
+        private static QueuedOption Idle => new(0, QueuedOption.Idle);
 
         public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
         {
             _options.Clear();
+            _producers.Clear();
+            _offers.Clear();
             var builds = new List<Entity>();
             var advancedBuilds = new List<Entity>();
             var products = new List<Entity>();
@@ -52,20 +61,68 @@ namespace HyperRTS.Presentation.HUD
                 return;
             }
 
+            ReadProducers(context);
             var entityManager = context.EntityManager;
             var buyer = context.SnapshotBuyer();
             foreach (var option in _options)
             {
                 var button = option.Button;
                 button.ShowRefusal(context.FindRefusal(option.Prefab, buyer));
-                button.ShowQueue(context.FindQueued(option.Producers, option.Prefab));
-                button.ShowUnpowered(option.Producers.Exists(context.IsUnpowered));
+                button.ShowQueue(FindQueued(option));
+                button.ShowUnpowered(HasUnpowered(option.Producers));
                 if (entityManager.HasComponent<BuildLimit>(option.Prefab))
                 {
                     button.ShowLimit(buyer.Counts.Count(entityManager, option.Prefab),
                         entityManager.GetComponentData<BuildLimit>(option.Prefab).Max);
                 }
             }
+        }
+
+        // One pass over the selected producers' queues, counting each prefab only where that producer offers it.
+        private void ReadProducers(HUDContext context)
+        {
+            _unpowered.Clear();
+            _queued.Clear();
+            foreach (var producer in _producers)
+            {
+                if (context.IsUnpowered(producer))
+                {
+                    _unpowered.Add(producer);
+                }
+
+                var queue = context.EntityManager.GetBuffer<ProductionQueueItem>(producer, true);
+                for (var i = 0; i < queue.Length; i++)
+                {
+                    var prefab = queue[i].Prefab;
+                    if (!_offers.Contains((producer, prefab)))
+                    {
+                        continue;
+                    }
+
+                    var queued = _queued.TryGetValue(prefab, out var found) ? found : Idle;
+                    var progress = i == 0
+                        ? math.max(queued.Progress, context.HeadProgress(producer, prefab))
+                        : queued.Progress;
+                    _queued[prefab] = new QueuedOption(queued.Count + 1, progress);
+                }
+            }
+        }
+
+        // A placed building has no producers, so it never shows a queue even if a factory also trains its prefab.
+        private QueuedOption FindQueued(Option option) =>
+            option.Producers.Count > 0 && _queued.TryGetValue(option.Prefab, out var queued) ? queued : Idle;
+
+        private bool HasUnpowered(List<Entity> producers)
+        {
+            foreach (var producer in producers)
+            {
+                if (_unpowered.Contains(producer))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private CommandEntry Add(HUDContext context, List<CommandEntry> entries, Entity prefab,
@@ -119,8 +176,7 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        private static List<Entity> FindProducers(EntityManager entityManager, IReadOnlyList<Entity> owned,
-            Entity prefab)
+        private List<Entity> FindProducers(EntityManager entityManager, IReadOnlyList<Entity> owned, Entity prefab)
         {
             var producers = new List<Entity>();
             foreach (var entity in owned)
@@ -129,9 +185,16 @@ namespace HyperRTS.Presentation.HUD
                              && entityManager.HasBuffer<ProductionOption>(entity)
                              && ProductionRules.HasOption(entityManager.GetBuffer<ProductionOption>(entity, true),
                                  prefab);
-                if (offers)
+                if (!offers)
                 {
-                    producers.Add(entity);
+                    continue;
+                }
+
+                producers.Add(entity);
+                _offers.Add((entity, prefab));
+                if (!_producers.Contains(entity))
+                {
+                    _producers.Add(entity);
                 }
             }
 

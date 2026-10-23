@@ -11,6 +11,12 @@ namespace HyperRTS.Presentation.HUD
     [UxmlElement]
     public partial class HUDTooltip : VisualElement
     {
+        // One delegate each, so tracking a reused button again finds them registered and adds nothing.
+        private readonly EventCallback<PointerEnterEvent> _onEnter;
+        private readonly EventCallback<PointerLeaveEvent> _onLeave;
+        private readonly EventCallback<FocusInEvent> _onFocusIn;
+        private readonly EventCallback<FocusOutEvent> _onFocusOut;
+
         private ITooltipSource _hovered;
         private ITooltipSource _focused;
         private ITooltipSource _shown;
@@ -18,6 +24,10 @@ namespace HyperRTS.Presentation.HUD
 
         public HUDTooltip()
         {
+            _onEnter = evt => _hovered = evt.currentTarget as ITooltipSource;
+            _onLeave = evt => Leave(ref _hovered, evt.currentTarget as ITooltipSource);
+            _onFocusIn = evt => _focused = evt.currentTarget as ITooltipSource;
+            _onFocusOut = evt => Leave(ref _focused, evt.currentTarget as ITooltipSource);
             AddToClassList("hud-tooltip");
             pickingMode = PickingMode.Ignore;
             this.SetHidden(true);
@@ -26,10 +36,10 @@ namespace HyperRTS.Presentation.HUD
         /// <summary>Shows <paramref name="source"/>'s details while the pointer is over it or it has focus.</summary>
         public void Track<T>(T source) where T : VisualElement, ITooltipSource
         {
-            source.RegisterCallback<PointerEnterEvent>(_ => _hovered = source);
-            source.RegisterCallback<PointerLeaveEvent>(_ => Leave(ref _hovered, source));
-            source.RegisterCallback<FocusInEvent>(_ => _focused = source);
-            source.RegisterCallback<FocusOutEvent>(_ => Leave(ref _focused, source));
+            source.RegisterCallback(_onEnter);
+            source.RegisterCallback(_onLeave);
+            source.RegisterCallback(_onFocusIn);
+            source.RegisterCallback(_onFocusOut);
         }
 
         /// <summary>Drops every tracked source: their elements are gone and will never send leave events.</summary>

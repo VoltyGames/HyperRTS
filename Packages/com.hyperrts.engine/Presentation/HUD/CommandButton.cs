@@ -23,6 +23,9 @@ namespace HyperRTS.Presentation.HUD
         private Label _count;
         private HUDGlyph _unpowered;
         private Label _limit;
+        private int _shownCount = -1;
+        private int _shownLimitCount = -1;
+        private int _shownLimitMax = -1;
 
         public CommandButton()
         {
@@ -142,7 +145,12 @@ namespace HyperRTS.Presentation.HUD
         /// <summary>The queued count badge, and the sweep while one is in work.</summary>
         public void ShowQueue(QueuedOption queued)
         {
-            _count.text = queued.Count.ToString();
+            if (queued.Count != _shownCount)
+            {
+                _shownCount = queued.Count;
+                _count.text = queued.Count.ToString();
+            }
+
             _count.SetHidden(queued.Count == 0);
             _sweep.SetHidden(!queued.InWork);
             EnableInClassList("hud-command--queued", queued.Count > 0);
@@ -158,7 +166,13 @@ namespace HyperRTS.Presentation.HUD
         public void ShowLimit(int count, int max)
         {
             _limit.SetHidden(max == 0);
-            _limit.text = max == 0 ? "" : $"{count}/{max}";
+            var changed = count != _shownLimitCount || max != _shownLimitMax;
+            if (max > 0 && changed)
+            {
+                _shownLimitCount = count;
+                _shownLimitMax = max;
+                _limit.text = $"{count}/{max}";
+            }
         }
 
         /// <summary>What a click does: nothing while a purchase rule refuses it.</summary>
