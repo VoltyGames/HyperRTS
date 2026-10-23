@@ -65,6 +65,19 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void FillFromModel_SpinsPropellersAboutTheNose()
+        {
+            var hull = Pivot("Hull", _unit.transform, new Vector3(4f, 3f, 30f));
+            var props = new[] { Pivot("Prop_01", hull), Pivot("Prop_02", hull) };
+            var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+            rig.FillFromModel();
+
+            Assert.AreEqual(props, rig.rotors.Select(slot => slot.part).ToArray());
+            Assert.IsTrue(rig.rotors.All(slot => slot.axis == Vector3.forward));
+        }
+
+        [Test]
         public void FillFromModel_TiltsTheModelWhenTheHullIsItsRoot()
         {
             var model = Pivot("Model", _unit.transform, new Vector3(3f, 2f, 7f));
@@ -132,6 +145,23 @@ namespace HyperRTS.Presentation.Tests
         }
 
         // A pivot with a cube mesh child of the given size, or an empty one.
+        [Test]
+        public void FillFromModel_TiltsAModelWithNoMovingParts()
+        {
+            var model = Pivot("Model", _unit.transform);
+            Pivot("Exhaust_01", model);
+            var hull = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
+            hull.name = "Hull_LOD0";
+            hull.SetParent(model, false);
+            hull.localScale = new Vector3(50f, 3f, 20f);
+            var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+            rig.FillFromModel();
+
+            Assert.AreEqual(model, rig.tiltRoot);
+            Assert.AreEqual(new Vector2(20f, 50f), rig.footprint);
+        }
+
         private static Transform Pivot(string name, Transform parent, Vector3 meshSize = default)
         {
             var pivot = new GameObject(name).transform;

@@ -25,6 +25,9 @@ namespace HyperRTS.Presentation.Animation
     {
         private static readonly Regex WheelName = new(@"^(Wheel_[LR]\d+|Sprocket_[LR]|Idler_[LR])$");
 
+        // Propellers turn about the aircraft's nose axis.
+        private static readonly Regex PropName = new(@"^Prop_\d\d$");
+
         // Turret_02 and Launcher_02 aim weapon 1, for a mount or interceptor on a launcher of its own.
         private static readonly Regex NumberedName = new(@"^(Turret|Launcher)_(\d\d)$");
 
@@ -129,7 +132,7 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>A part under this rig, never the rig itself: the unit's own transform is the simulation's.</summary>
         public bool IsBelow(Transform part) => part != transform && part.IsChildOf(transform);
 
-        /// <summary>Fills the slots, and the weapons' turret and barrel pivots, from parts named Turret, Barrel, Launcher, Wheel_L01, Rotor_Main, Hull and so on.</summary>
+        /// <summary>Fills the slots, and the weapons' turret and barrel pivots, from parts named Turret, Barrel, Launcher, Wheel_L01, Rotor_Main, Prop_01, Hull and so on.</summary>
         public void FillFromModel()
         {
             var parts = GetComponentsInChildren<Transform>(true).Where(IsBelow).ToList();
@@ -152,10 +155,11 @@ namespace HyperRTS.Presentation.Animation
             recoils = KeepTuned(recoils, new[] { Named("Barrel") }, part => new RecoilSlot { part = part });
             wheels = KeepTuned(wheels, parts.Where(part => WheelName.IsMatch(part.name)),
                 part => new WheelSlot { part = part, radius = WheelSlot.MeshRadius(part, transform) });
-            rotors = KeepTuned(rotors, new[] { Named("Rotor_Main"), Named("Rotor_Tail") }, part => new RotorSlot
+            var rotorParts = parts.Where(part => PropName.IsMatch(part.name)).Prepend(Named("Rotor_Tail")).Prepend(Named("Rotor_Main"));
+            rotors = KeepTuned(rotors, rotorParts, part => new RotorSlot
             {
                 part = part,
-                axis = part.InverseTransformDirection(part.name == "Rotor_Main" ? transform.up : transform.right),
+                axis = part.InverseTransformDirection(RotorAxis(part.name)),
             });
 
             FillWeaponPivots();
@@ -168,6 +172,13 @@ namespace HyperRTS.Presentation.Animation
             }
         }
 
+        private Vector3 RotorAxis(string partName) => partName switch
+        {
+            "Rotor_Main" => transform.up,
+            "Rotor_Tail" => transform.right,
+            _ => transform.forward,
+        };
+
         private static int NumberedWeapon(Transform part, int unnumbered)
         {
             var match = NumberedName.Match(part.name);
@@ -177,7 +188,7 @@ namespace HyperRTS.Presentation.Animation
         // A model whose only root node is the hull imports with the hull folded into the model object.
         private Transform ModelRoot()
         {
-            var part = Slots().Select(slot => slot.part).FirstOrDefault();
+            var part = GetComponentsInChildren<MeshFilter>(true).Select(mesh => mesh.transform).FirstOrDefault(IsBelow);
             while (part != null && part.parent != transform)
             {
                 part = part.parent;
