@@ -48,6 +48,9 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>A building never turns, so its weapon always aims a turret.</summary>
         public bool AimsTurret => turreted || TryGetComponent<BuildingAuthoring>(out _);
 
+        /// <summary>Pose buffer slots the primary and extra weapons take; an interceptor's pose follows them.</summary>
+        public int WeaponPoses => 1 + extraWeapons.Count;
+
         /// <summary>What one weapon deals and how it reaches; the primary and every extra weapon carry one.</summary>
         [Serializable]
         public class WeaponStats
@@ -235,9 +238,8 @@ namespace HyperRTS.Simulation.Combat
                 weapon.Turreted = authoring.AimsTurret;
 
                 var writer = new BakerWriter(this, entity);
-                var interceptorPoses = GetComponent<InterceptorAuthoring>() != null ? 1 : 0;
-                WeaponSetup.Add(ref writer, weapon, authoring.stance, authoring.transform.position,
-                    authoring.extraWeapons.Count + interceptorPoses);
+                var poses = authoring.WeaponPoses + (GetComponent<InterceptorAuthoring>() != null ? 1 : 0);
+                WeaponSetup.Add(ref writer, weapon, authoring.stance, authoring.transform.position, poses - 1);
                 if (authoring.extraWeapons.Count > 0)
                 {
                     WeaponSetup.AddMounts(ref writer, BakeMounts(authoring));

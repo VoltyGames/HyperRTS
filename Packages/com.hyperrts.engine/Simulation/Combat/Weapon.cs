@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -80,6 +81,19 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Where a projectile starts: the posed muzzle, else <see cref="ProjectileHeight"/> above the pivot.</summary>
         public float3 LaunchPoint(in LocalTransform shooter, in WeaponPose pose) =>
             HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose)) : shooter.Position + new float3(0f, ProjectileHeight, 0f);
+
+        /// <summary>Plays the Fire cue at the posed muzzle, else at the shooter's Fire socket or pivot.</summary>
+        public void PlayFire(ref CueWriter cues, Entity shooter, in LocalTransform place, in WeaponPose pose,
+            float3 direction, byte faction, byte variant)
+        {
+            if (HasMuzzle)
+            {
+                cues.PlayAt(shooter, CueSlot.Fire, LaunchPoint(place, pose), direction, faction, variant);
+                return;
+            }
+
+            cues.Play(shooter, CueSlot.Fire, place, direction, faction, variant);
+        }
 
         /// <summary>Where the weapon aims on a target standing at <paramref name="target"/>.</summary>
         public float3 AimPoint(float3 target) => target + new float3(0f, ProjectileHeight, 0f);

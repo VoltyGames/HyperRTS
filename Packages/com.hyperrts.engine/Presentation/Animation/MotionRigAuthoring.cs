@@ -68,13 +68,21 @@ namespace HyperRTS.Presentation.Animation
         public float recoilKick = 12f;
 
         /// <summary>Primary and extra weapons, then an interceptor: the <c>WeaponPose</c> indices a slot may follow.</summary>
-        public int WeaponCount => Weapons() + (TryGetComponent<InterceptorAuthoring>(out _) ? 1 : 0);
+        public int WeaponCount
+        {
+            get
+            {
+                if (TryGetComponent<InterceptorAuthoring>(out var interceptor))
+                {
+                    return interceptor.Pose + 1;
+                }
+
+                return TryGetComponent<WeaponAuthoring>(out var weapon) ? weapon.WeaponPoses : 0;
+            }
+        }
 
         /// <summary>A building stands on levelled ground and never moves, so its body never tilts.</summary>
         private bool IsBuilding => TryGetComponent<BuildingAuthoring>(out _);
-
-        private int Weapons() =>
-            TryGetComponent<WeaponAuthoring>(out var weapon) ? 1 + weapon.extraWeapons.Count : 0;
 
         public static void AddRig<TWriter>(ref TWriter writer, in MotionRig rig, IReadOnlyList<MotionRigPart> parts)
             where TWriter : struct, IEntityWriter

@@ -130,14 +130,8 @@ namespace HyperRTS.Simulation.Combat
         {
             var toward = targetPosition - transform.Position;
             toward.y = 0f;
-            var direction = math.normalizesafe(toward, transform.Forward());
-            if (weapon.HasMuzzle)
-            {
-                _cues.PlayAt(shooter, CueSlot.Fire, weapon.LaunchPoint(transform, aimed), direction, faction, pose);
-                return;
-            }
-
-            _cues.Play(shooter, CueSlot.Fire, transform, direction, faction, pose);
+            weapon.PlayFire(ref _cues, shooter, transform, aimed, math.normalizesafe(toward, transform.Forward()), faction,
+                pose);
         }
 
         private void Reveal(Entity shooter)

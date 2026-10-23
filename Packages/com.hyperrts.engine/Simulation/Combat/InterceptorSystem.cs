@@ -22,17 +22,13 @@ namespace HyperRTS.Simulation.Combat
     [UpdateBefore(typeof(ProjectileSystem))]
     public partial struct InterceptorSystem : ISystem
     {
-        private EntityQuery _projectileQuery;
         private ComponentLookup<Projectile> _projectiles;
-        private ComponentLookup<LocalTransform> _transforms;
         private CueWriter _cues;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _projectileQuery = SystemAPI.QueryBuilder().WithAll<Projectile, LocalTransform>().Build();
             _projectiles = state.GetComponentLookup<Projectile>();
-            _transforms = state.GetComponentLookup<LocalTransform>(true);
             _cues = new CueWriter(ref state);
             state.RequireForUpdate<Interceptor>();
             state.RequireForUpdate<FactionRelations>();
@@ -44,16 +40,16 @@ namespace HyperRTS.Simulation.Combat
         public void OnUpdate(ref SystemState state)
         {
             _projectiles.Update(ref state);
-            _transforms.Update(ref state);
             _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
 
+            var candidates = new NativeList<Candidate>(state.WorldUpdateAllocator);
+            new GatherJob { Candidates = candidates }.Schedule();
             // Single-threaded: two interceptors must never kill the same projectile.
             new InterceptJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                InFlight = _projectileQuery.ToEntityArray(state.WorldUpdateAllocator),
+                Candidates = candidates,
                 Projectiles = _projectiles,
-                Transforms = _transforms,
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Cues = _cues,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
@@ -61,106 +57,129 @@ namespace HyperRTS.Simulation.Combat
             }.Schedule();
         }
 
+        /// <summary>A projectile some interceptor could engage, copied once so each interceptor scans a compact list.</summary>
+        private struct Candidate
+        {
+            public Entity Entity;
+            public float3 Position;
+            public float3 Aim;
+            public ProjectileKind Kind;
+            public byte Faction;
+            public bool Intercepted;
+        }
+
+        [BurstCompile]
+        private partial struct GatherJob : IJobEntity
+        {
+            public NativeList<Candidate> Candidates;
+
+            private void Execute(Entity entity, in Projectile projectile, in LocalTransform transform)
+            {
+                if (projectile.Kind == ProjectileKind.None || projectile.Intercepted)
+                {
+                    return;
+                }
+
+                Candidates.Add(new Candidate
+                {
+                    Entity = entity,
+                    Position = transform.Position,
+                    Aim = projectile.Hit.Position,
+                    Kind = projectile.Kind,
+                    Faction = projectile.Hit.SourceFaction,
+                });
+            }
+        }
+
         [BurstCompile]
         [WithNone(typeof(Offline), typeof(Dead))]
         private partial struct InterceptJob : IJobEntity
         {
             public float DeltaTime;
-            [ReadOnly] public NativeArray<Entity> InFlight;
+            public NativeList<Candidate> Candidates;
             public ComponentLookup<Projectile> Projectiles;
-            [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             public FactionRelations Relations;
             public CueWriter Cues;
             public EntityCommandBuffer Ecb;
 
             private void Execute(Entity entity, ref Interceptor interceptor, DynamicBuffer<WeaponPose> poses,
-                in Faction faction)
+                in LocalTransform place, in Faction faction)
             {
                 interceptor.Tick(DeltaTime);
-                var place = Transforms[entity];
-                interceptor.Target = Nearest(interceptor, place.Position, faction.Value, out var inRange);
+                var target = Nearest(interceptor, place.Position, faction.Value, out var inRange);
                 var pose = poses[interceptor.Pose];
                 // Idle, it turns back to straight ahead and level.
                 var angles = float2.zero;
-                var tracking = interceptor.Target != Entity.Null;
-                if (tracking)
+                if (target >= 0)
                 {
-                    angles = interceptor.Aim.AimAngles(place, pose, Transforms[interceptor.Target].Position);
+                    angles = interceptor.Aim.AimAngles(place, pose, Candidates[target].Position);
                 }
 
                 interceptor.Aim.Turn(ref pose, angles, DeltaTime);
                 if (inRange && interceptor.Ready && interceptor.Aim.Aligned(pose, angles))
                 {
                     pose.CountShot();
-                    Engage(entity, ref interceptor, place, pose, faction.Value);
+                    Engage(entity, ref interceptor, place, pose, faction.Value, target);
                 }
 
                 poses[interceptor.Pose] = pose;
             }
 
             // A shot aimed inside the radius is tracked before it arrives, so the turret is on it as it enters.
-            private Entity Nearest(in Interceptor interceptor, float3 center, byte faction, out bool inRange)
+            private int Nearest(in Interceptor interceptor, float3 center, byte faction, out bool inRange)
             {
-                var near = Closest.Within(interceptor.Radius);
+                var radiusSq = interceptor.Radius * interceptor.Radius;
+                var near = Closest.Within(radiusSq);
                 var inbound = Closest.None;
-                for (var i = 0; i < InFlight.Length; i++)
+                for (var i = 0; i < Candidates.Length; i++)
                 {
-                    var shot = InFlight[i];
-                    var projectile = Projectiles[shot];
-                    if (!Engageable(interceptor, projectile, faction))
+                    var shot = Candidates[i];
+                    if (!Engageable(interceptor, shot, faction))
                     {
                         continue;
                     }
 
-                    var distance = math.distance(Transforms[shot].Position, center);
-                    near.Consider(i, shot, distance);
-                    if (math.distance(projectile.Hit.Position, center) <= interceptor.Radius)
+                    var distanceSq = math.distancesq(shot.Position, center);
+                    near.Consider(i, shot.Entity, distanceSq);
+                    if (math.distancesq(shot.Aim, center) <= radiusSq)
                     {
-                        inbound.Consider(i, shot, distance);
+                        inbound.Consider(i, shot.Entity, distanceSq);
                     }
                 }
 
                 inRange = near.Found;
-                return inRange ? near.Entity : inbound.Entity;
+                return inRange ? near.Index : inbound.Index;
             }
 
-            private bool Engageable(in Interceptor interceptor, in Projectile projectile, byte faction)
+            private bool Engageable(in Interceptor interceptor, in Candidate shot, byte faction)
             {
-                if (projectile.Intercepted || !interceptor.Engages(projectile.Kind))
+                if (shot.Intercepted || !interceptor.Engages(shot.Kind))
                 {
                     return false;
                 }
 
-                return Relations.IsHostile(faction, projectile.Hit.SourceFaction);
+                return Relations.IsHostile(faction, shot.Faction);
             }
 
             private void Engage(Entity entity, ref Interceptor interceptor, in LocalTransform place,
-                in WeaponPose pose, byte faction)
+                in WeaponPose pose, byte faction, int index)
             {
-                var target = interceptor.Target;
-                var position = Transforms[target].Position;
-                var muzzle = interceptor.Aim.LaunchPoint(place, pose);
-                var toward = math.normalizesafe(position - muzzle, place.Forward());
-                if (interceptor.Aim.HasMuzzle)
-                {
-                    Cues.PlayAt(entity, CueSlot.Fire, muzzle, toward, faction, interceptor.Pose);
-                }
-                else
-                {
-                    Cues.Play(entity, CueSlot.Fire, place, toward, faction, interceptor.Pose);
-                }
-
-                if (!interceptor.Engage(entity, target))
+                var shot = Candidates[index];
+                var toward = math.normalizesafe(shot.Position - interceptor.Aim.LaunchPoint(place, pose), place.Forward());
+                interceptor.Aim.PlayFire(ref Cues, entity, place, pose, toward, faction, interceptor.Pose);
+                if (!interceptor.Engage(entity, shot.Entity))
                 {
                     return;
                 }
 
-                var projectile = Projectiles[target];
+                shot.Intercepted = true;
+                Candidates[index] = shot;
+                var projectile = Projectiles[shot.Entity];
                 projectile.Intercepted = true;
-                Projectiles[target] = projectile;
-                Ecb.DestroyEntity(target);
-                Cues.Add(Cues.TypeIdFor(entity, CueSlot.Impact), CueSlot.Impact, position, toward, faction,
-                    target: target);
+                Projectiles[shot.Entity] = projectile;
+                Ecb.DestroyEntity(shot.Entity);
+                Cues.Add(Cues.TypeIdFor(entity, CueSlot.Impact), CueSlot.Impact, shot.Position, toward, faction,
+                    target: shot.Entity);
             }
         }
     }

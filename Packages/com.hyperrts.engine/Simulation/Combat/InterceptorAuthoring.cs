@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Combat
         public float reloadTime = 10f;
 
         /// <summary>Its index in the pose buffer: after the primary and extra weapons, or 0 without a weapon.</summary>
-        public int Pose => TryGetComponent<WeaponAuthoring>(out var weapon) ? 1 + weapon.extraWeapons.Count : 0;
+        public int Pose => TryGetComponent<WeaponAuthoring>(out var weapon) ? weapon.WeaponPoses : 0;
 
         /// <summary>Without a weapon, at pose 0, it brings the pose buffer; a weapon's baker sizes it otherwise.</summary>
         public static void Add<TWriter>(ref TWriter writer, in Interceptor interceptor)
@@ -90,6 +90,7 @@ namespace HyperRTS.Simulation.Combat
         {
             var aim = new Weapon
             {
+                Cooldown = 1f / engagementsPerSecond,
                 Turreted = true,
                 TraverseRate = math.radians(aimSpeed),
                 ElevationRate = math.radians(aimSpeed),
@@ -108,7 +109,6 @@ namespace HyperRTS.Simulation.Combat
             return new Interceptor
             {
                 Radius = radius,
-                Interval = 1f / engagementsPerSecond,
                 KillChance = killChance,
                 Kinds = kinds,
                 Aim = aim,

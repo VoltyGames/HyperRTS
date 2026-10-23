@@ -35,7 +35,6 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.IsFalse(_world.EntityManager.Exists(near), "the nearer shot is down");
             Assert.IsTrue(_world.EntityManager.Exists(far), "one engagement, one kill");
-            Assert.AreEqual(far, _world.Get<Interceptor>(defence).Target);
             Assert.AreEqual(0.5f * math.PI, Pose(defence, 0).YawRadians, YawTolerance, "it turned to the far shot");
             Assert.AreEqual(1, Pose(defence, 0).Shots);
         }
@@ -65,19 +64,20 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(_world.EntityManager.Exists(bomb));
             Assert.IsTrue(_world.EntityManager.Exists(friendly));
             Assert.IsTrue(_world.EntityManager.Exists(distant));
-            Assert.AreEqual(Entity.Null, _world.Get<Interceptor>(defence).Target);
+            Assert.AreEqual(0, Pose(defence, 0).Shots);
+            Assert.AreEqual(0, Pose(defence, 0).Yaw, "nothing tracked, so it stays straight ahead");
         }
 
         [Test]
         public void InboundShot_IsTrackedBeforeItIsInRange_ButNotEngaged()
         {
             var defence = Defence(_world.SpawnBuilding(1, float3.zero, new float2(2f, 2f)));
-            var shot = Shot(new float3(0f, 4f, -40f), aim: float3.zero);
+            Shot(new float3(0f, 4f, -40f), aim: float3.zero);
 
             _world.Run(1f);
 
-            Assert.AreEqual(shot, _world.Get<Interceptor>(defence).Target, "aimed inside the radius, so it is tracked");
-            Assert.AreEqual(math.PI, math.abs(Pose(defence, 0).YawRadians), YawTolerance, "the turret is on it");
+            Assert.AreEqual(math.PI, math.abs(Pose(defence, 0).YawRadians), YawTolerance,
+                "aimed inside the radius, so the turret is on it");
             Assert.AreEqual(0, Pose(defence, 0).Shots, "out of range, so held fire");
         }
 
@@ -130,11 +130,11 @@ namespace HyperRTS.Simulation.Tests
             var interceptor = new Interceptor
             {
                 Radius = 20f,
-                Interval = interval,
                 KillChance = killChance,
                 Kinds = ProjectileKind.Shell | ProjectileKind.Rocket | ProjectileKind.Missile,
                 Aim = new Weapon
                 {
+                    Cooldown = interval,
                     Turreted = true,
                     TraverseRate = math.radians(720f),
                     ElevationRate = math.radians(720f),
