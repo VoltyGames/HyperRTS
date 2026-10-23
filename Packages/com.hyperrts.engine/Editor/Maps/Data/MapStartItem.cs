@@ -12,5 +12,11 @@ namespace HyperRTS.Editor.Maps.Data
         public string key;
         public Vector2 offset;
         public float yaw;
+
+        /// <summary>Laid out facing the match camera, as a placed building faces, instead of turned with the spawn.</summary>
+        public bool facesCamera;
+
+        /// <summary>The yaw its offset turns with, in degrees.</summary>
+        public float Frame(float spawnYaw) => facesCamera ? 180f : spawnYaw;
     }
 }

@@ -112,6 +112,36 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void CameraFacingItem_IgnoresTheSpawnsYaw_AndFacesMinusZ()
+        {
+            CreateSides(_world, out _base, out _truck);
+            _world.EntityManager.GetBuffer<SideStartItem>(_world.MatchEntity()).Add(new SideStartItem
+            {
+                Side = 1, Prefab = _truck, Offset = new float2(2f, 5f), FacesCamera = true,
+            });
+            RequestSetup(Slot(1, 1), Slot(2, 1));
+
+            _world.Tick();
+
+            // Facing -Z, right is -X: the offset (2, 5) lands 2 m towards -X and 5 m towards -Z of spawn 2.
+            var trucks = _world.Owned(_truck, 2);
+            Assert.AreEqual(2, trucks.Count);
+            var placed = false;
+            foreach (var truck in trucks)
+            {
+                var pose = _world.Get<LocalTransform>(truck);
+                if (math.distance(pose.Position, new float3(38f, Ground, -5f)) < 1e-3f)
+                {
+                    placed = true;
+                    var facing = math.mul(pose.Rotation, new float3(0f, 0f, 1f));
+                    Assert.That(math.distance(facing, new float3(0f, 0f, -1f)), Is.LessThan(1e-3f));
+                }
+            }
+
+            Assert.IsTrue(placed, "a truck in the camera's frame");
+        }
+
+        [Test]
         public void Kit_SpawnsOnce_WhenTheSceneIsPlayedAsBaked()
         {
             CreateSides(_world, out _base, out _truck);

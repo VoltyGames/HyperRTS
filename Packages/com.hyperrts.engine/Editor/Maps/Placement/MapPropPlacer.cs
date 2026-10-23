@@ -56,10 +56,10 @@ namespace HyperRTS.Editor.Maps.Placement
         {
             foreach (var spawn in _layout.Spawns)
             {
-                var forward = MapGeometry.Forward(spawn.Yaw);
-                var right = MapGeometry.Right(forward);
                 foreach (var item in _palette.sides.SelectMany(side => side.startKit))
                 {
+                    var forward = MapGeometry.Forward(item.Frame(spawn.Yaw));
+                    var right = MapGeometry.Right(forward);
                     var position = spawn.Position + right * item.offset.x + forward * item.offset.y;
                     Clearance.Reserve(position, _palette.Entry(item.key).Radius);
                 }

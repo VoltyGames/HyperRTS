@@ -22,6 +22,12 @@ namespace HyperRTS.Simulation.Match
 
         /// <summary>Radians, added to the spawn's yaw.</summary>
         public float Yaw;
+
+        /// <summary>Laid out facing the match camera, as a placed building faces, instead of turned with the spawn.</summary>
+        public bool FacesCamera;
+
+        /// <summary>The yaw its offset and rotation turn with, in radians.</summary>
+        public float Frame(float spawnYaw) => FacesCamera ? math.PI : spawnYaw;
     }
 
     /// <summary>One AI build order step of a side, on the Match entity.</summary>

@@ -56,7 +56,8 @@ default it faces the match camera, toward -Z. While placing, the rebindable `Rot
 ghost a quarter clockwise per press, a low mark off the ghost shows its front, and an odd turn swaps the footprint's X and Z. `PlaceBuilding` carries the turn,
 0 to 3, in `PlayerCommand.Turn`. The server refuses any other value and places at `PlacementMath.Facing`. Children,
 work points and the spawn point turn with the building. The skirmish AI places at turn 0, line placement keeps its
-own turn, and map buildings keep their authored rotation.
+own turn, map buildings keep their authored rotation, and a start kit item turns with its spawn unless it sets
+`facesCamera`, which lays its offset and yaw out facing the camera as a placed building is.
 
 ### Line placement
 

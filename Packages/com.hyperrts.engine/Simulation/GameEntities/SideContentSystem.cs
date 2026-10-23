@@ -122,9 +122,6 @@ namespace HyperRTS.Simulation.GameEntities
         private static void SpawnKit(EntityManager entityManager, NativeArray<SideStartItem> kit, byte side,
             byte faction, in PlayerSpawn spawn, in TerrainHeight terrain)
         {
-            math.sincos(spawn.Yaw, out var sin, out var cos);
-            var forward = new float2(sin, cos);
-            var right = new float2(cos, -sin);
             foreach (var item in kit)
             {
                 if (item.Side != side)
@@ -132,9 +129,13 @@ namespace HyperRTS.Simulation.GameEntities
                     continue;
                 }
 
+                var frame = item.Frame(spawn.Yaw);
+                math.sincos(frame, out var sin, out var cos);
+                var forward = new float2(sin, cos);
+                var right = new float2(cos, -sin);
                 var ground = spawn.Position.xz + right * item.Offset.x + forward * item.Offset.y;
                 var position = new float3(ground.x, terrain.Height(ground), ground.y);
-                entityManager.Spawn(item.Prefab, position, quaternion.RotateY(spawn.Yaw + item.Yaw), faction);
+                entityManager.Spawn(item.Prefab, position, quaternion.RotateY(frame + item.Yaw), faction);
             }
         }
     }

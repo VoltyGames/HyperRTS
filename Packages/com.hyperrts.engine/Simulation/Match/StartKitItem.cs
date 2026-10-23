@@ -15,5 +15,8 @@ namespace HyperRTS.Simulation.Match
 
         [Tooltip("Degrees, added to the spawn's yaw.")]
         public float yaw;
+
+        [Tooltip("Offset and yaw face the match camera, as a placed building does, instead of turning with the spawn.")]
+        public bool facesCamera;
     }
 }

@@ -20,6 +20,7 @@ namespace HyperRTS.Editor.Maps.Scenes
                 prefab = palette.Entry(item.key).prefab,
                 offset = item.offset,
                 yaw = item.yaw,
+                facesCamera = item.facesCamera,
             }).ToList(),
             buildOrder = side.buildOrderAsset,
         }).ToList();

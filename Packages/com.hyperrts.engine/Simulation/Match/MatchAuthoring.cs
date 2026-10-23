@@ -204,6 +204,7 @@ namespace HyperRTS.Simulation.Match
                         Prefab = GetEntity(item.prefab, TransformUsageFlags.Dynamic),
                         Offset = item.offset,
                         Yaw = math.radians(item.yaw),
+                        FacesCamera = item.facesCamera,
                     });
                 }
             }
