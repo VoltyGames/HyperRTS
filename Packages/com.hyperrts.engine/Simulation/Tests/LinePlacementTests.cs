@@ -99,6 +99,20 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void PlaceLine_AlongX_FacesTheCameraAsAPlacedBuildingDoes()
+        {
+            var prefab = WallPrefab();
+            _world.PlaceLine(Builder(prefab, float3.zero), prefab, new float3(4f, 0f, 0.3f), new float3(10.2f, 0f, 1f));
+            _world.Tick();
+
+            var rotation = _world.Get<LocalTransform>(_world.All<ConstructionProgress>()[0]).Rotation;
+            var front = math.rotate(rotation, new float3(0f, 0f, 1f));
+            var expected = math.rotate(PlacementMath.Facing(0), new float3(0f, 0f, 1f));
+            Assert.AreEqual(expected.x, front.x, 0.001f);
+            Assert.AreEqual(expected.z, front.z, 0.001f);
+        }
+
+        [Test]
         public void PlaceLine_SkipsOccupiedSegments_AndChargesOnlyThePlacedOnes()
         {
             var prefab = WallPrefab();

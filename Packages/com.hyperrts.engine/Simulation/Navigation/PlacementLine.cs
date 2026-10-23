@@ -40,8 +40,8 @@ namespace HyperRTS.Simulation.Navigation
             Count = math.min(MaxSegments, (int)math.round(math.abs(along) / length) + 1);
         }
 
-        /// <summary>A quarter turn for a line along Z, so the prefab's length runs with the line.</summary>
-        public quaternion Turn => AlongZ ? quaternion.RotateY(math.PI * 0.5f) : quaternion.identity;
+        /// <summary>Faces the camera as a placed building does, a quarter on for a line along Z.</summary>
+        public quaternion Turn => PlacementMath.Facing(AlongZ ? 1 : 0);
 
         public float3 Segment(int index) => First + Step * index;
 
