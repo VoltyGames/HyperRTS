@@ -22,11 +22,14 @@ namespace HyperRTS.Simulation.Buildings
             var prefab = request.Command.Prefab;
             var map = SystemAPI.GetSingleton<MapSettings>();
             var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
+            var grid = SystemAPI.GetSingleton<NavGrid>();
+            var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var line = new PlacementLine(map, request.Command.Position, request.Command.End, footprint);
             var stock = SystemAPI.GetBuffer<ResourceStock>(request.Player);
             for (var i = 0; i < line.Count; i++)
             {
-                if (!IsFree(ref state, prefab, line, i, sites, out var center))
+                var valid = PlacementMath.Resolve(map, grid, line.Segment(i), line.Footprint, surface, out var center);
+                if (!valid || IsOccupied(center, line.Footprint, sites))
                 {
                     continue;
                 }
@@ -43,20 +46,6 @@ namespace HyperRTS.Simulation.Buildings
             {
                 Reverse(orders);
             }
-        }
-
-        private bool IsFree(ref SystemState state, Entity prefab, in PlacementLine line, int index,
-            NativeList<Site> sites, out float3 center)
-        {
-            var map = SystemAPI.GetSingleton<MapSettings>();
-            var grid = SystemAPI.GetSingleton<NavGrid>();
-            var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
-            if (!PlacementMath.Resolve(map, grid, line.Segment(index), line.Footprint, surface, out center))
-            {
-                return false;
-            }
-
-            return !IsOccupied(center, line.Footprint, sites);
         }
 
         /// <summary>Whether the builders' centre is nearer the last site than the first.</summary>

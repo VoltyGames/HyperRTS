@@ -28,6 +28,7 @@ namespace HyperRTS.Simulation.Buildings
             public bool Queue;
         }
 
+        /// <summary>World XZ box a new site can't overlap: a standing obstacle or a site placed this frame.</summary>
         private struct Site
         {
             public float3 Center;
@@ -71,7 +72,7 @@ namespace HyperRTS.Simulation.Buildings
         {
             // Played back right away so the sites exist before builders read the Build orders below.
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            var sites = new NativeList<Site>(Allocator.Temp);
+            var sites = StandingSites();
             var assignments = new NativeList<Assignment>(Allocator.Temp);
             // One buyer per player for the frame: each site placed counts against the next request's build limits.
             var buyers = new NativeHashMap<byte, Buyer>(4, Allocator.Temp);
@@ -232,23 +233,26 @@ namespace HyperRTS.Simulation.Buildings
             SystemAPI.HasBuffer<BuildOption>(unit)
             && ProductionRules.HasOption(SystemAPI.GetBuffer<BuildOption>(unit), prefab);
 
-        /// <summary>Checks existing obstacles too: the nav grid may lag a frame behind newly placed sites.</summary>
-        private bool IsOccupied(float3 center, float2 footprint, NativeList<Site> sites)
+        /// <summary>Every standing obstacle's world box: the nav grid may lag a frame behind newly placed sites.</summary>
+        private NativeList<Site> StandingSites()
+        {
+            var obstacles = _obstacles.ToComponentDataArray<NavObstacle>(Allocator.Temp);
+            var transforms = _obstacles.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+            var sites = new NativeList<Site>(obstacles.Length, Allocator.Temp);
+            for (var i = 0; i < obstacles.Length; i++)
+            {
+                var box = new NavBox(transforms[i].Position, transforms[i].Rotation, obstacles[i].Size);
+                sites.Add(new Site { Center = transforms[i].Position, Footprint = box.Extents * 2f });
+            }
+
+            return sites;
+        }
+
+        private static bool IsOccupied(float3 center, float2 footprint, NativeList<Site> sites)
         {
             foreach (var site in sites)
             {
                 if (Overlaps(center, footprint, site.Center, site.Footprint))
-                {
-                    return true;
-                }
-            }
-
-            var obstacles = _obstacles.ToComponentDataArray<NavObstacle>(Allocator.Temp);
-            var transforms = _obstacles.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-            for (var i = 0; i < obstacles.Length; i++)
-            {
-                var extent = obstacles[i].Extent(transforms[i].Rotation);
-                if (Overlaps(center, footprint, transforms[i].Position, extent))
                 {
                     return true;
                 }

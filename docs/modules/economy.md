@@ -67,7 +67,7 @@ own turn, map buildings keep their authored rotation, and a start kit item turns
 A building with `placedInLines` set, such as a wall, is placed by dragging: press at the start, drag, release to
 confirm. `PlacementLine` lays segments along the nearer grid axis, X or Z, each one footprint X long. A line along Z
 turns each segment a quarter, so its footprint swaps. Diagonal lines are not supported yet. The ghost draws every
-segment, valid or not by the same `PlacementMath` rules, and `PlacementState.ValidSegments` gives the HUD's `LineCost` the
+segment, valid or not by the same `PlacementMath` rules, and the HUD's `LineCost` counts the valid ones for the
 line's total cost.
 
 The command is `PlaceLine`, sent as a start, an end and a prefab. `PlaceBuildingSystem` rebuilds the same line and

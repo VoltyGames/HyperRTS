@@ -9,11 +9,11 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Quarter turns a placed building can take, so turn values run 0 to 3.</summary>
         public const int Turns = 4;
 
-        /// <summary>
-        /// Yaw of a building placed at <paramref name="turn"/>. Turn 0 points its front (+Z) at the match camera,
-        /// which looks along +Z; each turn adds a quarter clockwise seen from above.
-        /// </summary>
-        public static quaternion Facing(int turn) => quaternion.RotateY(math.PI * (1f + 0.5f * turn));
+        /// <summary>Yaw in radians that points a front (+Z) at the match camera, which looks along +Z.</summary>
+        public const float CameraYaw = math.PI;
+
+        /// <summary>Yaw at <paramref name="turn"/>: each turn adds a quarter clockwise to <see cref="CameraYaw"/>.</summary>
+        public static quaternion Facing(int turn) => quaternion.RotateY(CameraYaw + math.PI * 0.5f * turn);
 
         /// <summary>The footprint's world X and Z at <paramref name="turn"/>: odd turns swap them.</summary>
         public static float2 Turned(float2 footprint, int turn) => turn % 2 == 1 ? footprint.yx : footprint;

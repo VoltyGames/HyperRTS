@@ -87,7 +87,8 @@ namespace HyperRTS.Simulation.Tests
             MathAssert.Near(front, Front(site));
             Assert.AreEqual(centerX, transform.Position.x, 1e-4f, "snapped to the turned footprint");
             Assert.AreEqual(centerZ, transform.Position.z, 1e-4f);
-            var extent = _world.Get<NavObstacle>(site).Extent(transform.Rotation);
+            var box = new NavBox(transform.Position, transform.Rotation, _world.Get<NavObstacle>(site).Size);
+            var extent = box.Extents * 2f;
             MathAssert.Near(PlacementMath.Turned(new float2(3f, 2f), turn), extent);
             var spawn = transform.TransformPoint(_world.Get<Producer>(site).SpawnOffset);
             MathAssert.Near(transform.Position + front * SpawnOffset.z, spawn);

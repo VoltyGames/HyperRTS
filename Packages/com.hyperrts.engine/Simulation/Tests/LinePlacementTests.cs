@@ -91,7 +91,9 @@ namespace HyperRTS.Simulation.Tests
             }
 
             var site = _world.All<ConstructionProgress>()[0];
-            var extent = _world.Get<NavObstacle>(site).Extent(_world.Get<LocalTransform>(site).Rotation);
+            var transform = _world.Get<LocalTransform>(site);
+            var box = new NavBox(transform.Position, transform.Rotation, _world.Get<NavObstacle>(site).Size);
+            var extent = box.Extents * 2f;
             Assert.AreEqual(1.2f, extent.x, 0.001f, "the footprint turns with the segment");
             Assert.AreEqual(2f, extent.y, 0.001f);
         }
@@ -174,6 +176,22 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.IsTrue(ResourceMath.CanAfford(stock, cost, 3));
             Assert.IsFalse(ResourceMath.CanAfford(stock, cost, 4));
+        }
+
+        [Test]
+        public void Matches_IgnoresHeightAndCursorDrift_ButNotAnotherSegment()
+        {
+            var line = Line(new float3(4f, 0f, 4f), new float3(9.2f, 0f, 4f));
+
+            Assert.IsTrue(line.Matches(Line(new float3(4.1f, 3f, 4f), new float3(9.4f, 0f, 4.1f))));
+            Assert.IsFalse(line.Matches(Line(new float3(4f, 0f, 4f), new float3(11f, 0f, 4f))), "a longer line");
+            Assert.IsFalse(line.Matches(Line(new float3(4f, 0f, 4f), new float3(4f, 0f, 9f))), "along the other axis");
+        }
+
+        private static PlacementLine Line(float3 start, float3 end)
+        {
+            var map = new MapSettings { Min = new float2(-100f), Size = new float2(200f), NavCellSize = 1f };
+            return new PlacementLine(map, start, end, new float2(2f, 1.2f));
         }
 
         private struct AlongLine : IComparer<float3>

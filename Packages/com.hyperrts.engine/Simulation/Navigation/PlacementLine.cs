@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             var delta = end - start;
             AlongZ = math.abs(delta.z) > math.abs(delta.x);
-            Footprint = AlongZ ? footprint.yx : footprint;
+            Footprint = PlacementMath.Turned(footprint, AlongZ ? 1 : 0);
             // Whole cells, so every segment centre stays on the grid.
             var length = math.max(1f, math.round(footprint.x / map.NavCellSize)) * map.NavCellSize;
             First = PlacementMath.Snap(map, start, Footprint);
@@ -44,5 +44,10 @@ namespace HyperRTS.Simulation.Navigation
         public quaternion Turn => AlongZ ? quaternion.RotateY(math.PI * 0.5f) : quaternion.identity;
 
         public float3 Segment(int index) => First + Step * index;
+
+        /// <summary>The same segments as <paramref name="other"/>, heights aside since placement grounds each one.</summary>
+        public bool Matches(in PlacementLine other) =>
+            First.xz.Equals(other.First.xz) && Step.Equals(other.Step) && Count == other.Count
+            && Footprint.Equals(other.Footprint);
     }
 }

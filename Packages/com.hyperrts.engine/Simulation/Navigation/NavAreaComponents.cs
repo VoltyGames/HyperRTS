@@ -30,14 +30,6 @@ namespace HyperRTS.Simulation.Navigation
     {
         public float2 Size;
 
-        /// <summary>The world X and Z the footprint spans once turned by <paramref name="rotation"/>.</summary>
-        public readonly float2 Extent(quaternion rotation)
-        {
-            var across = math.abs(math.rotate(rotation, new float3(Size.x, 0f, 0f)));
-            var deep = math.abs(math.rotate(rotation, new float3(0f, 0f, Size.y)));
-            return (across + deep).xz;
-        }
-
         /// <summary>A hash of the footprint stamped at <paramref name="transform"/>, to tell when it changed.</summary>
         public readonly ulong Hash(in LocalTransform transform)
         {

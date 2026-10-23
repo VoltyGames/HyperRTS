@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -27,7 +28,7 @@ namespace HyperRTS.Simulation.Match
         public bool FacesCamera;
 
         /// <summary>The yaw its offset and rotation turn with, in radians.</summary>
-        public float Frame(float spawnYaw) => FacesCamera ? math.PI : spawnYaw;
+        public float Frame(float spawnYaw) => FacesCamera ? PlacementMath.CameraYaw : spawnYaw;
     }
 
     /// <summary>One AI build order step of a side, on the Match entity.</summary>

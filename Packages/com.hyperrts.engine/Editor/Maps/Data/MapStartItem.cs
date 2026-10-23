@@ -1,6 +1,8 @@
 using System;
-using UnityEngine;
 using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Simulation.Navigation;
+using Unity.Mathematics;
+using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
@@ -17,6 +19,6 @@ namespace HyperRTS.Editor.Maps.Data
         public bool facesCamera;
 
         /// <summary>The yaw its offset turns with, in degrees.</summary>
-        public float Frame(float spawnYaw) => facesCamera ? 180f : spawnYaw;
+        public float Frame(float spawnYaw) => facesCamera ? math.degrees(PlacementMath.CameraYaw) : spawnYaw;
     }
 }

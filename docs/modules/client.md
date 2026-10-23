@@ -76,7 +76,7 @@ The command card is a grid of 72 px cards, five a row, laid out in `HUDCommands.
 ability card is a picture: the icon fills the button, scaled and cropped, with the hotkey top left and the cost in a
 strip along the bottom. Its name is in the tooltip. Caption buttons (stances, unload, sell) stay text.
 
-While a line is dragged, `LineCost` shows its total, `ValidSegments` times the per-segment cost, above and right of
+While a line is dragged, `LineCost` shows its total, the valid `PlacementSegment`s times the per-segment cost, above and right of
 the line's end. It turns `hud-costs--short`, the unaffordable card's colour, when the stock can't cover it.
 
 `PurchaseCommands` asks `PurchaseRules.FindRefusal` why a purchase is refused and shows it as a class on the card:

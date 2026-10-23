@@ -23,6 +23,11 @@ namespace HyperRTS.Input.Commands
         private RTSInputActions _actions;
         private WorldPointer _pointer;
 
+        // The line last planned into the PlacementSegment buffer, so a still cursor doesn't replan it.
+        private PlacementLine _line;
+        private Entity _linePrefab;
+        private int _lineGridVersion;
+
         protected override void OnCreate()
         {
             _actions = InputActionsProvider.Actions;
@@ -91,36 +96,49 @@ namespace HyperRTS.Input.Commands
 
         private void MoveGhost(ref PlacementState placement, float3 ground)
         {
-            var map = SystemAPI.GetSingleton<MapSettings>();
-            var size = SystemAPI.GetComponent<NavObstacle>(placement.Prefab).Size;
+            var size = ReadFootprint(placement.Prefab, out var map, out var grid, out var surface);
             var footprint = PlacementMath.Turned(size, placement.Turn);
-            var surface = BuildingPlacement.GetSurface(EntityManager, placement.Prefab);
-            var grid = SystemAPI.GetSingleton<NavGrid>();
             CompleteDependency();
             placement.Valid = PlacementMath.Resolve(in map, in grid, ground, footprint, surface, out placement.Position);
         }
 
         private void MoveLine(ref PlacementState placement, float3 ground)
         {
-            var map = SystemAPI.GetSingleton<MapSettings>();
-            var footprint = SystemAPI.GetComponent<NavObstacle>(placement.Prefab).Size;
-            var surface = BuildingPlacement.GetSurface(EntityManager, placement.Prefab);
-            var grid = SystemAPI.GetSingleton<NavGrid>();
-            CompleteDependency();
+            var size = ReadFootprint(placement.Prefab, out var map, out var grid, out var surface);
             placement.Position = ground;
             var start = placement.Dragging ? placement.LineStart : ground;
-            var line = new PlacementLine(map, start, ground, footprint);
+            var line = new PlacementLine(map, start, ground, size);
             var segments = SystemAPI.GetSingletonBuffer<PlacementSegment>();
-            segments.Clear();
-            placement.ValidSegments = 0;
-            for (var i = 0; i < line.Count; i++)
+            if (!IsPlanned(line, placement.Prefab, grid.Version))
             {
-                var valid = PlacementMath.Resolve(map, grid, line.Segment(i), line.Footprint, surface, out var center);
-                segments.Add(new PlacementSegment { Center = center, Footprint = line.Footprint, Valid = valid });
-                placement.ValidSegments += valid ? 1 : 0;
+                CompleteDependency();
+                segments.Clear();
+                for (var i = 0; i < line.Count; i++)
+                {
+                    var footprint = line.Footprint;
+                    var valid = PlacementMath.Resolve(map, grid, line.Segment(i), footprint, surface, out var center);
+                    segments.Add(new PlacementSegment { Center = center, Footprint = footprint, Valid = valid });
+                }
+
+                _line = line;
+                _linePrefab = placement.Prefab;
+                _lineGridVersion = grid.Version;
             }
 
-            placement.Valid = placement.ValidSegments > 0;
+            // Read back from the buffer: a restarted placement resets Valid over an unchanged line.
+            placement.Valid = PlacementSegment.CountValid(segments) > 0;
+        }
+
+        private bool IsPlanned(in PlacementLine line, Entity prefab, int gridVersion) =>
+            line.Matches(_line) && prefab == _linePrefab && gridVersion == _lineGridVersion;
+
+        /// <summary>The prefab's unturned footprint and what snapping it reads; complete jobs before reading cells.</summary>
+        private float2 ReadFootprint(Entity prefab, out MapSettings map, out NavGrid grid, out PlacementSurface surface)
+        {
+            map = SystemAPI.GetSingleton<MapSettings>();
+            grid = SystemAPI.GetSingleton<NavGrid>();
+            surface = BuildingPlacement.GetSurface(EntityManager, prefab);
+            return SystemAPI.GetComponent<NavObstacle>(prefab).Size;
         }
 
         private void DragLine(ref PlacementState placement, bool aimed, bool queue)

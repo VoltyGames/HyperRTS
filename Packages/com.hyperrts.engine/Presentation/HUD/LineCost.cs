@@ -1,3 +1,5 @@
+using HyperRTS.Client.Common;
+using HyperRTS.Client.Interaction;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -12,6 +14,9 @@ namespace HyperRTS.Presentation.HUD
     public sealed class LineCost : HUDPanel
     {
         private static readonly Vector2 Offset = new(16f, -8f);
+
+        private readonly LiveQuery _placement = new(entityManager =>
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<PlacementSegment>()));
 
         private readonly CostRow _costs;
         private Entity _prefab;
@@ -29,23 +34,29 @@ namespace HyperRTS.Presentation.HUD
         public override void Refresh(HUDContext context)
         {
             var placement = context.Placement;
-            var shown = placement.Active && placement.Dragging && placement.ValidSegments > 0;
-            Root.SetHidden(!shown);
-            if (!shown)
+            var segments = placement.Active && placement.Dragging ? CountValid(context.EntityManager) : 0;
+            Root.SetHidden(segments == 0);
+            if (segments == 0)
             {
                 return;
             }
 
             var costs = context.EntityManager.GetBuffer<ResourceCost>(placement.Prefab, true);
-            if (placement.Prefab != _prefab || placement.ValidSegments != _segments)
+            if (placement.Prefab != _prefab || segments != _segments)
             {
                 _prefab = placement.Prefab;
-                _segments = placement.ValidSegments;
+                _segments = segments;
                 _costs.Bind(costs, _segments);
             }
 
             _costs.MarkShort(!ResourceMath.CanAfford(context.Stock.AsNativeArray(), costs, _segments));
             Place(placement.Position);
+        }
+
+        private int CountValid(EntityManager entityManager)
+        {
+            var placement = _placement.In(entityManager).GetSingletonEntity();
+            return PlacementSegment.CountValid(entityManager.GetBuffer<PlacementSegment>(placement, true));
         }
 
         // The drag's end sits under the cursor, so the row follows it without reading device input.

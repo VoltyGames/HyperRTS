@@ -13,5 +13,16 @@ namespace HyperRTS.Client.Interaction
         public float2 Footprint;
 
         public bool Valid;
+
+        public static int CountValid(DynamicBuffer<PlacementSegment> segments)
+        {
+            var count = 0;
+            foreach (var segment in segments)
+            {
+                count += segment.Valid ? 1 : 0;
+            }
+
+            return count;
+        }
     }
 }

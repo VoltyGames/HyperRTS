@@ -25,8 +25,5 @@ namespace HyperRTS.Client.Interaction
         public bool Dragging;
 
         public float3 LineStart;
-
-        /// <summary>Valid <see cref="PlacementSegment"/>s, so the HUD can show the line's total cost.</summary>
-        public int ValidSegments;
     }
 }

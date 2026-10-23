@@ -30,16 +30,14 @@ namespace HyperRTS.Input.Commands
             }
 
             SystemAPI.SetSingleton(presses);
-            if (InputActionsProvider.CancelPressed && !IsInteracting())
+            // Escape cancels a placement or targeted order before it turns the command card back to its first page.
+            if (InputActionsProvider.CancelPressed && !placing && !HasPendingCommand())
             {
                 SystemAPI.SetSingleton(new CommandCardPage());
             }
         }
 
-        // Escape cancels a placement or targeted order before it turns the command card back to its first page.
-        private bool IsInteracting() =>
-            SystemAPI.GetSingleton<PlacementState>().Active
-            || SystemAPI.GetSingleton<PendingCommand>().Type != CommandType.None;
+        private bool HasPendingCommand() => SystemAPI.GetSingleton<PendingCommand>().Type != CommandType.None;
 
         private static void Collect(Keyboard keyboard, Key first, Key last, char firstChar, ref HotkeyPresses presses)
         {
