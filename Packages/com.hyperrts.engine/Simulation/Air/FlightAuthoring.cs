@@ -42,13 +42,8 @@ namespace HyperRTS.Simulation.Air
             public override void Bake(FlightAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                if (authoring.releasePoint != null)
-                {
-                    DependsOn(authoring.releasePoint);
-                }
-
                 AirSetup.AddFlight(ref writer, authoring.altitude, authoring.climbSpeed, authoring.loiterRadius,
-                    EffectSetup.Socket(authoring.transform, authoring.releasePoint));
+                    EffectSetup.Socket(this, authoring.transform, authoring.releasePoint));
                 if (authoring.usesLandingPads)
                 {
                     AirSetup.AddPadUser(ref writer);

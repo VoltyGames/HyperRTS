@@ -40,11 +40,6 @@ namespace HyperRTS.Simulation.Transport
             public override void Bake(ContainerAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                if (authoring.exit != null)
-                {
-                    DependsOn(authoring.exit);
-                }
-
                 TransportSetup.AddContainer(ref writer, new Container
                 {
                     Capacity = authoring.capacity,
@@ -52,7 +47,7 @@ namespace HyperRTS.Simulation.Transport
                     PassengersFire = authoring.passengersFire,
                     PassengersSurvive = authoring.passengersSurvive,
                     HasExit = authoring.exit != null,
-                    Exit = EffectSetup.Socket(authoring.transform, authoring.exit),
+                    Exit = EffectSetup.Socket(this, authoring.transform, authoring.exit),
                 });
                 if (authoring.neutralGarrison)
                 {

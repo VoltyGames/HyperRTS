@@ -56,11 +56,6 @@ namespace HyperRTS.Simulation.Airdrops
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                if (authoring.landingPoint != null)
-                {
-                    DependsOn(authoring.landingPoint);
-                }
-
                 writer.Add(new AirdropReceiver
                 {
                     Aircraft = GetEntity(authoring.aircraft, TransformUsageFlags.Dynamic),
@@ -70,7 +65,7 @@ namespace HyperRTS.Simulation.Airdrops
                     Interval = authoring.interval,
                     Altitude = authoring.altitude,
                     FallSpeed = authoring.fallSpeed,
-                    Landing = EffectSetup.Socket(authoring.transform, authoring.landingPoint),
+                    Landing = EffectSetup.Socket(this, authoring.transform, authoring.landingPoint),
                 });
             }
         }

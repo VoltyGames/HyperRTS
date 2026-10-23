@@ -188,20 +188,13 @@ namespace HyperRTS.Simulation.Combat
                 };
                 if (muzzle != null)
                 {
-                    weapon.Muzzle = Pivot(baker, root, muzzle);
+                    weapon.Muzzle = EffectSetup.Socket(baker, root, muzzle);
                     weapon.HasMuzzle = true;
                 }
 
-                weapon.TurretPivot = turret != null ? Pivot(baker, root, turret) : float3.zero;
-                weapon.BarrelPivot = barrel != null ? Pivot(baker, root, barrel) : weapon.Muzzle;
+                weapon.TurretPivot = EffectSetup.Socket(baker, root, turret);
+                weapon.BarrelPivot = barrel != null ? EffectSetup.Socket(baker, root, barrel) : weapon.Muzzle;
                 return weapon;
-            }
-
-            /// <summary>Where <paramref name="part"/> sits in <paramref name="root"/>'s space; interceptors aim about these too.</summary>
-            internal static float3 Pivot(IBaker baker, Transform root, Transform part)
-            {
-                baker.DependsOn(part);
-                return EffectSetup.Socket(root, part);
             }
         }
 

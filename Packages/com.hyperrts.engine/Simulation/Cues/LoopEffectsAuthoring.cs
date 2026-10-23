@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Cues
                         DependsOn(entry.socket);
                     }
 
-                    var socket = EffectSetup.Socket(authoring.transform, entry.socket);
+                    var socket = EffectSetup.Socket(this, authoring.transform, entry.socket);
                     EffectSetup.AddLoop(loops, entry.rig, socket, entry.aboveHealth, entry.duration);
                 }
             }

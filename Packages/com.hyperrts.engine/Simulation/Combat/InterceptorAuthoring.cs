@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Collections;
 using Unity.Entities;
@@ -100,12 +101,12 @@ namespace HyperRTS.Simulation.Combat
             };
             if (muzzle != null)
             {
-                aim.Muzzle = WeaponAuthoring.WeaponStats.Pivot(baker, root, muzzle);
+                aim.Muzzle = EffectSetup.Socket(baker, root, muzzle);
                 aim.HasMuzzle = true;
             }
 
-            aim.TurretPivot = turret != null ? WeaponAuthoring.WeaponStats.Pivot(baker, root, turret) : float3.zero;
-            aim.BarrelPivot = barrel != null ? WeaponAuthoring.WeaponStats.Pivot(baker, root, barrel) : aim.Muzzle;
+            aim.TurretPivot = EffectSetup.Socket(baker, root, turret);
+            aim.BarrelPivot = barrel != null ? EffectSetup.Socket(baker, root, barrel) : aim.Muzzle;
             return new Interceptor
             {
                 Radius = radius,

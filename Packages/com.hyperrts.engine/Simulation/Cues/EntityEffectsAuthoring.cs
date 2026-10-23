@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Cues
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 var effects = EffectSetup.Add(ref writer);
-                var muzzle = EffectSetup.Socket(authoring.transform, authoring.muzzle);
+                var muzzle = EffectSetup.Socket(this, authoring.transform, authoring.muzzle);
                 EffectSetup.Set(effects, CueSlot.Fire, authoring.fire, muzzle);
                 EffectSetup.Set(effects, CueSlot.Death, authoring.death, default);
                 EffectSetup.Set(effects, CueSlot.Ability, authoring.ability, default);
@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Cues
                     }
 
                     EffectSetup.Set(effects, CueSlot.Fire, mount.rig,
-                        EffectSetup.Socket(authoring.transform, mount.muzzle), (byte)(i + 1));
+                        EffectSetup.Socket(this, authoring.transform, mount.muzzle), (byte)(i + 1));
                 }
             }
         }

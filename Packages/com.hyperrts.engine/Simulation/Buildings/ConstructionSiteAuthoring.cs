@@ -48,14 +48,13 @@ namespace HyperRTS.Simulation.Buildings
                     return;
                 }
 
-                // Through the baker, so moving a work point rebakes.
                 var transforms = new List<Transform>();
                 GetComponentsInChildren(authoring.site, transforms);
                 foreach (var point in transforms)
                 {
                     if (point.name.StartsWith(WorkPrefix, StringComparison.Ordinal))
                     {
-                        points.Add(new ConstructionWorkPoint { Socket = EffectSetup.Socket(authoring.transform, point) });
+                        points.Add(new ConstructionWorkPoint { Socket = EffectSetup.Socket(this, authoring.transform, point) });
                     }
                 }
             }

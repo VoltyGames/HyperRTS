@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Cues
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                var socket = EffectSetup.Socket(authoring.transform, authoring.socket);
+                var socket = EffectSetup.Socket(this, authoring.transform, authoring.socket);
                 EffectSetup.AddMotionDust(ref writer, authoring.effects, socket, authoring.minSpeed,
                     authoring.fullSpeed);
             }
