@@ -60,6 +60,20 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void Detector_OnLowPower_StopsDetecting_UntilPowered()
+        {
+            Detect(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f), power: -3f), radius: 10f);
+            var enemy = Stealthy(_world.SpawnUnit(2, new float3(5f, 0f, 0f)));
+
+            _world.Run(0.3f);
+            Assert.IsTrue(IsHidden(enemy), "a radar on low power is off");
+
+            _world.SpawnBuilding(1, new float3(-20f, 0f, 0f), new float2(4f, 4f), power: 5f);
+            _world.Run(0.3f);
+            Assert.IsFalse(IsHidden(enemy), "powered again, so it detects");
+        }
+
+        [Test]
         public void Firing_RevealsShooter_ThenItRestealths()
         {
             var shooter = Stealthy(_world.AddWeapon(_world.SpawnUnit(2, float3.zero), cooldown: 100f), reveal: 1f);

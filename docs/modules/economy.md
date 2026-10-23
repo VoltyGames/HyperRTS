@@ -39,7 +39,7 @@ Defaults for the balance pass: a truck carries 100 a trip, about 240 a minute on
 ## Power
 
 Part of `Buildings`. A building with positive **Power** generates it, negative draws it. While demand exceeds
-supply, consumers go offline: weapons hold fire and production slows to `MatchRules.LowPowerProductionRate`.
+supply, consumers go offline: weapons hold fire, detectors go blind and production slows to `MatchRules.LowPowerProductionRate`.
 `Offline` replicates, so every client can stop machines and dim [lights](client.md#building-lights) with it.
 
 ## Buildings

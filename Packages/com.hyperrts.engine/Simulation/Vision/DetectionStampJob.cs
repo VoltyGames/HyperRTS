@@ -7,9 +7,11 @@ namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
     /// Stamps every <see cref="Detector"/> into <see cref="FogOfWar.Detected"/> for its team. Single-threaded because
-    /// overlapping circles OR into the same cells.
+    /// overlapping circles OR into the same cells. An <see cref="Offline"/> detector, such as a radar on low power,
+    /// detects nothing.
     /// </summary>
     [BurstCompile]
+    [WithNone(typeof(Offline))]
     internal partial struct DetectionStampJob : IJobEntity
     {
         public FogOfWar Fog;
