@@ -6,11 +6,13 @@ namespace HyperRTS.Simulation.Animation
 {
     /// <summary>
     /// A door on a producer that opens for each unit it releases, holds while the unit drives out, then closes. Driven
-    /// on every client by the producer's replicated <c>Producer.Released</c> count; presentation only.
+    /// on every client by the producer's replicated <c>Producer.Released</c> count, or on an aircraft held open by its
+    /// replicated <c>DropRun</c>; presentation only.
     /// </summary>
     public struct ProductionDoor : IComponentData
     {
-        public Entity Building;
+        /// <summary>The producer or aircraft that drives the door.</summary>
+        public Entity Root;
 
         /// <summary>Open pose relative to the rest pose: a local translation, rotation and scale factor.</summary>
         public float3 OpenOffset;
@@ -62,6 +64,17 @@ namespace HyperRTS.Simulation.Animation
             }
 
             Elapsed += deltaTime;
+        }
+
+        /// <summary>Stays open while <paramref name="open"/>, then holds and closes as after a release.</summary>
+        public void Hold(bool open, float deltaTime)
+        {
+            if (open && Elapsed > MoveSeconds)
+            {
+                Elapsed = Openness * MoveSeconds;
+            }
+
+            Elapsed = open ? math.min(Elapsed + deltaTime, MoveSeconds) : Elapsed + deltaTime;
         }
 
         private readonly float Eased => math.smoothstep(0f, 1f, Openness);

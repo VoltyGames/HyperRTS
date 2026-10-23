@@ -40,7 +40,23 @@ namespace HyperRTS.Simulation.Airdrops
 
         public readonly bool IsOver(float3 position) => DistanceToTarget(position) <= DropRange;
 
-        /// <summary>The drop point, or the exit once the aircraft is leaving.</summary>
-        public readonly float3 Destination(bool leaving) => leaving ? Exit : Target;
+        /// <summary>Over the drop point and level with it or just past, so a load let go here lands on it.</summary>
+        public readonly bool IsReached(float3 position) =>
+            IsOver(position) && math.dot(position.xz - Target.xz, Heading) >= 0f;
+
+        /// <summary>
+        /// Just past the drop point, so the aircraft is still cruising when a load <paramref name="releaseBehind"/>
+        /// metres aft of its origin comes over it; the exit once it is leaving.
+        /// </summary>
+        public readonly float3 Destination(bool leaving, float releaseBehind)
+        {
+            if (leaving)
+            {
+                return Exit;
+            }
+
+            var past = releaseBehind + DropRange;
+            return Target + new float3(Heading.x * past, 0f, Heading.y * past);
+        }
     }
 }

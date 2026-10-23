@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Units;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Air
@@ -32,16 +33,33 @@ namespace HyperRTS.Simulation.Air
         [Tooltip("Takes a pad at the Airfield that builds it, flies back to it to reload (Return order or out of ammo) and docks there.")]
         public bool usesLandingPads;
 
+        [Tooltip("Optional child that airdrop crates and strike bombs leave from, such as a ramp or bomb bay; the origin "
+            + "without one.")]
+        public Transform releasePoint;
+
         public class Baker : Baker<FlightAuthoring>
         {
             public override void Bake(FlightAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                AirSetup.AddFlight(ref writer, authoring.altitude, authoring.climbSpeed, authoring.loiterRadius);
+                AirSetup.AddFlight(ref writer, authoring.altitude, authoring.climbSpeed, authoring.loiterRadius,
+                    LocalReleasePoint(authoring));
                 if (authoring.usesLandingPads)
                 {
                     AirSetup.AddPadUser(ref writer);
                 }
+            }
+
+            private float3 LocalReleasePoint(FlightAuthoring authoring)
+            {
+                if (authoring.releasePoint == null)
+                {
+                    return float3.zero;
+                }
+
+                // Registers the dependency, so moving the point rebakes the aircraft.
+                var point = GetComponent<Transform>(authoring.releasePoint);
+                return GetComponent<Transform>().InverseTransformPoint(point.position);
             }
         }
     }

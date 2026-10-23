@@ -119,6 +119,9 @@ coils up toward the pivot; a scaling door bakes a `PostTransformMatrix`.
 `ProductionDoorSystem` reads `Producer.Released`, a replicated count of released units, so every client sees it,
 enemies included. The owner-only production cue can't drive it. A building first seen mid-match adopts the count
 without opening, and a release while the door closes sends it back up from where it stands.
+Under an aircraft with `FlightAuthoring` instead, such as a cargo ramp or bomb bay, the door stays open while the
+aircraft's replicated `DropRun.Active` is set over an airdrop or strike, then holds and closes. Set `holdSeconds` to
+0 there, since the run already lasts past the drop.
 
 ## Strategic assets
 
@@ -134,7 +137,8 @@ the charge, about 300 s. The owner fires it from the command card like any build
 - Firing sends the `aircraft` in from the owner's map edge on a `DropRoute`. It carries `StealthAuthoring` and loses
   its stealth `revealSeconds` before the drop, so fighters and SAMs can engage it. Shot down first, the strike is
   lost.
-- Over the target it drops a `BombLoad`: `count` guided bombs, homing projectiles from the `bomb` prefab that seek
+- Over the target it drops a `BombLoad` from its release point, as an [airdrop](economy.md#airdrops) does, with its
+  `DropRun` set either side: `count` guided bombs, homing projectiles from the `bomb` prefab that seek
   enemy structures within `zoneRadius`, nearest first, and fall in a line along the run when there are none. Each
   enemy weapon or mount that can hit air, is not offline and reaches the target removes one bomb, down to
   `maxReduction` (half) of the stick.

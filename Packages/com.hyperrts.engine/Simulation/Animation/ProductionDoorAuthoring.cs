@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using Unity.Entities;
@@ -7,7 +8,10 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Animation
 {
-    /// <summary>A door under a Producer that opens for each unit it releases (a roll-up or hangar door).</summary>
+    /// <summary>
+    /// A door under a Producer that opens for each unit it releases (a roll-up or hangar door), or under an aircraft
+    /// that stays open through its drop run (a cargo ramp or bomb bay).
+    /// </summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "Production Door")]
     [Icon(HyperRTSIcons.Animation)]
     [HelpURL(HyperRTSDocs.Animation)]
@@ -41,8 +45,8 @@ namespace HyperRTS.Simulation.Animation
         {
             public override void Bake(ProductionDoorAuthoring authoring)
             {
-                var producer = GetComponentInParent<ProducerAuthoring>();
-                if (producer == null)
+                var root = Root();
+                if (root == null)
                 {
                     return;
                 }
@@ -55,7 +59,7 @@ namespace HyperRTS.Simulation.Animation
                 var writer = new BakerWriter(this, GetEntity(flags));
                 writer.Add(new ProductionDoor
                 {
-                    Building = GetEntity(producer, TransformUsageFlags.Dynamic),
+                    Root = GetEntity(root, TransformUsageFlags.Dynamic),
                     OpenOffset = authoring.openOffset,
                     OpenRotation = quaternion.AxisAngle(authoring.openAxis.normalized,
                         math.radians(authoring.openAngle)),
@@ -67,6 +71,12 @@ namespace HyperRTS.Simulation.Animation
                     HoldSeconds = authoring.holdSeconds,
                     Elapsed = float.MaxValue,
                 });
+            }
+
+            private Component Root()
+            {
+                var producer = GetComponentInParent<ProducerAuthoring>();
+                return producer != null ? producer : GetComponentInParent<FlightAuthoring>();
             }
         }
     }

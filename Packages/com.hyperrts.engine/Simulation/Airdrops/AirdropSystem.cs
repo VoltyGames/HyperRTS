@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -148,26 +149,29 @@ namespace HyperRTS.Simulation.Airdrops
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public ComponentLookup<Dead> DeadLookup;
 
-            private void Execute(Entity entity, ref AirdropFlight flight, ref MoveDestination destination,
-                EnabledRefRW<MoveDestination> moving, in Faction faction)
+            private void Execute(Entity entity, ref AirdropFlight flight, ref DropRun run,
+                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in MovementSpeed speed,
+                in Faction faction)
             {
-                var position = TransformLookup[entity].Position;
-                if (flight.Leaving && !Map.Contains(position))
+                var transform = TransformLookup[entity];
+                if (flight.Leaving && !Map.Contains(transform.Position))
                 {
                     Ecb.DestroyEntity(entity);
                     return;
                 }
 
+                var release = transform.TransformPoint(run.ReleasePoint);
+                run.Track(flight.Route.DistanceToTarget(release), speed.Value);
                 if (!flight.Leaving)
                 {
-                    Approach(ref flight, position, faction.Value);
+                    Approach(ref flight, release, faction.Value);
                 }
 
-                destination.Value = flight.Route.Destination(flight.Leaving);
+                destination.Value = flight.Route.Destination(flight.Leaving, run.Behind(transform.Scale));
                 moving.ValueRW = true;
             }
 
-            private void Approach(ref AirdropFlight flight, float3 position, byte faction)
+            private void Approach(ref AirdropFlight flight, float3 release, byte faction)
             {
                 if (!IsWorking(flight.Receiver, faction, out var receiver))
                 {
@@ -175,20 +179,19 @@ namespace HyperRTS.Simulation.Airdrops
                     return;
                 }
 
-                if (!flight.Route.IsOver(position))
+                if (!flight.Route.IsReached(release))
                 {
                     return;
                 }
 
                 flight.Leaving = true;
-                var target = flight.Route.Target;
                 var prefabTransform = TransformLookup[receiver.Crate];
-                var crate = Ecb.Spawn(receiver.Crate, prefabTransform, StretchLookup,
-                    new float3(target.x, position.y, target.z), prefabTransform.Rotation, faction);
+                var crate = Ecb.Spawn(receiver.Crate, prefabTransform, StretchLookup, release,
+                    prefabTransform.Rotation, faction);
                 Ecb.AddComponent(crate, new AirdropCrate
                 {
                     Receiver = flight.Receiver, Type = receiver.Type, Amount = receiver.Amount,
-                    FallSpeed = receiver.FallSpeed, Ground = target.y,
+                    FallSpeed = receiver.FallSpeed, Ground = flight.Route.Target.y,
                 });
             }
 

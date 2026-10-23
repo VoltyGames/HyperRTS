@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
@@ -46,8 +47,8 @@ namespace HyperRTS.Simulation.Airdrops
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var drops = new NativeList<Entity>(Allocator.Temp);
-            foreach (var (flight, destination, transform, speed, entity) in SystemAPI
-                         .Query<RefRW<BombingFlight>, RefRW<MoveDestination>, RefRO<LocalTransform>,
+            foreach (var (flight, run, destination, transform, speed, entity) in SystemAPI
+                         .Query<RefRW<BombingFlight>, RefRW<DropRun>, RefRW<MoveDestination>, RefRO<LocalTransform>,
                              RefRO<MovementSpeed>>()
                          .WithPresent<MoveDestination>().WithNone<Dead>().WithEntityAccess())
             {
@@ -58,12 +59,15 @@ namespace HyperRTS.Simulation.Airdrops
                     continue;
                 }
 
+                var release = transform.ValueRO.TransformPoint(run.ValueRO.ReleasePoint);
+                run.ValueRW.Track(flight.ValueRO.Route.DistanceToTarget(release), speed.ValueRO.Value);
                 if (!flight.ValueRO.Leaving)
                 {
-                    Approach(ref state, ref flight.ValueRW, entity, position, speed.ValueRO.Value, ref drops, ecb);
+                    Approach(ref state, ref flight.ValueRW, entity, release, speed.ValueRO.Value, ref drops, ecb);
                 }
 
-                destination.ValueRW.Value = flight.ValueRO.Route.Destination(flight.ValueRO.Leaving);
+                destination.ValueRW.Value = flight.ValueRO.Route.Destination(flight.ValueRO.Leaving,
+                    run.ValueRO.Behind(transform.ValueRO.Scale));
                 ecb.SetComponentEnabled<MoveDestination>(entity, true);
             }
 
@@ -73,17 +77,17 @@ namespace HyperRTS.Simulation.Airdrops
             }
         }
 
-        private void Approach(ref SystemState state, ref BombingFlight flight, Entity entity, float3 position,
+        private void Approach(ref SystemState state, ref BombingFlight flight, Entity entity, float3 release,
             float speed, ref NativeList<Entity> drops, EntityCommandBuffer ecb)
         {
-            var distance = flight.Route.DistanceToTarget(position);
+            var distance = flight.Route.DistanceToTarget(release);
             var revealed = distance <= flight.RevealSeconds * speed;
             if (revealed && SystemAPI.HasComponent<Stealth>(entity))
             {
                 ecb.SetComponentEnabled<Stealth>(entity, false);
             }
 
-            if (flight.Route.IsOver(position))
+            if (flight.Route.IsReached(release))
             {
                 flight.Leaving = true;
                 drops.Add(entity);
@@ -94,7 +98,8 @@ namespace HyperRTS.Simulation.Airdrops
         {
             var flight = SystemAPI.GetComponent<BombingFlight>(bomber);
             var faction = SystemAPI.GetComponent<Faction>(bomber).Value;
-            var origin = SystemAPI.GetComponent<LocalTransform>(bomber).Position;
+            var transform = SystemAPI.GetComponent<LocalTransform>(bomber);
+            var origin = transform.TransformPoint(SystemAPI.GetComponent<DropRun>(bomber).ReleasePoint);
             var relations = SystemAPI.GetSingleton<FactionRelations>();
             var load = flight.Bombs;
             var count = load.CountAfter(Defences(ref state, flight.Route.Target, faction, relations));

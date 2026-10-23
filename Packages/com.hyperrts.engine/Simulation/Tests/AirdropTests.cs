@@ -1,8 +1,10 @@
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -66,7 +68,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(20f, position.y, 0.5f, "at cruise altitude");
             Assert.AreEqual(1, _world.Get<Faction>(flights[0]).Value);
             Assert.IsTrue(_world.IsEnabled<MoveDestination>(flights[0]));
-            Assert.AreEqual(40f, _world.Get<MoveDestination>(flights[0]).Value.x, 0.01f);
+            Assert.AreEqual(40f, _world.Get<MoveDestination>(flights[0]).Value.x, 1f, "just past the receiver");
         }
 
         [Test]
@@ -93,10 +95,49 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(_world.RunUntil(() => Crates() > 0, 6f), "dropped");
             var crate = _world.All<AirdropCrate>().ToArray()[0];
             var position = _world.Get<LocalTransform>(crate).Position;
-            Assert.AreEqual(37f, position.x, 0.01f);
-            Assert.AreEqual(2f, position.z, 0.01f);
+            Assert.AreEqual(37f, position.x, 1f);
+            Assert.AreEqual(2f, position.z, 1f);
             Assert.AreEqual(0.5f, _world.Get<AirdropCrate>(crate).Ground, 0.01f);
         }
+
+        [Test]
+        public void DropRun_IsActiveFromJustBeforeTheReleaseUntilJustAfter()
+        {
+            // Slowed so the run, 60 m either side, starts after the aircraft enters.
+            var aircraft = _world.Get<AirdropReceiver>(_receiver).Aircraft;
+            _world.EntityManager.SetComponentData(aircraft, new MovementSpeed { Value = 20f });
+            _world.Run(Interval + 0.05f);
+            var flight = Flights()[0];
+            Assert.IsFalse(_world.Get<DropRun>(flight).Active, "closed on the way in");
+
+            Assert.IsTrue(_world.RunUntil(() => _world.Get<DropRun>(flight).Active, 6f));
+            Assert.That(DistanceToReceiver(flight), Is.InRange(55f, 61f), "opens about three seconds out");
+            Assert.AreEqual(0, Crates());
+
+            Assert.IsTrue(_world.RunUntil(() => Crates() > 0, 4f));
+            Assert.IsTrue(_world.Get<DropRun>(flight).Active, "open as the crate leaves");
+            Assert.IsTrue(_world.RunUntil(() => !_world.Get<DropRun>(flight).Active, 4f));
+            Assert.That(DistanceToReceiver(flight), Is.InRange(59f, 65f), "closes about three seconds after");
+        }
+
+        [Test]
+        public void ReleasePoint_DropsTheCrateFromIt_OverTheReceiver()
+        {
+            var aircraft = _world.Get<AirdropReceiver>(_receiver).Aircraft;
+            _world.EntityManager.SetComponentData(aircraft, new DropRun { ReleasePoint = new float3(0f, -2f, -6f) });
+            _world.Run(Interval + 0.05f);
+            var flight = Flights()[0];
+
+            Assert.IsTrue(_world.RunUntil(() => Crates() > 0, 6f));
+            var crate = _world.Get<LocalTransform>(_world.All<AirdropCrate>().ToArray()[0]).Position;
+            var plane = _world.Get<LocalTransform>(flight).Position;
+            Assert.AreEqual(plane.y - 2f, crate.y, 0.5f, "from below the aircraft");
+            Assert.Less(math.distance(crate.xz, new float2(40f, 0f)), 1f, "over the receiver");
+            Assert.That(DistanceToReceiver(flight), Is.InRange(5f, 8f), "the aircraft is past it by the offset");
+        }
+
+        private float DistanceToReceiver(Entity flight) =>
+            math.distance(_world.Get<LocalTransform>(flight).Position.xz, new float2(40f, 0f));
 
         [Test]
         public void ShotDownBeforeTheDrop_LosesTheDelivery()

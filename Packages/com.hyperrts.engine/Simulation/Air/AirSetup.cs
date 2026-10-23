@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Air
 {
@@ -9,12 +10,14 @@ namespace HyperRTS.Simulation.Air
     {
         /// <summary>
         /// Flies the unit at <paramref name="altitude"/>; its <c>NavAgent</c> must be on the Air layer. Its remains
-        /// fall to the ground.
+        /// fall to the ground. Drops leave from <paramref name="releasePoint"/>, in its local space.
         /// </summary>
-        public static void AddFlight<TWriter>(ref TWriter writer, float altitude, float climbSpeed, float loiterRadius)
+        public static void AddFlight<TWriter>(ref TWriter writer, float altitude, float climbSpeed, float loiterRadius,
+            float3 releasePoint = default)
             where TWriter : struct, IEntityWriter
         {
             writer.Add(new Flight { Altitude = altitude, ClimbSpeed = climbSpeed, LoiterRadius = loiterRadius });
+            writer.Add(new DropRun { ReleasePoint = releasePoint });
             writer.Add<DropRemains>();
         }
 

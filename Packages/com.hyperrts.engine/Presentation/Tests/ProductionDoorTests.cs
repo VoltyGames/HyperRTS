@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Animation;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Production;
 using NUnit.Framework;
@@ -10,8 +11,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Tests
 {
     /// <summary>
-    /// Production doors open per released unit, hold, close, roll up by scale, and skip releases from before first
-    /// sight.
+    /// Production doors open per released unit, hold, close, roll up by scale, skip releases from before first sight,
+    /// and stay open through an aircraft's drop run.
     /// </summary>
     public class ProductionDoorTests
     {
@@ -113,6 +114,28 @@ namespace HyperRTS.Presentation.Tests
             Assert.AreEqual(rest.y, Height(door), 1e-4f, "rolled back down");
         }
 
+        [Test]
+        public void DropRun_HoldsTheAircraftsDoorOpenThroughIt_ThenCloses()
+        {
+            var aircraft = _em.CreateEntity();
+            _em.AddComponentData(aircraft, new DropRun());
+            var door = Door(aircraft);
+            Run(1f);
+            Assert.AreEqual(Rest, Position(door), "shut before the run");
+
+            _em.SetComponentData(aircraft, new DropRun { Active = true });
+            Run(0.5f);
+            Assert.Greater(Position(door).y, Rest.y, "eases open");
+            Run(6f);
+            Assert.AreEqual(Rest.y + Lift.y, Position(door).y, 1e-4f, "stays open past the hold while the run lasts");
+
+            _em.SetComponentData(aircraft, new DropRun());
+            Run(2f);
+            Assert.AreEqual(Rest.y + Lift.y, Position(door).y, 1e-4f, "holds after the run");
+            Run(2f);
+            Assert.AreEqual(Rest.y, Position(door).y, 1e-4f, "closed again");
+        }
+
         private float Height(Entity door) => _em.GetComponentData<PostTransformMatrix>(door).Value.c1.y;
 
         private void Release(Entity building)
@@ -135,7 +158,7 @@ namespace HyperRTS.Presentation.Tests
             _em.AddComponentData(door, LocalTransform.FromPosition(Rest));
             _em.AddComponentData(door, new ProductionDoor
             {
-                Building = building,
+                Root = building,
                 OpenOffset = Lift,
                 OpenRotation = quaternion.identity,
                 OpenScale = new float3(1f),

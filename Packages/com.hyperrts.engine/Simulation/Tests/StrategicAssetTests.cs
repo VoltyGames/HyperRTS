@@ -1,9 +1,11 @@
 using HyperRTS.Simulation.Abilities;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Entities;
@@ -153,6 +155,27 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsTrue(_world.RunUntil(() => BombsInFlight() == 0, 3f));
             Assert.Less(_world.GetHealth(depot), 500f);
             Assert.Less(_world.GetHealth(plant), 500f);
+        }
+
+        [Test]
+        public void DropRun_OpensBeforeTheBombsLeaveTheReleasePoint()
+        {
+            // Slowed so the run, 90 m either side, starts after the bomber enters.
+            var bomber = _world.Get<StrategicAsset>(_asset).Aircraft;
+            _world.EntityManager.SetComponentData(bomber, new MovementSpeed { Value = 30f });
+            _world.EntityManager.SetComponentData(bomber, new DropRun { ReleasePoint = new float3(0f, -1.5f, 0f) });
+            Fire();
+            var flight = Bombers()[0];
+            Assert.IsFalse(_world.Get<DropRun>(flight).Active, "bay shut on the way in");
+
+            Assert.IsTrue(_world.RunUntil(() => _world.Get<DropRun>(flight).Active, 6f));
+            Assert.AreEqual(0, BombsInFlight(), "opens before the drop");
+
+            Assert.IsTrue(_world.RunUntil(() => BombsInFlight() > 0, 5f));
+            var bomb = _world.All<Projectile>().ToArray()[0];
+            var plane = _world.Get<LocalTransform>(flight).Position;
+            Assert.AreEqual(plane.y - 1.5f, _world.Get<Projectile>(bomb).Start.y, 0.1f, "from the bay");
+            Assert.IsTrue(_world.Get<DropRun>(flight).Active, "open as they fall");
         }
 
         [TestCase(1, Bombs - 1)]

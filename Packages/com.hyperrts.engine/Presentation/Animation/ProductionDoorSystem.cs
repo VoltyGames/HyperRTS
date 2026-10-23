@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Production;
 using Unity.Burst;
@@ -7,7 +8,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Animation
 {
-    /// <summary>Opens each <see cref="ProductionDoor"/> when its producer's release count rises, and poses and scales it.</summary>
+    /// <summary>
+    /// Opens each <see cref="ProductionDoor"/> when its producer's release count rises or while its aircraft's
+    /// <see cref="DropRun"/> is active, and poses and scales it.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PoseSystemGroup))]
     public partial struct ProductionDoorSystem : ISystem
@@ -22,6 +26,7 @@ namespace HyperRTS.Presentation.Animation
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Producers = SystemAPI.GetComponentLookup<Producer>(true),
+                DropRuns = SystemAPI.GetComponentLookup<DropRun>(true),
             }.ScheduleParallel(state.Dependency);
             state.Dependency = new StretchJob().ScheduleParallel(state.Dependency);
         }
@@ -31,15 +36,23 @@ namespace HyperRTS.Presentation.Animation
         {
             public float DeltaTime;
             [ReadOnly] public ComponentLookup<Producer> Producers;
+            [ReadOnly] public ComponentLookup<DropRun> DropRuns;
 
             private void Execute(ref LocalTransform transform, ref ProductionDoor door)
             {
-                if (!Producers.TryGetComponent(door.Building, out var producer))
+                if (Producers.TryGetComponent(door.Root, out var producer))
+                {
+                    door.Advance(producer.Released, DeltaTime);
+                }
+                else if (DropRuns.TryGetComponent(door.Root, out var run))
+                {
+                    door.Hold(run.Active, DeltaTime);
+                }
+                else
                 {
                     return;
                 }
 
-                door.Advance(producer.Released, DeltaTime);
                 door.Pose(ref transform);
             }
         }
