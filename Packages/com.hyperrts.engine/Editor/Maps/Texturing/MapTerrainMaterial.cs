@@ -53,6 +53,8 @@ namespace HyperRTS.Editor.Maps.Texturing
             material.SetTexture(GroundTintMap, groundTint);
             material.SetTexture(RowMap, rows);
             EditorUtility.SetDirty(material);
+            // Saved now: opening the map's scene unloads an unsaved material and drops every override.
+            AssetDatabase.SaveAssetIfDirty(material);
             return material;
         }
 
