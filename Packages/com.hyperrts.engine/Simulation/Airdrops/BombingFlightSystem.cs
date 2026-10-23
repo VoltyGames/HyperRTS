@@ -1,3 +1,4 @@
+using System;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat;
@@ -47,28 +48,31 @@ namespace HyperRTS.Simulation.Airdrops
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var drops = new NativeList<Entity>(Allocator.Temp);
-            foreach (var (flight, run, destination, transform, speed, entity) in SystemAPI
-                         .Query<RefRW<BombingFlight>, RefRW<DropRun>, RefRW<MoveDestination>, RefRO<LocalTransform>,
-                             RefRO<MovementSpeed>>()
+            foreach (var (flight, strike, run, destination, transform, speed, entity) in SystemAPI
+                         .Query<RefRW<DropFlight>, RefRO<BombingFlight>, RefRW<DropRun>, RefRW<MoveDestination>,
+                             RefRO<LocalTransform>, RefRO<MovementSpeed>>()
                          .WithPresent<MoveDestination>().WithNone<Dead>().WithEntityAccess())
             {
-                var position = transform.ValueRO.Position;
-                if (flight.ValueRO.Leaving && !map.Contains(position))
+                if (flight.ValueRO.HasLeft(map, transform.ValueRO.Position))
                 {
                     ecb.DestroyEntity(entity);
                     continue;
                 }
 
-                var release = transform.ValueRO.TransformPoint(run.ValueRO.ReleasePoint);
-                run.ValueRW.Track(flight.ValueRO.Route.DistanceToTarget(release), speed.ValueRO.Value);
-                if (!flight.ValueRO.Leaving)
+                var approaching = !flight.ValueRO.Leaving;
+                if (flight.ValueRW.Fly(transform.ValueRO, speed.ValueRO.Value, ref run.ValueRW, ref destination.ValueRW,
+                        out _))
                 {
-                    Approach(ref state, ref flight.ValueRW, entity, release, speed.ValueRO.Value, ref drops, ecb);
+                    drops.Add(entity);
                 }
 
-                destination.ValueRW.Value = flight.ValueRO.Route.Destination(flight.ValueRO.Leaving,
-                    run.ValueRO.Behind(transform.ValueRO.Scale));
                 ecb.SetComponentEnabled<MoveDestination>(entity, true);
+                var reveal = strike.ValueRO.RevealSeconds;
+                if (approaching && flight.ValueRO.IsWithin(reveal, speed.ValueRO.Value)
+                    && SystemAPI.HasComponent<Stealth>(entity))
+                {
+                    ecb.SetComponentEnabled<Stealth>(entity, false);
+                }
             }
 
             foreach (var bomber in drops)
@@ -77,40 +81,23 @@ namespace HyperRTS.Simulation.Airdrops
             }
         }
 
-        private void Approach(ref SystemState state, ref BombingFlight flight, Entity entity, float3 release,
-            float speed, ref NativeList<Entity> drops, EntityCommandBuffer ecb)
-        {
-            var distance = flight.Route.DistanceToTarget(release);
-            var revealed = distance <= flight.RevealSeconds * speed;
-            if (revealed && SystemAPI.HasComponent<Stealth>(entity))
-            {
-                ecb.SetComponentEnabled<Stealth>(entity, false);
-            }
-
-            if (flight.Route.IsReached(release))
-            {
-                flight.Leaving = true;
-                drops.Add(entity);
-            }
-        }
-
         private void Drop(ref SystemState state, Entity bomber, EntityCommandBuffer ecb)
         {
-            var flight = SystemAPI.GetComponent<BombingFlight>(bomber);
+            var route = SystemAPI.GetComponent<DropFlight>(bomber).Route;
+            var load = SystemAPI.GetComponent<BombingFlight>(bomber).Bombs;
             var faction = SystemAPI.GetComponent<Faction>(bomber).Value;
             var transform = SystemAPI.GetComponent<LocalTransform>(bomber);
             var origin = transform.TransformPoint(SystemAPI.GetComponent<DropRun>(bomber).ReleasePoint);
             var relations = SystemAPI.GetSingleton<FactionRelations>();
-            var load = flight.Bombs;
-            var count = load.CountAfter(Defences(ref state, flight.Route.Target, faction, relations));
-            var targets = Structures(ref state, flight.Route.Target, load.ZoneRadius, faction, relations);
+            var count = load.CountAfter(Defences(ref state, route.Target, faction, relations));
+            var targets = Structures(ref state, route.Target, load.ZoneRadius, faction, relations);
             var impact = _cues.TypeIdFor(bomber, CueSlot.Impact);
             var prefabTransform = SystemAPI.GetComponent<LocalTransform>(load.Prefab);
             for (var i = 0; i < count; i++)
             {
-                var target = targets.Length > 0 ? targets[i % targets.Length] : Entity.Null;
+                var target = targets.Length > 0 ? targets[i % targets.Length].Entity : Entity.Null;
                 var aim = target == Entity.Null
-                    ? StickPoint(flight.Route, load.ZoneRadius, i, count)
+                    ? route.StickPoint(load.ZoneRadius, i, count)
                     : SystemAPI.GetComponent<LocalTransform>(target).Position;
                 var bomb = ecb.Spawn(load.Prefab, prefabTransform, _stretchLookup, origin,
                     quaternion.LookRotationSafe(aim - origin, math.up()), faction);
@@ -118,34 +105,11 @@ namespace HyperRTS.Simulation.Airdrops
                 {
                     Speed = load.Speed,
                     ImpactTypeId = impact,
-                    Hit = Hit(load, bomber, faction, origin, target, aim),
+                    Hit = load.Hit(bomber, faction, origin, target, aim),
                     Trajectory = Trajectory.Direct,
                     Start = origin,
                 });
             }
-        }
-
-        private static DamageEvent Hit(in BombLoad load, Entity bomber, byte faction, float3 origin, Entity target,
-            float3 aim) => new()
-        {
-            Target = target,
-            Position = aim,
-            Origin = origin,
-            Source = bomber,
-            SourceFaction = faction,
-            Amount = load.Damage,
-            Type = load.DamageType,
-            Radius = load.Radius,
-            EdgeFactor = load.EdgeFactor,
-            Reach = WeaponTargets.Surface,
-        };
-
-        /// <summary>With no structure to seek, the bombs fall in a line along the run across the zone.</summary>
-        private static float3 StickPoint(in DropRoute route, float zoneRadius, int index, int count)
-        {
-            var along = count > 1 ? (index / (count - 1f) * 2f - 1f) * zoneRadius : 0f;
-            var heading = route.Heading;
-            return route.Target + new float3(heading.x * along, 0f, heading.y * along);
         }
 
         /// <summary>Enemy anti-air weapons, mounts included, that are working and reach the target point.</summary>
@@ -178,36 +142,35 @@ namespace HyperRTS.Simulation.Airdrops
         }
 
         private static bool Covers(in Weapon weapon, float3 from, float3 point) =>
-            weapon.Targets != WeaponTargets.Surface && math.distance(from.xz, point.xz) <= weapon.Range;
+            CombatMath.CanHit(weapon.Targets, NavLayer.Air) && weapon.Reaches(math.distance(from.xz, point.xz));
 
         /// <summary>Enemy structures in the zone, nearest the aim point first.</summary>
-        private NativeList<Entity> Structures(ref SystemState state, float3 point, float radius, byte faction,
+        private NativeList<NearStructure> Structures(ref SystemState state, float3 point, float radius, byte faction,
             in FactionRelations relations)
         {
-            var found = new NativeList<Entity>(Allocator.Temp);
-            var distances = new NativeList<float>(Allocator.Temp);
+            var found = new NativeList<NearStructure>(Allocator.Temp);
             foreach (var (transform, owner, entity) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<Faction>>()
                          .WithAll<BuildingTag>().WithNone<Dead>().WithEntityAccess())
             {
                 var distance = math.distance(transform.ValueRO.Position.xz, point.xz);
-                if (distance > radius || !relations.IsHostile(faction, owner.ValueRO.Value))
+                if (distance <= radius && relations.IsHostile(faction, owner.ValueRO.Value))
                 {
-                    continue;
+                    found.Add(new NearStructure { Distance = distance, Entity = entity });
                 }
-
-                var at = 0;
-                while (at < distances.Length && distances[at] <= distance)
-                {
-                    at++;
-                }
-
-                found.InsertRange(at, 1);
-                found[at] = entity;
-                distances.InsertRange(at, 1);
-                distances[at] = distance;
             }
 
+            found.Sort();
             return found;
+        }
+
+        private struct NearStructure : IComparable<NearStructure>
+        {
+            public float Distance;
+            public Entity Entity;
+
+            // Ties fall back to the entity, so every peer picks the same order.
+            public int CompareTo(NearStructure other) =>
+                Distance != other.Distance ? Distance.CompareTo(other.Distance) : Entity.CompareTo(other.Entity);
         }
     }
 }

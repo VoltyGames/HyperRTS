@@ -1,8 +1,8 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Units;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Air
@@ -42,24 +42,17 @@ namespace HyperRTS.Simulation.Air
             public override void Bake(FlightAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                if (authoring.releasePoint != null)
+                {
+                    DependsOn(authoring.releasePoint);
+                }
+
                 AirSetup.AddFlight(ref writer, authoring.altitude, authoring.climbSpeed, authoring.loiterRadius,
-                    LocalReleasePoint(authoring));
+                    EffectSetup.Socket(authoring.transform, authoring.releasePoint));
                 if (authoring.usesLandingPads)
                 {
                     AirSetup.AddPadUser(ref writer);
                 }
-            }
-
-            private float3 LocalReleasePoint(FlightAuthoring authoring)
-            {
-                if (authoring.releasePoint == null)
-                {
-                    return float3.zero;
-                }
-
-                // Registers the dependency, so moving the point rebakes the aircraft.
-                var point = GetComponent<Transform>(authoring.releasePoint);
-                return GetComponent<Transform>().InverseTransformPoint(point.position);
             }
         }
     }

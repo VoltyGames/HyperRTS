@@ -136,6 +136,30 @@ namespace HyperRTS.Simulation.Tests
             Assert.That(DistanceToReceiver(flight), Is.InRange(5f, 8f), "the aircraft is past it by the offset");
         }
 
+        [Test]
+        public void DropFlight_ReleasesOnceOverTheDropPoint_ThenHeadsForTheExit()
+        {
+            var flight = new DropFlight
+            {
+                Route = new DropRoute
+                {
+                    Entry = new float3(0f, 20f, -50f), Target = float3.zero, Exit = new float3(0f, 20f, 50f),
+                },
+            };
+            var run = new DropRun();
+            var destination = new MoveDestination();
+
+            Assert.IsFalse(flight.Fly(LocalTransform.FromPosition(0f, 20f, -10f), 10f, ref run, ref destination, out _));
+            Assert.IsFalse(flight.Leaving, "short of it");
+            Assert.IsTrue(run.Active, "within three seconds");
+            Assert.IsTrue(flight.Fly(LocalTransform.FromPosition(0f, 20f, 1f), 10f, ref run, ref destination,
+                out var release));
+            Assert.AreEqual(new float3(0f, 20f, 1f), release);
+            Assert.AreEqual(flight.Route.Exit, destination.Value);
+            Assert.IsFalse(flight.Fly(LocalTransform.FromPosition(0f, 20f, 2f), 10f, ref run, ref destination, out _),
+                "only once");
+        }
+
         private float DistanceToReceiver(Entity flight) =>
             math.distance(_world.Get<LocalTransform>(flight).Position.xz, new float2(40f, 0f));
 

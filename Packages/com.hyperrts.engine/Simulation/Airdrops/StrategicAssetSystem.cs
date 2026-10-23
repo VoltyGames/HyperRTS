@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Navigation;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -98,17 +97,10 @@ namespace HyperRTS.Simulation.Airdrops
 
                 var start = SystemAPI.GetComponent<PlayerSpawn>(players[used.Faction]).Position;
                 var route = DropRoute.Plan(map, start, used.Position, asset.Altitude);
-                var aircraft = ecb.Spawn(asset.Aircraft, SystemAPI.GetComponent<LocalTransform>(asset.Aircraft),
-                    _stretchLookup, route.Entry, route.Facing, used.Faction);
-                var flight = SystemAPI.GetComponent<Flight>(asset.Aircraft);
-                flight.Altitude = asset.Altitude;
-                ecb.SetComponent(aircraft, flight);
-                ecb.AddComponent(aircraft, new BombingFlight
-                {
-                    Route = route, RevealSeconds = asset.RevealSeconds, Bombs = asset.Bombs,
-                });
-                ecb.SetComponent(aircraft, new MoveDestination { Value = route.Target });
-                ecb.SetComponentEnabled<MoveDestination>(aircraft, true);
+                var aircraft = route.Launch(ecb, asset.Aircraft, SystemAPI.GetComponent<LocalTransform>(asset.Aircraft),
+                    _stretchLookup, SystemAPI.GetComponent<Flight>(asset.Aircraft), asset.Altitude, used.Faction);
+                ecb.AddComponent(aircraft,
+                    new BombingFlight { RevealSeconds = asset.RevealSeconds, Bombs = asset.Bombs });
             }
         }
     }

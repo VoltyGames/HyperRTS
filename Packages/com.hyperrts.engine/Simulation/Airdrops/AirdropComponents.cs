@@ -28,23 +28,20 @@ namespace HyperRTS.Simulation.Airdrops
         public float Elapsed;
     }
 
-    /// <summary>An aircraft flying a delivery to <see cref="Receiver"/>; shot down before the drop, the delivery is lost.</summary>
+    /// <summary>A <see cref="DropFlight"/> delivering to <see cref="Receiver"/>; shot down first, it is lost.</summary>
     public struct AirdropFlight : IComponentData
     {
         public Entity Receiver;
-        public DropRoute Route;
-
-        /// <summary>Set once it dropped or its receiver was lost; it then flies off the map and despawns.</summary>
-        public bool Leaving;
     }
 
     /// <summary>Cargo sinking onto <see cref="Receiver"/>; pays the receiver's owner when it lands.</summary>
     public struct AirdropCrate : IComponentData
     {
         public Entity Receiver;
-        public UnityObjectRef<ResourceType> Type;
-        public int Amount;
+
+        /// <summary>Copied from the receiver, so the crate still falls if the receiver is destroyed.</summary>
         public float FallSpeed;
+
         public float Ground;
     }
 }

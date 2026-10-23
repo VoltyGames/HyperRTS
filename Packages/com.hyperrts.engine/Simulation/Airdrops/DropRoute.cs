@@ -1,5 +1,9 @@
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
+using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Airdrops
 {
@@ -32,9 +36,32 @@ namespace HyperRTS.Simulation.Airdrops
             };
         }
 
+        /// <summary>
+        /// Spawns <paramref name="prefab"/> for <paramref name="faction"/> at the entry, cruising
+        /// <paramref name="altitude"/> up, on a <see cref="DropFlight"/> along this route.
+        /// </summary>
+        public readonly Entity Launch(EntityCommandBuffer ecb, Entity prefab, in LocalTransform prefabTransform,
+            in ComponentLookup<PostTransformMatrix> stretches, Flight flight, float altitude, byte faction)
+        {
+            var aircraft = ecb.Spawn(prefab, prefabTransform, stretches, Entry, Facing, faction);
+            flight.Altitude = altitude;
+            ecb.SetComponent(aircraft, flight);
+            ecb.AddComponent(aircraft, new DropFlight { Route = this });
+            ecb.SetComponent(aircraft, new MoveDestination { Value = Target });
+            ecb.SetComponentEnabled<MoveDestination>(aircraft, true);
+            return aircraft;
+        }
+
         public readonly float2 Heading => math.normalizesafe(Exit.xz - Target.xz);
 
         public readonly quaternion Facing => quaternion.LookRotationSafe(new float3(Heading.x, 0f, Heading.y), math.up());
+
+        /// <summary>Bomb <paramref name="index"/> of <paramref name="count"/> in a line along the run across the zone.</summary>
+        public readonly float3 StickPoint(float zoneRadius, int index, int count)
+        {
+            var along = count > 1 ? (index / (count - 1f) * 2f - 1f) * zoneRadius : 0f;
+            return Target + new float3(Heading.x * along, 0f, Heading.y * along);
+        }
 
         public readonly float DistanceToTarget(float3 position) => math.distance(position.xz, Target.xz);
 

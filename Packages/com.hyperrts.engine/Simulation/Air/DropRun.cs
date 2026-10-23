@@ -20,8 +20,5 @@ namespace HyperRTS.Simulation.Air
 
         /// <summary>Metres the release point sits aft of the origin, for an aircraft of <paramref name="scale"/>.</summary>
         public readonly float Behind(float scale) => -ReleasePoint.z * scale;
-
-        /// <summary>Within <see cref="LeadSeconds"/> of flight of the drop point, before or after it.</summary>
-        public void Track(float distanceToDrop, float speed) => Active = distanceToDrop <= LeadSeconds * speed;
     }
 }

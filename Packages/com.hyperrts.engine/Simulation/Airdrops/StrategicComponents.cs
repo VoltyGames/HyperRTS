@@ -26,6 +26,21 @@ namespace HyperRTS.Simulation.Airdrops
 
         /// <summary>Bombs left once each of <paramref name="defences"/> removes one, never below the cap.</summary>
         public readonly int CountAfter(int defences) => Count - math.min(defences, (int)(Count * MaxReduction));
+
+        /// <summary>One bomb's hit; its splash reaches the surface only and spares allies.</summary>
+        public readonly DamageEvent Hit(Entity bomber, byte faction, float3 origin, Entity target, float3 aim) => new()
+        {
+            Target = target,
+            Position = aim,
+            Origin = origin,
+            Source = bomber,
+            SourceFaction = faction,
+            Amount = Damage,
+            Type = DamageType,
+            Radius = Radius,
+            EdgeFactor = EdgeFactor,
+            Reach = WeaponTargets.Surface,
+        };
     }
 
     /// <summary>
@@ -49,15 +64,11 @@ namespace HyperRTS.Simulation.Airdrops
         public byte Owner;
     }
 
-    /// <summary>An aircraft on a strategic strike; shot down before the drop, the strike is lost.</summary>
+    /// <summary>A <see cref="DropFlight"/> on a strategic strike; shot down before the drop, the strike is lost.</summary>
     public struct BombingFlight : IComponentData
     {
-        public DropRoute Route;
         public float RevealSeconds;
         public BombLoad Bombs;
-
-        /// <summary>Set once it dropped; it then flies off the map and despawns.</summary>
-        public bool Leaving;
     }
 
     /// <summary>A player's strategic asset charge, replicated to every player for the map-wide countdown.</summary>

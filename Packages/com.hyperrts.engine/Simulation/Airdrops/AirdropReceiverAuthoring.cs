@@ -1,10 +1,10 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Units;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Airdrops
@@ -45,8 +45,6 @@ namespace HyperRTS.Simulation.Airdrops
         [Min(0.1f)]
         public float fallSpeed = 6f;
 
-        private float3 LocalLanding() => landingPoint == null ? float3.zero : (float3)transform.InverseTransformPoint(landingPoint.position);
-
         public class Baker : Baker<AirdropReceiverAuthoring>
         {
             public override void Bake(AirdropReceiverAuthoring authoring)
@@ -58,6 +56,11 @@ namespace HyperRTS.Simulation.Airdrops
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                if (authoring.landingPoint != null)
+                {
+                    DependsOn(authoring.landingPoint);
+                }
+
                 writer.Add(new AirdropReceiver
                 {
                     Aircraft = GetEntity(authoring.aircraft, TransformUsageFlags.Dynamic),
@@ -67,7 +70,7 @@ namespace HyperRTS.Simulation.Airdrops
                     Interval = authoring.interval,
                     Altitude = authoring.altitude,
                     FallSpeed = authoring.fallSpeed,
-                    Landing = authoring.LocalLanding(),
+                    Landing = EffectSetup.Socket(authoring.transform, authoring.landingPoint),
                 });
             }
         }

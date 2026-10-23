@@ -16,6 +16,7 @@ namespace HyperRTS.Simulation.Airdrops
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct AirdropCrateSystem : ISystem
     {
+        private ComponentLookup<AirdropReceiver> _receiverLookup;
         private ComponentLookup<Faction> _factionLookup;
         private ComponentLookup<Dead> _deadLookup;
         private BufferLookup<ResourceStock> _stockLookup;
@@ -28,6 +29,7 @@ namespace HyperRTS.Simulation.Airdrops
             state.RequireForUpdate<PlayerRegistry>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<AirdropCrate>();
+            _receiverLookup = state.GetComponentLookup<AirdropReceiver>(true);
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _deadLookup = state.GetComponentLookup<Dead>(true);
             _stockLookup = state.GetBufferLookup<ResourceStock>();
@@ -38,6 +40,7 @@ namespace HyperRTS.Simulation.Airdrops
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _receiverLookup.Update(ref state);
             _factionLookup.Update(ref state);
             _deadLookup.Update(ref state);
             _stockLookup.Update(ref state);
@@ -49,6 +52,7 @@ namespace HyperRTS.Simulation.Airdrops
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
+                ReceiverLookup = _receiverLookup,
                 FactionLookup = _factionLookup,
                 DeadLookup = _deadLookup,
                 StockLookup = _stockLookup,
@@ -64,6 +68,7 @@ namespace HyperRTS.Simulation.Airdrops
             public float DeltaTime;
             public EntityCommandBuffer Ecb;
             public PlayerRegistry Players;
+            [ReadOnly] public ComponentLookup<AirdropReceiver> ReceiverLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public ComponentLookup<Dead> DeadLookup;
             public BufferLookup<ResourceStock> StockLookup;
@@ -79,7 +84,9 @@ namespace HyperRTS.Simulation.Airdrops
                 }
 
                 Ecb.DestroyEntity(entity);
-                if (!FactionLookup.TryGetComponent(crate.Receiver, out var owner) || DeadLookup.HasEnabled(crate.Receiver))
+                if (!ReceiverLookup.TryGetComponent(crate.Receiver, out var receiver)
+                    || !FactionLookup.TryGetComponent(crate.Receiver, out var owner)
+                    || DeadLookup.HasEnabled(crate.Receiver))
                 {
                     return;
                 }
@@ -90,8 +97,8 @@ namespace HyperRTS.Simulation.Airdrops
                 }
 
                 var player = Players[owner.Value];
-                var paid = ResourcePayout.Scaled(ModifierLookup, player, crate.Amount);
-                ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, crate.Type, paid);
+                var paid = ResourcePayout.Scaled(ModifierLookup, player, receiver.Amount);
+                ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, receiver.Type, paid);
             }
         }
     }

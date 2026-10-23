@@ -1,6 +1,6 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
@@ -40,6 +40,11 @@ namespace HyperRTS.Simulation.Transport
             public override void Bake(ContainerAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                if (authoring.exit != null)
+                {
+                    DependsOn(authoring.exit);
+                }
+
                 TransportSetup.AddContainer(ref writer, new Container
                 {
                     Capacity = authoring.capacity,
@@ -47,7 +52,7 @@ namespace HyperRTS.Simulation.Transport
                     PassengersFire = authoring.passengersFire,
                     PassengersSurvive = authoring.passengersSurvive,
                     HasExit = authoring.exit != null,
-                    Exit = authoring.exit != null ? WeaponAuthoring.WeaponStats.Pivot(this, authoring.transform, authoring.exit) : default,
+                    Exit = EffectSetup.Socket(authoring.transform, authoring.exit),
                 });
                 if (authoring.neutralGarrison)
                 {

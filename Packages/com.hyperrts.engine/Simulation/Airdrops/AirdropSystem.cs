@@ -78,13 +78,13 @@ namespace HyperRTS.Simulation.Airdrops
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Map = map,
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                Ecb = ecbSystem.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
+                Ecb = ecbSystem.CreateCommandBuffer(state.WorldUnmanaged),
                 TransformLookup = _transformLookup,
                 StretchLookup = _stretchLookup,
                 OfflineLookup = _offlineLookup,
                 SpawnLookup = _spawnLookup,
                 FlightLookup = _flightLookup,
-            }.ScheduleParallel();
+            }.Schedule();
         }
 
         /// <summary>Counts down each owned, working receiver and sends its aircraft in from the owner's edge.</summary>
@@ -95,15 +95,14 @@ namespace HyperRTS.Simulation.Airdrops
             public float DeltaTime;
             public MapSettings Map;
             public PlayerRegistry Players;
-            public EntityCommandBuffer.ParallelWriter Ecb;
+            public EntityCommandBuffer Ecb;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<PostTransformMatrix> StretchLookup;
             [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
             [ReadOnly] public ComponentLookup<PlayerSpawn> SpawnLookup;
             [ReadOnly] public ComponentLookup<Flight> FlightLookup;
 
-            private void Execute([ChunkIndexInQuery] int chunk, Entity entity, ref AirdropReceiver receiver,
-                in Faction faction)
+            private void Execute(Entity entity, ref AirdropReceiver receiver, in Faction faction)
             {
                 if (faction.Value == Faction.Neutral)
                 {
@@ -124,14 +123,9 @@ namespace HyperRTS.Simulation.Airdrops
                 var start = SpawnLookup[Players[faction.Value]].Position;
                 var landing = TransformLookup[entity].TransformPoint(receiver.Landing);
                 var route = DropRoute.Plan(Map, start, landing, receiver.Altitude);
-                var aircraft = Ecb.Spawn(chunk, receiver.Aircraft, TransformLookup[receiver.Aircraft], StretchLookup,
-                    route.Entry, route.Facing, faction.Value);
-                var flight = FlightLookup[receiver.Aircraft];
-                flight.Altitude = receiver.Altitude;
-                Ecb.SetComponent(chunk, aircraft, flight);
-                Ecb.AddComponent(chunk, aircraft, new AirdropFlight { Receiver = entity, Route = route });
-                Ecb.SetComponent(chunk, aircraft, new MoveDestination { Value = route.Target });
-                Ecb.SetComponentEnabled<MoveDestination>(chunk, aircraft, true);
+                var aircraft = route.Launch(Ecb, receiver.Aircraft, TransformLookup[receiver.Aircraft], StretchLookup,
+                    FlightLookup[receiver.Aircraft], receiver.Altitude, faction.Value);
+                Ecb.AddComponent(aircraft, new AirdropFlight { Receiver = entity });
             }
         }
 
@@ -149,62 +143,37 @@ namespace HyperRTS.Simulation.Airdrops
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public ComponentLookup<Dead> DeadLookup;
 
-            private void Execute(Entity entity, ref AirdropFlight flight, ref DropRun run,
+            private void Execute(Entity entity, ref DropFlight flight, in AirdropFlight delivery, ref DropRun run,
                 ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in MovementSpeed speed,
                 in Faction faction)
             {
                 var transform = TransformLookup[entity];
-                if (flight.Leaving && !Map.Contains(transform.Position))
+                if (flight.HasLeft(Map, transform.Position))
                 {
                     Ecb.DestroyEntity(entity);
                     return;
                 }
 
-                var release = transform.TransformPoint(run.ReleasePoint);
-                run.Track(flight.Route.DistanceToTarget(release), speed.Value);
-                if (!flight.Leaving)
+                flight.Leaving |= !IsWorking(delivery.Receiver, faction.Value);
+                if (flight.Fly(transform, speed.Value, ref run, ref destination, out var release))
                 {
-                    Approach(ref flight, release, faction.Value);
+                    var crate = ReceiverLookup[delivery.Receiver];
+                    var prefabTransform = TransformLookup[crate.Crate];
+                    var spawned = Ecb.Spawn(crate.Crate, prefabTransform, StretchLookup, release,
+                        prefabTransform.Rotation, faction.Value);
+                    Ecb.AddComponent(spawned, new AirdropCrate
+                    {
+                        Receiver = delivery.Receiver, FallSpeed = crate.FallSpeed, Ground = flight.Route.Target.y,
+                    });
                 }
 
-                destination.Value = flight.Route.Destination(flight.Leaving, run.Behind(transform.Scale));
                 moving.ValueRW = true;
             }
 
-            private void Approach(ref AirdropFlight flight, float3 release, byte faction)
-            {
-                if (!IsWorking(flight.Receiver, faction, out var receiver))
-                {
-                    flight.Leaving = true;
-                    return;
-                }
-
-                if (!flight.Route.IsReached(release))
-                {
-                    return;
-                }
-
-                flight.Leaving = true;
-                var prefabTransform = TransformLookup[receiver.Crate];
-                var crate = Ecb.Spawn(receiver.Crate, prefabTransform, StretchLookup, release,
-                    prefabTransform.Rotation, faction);
-                Ecb.AddComponent(crate, new AirdropCrate
-                {
-                    Receiver = flight.Receiver, Type = receiver.Type, Amount = receiver.Amount,
-                    FallSpeed = receiver.FallSpeed, Ground = flight.Route.Target.y,
-                });
-            }
-
-            /// <summary>Still standing and still the aircraft owner's; a lost or captured receiver gets nothing.</summary>
-            private bool IsWorking(Entity entity, byte faction, out AirdropReceiver receiver)
-            {
-                if (!ReceiverLookup.TryGetComponent(entity, out receiver) || DeadLookup.HasEnabled(entity))
-                {
-                    return false;
-                }
-
-                return FactionLookup[entity].Value == faction;
-            }
+            /// <summary>Still standing and still the aircraft owner's; a lost or captured one gets nothing.</summary>
+            private bool IsWorking(Entity receiver, byte faction) =>
+                ReceiverLookup.HasComponent(receiver) && !DeadLookup.HasEnabled(receiver)
+                && FactionLookup[receiver].Value == faction;
         }
     }
 }
