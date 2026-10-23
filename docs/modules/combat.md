@@ -46,7 +46,7 @@ the hull and only once its pose is within `aimTolerance` of the target. A unit's
 hull into a closed cell. The weapon fires once the hull is within `aimTolerance` of the target. Buildings never turn,
 so a building's weapon always bakes as turreted and its `Turret` and `Barrel` follow the pose like a unit's.
 Shots leave from the muzzle turned by the pose: raised about the weapon's `barrel` and traversed about its `turret`,
-so directional armor sees the real origin.
+so directional armor sees the real origin, and the Fire cue (muzzle flash, tracer) plays from there too.
 
 ### Interception
 
@@ -67,7 +67,9 @@ interceptors ignore them.
 that pose is within `aimTolerance`. Each engagement plays its Fire cue toward the target, with the pose index as the
 variant, for the tracer burst. A kill marks the projectile `Intercepted`, so it stops flying and never lands, and
 plays the interceptor's Impact cue where it died as the airburst, classed as an `Air` surface. A miss lets it fly on.
-The roll is seeded by shooter, target and engagement count. An `Offline` or dead interceptor does nothing.
+A shot aimed inside the radius is tracked before it enters, so the turret is on it as it arrives, but only one
+inside the radius is engaged. The roll is seeded by shooter, target and engagement count. An `Offline` or dead
+interceptor does nothing.
 
 ### Destruction
 
@@ -142,7 +144,7 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
 | --- | --- |
 | `VisionRange` | Sight radius |
 | `StealthAuthoring` | Hidden unless detected. Revealed for a while after firing |
-| `DetectorAuthoring` | Detection radius |
+| `DetectorAuthoring` | Detection radius. Detects nothing while `Offline`, so a radar goes blind on low power |
 | `RememberedInFog` | Leaves a last-seen memory when it goes out of sight. On buildings by default |
 
 - Vision updates 10 times a second, and hills block sight.

@@ -69,6 +69,19 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void InboundShot_IsTrackedBeforeItIsInRange_ButNotEngaged()
+        {
+            var defence = Defence(_world.SpawnBuilding(1, float3.zero, new float2(2f, 2f)));
+            var shot = Shot(new float3(0f, 4f, -40f), aim: float3.zero);
+
+            _world.Run(1f);
+
+            Assert.AreEqual(shot, _world.Get<Interceptor>(defence).Target, "aimed inside the radius, so it is tracked");
+            Assert.AreEqual(math.PI, math.abs(Pose(defence, 0).YawRadians), YawTolerance, "the turret is on it");
+            Assert.AreEqual(0, Pose(defence, 0).Shots, "out of range, so held fire");
+        }
+
+        [Test]
         public void Offline_DoesNothing()
         {
             var site = _world.SpawnBuilding(1, float3.zero, new float2(2f, 2f), complete: false);
@@ -139,8 +152,9 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        // A slow hostile rocket heading away along its line, so it stays in range for the test.
-        private Entity Shot(float3 position, ProjectileKind kind = ProjectileKind.Rocket, byte faction = 2)
+        // A slow hostile rocket heading away along its line unless aimed, so it stays where it is for the test.
+        private Entity Shot(float3 position, ProjectileKind kind = ProjectileKind.Rocket, byte faction = 2,
+            float3? aim = null)
         {
             var shot = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(shot, LocalTransform.FromPosition(position));
@@ -148,7 +162,7 @@ namespace HyperRTS.Simulation.Tests
             {
                 Speed = 0.1f,
                 Kind = kind,
-                Hit = new DamageEvent { Position = position * 3f, SourceFaction = faction },
+                Hit = new DamageEvent { Position = aim ?? position * 3f, SourceFaction = faction },
             });
             return shot;
         }

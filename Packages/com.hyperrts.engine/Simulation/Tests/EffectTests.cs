@@ -53,6 +53,24 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void TurretFire_PlaysAtTheMuzzleTheTurretTurned()
+        {
+            var tank = _world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Tank"), range: 10f,
+                turreted: true);
+            var weapon = _world.Get<Combat.Weapon>(tank);
+            weapon.HasMuzzle = true;
+            weapon.Muzzle = new float3(0f, 1f, 2f);
+            _world.EntityManager.SetComponentData(tank, weapon);
+            Rigged(tank, CueSlot.Fire, weapon.Muzzle);
+            _world.SpawnUnit(2, new float3(8f, 0f, 0f), maxHealth: 1000f);
+
+            var fire = _world.QueuedOver(1f).Find(effect => effect.Slot == CueSlot.Fire);
+
+            Assert.That(math.distance(new float3(2f, 1f, 0f), fire.Position), Is.LessThan(0.1f),
+                "the hull stays put, its turret turns the muzzle onto the target");
+        }
+
+        [Test]
         public void EntitiesWithoutARigForTheSlot_PlayNothing()
         {
             Rigged(_world.AddWeapon(_world.SpawnUnit(1, float3.zero)), CueSlot.Death, float3.zero);

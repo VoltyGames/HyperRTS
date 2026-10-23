@@ -11,9 +11,10 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// Turns each <see cref="Interceptor"/>'s pose toward the nearest hostile projectile of a kind it engages and, once
-    /// on target, engages it: a Fire cue toward it and a kill roll that marks it <see cref="Projectile.Intercepted"/>,
-    /// destroys it and plays the Impact cue where it dies. Offline interceptors do nothing.
+    /// Turns each <see cref="Interceptor"/>'s pose toward the nearest hostile projectile of a kind it engages, or
+    /// failing one in range toward the nearest inbound on its radius, and, once on a target in range, engages it: a Fire
+    /// cue toward it and a kill roll that marks it <see cref="Projectile.Intercepted"/>, destroys it and plays the
+    /// Impact cue where it dies. Offline interceptors do nothing.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -77,7 +78,7 @@ namespace HyperRTS.Simulation.Combat
             {
                 interceptor.Tick(DeltaTime);
                 var place = Transforms[entity];
-                interceptor.Target = Nearest(interceptor, place.Position, faction.Value);
+                interceptor.Target = Nearest(interceptor, place.Position, faction.Value, out var inRange);
                 var pose = poses[interceptor.Pose];
                 // Idle, it turns back to straight ahead and level.
                 var angles = float2.zero;
@@ -88,7 +89,7 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 interceptor.Aim.Turn(ref pose, angles, DeltaTime);
-                if (tracking && interceptor.Ready && interceptor.Aim.Aligned(pose, angles))
+                if (inRange && interceptor.Ready && interceptor.Aim.Aligned(pose, angles))
                 {
                     pose.CountShot();
                     Engage(entity, ref interceptor, place, pose, faction.Value);
@@ -97,19 +98,30 @@ namespace HyperRTS.Simulation.Combat
                 poses[interceptor.Pose] = pose;
             }
 
-            private Entity Nearest(in Interceptor interceptor, float3 center, byte faction)
+            // A shot aimed inside the radius is tracked before it arrives, so the turret is on it as it enters.
+            private Entity Nearest(in Interceptor interceptor, float3 center, byte faction, out bool inRange)
             {
-                var best = Closest.Within(interceptor.Radius);
+                var near = Closest.Within(interceptor.Radius);
+                var inbound = Closest.None;
                 for (var i = 0; i < InFlight.Length; i++)
                 {
                     var shot = InFlight[i];
-                    if (Engageable(interceptor, Projectiles[shot], faction))
+                    var projectile = Projectiles[shot];
+                    if (!Engageable(interceptor, projectile, faction))
                     {
-                        best.Consider(i, shot, math.distance(Transforms[shot].Position, center));
+                        continue;
+                    }
+
+                    var distance = math.distance(Transforms[shot].Position, center);
+                    near.Consider(i, shot, distance);
+                    if (math.distance(projectile.Hit.Position, center) <= interceptor.Radius)
+                    {
+                        inbound.Consider(i, shot, distance);
                     }
                 }
 
-                return best.Entity;
+                inRange = near.Found;
+                return inRange ? near.Entity : inbound.Entity;
             }
 
             private bool Engageable(in Interceptor interceptor, in Projectile projectile, byte faction)
@@ -127,8 +139,17 @@ namespace HyperRTS.Simulation.Combat
             {
                 var target = interceptor.Target;
                 var position = Transforms[target].Position;
-                var toward = math.normalizesafe(position - interceptor.Aim.LaunchPoint(place, pose), place.Forward());
-                Cues.Play(entity, CueSlot.Fire, place, toward, faction, interceptor.Pose);
+                var muzzle = interceptor.Aim.LaunchPoint(place, pose);
+                var toward = math.normalizesafe(position - muzzle, place.Forward());
+                if (interceptor.Aim.HasMuzzle)
+                {
+                    Cues.PlayAt(entity, CueSlot.Fire, muzzle, toward, faction, interceptor.Pose);
+                }
+                else
+                {
+                    Cues.Play(entity, CueSlot.Fire, place, toward, faction, interceptor.Pose);
+                }
+
                 if (!interceptor.Engage(entity, target))
                 {
                     return;

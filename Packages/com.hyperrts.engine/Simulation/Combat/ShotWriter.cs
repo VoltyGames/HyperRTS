@@ -109,7 +109,7 @@ namespace HyperRTS.Simulation.Combat
             poses[pose] = fired;
             var place = _transforms[shooter];
             var targetPosition = _transforms[target].Position;
-            PlayFire(shooter, pose, place, targetPosition, faction);
+            PlayFire(shooter, weapon, fired, pose, place, targetPosition, faction);
             if (weapon.ProjectilePrefab == Entity.Null)
             {
                 var origin = weapon.HitOrigin(place, fired);
@@ -124,13 +124,19 @@ namespace HyperRTS.Simulation.Combat
             }
         }
 
-        /// <summary>The fire cue faces the target level, the way the shooter turned.</summary>
-        private void PlayFire(Entity shooter, byte pose, in LocalTransform transform, float3 targetPosition,
-            byte faction)
+        /// <summary>The fire cue faces the target level, the way the shooter turned, from the muzzle as the pose turned it.</summary>
+        private void PlayFire(Entity shooter, in Weapon weapon, in WeaponPose aimed, byte pose,
+            in LocalTransform transform, float3 targetPosition, byte faction)
         {
             var toward = targetPosition - transform.Position;
             toward.y = 0f;
             var direction = math.normalizesafe(toward, transform.Forward());
+            if (weapon.HasMuzzle)
+            {
+                _cues.PlayAt(shooter, CueSlot.Fire, weapon.LaunchPoint(transform, aimed), direction, faction, pose);
+                return;
+            }
+
             _cues.Play(shooter, CueSlot.Fire, transform, direction, faction, pose);
         }
 

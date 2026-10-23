@@ -60,6 +60,13 @@ namespace HyperRTS.Simulation.Cues
                 position = transform.TransformPoint(socket);
             }
 
+            return PlayAt(source, slot, position, direction, faction, variant);
+        }
+
+        /// <summary>Plays <paramref name="source"/>'s cue at <paramref name="position"/>, such as a muzzle turned with its turret.</summary>
+        public bool PlayAt(Entity source, CueSlot slot, float3 position, float3 direction, byte faction,
+            byte variant = 0)
+        {
             var typeId = TypeIdFor(source, slot, variant);
             return Add(typeId, slot, position, direction, faction, _cloaks.HasEnabled(source), variant: variant);
         }
