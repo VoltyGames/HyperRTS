@@ -54,7 +54,7 @@ namespace HyperRTS.Presentation.Flags
                 var shown = FlagDisplay.Resolve(owner, capture, out var hoist);
                 var position = place.ValueRO.Position;
                 var fogged = hasFog && BuildingFog.IsHidden(in view, in fog, in relations, owner, position);
-                var unfinished = building.HasComponent(entity) && building.IsComponentEnabled(entity);
+                var unfinished = building.HasEnabled(entity);
                 var visible = shown != Faction.Neutral && !fogged && !unfinished;
                 var next = new float4(layers[shown], hoist, visible ? 1f : 0f, mount.ValueRO.Drop);
                 if (math.any(states[flag].Value != next))

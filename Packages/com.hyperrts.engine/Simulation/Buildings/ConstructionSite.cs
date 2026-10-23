@@ -27,8 +27,11 @@ namespace HyperRTS.Simulation.Buildings
         public float3 Socket;
     }
 
-    /// <summary>What presentation last saw of a building's construction; the server never reads it.</summary>
-    public struct ConstructionWatch : IComponentData
+    /// <summary>
+    /// What presentation last saw of a building's construction; the server never reads it. Disabled once the building
+    /// shows built, so finished buildings cost nothing until construction starts again.
+    /// </summary>
+    public struct ConstructionWatch : IComponentData, IEnableableComponent
     {
         /// <summary>Work counts as stalled once progress hasn't risen for this long.</summary>
         public const double StallSeconds = 0.5;

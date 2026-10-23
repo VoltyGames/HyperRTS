@@ -60,14 +60,13 @@ namespace HyperRTS.Presentation.Animation
             private bool Runs(ref MachineClock clock)
             {
                 var building = clock.Building;
-                var offline = Offlines.HasEnabled(building) ? Offlines[building].Reasons : OfflineReason.None;
+                var offline = Offlines.HasEnabled(building) ? Offlines[building] : default;
                 switch (clock.Run)
                 {
                     case MachineRun.Powered:
-                        return offline == OfflineReason.None;
+                        return offline.Reasons == OfflineReason.None;
                     case MachineRun.Producing:
-                        var halted = (offline & ~OfflineReason.Unpowered) != 0;
-                        return !halted && Queues.TryGetBuffer(building, out var queue) && !queue.IsEmpty;
+                        return !offline.HasReasonOtherThan(OfflineReason.Unpowered) && Queues.TryGetBuffer(building, out var queue) && !queue.IsEmpty;
                     case MachineRun.Firing:
                         return clock.Fired(Shots(building), DeltaTime);
                     default:

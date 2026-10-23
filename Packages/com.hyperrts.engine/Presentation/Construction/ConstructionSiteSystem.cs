@@ -30,7 +30,7 @@ namespace HyperRTS.Presentation.Construction
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
             _switch = new RenderSwitch(ref CheckedStateRef);
-            RequireForUpdate<ConstructionWatch>();
+            RequireForUpdate(SystemAPI.QueryBuilder().WithPresent<ConstructionWatch>().Build());
         }
 
         protected override void OnUpdate()
@@ -42,10 +42,16 @@ namespace HyperRTS.Presentation.Construction
             _reach = EffectDetail.Level == DetailLevel.Low ? 0.5f : 1f;
             var progress = SystemAPI.GetComponentLookup<ConstructionProgress>(true);
             var fogged = SystemAPI.GetComponentLookup<FogHidden>(true);
+            foreach (var watching in SystemAPI.Query<EnabledRefRW<ConstructionWatch>>().WithAll<ConstructionProgress>()
+                         .WithDisabled<ConstructionWatch>())
+            {
+                watching.ValueRW = true;
+            }
+
             _streams.BeginFrame();
-            foreach (var (site, watch, points, place, entity) in SystemAPI
-                         .Query<RefRO<ConstructionSite>, RefRW<ConstructionWatch>, DynamicBuffer<ConstructionWorkPoint>,
-                             RefRO<LocalToWorld>>().WithEntityAccess())
+            foreach (var (site, watch, watching, points, place, entity) in SystemAPI
+                         .Query<RefRO<ConstructionSite>, RefRW<ConstructionWatch>, EnabledRefRW<ConstructionWatch>,
+                             DynamicBuffer<ConstructionWorkPoint>, RefRO<LocalToWorld>>().WithEntityAccess())
             {
                 var before = watch.ValueRO.Look;
                 var completed = watch.ValueRW.Observe(progress.IsComponentEnabled(entity), progress[entity].Value, now);
@@ -53,6 +59,8 @@ namespace HyperRTS.Presentation.Construction
                 {
                     _switch.SetBranch(entity, site.ValueRO.Visual, HideReason.Site, !watch.ValueRO.ShowsSite);
                 }
+
+                watching.ValueRW = watch.ValueRO.ShowsSite;
 
                 if (fogged.HasComponent(entity))
                 {

@@ -43,6 +43,22 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void Watch_StopsOnceBuilt_AndResumesWithConstruction()
+        {
+            var building = Building(true, out var site, out _);
+            Update(0.0);
+            _em.SetComponentEnabled<ConstructionProgress>(building, false);
+            Update(0.1);
+            Assert.IsFalse(_em.IsComponentEnabled<ConstructionWatch>(building));
+
+            _em.SetComponentEnabled<ConstructionProgress>(building, true);
+            Update(0.2);
+
+            Assert.IsTrue(_em.IsComponentEnabled<ConstructionWatch>(building));
+            Assert.IsTrue(Shown(site));
+        }
+
+        [Test]
         public void BuildingFirstSeenComplete_NeverShowsItsSite()
         {
             Building(false, out var site, out var dressing);

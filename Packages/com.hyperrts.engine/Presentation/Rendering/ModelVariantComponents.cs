@@ -25,6 +25,11 @@ namespace HyperRTS.Presentation.Rendering
         }
     }
 
+    /// <summary>Set once presentation has picked the <see cref="ModelVariants"/> model; baked off.</summary>
+    public struct ModelVariantPicked : IComponentData, IEnableableComponent
+    {
+    }
+
     /// <summary>A child model shown only while <see cref="Variant"/> is the picked one.</summary>
     [InternalBufferCapacity(0)]
     public struct ModelVariantPart : IBufferElementData
