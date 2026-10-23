@@ -30,7 +30,7 @@ income, refills and casualty income scale with the player's `Income` stat.
   at `altitude` above the building, flies a straight `DropRoute` over it, then on past the far edge and despawns.
 - It is a normal air unit, so enemy anti-air under its path can shoot it down. Killed before the drop, the delivery
   is lost. If the building dies or changes owner first, the aircraft turns away without dropping.
-- Over the building it spawns the `crate`, a ghost prefab of the cargo under parachutes, which sinks at `fallSpeed`
+- Over its `landingPoint`, or the building's origin without one, it spawns the `crate`, a ghost prefab of the cargo under parachutes, which sinks at `fallSpeed`
   and pays the owner `amount` of `type`, scaled by `Income`, when it lands.
 
 Defaults for the balance pass: a truck carries 100 a trip, about 240 a minute on a worked field. The design asks

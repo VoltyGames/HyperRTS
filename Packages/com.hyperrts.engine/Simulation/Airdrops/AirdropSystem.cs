@@ -121,7 +121,8 @@ namespace HyperRTS.Simulation.Airdrops
                 }
 
                 var start = SpawnLookup[Players[faction.Value]].Position;
-                var route = DropRoute.Plan(Map, start, TransformLookup[entity].Position, receiver.Altitude);
+                var landing = TransformLookup[entity].TransformPoint(receiver.Landing);
+                var route = DropRoute.Plan(Map, start, landing, receiver.Altitude);
                 var aircraft = Ecb.Spawn(chunk, receiver.Aircraft, TransformLookup[receiver.Aircraft], StretchLookup,
                     route.Entry, route.Facing, faction.Value);
                 var flight = FlightLookup[receiver.Aircraft];

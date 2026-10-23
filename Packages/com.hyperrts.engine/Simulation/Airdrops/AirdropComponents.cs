@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Airdrops
 {
@@ -20,6 +21,9 @@ namespace HyperRTS.Simulation.Airdrops
 
         /// <summary>Metres per second the crate sinks under its parachutes.</summary>
         public float FallSpeed;
+
+        /// <summary>Where the crate lands, in the structure's local space.</summary>
+        public float3 Landing;
 
         public float Elapsed;
     }

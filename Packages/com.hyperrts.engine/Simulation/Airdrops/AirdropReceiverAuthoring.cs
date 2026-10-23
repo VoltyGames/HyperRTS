@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Units;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Airdrops
@@ -21,6 +22,9 @@ namespace HyperRTS.Simulation.Airdrops
 
         [Tooltip("Ghost prefab of the cargo under its parachutes, sinking from the aircraft onto this structure.")]
         public GameObject crate;
+
+        [Tooltip("Optional point on this structure the crate lands on, such as the middle of a drop field; empty lands it on the origin.")]
+        public Transform landingPoint;
 
         [Tooltip("Resource the crate pays when it lands.")]
         public ResourceType type;
@@ -40,6 +44,8 @@ namespace HyperRTS.Simulation.Airdrops
         [Tooltip("Metres per second the crate sinks under its parachutes.")]
         [Min(0.1f)]
         public float fallSpeed = 6f;
+
+        private float3 LocalLanding() => landingPoint == null ? float3.zero : (float3)transform.InverseTransformPoint(landingPoint.position);
 
         public class Baker : Baker<AirdropReceiverAuthoring>
         {
@@ -61,6 +67,7 @@ namespace HyperRTS.Simulation.Airdrops
                     Interval = authoring.interval,
                     Altitude = authoring.altitude,
                     FallSpeed = authoring.fallSpeed,
+                    Landing = authoring.LocalLanding(),
                 });
             }
         }

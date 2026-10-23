@@ -83,6 +83,22 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void LandingPoint_DropsTheCrateThereInsteadOfOnTheOrigin()
+        {
+            var receiver = _world.Get<AirdropReceiver>(_receiver);
+            receiver.Landing = new float3(-3f, 0.5f, 2f);
+            _world.EntityManager.SetComponentData(_receiver, receiver);
+            _world.Run(Interval + 0.05f);
+
+            Assert.IsTrue(_world.RunUntil(() => Crates() > 0, 6f), "dropped");
+            var crate = _world.All<AirdropCrate>().ToArray()[0];
+            var position = _world.Get<LocalTransform>(crate).Position;
+            Assert.AreEqual(37f, position.x, 0.01f);
+            Assert.AreEqual(2f, position.z, 0.01f);
+            Assert.AreEqual(0.5f, _world.Get<AirdropCrate>(crate).Ground, 0.01f);
+        }
+
+        [Test]
         public void ShotDownBeforeTheDrop_LosesTheDelivery()
         {
             _world.Run(Interval + 0.05f);
