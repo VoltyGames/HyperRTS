@@ -162,6 +162,27 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void Unload_StepsOutAtTheExit_TurnedWithTheContainer()
+        {
+            var bunker = Bunker(float3.zero);
+            var container = _world.Get<Container>(bunker);
+            container.HasExit = true;
+            container.Exit = new float3(0f, 0f, -3f);
+            _world.EntityManager.SetComponentData(bunker, container);
+            _world.EntityManager.SetComponentData(bunker, LocalTransform.FromRotation(quaternion.RotateY(math.PI)));
+            var rifle = Passenger(new float3(6f, 0f, 0f));
+            _world.Enter(rifle, bunker);
+            _world.Run(2f);
+
+            _world.Command(1, new PlayerCommand { Type = CommandType.Unload, Unit = bunker, Argument = -1 });
+            _world.Tick();
+
+            var position = _world.Get<LocalTransform>(rifle).Position;
+            Assert.IsFalse(_world.IsInside(rifle));
+            Assert.Less(math.distance(position.xz, new float2(0f, 3f)), 2f, "at the exit, behind the turned bunker");
+        }
+
+        [Test]
         public void DefeatedPlayer_CannotUnload()
         {
             var bunker = Bunker(float3.zero);

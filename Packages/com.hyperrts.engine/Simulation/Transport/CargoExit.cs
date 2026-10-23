@@ -24,6 +24,7 @@ namespace HyperRTS.Simulation.Transport
         [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
         private ComponentLookup<Health> _health;
         private ComponentLookup<LastAttacker> _attackers;
+        [ReadOnly] private ComponentLookup<Container> _containers;
 
         public CargoExit(ref SystemState state)
         {
@@ -35,6 +36,7 @@ namespace HyperRTS.Simulation.Transport
             _obstacles = state.GetComponentLookup<NavObstacle>(true);
             _health = state.GetComponentLookup<Health>();
             _attackers = state.GetComponentLookup<LastAttacker>();
+            _containers = state.GetComponentLookup<Container>(true);
         }
 
         public void Update(ref SystemState state)
@@ -47,6 +49,7 @@ namespace HyperRTS.Simulation.Transport
             _obstacles.Update(ref state);
             _health.Update(ref state);
             _attackers.Update(ref state);
+            _containers.Update(ref state);
         }
 
         /// <summary>Health reads through the writable lookup, so a job using this can't also take Health.</summary>
@@ -103,8 +106,11 @@ namespace HyperRTS.Simulation.Transport
 
         private float3 ExitPosition(Entity container, Entity unit, int slot, in NavGrid grid)
         {
-            var center = _transforms[container].Position;
-            var distance = EntityRadius.Get(container, _agents, _obstacles) + EntityRadius.Get(unit, _agents, _obstacles) + 0.5f;
+            var transform = _transforms[container];
+            var hasExit = _containers.TryGetComponent(container, out var holder) && holder.HasExit;
+            var center = hasExit ? transform.TransformPoint(holder.Exit) : transform.Position;
+            var around = hasExit ? 0f : EntityRadius.Get(container, _agents, _obstacles);
+            var distance = around + EntityRadius.Get(unit, _agents, _obstacles) + 0.5f;
             math.sincos(slot * GoldenAngle, out var sin, out var cos);
             var position = center + new float3(cos, 0f, sin) * distance;
             var layer = NavAgent.GetLayer(_agents, unit);

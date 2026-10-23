@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
@@ -31,6 +32,9 @@ namespace HyperRTS.Simulation.Transport
         [Tooltip("A neutral building anyone may garrison; it belongs to whoever is inside, and is neutral again when empty.")]
         public bool neutralGarrison;
 
+        [Tooltip("Child transform passengers step out at, such as a door; none lets them out around the container.")]
+        public Transform exit;
+
         public class Baker : Baker<ContainerAuthoring>
         {
             public override void Bake(ContainerAuthoring authoring)
@@ -42,6 +46,8 @@ namespace HyperRTS.Simulation.Transport
                     MaxPassengerSize = authoring.maxPassengerSize,
                     PassengersFire = authoring.passengersFire,
                     PassengersSurvive = authoring.passengersSurvive,
+                    HasExit = authoring.exit != null,
+                    Exit = authoring.exit != null ? WeaponAuthoring.WeaponStats.Pivot(this, authoring.transform, authoring.exit) : default,
                 });
                 if (authoring.neutralGarrison)
                 {

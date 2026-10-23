@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Netcode;
 
 namespace HyperRTS.Simulation.Transport
@@ -10,6 +11,10 @@ namespace HyperRTS.Simulation.Transport
         public int MaxPassengerSize;
         public bool PassengersFire;
         public bool PassengersSurvive;
+        public bool HasExit;
+
+        /// <summary>Where passengers step out, relative to the container, when it has an exit.</summary>
+        public float3 Exit;
 
         public readonly bool Fits(DynamicBuffer<Cargo> cargo, int size) =>
             size <= MaxPassengerSize && Used(cargo) + size <= Capacity;

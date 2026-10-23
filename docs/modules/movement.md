@@ -137,8 +137,9 @@ once, so a player order given after that holds. It reloads while docked. Its rem
 ## Transport
 
 `ContainerAuthoring` lets a vehicle or building carry units with `PassengerAuthoring`. It sets the capacity, the
-largest passenger and whether passengers fire out or survive its death. They get out or die in the frame the
-container dies, and dying passengers credit its killer.
+largest passenger and whether passengers fire out or survive its death. Passengers step out at its `exit`, such as
+a bunker's back door, or around it when it has none. They get out or die in the frame the container dies, and dying
+passengers credit its killer.
 
 A passenger is hidden and takes no orders. A neutral garrison building belongs to whoever is inside and turns
 neutral when empty.
