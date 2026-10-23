@@ -14,7 +14,6 @@ namespace HyperRTS.Editor.Maps.Scenes
         public static Texture2D Capture(MapLayout layout, string path)
         {
             var camera = new GameObject("Minimap Capture").AddComponent<Camera>();
-            var target = RenderTexture.GetTemporary(Size, Size, 24, RenderTextureFormat.ARGB32);
             try
             {
                 camera.orthographic = true;
@@ -26,11 +25,10 @@ namespace HyperRTS.Editor.Maps.Scenes
                     Quaternion.Euler(90f, 0f, 0f));
                 camera.clearFlags = CameraClearFlags.SolidColor;
                 camera.backgroundColor = Color.black;
-                EditorTextures.RenderPng(camera, target, path);
+                EditorTextures.RenderPng(camera, Size, Size, path);
             }
             finally
             {
-                RenderTexture.ReleaseTemporary(target);
                 Object.DestroyImmediate(camera.gameObject);
             }
 

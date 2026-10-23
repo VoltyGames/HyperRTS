@@ -75,7 +75,6 @@ namespace HyperRTS.Editor.Maps.Views
             MapSubScenes.Load();
             var folder = MapReport.ViewsFolder(map);
             Directory.CreateDirectory(folder);
-            var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
             var paths = new List<string>();
             var transform = camera.transform;
             var (position, rotation) = (transform.position, transform.rotation);
@@ -88,7 +87,7 @@ namespace HyperRTS.Editor.Maps.Views
                 {
                     Aim(camera, view, controller);
                     var path = Path.Combine(folder, view.Name + ".png");
-                    EditorTextures.RenderPng(camera, target, path);
+                    EditorTextures.RenderPng(camera, Width, Height, path);
                     paths.Add(path);
                 }
             }
@@ -96,7 +95,6 @@ namespace HyperRTS.Editor.Maps.Views
             {
                 transform.SetPositionAndRotation(position, rotation);
                 camera.overrideSceneCullingMask = mask;
-                Object.DestroyImmediate(target);
             }
 
             return paths;

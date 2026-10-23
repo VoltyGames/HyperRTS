@@ -1,13 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Common
 {
-    /// <summary>Texture asset import and GPU read-back shared by the map and environment tools.</summary>
+    /// <summary>Texture asset import, PNG writing and GPU read-back shared by the map and environment tools.</summary>
     internal static class EditorTextures
     {
         /// <summary>
@@ -47,59 +50,25 @@ namespace HyperRTS.Editor.Common
             Action<TextureImporter> configure) =>
             WritePng(path, width, height, format, image => image.SetPixelData(pixels, 0), configure);
 
-        /// <summary>Renders a camera into <paramref name="target"/> and saves it, shader variants compiled first.</summary>
-        public static void RenderPng(Camera camera, RenderTexture target, string path)
+        /// <summary>Renders a camera to a width × height PNG.</summary>
+        public static void RenderPng(Camera camera, int width, int height, string path)
         {
-            var asyncCompilation = ShaderUtil.allowAsyncCompilation;
-            try
-            {
-                // Right after a build, variants not yet compiled would render as nothing (trees as bare bark).
-                ShaderUtil.allowAsyncCompilation = false;
-                RenderPipeline.SubmitRenderRequest(camera, new RenderPipeline.StandardRequest { destination = target });
-            }
-            finally
-            {
-                ShaderUtil.allowAsyncCompilation = asyncCompilation;
-            }
-
-            SavePng(target, path);
-        }
-
-        /// <summary>Writes a render texture to a PNG file as RGB.</summary>
-        public static void SavePng(RenderTexture source, string path)
-        {
+            var target = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32);
             var previous = RenderTexture.active;
-            var image = new Texture2D(source.width, source.height, TextureFormat.RGB24, false);
+            var image = new Texture2D(width, height, TextureFormat.RGB24, false);
             try
             {
-                RenderTexture.active = source;
-                image.ReadPixels(new Rect(0, 0, source.width, source.height), 0, 0);
-                File.WriteAllBytes(path, image.EncodeToPNG());
+                Render(camera, target, path);
+                RenderTexture.active = target;
+                image.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
+                SavePng(image, path);
             }
             finally
             {
                 RenderTexture.active = previous;
+                RenderTexture.ReleaseTemporary(target);
                 Object.DestroyImmediate(image);
             }
-        }
-
-        private static Texture2D WritePng(string path, int width, int height, TextureFormat format,
-            Action<Texture2D> fill, Action<TextureImporter> configure)
-        {
-            var image = new Texture2D(width, height, format, false, true);
-            try
-            {
-                fill(image);
-                image.Apply(false);
-                // The full path, since a local package's files are not under the project folder.
-                File.WriteAllBytes(Path.GetFullPath(path), image.EncodeToPNG());
-            }
-            finally
-            {
-                Object.DestroyImmediate(image);
-            }
-
-            return Import(path, configure);
         }
 
         /// <summary>
@@ -124,5 +93,75 @@ namespace HyperRTS.Editor.Common
                 RenderTexture.ReleaseTemporary(target);
             }
         }
+
+        /// <summary>
+        /// Renders with shader variants compiled first and Surface Cache GI off. Throws if the frame fails, which would
+        /// leave the target blank.
+        /// </summary>
+        private static void Render(Camera camera, RenderTexture target, string path)
+        {
+            string failure = null;
+            void Record(string message, string stackTrace, LogType type)
+            {
+                if (type == LogType.Exception)
+                {
+                    failure ??= message;
+                }
+            }
+
+            var surfaceCaches = ActiveSurfaceCaches();
+            var asyncCompilation = ShaderUtil.allowAsyncCompilation;
+            Application.logMessageReceived += Record;
+            try
+            {
+                // Right after a build, variants not yet compiled would render as nothing (trees as bare bark).
+                ShaderUtil.allowAsyncCompilation = false;
+                surfaceCaches.ForEach(feature => feature.SetActive(false));
+                RenderPipeline.SubmitRenderRequest(camera, new RenderPipeline.StandardRequest { destination = target });
+            }
+            finally
+            {
+                surfaceCaches.ForEach(feature => feature.SetActive(true));
+                ShaderUtil.allowAsyncCompilation = asyncCompilation;
+                Application.logMessageReceived -= Record;
+            }
+
+            if (failure != null)
+            {
+                throw new InvalidOperationException($"HyperRTS: rendering '{path}' failed: {failure}");
+            }
+        }
+
+        /// <summary>
+        /// Surface Cache GI builds up over frames, so a one-frame capture lights by the ambient probe instead. On Unity 7
+        /// alpha its update also throws after a map build replaces the scene, which blanks the frame.
+        /// </summary>
+        private static List<SurfaceCacheGIRendererFeature> ActiveSurfaceCaches() =>
+            UniversalRenderPipeline.asset.rendererDataList.ToArray()
+                .SelectMany(data => data.rendererFeatures)
+                .OfType<SurfaceCacheGIRendererFeature>()
+                .Where(feature => feature.isActive)
+                .ToList();
+
+        private static Texture2D WritePng(string path, int width, int height, TextureFormat format,
+            Action<Texture2D> fill, Action<TextureImporter> configure)
+        {
+            var image = new Texture2D(width, height, format, false, true);
+            try
+            {
+                fill(image);
+                SavePng(image, path);
+            }
+            finally
+            {
+                Object.DestroyImmediate(image);
+            }
+
+            return Import(path, configure);
+        }
+
+        // The full path, since a local package's files are not under the project folder.
+        private static void SavePng(Texture2D image, string path) =>
+            File.WriteAllBytes(Path.GetFullPath(path), image.EncodeToPNG());
     }
 }
