@@ -5,7 +5,7 @@ game-specific code. This repo is public: no third-party assets go into it.
 
 ## Environment
 
-- Unity 7000.0.0a11, the CoreCLR editor, and URP 17.7.
+- Unity 7000.0.0a12, the CoreCLR editor, and URP 17.7.
 - Input System only. Never `UnityEngine.Input`.
 - The DOTS packages track the editor version, 6.7: Entities, Entities Graphics, Physics, Collections, Burst and
   Mathematics. Netcode for Entities is its own package again, 7.1, in the `Unity.Netcode` namespace.
