@@ -44,6 +44,9 @@ namespace HyperRTS.Network.Session
         [NoAutoStaticsCleanup]
         private static NetworkEndpoint _rejoin;
 
+        /// <summary>The emptied world at the bottom of Unity's active world stack; see <see cref="Empty"/>.</summary>
+        private static World _base;
+
         public static bool IsRunning => ClientServerBootstrap.ServerWorld != null || ClientServerBootstrap.ClientWorld != null;
 
         [NoAutoStaticsCleanup]
@@ -177,17 +180,54 @@ namespace HyperRTS.Network.Session
         {
             RememberSlot();
             _rejoin = default;
-            var worlds = new List<World> { World.DefaultGameObjectInjectionWorld };
-            worlds.AddRange(ClientServerBootstrap.ServerWorlds);
-            worlds.AddRange(ClientServerBootstrap.ClientWorlds);
-            worlds.AddRange(ClientServerBootstrap.ThinClientWorlds);
-            foreach (var world in worlds)
+            var worlds = new HashSet<World> { World.DefaultGameObjectInjectionWorld };
+            worlds.UnionWith(ClientServerBootstrap.ServerWorlds);
+            worlds.UnionWith(ClientServerBootstrap.ClientWorlds);
+            worlds.UnionWith(ClientServerBootstrap.ThinClientWorlds);
+            worlds.RemoveWhere(world => world == null || world == keep || world == _base || !world.IsCreated);
+
+            // Unity disposes only worlds off its active world stack, which pops from the top down.
+            while (worlds.Contains(World.PeekWorldStack()))
             {
-                if (world != null && world != keep && world.IsCreated)
+                var top = World.PeekWorldStack();
+                if (!TryPop(top))
                 {
-                    world.Dispose();
+                    Empty(top);
+                    worlds.Remove(top);
+                    break;
                 }
             }
+
+            foreach (var world in worlds)
+            {
+                world.Dispose();
+            }
+        }
+
+        private static bool TryPop(World world)
+        {
+            try
+            {
+                World.PopWorldStack(world);
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                // The world at the bottom of the stack never pops.
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Stops and clears the world Unity keeps at the bottom of its active world stack, which can be neither
+        /// popped nor disposed, and keeps it as the empty base the session's worlds stack on.
+        /// </summary>
+        private static void Empty(World world)
+        {
+            ScriptBehaviourUpdateOrder.RemoveWorldFromCurrentPlayerLoop(world);
+            world.DestroyAllSystemsAndLogException();
+            world.EntityManager.DestroyEntity(world.EntityManager.UniversalQuery);
+            _base = world;
         }
 
         /// <summary>Keeps the closing client's slot, or its observer seat, for the next join.</summary>
@@ -228,6 +268,7 @@ namespace HyperRTS.Network.Session
             Preference = default;
             Token = NewToken();
             _rejoin = default;
+            _base = null;
             Status = NetworkStatus.Idle;
             DisconnectReason = default;
         }
