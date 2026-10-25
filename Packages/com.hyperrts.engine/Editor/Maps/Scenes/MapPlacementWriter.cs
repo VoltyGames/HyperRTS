@@ -10,33 +10,23 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Scenes
 {
     /// <summary>
-    /// Instantiates every placement: gameplay prefabs at the SubScene root with their owner and resource amount,
-    /// scenery under the main scene's generated root. Everything stands on the finished ground (<see cref="MapPlacementPose"/>).
+    /// Instantiates every placement at the SubScene root, gameplay prefabs with their owner and resource amount. Every
+    /// placement is an entity (<see cref="MapPlacements.CheckEntities"/>). Everything stands on the finished ground
+    /// (<see cref="MapPlacementPose"/>).
     /// </summary>
     public static class MapPlacementWriter
     {
         public static void Write(MapScene scene, MapGeneration generation)
         {
             var (heights, groundLevel) = (generation.Heights, generation.Layout.GroundLevel);
-            var scenery = scene.CreateChild("Scenery");
             var counts = new Dictionary<string, int>();
             foreach (var placement in generation.Placements.All)
             {
                 var key = placement.Entry.key;
                 counts[key] = counts.TryGetValue(key, out var count) ? count + 1 : 1;
                 var name = $"{key} {counts[key]}";
-                var instance = placement.IsEntity
-                    ? scene.CreateEntityInstance(placement.Entry.prefab, name)
-                    : (GameObject)PrefabUtility.InstantiatePrefab(placement.Entry.prefab, scenery);
-                if (placement.IsEntity)
-                {
-                    Configure(instance, placement);
-                }
-                else
-                {
-                    instance.name = name;
-                }
-
+                var instance = scene.CreateEntityInstance(placement.Entry.prefab, name);
+                Configure(instance, placement);
                 var pose = MapPlacementPose.OnGround(placement, heights, groundLevel);
                 instance.transform.SetPositionAndRotation(pose.position, pose.rotation);
                 MapPlacementScale.Apply(instance, placement);

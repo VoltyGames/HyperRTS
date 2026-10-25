@@ -31,6 +31,19 @@ namespace HyperRTS.Editor.Maps.Placement
             Clearance.Reserve(placement.Position, placement.Radius);
         }
 
+        /// <summary>
+        /// Play-area props bake into the SubScene so the simulation sees them (sites clear them, tanks crush them), so a
+        /// prefab without HyperRTS authoring is an error. It reads prefabs, so it runs on the main thread.
+        /// </summary>
+        public void CheckEntities(MapIssues issues)
+        {
+            foreach (var key in All.Where(p => p.Entry.prefab != null && !p.IsEntity).Select(p => p.Entry.key).Distinct())
+            {
+                issues.Error($"Prop '{key}' stands in the play area but its prefab has no HyperRTS authoring; " +
+                             "make it a Destructible scenery prefab so the simulation sees it.");
+            }
+        }
+
         /// <summary>Places a choice made at an authored-sector point in every copy of the sector.</summary>
         public void AddEverywhere(MapProp entry, Vector2 sectorPoint, float yaw, float scale, float stretch)
         {

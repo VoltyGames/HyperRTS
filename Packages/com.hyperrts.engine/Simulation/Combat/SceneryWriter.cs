@@ -14,6 +14,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<SpawnOnDeath> _remains;
         private ComponentLookup<SpawnEffect> _effects;
         private ComponentLookup<LocalTransform> _transforms;
+        private ComponentLookup<SceneryId> _ids;
         private RemainsLookups _remainsLookups;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
@@ -26,6 +27,7 @@ namespace HyperRTS.Simulation.Combat
             _remains = state.GetComponentLookup<SpawnOnDeath>(true);
             _effects = state.GetComponentLookup<SpawnEffect>(true);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
+            _ids = state.GetComponentLookup<SceneryId>(true);
             _remainsLookups = RemainsLookups.Create(ref state);
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
@@ -39,6 +41,7 @@ namespace HyperRTS.Simulation.Combat
             _remains.Update(ref state);
             _effects.Update(ref state);
             _transforms.Update(ref state);
+            _ids.Update(ref state);
             _remainsLookups.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
@@ -46,6 +49,9 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>False once the piece is destroyed here or its SubScene unloaded.</summary>
         public bool Exists(Entity scenery) => _health.HasComponent(scenery);
+
+        /// <summary>The piece standing or its remains, false once either is gone here.</summary>
+        public bool IsPlaced(Entity piece) => _transforms.HasComponent(piece);
 
         public void SetHealth(Entity scenery, float fraction, bool witnessed)
         {
@@ -75,8 +81,14 @@ namespace HyperRTS.Simulation.Combat
                 SpawnRemains(scenery, spawn.Prefab, witnessed, fall, ecb);
             }
 
+            Clear(scenery, ecb);
+        }
+
+        /// <summary>Removes a piece or its remains with nothing left behind, as a building site does.</summary>
+        public void Clear(Entity piece, EntityCommandBuffer ecb)
+        {
             var parts = new NativeList<Entity>(4, Allocator.Temp);
-            EntityParts.Collect(scenery, _groups, _children, parts);
+            EntityParts.Collect(piece, _groups, _children, parts);
             ecb.DestroyEntity(parts.AsArray());
         }
 
@@ -104,6 +116,8 @@ namespace HyperRTS.Simulation.Combat
             {
                 ecb.SetComponentEnabled<SpawnEffect>(spawned, false);
             }
+
+            ecb.AddComponent(spawned, _ids[scenery]);
         }
     }
 }

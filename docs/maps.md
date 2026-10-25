@@ -195,7 +195,9 @@ so map captures show Ultra.
 Checks run before anything is refined. `MapAssetCheck` covers the climate and palette, and `MapSpecCheck` covers
 the spec. Every key must resolve, or the error names the key and the feature. Settings that only work in some
 places, such as a prop's `besideRoad`, are rejected elsewhere. After the checks, lookups throw, so a missed key
-fails loudly.
+fails loudly. Once props are placed, `MapPlacements.CheckEntities` makes every prop in the play area an entity: a
+prefab without HyperRTS authoring is an error naming its key, since the simulation must see it to clear or crush it.
+The backdrop draws `backdropModel`s instead.
 
 The build then measures the map on the nav grid:
 

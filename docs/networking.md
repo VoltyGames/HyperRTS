@@ -167,7 +167,8 @@ through a new allocation and `StartRelayClient`.
   Give them Static optimization so they send only when they change. Their ruins are ghosts the server spawns.
 - **Scenery.** Trees, fences, bridges and wrecks are not ghosts. The server sends each change as a scenery id and a
   state byte, and every client spawns the remains itself. A fall the client saw tips over. One found later
-  shows already lying down.
+  shows already lying down. Remains carry their scenery's id, so a change with `Cleared` set removes the piece, or
+  its remains once destroyed, with nothing left behind, as a building site does.
 - **Late sight.** A ghost first seen more than a second after it spawned skips its spawn effect, so only witnessed
   collapses throw dust.
 - **Fields.** Components the client reads carry `[GhostField]`, and enableable ones `[GhostEnabledBit]`. Static data

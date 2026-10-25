@@ -58,7 +58,7 @@ namespace HyperRTS.Network.Scenery
             Send(ref state, news);
         }
 
-        /// <summary>Scenery only leaves by dying, which <see cref="Track"/> counts.</summary>
+        /// <summary>Scenery only leaves by dying or being cleared, which <see cref="Track"/> counts.</summary>
         private void Register(ref SystemState state)
         {
             var count = _scenery.CalculateEntityCount();
@@ -95,6 +95,17 @@ namespace HyperRTS.Network.Scenery
                 // Scenery that doesn't topple sends heading 0, which clients ignore.
                 fallen.TryGetComponent(entity, out var fell);
                 if (_tracker.Set(id.ValueRO.Value, now, fell.Heading, teams, _frame) && now == SceneryChange.Destroyed)
+                {
+                    _expected--;
+                }
+            }
+
+            // Cleared remains have no health, so only standing pieces leave the count.
+            var standing = SystemAPI.GetComponentLookup<Health>(true);
+            foreach (var (id, entity) in SystemAPI.Query<RefRO<SceneryId>>().WithAll<Cleared, LocalTransform>()
+                         .WithNone<GhostInstance>().WithEntityAccess())
+            {
+                if (_tracker.Clear(id.ValueRO.Value, teams, _frame) && standing.HasComponent(entity))
                 {
                     _expected--;
                 }

@@ -4,9 +4,12 @@ using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Spec;
+using HyperRTS.Simulation.Combat;
 using NUnit.Framework;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Tests
 {
@@ -194,6 +197,24 @@ namespace HyperRTS.Editor.Tests
             var issues = new MapIssues();
             MapAssetCheck.Check(climate, palette, issues);
             return issues;
+        }
+
+        [Test]
+        public void APlayAreaPropWithoutEntityAuthoring_IsAnErrorNamingIt()
+        {
+            var (stone, fence) = (new GameObject("Stone"), new GameObject("Fence"));
+            fence.AddComponent<DestructibleAuthoring>();
+            var issues = new MapIssues();
+            var context = MapRoadFixture.Context(MapRoadFixture.Spec(), MapRoadFixture.Climate(), issues);
+            context.Placements.Add(new MapPlacement(new MapProp { key = "Stone", prefab = stone }, Vector2.zero, 0f, 1f));
+            context.Placements.Add(new MapPlacement(new MapProp { key = "Fence", prefab = fence }, Vector2.one, 0f, 1f));
+
+            context.Placements.CheckEntities(issues);
+            Object.DestroyImmediate(stone);
+            Object.DestroyImmediate(fence);
+
+            Assert.AreEqual(1, issues.Errors.Count(), issues.ToString());
+            Assert.IsTrue(issues.Errors.Single().Contains("'Stone'"), issues.ToString());
         }
 
         /// <summary>The spec check against the road fixture's climate, a 1v1 rules asset and a palette of <paramref name="entries"/>.</summary>

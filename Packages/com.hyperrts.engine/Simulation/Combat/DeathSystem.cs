@@ -8,7 +8,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>Marks zero-health entities <see cref="Dead"/>, spawns their remains and destroys them at the end of the frame.</summary>
+    /// <summary>
+    /// Marks zero-health entities <see cref="Dead"/>, spawns their remains and destroys them at the end of the frame.
+    /// <see cref="Cleared"/> ones go quietly: no remains and no Dead, so no cues.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     [UpdateBefore(typeof(DeathCueSystem))]
@@ -18,6 +21,7 @@ namespace HyperRTS.Simulation.Combat
         private RemainsLookups _remains;
         private ComponentLookup<ToppleHeading> _toppleHeadings;
         private ComponentLookup<DropRemains> _drops;
+        private ComponentLookup<SceneryId> _ids;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
 
@@ -28,6 +32,7 @@ namespace HyperRTS.Simulation.Combat
             _remains = RemainsLookups.Create(ref state);
             _toppleHeadings = state.GetComponentLookup<ToppleHeading>(true);
             _drops = state.GetComponentLookup<DropRemains>(true);
+            _ids = state.GetComponentLookup<SceneryId>(true);
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -40,20 +45,24 @@ namespace HyperRTS.Simulation.Combat
             _remains.Update(ref state);
             _toppleHeadings.Update(ref state);
             _drops.Update(ref state);
+            _ids.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
-                .CreateCommandBuffer(state.WorldUnmanaged);
+                .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
-            new DeathJob
+            state.Dependency = new DeathJob
             {
-                Ecb = ecb.AsParallelWriter(), SpawnLookup = _spawnLookup, RemainsLookups = _remains,
-                FallSources = _toppleHeadings, Drops = _drops, Groups = _groups, Children = _children,
-            }.ScheduleParallel();
+                Ecb = ecb, SpawnLookup = _spawnLookup, RemainsLookups = _remains,
+                FallSources = _toppleHeadings, Drops = _drops, Ids = _ids, Groups = _groups, Children = _children,
+            }.ScheduleParallel(state.Dependency);
+            state.Dependency = new ClearJob { Ecb = ecb, Groups = _groups, Children = _children }
+                .ScheduleParallel(state.Dependency);
         }
 
         [BurstCompile]
         [WithPresent(typeof(Dead))]
+        [WithNone(typeof(Cleared))]
         [WithChangeFilter(typeof(Health))]
         private partial struct DeathJob : IJobEntity
         {
@@ -62,6 +71,7 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public RemainsLookups RemainsLookups;
             [ReadOnly] public ComponentLookup<ToppleHeading> FallSources;
             [ReadOnly] public ComponentLookup<DropRemains> Drops;
+            [ReadOnly] public ComponentLookup<SceneryId> Ids;
             [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
             [ReadOnly] public BufferLookup<Child> Children;
 
@@ -113,6 +123,28 @@ namespace HyperRTS.Simulation.Combat
                 {
                     Ecb.AddComponent<FallingRemains>(sortKey, spawned);
                 }
+
+                // Remains of map scenery answer to its id, so multiplayer can clear them.
+                if (Ids.TryGetComponent(entity, out var id))
+                {
+                    Ecb.AddComponent(sortKey, spawned, id);
+                }
+            }
+        }
+
+        [BurstCompile]
+        [WithAll(typeof(Cleared))]
+        private partial struct ClearJob : IJobEntity
+        {
+            public EntityCommandBuffer.ParallelWriter Ecb;
+            [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
+            [ReadOnly] public BufferLookup<Child> Children;
+
+            private void Execute([ChunkIndexInQuery] int sortKey, Entity entity)
+            {
+                var parts = new NativeList<Entity>(4, Allocator.Temp);
+                EntityParts.Collect(entity, Groups, Children, parts);
+                Ecb.DestroyEntity(sortKey, parts.AsArray());
             }
         }
     }

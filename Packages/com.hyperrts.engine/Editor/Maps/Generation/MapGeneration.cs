@@ -72,7 +72,14 @@ namespace HyperRTS.Editor.Maps.Generation
 
         /// <summary>The land planned but not painted, for previews. Null on errors.</summary>
         public static MapGeneration Plan(MapProject project, MapIssues issues) =>
-            Check(project, issues) ? PlanChecked(project, issues) : null;
+            Check(project, issues) ? CheckPlaced(PlanChecked(project, issues), issues) : null;
+
+        /// <summary>The plan's checks that read prefabs, on the main thread after <see cref="PlanChecked"/>. Null on errors.</summary>
+        public static MapGeneration CheckPlaced(MapGeneration generation, MapIssues issues)
+        {
+            generation?.Placements.CheckEntities(issues);
+            return issues.HasErrors ? null : generation;
+        }
 
         /// <summary><see cref="Plan"/> after <see cref="Check"/>. Touches no Unity object, so it may run on a worker thread.</summary>
         public static MapGeneration PlanChecked(MapProject project, MapIssues issues)

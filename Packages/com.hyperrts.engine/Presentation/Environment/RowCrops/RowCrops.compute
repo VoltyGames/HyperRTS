@@ -11,6 +11,7 @@ SamplerState sampler_LinearClamp;
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/RowCrops/RowCropInstance.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Scatter.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Grass/BuildingFootprints.hlsl"
 
 #define CHANNEL_DENSITY 0u
 #define CHANNEL_ACROSS 1u
@@ -163,6 +164,11 @@ void Plant(uint3 id : SV_DispatchThreadID)
     float across = (Channel(hash, CHANNEL_ACROSS) * 2.0 - 1.0) * _Sowing.z * _Sowing.x + wander;
     float along = (Channel(hash, CHANNEL_ALONG) * 2.0 - 1.0) * _Sowing.z * _Sowing.y;
     float2 xz = spot + field.across * across + field.along * along;
+    if (UnderBuilding(xz))
+    {
+        return;
+    }
+
     float3 position = float3(xz.x, GroundHeight(xz), xz.y);
     float range = length(position - _Camera.xyz);
     if (range >= _Camera.w)

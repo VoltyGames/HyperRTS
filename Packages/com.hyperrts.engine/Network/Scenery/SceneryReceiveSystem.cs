@@ -108,22 +108,38 @@ namespace HyperRTS.Network.Scenery
             }
         }
 
+        /// <summary>A clearing names the piece if it stands here, else its remains, which index under its id.</summary>
         private void Apply(in SceneryChange change, bool witnessed, EntityCommandBuffer ecb)
         {
-            if (!_index.TryGetValue(change.Id, out var scenery) || !_writer.Exists(scenery))
+            if (!_index.TryGetValue(change.Id, out var piece) || !IsReady(change, piece))
             {
                 _waiting[change.Id] = change;
                 return;
             }
 
-            if (change.State != SceneryChange.Destroyed)
+            if (change.Cleared)
             {
-                _writer.SetHealth(scenery, change.Fraction, witnessed);
+                _writer.Clear(piece, ecb);
+                Forget(change.Id);
                 return;
             }
 
-            _writer.Destroy(scenery, witnessed, change.Fall, ecb);
-            _index.Remove(change.Id);
+            if (change.State != SceneryChange.Destroyed)
+            {
+                _writer.SetHealth(piece, change.Fraction, witnessed);
+                return;
+            }
+
+            _writer.Destroy(piece, witnessed, change.Fall, ecb);
+            Forget(change.Id);
+        }
+
+        private bool IsReady(in SceneryChange change, Entity piece) =>
+            change.Cleared ? _writer.IsPlaced(piece) : _writer.Exists(piece);
+
+        private void Forget(ulong id)
+        {
+            _index.Remove(id);
             _indexed--;
         }
     }

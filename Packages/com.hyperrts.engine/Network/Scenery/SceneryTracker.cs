@@ -15,8 +15,8 @@ namespace HyperRTS.Network.Scenery
         private NativeHashMap<ulong, int> _slots;
         private NativeList<SceneryRecord> _records;
 
-        /// <summary>Last state each team saw, at <c>slot * Teams + team</c>.</summary>
-        private NativeList<byte> _known;
+        /// <summary>Last <see cref="SceneryChange.Code"/> each team saw, at <c>slot * Teams + team</c>.</summary>
+        private NativeList<ushort> _known;
 
         /// <summary>Slots some team hasn't caught up with.</summary>
         private NativeList<int> _stale;
@@ -25,7 +25,7 @@ namespace HyperRTS.Network.Scenery
         {
             _slots = new NativeHashMap<ulong, int>(1024, allocator);
             _records = new NativeList<SceneryRecord>(1024, allocator);
-            _known = new NativeList<byte>(1024 * Teams, allocator);
+            _known = new NativeList<ushort>(1024 * Teams, allocator);
             _stale = new NativeList<int>(64, allocator);
         }
 
@@ -50,7 +50,7 @@ namespace HyperRTS.Network.Scenery
             _records.Add(new SceneryRecord { Id = id, Position = position, State = SceneryChange.Intact });
             for (var team = 0; team < Teams; team++)
             {
-                _known.Add(SceneryChange.Intact);
+                _known.Add(SceneryChange.IntactCode);
             }
 
             return true;
@@ -67,15 +67,22 @@ namespace HyperRTS.Network.Scenery
             var record = _records[slot];
             record.State = state;
             record.Fall = fall;
-            record.Changed = frame;
-            record.Stale = StaleTeams(slot, state, teams);
-            if (record.Stale != 0 && !record.Listed)
+            Mark(slot, record, teams, frame);
+            return true;
+        }
+
+        /// <summary>Records the piece, or its remains once destroyed, removed with nothing left.</summary>
+        public bool Clear(ulong id, ushort teams, uint frame)
+        {
+            if (!_slots.TryGetValue(id, out var slot) || _records[slot].Cleared)
             {
-                record.Listed = true;
-                _stale.Add(slot);
+                return false;
             }
 
-            _records[slot] = record;
+            var record = _records[slot];
+            record.State = SceneryChange.Destroyed;
+            record.Cleared = true;
+            Mark(slot, record, teams, frame);
             return true;
         }
 
@@ -94,7 +101,7 @@ namespace HyperRTS.Network.Scenery
                         continue;
                     }
 
-                    _known[slot * Teams + team] = record.State;
+                    _known[slot * Teams + team] = record.Change.Code;
                     record.Stale &= (ushort)~(1 << team);
                     news.Add(new SceneryNews { Team = (byte)team, Witnessed = record.Changed == frame, Change = record.Change });
                 }
@@ -115,21 +122,34 @@ namespace HyperRTS.Network.Scenery
             for (var slot = 0; slot < _records.Length; slot++)
             {
                 var known = _known[slot * Teams + team];
-                if (known != SceneryChange.Intact)
+                if (known != SceneryChange.IntactCode)
                 {
                     var record = _records[slot];
-                    changes.Add(new SceneryChange { Id = record.Id, State = known, Fall = record.Fall });
+                    changes.Add(SceneryChange.FromCode(record.Id, known, record.Fall));
                 }
             }
         }
 
-        private readonly ushort StaleTeams(int slot, byte state, ushort teams)
+        private void Mark(int slot, SceneryRecord record, ushort teams, uint frame)
+        {
+            record.Changed = frame;
+            record.Stale = StaleTeams(slot, record.Change.Code, teams);
+            if (record.Stale != 0 && !record.Listed)
+            {
+                record.Listed = true;
+                _stale.Add(slot);
+            }
+
+            _records[slot] = record;
+        }
+
+        private readonly ushort StaleTeams(int slot, ushort code, ushort teams)
         {
             var stale = 0;
             for (var team = 0; team < Teams; team++)
             {
                 var bit = 1 << team;
-                if ((teams & bit) != 0 && _known[slot * Teams + team] != state)
+                if ((teams & bit) != 0 && _known[slot * Teams + team] != code)
                 {
                     stale |= bit;
                 }

@@ -9,6 +9,7 @@ namespace HyperRTS.Network.Scenery
         public float3 Position;
         public byte State;
         public byte Fall;
+        public bool Cleared;
 
         /// <summary>Teams, a bit each, that last saw another state.</summary>
         public ushort Stale;
@@ -19,6 +20,6 @@ namespace HyperRTS.Network.Scenery
         /// <summary>Whether some team hasn't caught up with it yet.</summary>
         public bool Listed;
 
-        public readonly SceneryChange Change => new() { Id = Id, State = State, Fall = Fall };
+        public readonly SceneryChange Change => new() { Id = Id, State = State, Fall = Fall, Cleared = Cleared };
     }
 }

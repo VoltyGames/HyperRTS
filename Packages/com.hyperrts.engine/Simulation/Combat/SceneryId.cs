@@ -5,7 +5,8 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Name of a piece of map scenery that every world loading the map agrees on, so multiplayer can refer to it
-    /// without making it a ghost: a hash of where it stands (to the centimetre) and how it is turned.
+    /// without making it a ghost: a hash of where it stands (to the centimetre) and how it is turned. Its remains
+    /// carry its id too, so a clearing can name them.
     /// </summary>
     public struct SceneryId : IComponentData
     {

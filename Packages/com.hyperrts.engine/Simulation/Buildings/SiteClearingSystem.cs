@@ -11,117 +11,138 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>
-    /// A building under construction flattens the open <see cref="Destructible"/> scenery inside its footprint (trees,
-    /// fences, small props) with a lethal hit, so remains and sync follow the normal death path. Scenery with its own
-    /// obstacle blocks placement instead.
+    /// A building under construction marks <see cref="Cleared"/> the open <see cref="Destructible"/> scenery its
+    /// footprint overlaps (trees, fences, pipes crossing the edge) and the scenery remains on it, so they go with no
+    /// remains, effects or sounds. Scenery with its own obstacle blocks placement instead.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
-    [UpdateBefore(typeof(DamageSystem))]
     public partial struct SiteClearingSystem : ISystem
     {
-        private const float Lethal = 1e6f;
-
-        private DamageWriter _damage;
         private ComponentLookup<Destructible> _destructibles;
         private ComponentLookup<NavObstacle> _obstacles;
         private ComponentLookup<NavAgent> _agents;
         private ComponentLookup<Health> _health;
+        private ComponentLookup<Cleared> _cleared;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<SpatialIndex>();
-            state.RequireForUpdate<DamageQueue>();
-            state.RequireForUpdate<ConstructionProgress>();
-            _damage = new DamageWriter(ref state);
+            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<BuildingTag, ConstructionProgress>().Build());
             _destructibles = state.GetComponentLookup<Destructible>(true);
             _obstacles = state.GetComponentLookup<NavObstacle>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
             _health = state.GetComponentLookup<Health>(true);
+            _cleared = state.GetComponentLookup<Cleared>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
             _destructibles.Update(ref state);
             _obstacles.Update(ref state);
             _agents.Update(ref state);
             _health.Update(ref state);
-            new ClearJob
+            _cleared.Update(ref state);
+            var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
+                .CreateCommandBuffer(state.WorldUnmanaged);
+            var sites = new NativeList<NavBox>(8, state.WorldUpdateAllocator);
+            new SceneryJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
-                Damage = _damage,
+                Ecb = ecb,
+                Sites = sites,
                 Destructibles = _destructibles,
                 Obstacles = _obstacles,
                 Agents = _agents,
                 Health = _health,
+                Cleared = _cleared,
             }.Schedule();
+            new RemainsJob { Ecb = ecb, Sites = sites }.Schedule();
         }
 
-        /// <summary>Single-threaded: hits go into the one damage queue.</summary>
+        /// <summary>A piece of scenery or remains counts as reaching the site when its circle overlaps the box.</summary>
+        private static bool Reaches(in NavBox site, float2 point, float radius) => site.Gap(point) < radius;
+
+        /// <summary>Single-threaded: it lists the sites and writes the one command buffer.</summary>
         [BurstCompile]
         [WithAll(typeof(BuildingTag), typeof(ConstructionProgress))]
         [WithNone(typeof(Dead))]
-        private partial struct ClearJob : IJobEntity
+        private partial struct SceneryJob : IJobEntity
         {
             [ReadOnly] public SpatialIndex Index;
-            public DamageWriter Damage;
+            public EntityCommandBuffer Ecb;
+            public NativeList<NavBox> Sites;
             [ReadOnly] public ComponentLookup<Destructible> Destructibles;
             [ReadOnly] public ComponentLookup<NavObstacle> Obstacles;
             [ReadOnly] public ComponentLookup<NavAgent> Agents;
             [ReadOnly] public ComponentLookup<Health> Health;
+            [ReadOnly] public ComponentLookup<Cleared> Cleared;
 
-            private void Execute(Entity entity, in NavObstacle obstacle, in LocalTransform transform)
+            private void Execute(in NavObstacle obstacle, in LocalTransform transform)
             {
                 var footprint = new Footprint
                 {
-                    Damage = Damage,
+                    Ecb = Ecb,
                     Destructibles = Destructibles,
                     Obstacles = Obstacles,
                     Agents = Agents,
                     Health = Health,
-                    Site = entity,
+                    Cleared = Cleared,
                     Box = new NavBox(transform.Position, transform.Rotation, obstacle.Size),
-                    Origin = transform.Position,
                 };
+                Sites.Add(footprint.Box);
                 Index.Query(transform.Position, math.length(obstacle.Size) * 0.5f, ref footprint);
+            }
+        }
+
+        /// <summary>Remains of map scenery carry its id and no health; solid ones block placement like the scenery.</summary>
+        [BurstCompile]
+        [WithAll(typeof(SceneryId))]
+        [WithNone(typeof(Health), typeof(NavObstacle), typeof(Cleared))]
+        private partial struct RemainsJob : IJobEntity
+        {
+            public EntityCommandBuffer Ecb;
+            [ReadOnly] public NativeList<NavBox> Sites;
+
+            private void Execute(Entity entity, in LocalTransform transform)
+            {
+                foreach (var site in Sites)
+                {
+                    if (Reaches(site, transform.Position.xz, EntityRadius.Default))
+                    {
+                        Ecb.AddComponent<Cleared>(entity);
+                        return;
+                    }
+                }
             }
         }
 
         private struct Footprint : ISpatialVisitor
         {
-            public DamageWriter Damage;
+            public EntityCommandBuffer Ecb;
             [ReadOnly] public ComponentLookup<Destructible> Destructibles;
             [ReadOnly] public ComponentLookup<NavObstacle> Obstacles;
             [ReadOnly] public ComponentLookup<NavAgent> Agents;
             [ReadOnly] public ComponentLookup<Health> Health;
-            public Entity Site;
+            [ReadOnly] public ComponentLookup<Cleared> Cleared;
             public NavBox Box;
-            public float3 Origin;
 
             public void Visit(in SpatialEntry entry)
             {
                 var victim = entry.Entity;
-                if (!IsOpenScenery(victim) || !Box.Contains(entry.Position.xz, 0f))
+                if (!IsOpenScenery(victim) || !Reaches(Box, entry.Position.xz, entry.Radius))
                 {
                     return;
                 }
 
-                if (!Common.Health.IsAlive(Health, victim))
+                // Scenery dying this frame leaves remains through the death path; the next frame clears them.
+                if (Common.Health.IsAlive(Health, victim) && !Cleared.HasComponent(victim))
                 {
-                    return;
+                    Ecb.AddComponent<Cleared>(victim);
                 }
-
-                Damage.Add(new DamageEvent
-                {
-                    Target = victim,
-                    Position = entry.Position,
-                    Origin = Origin,
-                    Source = Site,
-                    Amount = Lethal,
-                });
             }
 
             // Units and buildings carry Destructible too, and solid scenery has an obstacle of its own.

@@ -39,7 +39,8 @@ namespace HyperRTS.Editor.Maps.Build
             MapGeneration generation = null;
             if (MapGeneration.Check(project, issues))
             {
-                generation = await Task.Run(() => MapGeneration.PlanChecked(project, issues));
+                var planned = await Task.Run(() => MapGeneration.PlanChecked(project, issues));
+                generation = MapGeneration.CheckPlaced(planned, issues);
             }
 
             return Finish(project, issues, generation);

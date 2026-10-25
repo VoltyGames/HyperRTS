@@ -47,6 +47,13 @@ namespace HyperRTS.Simulation.Navigation
                    && OverlapsAlong(other, offset, other.Right) && OverlapsAlong(other, offset, other.Forward);
         }
 
+        /// <summary>Gap between the box and a point, 0 inside.</summary>
+        public float Gap(float2 point)
+        {
+            var local = Local(point);
+            return math.length(local - math.clamp(local, -Half, Half));
+        }
+
         /// <summary>Gap between the box and the segment from a to b, 0 when they touch.</summary>
         public float Gap(float2 a, float2 b) => NavCapsule.SegmentRectDistance(Local(a), Local(b), -Half, Half);
 

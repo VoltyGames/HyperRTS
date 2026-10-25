@@ -370,6 +370,15 @@ the crater's slope so the sun lights the bowl, darkens and dampens the bowl's so
 Foliage leans plants along the travel direction, and water reads `SampleWake`. The quality setting picks Full, Low
 at half resolution, or Off, which frees the textures.
 
+### Building footprints
+
+`BuildingFootprintSystem` draws every building's turned obstacle box into an R8 mask over the map at nav-cell
+resolution and publishes it as `_HyperRTSFootprints`, with `_HyperRTSFootprintRect` (zero without a map). Cells
+within half a cell of a wall count too. Grass and row crops skip plants where it is set, whatever the
+interaction-map quality, through `BuildingFootprints.hlsl`. It redraws only when buildings appear or go and their
+boxes differ, and each redraw bumps `BuildingFootprintMask.Version` so cameras rescatter their plants. With no map
+loaded it holds no texture.
+
 `LocalGustSystem` also sends up to 8 radial gusts to `Wind.hlsl`: downwash under a seen rotorcraft within its rotor
 wash height of the ground (25 m without one), and the blast of each seen impact with a splash of 1 m or more, which
 spreads out and relaxes over about a second. Plants lean away from them and tree trunks bend as in wind. Interaction quality Off turns them off.
@@ -386,7 +395,7 @@ Its `height` also shades the field: light falls off below the heads to `_CanopyS
 dark gaps between lit tops.
 
 Each camera regrows the plants of its visible tiles every frame, so trampling and camera moves need no cache.
-Trampled plants bend or disappear. Plants shrink away over the last 15 % of the draw distance. It also runs in edit
+Trampled plants bend or disappear, and none grow under a building's footprint. Plants shrink away over the last 15 % of the draw distance. It also runs in edit
 mode.
 
 ### Ambient life

@@ -44,7 +44,7 @@ namespace HyperRTS.Editor.Maps.Report
                 DrawPath(pixels, layout, nav, paths[i], PathColors[i % PathColors.Length]);
             }
 
-            return Finish(pixels, layout, generation.Shapes, generation.Placements.All, false);
+            return Finish(pixels, layout, generation.Shapes, generation.Placements.All);
         }
 
         /// <summary>A preview: land-use colours, trees as dark dots, scenery and gameplay objects.</summary>
@@ -58,7 +58,7 @@ namespace HyperRTS.Editor.Maps.Report
                 Disc(pixels, layout, tree.Position, 1.4f * tree.Scale, TreeColor);
             }
 
-            return Finish(pixels, layout, generation.Shapes, generation.Placements.All, true);
+            return Finish(pixels, layout, generation.Shapes, generation.Placements.All);
         }
 
         private static Color[] Shade(MapLayout layout, MapHeights heights, System.Func<Vector2, Color> ground)
@@ -91,8 +91,7 @@ namespace HyperRTS.Editor.Maps.Report
             return placement.Entry.IsGameplay ? Color.white : SceneryColor;
         }
 
-        private static Texture2D Finish(Color[] pixels, MapLayout layout, MapShapes shapes, List<MapPlacement> placements,
-            bool scenery)
+        private static Texture2D Finish(Color[] pixels, MapLayout layout, MapShapes shapes, List<MapPlacement> placements)
         {
             foreach (var crossing in shapes.Crossings)
             {
@@ -101,11 +100,6 @@ namespace HyperRTS.Editor.Maps.Report
 
             foreach (var placement in placements)
             {
-                if (!placement.IsEntity && !scenery)
-                {
-                    continue;
-                }
-
                 Disc(pixels, layout, placement.Position, Mathf.Max(0.8f, placement.Radius * 0.6f), DiscColor(placement));
             }
 

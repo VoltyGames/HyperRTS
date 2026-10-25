@@ -55,9 +55,12 @@ Builders also repair. Selling refunds `MatchRules.SellRefund`.
 `BuildingSpot` (centre, yaw, unturned footprint, surface) is the one placement value for the ghost, the server and
 the AI. `BuildingSpot.IsValid` decides where it may go: inside the map, with every cell under the turned box free on
 its surface, never a blocked cell. Anything with an obstacle blocks: buildings, map buildings, solid ruins and scenery
-with a `block` size such as walls. Open scenery (trees, shrubs, crushable fences and pipes, small props) doesn't:
-`SiteClearingSystem` flattens it inside a site's footprint with a lethal hit, on the server, so remains and sync
-follow the normal death path. The server also refuses overlap with standing obstacles and sites placed the same
+with a `block` size such as walls. Open scenery (trees, shrubs, crushable fences and pipes, small props) doesn't.
+On the server, `SiteClearingSystem` marks `Cleared` every piece of open scenery whose circle overlaps a site's turned
+box, so a fence crossing the edge goes too, and every open scenery remains lying on it. `DeathSystem` destroys
+cleared pieces the next frame with no remains, no `Dead` and so no cues. Multiplayer sends the clearing as a
+`SceneryChange` with `Cleared` set, and clients remove the piece, or the remains they spawned for it, the same way.
+The server also refuses overlap with standing obstacles and sites placed the same
 frame, comparing turned boxes (`NavBox.Overlaps`), so neighbours at any angle may touch.
 
 `BuildingSpot.Snap` keeps a yaw within 0.5° of a quarter turn exact and lands the turned edges on cell boundaries. At
