@@ -57,6 +57,7 @@ namespace HyperRTS.Simulation.AI
             public byte Faction;
             public float3 Home;
             public DynamicBuffer<PlayerCommand> Commands;
+            public DynamicBuffer<PlayerCommandSubject> Subjects;
             public NativeList<Entity> Busy;
             public Buyer Buyer;
         }
@@ -182,6 +183,7 @@ namespace HyperRTS.Simulation.AI
                 Faction = faction,
                 Home = Home(faction, snapshot),
                 Commands = SystemAPI.GetBuffer<PlayerCommand>(player),
+                Subjects = SystemAPI.GetBuffer<PlayerCommandSubject>(player),
                 Busy = new NativeList<Entity>(Allocator.Temp),
                 Buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, faction, snapshot.Completed,
                     SystemAPI.GetBuffer<CompletedResearch>(player)),

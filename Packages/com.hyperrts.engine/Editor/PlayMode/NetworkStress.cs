@@ -152,12 +152,11 @@ namespace HyperRTS.Editor.PlayMode
                 spawned[i] = Cheats.Spawn(entityManager, prefab, home.Faction, position);
             }
 
-            // Spawning is structural, so the command buffer is fetched once the batch exists.
-            var commands = entityManager.GetBuffer<PlayerCommand>(FindPlayer(entityManager, home.Faction));
-            foreach (var unit in spawned)
-            {
-                commands.Add(new PlayerCommand { Type = CommandType.AttackMove, Unit = unit, Position = enemy.Position });
-            }
+            // Spawning is structural, so the buffers are fetched once the batch exists.
+            var player = FindPlayer(entityManager, home.Faction);
+            var command = new PlayerCommand { Type = CommandType.AttackMove, Position = enemy.Position };
+            PlayerCommands.Address(ref command, entityManager.GetBuffer<PlayerCommandSubject>(player), spawned);
+            entityManager.GetBuffer<PlayerCommand>(player).Add(command);
         }
 
         private readonly struct Base

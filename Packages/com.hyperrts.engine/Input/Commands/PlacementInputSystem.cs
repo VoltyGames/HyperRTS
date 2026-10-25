@@ -26,6 +26,7 @@ namespace HyperRTS.Input.Commands
         private RTSInputActions _actions;
         private WorldPointer _pointer;
         private PlacementRotation _rotation;
+        private SeenEnemies _enemies;
 
         // The line last planned into the PlacementSegment buffer, so a still cursor doesn't replan it.
         private PlacementLine _line;
@@ -37,12 +38,14 @@ namespace HyperRTS.Input.Commands
             _actions = InputActionsProvider.Actions;
             _pointer = new WorldPointer(ref CheckedStateRef);
             _rotation = PlacementRotation.Start();
+            _enemies = new SeenEnemies(ref CheckedStateRef);
             RequireForUpdate<PlacementState>();
             RequireForUpdate<ScrollEdge>();
             RequireForUpdate<PointerState>();
             RequireForUpdate<LocalPlayer>();
             RequireForUpdate<MapSettings>();
             RequireForUpdate<NavGrid>();
+            RequireForUpdate<FactionRelations>();
         }
 
         // Not in OnCreate: without domain reload the Input System wipes action states after the world is created.
@@ -159,7 +162,7 @@ namespace HyperRTS.Input.Commands
             var spot = asked.Snap(map).Grounded(grid);
             placement.Position = spot.Center;
             placement.Yaw = spot.Yaw;
-            placement.Valid = spot.IsValid(map, grid);
+            placement.Valid = spot.IsValid(map, grid) && !_enemies.Block(spot);
         }
 
         private void PauseEdgeScroll(bool paused)
@@ -186,7 +189,7 @@ namespace HyperRTS.Input.Commands
                 for (var i = 0; i < line.Count; i++)
                 {
                     var spot = line.Segment(i).Grounded(grid);
-                    segments.Add(new PlacementSegment { Spot = spot, Valid = spot.IsValid(map, grid) });
+                    segments.Add(new PlacementSegment { Spot = spot, Ground = spot.IsValid(map, grid) });
                 }
 
                 _line = line;
@@ -194,7 +197,7 @@ namespace HyperRTS.Input.Commands
                 _lineGridVersion = grid.Version;
             }
 
-            // Read back from the buffer: a restarted placement resets Valid over an unchanged line.
+            _enemies.Mark(segments);
             placement.Valid = PlacementSegment.CountValid(segments) > 0;
         }
 

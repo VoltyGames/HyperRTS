@@ -125,5 +125,41 @@ namespace HyperRTS.Simulation.Buildings
 
         /// <summary>Touching is allowed, so buildings can sit flush at any angle.</summary>
         public bool Overlaps(in NavBox other) => Box.Overlaps(other);
+
+        /// <summary>A unit capsule, its core segment <paramref name="axis"/> either side of its centre, reaches inside.</summary>
+        public bool Overlaps(float2 position, float2 axis, float radius) =>
+            Box.Gap(position - axis, position + axis) < radius;
+
+        /// <summary>
+        /// A ground or naval unit hostile to <paramref name="faction"/> stands on the spot, seen or not. Friendly units
+        /// drive off by themselves.
+        /// </summary>
+        public bool IsBlockedByEnemies(in SpatialIndex index, in FactionRelations relations, byte faction)
+        {
+            var finder = new EnemyFinder { Spot = this, Relations = relations, Faction = faction };
+            index.QueryHulls(Center, math.length(Footprint) * 0.5f, ref finder);
+            return finder.Found;
+        }
+
+        private struct EnemyFinder : ISpatialVisitor
+        {
+            public BuildingSpot Spot;
+            public FactionRelations Relations;
+            public byte Faction;
+            public bool Found;
+
+            public void Visit(in SpatialEntry entry)
+            {
+                if (Found || !entry.IsUnit || entry.Layer == NavLayer.Air)
+                {
+                    return;
+                }
+
+                if (Relations.IsHostile(Faction, entry.Faction))
+                {
+                    Found = Spot.Overlaps(entry.Position.xz, entry.SegmentAxis, entry.Radius);
+                }
+            }
+        }
     }
 }

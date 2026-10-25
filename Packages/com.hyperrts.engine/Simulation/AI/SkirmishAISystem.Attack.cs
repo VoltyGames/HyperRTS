@@ -40,11 +40,21 @@ namespace HyperRTS.Simulation.AI
             }
 
             var map = SystemAPI.GetSingleton<MapSettings>();
+            turn.Commands.Add(WaveCommand(turn, army, wave, map.Center));
+        }
 
-            foreach (var i in wave)
+        /// <summary>One attack-move addressing the whole wave, so it moves as a formation on one group field.</summary>
+        private static PlayerCommand WaveCommand(in Turn turn, in AIGroup army, NativeList<int> wave, float3 position)
+        {
+            var units = new NativeArray<Entity>(wave.Length, Allocator.Temp);
+            for (var k = 0; k < wave.Length; k++)
             {
-                turn.Commands.Add(AttackMoveCommand(army.Entities[i], map.Center, false));
+                units[k] = army.Entities[wave[k]];
             }
+
+            var command = new PlayerCommand { Type = CommandType.AttackMove, Position = position };
+            PlayerCommands.Address(ref command, turn.Subjects, units);
+            return command;
         }
 
         /// <summary>Adds the faction's idle units that can hit the ground to <paramref name="wave"/>; returns their centre.</summary>
@@ -79,25 +89,22 @@ namespace HyperRTS.Simulation.AI
             ai.Attacks++;
             var lane = hints.Lane(turn.Faction, enemy, pick);
             var first = hints.NearestWaypoint(lane, center.xz);
-            var army = snapshot.Army;
-            foreach (var i in wave)
+            var command = WaveCommand(turn, snapshot.Army, wave, target);
+            for (var k = first; k < lane.Count; k++)
             {
-                var queue = false;
-                for (var k = first; k < lane.Count; k++)
-                {
-                    var point = hints.Waypoint(lane, k);
-                    turn.Commands.Add(AttackMoveCommand(army.Entities[i], new float3(point.x, 0f, point.y), queue));
-                    queue = true;
-                }
-
-                turn.Commands.Add(AttackMoveCommand(army.Entities[i], target, queue));
+                var point = hints.Waypoint(lane, k);
+                turn.Commands.Add(Leg(command, new float3(point.x, 0f, point.y), k > first));
             }
+
+            turn.Commands.Add(Leg(command, target, lane.Count > first));
         }
 
-        private static PlayerCommand AttackMoveCommand(Entity unit, float3 position, bool queue) => new()
+        private static PlayerCommand Leg(PlayerCommand wave, float3 position, bool queue)
         {
-            Type = CommandType.AttackMove, Unit = unit, Position = position, Queue = queue,
-        };
+            wave.Position = position;
+            wave.Queue = queue;
+            return wave;
+        }
 
         /// <summary>
         /// Nearest hostile critical building, else the nearest hostile unit, among the enemies the map has a lane to

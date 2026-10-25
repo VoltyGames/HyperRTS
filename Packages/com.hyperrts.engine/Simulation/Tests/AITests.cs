@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
@@ -136,6 +137,36 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.GreaterOrEqual(attacking, 2, "a wave of trained soldiers was sent at the enemy base");
             Assert.Less(_world.GetResources(2, _supplies), 100, "training was paid for");
+        }
+
+        [Test]
+        public void AIWave_MovesAsOneFormationGroup()
+        {
+            var squad = new Entity[3];
+            for (var i = 0; i < squad.Length; i++)
+            {
+                squad[i] = _world.SpawnUnit(2, new float3(i * 3f, 0f, 0f));
+                var writer = new EntityManagerWriter(_world.EntityManager, squad[i]);
+                WeaponSetup.Add(ref writer, new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f }, Stance.Aggressive,
+                    float3.zero, 0);
+            }
+
+            _world.SpawnBuilding(1, new float3(60f, 0f, 0f), new float2(4f, 4f));
+
+            _world.Run(1f);
+
+            var group = _world.Get<ActiveOrder>(squad[0]).Value.Group;
+            Assert.AreNotEqual(0, group, "the wave was ordered as a formation");
+            foreach (var unit in squad)
+            {
+                Assert.AreEqual(OrderType.AttackMove, _world.Get<ActiveOrder>(unit).Value.Type);
+                Assert.AreEqual(group, _world.Get<ActiveOrder>(unit).Value.Group, "one command, one group");
+            }
+
+            _world.EntityManager.CompleteAllTrackedJobs();
+            var pathfinder = _world.World.GetExistingSystem<PathfindingSystem>();
+            var stats = _world.World.Unmanaged.GetUnsafeSystemRef<PathfindingSystem>(pathfinder).Stats;
+            Assert.LessOrEqual(stats.SearchesByCause.x, 1, "the group shares one search, not one per unit");
         }
 
         [Test]

@@ -16,7 +16,8 @@ On each think, an AI player:
 2. Finishes abandoned sites and sends idle harvesters to work.
 3. Trains units and researches.
 4. Uses ready abilities and powers.
-5. Once enough combat units are idle, attack-moves them along a lane to the nearest hostile building.
+5. Once enough combat units are idle, attack-moves them along a lane to the nearest hostile building. The wave is
+   one command listing its units (`PlayerCommands.Address`), so it moves as one formation on a shared group field.
 
 The lane is chosen from the match seed, so replays repeat it. To replace the AI, disable the system and write
 your own `PlayerCommand`s.

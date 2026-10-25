@@ -33,6 +33,22 @@ namespace HyperRTS.Simulation.Orders
             subjects.AddRange(selected.ToEntityArray(Allocator.Temp));
         }
 
+        /// <summary>
+        /// Lists <paramref name="units"/> as <paramref name="command"/>'s own group, so its moves share one formation
+        /// and flow field. Later commands may copy the command to address the same group.
+        /// </summary>
+        public static void Address(ref PlayerCommand command, DynamicBuffer<PlayerCommandSubject> listed,
+            NativeArray<Entity> units)
+        {
+            command.Unit = Entity.Null;
+            command.SubjectStart = (ushort)listed.Length;
+            command.SubjectCount = (ushort)units.Length;
+            foreach (var unit in units)
+            {
+                listed.Add(new PlayerCommandSubject { Value = unit });
+            }
+        }
+
         public static NativeList<Entity> Collect(in PlayerCommand command, DynamicBuffer<PlayerCommandSubject> listed,
             EntityQuery selected)
         {

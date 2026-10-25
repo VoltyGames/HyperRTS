@@ -29,7 +29,7 @@ namespace HyperRTS.Simulation.Buildings
             for (var i = 0; i < line.Count; i++)
             {
                 var spot = line.Segment(i).Grounded(grid);
-                if (!spot.IsValid(map, grid) || IsOccupied(spot, sites))
+                if (!IsFree(ref state, spot, request.Faction, sites))
                 {
                     continue;
                 }

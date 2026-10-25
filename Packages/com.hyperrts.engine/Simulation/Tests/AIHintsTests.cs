@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Tests
 
         /// <summary>
         /// Bot 2 with a wave of two soldiers at <paramref name="wave"/> and the enemy base at (60, 0, 0) attacks once;
-        /// the first soldier's orders (x, z of the current one, then each queued one) come back.
+        /// the wave's orders come back: the centre of its formation slots for the current one, then each queued one.
         /// </summary>
         private static List<float3> AttackOrders(uint seed, AIMapHintsData hints, float3 wave)
         {
@@ -48,17 +48,18 @@ namespace HyperRTS.Simulation.Tests
             var writer = new EntityManagerWriter(world.EntityManager, world.Player(2));
             AIPlayerSetup.Add(ref writer, new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 2, RouteSeed = seed });
             world.CreateHints(hints);
-            var soldier = world.AddWeapon(world.SpawnUnit(2, wave));
-            world.AddWeapon(world.SpawnUnit(2, wave + new float3(0f, 0f, 4f)));
+            var first = world.AddWeapon(world.SpawnUnit(2, wave));
+            var second = world.AddWeapon(world.SpawnUnit(2, wave + new float3(0f, 0f, 4f)));
             world.SpawnBuilding(1, new float3(60f, 0f, 0f), new float2(4f, 4f));
 
             world.Tick(frames: 3);
 
-            var orders = new List<float3> { world.Get<ActiveOrder>(soldier).Value.Position };
-            orders.AddRange(world.EntityManager.GetBuffer<QueuedOrder>(soldier).AsNativeArray()
-                .Select(queued => queued.Value.Position));
-            return orders;
+            return Legs(world, first).Zip(Legs(world, second), (a, b) => (a + b) * 0.5f).ToList();
         }
+
+        private static IEnumerable<float3> Legs(TestWorld world, Entity soldier) =>
+            world.EntityManager.GetBuffer<QueuedOrder>(soldier).AsNativeArray().Select(queued => queued.Value.Position)
+                .Prepend(world.Get<ActiveOrder>(soldier).Value.Position).ToList();
 
         private static List<float3> AttackOrders(uint seed, AIMapHintsData hints) =>
             AttackOrders(seed, hints, new float3(-40f, 0f, 0f));

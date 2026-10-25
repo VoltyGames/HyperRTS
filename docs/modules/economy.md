@@ -56,6 +56,9 @@ Builders also repair. Selling refunds `MatchRules.SellRefund`.
 the AI. `BuildingSpot.IsValid` decides where it may go: inside the map, with every cell under the turned box free on
 its surface, never a blocked cell. Anything with an obstacle blocks: buildings, map buildings, solid ruins and scenery
 with a `block` size such as walls. Open scenery (trees, shrubs, crushable fences and pipes, small props) doesn't.
+A hostile ground or naval unit whose capsule reaches into the box (`BuildingSpot.IsBlockedByEnemies`, through the
+`SpatialIndex`) rules the spot out too, and friendly units drive off by themselves. The ghost (`SeenEnemies`) counts
+only enemies the player sees. The server counts hidden ones as well, and that order fails like any invalid spot.
 On the server, `SiteClearingSystem` marks `Cleared` every piece of open scenery whose circle overlaps a site's turned
 box, so a fence crossing the edge goes too, every tree whose crown (`Topple.Crown`, baked from its meshes) reaches
 over it, and every open scenery remains lying on it. `DeathSystem` destroys

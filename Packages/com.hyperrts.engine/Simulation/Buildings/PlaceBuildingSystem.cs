@@ -49,6 +49,8 @@ namespace HyperRTS.Simulation.Buildings
             _orders = new OrderWriter(ref state);
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<NavGrid>();
+            state.RequireForUpdate<SpatialIndex>();
+            state.RequireForUpdate<FactionRelations>();
         }
 
         [BurstCompile]
@@ -133,7 +135,7 @@ namespace HyperRTS.Simulation.Buildings
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var asked = new BuildingSpot(request.Command.Position, request.Command.Yaw, footprint, surface);
             var spot = asked.Snap(map).Grounded(grid);
-            if (!spot.IsValid(map, grid) || IsOccupied(spot, sites))
+            if (!IsFree(ref state, spot, request.Faction, sites))
             {
                 return false;
             }
@@ -229,6 +231,20 @@ namespace HyperRTS.Simulation.Buildings
             }
 
             return sites;
+        }
+
+        /// <summary>Valid ground with no site or enemy unit on it; a hidden enemy fails it like any bad spot.</summary>
+        private bool IsFree(ref SystemState state, in BuildingSpot spot, byte faction, NativeList<NavBox> sites)
+        {
+            var map = SystemAPI.GetSingleton<MapSettings>();
+            var grid = SystemAPI.GetSingleton<NavGrid>();
+            if (!spot.IsValid(map, grid) || IsOccupied(spot, sites))
+            {
+                return false;
+            }
+
+            var relations = SystemAPI.GetSingleton<FactionRelations>();
+            return !spot.IsBlockedByEnemies(SystemAPI.GetSingleton<SpatialIndex>(), relations, faction);
         }
 
         private static bool IsOccupied(in BuildingSpot spot, NativeList<NavBox> sites)
