@@ -21,10 +21,10 @@ namespace HyperRTS.Simulation.Air
             writer.Add<DropRemains>();
         }
 
-        /// <summary>The aircraft takes a pad at the airfield that builds it and docks there to reload.</summary>
-        public static void AddPadUser<TWriter>(ref TWriter writer) where TWriter : struct, IEntityWriter
+        /// <summary>The aircraft takes a pad of <paramref name="kind"/> at the airfield that builds it and docks there to reload.</summary>
+        public static void AddPadUser<TWriter>(ref TWriter writer, PadKind kind) where TWriter : struct, IEntityWriter
         {
-            writer.Add<HomePad>();
+            writer.Add(new HomePad { Kind = kind });
             writer.Add<Docked>();
             writer.SetEnabled<Docked>(false);
         }

@@ -50,6 +50,45 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void FillFromModel_PosesTheDamagedModelLikeTheIntactOne()
+        {
+            var model = Pivot("Model", _unit.transform);
+            var hull = Pivot("Hull", model, new Vector3(3f, 2f, 7f));
+            var turret = Pivot("Turret", hull);
+            var damaged = Pivot("Damaged", _unit.transform);
+            var damagedHull = Pivot("Hull", damaged, new Vector3(3f, 2f, 7f));
+            var damagedTurret = Pivot("Turret", damagedHull);
+            _unit.AddComponent<DamageStagesAuthoring>().stages = new()
+            {
+                new() { below = 1f, visual = model.gameObject },
+                new() { below = 0.5f, visual = damaged.gameObject },
+            };
+            _unit.AddComponent<WeaponAuthoring>().turreted = true;
+            var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+            rig.FillFromModel();
+
+            Assert.AreEqual(new[] { turret, damagedTurret }, rig.turrets.Select(slot => slot.part).ToArray());
+            Assert.AreEqual((hull, damagedHull), (rig.tiltRoot, rig.tiltStage));
+            CollectionAssert.IsEmpty(rig.Problems());
+        }
+
+        [Test]
+        public void FillFromModel_LeavesMachinePartsToTheirMachine()
+        {
+            var turret = Pivot("Turret", Pivot("Hull", _unit.transform, Vector3.one));
+            var box = Pivot("Barrel", turret);
+            box.gameObject.AddComponent<HyperRTS.Simulation.Animation.MachinePartAuthoring>();
+            var weapon = _unit.AddComponent<WeaponAuthoring>();
+            var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+            rig.FillFromModel();
+
+            Assert.IsEmpty(rig.elevations, "the machine raises the box");
+            Assert.AreEqual((turret, box), (weapon.stats.turret, weapon.stats.barrel), "shots still leave the raised box");
+        }
+
+        [Test]
         public void FillFromModel_AgainKeepsTunedSlots()
         {
             var barrel = Pivot("Barrel", Pivot("Hull", _unit.transform, Vector3.one));

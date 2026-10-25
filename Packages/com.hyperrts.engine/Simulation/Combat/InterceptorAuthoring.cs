@@ -62,6 +62,9 @@ namespace HyperRTS.Simulation.Combat
         [Min(0.1f)]
         public float aimTolerance = 3f;
 
+        [Tooltip("Holds fire until its Deployable unit has deployed.")]
+        public bool needsDeploy;
+
         [Header("Ammo")]
         [Tooltip("Engagements before it must reload; 0 never runs dry.")]
         [Min(0)]
@@ -98,6 +101,7 @@ namespace HyperRTS.Simulation.Combat
                 MinPitch = math.radians(minElevation),
                 MaxPitch = math.radians(maxElevation),
                 AimTolerance = math.radians(aimTolerance),
+                NeedsDeploy = needsDeploy,
             };
             if (muzzle != null)
             {

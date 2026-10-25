@@ -22,10 +22,11 @@ namespace HyperRTS.Simulation.Tests
         }
 
         /// <summary>Lets the aircraft take a pad and, with rounds above 0, limits its weapon's ammo.</summary>
-        public static Entity AddPadUser(this TestWorld world, Entity aircraft, int rounds = 0, float reloadTime = 0.5f)
+        public static Entity AddPadUser(this TestWorld world, Entity aircraft, int rounds = 0, float reloadTime = 0.5f,
+            PadKind kind = PadKind.Any)
         {
             var writer = new EntityManagerWriter(world.EntityManager, aircraft);
-            AirSetup.AddPadUser(ref writer);
+            AirSetup.AddPadUser(ref writer, kind);
             if (rounds > 0)
             {
                 WeaponSetup.AddAmmo(ref writer, rounds, reloadTime, AmmoRefill.Docked);

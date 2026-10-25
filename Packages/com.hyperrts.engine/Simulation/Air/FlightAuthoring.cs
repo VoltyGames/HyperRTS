@@ -33,6 +33,10 @@ namespace HyperRTS.Simulation.Air
         [Tooltip("Takes a pad at the Airfield that builds it, flies back to it to reload (Return order or out of ammo) and docks there.")]
         public bool usesLandingPads;
 
+        [Tooltip("The pads it lands on: helipads, shelters, or Any pad.")]
+        [ShowIf(nameof(usesLandingPads))]
+        public PadKind padKind;
+
         [Tooltip("Optional child that airdrop crates and strike bombs leave from, such as a ramp or bomb bay; the origin "
             + "without one.")]
         public Transform releasePoint;
@@ -46,7 +50,7 @@ namespace HyperRTS.Simulation.Air
                     EffectSetup.Socket(this, authoring.transform, authoring.releasePoint));
                 if (authoring.usesLandingPads)
                 {
-                    AirSetup.AddPadUser(ref writer);
+                    AirSetup.AddPadUser(ref writer, authoring.padKind);
                 }
             }
         }

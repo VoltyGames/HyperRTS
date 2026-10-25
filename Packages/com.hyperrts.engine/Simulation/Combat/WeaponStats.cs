@@ -126,7 +126,7 @@ namespace HyperRTS.Simulation.Combat
         [Min(0.05f)]
         public float salvoInterval = 0.25f;
 
-        [Tooltip("Ballistic shots land at random within this many metres of the aim point; homing shots ignore it.")]
+        [Tooltip("Shots land at random within this many metres of the aim point; a homing shot with a spread gives up its lock and flies to its point, so leave it 0 on missiles.")]
         [Min(0f)]
         public float spread;
 

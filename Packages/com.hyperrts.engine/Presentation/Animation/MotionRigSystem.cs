@@ -113,6 +113,12 @@ namespace HyperRTS.Presentation.Animation
                 var transform = Transforms[rig.TiltRoot];
                 transform.Rotation = rig.TiltedRotation();
                 Transforms[rig.TiltRoot] = transform;
+                if (rig.TiltStage != Entity.Null)
+                {
+                    var stage = Transforms[rig.TiltStage];
+                    stage.Rotation = transform.Rotation;
+                    Transforms[rig.TiltStage] = stage;
+                }
             }
 
             /// <summary>True when a recoil part fired this frame.</summary>

@@ -8,7 +8,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Salvos, muzzles fired in turn and whole-magazine reloads.</summary>
+    /// <summary>Salvos, muzzles fired in turn, spread and whole-magazine reloads.</summary>
     public class SalvoTests
     {
         private TestWorld _world;
@@ -42,6 +42,35 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(70f, _world.GetHealth(enemy), "the cooldown runs after the salvo");
             _world.Run(0.6f);
             Assert.AreEqual(60f, _world.GetHealth(enemy), "the next salvo");
+        }
+
+        [TestCase(Trajectory.Ballistic, true)]
+        [TestCase(Trajectory.Rocket, false)]
+        [TestCase(Trajectory.Direct, false)]
+        public void Spread_ScattersEveryTrajectory_AndOnlyShellsKeepTheirLock(Trajectory trajectory, bool keepsLock)
+        {
+            var weapon = new Weapon { Spread = 4f, Trajectory = trajectory };
+            var aim = new float3(10f, 0f, 20f);
+
+            var landed = new HashSet<float3>();
+            for (var shot = 0u; shot < 6; shot++)
+            {
+                var point = weapon.Scatter(aim, math.hash(new uint2(shot, 7u)));
+                Assert.LessOrEqual(math.distance(point.xz, aim.xz), 4f + 1e-4f);
+                landed.Add(point);
+            }
+
+            Assert.Greater(landed.Count, 1, "a ripple spreads out");
+            Assert.AreEqual(keepsLock, weapon.KeepsLock);
+        }
+
+        [Test]
+        public void NoSpread_KeepsTheAimAndTheLock()
+        {
+            var missile = new Weapon { Trajectory = Trajectory.Rocket };
+
+            Assert.AreEqual(new float3(1f, 2f, 3f), missile.Scatter(new float3(1f, 2f, 3f), 99u));
+            Assert.IsTrue(missile.KeepsLock);
         }
 
         [Test]

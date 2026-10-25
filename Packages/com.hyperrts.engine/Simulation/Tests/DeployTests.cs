@@ -7,7 +7,9 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Deployable units: deploy and pack-up timing, fire held while packed, moves refused while rooted.</summary>
+    /// <summary>
+    /// Deployable units: deploy and pack-up timing, fire and turret held while packed, moves refused while rooted.
+    /// </summary>
     public class DeployTests
     {
         private const float DeployTime = 1f;
@@ -34,6 +36,21 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(2f);
 
             Assert.AreEqual(100f, _world.GetHealth(enemy));
+        }
+
+        [Test]
+        public void Packed_KeepsItsTurretStowed_UntilDeployed()
+        {
+            var launcher = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, turreted: true);
+            _world.AddDeployable(launcher, DeployTime, PackUpTime);
+            _world.SpawnUnit(2, new float3(-4f, 0f, 0f));
+
+            _world.Run(1f);
+            Assert.AreEqual(0f, Yaw(launcher), 1e-4f, "packed");
+
+            Command(CommandType.Deploy, launcher);
+            _world.Run(DeployTime + 0.5f);
+            Assert.AreEqual(-0.5f * math.PI, Yaw(launcher), 0.05f, "deployed, it turns onto the target");
         }
 
         [Test]
@@ -118,5 +135,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Command(1, new PlayerCommand { Type = type, Unit = unit, Position = position });
 
         private DeployState State(Entity unit) => _world.Get<Deployable>(unit).State;
+
+        private float Yaw(Entity unit) => _world.EntityManager.GetBuffer<WeaponPose>(unit)[0].YawAngle;
     }
 }

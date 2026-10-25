@@ -14,8 +14,9 @@ namespace HyperRTS.Presentation.Animation
     /// <summary>
     /// Runs machine clocks, easing them to a stop while a machine shouldn't run (neutral, or its building offline or
     /// idle), and poses their parts: spins, swings and slides in step with the spin, links that sit on one point
-    /// aiming at another, parts that turn downwind, and parts that raise or extend with the speed, which a Deployed
-    /// machine takes from its unit's deploy progress. Links read last frame's transforms.
+    /// aiming at another, parts that turn downwind, parts that raise or extend over their span of the speed, which a
+    /// Deployed machine takes from its unit's deploy progress, and parts that point at another. Links and pointers
+    /// read last frame's transforms.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PoseSystemGroup))]
@@ -128,11 +129,11 @@ namespace HyperRTS.Presentation.Animation
                         transform.Position = part.RestPosition + part.Axis * travel;
                         break;
                     case MachineMotion.Raise:
-                        var raised = math.radians(part.Amplitude) * clock.Eased;
+                        var raised = math.radians(part.Amplitude) * part.Unfolded(clock.Ramp);
                         transform.Rotation = math.mul(part.Rest, quaternion.AxisAngle(part.Axis, raised));
                         break;
                     case MachineMotion.Extend:
-                        transform.Position = part.RestPosition + part.Axis * (part.Amplitude * clock.Eased);
+                        transform.Position = part.RestPosition + part.Axis * (part.Amplitude * part.Unfolded(clock.Ramp));
                         break;
                     case MachineMotion.Downwind:
                         if (Places.TryGetComponent(parent.Value, out var frame))
@@ -141,9 +142,20 @@ namespace HyperRTS.Presentation.Animation
                         }
 
                         break;
+                    case MachineMotion.Point:
+                        Point(ref transform, part, parent.Value);
+                        break;
                     default:
                         Link(ref transform, part, parent.Value);
                         break;
+                }
+            }
+
+            private void Point(ref LocalTransform transform, in MachinePart part, Entity parent)
+            {
+                if (Places.TryGetComponent(part.Aim, out var aim) & Places.TryGetComponent(parent, out var frame))
+                {
+                    transform.Rotation = part.Pointing(math.transform(math.inverse(frame.Value), aim.Position));
                 }
             }
 

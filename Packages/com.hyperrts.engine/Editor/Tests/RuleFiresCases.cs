@@ -5,9 +5,11 @@ using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Rules;
 using HyperRTS.Presentation.Animation;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Auras;
+using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Cues;
@@ -109,6 +111,21 @@ namespace HyperRTS.Editor.Tests
 
         private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> UnitRows()
         {
+            yield return Row<GarrisonPartRule>("no Container above it", f => f.Add<GarrisonPartAuthoring>(new GameObject("Gun")));
+            yield return Row<InterceptorRule>("no Deployable", f =>
+            {
+                var interceptor = f.Add<InterceptorAuthoring>(EntityTemplates.Unit());
+                interceptor.needsDeploy = true;
+                return interceptor;
+            });
+            yield return Row<MachinePartRule>("To must be above From", f =>
+            {
+                var part = f.Add<MachinePartAuthoring>(new GameObject("Jack"));
+                part.motion = MachineMotion.Extend;
+                part.from = 0.5f;
+                part.to = 0.5f;
+                return part;
+            });
             yield return Row<SceneryRemainsRule>("show twice", f =>
             {
                 var scenery = f.Add<DestructibleAuthoring>(new GameObject("Fence"));

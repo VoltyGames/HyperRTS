@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Air
 
                 if (!Airfields.IsOwn(home.Airfield, faction.Value) || !Airfields.Claim(entity, home))
                 {
-                    home = default;
+                    home.Lose();
                     docked.ValueRW = false;
                 }
             }
@@ -175,7 +175,7 @@ namespace HyperRTS.Simulation.Air
                 return pad.Aircraft == aircraft;
             }
 
-            /// <summary>Moves the aircraft's home to a free pad of the airfield; the old pad frees next frame.</summary>
+            /// <summary>Moves the aircraft's home to a free pad of its kind at the airfield; the old pad frees next frame.</summary>
             public void TryRehome(Entity aircraft, ref HomePad home, Entity airfield, byte faction)
             {
                 if (!IsOwn(airfield, faction))
@@ -184,14 +184,14 @@ namespace HyperRTS.Simulation.Air
                 }
 
                 var pads = Pads[airfield];
-                var free = LandingPad.FindFree(pads);
+                var free = LandingPad.FindFree(pads, home.Kind);
                 if (free < 0)
                 {
                     return;
                 }
 
                 pads.ElementAt(free).Aircraft = aircraft;
-                home = new HomePad { Airfield = airfield, Pad = free };
+                home = home.At(airfield, free);
             }
         }
     }

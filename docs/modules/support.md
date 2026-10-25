@@ -106,7 +106,12 @@ Animates machines such as pumpjacks, wind turbines, radar antennas and cranes. P
 along its axis (a crane on its rail, amplitude in metres), act as a `Link` rod between two transforms, or turn
 `Downwind` about its axis so its forward, plus `offset` degrees, follows the scene's `Wind` (a windsock). `Raise`
 turns a part about its axis and `Extend` moves it along its axis by `amplitude` degrees or metres as the machine
-speeds up, eased in and out: a launcher raising to its rest elevation, an outrigger jack lowering.
+speeds up, eased in and out: a launcher raising to its rest elevation, an outrigger jack lowering. Each moves over its
+own span of the speed, `from` to `to`, so a launcher's jacks can finish lowering before its box starts to raise, and
+packing up runs the stages in reverse. `Point` turns a part about its axis so its `aim` transform keeps the bearing it
+had at rest, which makes a hydraulic ram and its rod track each other as the box they hold rises. `MachinePartRule`
+flags a span that ends before it starts and a `Point` part with no aim. A part a machine moves is left out of the
+Motion Rig's fill, and a weapon with no barrel slot fires from the `Barrel` or `Launcher` its machine raises.
 
 A machine's `runs` says when its clock turns: `Always`, `Powered` while its building is complete and not `Offline` (a
 radar stops on low power), `Producing` while its building's queue has work that isn't halted (a crane runs only during

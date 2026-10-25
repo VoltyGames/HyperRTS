@@ -12,7 +12,7 @@ UI state that input, the HUD and overlays share, created once per presented worl
 
 | Singleton | Role |
 | --- | --- |
-| `PlacementState` | Building placement: prefab, ghost position, quarter turn, validity, a line's drag start. Its `PlacementSegment` buffer holds a line's ghost segments |
+| `PlacementState` | Building placement: prefab, ghost position, quarter turn, validity, the held drag's start. Its `PlacementSegment` buffer holds a line's ghost segments |
 | `PendingCommand` | A targeted command waiting for a click, such as attack-move or an aimed ability |
 | `PointerState` | Whether the pointer is over UI, so world clicks are ignored |
 | `SelectionDragState` | The selection box being dragged |
@@ -30,7 +30,7 @@ UI state that input, the HUD and overlays share, created once per presented worl
 | `InputActionsProvider` | The one shared actions instance, with `Suspend` and `Resume` |
 | `SelectionInputSystem` | Mouse gestures to `SelectionInput` |
 | `CommandInputSystem` | Right-click, hotkeys and targeted commands to `PlayerCommand` |
-| `PlacementInputSystem` | Moves and [turns](economy.md#facing) the placement ghost and confirms it, or drags and releases a [line](economy.md#line-placement) |
+| `PlacementInputSystem` | Moves and [turns](economy.md#facing) the placement ghost (R, or hold and drag) and confirms it on release, or drags and releases a [line](economy.md#line-placement) |
 | `WorldPointer` | What the cursor points at, and the ground point |
 | `CameraController` | Pan, edge scroll, eased zoom, rotate, map bounds. Pitch follows zoom height, flatter up close. Starts at the home base |
 
@@ -78,6 +78,7 @@ strip along the bottom. Its name is in the tooltip. Caption buttons (stances, un
 
 While a line is dragged, `LineCost` shows its total, the valid `PlacementSegment`s times the per-segment cost, above and right of
 the line's end. It turns `hud-costs--short`, the unaffordable card's colour, when the stock can't cover it.
+While a single building is placed, `PlacementHint` shows `hud.rotate-hint` below and right of its ghost.
 
 `PurchaseCommands` asks `PurchaseRules.FindRefusal` why a purchase is refused and shows it as a class on the card:
 
@@ -214,7 +215,10 @@ model** finds the parts by their art names: `Hull`, `Turret`, `Barrel`, `Launche
 `Idler_L`, `Rotor_Main`, `Rotor_Tail` and propellers `Prop_01` on, which spin about the nose axis. It keeps slots it already lists, measures wheel radii and the footprint
 from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon or an interceptor. Numbered parts
 aim their own weapon: `Turret_01` and `Launcher_01` weapon 0, `Turret_02` and `Launcher_02` weapon 1. It also fills the
-weapons' and the interceptor's turret and barrel pivots. A building's body never tilts, so it gets no tilt root.
+weapons' and the interceptor's turret and barrel pivots. Same-named parts of every model under the rig, such as a
+damaged model beside the intact one, all follow, and parts a Machine moves are left to it. With Damage Stages, the
+other stage's matching body becomes the `tiltStage`, which tilts and sways with the tilt root. A building's body never
+tilts, so it gets no tilt root.
 `MotionRigRule` checks every slot names a child of the rig and a weapon the unit has. Traverse and elevation rates and limits are weapon data, so the
 rig only smooths the simulated pose.
 

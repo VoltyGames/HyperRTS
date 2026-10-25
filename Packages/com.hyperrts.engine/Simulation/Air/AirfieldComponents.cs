@@ -10,15 +10,20 @@ namespace HyperRTS.Simulation.Air
     {
         public float3 Offset;
 
+        public PadKind Kind;
+
         /// <summary>The aircraft based here; <c>Entity.Null</c> while the pad is free.</summary>
         public Entity Aircraft;
 
-        /// <summary>Index of the first free pad, or -1.</summary>
-        public static int FindFree(DynamicBuffer<LandingPad> pads)
+        /// <summary>An Any pad takes every aircraft, and an Any aircraft lands on every pad.</summary>
+        public readonly bool Takes(PadKind aircraft) => Kind == PadKind.Any || aircraft == PadKind.Any || Kind == aircraft;
+
+        /// <summary>Index of the first free pad that takes <paramref name="aircraft"/>, or -1.</summary>
+        public static int FindFree(DynamicBuffer<LandingPad> pads, PadKind aircraft)
         {
             for (var i = 0; i < pads.Length; i++)
             {
-                if (pads[i].Aircraft == Entity.Null)
+                if (pads[i].Aircraft == Entity.Null && pads[i].Takes(aircraft))
                 {
                     return i;
                 }
@@ -36,6 +41,21 @@ namespace HyperRTS.Simulation.Air
 
         /// <summary>Sent home once on running dry, so player orders hold until it has rounds again.</summary>
         public bool Recalled;
+
+        /// <summary>The pads it lands on, kept when it changes or loses its home.</summary>
+        public PadKind Kind;
+
+        public readonly HomePad At(Entity airfield, int pad) => new() { Airfield = airfield, Pad = pad, Kind = Kind };
+
+        public void Lose() => this = new HomePad { Kind = Kind };
+    }
+
+    /// <summary>Which aircraft a landing pad takes: helicopters on a helipad, jets in a shelter.</summary>
+    public enum PadKind : byte
+    {
+        Any = 0,
+        Helipad = 1,
+        Shelter = 2,
     }
 
     /// <summary>

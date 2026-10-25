@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Animation
         /// <summary>While its building fired a weapon or interceptor in the last second (a gatling's barrels).</summary>
         Firing = 3,
 
-        /// <summary>Its speed is its unit's deploy progress, so Raise and Extend parts unfold as it deploys.</summary>
+        /// <summary>Its speed is its unit's deploy progress, so Raise and Extend parts unfold as it deploys, each over its own span.</summary>
         Deployed = 4,
     }
 
@@ -115,9 +115,16 @@ namespace HyperRTS.Simulation.Animation
         /// <summary>Degrees added to the cycle, to set parts relative to each other.</summary>
         public float Phase;
 
-        /// <summary>Link: the point it sits on and the point it aims at.</summary>
+        /// <summary>Raise and Extend: the span of the machine's speed, 0 to 1, it moves over, so parts unfold in turn.</summary>
+        public float From;
+        public float To;
+
+        /// <summary>Link: the point it sits on and the point it aims at. Point: the pivot it keeps aiming at.</summary>
         public Entity Follow;
         public Entity Aim;
+
+        /// <summary>Point: where <see cref="Aim"/> sat at rest, in the parent's space.</summary>
+        public float3 RestAim;
 
         /// <summary>The baked local pose the motion starts from.</summary>
         public quaternion Rest;
@@ -127,19 +134,28 @@ namespace HyperRTS.Simulation.Animation
         /// Downwind: the pose turned about <see cref="Axis"/> so its local forward, plus <see cref="Offset"/> degrees,
         /// points along <paramref name="downwind"/>, given in the parent's space. No wind keeps the rest pose.
         /// </summary>
-        public readonly quaternion FacingDownwind(float3 downwind)
+        public readonly quaternion FacingDownwind(float3 downwind) =>
+            Turned(math.rotate(Rest, math.forward()), downwind, math.radians(Offset));
+
+        /// <summary>Point: the pose turned about <see cref="Axis"/> so <paramref name="aim"/>, in the parent's space, keeps its rest bearing.</summary>
+        public readonly quaternion Pointing(float3 aim) => Turned(RestAim - RestPosition, aim - RestPosition, 0f);
+
+        /// <summary>Raise and Extend: how far through its span it is at machine speed <paramref name="ramp"/>, eased in and out.</summary>
+        public readonly float Unfolded(float ramp) => math.smoothstep(From, To, ramp);
+
+        // Turns the rest pose about the axis by the angle from have to want, both flattened onto the axis' plane.
+        private readonly quaternion Turned(float3 have, float3 want, float extra)
         {
             var axis = math.rotate(Rest, Axis);
-            var forward = math.rotate(Rest, math.forward());
-            var want = downwind - axis * math.dot(downwind, axis);
-            var have = forward - axis * math.dot(forward, axis);
+            want -= axis * math.dot(want, axis);
+            have -= axis * math.dot(have, axis);
             if (math.lengthsq(want) < 1e-6f || math.lengthsq(have) < 1e-6f)
             {
                 return Rest;
             }
 
             var angle = math.atan2(math.dot(math.cross(have, want), axis), math.dot(have, want));
-            return math.mul(Rest, quaternion.AxisAngle(Axis, angle + math.radians(Offset)));
+            return math.mul(Rest, quaternion.AxisAngle(Axis, angle + extra));
         }
     }
 
@@ -166,5 +182,8 @@ namespace HyperRTS.Simulation.Animation
 
         /// <summary>Travels along its axis by its amplitude in metres as the speed rises (a jack lowering).</summary>
         Extend = 6,
+
+        /// <summary>Turns about its axis to keep aiming at another part's pivot (a hydraulic ram).</summary>
+        Point = 7,
     }
 }

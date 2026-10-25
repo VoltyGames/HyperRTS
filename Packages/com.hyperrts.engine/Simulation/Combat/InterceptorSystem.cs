@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Combat
     /// Turns each <see cref="Interceptor"/>'s pose toward the nearest hostile projectile of a kind it engages, or
     /// failing one in range toward the nearest inbound on its radius, and, once on a target in range, engages it: a Fire
     /// cue toward it and a kill roll that marks it <see cref="Projectile.Intercepted"/>, destroys it and plays the
-    /// Impact cue where it dies. Offline interceptors do nothing.
+    /// Impact cue where it dies. Offline interceptors, and those waiting for their unit to deploy, do nothing.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -50,6 +50,7 @@ namespace HyperRTS.Simulation.Combat
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Candidates = candidates,
                 Projectiles = _projectiles,
+                Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Cues = _cues,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
@@ -98,6 +99,7 @@ namespace HyperRTS.Simulation.Combat
             public float DeltaTime;
             public NativeList<Candidate> Candidates;
             public ComponentLookup<Projectile> Projectiles;
+            [ReadOnly] public ComponentLookup<Deployable> Deployables;
             public FactionRelations Relations;
             public CueWriter Cues;
             public EntityCommandBuffer Ecb;
@@ -106,7 +108,9 @@ namespace HyperRTS.Simulation.Combat
                 in LocalTransform place, in Faction faction)
             {
                 interceptor.Tick(DeltaTime);
-                var target = Nearest(interceptor, place.Position, faction.Value, out var inRange);
+                var inRange = false;
+                var held = Deployable.Holds(Deployables, entity, interceptor.Aim);
+                var target = held ? -1 : Nearest(interceptor, place.Position, faction.Value, out inRange);
                 var pose = poses[interceptor.Pose];
                 // Idle, it turns back to straight ahead and level.
                 var angles = float2.zero;

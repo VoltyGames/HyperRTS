@@ -40,8 +40,9 @@ spends a round. The salvo keeps to the weapon's current target and stops when it
 rounds) or when its unit packs up: the rest of the salvo is dropped and the cooldown counts from the last shot.
 With `extraMuzzles`, shots leave from `muzzle` and then each extra muzzle in turn, wrapping round, and the next
 salvo carries on where the last stopped. They bake into the shooter's `WeaponMuzzle` buffer. Aim always uses the
-first muzzle. `spread` scatters each Ballistic shot's aim point at random within that many metres, seeded by
-shooter, target and shot count. Homing shots ignore it.
+first muzzle. `spread` scatters each shot's aim point at random within that many metres, seeded by shooter, target
+and shot count. A ballistic shell keeps its target while it stays put; a homing shot with a spread gives up its lock
+and flies to its scattered point, so a rocket ripple covers an area. Missiles that must stay locked keep 0.
 
 Limited rounds (`AmmoAuthoring` for the primary, `rounds` on an extra weapon) refill by their `AmmoRefill`:
 `Docked` one round per `reloadTime` while docked at an airfield, `Round` one per `reloadTime` anywhere, and
@@ -55,10 +56,11 @@ Limited rounds (`AmmoAuthoring` for the primary, `rounds` on an extra weapon) re
 orders and halts it, and `Deployable.Progress` rises from 0 to 1 over `deployTime`. Pack Up lowers it back over
 `packUpTime`. Either command reverses one in progress. While deploying, deployed or packing up the unit is rooted:
 `OrderResolver` refuses every order but Attack, so the player must pack it up first, and `EngagementSystem` fights
-it like a building, never chasing or backing off. `WeaponRule` flags a `needsDeploy` weapon on a unit without a
-Deployable. `State` and `Progress` replicate, and a `Deployed` machine (see [animation](support.md#animation))
-follows the progress. The skirmish AI deploys a unit holding a target in range and packs up a deployed one with
-nothing to shoot, so its next wave takes it.
+it like a building, never chasing or backing off. Until it has deployed, its `needsDeploy` weapons keep their turret
+centred, and an interceptor with `needsDeploy` neither tracks nor engages. `WeaponRule` and `InterceptorRule` flag
+either on a unit without a Deployable. `State` and `Progress` replicate, and a `Deployed` machine (see
+[animation](support.md#animation)) follows the progress. The skirmish AI deploys a unit holding a target in range and
+packs up a deployed one with nothing to shoot, so its next wave takes it.
 
 A projectile flies by its weapon's `Trajectory`. Direct shots fly straight and home on the target. Ballistic shells
 arc onto the point aimed at launch, `ArcHeight` times the ground distance high, and miss a target that moved. Rockets

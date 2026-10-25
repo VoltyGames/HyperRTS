@@ -11,7 +11,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Tests
 {
-    /// <summary>Machines run always, while their building is powered, produces or fires, easing in and out.</summary>
+    /// <summary>
+    /// Machines run always, while their building is powered, produces or fires, or as their unit deploys, easing in
+    /// and out, and their parts move.
+    /// </summary>
     public class MachineRunTests
     {
         private const float Step = 0.1f;
@@ -146,6 +149,39 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void Deployed_UnfoldsEachPartOverItsOwnSpan()
+        {
+            var unit = _em.CreateEntity();
+            _em.AddComponentData(unit, new Deployable { DeployTime = 1f, PackUpTime = 1f, Progress = 0.5f });
+            var machine = Machine(MachineRun.Deployed, unit);
+            var jack = Part(machine, new MachinePart { Motion = MachineMotion.Extend, Axis = math.down(), Amplitude = 0.5f, From = 0f, To = 0.5f });
+            var launcher = Part(machine, new MachinePart { Motion = MachineMotion.Raise, Axis = math.right(), Amplitude = 40f, From = 0.5f, To = 1f });
+
+            Run(Step);
+            Assert.AreEqual(-0.5f, _em.GetComponentData<LocalTransform>(jack).Position.y, 1e-4f, "the jacks are down first");
+            Assert.AreEqual(quaternion.identity, _em.GetComponentData<LocalTransform>(launcher).Rotation, "the launcher waits");
+
+            _em.SetComponentData(unit, new Deployable { DeployTime = 1f, PackUpTime = 1f, Progress = 1f });
+            Run(Step);
+            var raised = math.rotate(_em.GetComponentData<LocalTransform>(launcher).Rotation, math.forward());
+            Assert.AreEqual(math.sin(math.radians(-40f)), raised.y, 1e-4f, "then it raises fully");
+        }
+
+        [Test]
+        public void Point_TurnsAboutItsAxisToKeepAimingAtItsTarget()
+        {
+            var ram = new MachinePart
+            {
+                Motion = MachineMotion.Point, Axis = math.right(), Rest = quaternion.identity, RestAim = math.forward(),
+            };
+
+            var pointing = math.rotate(ram.Pointing(new float3(3f, 2f, 2f)), math.forward());
+
+            Assert.Less(math.distance(math.normalize(new float3(0f, 1f, 1f)), pointing), 1e-4f, "turns only about its axis");
+            Assert.AreEqual(quaternion.identity, ram.Pointing(new float3(0f, 0f, 4f)), "at its rest bearing it rests");
+        }
+
+        [Test]
         public void Downwind_TurnsAboutItsAxisToPointWithTheWind()
         {
             var sock = new MachinePart { Motion = MachineMotion.Downwind, Axis = math.up(), Rest = quaternion.identity };
@@ -171,6 +207,17 @@ namespace HyperRTS.Presentation.Tests
             var machine = _em.CreateEntity();
             _em.AddComponentData(machine, new MachineClock { Run = run, Owner = building, RampSeconds = 1f });
             return machine;
+        }
+
+        private Entity Part(Entity machine, MachinePart part)
+        {
+            var entity = _em.CreateEntity();
+            part.Machine = machine;
+            part.Rest = quaternion.identity;
+            _em.AddComponentData(entity, LocalTransform.Identity);
+            _em.AddComponentData(entity, new Parent { Value = machine });
+            _em.AddComponentData(entity, part);
+            return entity;
         }
 
         private void SetOffline(Entity building, OfflineReason reasons)

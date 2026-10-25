@@ -11,7 +11,8 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>
     /// Turns each <see cref="WeaponPose"/> toward its weapon's target at the weapon's traverse and elevation rates:
     /// the primary at the <see cref="AttackTarget"/>, mounts at their own. Arcing weapons pitch up to their launch
-    /// angle; idle weapons turn back to centre. Runs before firing, so turrets fire once on target.
+    /// angle; idle weapons, and those waiting for their unit to deploy, turn back to centre. Runs before firing, so
+    /// turrets fire once on target.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -21,12 +22,14 @@ namespace HyperRTS.Simulation.Combat
     {
         private ComponentLookup<LocalTransform> _transforms;
         private BufferLookup<WeaponMount> _mounts;
+        private ComponentLookup<Deployable> _deployables;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _mounts = state.GetBufferLookup<WeaponMount>(true);
+            _deployables = state.GetComponentLookup<Deployable>(true);
         }
 
         [BurstCompile]
@@ -34,10 +37,12 @@ namespace HyperRTS.Simulation.Combat
         {
             _transforms.Update(ref state);
             _mounts.Update(ref state);
+            _deployables.Update(ref state);
             new PoseJob
             {
                 Transforms = _transforms,
                 Mounts = _mounts,
+                Deployables = _deployables,
                 DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }
@@ -48,6 +53,7 @@ namespace HyperRTS.Simulation.Combat
         {
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             [ReadOnly] public BufferLookup<WeaponMount> Mounts;
+            [ReadOnly] public ComponentLookup<Deployable> Deployables;
             public float DeltaTime;
 
             private void Execute(Entity entity, DynamicBuffer<WeaponPose> poses, in Weapon weapon,
@@ -55,7 +61,7 @@ namespace HyperRTS.Simulation.Combat
             {
                 var hull = Transforms[entity];
                 var primary = attacking.ValueRO ? attack.Value : Entity.Null;
-                Pose(poses, 0, hull, weapon, primary);
+                Pose(poses, 0, hull, weapon, Aimed(entity, weapon, primary));
                 if (!Mounts.TryGetBuffer(entity, out var mounts))
                 {
                     return;
@@ -63,9 +69,13 @@ namespace HyperRTS.Simulation.Combat
 
                 foreach (var mount in mounts)
                 {
-                    Pose(poses, mount.Pose, hull, mount.Weapon, mount.Target);
+                    Pose(poses, mount.Pose, hull, mount.Weapon, Aimed(entity, mount.Weapon, mount.Target));
                 }
             }
+
+            // A packed-up launcher keeps its turret stowed until it has deployed.
+            private Entity Aimed(Entity unit, in Weapon weapon, Entity target) =>
+                Deployable.Holds(Deployables, unit, weapon) ? Entity.Null : target;
 
             private void Pose(DynamicBuffer<WeaponPose> poses, int index, in LocalTransform hull, in Weapon weapon,
                 Entity target)

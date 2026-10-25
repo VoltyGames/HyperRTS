@@ -125,6 +125,29 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void Airfield_BuildsAircraftOnlyOnPadsOfTheirKind()
+        {
+            var helicopter = _world.MakePrefab(_world.AddPadUser(_world.SpawnAircraft(1, float3.zero), kind: PadKind.Helipad));
+            _world.SetBuildTime(helicopter, 0.5f);
+            var shelter = new float3(-5f, 0f, 0f);
+            var airfield = _world.MakeProducer(_world.SpawnAirfield(1, float3.zero, shelter, Pad), float3.zero, helicopter);
+            var pads = _world.EntityManager.GetBuffer<LandingPad>(airfield);
+            pads.ElementAt(0).Kind = PadKind.Shelter;
+            pads.ElementAt(1).Kind = PadKind.Helipad;
+            _world.SpawnProvider(1, new float3(20f, 0f, 20f), 10);
+            _world.Produce(1, airfield, helicopter);
+            _world.Produce(1, airfield, helicopter);
+
+            _world.Run(3f);
+
+            using var built = _world.All<HomePad>();
+            Assert.AreEqual(1, built.Length, "the shelter takes no helicopter");
+            Assert.AreEqual(1, _world.Get<HomePad>(built[0]).Pad);
+            Assert.AreEqual(PadKind.Helipad, _world.Get<HomePad>(built[0]).Kind);
+            Assert.Less(math.distance(_world.GetPosition(built[0]).xz, Pad.xz), 0.01f, "spawned on the helipad");
+        }
+
+        [Test]
         public void LosingTheAirfield_FreesItsAircraft_AndAnotherAirfieldRehomesThem()
         {
             var first = _world.SpawnAirfield(1, float3.zero, Pad);

@@ -153,7 +153,7 @@ namespace HyperRTS.Simulation.Production
                 {
                     var position = SpawnPoint(entity, producer, transform, pad);
                     var unit = Spawn(prefab, position, transform, faction, hasRally.ValueRO, rally.Position);
-                    DockOnPad(unit, entity, pad);
+                    DockOnPad(unit, prefab, entity, pad);
                     SpawnedPopulation[faction.Value] += producible.Population;
                     producer.Released++;
                     Produced[Events].Add(new UnitProduced
@@ -186,7 +186,7 @@ namespace HyperRTS.Simulation.Production
                 return current.HasRoomFor(population);
             }
 
-            /// <summary>Aircraft that use pads need a free one here; -1 for every other unit.</summary>
+            /// <summary>Aircraft that use pads need a free one of their kind here; -1 for every other unit.</summary>
             private bool TryReservePad(Entity producer, Entity prefab, out int pad)
             {
                 pad = -1;
@@ -195,7 +195,7 @@ namespace HyperRTS.Simulation.Production
                     return true;
                 }
 
-                pad = LandingPad.FindFree(pads);
+                pad = LandingPad.FindFree(pads, PadUserLookup[prefab].Kind);
                 return pad >= 0;
             }
 
@@ -203,11 +203,11 @@ namespace HyperRTS.Simulation.Production
                 transform.TransformPoint(pad >= 0 ? PadLookup[entity][pad].Offset : producer.SpawnOffset);
 
             /// <summary>PadSystem claims the pad next frame, once the unit exists.</summary>
-            private void DockOnPad(Entity unit, Entity airfield, int pad)
+            private void DockOnPad(Entity unit, Entity prefab, Entity airfield, int pad)
             {
                 if (pad >= 0)
                 {
-                    Ecb.SetComponent(unit, new HomePad { Airfield = airfield, Pad = pad });
+                    Ecb.SetComponent(unit, PadUserLookup[prefab].At(airfield, pad));
                     Ecb.SetComponentEnabled<Docked>(unit, true);
                 }
             }

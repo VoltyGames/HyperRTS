@@ -130,8 +130,9 @@ shrinks. A `Decay` wreck stops blocking once it starts to sink, and its cells op
 
 `FlightAuthoring` makes a unit an aircraft with an altitude and a loiter radius. A radius of 0 hovers. Its optional
 `releasePoint`, a child such as a ramp or bomb bay, is where airdrop crates and strike bombs leave it.
-`AirfieldAuthoring` gives a building landing pads, one aircraft each. An airfield only builds a pad-using aircraft
-when a pad is free. An aircraft flies home once every weapon with limited rounds (its `Ammo` and mounts with
+`AirfieldAuthoring` gives a building landing pads, one aircraft each, each a `PadKind`: `Helipad`, `Shelter` or
+`Any`. `FlightAuthoring.padKind` says which pads an aircraft takes, and `Any` on either side matches every kind. An
+airfield only builds a pad-using aircraft when a pad of its kind is free, and Return to Base only claims one. An aircraft flies home once every weapon with limited rounds (its `Ammo` and mounts with
 rounds) is empty, so a gunship with an unlimited gun still returns when its missiles are spent. It is sent home
 once, so a player order given after that holds. It reloads while docked. Its remains fall to the ground under gravity. Fuel is left to game code.
 

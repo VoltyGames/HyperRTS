@@ -24,6 +24,9 @@ namespace HyperRTS.Presentation.Rendering
 
         /// <summary>A model variant other than the one picked for this entity.</summary>
         Variant = 1 << 6,
+
+        /// <summary>A garrison part whose passengers aren't aboard.</summary>
+        Garrison = 1 << 7,
     }
 
     /// <summary>

@@ -181,7 +181,7 @@ namespace HyperRTS.Simulation.Combat
                 Speed = weapon.ProjectileSpeed,
                 Height = weapon.ProjectileHeight,
                 ImpactTypeId = _cues.TypeIdFor(shooter, CueSlot.Impact),
-                Hit = CombatMath.Hit(weapon, shooter, faction, origin, target, aim),
+                Hit = CombatMath.Hit(weapon, shooter, faction, origin, weapon.KeepsLock ? target : Entity.Null, aim),
                 Trajectory = weapon.Trajectory,
                 Kind = weapon.ProjectileKind,
                 Start = origin,

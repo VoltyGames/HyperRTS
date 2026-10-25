@@ -21,6 +21,9 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>The child that pitches and rolls, or null for none.</summary>
         public Entity TiltRoot;
 
+        /// <summary>The same body in another stage's model, posed like <see cref="TiltRoot"/>, or null.</summary>
+        public Entity TiltStage;
+
         /// <summary>Rotation of the tilt root's parent relative to the unit.</summary>
         public quaternion TiltFrame;
 

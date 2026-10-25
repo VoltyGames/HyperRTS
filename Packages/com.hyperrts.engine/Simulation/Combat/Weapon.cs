@@ -120,10 +120,16 @@ namespace HyperRTS.Simulation.Combat
             CooldownRemaining = math.max(0f, CooldownRemaining + Cooldown - SalvoInterval);
         }
 
-        /// <summary>A ballistic <paramref name="aim"/> moved to a random point within <see cref="Spread"/>.</summary>
+        /// <summary>
+        /// A homing shot keeps its target only without a <see cref="Spread"/>: one with a spread flies to its scattered
+        /// point instead, as a rocket ripple saturates an area. Ballistic shells keep it while it stays put.
+        /// </summary>
+        public bool KeepsLock => Spread <= 0f || Trajectory == Trajectory.Ballistic;
+
+        /// <summary><paramref name="aim"/> moved to a random point within <see cref="Spread"/>.</summary>
         public float3 Scatter(float3 aim, uint seed)
         {
-            if (Spread <= 0f || Trajectory != Trajectory.Ballistic)
+            if (Spread <= 0f)
             {
                 return aim;
             }

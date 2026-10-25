@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
@@ -21,16 +20,8 @@ namespace HyperRTS.Presentation.Animation
     [Icon(HyperRTSIcons.Animation)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public class MotionRigAuthoring : AuthoringBehaviour
+    public partial class MotionRigAuthoring : AuthoringBehaviour
     {
-        private static readonly Regex WheelName = new(@"^(Wheel_[LR]\d+|Sprocket_[LR]|Idler_[LR])$");
-
-        // Propellers turn about the aircraft's nose axis.
-        private static readonly Regex PropName = new(@"^Prop_\d\d$");
-
-        // Turret_02 and Launcher_02 aim weapon 1, for a mount or interceptor on a launcher of its own.
-        private static readonly Regex NumberedName = new(@"^(Turret|Launcher)_(\d\d)$");
-
         [Tooltip("Parts that turn to the weapon's yaw.")]
         public List<TurretSlot> turrets = new();
 
@@ -48,6 +39,9 @@ namespace HyperRTS.Presentation.Animation
 
         [Tooltip("The model or hull child that pitches and rolls; none keeps the body level, as on buildings.")]
         public Transform tiltRoot;
+
+        [Tooltip("The same body in another model, such as the damaged stage, which tilts and sways with the tilt root.")]
+        public Transform tiltStage;
 
         [Tooltip("Length and width of the ground the body sits on, sampled at the four edges.")]
         public Vector2 footprint = new(6f, 3f);
@@ -116,6 +110,11 @@ namespace HyperRTS.Presentation.Animation
                 yield return $"Tilt root '{tiltRoot.name}' must be a child of '{name}'.";
             }
 
+            if (tiltStage != null && (tiltRoot == null || !IsBelow(tiltStage)))
+            {
+                yield return $"Tilt stage '{tiltStage.name}' needs a tilt root and must be a child of '{name}'.";
+            }
+
             if (tiltRoot != null && IsBuilding)
             {
                 yield return $"Building '{name}' never tilts; clear its tilt root.";
@@ -139,119 +138,6 @@ namespace HyperRTS.Presentation.Animation
 
         /// <summary>A part under this rig, never the rig itself: the unit's own transform is the simulation's.</summary>
         public bool IsBelow(Transform part) => part != transform && part.IsChildOf(transform);
-
-        /// <summary>Fills the slots, and the weapons' turret and barrel pivots, from parts named Turret, Barrel, Launcher, Wheel_L01, Rotor_Main, Prop_01, Hull and so on.</summary>
-        public void FillFromModel()
-        {
-            var parts = GetComponentsInChildren<Transform>(true).Where(IsBelow).ToList();
-            Transform Named(string partName) => parts.FirstOrDefault(part => part.name == partName);
-            var launcherWeapon = WeaponCount > 1 ? 1 : 0;
-
-            var turretParts = parts.Where(part => NumberedName.Match(part.name).Groups[1].Value == "Turret");
-            var launcherParts = parts.Where(part => NumberedName.Match(part.name).Groups[1].Value == "Launcher");
-            turrets = KeepTuned(turrets, turretParts.Prepend(Named("Turret")), part => new TurretSlot
-            {
-                part = part,
-                weapon = NumberedWeapon(part, 0),
-            });
-            elevations = KeepTuned(elevations, launcherParts.Prepend(Named("Launcher")).Prepend(Named("Barrel")),
-                part => new ElevationSlot
-                {
-                    part = part,
-                    weapon = NumberedWeapon(part, part.name == "Launcher" ? launcherWeapon : 0),
-                });
-            recoils = KeepTuned(recoils, new[] { Named("Barrel") }, part => new RecoilSlot { part = part });
-            wheels = KeepTuned(wheels, parts.Where(part => WheelName.IsMatch(part.name)),
-                part => new WheelSlot { part = part, radius = WheelSlot.MeshRadius(part, transform) });
-            var rotorParts = parts.Where(part => PropName.IsMatch(part.name)).Prepend(Named("Rotor_Tail")).Prepend(Named("Rotor_Main"));
-            rotors = KeepTuned(rotors, rotorParts, part => new RotorSlot
-            {
-                part = part,
-                axis = part.InverseTransformDirection(RotorAxis(part.name)),
-            });
-
-            FillWeaponPivots();
-            FillInterceptorPivots();
-            tiltRoot = IsBuilding ? null : Named("Hull") ?? ModelRoot();
-            if (tiltRoot != null)
-            {
-                var size = PartSlot.MeshBounds(tiltRoot, transform).size;
-                footprint = new Vector2(size.z, size.x);
-            }
-        }
-
-        private Vector3 RotorAxis(string partName) => partName switch
-        {
-            "Rotor_Main" => transform.up,
-            "Rotor_Tail" => transform.right,
-            _ => transform.forward,
-        };
-
-        private static int NumberedWeapon(Transform part, int unnumbered)
-        {
-            var match = NumberedName.Match(part.name);
-            return match.Success ? int.Parse(match.Groups[2].Value) - 1 : unnumbered;
-        }
-
-        // A model whose only root node is the hull imports with the hull folded into the model object.
-        private Transform ModelRoot()
-        {
-            var part = GetComponentsInChildren<MeshFilter>(true).Select(mesh => mesh.transform).FirstOrDefault(IsBelow);
-            while (part != null && part.parent != transform)
-            {
-                part = part.parent;
-            }
-
-            return part;
-        }
-
-        // Shots leave from the muzzle turned about these parts, so each weapon's pivots follow its slots.
-        private void FillWeaponPivots()
-        {
-            if (!TryGetComponent<WeaponAuthoring>(out var weapon))
-            {
-                return;
-            }
-
-            var stats = weapon.extraWeapons.Select(slot => slot.stats).Prepend(weapon.stats).ToList();
-            for (var index = 0; index < stats.Count; index++)
-            {
-                var barrel = elevations.FirstOrDefault(slot => slot.weapon == index)?.part;
-                stats[index].barrel = barrel;
-                stats[index].turret = Turret(index, barrel);
-            }
-        }
-
-        private void FillInterceptorPivots()
-        {
-            if (!TryGetComponent<InterceptorAuthoring>(out var interceptor))
-            {
-                return;
-            }
-
-            interceptor.barrel = elevations.FirstOrDefault(slot => slot.weapon == interceptor.Pose)?.part;
-            interceptor.turret = Turret(interceptor.Pose, interceptor.barrel);
-        }
-
-        // A weapon turns with its own turret slot, else with the turret its barrel sits on.
-        private Transform Turret(int weapon, Transform barrel)
-        {
-            var own = turrets.FirstOrDefault(slot => slot.weapon == weapon);
-            if (own != null)
-            {
-                return own.part;
-            }
-
-            var carrying = barrel != null ? turrets.FirstOrDefault(slot => barrel.IsChildOf(slot.part)) : null;
-            return carrying?.part;
-        }
-
-        // Keeps the tuned slot of a part already listed, so filling again changes nothing.
-        private static List<T> KeepTuned<T>(List<T> slots, IEnumerable<Transform> found, Func<Transform, T> make)
-            where T : PartSlot =>
-            found.Where(part => part != null)
-                .Select(part => slots.FirstOrDefault(slot => slot.part == part) ?? make(part))
-                .ToList();
 
         public class Baker : Baker<MotionRigAuthoring>
         {
@@ -288,6 +174,7 @@ namespace HyperRTS.Presentation.Animation
                 return new MotionRig
                 {
                     TiltRoot = GetEntity(tilt, TransformUsageFlags.Dynamic),
+                    TiltStage = authoring.tiltStage != null ? GetEntity(authoring.tiltStage, TransformUsageFlags.Dynamic) : Entity.Null,
                     TiltFrame = Quaternion.Inverse(authoring.transform.rotation) * tilt.parent.rotation,
                     TiltRest = tilt.localRotation,
                     Footprint = authoring.footprint,
