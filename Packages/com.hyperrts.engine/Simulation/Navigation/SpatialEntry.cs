@@ -63,29 +63,7 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>From this entry's core segment to another's, between their closest points.</summary>
-        public readonly float2 ClosestOffset(float2 position, float2 axis)
-        {
-            // Closest points of segments P(s) and Q(t), s and t in -1..1 (Ericson, Real-Time Collision Detection 5.1.9).
-            var r = position - Position.xz;
-            var a = math.lengthsq(axis);
-            var e = math.lengthsq(SegmentAxis);
-            var b = math.dot(axis, SegmentAxis);
-            var c = math.dot(axis, r);
-            var f = math.dot(SegmentAxis, r);
-            var denominator = a * e - b * b;
-            var s = denominator > 1e-6f ? math.clamp((b * f - c * e) / denominator, -1f, 1f) : 0f;
-            var t = e > 1e-6f ? (b * s + f) / e : 0f;
-            if (t < -1f || t > 1f)
-            {
-                t = math.clamp(t, -1f, 1f);
-                s = a > 1e-6f ? math.clamp((b * t - c) / a, -1f, 1f) : 0f;
-            }
-            else if (a > 1e-6f && e <= 1e-6f)
-            {
-                s = math.clamp(-c / a, -1f, 1f);
-            }
-
-            return r + axis * s - SegmentAxis * t;
-        }
+        public readonly float2 ClosestOffset(float2 position, float2 axis) =>
+            NavCapsule.ClosestOffset(position, axis, Position.xz, SegmentAxis);
     }
 }

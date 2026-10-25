@@ -8,8 +8,9 @@ namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
     /// 8-directional A* over the cells a <see cref="NavAccess"/> finds open inside a <see cref="NavCorridor"/>;
-    /// diagonals may not cut corners, and each step costs its length times <see cref="NavAccess.CellCost"/>, at least 1,
-    /// so the octile heuristic stays admissible. Records are sized to the corridor, so each search or worker owns one.
+    /// diagonals may not cut corners, and each step costs its length times <see cref="NavAccess.CellCost"/>, at least 1.
+    /// The octile heuristic is weighted slightly, so paths may run a fraction long for far fewer expansions. Records
+    /// are sized to the corridor, so each search or worker owns one.
     /// </summary>
     public struct GridAStar : IDisposable
     {
@@ -17,6 +18,9 @@ namespace HyperRTS.Simulation.Navigation
 
         private const byte Reached = 1;
         private const byte Closed = 2;
+
+        // Cuts cross-map expansions about two thirds for paths about 0.1% longer (NavBenchmarkTests).
+        private const float Greed = 1.25f;
 
         private static readonly ProfilerMarker SearchMarker = new("GridAStar.Search");
 
@@ -101,7 +105,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             var first = corridor.Index(start);
             Reach(first, -1, 0f);
-            _open.Push(first, Heuristic(start, goal));
+            _open.Push(first, Heuristic(start, goal) * Greed);
             expansions = 0;
             while (_open.TryPop(out var current))
             {
@@ -148,7 +152,7 @@ namespace HyperRTS.Simulation.Navigation
                     }
 
                     Reach(index, parent, nextCost);
-                    _open.Push(index, nextCost + Heuristic(next, goal));
+                    _open.Push(index, nextCost + Heuristic(next, goal) * Greed);
                 }
             }
         }

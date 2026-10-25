@@ -13,11 +13,12 @@ namespace HyperRTS.Simulation.Units
     /// <summary>
     /// Moves ground and naval units along their <see cref="PathWaypoint"/>s toward an enabled
     /// <see cref="MoveDestination"/> and, when the move ends by itself, disables it and enables <see cref="Arrival"/>.
-    /// Each frame reads as one pipeline: follow the path, drive and steer round neighbours (<see cref="CrowdVisitor"/>),
-    /// keep the footprint out of walls (<see cref="NavCapsule.Constrain"/>, wrecks' cells included), then measure
-    /// progress (<see cref="MoveProgress"/>). While its path is pending a unit brakes and turns to its goal. Every
-    /// unit drives with its <see cref="Locomotion"/>, or <see cref="Locomotion.Instant"/> without one, and Y follows
-    /// its layer's surface on the <see cref="NavGrid"/> (ground, deck or water). Aircraft fly in their own system.
+    /// Each frame reads as one pipeline: follow the path, drive and steer round neighbours and walls
+    /// (<see cref="Steering"/>), keep the footprint out of walls (<see cref="NavCapsule.Constrain"/>, wrecks' cells
+    /// included), then measure progress (<see cref="MoveProgress"/>). While its path is pending a unit brakes and turns
+    /// to its goal. Every unit drives with its <see cref="Locomotion"/>, or <see cref="Locomotion.Instant"/> without
+    /// one, and Y follows its layer's surface on the <see cref="NavGrid"/> (ground, deck or water). Aircraft fly in
+    /// their own system.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
@@ -95,6 +96,12 @@ namespace HyperRTS.Simulation.Units
                 var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
                 // Instant handling needs no memory between frames, so units without it start each from rest.
                 var remembers = States.TryGetComponent(entity, out var drive);
+                if (!remembers)
+                {
+                    // Without state, last frame's movement stands in for last frame's steering choice.
+                    drive.LastChoice = velocity.Value;
+                }
+
                 // Read before arrival can clear it, as the index saw it, so both sides of a contact agree.
                 var wasMoving = moving.ValueRO;
                 var from = transform.Position.xz;
@@ -123,16 +130,29 @@ namespace HyperRTS.Simulation.Units
                     States[entity] = drive;
                 }
 
-                Face(ref transform, agent, axis, heading);
+                Face(ref transform, agent, axis, facing, heading, moving.ValueRO);
                 velocity.Value = (transform.Position.xz - from) / DeltaTime;
             }
 
-            // A long hull mustn't swing an end into a wall; it moves on unturned.
-            private readonly void Face(ref LocalTransform transform, in NavAgent agent, float2 axis, float2 heading)
+            // A long hull mustn't swing an end into a wall. A mover slides off by the end's sweep, else stays unturned.
+            private readonly void Face(ref LocalTransform transform, in NavAgent agent, float2 axis, float2 facing,
+                float2 heading, bool moving)
             {
-                var turned = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
-                if (math.any(heading != 0f) && agent.CanTurn(Grid, transform.Position.xz, axis, turned))
+                if (math.all(heading == 0f))
                 {
+                    return;
+                }
+
+                var center = transform.Position.xz;
+                var turned = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
+                var sweep = agent.HalfSegment * math.acos(math.clamp(math.dot(facing, heading), -1f, 1f));
+                if (agent.CanTurn(Grid, center, axis, turned))
+                {
+                    transform.Rotation = turned;
+                }
+                else if (moving && agent.TryTurnOff(Grid, center, axis, turned, sweep, out var moved))
+                {
+                    transform.Position.xz = moved;
                     transform.Rotation = turned;
                 }
             }
@@ -170,7 +190,9 @@ namespace HyperRTS.Simulation.Units
                     return locomotion.BrakeToStop(ref drive, facing, DeltaTime);
                 }
 
-                return crowd.Drive(locomotion, ref drive, facing, ref heading, leg, velocity, topSpeed, DeltaTime);
+                var steering = new Steering(crowd, velocity, topSpeed);
+                steering.AddWalls(agent.Access(Grid));
+                return steering.Drive(locomotion, ref drive, facing, ref heading, leg, DeltaTime);
             }
 
             /// <summary>Picks the leg to drive; false once the unit has arrived.</summary>

@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Tests
     /// bridges, against twice the plan's budgets. Each test runs its work once untimed first, so Burst is warm.
     /// </summary>
     [Category("Benchmark")]
-    public class NavBenchmarkTests
+    public partial class NavBenchmarkTests
     {
         private const float MapSize = 600f;
 
@@ -168,7 +168,7 @@ namespace HyperRTS.Simulation.Tests
             var expansions = new NativeReference<int>(Allocator.Persistent);
             var job = new SearchJob { Grid = _world.Grid(), Agent = Truck, Points = points, Expansions = expansions };
             var random = new Random(23);
-            double total = 0.0, slowest = 0.0;
+            double total = 0.0, slowest = 0.0, length = 0.0;
             long expanded = 0;
             var most = 0;
             for (var i = -1; i < 200; i++)
@@ -184,15 +184,27 @@ namespace HyperRTS.Simulation.Tests
                     slowest = math.max(slowest, time);
                     expanded += expansions.Value;
                     most = math.max(most, expansions.Value);
+                    length += PathLength(job.Start, points);
                 }
             }
 
             points.Dispose();
             expansions.Dispose();
             TestContext.WriteLine($"200 cross-map searches: mean {total / 200.0:F3} ms, max {slowest:F3} ms, " +
-                                  $"expansions mean {expanded / 200} max {most}");
+                                  $"expansions mean {expanded / 200} max {most}, path mean {length / 200.0:F1} m");
             Assert.Less(total / 200.0, 4.0, $"mean {total / 200.0:F3} ms, under twice 2 ms");
             Assert.Less(slowest, 8.0, $"slowest {slowest:F3} ms, under four times 2 ms");
+        }
+
+        private static float PathLength(float3 start, NativeList<float3> points)
+        {
+            var length = 0f;
+            for (var i = 0; i < points.Length; i++)
+            {
+                length += math.distance((i == 0 ? start : points[i - 1]).xz, points[i].xz);
+            }
+
+            return length;
         }
 
         [TestCase(30, 12.0)]

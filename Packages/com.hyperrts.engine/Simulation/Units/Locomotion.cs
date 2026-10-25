@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Units
         private const float Crawl = 0.5f;
         private const float LookAheadTime = 0.5f;
         private const float Unlimited = 1e4f;
-        private const float ThreePointLegSeconds = 1.5f;
+        private const float OtherWaySeconds = 1.5f;
         private const float ReverseMargin = 1.3f;
         private const float Instantly = 1e6f;
 
@@ -43,6 +43,12 @@ namespace HyperRTS.Simulation.Units
             TurnRate = Instantly,
         };
 
+        /// <summary>Whether it handles as <see cref="Instant"/>: any facing at once.</summary>
+        public readonly bool IsInstant => TurnRate >= Instantly;
+
+        /// <summary>Radians the hull can turn within <paramref name="seconds"/> at <paramref name="speed"/>.</summary>
+        public readonly float TurnWithin(float speed, float seconds) => math.min(math.PI, TurnLimit(speed) * seconds);
+
         /// <summary>How far ahead it may cut to a corner in sight: further when fast or wide-turning.</summary>
         public readonly float LookAhead(float speed, float radius) =>
             radius * 2f + math.abs(speed) * LookAheadTime + TurnRadius * 0.5f;
@@ -53,20 +59,38 @@ namespace HyperRTS.Simulation.Units
             Follow(ref state, position, ref facing, leg, topSpeed, topSpeed, radius, deltaTime);
 
         /// <summary>
-        /// Drives toward the avoidance <paramref name="velocity"/> instead of the leg, no faster than it, turning only
-        /// as the hull can. A vehicle told to go back brakes on the leg instead of turning round.
+        /// Drives toward the steering <paramref name="velocity"/> instead of the leg, no faster than it, turning only
+        /// as the hull can. A vehicle told to go back backs straight up if it can reverse, else brakes on the leg.
         /// </summary>
         public readonly float2 Steer(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
             float2 velocity, float topSpeed, float radius, float deltaTime)
         {
-            var travel = state.Reverse ? -facing : facing;
-            if (TurnRate < Instantly && math.dot(velocity, travel) < 0f)
+            // Told to stand, it keeps turning toward the leg, as a pivot does.
+            if (math.lengthsq(velocity) < 1e-6f)
             {
                 return Follow(ref state, position, ref facing, leg, topSpeed, 0f, radius, deltaTime);
             }
 
+            var travel = state.Reverse ? -facing : facing;
+            if (TurnRate < Instantly && math.dot(velocity, travel) < 0f)
+            {
+                return GoBack(ref state, position, ref facing, leg, math.length(velocity), topSpeed, radius, deltaTime);
+            }
+
             var steered = leg.Toward(position, velocity);
             return Follow(ref state, position, ref facing, steered, topSpeed, math.length(velocity), radius, deltaTime);
+        }
+
+        private readonly float2 GoBack(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
+            float speed, float topSpeed, float radius, float deltaTime)
+        {
+            if (state.Reverse || ReverseSpeed <= 0f)
+            {
+                return Follow(ref state, position, ref facing, leg, topSpeed, 0f, radius, deltaTime);
+            }
+
+            state.Speed = Accelerate(state.Speed, -math.min(speed, ReverseSpeed), deltaTime);
+            return facing * (state.Speed * deltaTime);
         }
 
         private readonly float2 Follow(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
@@ -74,9 +98,10 @@ namespace HyperRTS.Simulation.Units
         {
             state.Reverse = PrefersReverse(state.Reverse, facing, leg, topSpeed);
             state.InThreePointTurn = IsInThreePointTurn(state.InThreePointTurn, position, facing, leg.Corner);
-            var desired = state.Reverse ? -leg.Direction : leg.Direction;
+            var ahead = TurnsIn(leg) ? leg.Next : leg.Direction;
+            var desired = state.Reverse ? -ahead : ahead;
             var error = SignedAngle(facing, desired);
-            var gear = state.Reverse == IsReverseLeg(ref state, deltaTime) ? 1f : -1f;
+            var gear = state.Reverse == IsOtherWay(ref state, deltaTime) ? 1f : -1f;
             var top = math.min(gear > 0f ? topSpeed : ReverseSpeed, cap);
             // Never past the goal in one frame, which only bites for near-instant braking.
             var limit = math.min(TargetSpeed(error, leg, top, radius, LookAhead(state.Speed, radius)),
@@ -85,6 +110,18 @@ namespace HyperRTS.Simulation.Units
             state.Speed = Accelerate(state.Speed, target, deltaTime);
             facing = Turn(facing, error, TurnLimit(state.Speed) * deltaTime);
             return facing * (state.Speed * deltaTime);
+        }
+
+        // Wheels turn on an arc, which meets the next leg this far before the corner, so the turn starts there.
+        private readonly bool TurnsIn(in PathLeg leg)
+        {
+            if (leg.IsFinal || Pivots || TurnRadius <= 0f)
+            {
+                return false;
+            }
+
+            var tangent = TurnRadius * math.tan(math.min(leg.CornerTurn, math.PI * 0.8f) * 0.5f);
+            return leg.Distance < tangent;
         }
 
         /// <summary>Turns the standing hull toward <paramref name="direction"/> at its turn rate, as when aiming.</summary>
@@ -109,7 +146,8 @@ namespace HyperRTS.Simulation.Units
             state.Speed = Accelerate(state.Speed, 0f, deltaTime);
             state.Reverse = false;
             state.InThreePointTurn = false;
-            state.ThreePointTurnBlocked = 0f;
+            state.OtherWay = 0f;
+            state.LastChoice = float2.zero;
             return facing * (state.Speed * deltaTime);
         }
 
@@ -167,13 +205,24 @@ namespace HyperRTS.Simulation.Units
         private readonly bool IsInThreePointTurn(bool turning, float2 position, float2 facing, float2 corner) =>
             IsInsideTurn(position, facing, corner, turning ? 1.2f : 1f);
 
-        // A reversing leg that runs into something drives the other leg of the turn for a while.
-        private static bool IsReverseLeg(ref LocomotionState state, float deltaTime)
+        /// <summary>Wheels can't turn standing, so a wheeled hull wedged against a wall backs off it a while.</summary>
+        public readonly void BackOff(ref LocomotionState state)
         {
-            var hit = state.InThreePointTurn && state.Blocked && state.ThreePointTurnBlocked <= 0f;
-            state.ThreePointTurnBlocked =
-                hit ? ThreePointLegSeconds : math.max(0f, state.ThreePointTurnBlocked - deltaTime);
-            return state.InThreePointTurn && state.ThreePointTurnBlocked <= 0f;
+            if (IsWheeled && state.OtherWay <= 0f)
+            {
+                state.OtherWay = OtherWaySeconds;
+            }
+        }
+
+        private readonly bool IsWheeled => !Pivots && TurnRadius > 0f;
+
+        // Wheels can't turn standing, so a leg that runs head-on into a wall drives the other way for a while,
+        // backing off to turn or taking a three-point turn's forward leg. A manoeuvre timer, not a stuck test.
+        private readonly bool IsOtherWay(ref LocomotionState state, float deltaTime)
+        {
+            var hit = IsWheeled && state.Blocked && state.OtherWay <= 0f;
+            state.OtherWay = hit ? OtherWaySeconds : math.max(0f, state.OtherWay - deltaTime);
+            return state.InThreePointTurn != state.OtherWay > 0f;
         }
 
         private readonly float TargetSpeed(float error, in PathLeg leg, float top, float radius, float lookAhead)

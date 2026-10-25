@@ -15,8 +15,14 @@ namespace HyperRTS.Simulation.Units
         /// <summary>Going the other way to bring a target out of its turning circle, as in a three-point turn.</summary>
         public bool InThreePointTurn;
 
-        /// <summary>Seconds left driving the turn's other leg after the reversing leg ran into something.</summary>
-        public float ThreePointTurnBlocked;
+        /// <summary>Seconds left driving the other way after a wheeled leg ran head-on into a wall.</summary>
+        public float OtherWay;
+
+        /// <summary>The velocity <see cref="Steering"/> chose last frame, which it prefers to keep.</summary>
+        public float2 LastChoice;
+
+        /// <summary>In a manoeuvre that steering would break: a three-point turn or backing off a wall.</summary>
+        public readonly bool IsManoeuvring => InThreePointTurn || OtherWay > 0f;
 
         /// <summary>Last frame's move was stopped head-on by a wall.</summary>
         public bool Blocked;

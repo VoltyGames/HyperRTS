@@ -34,7 +34,8 @@ namespace HyperRTS.Simulation.Navigation
                 return to;
             }
 
-            var allowed = math.max(0f, Depth(from, Axis)) + NavTolerances.Skin;
+            // No skin on top of an overlap, or a hull pressed into a wall frame after frame would ratchet deeper.
+            var allowed = math.max(Depth(from, Axis), NavTolerances.Skin);
             if (depth <= allowed)
             {
                 return to;
@@ -61,7 +62,18 @@ namespace HyperRTS.Simulation.Navigation
         public bool CanTurn(float2 center, float2 axis)
         {
             var depth = Depth(center, axis);
-            return depth <= NavTolerances.Skin || depth <= math.max(0f, Depth(center, Axis)) + NavTolerances.Skin;
+            return depth <= NavTolerances.Skin || depth <= Depth(center, Axis);
+        }
+
+        /// <summary>
+        /// Where the centre may slide off the walls, at most <paramref name="reach"/>, so a turn to
+        /// <paramref name="axis"/> that would swing an end into one clears it, as a track pivots off-centre.
+        /// </summary>
+        public bool TryTurnOff(float2 center, float2 axis, float reach, out float2 moved)
+        {
+            var depth = Depth(center, axis, out var deepest);
+            moved = center + Access.Normal(deepest) * math.min(reach, depth + NavTolerances.Skin);
+            return CanTurn(moved, axis) && Constrain(center, moved).Equals(moved);
         }
 
         /// <summary>
@@ -147,6 +159,32 @@ namespace HyperRTS.Simulation.Navigation
             var lengthSq = math.lengthsq(delta);
             var t = lengthSq > 1e-8f ? math.saturate(math.dot(point - a, delta) / lengthSq) : 0f;
             return math.distance(point, a + delta * t);
+        }
+
+        /// <summary>From one core segment to another between their closest points, each a centre and half axis.</summary>
+        internal static float2 ClosestOffset(float2 position, float2 axis, float2 other, float2 otherAxis)
+        {
+            // Segments P(s) and Q(t), s and t in -1..1 (Ericson, Real-Time Collision Detection 5.1.9).
+            var r = position - other;
+            var a = math.lengthsq(axis);
+            var e = math.lengthsq(otherAxis);
+            var b = math.dot(axis, otherAxis);
+            var c = math.dot(axis, r);
+            var f = math.dot(otherAxis, r);
+            var denominator = a * e - b * b;
+            var s = denominator > 1e-6f ? math.clamp((b * f - c * e) / denominator, -1f, 1f) : 0f;
+            var t = e > 1e-6f ? (b * s + f) / e : 0f;
+            if (t < -1f || t > 1f)
+            {
+                t = math.clamp(t, -1f, 1f);
+                s = a > 1e-6f ? math.clamp((b * t - c) / a, -1f, 1f) : 0f;
+            }
+            else if (a > 1e-6f && e <= 1e-6f)
+            {
+                s = math.clamp(-c / a, -1f, 1f);
+            }
+
+            return r + axis * s - otherAxis * t;
         }
     }
 }

@@ -53,11 +53,11 @@ namespace HyperRTS.Simulation.Tests
             var instant = Locomotion.Instant;
             var state = default(LocomotionState);
             var facing = new float2(1f, 0f);
-            var far = new PathLeg(float2.zero, new float2(10f, 0f), 0f, 10f, true);
+            var far = new PathLeg(float2.zero, new float2(10f, 0f), float2.zero, 0f, 10f, true);
             var step = instant.Drive(ref state, float2.zero, ref facing, far, 5f, 0.4f, 0.1f);
             MathAssert.Near(new float2(0.5f, 0f), step);
 
-            var near = new PathLeg(float2.zero, new float2(0.2f, 0f), 0f, 0.2f, true);
+            var near = new PathLeg(float2.zero, new float2(0.2f, 0f), float2.zero, 0f, 0.2f, true);
             step = instant.Drive(ref state, float2.zero, ref facing, near, 5f, 0.4f, 0.1f);
             MathAssert.Near(new float2(0.2f, 0f), step);
         }

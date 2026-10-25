@@ -89,6 +89,12 @@ namespace HyperRTS.Simulation.Air
                 var heading = float2.zero;
                 var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
                 var remembers = States.TryGetComponent(entity, out var drive);
+                if (!remembers)
+                {
+                    // Without state, last frame's movement stands in for last frame's steering choice.
+                    drive.LastChoice = velocity.Value;
+                }
+
                 var wasMoving = moving.ValueRO;
                 var landed = Docked.HasEnabled(entity);
                 var from = transform.Position.xz;
@@ -147,7 +153,8 @@ namespace HyperRTS.Simulation.Air
 
                 if (moving.ValueRO)
                 {
-                    return crowd.Drive(locomotion, ref drive, facing, ref heading, leg, velocity, topSpeed, DeltaTime);
+                    var steering = new Steering(crowd, velocity, topSpeed);
+                    return steering.Drive(locomotion, ref drive, facing, ref heading, leg, DeltaTime);
                 }
 
                 return Loiter(transform.Rotation, flight, landed, topSpeed * DeltaTime, ref heading);

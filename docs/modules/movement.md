@@ -82,13 +82,25 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 `UnitAuthoring` sets speed, radius, hull length, spacing, nav layer, whether it walks through scenery, and
 population. Units follow their path and
 stop on arrival. A unit with a hull length is a capsule that long along its forward and two radii wide; 0 keeps a
-circle. A moving unit steers round its neighbours with ORCA local avoidance (`CrowdVisitor`): of the nearest 8
-units within reach, each gives a half-plane of velocities that stay clear for 1.5 s, and a linear program picks the
-one closest to the step `Locomotion` planned. A capsule counts as the circle at its closest point to the other's, so
-hulls side by side keep their true gap. Velocities are last frame's (`Velocity`). The chosen velocity goes back to
-`Locomotion` as the heading and speed to drive, so a vehicle turns at its rate and radius rather than sliding
-sideways, and brakes rather than turning round when told to back off. A unit dead ahead, coming at it or standing,
-is passed on the right, so a head-on pair both keep right instead of braking. Layers that can't block each other
+circle. A moving unit steers by sampling (`Steering`). It scores candidate velocities against the nearest 8 units
+within reach (`CrowdVisitor`) and the walls' distance field, and picks the cheapest:
+
+- Candidates: a vehicle tries what its handling reaches within 0.5 s, 7 headings across its reachable turn at half,
+  three quarter and full speed, plus standing and backing straight up when it can reverse. An instant unit tries 12
+  directions at 3 speeds and small swerves off its planned direction. Both also try the planned velocity and last
+  frame's choice.
+- Cost: how much deeper footprints would overlap at their closest approach in each of 0 to 0.3, 0.3 to 0.75 and
+  0.75 to 1.5 s, sooner counting more, under straight-line prediction. Capsules count as capsules. A moving
+  neighbour is scored RVO-style: the mover takes only its share of the change. The wall term samples the field at
+  both capsule ends, only as far as the next corner. Straying from the planned velocity and from last frame's choice
+  costs, standing still costs a little extra, and swerving left costs a little more than right, so a head-on pair
+  both keep right.
+- The planned velocity is taken without sampling when it hits nothing, or when no neighbour is in reach and no
+  wall within the wall margin. Parked units never steer. A three-point turn or a back-off skips steering.
+
+Velocities are last frame's (`Velocity`). The chosen velocity goes back to `Locomotion` as the heading and speed to
+drive, so a vehicle turns at its rate and radius rather than sliding sideways. Told to go back, it backs straight up
+if it can reverse and brakes otherwise. Layers that can't block each other
 ignore each other, aircraft included. The same query feeds the overlap fallback, which pushes neighbours apart
 along the line between their closest points, half each, until the larger of their two spacings lies between them
 (0.6 m by default, less for infantry). Each formation slot is
@@ -97,11 +109,11 @@ A row is as deep as its deepest member. A slot in a building or off the unit's g
 unit fits and can reach; one only across water or a wall is left to the pathfinder's snap into the unit's region.
 
 - Two movers share the avoiding half each.
-- An idle parked unit steps aside for a moving unit of its own side (`GivingWay`): the mover avoids it by half, and
-  it shares the push and moves out of the mover's lane, toward the mover's left head-on, so a unit in a one-unit
+- An idle parked unit steps aside for a moving unit of its own side (`GivingWay`). The mover doesn't steer round it,
+  so it never stops short in a gap. The idle unit shares the push and moves out of the mover's lane, toward the mover's left head-on, so a unit in a one-unit
   gap or on a bridge makes way. It stays where it was pushed.
 - A busy parked unit (one with an order, a target or Hold Position), a landed aircraft and an enemy hold their ground. To the
-  mover it is a fixed obstacle: it takes the whole avoiding and the whole push, so a truck never shoves a dozer that
+  mover it is a fixed obstacle: the mover takes the whole avoiding and the whole push, so a truck never shoves a dozer that
   is building. A unit standing on the mover's goal and an arrived groupmate are not avoided, so the mover waits
   against the one and arrives by touching the other.
 - A formation move gives its units one group (`MoveDestination.Group`). A unit touching an arrived groupmate that
@@ -137,8 +149,13 @@ enabled `FacingGoal`, as a hull-fixed weapon sets, turns toward it standing at i
   corners, and brakes to stop at the goal.
 - A target inside its turning circle can't be reached on any arc, so it makes a three-point turn: it goes the
   other way, turning toward the target, until the target is clear of the circle. A goal under the hull inside the
-  circle counts as reached. A reversing leg that runs into a wall drives the other leg for 1.5 s, a manoeuvre
-  timer rather than a stuck test. So it never orbits.
+  circle counts as reached. So it never orbits.
+- A wheeled vehicle starts a turn where an arc of its turn radius meets the next leg, before the corner.
+- Wheels can't turn standing, so a wheeled leg that runs head-on into a wall, or that steering stops short of one,
+  drives the other way for 1.5 s (`LocomotionState.OtherWay`): it backs off to turn, or takes a three-point turn's
+  forward leg. This is a manoeuvre timer, not a stuck test.
+- A moving hull whose turn would swing an end into a wall slides off the wall by the end's sweep, as a track
+  pivots off-centre. An overlapping hull never moves or turns deeper into a wall.
 - A wall that stops it head-on takes its speed with it. A glancing slide or the crowd's push costs none.
 
 `BlockerAuthoring` makes remains such as a wreck solid: a capsule of radius and hull length along its forward that

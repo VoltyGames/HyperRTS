@@ -19,7 +19,10 @@ namespace HyperRTS.Simulation.Units
 
         public readonly bool IsFinal;
 
-        public PathLeg(float2 position, float2 corner, float cornerTurn, float remaining, bool isFinal)
+        /// <summary>Heading of the stretch after <see cref="Corner"/>; this leg's own at the goal.</summary>
+        public readonly float2 Next;
+
+        public PathLeg(float2 position, float2 corner, float2 next, float cornerTurn, float remaining, bool isFinal)
         {
             var toCorner = corner - position;
             Corner = corner;
@@ -28,11 +31,12 @@ namespace HyperRTS.Simulation.Units
             CornerTurn = cornerTurn;
             Remaining = remaining;
             IsFinal = isFinal;
+            Next = isFinal ? Direction : next;
         }
 
         /// <summary>The same leg bent to head along <paramref name="velocity"/>, as avoidance steers it.</summary>
         public PathLeg Toward(float2 position, float2 velocity) =>
-            new(position, position + math.normalizesafe(velocity) * Distance, CornerTurn, Remaining, IsFinal);
+            new(position, position + math.normalizesafe(velocity) * Distance, Next, CornerTurn, Remaining, IsFinal);
 
         public bool HasArrived(float radius) => IsFinal && Distance <= NavTolerances.Arrive(radius);
 
@@ -45,14 +49,15 @@ namespace HyperRTS.Simulation.Units
         {
             if (waypoints.Length == 0)
             {
-                return new PathLeg(position, goal, 0f, math.distance(position, goal), true);
+                return new PathLeg(position, goal, float2.zero, 0f, math.distance(position, goal), true);
             }
 
             var corner = waypoints[0].Position.xz;
             var remaining = math.distance(position, corner) + path.LengthPastCorner;
             var isFinal = waypoints.Length == 1;
-            var turn = isFinal ? 0f : Turn(corner - position, waypoints[1].Position.xz - corner);
-            return new PathLeg(position, corner, turn, remaining, isFinal);
+            var next = isFinal ? float2.zero : math.normalizesafe(waypoints[1].Position.xz - corner);
+            var turn = isFinal ? 0f : Turn(corner - position, next);
+            return new PathLeg(position, corner, next, turn, remaining, isFinal);
         }
 
         private static float Turn(float2 into, float2 outOf)

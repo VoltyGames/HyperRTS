@@ -6,22 +6,17 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// One neighbour query per unit for both crowd responses. A mover gathers its nearest neighbours for ORCA local
-    /// avoidance: <see cref="Avoid"/> picks the velocity closest to its planned one that keeps clear of them for
-    /// <see cref="TimeHorizon"/>, and two movers share the avoiding. Every unit also sums the overlap push behind it:
-    /// footprints are capsules (circles when the segment is zero) and must stay the larger of the two spacings apart,
-    /// pushed along the line between their closest points, half each, as both move. A busy or enemy parked unit holds
-    /// its ground against a mover, which avoids it alone and takes the whole push. An idle parked unit of the mover's
-    /// side shares both and steps out of the mover's lane (<see cref="GivingWay"/>). Units on layers that never share
-    /// a surface (a ship under a bridge, a tank on it) ignore each other.
+    /// One neighbour query per unit for both crowd responses. A mover gathers its nearest neighbours for
+    /// <see cref="Steering"/>, all but idle allies, which the push moves aside. Every unit also sums the overlap push
+    /// behind it: footprints are capsules (circles when the segment is zero) and must stay the larger of the two
+    /// spacings apart, pushed along the line between their closest points, half each, as both move. A busy or enemy
+    /// parked unit holds its ground against a mover, which steers round it alone and takes the whole push. An idle
+    /// parked unit of the mover's side shares the push and steps out of the mover's lane (<see cref="GivingWay"/>).
+    /// Units on layers that never share a surface (a ship under a bridge, a tank on it) ignore each other.
     /// </summary>
     internal struct CrowdVisitor : ISpatialVisitor
     {
         public const int MaxNeighbours = 8;
-        public const float TimeHorizon = 1.5f;
-
-        // Squared change in velocity below which avoidance leaves the planned step alone.
-        private const float SteerThreshold = 1e-4f;
 
         public Entity Self;
         public float2 Position;
@@ -63,51 +58,15 @@ namespace HyperRTS.Simulation.Units
         /// <summary>Where to query round; queries only read XZ.</summary>
         public readonly float3 Center => new(Position.x, 0f, Position.y);
 
-        /// <summary>A mover looks as far as two units closing at top speed cover within the time horizon.</summary>
+        /// <summary>A mover looks as far as two units closing at top speed cover within the steering horizon.</summary>
         public readonly float Reach(float maxSpeed)
         {
             var overlap = Radius + math.length(SegmentAxis) + Spacing;
-            return Moving ? overlap + maxSpeed * TimeHorizon * 2f : overlap;
+            return Moving ? overlap + maxSpeed * Steering.Horizon * 2f : overlap;
         }
 
-        /// <summary>The velocity nearest <paramref name="planned"/> that keeps clear of the gathered neighbours.</summary>
-        public readonly float2 Avoid(float2 velocity, float2 planned, float maxSpeed, float deltaTime)
-        {
-            var planes = new VelocityPlanes();
-            foreach (var neighbour in _neighbours)
-            {
-                planes.Add(neighbour.Plane(velocity, TimeHorizon, deltaTime));
-            }
-
-            return planes.Solve(planned, maxSpeed);
-        }
-
-        /// <summary>
-        /// Drives the leg, steering round the gathered neighbours when that changes the step. A three-point turn
-        /// manoeuvres at a crawl, and steering would break its legs.
-        /// </summary>
-        public readonly float2 Drive(in Locomotion locomotion, ref LocomotionState drive, float2 facing,
-            ref float2 heading, in PathLeg leg, float2 velocity, float topSpeed, float deltaTime)
-        {
-            var start = drive;
-            heading = facing;
-            var step = locomotion.Drive(ref drive, Position, ref heading, leg, topSpeed, Radius, deltaTime);
-            if (drive.InThreePointTurn)
-            {
-                return step;
-            }
-
-            var planned = step / deltaTime;
-            var chosen = Avoid(velocity, planned, topSpeed, deltaTime);
-            if (math.distancesq(chosen, planned) <= SteerThreshold)
-            {
-                return step;
-            }
-
-            drive = start;
-            heading = facing;
-            return locomotion.Steer(ref drive, Position, ref heading, leg, chosen, topSpeed, Radius, deltaTime);
-        }
+        /// <summary>The nearest neighbours a mover steers round.</summary>
+        public readonly FixedList512Bytes<AvoidanceNeighbour> Neighbours => _neighbours;
 
         /// <summary>The overlap push, no longer than one frame's step.</summary>
         public readonly float2 PushWithin(float maxStep)
@@ -128,7 +87,7 @@ namespace HyperRTS.Simulation.Units
             var reach = Radius + entry.Radius + math.max(Spacing, entry.Spacing);
             if (Moving)
             {
-                Gather(entry, -offset, distanceSq, reach);
+                Gather(entry, distanceSq, reach);
             }
 
             if (distanceSq < reach * reach)
@@ -137,21 +96,23 @@ namespace HyperRTS.Simulation.Units
             }
         }
 
-        private void Gather(in SpatialEntry entry, float2 offset, float distanceSq, float reach)
+        private void Gather(in SpatialEntry entry, float distanceSq, float reach)
         {
             // Stacked units have no line between them; the overlap push parts them first.
-            if (IsWelcome(entry) || distanceSq < 1e-8f)
+            if (IsWelcome(entry) || IsMakingWay(entry) || distanceSq < 1e-8f)
             {
                 return;
             }
 
             Keep(new AvoidanceNeighbour
             {
-                Offset = offset,
+                Position = entry.Position.xz,
+                SegmentAxis = entry.SegmentAxis,
                 Velocity = entry.Velocity,
                 Reach = reach,
                 Share = Share(entry),
                 DistanceSq = distanceSq,
+                Contact = math.max(0f, reach - math.sqrt(distanceSq)),
             });
         }
 
@@ -180,6 +141,10 @@ namespace HyperRTS.Simulation.Units
         private readonly bool IsWelcome(in SpatialEntry entry) =>
             IsArrivedGroupmate(entry) ||
             (!entry.IsMoving && math.distance(Goal, entry.Position.xz) < entry.HullReach + Radius);
+
+        // Steering round an idle ally would stop the mover short in a gap; it presses on and the push moves the ally.
+        private readonly bool IsMakingWay(in SpatialEntry entry) =>
+            !entry.IsMoving && Rule.Yields(entry.Entity, entry.Faction, Faction);
 
         private readonly bool IsArrivedGroupmate(in SpatialEntry entry) =>
             Group != 0 && entry.Group == Group && entry.IsArrived && !entry.IsMoving;
