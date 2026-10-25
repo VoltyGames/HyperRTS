@@ -111,6 +111,12 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Formation move it belongs to, 0 for none: touching an arrived groupmate is arrival.</summary>
         public int Group;
+
+        /// <summary>
+        /// Metres the formation's slots span. Touching an arrived groupmate counts only this close to the unit's own
+        /// slot, so a groupmate parked on the way doesn't end the move short.
+        /// </summary>
+        public float Extent;
     }
 
     /// <summary>

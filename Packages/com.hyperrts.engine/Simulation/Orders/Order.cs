@@ -42,5 +42,8 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>Formation move it belongs to, 0 for none; the group's units arrive together.</summary>
         public int Group;
+
+        /// <summary>Metres the formation's slots span, the goal area its units may arrive in by touch.</summary>
+        public float Extent;
     }
 }

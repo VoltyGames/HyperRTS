@@ -62,6 +62,18 @@ namespace HyperRTS.Simulation.Commands
             keys.Dispose();
         }
 
+        /// <summary>How far apart the slots can lie: twice the farthest slot's distance from the goal.</summary>
+        public static float Extent(NativeArray<float3> slots, float3 goal)
+        {
+            var farthest = 0f;
+            foreach (var slot in slots)
+            {
+                farthest = math.max(farthest, math.distance(slot.xz, goal.xz));
+            }
+
+            return farthest * 2f;
+        }
+
         private static float RowDepth(NativeArray<int> order, int row, int columns, NativeArray<float2> spacings)
         {
             var depth = 0f;

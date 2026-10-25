@@ -28,6 +28,9 @@ namespace HyperRTS.Simulation.Units
         public bool Moving;
         public float2 Goal;
         public int Group;
+
+        /// <summary>Within the formation's <see cref="MoveDestination.Extent"/> of its own slot.</summary>
+        public bool InGoalArea;
         public GivingWay Rule;
         public float2 Push;
 
@@ -49,6 +52,7 @@ namespace HyperRTS.Simulation.Units
             Moving = moving;
             Goal = destination.Value.xz;
             Group = destination.Group;
+            InGoalArea = math.distance(position, Goal) <= destination.Extent;
             Rule = rule;
             Push = float2.zero;
             ReachedGroup = false;
@@ -146,8 +150,9 @@ namespace HyperRTS.Simulation.Units
         private readonly bool IsMakingWay(in SpatialEntry entry) =>
             !entry.IsMoving && Rule.Yields(entry.Entity, entry.Faction, Faction);
 
+        // Only in the goal area, or a groupmate parked on the route would end the move there.
         private readonly bool IsArrivedGroupmate(in SpatialEntry entry) =>
-            Group != 0 && entry.Group == Group && entry.IsArrived && !entry.IsMoving;
+            InGoalArea && Group != 0 && entry.Group == Group && entry.IsArrived && !entry.IsMoving;
 
         /// <summary>The mover's part: half against a unit that gives way too, all against one holding its ground.</summary>
         private readonly float Share(in SpatialEntry entry)

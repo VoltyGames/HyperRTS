@@ -72,7 +72,10 @@ namespace HyperRTS.Simulation.Orders
                 // Not yet driving, or something else halted the walk: point locomotion at the goal again.
                 if (!driving.ValueRO || !moving.ValueRO)
                 {
-                    destination = new MoveDestination { Value = order.Value.Position, Group = order.Value.Group };
+                    destination = new MoveDestination
+                    {
+                        Value = order.Value.Position, Group = order.Value.Group, Extent = order.Value.Extent,
+                    };
                     moving.ValueRW = true;
                     arrived.ValueRW = false;
                     driving.ValueRW = true;

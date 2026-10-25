@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Entities;
@@ -56,6 +58,17 @@ namespace HyperRTS.Simulation.Tests
         {
             _world.EntityManager.SetComponentData(unit, new MoveDestination { Value = goal, Group = group });
             _world.EntityManager.SetComponentEnabled<MoveDestination>(unit, true);
+        }
+
+        // Selects the units and gives one move, as a player's right-click does.
+        private void OrderFormation(List<Entity> units, float3 goal)
+        {
+            foreach (var unit in units)
+            {
+                _world.EntityManager.SetComponentEnabled<Selected>(unit, true);
+            }
+
+            _world.Command(1, new PlayerCommand { Type = CommandType.Move, Position = goal });
         }
 
         private bool AllArrived(List<Entity> units)
@@ -136,8 +149,10 @@ namespace HyperRTS.Simulation.Tests
             }
         }
 
-        [Test]
-        public void TwentyTanks_ThroughATwelveMetreGate_AllArrive()
+        // A formation order is what players give; single moves cover the corridor search instead of the group field.
+        [TestCase(true)]
+        [TestCase(false)]
+        public void TwentyTanks_ThroughATwelveMetreGate_AllArrive(bool formation)
         {
             // A wall along x = 0 with a 12 m gate at z -6 to 6.
             SpawnObstacle(new float3(0f, 0f, 46f), new float2(2f, 80f));
@@ -156,17 +171,24 @@ namespace HyperRTS.Simulation.Tests
             }
 
             _world.Tick();
-            // Single moves: in a group the first tank through would park in the lane and the rest arrive by touch.
-            for (var i = 0; i < 20; i++)
+            if (formation)
             {
-                Send(units[i], new float3(30f + i / 4 * 12f, 0f, -15f + i % 4 * 10f), 0);
+                OrderFormation(units, new float3(55f, 0f, 0f));
+            }
+            else
+            {
+                for (var i = 0; i < 20; i++)
+                {
+                    Send(units[i], new float3(30f + i / 4 * 12f, 0f, -15f + i % 4 * 10f), 0);
+                }
             }
 
             Assert.IsTrue(RunWatchingWalls(units, 120f), Stragglers(units));
             AssertNoneStalled(units);
             foreach (var unit in units)
             {
-                Assert.Greater(_world.GetPosition(unit).x, 10f, $"{unit} got through the gate, at {_world.GetPosition(unit)}");
+                var at = _world.GetPosition(unit);
+                Assert.Greater(at.x, 10f, $"{unit} got through the gate, at {at}");
             }
 
             Assert.LessOrEqual(_deepest, WallSlack, $"no tank sank into the wall, deepest {_deepest:F3} m");

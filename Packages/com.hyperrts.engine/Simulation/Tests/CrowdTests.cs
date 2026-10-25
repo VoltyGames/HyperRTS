@@ -157,7 +157,7 @@ namespace HyperRTS.Simulation.Tests
             };
             foreach (var unit in units)
             {
-                _world.Issue(unit, new Order { Type = OrderType.Move, Position = goal, Group = 7 });
+                _world.Issue(unit, new Order { Type = OrderType.Move, Position = goal, Group = 7, Extent = 4f });
             }
 
             var done = _world.RunUntil(() => System.Array.TrueForAll(units, u => !_world.IsEnabled<ActiveOrder>(u)),
@@ -169,6 +169,21 @@ namespace HyperRTS.Simulation.Tests
                 Assert.IsTrue(_world.IsEnabled<Arrival>(unit), "arrived");
                 Assert.IsFalse(_world.Get<Arrival>(unit).Stalled, "by the goal or a groupmate, not by giving up");
             }
+        }
+
+        [Test]
+        public void Groupmate_ParkedOnTheRoute_FarFromTheGoalArea_DoesNotEndTheMove()
+        {
+            var parked = _world.SpawnUnit(1, new float3(0f, 0f, 0f));
+            var mover = _world.SpawnUnit(1, new float3(-10f, 0f, 0f));
+            var goal = new float3(25f, 0f, 0f);
+            _world.Issue(parked, new Order { Type = OrderType.Move, Position = new float3(0.5f, 0f, 0f), Group = 7,
+                Extent = 4f });
+            _world.Issue(mover, new Order { Type = OrderType.Move, Position = goal, Group = 7, Extent = 4f });
+
+            Assert.IsTrue(_world.RunUntil(() => !_world.IsEnabled<ActiveOrder>(mover), 15f), "the move ended");
+
+            Assert.Less(math.distance(_world.GetPosition(mover).xz, goal.xz), 1f, "went on past it to its own slot");
         }
     }
 }

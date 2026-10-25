@@ -187,11 +187,13 @@ namespace HyperRTS.Simulation.Commands
 
             Formation.Assign(positions, command.Position, spacings, slots);
             _lastGroup++;
+            var extent = Formation.Extent(slots, command.Position);
             for (var i = 0; i < movers.Length; i++)
             {
                 var order = orders[i];
                 order.Position = Fit(movers[i], map.Clamp(slots[i]), grid);
                 order.Group = _lastGroup;
+                order.Extent = extent;
                 if (order.Type == OrderType.Patrol)
                 {
                     IssuePatrol(movers[i], order, positions[i], command.Queue);

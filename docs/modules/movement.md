@@ -116,8 +116,10 @@ unit fits and can reach; one only across water or a wall is left to the pathfind
   mover it is a fixed obstacle: the mover takes the whole avoiding and the whole push, so a truck never shoves a dozer that
   is building. A unit standing on the mover's goal and an arrived groupmate are not avoided, so the mover waits
   against the one and arrives by touching the other.
-- A formation move gives its units one group (`MoveDestination.Group`). A unit touching an arrived groupmate that
-  lies toward its goal has arrived too, so arrival passes through a crowded group by contact.
+- A formation move gives its units one group (`MoveDestination.Group`) and the span of its slots
+  (`MoveDestination.Extent`, twice the farthest slot's distance from the goal). A unit within that span of its own
+  slot that touches an arrived groupmate lying toward its goal has arrived too, so arrival passes through a crowded
+  group by contact. Farther out a parked groupmate is only traffic.
 - A move ends by itself at the goal, against an arrived groupmate, or when the unit stops getting on. Then
   `MoveDestination` is disabled and `Arrival` enabled, with `Stalled` set when it gave up. `MoveOrderSystem`
   finishes its order on `Arrival`. If anything else halts the unit, such as combat letting go, it points the unit
