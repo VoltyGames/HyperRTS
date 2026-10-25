@@ -117,6 +117,12 @@ namespace HyperRTS.Simulation.Navigation
         /// slot, so a groupmate parked on the way doesn't end the move short.
         /// </summary>
         public float Extent;
+
+        /// <summary>
+        /// The goal follows a moving target, as combat and walk-ups set: its moves re-aim the path's end by sight and
+        /// search again at most every <see cref="PathState.ChaseSearchSeconds"/>.
+        /// </summary>
+        public bool Chase;
     }
 
     /// <summary>

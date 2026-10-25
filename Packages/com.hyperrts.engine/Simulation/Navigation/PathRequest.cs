@@ -15,5 +15,6 @@ namespace HyperRTS.Simulation.Navigation
         public int Group;
 
         public uint Frame;
+        public PathCause Cause;
     }
 }

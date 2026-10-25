@@ -32,6 +32,9 @@ namespace HyperRTS.Simulation.Units
         private const float LookAheadTime = 0.5f;
         private const float Unlimited = 1e4f;
         private const float OtherWaySeconds = 1.5f;
+
+        // Long enough to back about a hull length off the walls before turning.
+        private const float TurnOutSeconds = 3f;
         private const float ReverseMargin = 1.3f;
         private const float Instantly = 1e6f;
 
@@ -103,8 +106,10 @@ namespace HyperRTS.Simulation.Units
             var error = SignedAngle(facing, desired);
             var gear = state.Reverse == IsOtherWay(ref state, deltaTime) ? 1f : -1f;
             var top = math.min(gear > 0f ? topSpeed : ReverseSpeed, cap);
+            // Pivoting is what a wedge blocks, so tracks back out of one and turn as they go.
+            var backsOut = Pivots && state.OtherWay > 0f;
             // Never past the goal in one frame, which only bites for near-instant braking.
-            var limit = math.min(TargetSpeed(error, leg, top, radius, LookAhead(state.Speed, radius)),
+            var limit = math.min(TargetSpeed(error, leg, top, radius, LookAhead(state.Speed, radius), backsOut),
                 leg.Remaining / deltaTime);
             var target = gear * limit;
             state.Speed = Accelerate(state.Speed, target, deltaTime);
@@ -216,6 +221,12 @@ namespace HyperRTS.Simulation.Units
 
         private readonly bool IsWheeled => !Pivots && TurnRadius > 0f;
 
+        /// <summary>Whether it can back out of a wedge: any vehicle that reverses.</summary>
+        public readonly bool CanTurnOut => !IsInstant && ReverseSpeed > 0f;
+
+        /// <summary>Drives the other way a while, wheels or tracks, to turn out of a wedge the walls hold it in.</summary>
+        public readonly void TurnOut(ref LocomotionState state) => state.OtherWay = TurnOutSeconds;
+
         // Wheels can't turn standing, so a leg that runs head-on into a wall drives the other way for a while,
         // backing off to turn or taking a three-point turn's forward leg. A manoeuvre timer, not a stuck test.
         private readonly bool IsOtherWay(ref LocomotionState state, float deltaTime)
@@ -225,8 +236,15 @@ namespace HyperRTS.Simulation.Units
             return state.InThreePointTurn != state.OtherWay > 0f;
         }
 
-        private readonly float TargetSpeed(float error, in PathLeg leg, float top, float radius, float lookAhead)
+        private readonly float TargetSpeed(float error, in PathLeg leg, float top, float radius, float lookAhead,
+            bool backsOut)
         {
+            // Backing out of a wedge runs straight off the walls, whatever the path's turns.
+            if (backsOut)
+            {
+                return top;
+            }
+
             if (Pivots && math.abs(error) > PivotAngle)
             {
                 return 0f;

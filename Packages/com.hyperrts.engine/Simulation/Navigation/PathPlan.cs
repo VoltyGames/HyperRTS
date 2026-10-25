@@ -33,6 +33,9 @@ namespace HyperRTS.Simulation.Navigation
         public int FirstSector;
 
         public int SectorCount;
+
+        /// <summary>The planner's estimate of a search's expansions.</summary>
+        public float Cost;
     }
 
     /// <summary>The frame's chosen tasks, the abstract paths they search along and the group fields to build.</summary>

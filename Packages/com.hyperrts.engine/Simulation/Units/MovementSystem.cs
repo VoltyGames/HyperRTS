@@ -124,6 +124,10 @@ namespace HyperRTS.Simulation.Units
                 var stalled = moving.ValueRO && !crowd.ReachedGroup &&
                               progress.HasGivenUp(transform.Position.xz, facing, agent, destination.Value, waypoints,
                                   ref path, hold, DeltaTime);
+                if (stalled && remembers)
+                {
+                    stalled = !progress.TryTurnOut(locomotion, ref drive, hold);
+                }
                 if (moving.ValueRO && (crowd.ReachedGroup || stalled))
                 {
                     path.Halt(moving, waypoints);

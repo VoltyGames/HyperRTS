@@ -39,6 +39,9 @@ namespace HyperRTS.Simulation.Units
 
         public bool IsTracking;
 
+        /// <summary>A turn-out from the walls was tried since the unit last got closer, so the next hold gives up.</summary>
+        public bool TurnedOut;
+
         /// <summary>How walls hold a unit this frame.</summary>
         public enum WallHold : byte
         {
@@ -75,6 +78,24 @@ namespace HyperRTS.Simulation.Units
             return Stalled >= GiveUpSeconds && (hold != WallHold.None || nearEnd);
         }
 
+        /// <summary>
+        /// Before a vehicle held by walls gives up, it drives the other way once (<see cref="Locomotion.TurnOut"/>)
+        /// with the clock restarted; true when it does.
+        /// </summary>
+        public bool TryTurnOut(in Locomotion locomotion, ref LocomotionState drive, WallHold hold)
+        {
+            if (hold == WallHold.None || TurnedOut || !locomotion.CanTurnOut)
+            {
+                return false;
+            }
+
+            TurnedOut = true;
+            Stalled = 0f;
+            NextReplan = ReplanSeconds;
+            locomotion.TurnOut(ref drive);
+            return true;
+        }
+
         /// <summary>Records this frame's path left; true when a replan is due.</summary>
         private bool Track(float remaining, float2 facing, float margin, bool sunk, float deltaTime)
         {
@@ -96,8 +117,11 @@ namespace HyperRTS.Simulation.Units
 
             // A hull stuck sunk in walls turning on the spot gets nowhere.
             var turned = !sunk && math.dot(facing, Facing) < TurnedCos;
-            if (remaining < Best - margin || turned)
+            var closer = remaining < Best - margin;
+            if (closer || turned)
             {
+                // Only getting closer earns another turn-out, so a hull can't rock in a wedge for ever.
+                TurnedOut &= !closer;
                 Restart(remaining, facing);
                 return false;
             }
@@ -132,6 +156,7 @@ namespace HyperRTS.Simulation.Units
 
             IsTracking = false;
             Replanned = false;
+            TurnedOut = false;
             if (wasMoving)
             {
                 arrived.ValueRW = true;

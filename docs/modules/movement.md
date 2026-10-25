@@ -44,9 +44,15 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   1 + 2 x max(0, margin - distance) / margin, where the margin is the agent's `WallMargin`: its radius, 2 m, and a
   quarter each of its half hull segment and turn radius, set at bake. Paths so keep room off walls where there is
   room.
-- Each frame takes requests oldest first until their estimated cost (the abstract path's length) spends the budget,
-  then serves them at once, one job each; the rest wait a frame, and their units brake and turn toward the goal. Each
-  search runs to the end, so no path is ever partial.
+- Each frame takes requests oldest first until their estimated expansions spend the budget of 30,000, so it runs
+  over by one search at most, then serves them at once, one job each. A search's estimate is half its corridor's
+  cells. The rest wait a frame, and their units brake and turn toward the goal. Each search runs to the end, so no
+  path is ever partial. `PathStats` counts searches by cause (`PathCause`: order, chase, grid change, replan, and
+  broken group traces) and both the estimated and the real expansions.
+- A goal set by `ReachMath.MoveTo`, as chases, walk-ups and escorts do, is a chase (`MoveDestination.Chase`). When it
+  moves, the path's last waypoint follows it if the corner before it, or the unit on its last leg, still sees it and
+  it moved no more than a quarter of the path left. Otherwise the unit keeps its path and searches again at most
+  every 0.5 s. A new order always plans at once.
 - A formation move's members of one class share a flow field (`GroupFields`): a Dijkstra with the same step costs
   from the cell nearest the centre of their slots, over the union of their corridors. Each member traces it downhill,
   leaves it at its first cell near the goal that sees its own slot, and is pulled tight with line of sight, so it
@@ -91,7 +97,9 @@ within reach (`CrowdVisitor`) and the walls' distance field, and picks the cheap
   frame's choice.
 - Cost: how much deeper footprints would overlap at their closest approach in each of 0 to 0.3, 0.3 to 0.75 and
   0.75 to 1.5 s, sooner counting more, under straight-line prediction. Capsules count as capsules. A moving
-  neighbour is scored RVO-style: the mover takes only its share of the change. The wall term samples the field at
+  neighbour is scored RVO-style: the mover takes only its share of the change. Overlap a pair already has is left
+  to the push, except that a follower counts its overlap with a moving unit ahead in full and brakes. On a bridge
+  the push between an abreast pair points into the rails, which cancel it. The wall term samples the field at
   both capsule ends, only as far as the next corner. Straying from the planned velocity and from last frame's choice
   costs, standing still costs a little extra, and swerving left costs a little more than right, so a head-on pair
   both keep right.
@@ -131,6 +139,8 @@ unit fits and can reach; one only across water or a wall is left to the pathfind
   turning about 20 degrees, so a pivot or a three-point turn counts. Without progress for 1 s the whole path is
   planned again from where the unit stands, then after waits doubling up to 4 s. A unit gives up after 3 s within
   four radii of its path's end, where the goal is taken, or anywhere while it is pinned in walls it can't leave.
+  Before giving up there, a vehicle that reverses backs out for 3 s (`MoveProgress.TryTurnOut`), tracks too, and
+  tries again only after it gets closer.
   Farther out a jam is traffic, so a column queued at a bridge keeps its order. A goal it can't reach snaps into its region, so it stops there. A new path is measured
   afresh but the clock runs on, and a pending path isn't measured.
 

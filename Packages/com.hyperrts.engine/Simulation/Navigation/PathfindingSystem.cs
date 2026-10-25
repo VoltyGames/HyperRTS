@@ -10,10 +10,11 @@ namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
     /// Plans <see cref="PathWaypoint"/>s for units whose <see cref="MoveDestination"/> is new or moved by more than a
-    /// cell, or whose path passes near cells the grid changed (<see cref="NavChanges"/>). Each frame takes requests
-    /// oldest first until their estimated cost (abstract path length) spends the budget, then serves them in parallel,
-    /// each to the end: none returns a partial path. Formation members share a <see cref="GroupField"/> and trace it;
-    /// single moves, chases and walk-ups search a corridor. Aircraft (<see cref="NavLayer.Air"/>) fly straight.
+    /// cell, or whose path passes near cells the grid changed (<see cref="NavChanges"/>). A chased goal re-aims the
+    /// path's end by sight instead. Each frame takes requests oldest first until their estimated cost (corridor
+    /// cells) spends the budget, then serves them in parallel, each to the end: none returns a partial path.
+    /// Formation members share a <see cref="GroupField"/> and trace it; single moves, chases and walk-ups search a
+    /// corridor. Aircraft (<see cref="NavLayer.Air"/>) fly straight.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
@@ -63,12 +64,14 @@ namespace HyperRTS.Simulation.Navigation
             var count = _agents.CalculateEntityCount();
             var requests = new NativeList<PathRequest>(count, Allocator.TempJob);
             var used = new NativeParallelHashSet<int2>(math.max(count, 1), Allocator.TempJob);
+            var now = SystemAPI.Time.ElapsedTime;
             state.Dependency = new EvaluateJob
             {
                 Requests = requests.AsParallelWriter(),
                 Used = used.AsParallelWriter(),
                 Grid = grid,
                 Frame = _frame,
+                Now = now,
             }.ScheduleParallel(_agents, state.Dependency);
 
             _waypointLookup.Update(ref state);
@@ -76,17 +79,16 @@ namespace HyperRTS.Simulation.Navigation
             var plan = new PathPlan(Allocator.TempJob);
             state.Dependency = new PlanJob
             {
-                Requests = requests, Used = used, Grid = grid, Fields = _fields, Plan = plan,
-                Now = SystemAPI.Time.ElapsedTime,
+                Requests = requests, Used = used, Grid = grid, Fields = _fields, Plan = plan, Now = now,
             }.Schedule(state.Dependency);
-            state.Dependency = Serve(grid, requests, plan, state.Dependency);
+            state.Dependency = Serve(grid, requests, plan, now, state.Dependency);
             requests.Dispose(state.Dependency);
             used.Dispose(state.Dependency);
             plan.Dispose(state.Dependency);
         }
 
         // Fields first, as traces read them; then every task at once, each writing only its own unit.
-        private JobHandle Serve(in NavGrid grid, NativeList<PathRequest> requests, in PathPlan plan,
+        private JobHandle Serve(in NavGrid grid, NativeList<PathRequest> requests, in PathPlan plan, double now,
             JobHandle dependency)
         {
             var fields = _fields.Fields.AsDeferredJobArray();
@@ -102,8 +104,10 @@ namespace HyperRTS.Simulation.Navigation
                 Grid = grid,
                 WaypointLookup = _waypointLookup,
                 StateLookup = _stateLookup,
+                Now = now,
             }.Schedule(plan.Tasks, 1, dependency);
-            return new StatsJob { Plan = plan, Stats = _stats }.Schedule(dependency);
+            return new StatsJob { Plan = plan, Requests = requests.AsDeferredJobArray(), Stats = _stats }
+                .Schedule(dependency);
         }
 
         /// <summary>Drops paths of stopped units and queues searches for stale ones.</summary>
@@ -114,6 +118,7 @@ namespace HyperRTS.Simulation.Navigation
             public NativeParallelHashSet<int2>.ParallelWriter Used;
             [ReadOnly] public NavGrid Grid;
             public uint Frame;
+            public double Now;
 
             private void Execute(Entity entity, ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
                 in MoveDestination destination, EnabledRefRO<MoveDestination> moving, in LocalTransform transform,
@@ -139,19 +144,55 @@ namespace HyperRTS.Simulation.Navigation
 
                 var goal = destination.Value;
                 var goalMoved = math.distancesq(path.Goal.xz, goal.xz) > Grid.CellSize * Grid.CellSize;
-                if (path.Status == PathStatus.Ready && !goalMoved && path.GridVersion != Grid.Version &&
+                if (path.Status == PathStatus.Ready && path.GridVersion != Grid.Version &&
                     !IsNearChange(path, waypoints, transform.Position, agent))
                 {
                     path.GridVersion = Grid.Version;
                 }
 
-                if (path.Status == PathStatus.Ready && !goalMoved && path.GridVersion == Grid.Version)
+                var isCurrent = path.Status == PathStatus.Ready && path.GridVersion == Grid.Version;
+                if (isCurrent && !goalMoved)
                 {
                     FollowSmallGoalMove(ref path, waypoints, goal, agent.Layer);
                     return;
                 }
 
+                var isChasing = isCurrent && destination.Chase;
+                if (isChasing && FollowsChase(ref path, waypoints, transform.Position, goal, agent))
+                {
+                    return;
+                }
+
                 Request(entity, ref path, waypoints, transform.Position, destination, agent, goalMoved);
+            }
+
+            // Between searches a chase keeps its path, re-aimed by sight where it can be.
+            private readonly bool FollowsChase(ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
+                float3 position, float3 goal, in NavAgent agent)
+            {
+                if (waypoints.Length == 0)
+                {
+                    return false;
+                }
+
+                return path.TryFollowGoal(agent.Access(Grid), position, goal, waypoints) || !path.IsChaseSearchDue(Now);
+            }
+
+            private static PathCause Cause(in PathState path, DynamicBuffer<PathWaypoint> waypoints, bool goalMoved,
+                bool chase)
+            {
+                if (path.Status == PathStatus.None)
+                {
+                    // Halts and resets drop the waypoints; a stuck unit's replan keeps them.
+                    return waypoints.Length == 0 ? PathCause.Order : PathCause.Replan;
+                }
+
+                if (goalMoved)
+                {
+                    return chase ? PathCause.Chase : PathCause.Order;
+                }
+
+                return PathCause.GridChange;
             }
 
             // A change past the wall margin can neither block a leg nor make another way cheaper.
@@ -184,8 +225,10 @@ namespace HyperRTS.Simulation.Navigation
             {
                 if (path.Status != PathStatus.Requested)
                 {
+                    path.Cause = Cause(path, waypoints, goalMoved, destination.Chase);
                     // Corners toward an old, distant goal would lead the wrong way while the search waits.
-                    if (goalMoved)
+                    // A chased goal stays near its old one, so the unit keeps closing meanwhile.
+                    if (goalMoved && !destination.Chase)
                     {
                         path.ClearWaypoints(waypoints);
                     }
@@ -202,6 +245,7 @@ namespace HyperRTS.Simulation.Navigation
                     Group = destination.Group,
                     Agent = agent,
                     Frame = path.RequestFrame,
+                    Cause = path.Cause,
                 });
             }
 

@@ -37,6 +37,7 @@ namespace HyperRTS.Simulation.Navigation
             public NativeArray<int2> Results;
             [NativeDisableParallelForRestriction] public BufferLookup<PathWaypoint> WaypointLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<PathState> StateLookup;
+            public double Now;
 
             public void Execute(int index)
             {
@@ -60,6 +61,7 @@ namespace HyperRTS.Simulation.Navigation
                     Status = PathStatus.Ready,
                     IsShort = !task.Query.Exact,
                     LengthPastCorner = PathState.Measure(waypoints),
+                    PlanTime = Now,
                 };
             }
 
@@ -99,6 +101,7 @@ namespace HyperRTS.Simulation.Navigation
         private struct StatsJob : IJob
         {
             [ReadOnly] public PathPlan Plan;
+            [ReadOnly] public NativeArray<PathRequest> Requests;
             public NativeReference<PathStats> Stats;
 
             public void Execute()
@@ -107,9 +110,19 @@ namespace HyperRTS.Simulation.Navigation
                 for (var i = 0; i < Plan.Tasks.Length; i++)
                 {
                     var result = Plan.Results[i];
+                    var task = Plan.Tasks[i];
                     stats.Expansions += result.x;
                     stats.Searches += result.y;
-                    stats.Traces += Plan.Tasks[i].Kind == PathTaskKind.Trace && result.y == 0 ? 1 : 0;
+                    stats.Estimated += (long)task.Cost;
+                    if (task.Kind == PathTaskKind.Search)
+                    {
+                        stats.SearchesByCause[(int)Requests[task.Request].Cause]++;
+                    }
+                    else if (task.Kind == PathTaskKind.Trace)
+                    {
+                        stats.Traces += 1 - result.y;
+                        stats.Retraces += result.y;
+                    }
                 }
 
                 stats.Fields += Plan.Builds.Length;

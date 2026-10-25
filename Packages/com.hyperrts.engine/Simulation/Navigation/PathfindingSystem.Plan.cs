@@ -8,11 +8,11 @@ namespace HyperRTS.Simulation.Navigation
 {
     public partial struct PathfindingSystem
     {
-        /// <summary>Estimated cells a frame's paths may cost; the frame's first request runs whatever its cost.</summary>
-        public const float CostPerFrame = 150000f;
+        /// <summary>Estimated expansions a frame's paths may cost; the frame's first request runs whatever its cost.</summary>
+        public const float CostPerFrame = 30000f;
 
-        // A fine search expands about this many cells per cell of its abstract path.
-        private const float SearchCostPerCell = 8f;
+        // A fine search clears its whole corridor's records and expands about this share of its cells.
+        private const float SearchCostPerCorridorCell = 0.5f;
 
         // A trace walks and string-pulls its cells, with no search.
         private const float TraceCostPerCell = 2f;
@@ -141,9 +141,25 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 var first = _plan.Sectors.Length;
-                var length = GridPathfinder.FindSectors(access, query, _plan.Sectors);
-                Add(index, PathTaskKind.Search, query, -1, first, _plan.Sectors.Length - first);
-                return opened + length * SearchCostPerCell;
+                GridPathfinder.FindSectors(access, query, _plan.Sectors);
+                var count = _plan.Sectors.Length - first;
+                var cost = CorridorCells(first, count) * SearchCostPerCorridorCell;
+                Add(index, PathTaskKind.Search, query, -1, first, count, cost);
+                return opened + cost;
+            }
+
+            // The corridor the fine search will build round these sectors.
+            private readonly int CorridorCells(int first, int count)
+            {
+                var corridor = new NavCorridor(_grid.Field.Sectors, Allocator.Temp);
+                for (var i = first; i < first + count; i++)
+                {
+                    corridor.AddWithRing(_plan.Sectors[i]);
+                }
+
+                var cells = corridor.Cells;
+                corridor.Dispose();
+                return cells;
             }
 
             private PathQuery Query(int index, in NavAccess access)
@@ -165,11 +181,11 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             private void Add(int index, PathTaskKind kind, in PathQuery query, int field = -1, int firstSector = 0,
-                int sectorCount = 0) =>
+                int sectorCount = 0, float cost = 0f) =>
                 _plan.Tasks.Add(new PathTask
                 {
                     Request = index, Kind = kind, Query = query, Field = field, FirstSector = firstSector,
-                    SectorCount = sectorCount,
+                    SectorCount = sectorCount, Cost = cost,
                 });
         }
     }

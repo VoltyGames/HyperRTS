@@ -51,13 +51,12 @@ namespace HyperRTS.Simulation.Navigation
             return query;
         }
 
-        /// <summary>Adds the sectors of the abstract path and returns its length in cells, the search's estimated cost.</summary>
-        public static float FindSectors(in NavAccess access, in PathQuery query, NativeList<int> sectors)
+        /// <summary>Adds the sectors of the abstract path, which the fine search's corridor is built round.</summary>
+        public static void FindSectors(in NavAccess access, in PathQuery query, NativeList<int> sectors)
         {
             var search = new SectorSearch(Allocator.Temp);
-            var length = search.Find(access, query.From, query.To, sectors);
+            search.Find(access, query.From, query.To, sectors);
             search.Dispose();
-            return length;
         }
 
         /// <summary>
