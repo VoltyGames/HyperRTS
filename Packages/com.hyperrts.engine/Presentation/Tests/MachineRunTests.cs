@@ -169,7 +169,7 @@ namespace HyperRTS.Presentation.Tests
         private Entity Machine(MachineRun run, Entity building)
         {
             var machine = _em.CreateEntity();
-            _em.AddComponentData(machine, new MachineClock { Run = run, Building = building, RampSeconds = 1f });
+            _em.AddComponentData(machine, new MachineClock { Run = run, Owner = building, RampSeconds = 1f });
             return machine;
         }
 

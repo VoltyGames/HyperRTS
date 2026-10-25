@@ -13,8 +13,8 @@ namespace HyperRTS.Simulation.Animation
 
         public MachineRun Run;
 
-        /// <summary>The building whose power or queue <see cref="Run"/> reads.</summary>
-        public Entity Building;
+        /// <summary>The unit or building whose power, queue, shots or deploy progress <see cref="Run"/> reads.</summary>
+        public Entity Owner;
 
         /// <summary>Seconds to ease from a stop to full speed, and back.</summary>
         public float RampSeconds;
@@ -61,8 +61,19 @@ namespace HyperRTS.Simulation.Animation
             var step = deltaTime / RampSeconds;
             Ramp = Started ? Ramp + math.clamp(target - Ramp, -step, step) : target;
             Started = true;
-            Time += deltaTime * math.smoothstep(0f, 1f, Ramp);
+            Time += deltaTime * Eased;
         }
+
+        /// <summary>Takes <paramref name="ramp"/> as the speed outright, to follow a unit's deploy progress.</summary>
+        public void Follow(float ramp, float deltaTime)
+        {
+            Ramp = ramp;
+            Started = true;
+            Time += deltaTime * Eased;
+        }
+
+        /// <summary><see cref="Ramp"/> eased in and out, which speeds and Raise and Extend parts move by.</summary>
+        public readonly float Eased => math.smoothstep(0f, 1f, Ramp);
     }
 
     /// <summary>When a machine runs.</summary>
@@ -78,6 +89,9 @@ namespace HyperRTS.Simulation.Animation
 
         /// <summary>While its building fired a weapon or interceptor in the last second (a gatling's barrels).</summary>
         Firing = 3,
+
+        /// <summary>Its speed is its unit's deploy progress, so Raise and Extend parts unfold as it deploys.</summary>
+        Deployed = 4,
     }
 
     /// <summary>A moving piece of a machine, posed every frame from its machine's clock.</summary>
@@ -92,7 +106,7 @@ namespace HyperRTS.Simulation.Animation
         /// <summary>Degrees per second of the cycle; a swing completes one rock per 360°.</summary>
         public float Speed;
 
-        /// <summary>Swing: largest angle either way of <see cref="Offset"/>, degrees; Slide: metres.</summary>
+        /// <summary>Swing: largest angle either way of <see cref="Offset"/>, degrees; Slide: metres. Raise and Extend: at full speed.</summary>
         public float Amplitude;
 
         /// <summary>Swing: the angle (degrees from rest) it rocks about. Slide: metres along the axis.</summary>
@@ -146,5 +160,11 @@ namespace HyperRTS.Simulation.Animation
 
         /// <summary>Turns about its axis to point downwind with the scene's wind (a windsock).</summary>
         Downwind = 4,
+
+        /// <summary>Turns about its axis by its amplitude in degrees as the speed rises (a launcher raising).</summary>
+        Raise = 5,
+
+        /// <summary>Travels along its axis by its amplitude in metres as the speed rises (a jack lowering).</summary>
+        Extend = 6,
     }
 }

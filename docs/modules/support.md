@@ -104,13 +104,16 @@ Replays record what happened, not the commands, because the simulation is not de
 Animates machines such as pumpjacks, wind turbines, radar antennas and cranes. Put `MachineAuthoring` on the root and
 `MachinePartAuthoring` on each moving child. A part can `Spin`, `Swing` in step with the spin, `Slide` to and fro
 along its axis (a crane on its rail, amplitude in metres), act as a `Link` rod between two transforms, or turn
-`Downwind` about its axis so its forward, plus `offset` degrees, follows the scene's `Wind` (a windsock).
+`Downwind` about its axis so its forward, plus `offset` degrees, follows the scene's `Wind` (a windsock). `Raise`
+turns a part about its axis and `Extend` moves it along its axis by `amplitude` degrees or metres as the machine
+speeds up, eased in and out: a launcher raising to its rest elevation, an outrigger jack lowering.
 
 A machine's `runs` says when its clock turns: `Always`, `Powered` while its building is complete and not `Offline` (a
 radar stops on low power), `Producing` while its building's queue has work that isn't halted (a crane runs only during
 production), or `Firing` for a second after any of its building's weapons or interceptor fired (a gatling's barrels),
 read from the replicated `WeaponPose` shot counts. The clock eases to a stop and back over `rampSeconds` rather than
-snapping. A machine first seen mid-match starts at the speed it should have.
+snapping. `Deployed` skips the ramp and takes its speed from the replicated `Deployable.Progress` of the unit or
+building above it, so `Raise` and `Extend` parts unfold over the deploy time and fold over the pack-up time. A machine first seen mid-match starts at the speed it should have.
 
 `ProductionDoorAuthoring` on a child of a producer opens that door for each unit the producer releases: it moves by
 `openOffset`, turns `openAngle` about `openAxis` and scales by `openScale`, eased over `moveSeconds`, holds for

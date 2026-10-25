@@ -18,10 +18,10 @@ namespace HyperRTS.Simulation.AI
 {
     /// <summary>
     /// Skirmish AI for <see cref="AIPlayer"/>s: follows its <see cref="AIBuildStep"/> build order, then keeps producers
-    /// training; keeps harvesters on the map's resource fields in the slot's expansion order, fires ready abilities and
-    /// sends idle armies at an enemy base along one of the map's attack lanes (see <see cref="AIMapHints"/>, which the
-    /// map must carry). It only issues <see cref="PlayerCommand"/>s, exactly like a human player. Split by concern
-    /// over partial files.
+    /// training; keeps harvesters on the map's resource fields in the slot's expansion order, fires ready abilities,
+    /// deploys and packs up deployable units and sends idle armies at an enemy base along one of the map's attack
+    /// lanes (see <see cref="AIMapHints"/>, which the map must carry). It only issues <see cref="PlayerCommand"/>s,
+    /// exactly like a human player. Split by concern over partial files.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(AISystemGroup))]
@@ -195,6 +195,7 @@ namespace HyperRTS.Simulation.AI
                 Train(ref state, turn, snapshot);
             }
 
+            Deploy(ref state, turn);
             Attack(ref state, turn, snapshot);
             if (SystemAPI.GetComponent<AIPlayer>(player).UseAbilities)
             {

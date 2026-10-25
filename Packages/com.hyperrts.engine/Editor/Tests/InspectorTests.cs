@@ -23,8 +23,8 @@ namespace HyperRTS.Editor.Tests
         {
             var weapon = Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
             var serialized = new SerializedObject(weapon);
-            var splash = Stat(nameof(WeaponAuthoring.WeaponStats.splashRadius));
-            var projectile = Stat(nameof(WeaponAuthoring.WeaponStats.projectilePrefab));
+            var splash = Stat(nameof(WeaponStats.splashRadius));
+            var projectile = Stat(nameof(WeaponStats.projectilePrefab));
             Assert.IsFalse(ConditionalFields.IsMet(serialized.FindProperty(splash)));
             Assert.IsFalse(ConditionalFields.IsMet(serialized.FindProperty(projectile)));
 
@@ -41,13 +41,13 @@ namespace HyperRTS.Editor.Tests
             var weapon = Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
             var serialized = new SerializedObject(weapon);
             Assert.Throws<System.ArgumentException>(() =>
-                ConditionalFields.IsMet(serialized.FindProperty(Stat(nameof(WeaponAuthoring.WeaponStats.targets)))));
+                ConditionalFields.IsMet(serialized.FindProperty(Stat(nameof(WeaponStats.targets)))));
         }
 
         [Test]
         public void ShowIfReadsSiblingsInsideNestedStats() =>
             CollectionAssert.Contains(ConditionalFields.Conditions(typeof(WeaponAuthoring)).ToList(),
-                (Stat(nameof(WeaponAuthoring.WeaponStats.splashEdgeDamage)), Stat(nameof(WeaponAuthoring.WeaponStats.splashRadius))));
+                (Stat(nameof(WeaponStats.splashEdgeDamage)), Stat(nameof(WeaponStats.splashRadius))));
 
         [Test]
         public void OptionSummaryShowsCostAndTime()

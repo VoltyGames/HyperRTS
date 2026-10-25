@@ -18,6 +18,8 @@ namespace HyperRTS.Simulation.Combat
         [ReadOnly] private ComponentLookup<PostTransformMatrix> _stretches;
         private ComponentLookup<Stealth> _stealth;
         private ComponentLookup<Ammo> _ammo;
+        [ReadOnly] private ComponentLookup<Deployable> _deployables;
+        [ReadOnly] private BufferLookup<WeaponMuzzle> _muzzles;
         private BufferLookup<WeaponPose> _poses;
         private DamageWriter _damage;
         private CueWriter _cues;
@@ -29,6 +31,8 @@ namespace HyperRTS.Simulation.Combat
             _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
             _stealth = state.GetComponentLookup<Stealth>();
             _ammo = state.GetComponentLookup<Ammo>();
+            _deployables = state.GetComponentLookup<Deployable>(true);
+            _muzzles = state.GetBufferLookup<WeaponMuzzle>(true);
             _poses = state.GetBufferLookup<WeaponPose>();
             _damage = new DamageWriter(ref state);
             _cues = new CueWriter(ref state);
@@ -41,6 +45,8 @@ namespace HyperRTS.Simulation.Combat
             _stretches.Update(ref state);
             _stealth.Update(ref state);
             _ammo.Update(ref state);
+            _deployables.Update(ref state);
+            _muzzles.Update(ref state);
             _poses.Update(ref state);
             _damage.Update(ref state, damageQueue);
             _cues.Update(ref state, cueQueue);
@@ -65,12 +71,19 @@ namespace HyperRTS.Simulation.Combat
         }
 
         /// <summary>
-        /// The fire step both the primary and the mounts take: off cooldown, a turret on target, spend a round (the
-        /// shooter's <see cref="Ammo"/> when <paramref name="usesShooterAmmo"/>), restart the cooldown and fire.
+        /// The fire step both the primary and the mounts take: deployed if it must be, off cooldown, a turret on target,
+        /// spend a round (the shooter's <see cref="Ammo"/> when <paramref name="usesShooterAmmo"/>), restart the
+        /// cooldown or step the salvo, and fire from the next muzzle.
         /// </summary>
         public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction,
             bool usesShooterAmmo)
         {
+            if (Deployable.Holds(_deployables, shooter, weapon))
+            {
+                weapon.EndSalvo();
+                return false;
+            }
+
             if (weapon.CoolingDown || !Aimed(shooter, weapon, pose, target))
             {
                 return false;
@@ -81,9 +94,23 @@ namespace HyperRTS.Simulation.Combat
                 return false;
             }
 
+            var shot = NextMuzzle(shooter, ref weapon);
             weapon.StartCooldown();
-            Fire(shooter, weapon, pose, target, faction);
+            Fire(shooter, shot, pose, target, faction);
             return true;
+        }
+
+        /// <summary>The weapon as it fires this shot, from its next muzzle in turn.</summary>
+        private Weapon NextMuzzle(Entity shooter, ref Weapon weapon)
+        {
+            var shot = weapon;
+            if (weapon.MuzzleCount > 1)
+            {
+                shot.Muzzle = _muzzles[shooter][weapon.FirstMuzzle + weapon.NextMuzzle].Point;
+                weapon.NextMuzzle = (byte)((weapon.NextMuzzle + 1) % weapon.MuzzleCount);
+            }
+
+            return shot;
         }
 
         /// <summary>A hull-fixed weapon fires as the hull faces; a turret once its pose points at the target.</summary>
@@ -146,7 +173,8 @@ namespace HyperRTS.Simulation.Combat
             Entity target, float3 targetPosition, byte faction)
         {
             var origin = weapon.LaunchPoint(place, pose);
-            var aim = weapon.AimPoint(targetPosition);
+            var seed = math.hash(new uint3((uint)shooter.Index, (uint)target.Index, pose.Shots));
+            var aim = weapon.Scatter(weapon.AimPoint(targetPosition), seed);
 
             var flight = new Projectile
             {

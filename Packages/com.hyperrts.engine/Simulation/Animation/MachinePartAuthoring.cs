@@ -12,16 +12,16 @@ namespace HyperRTS.Simulation.Animation
     [DisallowMultipleComponent]
     public class MachinePartAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Spin about the axis, Swing to and fro about it, Slide along it, Link one point to another, or turn Downwind about it.")]
+        [Tooltip("Spin about the axis, Swing to and fro about it, Slide along it, Link one point to another, turn Downwind about it, or Raise about it and Extend along it as the machine speeds up.")]
         public MachineMotion motion;
 
-        [Tooltip("Local axis for Spin, Swing and Downwind, or the direction for Slide.")]
+        [Tooltip("Local axis for Spin, Swing, Downwind and Raise, or the direction for Slide and Extend.")]
         public Vector3 axis = Vector3.right;
 
         [Tooltip("Degrees per second of the machine's cycle; give every part of one machine the same speed.")]
         public float speed = 45f;
 
-        [Tooltip("Swing: largest angle either way of the offset (degrees). Slide: the same in metres.")]
+        [Tooltip("Swing: largest angle either way of the offset (degrees). Slide: the same in metres. Raise and Extend: degrees or metres at full speed.")]
         public float amplitude = 15f;
 
         [Tooltip("Swing: the angle it rocks about, in degrees from its modelled pose. Slide: metres along the axis. Downwind: degrees from its forward to the way it points.")]

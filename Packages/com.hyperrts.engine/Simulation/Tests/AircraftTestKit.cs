@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Tests
             AirSetup.AddPadUser(ref writer);
             if (rounds > 0)
             {
-                WeaponSetup.AddAmmo(ref writer, rounds, reloadTime);
+                WeaponSetup.AddAmmo(ref writer, rounds, reloadTime, AmmoRefill.Docked);
             }
 
             return aircraft;

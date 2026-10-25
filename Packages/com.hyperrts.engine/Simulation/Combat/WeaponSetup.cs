@@ -20,10 +20,17 @@ namespace HyperRTS.Simulation.Combat
         }
 
         /// <summary>Limits the weapon to <paramref name="rounds"/> shots, starting full.</summary>
-        public static void AddAmmo<TWriter>(ref TWriter writer, int rounds, float reloadTime)
+        public static void AddAmmo<TWriter>(ref TWriter writer, int rounds, float reloadTime, AmmoRefill refill)
             where TWriter : struct, IEntityWriter
         {
-            writer.Add(new Ammo { Max = rounds, Current = rounds, ReloadTime = reloadTime });
+            writer.Add(new Ammo { Max = rounds, Current = rounds, ReloadTime = reloadTime, Refill = refill });
+        }
+
+        /// <summary>The muzzles of weapons that fire from several in turn; see <see cref="Weapon.FirstMuzzle"/>.</summary>
+        public static void AddMuzzles<TWriter>(ref TWriter writer, IReadOnlyList<WeaponMuzzle> muzzles)
+            where TWriter : struct, IEntityWriter
+        {
+            writer.AddBuffer(muzzles);
         }
 
         /// <summary>Extra weapons beside the primary; build each with <see cref="WeaponMount.Create"/>.</summary>

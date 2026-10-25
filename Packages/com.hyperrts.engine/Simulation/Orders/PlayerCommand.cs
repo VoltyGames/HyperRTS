@@ -66,6 +66,12 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Place a line of <see cref="PlayerCommand.Prefab"/> from Position to <see cref="PlayerCommand.End"/>.</summary>
         PlaceLine = 24,
 
+        /// <summary>Deployable units halt and deploy, so their deployed-only weapons may fire.</summary>
+        Deploy = 25,
+
+        /// <summary>Deployed units pack up, so they may move again.</summary>
+        PackUp = 26,
+
         /// <summary>First value a game may use for its own commands; the engine never defines one from here up.</summary>
         GameFirst = 128,
     }

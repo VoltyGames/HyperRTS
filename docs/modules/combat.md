@@ -12,9 +12,10 @@ queue, so armor, splash and kill credit apply to all of them.
 | Type | Role |
 | --- | --- |
 | `WeaponAuthoring` | The primary's `stats`, turreted, acquire range, leash, stance and extra weapons |
-| `WeaponStats` | Damage, damage type, cooldown, splash, projectile, trajectory and projectile kind, muzzle, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets. The primary and each extra weapon carry one |
+| `WeaponStats` | Damage, damage type, cooldown, splash, projectile, trajectory and projectile kind, muzzle and extra muzzles, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets, needs deploy, salvo size and interval, spread. The primary and each extra weapon carry one |
 | `WeaponMount` | An extra weapon. Server only, rewritten by stats like the primary |
-| `AmmoAuthoring` | Rounds per load. Reloads while docked |
+| `AmmoAuthoring` | Rounds per load and how they refill: `Docked`, `Round` or `Magazine` |
+| `DeployableAuthoring` | Deploy and pack-up times for a unit that deploys to fire |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
 | `DamageWriter` | Queues a hit. A negative amount heals |
 | `CombatStance` | Aggressive, Defensive, HoldPosition or Passive |
@@ -31,6 +32,33 @@ empty), and each fires its own Fire cue: the cue's variant is the weapon's pose 
 for the mounts, which `mountFire` on the sound and effect authoring fills in order. A mount without an entry fires
 silently. `ShotWriter.TryFire` is the fire step both weapon kinds share.
 `ShotWriter` fires both kinds of weapon.
+
+### Salvos, muzzles and ammo
+
+A weapon with `salvoSize` above 1 fires that many shots `salvoInterval` apart, then runs its cooldown. Each shot
+spends a round. The salvo keeps to the weapon's current target and stops when it has none (dead, lost or out of
+rounds) or when its unit packs up: the rest of the salvo is dropped and the cooldown counts from the last shot.
+With `extraMuzzles`, shots leave from `muzzle` and then each extra muzzle in turn, wrapping round, and the next
+salvo carries on where the last stopped. They bake into the shooter's `WeaponMuzzle` buffer. Aim always uses the
+first muzzle. `spread` scatters each Ballistic shot's aim point at random within that many metres, seeded by
+shooter, target and shot count. Homing shots ignore it.
+
+Limited rounds (`AmmoAuthoring` for the primary, `rounds` on an extra weapon) refill by their `AmmoRefill`:
+`Docked` one round per `reloadTime` while docked at an airfield, `Round` one per `reloadTime` anywhere, and
+`Magazine` every round together `reloadTime` after the magazine runs empty. A part-empty magazine never reloads.
+`AmmoRefillSystem` reloads the last two, and `Ammo.Reload` is the one rule `Ammo`, `WeaponMount` and
+`Interceptor` share.
+
+### Deploying
+
+`DeployableAuthoring` makes a unit deploy before its `needsDeploy` weapons fire. The Deploy command clears its
+orders and halts it, and `Deployable.Progress` rises from 0 to 1 over `deployTime`. Pack Up lowers it back over
+`packUpTime`. Either command reverses one in progress. While deploying, deployed or packing up the unit is rooted:
+`OrderResolver` refuses every order but Attack, so the player must pack it up first, and `EngagementSystem` fights
+it like a building, never chasing or backing off. `WeaponRule` flags a `needsDeploy` weapon on a unit without a
+Deployable. `State` and `Progress` replicate, and a `Deployed` machine (see [animation](support.md#animation))
+follows the progress. The skirmish AI deploys a unit holding a target in range and packs up a deployed one with
+nothing to shoot, so its next wave takes it.
 
 A projectile flies by its weapon's `Trajectory`. Direct shots fly straight and home on the target. Ballistic shells
 arc onto the point aimed at launch, `ArcHeight` times the ground distance high, and miss a target that moved. Rockets
@@ -60,7 +88,7 @@ interceptors ignore them.
 | `radius`, `kinds` | What it engages, measured from the pivot in 3D |
 | `engagementsPerSecond`, `killChance` | How often it engages, and the chance each engagement kills |
 | `muzzle`, `turret`, `barrel`, `aimSpeed`, elevation limits, `aimTolerance` | Aim, like a weapon's |
-| `rounds`, `reloadTime` | Optional stock, one round refilled per `reloadTime` while online |
+| `rounds`, `reloadTime` | Optional stock, one round refilled per `reloadTime` while online (`AmmoRefill.Round`) |
 
 `InterceptorSystem` runs after the weapons and before `ProjectileSystem`. Its `WeaponPose` sits after the weapons
 (index 0 on an entity with no weapon), so a `MotionRigAuthoring` turret or launcher follows it, and it engages once

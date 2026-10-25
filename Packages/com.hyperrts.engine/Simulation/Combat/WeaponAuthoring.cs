@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Upgrades;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Combat
@@ -51,153 +49,6 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Pose buffer slots the primary and extra weapons take; an interceptor's pose follows them.</summary>
         public int WeaponPoses => 1 + extraWeapons.Count;
 
-        /// <summary>What one weapon deals and how it reaches; the primary and every extra weapon carry one.</summary>
-        [Serializable]
-        public class WeaponStats
-        {
-            [Header("Damage")]
-            [Tooltip("Damage per hit before armor.")]
-            [Min(0f)]
-            public float damage = 10f;
-
-            [Tooltip("Seconds between shots.")]
-            [Min(0.05f)]
-            public float cooldown = 1f;
-
-            [Tooltip("Optional damage category that armor can scale.")]
-            public DamageType damageType;
-
-            [Header("Splash")]
-            [Tooltip("Radius around the impact that also takes damage; 0 hits only the target.")]
-            [Min(0f)]
-            public float splashRadius;
-
-            [Tooltip("Fraction of the damage dealt at the splash edge (1 = no falloff).")]
-            [Range(0f, 1f)]
-            [ShowIf(nameof(splashRadius))]
-            public float splashEdgeDamage = 0.5f;
-
-            [Tooltip("Splash also hurts the shooter's own and allied units.")]
-            [ShowIf(nameof(splashRadius))]
-            public bool friendlyFire;
-
-            [Header("Projectile")]
-            [Tooltip("Optional projectile prefab; leave empty for instant hits.")]
-            public GameObject projectilePrefab;
-
-            [Tooltip("Child transform shots spawn at; none spawns projectiles above the pivot.")]
-            public Transform muzzle;
-
-            [Tooltip("Projectile speed in world units per second.")]
-            [Min(0.1f)]
-            [ShowIf(nameof(projectilePrefab))]
-            public float projectileSpeed = 25f;
-
-            [Tooltip("Height above the shooter's and target's pivots that projectiles fly at.")]
-            [Min(0f)]
-            [ShowIf(nameof(projectilePrefab))]
-            public float projectileHeight = 1f;
-
-            [Tooltip("Direct flies straight, Ballistic arcs onto where the target stood, Rocket climbs and dives onto it.")]
-            [ShowIf(nameof(projectilePrefab))]
-            public Trajectory trajectory;
-
-            [Tooltip("Arc apex as a fraction of the ground distance to the target.")]
-            [Min(0f)]
-            [ShowIf(nameof(projectilePrefab))]
-            public float arcHeight = 0.25f;
-
-            [Tooltip("What interceptors see the projectile as; None is never shot down.")]
-            [ShowIf(nameof(projectilePrefab))]
-            public ProjectileKind projectileKind;
-
-            [Header("Aim")]
-            [Tooltip("Part the muzzle traverses about, such as the turret; none traverses about the unit's pivot.")]
-            public Transform turret;
-
-            [Tooltip("Part the muzzle elevates about, such as the barrel; none raises only the aim, not the muzzle.")]
-            public Transform barrel;
-
-            [Tooltip("Degrees per second the weapon traverses; a turreted weapon fires once it has turned onto the target.")]
-            [Min(1f)]
-            public float traverseSpeed = 40f;
-
-            [Tooltip("Degrees per second the weapon elevates.")]
-            [Min(1f)]
-            public float elevationSpeed = 25f;
-
-            [Tooltip("Lowest elevation in degrees (negative is depression).")]
-            [Range(-90f, 0f)]
-            public float minElevation = -10f;
-
-            [Tooltip("Highest elevation in degrees.")]
-            [Range(0f, 90f)]
-            public float maxElevation = 20f;
-
-            [Tooltip("Degrees off target, per axis, a turret may fire at. A unit's hull-fixed weapon fires once the hull is this close.")]
-            [Min(0.1f)]
-            public float aimTolerance = 2f;
-
-            [Header("Targeting")]
-            [Tooltip("Firing range in world units, measured edge to edge.")]
-            [Min(0.1f)]
-            public float range = 6f;
-
-            [Tooltip("Targets closer than this, edge to edge, can't be hit; ordered attacks back off first.")]
-            [Min(0f)]
-            public float minRange;
-
-            [Tooltip("What the weapon can hit: Surface (ground and naval units, buildings), Air (aircraft), or both.")]
-            public WeaponTargets targets;
-
-            [Tooltip("Never auto-acquire targets whose armor scales this damage below this factor; 0 picks any.")]
-            [Min(0f)]
-            public float minEffect;
-
-            /// <summary>Damage per second before armor, with the cooldown floored at its minimum.</summary>
-            public float Dps => damage / Mathf.Max(cooldown, 0.05f);
-
-            /// <summary>The baked weapon, with its muzzle socket relative to <paramref name="root"/>.</summary>
-            public Weapon Bake(IBaker baker, Transform root)
-            {
-                var weapon = new Weapon
-                {
-                    Range = range,
-                    Damage = damage,
-                    Cooldown = cooldown,
-                    DamageType = damageType,
-                    SplashRadius = splashRadius,
-                    SplashEdgeFactor = splashEdgeDamage,
-                    FriendlyFire = friendlyFire,
-                    ProjectilePrefab = projectilePrefab != null
-                        ? baker.GetEntity(projectilePrefab, TransformUsageFlags.Dynamic)
-                        : Entity.Null,
-                    ProjectileSpeed = projectileSpeed,
-                    ProjectileKind = projectileKind,
-                    ProjectileHeight = projectileHeight,
-                    Targets = targets,
-                    MinEffect = minEffect,
-                    Trajectory = trajectory,
-                    ArcHeight = arcHeight,
-                    MinRange = minRange,
-                    TraverseRate = math.radians(traverseSpeed),
-                    ElevationRate = math.radians(elevationSpeed),
-                    MinPitch = math.radians(minElevation),
-                    MaxPitch = math.radians(maxElevation),
-                    AimTolerance = math.radians(aimTolerance),
-                };
-                if (muzzle != null)
-                {
-                    weapon.Muzzle = EffectSetup.Socket(baker, root, muzzle);
-                    weapon.HasMuzzle = true;
-                }
-
-                weapon.TurretPivot = EffectSetup.Socket(baker, root, turret);
-                weapon.BarrelPivot = barrel != null ? EffectSetup.Socket(baker, root, barrel) : weapon.Muzzle;
-                return weapon;
-            }
-        }
-
         /// <summary>An extra weapon: its own stats plus its targeting, ammo and unlock.</summary>
         [Serializable]
         public class WeaponSlot
@@ -211,13 +62,16 @@ namespace HyperRTS.Simulation.Combat
             [Tooltip("Research the owner must finish before it fires; none fires from the start.")]
             public UpgradeAuthoring requires;
 
-            [Tooltip("Shots before it must reload while docked; 0 never runs dry.")]
+            [Tooltip("Shots before it must reload; 0 never runs dry.")]
             [Min(0)]
             public int rounds;
 
-            [Tooltip("Seconds per round refilled while docked.")]
+            [Tooltip("Seconds per round refilled, or per magazine with Magazine.")]
             [Min(0.05f)]
             public float reloadTime = 1f;
+
+            [Tooltip("Docked refills by the round at an airfield, Round by the round anywhere, Magazine every round together once empty.")]
+            public AmmoRefill refill;
         }
 
         public class Baker : Baker<WeaponAuthoring>
@@ -225,7 +79,8 @@ namespace HyperRTS.Simulation.Combat
             public override void Bake(WeaponAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
-                var weapon = authoring.stats.Bake(this, authoring.transform);
+                var muzzles = new List<WeaponMuzzle>();
+                var weapon = authoring.stats.Bake(this, authoring.transform, muzzles);
                 weapon.AcquireRange = authoring.acquireRange;
                 weapon.LeashFactor = authoring.leashFactor;
                 weapon.Turreted = authoring.AimsTurret;
@@ -235,11 +90,16 @@ namespace HyperRTS.Simulation.Combat
                 WeaponSetup.Add(ref writer, weapon, authoring.stance, authoring.transform.position, poses - 1);
                 if (authoring.extraWeapons.Count > 0)
                 {
-                    WeaponSetup.AddMounts(ref writer, BakeMounts(authoring));
+                    WeaponSetup.AddMounts(ref writer, BakeMounts(authoring, muzzles));
+                }
+
+                if (muzzles.Count > 0)
+                {
+                    WeaponSetup.AddMuzzles(ref writer, muzzles);
                 }
             }
 
-            private List<WeaponMount> BakeMounts(WeaponAuthoring authoring)
+            private List<WeaponMount> BakeMounts(WeaponAuthoring authoring, List<WeaponMuzzle> muzzles)
             {
                 var mounts = new List<WeaponMount>();
                 for (var i = 0; i < authoring.extraWeapons.Count; i++)
@@ -251,9 +111,9 @@ namespace HyperRTS.Simulation.Combat
                     }
 
                     var required = slot.requires != null ? slot.requires.TypeId : 0;
-                    var weapon = slot.stats.Bake(this, authoring.transform);
-                    mounts.Add(WeaponMount.Create(weapon, slot.rounds, slot.reloadTime, required, (byte)(i + 1),
-                        slot.independent));
+                    var weapon = slot.stats.Bake(this, authoring.transform, muzzles);
+                    mounts.Add(WeaponMount.Create(weapon, slot.rounds, slot.reloadTime, slot.refill, required,
+                        (byte)(i + 1), slot.independent));
                 }
 
                 return mounts;

@@ -42,7 +42,7 @@ namespace HyperRTS.Simulation.Combat
         public void Tick(float deltaTime)
         {
             Aim.Tick(deltaTime);
-            Ammo.Reload(ref Rounds, MaxRounds, ref ReloadElapsed, ReloadTime, deltaTime);
+            Ammo.Reload(ref Rounds, MaxRounds, ref ReloadElapsed, ReloadTime, AmmoRefill.Round, deltaTime);
         }
 
         /// <summary>Spends a round and restarts the cooldown; true when the roll downs <paramref name="target"/>.</summary>

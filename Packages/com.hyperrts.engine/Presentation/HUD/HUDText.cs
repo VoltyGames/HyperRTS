@@ -23,6 +23,8 @@ namespace HyperRTS.Presentation.HUD
             ["hud.strategic-ready"] = "READY",
             ["command.return"] = "Return",
             ["command.unload"] = "Unload",
+            ["command.deploy"] = "Deploy",
+            ["command.pack-up"] = "Pack Up",
             ["command.sell"] = "Sell",
             ["command.more"] = "More",
             ["command.back"] = "Back",

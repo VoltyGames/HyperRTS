@@ -24,10 +24,12 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>0 never runs dry.</summary>
         public int MaxRounds;
 
-        /// <summary>Seconds per round refilled while docked.</summary>
+        /// <summary>Seconds per round, or per magazine with <see cref="AmmoRefill.Magazine"/>.</summary>
         public float ReloadTime;
 
         public float ReloadElapsed;
+
+        public AmmoRefill Refill;
 
         /// <summary>Research type the owner must have finished; 0 needs none.</summary>
         public int RequiredResearchTypeId;
@@ -41,8 +43,8 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>May pick its own target when it can't hit the shared one.</summary>
         public bool Independent;
 
-        public static WeaponMount Create(in Weapon weapon, int rounds, float reloadTime, int requiredResearchTypeId,
-            byte pose, bool independent) => new()
+        public static WeaponMount Create(in Weapon weapon, int rounds, float reloadTime, AmmoRefill refill,
+            int requiredResearchTypeId, byte pose, bool independent) => new()
         {
             Weapon = Turned(weapon),
             BaseDamage = weapon.Damage,
@@ -51,6 +53,7 @@ namespace HyperRTS.Simulation.Combat
             Rounds = rounds,
             MaxRounds = rounds,
             ReloadTime = reloadTime,
+            Refill = refill,
             RequiredResearchTypeId = requiredResearchTypeId,
             Pose = pose,
             Independent = independent,
@@ -80,8 +83,7 @@ namespace HyperRTS.Simulation.Combat
             }
         }
 
-        /// <summary>Refills one round per <see cref="ReloadTime"/>.</summary>
         public void Reload(float deltaTime) =>
-            Ammo.Reload(ref Rounds, MaxRounds, ref ReloadElapsed, ReloadTime, deltaTime);
+            Ammo.Reload(ref Rounds, MaxRounds, ref ReloadElapsed, ReloadTime, Refill, deltaTime);
     }
 }

@@ -162,7 +162,11 @@ namespace HyperRTS.Simulation.Combat
                     var mount = mounts[i];
                     mount.Weapon.Tick(DeltaTime);
                     var aimed = mount.Target != Entity.Null;
-                    if (aimed && Shots.TryFire(entity, ref mount.Weapon, mount.Pose, mount.Target, faction.Value, false))
+                    if (!aimed)
+                    {
+                        mount.Weapon.EndSalvo();
+                    }
+                    else if (Shots.TryFire(entity, ref mount.Weapon, mount.Pose, mount.Target, faction.Value, false))
                     {
                         mount.UseRound();
                     }

@@ -13,8 +13,9 @@ namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
     /// Runs machine clocks, easing them to a stop while a machine shouldn't run (neutral, or its building offline or
-    /// idle), and poses their parts: spins, swings and slides in step with the spin, and links that sit on one point
-    /// aiming at another, and parts that turn downwind. Links read last frame's transforms.
+    /// idle), and poses their parts: spins, swings and slides in step with the spin, links that sit on one point
+    /// aiming at another, parts that turn downwind, and parts that raise or extend with the speed, which a Deployed
+    /// machine takes from its unit's deploy progress. Links read last frame's transforms.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PoseSystemGroup))]
@@ -33,6 +34,7 @@ namespace HyperRTS.Presentation.Animation
                 Offlines = SystemAPI.GetComponentLookup<Offline>(true),
                 Queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(true),
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
+                Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
             }.ScheduleParallel(state.Dependency);
             state.Dependency = new PartJob
             {
@@ -50,16 +52,23 @@ namespace HyperRTS.Presentation.Animation
             [ReadOnly] public ComponentLookup<Offline> Offlines;
             [ReadOnly] public BufferLookup<ProductionQueueItem> Queues;
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
+            [ReadOnly] public ComponentLookup<Deployable> Deployables;
 
             private void Execute(Entity entity, ref MachineClock clock)
             {
+                if (clock.Run == MachineRun.Deployed)
+                {
+                    clock.Follow(Deployables[clock.Owner].Progress, DeltaTime);
+                    return;
+                }
+
                 var owned = Factions.TryGetComponent(entity, out var faction) && faction.Value != Faction.Neutral;
                 clock.Advance((!clock.OwnedOnly || owned) && Runs(ref clock), DeltaTime);
             }
 
             private bool Runs(ref MachineClock clock)
             {
-                var building = clock.Building;
+                var building = clock.Owner;
                 var offline = Offlines.HasEnabled(building) ? Offlines[building] : default;
                 switch (clock.Run)
                 {
@@ -117,6 +126,13 @@ namespace HyperRTS.Presentation.Animation
                     case MachineMotion.Slide:
                         var travel = part.Offset + part.Amplitude * math.sin(cycle);
                         transform.Position = part.RestPosition + part.Axis * travel;
+                        break;
+                    case MachineMotion.Raise:
+                        var raised = math.radians(part.Amplitude) * clock.Eased;
+                        transform.Rotation = math.mul(part.Rest, quaternion.AxisAngle(part.Axis, raised));
+                        break;
+                    case MachineMotion.Extend:
+                        transform.Position = part.RestPosition + part.Axis * (part.Amplitude * clock.Eased);
                         break;
                     case MachineMotion.Downwind:
                         if (Places.TryGetComponent(parent.Value, out var frame))

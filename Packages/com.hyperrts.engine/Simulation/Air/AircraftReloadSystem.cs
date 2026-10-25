@@ -10,8 +10,9 @@ namespace HyperRTS.Simulation.Air
 {
     /// <summary>
     /// The reload cycle: aircraft whose limited weapons (<see cref="Ammo"/>, mounts with rounds) run empty get one
-    /// Return to Base order, which the player may override, and docked aircraft reload one round per <see cref="Ammo.ReloadTime"/>, each
-    /// <see cref="WeaponMount"/> at its own pace. Games refuel and repair docked aircraft the same way.
+    /// Return to Base order, which the player may override, and docked aircraft reload their
+    /// <see cref="AmmoRefill.Docked"/> weapons, each <see cref="WeaponMount"/> at its own pace. Games refuel and
+    /// repair docked aircraft the same way.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -111,7 +112,13 @@ namespace HyperRTS.Simulation.Air
         {
             public float DeltaTime;
 
-            private void Execute(ref Ammo ammo) => ammo.Reload(DeltaTime);
+            private void Execute(ref Ammo ammo)
+            {
+                if (ammo.Refill == AmmoRefill.Docked)
+                {
+                    ammo.Reload(DeltaTime);
+                }
+            }
         }
 
         [BurstCompile]
@@ -125,8 +132,11 @@ namespace HyperRTS.Simulation.Air
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
-                    mount.Reload(DeltaTime);
-                    mounts[i] = mount;
+                    if (mount.Refill == AmmoRefill.Docked)
+                    {
+                        mount.Reload(DeltaTime);
+                        mounts[i] = mount;
+                    }
                 }
             }
         }

@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Validates and leashes <see cref="AttackTarget"/>s, chases targets out of weapon range, backs off from ordered ones
-    /// inside the minimum range and halts once in range.
+    /// inside the minimum range and halts once in range. A rooted <see cref="Deployable"/> fights like a building.
     /// Also keeps <see cref="CombatStance.ReturnPoint"/> on idle, unengaged units.
     /// </summary>
     [BurstCompile]
@@ -29,6 +29,7 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<ActiveOrder> _orders;
         private ComponentLookup<MoveDestination> _moves;
         private ComponentLookup<Ammo> _ammo;
+        private ComponentLookup<Deployable> _deployables;
         private BufferLookup<WeaponMount> _mounts;
         private BufferLookup<ArmorModifier> _armor;
 
@@ -40,6 +41,7 @@ namespace HyperRTS.Simulation.Combat
             _orders = state.GetComponentLookup<ActiveOrder>(true);
             _moves = state.GetComponentLookup<MoveDestination>();
             _ammo = state.GetComponentLookup<Ammo>(true);
+            _deployables = state.GetComponentLookup<Deployable>(true);
             _mounts = state.GetBufferLookup<WeaponMount>(true);
             _armor = state.GetBufferLookup<ArmorModifier>(true);
             state.RequireForUpdate<FactionRelations>();
@@ -52,6 +54,7 @@ namespace HyperRTS.Simulation.Combat
             _orders.Update(ref state);
             _moves.Update(ref state);
             _ammo.Update(ref state);
+            _deployables.Update(ref state);
             _mounts.Update(ref state);
             _armor.Update(ref state);
 
@@ -65,6 +68,7 @@ namespace HyperRTS.Simulation.Combat
                 Traits = traits,
                 Moves = _moves,
                 AmmoLookup = _ammo,
+                Deployables = _deployables,
                 Mounts = _mounts,
                 Armor = _armor,
             }.ScheduleParallel();
@@ -79,6 +83,7 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             public OrderTraitTable Traits;
             [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
+            [ReadOnly] public ComponentLookup<Deployable> Deployables;
             [ReadOnly] public BufferLookup<WeaponMount> Mounts;
             [ReadOnly] public BufferLookup<ArmorModifier> Armor;
 
@@ -173,7 +178,7 @@ namespace HyperRTS.Simulation.Combat
             private bool ShouldLeash(Entity entity, float3 position, in Weapon weapon, in VisionRange vision,
                 in CombatStance stance, Entity target, float gap, float reach)
             {
-                if (stance.Value == Stance.HoldPosition || !Moves.HasComponent(entity))
+                if (stance.Value == Stance.HoldPosition || !Mobile(entity))
                 {
                     return gap > reach;
                 }
@@ -223,7 +228,7 @@ namespace HyperRTS.Simulation.Combat
                 attack.BackingOff = false;
                 attacking.ValueRW = false;
 
-                if (!Moves.HasComponent(entity))
+                if (!Mobile(entity))
                 {
                     return;
                 }
@@ -241,7 +246,7 @@ namespace HyperRTS.Simulation.Combat
 
             private void Chase(Entity entity, float3 targetPosition)
             {
-                if (Moves.HasComponent(entity))
+                if (Mobile(entity))
                 {
                     ReachMath.MoveTo(ref Moves.GetRefRW(entity).ValueRW, Moves.GetEnabledRefRW<MoveDestination>(entity),
                         targetPosition, RepathDistance);
@@ -256,7 +261,7 @@ namespace HyperRTS.Simulation.Combat
                     return attack.Gap < middle && IsMoving(entity);
                 }
 
-                return attack.Gap < floor && Moves.HasComponent(entity);
+                return attack.Gap < floor && Mobile(entity);
             }
 
             /// <summary>Retreats straight away from the target to <paramref name="gap"/> edge to edge.</summary>
@@ -282,6 +287,8 @@ namespace HyperRTS.Simulation.Combat
                 ReachMath.MoveTo(ref Moves.GetRefRW(entity).ValueRW, Moves.GetEnabledRefRW<MoveDestination>(entity), goal);
 
             private bool IsMoving(Entity entity) => Moves.HasEnabled(entity);
+
+            private bool Mobile(Entity entity) => Moves.HasComponent(entity) && !Deployable.IsRooted(Deployables, entity);
 
             private Order CurrentOrder(Entity entity) => Orders.HasEnabled(entity) ? Orders[entity].Value : default;
         }

@@ -25,9 +25,9 @@ namespace HyperRTS.Editor.Catalog
             ("Build s", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.buildTime)),
             ("Vision", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.visionRange)),
             ("Speed", typeof(UnitAuthoring), nameof(UnitAuthoring.moveSpeed)),
-            ("Damage", typeof(WeaponAuthoring), Stat(nameof(WeaponAuthoring.WeaponStats.damage))),
-            ("Cooldown", typeof(WeaponAuthoring), Stat(nameof(WeaponAuthoring.WeaponStats.cooldown))),
-            ("Range", typeof(WeaponAuthoring), Stat(nameof(WeaponAuthoring.WeaponStats.range))),
+            ("Damage", typeof(WeaponAuthoring), Stat(nameof(WeaponStats.damage))),
+            ("Cooldown", typeof(WeaponAuthoring), Stat(nameof(WeaponStats.cooldown))),
+            ("Range", typeof(WeaponAuthoring), Stat(nameof(WeaponStats.range))),
         };
 
         private readonly Dictionary<Component, SerializedObject> _serialized = new();

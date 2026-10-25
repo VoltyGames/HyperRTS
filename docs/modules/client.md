@@ -64,7 +64,7 @@ to every panel and keeps it in sync with the simulation. Code fills in only per-
 | --- | --- |
 | `hud.pop`, `hud.power` | Resource bar labels |
 | `hud.strategic-ready` | A charged strategic asset in the countdowns |
-| `command.return`, `command.unload`, `command.sell` | Fixed commands |
+| `command.return`, `command.unload`, `command.deploy`, `command.pack-up`, `command.sell` | Fixed commands |
 | `command.more`, `command.back` | Command card page cards |
 | `stance.<stance>` | Stance names |
 | `outcome.victory`, `outcome.defeat`, `outcome.draw` | Game over banner |

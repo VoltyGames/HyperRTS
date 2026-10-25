@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Validation.Rules
     /// <summary>
     /// Projectiles are prefab ghosts, since the server spawns them and clients must see them fly. A mount sharing the
     /// unit's target hits only what the primary hits, so orders and the AI, which read the primary, stay correct. Arcs
-    /// need a projectile to fly.
+    /// need a projectile to fly. Extra muzzles follow a first one, and deployed-only weapons need a Deployable.
     /// </summary>
     public sealed class WeaponRule : AuthoringRule<WeaponAuthoring>
     {
@@ -56,7 +56,7 @@ namespace HyperRTS.Editor.Validation.Rules
                 issues);
         }
 
-        private static void CheckFlight(WeaponAuthoring weapon, string label, WeaponAuthoring.WeaponStats stats, ValidationIssues issues)
+        private static void CheckFlight(WeaponAuthoring weapon, string label, WeaponStats stats, ValidationIssues issues)
         {
             if (stats.minRange >= stats.range)
             {
@@ -71,6 +71,16 @@ namespace HyperRTS.Editor.Validation.Rules
             if (stats.trajectory != Trajectory.Direct && stats.projectilePrefab == null)
             {
                 issues.Error(weapon, $"{label} flies {stats.trajectory} but has no projectile prefab.");
+            }
+
+            if (stats.extraMuzzles.Count > 0 && stats.muzzle == null)
+            {
+                issues.Error(weapon, $"{label} has extra muzzles but no first muzzle.");
+            }
+
+            if (stats.needsDeploy && !weapon.TryGetComponent<DeployableAuthoring>(out _))
+            {
+                issues.Error(weapon, $"{label} needs deployment but the unit has no Deployable.");
             }
         }
 

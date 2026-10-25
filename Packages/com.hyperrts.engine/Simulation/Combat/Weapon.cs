@@ -67,13 +67,71 @@ namespace HyperRTS.Simulation.Combat
         public float3 TurretPivot;
         public float3 BarrelPivot;
 
+        /// <summary>Shots per salvo, <see cref="SalvoInterval"/> seconds apart, before the cooldown; 1 fires singly.</summary>
+        public int SalvoSize;
+
+        public float SalvoInterval;
+
+        /// <summary>Shots fired so far in the running salvo.</summary>
+        public int SalvoShot;
+
+        /// <summary>Metres around the aim point a ballistic shot lands at random; homing shots ignore it.</summary>
+        public float Spread;
+
+        /// <summary>Muzzles fired in turn from the shooter's <see cref="WeaponMuzzle"/>s; up to 1 uses <see cref="Muzzle"/>.</summary>
+        public byte MuzzleCount;
+
+        public byte FirstMuzzle;
+
+        public byte NextMuzzle;
+
+        /// <summary>Holds fire until its unit is <see cref="Deployable"/> and deployed.</summary>
+        public bool NeedsDeploy;
+
         public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
 
         public bool CoolingDown => CooldownRemaining > 0f;
 
         public void Tick(float deltaTime) => CooldownRemaining = math.max(0f, CooldownRemaining - deltaTime);
 
-        public void StartCooldown() => CooldownRemaining = Cooldown;
+        /// <summary>Counts a shot: the next shot of a salvo waits <see cref="SalvoInterval"/>, the last the cooldown.</summary>
+        public void StartCooldown()
+        {
+            SalvoShot++;
+            if (SalvoShot < SalvoSize)
+            {
+                CooldownRemaining = SalvoInterval;
+                return;
+            }
+
+            SalvoShot = 0;
+            CooldownRemaining = Cooldown;
+        }
+
+        /// <summary>Drops the rest of a salvo whose target is gone; the cooldown counts from its last shot.</summary>
+        public void EndSalvo()
+        {
+            if (SalvoShot == 0)
+            {
+                return;
+            }
+
+            SalvoShot = 0;
+            CooldownRemaining = math.max(0f, CooldownRemaining + Cooldown - SalvoInterval);
+        }
+
+        /// <summary>A ballistic <paramref name="aim"/> moved to a random point within <see cref="Spread"/>.</summary>
+        public float3 Scatter(float3 aim, uint seed)
+        {
+            if (Spread <= 0f || Trajectory != Trajectory.Ballistic)
+            {
+                return aim;
+            }
+
+            var random = Random.CreateFromIndex(seed);
+            var offset = random.NextFloat2Direction() * Spread * math.sqrt(random.NextFloat());
+            return aim + new float3(offset.x, 0f, offset.y);
+        }
 
         public bool Affects(in BufferLookup<ArmorModifier> armor, Entity target) =>
             MinEffect <= 0f || CombatMath.ArmorMultiplier(armor, target, DamageType) >= MinEffect;

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Transport;
@@ -8,7 +9,7 @@ using Unity.Entities;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>Return to base, unload and sell, each shown when some owned entity can do it.</summary>
+    /// <summary>Return to base, unload, deploy, pack up and sell, each shown when some owned entity can do it.</summary>
     public sealed class UnitActionCommands : ICommandSource
     {
         public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
@@ -16,16 +17,20 @@ namespace HyperRTS.Presentation.HUD
             var entityManager = context.EntityManager;
             var canReturn = false;
             var canUnload = false;
+            var canDeploy = false;
             var canSell = false;
             foreach (var entity in owned)
             {
                 canReturn |= entityManager.HasComponent<HomePad>(entity);
                 canUnload |= entityManager.HasComponent<Container>(entity);
+                canDeploy |= entityManager.HasComponent<Deployable>(entity);
                 canSell |= BuildingRules.IsSellable(entityManager, entity);
             }
 
             Add(context, entries, canReturn, "command.return", CommandType.ReturnToBase, 0);
             Add(context, entries, canUnload, "command.unload", CommandType.Unload, -1);
+            Add(context, entries, canDeploy, "command.deploy", CommandType.Deploy, 0);
+            Add(context, entries, canDeploy, "command.pack-up", CommandType.PackUp, 0);
             Add(context, entries, canSell, "command.sell", CommandType.Sell, 0);
         }
 

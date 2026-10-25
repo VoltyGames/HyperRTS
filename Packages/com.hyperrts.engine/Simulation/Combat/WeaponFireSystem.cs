@@ -14,7 +14,8 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>
     /// Ticks weapon cooldowns and fires at in-range targets: an instant <see cref="DamageEvent"/>, or a launched
     /// <see cref="Projectile"/> when the weapon has a prefab. Unfinished and unpowered buildings stay silent, as do
-    /// weapons out of <see cref="Ammo"/>; a shot reveals a stealthed shooter for its <see cref="Stealth.RevealDuration"/>.
+    /// weapons out of <see cref="Ammo"/> and undeployed <see cref="Weapon.NeedsDeploy"/> weapons. A salvo stops when its
+    /// target is lost, and a shot reveals a stealthed shooter for its <see cref="Stealth.RevealDuration"/>.
     /// A unit without a turreted weapon turns its hull to the target through movement and fires once it faces it. A
     /// turret fires once its pose is on target. Buildings never turn.
     /// </summary>
@@ -92,6 +93,7 @@ namespace HyperRTS.Simulation.Combat
                 var target = attack.Value;
                 if (!InReach(weapon, attack, attacking.ValueRO) || !Health.IsAlive(HealthLookup, target))
                 {
+                    weapon.EndSalvo();
                     return;
                 }
 
