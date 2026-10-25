@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Commands
             }
 
             state.CompleteDependency();
-            _writer.Update(ref state);
+            _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             _resolver.Update(ref state, _fogQuery);
             _transforms.Update(ref state);
             _agents.Update(ref state);

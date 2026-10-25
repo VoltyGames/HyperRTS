@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Production
             _queues.Update(ref state);
             _stocks.Update(ref state);
             _costs.Update(ref state);
-            _orders.Update(ref state);
+            _orders.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             _rallies.Update(ref state);
             _selected.Update(ref state);
 

@@ -20,16 +20,18 @@ namespace HyperRTS.Simulation.Orders
             _queue = state.GetBufferLookup<QueuedOrder>();
             _halt = new OrderHalt(ref state);
             _inside = state.GetComponentLookup<Inside>(true);
+            state.RequireForUpdate<OrderTraitTable>();
             _traits = default;
         }
 
-        public void Update(ref SystemState state)
+        /// <summary>Pass <c>SystemAPI.GetSingleton&lt;OrderTraitTable&gt;()</c>: jobs copy the writer, so it can't hold a query.</summary>
+        public void Update(ref SystemState state, in OrderTraitTable traits)
         {
             _active.Update(ref state);
             _queue.Update(ref state);
             _halt.Update(ref state);
             _inside.Update(ref state);
-            _traits = state.GetEntityQuery(ComponentType.ReadOnly<OrderTraitTable>()).GetSingleton<OrderTraitTable>();
+            _traits = traits;
         }
 
         /// <summary>The traits table, for callers that branch on how an order runs.</summary>

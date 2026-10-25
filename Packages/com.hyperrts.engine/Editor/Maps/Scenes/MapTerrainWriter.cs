@@ -10,7 +10,10 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Scenes
 {
-    /// <summary>Writes the generated ground into the map's TerrainData: heights, layers and trees.</summary>
+    /// <summary>
+    /// Writes the generated ground into the map's TerrainData: heights, layers and trees, with a LODGroup copy of
+    /// each scenery model that lacks one in the map's generated folder.
+    /// </summary>
     public static class MapTerrainWriter
     {
         public static TerrainData Write(MapGeneration generation)
@@ -33,7 +36,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             data.SetAlphamaps(0, 0, splat);
             // Grass is the GrassRenderer's: an asset rebuilt in place keeps no terrain details.
             data.detailPrototypes = System.Array.Empty<DetailPrototype>();
-            WriteTrees(data, trees, generation.Scenery, climate, layout);
+            WriteTrees(data, trees, generation.Scenery, climate, layout, generation.Project.Paths);
             EditorUtility.SetDirty(data);
             return data;
         }
@@ -56,7 +59,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         /// One terrain prototype per species and variant, each species' variants in a run, then one per scenery model.
         /// </summary>
         private static void WriteTrees(TerrainData data, List<MapTree> trees, List<MapScenery> scenery,
-            MapClimate climate, MapLayout layout)
+            MapClimate climate, MapLayout layout, MapPaths paths)
         {
             var first = new int[climate.trees.Count];
             var prototypes = new List<TreePrototype>();
@@ -70,7 +73,8 @@ namespace HyperRTS.Editor.Maps.Scenes
             foreach (var model in scenery.Select(s => s.Model).Distinct())
             {
                 models[model] = prototypes.Count;
-                prototypes.Add(new TreePrototype { prefab = model });
+                var prefab = TreeModel(model, $"{paths.Generated}/{paths.Name}_Scenery_{model.name}.prefab");
+                prototypes.Add(new TreePrototype { prefab = prefab });
             }
 
             data.treePrototypes = prototypes.ToArray();
@@ -78,6 +82,31 @@ namespace HyperRTS.Editor.Maps.Scenes
                 Instance(first[tree.Species] + tree.Variant, tree.Position, tree.Yaw, tree.Scale, layout));
             var props = scenery.Select(s => Instance(models[s.Model], s.Position, s.Yaw, s.Scale, layout));
             data.SetTreeInstances(instances.Concat(props).ToArray(), true);
+        }
+
+        /// <summary>
+        /// <paramref name="model"/> when it has a LODGroup, else a copy with one never-culled LOD saved at
+        /// <paramref name="path"/>: Unity draws a terrain tree without a tree shader only through a LODGroup.
+        /// </summary>
+        public static GameObject TreeModel(GameObject model, string path)
+        {
+            if (model.GetComponent<LODGroup>() != null)
+            {
+                return model;
+            }
+
+            var copy = (GameObject)PrefabUtility.InstantiatePrefab(model);
+            try
+            {
+                var group = copy.AddComponent<LODGroup>();
+                group.SetLODs(new[] { new LOD(0f, copy.GetComponentsInChildren<Renderer>()) });
+                group.RecalculateBounds();
+                return PrefabUtility.SaveAsPrefabAsset(copy, path);
+            }
+            finally
+            {
+                Object.DestroyImmediate(copy);
+            }
         }
 
         private static TreeInstance Instance(int prototype, Vector2 position, float yaw, float scale, MapLayout layout)

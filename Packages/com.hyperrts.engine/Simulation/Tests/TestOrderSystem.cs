@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Tests
         public void Issue(ref SystemState state, Entity unit, in Order order, bool queue)
         {
             state.EntityManager.CompleteAllTrackedJobs();
-            _writer.Update(ref state);
+            _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             _writer.Issue(unit, order, queue);
         }
     }

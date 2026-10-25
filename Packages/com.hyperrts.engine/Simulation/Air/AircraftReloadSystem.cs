@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Air
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _writer.Update(ref state);
+            _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             _ammo.Update(ref state);
             _mounts.Update(ref state);
             new ReturnJob { Writer = _writer, Ammos = _ammo, Mounts = _mounts }.Schedule();

@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Production
         public void OnUpdate(ref SystemState state)
         {
             state.CompleteDependency();
-            _writer.Update(ref state);
+            _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             foreach (var (rally, unit) in SystemAPI.Query<RefRO<RallyOrder>>().WithEntityAccess())
             {
                 _writer.Issue(unit, new Order { Type = OrderType.Move, Position = rally.ValueRO.Position }, false);

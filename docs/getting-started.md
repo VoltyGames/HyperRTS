@@ -67,6 +67,7 @@ A player is defeated after losing every entity flagged **Counts For Victory**.
 | Shift + right click | Queue the order |
 | A / P / E, then left click | Attack-move / patrol / escort |
 | S / H | Stop / hold position |
+| R, or hold and drag | Turn the building being placed; release to place it |
 | Esc | Cancel placement or a targeted command |
 | Ctrl+1 to Ctrl+5 | Assign a control group |
 | 1 to 5 | Recall a control group |

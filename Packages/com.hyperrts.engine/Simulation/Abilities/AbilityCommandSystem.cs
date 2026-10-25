@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Abilities
             }
 
             state.CompleteDependency();
-            _writer.Update(ref state);
+            _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             _targets.Update(ref state, _fogQuery);
             _factions.Update(ref state);
             _caster.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),

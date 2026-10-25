@@ -1,6 +1,7 @@
 using System.IO;
 using System.Threading;
 using HyperRTS.Editor.Maps.Report;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -56,6 +57,8 @@ namespace HyperRTS.Editor.Maps.Designer
             watcher.Created += (_, _) => main.Post(_ => OnWritten(watcher), null);
             watcher.EnableRaisingEvents = true;
             _watcher = watcher;
+            // A live watcher's OS callback would keep the old scripts loaded after a reload.
+            AssemblyReloadEvents.beforeAssemblyReload += Stop;
         }
 
         // Events arrive on a worker thread and may land after the watcher stopped.
@@ -69,6 +72,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private void Stop()
         {
+            AssemblyReloadEvents.beforeAssemblyReload -= Stop;
             _watcher?.Dispose();
             _watcher = null;
             _diskTicks = 0L;

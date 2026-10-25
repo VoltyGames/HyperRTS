@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Combat
             }
 
             state.CompleteDependency();
-            _writer.Update(ref state);
+            _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             foreach (var each in issued)
             {
                 var deploy = each.Command.Type == CommandType.Deploy;
