@@ -4,7 +4,6 @@ using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -23,14 +22,6 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private void SpawnObstacle(float3 center, float2 size)
-        {
-            var obstacle = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(obstacle, LocalTransform.FromPosition(center));
-            var writer = new EntityManagerWriter(_world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
-        }
-
         private bool IsSunk(Entity unit)
         {
             var agent = _world.Get<NavAgent>(unit);
@@ -44,7 +35,7 @@ namespace HyperRTS.Simulation.Tests
             var unit = _world.SpawnUnit(1, float3.zero);
             _world.Tick();
             // Its south edge is 1.5 m away, the others 2.5 m or more.
-            SpawnObstacle(new float3(0f, 0f, 1f), new float2(8f, 5f));
+            _world.SpawnObstacle(new float3(0f, 0f, 1f), new float2(8f, 5f));
             _world.Tick();
             Assert.IsTrue(IsSunk(unit), "the obstacle landed on it");
 
@@ -63,7 +54,7 @@ namespace HyperRTS.Simulation.Tests
             var unit = _world.SpawnUnit(1, float3.zero);
             _world.Tick();
             // Deeper than the field's cap, where it reads flat.
-            SpawnObstacle(float3.zero, new float2(24f, 24f));
+            _world.SpawnObstacle(float3.zero, new float2(24f, 24f));
             _world.Tick();
             var goal = new float3(0f, 0f, 20f);
             _world.MoveTo(unit, goal);
@@ -82,8 +73,8 @@ namespace HyperRTS.Simulation.Tests
             // A two-metre slot between two walls, too narrow for a three-metre unit to leave either way.
             var unit = _world.SpawnUnit(1, float3.zero, radius: 1.5f);
             _world.Tick();
-            SpawnObstacle(new float3(-3f, 0f, 0f), new float2(4f, 40f));
-            SpawnObstacle(new float3(3f, 0f, 0f), new float2(4f, 40f));
+            _world.SpawnObstacle(new float3(-3f, 0f, 0f), new float2(4f, 40f));
+            _world.SpawnObstacle(new float3(3f, 0f, 0f), new float2(4f, 40f));
             _world.Tick();
             _world.MoveTo(unit, new float3(30f, 0f, 0f));
 

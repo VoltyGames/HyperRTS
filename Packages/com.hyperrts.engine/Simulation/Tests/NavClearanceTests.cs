@@ -26,15 +26,6 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private Entity SpawnObstacle(float3 center, float2 size)
-        {
-            var obstacle = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(obstacle, LocalTransform.FromPosition(center));
-            var writer = new EntityManagerWriter(_world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
-            return obstacle;
-        }
-
         private float GroundField(float x, float z)
         {
             var grid = _world.Grid();
@@ -44,7 +35,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Field_IsNegativeInsideWalls_AboutZeroOnTheirEdge_AndFollowsObstacles()
         {
-            var obstacle = SpawnObstacle(new float3(0.5f, 0f, 0.5f), new float2(1f, 1f));
+            var obstacle = _world.SpawnObstacle(new float3(0.5f, 0f, 0.5f), new float2(1f, 1f));
             _world.Tick();
 
             Assert.AreEqual(-0.5f, GroundField(0.5f, 0.5f), 1e-4f, "the closed cell");
@@ -66,9 +57,9 @@ namespace HyperRTS.Simulation.Tests
         public void WideUnit_TakesTheWideGap_WhileASmallUnitSlipsThroughTheNarrowOne()
         {
             // A wall along Z with a one-cell gap at z 0 to 1 and a three-cell gap at z 10 to 13.
-            SpawnObstacle(new float3(0.5f, 0f, -10f), new float2(1f, 20f));
-            SpawnObstacle(new float3(0.5f, 0f, 5.5f), new float2(1f, 9f));
-            SpawnObstacle(new float3(0.5f, 0f, 22f), new float2(1f, 18f));
+            _world.SpawnObstacle(new float3(0.5f, 0f, -10f), new float2(1f, 20f));
+            _world.SpawnObstacle(new float3(0.5f, 0f, 5.5f), new float2(1f, 9f));
+            _world.SpawnObstacle(new float3(0.5f, 0f, 22f), new float2(1f, 18f));
             _world.Tick();
 
             var small = _world.SpawnUnit(1, new float3(-6f, 0f, 0.5f), radius: 0.4f);
@@ -97,7 +88,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Constrain_KeepsTheCapsuleNoseOffAWall_AndSlidesAlongIt()
         {
-            SpawnObstacle(new float3(2.5f, 0f, 0f), new float2(1f, 20f));
+            _world.SpawnObstacle(new float3(2.5f, 0f, 0f), new float2(1f, 20f));
             _world.Tick();
             var access = new NavAgent { Radius = 0.5f, HullLength = 4f }.Access(_world.Grid());
             var capsule = new NavCapsule(access, new float2(1.5f, 0f));
@@ -115,7 +106,7 @@ namespace HyperRTS.Simulation.Tests
         public void Capsule_PushedIntoADiagonalWall_SlidesAlongIt()
         {
             // A wall along x = z, stamped as a staircase of cells.
-            var wall = SpawnObstacle(float3.zero, new float2(1f, 40f));
+            var wall = _world.SpawnObstacle(float3.zero, new float2(1f, 40f));
             _world.EntityManager.SetComponentData(wall,
                 LocalTransform.FromPositionRotation(float3.zero, quaternion.RotateY(math.PI * 0.25f)));
             _world.Tick();

@@ -6,10 +6,10 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Tests
 {
     /// <summary>
-    /// Nav regions and changed areas: reachability per layer and width, goals snapping to the start's side, and grid
-    /// changes re-planning only the paths that pass near them.
+    /// Reachability per layer and width, goals snapping to the start's side, and grid changes re-planning only the
+    /// paths that pass near them.
     /// </summary>
-    public class NavRegionTests
+    public class NavReachTests
     {
         private static readonly NavAgent Infantry = new() { Radius = 0.5f };
         private static readonly NavAgent Tank = new() { Radius = 1.85f };

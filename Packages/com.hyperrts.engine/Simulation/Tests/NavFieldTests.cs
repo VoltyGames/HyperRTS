@@ -33,16 +33,6 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private Entity SpawnObstacle(float3 center, float2 size, float yaw = 0f)
-        {
-            var obstacle = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(obstacle,
-                LocalTransform.FromPositionRotation(center, quaternion.RotateY(yaw)));
-            var writer = new EntityManagerWriter(_world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
-            return obstacle;
-        }
-
         private Entity PlantTree(float3 position, int crush)
         {
             var tree = _world.EntityManager.CreateEntity();
@@ -65,7 +55,7 @@ namespace HyperRTS.Simulation.Tests
                 {
                     var center = new float3(random.NextFloat(-90f, 90f), 0f, random.NextFloat(-90f, 90f));
                     var size = random.NextFloat2(new float2(2f), new float2(14f));
-                    placed.Add(SpawnObstacle(center, size, random.NextFloat(math.PI)));
+                    placed.Add(_world.SpawnObstacle(center, size, random.NextFloat(math.PI)));
                     placed.Add(PlantTree(center + new float3(9f, 0f, 3f), random.NextInt(1, 6)));
                 }
 
@@ -117,7 +107,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void Values_AreNegativeInsideABuilding_AndPositiveOutside()
         {
-            SpawnObstacle(float3.zero, new float2(20f, 20f));
+            _world.SpawnObstacle(float3.zero, new float2(20f, 20f));
             _world.Tick();
             var grid = _world.Grid();
             var access = Truck.Access(grid);
@@ -133,8 +123,8 @@ namespace HyperRTS.Simulation.Tests
         public void GapExactlyTwoRadiiWide_LetsThatRadiusThrough()
         {
             // A wall along x with a three-cell gap from x -1 to 2, so the middle cell is 1.5 m from each side.
-            SpawnObstacle(new float3(-51f, 0f, 0.5f), new float2(100f, 1f));
-            SpawnObstacle(new float3(52f, 0f, 0.5f), new float2(100f, 1f));
+            _world.SpawnObstacle(new float3(-51f, 0f, 0.5f), new float2(100f, 1f));
+            _world.SpawnObstacle(new float3(52f, 0f, 0.5f), new float2(100f, 1f));
             var exact = new NavAgent { Radius = 1.5f };
             var wider = new NavAgent { Radius = 1.6f };
             _world.AddAgentPrefabs(exact, wider);

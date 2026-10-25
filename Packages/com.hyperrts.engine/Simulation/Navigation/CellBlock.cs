@@ -39,16 +39,15 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>What the step from the centre to the neighbour costs.</summary>
         public readonly float CostOut(int2 offset) =>
-            Length(offset) * NavAccess.CellCost(_distances[(offset.y + 1) * 3 + offset.x + 1], _wallMargin);
+            GridAStar.StepCost(int2.zero, offset) *
+            NavAccess.CellCost(_distances[(offset.y + 1) * 3 + offset.x + 1], _wallMargin);
 
         /// <summary>What the step from the neighbour onto the centre costs.</summary>
         public readonly float CostIn(int2 offset) =>
-            Length(offset) * NavAccess.CellCost(_distances[4], _wallMargin);
+            GridAStar.StepCost(int2.zero, offset) * NavAccess.CellCost(_distances[4], _wallMargin);
 
         // A diagonal needs both cells beside it open, so it never cuts a corner.
         private readonly bool IsCornerOpen(int2 offset) =>
             offset.x == 0 || offset.y == 0 || (IsOpen(new int2(offset.x, 0)) && IsOpen(new int2(0, offset.y)));
-
-        private static float Length(int2 offset) => offset.x != 0 && offset.y != 0 ? GridAStar.Diagonal : 1f;
     }
 }

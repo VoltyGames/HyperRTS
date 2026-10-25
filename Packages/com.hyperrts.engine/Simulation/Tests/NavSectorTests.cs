@@ -4,7 +4,6 @@ using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -31,16 +30,6 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private Entity SpawnObstacle(float3 center, float2 size, float yaw)
-        {
-            var obstacle = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(obstacle,
-                LocalTransform.FromPositionRotation(center, quaternion.RotateY(yaw)));
-            var writer = new EntityManagerWriter(_world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
-            return obstacle;
-        }
-
         // Rotated buildings, some closing pockets, and a river with a bridge.
         private List<Entity> SpawnClutter(uint seed, int count)
         {
@@ -50,7 +39,7 @@ namespace HyperRTS.Simulation.Tests
             {
                 var center = new float3(random.NextFloat(-95f, 95f), 0f, random.NextFloat(-95f, 95f));
                 var size = random.NextFloat2(new float2(2f), new float2(18f));
-                placed.Add(SpawnObstacle(center, size, random.NextFloat(math.PI)));
+                placed.Add(_world.SpawnObstacle(center, size, random.NextFloat(math.PI)));
             }
 
             return placed;
@@ -62,10 +51,10 @@ namespace HyperRTS.Simulation.Tests
             _world.SpawnNavArea(new float3(0f, 0f, 30f), new float2(200f, 12f), NavAreaKind.Water);
             _world.SpawnNavArea(new float3(-40f, 0f, 30f), new float2(6f, 14f), NavAreaKind.Deck);
             // A closed ring, so its inside is a region of its own.
-            SpawnObstacle(new float3(50f, 0f, -50f), new float2(20f, 2f), 0f);
-            SpawnObstacle(new float3(50f, 0f, -70f), new float2(20f, 2f), 0f);
-            SpawnObstacle(new float3(41f, 0f, -60f), new float2(2f, 20f), 0f);
-            SpawnObstacle(new float3(59f, 0f, -60f), new float2(2f, 20f), 0f);
+            _world.SpawnObstacle(new float3(50f, 0f, -50f), new float2(20f, 2f), 0f);
+            _world.SpawnObstacle(new float3(50f, 0f, -70f), new float2(20f, 2f), 0f);
+            _world.SpawnObstacle(new float3(41f, 0f, -60f), new float2(2f, 20f), 0f);
+            _world.SpawnObstacle(new float3(59f, 0f, -60f), new float2(2f, 20f), 0f);
             SpawnClutter(11, 30);
             _world.Tick();
 

@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
@@ -21,15 +20,6 @@ namespace HyperRTS.Simulation.Tests
             _world.CreateMatch(new byte[] { 1, 2 }, size);
         }
 
-        private void SpawnObstacle(float3 center, float2 size, float yaw = 0f)
-        {
-            var obstacle = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(obstacle,
-                LocalTransform.FromPositionRotation(center, quaternion.RotateY(yaw)));
-            var writer = new EntityManagerWriter(_world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
-        }
-
         private DynamicBuffer<PathWaypoint> Waypoints(Entity unit) =>
             _world.EntityManager.GetBuffer<PathWaypoint>(unit);
 
@@ -38,7 +28,7 @@ namespace HyperRTS.Simulation.Tests
         {
             CreateMatch(600f);
             // A wall down the middle with its only way round at the north end, among rotated buildings.
-            SpawnObstacle(new float3(0f, 0f, -25f), new float2(2f, 550f));
+            _world.SpawnObstacle(new float3(0f, 0f, -25f), new float2(2f, 550f));
             var start = new float3(-270f, 0f, -270f);
             var goal = new float3(270f, 0f, -270f);
             var random = new Random(3);
@@ -50,7 +40,7 @@ namespace HyperRTS.Simulation.Tests
                 if (clear)
                 {
                     var size = random.NextFloat2(new float2(8f), new float2(30f));
-                    SpawnObstacle(center, size, random.NextFloat(math.PI));
+                    _world.SpawnObstacle(center, size, random.NextFloat(math.PI));
                 }
             }
 
@@ -73,9 +63,9 @@ namespace HyperRTS.Simulation.Tests
         {
             CreateMatch(200f);
             // A cup open to the south, its bottom between the unit and the goal.
-            SpawnObstacle(new float3(0f, 0f, 10f), new float2(22f, 2f));
-            SpawnObstacle(new float3(-10f, 0f, 0f), new float2(2f, 20f));
-            SpawnObstacle(new float3(10f, 0f, 0f), new float2(2f, 20f));
+            _world.SpawnObstacle(new float3(0f, 0f, 10f), new float2(22f, 2f));
+            _world.SpawnObstacle(new float3(-10f, 0f, 0f), new float2(2f, 20f));
+            _world.SpawnObstacle(new float3(10f, 0f, 0f), new float2(2f, 20f));
             _world.Tick();
             var unit = _world.SpawnUnit(1, float3.zero);
             var goal = new float3(0f, 0f, 30f);
@@ -91,8 +81,8 @@ namespace HyperRTS.Simulation.Tests
         public void PathCorners_KeepTheWallMargin_InTheOpen()
         {
             CreateMatch(200f);
-            SpawnObstacle(float3.zero, new float2(20f, 20f));
-            SpawnObstacle(new float3(30f, 0f, 25f), new float2(12f, 12f), math.PI * 0.25f);
+            _world.SpawnObstacle(float3.zero, new float2(20f, 20f));
+            _world.SpawnObstacle(new float3(30f, 0f, 25f), new float2(12f, 12f), math.PI * 0.25f);
             _world.Tick();
             var unit = _world.SpawnUnit(1, new float3(-30f, 0f, -5f));
             var goal = new float3(45f, 0f, 45f);
@@ -119,7 +109,8 @@ namespace HyperRTS.Simulation.Tests
                 for (var z = 0; z < 6; z++)
                 {
                     var center = new float3(-35f + x * 14f, 0f, -35f + z * 14f);
-                    SpawnObstacle(center, random.NextFloat2(new float2(6f), new float2(9f)), random.NextFloat(math.PI));
+                    _world.SpawnObstacle(center, random.NextFloat2(new float2(6f), new float2(9f)),
+                        random.NextFloat(math.PI));
                 }
             }
 

@@ -80,10 +80,13 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>Octile distance, nudged up slightly so ties favour cells nearer the goal (fewer expansions).</summary>
-        public static float Heuristic(int2 cell, int2 goal)
+        public static float Heuristic(int2 cell, int2 goal) => Octile(cell, goal) * 1.001f;
+
+        /// <summary>The shortest eight-way distance between two cells, in cells.</summary>
+        public static float Octile(int2 a, int2 b)
         {
-            var d = math.abs(goal - cell);
-            return (math.cmax(d) + (Diagonal - 1f) * math.cmin(d)) * 1.001f;
+            var d = math.abs(b - a);
+            return math.cmax(d) + (Diagonal - 1f) * math.cmin(d);
         }
 
         /// <summary>A step's length in cells.</summary>

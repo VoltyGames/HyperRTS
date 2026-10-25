@@ -24,14 +24,6 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private void SpawnObstacle(float3 center, float2 size)
-        {
-            var obstacle = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(obstacle, LocalTransform.FromPosition(center));
-            var writer = new EntityManagerWriter(_world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
-        }
-
         // Largest distance the unit is pushed from where it stands over the given time.
         private float Shove(Entity unit, float seconds)
         {
@@ -50,8 +42,8 @@ namespace HyperRTS.Simulation.Tests
         public void IdleAlly_InAOneUnitGap_StepsAside_AndTheMoverGetsThrough()
         {
             // A lane one cell wide, z 0 to 1, from x -3 to 3.
-            SpawnObstacle(new float3(0f, 0f, 2f), new float2(6f, 2f));
-            SpawnObstacle(new float3(0f, 0f, -1f), new float2(6f, 2f));
+            _world.SpawnObstacle(new float3(0f, 0f, 2f), new float2(6f, 2f));
+            _world.SpawnObstacle(new float3(0f, 0f, -1f), new float2(6f, 2f));
             _world.Tick();
 
             var parked = _world.SpawnUnit(1, new float3(0f, 0f, 0.5f), radius: 0.4f);
@@ -116,8 +108,8 @@ namespace HyperRTS.Simulation.Tests
         public void Column_QueuedAtAChoke_FarFromItsGoals_KeepsItsOrders()
         {
             // A lane one cell wide, z 0 to 1, from x -15 to 15, too long to go round, shut by an enemy standing in it.
-            SpawnObstacle(new float3(0f, 0f, 2f), new float2(30f, 2f));
-            SpawnObstacle(new float3(0f, 0f, -1f), new float2(30f, 2f));
+            _world.SpawnObstacle(new float3(0f, 0f, 2f), new float2(30f, 2f));
+            _world.SpawnObstacle(new float3(0f, 0f, -1f), new float2(30f, 2f));
             _world.Tick();
             var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 0.5f), radius: 0.4f);
             var column = new Entity[3];

@@ -23,22 +23,14 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private void SpawnObstacle(float3 center, float2 size)
-        {
-            var obstacle = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(obstacle, LocalTransform.FromPosition(center));
-            var writer = new EntityManagerWriter(_world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
-        }
-
         private float3 FirstCorner(Entity unit) => _world.EntityManager.GetBuffer<PathWaypoint>(unit)[0].Position;
 
         [Test]
         public void ShovedBehindAPillar_StillArrives()
         {
             // A wall from z -6 to 14 whose south end is the way round, and a pillar north of the start.
-            SpawnObstacle(new float3(0.5f, 0f, 4f), new float2(1f, 20f));
-            SpawnObstacle(new float3(-2f, 0f, 10.5f), new float2(2f, 1f));
+            _world.SpawnObstacle(new float3(0.5f, 0f, 4f), new float2(1f, 20f));
+            _world.SpawnObstacle(new float3(-2f, 0f, 10.5f), new float2(2f, 1f));
             _world.Tick();
 
             var unit = _world.SpawnUnit(1, new float3(-5f, 0f, 0f));

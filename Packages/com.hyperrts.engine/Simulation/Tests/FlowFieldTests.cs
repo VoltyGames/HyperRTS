@@ -25,22 +25,12 @@ namespace HyperRTS.Simulation.Tests
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
             // A wall between the start and goal areas, open at both ends.
-            SpawnObstacle(new float3(0f, 0f, 0f), new float2(4f, 120f), 0.2f);
-            SpawnObstacle(new float3(-30f, 0f, 40f), new float2(16f, 10f), 0.7f);
+            _world.SpawnObstacle(new float3(0f, 0f, 0f), new float2(4f, 120f), 0.2f);
+            _world.SpawnObstacle(new float3(-30f, 0f, 40f), new float2(16f, 10f), 0.7f);
         }
 
         [TearDown]
         public void TearDown() => _world.Dispose();
-
-        private Entity SpawnObstacle(float3 center, float2 size, float yaw)
-        {
-            var obstacle = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(obstacle,
-                LocalTransform.FromPositionRotation(center, quaternion.RotateY(yaw)));
-            var writer = new EntityManagerWriter(_world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
-            return obstacle;
-        }
 
         private PathfindingSystem Pathfinder()
         {
@@ -156,7 +146,7 @@ namespace HyperRTS.Simulation.Tests
             var built = Pathfinder().Stats.Fields;
 
             // Across the members' way from the wall's south end to their slots.
-            SpawnObstacle(new float3(14f, 0f, -36f), new float2(4f, 24f), 0f);
+            _world.SpawnObstacle(new float3(14f, 0f, -36f), new float2(4f, 24f), 0f);
             _world.Tick(frames: 2);
 
             var pathfinder = Pathfinder();

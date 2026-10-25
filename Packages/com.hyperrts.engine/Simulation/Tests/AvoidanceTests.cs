@@ -4,11 +4,10 @@ using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Movers steering round each other with ORCA before they touch, and round idle units that give way.</summary>
+    /// <summary>Movers steering round each other before they touch, and round idle units that give way.</summary>
     public class AvoidanceTests
     {
         private TestWorld _world;
@@ -120,8 +119,8 @@ namespace HyperRTS.Simulation.Tests
         public void Column_ThroughAnIdleAlly_InAOneUnitGap_GetsThrough()
         {
             // A lane one cell wide, z 0 to 1, from x -3 to 3.
-            SpawnObstacle(new float3(0f, 0f, 2f), new float2(6f, 2f));
-            SpawnObstacle(new float3(0f, 0f, -1f), new float2(6f, 2f));
+            _world.SpawnObstacle(new float3(0f, 0f, 2f), new float2(6f, 2f));
+            _world.SpawnObstacle(new float3(0f, 0f, -1f), new float2(6f, 2f));
             _world.Tick();
 
             _world.SpawnUnit(1, new float3(0f, 0f, 0.5f), radius: 0.4f);
@@ -143,14 +142,6 @@ namespace HyperRTS.Simulation.Tests
             {
                 Assert.Less(math.distance(_world.GetPosition(column[i]).xz, goals[i].xz), 1f, "got through the lane");
             }
-        }
-
-        private void SpawnObstacle(float3 center, float2 size)
-        {
-            var obstacle = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(obstacle, LocalTransform.FromPosition(center));
-            var writer = new EntityManagerWriter(_world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
         }
     }
 }

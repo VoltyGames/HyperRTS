@@ -33,14 +33,6 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private void SpawnObstacle(float3 center, float2 size)
-        {
-            var obstacle = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(obstacle, LocalTransform.FromPosition(center));
-            var writer = new EntityManagerWriter(_world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
-        }
-
         private Entity SpawnVehicle(float3 position, float yaw, float speed, NavAgent agent, Locomotion locomotion)
         {
             var vehicle = _world.SpawnUnit(1, position, speed, agent.Radius);
@@ -155,8 +147,8 @@ namespace HyperRTS.Simulation.Tests
         public void TwentyTanks_ThroughATwelveMetreGate_AllArrive(bool formation)
         {
             // A wall along x = 0 with a 12 m gate at z -6 to 6.
-            SpawnObstacle(new float3(0f, 0f, 46f), new float2(2f, 80f));
-            SpawnObstacle(new float3(0f, 0f, -46f), new float2(2f, 80f));
+            _world.SpawnObstacle(new float3(0f, 0f, 46f), new float2(2f, 80f));
+            _world.SpawnObstacle(new float3(0f, 0f, -46f), new float2(2f, 80f));
             var tank = new NavAgent { Radius = 1.85f, HullLength = 7.5f };
             var handling = new Locomotion
             {
@@ -198,10 +190,10 @@ namespace HyperRTS.Simulation.Tests
         public void TruckColumn_FollowsARoadRoundACorner_AndThroughAGap()
         {
             // A road 20 m wide east along z = 0, north along x = 50 past a gap 10 m wide, into open ground.
-            SpawnObstacle(new float3(-80f, 0f, -16f), new float2(300f, 12f));
-            SpawnObstacle(new float3(-95f, 0f, 70f), new float2(270f, 120f));
-            SpawnObstacle(new float3(67f, 0f, 55f), new float2(14f, 150f));
-            SpawnObstacle(new float3(45f, 0f, 90f), new float2(10f, 4f));
+            _world.SpawnObstacle(new float3(-80f, 0f, -16f), new float2(300f, 12f));
+            _world.SpawnObstacle(new float3(-95f, 0f, 70f), new float2(270f, 120f));
+            _world.SpawnObstacle(new float3(67f, 0f, 55f), new float2(14f, 150f));
+            _world.SpawnObstacle(new float3(45f, 0f, 90f), new float2(10f, 4f));
             var truck = new NavAgent { Radius = 1.4f, HullLength = 17f };
             var handling = new Locomotion
             {

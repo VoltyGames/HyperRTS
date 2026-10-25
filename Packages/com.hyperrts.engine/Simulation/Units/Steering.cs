@@ -112,12 +112,13 @@ namespace HyperRTS.Simulation.Units
         {
             using var scope = PickMarker.Auto();
             var alone = _neighbours.Length == 0 && !IsNearWall();
-            if (alone || Penalty(_preferred) <= 0f)
+            var penalty = alone ? 0f : Penalty(_preferred);
+            if (penalty <= 0f)
             {
                 return _preferred;
             }
 
-            var best = new Choice { Velocity = _preferred, Cost = Cost(_preferred) };
+            var best = new Choice { Velocity = _preferred, Cost = penalty + Straying(_preferred) };
             Try(ref best, _last, 0f);
             Try(ref best, float2.zero, StandingCost);
             if (locomotion.IsInstant)
@@ -197,19 +198,26 @@ namespace HyperRTS.Simulation.Units
 
         private readonly void Try(ref Choice best, float2 candidate, float extra)
         {
-            var cost = Cost(candidate) + extra;
+            // The penalty is never negative, so a candidate already dearer without it can't win.
+            var cost = Straying(candidate) + extra;
+            if (cost >= best.Cost)
+            {
+                return;
+            }
+
+            cost += Penalty(candidate);
             if (cost < best.Cost)
             {
                 best = new Choice { Velocity = candidate, Cost = cost };
             }
         }
 
-        private readonly float Cost(float2 candidate)
+        private readonly float Straying(float2 candidate)
         {
             var left = math.max(0f, Cross(math.normalizesafe(_preferred), candidate));
             var straying = math.distance(candidate, _preferred) + Stickiness * math.distance(candidate, _last) +
                            KeepRight * left;
-            return Penalty(candidate) + straying / _topSpeed;
+            return straying / _topSpeed;
         }
 
         /// <summary>Metres of overlap with neighbours and walls, weighted to count sooner hits more.</summary>

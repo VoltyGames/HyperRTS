@@ -58,7 +58,8 @@ namespace HyperRTS.Simulation.Tests
                 var center = new float3(random.NextFloat(-280f, 280f), 0f, random.NextFloat(-280f, 280f));
                 if (IsInland(center))
                 {
-                    SpawnObstacle(center, random.NextFloat2(new float2(8f), new float2(30f)), random.NextFloat(math.PI));
+                    _world.SpawnObstacle(center, random.NextFloat2(new float2(8f), new float2(30f)),
+                        random.NextFloat(math.PI));
                     placed++;
                 }
             }
@@ -82,15 +83,6 @@ namespace HyperRTS.Simulation.Tests
 
                 placed++;
             }
-        }
-
-        private void SpawnObstacle(float3 center, float2 size, float yaw)
-        {
-            var obstacle = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(obstacle,
-                LocalTransform.FromPositionRotation(center, quaternion.RotateY(yaw)));
-            var writer = new EntityManagerWriter(_world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
         }
 
         private void PlantTree(float3 position, int crush)
@@ -127,7 +119,7 @@ namespace HyperRTS.Simulation.Tests
             var random = new Random(5);
             for (var run = 0; run < 6; run++)
             {
-                SpawnObstacle(new float3(random.NextFloat(-200f, 60f), 0f, random.NextFloat(-250f, 250f)),
+                _world.SpawnObstacle(new float3(random.NextFloat(-200f, 60f), 0f, random.NextFloat(-250f, 250f)),
                     new float2(14f, 10f), random.NextFloat(math.PI));
                 var grid = TimeSystem<NavGridSystem>();
                 var field = TimeSystem<NavFieldSystem>();

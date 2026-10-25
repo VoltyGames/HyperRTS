@@ -91,7 +91,7 @@ namespace HyperRTS.Simulation.Navigation
             foreach (var next in _neighbours)
             {
                 var to = Position(graph, access.ClassIndex, next, first, last, start, goal);
-                var nextCost = cost + Octile(at, to);
+                var nextCost = cost + GridAStar.Octile(at, to);
                 var seen = _records.TryGetValue(next, out var record);
                 if (seen && (record.Closed || record.Cost <= nextCost))
                 {
@@ -112,12 +112,6 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             return node == last ? goal : graph.Representative(classIndex, node);
-        }
-
-        private static float Octile(int2 a, int2 b)
-        {
-            var d = math.abs(b - a);
-            return math.cmax(d) + (GridAStar.Diagonal - 1f) * math.cmin(d);
         }
 
         // Sectors from the start's to the goal's, each once in a row.

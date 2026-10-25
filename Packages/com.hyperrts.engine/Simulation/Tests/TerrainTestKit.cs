@@ -31,6 +31,16 @@ namespace HyperRTS.Simulation.Tests
             return area;
         }
 
+        public static Entity SpawnObstacle(this TestWorld world, float3 center, float2 size, float yaw = 0f)
+        {
+            var obstacle = world.EntityManager.CreateEntity();
+            world.EntityManager.AddComponentData(obstacle,
+                LocalTransform.FromPositionRotation(center, quaternion.RotateY(yaw)));
+            var writer = new EntityManagerWriter(world.EntityManager, obstacle);
+            NavSetup.AddObstacle(ref writer, size);
+            return obstacle;
+        }
+
         public static Entity SpawnShip(this TestWorld world, byte faction, float3 position, float radius = 0.5f)
         {
             var ship = world.SpawnUnit(faction, position, speed: 8f, radius: radius, name: "Ship");
