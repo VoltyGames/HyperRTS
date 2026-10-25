@@ -1,17 +1,20 @@
 using HyperRTS.Simulation.Match;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Authoring
 {
     /// <summary>The open scenes' Match, cached until the hierarchy changes, and its player colours.</summary>
-    [InitializeOnLoad]
-    public static class SceneMatch
+    public static partial class SceneMatch
     {
+        [AutoStaticsCleanup]
         private static MatchAuthoring _match;
+        [AutoStaticsCleanup]
         private static bool _stale = true;
 
-        static SceneMatch() => EditorApplication.hierarchyChanged += () => _stale = true;
+        [InitializeOnLoadMethod]
+        private static void WatchHierarchy() => EditorApplication.hierarchyChanged += MarkStale;
 
         public static MatchAuthoring Current
         {
@@ -26,6 +29,8 @@ namespace HyperRTS.Editor.Authoring
                 return _match;
             }
         }
+
+        private static void MarkStale() => _stale = true;
 
         /// <summary>Grey for neutral, cyan for an owner with no player slot.</summary>
         public static Color PlayerColor(int owner)

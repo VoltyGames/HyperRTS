@@ -152,9 +152,9 @@ namespace HyperRTS.Presentation.Overlays
         /// <summary>The same meshes and sub-mesh layout with the ghost material in every material slot.</summary>
         private RenderMeshArray Ghosted(RenderMeshArray array)
         {
-            var materials = new Material[array.Materials.Length];
+            var materials = new UnityObjectRef<Material>[array.MaterialReferences.Length];
             Array.Fill(materials, _material);
-            return new RenderMeshArray(materials, array.Meshes, array.MaterialMeshIndices);
+            return new RenderMeshArray(materials, array.MeshReferences, array.MaterialMeshIndices);
         }
 
         private void Resize(EntityManager entityManager)

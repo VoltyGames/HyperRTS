@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using HyperRTS.Presentation.Animation;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -13,11 +14,12 @@ namespace HyperRTS.Editor.Import
     /// <c>VAT/&lt;Model&gt;.vat.json</c> sits beside it, and its UV1 must reach the GPU as full floats. The textures
     /// that bake info names are read texel for texel, so they stay exact.
     /// </summary>
-    public sealed class VATImportRules : AssetPostprocessor
+    public sealed partial class VATImportRules : AssetPostprocessor
     {
         private const int MaxTextureSize = 16384;
 
         // Texture names by bake info path, so a folder's textures parse each bake info file once until it changes.
+        [AutoStaticsCleanup]
         private static readonly Dictionary<string, (DateTime Written, string Positions, string Normals)> Named = new();
 
         /// <summary>After a game's own import rules, so these settings win.</summary>

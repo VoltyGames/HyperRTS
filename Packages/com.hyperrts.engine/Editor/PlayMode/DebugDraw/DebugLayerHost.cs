@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     {
         private const double RepaintSeconds = 0.1;
 
+        [NoAutoStaticsCleanup]
         private static double _nextRepaint;
 
         static DebugLayerHost()
@@ -21,6 +23,7 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
             EditorApplication.update += RepaintWhileActive;
         }
 
+        [NoAutoStaticsCleanup]
         private static readonly DebugLayer[] AllLayers =
             TypeDiscovery.Instances<DebugLayer>().OrderBy(layer => layer.Label).ToArray();
 

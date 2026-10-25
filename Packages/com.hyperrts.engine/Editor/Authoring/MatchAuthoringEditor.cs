@@ -2,6 +2,7 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -18,7 +19,9 @@ namespace HyperRTS.Editor.Authoring
 
         private static readonly Color MapColor = new(1f, 0.85f, 0.2f);
 
+        [NoAutoStaticsCleanup]
         private static bool _showNavGrid;
+        [NoAutoStaticsCleanup]
         private static bool _showFogGrid;
 
         private VisualElement _owners;

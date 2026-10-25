@@ -3,6 +3,7 @@ using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Meshes;
 using NUnit.Framework;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -13,9 +14,13 @@ namespace HyperRTS.Editor.Tests
     {
         private const int Columns = 5;
 
+        [NoAutoStaticsCleanup]
         private static readonly MapRoadClass Asphalt = new() { key = "Asphalt", width = 6f, rank = 2 };
+        [NoAutoStaticsCleanup]
         private static readonly MapRoadClass Dirt = new() { key = "Dirt", width = 4f, rank = 0 };
+        [NoAutoStaticsCleanup]
         private static readonly MapRoadClass Gravel = new() { key = "Gravel", width = 4f, rank = 5 };
+        [NoAutoStaticsCleanup]
         private static readonly MapRoadClass Lane = new() { key = "Lane", width = 4f, rank = 1 };
 
         private static MapHeights Flat() => new(129, new Rect(-64f, -64f, 128f, 128f));

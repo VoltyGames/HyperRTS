@@ -8,6 +8,7 @@ using HyperRTS.Editor.Validation.Rules;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Upgrades;
 using NUnit.Framework;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace HyperRTS.Editor.Tests
     /// <summary>Each discovered rule reports its minimal broken case, so a new rule ships with one.</summary>
     public partial class RuleFiresTests
     {
+        [NoAutoStaticsCleanup]
         private static readonly Dictionary<Type, string> Skipped = new()
         {
             [typeof(HeightFogRule)] = "Fires only when the project's active URP renderer lacks the feature.",

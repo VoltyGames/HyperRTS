@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Maps.Data;
+using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Editor.Maps.Library
 {
@@ -10,6 +11,7 @@ namespace HyperRTS.Editor.Maps.Library
     public sealed class MapLibrary
     {
         /// <summary>Item types in listing order.</summary>
+        [NoAutoStaticsCleanup]
         private static readonly Type[] Types =
         {
             typeof(MapClimateLayer),
@@ -29,6 +31,7 @@ namespace HyperRTS.Editor.Maps.Library
             typeof(MapRules),
         };
 
+        [NoAutoStaticsCleanup]
         private static readonly Dictionary<Type, string> TypeNames =
             Types.ToDictionary(type => type, type => MapLibraryItemAttribute.Require(type).Name);
 

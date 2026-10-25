@@ -99,7 +99,7 @@ namespace HyperRTS.Presentation.Tests
             MathAssert.Near(math.rotate(quaternion.RotateY(Yaw), math.forward()), math.rotate(transform.Rotation, math.forward()));
 
             var part = _em.GetBuffer<LinkedEntityGroup>(root)[1].Value;
-            Assert.AreSame(_ghost, _em.GetSharedComponent<RenderMeshArray>(part).Materials[0]);
+            Assert.AreSame(_ghost, _em.GetSharedComponent<RenderMeshArray>(part).MaterialReferences[0].Value);
             var tint = _em.GetComponentData<URPMaterialPropertyBaseColor>(part).Value;
             float4 invalid = (Vector4)_style.placementInvalid.linear;
             Assert.AreEqual(invalid, tint, "tinted as a refused spot");

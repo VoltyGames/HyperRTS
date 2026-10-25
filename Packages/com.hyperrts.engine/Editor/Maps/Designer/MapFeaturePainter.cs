@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Spec;
 using HyperRTS.Editor.Maps.Symmetry;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -17,7 +18,9 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private static readonly Color Outline = new(0f, 0f, 0f, 0.7f);
         private static readonly Color Selected = Color.white;
+        [NoAutoStaticsCleanup]
         private static readonly List<Vector2> World = new();
+        [NoAutoStaticsCleanup]
         private static readonly List<Vector2> Local = new();
 
         /// <summary>The symmetry's other copies of every feature that isn't shared, faded.</summary>

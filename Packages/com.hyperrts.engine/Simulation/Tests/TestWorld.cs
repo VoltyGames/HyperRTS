@@ -43,6 +43,10 @@ namespace HyperRTS.Simulation.Tests
                 typeof(TransformSystemGroup),
                 typeof(BeginSimulationEntityCommandBufferSystem),
                 typeof(EndSimulationEntityCommandBufferSystem),
+                // The command buffer systems order themselves against these groups.
+                typeof(FixedStepSimulationSystemGroup),
+                typeof(VariableRateSimulationSystemGroup),
+                typeof(LateSimulationSystemGroup),
             };
 
             foreach (var type in DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default))

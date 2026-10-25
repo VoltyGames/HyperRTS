@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using Unity.Entities;
 using Unity.Netcode;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode
 {
     /// <summary>The running game worlds for Play-mode tools, with their jobs completed so data is safe to read.</summary>
-    internal static class PlayWorld
+    internal static partial class PlayWorld
     {
+        [AutoStaticsCleanup]
         private static readonly Dictionary<World, Dictionary<Type, EntityQuery>> Singletons = new();
 
         /// <summary>The world that owns game state: the host or server when one runs, else the single-player world. Cheats write here.</summary>

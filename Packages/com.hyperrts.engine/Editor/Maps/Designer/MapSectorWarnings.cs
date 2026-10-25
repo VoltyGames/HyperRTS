@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Spec;
 using HyperRTS.Editor.Maps.Symmetry;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -16,6 +17,7 @@ namespace HyperRTS.Editor.Maps.Designer
         private const float RingWidth = 2f;
 
         private static readonly Color Warning = new(1f, 0.55f, 0.1f);
+        [NoAutoStaticsCleanup]
         private static readonly List<Vector2> Points = new();
 
         public static void Draw(Painter2D painter, MapSpec spec, MapCanvasView view, MapSymmetry symmetry)

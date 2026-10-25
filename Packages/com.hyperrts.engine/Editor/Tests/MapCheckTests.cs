@@ -8,6 +8,7 @@ using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Spec;
 using HyperRTS.Simulation.Combat;
 using NUnit.Framework;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -73,6 +74,7 @@ namespace HyperRTS.Editor.Tests
             Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains(named)), issues.ToString());
         }
 
+        [NoAutoStaticsCleanup]
         private static readonly TestCaseData[] BrokenSettlementKits =
         {
             new TestCaseData((Action<MapSettlementKit>)(kit => kit.houses[0] = "Nope"), "Nope")

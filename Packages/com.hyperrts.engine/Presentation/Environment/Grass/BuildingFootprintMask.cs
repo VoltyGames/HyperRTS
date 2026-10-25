@@ -13,7 +13,7 @@ namespace HyperRTS.Presentation.Environment.Grass
     /// Where buildings stand, as an R8 picture over the map at nav-cell resolution, published as
     /// <c>_HyperRTSFootprints</c> so grass and row crops skip those spots whatever the interaction-map quality.
     /// </summary>
-    public sealed class BuildingFootprintMask : IDisposable
+    public sealed partial class BuildingFootprintMask : IDisposable
     {
         public static readonly int TextureId = Shader.PropertyToID("_HyperRTSFootprints");
         public static readonly int RectId = Shader.PropertyToID("_HyperRTSFootprintRect");

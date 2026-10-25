@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Maps.Library
@@ -13,7 +14,9 @@ namespace HyperRTS.Editor.Maps.Library
     /// </summary>
     public sealed class MapLibraryRefSync : AssetPostprocessor
     {
+        [NoAutoStaticsCleanup]
         private static readonly HashSet<string> Pending = new(StringComparer.Ordinal);
+        [NoAutoStaticsCleanup]
         private static bool _queued;
 
         private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)

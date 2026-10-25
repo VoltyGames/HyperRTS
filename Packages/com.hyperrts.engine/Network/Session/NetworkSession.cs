@@ -45,6 +45,7 @@ namespace HyperRTS.Network.Session
         private static NetworkEndpoint _rejoin;
 
         /// <summary>The emptied world at the bottom of Unity's active world stack; see <see cref="Empty"/>.</summary>
+        [NoAutoStaticsCleanup]
         private static World _base;
 
         public static bool IsRunning => ClientServerBootstrap.ServerWorld != null || ClientServerBootstrap.ClientWorld != null;
@@ -149,7 +150,7 @@ namespace HyperRTS.Network.Session
             }
 
             DisposeWorlds(world);
-            World.DefaultGameObjectInjectionWorld = world;
+            World.PushWorldStack(world);
             SetStatus(NetworkStatus.Connected);
             SessionSceneLoader.Load(scene);
             return true;
@@ -165,7 +166,7 @@ namespace HyperRTS.Network.Session
 
             var world = SessionWorlds.CreateClient(SessionWorlds.ClientSystems());
             SessionWorlds.Connect(world, server, drivers);
-            World.DefaultGameObjectInjectionWorld = world;
+            World.PushWorldStack(world);
             SetStatus(NetworkStatus.Connecting);
             SessionSceneLoader.Load(scene);
         }
@@ -220,7 +221,7 @@ namespace HyperRTS.Network.Session
         private static void Empty(World world)
         {
             ScriptBehaviourUpdateOrder.RemoveWorldFromCurrentPlayerLoop(world);
-            world.DestroyAllSystemsAndLogException();
+            world.DestroyAllSystemsAndLogException(out _);
             world.EntityManager.DestroyEntity(world.EntityManager.UniversalQuery);
             _base = world;
         }

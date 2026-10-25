@@ -1,11 +1,12 @@
 using System;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor.PackageManager;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace HyperRTS.Editor.Common
 {
     /// <summary>Where the engine package lives; tools that write into it need it embedded or local, not installed.</summary>
-    internal static class EnginePackage
+    internal static partial class EnginePackage
     {
         public static bool Writable
         {
@@ -21,6 +22,7 @@ namespace HyperRTS.Editor.Common
         /// <summary>The package's project path, such as <c>Packages/com.hyperrts.engine</c>.</summary>
         public static string Folder => Info.assetPath;
 
+        [AutoStaticsCleanup]
         private static PackageInfo _info;
 
         // A package change reloads the domain, so the lookup never goes stale.

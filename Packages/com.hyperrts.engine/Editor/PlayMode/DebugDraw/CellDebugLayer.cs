@@ -1,4 +1,5 @@
 using Unity.Mathematics;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.DebugDraw
@@ -8,6 +9,7 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     {
         private const float Height = 0.1f;
 
+        [NoAutoStaticsCleanup]
         private static Material _material;
 
         protected static void BeginCells(Color color)

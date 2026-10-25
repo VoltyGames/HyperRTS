@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Tests
     {
         public const float FrameTime = 1f / 60f;
 
-        // Rendering, input and the game stay out; the editor's clock does too, so frames get a fixed time step.
+        // Rendering, input and the game stay out.
         [NoAutoStaticsCleanup]
         private static readonly HashSet<string> Assemblies = new()
         {
@@ -48,6 +48,7 @@ namespace HyperRTS.Simulation.Tests
             Application.runInBackground = true;
             var port = _nextPort++;
             var host = SessionWorlds.CreateHost(Keep(SessionWorlds.HostSystems()));
+            StopEditorClock(host);
             Host = new TestWorld(host);
             Host.CreateMatch(teams);
             if (!SessionWorlds.TryListen(host, port, new IpcDrivers()))
@@ -56,6 +57,7 @@ namespace HyperRTS.Simulation.Tests
             }
 
             var client = SessionWorlds.CreateClient(Keep(SessionWorlds.ClientSystems()));
+            StopEditorClock(client);
             Client = new TestWorld(client);
             Client.CreateMatch(teams);
 
@@ -135,11 +137,17 @@ namespace HyperRTS.Simulation.Tests
             world.Update();
         }
 
+        // Netcode's time system orders against the editor's clock, which stays off so frames get a fixed time step.
+        private static void StopEditorClock(World world) =>
+            world.GetExistingSystemManaged<UpdateWorldTimeSystem>().Enabled = false;
+
         private static NativeList<SystemTypeIndex> Keep(NativeList<SystemTypeIndex> systems)
         {
             for (var i = systems.Length - 1; i >= 0; i--)
             {
-                if (!Assemblies.Contains(TypeManager.GetSystemType(systems[i]).Assembly.GetName().Name))
+                var type = TypeManager.GetSystemType(systems[i]);
+                var kept = Assemblies.Contains(type.Assembly.GetName().Name) || type == typeof(UpdateWorldTimeSystem);
+                if (!kept)
                 {
                     systems.RemoveAt(i);
                 }

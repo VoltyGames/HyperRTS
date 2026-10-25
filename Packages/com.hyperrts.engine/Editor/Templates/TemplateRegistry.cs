@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Editor.Templates
 {
@@ -28,6 +29,7 @@ namespace HyperRTS.Editor.Templates
         public const string NavObstacle = "Map/Nav Obstacle";
         public const string NavArea = "Map/Nav Area";
 
+        [NoAutoStaticsCleanup]
         public static readonly IReadOnlyList<EntityTemplate> All = new[]
         {
             new EntityTemplate(Unit, () => EntityTemplates.Unit()),

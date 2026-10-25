@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -12,12 +13,13 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Common
 {
     /// <summary>Engine assets found by GUID or type, so tools keep working when the engine moves into a package.</summary>
-    internal static class EditorAssets
+    internal static partial class EditorAssets
     {
         private const string RigGuid = "4b013d5a34cf1e34d8d223e003462d25";
 
         private const string MatchStateGuid = "37a4b4ac2aee31d42895a37c3d702bed";
 
+        [AutoStaticsCleanup]
         private static readonly Dictionary<string, VisualTreeAsset> Layouts = new();
 
         /// <summary>The engine layout named after <paramref name="owner"/> plus <paramref name="part"/>, such as MapsPageRow.uxml.</summary>

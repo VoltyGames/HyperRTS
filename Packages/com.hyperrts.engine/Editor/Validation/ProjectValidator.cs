@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Validation.Rules;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Validation
@@ -11,8 +12,11 @@ namespace HyperRTS.Editor.Validation
     /// </summary>
     public static class ProjectValidator
     {
+        [NoAutoStaticsCleanup]
         private static readonly IAuthoringRule[] ComponentRules = TypeDiscovery.Instances<IAuthoringRule>();
+        [NoAutoStaticsCleanup]
         private static readonly ISceneRule[] SceneRules = TypeDiscovery.Instances<ISceneRule>();
+        [NoAutoStaticsCleanup]
         private static readonly IPrefabRule[] PrefabRules = TypeDiscovery.Instances<IPrefabRule>();
 
         /// <summary>Every component rule that applies to one component.</summary>

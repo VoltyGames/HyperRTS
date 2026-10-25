@@ -21,8 +21,6 @@ namespace HyperRTS.Editor.Maps.Scenes
             }
 
             settings.bakedGI = false;
-            settings.realtimeGI = false;
-            settings.autoGenerate = false;
             EditorUtility.SetDirty(settings);
             Lightmapping.lightingSettings = settings;
             if (!Lightmapping.Bake())

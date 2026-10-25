@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Spec;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Designer
@@ -14,6 +15,7 @@ namespace HyperRTS.Editor.Maps.Designer
         public const float PointPixels = 7f;
         public const float LinePixels = 5f;
 
+        [NoAutoStaticsCleanup]
         private static readonly List<Vector2> Points = new();
 
         public static MapFeatureRef FeatureAt(MapSpec spec, MapCanvasView view, Vector2 local)

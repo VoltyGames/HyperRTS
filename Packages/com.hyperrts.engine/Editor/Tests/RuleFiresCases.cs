@@ -23,6 +23,7 @@ using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Upgrades;
 using HyperRTS.Simulation.Veterancy;
 using Unity.Scenes;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Tests
@@ -30,6 +31,7 @@ namespace HyperRTS.Editor.Tests
     /// <summary>One minimal broken case per rule, keyed by rule type, with a fragment of what it must report.</summary>
     public partial class RuleFiresTests
     {
+        [NoAutoStaticsCleanup]
         private static readonly Dictionary<Type, (string Expected, Func<RuleFiresTests, object> Build)> Rows =
             GameplayRows().Concat(EntityRows()).Concat(UnitRows()).Concat(EffectRows()).Concat(SceneRows())
                 .ToDictionary(row => row.Rule, row => (row.Expected, row.Build));

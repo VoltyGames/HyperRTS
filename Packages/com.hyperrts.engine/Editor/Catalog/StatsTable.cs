@@ -5,6 +5,7 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Units;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace HyperRTS.Editor.Catalog
         private const float NameWidth = 140f;
         private const float Narrow = 76f;
 
+        [NoAutoStaticsCleanup]
         private static readonly (string Header, Type Component, string Field)[] Fields =
         {
             ("HP", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.maxHealth)),

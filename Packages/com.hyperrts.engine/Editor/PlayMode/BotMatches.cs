@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,7 +18,7 @@ namespace HyperRTS.Editor.PlayMode
     /// Plays the open map AI against AI, match after match, and writes the results to Logs/BotMatches. Each match moves
     /// the baked sides one slot on, so every side plays every start. Editor Play mode only.
     /// </summary>
-    internal static class BotMatches
+    internal static partial class BotMatches
     {
         private const string Folder = "Logs/BotMatches";
         private const double TickSeconds = 0.25;
@@ -52,14 +53,20 @@ namespace HyperRTS.Editor.PlayMode
             public List<MatchResult> matches = new();
         }
 
+        [AutoStaticsCleanup]
         private static Report _report;
+        [AutoStaticsCleanup]
         private static byte[] _bakedSides;
+        [AutoStaticsCleanup]
         private static int _current = -1;
+        [AutoStaticsCleanup]
         private static bool _setupSeen;
+        [AutoStaticsCleanup]
         private static double _nextTick;
 
         public static bool IsRunning => _report != null;
 
+        [AutoStaticsCleanup]
         public static string Status { get; private set; } = "";
 
         public static void Start(Settings settings)

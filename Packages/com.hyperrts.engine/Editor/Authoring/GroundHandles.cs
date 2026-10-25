@@ -1,5 +1,6 @@
 using System;
 using HyperRTS.Editor.Common;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -10,6 +11,7 @@ namespace HyperRTS.Editor.Authoring
     /// <summary>Scene-view handles that lie flat on the ground and drag along X and Z.</summary>
     public static class GroundHandles
     {
+        [NoAutoStaticsCleanup]
         private static readonly BoxBoundsHandle BoxHandle = new()
         {
             axes = PrimitiveBoundsHandle.Axes.X | PrimitiveBoundsHandle.Axes.Z,

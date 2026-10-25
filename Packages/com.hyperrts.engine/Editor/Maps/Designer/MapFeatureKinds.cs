@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Spec;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using static HyperRTS.Editor.Maps.Designer.MapFeatureKind;
 
@@ -9,6 +10,7 @@ namespace HyperRTS.Editor.Maps.Designer
     /// <summary>Every feature list of a map spec, in drawing order (areas under lines under points).</summary>
     public static class MapFeatureKinds
     {
+        [NoAutoStaticsCleanup]
         public static readonly IReadOnlyList<MapFeatureKind> All = new[]
         {
             Polygon(nameof(MapSpec.farmland), "Farmland", new Color(0.85f, 0.75f, 0.3f), nameof(MapFarmlandSpec.points)),
