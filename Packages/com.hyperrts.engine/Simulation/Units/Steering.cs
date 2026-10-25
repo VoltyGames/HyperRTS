@@ -47,6 +47,7 @@ namespace HyperRTS.Simulation.Units
         private float2 _preferred;
         private float2 _last;
         private float _wallReach;
+        private float2 _leg;
 
         public Steering(in CrowdVisitor crowd, float2 velocity, float topSpeed)
         {
@@ -62,6 +63,7 @@ namespace HyperRTS.Simulation.Units
             _preferred = float2.zero;
             _last = float2.zero;
             _wallReach = 0f;
+            _leg = float2.zero;
         }
 
         /// <summary>Also keeps the footprint off the walls of <paramref name="access"/>; aircraft have none.</summary>
@@ -81,7 +83,9 @@ namespace HyperRTS.Simulation.Units
             var start = drive;
             heading = facing;
             var step = locomotion.Drive(ref drive, _position, ref heading, leg, _topSpeed, _radius, deltaTime);
-            _preferred = step / deltaTime;
+            // With no one near, a pivot means to stand, not to roll on as it brakes.
+            var standsToTurn = _neighbours.Length == 0 && locomotion.IsPivoting(drive, facing, leg);
+            _preferred = standsToTurn ? float2.zero : step / deltaTime;
             if (drive.IsManoeuvring)
             {
                 drive.LastChoice = _preferred;
@@ -90,6 +94,7 @@ namespace HyperRTS.Simulation.Units
 
             _last = start.LastChoice;
             _wallReach = leg.Distance;
+            _leg = drive.Reverse ? -leg.Direction : leg.Direction;
             var chosen = Pick(locomotion, start, facing);
             if (math.distancesq(chosen, _preferred) > Unchanged)
             {
@@ -120,7 +125,7 @@ namespace HyperRTS.Simulation.Units
 
             var best = new Choice { Velocity = _preferred, Cost = penalty + Straying(_preferred) };
             Try(ref best, _last, 0f);
-            Try(ref best, float2.zero, StandingCost);
+            Try(ref best, float2.zero, StandingExtra(locomotion, facing));
             if (locomotion.IsInstant)
             {
                 TryDirections(ref best, facing);
@@ -131,6 +136,19 @@ namespace HyperRTS.Simulation.Units
             }
 
             return best.Velocity;
+        }
+
+        // Clear of traffic, tracks reach a leg beyond their reachable headings only by stopping to turn, so that isn't
+        // waiting. Among neighbours standing still blocks them, so it keeps its cost.
+        private readonly float StandingExtra(in Locomotion locomotion, float2 facing)
+        {
+            if (!locomotion.Pivots || _neighbours.Length > 0)
+            {
+                return StandingCost;
+            }
+
+            var reachable = locomotion.TurnWithin(_topSpeed * 0.5f, ReachTime);
+            return math.dot(facing, _leg) < math.cos(reachable) ? 0f : StandingCost;
         }
 
         // Stopped short of a wall it is facing, which only backing off and turning gets it away from.

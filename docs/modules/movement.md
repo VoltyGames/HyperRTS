@@ -94,12 +94,14 @@ within reach (`CrowdVisitor`) and the walls' distance field, and picks the cheap
 - Candidates: a vehicle tries what its handling reaches within 0.5 s, 7 headings across its reachable turn at half,
   three quarter and full speed, plus standing and backing straight up when it can reverse. An instant unit tries 12
   directions at 3 speeds and small swerves off its planned direction. Both also try the planned velocity and last
-  frame's choice.
+  frame's choice. With no neighbour in reach a pivot plans to stand, not to roll on as it brakes, so a lone tank
+  pivots into a gap rather than orbiting it.
 - Cost: how much deeper footprints would overlap at their closest approach in each of 0 to 0.3, 0.3 to 0.75 and
   0.75 to 1.5 s, sooner counting more, under straight-line prediction. Capsules count as capsules. A moving
   neighbour is scored RVO-style: the mover takes only its share of the change. The wall term samples the field at
   both capsule ends, only as far as the next corner. Straying from the planned velocity and from last frame's choice
-  costs, standing still costs a little extra, and swerving left costs a little more than right, so a head-on pair
+  costs, standing still costs a little extra, except for a lone tracked hull whose leg lies beyond its reachable
+  headings, where stopping to turn is the way on, and swerving left costs a little more than right, so a head-on pair
   both keep right.
 - The planned velocity is taken without sampling when it hits nothing, or when no neighbour is in reach and no
   wall within the wall margin. Parked units never steer. A three-point turn or a back-off skips steering.

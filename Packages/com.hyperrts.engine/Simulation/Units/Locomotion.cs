@@ -39,12 +39,7 @@ namespace HyperRTS.Simulation.Units
         private const float Instantly = 1e6f;
 
         /// <summary>Handling of units without their own: full speed and any facing at once, never reversing.</summary>
-        public static Locomotion Instant => new()
-        {
-            Acceleration = Instantly,
-            Braking = Instantly,
-            TurnRate = Instantly,
-        };
+        public static Locomotion Instant => new() { Acceleration = Instantly, Braking = Instantly, TurnRate = Instantly };
 
         /// <summary>Whether it handles as <see cref="Instant"/>: any facing at once.</summary>
         public readonly bool IsInstant => TurnRate >= Instantly;
@@ -55,6 +50,12 @@ namespace HyperRTS.Simulation.Units
         /// <summary>How far ahead it may cut to a corner in sight: further when fast or wide-turning.</summary>
         public readonly float LookAhead(float speed, float radius) =>
             radius * 2f + math.abs(speed) * LookAheadTime + TurnRadius * 0.5f;
+
+        /// <summary>Whether it stands to turn toward the leg rather than drive on.</summary>
+        public readonly bool IsPivoting(in LocomotionState state, float2 facing, in PathLeg leg) =>
+            state.OtherWay <= 0f && IsPivot(SignedAngle(facing, state.Reverse ? -leg.Direction : leg.Direction));
+
+        private readonly bool IsPivot(float error) => Pivots && math.abs(error) > PivotAngle;
 
         /// <summary>Accelerates and turns toward the leg, returning this frame's step along the new facing.</summary>
         public readonly float2 Drive(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
@@ -100,7 +101,8 @@ namespace HyperRTS.Simulation.Units
             float topSpeed, float cap, float radius, float deltaTime)
         {
             state.Reverse = PrefersReverse(state.Reverse, facing, leg, topSpeed);
-            state.InThreePointTurn = IsInThreePointTurn(state.InThreePointTurn, position, facing, leg.Corner);
+            // Keeps reversing a little past the circle's edge, so it doesn't flip gear every frame.
+            state.InThreePointTurn = IsInsideTurn(position, facing, leg.Corner, state.InThreePointTurn ? 1.2f : 1f);
             var ahead = TurnsIn(leg) ? leg.Next : leg.Direction;
             var desired = state.Reverse ? -ahead : ahead;
             var error = SignedAngle(facing, desired);
@@ -206,10 +208,6 @@ namespace HyperRTS.Simulation.Units
             return angle * math.max(1f / TurnRate, rolling);
         }
 
-        // Keeps reversing a little past the circle's edge, so it doesn't flip gear every frame.
-        private readonly bool IsInThreePointTurn(bool turning, float2 position, float2 facing, float2 corner) =>
-            IsInsideTurn(position, facing, corner, turning ? 1.2f : 1f);
-
         /// <summary>Wheels can't turn standing, so a wheeled hull wedged against a wall backs off it a while.</summary>
         public readonly void BackOff(ref LocomotionState state)
         {
@@ -245,7 +243,7 @@ namespace HyperRTS.Simulation.Units
                 return top;
             }
 
-            if (Pivots && math.abs(error) > PivotAngle)
+            if (IsPivot(error))
             {
                 return 0f;
             }
