@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Network.Players;
+using HyperRTS.Network.Common;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
@@ -16,6 +16,7 @@ namespace HyperRTS.Network.Scenery
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
+    [UpdateAfter(typeof(FactionConnectionsSystem))]
     public partial struct ScenerySendSystem : ISystem
     {
         private EntityQuery _scenery;
@@ -34,6 +35,7 @@ namespace HyperRTS.Network.Scenery
             _tracker = new SceneryTracker(Allocator.Persistent);
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<FactionConnections>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -115,31 +117,39 @@ namespace HyperRTS.Network.Scenery
         private void Send(ref SystemState state, NativeList<SceneryNews> news)
         {
             var relations = SystemAPI.GetSingleton<FactionRelations>();
+            var viewers = SystemAPI.GetSingleton<FactionConnections>();
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var changes = new NativeList<SceneryChange>(Allocator.Temp);
-            // A host's own connection has no stream: its world simulates the scenery itself.
-            foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>()
-                         .WithAll<NetworkStreamInGame, NetworkStreamConnection>().WithEntityAccess())
+            var seen = new NativeList<SceneryRpc>(Allocator.Temp);
+            var known = new NativeList<SceneryRpc>(Allocator.Temp);
+            foreach (var faction in viewers.Factions)
             {
-                var team = relations.GetTeam(ConnectionPlayers.Faction(ref state, connection));
-                if (SystemAPI.HasComponent<ScenerySynced>(connection))
+                var team = relations.GetTeam(faction);
+                seen.Clear();
+                BatchNews(news, team, true, changes, seen);
+                BatchNews(news, team, false, changes, seen);
+                foreach (var connection in viewers.Connections.GetValuesForKey(faction))
                 {
-                    PostNews(ecb, connection, news, team, true, changes);
-                    PostNews(ecb, connection, news, team, false, changes);
-                    continue;
-                }
+                    if (SystemAPI.HasComponent<ScenerySynced>(connection))
+                    {
+                        FactionConnections.Send(ecb, connection, seen);
+                        continue;
+                    }
 
-                // A joining client starts from what its team knows, this frame's news included.
-                changes.Clear();
-                _tracker.Known(team, changes);
-                Post(ecb, connection, false, changes);
-                ecb.AddComponent<ScenerySynced>(connection);
+                    // A joining client starts from what its team knows, this frame's news included.
+                    changes.Clear();
+                    known.Clear();
+                    _tracker.Known(team, changes);
+                    SceneryRpc.Batch(changes, false, known);
+                    FactionConnections.Send(ecb, connection, known);
+                    ecb.AddComponent<ScenerySynced>(connection);
+                }
             }
         }
 
-        private static void PostNews(EntityCommandBuffer ecb, Entity connection, NativeList<SceneryNews> news,
-            byte team, bool witnessed, NativeList<SceneryChange> changes)
+        private static void BatchNews(NativeList<SceneryNews> news, byte team, bool witnessed,
+            NativeList<SceneryChange> changes, NativeList<SceneryRpc> batches)
         {
             changes.Clear();
             foreach (var item in news)
@@ -150,25 +160,7 @@ namespace HyperRTS.Network.Scenery
                 }
             }
 
-            Post(ecb, connection, witnessed, changes);
-        }
-
-        private static void Post(EntityCommandBuffer ecb, Entity connection, bool witnessed,
-            NativeList<SceneryChange> changes)
-        {
-            for (var start = 0; start < changes.Length; start += SceneryRpc.Capacity)
-            {
-                var rpc = new SceneryRpc { Witnessed = witnessed };
-                var end = math.min(start + SceneryRpc.Capacity, changes.Length);
-                for (var i = start; i < end; i++)
-                {
-                    rpc.Changes.Add(changes[i]);
-                }
-
-                var message = ecb.CreateEntity();
-                ecb.AddComponent(message, rpc);
-                ecb.AddComponent(message, new SendRpcCommandRequest { TargetConnection = connection });
-            }
+            SceneryRpc.Batch(changes, witnessed, batches);
         }
     }
 }

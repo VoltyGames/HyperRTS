@@ -40,12 +40,7 @@ namespace HyperRTS.Network.Players
             {
                 entityManager.AddComponent<NetworkStreamInGame>(connection);
                 var request = entityManager.CreateEntity();
-                entityManager.AddComponentData(request, new JoinRequest
-                {
-                    Faction = preference.Faction,
-                    Observe = preference.Observe,
-                    Token = token.Value,
-                });
+                entityManager.AddComponentData(request, JoinRequest.From(preference, token.Value));
                 entityManager.AddComponentData(request, new SendRpcCommandRequest { TargetConnection = connection });
             }
         }

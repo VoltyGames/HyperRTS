@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Network.Players;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -32,8 +33,20 @@ namespace HyperRTS.Network.Common
             foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>()
                          .WithAll<NetworkStreamInGame, NetworkStreamConnection>().WithEntityAccess())
             {
-                _connections.Add(ConnectionPlayers.Faction(ref state, connection), connection);
+                _connections.Add(ViewerFaction(ref state, connection), connection);
             }
+        }
+
+        // Observers hold no slot and view as neutral, whose team 0 sees and hears everything.
+        private byte ViewerFaction(ref SystemState state, Entity connection)
+        {
+            if (!SystemAPI.HasComponent<ConnectionPlayer>(connection))
+            {
+                return Faction.Neutral;
+            }
+
+            var player = SystemAPI.GetComponent<ConnectionPlayer>(connection).Player;
+            return SystemAPI.GetComponent<Player>(player).Faction;
         }
     }
 }

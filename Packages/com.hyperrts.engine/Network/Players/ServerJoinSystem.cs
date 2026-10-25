@@ -46,15 +46,9 @@ namespace HyperRTS.Network.Players
                 return;
             }
 
-            var connection = seating.GetSingletonEntity();
-            var preference = SystemAPI.GetSingleton<JoinPreference>();
-            var wanted = new JoinRequest
-            {
-                Faction = preference.Faction,
-                Observe = preference.Observe,
-                Token = SystemAPI.GetSingleton<JoinToken>().Value,
-            };
-            Join(ref state, connection, wanted);
+            var wanted = JoinRequest.From(SystemAPI.GetSingleton<JoinPreference>(),
+                SystemAPI.GetSingleton<JoinToken>().Value);
+            Join(ref state, seating.GetSingletonEntity(), wanted);
         }
 
         /// <summary>Binds the connection to a slot; repeats from a connection already in game can't claim more.</summary>

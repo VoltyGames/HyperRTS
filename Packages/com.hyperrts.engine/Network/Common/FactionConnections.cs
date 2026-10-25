@@ -49,12 +49,19 @@ namespace HyperRTS.Network.Common
         {
             foreach (var connection in Connections.GetValuesForKey(faction))
             {
-                foreach (var batch in batches)
-                {
-                    var rpc = ecb.CreateEntity();
-                    ecb.AddComponent(rpc, batch);
-                    ecb.AddComponent(rpc, new SendRpcCommandRequest { TargetConnection = connection });
-                }
+                Send(ecb, connection, batches);
+            }
+        }
+
+        /// <summary>Queues every batch as an RPC to <paramref name="connection"/>.</summary>
+        public static void Send<T>(EntityCommandBuffer ecb, Entity connection, NativeList<T> batches)
+            where T : unmanaged, IRpcCommand
+        {
+            foreach (var batch in batches)
+            {
+                var rpc = ecb.CreateEntity();
+                ecb.AddComponent(rpc, batch);
+                ecb.AddComponent(rpc, new SendRpcCommandRequest { TargetConnection = connection });
             }
         }
     }

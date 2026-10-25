@@ -13,5 +13,8 @@ namespace HyperRTS.Network.Players
 
         /// <summary>The sender's <see cref="JoinToken"/>; the slot it owns comes back to it. 0 owns nothing.</summary>
         public ulong Token;
+
+        public static JoinRequest From(in JoinPreference preference, ulong token) =>
+            new() { Faction = preference.Faction, Observe = preference.Observe, Token = token };
     }
 }

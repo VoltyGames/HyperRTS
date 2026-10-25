@@ -132,11 +132,6 @@ namespace HyperRTS.Network.Session
 
         internal static void SetStatus(NetworkStatus status, NetworkStreamDisconnectReason reason = default)
         {
-            if (status == Status && reason == DisconnectReason)
-            {
-                return;
-            }
-
             Status = status;
             DisconnectReason = reason;
         }
@@ -239,24 +234,19 @@ namespace HyperRTS.Network.Session
                 return;
             }
 
-            if (TryRemember(client.EntityManager, out var rejoin))
-            {
-                Preference = rejoin;
-            }
-        }
-
-        private static bool TryRemember(EntityManager entities, out JoinPreference rejoin)
-        {
-            using var granted = entities.CreateEntityQuery(ComponentType.ReadOnly<LocalFaction>());
+            using var granted = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalFaction>());
             if (granted.TryGetSingleton(out LocalFaction faction))
             {
-                rejoin = JoinPreference.Rejoining(faction);
-                return true;
+                Preference = JoinPreference.Rejoining(faction);
+                return;
             }
 
             // Dropped before the server answered: ask again for what this client asked for.
-            using var asked = entities.CreateEntityQuery(ComponentType.ReadOnly<JoinPreference>());
-            return asked.TryGetSingleton(out rejoin);
+            using var asked = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<JoinPreference>());
+            if (asked.TryGetSingleton(out JoinPreference wanted))
+            {
+                Preference = wanted;
+            }
         }
 
         // Never 0, which a join request sends when it owns no slot.
