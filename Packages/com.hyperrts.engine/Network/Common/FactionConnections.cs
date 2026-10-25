@@ -43,25 +43,25 @@ namespace HyperRTS.Network.Common
             Connections.Add(faction, connection);
         }
 
-        /// <summary>Queues every batch as an RPC to each connection viewing as <paramref name="faction"/>.</summary>
-        public readonly void Send<T>(EntityCommandBuffer ecb, byte faction, NativeList<T> batches)
+        /// <summary>Queues every RPC to each connection viewing as <paramref name="faction"/>.</summary>
+        public readonly void Send<T>(EntityCommandBuffer ecb, byte faction, NativeList<T> rpcs)
             where T : unmanaged, IRpcCommand
         {
             foreach (var connection in Connections.GetValuesForKey(faction))
             {
-                Send(ecb, connection, batches);
+                Send(ecb, connection, rpcs);
             }
         }
 
-        /// <summary>Queues every batch as an RPC to <paramref name="connection"/>.</summary>
-        public static void Send<T>(EntityCommandBuffer ecb, Entity connection, NativeList<T> batches)
+        /// <summary>Queues every RPC to <paramref name="connection"/>.</summary>
+        public static void Send<T>(EntityCommandBuffer ecb, Entity connection, NativeList<T> rpcs)
             where T : unmanaged, IRpcCommand
         {
-            foreach (var batch in batches)
+            foreach (var rpc in rpcs)
             {
-                var rpc = ecb.CreateEntity();
-                ecb.AddComponent(rpc, batch);
-                ecb.AddComponent(rpc, new SendRpcCommandRequest { TargetConnection = connection });
+                var request = ecb.CreateEntity();
+                ecb.AddComponent(request, rpc);
+                ecb.AddComponent(request, new SendRpcCommandRequest { TargetConnection = connection });
             }
         }
     }

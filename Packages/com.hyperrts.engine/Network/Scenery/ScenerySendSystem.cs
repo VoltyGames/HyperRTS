@@ -127,8 +127,8 @@ namespace HyperRTS.Network.Scenery
             {
                 var team = relations.GetTeam(faction);
                 seen.Clear();
-                BatchNews(news, team, true, changes, seen);
-                BatchNews(news, team, false, changes, seen);
+                FillNews(news, team, true, changes, seen);
+                FillNews(news, team, false, changes, seen);
                 foreach (var connection in viewers.Connections.GetValuesForKey(faction))
                 {
                     if (SystemAPI.HasComponent<ScenerySynced>(connection))
@@ -141,15 +141,15 @@ namespace HyperRTS.Network.Scenery
                     changes.Clear();
                     known.Clear();
                     _tracker.Known(team, changes);
-                    SceneryRpc.Batch(changes, false, known);
+                    SceneryRpc.Fill(changes, false, known);
                     FactionConnections.Send(ecb, connection, known);
                     ecb.AddComponent<ScenerySynced>(connection);
                 }
             }
         }
 
-        private static void BatchNews(NativeList<SceneryNews> news, byte team, bool witnessed,
-            NativeList<SceneryChange> changes, NativeList<SceneryRpc> batches)
+        private static void FillNews(NativeList<SceneryNews> news, byte team, bool witnessed,
+            NativeList<SceneryChange> changes, NativeList<SceneryRpc> rpcs)
         {
             changes.Clear();
             foreach (var item in news)
@@ -160,7 +160,7 @@ namespace HyperRTS.Network.Scenery
                 }
             }
 
-            SceneryRpc.Batch(changes, witnessed, batches);
+            SceneryRpc.Fill(changes, witnessed, rpcs);
         }
     }
 }

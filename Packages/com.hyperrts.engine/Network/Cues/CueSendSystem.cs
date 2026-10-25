@@ -20,9 +20,9 @@ namespace HyperRTS.Network.Cues
     public partial struct CueSendSystem : ISystem
     {
         /// <summary>
-        /// Most batches each client gets per tick; a big battle drops its least important cues rather than flood RPCs.
+        /// Most RPCs each client gets per tick; a big battle drops its least important cues rather than flood RPCs.
         /// </summary>
-        public const int MaxBatchesPerTick = 3;
+        public const int MaxRpcsPerTick = 3;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -47,7 +47,7 @@ namespace HyperRTS.Network.Cues
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var visible = new NativeList<CueEvent>(cues.Length, Allocator.Temp);
-            var batches = new NativeList<CueRpc>(MaxBatchesPerTick, Allocator.Temp);
+            var rpcs = new NativeList<CueRpc>(MaxRpcsPerTick, Allocator.Temp);
             var viewers = SystemAPI.GetSingleton<FactionConnections>();
             foreach (var viewer in viewers.Factions)
             {
@@ -60,9 +60,9 @@ namespace HyperRTS.Network.Cues
                     }
                 }
 
-                batches.Clear();
-                CueRpc.Batch(visible.AsArray(), MaxBatchesPerTick, batches);
-                viewers.Send(ecb, viewer, batches);
+                rpcs.Clear();
+                CueRpc.Fill(visible.AsArray(), MaxRpcsPerTick, rpcs);
+                viewers.Send(ecb, viewer, rpcs);
             }
         }
     }

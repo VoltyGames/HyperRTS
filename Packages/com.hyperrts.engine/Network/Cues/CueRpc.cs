@@ -15,12 +15,12 @@ namespace HyperRTS.Network.Cues
         public FixedList4096Bytes<PackedCue> Cues;
 
         /// <summary>
-        /// Fills up to <paramref name="maxBatches"/> RPCs of <see cref="Capacity"/> in arrival order. Past the limit,
+        /// Fills up to <paramref name="maxRpcs"/> RPCs of <see cref="Capacity"/> in arrival order. Past the limit,
         /// per-shot fire and impact cues are dropped before deaths, abilities and voices.
         /// </summary>
-        public static void Batch(NativeArray<CueEvent> cues, int maxBatches, NativeList<CueRpc> batches)
+        public static void Fill(NativeArray<CueEvent> cues, int maxRpcs, NativeList<CueRpc> rpcs)
         {
-            var quotas = Quotas(cues, maxBatches * Capacity);
+            var quotas = Quotas(cues, maxRpcs * Capacity);
             var rpc = new CueRpc();
             foreach (var cue in cues)
             {
@@ -34,14 +34,14 @@ namespace HyperRTS.Network.Cues
                 rpc.Cues.Add(PackedCue.Pack(cue));
                 if (rpc.Cues.Length == Capacity)
                 {
-                    batches.Add(rpc);
+                    rpcs.Add(rpc);
                     rpc = new CueRpc();
                 }
             }
 
             if (rpc.Cues.Length > 0)
             {
-                batches.Add(rpc);
+                rpcs.Add(rpc);
             }
         }
 

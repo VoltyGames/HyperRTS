@@ -7,11 +7,11 @@ using Unity.Netcode;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>Connections group by viewer faction, and each faction's batches reach all its connections.</summary>
+    /// <summary>Connections group by viewer faction, and each faction's RPCs reach all its connections.</summary>
     public class FactionConnectionsTests
     {
         [Test]
-        public void Factions_AreListedOnce_AndBatchesReachEveryConnectionOfTheFaction()
+        public void Factions_AreListedOnce_AndRpcsReachEveryConnectionOfTheFaction()
         {
             using var world = new TestWorld();
             var entities = world.EntityManager;
@@ -21,17 +21,17 @@ namespace HyperRTS.Simulation.Tests
             viewers.Add(1, allies[0]);
             viewers.Add(0, observer);
             viewers.Add(1, allies[1]);
-            using var batches = new NativeList<CueRpc>(Allocator.Temp) { new CueRpc(), new CueRpc() };
+            using var rpcs = new NativeList<CueRpc>(Allocator.Temp) { new CueRpc(), new CueRpc() };
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
-            viewers.Send(ecb, 1, batches);
+            viewers.Send(ecb, 1, rpcs);
             ecb.Playback(entities);
             ecb.Dispose();
 
             CollectionAssert.AreEqual(new byte[] { 1, 0 }, viewers.Factions.AsArray().ToArray());
             using var query = entities.CreateEntityQuery(typeof(CueRpc), typeof(SendRpcCommandRequest));
             var requests = query.ToComponentDataArray<SendRpcCommandRequest>(Allocator.Temp);
-            Assert.AreEqual(4, requests.Length, "two batches to each of the two allies");
+            Assert.AreEqual(4, requests.Length, "two RPCs to each of the two allies");
             foreach (var request in requests)
             {
                 Assert.AreNotEqual(observer, request.TargetConnection, "the observer views as another faction");

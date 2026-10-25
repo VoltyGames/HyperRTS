@@ -7,7 +7,7 @@ using Unity.Netcode;
 
 namespace HyperRTS.Network.Cues
 {
-    /// <summary>Client: unpacks the server's cue batches into local <see cref="CueEvent"/>s, so playback reads one buffer.</summary>
+    /// <summary>Client: unpacks the server's cue RPCs into local <see cref="CueEvent"/>s, so playback reads one buffer.</summary>
     [BurstCompile]
     [RemoteClientOnly]
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]

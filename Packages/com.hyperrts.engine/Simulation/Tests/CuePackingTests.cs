@@ -91,38 +91,38 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void Batch_FillsRPCsOf48_AndDropsPastTheLimit()
+        public void Fill_MakesRPCsOf48_AndDropsPastTheLimit()
         {
             using var cues = new NativeArray<CueEvent>(200, Allocator.Temp);
-            using var batches = new NativeList<CueRpc>(Allocator.Temp);
+            using var rpcs = new NativeList<CueRpc>(Allocator.Temp);
 
-            CueRpc.Batch(cues, 2, batches);
-            Assert.AreEqual(2, batches.Length);
-            Assert.AreEqual(CueRpc.Capacity, batches[0].Cues.Length);
-            Assert.AreEqual(CueRpc.Capacity, batches[1].Cues.Length);
+            CueRpc.Fill(cues, 2, rpcs);
+            Assert.AreEqual(2, rpcs.Length);
+            Assert.AreEqual(CueRpc.Capacity, rpcs[0].Cues.Length);
+            Assert.AreEqual(CueRpc.Capacity, rpcs[1].Cues.Length);
 
-            batches.Clear();
-            CueRpc.Batch(cues, CueSendSystem.MaxBatchesPerTick, batches);
-            Assert.AreEqual(CueSendSystem.MaxBatchesPerTick, batches.Length, "a barrage drops the rest");
+            rpcs.Clear();
+            CueRpc.Fill(cues, CueSendSystem.MaxRpcsPerTick, rpcs);
+            Assert.AreEqual(CueSendSystem.MaxRpcsPerTick, rpcs.Length, "a barrage drops the rest");
         }
 
         [Test]
-        public void Batch_PastTheLimit_DropsFireThenImpacts_AndKeepsArrivalOrder()
+        public void Fill_PastTheLimit_DropsFireThenImpacts_AndKeepsArrivalOrder()
         {
-            var budget = CueSendSystem.MaxBatchesPerTick * CueRpc.Capacity;
+            var budget = CueSendSystem.MaxRpcsPerTick * CueRpc.Capacity;
             using var cues = new NativeList<CueEvent>(Allocator.Temp);
             Add(cues, CueSlot.Fire, budget);
             Add(cues, CueSlot.Impact, 20);
             Add(cues, CueSlot.Death, 5);
             Add(cues, CueSlot.Attack, 5);
-            using var batches = new NativeList<CueRpc>(Allocator.Temp);
+            using var rpcs = new NativeList<CueRpc>(Allocator.Temp);
 
-            CueRpc.Batch(cues.AsArray(), CueSendSystem.MaxBatchesPerTick, batches);
+            CueRpc.Fill(cues.AsArray(), CueSendSystem.MaxRpcsPerTick, rpcs);
 
             using var sent = new NativeList<CueSlot>(Allocator.Temp);
-            foreach (var batch in batches)
+            foreach (var rpc in rpcs)
             {
-                foreach (var packed in batch.Cues)
+                foreach (var packed in rpc.Cues)
                 {
                     sent.Add(packed.Unpack().Slot);
                 }
