@@ -109,7 +109,7 @@ namespace HyperRTS.Simulation.Buildings
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
 
-            _orders.Update(ref state);
+            _orders.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             foreach (var assignment in assignments)
             {
                 _orders.Issue(assignment.Builder, assignment.Order, assignment.Queue);

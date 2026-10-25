@@ -1,10 +1,9 @@
 using HyperRTS.Client.Common;
 using HyperRTS.Client.Interaction;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
@@ -34,7 +33,7 @@ namespace HyperRTS.Presentation.HUD
         public override void Refresh(HUDContext context)
         {
             var placement = context.Placement;
-            var segments = placement.Active && placement.Dragging ? CountValid(context.EntityManager) : 0;
+            var segments = IsDraggingLine(context.EntityManager, placement) ? CountValid(context.EntityManager) : 0;
             Root.SetHidden(segments == 0);
             if (segments == 0)
             {
@@ -50,27 +49,25 @@ namespace HyperRTS.Presentation.HUD
             }
 
             _costs.MarkShort(!ResourceMath.CanAfford(context.Stock.AsNativeArray(), costs, _segments));
-            Place(placement.Position);
+            // The drag's end sits under the cursor, so the row follows it without reading device input.
+            PlaceBeside(placement.Position, Offset);
+        }
+
+        // A single building drags too, to turn, and leaves the last line's segments in the buffer.
+        private static bool IsDraggingLine(EntityManager entityManager, in PlacementState placement)
+        {
+            if (!placement.Active || !placement.Dragging)
+            {
+                return false;
+            }
+
+            return entityManager.HasComponent<LinePlacement>(placement.Prefab);
         }
 
         private int CountValid(EntityManager entityManager)
         {
             var placement = _placement.In(entityManager).GetSingletonEntity();
             return PlacementSegment.CountValid(entityManager.GetBuffer<PlacementSegment>(placement, true));
-        }
-
-        // The drag's end sits under the cursor, so the row follows it without reading device input.
-        private void Place(float3 point)
-        {
-            var camera = Camera.main;
-            if (camera == null || Root.panel == null)
-            {
-                return;
-            }
-
-            var position = RuntimePanelUtils.CameraTransformWorldToPanel(Root.panel, point, camera);
-            Root.style.left = position.x + Offset.x;
-            Root.style.top = position.y + Offset.y;
         }
     }
 }

@@ -12,7 +12,7 @@ namespace HyperRTS.Client.Interaction
         public bool Active;
         public Entity Prefab;
 
-        /// <summary>Snapped ghost centre under the cursor; for a line, the drag's current end.</summary>
+        /// <summary>Snapped ghost centre; for a line, the drag's current end.</summary>
         public float3 Position;
 
         /// <summary>Quarter turns of a single building from its default facing; lines ignore it.</summary>
@@ -21,9 +21,9 @@ namespace HyperRTS.Client.Interaction
         /// <summary>For a line, any segment is valid.</summary>
         public bool Valid;
 
-        /// <summary>A line prefab's drag is held down from <see cref="LineStart"/>.</summary>
+        /// <summary>Confirm is held from <see cref="DragStart"/>: a line drags its end, a single building turns.</summary>
         public bool Dragging;
 
-        public float3 LineStart;
+        public float3 DragStart;
     }
 }

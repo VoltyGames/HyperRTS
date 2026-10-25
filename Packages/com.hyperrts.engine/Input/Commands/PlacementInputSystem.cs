@@ -11,8 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Input.Commands
 {
     /// <summary>
-    /// Drives building placement mode: moves and turns the snapped ghost and confirms it as a PlaceBuilding command, or
-    /// for a line prefab drags the line from press to release and sends it as a PlaceLine command.
+    /// Drives building placement mode: moves the snapped ghost, turns it on RotateBuilding or a held drag and confirms
+    /// it on release as a PlaceBuilding command, or for a line prefab drags the line and sends it as a PlaceLine command.
     /// </summary>
     // After CommandInputSystem, so a cancelling right-click can't also become a smart command this frame.
     [WorldSystemFilter(SimulationWorlds.Presented)]
@@ -20,6 +20,9 @@ namespace HyperRTS.Input.Commands
     [UpdateAfter(typeof(CommandInputSystem))]
     public partial class PlacementInputSystem : SystemBase
     {
+        // Metres the cursor moves from the press before a held click turns the ghost, so a plain click never does.
+        private const float TurnDragDistance = 2f;
+
         private RTSInputActions _actions;
         private WorldPointer _pointer;
 
@@ -77,21 +80,42 @@ namespace HyperRTS.Input.Commands
             if (commands.RotateBuilding.WasPressedThisFrame())
             {
                 placement.Turn = (byte)((placement.Turn + 1) % PlacementMath.Turns);
-                SystemAPI.SetSingleton(placement);
             }
 
-            if (!aimed)
+            if (placement.Dragging)
+            {
+                DragTurn(ref placement, aimed, ground, commands.Queue.IsPressed());
+            }
+            else if (aimed)
+            {
+                MoveGhost(ref placement, ground);
+                placement.Dragging = commands.Confirm.WasPressedThisFrame();
+                placement.DragStart = ground;
+            }
+
+            SystemAPI.SetSingleton(placement);
+        }
+
+        /// <summary>Holding Confirm pins the ghost and turns its front toward the cursor; release places it.</summary>
+        private void DragTurn(ref PlacementState placement, bool aimed, float3 ground, bool queue)
+        {
+            var pull = ground.xz - placement.DragStart.xz;
+            if (aimed && math.lengthsq(pull) > TurnDragDistance * TurnDragDistance)
+            {
+                placement.Turn = (byte)PlacementMath.TurnToward(pull);
+            }
+
+            MoveGhost(ref placement, placement.DragStart);
+            if (!_actions.Commands.Confirm.WasReleasedThisFrame())
             {
                 return;
             }
 
-            MoveGhost(ref placement, ground);
-            if (commands.Confirm.WasPressedThisFrame() && placement.Valid)
+            placement.Dragging = false;
+            if (placement.Valid)
             {
-                Place(ref placement, commands.Queue.IsPressed());
+                Place(ref placement, queue);
             }
-
-            SystemAPI.SetSingleton(placement);
         }
 
         private void MoveGhost(ref PlacementState placement, float3 ground)
@@ -106,7 +130,7 @@ namespace HyperRTS.Input.Commands
         {
             var size = ReadFootprint(placement.Prefab, out var map, out var grid, out var surface);
             placement.Position = ground;
-            var start = placement.Dragging ? placement.LineStart : ground;
+            var start = placement.Dragging ? placement.DragStart : ground;
             var line = new PlacementLine(map, start, ground, size);
             var segments = SystemAPI.GetSingletonBuffer<PlacementSegment>();
             if (!IsPlanned(line, placement.Prefab, grid.Version))
@@ -149,7 +173,7 @@ namespace HyperRTS.Input.Commands
                 if (aimed && confirm.WasPressedThisFrame())
                 {
                     placement.Dragging = true;
-                    placement.LineStart = placement.Position;
+                    placement.DragStart = placement.Position;
                 }
 
                 return;
@@ -166,7 +190,7 @@ namespace HyperRTS.Input.Commands
                 {
                     Type = CommandType.PlaceLine,
                     Prefab = placement.Prefab,
-                    Position = placement.LineStart,
+                    Position = placement.DragStart,
                     End = placement.Position,
                     Queue = queue,
                 });

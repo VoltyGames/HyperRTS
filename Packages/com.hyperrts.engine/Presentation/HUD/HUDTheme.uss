@@ -287,6 +287,13 @@
     font-size: 14px;
 }
 
+.hud-placement-hint {
+    background-color: rgba(8, 10, 14, 0.75);
+    border-radius: 4px;
+    color: rgb(220, 226, 235);
+    font-size: 12px;
+}
+
 .drag-box {
     background-color: rgba(200, 225, 255, 0.1);
     border-color: rgba(200, 225, 255, 0.9);

@@ -1,3 +1,5 @@
+using Unity.Mathematics;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
@@ -26,5 +28,19 @@ namespace HyperRTS.Presentation.HUD
         public virtual bool NeedsPlayer => true;
 
         public abstract void Refresh(HUDContext context);
+
+        /// <summary>Pins an absolutely positioned root beside a world point, such as the placement ghost under the cursor.</summary>
+        protected void PlaceBeside(float3 point, Vector2 offset)
+        {
+            var camera = Camera.main;
+            if (camera == null || Root.panel == null)
+            {
+                return;
+            }
+
+            var position = RuntimePanelUtils.CameraTransformWorldToPanel(Root.panel, point, camera);
+            Root.style.left = position.x + offset.x;
+            Root.style.top = position.y + offset.y;
+        }
     }
 }

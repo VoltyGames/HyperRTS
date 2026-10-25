@@ -52,11 +52,21 @@ supply, consumers go offline: weapons hold fire, detectors go blind and producti
 Builders also repair. Selling refunds `MatchRules.SellRefund`.
 `FlagMountAuthoring` flies the owner's flag.
 
+`PlacementMath.IsValid` decides where a footprint may go, at its current turn, for the ghost, the server and the AI:
+inside the map, over free cells of its surface, never over a blocked cell. Anything with an obstacle blocks: buildings,
+map buildings, solid ruins and scenery with a `block` size such as walls. Open scenery (trees, shrubs, crushable
+fences and pipes, small props) doesn't: `SiteClearingSystem` flattens it inside a site's footprint with a lethal hit,
+on the server, so remains and sync follow the normal death path. The server also refuses overlap with standing
+obstacles and sites placed the same frame.
+
 ### Facing
 
 A placed building's front is its prefab's +Z: doors, the producer's `spawnOffset` and the units it releases. By
-default it faces the match camera, toward -Z. While placing, the rebindable `RotateBuilding` action (R) turns the
-ghost a quarter clockwise per press, a low mark off the ghost shows its front, and an odd turn swaps the footprint's X and Z. `PlaceBuilding` carries the turn,
+default it faces the match camera, toward -Z, and each placement starts there. While placing, the rebindable
+`RotateBuilding` action (R) turns the ghost a quarter clockwise per press. Holding the click pins the ghost, and
+dragging more than 2 m turns its front toward the cursor (`PlacementMath.TurnToward`). Release places it. The mouse
+wheel stays camera zoom. A low mark off the ghost shows its front, the HUD's `PlacementHint` says how to turn it, and
+an odd turn swaps the footprint's X and Z. Shift keeps the turn for the next copy. `PlaceBuilding` carries the turn,
 0 to 3, in `PlayerCommand.Turn`. The server refuses any other value and places at `PlacementMath.Facing`. Children,
 work points and the spawn point turn with the building. The skirmish AI places at turn 0, line placement keeps its
 own turn, map buildings keep their authored rotation, and a start kit item turns with its spawn unless it sets
@@ -79,6 +89,10 @@ orders on the sites from the end nearer them, the rest shift-queued. The skirmis
 `ModelVariantsAuthoring` lists variant child models. Presentation shows one, picked by a hash of the position, so a
 wall doesn't repeat one panel and every client shows the same. A variant lists all its children, damage stage
 models included.
+
+`GarrisonPartAuthoring` on a mesh under a container draws it only while one of its `shownFor` passengers is aboard,
+read from the replicated cargo, such as the machine gun a bunker shows for a rifle squad. `GarrisonPartRule` flags
+one with no container above it or no passengers.
 
 `ConstructionSiteAuthoring` dresses a building while it is built. Its `site` child (fencing, crane, pallets, work
 lights) shows only under construction. Its work rig streams from the site's `Work_01` onward empties while progress

@@ -54,18 +54,27 @@ namespace HyperRTS.Simulation.Tests
             AssertOnCellBoundaries(in coarse, PlacementMath.Snap(in coarse, new float3(3.1f, 0f, -2.9f), large), large);
         }
 
+        /// <summary>Open land under every cell of <paramref name="map"/>, with an empty scenery layer as the nav grid builds it.</summary>
+        private static NavGrid LandGrid(in MapSettings map)
+        {
+            var size = (int2)(map.Size / map.NavCellSize);
+            var count = size.x * size.y;
+            var cells = new NativeArray<byte>(count, Allocator.Temp);
+            for (var i = 0; i < count; i++)
+            {
+                cells[i] = (byte)NavSurface.Land;
+            }
+
+            var scenery = new NativeArray<byte>(count, Allocator.Temp);
+            return new NavGrid { Cells = cells, Scenery = scenery, Size = size, Min = map.Min, CellSize = map.NavCellSize };
+        }
+
         [Test]
         public void IsValid_RejectsOutsideMapAndBlockedCells()
         {
             var map = Map();
             var footprint = new float2(2f, 2f);
-            var cells = new NativeArray<byte>(400, Allocator.Temp);
-            for (var i = 0; i < cells.Length; i++)
-            {
-                cells[i] = (byte)NavSurface.Land;
-            }
-
-            var grid = new NavGrid { Cells = cells, Size = new int2(20, 20), Min = map.Min, CellSize = 1f };
+            var grid = LandGrid(map);
             Assert.IsTrue(PlacementMath.IsValid(in map, in grid, float3.zero, footprint), "free cells");
             Assert.IsFalse(PlacementMath.IsValid(in map, in grid, new float3(9.5f, 0f, 0f), footprint),
                 "footprint crosses the map edge");
@@ -73,10 +82,59 @@ namespace HyperRTS.Simulation.Tests
                 "outside the map");
 
             var blocked = grid.WorldToCell(new float3(0.5f, 0f, 0.5f));
-            cells[grid.Index(blocked)] = (byte)NavSurface.Blocked;
+            grid.Cells[grid.Index(blocked)] = (byte)NavSurface.Blocked;
             Assert.IsFalse(PlacementMath.IsValid(in map, in grid, float3.zero, footprint), "blocked cell under footprint");
             Assert.IsTrue(PlacementMath.IsValid(in map, in grid, new float3(-4f, 0f, -4f), footprint), "elsewhere is free");
-            cells.Dispose();
+            grid.Cells.Dispose();
+            grid.Scenery.Dispose();
+        }
+
+        [Test]
+        public void IsValid_PlacesOverOpenSceneryButNotObstacles()
+        {
+            var map = Map();
+            var footprint = new float2(4f, 4f);
+            var grid = LandGrid(map);
+            var tree = grid.WorldToCell(new float3(1.5f, 0f, -1.5f));
+            grid.Scenery[grid.Index(tree)] = 1;
+            Assert.IsTrue(PlacementMath.IsValid(in map, in grid, float3.zero, footprint), "the site clears a tree");
+
+            grid.Cells[grid.Index(tree)] = (byte)NavSurface.Blocked;
+            Assert.IsFalse(PlacementMath.IsValid(in map, in grid, float3.zero, footprint), "a house's cells block");
+            grid.Cells.Dispose();
+            grid.Scenery.Dispose();
+        }
+
+        [Test]
+        public void IsValid_ChecksTheFootprintAtItsTurn()
+        {
+            var map = Map();
+            var footprint = new float2(2f, 6f);
+            var grid = LandGrid(map);
+            var house = grid.WorldToCell(new float3(2.5f, 0f, 0.5f));
+            grid.Cells[grid.Index(house)] = (byte)NavSurface.Blocked;
+
+            Assert.IsTrue(PlacementMath.IsValid(in map, in grid, float3.zero, PlacementMath.Turned(footprint, 0)),
+                "the narrow side misses the house");
+            Assert.IsFalse(PlacementMath.IsValid(in map, in grid, float3.zero, PlacementMath.Turned(footprint, 1)),
+                "a quarter turn lays the long side over it");
+            Assert.IsFalse(PlacementMath.IsValid(in map, in grid, float3.zero, PlacementMath.Turned(footprint, 3)));
+            grid.Cells.Dispose();
+            grid.Scenery.Dispose();
+        }
+
+        [Test]
+        public void TurnToward_FacesTheFrontAlongTheDrag()
+        {
+            for (var turn = 0; turn < PlacementMath.Turns; turn++)
+            {
+                var front = math.rotate(PlacementMath.Facing(turn), new float3(0f, 0f, 1f)).xz;
+                Assert.AreEqual(turn, PlacementMath.TurnToward(front), $"front of turn {turn}");
+                var skewed = math.rotate(quaternion.RotateY(0.6f), new float3(front.x, 0f, front.y)).xz;
+                Assert.AreEqual(turn, PlacementMath.TurnToward(skewed), $"off-axis drag near turn {turn}");
+            }
+
+            Assert.AreEqual(0, PlacementMath.TurnToward(new float2(0f, -1f)), "toward the camera is the default turn");
         }
 
         [Test]

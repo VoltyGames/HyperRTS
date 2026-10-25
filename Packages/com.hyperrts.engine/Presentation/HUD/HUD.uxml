@@ -3,5 +3,6 @@
     <ui:VisualElement name="bottom" class="hud-bottom" picking-mode="Ignore" />
     <ui:VisualElement name="strategic-countdowns" class="hud-countdowns" picking-mode="Ignore" />
     <HyperRTS.Presentation.HUD.CostRow name="line-cost" class="hud-line-cost" picking-mode="Ignore" />
+    <ui:Label name="placement-hint" class="hud-placement-hint" picking-mode="Ignore" />
   </ui:VisualElement>
 </ui:UXML>

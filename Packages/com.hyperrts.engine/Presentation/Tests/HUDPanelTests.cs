@@ -56,6 +56,17 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void PlacementHint_IsAHiddenPassThroughLabelWithTheRotateText()
+        {
+            var label = Layouts.Root.CloneRoot().Require<Label>("placement-hint");
+            var hint = new PlacementHint(label);
+
+            Assert.IsFalse(hint.BlocksPointer);
+            Assert.AreEqual(HUDText.Text("hud.rotate-hint"), label.text);
+            Assert.IsTrue(label.ClassListContains("hrts-hidden"), "hidden until a building is placed");
+        }
+
+        [Test]
         public void RowTemplates_HaveTheNamedElements()
         {
             var layouts = Layouts;

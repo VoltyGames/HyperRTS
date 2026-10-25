@@ -15,6 +15,13 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Yaw at <paramref name="turn"/>: each turn adds a quarter clockwise to <see cref="CameraYaw"/>.</summary>
         public static quaternion Facing(int turn) => quaternion.RotateY(CameraYaw + math.PI * 0.5f * turn);
 
+        /// <summary>The turn whose front points nearest along <paramref name="direction"/> on XZ.</summary>
+        public static int TurnToward(float2 direction)
+        {
+            var quarters = (math.atan2(direction.x, direction.y) - CameraYaw) / (math.PI * 0.5f);
+            return ((int)math.round(quarters) % Turns + Turns) % Turns;
+        }
+
         /// <summary>The footprint's world X and Z at <paramref name="turn"/>: odd turns swap them.</summary>
         public static float2 Turned(float2 footprint, int turn) => turn % 2 == 1 ? footprint.yx : footprint;
 
@@ -30,7 +37,7 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>
         /// Inside the map and over free cells of the surface only: plain land or plain water, never a deck or a
-        /// blocked cell.
+        /// blocked cell. Open scenery such as trees doesn't count: the site clears it.
         /// </summary>
         public static bool IsValid(in MapSettings map, in NavGrid grid, float3 center, float2 footprint,
             PlacementSurface surface = PlacementSurface.Land)

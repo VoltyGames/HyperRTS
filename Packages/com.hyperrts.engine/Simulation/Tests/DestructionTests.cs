@@ -24,12 +24,12 @@ namespace HyperRTS.Simulation.Tests
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private Entity SpawnScenery(float3 position, int crush, Entity remains = default)
+        private Entity SpawnScenery(float3 position, int crush, Entity remains = default, float2 block = default)
         {
             var entity = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(entity, LocalTransform.FromPosition(position));
             var writer = new EntityManagerWriter(_world.EntityManager, entity);
-            DestructibleSetup.AddScenery(ref writer, 50f, crush, remains, float2.zero,
+            DestructibleSetup.AddScenery(ref writer, 50f, crush, remains, block,
                 SceneryId.At(position, quaternion.identity));
             return entity;
         }
@@ -67,6 +67,23 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsFalse(_world.EntityManager.Exists(underNose), "the hull's front corner reaches past a centre circle");
             Assert.IsFalse(_world.EntityManager.Exists(underTail), "so does its rear corner");
             Assert.IsTrue(_world.EntityManager.Exists(beside), "scenery clear of the tracks stands");
+        }
+
+        [Test]
+        public void ConstructionSite_ClearsOpenSceneryInItsFootprint_ButNotSolidSceneryOrOutside()
+        {
+            var tree = SpawnScenery(new float3(2f, 0f, 1f), 0);
+            var fence = SpawnScenery(new float3(-1f, 0f, -2f), 1);
+            var outside = SpawnScenery(new float3(5f, 0f, 0f), 0);
+            var wall = SpawnScenery(new float3(0f, 0f, 2.5f), 0, block: new float2(1f, 1f));
+            _world.SpawnBuilding(1, float3.zero, new float2(6f, 6f), complete: false);
+
+            _world.Run(0.5f);
+
+            Assert.IsFalse(_world.EntityManager.Exists(tree), "a tree inside the site is cleared");
+            Assert.IsFalse(_world.EntityManager.Exists(fence), "so is a fence");
+            Assert.IsTrue(_world.EntityManager.Exists(outside), "scenery outside the footprint stands");
+            Assert.IsTrue(_world.EntityManager.Exists(wall), "solid scenery is an obstacle, not cleared");
         }
 
         [Test]
