@@ -13,13 +13,16 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests
 {
     /// <summary>
-    /// Placed buildings face the camera by default and turn by quarters: footprint swap, snapping, validity, the
-    /// producer's spawn point and the turn on the wire.
+    /// Placed buildings turn to any yaw: quarter turns snap edges onto cells, free yaws land on the half-cell lattice,
+    /// turned neighbours sit flush, and the yaw survives the wire.
     /// </summary>
     public class BuildingFacingTests
     {
         private static readonly float3 Far = new(90f, 0f, 90f);
         private static readonly float3 SpawnOffset = new(0f, 0f, 4f);
+
+        // Right along (0.8, -0.6), so a neighbour one width over sits on the half-cell lattice.
+        private static readonly float TiltedYaw = math.atan2(0.6f, 0.8f);
 
         private TestWorld _world;
         private ResourceType _supplies;
@@ -44,13 +47,20 @@ namespace HyperRTS.Simulation.Tests
             return _world.MakeProducer(prefab, SpawnOffset, unit);
         }
 
-        private Entity Place(Entity prefab, float3 position, byte turn)
+        private static float Quarter(int turn) => PlacementMath.CameraYaw + math.PI * 0.5f * turn;
+
+        private void Command(Entity prefab, float3 position, float yaw)
         {
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero), prefab);
             _world.Command(1, new PlayerCommand
             {
-                Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position, Turn = turn,
+                Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position, Yaw = yaw,
             });
+        }
+
+        private Entity Place(Entity prefab, float3 position, float yaw)
+        {
+            Command(prefab, position, yaw);
             _world.Tick();
             foreach (var site in _world.All<ConstructionProgress>())
             {
@@ -68,7 +78,7 @@ namespace HyperRTS.Simulation.Tests
         [Test]
         public void DefaultFacing_PointsTheFrontAtTheCamera()
         {
-            var site = Place(FactoryPrefab(new float2(4f, 4f)), new float3(10f, 0f, 10f), 0);
+            var site = Place(FactoryPrefab(new float2(4f, 4f)), new float3(10f, 0f, 10f), PlacementMath.CameraYaw);
 
             MathAssert.Near(new float3(0f, 0f, -1f), Front(site));
         }
@@ -80,7 +90,7 @@ namespace HyperRTS.Simulation.Tests
         public void QuarterTurn_TurnsTheFrontFootprintAndSpawnPoint(int turn, float frontX, float frontZ,
             float centerX, float centerZ)
         {
-            var site = Place(FactoryPrefab(new float2(3f, 2f)), new float3(10.2f, 0f, 10.2f), (byte)turn);
+            var site = Place(FactoryPrefab(new float2(3f, 2f)), new float3(10.2f, 0f, 10.2f), Quarter(turn));
             var transform = _world.Get<LocalTransform>(site);
             var front = new float3(frontX, 0f, frontZ);
 
@@ -89,7 +99,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.AreEqual(centerZ, transform.Position.z, 1e-4f);
             var box = new NavBox(transform.Position, transform.Rotation, _world.Get<NavObstacle>(site).Size);
             var extent = box.Extents * 2f;
-            MathAssert.Near(PlacementMath.Turned(new float2(3f, 2f), turn), extent);
+            MathAssert.Near(turn % 2 == 1 ? new float2(2f, 3f) : new float2(3f, 2f), extent);
             var spawn = transform.TransformPoint(_world.Get<Producer>(site).SpawnOffset);
             MathAssert.Near(transform.Position + front * SpawnOffset.z, spawn);
         }
@@ -99,29 +109,64 @@ namespace HyperRTS.Simulation.Tests
         {
             var prefab = FactoryPrefab(new float2(2f, 6f));
 
-            Assert.AreEqual(Entity.Null, Place(prefab, new float3(98f, 0f, 0f), 1), "turned, it crosses the edge");
-            Assert.AreNotEqual(Entity.Null, Place(prefab, new float3(98f, 0f, 0f), 0), "unturned, it fits");
+            Assert.AreEqual(Entity.Null, Place(prefab, new float3(98f, 0f, 0f), Quarter(1)), "turned, it crosses the edge");
+            Assert.AreNotEqual(Entity.Null, Place(prefab, new float3(98f, 0f, 0f), Quarter(0)), "unturned, it fits");
         }
 
         [Test]
-        public void TurnOutOfRange_IsRefused()
+        public void NonFiniteYaw_IsRefused()
         {
-            Assert.AreEqual(Entity.Null, Place(FactoryPrefab(new float2(4f, 4f)), new float3(10f, 0f, 10f), 4));
+            Assert.AreEqual(Entity.Null, Place(FactoryPrefab(new float2(4f, 4f)), new float3(10f, 0f, 10f), float.NaN));
             Assert.AreEqual(1000, _world.GetResources(1, _supplies), "nothing charged");
         }
 
         [Test]
-        public void CommandRpc_CarriesTheTurn()
+        public void FreeYaw_TurnsTheSite_AndCentresItOnTheHalfCellLattice()
+        {
+            const float yaw = 0.7f;
+            var site = Place(FactoryPrefab(new float2(4f, 4f)), new float3(10.3f, 0f, 10.1f), yaw);
+            var transform = _world.Get<LocalTransform>(site);
+
+            MathAssert.Near(new float3(math.sin(yaw), 0f, math.cos(yaw)), Front(site));
+            Assert.AreEqual(10.5f, transform.Position.x, 1e-4f);
+            Assert.AreEqual(10f, transform.Position.z, 1e-4f);
+        }
+
+        [TestCase(14f, 7f, 2, TestName = "TurnedNeighbours_ThatOnlyTouch_AreBothPlaced")]
+        [TestCase(12f, 8.5f, 1, TestName = "TurnedNeighbours_ThatOverlap_AreRefused")]
+        public void TurnedNeighbours_AreComparedAsTurnedBoxes(float x, float z, int expected)
+        {
+            var prefab = FactoryPrefab(new float2(5f, 5f));
+            Command(prefab, new float3(10f, 0f, 10f), TiltedYaw);
+            Command(prefab, new float3(x, 0f, z), TiltedYaw);
+            _world.Tick();
+
+            Assert.AreEqual(expected, PlayerSites());
+        }
+
+        private int PlayerSites()
+        {
+            var count = 0;
+            foreach (var site in _world.All<ConstructionProgress>())
+            {
+                count += _world.Get<Faction>(site).Value == 1 ? 1 : 0;
+            }
+
+            return count;
+        }
+
+        [Test]
+        public void FreeYaw_RoundTripsThroughTheCommandRpc()
         {
             var command = new PlayerCommand
             {
-                Type = CommandType.PlaceBuilding, Position = new float3(3f, 0f, 7f), Turn = 3, Queue = true,
+                Type = CommandType.PlaceBuilding, Position = new float3(3f, 0f, 7f), Yaw = 0.7f, Queue = true,
             };
 
             var received = CommandRpc.From(command).ToCommand();
 
             Assert.AreEqual(CommandType.PlaceBuilding, received.Type);
-            Assert.AreEqual(3, received.Turn);
+            Assert.AreEqual(0.7f, received.Yaw);
             Assert.AreEqual(command.Position, received.Position);
             Assert.IsTrue(received.Queue);
         }

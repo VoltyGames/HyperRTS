@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.HUD
             ["hud.pop"] = "POP",
             ["hud.power"] = "PWR",
             ["hud.strategic-ready"] = "READY",
-            ["hud.rotate-hint"] = "R or drag: rotate",
+            ["hud.rotate-hint"] = "Drag or hold R: rotate, R: +45°, Shift: snap",
             ["command.return"] = "Return",
             ["command.unload"] = "Unload",
             ["command.deploy"] = "Deploy",

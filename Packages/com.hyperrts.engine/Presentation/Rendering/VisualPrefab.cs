@@ -25,7 +25,8 @@ namespace HyperRTS.Presentation.Rendering
             return root;
         }
 
-        private static NativeList<Entity> Members(EntityManager entityManager, Entity root)
+        /// <summary>The root and every entity in its linked group.</summary>
+        public static NativeList<Entity> Members(EntityManager entityManager, Entity root)
         {
             var members = new NativeList<Entity>(Allocator.Temp);
             if (!entityManager.HasBuffer<LinkedEntityGroup>(root))

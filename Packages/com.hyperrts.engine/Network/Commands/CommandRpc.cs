@@ -21,7 +21,7 @@ namespace HyperRTS.Network.Commands
         public int Argument;
         public float3 Position;
         public float3 End;
-        public byte Turn;
+        public float Yaw;
         public Entity Target;
 
         /// <summary>A map scenery target's <c>SceneryId</c>: scenery isn't a ghost, so <see cref="Target"/> can't carry it.</summary>
@@ -40,7 +40,7 @@ namespace HyperRTS.Network.Commands
             Argument = command.Argument,
             Position = command.Position,
             End = command.End,
-            Turn = command.Turn,
+            Yaw = command.Yaw,
         };
 
         /// <summary>The plain fields back as a command; the receiver resolves entities and the prefab.</summary>
@@ -51,7 +51,7 @@ namespace HyperRTS.Network.Commands
             Argument = Argument,
             Position = Position,
             End = End,
-            Turn = Turn,
+            Yaw = Yaw,
         };
     }
 }

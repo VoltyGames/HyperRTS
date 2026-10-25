@@ -9,6 +9,9 @@ namespace HyperRTS.Client.Interaction
         /// <summary>-1, 0 or 1 per axis; +y is the top of the screen.</summary>
         public int2 Direction;
 
+        /// <summary>Set by input that steers with the pointer, such as turning a building, so the camera holds still.</summary>
+        public bool Paused;
+
         /// <summary>The edge a pointer touches within <paramref name="border"/> pixels, zero off screen or inside.</summary>
         public static int2 At(float2 pointer, float2 screen, float border)
         {

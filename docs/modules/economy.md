@@ -52,34 +52,42 @@ supply, consumers go offline: weapons hold fire, detectors go blind and producti
 Builders also repair. Selling refunds `MatchRules.SellRefund`.
 `FlagMountAuthoring` flies the owner's flag.
 
-`PlacementMath.IsValid` decides where a footprint may go, at its current turn, for the ghost, the server and the AI:
-inside the map, over free cells of its surface, never over a blocked cell. Anything with an obstacle blocks: buildings,
-map buildings, solid ruins and scenery with a `block` size such as walls. Open scenery (trees, shrubs, crushable
-fences and pipes, small props) doesn't: `SiteClearingSystem` flattens it inside a site's footprint with a lethal hit,
-on the server, so remains and sync follow the normal death path. The server also refuses overlap with standing
-obstacles and sites placed the same frame.
+`BuildingSpot` (centre, yaw, unturned footprint, surface) is the one placement value for the ghost, the server and
+the AI. `BuildingSpot.IsValid` decides where it may go: inside the map, with every cell under the turned box free on
+its surface, never a blocked cell. Anything with an obstacle blocks: buildings, map buildings, solid ruins and scenery
+with a `block` size such as walls. Open scenery (trees, shrubs, crushable fences and pipes, small props) doesn't:
+`SiteClearingSystem` flattens it inside a site's footprint with a lethal hit, on the server, so remains and sync
+follow the normal death path. The server also refuses overlap with standing obstacles and sites placed the same
+frame, comparing turned boxes (`NavBox.Overlaps`), so neighbours at any angle may touch.
+
+`BuildingSpot.Snap` keeps a yaw within 0.5° of a quarter turn exact and lands the turned edges on cell boundaries. At
+any other yaw it centres the spot on the half-cell lattice.
 
 ### Facing
 
-A placed building's front is its prefab's +Z: doors, the producer's `spawnOffset` and the units it releases. By
-default it faces the match camera, toward -Z, and each placement starts there. While placing, the rebindable
-`RotateBuilding` action (R) turns the ghost a quarter clockwise per press. Holding the click pins the ghost, and
-dragging more than 2 m turns its front toward the cursor (`PlacementMath.TurnToward`). Release places it. The mouse
-wheel stays camera zoom. A low mark off the ghost shows its front, the HUD's `PlacementHint` says how to turn it, and
-an odd turn swaps the footprint's X and Z. Shift keeps the turn for the next copy. `PlaceBuilding` carries the turn,
-0 to 3, in `PlayerCommand.Turn`. The server refuses any other value and places at `PlacementMath.Facing`. Children,
-work points and the spawn point turn with the building. The skirmish AI places at turn 0, line placement keeps its
-own turn, map buildings keep their authored rotation, and a start kit item turns with its spawn unless it sets
-`facesCamera`, which lays its offset and yaw out facing the camera as a placed building is.
+A placed building's front is its prefab's +Z: doors, the producer's `spawnOffset` and the units it releases. Each
+placement starts facing the match camera, toward -Z (`PlacementMath.CameraYaw`). `PlacementRotation` owns the ghost's
+yaw while placing:
+
+- Holding the click pins the ghost, and dragging more than 2 m aims its front at the cursor, at any angle.
+- Holding the rebindable `RotateBuilding` action (R) pins it while sideways mouse motion turns it, 0.5° a pixel.
+  Edge scrolling pauses meanwhile through `ScrollEdge.Paused`.
+- A tap of R, released with less than 3 px of motion, adds 45°.
+- Shift, the `Queue` action, rounds every turn to 15° and keeps the yaw for the next copy.
+
+The mouse wheel stays camera zoom, and the HUD's `PlacementHint` says how to turn. `PlaceBuilding` carries the yaw in
+radians in `PlayerCommand.Yaw`. The server refuses a non-finite yaw. Children, work points and the spawn point turn
+with the building. The skirmish AI tries the camera facing, then a quarter turn. Map buildings keep their authored
+rotation, and a start kit item turns with its spawn unless it sets `facesCamera`, which lays its offset and yaw out
+facing the camera as a placed building is.
 
 ### Line placement
 
 A building with `placedInLines` set, such as a wall, is placed by dragging: press at the start, drag, release to
-confirm. `PlacementLine` lays segments along the nearer grid axis, X or Z, each one footprint X long. A line along Z
-turns each segment a quarter, so its footprint swaps. Each segment faces the camera at `PlacementMath.Facing`, as a
-placed building does. Diagonal lines are not supported yet. The ghost draws every
-segment, valid or not by the same `PlacementMath` rules, and the HUD's `LineCost` counts the valid ones for the
-line's total cost.
+confirm. `PlacementLine` lays `BuildingSpot`s in any drag direction, each one footprint X long and yawed along the
+line with its front toward the camera. Only the first spot snaps, so the rest follow gap-free. Shift rounds the drag
+direction to 15°. The ghost draws every segment, valid or not by the same rules, and the HUD's `LineCost` counts the
+valid ones for the line's total cost.
 
 The command is `PlaceLine`, sent as a start, an end and a prefab. `PlaceBuildingSystem` rebuilds the same line and
 places each free segment from the start as its own construction site, charged per segment. It skips blocked

@@ -17,19 +17,19 @@ namespace HyperRTS.Simulation.Buildings
         /// sites from the end nearer the builders.
         /// </summary>
         private void PlaceLine(ref SystemState state, in IssuedCommand request, in Buyer buyer,
-            EntityCommandBuffer ecb, NativeList<Site> sites, NativeList<Entity> builders, NativeList<Order> orders)
+            EntityCommandBuffer ecb, NativeList<NavBox> sites, NativeList<Entity> builders, NativeList<Order> orders)
         {
             var prefab = request.Command.Prefab;
             var map = SystemAPI.GetSingleton<MapSettings>();
-            var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
             var grid = SystemAPI.GetSingleton<NavGrid>();
+            var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
-            var line = new PlacementLine(map, request.Command.Position, request.Command.End, footprint);
+            var line = new PlacementLine(map, request.Command.Position, request.Command.End, footprint, surface);
             var stock = SystemAPI.GetBuffer<ResourceStock>(request.Player);
             for (var i = 0; i < line.Count; i++)
             {
-                var valid = PlacementMath.Resolve(map, grid, line.Segment(i), line.Footprint, surface, out var center);
-                if (!valid || IsOccupied(center, line.Footprint, sites))
+                var spot = line.Segment(i).Grounded(grid);
+                if (!spot.IsValid(map, grid) || IsOccupied(spot, sites))
                 {
                     continue;
                 }
@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Buildings
                     break;
                 }
 
-                orders.Add(Raise(ref state, request, buyer, ecb, sites, center, line.Footprint, line.Turn));
+                orders.Add(Raise(ref state, request, buyer, ecb, sites, spot));
             }
 
             if (IsFarEndNearer(ref state, builders, orders))

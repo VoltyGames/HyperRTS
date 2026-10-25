@@ -140,14 +140,16 @@ namespace HyperRTS.Simulation.Tests
             var shore = float3.zero;
             var inland = new float3(-10f, 0f, 0f);
             var offshore = new float3(10f, 0f, 0f);
+            bool Fits(float3 center, PlacementSurface surface) =>
+                new BuildingSpot(center, PlacementMath.CameraYaw, footprint, surface).IsValid(map, grid);
 
-            Assert.IsTrue(PlacementMath.IsValid(map, grid, shore, footprint, PlacementSurface.Shoreline));
-            Assert.IsFalse(PlacementMath.IsValid(map, grid, inland, footprint, PlacementSurface.Shoreline));
-            Assert.IsFalse(PlacementMath.IsValid(map, grid, offshore, footprint, PlacementSurface.Shoreline));
-            Assert.IsTrue(PlacementMath.IsValid(map, grid, inland, footprint));
-            Assert.IsFalse(PlacementMath.IsValid(map, grid, shore, footprint), "land buildings stay off water");
-            Assert.IsTrue(PlacementMath.IsValid(map, grid, offshore, footprint, PlacementSurface.Water));
-            Assert.IsFalse(PlacementMath.IsValid(map, grid, shore, footprint, PlacementSurface.Water));
+            Assert.IsTrue(Fits(shore, PlacementSurface.Shoreline));
+            Assert.IsFalse(Fits(inland, PlacementSurface.Shoreline));
+            Assert.IsFalse(Fits(offshore, PlacementSurface.Shoreline));
+            Assert.IsTrue(Fits(inland, PlacementSurface.Land));
+            Assert.IsFalse(Fits(shore, PlacementSurface.Land), "land buildings stay off water");
+            Assert.IsTrue(Fits(offshore, PlacementSurface.Water));
+            Assert.IsFalse(Fits(shore, PlacementSurface.Water));
         }
 
         [Test]

@@ -1,6 +1,6 @@
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>What ground a building's footprint must cover (see <see cref="PlacementMath"/>).</summary>
+    /// <summary>What ground a building's footprint must cover.</summary>
     public enum PlacementSurface : byte
     {
         Land = 0,

@@ -28,13 +28,6 @@ namespace HyperRTS.Simulation.Buildings
             public bool Queue;
         }
 
-        /// <summary>World XZ box a new site can't overlap: a standing obstacle or a site placed this frame.</summary>
-        private struct Site
-        {
-            public float3 Center;
-            public float2 Footprint;
-        }
-
         private CommandReader _commands;
         private EntityQuery _obstacles;
         private EntityQuery _completed;
@@ -130,26 +123,17 @@ namespace HyperRTS.Simulation.Buildings
         }
 
         private bool TryPlace(ref SystemState state, in IssuedCommand request, in Buyer buyer, EntityCommandBuffer ecb,
-            NativeList<Site> sites, out Order order)
+            NativeList<NavBox> sites, out Order order)
         {
             order = default;
-            var turn = request.Command.Turn;
-            if (turn >= PlacementMath.Turns)
-            {
-                return false;
-            }
-
             var prefab = request.Command.Prefab;
             var map = SystemAPI.GetSingleton<MapSettings>();
-            var footprint = PlacementMath.Turned(SystemAPI.GetComponent<NavObstacle>(prefab).Size, turn);
-            var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var grid = SystemAPI.GetSingleton<NavGrid>();
-            if (!PlacementMath.Resolve(map, grid, request.Command.Position, footprint, surface, out var center))
-            {
-                return false;
-            }
-
-            if (IsOccupied(center, footprint, sites))
+            var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
+            var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
+            var asked = new BuildingSpot(request.Command.Position, request.Command.Yaw, footprint, surface);
+            var spot = asked.Snap(map).Grounded(grid);
+            if (!spot.IsValid(map, grid) || IsOccupied(spot, sites))
             {
                 return false;
             }
@@ -160,28 +144,28 @@ namespace HyperRTS.Simulation.Buildings
                 return false;
             }
 
-            order = Raise(ref state, request, buyer, ecb, sites, center, footprint, PlacementMath.Facing(turn));
+            order = Raise(ref state, request, buyer, ecb, sites, spot);
             return true;
         }
 
         /// <summary>Counts the bought site against the buyer, spawns it and returns the Build order on it.</summary>
         private Order Raise(ref SystemState state, in IssuedCommand request, in Buyer buyer, EntityCommandBuffer ecb,
-            NativeList<Site> sites, float3 center, float2 footprint, quaternion turn)
+            NativeList<NavBox> sites, in BuildingSpot spot)
         {
             var prefab = request.Command.Prefab;
             buyer.AddPurchase(state.EntityManager, prefab);
-            var building = SpawnSite(ref state, prefab, center, turn, request.Faction, ecb);
-            sites.Add(new Site { Center = center, Footprint = footprint });
-            return new Order { Type = OrderType.Build, Target = building, Position = center };
+            var building = SpawnSite(ref state, prefab, spot.Center, spot.Rotation, request.Faction, ecb);
+            sites.Add(spot.Box);
+            return new Order { Type = OrderType.Build, Target = building, Position = spot.Center };
         }
 
         /// <summary>An unbuilt instance of <paramref name="prefab"/>; builders raise it through Build orders.</summary>
-        private Entity SpawnSite(ref SystemState state, Entity prefab, float3 center, quaternion turn, byte faction,
+        private Entity SpawnSite(ref SystemState state, Entity prefab, float3 center, quaternion rotation, byte faction,
             EntityCommandBuffer ecb)
         {
             var transform = SystemAPI.GetComponent<LocalTransform>(prefab);
             var building = ecb.Spawn(prefab, transform, SystemAPI.GetComponentLookup<PostTransformMatrix>(true),
-                center, math.mul(turn, transform.Rotation), faction);
+                center, math.mul(rotation, transform.Rotation), faction);
             ecb.SetComponent(building, new ConstructionProgress { Value = 0f });
             ecb.SetComponentEnabled<ConstructionProgress>(building, true);
             // Offline from the first frame, before OfflineSystem sees the site.
@@ -233,26 +217,25 @@ namespace HyperRTS.Simulation.Buildings
             SystemAPI.HasBuffer<BuildOption>(unit)
             && ProductionRules.HasOption(SystemAPI.GetBuffer<BuildOption>(unit), prefab);
 
-        /// <summary>Every standing obstacle's world box: the nav grid may lag a frame behind newly placed sites.</summary>
-        private NativeList<Site> StandingSites()
+        /// <summary>Every standing obstacle's box: the nav grid may lag a frame behind newly placed sites.</summary>
+        private NativeList<NavBox> StandingSites()
         {
             var obstacles = _obstacles.ToComponentDataArray<NavObstacle>(Allocator.Temp);
             var transforms = _obstacles.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-            var sites = new NativeList<Site>(obstacles.Length, Allocator.Temp);
+            var sites = new NativeList<NavBox>(obstacles.Length, Allocator.Temp);
             for (var i = 0; i < obstacles.Length; i++)
             {
-                var box = new NavBox(transforms[i].Position, transforms[i].Rotation, obstacles[i].Size);
-                sites.Add(new Site { Center = transforms[i].Position, Footprint = box.Extents * 2f });
+                sites.Add(new NavBox(transforms[i].Position, transforms[i].Rotation, obstacles[i].Size));
             }
 
             return sites;
         }
 
-        private static bool IsOccupied(float3 center, float2 footprint, NativeList<Site> sites)
+        private static bool IsOccupied(in BuildingSpot spot, NativeList<NavBox> sites)
         {
             foreach (var site in sites)
             {
-                if (Overlaps(center, footprint, site.Center, site.Footprint))
+                if (spot.Overlaps(site))
                 {
                     return true;
                 }
@@ -260,9 +243,5 @@ namespace HyperRTS.Simulation.Buildings
 
             return false;
         }
-
-        /// <summary>Touching edges are allowed so buildings can sit flush.</summary>
-        private static bool Overlaps(float3 a, float2 sizeA, float3 b, float2 sizeB) =>
-            math.all(math.abs(a.xz - b.xz) * 2f < sizeA + sizeB - 0.001f);
     }
 }

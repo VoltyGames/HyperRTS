@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
@@ -139,6 +140,7 @@ namespace HyperRTS.Simulation.Tests
             world.Command(world.Get<Faction>(builder).Value, new PlayerCommand
             {
                 Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position,
+                Yaw = PlacementMath.CameraYaw,
             });
 
         public static void PlaceLine(this TestWorld world, Entity builder, Entity prefab, float3 start, float3 end) =>

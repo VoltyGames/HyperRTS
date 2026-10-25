@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Mathematics;
@@ -10,12 +11,15 @@ namespace HyperRTS.Simulation.AI
         /// <summary>How far the search looks, in building-plus-gap steps from home.</summary>
         public const int MaxRings = 12;
 
+        // Facing the camera, then a quarter on: further quarters repeat the same two footprints.
+        private const int Facings = 2;
+
         /// <summary>
         /// Closest free spot to <paramref name="home"/>, ring by ring; candidates are a building plus
         /// <paramref name="gap"/> apart, and the gap stays clear around the spot.
         /// </summary>
         public static bool TryFindSpot(in MapSettings map, in NavGrid grid, float3 home, float2 footprint,
-            PlacementSurface surface, float gap, out float3 spot)
+            PlacementSurface surface, float gap, out BuildingSpot spot)
         {
             var step = math.cmax(footprint) + gap;
             for (var ring = 1; ring <= MaxRings; ring++)
@@ -24,7 +28,7 @@ namespace HyperRTS.Simulation.AI
                 {
                     var cell = RingCell(ring, k);
                     var position = home + new float3(cell.x, 0f, cell.y) * step;
-                    if (IsFree(map, grid, position, footprint, surface, gap, out spot))
+                    if (TryFace(map, grid, new BuildingSpot(position, 0f, footprint, surface), gap, out spot))
                     {
                         return true;
                     }
@@ -48,12 +52,22 @@ namespace HyperRTS.Simulation.AI
             };
         }
 
-        /// <summary>The single call into <see cref="PlacementMath"/>: the shared rules over a footprint padded by the gap.</summary>
-        private static bool IsFree(in MapSettings map, in NavGrid grid, float3 position, float2 footprint,
-            PlacementSurface surface, float gap, out float3 spot)
+        /// <summary>The first quarter yaw at which the spot, padded by the gap, is valid.</summary>
+        private static bool TryFace(in MapSettings map, in NavGrid grid, in BuildingSpot candidate, float gap,
+            out BuildingSpot spot)
         {
-            spot = PlacementMath.Snap(map, position, footprint);
-            return PlacementMath.IsValid(map, grid, spot, footprint + 2f * gap, surface);
+            for (var quarter = 0; quarter < Facings; quarter++)
+            {
+                var yaw = PlacementMath.CameraYaw + quarter * math.PI * 0.5f;
+                spot = new BuildingSpot(candidate.Center, yaw, candidate.Footprint, candidate.Surface).Snap(map);
+                if (spot.Grown(gap).IsValid(map, grid))
+                {
+                    return true;
+                }
+            }
+
+            spot = default;
+            return false;
         }
     }
 }

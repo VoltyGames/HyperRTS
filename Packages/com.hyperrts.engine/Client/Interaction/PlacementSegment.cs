@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Buildings;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Client.Interaction
 {
@@ -7,10 +7,8 @@ namespace HyperRTS.Client.Interaction
     [InternalBufferCapacity(0)]
     public struct PlacementSegment : IBufferElementData
     {
-        public float3 Center;
-
-        /// <summary>The segment's footprint as turned along the line.</summary>
-        public float2 Footprint;
+        /// <summary>Grounded and yawed along the line, as the server will check it.</summary>
+        public BuildingSpot Spot;
 
         public bool Valid;
 

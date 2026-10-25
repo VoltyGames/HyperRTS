@@ -11,8 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Input.Commands
 {
     /// <summary>
-    /// Drives building placement mode: moves the snapped ghost, turns it on RotateBuilding or a held drag and confirms
-    /// it on release as a PlaceBuilding command, or for a line prefab drags the line and sends it as a PlaceLine command.
+    /// Drives building placement mode: moves the snapped ghost, turns it through <see cref="PlacementRotation"/> and
+    /// confirms it on release as a PlaceBuilding command, or for a line prefab drags the line as a PlaceLine command.
     /// </summary>
     // After CommandInputSystem, so a cancelling right-click can't also become a smart command this frame.
     [WorldSystemFilter(SimulationWorlds.Presented)]
@@ -25,6 +25,7 @@ namespace HyperRTS.Input.Commands
 
         private RTSInputActions _actions;
         private WorldPointer _pointer;
+        private PlacementRotation _rotation;
 
         // The line last planned into the PlacementSegment buffer, so a still cursor doesn't replan it.
         private PlacementLine _line;
@@ -35,7 +36,9 @@ namespace HyperRTS.Input.Commands
         {
             _actions = InputActionsProvider.Actions;
             _pointer = new WorldPointer(ref CheckedStateRef);
+            _rotation = PlacementRotation.Start();
             RequireForUpdate<PlacementState>();
+            RequireForUpdate<ScrollEdge>();
             RequireForUpdate<PointerState>();
             RequireForUpdate<LocalPlayer>();
             RequireForUpdate<MapSettings>();
@@ -52,6 +55,8 @@ namespace HyperRTS.Input.Commands
             var placement = SystemAPI.GetSingleton<PlacementState>();
             if (!placement.Active)
             {
+                _rotation = PlacementRotation.Start();
+                PauseEdgeScroll(false);
                 return;
             }
 
@@ -64,48 +69,77 @@ namespace HyperRTS.Input.Commands
             }
 
             var aimed = TryAim(out var ground);
+            // Shift queues the placement and snaps its turn and line direction.
+            var shift = commands.Queue.IsPressed();
             if (SystemAPI.HasComponent<LinePlacement>(placement.Prefab))
             {
                 // A drag released over the HUD still ends where the cursor last touched the ground.
                 if (aimed)
                 {
-                    MoveLine(ref placement, ground);
+                    MoveLine(ref placement, ground, shift);
                 }
 
-                DragLine(ref placement, aimed, commands.Queue.IsPressed());
-                SystemAPI.SetSingleton(placement);
-                return;
+                DragLine(ref placement, aimed, shift);
+            }
+            else
+            {
+                Rotate(commands);
+                MoveSingle(ref placement, aimed, ground, shift);
             }
 
-            if (commands.RotateBuilding.WasPressedThisFrame())
-            {
-                placement.Turn = (byte)((placement.Turn + 1) % PlacementMath.Turns);
-            }
-
-            if (placement.Dragging)
-            {
-                DragTurn(ref placement, aimed, ground, commands.Queue.IsPressed());
-            }
-            else if (aimed)
-            {
-                MoveGhost(ref placement, ground);
-                placement.Dragging = commands.Confirm.WasPressedThisFrame();
-                placement.DragStart = ground;
-            }
-
+            PauseEdgeScroll(_rotation.Turning);
             SystemAPI.SetSingleton(placement);
         }
 
+        /// <summary>RotateBuilding held turns with the pointer's sideways motion; a tap adds a step.</summary>
+        private void Rotate(RTSInputActions.CommandsActions commands)
+        {
+            var pointerX = commands.Point.ReadValue<Vector2>().x;
+            var key = commands.RotateBuilding;
+            if (key.WasPressedThisFrame())
+            {
+                _rotation.Press(pointerX);
+            }
+            else if (_rotation.Turning)
+            {
+                _rotation.Turn(pointerX);
+            }
+
+            if (key.WasReleasedThisFrame() && _rotation.Turning)
+            {
+                _rotation.Release();
+            }
+        }
+
+        /// <summary>The ghost follows the cursor, stays pinned while dragged or turned, and places on release.</summary>
+        private void MoveSingle(ref PlacementState placement, bool aimed, float3 ground, bool shift)
+        {
+            if (placement.Dragging)
+            {
+                DragTurn(ref placement, aimed, ground, shift);
+            }
+            else if (_rotation.Turning)
+            {
+                MoveGhost(ref placement, placement.DragStart, shift);
+            }
+            else if (aimed)
+            {
+                MoveGhost(ref placement, ground, shift);
+                placement.Dragging = _actions.Commands.Confirm.WasPressedThisFrame();
+                placement.DragStart = ground;
+            }
+        }
+
         /// <summary>Holding Confirm pins the ghost and turns its front toward the cursor; release places it.</summary>
-        private void DragTurn(ref PlacementState placement, bool aimed, float3 ground, bool queue)
+        private void DragTurn(ref PlacementState placement, bool aimed, float3 ground, bool shift)
         {
             var pull = ground.xz - placement.DragStart.xz;
             if (aimed && math.lengthsq(pull) > TurnDragDistance * TurnDragDistance)
             {
-                placement.Turn = (byte)PlacementMath.TurnToward(pull);
+                _rotation.Aim(pull);
             }
 
-            MoveGhost(ref placement, placement.DragStart);
+            MoveGhost(ref placement, placement.DragStart, shift);
             if (!_actions.Commands.Confirm.WasReleasedThisFrame())
             {
                 return;
@@ -114,24 +148,36 @@ namespace HyperRTS.Input.Commands
             placement.Dragging = false;
             if (placement.Valid)
             {
-                Place(ref placement, queue);
+                Place(ref placement, shift);
             }
         }
 
-        private void MoveGhost(ref PlacementState placement, float3 ground)
+        private void MoveGhost(ref PlacementState placement, float3 ground, bool shift)
         {
-            var size = ReadFootprint(placement.Prefab, out var map, out var grid, out var surface);
-            var footprint = PlacementMath.Turned(size, placement.Turn);
+            var asked = Spot(placement.Prefab, ground, _rotation.Yaw(shift), out var map, out var grid);
             CompleteDependency();
-            placement.Valid = PlacementMath.Resolve(in map, in grid, ground, footprint, surface, out placement.Position);
+            var spot = asked.Snap(map).Grounded(grid);
+            placement.Position = spot.Center;
+            placement.Yaw = spot.Yaw;
+            placement.Valid = spot.IsValid(map, grid);
         }
 
-        private void MoveLine(ref PlacementState placement, float3 ground)
+        private void PauseEdgeScroll(bool paused)
         {
-            var size = ReadFootprint(placement.Prefab, out var map, out var grid, out var surface);
-            placement.Position = ground;
+            var edge = SystemAPI.GetSingleton<ScrollEdge>();
+            if (edge.Paused != paused)
+            {
+                edge.Paused = paused;
+                SystemAPI.SetSingleton(edge);
+            }
+        }
+
+        private void MoveLine(ref PlacementState placement, float3 ground, bool shift)
+        {
             var start = placement.Dragging ? placement.DragStart : ground;
-            var line = new PlacementLine(map, start, ground, size);
+            placement.Position = shift ? PlacementRotation.SnapEnd(start, ground) : ground;
+            var first = Spot(placement.Prefab, start, 0f, out var map, out var grid);
+            var line = new PlacementLine(map, start, placement.Position, first.Footprint, first.Surface);
             var segments = SystemAPI.GetSingletonBuffer<PlacementSegment>();
             if (!IsPlanned(line, placement.Prefab, grid.Version))
             {
@@ -139,9 +185,8 @@ namespace HyperRTS.Input.Commands
                 segments.Clear();
                 for (var i = 0; i < line.Count; i++)
                 {
-                    var footprint = line.Footprint;
-                    var valid = PlacementMath.Resolve(map, grid, line.Segment(i), footprint, surface, out var center);
-                    segments.Add(new PlacementSegment { Center = center, Footprint = footprint, Valid = valid });
+                    var spot = line.Segment(i).Grounded(grid);
+                    segments.Add(new PlacementSegment { Spot = spot, Valid = spot.IsValid(map, grid) });
                 }
 
                 _line = line;
@@ -156,13 +201,13 @@ namespace HyperRTS.Input.Commands
         private bool IsPlanned(in PlacementLine line, Entity prefab, int gridVersion) =>
             line.Matches(_line) && prefab == _linePrefab && gridVersion == _lineGridVersion;
 
-        /// <summary>The prefab's unturned footprint and what snapping it reads; complete jobs before reading cells.</summary>
-        private float2 ReadFootprint(Entity prefab, out MapSettings map, out NavGrid grid, out PlacementSurface surface)
+        /// <summary>The prefab's unsnapped spot and what snapping it reads; complete jobs before reading cells.</summary>
+        private BuildingSpot Spot(Entity prefab, float3 position, float yaw, out MapSettings map, out NavGrid grid)
         {
             map = SystemAPI.GetSingleton<MapSettings>();
             grid = SystemAPI.GetSingleton<NavGrid>();
-            surface = BuildingPlacement.GetSurface(EntityManager, prefab);
-            return SystemAPI.GetComponent<NavObstacle>(prefab).Size;
+            var surface = BuildingPlacement.GetSurface(EntityManager, prefab);
+            return new BuildingSpot(position, yaw, SystemAPI.GetComponent<NavObstacle>(prefab).Size, surface);
         }
 
         private void DragLine(ref PlacementState placement, bool aimed, bool queue)
@@ -217,7 +262,7 @@ namespace HyperRTS.Input.Commands
                 Type = CommandType.PlaceBuilding,
                 Prefab = placement.Prefab,
                 Position = placement.Position,
-                Turn = placement.Turn,
+                Yaw = placement.Yaw,
                 Queue = queue,
             });
 

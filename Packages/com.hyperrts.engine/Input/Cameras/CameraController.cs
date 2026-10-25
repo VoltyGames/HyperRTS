@@ -158,7 +158,7 @@ namespace HyperRTS.Input.Cameras
             // A disabled Point reads (0, 0), the bottom-left corner, and would edge scroll behind a menu.
             if (!camera.enabled)
             {
-                PublishEdge(int2.zero);
+                EdgeDirection(false);
                 return;
             }
 
@@ -185,33 +185,33 @@ namespace HyperRTS.Input.Cameras
         /// <summary>World-space XZ pan from the arrow keys plus edge scrolling, relative to the camera's yaw.</summary>
         private Vector3 PanDirection()
         {
-            var input = _actions.Camera.Pan.ReadValue<Vector2>() + EdgeDirection();
+            var input = _actions.Camera.Pan.ReadValue<Vector2>() + EdgeDirection(true);
             var forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
             var right = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
             return Vector3.ClampMagnitude(right * input.x + forward * input.y, 1f);
         }
 
-        private Vector2 EdgeDirection()
-        {
-            var edge = int2.zero;
-            if (edgeScrolling && Application.isFocused)
-            {
-                var screen = new float2(Screen.width, Screen.height);
-                edge = ScrollEdge.At(_actions.Camera.Point.ReadValue<Vector2>(), screen, edgeSize);
-            }
-
-            PublishEdge(edge);
-            return new Vector2(edge.x, edge.y);
-        }
-
-        /// <summary>Tells the cursor which edge is scrolling.</summary>
-        private void PublishEdge(int2 edge)
+        /// <summary>The edge the pointer scrolls against, published for the cursor; input may pause it.</summary>
+        private Vector2 EdgeDirection(bool pointerLive)
         {
             var hasWorld = DefaultWorld.TryGetEntityManager(out var entityManager);
-            if (hasWorld && _scrollEdge.In(entityManager).TryGetSingletonEntity<ScrollEdge>(out var singleton))
+            var singleton = Entity.Null;
+            var shared = hasWorld && _scrollEdge.In(entityManager).TryGetSingletonEntity<ScrollEdge>(out singleton);
+            var state = shared ? entityManager.GetComponentData<ScrollEdge>(singleton) : default;
+            state.Direction = int2.zero;
+            var scrolls = pointerLive && edgeScrolling && Application.isFocused;
+            if (scrolls && !state.Paused)
             {
-                entityManager.SetComponentData(singleton, new ScrollEdge { Direction = edge });
+                var screen = new float2(Screen.width, Screen.height);
+                state.Direction = ScrollEdge.At(_actions.Camera.Point.ReadValue<Vector2>(), screen, edgeSize);
             }
+
+            if (shared)
+            {
+                entityManager.SetComponentData(singleton, state);
+            }
+
+            return new Vector2(state.Direction.x, state.Direction.y);
         }
 
         /// <summary>The y = 0 ground point the camera looks at; zoom and panning keep the camera relative to it.</summary>

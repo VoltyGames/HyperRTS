@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>
-    /// Draws ground markers, health bars, capture dials, garrison pips, the placement ghost and rally points with
-    /// instanced meshes.
+    /// Draws ground markers, health bars, capture dials, garrison pips, the placement outline and rally points with
+    /// instanced meshes, and keeps the placement ghost's model copies.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Rig + "Overlay Renderer")]
     [Icon(HyperRTSIcons.UI)]
@@ -32,6 +32,10 @@ namespace HyperRTS.Presentation.Overlays
         private Material barMaterial;
 
         [SerializeField]
+        [Tooltip("HyperRTS/Placement Ghost material drawn over the placed building's real meshes.")]
+        private Material ghostMaterial;
+
+        [SerializeField]
         [Tooltip("Overlay colours and sizes; a game supplies its own asset.")]
         private OverlayStyle style;
 
@@ -40,6 +44,7 @@ namespace HyperRTS.Presentation.Overlays
         private UnitOverlays _units;
         private BuildingOverlays _buildings;
         private CommandOverlays _commands;
+        private PlacementGhosts _ghosts;
 
         /// <summary>Which units show a health bar; a game sets it from its settings.</summary>
         public HealthBarVisibility HealthBars { get; set; } = HealthBarVisibility.DamagedAndSelected;
@@ -49,23 +54,24 @@ namespace HyperRTS.Presentation.Overlays
 
         protected override void OnAwake()
         {
-            if (material == null || markerMaterial == null || barMaterial == null || style == null)
+            var missing = material == null || markerMaterial == null || barMaterial == null || ghostMaterial == null;
+            if (missing || style == null)
             {
                 throw new InvalidOperationException(
-                    $"Overlay Renderer on '{name}' needs its material, markerMaterial, barMaterial and style set.");
+                    $"Overlay Renderer on '{name}' needs its material, markerMaterial, barMaterial, ghostMaterial and style set.");
             }
 
             var ring = OverlayMeshes.Ring(48, 0.82f);
             var billboard = OverlayMeshes.Billboard();
-            var box = OverlayMeshes.Box();
             var flat = OverlayMeshes.FlatQuad();
             var dial = BuildingOverlays.DialSegment();
             var disc = OverlayMeshes.Disc(48);
             var grid = OverlayMeshes.Grid(MarkerGridCells);
-            _meshes = new[] { ring, billboard, box, flat, dial, disc, grid };
+            _meshes = new[] { ring, billboard, flat, dial, disc, grid };
             _units = new UnitOverlays(grid, billboard, markerMaterial, barMaterial);
             _buildings = new BuildingOverlays(dial, disc, billboard);
-            _commands = new CommandOverlays(box, ring, flat);
+            _commands = new CommandOverlays(ring, flat);
+            _ghosts = new PlacementGhosts(ghostMaterial);
         }
 
         private void LateUpdate()
@@ -80,7 +86,8 @@ namespace HyperRTS.Presentation.Overlays
 
             _units.Gather(view, style, HealthBars, Time.unscaledTime);
             _buildings.Gather(view, style, camera);
-            _commands.Gather(view, style);
+            _commands.Gather(view);
+            _ghosts.Update(view.EntityManager, style);
             _units.Draw(style, UIScale, gameObject.layer);
             _buildings.Draw(_materials, view, style, gameObject.layer);
             _commands.Draw(_materials.DepthTested, style, gameObject.layer);
@@ -94,6 +101,7 @@ namespace HyperRTS.Presentation.Overlays
             }
 
             _units.Dispose();
+            _ghosts.Dispose();
             _materials?.Dispose();
         }
     }

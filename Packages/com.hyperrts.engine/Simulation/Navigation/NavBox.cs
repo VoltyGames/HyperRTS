@@ -7,6 +7,9 @@ namespace HyperRTS.Simulation.Navigation
     {
         private const float AxisTolerance = 1e-3f;
 
+        // Metres two boxes may share along an axis and still count as touching, so flush neighbours fit.
+        private const float TouchTolerance = 1e-3f;
+
         public readonly float2 Center;
         public readonly float2 Right;
         public readonly float2 Forward;
@@ -36,6 +39,14 @@ namespace HyperRTS.Simulation.Navigation
                    && math.abs(math.dot(offset, Forward)) <= Half.y + margin;
         }
 
+        /// <summary>Separating-axis test on both boxes' sides; boxes that only touch don't overlap.</summary>
+        public bool Overlaps(in NavBox other)
+        {
+            var offset = other.Center - Center;
+            return OverlapsAlong(other, offset, Right) && OverlapsAlong(other, offset, Forward)
+                   && OverlapsAlong(other, offset, other.Right) && OverlapsAlong(other, offset, other.Forward);
+        }
+
         /// <summary>Gap between the box and the segment from a to b, 0 when they touch.</summary>
         public float Gap(float2 a, float2 b) => NavCapsule.SegmentRectDistance(Local(a), Local(b), -Half, Half);
 
@@ -53,6 +64,13 @@ namespace HyperRTS.Simulation.Navigation
 
             return Center + Right * (edge.x + outward.x * offset) + Forward * (edge.y + outward.y * offset);
         }
+
+        /// <summary>Half the box's width along <paramref name="axis"/>.</summary>
+        private float Reach(float2 axis) =>
+            math.abs(math.dot(Right, axis)) * Half.x + math.abs(math.dot(Forward, axis)) * Half.y;
+
+        private bool OverlapsAlong(in NavBox other, float2 offset, float2 axis) =>
+            math.abs(math.dot(offset, axis)) < Reach(axis) + other.Reach(axis) - TouchTolerance;
 
         private float2 Local(float2 point)
         {

@@ -15,8 +15,8 @@ namespace HyperRTS.Client.Interaction
         /// <summary>Snapped ghost centre; for a line, the drag's current end.</summary>
         public float3 Position;
 
-        /// <summary>Quarter turns of a single building from its default facing; lines ignore it.</summary>
-        public byte Turn;
+        /// <summary>A single building's snapped yaw in radians; lines yaw each segment along the line.</summary>
+        public float Yaw;
 
         /// <summary>For a line, any segment is valid.</summary>
         public bool Valid;

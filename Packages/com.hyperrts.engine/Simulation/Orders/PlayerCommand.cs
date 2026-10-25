@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Orders
         /// <summary><see cref="PlayerCommand.Argument"/> is a <c>Stance</c>.</summary>
         SetStance = 8,
 
-        /// <summary>Place <see cref="PlayerCommand.Prefab"/> at Position, turned by Turn, and send builders to it.</summary>
+        /// <summary>Place <see cref="PlayerCommand.Prefab"/> at Position, turned by Yaw, and send builders to it.</summary>
         PlaceBuilding = 9,
 
         /// <summary>Queue <see cref="PlayerCommand.Prefab"/> at a producer.</summary>
@@ -99,8 +99,8 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Where a <see cref="CommandType.PlaceLine"/> drag ended.</summary>
         public float3 End;
 
-        /// <summary>A <see cref="CommandType.PlaceBuilding"/>'s quarter turns from the default facing, 0 to 3.</summary>
-        public byte Turn;
+        /// <summary>A <see cref="CommandType.PlaceBuilding"/>'s yaw in radians about Y.</summary>
+        public float Yaw;
 
         public Entity Prefab;
 

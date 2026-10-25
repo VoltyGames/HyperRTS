@@ -135,7 +135,8 @@ namespace HyperRTS.Simulation.AI
 
             turn.Commands.Add(new PlayerCommand
             {
-                Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = spot,
+                Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = spot.Center,
+                Yaw = spot.Yaw,
             });
             turn.Busy.Add(builder);
             return true;

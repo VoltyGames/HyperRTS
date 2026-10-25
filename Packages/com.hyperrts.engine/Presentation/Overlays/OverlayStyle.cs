@@ -114,15 +114,11 @@ namespace HyperRTS.Presentation.Overlays
         public float markerOffset = 14f;
 
         [Header("Placement & Rally")]
-        [Tooltip("Ghost box where the building can be placed.")]
+        [Tooltip("Placement ghost and footprint outline where the building can be placed.")]
         public Color placementValid = new(0.25f, 1f, 0.35f, 0.35f);
 
-        [Tooltip("Ghost box where the building can't be placed.")]
+        [Tooltip("Placement ghost, outline and blocking cells where the building can't be placed.")]
         public Color placementInvalid = new(1f, 0.2f, 0.2f, 0.35f);
-
-        [Tooltip("Height of the placement ghost box.")]
-        [Min(0.1f)]
-        public float ghostHeight = 1.5f;
 
         [Tooltip("Rally point marker and line.")]
         public Color rally = new(0.3f, 0.8f, 1f, 0.85f);
