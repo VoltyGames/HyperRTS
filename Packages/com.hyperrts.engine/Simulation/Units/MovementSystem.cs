@@ -118,8 +118,8 @@ namespace HyperRTS.Simulation.Units
                 var depth = capsule.Depth(from, axis);
                 var sunk = depth > NavTolerances.Skin;
                 var escape = sunk ? capsule.WayOut(from, maxStep) : float2.zero;
-                var wanted = from + step + escape + crowd.PushWithin(maxStep);
-                Walk(ref transform, capsule, from, wanted, agent);
+                var wanted = from + crowd.Within(step + escape + crowd.PushWithin(maxStep));
+                Walk(ref transform, capsule, from, wanted, agent, crowd);
                 var hold = Hold(capsule, depth, from, transform.Position.xz, axis, crowd);
                 var stalled = moving.ValueRO && !crowd.ReachedGroup &&
                               progress.HasGivenUp(transform.Position.xz, facing, agent, destination.Value, waypoints,
@@ -180,10 +180,12 @@ namespace HyperRTS.Simulation.Units
                 return wedged ? MoveProgress.WallHold.Wedged : MoveProgress.WallHold.None;
             }
 
+            // A wall's slide can turn the move back into a neighbour, and then the unit stands.
             private readonly void Walk(ref LocalTransform transform, in NavCapsule capsule, float2 from, float2 wanted,
-                in NavAgent agent)
+                in NavAgent agent, in CrowdVisitor crowd)
             {
-                transform.Position.xz = capsule.Constrain(from, wanted);
+                var to = capsule.Constrain(from, wanted);
+                transform.Position.xz = crowd.Keeps(to - from) ? to : from;
                 transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
             }
 

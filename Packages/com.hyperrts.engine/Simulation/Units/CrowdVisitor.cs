@@ -44,6 +44,7 @@ namespace HyperRTS.Simulation.Units
         public bool ReachedGroup;
 
         private FixedList512Bytes<AvoidanceNeighbour> _neighbours;
+        private HullRoom _room;
 
         public CrowdVisitor(Entity self, float2 position, float2 facing, in NavAgent agent, byte faction, bool moving,
             in MoveDestination destination, in GivingWay rule)
@@ -64,6 +65,7 @@ namespace HyperRTS.Simulation.Units
             Push = float2.zero;
             ReachedGroup = false;
             _neighbours = default;
+            _room = default;
         }
 
         /// <summary>Where to query round; queries only read XZ.</summary>
@@ -101,11 +103,32 @@ namespace HyperRTS.Simulation.Units
                 Gather(entry, distanceSq, reach);
             }
 
-            if (distanceSq < reach * reach)
+            // Beyond twice the spacing no pair closes the room left in one frame, so it needn't count.
+            var watched = reach + math.max(Spacing, entry.Spacing);
+            if (distanceSq >= watched * watched)
             {
-                Separate(entry, offset, math.sqrt(distanceSq), reach);
+                return;
+            }
+
+            var distance = math.sqrt(distanceSq);
+            var direction = Direction(offset, distance, entry);
+            // Parked pairs only part, and a mover may press an idle ally aside, so neither pair limits the move.
+            if (Moving ? !IsMakingWay(entry) : entry.IsMoving)
+            {
+                _room.Add(direction, distance - Radius - entry.Radius);
+            }
+
+            if (distance < reach)
+            {
+                Separate(entry, direction, distance, reach);
             }
         }
+
+        /// <summary>The move cut so no neighbour's hull is met; see <see cref="HullRoom"/>.</summary>
+        public readonly float2 Within(float2 move) => _room.Within(move);
+
+        /// <summary>Whether the move meets no neighbour's hull.</summary>
+        public readonly bool Keeps(float2 move) => _room.Keeps(move);
 
         private void Gather(in SpatialEntry entry, float distanceSq, float reach)
         {
@@ -130,9 +153,8 @@ namespace HyperRTS.Simulation.Units
             });
         }
 
-        private void Separate(in SpatialEntry entry, float2 offset, float distance, float reach)
+        private void Separate(in SpatialEntry entry, float2 direction, float distance, float reach)
         {
-            var direction = Direction(offset, distance, entry);
             var overlap = reach - distance;
             ReachedGroup |= Moving && IsArrivedGroupmate(entry) &&
                             math.dot(entry.Position.xz - Position, Goal - Position) > 0f;

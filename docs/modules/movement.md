@@ -111,7 +111,11 @@ drive, so a vehicle turns at its rate and radius rather than sliding sideways. T
 if it can reverse and brakes otherwise. Layers that can't block each other
 ignore each other, aircraft included. The same query feeds the overlap fallback, which pushes neighbours apart
 along the line between their closest points, half each, until the larger of their two spacings lies between them
-(0.6 m by default, less for infantry). Each formation slot is
+(0.6 m by default, less for infantry). The push only moves spacing about; hulls never meet. Each unit's whole move
+(step, push and way out of walls) closes on each neighbour by at most half the room between their hulls
+(`HullRoom`), so a pair can't meet however the pushes of a packed queue add up. Two parked units, and a mover
+against an idle ally that gives way, keep the soft push alone, so a packed crowd still flows. A move a wall's slide
+turns back into a neighbour stands. Each formation slot is
 sized by its own unit's footprint, so a tank column doesn't pile up nose to tail and infantry beside it stay close.
 A row is as deep as its deepest member. A slot in a building or off the unit's ground moves to the nearest spot the
 unit fits and can reach; one only across water or a wall is left to the pathfinder's snap into the unit's region.
