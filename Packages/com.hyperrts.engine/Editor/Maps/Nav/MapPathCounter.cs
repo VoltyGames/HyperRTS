@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Nav
 {
     /// <summary>
     /// Counts separate attack paths: find the shortest path, close a vehicle-column corridor along it (outside both
-    /// bases) and search again until no path is left.
+    /// bases) and search again until no path is left. Reachability comes from the sector graph's region ids.
     /// </summary>
     public static class MapPathCounter
     {
@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.Maps.Nav
                 while (paths.Count < max)
                 {
                     var access = new NavAccess(grid, MapNavGrid.ToolsClass, 0f);
-                    var path = MapPathfinder.Find(ref nav.Search, access, start, goal);
+                    var path = MapPathfinder.Find(access, start, goal);
                     if (path == null)
                     {
                         break;

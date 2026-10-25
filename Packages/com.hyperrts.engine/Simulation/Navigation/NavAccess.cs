@@ -19,10 +19,12 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Distance from walls inside which steps cost more; 0 keeps every step at its length.</summary>
         public readonly float WallMargin;
 
+        /// <summary>The class's index in <see cref="MovementClasses"/>, which lays out its sector graph.</summary>
+        public readonly int ClassIndex;
+
         // Region filter that takes an open cell in any region.
         private const int AnyRegion = -1;
 
-        private readonly int _classIndex;
         private readonly int _slot;
 
         /// <summary>The view of a registered class; throws for one <see cref="NavFieldSystem"/> hasn't registered.</summary>
@@ -31,13 +33,13 @@ namespace HyperRTS.Simulation.Navigation
             Grid = grid;
             Class = movementClass;
             WallMargin = wallMargin;
-            _classIndex = grid.Classes.Find(movementClass);
-            if (_classIndex < 0)
+            ClassIndex = grid.Classes.Find(movementClass);
+            if (ClassIndex < 0)
             {
                 throw new InvalidOperationException("Movement class not registered: no NavAgent has it yet.");
             }
 
-            _slot = grid.Classes.KeySlot(_classIndex);
+            _slot = grid.Classes.KeySlot(ClassIndex);
         }
 
         /// <summary>Signed metres from the cell centre to the nearest wall, capped at <see cref="NavField.Cap"/>.</summary>
@@ -53,18 +55,24 @@ namespace HyperRTS.Simulation.Navigation
         public bool IsOpen(int2 cell) => Grid.InBounds(cell) && Grid.Field.IsOpen(_slot, cell, Class.Radius);
 
         /// <summary>The connected region of a cell for this class; 0 when closed or off the grid.</summary>
-        public int Region(int2 cell) => Grid.Regions.Label(Grid.Field, _classIndex, cell);
+        public int Region(int2 cell) => Grid.Sectors.Region(ClassIndex, cell);
 
         /// <summary>What a step onto the cell costs per metre: 1 in the open, up to 3 against a wall.</summary>
-        public float CellCost(int2 cell)
+        public float CellCost(int2 cell) => CellCost(Distance(cell), WallMargin);
+
+        /// <summary><see cref="CellCost(int2)"/> from a field value already read.</summary>
+        public static float CellCost(float distance, float wallMargin)
         {
-            if (WallMargin <= 0f)
+            if (wallMargin <= 0f)
             {
                 return 1f;
             }
 
-            return 1f + 2f * math.max(0f, WallMargin - Distance(cell)) / WallMargin;
+            return 1f + 2f * math.max(0f, wallMargin - distance) / wallMargin;
         }
+
+        /// <summary>The least field value a cell may read and stay open to the class.</summary>
+        public float OpenDistance => Class.Radius - NavTolerances.Skin;
 
         /// <summary>Closest open cell by ring distance, up to <paramref name="rings"/> rings out.</summary>
         public bool TryFindNearest(int2 cell, int rings, out int2 found) =>

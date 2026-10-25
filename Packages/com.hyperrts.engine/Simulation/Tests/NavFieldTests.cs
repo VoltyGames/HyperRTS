@@ -104,7 +104,9 @@ namespace HyperRTS.Simulation.Tests
                     }
                 }
 
-                CollectionAssert.AreEqual(whole.Regions.Labels.ToArray(), grid.Regions.Labels.ToArray(), when);
+                CollectionAssert.AreEqual(whole.Sectors.Labels.ToArray(), grid.Sectors.Labels.ToArray(), when);
+                CollectionAssert.AreEqual(whole.Sectors.Regions.AsArray().ToArray(),
+                    grid.Sectors.Regions.AsArray().ToArray(), when);
             }
             finally
             {

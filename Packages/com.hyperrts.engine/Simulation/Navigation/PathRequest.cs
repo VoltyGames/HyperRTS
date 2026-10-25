@@ -10,6 +10,10 @@ namespace HyperRTS.Simulation.Navigation
         public float3 Start;
         public float3 Goal;
         public NavAgent Agent;
+
+        /// <summary><see cref="MoveDestination.Group"/>: members of one share a flow field.</summary>
+        public int Group;
+
         public uint Frame;
     }
 }

@@ -1,55 +1,63 @@
 using System;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+using Unity.Profiling;
 
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// 8-directional A* over the cells a <see cref="NavAccess"/> finds open; diagonals may not cut corners, and each
-    /// step costs its length times <see cref="NavAccess.CellCost"/>, at least 1, so the octile heuristic stays
-    /// admissible. Records live in flat arrays sized to the grid and are reused, each search stamping them with its
-    /// generation.
+    /// 8-directional A* over the cells a <see cref="NavAccess"/> finds open inside a <see cref="NavCorridor"/>;
+    /// diagonals may not cut corners, and each step costs its length times <see cref="NavAccess.CellCost"/>, at least 1,
+    /// so the octile heuristic stays admissible. Records are sized to the corridor, so each search or worker owns one.
     /// </summary>
     public struct GridAStar : IDisposable
     {
         public const float Diagonal = 1.41421356f;
 
-        private NativeArray<int> _parents;
-        private NativeArray<float> _costs;
-        private NativeArray<uint> _reached;
-        private NativeArray<uint> _closed;
-        private NativeReference<uint> _generation;
-        private OpenSet _open;
-        private uint _stamp;
+        private const byte Reached = 1;
+        private const byte Closed = 2;
 
+        private static readonly ProfilerMarker SearchMarker = new("GridAStar.Search");
+
+        // Unchecked, as these are read and written for every neighbour of every expansion.
+        private UnsafeList<int> _parents;
+        private UnsafeList<float> _costs;
+        private UnsafeList<byte> _marks;
+        private OpenSet _open;
+
+        /// <summary>Records for a corridor of <paramref name="cells"/> cells.</summary>
         public GridAStar(int cells, Allocator allocator)
         {
-            _parents = new NativeArray<int>(cells, allocator, NativeArrayOptions.UninitializedMemory);
-            _costs = new NativeArray<float>(cells, allocator, NativeArrayOptions.UninitializedMemory);
-            _reached = new NativeArray<uint>(cells, allocator);
-            _closed = new NativeArray<uint>(cells, allocator);
-            _generation = new NativeReference<uint>(allocator);
+            _parents = new UnsafeList<int>(cells, allocator);
+            _parents.Resize(cells);
+            _costs = new UnsafeList<float>(cells, allocator);
+            _costs.Resize(cells);
+            _marks = new UnsafeList<byte>(cells, allocator);
+            _marks.Resize(cells, NativeArrayOptions.ClearMemory);
             _open = new OpenSet(256, allocator);
-            _stamp = 0;
         }
 
-        public readonly bool IsCreated => _parents.IsCreated;
-
-        /// <summary>Cells the records cover; a grid of another size needs a new search.</summary>
-        public readonly int Cells => _parents.Length;
-
         /// <summary>
-        /// Fills <paramref name="path"/> with cells from start to goal; false, with no path, when the goal is out of
-        /// the start's reach. Never stops early, so callers keep goals inside the start's region.
+        /// Fills <paramref name="path"/> with cells from start to goal, both inside the corridor; false, with no path,
+        /// when the goal is out of the start's reach there. Never stops early.
         /// </summary>
-        public bool Search(in NavAccess access, int2 start, int2 goal, NativeList<int2> path, out int expansions)
+        public bool Search(in NavAccess access, in NavCorridor corridor, int2 start, int2 goal, NativeList<int2> path,
+            out int expansions)
         {
-            NextGeneration();
+            using var scope = SearchMarker.Auto();
+            for (var i = 0; i < _marks.Length; i++)
+            {
+                _marks[i] = 0;
+            }
+
+            _open.Clear();
             path.Clear();
-            var reached = Explore(access, start, goal, out expansions);
+            var goalIndex = corridor.Index(goal);
+            var reached = Explore(access, corridor, start, goal, goalIndex, out expansions);
             if (reached)
             {
-                Reconstruct(access.Grid, access.Grid.Index(goal), path);
+                Reconstruct(corridor, goalIndex, path);
             }
 
             return reached;
@@ -84,54 +92,31 @@ namespace HyperRTS.Simulation.Navigation
         {
             _parents.Dispose();
             _costs.Dispose();
-            _reached.Dispose();
-            _closed.Dispose();
-            _generation.Dispose();
+            _marks.Dispose();
             _open.Dispose();
         }
 
-        // Wrapping round would make stale stamps look current, so the records start over.
-        private void NextGeneration()
+        private bool Explore(in NavAccess access, in NavCorridor corridor, int2 start, int2 goal, int goalIndex,
+            out int expansions)
         {
-            _stamp = _generation.Value + 1;
-            if (_stamp == 0)
-            {
-                for (var i = 0; i < _reached.Length; i++)
-                {
-                    _reached[i] = 0;
-                    _closed[i] = 0;
-                }
-
-                _stamp = 1;
-            }
-
-            _generation.Value = _stamp;
-            _open.Clear();
-        }
-
-        private bool Explore(in NavAccess access, int2 start, int2 goal, out int expansions)
-        {
-            var grid = access.Grid;
-            var goalIndex = grid.Index(goal);
-            var first = grid.Index(start);
+            var first = corridor.Index(start);
             Reach(first, -1, 0f);
             _open.Push(first, Heuristic(start, goal));
-
             expansions = 0;
             while (_open.TryPop(out var current))
             {
-                if (_closed[current] == _stamp)
+                if (_marks[current] == Closed)
                 {
                     continue;
                 }
 
-                _closed[current] = _stamp;
+                _marks[current] = Closed;
                 if (current == goalIndex)
                 {
                     return true;
                 }
 
-                Expand(access, grid.Cell(current), goal);
+                Expand(access, corridor, current, goal);
                 expansions++;
             }
 
@@ -139,23 +124,25 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         // Every expanded cell was open when pushed, and the start comes from TryFindNearest.
-        private void Expand(in NavAccess access, int2 cell, int2 goal)
+        private void Expand(in NavAccess access, in NavCorridor corridor, int parent, int2 goal)
         {
-            var parent = access.Grid.Index(cell);
+            var cell = corridor.Cell(parent);
             var cost = _costs[parent];
+            var block = new CellBlock(access, cell);
             for (var dy = -1; dy <= 1; dy++)
             {
                 for (var dx = -1; dx <= 1; dx++)
                 {
-                    var next = cell + new int2(dx, dy);
-                    if ((dx == 0 && dy == 0) || !CanStep(access, cell, next))
+                    var offset = new int2(dx, dy);
+                    var index = corridor.Index(parent, cell, offset);
+                    if ((dx == 0 && dy == 0) || index < 0 || _marks[index] == Closed || !block.CanStepOut(offset))
                     {
                         continue;
                     }
 
-                    var nextCost = cost + Cost(access, cell, next);
-                    var index = access.Grid.Index(next);
-                    if (_closed[index] == _stamp || (_reached[index] == _stamp && _costs[index] <= nextCost))
+                    var next = cell + offset;
+                    var nextCost = cost + block.CostOut(offset);
+                    if (_marks[index] == Reached && _costs[index] <= nextCost)
                     {
                         continue;
                     }
@@ -168,17 +155,16 @@ namespace HyperRTS.Simulation.Navigation
 
         private void Reach(int index, int parent, float cost)
         {
-            _reached[index] = _stamp;
+            _marks[index] = Reached;
             _parents[index] = parent;
             _costs[index] = cost;
         }
 
-        private readonly void Reconstruct(in NavGrid grid, int last, NativeList<int2> path)
+        private readonly void Reconstruct(in NavCorridor corridor, int last, NativeList<int2> path)
         {
-            path.Clear();
             for (var index = last; index >= 0; index = _parents[index])
             {
-                path.Add(grid.Cell(index));
+                path.Add(corridor.Cell(index));
             }
 
             for (int i = 0, j = path.Length - 1; i < j; i++, j--)

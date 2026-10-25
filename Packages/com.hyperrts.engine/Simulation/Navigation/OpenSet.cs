@@ -1,4 +1,5 @@
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace HyperRTS.Simulation.Navigation
 {
@@ -11,9 +12,10 @@ namespace HyperRTS.Simulation.Navigation
             public float Cost;
         }
 
-        private NativeList<Node> _heap;
+        // Unchecked, as the heap is the inner loop of every search.
+        private UnsafeList<Node> _heap;
 
-        public OpenSet(int capacity, Allocator allocator) => _heap = new NativeList<Node>(capacity, allocator);
+        public OpenSet(int capacity, Allocator allocator) => _heap = new UnsafeList<Node>(capacity, allocator);
 
         public void Dispose() => _heap.Dispose();
 

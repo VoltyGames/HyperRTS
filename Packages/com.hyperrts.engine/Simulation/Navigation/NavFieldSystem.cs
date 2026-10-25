@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Navigation
     /// <summary>
     /// Registers the <see cref="MovementClass"/> of every <see cref="NavAgent"/> prefab and unit, then rebuilds the
     /// <see cref="NavField"/> for every sector <see cref="NavGridSystem"/> marked dirty, one job per sector and key,
-    /// and relabels the regions. A new key builds whole. Only worlds that move units run it.
+    /// then relabels those sectors' <see cref="NavSectors"/>. A new key builds whole. Only worlds that move units run it.
     /// </summary>
     [UpdateInGroup(typeof(MovementSystemGroup))]
     [UpdateAfter(typeof(NavGridSystem))]
@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Navigation
                 Work = work.AsArray(),
                 Field = grid.Field,
             }.Schedule(work.Length, 1, state.Dependency);
-            dependency = grid.Regions.Schedule(grid.Field, grid.Classes, dependency);
+            dependency = grid.Sectors.Schedule(grid.Field, grid.Classes, dependency);
             state.Dependency = work.Dispose(dependency);
         }
 
@@ -71,7 +71,7 @@ namespace HyperRTS.Simulation.Navigation
             agents.Dispose();
         }
 
-        // Every sector of a new key, else its dirty sectors; the marks are spent once collected.
+        // Every sector of a new key, else its dirty sectors; the marks pass on to the sector graph.
         private static NativeList<int2> Collect(in NavGrid grid, int firstNewKey)
         {
             var field = grid.Field;
@@ -87,8 +87,10 @@ namespace HyperRTS.Simulation.Navigation
                 }
             }
 
+            var sectors = grid.Sectors;
             for (var sector = 0; sector < field.DirtySectors.Length; sector++)
             {
+                sectors.Dirty[sector] |= field.DirtySectors[sector];
                 field.DirtySectors[sector] = false;
             }
 

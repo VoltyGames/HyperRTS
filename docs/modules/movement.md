@@ -29,17 +29,31 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   changed box, and scenery marks only the sectors whose cells it changed.
 - A cell is open to a class when the field at its centre is at least its radius (`NavAccess`). A*, the nearest
   cell search and line of sight all use that one rule, so a gap exactly two radii wide lets a unit through.
-- Pathfinding is Burst A* over cell centres with smoothing. Each step costs its length times
+- Each class has a sector graph (`NavSectors`), rebuilt right after the field in the same worlds. Inside each 16 by
+  16 sector the open cells split into 4-connected components, each with a representative cell near its centroid.
+  Components of neighbouring sectors that touch across the border share an edge, and union-find over the edges gives
+  region ids. A dirty sector relabels alone, then the edges along its borders and the region ids follow.
+- A goal the start's region can't reach snaps to the nearest open cell it can, within 64 cells, so a click across a
+  river stops on this bank. With none that near, the move ends where the unit stands, with no search.
+  `NavGrid.IsReachable(agent, from, to)` asks the same of any two points. Regions leave scenery out.
+- A path query snaps the start and goal (`GridPathfinder.Prepare`) and goes straight when the end is in sight.
+  Otherwise an abstract A* over the sector graph (`SectorSearch`) finds the sectors from the start's component to
+  the goal's, and Burst A* runs over cell centres inside them plus a ring of sectors (`NavCorridor`). It always
+  succeeds: the corridor's components connect by 4-connected steps, which A* allows. Its records are sized to the
+  corridor, slot x 256 plus the local cell, so searches run in parallel. Each step costs its length times
   1 + 2 x max(0, margin - distance) / margin, where the margin is the agent's `WallMargin`: its radius, 2 m, and a
   quarter each of its half hull segment and turn radius, set at bake. Paths so keep room off walls where there is
-  room. Searches run oldest request first until the frame has expanded 40,000 cells (looking along a straight path
-  counts its length); the rest wait a frame, and their units brake and turn toward the goal. Each search runs to
-  the end, so no path is ever partial. A* keeps its records in flat arrays sized to the grid and reused, each
-  search stamping them with its own generation.
-- Regions label the connected open cells per class (`NavRegions`), rebuilt after the field. A goal the start's
-  region can't reach snaps to the nearest open cell it can, within 64 cells, so a click across a river stops on
-  this bank. With none that near, the move ends where the unit stands, with no search.
-  `NavGrid.IsReachable(agent, from, to)` asks the same of any two points. Regions leave scenery out.
+  room.
+- Each frame takes requests oldest first until their estimated cost (the abstract path's length) spends the budget,
+  then serves them at once, one job each; the rest wait a frame, and their units brake and turn toward the goal. Each
+  search runs to the end, so no path is ever partial.
+- A formation move's members of one class share a flow field (`GroupFields`): a Dijkstra with the same step costs
+  from the cell nearest the centre of their slots, over the union of their corridors. Each member traces it downhill,
+  leaves it at its first cell near the goal that sees its own slot, and is pulled tight with line of sight, so it
+  still gets ordinary waypoints. A replan while the field is valid is a trace again, with no search. A field goes when
+  a grid change reaches its corridor, when no moving unit uses it or after 30 s idle. Over 60,000 cells, members
+  split by start sector into several fields. A member alone, or one whose slot lies out of sight of the centre or
+  over 48 m from it, searches by itself, as do chases and walk-ups.
 - Smoothing and corner skipping use line of sight, which walks every cell the line crosses (Amanatides and Woo) and
   needs each open.
 - Movement holds the whole capsule off walls (`NavCapsule`). Its depth sums how far points half a radius apart

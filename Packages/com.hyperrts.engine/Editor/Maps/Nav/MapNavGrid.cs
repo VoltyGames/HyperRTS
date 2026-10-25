@@ -22,7 +22,6 @@ namespace HyperRTS.Editor.Maps.Nav
         public static readonly MovementClass ToolsClass = new(NavLayer.Ground, NavAccess.AllScenery, 0.5f);
 
         private TerrainHeight _terrain;
-        private GridAStar _search;
 
         private MapNavGrid(NavGrid grid, TerrainHeight terrain)
         {
@@ -30,16 +29,12 @@ namespace HyperRTS.Editor.Maps.Nav
             grid.BuildAccess();
             Grid = grid;
             _terrain = terrain;
-            _search = new GridAStar(grid.Cells.Length, Allocator.Persistent);
         }
 
         public NavGrid Grid { get; private set; }
 
         /// <summary>The grid as <see cref="ToolsClass"/> sees it.</summary>
         public NavAccess Access => new(Grid, ToolsClass, 0f);
-
-        /// <summary>One A* reused by every path search on this grid and its corridor-closed copies.</summary>
-        internal ref GridAStar Search => ref _search;
 
         public static MapNavGrid Build(Scene entities, TerrainData terrainData, Vector3 terrainOrigin, Rect bounds,
             float waterLevel, MapRules rules)
@@ -91,7 +86,6 @@ namespace HyperRTS.Editor.Maps.Nav
         public void Dispose()
         {
             Grid.Dispose();
-            _search.Dispose();
             if (_terrain.IsCreated)
             {
                 _terrain.Blob.Dispose();

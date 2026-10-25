@@ -109,5 +109,71 @@ namespace HyperRTS.Simulation.Tests
                 Assert.GreaterOrEqual(clearance, agent.WallMargin - 0.5f, $"corner {i} at {waypoints[i].Position}");
             }
         }
+        [Test]
+        public void DenseBaseOfRotatedBuildings_PathThreadsTheGaps_AndArrives()
+        {
+            CreateMatch(200f);
+            var random = new Random(21);
+            for (var x = 0; x < 6; x++)
+            {
+                for (var z = 0; z < 6; z++)
+                {
+                    var center = new float3(-35f + x * 14f, 0f, -35f + z * 14f);
+                    SpawnObstacle(center, random.NextFloat2(new float2(6f), new float2(9f)), random.NextFloat(math.PI));
+                }
+            }
+
+            _world.Tick();
+            var start = new float3(-70f, 0f, -60f);
+            var goal = new float3(0f, 0f, 0f);
+            var unit = _world.SpawnUnit(1, start);
+            _world.MoveTo(unit, goal);
+            _world.Tick(frames: 2);
+
+            var path = _world.Get<PathState>(unit);
+            Assert.AreEqual(PathStatus.Ready, path.Status);
+            Assert.IsFalse(path.IsShort, "the gap between buildings is reachable");
+            AssertLegsInSight(unit, start);
+            Assert.IsTrue(_world.RunUntil(() => !_world.IsEnabled<MoveDestination>(unit), 40f), "the move ended");
+            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 1f, "at the goal inside the base");
+        }
+
+        [Test]
+        public void RiverWithOneBridge_PathCrossesOnTheBridge()
+        {
+            CreateMatch(200f);
+            _world.SpawnNavArea(new float3(0f, 0f, 10f), new float2(200f, 12f), NavAreaKind.Water);
+            _world.SpawnNavArea(new float3(60f, 0f, 10f), new float2(8f, 14f), NavAreaKind.Deck);
+            _world.Tick();
+            var start = new float3(-60f, 0f, -20f);
+            var goal = new float3(-60f, 0f, 40f);
+            var unit = _world.SpawnUnit(1, start);
+            _world.MoveTo(unit, goal);
+            _world.Tick(frames: 2);
+
+            var path = _world.Get<PathState>(unit);
+            Assert.AreEqual(PathStatus.Ready, path.Status);
+            Assert.IsFalse(path.IsShort, "the far bank is reachable over the bridge");
+            AssertLegsInSight(unit, start);
+            var crosses = false;
+            foreach (var waypoint in Waypoints(unit))
+            {
+                crosses |= math.abs(waypoint.Position.x - 60f) < 6f;
+            }
+
+            Assert.IsTrue(crosses, "a corner at the bridge");
+        }
+
+        // Every leg of the path keeps to open ground.
+        private void AssertLegsInSight(Entity unit, float3 start)
+        {
+            var access = _world.Get<NavAgent>(unit).Access(_world.Grid());
+            var from = start;
+            foreach (var waypoint in Waypoints(unit))
+            {
+                Assert.IsTrue(access.HasLineOfSight(from, waypoint.Position), $"leg {from} to {waypoint.Position}");
+                from = waypoint.Position;
+            }
+        }
     }
 }

@@ -23,8 +23,8 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Distance to walls per field key; built only in worlds that move units (see <see cref="NavFieldSystem"/>).</summary>
         public NavField Field;
 
-        /// <summary>Which cells connect, per movement class, for <see cref="IsReachable"/>.</summary>
-        public NavRegions Regions;
+        /// <summary>Which cells connect, per movement class, for <see cref="IsReachable"/> and path corridors.</summary>
+        public NavSectors Sectors;
 
         public NavChanges Changes;
 
@@ -52,13 +52,14 @@ namespace HyperRTS.Simulation.Navigation
         public static NavGrid Create(int2 size, float2 min, float cellSize, in TerrainHeight terrain, float waterLevel)
         {
             var count = size.x * size.y;
+            var field = NavField.Create(size, min, cellSize, 0, Allocator.Persistent);
             return new NavGrid
             {
                 Cells = new NativeArray<byte>(count, Allocator.Persistent),
                 Scenery = new NativeArray<byte>(count, Allocator.Persistent),
                 Classes = MovementClasses.Create(Allocator.Persistent),
-                Field = NavField.Create(size, min, cellSize, 0, Allocator.Persistent),
-                Regions = NavRegions.Create(0, count, Allocator.Persistent),
+                Field = field,
+                Sectors = NavSectors.Create(0, field.Sectors, Allocator.Persistent),
                 DeckHeights = new NativeArray<float>(count, Allocator.Persistent),
                 Changes = NavChanges.Create(count, Allocator.Persistent),
                 Terrain = terrain,
@@ -75,7 +76,7 @@ namespace HyperRTS.Simulation.Navigation
             Scenery.Dispose();
             Classes.Dispose();
             Field.Dispose();
-            Regions.Dispose();
+            Sectors.Dispose();
             DeckHeights.Dispose();
             Changes.Dispose();
         }
@@ -214,8 +215,8 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>
-        /// Sizes the field and regions to the registered classes after a registration; returns the first field slot
-        /// that is new, so needs a full build.
+        /// Sizes the field and sector graph to the registered classes after a registration; returns the first field
+        /// slot that is new, so needs a full build. A new class relabels every sector.
         /// </summary>
         public int FitAccess()
         {
@@ -225,16 +226,16 @@ namespace HyperRTS.Simulation.Navigation
                 Field.Grow(Classes.Keys.Length, Allocator.Persistent);
             }
 
-            if (Regions.Labels.Length != Classes.Classes.Length * Cells.Length)
+            if (Sectors.Classes != Classes.Classes.Length)
             {
-                Regions.Dispose();
-                Regions = NavRegions.Create(Classes.Classes.Length, Cells.Length, Allocator.Persistent);
+                Sectors.Dispose();
+                Sectors = NavSectors.Create(Classes.Classes.Length, Field.Sectors, Allocator.Persistent);
             }
 
             return built;
         }
 
-        /// <summary>Builds the whole field and the regions for the registered classes at once, as editor tools need.</summary>
+        /// <summary>Builds the whole field and sector graph for the registered classes at once, as editor tools need.</summary>
         public void BuildAccess()
         {
             FitAccess();
@@ -248,7 +249,7 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             transform.Dispose();
-            Regions.Build(Field, Classes);
+            Sectors.Build(Field, Classes);
             for (var sector = 0; sector < Field.DirtySectors.Length; sector++)
             {
                 Field.DirtySectors[sector] = false;
