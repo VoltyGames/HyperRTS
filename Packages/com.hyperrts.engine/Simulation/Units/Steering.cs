@@ -15,6 +15,9 @@ namespace HyperRTS.Simulation.Units
         /// <summary>Longest look-ahead, which also sizes the neighbour query.</summary>
         public const float Horizon = 1.5f;
 
+        // The look-ahead slices, so a sooner hit weighs more.
+        private const float Soon = 0.3f;
+        private const float Mid = 0.75f;
         private const float ReachTime = 0.5f;
         private const int Headings = 7;
         private const int Directions = 12;
@@ -160,7 +163,8 @@ namespace HyperRTS.Simulation.Units
             }
 
             var forward = facing * _topSpeed;
-            return WallDepth(forward, facing * _halfSegment, 0.3f) > 0f;
+            var axis = facing * _halfSegment;
+            return _hasWalls && WallDepth(forward, axis, Soon, DepthAt(_position, axis)) > 0f;
         }
 
         private readonly bool IsNearWall()
@@ -243,11 +247,12 @@ namespace HyperRTS.Simulation.Units
         {
             var moving = _halfSegment > 0f && math.lengthsq(candidate) > 1e-6f;
             var axis = moving ? math.normalize(candidate) * _halfSegment : _axis;
-            return PenaltyAt(candidate, axis, 0f, 0.3f) + PenaltyAt(candidate, axis, 0.3f, 0.75f) +
-                   PenaltyAt(candidate, axis, 0.75f, Horizon);
+            var resting = _hasWalls ? DepthAt(_position, axis) : 0f;
+            return PenaltyAt(candidate, axis, resting, 0f, Soon) + PenaltyAt(candidate, axis, resting, Soon, Mid) +
+                   PenaltyAt(candidate, axis, resting, Mid, Horizon);
         }
 
-        private readonly float PenaltyAt(float2 candidate, float2 axis, float from, float time)
+        private readonly float PenaltyAt(float2 candidate, float2 axis, float resting, float from, float time)
         {
             var overlap = 0f;
             foreach (var neighbour in _neighbours)
@@ -255,21 +260,17 @@ namespace HyperRTS.Simulation.Units
                 overlap += neighbour.Overlap(_position, axis, _velocity, candidate, from, time);
             }
 
-            return (overlap + WallDepth(candidate, axis, time)) / time;
+            var walls = _hasWalls ? WallDepth(candidate, axis, time, resting) : 0f;
+            return (overlap + walls) / time;
         }
 
         // Only as far as the next corner, since the path turns there and a straight line on would cross its wall.
         // Only sinking deeper counts, so a unit already touching a wall may still slide along it.
-        private readonly float WallDepth(float2 candidate, float2 axis, float time)
+        private readonly float WallDepth(float2 candidate, float2 axis, float time, float resting)
         {
-            if (!_hasWalls)
-            {
-                return 0f;
-            }
-
             var travel = math.min(math.length(candidate) * time, _wallReach);
             var center = _position + math.normalizesafe(candidate) * travel;
-            return math.max(0f, DepthAt(center, axis) - DepthAt(_position, axis));
+            return math.max(0f, DepthAt(center, axis) - resting);
         }
 
         private readonly float DepthAt(float2 center, float2 axis)

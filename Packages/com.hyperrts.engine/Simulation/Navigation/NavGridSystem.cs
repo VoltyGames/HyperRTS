@@ -151,7 +151,7 @@ namespace HyperRTS.Simulation.Navigation
         private readonly bool SameGround(in MapSettings map, in TerrainHeight terrain)
         {
             var built = _builtMap;
-            var sameArea = map.SameArea(built) && map.NavCellSize == built.NavCellSize;
+            var sameArea = map.SameNavGrid(built);
             var sameWater = map.WaterLevel == built.WaterLevel && map.FloodTerrain == built.FloodTerrain;
             return terrain.Blob.Equals(_builtTerrain.Blob) && sameArea && sameWater && map.MaxSlope == built.MaxSlope;
         }

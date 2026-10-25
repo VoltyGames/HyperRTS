@@ -81,22 +81,6 @@ namespace HyperRTS.Simulation.Navigation
             return NavCapsule.PointSegmentDistance(point, center - axis, center + axis) - Radius;
         }
 
-        /// <summary>Whether the hull may turn to <paramref name="turned"/> without swinging an end into a closed cell.</summary>
-        public readonly bool CanTurn(in NavGrid grid, float2 center, float2 axis, quaternion turned)
-        {
-            if (HalfSegment <= 0f)
-            {
-                return true;
-            }
-
-            return new NavCapsule(Access(grid), axis).CanTurn(center, SegmentAxis(turned));
-        }
-
-        /// <summary>Where the hull slides to turn to <paramref name="turned"/> off a wall it would swing into.</summary>
-        public readonly bool TryTurnOff(in NavGrid grid, float2 center, float2 axis, quaternion turned, float reach,
-            out float2 moved) =>
-            new NavCapsule(Access(grid), axis).TryTurnOff(center, SegmentAxis(turned), reach, out moved);
-
         private static float HalfSegmentFor(float radius, float hullLength) => math.max(0f, hullLength * 0.5f - radius);
 
         /// <summary>Entities without an agent (buildings, props) sit on the ground.</summary>

@@ -29,7 +29,7 @@ namespace HyperRTS.Simulation.Buildings
             for (var i = 0; i < line.Count; i++)
             {
                 var spot = line.Segment(i).Grounded(grid);
-                if (!IsFree(ref state, spot, request.Faction, sites))
+                if (!IsFree(ref state, spot, map, grid, request.Faction, sites))
                 {
                     continue;
                 }

@@ -89,11 +89,7 @@ namespace HyperRTS.Simulation.Navigation
                     return int2.zero;
                 }
 
-                var sectors = new NativeList<int>(32, Allocator.Temp);
-                GridPathfinder.FindSectors(access, task.Query, sectors);
-                var expansions = GridPathfinder.Route(access, task.Query, sectors.AsArray(), points);
-                sectors.Dispose();
-                return new int2(expansions, 1);
+                return new int2(GridPathfinder.Search(access, task.Query, points), 1);
             }
         }
 

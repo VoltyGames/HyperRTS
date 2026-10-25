@@ -97,10 +97,12 @@ namespace HyperRTS.Simulation.Units
 
             var offset = entry.ClosestOffset(Position, SegmentAxis);
             var distanceSq = math.lengthsq(offset);
+            var distance = math.sqrt(distanceSq);
             var reach = Radius + entry.Radius + math.max(Spacing, entry.Spacing);
+            var precedence = Precedence(entry);
             if (Moving)
             {
-                Gather(entry, distanceSq, reach);
+                Gather(entry, distanceSq, distance, reach, precedence);
             }
 
             // Beyond twice the spacing no pair closes the room left in one frame, so it needn't count.
@@ -110,7 +112,6 @@ namespace HyperRTS.Simulation.Units
                 return;
             }
 
-            var distance = math.sqrt(distanceSq);
             var direction = Direction(offset, distance, entry);
             // Parked pairs only part, and a mover may press an idle ally aside, so neither pair limits the move.
             if (Moving ? !IsMakingWay(entry) : entry.IsMoving)
@@ -120,7 +121,7 @@ namespace HyperRTS.Simulation.Units
 
             if (distance < reach)
             {
-                Separate(entry, direction, distance, reach);
+                Separate(entry, direction, distance, reach, precedence);
             }
         }
 
@@ -130,7 +131,7 @@ namespace HyperRTS.Simulation.Units
         /// <summary>Whether the move meets no neighbour's hull.</summary>
         public readonly bool Keeps(float2 move) => _room.Keeps(move);
 
-        private void Gather(in SpatialEntry entry, float distanceSq, float reach)
+        private void Gather(in SpatialEntry entry, float distanceSq, float distance, float reach, int precedence)
         {
             // Stacked units have no line between them; the overlap push parts them first.
             if (IsWelcome(entry) || IsMakingWay(entry) || distanceSq < 1e-8f)
@@ -139,7 +140,6 @@ namespace HyperRTS.Simulation.Units
             }
 
             // Behind same-way traffic a mover counts the whole spacing it already lacks, so it backs off.
-            var precedence = Precedence(entry);
             reach = precedence > 0 ? LeaderReach(entry, reach) : reach;
             Keep(new AvoidanceNeighbour
             {
@@ -149,18 +149,18 @@ namespace HyperRTS.Simulation.Units
                 Reach = reach,
                 Share = precedence == 0 ? Share(entry) : 1f,
                 DistanceSq = distanceSq,
-                Contact = precedence < 0 ? 0f : math.max(0f, reach - math.sqrt(distanceSq)),
+                Contact = precedence < 0 ? 0f : math.max(0f, reach - distance),
             });
         }
 
-        private void Separate(in SpatialEntry entry, float2 direction, float distance, float reach)
+        private void Separate(in SpatialEntry entry, float2 direction, float distance, float reach, int precedence)
         {
             var overlap = reach - distance;
             ReachedGroup |= Moving && IsArrivedGroupmate(entry) &&
                             math.dot(entry.Position.xz - Position, Goal - Position) > 0f;
             if (Moving)
             {
-                Push += direction * MoverPush(entry, distance, reach);
+                Push += direction * MoverPush(entry, distance, reach, precedence);
             }
             else if (!entry.IsMoving)
             {
@@ -201,10 +201,9 @@ namespace HyperRTS.Simulation.Units
 
         // Same-way traffic makes its spacing by the follower alone, but inside the leader's own reach both part half
         // each, so a follower pressed from both sides can't be driven into.
-        private readonly float MoverPush(in SpatialEntry entry, float distance, float reach)
+        private readonly float MoverPush(in SpatialEntry entry, float distance, float reach, int precedence)
         {
             var overlap = reach - distance;
-            var precedence = Precedence(entry);
             if (precedence == 0)
             {
                 return overlap * Share(entry);

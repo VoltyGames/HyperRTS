@@ -135,7 +135,7 @@ namespace HyperRTS.Simulation.Buildings
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var asked = new BuildingSpot(request.Command.Position, request.Command.Yaw, footprint, surface);
             var spot = asked.Snap(map).Grounded(grid);
-            if (!IsFree(ref state, spot, request.Faction, sites))
+            if (!IsFree(ref state, spot, map, grid, request.Faction, sites))
             {
                 return false;
             }
@@ -234,10 +234,9 @@ namespace HyperRTS.Simulation.Buildings
         }
 
         /// <summary>Valid ground with no site or enemy unit on it; a hidden enemy fails it like any bad spot.</summary>
-        private bool IsFree(ref SystemState state, in BuildingSpot spot, byte faction, NativeList<NavBox> sites)
+        private bool IsFree(ref SystemState state, in BuildingSpot spot, in MapSettings map, in NavGrid grid,
+            byte faction, NativeList<NavBox> sites)
         {
-            var map = SystemAPI.GetSingleton<MapSettings>();
-            var grid = SystemAPI.GetSingleton<NavGrid>();
             if (!spot.IsValid(map, grid) || IsOccupied(spot, sites))
             {
                 return false;

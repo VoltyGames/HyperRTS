@@ -29,6 +29,9 @@ namespace HyperRTS.Simulation.Common
         /// <summary>Same playable area as <paramref name="other"/>; grids built over one fit the other.</summary>
         public readonly bool SameArea(in MapSettings other) => Min.Equals(other.Min) && Size.Equals(other.Size);
 
+        /// <summary>Same area and nav cells, so a nav-cell grid built over one fits the other.</summary>
+        public readonly bool SameNavGrid(in MapSettings other) => SameArea(other) && NavCellSize == other.NavCellSize;
+
         public readonly bool Contains(float3 position) =>
             math.all(position.xz >= Min) && math.all(position.xz <= Max);
 

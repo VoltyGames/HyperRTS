@@ -44,7 +44,7 @@ namespace HyperRTS.Presentation.Environment.Grass
         [AutoStaticsCleanup]
         public static int Version { get; private set; }
 
-        public bool Fits(in MapSettings map) => map.SameArea(_map) && map.NavCellSize == _map.NavCellSize;
+        public bool Fits(in MapSettings map) => map.SameNavGrid(_map);
 
         /// <summary>Redraws the mask from every building's turned box and publishes it.</summary>
         public void Draw(NativeArray<NavBox> boxes)

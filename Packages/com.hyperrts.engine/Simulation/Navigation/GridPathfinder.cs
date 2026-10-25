@@ -100,11 +100,16 @@ namespace HyperRTS.Simulation.Navigation
                 return query.Exact;
             }
 
-            var sectors = new NativeList<int>(32, Allocator.Temp);
-            FindSectors(access, query, sectors);
-            expansions = Route(access, query, sectors.AsArray(), points);
-            sectors.Dispose();
+            expansions = Search(access, query, points);
             return query.Exact;
+        }
+
+        /// <summary>Finds the query's sector corridor and routes through it; returns the cells expanded.</summary>
+        public static int Search(in NavAccess access, in PathQuery query, NativeList<float3> points)
+        {
+            using var sectors = new NativeList<int>(32, Allocator.Temp);
+            FindSectors(access, query, sectors);
+            return Route(access, query, sectors.AsArray(), points);
         }
 
         /// <summary>

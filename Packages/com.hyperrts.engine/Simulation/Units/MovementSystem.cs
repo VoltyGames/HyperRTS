@@ -110,11 +110,11 @@ namespace HyperRTS.Simulation.Units
                 var crowd = new CrowdVisitor(entity, from, facing, agent, faction.Value, wasMoving, destination,
                     GivingWay);
                 Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
+                var capsule = new NavCapsule(agent.Access(Grid), axis);
                 var step = Plan(transform.Position, facing, speed.Value, agent, destination.Value, moving, ref path,
-                    waypoints, locomotion, ref drive, ref heading, crowd, velocity.Value);
+                    waypoints, locomotion, ref drive, ref heading, crowd, velocity.Value, capsule.Access);
                 heading = locomotion.Aim(heading, facing, !moving.ValueRO, aim, aiming, DeltaTime);
                 // A building or wreck that lands on a unit leaves it sunk in walls, parked or not, and it drives out.
-                var capsule = new NavCapsule(agent.Access(Grid), axis);
                 var depth = capsule.Depth(from, axis);
                 var sunk = depth > NavTolerances.Skin;
                 var escape = sunk ? capsule.WayOut(from, maxStep) : float2.zero;
@@ -140,13 +140,13 @@ namespace HyperRTS.Simulation.Units
                     States[entity] = drive;
                 }
 
-                Face(ref transform, agent, axis, facing, heading, moving.ValueRO);
+                Face(ref transform, capsule, agent, facing, heading, moving.ValueRO);
                 velocity.Value = (transform.Position.xz - from) / DeltaTime;
             }
 
             // A long hull mustn't swing an end into a wall. A mover slides off by the end's sweep, else stays unturned.
-            private readonly void Face(ref LocalTransform transform, in NavAgent agent, float2 axis, float2 facing,
-                float2 heading, bool moving)
+            private static void Face(ref LocalTransform transform, in NavCapsule capsule, in NavAgent agent,
+                float2 facing, float2 heading, bool moving)
             {
                 if (math.all(heading == 0f))
                 {
@@ -156,11 +156,12 @@ namespace HyperRTS.Simulation.Units
                 var center = transform.Position.xz;
                 var turned = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
                 var sweep = agent.HalfSegment * math.acos(math.clamp(math.dot(facing, heading), -1f, 1f));
-                if (agent.CanTurn(Grid, center, axis, turned))
+                var turnedAxis = agent.SegmentAxis(turned);
+                if (agent.HalfSegment <= 0f || capsule.CanTurn(center, turnedAxis))
                 {
                     transform.Rotation = turned;
                 }
-                else if (moving && agent.TryTurnOff(Grid, center, axis, turned, sweep, out var moved))
+                else if (moving && capsule.TryTurnOff(center, turnedAxis, sweep, out var moved))
                 {
                     transform.Position.xz = moved;
                     transform.Rotation = turned;
@@ -193,7 +194,7 @@ namespace HyperRTS.Simulation.Units
             private readonly float2 Plan(float3 position, float2 facing, float topSpeed, in NavAgent agent, float3 goal,
                 EnabledRefRW<MoveDestination> moving, ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
                 in Locomotion locomotion, ref LocomotionState drive, ref float2 heading, in CrowdVisitor crowd,
-                float2 velocity)
+                float2 velocity, in NavAccess access)
             {
                 var maxStep = topSpeed * DeltaTime;
                 var leg = default(PathLeg);
@@ -216,7 +217,7 @@ namespace HyperRTS.Simulation.Units
                 }
 
                 var steering = new Steering(crowd, velocity, topSpeed);
-                steering.AddWalls(agent.Access(Grid));
+                steering.AddWalls(access);
                 return steering.Drive(locomotion, ref drive, facing, ref heading, leg, DeltaTime);
             }
 

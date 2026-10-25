@@ -30,10 +30,11 @@ namespace HyperRTS.Input.Commands
         /// <summary>Units move every frame, so each segment's cached cell check is joined with them again.</summary>
         public readonly void Mark(DynamicBuffer<PlacementSegment> segments)
         {
+            using var seen = Read();
             for (var i = 0; i < segments.Length; i++)
             {
                 var segment = segments[i];
-                segment.Valid = segment.Ground && !Block(segment.Spot);
+                segment.Valid = segment.Ground && !seen.Block(segment.Spot);
                 segments[i] = segment;
             }
         }
@@ -41,26 +42,53 @@ namespace HyperRTS.Input.Commands
         /// <summary>Whether a seen unit hostile to the local player stands on <paramref name="spot"/>.</summary>
         public readonly bool Block(in BuildingSpot spot)
         {
-            var relations = _relations.GetSingleton<FactionRelations>();
-            var faction = _local.GetSingleton<Player>().Faction;
-            using var agents = _units.ToComponentDataArray<NavAgent>(Allocator.Temp);
-            using var factions = _units.ToComponentDataArray<Faction>(Allocator.Temp);
-            using var transforms = _units.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-            for (var i = 0; i < agents.Length; i++)
+            using var seen = Read();
+            return seen.Block(spot);
+        }
+
+        private readonly Snapshot Read() => new()
+        {
+            Relations = _relations.GetSingleton<FactionRelations>(),
+            Faction = _local.GetSingleton<Player>().Faction,
+            Agents = _units.ToComponentDataArray<NavAgent>(Allocator.Temp),
+            Factions = _units.ToComponentDataArray<Faction>(Allocator.Temp),
+            Transforms = _units.ToComponentDataArray<LocalTransform>(Allocator.Temp),
+        };
+
+        /// <summary>The seen units copied once, so a line of spots is checked against one read.</summary>
+        private struct Snapshot : System.IDisposable
+        {
+            public FactionRelations Relations;
+            public byte Faction;
+            public NativeArray<NavAgent> Agents;
+            public NativeArray<Faction> Factions;
+            public NativeArray<LocalTransform> Transforms;
+
+            public readonly bool Block(in BuildingSpot spot)
             {
-                if (agents[i].Layer == NavLayer.Air || !relations.IsHostile(faction, factions[i].Value))
+                for (var i = 0; i < Agents.Length; i++)
                 {
-                    continue;
+                    if (Agents[i].Layer == NavLayer.Air || !Relations.IsHostile(Faction, Factions[i].Value))
+                    {
+                        continue;
+                    }
+
+                    var axis = Agents[i].SegmentAxis(Transforms[i].Rotation);
+                    if (spot.Overlaps(Transforms[i].Position.xz, axis, Agents[i].Radius))
+                    {
+                        return true;
+                    }
                 }
 
-                var axis = agents[i].SegmentAxis(transforms[i].Rotation);
-                if (spot.Overlaps(transforms[i].Position.xz, axis, agents[i].Radius))
-                {
-                    return true;
-                }
+                return false;
             }
 
-            return false;
+            public void Dispose()
+            {
+                Agents.Dispose();
+                Factions.Dispose();
+                Transforms.Dispose();
+            }
         }
     }
 }
