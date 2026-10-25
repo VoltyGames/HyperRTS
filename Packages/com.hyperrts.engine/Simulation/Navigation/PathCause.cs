@@ -1,6 +1,8 @@
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>Why a unit's path is planned, counted per fine search in <see cref="PathStats"/>.</summary>
+    /// <summary>
+    /// Why a unit's path is planned, counted per fine search in <see cref="PathStats"/>, which has room for four.
+    /// </summary>
     public enum PathCause : byte
     {
         /// <summary>A new move, or an order that moved the goal.</summary>

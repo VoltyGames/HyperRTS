@@ -29,7 +29,7 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Frame of the pending request; older requests are served first.</summary>
         public uint RequestFrame;
 
-        /// <summary>Why the pending request was made.</summary>
+        /// <summary>Why the path was dropped, then why the pending request was made.</summary>
         public PathCause Cause;
 
         /// <summary>Elapsed seconds when the path was planned.</summary>
@@ -98,8 +98,22 @@ namespace HyperRTS.Simulation.Navigation
         public void Halt(EnabledRefRW<MoveDestination> moving, DynamicBuffer<PathWaypoint> waypoints)
         {
             moving.ValueRW = false;
+            Drop(waypoints);
+        }
+
+        /// <summary>Drops the path and its corners, so the next move plans afresh.</summary>
+        public void Drop(DynamicBuffer<PathWaypoint> waypoints)
+        {
             Status = PathStatus.None;
+            Cause = PathCause.Order;
             ClearWaypoints(waypoints);
+        }
+
+        /// <summary>Plans the whole path again, keeping its corners to drive on while the search waits.</summary>
+        public void Replan()
+        {
+            Status = PathStatus.None;
+            Cause = PathCause.Replan;
         }
 
         public void ClearWaypoints(DynamicBuffer<PathWaypoint> waypoints)

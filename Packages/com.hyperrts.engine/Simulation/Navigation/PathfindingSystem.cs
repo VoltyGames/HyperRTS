@@ -178,13 +178,12 @@ namespace HyperRTS.Simulation.Navigation
                 return path.TryFollowGoal(agent.Access(Grid), position, goal, waypoints) || !path.IsChaseSearchDue(Now);
             }
 
-            private static PathCause Cause(in PathState path, DynamicBuffer<PathWaypoint> waypoints, bool goalMoved,
-                bool chase)
+            // A dropped path recorded why it was dropped.
+            private static PathCause Cause(in PathState path, bool goalMoved, bool chase)
             {
                 if (path.Status == PathStatus.None)
                 {
-                    // Halts and resets drop the waypoints; a stuck unit's replan keeps them.
-                    return waypoints.Length == 0 ? PathCause.Order : PathCause.Replan;
+                    return path.Cause;
                 }
 
                 if (goalMoved)
@@ -225,7 +224,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 if (path.Status != PathStatus.Requested)
                 {
-                    path.Cause = Cause(path, waypoints, goalMoved, destination.Chase);
+                    path.Cause = Cause(path, goalMoved, destination.Chase);
                     // Corners toward an old, distant goal would lead the wrong way while the search waits.
                     // A chased goal stays near its old one, so the unit keeps closing meanwhile.
                     if (goalMoved && !destination.Chase)
@@ -277,8 +276,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             if (path.Status != PathStatus.None)
             {
-                path.Status = PathStatus.None;
-                path.ClearWaypoints(waypoints);
+                path.Drop(waypoints);
             }
         }
     }

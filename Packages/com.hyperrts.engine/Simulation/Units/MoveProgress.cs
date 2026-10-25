@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Units
             var margin = NavTolerances.Arrive(agent.Radius);
             if (Track(remaining, facing, margin, hold == WallHold.Sunk, deltaTime))
             {
-                path.Status = PathStatus.None;
+                path.Replan();
                 Replanned = true;
             }
 

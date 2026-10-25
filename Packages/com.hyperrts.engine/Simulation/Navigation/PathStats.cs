@@ -23,7 +23,9 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Cells the fine searches expanded.</summary>
         public long Expansions;
 
-        /// <summary>The planner's estimate of the fine searches' expansions, to check against <see cref="Expansions"/>.</summary>
+        /// <summary>
+        /// The planner's estimate of the fine searches' expansions, to check against <see cref="Expansions"/>.
+        /// </summary>
         public long Estimated;
     }
 }

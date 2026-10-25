@@ -97,9 +97,7 @@ within reach (`CrowdVisitor`) and the walls' distance field, and picks the cheap
   frame's choice.
 - Cost: how much deeper footprints would overlap at their closest approach in each of 0 to 0.3, 0.3 to 0.75 and
   0.75 to 1.5 s, sooner counting more, under straight-line prediction. Capsules count as capsules. A moving
-  neighbour is scored RVO-style: the mover takes only its share of the change. Overlap a pair already has is left
-  to the push, except that a follower counts its overlap with a moving unit ahead in full and brakes. On a bridge
-  the push between an abreast pair points into the rails, which cancel it. The wall term samples the field at
+  neighbour is scored RVO-style: the mover takes only its share of the change. The wall term samples the field at
   both capsule ends, only as far as the next corner. Straying from the planned velocity and from last frame's choice
   costs, standing still costs a little extra, and swerving left costs a little more than right, so a head-on pair
   both keep right.

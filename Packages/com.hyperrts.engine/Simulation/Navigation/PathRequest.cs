@@ -15,6 +15,8 @@ namespace HyperRTS.Simulation.Navigation
         public int Group;
 
         public uint Frame;
+
+        /// <summary>Why the unit asked, for <see cref="PathStats.SearchesByCause"/>.</summary>
         public PathCause Cause;
     }
 }
