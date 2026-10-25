@@ -13,7 +13,8 @@ namespace HyperRTS.Simulation.Buildings
     /// <summary>
     /// A building under construction marks <see cref="Cleared"/> the open <see cref="Destructible"/> scenery its
     /// footprint overlaps (trees, fences, pipes crossing the edge) and the scenery remains on it, so they go with no
-    /// remains, effects or sounds. Scenery with its own obstacle blocks placement instead.
+    /// remains, effects or sounds. A tree goes when its crown reaches over the site. Scenery with its own obstacle
+    /// blocks placement instead.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -61,6 +62,7 @@ namespace HyperRTS.Simulation.Buildings
                 Cleared = _cleared,
             }.Schedule();
             new RemainsJob { Ecb = ecb, Sites = sites }.Schedule();
+            new CrownJob { Ecb = ecb, Sites = sites }.Schedule();
         }
 
         /// <summary>A piece of scenery or remains counts as reaching the site when its circle overlaps the box.</summary>
@@ -112,6 +114,34 @@ namespace HyperRTS.Simulation.Buildings
                 foreach (var site in Sites)
                 {
                     if (Reaches(site, transform.Position.xz, EntityRadius.Default))
+                    {
+                        Ecb.AddComponent<Cleared>(entity);
+                        return;
+                    }
+                }
+            }
+        }
+
+        /// <summary>A tree's trunk may stand clear while its crown hangs over the site, so its crown decides.</summary>
+        [BurstCompile]
+        [WithAll(typeof(Destructible))]
+        [WithNone(typeof(NavObstacle), typeof(Cleared))]
+        private partial struct CrownJob : IJobEntity
+        {
+            public EntityCommandBuffer Ecb;
+            [ReadOnly] public NativeList<NavBox> Sites;
+
+            private void Execute(Entity entity, in Topple topple, in LocalTransform transform, in Health health)
+            {
+                // A tree felled this frame leaves remains through the death path; the remains pass clears them.
+                if (health.Current <= 0f)
+                {
+                    return;
+                }
+
+                foreach (var site in Sites)
+                {
+                    if (Reaches(site, transform.Position.xz, topple.Crown * transform.Scale))
                     {
                         Ecb.AddComponent<Cleared>(entity);
                         return;

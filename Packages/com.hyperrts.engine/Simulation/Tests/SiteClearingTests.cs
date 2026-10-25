@@ -88,6 +88,25 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
+        public void TreeBesideTheSite_GoesWhenItsCrownReachesOver()
+        {
+            var overhanging = SpawnScenery(new float3(0f, 0f, 3f));
+            var clear = SpawnScenery(new float3(0f, 0f, -5f));
+            foreach (var tree in new[] { overhanging, clear })
+            {
+                var writer = new EntityManagerWriter(Manager, tree);
+                DestructibleSetup.AddTopple(ref writer, new float3(0f, 1f, 0f), 12f, 0f, 2.5f);
+            }
+
+            _world.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
+
+            _world.Run(0.5f);
+
+            Assert.IsFalse(Manager.Exists(overhanging), "a trunk 2 m off the edge hangs its crown over the site");
+            Assert.IsTrue(Manager.Exists(clear), "a crown that stops short stands");
+        }
+
+        [Test]
         public void SolidScenery_StaysAndStillBlocksPlacement()
         {
             var wall = SpawnScenery(new float3(6f, 0f, 0f), block: new float2(4f, 4f));

@@ -81,13 +81,14 @@ namespace HyperRTS.Presentation.Overlays
             }
         }
 
-        public void Draw(Material material, OverlayStyle style, int layer)
+        public void Draw(OverlayMaterials materials, OverlayStyle style, int layer)
         {
-            _blockedCells.Draw(material, style.placementInvalid, layer);
-            _validOutline.Draw(material, style.placementValid, layer);
-            _invalidOutline.Draw(material, style.placementInvalid, layer);
-            _rallyRings.Draw(material, style.rally, layer);
-            _rallyLines.Draw(material, style.rally, layer);
+            // On top, or the very prop or wall that blocks a cell hides its marker.
+            _blockedCells.Draw(materials.OnTop, style.placementInvalid, layer);
+            _validOutline.Draw(materials.DepthTested, style.placementValid, layer);
+            _invalidOutline.Draw(materials.DepthTested, style.placementInvalid, layer);
+            _rallyRings.Draw(materials.DepthTested, style.rally, layer);
+            _rallyLines.Draw(materials.DepthTested, style.rally, layer);
         }
 
         /// <summary>The cells are read on the main thread, so the jobs stamping them finish first.</summary>

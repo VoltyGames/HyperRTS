@@ -15,10 +15,10 @@ namespace HyperRTS.Simulation.Units
     /// <see cref="MoveDestination"/> and, when the move ends by itself, disables it and enables <see cref="Arrival"/>.
     /// Each frame reads as one pipeline: follow the path, drive and steer round neighbours and walls
     /// (<see cref="Steering"/>), keep the footprint out of walls (<see cref="NavCapsule.Constrain"/>, wrecks' cells
-    /// included), then measure progress (<see cref="MoveProgress"/>). While its path is pending a unit brakes and turns
-    /// to its goal. Every unit drives with its <see cref="Locomotion"/>, or <see cref="Locomotion.Instant"/> without
-    /// one, and Y follows its layer's surface on the <see cref="NavGrid"/> (ground, deck or water). Aircraft fly in
-    /// their own system.
+    /// included) or drive out of any it is sunk in, then measure progress (<see cref="MoveProgress"/>). While its
+    /// path is pending a unit brakes and turns to its goal. Every unit drives with its <see cref="Locomotion"/>, or
+    /// <see cref="Locomotion.Instant"/> without one, and Y follows its layer's surface on the <see cref="NavGrid"/>
+    /// (ground, deck or water). Aircraft fly in their own system.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
@@ -113,11 +113,17 @@ namespace HyperRTS.Simulation.Units
                 var step = Plan(transform.Position, facing, speed.Value, agent, destination.Value, moving, ref path,
                     waypoints, locomotion, ref drive, ref heading, crowd, velocity.Value);
                 heading = locomotion.Aim(heading, facing, !moving.ValueRO, aim, aiming, DeltaTime);
-                var wanted = from + step + crowd.PushWithin(maxStep);
-                Walk(ref transform, from, wanted, agent, axis);
+                // A building or wreck that lands on a unit leaves it sunk in walls, parked or not, and it drives out.
+                var capsule = new NavCapsule(agent.Access(Grid), axis);
+                var depth = capsule.Depth(from, axis);
+                var sunk = depth > NavTolerances.Skin;
+                var escape = sunk ? capsule.WayOut(from, maxStep) : float2.zero;
+                var wanted = from + step + escape + crowd.PushWithin(maxStep);
+                Walk(ref transform, capsule, from, wanted, agent);
+                var hold = Hold(capsule, depth, from, transform.Position.xz, axis, crowd);
                 var stalled = moving.ValueRO && !crowd.ReachedGroup &&
                               progress.HasGivenUp(transform.Position.xz, facing, agent, destination.Value, waypoints,
-                                  ref path, DeltaTime);
+                                  ref path, hold, DeltaTime);
                 if (moving.ValueRO && (crowd.ReachedGroup || stalled))
                 {
                     path.Halt(moving, waypoints);
@@ -157,10 +163,23 @@ namespace HyperRTS.Simulation.Units
                 }
             }
 
-            private readonly void Walk(ref LocalTransform transform, float2 from, float2 wanted, in NavAgent agent,
-                float2 axis)
+            // Traffic clears, so only a unit with no neighbour near counts as wedged.
+            private static MoveProgress.WallHold Hold(in NavCapsule capsule, float depth, float2 from, float2 to,
+                float2 axis, in CrowdVisitor crowd)
             {
-                transform.Position.xz = new NavCapsule(agent.Access(Grid), axis).Constrain(from, wanted);
+                if (depth > NavTolerances.Skin)
+                {
+                    return capsule.Depth(to, axis) >= depth ? MoveProgress.WallHold.Sunk : MoveProgress.WallHold.None;
+                }
+
+                var wedged = depth > 0f && to.Equals(from) && crowd.Neighbours.Length == 0;
+                return wedged ? MoveProgress.WallHold.Wedged : MoveProgress.WallHold.None;
+            }
+
+            private readonly void Walk(ref LocalTransform transform, in NavCapsule capsule, float2 from, float2 wanted,
+                in NavAgent agent)
+            {
+                transform.Position.xz = capsule.Constrain(from, wanted);
                 transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
             }
 

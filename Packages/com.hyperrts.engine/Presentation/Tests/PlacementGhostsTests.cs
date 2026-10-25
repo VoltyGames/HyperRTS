@@ -106,6 +106,10 @@ namespace HyperRTS.Presentation.Tests
         }
 
         [Test]
+        public void GhostMaterial_HasTheMetaPassSurfaceCacheGIDrawsMaterialsWith() =>
+            Assert.GreaterOrEqual(_ghost.FindPass("Meta"), 0);
+
+        [Test]
         public void Ghost_IsDestroyed_WhenPlacementEnds()
         {
             var singleton = StartPlacement(BuildingPrefab());

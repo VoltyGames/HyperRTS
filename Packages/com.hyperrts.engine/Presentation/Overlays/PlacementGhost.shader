@@ -20,6 +20,17 @@ Shader "HyperRTS/Placement Ghost"
             "IgnoreProjector" = "True"
         }
 
+        HLSLINCLUDE
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+        CBUFFER_START(UnityPerMaterial)
+            float4 _BaseColor;
+            half _RimPower;
+            half _RimStrength;
+            half _Shading;
+        CBUFFER_END
+        ENDHLSL
+
         Pass
         {
             Name "Ghost"
@@ -37,15 +48,7 @@ Shader "HyperRTS/Placement Ghost"
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-
-            CBUFFER_START(UnityPerMaterial)
-                float4 _BaseColor;
-                half _RimPower;
-                half _RimStrength;
-                half _Shading;
-            CBUFFER_END
 
             #ifdef UNITY_DOTS_INSTANCING_ENABLED
             UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
@@ -91,6 +94,27 @@ Shader "HyperRTS/Placement Ghost"
                 half3 color = input.color.rgb * light + input.color.rgb * rim;
                 half alpha = saturate(input.color.a + rim * (1.0h - input.color.a));
                 return half4(color, alpha);
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Meta"
+            Tags { "LightMode" = "Meta" }
+
+            Cull Off
+
+            HLSLPROGRAM
+            #pragma target 4.5
+            #pragma vertex MetaPassVertex
+            #pragma fragment MetaPassFragment
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+
+            // Black to GI: a ghost is a preview and must never tint the bounce light round it.
+            half3 MetaAlbedo(float2 uv0)
+            {
+                return 0;
             }
             ENDHLSL
         }

@@ -7,8 +7,8 @@ namespace HyperRTS.Simulation.Units
     /// <summary>
     /// How a unit's move gets on: progress is the path left shrinking or the hull turning. One check: no progress for
     /// <see cref="ReplanSeconds"/> plans the whole path again, backing off to <see cref="MaxReplanSeconds"/>, and
-    /// after <see cref="GiveUpSeconds"/> near its path's end the unit gives up. Farther out a jam is traffic that
-    /// clears. A path still pending isn't measured.
+    /// after <see cref="GiveUpSeconds"/> near its path's end, or held by walls anywhere, the unit gives up. Farther
+    /// out a jam is traffic that clears. A path still pending isn't measured.
     /// </summary>
     public struct MoveProgress : IComponentData
     {
@@ -39,9 +39,21 @@ namespace HyperRTS.Simulation.Units
 
         public bool IsTracking;
 
+        /// <summary>How walls hold a unit this frame.</summary>
+        public enum WallHold : byte
+        {
+            None,
+
+            /// <summary>Against walls, unmoved, with no other unit near: only the walls stop it.</summary>
+            Wedged,
+
+            /// <summary>Sunk in walls and getting no shallower.</summary>
+            Sunk,
+        }
+
         /// <summary>Measures the path left and asks for a replan when due; true once the unit gives up.</summary>
         public bool HasGivenUp(float2 position, float2 facing, in NavAgent agent, float3 goal,
-            DynamicBuffer<PathWaypoint> waypoints, ref PathState path, float deltaTime)
+            DynamicBuffer<PathWaypoint> waypoints, ref PathState path, WallHold hold, float deltaTime)
         {
             if (path.Status != PathStatus.Ready)
             {
@@ -52,17 +64,19 @@ namespace HyperRTS.Simulation.Units
                 ? math.distance(position, waypoints[0].Position.xz) + path.LengthPastCorner
                 : math.distance(position, goal.xz);
             var margin = NavTolerances.Arrive(agent.Radius);
-            if (Track(remaining, facing, margin, deltaTime))
+            if (Track(remaining, facing, margin, hold == WallHold.Sunk, deltaTime))
             {
                 path.Status = PathStatus.None;
                 Replanned = true;
             }
 
-            return Stalled >= GiveUpSeconds && remaining <= agent.Radius * NearEndRadii + margin;
+            // Held by walls alone, no replan frees it, however far the goal.
+            var nearEnd = remaining <= agent.Radius * NearEndRadii + margin;
+            return Stalled >= GiveUpSeconds && (hold != WallHold.None || nearEnd);
         }
 
         /// <summary>Records this frame's path left; true when a replan is due.</summary>
-        private bool Track(float remaining, float2 facing, float margin, float deltaTime)
+        private bool Track(float remaining, float2 facing, float margin, bool sunk, float deltaTime)
         {
             if (!IsTracking)
             {
@@ -80,7 +94,9 @@ namespace HyperRTS.Simulation.Units
                 return false;
             }
 
-            if (remaining < Best - margin || math.dot(facing, Facing) < TurnedCos)
+            // A hull stuck sunk in walls turning on the spot gets nowhere.
+            var turned = !sunk && math.dot(facing, Facing) < TurnedCos;
+            if (remaining < Best - margin || turned)
             {
                 Restart(remaining, facing);
                 return false;

@@ -57,7 +57,8 @@ the AI. `BuildingSpot.IsValid` decides where it may go: inside the map, with eve
 its surface, never a blocked cell. Anything with an obstacle blocks: buildings, map buildings, solid ruins and scenery
 with a `block` size such as walls. Open scenery (trees, shrubs, crushable fences and pipes, small props) doesn't.
 On the server, `SiteClearingSystem` marks `Cleared` every piece of open scenery whose circle overlaps a site's turned
-box, so a fence crossing the edge goes too, and every open scenery remains lying on it. `DeathSystem` destroys
+box, so a fence crossing the edge goes too, every tree whose crown (`Topple.Crown`, baked from its meshes) reaches
+over it, and every open scenery remains lying on it. `DeathSystem` destroys
 cleared pieces the next frame with no remains, no `Dead` and so no cues. Multiplayer sends the clearing as a
 `SceneryChange` with `Cleared` set, and clients remove the piece, or the remains they spawned for it, the same way.
 The server also refuses overlap with standing obstacles and sites placed the same

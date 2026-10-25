@@ -32,7 +32,33 @@ namespace HyperRTS.Simulation.Combat
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 var trunk = math.normalize((float3)authoring.trunk);
-                DestructibleSetup.AddTopple(ref writer, trunk, authoring.trunk.magnitude, math.radians(authoring.lie));
+                DestructibleSetup.AddTopple(ref writer, trunk, authoring.trunk.magnitude, math.radians(authoring.lie),
+                    Crown(authoring.transform));
+            }
+
+            // The widest reach of the standing model's meshes from the stump, so a site clears a crown over it.
+            private float Crown(Transform root)
+            {
+                var crown = 0f;
+                foreach (var filter in GetComponentsInChildren<MeshFilter>())
+                {
+                    var mesh = DependsOn(filter.sharedMesh);
+                    if (mesh == null)
+                    {
+                        continue;
+                    }
+
+                    var bounds = mesh.bounds;
+                    for (var corner = 0; corner < 8; corner++)
+                    {
+                        var sign = new Vector3(corner & 1, (corner >> 1) & 1, (corner >> 2) & 1) * 2f - Vector3.one;
+                        var point = bounds.center + Vector3.Scale(bounds.extents, sign);
+                        var local = root.InverseTransformPoint(filter.transform.TransformPoint(point));
+                        crown = math.max(crown, math.max(math.abs(local.x), math.abs(local.z)));
+                    }
+                }
+
+                return crown;
             }
         }
     }

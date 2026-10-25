@@ -116,6 +116,9 @@ unit fits and can reach; one only across water or a wall is left to the pathfind
   mover it is a fixed obstacle: the mover takes the whole avoiding and the whole push, so a truck never shoves a dozer that
   is building. A unit standing on the mover's goal and an arrived groupmate are not avoided, so the mover waits
   against the one and arrives by touching the other.
+- A unit sunk in walls, as when a building or wreck lands on it, parked or moving, drives out at its own top
+  speed on top of its planned step. `NavCapsule.WayOut` heads down the field's slope at its sunk points, or toward
+  the nearest open cell where the capped field reads flat. The wall constraint still never lets it go deeper.
 - A formation move gives its units one group (`MoveDestination.Group`) and the span of its slots
   (`MoveDestination.Extent`, twice the farthest slot's distance from the goal). A unit within that span of its own
   slot that touches an arrived groupmate lying toward its goal has arrived too, so arrival passes through a crowded
@@ -126,9 +129,9 @@ unit fits and can reach; one only across water or a wall is left to the pathfind
   at the goal again.
 - `MoveProgress` is the one stuck measure. Progress is the path left shrinking by the arrival tolerance or the hull
   turning about 20 degrees, so a pivot or a three-point turn counts. Without progress for 1 s the whole path is
-  planned again from where the unit stands, then after waits doubling up to 4 s. A unit gives up after 3 s only
-  within four radii of its path's end, where the goal is taken. Farther out a jam is traffic, so a column queued at
-  a bridge keeps its order. A goal it can't reach snaps into its region, so it stops there. A new path is measured
+  planned again from where the unit stands, then after waits doubling up to 4 s. A unit gives up after 3 s within
+  four radii of its path's end, where the goal is taken, or anywhere while it is pinned in walls it can't leave.
+  Farther out a jam is traffic, so a column queued at a bridge keeps its order. A goal it can't reach snaps into its region, so it stops there. A new path is measured
   afresh but the clock runs on, and a pending path isn't measured.
 
 Every unit follows its path through `Locomotion`. Without its own, a unit gets `Locomotion.Instant`: full speed and

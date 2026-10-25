@@ -14,6 +14,9 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>Heading in radians from +Z toward +X that the crown points in the remains model.</summary>
         public float Lie;
+
+        /// <summary>Metres from the stump to the crown's widest reach on XZ in the standing model.</summary>
+        public float Crown;
     }
 
     /// <summary>Remains of a <see cref="Topple"/> piece that presentation shows falling. Their transform already holds the final pose.</summary>

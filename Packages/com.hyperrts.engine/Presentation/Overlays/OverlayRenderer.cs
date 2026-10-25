@@ -90,7 +90,7 @@ namespace HyperRTS.Presentation.Overlays
             _ghosts.Update(view.EntityManager, style);
             _units.Draw(style, UIScale, gameObject.layer);
             _buildings.Draw(_materials, view, style, gameObject.layer);
-            _commands.Draw(_materials.DepthTested, style, gameObject.layer);
+            _commands.Draw(_materials, style, gameObject.layer);
         }
 
         protected override void OnDestroyed()

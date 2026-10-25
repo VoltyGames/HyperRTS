@@ -77,21 +77,66 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>
+        /// The step out of the walls the capsule sinks into, at most <paramref name="maxStep"/>: down the field's
+        /// slope at its sunk points, so it leaves by the nearest edge.
+        /// </summary>
+        public float2 WayOut(float2 center, float maxStep)
+        {
+            var radius = Access.Class.Radius;
+            var points = Points(Axis, radius);
+            var slope = float2.zero;
+            var depth = 0f;
+            for (var i = 0; i < points; i++)
+            {
+                var point = Point(center, Axis, i, points);
+                var sunk = math.max(0f, radius - Access.Distance(point));
+                slope += Access.Normal(point) * sunk;
+                depth += sunk;
+            }
+
+            var direction = math.normalizesafe(slope);
+            if (direction.Equals(float2.zero) && IsInWall(center, out var open))
+            {
+                direction = math.normalizesafe(Access.Grid.CellCenter(open).xz - center);
+            }
+
+            return direction * math.min(maxStep, depth + NavTolerances.Skin);
+        }
+
+        // Past the field's cap, or dead centre, a wall reads flat, so the way out is toward the nearest open cell.
+        private bool IsInWall(float2 center, out int2 open)
+        {
+            open = default;
+            if (Access.Distance(center) >= 0f)
+            {
+                return false;
+            }
+
+            return Access.TryFindNearest(Access.Grid.WorldToCell(center), GridPathfinder.NearestSearchRadius, out open);
+        }
+
+        /// <summary>
         /// How far the capsule reaches into walls, summed over points half a radius apart along its core, so sliding
         /// a longer stretch onto a wall counts as deeper.
         /// </summary>
         public float Depth(float2 center, float2 axis) => Depth(center, axis, out _);
 
+        private static int Points(float2 axis, float radius) =>
+            1 + (int)math.ceil(math.length(axis) * 2f / math.max(radius * 0.5f, 0.05f));
+
+        private static float2 Point(float2 center, float2 axis, int i, int points) =>
+            points == 1 ? center : center + axis * (i * 2f / (points - 1) - 1f);
+
         private float Depth(float2 center, float2 axis, out float2 deepest)
         {
             var radius = Access.Class.Radius;
-            var points = 1 + (int)math.ceil(math.length(axis) * 2f / math.max(radius * 0.5f, 0.05f));
+            var points = Points(axis, radius);
             var depth = 0f;
             var most = 0f;
             deepest = center;
             for (var i = 0; i < points; i++)
             {
-                var point = points == 1 ? center : center + axis * (i * 2f / (points - 1) - 1f);
+                var point = Point(center, axis, i, points);
                 var sunk = math.max(0f, radius - Access.Distance(point));
                 depth += sunk;
                 if (sunk > most)

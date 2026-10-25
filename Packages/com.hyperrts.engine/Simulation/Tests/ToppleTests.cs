@@ -114,12 +114,12 @@ namespace HyperRTS.Simulation.Tests
         {
             var entity = _world.EntityManager.CreateEntity();
             standing = LocalTransform.FromPositionRotation(position, quaternion.RotateY(0.5f));
-            topple = new Topple { Trunk = new float3(0f, 1f, 0f), Height = 12f, Lie = 0f };
+            topple = new Topple { Trunk = new float3(0f, 1f, 0f), Height = 12f, Lie = 0f, Crown = 3f };
             _world.EntityManager.AddComponentData(entity, standing);
             var writer = new EntityManagerWriter(_world.EntityManager, entity);
             DestructibleSetup.AddScenery(ref writer, 50f, 0, remains, float2.zero,
                 SceneryId.At(position, standing.Rotation));
-            DestructibleSetup.AddTopple(ref writer, topple.Trunk, topple.Height, topple.Lie);
+            DestructibleSetup.AddTopple(ref writer, topple.Trunk, topple.Height, topple.Lie, topple.Crown);
             return entity;
         }
 
