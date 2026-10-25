@@ -177,5 +177,22 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.Less(math.distance(_world.GetPosition(mover).xz, goal.xz), 1f, "went on past it to its own slot");
         }
+
+        [Test]
+        public void Groupmate_StoppedShortAgainstAnother_DoesNotEndTheMove()
+        {
+            var parked = _world.SpawnUnit(1, float3.zero);
+            var goal = new float3(8f, 0f, 0f);
+            _world.EntityManager.SetComponentData(parked, new MoveDestination { Value = goal, Group = 7 });
+            _world.EntityManager.SetComponentData(parked, new Arrival { AgainstGroup = true });
+            _world.EntityManager.SetComponentEnabled<Arrival>(parked, true);
+            var mover = _world.SpawnUnit(1, new float3(-6f, 0f, 0f));
+            _world.Issue(mover, new Order { Type = OrderType.Move, Position = goal, Group = 7, Extent = 30f });
+
+            Assert.IsTrue(_world.RunUntil(() => !_world.IsEnabled<ActiveOrder>(mover), 15f), "the move ended");
+
+            var left = math.distance(_world.GetPosition(mover).xz, goal.xz);
+            Assert.Less(left, 1f, "a groupmate that stopped short doesn't stop the next one short");
+        }
     }
 }

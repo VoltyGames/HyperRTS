@@ -203,15 +203,12 @@ namespace HyperRTS.Simulation.Navigation
             }
         }
 
-        /// <summary>Records the box this version changed (<see cref="Changes"/>) and marks its field sectors for rebuild.</summary>
+        /// <summary>Records the box this version changed (<see cref="Changes"/>) and marks the field sectors round each changed cell.</summary>
         public void RecordChanges()
         {
             Changes.Record(this);
-            var area = Changes.Areas[Version % NavChanges.History];
-            if (math.all(area.xy <= area.zw))
-            {
-                Field.MarkDirty(area.xy, area.zw);
-            }
+            // Cell by cell, so wrecks far apart in one restamp don't rebuild every sector of the box between them.
+            Field.MarkChanges(Cells, Changes.Previous);
         }
 
         /// <summary>

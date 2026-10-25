@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Air
                 var landed = Docked.HasEnabled(entity);
                 var from = transform.Position.xz;
                 var facing = math.normalizesafe(transform.Forward().xz);
-                var crowd = new CrowdVisitor(entity, from, facing * agent.HalfSegment, agent, faction.Value,
+                var crowd = new CrowdVisitor(entity, from, facing, agent, faction.Value,
                     wasMoving, destination, GivingWay);
                 Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
                 var step = Plan(transform, facing, speed.Value, flight, landed, destination.Value, moving, ref path,
@@ -111,7 +111,7 @@ namespace HyperRTS.Simulation.Air
                     path.Halt(moving, waypoints);
                 }
 
-                progress.Report(wasMoving, moving.ValueRO, false, ref arrival, arrived);
+                progress.Report(wasMoving, moving.ValueRO, false, crowd.ReachedGroup, ref arrival, arrived);
                 if (remembers)
                 {
                     drive.Hit(transform.Position.xz - from, step, false);

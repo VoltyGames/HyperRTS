@@ -132,6 +132,9 @@ namespace HyperRTS.Simulation.Navigation
     public struct Arrival : IComponentData, IEnableableComponent
     {
         public bool Stalled;
+
+        /// <summary>Stopped against an arrived groupmate short of its goal, so no groupmate stops against it.</summary>
+        public bool AgainstGroup;
     }
 
     /// <summary>

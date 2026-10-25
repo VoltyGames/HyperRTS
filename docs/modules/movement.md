@@ -25,8 +25,8 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 - `NavField` holds the signed distance in metres from each cell centre to the nearest wall, per layer and crush
   limit: positive in the open, negative inside buildings, about 0 on their edge, capped at 8 m. Off the map counts
   as wall. It is rebuilt per 16 by 16 cell sector over a window with an 8 m halo (Felzenszwalb's lower envelope),
-  one job per dirty sector and key, so a full build is every sector dirty. Restamps mark the sectors round their
-  changed box, and scenery marks only the sectors whose cells it changed.
+  one job per dirty sector and key, so a full build is every sector dirty. Restamps and scenery mark only the
+  sectors round the cells they changed, so wrecks far apart in one frame leave the sectors between them alone.
 - A cell is open to a class when the field at its centre is at least its radius (`NavAccess`). A*, the nearest
   cell search and line of sight all use that one rule, so a gap exactly two radii wide lets a unit through.
 - Each class has a sector graph (`NavSectors`), rebuilt right after the field in the same worlds. Inside each 16 by
@@ -114,7 +114,11 @@ sized by its own unit's footprint, so a tank column doesn't pile up nose to tail
 A row is as deep as its deepest member. A slot in a building or off the unit's ground moves to the nearest spot the
 unit fits and can reach; one only across water or a wall is left to the pathfinder's snap into the unit's region.
 
-- Two movers share the avoiding half each.
+- Two movers share the avoiding half each, unless they go one way: the directions to their goals under 60 degrees
+  apart, so a pair crossing at right angles still shares it. Then the one further back along their shared heading
+  gives way: it keeps its whole spacing, so it backs off, and takes the push beyond half the spacing. The one ahead
+  keeps half the spacing and shares only the push inside it, so an abreast pair at a one-lane bridge never waits on
+  each other and a follower pressed from both sides is never driven into.
 - An idle parked unit steps aside for a moving unit of its own side (`GivingWay`). The mover doesn't steer round it,
   so it never stops short in a gap. The idle unit shares the push and moves out of the mover's lane, toward the mover's left head-on, so a unit in a one-unit
   gap or on a bridge makes way. It stays where it was pushed.
@@ -128,7 +132,8 @@ unit fits and can reach; one only across water or a wall is left to the pathfind
 - A formation move gives its units one group (`MoveDestination.Group`) and the span of its slots
   (`MoveDestination.Extent`, twice the farthest slot's distance from the goal). A unit within that span of its own
   slot that touches an arrived groupmate lying toward its goal has arrived too, so arrival passes through a crowded
-  group by contact. Farther out a parked groupmate is only traffic.
+  group by contact. Farther out a parked groupmate is only traffic. A groupmate that itself stopped that way
+  (`Arrival.AgainstGroup`) doesn't count, so a group crossing a bridge never stops in a chain back onto the deck.
 - A move ends by itself at the goal, against an arrived groupmate, or when the unit stops getting on. Then
   `MoveDestination` is disabled and `Arrival` enabled, with `Stalled` set when it gave up. `MoveOrderSystem`
   finishes its order on `Arrival`. If anything else halts the unit, such as combat letting go, it points the unit

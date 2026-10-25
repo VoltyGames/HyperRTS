@@ -9,19 +9,25 @@ namespace HyperRTS.Simulation.Units
     /// One neighbour query per unit for both crowd responses. A mover gathers its nearest neighbours for
     /// <see cref="Steering"/>, all but idle allies, which the push moves aside. Every unit also sums the overlap push
     /// behind it: footprints are capsules (circles when the segment is zero) and must stay the larger of the two
-    /// spacings apart, pushed along the line between their closest points, half each, as both move. A busy or enemy
-    /// parked unit holds its ground against a mover, which steers round it alone and takes the whole push. An idle
-    /// parked unit of the mover's side shares the push and steps out of the mover's lane (<see cref="GivingWay"/>).
-    /// Units on layers that never share a surface (a ship under a bridge, a tank on it) ignore each other.
+    /// spacings apart, pushed along the line between their closest points, half each, or mostly on the one behind when
+    /// both head one way. A busy or enemy parked unit holds its ground against a mover, which steers round it alone
+    /// and takes the whole push. An idle parked unit of the mover's side shares the push and steps out of the mover's
+    /// lane (<see cref="GivingWay"/>). Units on layers that never share a surface (a ship under a bridge, a tank on
+    /// it) ignore each other.
     /// </summary>
     internal struct CrowdVisitor : ISpatialVisitor
     {
         public const int MaxNeighbours = 8;
 
+        // Goals within 60 degrees of each other share a heading, so a crossing pair still shares the avoiding.
+        private const float SharedHeading = 0.5f;
+
         public Entity Self;
         public float2 Position;
         public float Radius;
         public float2 SegmentAxis;
+        /// <summary>Unit direction to its goal while it moves, else zero.</summary>
+        public float2 Heading;
         public float Spacing;
         public NavLayer Layer;
         public byte Faction;
@@ -39,18 +45,19 @@ namespace HyperRTS.Simulation.Units
 
         private FixedList512Bytes<AvoidanceNeighbour> _neighbours;
 
-        public CrowdVisitor(Entity self, float2 position, float2 axis, in NavAgent agent, byte faction, bool moving,
+        public CrowdVisitor(Entity self, float2 position, float2 facing, in NavAgent agent, byte faction, bool moving,
             in MoveDestination destination, in GivingWay rule)
         {
             Self = self;
             Position = position;
             Radius = agent.Radius;
-            SegmentAxis = axis;
+            SegmentAxis = facing * agent.HalfSegment;
             Spacing = agent.Spacing;
             Layer = agent.Layer;
             Faction = faction;
             Moving = moving;
             Goal = destination.Value.xz;
+            Heading = moving ? math.normalizesafe(Goal - position) : float2.zero;
             Group = destination.Group;
             InGoalArea = math.distance(position, Goal) <= destination.Extent;
             Rule = rule;
@@ -108,15 +115,18 @@ namespace HyperRTS.Simulation.Units
                 return;
             }
 
+            // Behind same-way traffic a mover counts the whole spacing it already lacks, so it backs off.
+            var precedence = Precedence(entry);
+            reach = precedence > 0 ? LeaderReach(entry, reach) : reach;
             Keep(new AvoidanceNeighbour
             {
                 Position = entry.Position.xz,
                 SegmentAxis = entry.SegmentAxis,
                 Velocity = entry.Velocity,
                 Reach = reach,
-                Share = Share(entry),
+                Share = precedence == 0 ? Share(entry) : 1f,
                 DistanceSq = distanceSq,
-                Contact = math.max(0f, reach - math.sqrt(distanceSq)),
+                Contact = precedence < 0 ? 0f : math.max(0f, reach - math.sqrt(distanceSq)),
             });
         }
 
@@ -126,14 +136,13 @@ namespace HyperRTS.Simulation.Units
             var overlap = reach - distance;
             ReachedGroup |= Moving && IsArrivedGroupmate(entry) &&
                             math.dot(entry.Position.xz - Position, Goal - Position) > 0f;
-            if (entry.IsMoving == Moving)
+            if (Moving)
+            {
+                Push += direction * MoverPush(entry, distance, reach);
+            }
+            else if (!entry.IsMoving)
             {
                 Push += direction * (overlap * 0.5f);
-            }
-            else if (Moving)
-            {
-                // Only the mover gives way to a busy or enemy unit, so a truck can't shove a dozer that is building.
-                Push += direction * (overlap * Share(entry));
             }
             else if (Rule.Yields(Self, Faction, entry.Faction))
             {
@@ -154,7 +163,10 @@ namespace HyperRTS.Simulation.Units
         private readonly bool IsArrivedGroupmate(in SpatialEntry entry) =>
             InGoalArea && Group != 0 && entry.Group == Group && entry.IsArrived && !entry.IsMoving;
 
-        /// <summary>The mover's part: half against a unit that gives way too, all against one holding its ground.</summary>
+        /// <summary>
+        /// The mover's part: half against a unit that gives way too, all against one holding its ground, so a truck
+        /// can't shove a dozer that is building.
+        /// </summary>
         private readonly float Share(in SpatialEntry entry)
         {
             if (entry.IsMoving || Rule.Yields(entry.Entity, entry.Faction, Faction))
@@ -163,6 +175,43 @@ namespace HyperRTS.Simulation.Units
             }
 
             return 1f;
+        }
+
+        // Same-way traffic makes its spacing by the follower alone, but inside the leader's own reach both part half
+        // each, so a follower pressed from both sides can't be driven into.
+        private readonly float MoverPush(in SpatialEntry entry, float distance, float reach)
+        {
+            var overlap = reach - distance;
+            var precedence = Precedence(entry);
+            if (precedence == 0)
+            {
+                return overlap * Share(entry);
+            }
+
+            var close = math.max(0f, LeaderReach(entry, reach) - distance) * 0.5f;
+            return precedence > 0 ? close : overlap - close;
+        }
+
+        // Ahead of same-way traffic a mover keeps half the spacing, so it drives on while the follower backs off.
+        private readonly float LeaderReach(in SpatialEntry entry, float reach) =>
+            (reach + Radius + entry.Radius) * 0.5f;
+
+        // Two movers going one way at a gap too narrow for both would each wait on the other, so the one further back
+        // along their shared heading gives way alone. Head-on movers share the avoiding.
+        private readonly int Precedence(in SpatialEntry entry)
+        {
+            if (!Moving || !entry.IsMoving || math.dot(Heading, entry.Heading) < SharedHeading)
+            {
+                return 0;
+            }
+
+            var ahead = math.dot(Position - entry.Position.xz, Heading + entry.Heading);
+            if (ahead != 0f)
+            {
+                return ahead > 0f ? 1 : -1;
+            }
+
+            return Self.Index < entry.Entity.Index ? 1 : -1;
         }
 
         private void Keep(in AvoidanceNeighbour neighbour)

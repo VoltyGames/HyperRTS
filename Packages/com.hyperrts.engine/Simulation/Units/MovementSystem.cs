@@ -107,7 +107,7 @@ namespace HyperRTS.Simulation.Units
                 var from = transform.Position.xz;
                 var facing = math.normalizesafe(transform.Forward().xz);
                 var axis = facing * agent.HalfSegment;
-                var crowd = new CrowdVisitor(entity, from, axis, agent, faction.Value, wasMoving, destination,
+                var crowd = new CrowdVisitor(entity, from, facing, agent, faction.Value, wasMoving, destination,
                     GivingWay);
                 Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
                 var step = Plan(transform.Position, facing, speed.Value, agent, destination.Value, moving, ref path,
@@ -133,7 +133,7 @@ namespace HyperRTS.Simulation.Units
                     path.Halt(moving, waypoints);
                 }
 
-                progress.Report(wasMoving, moving.ValueRO, stalled, ref arrival, arrived);
+                progress.Report(wasMoving, moving.ValueRO, stalled, crowd.ReachedGroup, ref arrival, arrived);
                 if (remembers)
                 {
                     drive.Hit(transform.Position.xz - from, step, !transform.Position.xz.Equals(wanted));

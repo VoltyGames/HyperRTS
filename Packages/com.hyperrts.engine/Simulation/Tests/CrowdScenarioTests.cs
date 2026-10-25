@@ -12,10 +12,10 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests
 {
     /// <summary>
-    /// Whole-crowd steering: tanks through a gate, a column of long trucks along a road, infantry passing head-on,
-    /// with no footprint ever sunk into a wall past the skin.
+    /// Whole-crowd steering: tanks through a gate and over a one-lane bridge, a column of long trucks along a road,
+    /// infantry passing head-on, with no footprint ever sunk into a wall past the skin.
     /// </summary>
-    public class CrowdScenarioTests
+    public partial class CrowdScenarioTests
     {
         private const float WallSlack = NavTolerances.Skin + 0.05f;
 

@@ -145,7 +145,7 @@ namespace HyperRTS.Simulation.Units
         }
 
         /// <summary>A move that just ended arrived or stalled; the next one measures progress afresh.</summary>
-        public void Report(bool wasMoving, bool isMoving, bool stalled, ref Arrival arrival,
+        public void Report(bool wasMoving, bool isMoving, bool stalled, bool againstGroup, ref Arrival arrival,
             EnabledRefRW<Arrival> arrived)
         {
             if (isMoving)
@@ -161,6 +161,7 @@ namespace HyperRTS.Simulation.Units
             {
                 arrived.ValueRW = true;
                 arrival.Stalled = stalled;
+                arrival.AgainstGroup = againstGroup;
             }
         }
     }

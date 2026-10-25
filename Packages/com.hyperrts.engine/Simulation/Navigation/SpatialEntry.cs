@@ -18,7 +18,9 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Its <see cref="MoveDestination"/> is enabled.</summary>
         public bool IsMoving;
 
-        /// <summary>Its <see cref="Arrival"/> is enabled: its last move ended by itself.</summary>
+        /// <summary>
+        /// Its <see cref="Arrival"/> is enabled: its last move ended by itself, not short against a groupmate.
+        /// </summary>
         public bool IsArrived;
 
         /// <summary>The <see cref="MoveDestination.Group"/> of its current or last move.</summary>
@@ -26,6 +28,9 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Unit forward on XZ, the lane a mover drives along.</summary>
         public float2 Facing;
+
+        /// <summary>Unit direction on XZ from it to its move goal while it moves, else zero.</summary>
+        public float2 Heading;
 
         /// <summary>Last frame's <see cref="Velocity"/>; zero for entities without one.</summary>
         public float2 Velocity;
