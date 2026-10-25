@@ -125,11 +125,6 @@ namespace HyperRTS.Editor.Maps.Report
                     _issues.Error($"Symmetric slots {i + 1} to {i + copies} differ in rush time ({group.Min():0} to {group.Max():0} s).");
                 }
             }
-
-            if (Metrics.maxExpansions > NavGrid.MaxSearchExpansions)
-            {
-                _issues.Warn($"A base-to-base search expands {Metrics.maxExpansions} cells, over the runtime budget of {NavGrid.MaxSearchExpansions}; long moves may stop short.");
-            }
         }
 
         private void CountPaths()

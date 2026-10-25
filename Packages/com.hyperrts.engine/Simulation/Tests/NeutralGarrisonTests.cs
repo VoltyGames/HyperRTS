@@ -216,7 +216,7 @@ namespace HyperRTS.Simulation.Tests
             Assert.IsFalse(_world.EntityManager.HasComponent<FogHidden>(unit), "its own side sees it");
             using var query = _world.EntityManager.CreateEntityQuery(typeof(NavGrid));
             var grid = query.GetSingleton<NavGrid>();
-            Assert.IsTrue(grid.TryFindNearestWalkable(grid.WorldToCell(position), 0, out _), "stands on open ground");
+            Assert.IsTrue(grid.IsWalkable(position), "stands on open ground");
         }
     }
 }

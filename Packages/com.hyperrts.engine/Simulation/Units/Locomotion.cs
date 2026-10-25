@@ -91,6 +91,18 @@ namespace HyperRTS.Simulation.Units
         public readonly float2 TurnToward(float2 facing, float2 direction, float deltaTime) =>
             Turn(facing, SignedAngle(facing, direction), TurnRate * deltaTime);
 
+        /// <summary>
+        /// A parked unit with no other turn turns its hull to a hull-fixed weapon's target at its turn rate. The aim
+        /// lasts one frame, so it is cleared here.
+        /// </summary>
+        public readonly float2 Aim(float2 heading, float2 facing, bool parked, in FacingGoal aim,
+            EnabledRefRW<FacingGoal> aiming, float deltaTime)
+        {
+            var turns = parked && aiming.ValueRO && math.all(heading == 0f);
+            aiming.ValueRW = false;
+            return turns ? TurnToward(facing, aim.Direction, deltaTime) : heading;
+        }
+
         /// <summary>Brakes to a stop along its facing once it has nowhere to go.</summary>
         public readonly float2 BrakeToStop(ref LocomotionState state, float2 facing, float deltaTime)
         {

@@ -85,14 +85,17 @@ namespace HyperRTS.Simulation.Units
                 authoring.BakeGameEntity(this, entity);
 
                 var writer = new BakerWriter(this, entity);
-                UnitAuthoring.Add(ref writer, authoring.moveSpeed, new NavAgent
+                var agent = new NavAgent
                 {
                     Radius = authoring.radius,
                     HullLength = authoring.hullLength,
                     Spacing = authoring.spacing,
                     Layer = Layer(authoring),
                     SceneryCrushLimit = SceneryCrushLimit(authoring),
-                });
+                };
+                var locomotion = GetComponent<LocomotionAuthoring>();
+                agent.WallMargin = agent.WallMarginFor(locomotion != null ? locomotion.turnRadius : 0f);
+                UnitAuthoring.Add(ref writer, authoring.moveSpeed, agent);
             }
 
             private byte SceneryCrushLimit(UnitAuthoring authoring)

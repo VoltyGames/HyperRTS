@@ -1,11 +1,12 @@
+using System;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// One agent's view of the <see cref="NavGrid"/>: the cells it may enter (its layer's surfaces and the scenery it
-    /// drives through) and the square <see cref="Footprint"/> it needs. Paths run over anchors, the low corner cell of
-    /// that square, so a footprint of one cell paths over plain cells.
+    /// One movement class's view of the <see cref="NavGrid"/>. A cell is open when its centre keeps the class's radius
+    /// from walls (<see cref="NavField"/>), and A*, the nearest-cell search and line of sight all use that one rule.
+    /// Paths run over cell centres and pay more near walls, up to <see cref="WallMargin"/> away.
     /// </summary>
     public readonly struct NavAccess
     {
@@ -13,101 +14,81 @@ namespace HyperRTS.Simulation.Navigation
         public const byte AllScenery = byte.MaxValue;
 
         public readonly NavGrid Grid;
-        public readonly NavSurface Surfaces;
-        public readonly byte SceneryCrushLimit;
+        public readonly MovementClass Class;
 
-        /// <summary>Side of the square of cells the agent needs, from its width.</summary>
-        public readonly int Footprint;
+        /// <summary>Distance from walls inside which steps cost more; 0 keeps every step at its length.</summary>
+        public readonly float WallMargin;
 
-        /// <summary>Distance kept from closed cells: the radius, capped to fit through a gap of the footprint's width.</summary>
-        public readonly float Clearance;
-
-        // Region filter that takes an open anchor in any region.
+        // Region filter that takes an open cell in any region.
         private const int AnyRegion = -1;
 
+        private readonly int _classIndex;
         private readonly int _slot;
 
-        public NavAccess(in NavGrid grid, NavLayer layer, float radius, byte sceneryCrushLimit)
+        /// <summary>The view of a registered class; throws for one <see cref="NavFieldSystem"/> hasn't registered.</summary>
+        public NavAccess(in NavGrid grid, in MovementClass movementClass, float wallMargin)
         {
             Grid = grid;
-            Surfaces = NavLayers.Surfaces(layer);
-            SceneryCrushLimit = sceneryCrushLimit;
-            Footprint = math.max(1, (int)math.ceil(radius * 2f / grid.CellSize - 1e-3f));
-            Clearance = math.min(radius, (Footprint - 0.1f) * grid.CellSize * 0.5f);
-            _slot = (int)layer;
-        }
-
-        /// <summary>A one-cell view that only asks a layer's surfaces, for spot searches.</summary>
-        public static NavAccess Surface(in NavGrid grid, NavLayer layer) => new(grid, layer, 0f, AllScenery);
-
-        /// <summary>From an anchor to the centre of its footprint square.</summary>
-        public float2 Offset => (Footprint - 1) * 0.5f * Grid.CellSize;
-
-        public int2 AnchorAt(float3 position) => Grid.WorldToCell(position.xz - Offset);
-
-        public float3 AnchorCenter(int2 anchor) => Grid.CellCenter(anchor) + new float3(Offset.x, 0f, Offset.y);
-
-        /// <summary>Whether one cell is open to the layer and holds no scenery the agent can't drive through.</summary>
-        public bool IsOpen(int2 cell) => IsBlockOpen(cell, 1);
-
-        /// <summary>Whether the agent's whole footprint square, anchored at the cell, is open.</summary>
-        public bool IsAnchorOpen(int2 anchor) => IsBlockOpen(anchor, Footprint);
-
-        /// <summary>The connected region of an anchor at this layer and footprint; 0 when closed or off the grid.</summary>
-        public int Region(int2 anchor) => Grid.Regions.Label(Grid, _slot, Footprint, anchor);
-
-        /// <summary>A diagonal step needs both side squares open, or it would slip between two closed ones.</summary>
-        public bool CutsCorner(int2 from, int2 to, int size)
-        {
-            if (from.x == to.x || from.y == to.y)
+            Class = movementClass;
+            WallMargin = wallMargin;
+            _classIndex = grid.Classes.Find(movementClass);
+            if (_classIndex < 0)
             {
-                return false;
+                throw new InvalidOperationException("Movement class not registered: no NavAgent has it yet.");
             }
 
-            return !IsBlockOpen(new int2(from.x, to.y), size) || !IsBlockOpen(new int2(to.x, from.y), size);
+            _slot = grid.Classes.KeySlot(_classIndex);
         }
 
-        /// <summary>
-        /// <see cref="CutsCorner"/> at <see cref="Footprint"/> for a step between two open anchors: each side square
-        /// adds only one cell to the from and to squares, so only those two cells need checking.
-        /// </summary>
-        public bool CutsCornerBetweenOpen(int2 from, int2 to)
+        /// <summary>Signed metres from the cell centre to the nearest wall, capped at <see cref="NavField.Cap"/>.</summary>
+        public float Distance(int2 cell) => Grid.Field.At(_slot, cell);
+
+        /// <summary>Signed metres from a point to the nearest wall, blended between cell centres.</summary>
+        public float Distance(float2 position) => Grid.Field.Sample(_slot, position);
+
+        /// <summary>The way out of the nearest wall at a point.</summary>
+        public float2 Normal(float2 position) => Grid.Field.Normal(_slot, position);
+
+        /// <summary>Whether the class may stand on the cell's centre.</summary>
+        public bool IsOpen(int2 cell) => Grid.InBounds(cell) && Grid.Field.IsOpen(_slot, cell, Class.Radius);
+
+        /// <summary>The connected region of a cell for this class; 0 when closed or off the grid.</summary>
+        public int Region(int2 cell) => Grid.Regions.Label(Grid.Field, _classIndex, cell);
+
+        /// <summary>What a step onto the cell costs per metre: 1 in the open, up to 3 against a wall.</summary>
+        public float CellCost(int2 cell)
         {
-            var step = to - from;
-            if (step.x == 0 || step.y == 0)
+            if (WallMargin <= 0f)
             {
-                return false;
+                return 1f;
             }
 
-            var far = new int2(Footprint - 1);
-            var trailing = from + math.select(far, int2.zero, step > 0);
-            var leading = to + math.select(int2.zero, far, step > 0);
-            return !IsOpen(new int2(trailing.x, leading.y)) || !IsOpen(new int2(leading.x, trailing.y));
+            return 1f + 2f * math.max(0f, WallMargin - Distance(cell)) / WallMargin;
         }
 
-        /// <summary>Closest open anchor by ring distance, up to <paramref name="maxRadius"/> rings out.</summary>
-        public bool TryFindNearest(int2 anchor, int maxRadius, out int2 found) =>
-            TryFindNearest(anchor, maxRadius, AnyRegion, out found);
+        /// <summary>Closest open cell by ring distance, up to <paramref name="rings"/> rings out.</summary>
+        public bool TryFindNearest(int2 cell, int rings, out int2 found) =>
+            TryFindNearest(cell, rings, AnyRegion, out found);
 
-        /// <summary>The same search, keeping only anchors in <paramref name="region"/>.</summary>
-        public bool TryFindNearest(int2 anchor, int maxRadius, int region, out int2 found)
+        /// <summary>The same search, keeping only cells in <paramref name="region"/>.</summary>
+        public bool TryFindNearest(int2 cell, int rings, int region, out int2 found)
         {
-            anchor = math.clamp(anchor, 0, Grid.Size - 1);
-            found = anchor;
-            if (IsOpenIn(region, anchor))
+            cell = math.clamp(cell, 0, Grid.Size - 1);
+            found = cell;
+            if (IsOpenIn(region, cell))
             {
                 return true;
             }
 
-            for (var r = 1; r <= maxRadius; r++)
+            for (var r = 1; r <= rings; r++)
             {
                 var best = int.MaxValue;
                 for (var i = -r; i <= r; i++)
                 {
-                    Consider(region, anchor, new int2(i, -r), ref best, ref found);
-                    Consider(region, anchor, new int2(i, r), ref best, ref found);
-                    Consider(region, anchor, new int2(-r, i), ref best, ref found);
-                    Consider(region, anchor, new int2(r, i), ref best, ref found);
+                    Consider(region, cell, new int2(i, -r), ref best, ref found);
+                    Consider(region, cell, new int2(i, r), ref best, ref found);
+                    Consider(region, cell, new int2(-r, i), ref best, ref found);
+                    Consider(region, cell, new int2(r, i), ref best, ref found);
                 }
 
                 if (best != int.MaxValue)
@@ -119,13 +100,9 @@ namespace HyperRTS.Simulation.Navigation
             return false;
         }
 
-        /// <summary>
-        /// True when a straight move stays on open cells without cutting a closed corner. A wide test also keeps
-        /// <see cref="Clearance"/> from every closed cell, less the capsule's skin.
-        /// </summary>
-        public bool HasLineOfSight(float3 from, float3 to, bool wide)
+        /// <summary>True when every cell a straight move crosses is open; through a corner, both cells beside it too.</summary>
+        public bool HasLineOfSight(float3 from, float3 to)
         {
-            var clearance = wide ? Clearance : 0f;
             var start = (from.xz - Grid.Min) / Grid.CellSize;
             var delta = (to.xz - Grid.Min) / Grid.CellSize - start;
             var cell = (int2)math.floor(start);
@@ -137,101 +114,22 @@ namespace HyperRTS.Simulation.Navigation
             var span = math.select(1f / math.abs(delta), float.PositiveInfinity, still);
             var toEdge = math.select((float2)cell + 1f - start, start - cell, delta < 0f);
             var next = math.select(toEdge * span, float.PositiveInfinity, still);
-            var clear = IsSightClear(cell, from.xz, to.xz, clearance);
+            var clear = IsOpen(cell);
             for (var i = 0; clear && i < crossings; i++)
             {
-                // Through a corner exactly it crosses both axes, and both cells beside the corner must be clear too.
                 var axis = new bool2(next.x <= next.y, next.y <= next.x);
                 if (math.all(axis))
                 {
-                    clear = IsSightClear(cell + new int2(step.x, 0), from.xz, to.xz, clearance) &&
-                            IsSightClear(cell + new int2(0, step.y), from.xz, to.xz, clearance);
+                    clear = IsOpen(cell + new int2(step.x, 0)) && IsOpen(cell + new int2(0, step.y));
                     i++;
                 }
 
                 cell += math.select(int2.zero, step, axis);
                 next += math.select(float2.zero, span, axis);
-                clear = clear && IsSightClear(cell, from.xz, to.xz, clearance);
+                clear = clear && IsOpen(cell);
             }
 
             return clear;
-        }
-
-        // Exact: only cells within reach of a crossed cell can come within the clearance of the segment.
-        private bool IsSightClear(int2 cell, float2 from, float2 to, float clearance)
-        {
-            if (!IsOpen(cell))
-            {
-                return false;
-            }
-
-            var reach = (int)math.ceil(clearance / Grid.CellSize);
-            var corner = cell - reach;
-            var side = reach * 2 + 1;
-            if (reach == 0 || (SceneryCrushLimit == AllScenery && Grid.ClearanceAt(_slot, corner) >= side))
-            {
-                return true;
-            }
-
-            for (var y = 0; y < side; y++)
-            {
-                for (var x = 0; x < side; x++)
-                {
-                    var near = corner + new int2(x, y);
-                    if (!IsOpen(near) && Grid.CellGap(near, from, to) < clearance - NavCapsule.Skin)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        private bool IsBlockOpen(int2 cell, int size)
-        {
-            if (!Grid.InBounds(cell))
-            {
-                return false;
-            }
-
-            if (size == 1)
-            {
-                return IsCellOpen(Grid.Index(cell));
-            }
-
-            return Grid.ClearanceAt(_slot, cell) >= size && SceneryFits(cell, size);
-        }
-
-        private bool IsCellOpen(int index)
-        {
-            if (((NavSurface)Grid.Cells[index] & Surfaces) == 0)
-            {
-                return false;
-            }
-
-            return SceneryCrushLimit == AllScenery || Grid.Scenery[index] <= SceneryCrushLimit;
-        }
-
-        private bool SceneryFits(int2 anchor, int size)
-        {
-            if (SceneryCrushLimit == AllScenery)
-            {
-                return true;
-            }
-
-            for (var y = 0; y < size; y++)
-            {
-                for (var x = 0; x < size; x++)
-                {
-                    if (Grid.Scenery[Grid.Index(anchor + new int2(x, y))] > SceneryCrushLimit)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
         }
 
         private void Consider(int region, int2 center, int2 offset, ref int best, ref int2 found)
@@ -244,7 +142,6 @@ namespace HyperRTS.Simulation.Navigation
             }
         }
 
-        private bool IsOpenIn(int region, int2 anchor) =>
-            (region == AnyRegion || Region(anchor) == region) && IsAnchorOpen(anchor);
+        private bool IsOpenIn(int region, int2 cell) => (region == AnyRegion || Region(cell) == region) && IsOpen(cell);
     }
 }

@@ -20,6 +20,9 @@ namespace HyperRTS.Simulation.Units
         public const int MaxNeighbours = 8;
         public const float TimeHorizon = 1.5f;
 
+        // Squared change in velocity below which avoidance leaves the planned step alone.
+        private const float SteerThreshold = 1e-4f;
+
         public Entity Self;
         public float2 Position;
         public float Radius;
@@ -77,6 +80,40 @@ namespace HyperRTS.Simulation.Units
             }
 
             return planes.Solve(planned, maxSpeed);
+        }
+
+        /// <summary>
+        /// Drives the leg, steering round the gathered neighbours when that changes the step. A three-point turn
+        /// manoeuvres at a crawl, and steering would break its legs.
+        /// </summary>
+        public readonly float2 Drive(in Locomotion locomotion, ref LocomotionState drive, float2 facing,
+            ref float2 heading, in PathLeg leg, float2 velocity, float topSpeed, float deltaTime)
+        {
+            var start = drive;
+            heading = facing;
+            var step = locomotion.Drive(ref drive, Position, ref heading, leg, topSpeed, Radius, deltaTime);
+            if (drive.InThreePointTurn)
+            {
+                return step;
+            }
+
+            var planned = step / deltaTime;
+            var chosen = Avoid(velocity, planned, topSpeed, deltaTime);
+            if (math.distancesq(chosen, planned) <= SteerThreshold)
+            {
+                return step;
+            }
+
+            drive = start;
+            heading = facing;
+            return locomotion.Steer(ref drive, Position, ref heading, leg, chosen, topSpeed, Radius, deltaTime);
+        }
+
+        /// <summary>The overlap push, no longer than one frame's step.</summary>
+        public readonly float2 PushWithin(float maxStep)
+        {
+            var length = math.length(Push);
+            return length > maxStep ? Push * (maxStep / length) : Push;
         }
 
         public void Visit(in SpatialEntry entry)

@@ -5,6 +5,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Navigation
@@ -12,8 +13,8 @@ namespace HyperRTS.Simulation.Navigation
     /// <summary>
     /// Plans <see cref="PathWaypoint"/>s for units whose <see cref="MoveDestination"/> is new or moved by more than a
     /// cell, or whose path passes near cells the grid changed (<see cref="NavChanges"/>). Searches run oldest request
-    /// first until the frame's expansion budget is spent. Aircraft (<see cref="NavLayer.Air"/>) never search: they fly
-    /// straight.
+    /// first until the frame's budget is spent, each to the end: none returns a partial path. Aircraft
+    /// (<see cref="NavLayer.Air"/>) never search: they fly straight.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
@@ -21,7 +22,7 @@ namespace HyperRTS.Simulation.Navigation
     public partial struct PathfindingSystem : ISystem
     {
         /// <summary>Cells all of a frame's searches may expand or look along; the last search started may run past it.</summary>
-        public const int MaxExpansionsPerFrame = NavGrid.MaxSearchExpansions * 2;
+        public const int MaxExpansionsPerFrame = 40000;
 
         private EntityQuery _agents;
         private GridAStar _search;
@@ -124,7 +125,6 @@ namespace HyperRTS.Simulation.Navigation
                     !IsNearChange(path, waypoints, transform.Position, agent))
                 {
                     path.GridVersion = Grid.Version;
-                    path.IsHidden = false;
                 }
 
                 if (path.Status == PathStatus.Ready && !goalMoved && path.GridVersion == Grid.Version)
@@ -133,11 +133,10 @@ namespace HyperRTS.Simulation.Navigation
                     return;
                 }
 
-                var repair = CanRepair(path, waypoints, goalMoved);
-                Request(entity, ref path, waypoints, transform.Position, goal, agent, goalMoved, repair);
+                Request(entity, ref path, waypoints, transform.Position, goal, agent, goalMoved);
             }
 
-            // Legs keep the radius from closed cells, so a change over a footprint away leaves them valid.
+            // A change past the wall margin can neither block a leg nor make another way cheaper.
             private readonly bool IsNearChange(in PathState path, DynamicBuffer<PathWaypoint> waypoints,
                 float3 position, in NavAgent agent)
             {
@@ -146,7 +145,7 @@ namespace HyperRTS.Simulation.Navigation
                     return true;
                 }
 
-                var margin = agent.Radius * 2f + Grid.CellSize;
+                var margin = math.max(agent.Radius * 2f, agent.WallMargin) + Grid.CellSize;
                 var from = position.xz;
                 for (var i = 0; i < waypoints.Length; i++)
                 {
@@ -162,19 +161,8 @@ namespace HyperRTS.Simulation.Navigation
                 return false;
             }
 
-            // A repair keeps the old corners, so they must still lead to this goal over this grid.
-            private readonly bool CanRepair(in PathState path, DynamicBuffer<PathWaypoint> waypoints, bool goalMoved)
-            {
-                if (!path.Repair || goalMoved || waypoints.Length == 0)
-                {
-                    return false;
-                }
-
-                return path.GridVersion == Grid.Version;
-            }
-
             private void Request(Entity entity, ref PathState path, DynamicBuffer<PathWaypoint> waypoints, float3 start,
-                float3 goal, in NavAgent agent, bool goalMoved, bool repair)
+                float3 goal, in NavAgent agent, bool goalMoved)
             {
                 if (path.Status != PathStatus.Requested)
                 {
@@ -194,7 +182,6 @@ namespace HyperRTS.Simulation.Navigation
                     Start = start,
                     Goal = goal,
                     Agent = agent,
-                    Repair = repair,
                     Frame = path.RequestFrame,
                 });
             }
@@ -245,6 +232,8 @@ namespace HyperRTS.Simulation.Navigation
         [BurstCompile]
         private struct SearchJob : IJob
         {
+            private static readonly ProfilerMarker SearchMarker = new("PathfindingSystem.Search");
+
             public NativeList<PathRequest> Requests;
             [ReadOnly] public NavGrid Grid;
             public GridAStar Search;
@@ -263,18 +252,17 @@ namespace HyperRTS.Simulation.Navigation
 
             private void Serve(in PathRequest request, ref int work)
             {
+                using var scope = SearchMarker.Auto();
                 var access = request.Agent.Access(Grid);
                 var waypoints = WaypointLookup[request.Entity];
-                var reached = request.Repair
-                    ? GridPathfinder.Repair(ref Search, access, request, waypoints, ref work)
-                    : GridPathfinder.Plan(ref Search, access, request.Start, request.Goal, waypoints, ref work);
+                var exact = GridPathfinder.Plan(ref Search, access, request.Start, request.Goal, waypoints, ref work);
 
                 StateLookup[request.Entity] = new PathState
                 {
                     Goal = request.Goal,
                     GridVersion = Grid.Version,
                     Status = PathStatus.Ready,
-                    IsShort = !reached,
+                    IsShort = !exact,
                     LengthPastCorner = PathState.Measure(waypoints),
                 };
             }

@@ -8,7 +8,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>A shoved unit keeps its path for a moment, then re-plans only the way back to its corner.</summary>
+    /// <summary>A unit shoved off its path re-plans from where it stands and still arrives.</summary>
     public class PathRepairTests
     {
         private TestWorld _world;
@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Tests
         private float3 FirstCorner(Entity unit) => _world.EntityManager.GetBuffer<PathWaypoint>(unit)[0].Position;
 
         [Test]
-        public void ShovedBehindAPillar_KeepsItsPathAWhile_ThenKeepsToTheSideItWasTaking()
+        public void ShovedBehindAPillar_StillArrives()
         {
             // A wall from z -6 to 14 whose south end is the way round, and a pillar north of the start.
             SpawnObstacle(new float3(0.5f, 0f, 4f), new float2(1f, 20f));
@@ -52,20 +52,11 @@ namespace HyperRTS.Simulation.Tests
             var transform = _world.Get<LocalTransform>(unit);
             transform.Position = new float3(-2f, 0f, 12f);
             _world.EntityManager.SetComponentData(unit, transform);
-            _world.Run(MoveProgress.RepairSeconds * 0.5f);
 
-            Assert.AreEqual(PathStatus.Ready, _world.Get<PathState>(unit).Status, "no re-plan the moment it is walled");
-            Assert.AreEqual(corner, FirstCorner(unit), "still heading for the same corner");
-
-            var northmost = 0f;
-            for (var t = 0f; t < 15f && _world.IsEnabled<MoveDestination>(unit); t += TestWorld.FrameTime)
-            {
-                _world.Tick();
-                northmost = math.max(northmost, _world.GetPosition(unit).z);
-            }
-
-            Assert.Less(northmost, 13f, "never went round the north end");
-            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 1f, "arrived");
+            var arrived = _world.RunUntil(() => !_world.IsEnabled<MoveDestination>(unit), 20f);
+            Assert.IsTrue(arrived, "the move ended");
+            Assert.IsFalse(_world.Get<Arrival>(unit).Stalled, "by arriving, not by giving up");
+            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 1f, "at the goal");
         }
     }
 }

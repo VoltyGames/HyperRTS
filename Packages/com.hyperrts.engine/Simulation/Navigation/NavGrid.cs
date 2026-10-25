@@ -1,7 +1,5 @@
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
@@ -12,15 +10,6 @@ namespace HyperRTS.Simulation.Navigation
     /// </summary>
     public struct NavGrid : IComponentData
     {
-        /// <summary>
-        /// Most cells one path search expands, so a hopeless request can't stall a worker thread; past it a unit heads
-        /// for the closest cell found. Map tools warn when a cross-map path needs more.
-        /// </summary>
-        public const int MaxSearchExpansions = 20000;
-
-        /// <summary>Layers with a <see cref="Clearance"/> field: ground, naval and amphibious, by layer value.</summary>
-        public const int ClearanceLayers = 3;
-
         public NativeArray<byte> Cells;
 
         /// <summary>
@@ -28,10 +17,13 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public NativeArray<byte> Scenery;
 
-        /// <summary>Per layer, then per cell: see <see cref="BuildClearance(int)"/>. Scenery never counts as closed here.</summary>
-        public NativeArray<byte> Clearance;
+        /// <summary>The movement classes of the match's units, carried over when the grid is rebuilt.</summary>
+        public MovementClasses Classes;
 
-        /// <summary>Which anchors connect, per layer and footprint, for <see cref="IsReachable"/>.</summary>
+        /// <summary>Distance to walls per field key; built only in worlds that move units (see <see cref="NavFieldSystem"/>).</summary>
+        public NavField Field;
+
+        /// <summary>Which cells connect, per movement class, for <see cref="IsReachable"/>.</summary>
         public NavRegions Regions;
 
         public NavChanges Changes;
@@ -56,7 +48,7 @@ namespace HyperRTS.Simulation.Navigation
 
         public readonly bool IsCreated => Cells.IsCreated;
 
-        /// <summary>A blank grid with every layer allocated; the caller fills the cells and disposes it.</summary>
+        /// <summary>A blank grid with no movement classes yet; the caller fills the cells and disposes it.</summary>
         public static NavGrid Create(int2 size, float2 min, float cellSize, in TerrainHeight terrain, float waterLevel)
         {
             var count = size.x * size.y;
@@ -64,9 +56,10 @@ namespace HyperRTS.Simulation.Navigation
             {
                 Cells = new NativeArray<byte>(count, Allocator.Persistent),
                 Scenery = new NativeArray<byte>(count, Allocator.Persistent),
-                Clearance = new NativeArray<byte>(count * ClearanceLayers, Allocator.Persistent),
+                Classes = MovementClasses.Create(Allocator.Persistent),
+                Field = NavField.Create(size, min, cellSize, 0, Allocator.Persistent),
+                Regions = NavRegions.Create(0, count, Allocator.Persistent),
                 DeckHeights = new NativeArray<float>(count, Allocator.Persistent),
-                Regions = NavRegions.Create(count, Allocator.Persistent),
                 Changes = NavChanges.Create(count, Allocator.Persistent),
                 Terrain = terrain,
                 WaterLevel = waterLevel,
@@ -80,9 +73,10 @@ namespace HyperRTS.Simulation.Navigation
         {
             Cells.Dispose();
             Scenery.Dispose();
-            Clearance.Dispose();
-            DeckHeights.Dispose();
+            Classes.Dispose();
+            Field.Dispose();
             Regions.Dispose();
+            DeckHeights.Dispose();
             Changes.Dispose();
         }
 
@@ -133,25 +127,6 @@ namespace HyperRTS.Simulation.Navigation
         public readonly float HeightFor(float3 position, NavLayer layer) =>
             layer == NavLayer.Naval ? WaterLevel : SurfaceHeight(position);
 
-        /// <summary>True when every cell under an XZ box is inside the map and open to the layer.</summary>
-        public readonly bool IsAreaFree(float3 center, float2 size, NavLayer layer = NavLayer.Ground)
-        {
-            GetArea(center, size, out var min, out var max);
-            var surfaces = NavLayers.Surfaces(layer);
-            for (var y = min.y; y <= max.y; y++)
-            {
-                for (var x = min.x; x <= max.x; x++)
-                {
-                    if (!IsOpen(new int2(x, y), surfaces))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
         /// <summary>First and last cell under an XZ box (may lie outside the grid).</summary>
         public readonly void GetArea(float3 center, float2 size, out int2 min, out int2 max)
         {
@@ -176,13 +151,8 @@ namespace HyperRTS.Simulation.Navigation
         public readonly bool InBox(in NavBox box, int2 cell) =>
             box.IsAxisAligned || box.Contains(CellCenter(cell).xz, CellSize * 0.5f);
 
-        /// <summary>Closest cell open to the layer by ring distance, up to <paramref name="maxRadius"/> rings out.</summary>
-        public readonly bool TryFindNearestWalkable(int2 cell, int maxRadius, out int2 found,
-            NavLayer layer = NavLayer.Ground) =>
-            NavAccess.Surface(this, layer).TryFindNearest(cell, maxRadius, out found);
-
         /// <summary>
-        /// Whether an agent could path between two points: their anchors share a region, scenery aside. A start in
+        /// Whether an agent could path between two points: their cells share a region, scenery aside. A start in
         /// closed cells counts from the open ground it would step out to. Aircraft reach everywhere.
         /// </summary>
         public readonly bool IsReachable(in NavAgent agent, float3 from, float3 to)
@@ -193,16 +163,13 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             var access = agent.Access(this);
-            if (!access.TryFindNearest(access.AnchorAt(from), GridPathfinder.NearestSearchRadius, out var start))
+            if (!access.TryFindNearest(WorldToCell(from), GridPathfinder.NearestSearchRadius, out var start))
             {
                 return false;
             }
 
-            return access.Region(start) == access.Region(access.AnchorAt(to));
+            return access.Region(start) == access.Region(WorldToCell(to));
         }
-
-        public readonly int Region(NavLayer layer, int footprint, int2 anchor) =>
-            Regions.Label(this, (int)layer, footprint, anchor);
 
         /// <summary>The surface the ground alone gives a cell (<see cref="NavGround.Classify"/>).</summary>
         public readonly NavSurface GroundSurface(int index, bool flood, float maxGradient) =>
@@ -235,70 +202,60 @@ namespace HyperRTS.Simulation.Navigation
             }
         }
 
-        /// <summary>Builds what paths read from the cells: every layer's <see cref="Clearance"/>, then the <see cref="Regions"/>.</summary>
-        public void BuildAccess()
+        /// <summary>Records the box this version changed (<see cref="Changes"/>) and marks its field sectors for rebuild.</summary>
+        public void RecordChanges()
         {
-            for (var slot = 0; slot < ClearanceLayers; slot++)
+            Changes.Record(this);
+            var area = Changes.Areas[Version % NavChanges.History];
+            if (math.all(area.xy <= area.zw))
             {
-                BuildClearance(slot);
+                Field.MarkDirty(area.xy, area.zw);
             }
-
-            Regions.Build(this);
-        }
-
-        /// <summary><see cref="BuildAccess"/> on workers, one per layer and then one per region slice.</summary>
-        public readonly JobHandle ScheduleAccess(JobHandle dependency)
-        {
-            var clearance = new ClearanceJob { Cells = Cells, Clearance = Clearance, Size = Size }
-                .Schedule(ClearanceLayers, 1, dependency);
-            return Regions.Schedule(this, clearance);
         }
 
         /// <summary>
-        /// Fills one layer's <see cref="Clearance"/>: the side, in cells, of the largest open square whose low corner is
-        /// the cell, so a footprint k cells wide fits wherever it is at least k. Layers touch disjoint slices.
+        /// Sizes the field and regions to the registered classes after a registration; returns the first field slot
+        /// that is new, so needs a full build.
         /// </summary>
-        public void BuildClearance(int slot)
+        public int FitAccess()
         {
-            var offset = slot * Cells.Length;
-            var surfaces = NavLayers.Surfaces((NavLayer)slot);
-            for (var y = Size.y - 1; y >= 0; y--)
+            var built = Field.Keys;
+            if (Classes.Keys.Length > built)
             {
-                for (var x = Size.x - 1; x >= 0; x--)
+                Field.Grow(Classes.Keys.Length, Allocator.Persistent);
+            }
+
+            if (Regions.Labels.Length != Classes.Classes.Length * Cells.Length)
+            {
+                Regions.Dispose();
+                Regions = NavRegions.Create(Classes.Classes.Length, Cells.Length, Allocator.Persistent);
+            }
+
+            return built;
+        }
+
+        /// <summary>Builds the whole field and the regions for the registered classes at once, as editor tools need.</summary>
+        public void BuildAccess()
+        {
+            FitAccess();
+            var transform = new DistanceTransform(Field.WindowSide, Allocator.Temp);
+            for (var slot = 0; slot < Classes.Keys.Length; slot++)
+            {
+                for (var sector = 0; sector < Field.DirtySectors.Length; sector++)
                 {
-                    var cell = new int2(x, y);
-                    var side = IsOpen(cell, surfaces) ? 1 + SmallestSquareAbove(slot, cell) : 0;
-                    Clearance[offset + Index(cell)] = (byte)math.min(side, byte.MaxValue);
+                    Field.Rebuild(Cells, Scenery, Classes.Keys[slot], slot, sector, ref transform);
                 }
+            }
+
+            transform.Dispose();
+            Regions.Build(Field, Classes);
+            for (var sector = 0; sector < Field.DirtySectors.Length; sector++)
+            {
+                Field.DirtySectors[sector] = false;
             }
         }
 
-        // A square grows past its neighbours' only as far as the smallest of the three it overlaps.
-        private readonly int SmallestSquareAbove(int slot, int2 cell)
-        {
-            var right = ClearanceAt(slot, cell + new int2(1, 0));
-            var up = ClearanceAt(slot, cell + new int2(0, 1));
-            return math.min(math.min(right, up), ClearanceAt(slot, cell + 1));
-        }
-
-        /// <summary>A layer's <see cref="Clearance"/> at a cell; zero off the grid.</summary>
-        public readonly int ClearanceAt(int slot, int2 cell) =>
-            InBounds(cell) ? Clearance[slot * Cells.Length + Index(cell)] : 0;
-
         internal readonly bool IsOpen(int2 cell, NavSurface surfaces) =>
             InBounds(cell) && ((NavSurface)Cells[Index(cell)] & surfaces) != 0;
-
-        /// <summary>One layer per index; each writes only its own slice of the clearance array.</summary>
-        [BurstCompile]
-        private struct ClearanceJob : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<byte> Cells;
-            [NativeDisableParallelForRestriction] public NativeArray<byte> Clearance;
-            public int2 Size;
-
-            // A grid of just the fields clearance reads keeps the rest out of the job.
-            public void Execute(int slot) =>
-                new NavGrid { Cells = Cells, Clearance = Clearance, Size = Size }.BuildClearance(slot);
-        }
     }
 }

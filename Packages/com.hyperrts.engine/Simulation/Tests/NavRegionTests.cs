@@ -13,6 +13,7 @@ namespace HyperRTS.Simulation.Tests
     {
         private static readonly NavAgent Infantry = new() { Radius = 0.5f };
         private static readonly NavAgent Tank = new() { Radius = 1.85f };
+        private static readonly NavAgent Ship = new() { Radius = 0.5f, Layer = NavLayer.Naval };
 
         private TestWorld _world;
 
@@ -21,6 +22,7 @@ namespace HyperRTS.Simulation.Tests
         {
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
+            _world.AddAgentPrefabs(Infantry, Tank, Ship);
         }
 
         [TearDown]
@@ -39,8 +41,7 @@ namespace HyperRTS.Simulation.Tests
             var grid = _world.Grid();
             Assert.IsTrue(grid.IsReachable(Infantry, float3.zero, new float3(30f, 0f, -20f)), "same bank");
             Assert.IsFalse(grid.IsReachable(Infantry, float3.zero, new float3(0f, 0f, 20f)), "across the river");
-            var ship = new NavAgent { Radius = 0.5f, Layer = NavLayer.Naval };
-            Assert.IsTrue(grid.IsReachable(ship, new float3(-50f, 0f, 10f), new float3(50f, 0f, 10f)), "along it");
+            Assert.IsTrue(grid.IsReachable(Ship, new float3(-50f, 0f, 10f), new float3(50f, 0f, 10f)), "along it");
 
             _world.SpawnNavArea(new float3(0f, 0f, 10f), new float2(6f, 12f), NavAreaKind.Deck);
             _world.Tick();

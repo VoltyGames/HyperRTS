@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Maps.Nav
 
         public float Length { get; }
 
-        /// <summary>Cells the search expanded; the runtime gives up past <c>NavGrid.MaxSearchExpansions</c>.</summary>
+        /// <summary>Cells the search expanded.</summary>
         public int Expansions { get; }
     }
 }

@@ -15,8 +15,7 @@ namespace HyperRTS.Editor.Maps.Nav
             int max)
         {
             // Corridors close cells of a copy, so the map's own grid stays as built.
-            var grid = nav.Grid;
-            grid.Cells = new NativeArray<byte>(nav.Grid.Cells, Allocator.Persistent);
+            var grid = nav.Copy();
             var paths = new List<MapPath>();
             var corridor = (int)math.ceil(corridorWidth * 0.5f / grid.CellSize);
             var keepOpen = baseRadius / grid.CellSize;
@@ -24,7 +23,8 @@ namespace HyperRTS.Editor.Maps.Nav
             {
                 while (paths.Count < max)
                 {
-                    var path = MapPathfinder.Find(ref nav.Search, grid, start, goal);
+                    var access = new NavAccess(grid, MapNavGrid.ToolsClass, 0f);
+                    var path = MapPathfinder.Find(ref nav.Search, access, start, goal);
                     if (path == null)
                     {
                         break;
@@ -38,11 +38,13 @@ namespace HyperRTS.Editor.Maps.Nav
                             Close(grid, cell, corridor);
                         }
                     }
+
+                    grid.BuildAccess();
                 }
             }
             finally
             {
-                grid.Cells.Dispose();
+                grid.Dispose();
             }
 
             return paths;
@@ -52,11 +54,12 @@ namespace HyperRTS.Editor.Maps.Nav
         public static bool[] Flood(MapNavGrid nav, int2 start)
         {
             var grid = nav.Grid;
-            var region = grid.Region(NavLayer.Ground, 1, start);
+            var access = nav.Access;
+            var region = access.Region(start);
             var reached = new bool[grid.Cells.Length];
             for (var i = 0; i < reached.Length; i++)
             {
-                reached[i] = region != 0 && grid.Region(NavLayer.Ground, 1, grid.Cell(i)) == region;
+                reached[i] = region != 0 && access.Region(grid.Cell(i)) == region;
             }
 
             reached[grid.Index(start)] = true;

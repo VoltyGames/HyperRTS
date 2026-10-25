@@ -114,13 +114,21 @@ namespace HyperRTS.Simulation.Transport
             math.sincos(slot * GoldenAngle, out var sin, out var cos);
             var position = center + new float3(cos, 0f, sin) * distance;
             var layer = NavAgent.GetLayer(_agents, unit);
-            if (grid.TryFindNearestWalkable(grid.WorldToCell(position), WalkableSearchRings, out var cell, layer))
+            if (TryFindStand(unit, grid, position, out var cell))
             {
                 position.xz = grid.CellCenter(cell).xz;
             }
 
             position.y = grid.HeightFor(position, layer);
             return position;
+        }
+
+        // A unit whose class isn't registered yet, or an aircraft, gets out where it is.
+        private readonly bool TryFindStand(Entity unit, in NavGrid grid, float3 position, out int2 cell)
+        {
+            cell = default;
+            return _agents.TryGetComponent(unit, out var agent) && agent.TryAccess(grid, out var access) &&
+                   access.TryFindNearest(grid.WorldToCell(position), WalkableSearchRings, out cell);
         }
     }
 }

@@ -146,13 +146,16 @@ namespace HyperRTS.Simulation.Tests
         /// enemies; <see cref="AIHintsTestKit.CreateHints"/> replaces them. Builds the nav grid, as a loaded map has
         /// before anyone commands.
         /// </summary>
-        public void CreateMatch(params byte[] teams)
+        public void CreateMatch(params byte[] teams) => CreateMatch(teams, 200f);
+
+        /// <summary><see cref="CreateMatch(byte[])"/> on a square map <paramref name="size"/> metres across, centred on 0.</summary>
+        public void CreateMatch(byte[] teams, float size)
         {
             var match = EntityManager.CreateEntity();
             EntityManager.AddComponentData(match, new MapSettings
             {
-                Min = new float2(-100f, -100f),
-                Size = new float2(200f, 200f),
+                Min = new float2(size * -0.5f),
+                Size = new float2(size),
                 NavCellSize = 1f,
                 FogCellSize = 2f,
                 FogOfWar = true,
@@ -239,8 +242,20 @@ namespace HyperRTS.Simulation.Tests
             float maxHealth = 100f, string name = "Unit")
         {
             var unit = CreateGameEntity(faction, position, maxHealth, name, out var writer);
-            UnitAuthoring.Add(ref writer, speed, new NavAgent { Radius = radius });
+            var agent = new NavAgent { Radius = radius };
+            agent.WallMargin = agent.WallMarginFor(0f);
+            UnitAuthoring.Add(ref writer, speed, agent);
             return unit;
+        }
+
+        /// <summary>Prefabs of these agents, so their movement classes register as a scene's unit prefabs do.</summary>
+        public void AddAgentPrefabs(params NavAgent[] agents)
+        {
+            foreach (var agent in agents)
+            {
+                var prefab = EntityManager.CreateEntity(typeof(Prefab));
+                EntityManager.AddComponentData(prefab, agent);
+            }
         }
 
         public Entity SpawnBuilding(byte faction, float3 position, float2 footprint, bool complete = true,

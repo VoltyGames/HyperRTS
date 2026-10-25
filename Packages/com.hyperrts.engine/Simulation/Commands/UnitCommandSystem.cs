@@ -220,15 +220,20 @@ namespace HyperRTS.Simulation.Commands
                 return slot;
             }
 
-            var access = agent.Access(grid);
-            var anchor = access.AnchorAt(slot);
-            if (!access.TryFindNearest(anchor, GridPathfinder.NearestSearchRadius, out var found) || found.Equals(anchor))
+            // A unit spawned this frame has no class until the field system runs; the pathfinder fits it then.
+            if (!agent.TryAccess(grid, out var access))
+            {
+                return slot;
+            }
+
+            var cell = grid.WorldToCell(slot);
+            if (!access.TryFindNearest(cell, GridPathfinder.NearestSearchRadius, out var found) || found.Equals(cell))
             {
                 return slot;
             }
 
             // Ground the unit can't reach is left to the pathfinder, which snaps the goal into the unit's region.
-            var center = access.AnchorCenter(found);
+            var center = grid.CellCenter(found);
             var fitted = new float3(center.x, slot.y, center.z);
             return grid.IsReachable(agent, _transforms[unit].Position, fitted) ? fitted : slot;
         }

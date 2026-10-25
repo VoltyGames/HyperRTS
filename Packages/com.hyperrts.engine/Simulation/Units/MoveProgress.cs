@@ -5,14 +5,15 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// How a unit's move gets on: progress is the path left shrinking or the hull turning. Without it the unit
-    /// re-plans the way to its next corner, backing off from <see cref="RepairSeconds"/> to
-    /// <see cref="MaxRepairSeconds"/>, and gives up after <see cref="GiveUpSeconds"/> only near its path's end.
+    /// How a unit's move gets on: progress is the path left shrinking or the hull turning. One check: no progress for
+    /// <see cref="ReplanSeconds"/> plans the whole path again, backing off to <see cref="MaxReplanSeconds"/>, and
+    /// after <see cref="GiveUpSeconds"/> near its path's end the unit gives up. Farther out a jam is traffic that
+    /// clears. A path still pending isn't measured.
     /// </summary>
     public struct MoveProgress : IComponentData
     {
-        public const float RepairSeconds = 0.75f;
-        public const float MaxRepairSeconds = 6f;
+        public const float ReplanSeconds = 1f;
+        public const float MaxReplanSeconds = 4f;
         public const float GiveUpSeconds = 3f;
 
         // Stuck within this many radii of the path's end, the goal is taken; farther out it is traffic that clears.
@@ -30,81 +31,96 @@ namespace HyperRTS.Simulation.Units
         /// <summary>Seconds since the last progress.</summary>
         public float Stalled;
 
-        /// <summary>Value of <see cref="Stalled"/> at which the next repair is due.</summary>
-        public float NextRepair;
+        /// <summary>Value of <see cref="Stalled"/> at which the next replan is due.</summary>
+        public float NextReplan;
 
-        /// <summary>Wait before the repair after next; doubles with each repair up to the cap.</summary>
-        public float Backoff;
-
-        /// <summary>Path status the measure was taken on; a new path starts a new baseline.</summary>
-        public PathStatus Seen;
+        /// <summary>A replan was asked for, so the next path is measured afresh while the clock runs on.</summary>
+        public bool Replanned;
 
         public bool IsTracking;
 
-        /// <summary>Measures the path left and asks for a repair when due; true once the unit gives up.</summary>
+        /// <summary>Measures the path left and asks for a replan when due; true once the unit gives up.</summary>
         public bool HasGivenUp(float2 position, float2 facing, in NavAgent agent, float3 goal,
             DynamicBuffer<PathWaypoint> waypoints, ref PathState path, float deltaTime)
         {
+            if (path.Status != PathStatus.Ready)
+            {
+                return false;
+            }
+
             var remaining = waypoints.Length > 0
                 ? math.distance(position, waypoints[0].Position.xz) + path.LengthPastCorner
                 : math.distance(position, goal.xz);
             var margin = NavTolerances.Arrive(agent.Radius);
-            if (Track(remaining, facing, path.Status, margin, deltaTime) && waypoints.Length > 0)
+            if (Track(remaining, facing, margin, deltaTime))
             {
                 path.Status = PathStatus.None;
-                path.Repair = true;
+                Replanned = true;
             }
 
             return Stalled >= GiveUpSeconds && remaining <= agent.Radius * NearEndRadii + margin;
         }
 
-        /// <summary>Records this frame's path left; true when the way to the next corner is due a repair.</summary>
-        private bool Track(float remaining, float2 facing, PathStatus status, float margin, float deltaTime)
+        /// <summary>Records this frame's path left; true when a replan is due.</summary>
+        private bool Track(float remaining, float2 facing, float margin, float deltaTime)
         {
             if (!IsTracking)
             {
                 IsTracking = true;
-                Restart(remaining, facing, status);
+                Restart(remaining, facing);
                 return false;
             }
 
-            // A new path is measured afresh, but the clock runs on so a unit that keeps re-planning still gives up.
-            if (status != Seen)
+            // A replanned path is measured afresh, but the clock runs on so endless replans still give up.
+            if (Replanned)
             {
-                Rebase(remaining, facing, status);
+                Replanned = false;
+                Best = remaining;
+                Facing = facing;
                 return false;
             }
 
             if (remaining < Best - margin || math.dot(facing, Facing) < TurnedCos)
             {
-                Restart(remaining, facing, status);
+                Restart(remaining, facing);
                 return false;
             }
 
             Stalled += deltaTime;
-            if (Stalled < NextRepair)
+            if (Stalled < NextReplan)
             {
                 return false;
             }
 
-            NextRepair += Backoff;
-            Backoff = math.min(Backoff * 2f, MaxRepairSeconds);
+            NextReplan += math.min(NextReplan, MaxReplanSeconds);
             return true;
         }
 
-        private void Restart(float remaining, float2 facing, PathStatus status)
-        {
-            Rebase(remaining, facing, status);
-            Stalled = 0f;
-            NextRepair = RepairSeconds;
-            Backoff = RepairSeconds * 2f;
-        }
-
-        private void Rebase(float remaining, float2 facing, PathStatus status)
+        private void Restart(float remaining, float2 facing)
         {
             Best = remaining;
             Facing = facing;
-            Seen = status;
+            Stalled = 0f;
+            NextReplan = ReplanSeconds;
+        }
+
+        /// <summary>A move that just ended arrived or stalled; the next one measures progress afresh.</summary>
+        public void Report(bool wasMoving, bool isMoving, bool stalled, ref Arrival arrival,
+            EnabledRefRW<Arrival> arrived)
+        {
+            if (isMoving)
+            {
+                arrived.ValueRW = false;
+                return;
+            }
+
+            IsTracking = false;
+            Replanned = false;
+            if (wasMoving)
+            {
+                arrived.ValueRW = true;
+                arrival.Stalled = stalled;
+            }
         }
     }
 }

@@ -25,6 +25,12 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public byte SceneryCrushLimit;
 
+        /// <summary>
+        /// Distance from walls inside which its paths cost more, so they keep room to turn and pass (see
+        /// <see cref="WallMarginFor"/>); 0 lets them hug walls.
+        /// </summary>
+        public float WallMargin;
+
         /// <summary>Half the capsule's core segment: zero for round footprints.</summary>
         public readonly float HalfSegment => HalfSegmentFor(Radius, HullLength);
 
@@ -38,8 +44,28 @@ namespace HyperRTS.Simulation.Navigation
         public readonly float2 SlotSpacing =>
             new float2(Radius * 2f, HalfLength * 2f) * 1.25f + Spacing;
 
-        /// <summary>What this agent may enter on the grid.</summary>
-        public readonly NavAccess Access(in NavGrid grid) => new(grid, Layer, Radius, SceneryCrushLimit);
+        /// <summary>Who it is to the map: its layer, crush limit and radius.</summary>
+        public readonly MovementClass Class => new(Layer, SceneryCrushLimit, Radius);
+
+        /// <summary>What this agent may enter on the grid; its class must be registered (<see cref="NavFieldSystem"/>).</summary>
+        public readonly NavAccess Access(in NavGrid grid) => new(grid, Class, WallMargin);
+
+        /// <summary>
+        /// <see cref="Access"/> once its class is registered, which a unit spawned this frame may not be until
+        /// <see cref="NavFieldSystem"/> runs.
+        /// </summary>
+        public readonly bool TryAccess(in NavGrid grid, out NavAccess access)
+        {
+            var registered = grid.Classes.IsCreated && grid.Classes.Find(Class) >= 0;
+            access = registered ? Access(grid) : default;
+            return registered;
+        }
+
+        /// <summary>
+        /// The wall margin its size and handling need: the radius, 2 m of room, and a quarter each of the hull's half
+        /// segment and the turn radius, so long and wide-turning hulls keep further off.
+        /// </summary>
+        public readonly float WallMarginFor(float turnRadius) => Radius + 2f + 0.25f * HalfSegment + 0.25f * turnRadius;
 
         /// <summary>The core segment's half on the XZ plane, along the unit's facing.</summary>
         public readonly float2 SegmentAxis(quaternion rotation) => SegmentAxis(rotation, Radius, HullLength);

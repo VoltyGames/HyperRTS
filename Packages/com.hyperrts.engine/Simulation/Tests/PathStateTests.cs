@@ -8,7 +8,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>The cached path length and hidden corner in <see cref="PathState"/>, instant handling and kinds.</summary>
+    /// <summary>The cached path length in <see cref="PathState"/>, instant handling and kinds.</summary>
     public class PathStateTests
     {
         private TestWorld _world;
@@ -45,21 +45,6 @@ namespace HyperRTS.Simulation.Tests
 
             path.ClearWaypoints(waypoints);
             Assert.AreEqual(0f, path.LengthPastCorner);
-        }
-
-        [Test]
-        public void HiddenCorner_IsForgotten_InAnotherCell_OnANewGrid_OrPastTheCorner()
-        {
-            var waypoints = Path(new float2(0f, 0f), new float2(3f, 0f), new float2(3f, 4f));
-            var path = new PathState { GridVersion = 2 };
-            path.Hide(new int2(4, 5));
-
-            Assert.IsTrue(path.IsHiddenFrom(new int2(4, 5), 2));
-            Assert.IsFalse(path.IsHiddenFrom(new int2(4, 6), 2), "another cell");
-            Assert.IsFalse(path.IsHiddenFrom(new int2(4, 5), 3), "the grid changed");
-
-            path.PassCorner(waypoints);
-            Assert.IsFalse(path.IsHiddenFrom(new int2(4, 5), 2), "a new corner after next");
         }
 
         [Test]

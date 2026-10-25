@@ -6,23 +6,23 @@ using Unity.Mathematics;
 namespace HyperRTS.Editor.Maps.Nav
 {
     /// <summary>
-    /// The runtime's A* (<see cref="GridAStar"/>) without its budget, over ground one cell wide, so map metrics such
-    /// as rush times and attack paths match in-game pathing.
+    /// The runtime's A* (<see cref="GridAStar"/>) as <see cref="MapNavGrid.ToolsClass"/>, with no wall margin, so map
+    /// metrics such as rush times and attack paths match in-game pathing by length.
     /// </summary>
     public static class MapPathfinder
     {
         /// <summary>The shortest walkable path, or null when the goal can't be reached.</summary>
-        public static MapPath Find(MapNavGrid nav, int2 start, int2 goal) => Find(ref nav.Search, nav.Grid, start, goal);
+        public static MapPath Find(MapNavGrid nav, int2 start, int2 goal) =>
+            Find(ref nav.Search, nav.Access, start, goal);
 
         /// <summary><see cref="Find(MapNavGrid, int2, int2)"/> on a grid with its own cells, such as corridors closed.</summary>
-        internal static MapPath Find(ref GridAStar search, in NavGrid grid, int2 start, int2 goal)
+        internal static MapPath Find(ref GridAStar search, in NavAccess access, int2 start, int2 goal)
         {
-            var access = NavAccess.Surface(grid, NavLayer.Ground);
             var cells = new NativeList<int2>(256, Allocator.Persistent);
             try
             {
-                var reached = search.Search(access, start, goal, int.MaxValue, cells, out var expansions);
-                return reached ? Build(grid, cells, expansions) : null;
+                var reached = search.Search(access, start, goal, cells, out var expansions);
+                return reached ? Build(access.Grid, cells, expansions) : null;
             }
             finally
             {

@@ -7,9 +7,12 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests
 {
-    /// <summary>The clearance field, wide units keeping out of narrow gaps, and capsules held off walls.</summary>
+    /// <summary>The distance field, wide units keeping out of narrow gaps, and capsules held off walls.</summary>
     public class NavClearanceTests
     {
+        private static readonly NavAgent Infantry = new() { Radius = 0.5f };
+        private static readonly NavAgent Wide = new() { Radius = 1f };
+
         private TestWorld _world;
 
         [SetUp]
@@ -17,6 +20,7 @@ namespace HyperRTS.Simulation.Tests
         {
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
+            _world.AddAgentPrefabs(Infantry, Wide);
         }
 
         [TearDown]
@@ -31,29 +35,31 @@ namespace HyperRTS.Simulation.Tests
             return obstacle;
         }
 
-        private int GroundClearance(float x, float z)
+        private float GroundField(float x, float z)
         {
             var grid = _world.Grid();
-            return grid.ClearanceAt((int)NavLayer.Ground, grid.WorldToCell(new float3(x, 0f, z)));
+            return Infantry.Access(grid).Distance(grid.WorldToCell(new float3(x, 0f, z)));
         }
 
         [Test]
-        public void Clearance_CountsTheOpenSquareAboveEachCell_AndFollowsObstacles()
+        public void Field_IsNegativeInsideWalls_AboutZeroOnTheirEdge_AndFollowsObstacles()
         {
             var obstacle = SpawnObstacle(new float3(0.5f, 0f, 0.5f), new float2(1f, 1f));
             _world.Tick();
 
-            Assert.AreEqual(0, GroundClearance(0.5f, 0.5f), "the closed cell");
-            Assert.AreEqual(1, GroundClearance(-0.5f, -0.5f), "diagonally below it");
-            Assert.AreEqual(2, GroundClearance(-1.5f, -1.5f));
-            Assert.AreEqual(3, GroundClearance(-2.5f, -1.5f), "its 3 by 3 square stops a column short");
-            Assert.AreEqual(6, GroundClearance(-5.5f, -0.5f), "a wider square would reach the obstacle");
+            Assert.AreEqual(-0.5f, GroundField(0.5f, 0.5f), 1e-4f, "the closed cell");
+            Assert.AreEqual(0.5f, GroundField(-0.5f, 0.5f), 1e-4f, "beside it");
+            Assert.AreEqual(math.SQRT2 - 0.5f, GroundField(-0.5f, -0.5f), 1e-4f, "diagonally below it");
+            Assert.AreEqual(2.5f, GroundField(-2.5f, 0.5f), 1e-4f, "three cells out");
+            var access = Infantry.Access(_world.Grid());
+            Assert.AreEqual(0f, access.Distance(new float2(0f, 0.5f)), 1e-4f, "on its edge");
+            MathAssert.Near(new float2(-1f, 0f), access.Normal(new float2(-0.2f, 0.5f)));
 
             _world.EntityManager.DestroyEntity(obstacle);
             _world.Tick();
 
-            Assert.Greater(GroundClearance(0.5f, 0.5f), 50, "reopened once the obstacle is gone");
-            Assert.Greater(GroundClearance(-0.5f, -0.5f), 50);
+            Assert.AreEqual(NavField.Cap, GroundField(0.5f, 0.5f), "reopened once the obstacle is gone");
+            Assert.AreEqual(NavField.Cap, GroundField(-0.5f, -0.5f));
         }
 
         [Test]
@@ -97,7 +103,7 @@ namespace HyperRTS.Simulation.Tests
             var capsule = new NavCapsule(access, new float2(1.5f, 0f));
             var from = new float2(-0.5f, 0.5f);
 
-            Assert.AreEqual(from, capsule.Constrain(from, new float2(0.2f, 0.5f)),
+            Assert.Less(math.distance(from, capsule.Constrain(from, new float2(0.2f, 0.5f))), 1e-3f,
                 "the centre is open, but the nose would enter the wall");
             var slid = capsule.Constrain(from, new float2(0.2f, 1.5f));
             Assert.Less(math.distance(new float2(-0.5f, 1.5f), slid), 1e-3f, "a slanted move slides along it");
@@ -114,7 +120,7 @@ namespace HyperRTS.Simulation.Tests
                 LocalTransform.FromPositionRotation(float3.zero, quaternion.RotateY(math.PI * 0.25f)));
             _world.Tick();
             // Two cells wide, so it rides the step corners rather than sitting in the notches between them.
-            var capsule = new NavCapsule(new NavAgent { Radius = 1f }.Access(_world.Grid()), float2.zero);
+            var capsule = new NavCapsule(Wide.Access(_world.Grid()), float2.zero);
             var along = math.normalize(new float2(1f, 1f));
             var move = 0.2f * new float2(math.cos(math.radians(20f)), math.sin(math.radians(20f)));
 
@@ -132,56 +138,6 @@ namespace HyperRTS.Simulation.Tests
             Assert.Greater(math.dot(position, along) - start, ideal * 0.9f, $"slid along it, ending at {position}");
             Assert.Less(position.x, position.y, "on its own side");
             Assert.Less(deepest, 0.05f, "and never sank into it");
-        }
-
-        [Test]
-        public void CutsCornerBetweenOpen_MatchesTheFullSideSquareCheck()
-        {
-            SpawnObstacle(new float3(0.5f, 0f, 0.5f), new float2(1f, 1f));
-            SpawnObstacle(new float3(3f, 0f, -2.5f), new float2(2f, 1f));
-            _world.Tick();
-            var grid = _world.Grid();
-            var center = grid.WorldToCell(float3.zero);
-            grid.Scenery[grid.Index(center + new int2(-3, 2))] = 5;
-
-            var cuts = 0;
-            for (var size = 1; size <= 3; size++)
-            {
-                var access = new NavAccess(grid, NavLayer.Ground, size * grid.CellSize * 0.5f, 2);
-                Assert.AreEqual(size, access.Footprint);
-                for (var y = -6; y <= 6; y++)
-                {
-                    for (var x = -6; x <= 6; x++)
-                    {
-                        cuts += CompareDiagonals(access, center + new int2(x, y));
-                    }
-                }
-            }
-
-            grid.Scenery[grid.Index(center + new int2(-3, 2))] = 0;
-            Assert.Greater(cuts, 0, "some steps near the obstacles cut a corner");
-        }
-
-        private static int CompareDiagonals(in NavAccess access, int2 from)
-        {
-            var cuts = 0;
-            for (var dy = -1; dy <= 1; dy += 2)
-            {
-                for (var dx = -1; dx <= 1; dx += 2)
-                {
-                    var to = from + new int2(dx, dy);
-                    if (!access.IsAnchorOpen(from) || !access.IsAnchorOpen(to))
-                    {
-                        continue;
-                    }
-
-                    var expected = access.CutsCorner(from, to, access.Footprint);
-                    Assert.AreEqual(expected, access.CutsCornerBetweenOpen(from, to), $"{from} to {to}");
-                    cuts += expected ? 1 : 0;
-                }
-            }
-
-            return cuts;
         }
     }
 }

@@ -110,6 +110,8 @@ namespace HyperRTS.Simulation.Tests
                 units[i] = _world.SpawnUnit(1, new float3(-10f, 0f, i * 1.5f));
             }
 
+            // A frame first registers their movement class, as a prefab's is before any unit spawns.
+            _world.Tick();
             Move(goal, units);
             _world.Tick();
 

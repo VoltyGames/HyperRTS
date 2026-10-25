@@ -1,5 +1,4 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Transport;
@@ -12,15 +11,13 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// Follows <see cref="PathWaypoint"/>s toward an enabled <see cref="MoveDestination"/> and, when the move ends by
-    /// itself, disables it and enables <see cref="Arrival"/>. <see cref="MoveProgress"/> repairs the path and gives
-    /// up when the unit stops getting on. A mover steers round its neighbours (<see cref="CrowdVisitor"/>), units
-    /// of the same layer are pushed their spacing apart, and no footprint enters cells closed to the agent
-    /// (<see cref="NavCapsule.Constrain"/>), wrecks' cells included. Every unit drives with its
-    /// <see cref="Locomotion"/>, or <see cref="Locomotion.Instant"/> without one, avoidance included.
-    /// Steers on XZ, and Y follows the layer's surface on the <see cref="NavGrid"/> (ground, deck or water). Aircraft
-    /// ignore the grid, climb to their <see cref="Flight"/> altitude (land while <see cref="Docked"/>) and, if they
-    /// can't hover, circle when idle.
+    /// Moves ground and naval units along their <see cref="PathWaypoint"/>s toward an enabled
+    /// <see cref="MoveDestination"/> and, when the move ends by itself, disables it and enables <see cref="Arrival"/>.
+    /// Each frame reads as one pipeline: follow the path, drive and steer round neighbours (<see cref="CrowdVisitor"/>),
+    /// keep the footprint out of walls (<see cref="NavCapsule.Constrain"/>, wrecks' cells included), then measure
+    /// progress (<see cref="MoveProgress"/>). While its path is pending a unit brakes and turns to its goal. Every
+    /// unit drives with its <see cref="Locomotion"/>, or <see cref="Locomotion.Instant"/> without one, and Y follows
+    /// its layer's surface on the <see cref="NavGrid"/> (ground, deck or water). Aircraft fly in their own system.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
@@ -28,14 +25,12 @@ namespace HyperRTS.Simulation.Units
     [UpdateBefore(typeof(CargoFollowSystem))]
     public partial struct MovementSystem : ISystem
     {
-        private ComponentLookup<Flight> _flights;
         private GivingWay _givingWay;
         private ComponentLookup<Locomotion> _locomotions;
         private ComponentLookup<LocomotionState> _locomotionStates;
 
         public void OnCreate(ref SystemState state)
         {
-            _flights = state.GetComponentLookup<Flight>(true);
             _givingWay = new GivingWay(ref state);
             _locomotions = state.GetComponentLookup<Locomotion>(true);
             _locomotionStates = state.GetComponentLookup<LocomotionState>();
@@ -46,7 +41,6 @@ namespace HyperRTS.Simulation.Units
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _flights.Update(ref state);
             _givingWay.Update(ref state);
             _locomotions.Update(ref state);
             _locomotionStates.Update(ref state);
@@ -62,7 +56,6 @@ namespace HyperRTS.Simulation.Units
             {
                 Index = index,
                 Grid = grid,
-                Flights = _flights,
                 GivingWay = _givingWay,
                 Locomotions = _locomotions,
                 States = _locomotionStates,
@@ -77,16 +70,12 @@ namespace HyperRTS.Simulation.Units
         {
             [ReadOnly] public SpatialIndex Index;
             [ReadOnly] public NavGrid Grid;
-            [ReadOnly] public ComponentLookup<Flight> Flights;
             public GivingWay GivingWay;
             [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
 
             // Each unit writes only its own state.
             [NativeDisableParallelForRestriction] public ComponentLookup<LocomotionState> States;
             public float DeltaTime;
-
-            // Squared change in velocity below which avoidance leaves the planned step alone.
-            private const float SteerThreshold = 1e-4f;
 
             // `ref`, not `in`: each must share one writable handle with its EnabledRefRW.
             private void Execute(Entity entity, ref LocalTransform transform, in MovementSpeed speed, in NavAgent agent,
@@ -95,6 +84,12 @@ namespace HyperRTS.Simulation.Units
                 ref Arrival arrival, EnabledRefRW<Arrival> arrived, ref Velocity velocity, ref FacingGoal aim,
                 EnabledRefRW<FacingGoal> aiming)
             {
+                // Aircraft fly in FlightMovementSystem, which this module can't name without a cycle.
+                if (agent.Layer == NavLayer.Air)
+                {
+                    return;
+                }
+
                 var maxStep = speed.Value * DeltaTime;
                 var heading = float2.zero;
                 var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
@@ -108,53 +103,35 @@ namespace HyperRTS.Simulation.Units
                 var crowd = new CrowdVisitor(entity, from, axis, agent, faction.Value, wasMoving, destination,
                     GivingWay);
                 Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
-                var step = Plan(entity, transform, facing, speed.Value, agent, destination.Value, moving, ref path,
+                var step = Plan(transform.Position, facing, speed.Value, agent, destination.Value, moving, ref path,
                     waypoints, locomotion, ref drive, ref heading, crowd, velocity.Value);
-                // A parked unit turns its hull to a hull-fixed weapon's target at its own turn rate.
-                if (!moving.ValueRO && aiming.ValueRO && math.all(heading == 0f))
-                {
-                    heading = locomotion.TurnToward(facing, aim.Direction, DeltaTime);
-                }
-
-                aiming.ValueRW = false;
-
-                var flying = agent.Layer == NavLayer.Air;
-                var wanted = from + step + Separation(crowd.Push, maxStep);
-                var stalled = false;
-                if (flying)
-                {
-                    Fly(entity, ref transform, wanted);
-                }
-                else
-                {
-                    Walk(ref transform, from, wanted, agent, axis);
-                    stalled = moving.ValueRO && !crowd.ReachedGroup &&
-                              progress.HasGivenUp(transform.Position.xz, facing, agent, destination.Value, waypoints, ref path,
-                                  DeltaTime);
-                }
-
+                heading = locomotion.Aim(heading, facing, !moving.ValueRO, aim, aiming, DeltaTime);
+                var wanted = from + step + crowd.PushWithin(maxStep);
+                Walk(ref transform, from, wanted, agent, axis);
+                var stalled = moving.ValueRO && !crowd.ReachedGroup &&
+                              progress.HasGivenUp(transform.Position.xz, facing, agent, destination.Value, waypoints,
+                                  ref path, DeltaTime);
                 if (moving.ValueRO && (crowd.ReachedGroup || stalled))
                 {
-                    Halt(moving, ref path, waypoints);
+                    path.Halt(moving, waypoints);
                 }
 
-                Report(wasMoving, moving.ValueRO, stalled, ref arrival, arrived, ref progress);
+                progress.Report(wasMoving, moving.ValueRO, stalled, ref arrival, arrived);
                 if (remembers)
                 {
                     drive.Hit(transform.Position.xz - from, step, !transform.Position.xz.Equals(wanted));
                     States[entity] = drive;
                 }
 
-                Face(ref transform, agent, axis, heading, flying);
+                Face(ref transform, agent, axis, heading);
                 velocity.Value = (transform.Position.xz - from) / DeltaTime;
             }
 
-            // A long hull mustn't swing an end into a closed cell; it moves on unturned.
-            private readonly void Face(ref LocalTransform transform, in NavAgent agent, float2 axis, float2 heading,
-                bool flying)
+            // A long hull mustn't swing an end into a wall; it moves on unturned.
+            private readonly void Face(ref LocalTransform transform, in NavAgent agent, float2 axis, float2 heading)
             {
                 var turned = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
-                if (math.any(heading != 0f) && (flying || agent.CanTurn(Grid, transform.Position.xz, axis, turned)))
+                if (math.any(heading != 0f) && agent.CanTurn(Grid, transform.Position.xz, axis, turned))
                 {
                     transform.Rotation = turned;
                 }
@@ -167,113 +144,33 @@ namespace HyperRTS.Simulation.Units
                 transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
             }
 
-            private static void Halt(EnabledRefRW<MoveDestination> moving, ref PathState path,
-                DynamicBuffer<PathWaypoint> waypoints)
-            {
-                moving.ValueRW = false;
-                path.Status = PathStatus.None;
-                path.ClearWaypoints(waypoints);
-            }
-
-            /// <summary>A move that just ended arrived or stalled; the next one measures progress afresh.</summary>
-            private static void Report(bool wasMoving, bool isMoving, bool stalled, ref Arrival arrival,
-                EnabledRefRW<Arrival> arrived, ref MoveProgress progress)
-            {
-                if (isMoving)
-                {
-                    arrived.ValueRW = false;
-                    return;
-                }
-
-                progress.IsTracking = false;
-                if (wasMoving)
-                {
-                    arrived.ValueRW = true;
-                    arrival.Stalled = stalled;
-                }
-            }
-
-            /// <summary>Aircraft go wherever they steer and climb toward their altitude over the surface below.</summary>
-            private readonly void Fly(Entity entity, ref LocalTransform transform, float2 wanted)
-            {
-                transform.Position.xz = wanted;
-                var surface = Grid.SurfaceHeight(transform.Position);
-                transform.Position.y = Flights.TryGetComponent(entity, out var flight)
-                    ? FlightMath.Climb(transform.Position.y, surface, flight, IsLanded(entity), DeltaTime)
-                    : surface;
-            }
-
-            /// <summary>An idle aircraft that can't hover keeps flying a circle; one that can stays put.</summary>
-            private readonly float2 Loiter(Entity entity, quaternion rotation, float maxStep, ref float2 heading)
-            {
-                if (!Flights.TryGetComponent(entity, out var flight) || flight.LoiterRadius <= 0f || IsLanded(entity))
-                {
-                    return float2.zero;
-                }
-
-                heading = FlightMath.Loiter(rotation, maxStep, flight.LoiterRadius);
-                return heading * maxStep;
-            }
-
-            private readonly bool IsLanded(Entity entity) => GivingWay.IsLanded(entity);
-
-            private static float2 Separation(float2 push, float maxStep)
-            {
-                var length = math.length(push);
-                return length > maxStep ? push * (maxStep / length) : push;
-            }
-
-            /// <summary>This frame's step and facing before the crowd and walls have their say.</summary>
-            private readonly float2 Plan(Entity entity, in LocalTransform transform, float2 facing, float topSpeed,
-                in NavAgent agent,
-                float3 goal, EnabledRefRW<MoveDestination> moving, ref PathState path,
-                DynamicBuffer<PathWaypoint> waypoints, in Locomotion locomotion, ref LocomotionState drive,
-                ref float2 heading, in CrowdVisitor crowd, float2 velocity)
+            /// <summary>This frame's step and facing before the crowd's push and the walls have their say.</summary>
+            private readonly float2 Plan(float3 position, float2 facing, float topSpeed, in NavAgent agent, float3 goal,
+                EnabledRefRW<MoveDestination> moving, ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
+                in Locomotion locomotion, ref LocomotionState drive, ref float2 heading, in CrowdVisitor crowd,
+                float2 velocity)
             {
                 var maxStep = topSpeed * DeltaTime;
                 var leg = default(PathLeg);
-                if (moving.ValueRO && !Follow(transform.Position, facing, agent, maxStep, locomotion, drive.Speed, goal,
+                if (moving.ValueRO && !Follow(position, facing, agent, maxStep, locomotion, drive.Speed, goal,
                         ref path, waypoints, out leg))
                 {
-                    Halt(moving, ref path, waypoints);
+                    path.Halt(moving, waypoints);
                 }
 
-                if (moving.ValueRO)
+                if (!moving.ValueRO)
                 {
-                    var start = drive;
-                    heading = facing;
-                    var step = locomotion.Drive(ref drive, transform.Position.xz, ref heading, leg, topSpeed,
-                        agent.Radius, DeltaTime);
-                    if (!Avoid(crowd, velocity, step, topSpeed, drive, out var chosen))
-                    {
-                        return step;
-                    }
-
-                    drive = start;
-                    heading = facing;
-                    return locomotion.Steer(ref drive, transform.Position.xz, ref heading, leg, chosen, topSpeed,
-                        agent.Radius, DeltaTime);
+                    return locomotion.BrakeToStop(ref drive, facing, DeltaTime);
                 }
 
-                return agent.Layer == NavLayer.Air
-                    ? Loiter(entity, transform.Rotation, maxStep, ref heading)
-                    : locomotion.BrakeToStop(ref drive, facing, DeltaTime);
-            }
-
-            /// <summary>The velocity nearest the planned step that keeps clear of neighbours, when it differs.</summary>
-            private readonly bool Avoid(in CrowdVisitor crowd, float2 velocity, float2 step, float topSpeed,
-                in LocomotionState drive, out float2 chosen)
-            {
-                var planned = step / DeltaTime;
-                chosen = planned;
-                // A three-point turn manoeuvres at a crawl, and steering would break its legs.
-                if (drive.InThreePointTurn)
+                // No corners yet: stop and face the goal rather than drive blind at it.
+                if (path.Status != PathStatus.Ready && waypoints.Length == 0)
                 {
-                    return false;
+                    heading = locomotion.TurnToward(facing, math.normalizesafe(goal.xz - position.xz), DeltaTime);
+                    return locomotion.BrakeToStop(ref drive, facing, DeltaTime);
                 }
 
-                chosen = crowd.Avoid(velocity, planned, topSpeed, DeltaTime);
-                return math.distancesq(chosen, planned) > SteerThreshold;
+                return crowd.Drive(locomotion, ref drive, facing, ref heading, leg, velocity, topSpeed, DeltaTime);
             }
 
             /// <summary>Picks the leg to drive; false once the unit has arrived.</summary>
@@ -283,7 +180,6 @@ namespace HyperRTS.Simulation.Units
             {
                 var reach = locomotion.LookAhead(speed, agent.Radius);
                 path.SkipCorners(Grid, agent, position, math.max(agent.Radius * 0.5f, maxStep), reach, waypoints);
-                // No corners yet (search pending): head straight for the goal meanwhile.
                 leg = PathLeg.Along(position.xz, goal.xz, waypoints, path);
                 return !locomotion.HasArrived(leg, position.xz, facing, agent.Radius);
             }

@@ -5,8 +5,10 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// 8-directional A* over the anchors a <see cref="NavAccess"/> may stand on; diagonals may not cut corners.
-    /// Records live in flat arrays sized to the grid and are reused, each search stamping them with its generation.
+    /// 8-directional A* over the cells a <see cref="NavAccess"/> finds open; diagonals may not cut corners, and each
+    /// step costs its length times <see cref="NavAccess.CellCost"/>, at least 1, so the octile heuristic stays
+    /// admissible. Records live in flat arrays sized to the grid and are reused, each search stamping them with its
+    /// generation.
     /// </summary>
     public struct GridAStar : IDisposable
     {
@@ -37,21 +39,33 @@ namespace HyperRTS.Simulation.Navigation
         public readonly int Cells => _parents.Length;
 
         /// <summary>
-        /// Fills <paramref name="path"/> with anchors from start to goal, expanding at most <paramref name="budget"/>
-        /// cells. When the goal is out of reach it leads to the explored anchor closest to the goal and returns false.
+        /// Fills <paramref name="path"/> with cells from start to goal; false, with no path, when the goal is out of
+        /// the start's reach. Never stops early, so callers keep goals inside the start's region.
         /// </summary>
-        public bool Search(in NavAccess access, int2 start, int2 goal, int budget, NativeList<int2> path,
-            out int expansions)
+        public bool Search(in NavAccess access, int2 start, int2 goal, NativeList<int2> path, out int expansions)
         {
             NextGeneration();
-            var last = Explore(access, start, goal, budget, out expansions);
-            Reconstruct(access.Grid, last, path);
-            return last == access.Grid.Index(goal);
+            path.Clear();
+            var reached = Explore(access, start, goal, out expansions);
+            if (reached)
+            {
+                Reconstruct(access.Grid, access.Grid.Index(goal), path);
+            }
+
+            return reached;
         }
 
-        /// <summary>Whether an agent may step between neighbouring anchors.</summary>
-        public static bool CanStep(in NavAccess access, int2 from, int2 to) =>
-            access.IsAnchorOpen(to) && !access.CutsCornerBetweenOpen(from, to);
+        /// <summary>Whether an agent may step between neighbouring cells: onto an open one, past open corners.</summary>
+        public static bool CanStep(in NavAccess access, int2 from, int2 to)
+        {
+            if (!access.IsOpen(to))
+            {
+                return false;
+            }
+
+            var diagonal = from.x != to.x && from.y != to.y;
+            return !diagonal || (access.IsOpen(new int2(from.x, to.y)) && access.IsOpen(new int2(to.x, from.y)));
+        }
 
         /// <summary>Octile distance, nudged up slightly so ties favour cells nearer the goal (fewer expansions).</summary>
         public static float Heuristic(int2 cell, int2 goal)
@@ -60,7 +74,11 @@ namespace HyperRTS.Simulation.Navigation
             return (math.cmax(d) + (Diagonal - 1f) * math.cmin(d)) * 1.001f;
         }
 
+        /// <summary>A step's length in cells.</summary>
         public static float StepCost(int2 from, int2 to) => from.x != to.x && from.y != to.y ? Diagonal : 1f;
+
+        /// <summary>What the search pays for a step: its length, dearer near walls.</summary>
+        public static float Cost(in NavAccess access, int2 from, int2 to) => StepCost(from, to) * access.CellCost(to);
 
         public void Dispose()
         {
@@ -91,17 +109,16 @@ namespace HyperRTS.Simulation.Navigation
             _open.Clear();
         }
 
-        private int Explore(in NavAccess access, int2 start, int2 goal, int budget, out int expansions)
+        private bool Explore(in NavAccess access, int2 start, int2 goal, out int expansions)
         {
             var grid = access.Grid;
             var goalIndex = grid.Index(goal);
-            var best = grid.Index(start);
-            var bestHeuristic = Heuristic(start, goal);
-            Reach(best, -1, 0f);
-            _open.Push(best, bestHeuristic);
+            var first = grid.Index(start);
+            Reach(first, -1, 0f);
+            _open.Push(first, Heuristic(start, goal));
 
             expansions = 0;
-            while (expansions < budget && _open.TryPop(out var current))
+            while (_open.TryPop(out var current))
             {
                 if (_closed[current] == _stamp)
                 {
@@ -111,25 +128,17 @@ namespace HyperRTS.Simulation.Navigation
                 _closed[current] = _stamp;
                 if (current == goalIndex)
                 {
-                    return current;
+                    return true;
                 }
 
-                var cell = grid.Cell(current);
-                var heuristic = Heuristic(cell, goal);
-                if (heuristic < bestHeuristic)
-                {
-                    bestHeuristic = heuristic;
-                    best = current;
-                }
-
-                Expand(access, cell, goal);
+                Expand(access, grid.Cell(current), goal);
                 expansions++;
             }
 
-            return best;
+            return false;
         }
 
-        // Every expanded anchor was open when pushed, and the start comes from TryFindNearest.
+        // Every expanded cell was open when pushed, and the start comes from TryFindNearest.
         private void Expand(in NavAccess access, int2 cell, int2 goal)
         {
             var parent = access.Grid.Index(cell);
@@ -144,7 +153,7 @@ namespace HyperRTS.Simulation.Navigation
                         continue;
                     }
 
-                    var nextCost = cost + StepCost(cell, next);
+                    var nextCost = cost + Cost(access, cell, next);
                     var index = access.Grid.Index(next);
                     if (_closed[index] == _stamp || (_reached[index] == _stamp && _costs[index] <= nextCost))
                     {

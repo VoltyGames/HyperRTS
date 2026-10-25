@@ -13,21 +13,30 @@ namespace HyperRTS.Editor.Maps.Nav
 {
     /// <summary>
     /// The nav grid a built map gives the simulation, made in the editor with the runtime's stamps: the baked terrain
-    /// classified, then the SubScene's nav areas, obstacles and building footprints stamped on top.
+    /// classified, then the SubScene's nav areas, obstacles and building footprints stamped on top. Tools read it
+    /// as one <see cref="ToolsClass"/> with no wall margin, so rush times stay geometric.
     /// </summary>
     public sealed class MapNavGrid : IDisposable
     {
+        /// <summary>A small ground unit that walks through all scenery: the map's own walkable ground.</summary>
+        public static readonly MovementClass ToolsClass = new(NavLayer.Ground, NavAccess.AllScenery, 0.5f);
+
         private TerrainHeight _terrain;
         private GridAStar _search;
 
         private MapNavGrid(NavGrid grid, TerrainHeight terrain)
         {
+            grid.Classes.Register(ToolsClass);
+            grid.BuildAccess();
             Grid = grid;
             _terrain = terrain;
             _search = new GridAStar(grid.Cells.Length, Allocator.Persistent);
         }
 
         public NavGrid Grid { get; private set; }
+
+        /// <summary>The grid as <see cref="ToolsClass"/> sees it.</summary>
+        public NavAccess Access => new(Grid, ToolsClass, 0f);
 
         /// <summary>One A* reused by every path search on this grid and its corridor-closed copies.</summary>
         internal ref GridAStar Search => ref _search;
@@ -49,11 +58,13 @@ namespace HyperRTS.Editor.Maps.Nav
             var roots = entities.GetRootGameObjects();
             StampAreas(grid, roots);
             StampObstacles(grid, roots);
-            grid.BuildAccess();
             return new MapNavGrid(grid, terrain);
         }
 
-        /// <summary>A nav grid made by hand (tests, tools) rather than from a scene; it owns <paramref name="grid"/>.</summary>
+        /// <summary>
+        /// A nav grid made by hand (tests, tools) rather than from a scene, its cells filled; it owns
+        /// <paramref name="grid"/> and builds its access.
+        /// </summary>
         public static MapNavGrid Wrap(NavGrid grid) => new(grid, default);
 
         public bool IsWalkable(int2 cell) => Grid.IsWalkable(cell);
@@ -64,7 +75,18 @@ namespace HyperRTS.Editor.Maps.Nav
 
         /// <summary>The walkable cell nearest a point, searching up to <paramref name="radius"/> metres out.</summary>
         public bool TryFindWalkable(Vector2 point, float radius, out int2 cell) =>
-            Grid.TryFindNearestWalkable(Cell(point), Mathf.CeilToInt(radius / Grid.CellSize), out cell);
+            Access.TryFindNearest(Cell(point), Mathf.CeilToInt(radius / Grid.CellSize), out cell);
+
+        /// <summary>A copy with its own cells and access, for searches that close cells; the caller disposes it.</summary>
+        internal NavGrid Copy()
+        {
+            var copy = NavGrid.Create(Grid.Size, Grid.Min, Grid.CellSize, Grid.Terrain, Grid.WaterLevel);
+            copy.Cells.CopyFrom(Grid.Cells);
+            copy.Scenery.CopyFrom(Grid.Scenery);
+            copy.Classes.Register(ToolsClass);
+            copy.BuildAccess();
+            return copy;
+        }
 
         public void Dispose()
         {

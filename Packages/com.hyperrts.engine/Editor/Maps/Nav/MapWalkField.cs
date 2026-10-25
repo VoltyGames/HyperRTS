@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Maps.Nav
             var distance = new float[grid.Cells.Length];
             Array.Fill(distance, float.PositiveInfinity);
             var heap = new MapHeap();
-            var access = NavAccess.Surface(grid, NavLayer.Ground);
+            var access = nav.Access;
             distance[grid.Index(start)] = 0f;
             heap.Push(0f, grid.Index(start));
             while (heap.Count > 0)
@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Maps.Nav
                         continue;
                     }
 
-                    var nextCost = cost + GridAStar.StepCost(cell, next);
+                    var nextCost = cost + GridAStar.Cost(access, cell, next);
                     var index = access.Grid.Index(next);
                     if (nextCost < distance[index])
                     {
