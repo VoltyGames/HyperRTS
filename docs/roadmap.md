@@ -23,7 +23,9 @@ In progress:
 
 | Decision | Why |
 | --- | --- |
-| Grid A*, no flow fields | Formation slots give each unit its own goal |
+| Grid with distance fields and a sector graph, not a navmesh | Buildings, crushable scenery, decks and water restamp cells cheaply |
+| Corridor A* for single moves, a flow field per formation order | One search serves a whole group; chases and one-off moves stay cheap |
+| Sampled steering, not ORCA | Vehicles turn at their rate and radius, and walls count like neighbours |
 | Server-authoritative Netcode, not lockstep | Burst float math is not deterministic across platforms |
 | Replays record state, not commands | The simulation is not deterministic |
 | One damage queue | Armor, splash and kill credit apply to every source |
