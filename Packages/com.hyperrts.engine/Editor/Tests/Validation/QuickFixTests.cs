@@ -8,6 +8,7 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Production;
+using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
@@ -25,16 +26,16 @@ namespace HyperRTS.Editor.Tests.Validation
         public void DeleteFolder() => AssetDatabase.DeleteAsset(Folder);
 
         [Test]
-        public void FitColliderWrapsTheModel()
+        public void FitPickBoxWrapsTheModel()
         {
             var unit = Track(EntityTemplates.Unit());
-            Object.DestroyImmediate(unit.GetComponent<Collider>());
+            Object.DestroyImmediate(unit.GetComponent<PickBoxAuthoring>());
 
-            Fix(unit.GetComponent<UnitAuthoring>(), "Fit Collider");
+            Fix(unit.GetComponent<UnitAuthoring>(), "Fit Pick Box");
 
-            var collider = unit.GetComponent<BoxCollider>();
-            Assert.IsNotNull(collider);
-            Assert.AreEqual(1.8f, collider.size.y, 0.01f);
+            var box = unit.GetComponent<PickBoxAuthoring>();
+            Assert.IsNotNull(box);
+            Assert.AreEqual(1.8f, box.size.y, 0.01f);
         }
 
         [Test]

@@ -56,7 +56,7 @@ Then follow [getting started](docs/getting-started.md).
 
 ## Requirements
 
-Unity 7000.0.0a12 (CoreCLR), URP 17.7, Entities 6.7, Entities Graphics, Unity Physics, Netcode for Entities 7.1, Input System.
+Unity 7000.0.0a12 (CoreCLR), URP 17.7, Entities 6.7, Entities Graphics, Netcode for Entities 7.1, Input System.
 
 ## License
 

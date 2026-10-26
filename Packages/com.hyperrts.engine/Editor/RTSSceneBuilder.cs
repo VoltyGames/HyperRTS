@@ -5,7 +5,6 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
-using Unity.Netcode;
 using Unity.Scenes;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -93,7 +92,6 @@ namespace HyperRTS.Editor
         {
             var entities = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
             var match = new GameObject("Match").AddComponent<MatchAuthoring>();
-            match.gameObject.AddComponent<NetcodePhysicsConfig>().PhysicGroupRunMode = PhysicGroupRunMode.AlwaysRun;
             EditorSceneManager.MoveGameObjectToScene(match.gameObject, entities);
             PrefabUtility.InstantiatePrefab(EditorAssets.MatchStatePrefab, entities);
             match.mapSize = spec.MapSize;

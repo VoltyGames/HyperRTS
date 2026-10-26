@@ -107,10 +107,13 @@ formation.
 | `Selectable`, `Selected` | Marks a selectable entity. `Selected` is enableable |
 | `SelectionInput` | The gesture from input: click, box, double-click, modifiers, group keys |
 | `ControlGroup` | The control groups an entity belongs to |
+| `PickBox` | The box a click must hit, in the entity's space so it turns with it |
 | `PickRanking` | Which entity a click picks |
 
 A click prefers a visible unit on the ray, then one within 10 px or its radius of the pointer, then the closest hit.
-So a unit behind a building still wins. Selectable prefabs need a collider.
+So a unit behind a building still wins. The ray is tested against each pick box, skipping hidden entities and
+passengers. Selectable prefabs and resource nodes need a **Pick Box** on their root, drawn as a box you can drag in
+the Scene view.
 
 | Gesture | Selects |
 | --- | --- |

@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Selection;
 using UnityEditor;
 using UnityEngine;
 
@@ -59,9 +60,10 @@ namespace HyperRTS.Editor.Authoring
             producible != null ? producible.icon : null;
 
         // Other authoring components on the object (engine or game), named as in the Add Component menu.
+        // Every selectable has a pick box, so it says nothing about the entity.
         private static string Modules(GameEntityAuthoring entity) =>
             string.Join(", ", entity.GetComponents<AuthoringBehaviour>()
-                .Where(component => component != entity)
+                .Where(component => component != entity && component is not PickBoxAuthoring)
                 .Select(component => ComponentName(component.GetType())));
 
         private static string ComponentName(System.Type type) =>

@@ -24,9 +24,8 @@ namespace HyperRTS.Input.Commands
         }
 
         /// <summary>
-        /// Picks through <see cref="PickRanking"/> when physics is available. Only ownable entities and resource nodes
-        /// count as targets; anything else picked (terrain) supplies the ground point, otherwise the ray meets the
-        /// baked terrain or the y = 0 plane.
+        /// Picks through <see cref="PickRanking"/>. Only ownable entities and resource nodes count as targets; anything
+        /// else picked supplies the ground point, otherwise the ray meets the baked terrain or the y = 0 plane.
         /// </summary>
         public bool TryPick(ref SystemState state, float2 screen, out Entity target, out float3 ground)
         {
@@ -37,10 +36,10 @@ namespace HyperRTS.Input.Commands
                 return false;
             }
 
-            var ray = PickRanking.Ray(origin, direction, _camera.farClipPlane);
+            var ray = new PickRay(origin, direction, _camera.farClipPlane);
             var screenSize = new float2(Screen.width, Screen.height);
             var viewProjection = CameraMatrices.ViewProjection(_camera);
-            if (!_ranking.TryPick(ref state, ray, screen, viewProjection, screenSize, out var picked, out var point))
+            if (!_ranking.TryPick(ref state, in ray, screen, viewProjection, screenSize, out var picked, out var point))
             {
                 return RaycastTerrain(origin, direction, out ground);
             }

@@ -15,6 +15,7 @@ namespace HyperRTS.Core
         public const string Research = Root + "Research/";
         public const string Resources = Root + "Resources/";
         public const string Rig = Root + "Rig/";
+        public const string Selection = Root + "Selection/";
         public const string Units = Root + "Units/";
         public const string Vision = Root + "Vision/";
     }

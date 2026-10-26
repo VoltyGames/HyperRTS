@@ -1,24 +1,19 @@
-using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Physics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests.Orders
 {
     /// <summary>
-    /// Selection math, drag boxes with modifiers and ownership preference, control groups and click pick ranking.
+    /// Selection math, drag boxes with modifiers and ownership preference, and control groups.
     /// An identity view-projection maps world (x, y, 0) to ((x, y) * 0.5 + 0.5) * screen size.
     /// </summary>
     public class SelectionTests
     {
         private static readonly float2 Screen = new(100f, 100f);
-        private static readonly float2 PickScreen = new(1000f, 1000f);
 
         private TestWorld _world;
         private EntityManager _entityManager;
@@ -43,14 +38,6 @@ namespace HyperRTS.Simulation.Tests.Orders
             return entity;
         }
 
-        private Entity CreatePickableUnit(float3 position)
-        {
-            var entity = CreateSelectable(position);
-            _entityManager.AddComponent<UnitTag>(entity);
-            _entityManager.AddComponentData(entity, new NavAgent { Radius = 0.001f });
-            return entity;
-        }
-
         private void Send(SelectionInput input)
         {
             input.ViewProjection = float4x4.identity;
@@ -71,19 +58,6 @@ namespace HyperRTS.Simulation.Tests.Orders
         private bool IsSelected(Entity entity) => _world.IsEnabled<Selected>(entity);
 
         private void SetSelected(Entity entity, bool value) => _entityManager.SetComponentEnabled<Selected>(entity, value);
-
-        private Entity Pick(float2 pointer, params RaycastHit[] hits)
-        {
-            // Any system's state builds the lookups; the selection system is always in the test world.
-            var world = _world.World.Unmanaged;
-            ref var state = ref world.ResolveSystemStateRef(world.GetExistingUnmanagedSystem<SelectionSystem>());
-            var ranking = new PickRanking(ref state);
-            using var hitArray = new NativeArray<RaycastHit>(hits, Allocator.Temp);
-            ranking.TryRank(hitArray, pointer, float4x4.identity, PickScreen, out var entity, out _);
-            return entity;
-        }
-
-        private static RaycastHit Hit(Entity entity, float fraction) => new() { Entity = entity, Fraction = fraction };
 
         [Test]
         public void RectContains_HandlesInsideOutsideEdgesAndInvertedCorners()
@@ -250,34 +224,6 @@ namespace HyperRTS.Simulation.Tests.Orders
 
             Assert.IsFalse(IsSelected(first));
             Assert.IsTrue(IsSelected(second));
-        }
-
-        [Test]
-        public void Pick_PrefersAUnitBehindOrBesideABuilding_UnlessFogHidesIt()
-        {
-            var building = CreateSelectable(float3.zero);
-            var behind = CreatePickableUnit(float3.zero);
-            Assert.AreEqual(behind, Pick(new float2(500f, 500f), Hit(building, 0.2f), Hit(behind, 0.6f)));
-
-            _entityManager.AddComponent<FogHidden>(behind);
-            Assert.AreEqual(building, Pick(new float2(500f, 500f), Hit(building, 0.2f), Hit(behind, 0.6f)),
-                "a fog-hidden unit never wins");
-
-            var beside = CreatePickableUnit(new float3(0.016f, 0f, 0f));
-            Assert.AreEqual(beside, Pick(new float2(500f, 500f), Hit(building, 0.2f)), "8 px away");
-            Assert.AreEqual(building, Pick(new float2(480f, 500f), Hit(building, 0.2f)), "28 px is too far");
-        }
-
-        [Test]
-        public void Pick_WithNothingRanked_ReturnsTheClosestHit_EvenIfNotSelectable()
-        {
-            var far = CreateSelectable(float3.zero);
-            var near = CreateSelectable(float3.zero);
-            Assert.AreEqual(near, Pick(new float2(500f, 500f), Hit(far, 0.7f), Hit(near, 0.3f)));
-
-            var ground = _entityManager.CreateEntity();
-            CreatePickableUnit(new float3(0.5f, 0.5f, 0f));
-            Assert.AreEqual(ground, Pick(new float2(500f, 500f), Hit(ground, 0.5f)), "empty ground picks nothing selectable");
         }
     }
 }

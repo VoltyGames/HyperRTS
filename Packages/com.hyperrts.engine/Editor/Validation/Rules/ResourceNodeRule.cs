@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Validation.Rules
                 issues.Error(node, "Resource node has no resource type.");
             }
 
-            FitColliderIfMissing(node, "harvesters can't be right-click ordered to gather here.", issues);
+            FitPickBoxIfMissing(node, "harvesters can't be right-click ordered to gather here.", issues);
         }
     }
 }

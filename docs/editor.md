@@ -52,7 +52,7 @@ map objects. **Assets ▸ Create ▸ HyperRTS ▸ Prefabs** creates the same tem
 **Assets ▸ Create ▸ HyperRTS** also creates data assets: Resource Type, Damage Type, Impact Mark, Sound Cue and AI
 Build Order.
 
-A template is a root with a collider and authoring components, plus a primitive `Model` child for you to replace.
+A template is a root with a pick box and authoring components, plus a primitive `Model` child for you to replace.
 `Editor/Templates/TemplateRegistry.cs` lists them all. New scene objects go into the SubScene open for editing.
 
 Authoring components sit under **Add Component ▸ HyperRTS**, one submenu per module. Each one's help button opens

@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Validation.Rules
     {
         protected override void Check(GameEntityAuthoring entity, ValidationIssues issues)
         {
-            FitColliderIfMissing(entity, "this can't be clicked, selected or right-click targeted.", issues);
+            FitPickBoxIfMissing(entity, "this can't be clicked, selected or right-click targeted.", issues);
 
             if (entity.GetComponentInChildren<Renderer>() == null)
             {

@@ -6,7 +6,7 @@ so no third-party assets go in.
 ## Environment
 
 - Unity 7000.0.0a12 (CoreCLR editor) with URP 17.7. Input System only, never `UnityEngine.Input`.
-- DOTS packages at 6.7: Entities, Entities Graphics, Physics, Collections, Burst, Mathematics. Netcode for Entities
+- DOTS packages at 6.7: Entities, Entities Graphics, Collections, Burst, Mathematics. Netcode for Entities
   is its own package, 7.1, in `Unity.Netcode`.
 
 ## Layout

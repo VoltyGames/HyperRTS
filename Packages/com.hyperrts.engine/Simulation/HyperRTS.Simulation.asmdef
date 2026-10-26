@@ -8,8 +8,7 @@
         "Unity.Mathematics",
         "Unity.Collections",
         "Unity.Burst",
-        "Unity.NetCode",
-        "Unity.Physics"
+        "Unity.NetCode"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

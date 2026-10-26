@@ -89,8 +89,6 @@ namespace HyperRTS.Editor.Tests.Validation
                 unit.deathSpawn = f.Track(EntityTemplates.Unit("Wreck"));
                 return unit;
             });
-            yield return Row<MatchPhysicsRule>("can't click units",
-                f => f.Add<MatchAuthoring>(new GameObject("Match")));
             yield return Row<MatchRule>("no players", f =>
             {
                 var match = f.Add<MatchAuthoring>(new GameObject("Match"));

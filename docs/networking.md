@@ -217,12 +217,6 @@ The server never plays sounds or effects. Every transient event, such as a shot,
 `CueEvent`. The server sends each client the cues its team may see, under the same fog and stealth rule, packed at
 18 bytes each. The client plays them exactly as single player does.
 
-## Physics
-
-Clicks raycast against Unity Physics, which Netcode only steps inside the prediction loop. The Match object needs
-`NetCodePhysicsConfig` set to **Always Run**, and the validator offers the fix. A dedicated server never raycasts, so
-its physics stays off. A host keeps it on for its player's clicks.
-
 ## Limits
 
 - No client-side prediction: a command shows after a round trip, as in most server-based RTS games.

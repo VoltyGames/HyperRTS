@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Upgrades;
@@ -15,7 +16,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Templates
 {
     /// <summary>
-    /// Ready-to-bake GameObjects per role: a root with collider, authoring and ghost (so it replicates), and a primitive
+    /// Ready-to-bake GameObjects per role: a root with pick box, authoring and ghost (so it replicates), and a primitive
     /// Model child in the team-coloured material.
     /// </summary>
     public static class EntityTemplates
@@ -94,7 +95,7 @@ namespace HyperRTS.Editor.Templates
         public static GameObject NavObstacle()
         {
             var go = Template("Nav Obstacle", PrimitiveType.Cube, new Vector3(4f, 2f, 4f), 1f);
-            Object.DestroyImmediate(go.GetComponent<Collider>());
+            Object.DestroyImmediate(go.GetComponent<PickBoxAuthoring>());
             go.AddComponent<NavObstacleAuthoring>().size = new Vector2(4f, 4f);
             return go;
         }
@@ -119,9 +120,9 @@ namespace HyperRTS.Editor.Templates
             model.transform.localPosition = new Vector3(0f, centerY, 0f);
             model.transform.localScale = size;
 
-            var collider = root.AddComponent<BoxCollider>();
-            collider.center = model.transform.localPosition;
-            collider.size = shape == PrimitiveType.Capsule ? new Vector3(size.x, size.y * 2f, size.z) : size;
+            var box = root.AddComponent<PickBoxAuthoring>();
+            box.center = model.transform.localPosition;
+            box.size = shape == PrimitiveType.Capsule ? new Vector3(size.x, size.y * 2f, size.z) : size;
             return root;
         }
     }

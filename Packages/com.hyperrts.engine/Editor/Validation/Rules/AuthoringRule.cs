@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Selection;
 using Unity.Netcode;
 using UnityEditor;
 using UnityEngine;
@@ -62,11 +63,12 @@ namespace HyperRTS.Editor.Validation.Rules
             }
         }
 
-        protected static void FitColliderIfMissing(Component component, string consequence, ValidationIssues issues)
+        // The pick box must sit on the entity itself: a child's box would bake onto another entity.
+        protected static void FitPickBoxIfMissing(Component component, string consequence, ValidationIssues issues)
         {
-            if (component.GetComponentInChildren<Collider>() == null)
+            if (!component.TryGetComponent<PickBoxAuthoring>(out _))
             {
-                issues.Warn(component, $"No collider: {consequence}", "Fit Collider", () => QuickFixes.FitCollider(component));
+                issues.Warn(component, $"No pick box: {consequence}", "Fit Pick Box", () => QuickFixes.FitPickBox(component));
             }
         }
 

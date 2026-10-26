@@ -4,9 +4,7 @@ using HyperRTS.Network.Players;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;
-using Unity.Netcode.NetcodeTime;
 using Unity.Networking.Transport;
-using Unity.Physics.Systems;
 using UnityEngine;
 
 namespace HyperRTS.Network.Session
@@ -73,7 +71,6 @@ namespace HyperRTS.Network.Session
             ClientServerBootstrap.AutoConnectPort = 0;
             var world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
             SetSingleton(world, ServerTickRate());
-            DisablePhysics(world);
             return world;
         }
 
@@ -81,7 +78,6 @@ namespace HyperRTS.Network.Session
         {
             ClientServerBootstrap.AutoConnectPort = 0;
             var world = ClientServerBootstrap.CreateClientWorld("ClientWorld", systems);
-            SetSingleton(world, ClientTickRate());
             AddJoin(world);
             return world;
         }
@@ -134,24 +130,6 @@ namespace HyperRTS.Network.Session
             rate.ResolveDefaults();
             rate.NetworkTickRate = NetworkSession.SnapshotRate;
             return rate;
-        }
-
-        // Clicks raycast against Unity Physics, which Netcode only steps inside the prediction loop.
-        private static ClientTickRate ClientTickRate()
-        {
-            var rate = NetworkTimeSystem.DefaultClientTickRate;
-            rate.PredictionLoopUpdateMode = PredictionLoopUpdateMode.AlwaysRun;
-            return rate;
-        }
-
-        // Physics only serves click raycasts, which a dedicated server never makes.
-        private static void DisablePhysics(World world)
-        {
-            var physics = world.GetExistingSystemManaged<PhysicsSystemGroup>();
-            if (physics != null)
-            {
-                physics.Enabled = false;
-            }
         }
 
         private static EntityQuery DriverQuery(World world) =>

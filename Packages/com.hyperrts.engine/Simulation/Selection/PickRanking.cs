@@ -1,10 +1,11 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
+using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Physics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Selection
@@ -26,7 +27,11 @@ namespace HyperRTS.Simulation.Selection
         public ComponentLookup<NavAgent> Agents;
         public ComponentLookup<NavObstacle> Obstacles;
 
-        private EntityQuery _physics;
+        private EntityTypeHandle _entityHandle;
+        private ComponentTypeHandle<LocalTransform> _transformHandle;
+        private ComponentTypeHandle<PickBox> _boxHandle;
+        private ComponentTypeHandle<Inside> _insideHandle;
+        private EntityQuery _boxes;
         private EntityQuery _units;
 
         public PickRanking(ref SystemState state)
@@ -38,7 +43,13 @@ namespace HyperRTS.Simulation.Selection
             Transforms = state.GetComponentLookup<LocalTransform>(true);
             Agents = state.GetComponentLookup<NavAgent>(true);
             Obstacles = state.GetComponentLookup<NavObstacle>(true);
-            _physics = new EntityQueryBuilder(Allocator.Temp).WithAll<PhysicsWorldSingleton>().Build(ref state);
+            _entityHandle = state.GetEntityTypeHandle();
+            _transformHandle = state.GetComponentTypeHandle<LocalTransform>(true);
+            _boxHandle = state.GetComponentTypeHandle<PickBox>(true);
+            _insideHandle = state.GetComponentTypeHandle<Inside>(true);
+            // Fog-hidden entities can't be clicked, or a click would reveal them.
+            _boxes = new EntityQueryBuilder(Allocator.Temp).WithAll<PickBox, LocalTransform>().WithNone<FogHidden>()
+                .Build(ref state);
             _units = new EntityQueryBuilder(Allocator.Temp).WithAll<Selectable, UnitTag>().Build(ref state);
         }
 
@@ -51,47 +62,42 @@ namespace HyperRTS.Simulation.Selection
             Transforms.Update(ref state);
             Agents.Update(ref state);
             Obstacles.Update(ref state);
+            _entityHandle.Update(ref state);
+            _transformHandle.Update(ref state);
+            _boxHandle.Update(ref state);
+            _insideHandle.Update(ref state);
         }
 
-        /// <summary>A ray along <paramref name="direction"/> from <paramref name="origin"/>, hitting every collider.</summary>
-        public static RaycastInput Ray(float3 origin, float3 direction, float distance) => new()
-        {
-            Start = origin,
-            End = origin + direction * distance,
-            Filter = CollisionFilter.Default,
-        };
-
-        /// <summary>Casts <paramref name="ray"/> through the physics world and ranks what it hits; false without physics.</summary>
-        public bool TryPick(ref SystemState state, RaycastInput ray, float2 pointer, float4x4 viewProjection,
+        /// <summary>Tests <paramref name="ray"/> against every pick box and ranks what it hits.</summary>
+        public bool TryPick(ref SystemState state, in PickRay ray, float2 pointer, float4x4 viewProjection,
             float2 screenSize, out Entity entity, out float3 point)
         {
-            entity = Entity.Null;
-            point = default;
-            if (!_physics.TryGetSingleton(out PhysicsWorldSingleton physics))
-            {
-                return false;
-            }
-
             state.CompleteDependency();
             Update(ref state);
-            var hits = new NativeList<RaycastHit>(Allocator.Temp);
-            physics.CastRay(ray, ref hits);
-            var picked = TryRank(hits.AsArray(), pointer, viewProjection, screenSize, out entity, out point);
-            hits.Dispose();
-            return picked;
+            var hits = new NativeList<PickHit>(state.WorldUpdateAllocator);
+            new CastJob
+            {
+                Ray = ray,
+                Entities = _entityHandle,
+                Transforms = _transformHandle,
+                Boxes = _boxHandle,
+                Inside = _insideHandle,
+                Hits = hits,
+            }.Run(_boxes);
+            return TryRank(hits.AsArray(), pointer, viewProjection, screenSize, out entity, out point);
         }
 
         /// <summary>
         /// Picks among <paramref name="hits"/> (any order) and the on-screen units; the point is the hit position, or
         /// the unit's position when it was picked on screen.
         /// </summary>
-        public bool TryRank(NativeArray<RaycastHit> hits, float2 pointer, float4x4 viewProjection, float2 screenSize,
+        public bool TryRank(NativeArray<PickHit> hits, float2 pointer, float4x4 viewProjection, float2 screenSize,
             out Entity entity, out float3 point)
         {
             if (TryClosestHit(hits, true, out var hit))
             {
                 entity = hit.Entity;
-                point = hit.Position;
+                point = hit.Point;
                 return true;
             }
 
@@ -105,7 +111,7 @@ namespace HyperRTS.Simulation.Selection
 
             var any = TryClosestHit(hits, false, out hit);
             entity = hit.Entity;
-            point = hit.Position;
+            point = hit.Point;
             return any;
         }
 
@@ -120,7 +126,7 @@ namespace HyperRTS.Simulation.Selection
             return !Hidden.HasComponent(entity) && !Inside.HasEnabled(entity);
         }
 
-        private bool TryClosestHit(NativeArray<RaycastHit> hits, bool unitsOnly, out RaycastHit closest)
+        private bool TryClosestHit(NativeArray<PickHit> hits, bool unitsOnly, out PickHit closest)
         {
             closest = default;
             var found = false;
@@ -188,6 +194,40 @@ namespace HyperRTS.Simulation.Selection
             }
 
             return reach;
+        }
+
+        // Burst keeps the box test cheap enough to run on every hover.
+        [BurstCompile]
+        private struct CastJob : IJobChunk
+        {
+            public PickRay Ray;
+            [ReadOnly] public EntityTypeHandle Entities;
+            [ReadOnly] public ComponentTypeHandle<LocalTransform> Transforms;
+            [ReadOnly] public ComponentTypeHandle<PickBox> Boxes;
+            [ReadOnly] public ComponentTypeHandle<Inside> Inside;
+            public NativeList<PickHit> Hits;
+
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
+            {
+                var entities = chunk.GetNativeArray(Entities);
+                var transforms = chunk.GetNativeArray(ref Transforms);
+                var boxes = chunk.GetNativeArray(ref Boxes);
+                var carried = chunk.Has(ref Inside);
+                for (var i = 0; i < chunk.Count; i++)
+                {
+                    // A passenger is out of sight inside its container.
+                    if (carried && chunk.IsComponentEnabled(ref Inside, i))
+                    {
+                        continue;
+                    }
+
+                    if (boxes[i].TryHit(transforms[i], Ray, out var fraction))
+                    {
+                        Hits.Add(new PickHit { Entity = entities[i], Point = Ray.Point(fraction), Fraction = fraction });
+                    }
+                }
+            }
         }
     }
 }
