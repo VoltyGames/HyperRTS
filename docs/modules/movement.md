@@ -35,7 +35,14 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   region ids. A dirty sector relabels alone, then the edges along its borders and the region ids follow.
 - A goal the start's region can't reach snaps to the nearest open cell it can, within 64 cells, so a click across a
   river stops on this bank. With none that near, the move ends where the unit stands, with no search.
-  `NavGrid.IsReachable(agent, from, to)` asks the same of any two points. Regions leave scenery out.
+  `NavGrid.IsReachable(agent, from, to)` asks the same of any two points, a closed end counting from the open cell
+  nearest it. Regions leave scenery out.
+- A unit in a closed cell starts its path at the nearest open cell it can squeeze to (`NavAccess.TryFindStart`):
+  every cell on the straight line there reads above 0 and at least the smaller of the class radius and the field where
+  it stands, so a dozer in a gap narrower than its class drives along the gap but never through water or a wall. It
+  takes such a cell in the goal's region first (the region of the open cell nearest the goal), then in any region,
+  then the nearest open cell, which is how a unit inside a new footprint gets out. The first leg runs from the unit
+  to that cell.
 - A path query snaps the start and goal (`GridPathfinder.Prepare`) and goes straight when the end is in sight.
   Otherwise an abstract A* over the sector graph (`SectorSearch`) finds the sectors from the start's component to
   the goal's, and Burst A* runs over cell centres inside them plus a ring of sectors (`NavCorridor`). It always

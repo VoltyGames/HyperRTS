@@ -71,11 +71,13 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void PinnedUnit_GivesUpItsMove_InsteadOfReplanningForever()
         {
-            // A two-metre slot between two walls, too narrow for a three-metre unit to leave either way.
+            // A sealed two-metre slot, too narrow for a three-metre unit to drive along or leave.
             var unit = _world.SpawnUnit(1, float3.zero, radius: 1.5f);
             _world.Tick();
             _world.SpawnObstacle(new float3(-3f, 0f, 0f), new float2(4f, 40f));
             _world.SpawnObstacle(new float3(3f, 0f, 0f), new float2(4f, 40f));
+            _world.SpawnObstacle(new float3(0f, 0f, 21f), new float2(10f, 2f));
+            _world.SpawnObstacle(new float3(0f, 0f, -21f), new float2(10f, 2f));
             _world.Tick();
             _world.MoveTo(unit, new float3(30f, 0f, 0f));
 

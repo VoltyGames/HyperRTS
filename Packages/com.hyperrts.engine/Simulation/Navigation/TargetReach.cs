@@ -49,8 +49,11 @@ namespace HyperRTS.Simulation.Navigation
                 agent.Radius, _navCellSize);
         }
 
-        // A unit such as a transport is reached by the box round its hull, a footprintless node by EntityRadius.
-        private NavBox Footprint(Entity target)
+        /// <summary>
+        /// The box a target is reached by: its footprint, the box round a unit's hull such as a transport's, or
+        /// <see cref="EntityRadius"/> round a footprintless node.
+        /// </summary>
+        public NavBox Footprint(Entity target)
         {
             var transform = _transforms[target];
             if (_obstacles.TryGetComponent(target, out var obstacle))

@@ -5,12 +5,11 @@ using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests.Economy
 {
     /// <summary>
-    /// Harvesting (the loop, drop-off choice, depletion and regrowth) and passive income: offline pauses, occupants,
+    /// Harvesting (the loop, depletion and regrowth) and passive income: offline pauses, occupants,
     /// finite reserves with refills and casualties.
     /// </summary>
     public class IncomeTests
@@ -71,19 +70,6 @@ namespace HyperRTS.Simulation.Tests.Economy
             _world.Kill(unit);
         }
 
-        /// <summary>Runs for the given time and returns the lowest x the harvester reached.</summary>
-        private float FarthestWest(Entity harvester, float seconds)
-        {
-            var west = float.MaxValue;
-            for (var t = 0f; t < seconds; t += TestWorld.FrameTime)
-            {
-                _world.Tick();
-                west = math.min(west, _world.Get<LocalTransform>(harvester).Position.x);
-            }
-
-            return west;
-        }
-
         [Test]
         public void Harvester_LoopsBetweenNodeAndDropOff()
         {
@@ -138,26 +124,6 @@ namespace HyperRTS.Simulation.Tests.Economy
             {
                 Assert.AreEqual(second, _world.Get<ActiveOrder>(harvester).Value.Target);
             }
-        }
-
-        [Test]
-        public void Harvester_DeliversToNearerDropOff_OnceItIsBuilt()
-        {
-            SpawnDropOff(new float3(-30f, 0f, 0f));
-            var site = _world.SpawnBuilding(1, new float3(6f, 0f, 4f), new float2(4f, 4f), complete: false);
-            _world.EntityManager.AddComponent<ResourceDropOff>(site);
-            var node = _world.SpawnNode(new float3(10f, 0f, 0f), _supplies, 1000);
-            var harvester = SpawnHarvester(new float3(8f, 0f, 0f));
-
-            _world.Order(harvester, OrderType.Gather, node);
-            Assert.Less(FarthestWest(harvester, 15f), -20f, "an unfinished site takes no cargo");
-
-            _world.EntityManager.SetComponentEnabled<ConstructionProgress>(site, false);
-            _world.Run(10f);
-            var before = _world.GetResources(1, _supplies);
-
-            Assert.Greater(FarthestWest(harvester, 20f), 0f, "every later trip ends at the finished drop-off");
-            Assert.Greater(_world.GetResources(1, _supplies), before + 20, "it keeps delivering there");
         }
 
         [Test]

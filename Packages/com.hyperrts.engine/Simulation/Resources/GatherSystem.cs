@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -11,7 +12,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Resources
 {
-    /// <summary>Runs Gather orders: walk to the node, fill up, deposit at the nearest owned drop-off, repeat.</summary>
+    /// <summary>
+    /// Runs Gather orders: walk to the node, fill up, deposit at an owned drop-off chosen once per trip by its edge
+    /// distance and the turn needed to face it, repeat.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct GatherSystem : ISystem
@@ -24,6 +28,7 @@ namespace HyperRTS.Simulation.Resources
         private ComponentLookup<Faction> _factionLookup;
         private BufferLookup<StatModifier> _modifierLookup;
         private ComponentLookup<PlayerStats> _statsLookup;
+        private ComponentLookup<Locomotion> _locomotionLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -39,6 +44,8 @@ namespace HyperRTS.Simulation.Resources
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _modifierLookup = state.GetBufferLookup<StatModifier>(true);
             _statsLookup = state.GetComponentLookup<PlayerStats>();
+            _locomotionLookup = state.GetComponentLookup<Locomotion>(true);
+            state.RequireForUpdate<NavGrid>();
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<Harvester, ActiveOrder>().Build());
         }
 
@@ -56,6 +63,7 @@ namespace HyperRTS.Simulation.Resources
             _factionLookup.Update(ref state);
             _modifierLookup.Update(ref state);
             _statsLookup.Update(ref state);
+            _locomotionLookup.Update(ref state);
 
             new GatherJob
             {
@@ -69,6 +77,8 @@ namespace HyperRTS.Simulation.Resources
                 FactionLookup = _factionLookup,
                 ModifierLookup = _modifierLookup,
                 StatsLookup = _statsLookup,
+                LocomotionLookup = _locomotionLookup,
+                Grid = SystemAPI.GetSingleton<NavGrid>(),
             }.Schedule();
         }
 
@@ -88,10 +98,13 @@ namespace HyperRTS.Simulation.Resources
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public BufferLookup<StatModifier> ModifierLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
+            [ReadOnly] public ComponentLookup<Locomotion> LocomotionLookup;
+            [ReadOnly] public NavGrid Grid;
 
-            private void Execute(ref Harvester harvester, ref HarvestState harvest, ref ActiveOrder order,
-                EnabledRefRW<ActiveOrder> busy, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
-                EnabledRefRW<Arrival> arrived, in LocalTransform transform, in NavAgent agent, in Faction faction)
+            private void Execute(Entity entity, ref Harvester harvester, ref HarvestState harvest,
+                ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy, ref MoveDestination destination,
+                EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived, in LocalTransform transform,
+                in NavAgent agent, in Faction faction)
             {
                 if (!busy.ValueRO || order.Value.Type != OrderType.Gather)
                 {
@@ -100,8 +113,8 @@ namespace HyperRTS.Simulation.Resources
 
                 if (harvest.Phase == HarvestPhase.Returning)
                 {
-                    Return(ref harvester, ref harvest, ref destination, busy, moving, arrived, transform, agent,
-                        faction.Value);
+                    Return(entity, ref harvester, ref harvest, ref destination, busy, moving, arrived, transform,
+                        agent, faction.Value);
                     return;
                 }
 
@@ -125,6 +138,7 @@ namespace HyperRTS.Simulation.Resources
                 EnabledRefRW<MoveDestination> moving)
             {
                 harvest.Phase = HarvestPhase.Returning;
+                harvest.DropOff = Entity.Null;
                 if (harvester.CargoAmount <= 0)
                 {
                     ActiveOrder.Finish(busy, moving);
@@ -153,14 +167,20 @@ namespace HyperRTS.Simulation.Resources
                 {
                     harvest.Phase = HarvestPhase.Returning;
                     harvest.Progress = 0f;
+                    harvest.DropOff = Entity.Null;
                 }
             }
 
-            private void Return(ref Harvester harvester, ref HarvestState harvest, ref MoveDestination destination,
-                EnabledRefRW<ActiveOrder> busy, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
-                in LocalTransform transform, in NavAgent agent, byte faction)
+            private void Return(Entity entity, ref Harvester harvester, ref HarvestState harvest,
+                ref MoveDestination destination, EnabledRefRW<ActiveOrder> busy, EnabledRefRW<MoveDestination> moving,
+                EnabledRefRW<Arrival> arrived, in LocalTransform transform, in NavAgent agent, byte faction)
             {
-                var dropOff = NearestDropOff(transform.Position, faction);
+                if (!IsDropOff(harvest.DropOff, faction))
+                {
+                    harvest.DropOff = ChooseDropOff(entity, transform, agent, faction);
+                }
+
+                var dropOff = harvest.DropOff;
                 if (harvester.CargoAmount <= 0 || dropOff == Entity.Null)
                 {
                     // Empty-handed goes straight back to work; with no drop-off, wait until one is built.
@@ -180,6 +200,7 @@ namespace HyperRTS.Simulation.Resources
                 ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, harvester.CargoType, delivered);
                 harvester.CargoAmount = 0;
                 harvest.Phase = HarvestPhase.Gathering;
+                harvest.DropOff = Entity.Null;
             }
 
             private bool IsHarvestable(Entity node) =>
@@ -205,19 +226,45 @@ namespace HyperRTS.Simulation.Resources
                 return closest.Found;
             }
 
-            private Entity NearestDropOff(float3 position, byte faction)
+            /// <summary>Still a finished, living drop-off of this owner.</summary>
+            private readonly bool IsDropOff(Entity entity, byte faction) =>
+                DropOffs.Contains(entity) && FactionLookup[entity].Value == faction;
+
+            /// <summary>The reachable owned drop-off with the lowest edge gap plus the path its turn takes.</summary>
+            private Entity ChooseDropOff(Entity entity, in LocalTransform transform, in NavAgent agent, byte faction)
             {
+                var position = transform.Position;
+                var facing = math.normalizesafe(transform.Forward().xz);
+                var turnLength = TurnLength(entity, agent);
                 var closest = Closest.None;
                 for (var i = 0; i < DropOffs.Length; i++)
                 {
                     var candidate = DropOffs[i];
-                    if (FactionLookup[candidate].Value == faction)
+                    if (FactionLookup[candidate].Value != faction)
                     {
-                        closest.Consider(i, candidate, DistanceSq(candidate, position));
+                        continue;
                     }
+
+                    var footprint = Reach.Footprint(candidate);
+                    var edge = footprint.EdgePoint(position.xz, agent.Radius);
+                    if (!Grid.IsReachable(agent, position, new float3(edge.x, position.y, edge.y)))
+                    {
+                        continue;
+                    }
+
+                    var toEdge = math.normalizesafe(edge - position.xz);
+                    var turn = math.acos(math.clamp(math.dot(facing, toEdge), -1f, 1f));
+                    closest.Consider(i, candidate, footprint.Gap(position.xz) + turn * turnLength);
                 }
 
                 return closest.Entity;
+            }
+
+            // Metres a radian of turn costs: the turn radius, or half the hull for one that pivots on its tracks.
+            private readonly float TurnLength(Entity entity, in NavAgent agent)
+            {
+                var handling = LocomotionLookup.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
+                return handling.Pivots ? agent.HalfLength : handling.TurnRadius;
             }
 
             private readonly float DistanceSq(Entity entity, float3 position) =>

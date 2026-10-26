@@ -25,6 +25,9 @@ namespace HyperRTS.Simulation.Navigation
         // Region filter that takes an open cell in any region.
         private const int AnyRegion = -1;
 
+        // Clearance for a nearest-cell search that needs no line to the cell.
+        private const float AnyClearance = float.NegativeInfinity;
+
         private readonly int _slot;
 
         /// <summary>The view of a registered class; throws for one <see cref="NavFieldSystem"/> hasn't registered.</summary>
@@ -79,11 +82,56 @@ namespace HyperRTS.Simulation.Navigation
             TryFindNearest(cell, rings, AnyRegion, out found);
 
         /// <summary>The same search, keeping only cells in <paramref name="region"/>.</summary>
-        public bool TryFindNearest(int2 cell, int rings, int region, out int2 found)
+        public bool TryFindNearest(int2 cell, int rings, int region, out int2 found) =>
+            TryFindNearest(cell, rings, region, float3.zero, AnyClearance, out found);
+
+        /// <summary>
+        /// Where a path from <paramref name="start"/> in <paramref name="startCell"/> begins: the cell when open, else
+        /// the nearest open cell it can squeeze to in the goal's region, then in any region, then the nearest open
+        /// cell, which is how a unit inside a footprint gets out.
+        /// </summary>
+        public bool TryFindStart(int2 startCell, float3 start, float3 goal, out int2 from)
+        {
+            var rings = GridPathfinder.NearestSearchRadius;
+            startCell = math.clamp(startCell, 0, Grid.Size - 1);
+            if (IsOpen(startCell))
+            {
+                from = startCell;
+                return true;
+            }
+
+            // A unit already in a gap narrower than its class may drive along it, but never through anything tighter.
+            var squeeze = math.min(OpenDistance, Distance(startCell));
+            if (squeeze > 0f)
+            {
+                var goalRegion = NearestRegion(goal);
+                if (goalRegion != 0 && TryFindNearest(startCell, rings, goalRegion, start, squeeze, out from))
+                {
+                    return true;
+                }
+
+                if (TryFindNearest(startCell, rings, AnyRegion, start, squeeze, out from))
+                {
+                    return true;
+                }
+            }
+
+            return TryFindNearest(startCell, rings, out from);
+        }
+
+        /// <summary>The region of the open cell nearest <paramref name="point"/>; 0 when none is near.</summary>
+        public int NearestRegion(float3 point)
+        {
+            var cell = Grid.WorldToCell(point);
+            return TryFindNearest(cell, GridPathfinder.NearestSearchRadius, out var open) ? Region(open) : 0;
+        }
+
+        // Ring search; with a clearance, a cell also needs a straight line to it from the origin that keeps it.
+        private bool TryFindNearest(int2 cell, int rings, int region, float3 origin, float clearance, out int2 found)
         {
             cell = math.clamp(cell, 0, Grid.Size - 1);
             found = cell;
-            if (IsOpenIn(region, cell))
+            if (IsCandidate(region, cell, origin, clearance))
             {
                 return true;
             }
@@ -93,10 +141,10 @@ namespace HyperRTS.Simulation.Navigation
                 var best = int.MaxValue;
                 for (var i = -r; i <= r; i++)
                 {
-                    Consider(region, cell, new int2(i, -r), ref best, ref found);
-                    Consider(region, cell, new int2(i, r), ref best, ref found);
-                    Consider(region, cell, new int2(-r, i), ref best, ref found);
-                    Consider(region, cell, new int2(r, i), ref best, ref found);
+                    Consider(region, cell, new int2(i, -r), origin, clearance, ref best, ref found);
+                    Consider(region, cell, new int2(i, r), origin, clearance, ref best, ref found);
+                    Consider(region, cell, new int2(-r, i), origin, clearance, ref best, ref found);
+                    Consider(region, cell, new int2(r, i), origin, clearance, ref best, ref found);
                 }
 
                 if (best != int.MaxValue)
@@ -109,7 +157,10 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>True when every cell a straight move crosses is open; through a corner, both cells beside it too.</summary>
-        public bool HasLineOfSight(float3 from, float3 to)
+        public bool HasLineOfSight(float3 from, float3 to) => HasLineOfSight(from, to, OpenDistance);
+
+        /// <summary>The same walk, each cell reading at least <paramref name="clearance"/> from walls.</summary>
+        public bool HasLineOfSight(float3 from, float3 to, float clearance)
         {
             var start = (from.xz - Grid.Min) / Grid.CellSize;
             var delta = (to.xz - Grid.Min) / Grid.CellSize - start;
@@ -122,34 +173,48 @@ namespace HyperRTS.Simulation.Navigation
             var span = math.select(1f / math.abs(delta), float.PositiveInfinity, still);
             var toEdge = math.select((float2)cell + 1f - start, start - cell, delta < 0f);
             var next = math.select(toEdge * span, float.PositiveInfinity, still);
-            var clear = IsOpen(cell);
+            var clear = IsClear(cell, clearance);
             for (var i = 0; clear && i < crossings; i++)
             {
                 var axis = new bool2(next.x <= next.y, next.y <= next.x);
                 if (math.all(axis))
                 {
-                    clear = IsOpen(cell + new int2(step.x, 0)) && IsOpen(cell + new int2(0, step.y));
+                    var sides = IsClear(cell + new int2(step.x, 0), clearance);
+                    clear = sides && IsClear(cell + new int2(0, step.y), clearance);
                     i++;
                 }
 
                 cell += math.select(int2.zero, step, axis);
                 next += math.select(float2.zero, span, axis);
-                clear = clear && IsOpen(cell);
+                clear = clear && IsClear(cell, clearance);
             }
 
             return clear;
         }
 
-        private void Consider(int region, int2 center, int2 offset, ref int best, ref int2 found)
+        private void Consider(int region, int2 center, int2 offset, float3 origin, float clearance, ref int best,
+            ref int2 found)
         {
             var distance = offset.x * offset.x + offset.y * offset.y;
-            if (distance < best && IsOpenIn(region, center + offset))
+            if (distance < best && IsCandidate(region, center + offset, origin, clearance))
             {
                 best = distance;
                 found = center + offset;
             }
         }
 
+        private bool IsCandidate(int region, int2 cell, float3 origin, float clearance)
+        {
+            if (!IsOpenIn(region, cell))
+            {
+                return false;
+            }
+
+            return clearance == AnyClearance || HasLineOfSight(origin, Grid.CellCenter(cell), clearance);
+        }
+
         private bool IsOpenIn(int region, int2 cell) => (region == AnyRegion || Region(cell) == region) && IsOpen(cell);
+
+        private bool IsClear(int2 cell, float clearance) => Grid.InBounds(cell) && Distance(cell) >= clearance;
     }
 }

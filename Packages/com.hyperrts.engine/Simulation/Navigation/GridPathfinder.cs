@@ -10,21 +10,22 @@ namespace HyperRTS.Simulation.Navigation
     /// </summary>
     public static class GridPathfinder
     {
-        /// <summary>How far (in cells) to look for open ground around a blocked start.</summary>
+        /// <summary>How far (in cells) to look for open ground around a blocked start or goal.</summary>
         public const int NearestSearchRadius = 32;
 
         /// <summary>How far (in cells) to look round a goal for ground the start's region reaches.</summary>
         public const int ReachableSearchRadius = 64;
 
         /// <summary>
-        /// Snaps the start to open ground and the goal to the nearest cell in the start's region, and picks the route:
-        /// straight when in sight, stay when no such cell is near, else a search.
+        /// Snaps the start to open ground it can squeeze to (<see cref="NavAccess.TryFindStart"/>) and the goal to the
+        /// nearest cell in the start's region, and picks the route: straight when in sight, stay when no such cell is
+        /// near, else a search.
         /// </summary>
         public static PathQuery Prepare(in NavAccess access, float3 start, float3 goal)
         {
             var grid = access.Grid;
             var startCell = grid.WorldToCell(start);
-            if (!access.TryFindNearest(startCell, NearestSearchRadius, out var from))
+            if (!access.TryFindStart(startCell, start, goal, out var from))
             {
                 return new PathQuery { Route = PathRoute.Straight, Origin = start, End = goal };
             }

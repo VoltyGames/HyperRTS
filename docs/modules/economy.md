@@ -18,6 +18,12 @@ Players spend resources to build and train. Each resource is a `ResourceType` as
 `ResourceStagesAuthoring` on a node swaps child models by the share of its starting amount left, ordered from full
 to nearly spent, and steps back up as a renewable node regrows. `ResourceStageSystem` shows them on the client.
 
+A full harvester chooses its drop-off once per trip (`HarvestState.DropOff`) and keeps it until it delivers or the
+drop-off is gone, dies, is unfinished or changes owner. Among its owner's finished drop-offs that it can reach
+(`NavGrid.IsReachable`), it takes the lowest gap to the footprint's edge plus the turn to face that edge times its
+turn radius, or half its hull for a vehicle that pivots. So a truck keeps to the drop-off ahead, and one turning
+round never flips between two.
+
 Nodes are finite or regrow. Harvesters move on when a node runs dry. A killed delivery carrier pays nothing. Steady
 income, refills and casualty income scale with the player's `Income` stat.
 

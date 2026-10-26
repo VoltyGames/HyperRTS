@@ -33,6 +33,9 @@ namespace HyperRTS.Simulation.Resources
 
         /// <summary>Fractional gathering carried between frames.</summary>
         public float Progress;
+
+        /// <summary>Where this trip delivers, chosen once so a turning truck doesn't flip between two.</summary>
+        public Entity DropOff;
     }
 
     /// <summary>Accepts harvested cargo from its owner's harvesters.</summary>

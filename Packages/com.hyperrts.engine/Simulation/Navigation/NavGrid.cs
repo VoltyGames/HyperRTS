@@ -153,8 +153,9 @@ namespace HyperRTS.Simulation.Navigation
             box.IsAxisAligned || box.Contains(CellCenter(cell).xz, CellSize * 0.5f);
 
         /// <summary>
-        /// Whether an agent could path between two points: their cells share a region, scenery aside. A start in
-        /// closed cells counts from the open ground it would step out to. Aircraft reach everywhere.
+        /// Whether an agent could path between two points: they share a region, scenery aside. A closed start counts
+        /// from where its path would begin, a closed end from the open cell nearest it. Aircraft reach everywhere; a
+        /// unit whose class isn't registered yet reaches nothing.
         /// </summary>
         public readonly bool IsReachable(in NavAgent agent, float3 from, float3 to)
         {
@@ -163,13 +164,17 @@ namespace HyperRTS.Simulation.Navigation
                 return true;
             }
 
-            var access = agent.Access(this);
-            if (!access.TryFindNearest(WorldToCell(from), GridPathfinder.NearestSearchRadius, out var start))
+            if (!agent.TryAccess(this, out var access))
             {
                 return false;
             }
 
-            return access.Region(start) == access.Region(WorldToCell(to));
+            if (!access.TryFindStart(WorldToCell(from), from, to, out var start))
+            {
+                return false;
+            }
+
+            return access.Region(start) == access.NearestRegion(to);
         }
 
         /// <summary>The surface the ground alone gives a cell (<see cref="NavGround.Classify"/>).</summary>
