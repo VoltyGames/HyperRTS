@@ -14,7 +14,8 @@ namespace HyperRTS.Simulation.Buildings
     /// A building under construction marks <see cref="Cleared"/> the open <see cref="Destructible"/> scenery its
     /// footprint overlaps (trees, fences, pipes crossing the edge) and the scenery remains on it, so they go with no
     /// remains, effects or sounds. A tree goes when its crown reaches over the site. Scenery with its own obstacle
-    /// blocks placement instead.
+    /// blocks placement instead. Scenery and sites stand still, so only a new site or new scenery is checked again;
+    /// remains appear any time and are checked every frame.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -25,6 +26,8 @@ namespace HyperRTS.Simulation.Buildings
         private ComponentLookup<NavAgent> _agents;
         private ComponentLookup<Health> _health;
         private ComponentLookup<Cleared> _cleared;
+        private int _siteOrder;
+        private int _sceneryOrder;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -49,9 +52,15 @@ namespace HyperRTS.Simulation.Buildings
             _cleared.Update(ref state);
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
+            var siteOrder = state.EntityManager.GetComponentOrderVersion<ConstructionProgress>();
+            var sceneryOrder = state.EntityManager.GetComponentOrderVersion<Destructible>();
+            var changed = siteOrder != _siteOrder || sceneryOrder != _sceneryOrder;
+            _siteOrder = siteOrder;
+            _sceneryOrder = sceneryOrder;
             var sites = new NativeList<NavBox>(8, state.WorldUpdateAllocator);
             new SceneryJob
             {
+                Search = changed,
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Ecb = ecb,
                 Sites = sites,
@@ -62,13 +71,16 @@ namespace HyperRTS.Simulation.Buildings
                 Cleared = _cleared,
             }.Schedule();
             new RemainsJob { Ecb = ecb, Sites = sites }.Schedule();
-            new CrownJob { Ecb = ecb, Sites = sites }.Schedule();
+            if (changed)
+            {
+                new CrownJob { Ecb = ecb, Sites = sites }.Schedule();
+            }
         }
 
         /// <summary>A piece of scenery or remains counts as reaching the site when its circle overlaps the box.</summary>
         private static bool Reaches(in NavBox site, float2 point, float radius) => site.Gap(point) < radius;
 
-        /// <summary>Single-threaded: it lists the sites and writes the one command buffer.</summary>
+        /// <summary>Single-threaded: it lists the sites, searches them on a change and writes the one buffer.</summary>
         [BurstCompile]
         [WithAll(typeof(BuildingTag), typeof(ConstructionProgress))]
         [WithNone(typeof(Dead))]
@@ -77,6 +89,7 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public SpatialIndex Index;
             public EntityCommandBuffer Ecb;
             public NativeList<NavBox> Sites;
+            public bool Search;
             [ReadOnly] public ComponentLookup<Destructible> Destructibles;
             [ReadOnly] public ComponentLookup<NavObstacle> Obstacles;
             [ReadOnly] public ComponentLookup<NavAgent> Agents;
@@ -96,6 +109,11 @@ namespace HyperRTS.Simulation.Buildings
                     Box = new NavBox(transform.Position, transform.Rotation, obstacle.Size),
                 };
                 Sites.Add(footprint.Box);
+                if (!Search)
+                {
+                    return;
+                }
+
                 Index.Query(transform.Position, math.length(obstacle.Size) * 0.5f, ref footprint);
             }
         }

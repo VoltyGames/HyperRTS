@@ -98,7 +98,8 @@ namespace HyperRTS.Simulation.Tests
             _world.Run(2f + MoveProgress.GiveUpSeconds);
 
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(unit), "the blocked move completed");
-            Assert.IsTrue(_world.IsEnabled<Arrival>(unit) && _world.Get<Arrival>(unit).Stalled, "it gave up");
+            Assert.IsTrue(_world.IsEnabled<Arrival>(unit) &&
+                _world.Get<Arrival>(unit).Reason == ArrivalReason.Stalled, "it gave up");
             // Once both are parked they share the last frame's press, a few centimetres.
             Assert.AreEqual(goal.x, _world.GetPosition(parked).x, 0.1f, "never shoved off the goal");
             Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 1.5f, "waited beside it, not circling");
@@ -159,7 +160,8 @@ namespace HyperRTS.Simulation.Tests
             foreach (var unit in units)
             {
                 Assert.IsTrue(_world.IsEnabled<Arrival>(unit), "arrived");
-                Assert.IsFalse(_world.Get<Arrival>(unit).Stalled, "by the goal or a groupmate, not by giving up");
+                Assert.AreNotEqual(ArrivalReason.Stalled, _world.Get<Arrival>(unit).Reason,
+                    "by the goal or a groupmate, not by giving up");
             }
         }
 
@@ -184,7 +186,7 @@ namespace HyperRTS.Simulation.Tests
             var parked = _world.SpawnUnit(1, float3.zero);
             var goal = new float3(8f, 0f, 0f);
             _world.EntityManager.SetComponentData(parked, new MoveDestination { Value = goal, Group = 7 });
-            _world.EntityManager.SetComponentData(parked, new Arrival { AgainstGroup = true });
+            _world.EntityManager.SetComponentData(parked, new Arrival { Reason = ArrivalReason.AtGroupmate });
             _world.EntityManager.SetComponentEnabled<Arrival>(parked, true);
             var mover = _world.SpawnUnit(1, new float3(-6f, 0f, 0f));
             _world.Issue(mover, new Order { Type = OrderType.Move, Position = goal, Group = 7, Extent = 30f });

@@ -144,8 +144,8 @@ namespace HyperRTS.Simulation.Units
             NextReplan = ReplanSeconds;
         }
 
-        /// <summary>A move that just ended arrived or stalled; the next one measures progress afresh.</summary>
-        public void Report(bool wasMoving, bool isMoving, bool stalled, bool againstGroup, ref Arrival arrival,
+        /// <summary>A move that just ended records why; the next one measures progress afresh.</summary>
+        public void Report(bool wasMoving, bool isMoving, ArrivalReason reason, ref Arrival arrival,
             EnabledRefRW<Arrival> arrived)
         {
             if (isMoving)
@@ -160,8 +160,7 @@ namespace HyperRTS.Simulation.Units
             if (wasMoving)
             {
                 arrived.ValueRW = true;
-                arrival.Stalled = stalled;
-                arrival.AgainstGroup = againstGroup;
+                arrival.Reason = reason;
             }
         }
     }

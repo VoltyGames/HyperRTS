@@ -21,12 +21,15 @@ namespace HyperRTS.Simulation.Navigation
     [UpdateAfter(typeof(NavGridSystem))]
     public partial struct PathfindingSystem : ISystem
     {
+        private const double UseCheckSeconds = 1.0;
+
         private EntityQuery _agents;
         private GroupFields _fields;
         private NativeReference<PathStats> _stats;
         private BufferLookup<PathWaypoint> _waypointLookup;
         private ComponentLookup<PathState> _stateLookup;
         private uint _frame;
+        private double _nextUseCheck;
 
         /// <summary>Totals of the work done so far; complete the world's jobs before reading.</summary>
         public readonly PathStats Stats => _stats.Value;
@@ -62,13 +65,21 @@ namespace HyperRTS.Simulation.Navigation
             _frame++;
             var grid = SystemAPI.GetSingleton<NavGrid>();
             var count = _agents.CalculateEntityCount();
-            var requests = new NativeList<PathRequest>(count, Allocator.TempJob);
-            var used = new NativeParallelHashSet<int2>(math.max(count, 1), Allocator.TempJob);
             var now = SystemAPI.Time.ElapsedTime;
+            // Which group fields moving units still have is gathered about once a second, not every frame.
+            var checksUse = now >= _nextUseCheck;
+            if (checksUse)
+            {
+                _nextUseCheck = now + UseCheckSeconds;
+            }
+
+            var requests = new NativeList<PathRequest>(count, Allocator.TempJob);
+            var used = new NativeParallelHashSet<int2>(checksUse ? math.max(count, 1) : 1, Allocator.TempJob);
             state.Dependency = new EvaluateJob
             {
                 Requests = requests.AsParallelWriter(),
                 Used = used.AsParallelWriter(),
+                ChecksUse = checksUse,
                 Grid = grid,
                 Frame = _frame,
                 Now = now,
@@ -79,7 +90,8 @@ namespace HyperRTS.Simulation.Navigation
             var plan = new PathPlan(Allocator.TempJob);
             state.Dependency = new PlanJob
             {
-                Requests = requests, Used = used, Grid = grid, Fields = _fields, Plan = plan, Now = now,
+                Requests = requests, Used = used, ChecksUse = checksUse, Grid = grid, Fields = _fields, Plan = plan,
+                Now = now,
             }.Schedule(state.Dependency);
             state.Dependency = Serve(grid, requests, plan, now, state.Dependency);
             requests.Dispose(state.Dependency);
@@ -116,6 +128,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             public NativeList<PathRequest>.ParallelWriter Requests;
             public NativeParallelHashSet<int2>.ParallelWriter Used;
+            public bool ChecksUse;
             [ReadOnly] public NavGrid Grid;
             public uint Frame;
             public double Now;
@@ -137,7 +150,7 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 var classIndex = Grid.Classes.Find(agent.Class);
-                if (destination.Group != 0 && classIndex >= 0)
+                if (ChecksUse && destination.Group != 0 && classIndex >= 0)
                 {
                     Used.Add(new int2(destination.Group, classIndex));
                 }

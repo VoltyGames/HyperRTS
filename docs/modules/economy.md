@@ -61,7 +61,8 @@ A hostile ground or naval unit whose capsule reaches into the box (`BuildingSpot
 only enemies the player sees. The server counts hidden ones as well, and that order fails like any invalid spot.
 On the server, `SiteClearingSystem` marks `Cleared` every piece of open scenery whose circle overlaps a site's turned
 box, so a fence crossing the edge goes too, every tree whose crown (`Topple.Crown`, baked from its meshes) reaches
-over it, and every open scenery remains lying on it. `DeathSystem` destroys
+over it, and every open scenery remains lying on it. Scenery and sites never move, so scenery is checked again only
+when a site or a piece of scenery appears; remains are checked every frame. `DeathSystem` destroys
 cleared pieces the next frame with no remains, no `Dead` and so no cues. Multiplayer sends the clearing as a
 `SceneryChange` with `Cleared` set, and clients remove the piece, or the remains they spawned for it, the same way.
 The server also refuses overlap with standing obstacles and sites placed the same

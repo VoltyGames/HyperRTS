@@ -111,7 +111,8 @@ namespace HyperRTS.Simulation.Air
                     path.Halt(moving, waypoints);
                 }
 
-                progress.Report(wasMoving, moving.ValueRO, false, crowd.ReachedGroup, ref arrival, arrived);
+                var reason = crowd.ReachedGroup ? ArrivalReason.AtGroupmate : ArrivalReason.Reached;
+                progress.Report(wasMoving, moving.ValueRO, reason, ref arrival, arrived);
                 if (remembers)
                 {
                     drive.Hit(transform.Position.xz - from, step, false);

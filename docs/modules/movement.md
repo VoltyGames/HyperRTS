@@ -57,8 +57,8 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   from the cell nearest the centre of their slots, over the union of their corridors. Each member traces it downhill,
   leaves it at its first cell near the goal that sees its own slot, and is pulled tight with line of sight, so it
   still gets ordinary waypoints. A replan while the field is valid is a trace again, with no search. A field goes when
-  a grid change reaches its corridor, when no moving unit uses it or after 30 s idle. Over 60,000 cells, members
-  split by start sector into several fields. A member alone, or one whose slot lies out of sight of the centre or
+  a grid change reaches its corridor, within a second of no moving unit using it, or after 30 s idle. Over 60,000
+  cells, members split by start sector into several fields. A member alone, or one whose slot lies out of sight of the centre or
   over 48 m from it, searches by itself, as do chases and walk-ups.
 - Smoothing and corner skipping use line of sight, which walks every cell the line crosses (Amanatides and Woo) and
   needs each open.
@@ -139,9 +139,9 @@ unit fits and can reach; one only across water or a wall is left to the pathfind
   (`MoveDestination.Extent`, twice the farthest slot's distance from the goal). A unit within that span of its own
   slot that touches an arrived groupmate lying toward its goal has arrived too, so arrival passes through a crowded
   group by contact. Farther out a parked groupmate is only traffic. A groupmate that itself stopped that way
-  (`Arrival.AgainstGroup`) doesn't count, so a group crossing a bridge never stops in a chain back onto the deck.
+  (`ArrivalReason.AtGroupmate`) doesn't count, so a group crossing a bridge never stops in a chain back onto the deck.
 - A move ends by itself at the goal, against an arrived groupmate, or when the unit stops getting on. Then
-  `MoveDestination` is disabled and `Arrival` enabled, with `Stalled` set when it gave up. `MoveOrderSystem`
+  `MoveDestination` is disabled and `Arrival` enabled, its `Reason` saying which. `MoveOrderSystem`
   finishes its order on `Arrival`. If anything else halts the unit, such as combat letting go, it points the unit
   at the goal again.
 - `MoveProgress` is the one stuck measure. Progress is the path left shrinking by the arrival tolerance or the hull

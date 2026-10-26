@@ -73,7 +73,7 @@ namespace HyperRTS.Simulation.Tests
             _world.Tick();
 
             Assert.IsTrue(_world.RunUntil(() => !_world.IsEnabled<MoveDestination>(unit), 40f), "the move ended");
-            Assert.IsFalse(_world.Get<Arrival>(unit).Stalled, "by arriving");
+            Assert.AreNotEqual(ArrivalReason.Stalled, _world.Get<Arrival>(unit).Reason, "by arriving");
             Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 1f, "at the goal");
         }
 

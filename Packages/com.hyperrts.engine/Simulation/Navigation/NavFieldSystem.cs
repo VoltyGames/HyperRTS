@@ -32,26 +32,32 @@ namespace HyperRTS.Simulation.Navigation
         public void OnUpdate(ref SystemState state)
         {
             ref var grid = ref SystemAPI.GetSingletonRW<NavGrid>().ValueRW;
-            // The registry and dirty marks are read here on the main thread, after the grid's stamps.
-            state.CompleteDependency();
-            var classes = grid.Classes.Classes.Length;
-            Register(ref grid);
-            var firstNewKey = grid.FitAccess();
-            var work = Collect(grid, firstNewKey);
-            if (work.Length == 0 && classes == grid.Classes.Classes.Length)
+            var firstNewKey = grid.Field.Keys;
+            // The registry grows on the main thread, so only frames with new or edited agents wait for its readers.
+            if (!_agents.IsEmpty)
             {
-                work.Dispose();
-                return;
+                state.CompleteDependency();
+                Register(ref grid);
+                firstNewKey = grid.FitAccess();
             }
 
-            var dependency = new RebuildJob
+            var work = new NativeList<int2>(Allocator.TempJob);
+            var dependency = new CollectJob
+            {
+                Field = grid.Field,
+                SectorDirty = grid.Sectors.Dirty,
+                KeyCount = grid.Classes.Keys.Length,
+                FirstNewKey = firstNewKey,
+                Work = work,
+            }.Schedule(state.Dependency);
+            dependency = new RebuildJob
             {
                 Cells = grid.Cells,
                 Scenery = grid.Scenery,
                 Keys = grid.Classes.Keys.AsArray(),
-                Work = work.AsArray(),
+                Work = work.AsDeferredJobArray(),
                 Field = grid.Field,
-            }.Schedule(work.Length, 1, state.Dependency);
+            }.Schedule(work, 1, dependency);
             dependency = grid.Sectors.Schedule(grid.Field, grid.Classes, dependency);
             state.Dependency = work.Dispose(dependency);
         }
@@ -71,35 +77,41 @@ namespace HyperRTS.Simulation.Navigation
             agents.Dispose();
         }
 
-        // Every sector of a new key, else its dirty sectors; the marks pass on to the sector graph.
-        private static NativeList<int2> Collect(in NavGrid grid, int firstNewKey)
+        /// <summary>Every sector of a new key, else its dirty sectors; the marks pass on to the sector graph.</summary>
+        [BurstCompile]
+        private struct CollectJob : IJob
         {
-            var field = grid.Field;
-            var work = new NativeList<int2>(field.DirtySectors.Length, Allocator.TempJob);
-            for (var slot = 0; slot < grid.Classes.Keys.Length; slot++)
+            public NavField Field;
+            public NativeArray<bool> SectorDirty;
+            public int KeyCount;
+            public int FirstNewKey;
+            public NativeList<int2> Work;
+
+            public void Execute()
             {
-                for (var sector = 0; sector < field.DirtySectors.Length; sector++)
+                var dirty = Field.DirtySectors;
+                for (var slot = 0; slot < KeyCount; slot++)
                 {
-                    if (slot >= firstNewKey || field.DirtySectors[sector])
+                    for (var sector = 0; sector < dirty.Length; sector++)
                     {
-                        work.Add(new int2(sector, slot));
+                        if (slot >= FirstNewKey || dirty[sector])
+                        {
+                            Work.Add(new int2(sector, slot));
+                        }
                     }
                 }
-            }
 
-            var sectors = grid.Sectors;
-            for (var sector = 0; sector < field.DirtySectors.Length; sector++)
-            {
-                sectors.Dirty[sector] |= field.DirtySectors[sector];
-                field.DirtySectors[sector] = false;
+                for (var sector = 0; sector < dirty.Length; sector++)
+                {
+                    SectorDirty[sector] |= dirty[sector];
+                    dirty[sector] = false;
+                }
             }
-
-            return work;
         }
 
         /// <summary>One sector of one key per index; each writes only that sector's cells of that key.</summary>
         [BurstCompile]
-        private struct RebuildJob : IJobParallelFor
+        private struct RebuildJob : IJobParallelForDefer
         {
             private static readonly ProfilerMarker RebuildMarker = new("NavFieldSystem.Rebuild");
 

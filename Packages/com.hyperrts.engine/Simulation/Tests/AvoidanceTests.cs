@@ -54,7 +54,8 @@ namespace HyperRTS.Simulation.Tests
         private void AssertArrived(Entity unit, float3 goal, float tolerance)
         {
             Assert.IsTrue(_world.IsEnabled<Arrival>(unit), "arrived");
-            Assert.IsFalse(_world.Get<Arrival>(unit).Stalled, "reached the goal, not given up");
+            Assert.AreNotEqual(ArrivalReason.Stalled, _world.Get<Arrival>(unit).Reason,
+                "reached the goal, not given up");
             Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), tolerance, "at its goal");
         }
 

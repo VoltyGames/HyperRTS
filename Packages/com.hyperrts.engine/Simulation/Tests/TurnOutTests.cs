@@ -92,7 +92,8 @@ namespace HyperRTS.Simulation.Tests
 
             Assert.IsTrue(turnedOut, "wedged, it backed out");
             Assert.IsTrue(ended, "the move ended");
-            Assert.IsFalse(_world.Get<Arrival>(tank).Stalled, "by arriving, not by giving up");
+            Assert.AreNotEqual(ArrivalReason.Stalled, _world.Get<Arrival>(tank).Reason,
+                "by arriving, not by giving up");
             Assert.Less(math.distance(_world.GetPosition(tank).xz, goal.xz), 2f, "at the goal");
         }
     }

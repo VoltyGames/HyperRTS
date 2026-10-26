@@ -137,7 +137,8 @@ namespace HyperRTS.Simulation.Tests
         {
             foreach (var unit in units)
             {
-                Assert.IsFalse(_world.Get<Arrival>(unit).Stalled, $"{unit} gave up at {_world.GetPosition(unit)}");
+                Assert.AreNotEqual(ArrivalReason.Stalled, _world.Get<Arrival>(unit).Reason,
+                    $"{unit} gave up at {_world.GetPosition(unit)}");
             }
         }
 

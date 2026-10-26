@@ -73,8 +73,8 @@ namespace HyperRTS.Simulation.Navigation
 
     /// <summary>
     /// The live <see cref="GroupField"/>s, keyed by (group, class). A field goes once a grid change reaches its
-    /// corridor, once no moving unit has its key, or after <see cref="IdleSeconds"/> unused; members asking again
-    /// then get a new one.
+    /// corridor, within a second of no moving unit having its key, or after <see cref="IdleSeconds"/> unused; members
+    /// asking again then get a new one.
     /// </summary>
     public struct GroupFields : IDisposable
     {
@@ -119,14 +119,28 @@ namespace HyperRTS.Simulation.Navigation
             return -1;
         }
 
-        /// <summary>Drops fields no moving unit uses, idle ones and ones a grid change reached; keeps the rest current.</summary>
-        public void Prune(in NavGrid grid, in NativeParallelHashSet<int2> used, double now)
+        /// <summary>Drops the fields no moving unit has the key of.</summary>
+        public void DropUnused(in NativeParallelHashSet<int2> used)
         {
             for (var i = Fields.Length - 1; i >= 0; i--)
             {
                 var field = Fields[i];
-                var stale = !used.Contains(field.Key) || now - field.LastUsed > IdleSeconds ||
-                            !grid.Changes.Covers(field.Version, grid.Version) || IsTouched(field, grid);
+                if (!used.Contains(field.Key))
+                {
+                    field.Field.Dispose();
+                    Fields.RemoveAtSwapBack(i);
+                }
+            }
+        }
+
+        /// <summary>Drops idle fields and ones a grid change reached; keeps the rest current.</summary>
+        public void Prune(in NavGrid grid, double now)
+        {
+            for (var i = Fields.Length - 1; i >= 0; i--)
+            {
+                var field = Fields[i];
+                var stale = now - field.LastUsed > IdleSeconds || !grid.Changes.Covers(field.Version, grid.Version) ||
+                            IsTouched(field, grid);
                 if (stale)
                 {
                     field.Field.Dispose();

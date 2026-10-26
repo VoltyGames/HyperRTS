@@ -32,6 +32,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             public NativeList<PathRequest> Requests;
             [ReadOnly] public NativeParallelHashSet<int2> Used;
+            public bool ChecksUse;
             [ReadOnly] public NavGrid Grid;
             public GroupFields Fields;
             public PathPlan Plan;
@@ -39,7 +40,12 @@ namespace HyperRTS.Simulation.Navigation
 
             public void Execute()
             {
-                Fields.Prune(Grid, Used, Now);
+                if (ChecksUse)
+                {
+                    Fields.DropUnused(Used);
+                }
+
+                Fields.Prune(Grid, Now);
                 Requests.Sort(new OldestFirst());
                 var planner = new Planner(Requests.AsArray(), Grid, Fields, Plan, Now);
                 planner.Run();

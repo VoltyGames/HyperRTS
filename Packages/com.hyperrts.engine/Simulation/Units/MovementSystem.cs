@@ -133,7 +133,13 @@ namespace HyperRTS.Simulation.Units
                     path.Halt(moving, waypoints);
                 }
 
-                progress.Report(wasMoving, moving.ValueRO, stalled, crowd.ReachedGroup, ref arrival, arrived);
+                var reason = stalled ? ArrivalReason.Stalled : ArrivalReason.Reached;
+                if (crowd.ReachedGroup)
+                {
+                    reason = ArrivalReason.AtGroupmate;
+                }
+
+                progress.Report(wasMoving, moving.ValueRO, reason, ref arrival, arrived);
                 if (remembers)
                 {
                     drive.Hit(transform.Position.xz - from, step, !transform.Position.xz.Equals(wanted));

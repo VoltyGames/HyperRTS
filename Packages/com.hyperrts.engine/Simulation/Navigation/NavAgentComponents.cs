@@ -109,16 +109,23 @@ namespace HyperRTS.Simulation.Navigation
         public bool Chase;
     }
 
-    /// <summary>
-    /// Enabled when locomotion ended the move by itself, at the goal or against an arrived groupmate, or
-    /// <see cref="Stalled"/> when it stopped making progress. Disabled while a move runs.
-    /// </summary>
+    /// <summary>Enabled when locomotion ended the move by itself, with why. Disabled while a move runs.</summary>
     public struct Arrival : IComponentData, IEnableableComponent
     {
-        public bool Stalled;
+        public ArrivalReason Reason;
+    }
+
+    /// <summary>Why a move ended by itself.</summary>
+    public enum ArrivalReason : byte
+    {
+        /// <summary>At the goal.</summary>
+        Reached,
+
+        /// <summary>Gave up after making no progress.</summary>
+        Stalled,
 
         /// <summary>Stopped against an arrived groupmate short of its goal, so no groupmate stops against it.</summary>
-        public bool AgainstGroup;
+        AtGroupmate,
     }
 
     /// <summary>

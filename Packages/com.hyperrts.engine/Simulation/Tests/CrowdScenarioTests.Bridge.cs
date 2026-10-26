@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Tests
                     behind.Add($"{at.xz} facing {_world.Get<LocalTransform>(unit).Forward().xz} at {speed:F1} m/s " +
                                $"to {_world.Get<MoveDestination>(unit).Value.xz} " +
                                $"moving {_world.IsEnabled<MoveDestination>(unit)} " +
-                               $"stalled {_world.Get<Arrival>(unit).Stalled}");
+                               $"ended {_world.Get<Arrival>(unit).Reason}");
                 }
             }
 

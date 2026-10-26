@@ -215,27 +215,40 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Relabels the dirty sectors of every class at once, one job each, then connects them.</summary>
         public readonly JobHandle Schedule(in NavField field, in MovementClasses classes, JobHandle dependency)
         {
-            var work = new NativeList<int2>(Dirty.Length, Allocator.TempJob);
-            for (var sector = 0; sector < Dirty.Length; sector++)
-            {
-                for (var classIndex = 0; Dirty[sector] && classIndex < Classes; classIndex++)
-                {
-                    work.Add(new int2(sector, classIndex));
-                }
-            }
-
+            var work = new NativeList<int2>(Allocator.TempJob);
+            dependency = new CollectJob { Dirty = Dirty, ClassCount = Classes, Work = work }.Schedule(dependency);
             dependency = new RelabelJob
             {
-                Field = field, Classes = classes, Work = work.AsArray(), Labels = Labels, Counts = Counts,
+                Field = field, Classes = classes, Work = work.AsDeferredJobArray(), Labels = Labels, Counts = Counts,
                 Representatives = Representatives, Sectors = Sectors, ClassCount = Classes,
-            }.Schedule(work.Length, 4, dependency);
+            }.Schedule(work, 4, dependency);
             dependency = new ConnectJob { Graph = this }.Schedule(dependency);
             return work.Dispose(dependency);
         }
 
+        /// <summary>Every class of each dirty sector, sector then class.</summary>
+        [BurstCompile]
+        private struct CollectJob : IJob
+        {
+            [ReadOnly] public NativeArray<bool> Dirty;
+            public int ClassCount;
+            public NativeList<int2> Work;
+
+            public void Execute()
+            {
+                for (var sector = 0; sector < Dirty.Length; sector++)
+                {
+                    for (var classIndex = 0; Dirty[sector] && classIndex < ClassCount; classIndex++)
+                    {
+                        Work.Add(new int2(sector, classIndex));
+                    }
+                }
+            }
+        }
+
         /// <summary>One sector of one class per index; each writes only that sector's entries of that class.</summary>
         [BurstCompile]
-        private struct RelabelJob : IJobParallelFor
+        private struct RelabelJob : IJobParallelForDefer
         {
             [ReadOnly] public NavField Field;
             [ReadOnly] public MovementClasses Classes;

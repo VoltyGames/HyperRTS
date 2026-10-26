@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.Navigation
                     Faction = faction.Value,
                     IsUnit = isUnit,
                     IsMoving = moving,
-                    IsArrived = ArrivalLookup.HasEnabled(entity) && !arrival.AgainstGroup,
+                    IsArrived = ArrivalLookup.HasEnabled(entity) && arrival.Reason != ArrivalReason.AtGroupmate,
                     Group = destination.Group,
                     Facing = facing,
                     Heading = moving ? math.normalizesafe(destination.Value.xz - transform.Position.xz) : float2.zero,
