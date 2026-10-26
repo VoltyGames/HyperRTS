@@ -18,9 +18,13 @@ the match camera.
 | Edit | Any text editor. **HyperRTS ▸ Map Editor** shows the result | The spec |
 | Preview | The Map Editor, `MapPreview.Run(spec)` or batch `.Preview` | Layout image, issues and land figures |
 | Build | **Build** in the Map Editor or on **HyperRTS ▸ Tools ▸ Maps**, `MapBuilder.Build(spec)` or batch `.Build` | Scene, SubScene, assets, report, minimap, views |
-| Views | Every build with graphics, or **Recapture views** in the Map Editor | Screenshots in `Logs/MapReports/<Map>/` |
+| Views | Every build with graphics, or **Recapture views** in the Map Editor | Screenshots in `Logs/MapReports/<Map>/`, and their contrast in the report |
 
 A preview needs no scene. It does not measure rush times or attack paths; only a build does.
+
+The views' contrast is `viewLuminanceSpread`, the 5th to 95th percentile of luminance, and `viewLocalContrast`, the
+mean distance of each 4 px cell from the 5 by 5 cells round it. Both average the ground views and leave out the
+overview. Low figures mean flat, front-lit ground.
 
 ## Map Editor
 

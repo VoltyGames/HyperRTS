@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace HyperRTS.Editor.Maps.Report
 {
@@ -25,5 +27,25 @@ namespace HyperRTS.Editor.Maps.Report
         public int decals;
         public int wetDecals;
         public List<MapSpawnMetrics> spawns = new();
+
+        /// <summary>The ground views' mean <see cref="MapViewContrast.LuminanceSpread"/>; the overview is left out.</summary>
+        public float viewLuminanceSpread;
+
+        /// <summary>The ground views' mean <see cref="MapViewContrast.LocalContrast"/>; the overview is left out.</summary>
+        public float viewLocalContrast;
+
+        /// <summary>Measures the light and shade of the views just captured.</summary>
+        public void MeasureViews(IEnumerable<string> files, string overviewName)
+        {
+            var views = files.Where(f => Path.GetFileNameWithoutExtension(f) != overviewName)
+                .Select(MapViewContrast.Load).ToList();
+            if (views.Count == 0)
+            {
+                return;
+            }
+
+            viewLuminanceSpread = views.Average(v => v.LuminanceSpread);
+            viewLocalContrast = views.Average(v => v.LocalContrast);
+        }
     }
 }

@@ -191,7 +191,7 @@ namespace HyperRTS.Editor.Maps.Designer
             AddFigure(_landRows, "Crop plants", land.cropPlants.ToString("N0", CultureInfo.InvariantCulture));
         }
 
-        /// <summary>What a build measured: rush times, attack paths and each base's buildable ground and resources.</summary>
+        /// <summary>What a build measured: rush times, attack paths, view contrast and each base's buildable ground and resources.</summary>
         private void ShowMetrics(MapMetrics metrics)
         {
             _metricRows.Clear();
@@ -199,6 +199,8 @@ namespace HyperRTS.Editor.Maps.Designer
             AddFigure(_metricRows, "Attack paths", Count(metrics.paths));
             AddFigure(_metricRows, "Path search", $"{metrics.maxExpansions:N0} cells");
             AddFigure(_metricRows, "Renewable fields", $"{metrics.renewableFieldsPerPlayer:0.#} per player");
+            AddFigure(_metricRows, "View contrast",
+                $"spread {metrics.viewLuminanceSpread:0.000}, local {metrics.viewLocalContrast:0.000}");
             foreach (var spawn in metrics.spawns)
             {
                 var text = $"team {spawn.team}, rush {Seconds(spawn.rush)}, buildable {Percent(spawn.buildable)}, "

@@ -7,7 +7,10 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Views
 {
-    /// <summary>Opens a built map's scene if it isn't open and renders its standard views.</summary>
+    /// <summary>
+    /// Opens a built map's scene if it isn't open, renders its standard views and updates the last build's view
+    /// contrast.
+    /// </summary>
     public static class MapViewCapture
     {
         public static List<string> Capture(string specPath)
@@ -25,6 +28,13 @@ namespace HyperRTS.Editor.Maps.Views
             var name = project.Spec.name;
             var views = MapViews.For(generation.Layout, generation.Shapes, project.Rules);
             var files = MapViews.Capture(name, views);
+            var report = MapReport.Load(name);
+            if (report != null)
+            {
+                report.metrics.MeasureViews(files, MapViews.OverviewName);
+                report.Write(null);
+            }
+
             Debug.Log($"HyperRTS: captured {files.Count} views of '{name}' in {MapReport.ViewsFolder(name)}");
             return files;
         }

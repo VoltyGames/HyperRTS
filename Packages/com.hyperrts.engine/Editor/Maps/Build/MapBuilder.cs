@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Maps.Build
             var report = Measure(generation, scene, data, issues);
             scene.SaveAndCloseEntities();
             AssetDatabase.SaveAssets();
-            var overview = CaptureViews(generation);
+            var overview = CaptureViews(generation, report);
             Log(report);
             var result = new MapBuildResult(project.Spec, project.Paths, project.Climate, report,
                 generation.Layout.Spawns.Count, minimap, overview);
@@ -81,8 +81,11 @@ namespace HyperRTS.Editor.Maps.Build
             return Kept(paths.Name, paths.Minimap);
         }
 
-        /// <summary>Screenshots the map and saves its overview, or keeps the last overview without graphics.</summary>
-        private static Texture2D CaptureViews(MapGeneration generation)
+        /// <summary>
+        /// Screenshots the map, adds the views' contrast to the report and saves the overview, or keeps the last
+        /// overview without graphics.
+        /// </summary>
+        private static Texture2D CaptureViews(MapGeneration generation, MapReport report)
         {
             var project = generation.Project;
             if (!GraphicsSupport.Available)
@@ -92,6 +95,8 @@ namespace HyperRTS.Editor.Maps.Build
 
             var views = MapViews.For(generation.Layout, generation.Shapes, project.Rules);
             var files = MapViews.Capture(project.Spec.name, views);
+            report.metrics.MeasureViews(files, MapViews.OverviewName);
+            report.Write(null);
             var overview = files.Find(f => Path.GetFileNameWithoutExtension(f) == MapViews.OverviewName);
             return MapOverviewPicture.Save(overview, project.Paths.Overview);
         }
