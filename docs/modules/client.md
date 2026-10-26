@@ -330,8 +330,8 @@ The scene fog is URP's: its `Volumetric Fog` renderer feature draws the profile'
 volumetric fog where the override turns it on) over the opaques after the skybox, before the opaque texture is
 copied. URP compiles it only under the `VOLUMETRIC_FOG` scripting define, so a project using it sets that define;
 the engine itself references none of its types. URP skips orthographic cameras without resetting its fog globals,
-so `OrthographicFogFeature`, after URP's feature on the renderer, clears them there with `ClearAtmosphereFogPass`
-and captures such as the minimap stay clear.
+so `FogOfWarFeature`, after URP's feature on the renderer, clears them there with `ClearAtmosphereFogPass` and
+captures such as the minimap stay clear.
 
 Transparent shaders apply both fogs in the full-screen order with `SceneFogAt` and `ApplySceneFog` from
 `SceneFog.hlsl`, and need `#pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC`. A shader that samples the

@@ -5,7 +5,10 @@ using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Presentation.Rendering
 {
-    /// <summary>Draws the <see cref="FogOfWarRenderer"/> grid full screen in game cameras while a match shows it.</summary>
+    /// <summary>
+    /// Draws the <see cref="FogOfWarRenderer"/> grid full screen in game cameras while a match shows it, and keeps URP's
+    /// fog off orthographic cameras, which URP's fog feature skips without resetting the last perspective camera's fog.
+    /// </summary>
     public sealed class FogOfWarFeature : ScriptableRendererFeature
     {
         public const string ShaderName = "Hidden/HyperRTS/FogOfWar";
@@ -15,9 +18,11 @@ namespace HyperRTS.Presentation.Rendering
 
         private Material material;
         private FogOfWarPass pass;
+        private ClearAtmosphereFogPass clearFog;
 
         public override void Create()
         {
+            clearFog = new ClearAtmosphereFogPass();
             if (shader == null)
             {
                 Debug.LogError($"HyperRTS: {nameof(FogOfWarFeature)} '{name}' has no shader; set it to {ShaderName}.", this);
@@ -28,12 +33,17 @@ namespace HyperRTS.Presentation.Rendering
             pass = new FogOfWarPass(material);
         }
 
-        // Orthographic cameras are top-down captures such as the minimap.
+        // Orthographic cameras are top-down captures such as the minimap: neither fog draws there.
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             var cameraData = renderingData.cameraData;
-            var drawn = cameraData.cameraType == CameraType.Game && !cameraData.camera.orthographic;
-            if (pass == null || !drawn || !FogOfWarRenderer.Shown)
+            if (cameraData.camera.orthographic)
+            {
+                renderer.EnqueuePass(clearFog);
+                return;
+            }
+
+            if (pass == null || cameraData.cameraType != CameraType.Game || !FogOfWarRenderer.Shown)
             {
                 return;
             }
@@ -46,6 +56,7 @@ namespace HyperRTS.Presentation.Rendering
             CoreUtils.Destroy(material);
             material = null;
             pass = null;
+            clearFog = null;
         }
     }
 }
