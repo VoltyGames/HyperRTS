@@ -157,6 +157,20 @@ namespace HyperRTS.Presentation.Tests.Environment
         }
 
         [Test]
+        public void AddFootprintScar_CoversTheFootprint_ScorchedAndChurnedWithoutABowl()
+        {
+            var stamps = new InteractionStamps();
+
+            stamps.AddFootprintScar(new float2(1f, 2f), new float2(1f, 0f), new float2(8f, 6f), 0.5f);
+
+            var scar = stamps.Scars[0];
+            Assert.AreEqual(new float2(4f, 3f), scar.HalfSize);
+            Assert.AreEqual(new float2(1f, 0f), scar.Forward);
+            Assert.AreEqual(new float4(0f, 0.5f, 0f, 0.5f), scar.Value, "no bowl marks the square shape");
+            Assert.IsEmpty(stamps.Trample);
+        }
+
+        [Test]
         public void AddWake_TrailsBehindTheUnit_FoamGrowingWithSpeed()
         {
             var stamps = new InteractionStamps();

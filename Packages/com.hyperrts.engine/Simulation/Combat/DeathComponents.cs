@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Combat
         }
     }
 
-    /// <summary>Remains that last <see cref="Lifetime"/> seconds, then sink <see cref="DespawnDepth"/> metres and go.</summary>
+    /// <summary>Remains that last <see cref="Lifetime"/> seconds, then are buried <see cref="DespawnDepth"/> metres deep and go.</summary>
     public struct Decay : IComponentData
     {
         public float Lifetime;

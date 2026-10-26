@@ -94,11 +94,17 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             return half4(input.value.x * rut * Footprint(input, 0.9), input.value.y * Footprint(input, 0.6), 0.0, 0.0);
         }
 
-        // A ragged rim keeps hundreds of scars from reading as stamped circles.
+        // A ragged rim keeps hundreds of scars from reading as stamped circles. A scar without a bowl is a footprint.
         half4 ScarsFragment(StampVaryings input) : SV_Target
         {
             float angle = atan2(input.local.y, input.local.x);
             float ragged = 1.0 + 0.08 * sin(5.0 * angle + input.phase) + 0.05 * sin(3.0 * angle - 2.0 * input.phase);
+            if (input.value.z <= 0.0)
+            {
+                float burnt = 1.0 - smoothstep(0.85, 1.0, max(abs(input.local.x), abs(input.local.y)) * ragged);
+                return half4(0.0, input.value.w * burnt, input.value.y * burnt, 0.0);
+            }
+
             float reach = length(input.local) * ragged;
             float bowl = saturate(1.0 - Sq(reach / input.value.z));
             float scorch = 1.0 - smoothstep(0.55, 1.0, reach);

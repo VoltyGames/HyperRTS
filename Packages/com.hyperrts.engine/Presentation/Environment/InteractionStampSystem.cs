@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Animation;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Units;
@@ -13,8 +14,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Environment
 {
     /// <summary>
-    /// Gathers this frame's stamps from vehicles, infantry footsteps, building footprints and wakes the local player
-    /// sees. Footsteps need the full-resolution maps.
+    /// Gathers this frame's stamps from vehicles, infantry footsteps, building footprints, buried remains and wakes the
+    /// local player sees. Footsteps need the full-resolution maps.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -26,6 +27,7 @@ namespace HyperRTS.Presentation.Environment
         private EntityQuery _vehicles;
         private EntityQuery _squads;
         private EntityQuery _buildings;
+        private EntityQuery _remains;
 
         public InteractionStamps Stamps { get; } = new();
 
@@ -36,6 +38,8 @@ namespace HyperRTS.Presentation.Environment
             _squads = SystemAPI.QueryBuilder().WithAll<SquadFigures, SquadFigure, LocalToWorld>()
                 .WithNone<FogHidden, Inside>().Build();
             _buildings = SystemAPI.QueryBuilder().WithAll<BuildingTag, NavObstacle, LocalToWorld>()
+                .WithNone<FogHidden, Inside>().Build();
+            _remains = SystemAPI.QueryBuilder().WithAll<Decay, NavObstacle, LocalToWorld>()
                 .WithNone<FogHidden, Inside>().Build();
         }
 
@@ -54,6 +58,7 @@ namespace HyperRTS.Presentation.Environment
             AddVehicles();
             AddFootsteps();
             AddBuildings();
+            AddBuriedRemains();
             AddWakes();
         }
 
@@ -139,6 +144,24 @@ namespace HyperRTS.Presentation.Environment
             for (var i = 0; i < footprints.Length; i++)
             {
                 Stamps.Trample.Add(InteractionMath.Footprint(transforms[i].Position.xz, footprints[i].Size));
+            }
+        }
+
+        // The scar deepens as the remains are buried, so the plot keeps a burnt mark of what stood there.
+        private void AddBuriedRemains()
+        {
+            using var decays = _remains.ToComponentDataArray<Decay>(Allocator.Temp);
+            using var footprints = _remains.ToComponentDataArray<NavObstacle>(Allocator.Temp);
+            using var transforms = _remains.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
+            for (var i = 0; i < decays.Length; i++)
+            {
+                var forward = transforms[i].Forward.xz;
+                var buried = decays[i].DespawnProgress > 0f;
+                if (buried && math.lengthsq(forward) > 1e-4f)
+                {
+                    Stamps.AddFootprintScar(transforms[i].Position.xz, math.normalize(forward), footprints[i].Size,
+                        decays[i].DespawnProgress);
+                }
             }
         }
 

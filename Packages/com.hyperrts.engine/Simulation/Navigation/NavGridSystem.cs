@@ -121,7 +121,7 @@ namespace HyperRTS.Simulation.Navigation
             state.Dependency = new ChangeJob { Grid = grid }.Schedule(dependency);
         }
 
-        // Footprints only differ after an add, removal or archetype change, or a blocker turning off as it sinks.
+        // Footprints only differ after an add, removal or archetype change, or a blocker turning off as it is buried.
         private bool FootprintsMayDiffer(ref SystemState state)
         {
             var count = _blockers.CalculateEntityCount();

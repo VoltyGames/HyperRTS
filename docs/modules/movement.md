@@ -193,7 +193,7 @@ enabled `FacingGoal`, as a hull-fixed weapon sets, turns toward it standing at i
 never moves. It closes the land cells it covers, so paths go round it and `NavCapsule` keeps units out, and nothing
 can be built on it. Water and decks stay, so ships pass under a wreck on a bridge. A unit caught in its cells as it
 appears drives out, since its path first steps out to open ground and `NavCapsule` lets it move while its overlap
-shrinks. A `Decay` wreck stops blocking once it starts to sink, and its cells open again.
+shrinks. A `Decay` wreck stops blocking once it starts to be buried, and its cells open again.
 
 ## Air
 

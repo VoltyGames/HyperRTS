@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
 {
     /// <summary>
     /// Scenery and wrecks on the ground: trucks go round woods, tanks crush through, and a wreck closes its land
-    /// cells until it sinks.
+    /// cells until it is buried.
     /// </summary>
     public class NavSceneryTests
     {
@@ -225,7 +225,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
         }
 
         [Test]
-        public void SinkingWreck_OpensItsCells()
+        public void BuriedWreck_OpensItsCells()
         {
             var wreck = SpawnWreck();
             var writer = new EntityManagerWriter(_world.EntityManager, wreck);
@@ -234,7 +234,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             Assert.IsFalse(_world.Grid().IsWalkable(float3.zero), "it blocks while it waits");
 
             _world.Run(3f);
-            Assert.IsFalse(_world.IsEnabled<Blocker>(wreck), "it stops blocking once it sinks");
+            Assert.IsFalse(_world.IsEnabled<Blocker>(wreck), "it stops blocking once it is buried");
             Assert.IsTrue(_world.Grid().IsWalkable(float3.zero), "its cells open again");
 
             var unit = DriveAcross(new float3(-10f, 0f, 0f));

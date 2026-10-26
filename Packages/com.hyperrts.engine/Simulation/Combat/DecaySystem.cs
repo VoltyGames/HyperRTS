@@ -10,7 +10,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// Starts <see cref="Decay"/> remains' clocks, sinks them when their lifetime ends (no longer blocking), then destroys
+    /// Starts <see cref="Decay"/> remains' clocks, buries them when their lifetime ends (no longer blocking), then destroys
     /// them.
     /// </summary>
     [BurstCompile]
@@ -104,7 +104,7 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                // Sinking remains are on their way out, so units may drive over them.
+                // Remains being buried are on their way out, so units may drive over them.
                 if (Blockers.HasComponent(entity))
                 {
                     Blockers.SetComponentEnabled(entity, false);

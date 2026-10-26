@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
     /// Makes remains such as a wreck a blocker: units slide round its capsule instead of driving into it. It never moves
-    /// and stops blocking once it sinks under Decay.
+    /// and stops blocking once Decay starts to bury it.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Navigation + "Blocker")]
     [Icon(HyperRTSIcons.Navigation)]

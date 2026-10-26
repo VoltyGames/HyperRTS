@@ -72,6 +72,21 @@ namespace HyperRTS.Presentation.Tests.Environment
             Assert.Greater(Sample(_surfaces.Tracks, Blue)[0], 0.9f, "the scorch faded");
         }
 
+        // The sample sits near the footprint's corner, outside the disc a crater scar would draw.
+        [Test]
+        public void FootprintScar_ScorchesToTheCorners_AndOutlastsTheFade()
+        {
+            var stamps = new InteractionStamps();
+            stamps.AddFootprintScar(new float2(47f, 117f), new float2(0f, 1f), new float2(10f), 1f);
+            Draw(stamps, 0, 0);
+
+            Draw(new InteractionStamps(), InteractionMath.Levels, InteractionMath.Levels);
+
+            var scorch = Sample(_surfaces.Tracks, Blue);
+            Assert.Greater(scorch[0], 0.9f, "the corner is not scorched");
+            Assert.Less(scorch[1], 0.01f);
+        }
+
         [Test]
         public void Reset_ClearsTheScars()
         {

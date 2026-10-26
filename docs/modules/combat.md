@@ -111,7 +111,7 @@ interceptor does nothing.
 | `BreakablePartsAuthoring` | Wall and roof sections that break one at a time as health drops |
 | `ToppleAuthoring` | Scenery that falls away from the hit that killed it |
 | `StretchPartsAuthoring` | A prop the map builder stretches. Only the middle span scales |
-| `DecayAuthoring` | Remains that wait, sink and disappear |
+| `DecayAuthoring` | Remains that wait, are buried and go. Remains with a `NavObstacle` footprint block it until they go, and while they are buried leave a square scorched and churned scar on the interaction maps |
 | `DropRemains` | Remains that fall from where the entity died onto the nav grid surface: ground, water or deck. Aircraft get it with `Flight` |
 | `SpawnEffectAuthoring` | An effect played once where an entity appears |
 

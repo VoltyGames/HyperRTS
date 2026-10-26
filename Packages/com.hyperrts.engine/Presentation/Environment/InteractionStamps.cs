@@ -30,6 +30,13 @@ namespace HyperRTS.Presentation.Environment
             Scars.Add(disc);
         }
 
+        /// <summary>A footprint scorched and churned to <paramref name="share"/>: square, with no bowl.</summary>
+        public void AddFootprintScar(float2 center, float2 forward, float2 size, float share) =>
+            Scars.Add(new InteractionStamp
+            {
+                Center = center, Forward = forward, HalfSize = size * 0.5f, Value = new float4(0f, share, 0f, share),
+            });
+
         public void AddWake(float2 position, float2 direction, float speed, float radius)
         {
             var halfLength = radius + speed * InteractionMath.WakeReachSeconds * 0.5f;

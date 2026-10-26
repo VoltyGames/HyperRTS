@@ -7,7 +7,7 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// Clears remains (a wreck) after a while: they sink into the ground, fading their loop effects, then the
+    /// Clears remains (a wreck) after a while: they are buried, fading their loop effects, then the
     /// authoritative world destroys them. Put it on a ghost so clients follow.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Decay")]
@@ -16,15 +16,15 @@ namespace HyperRTS.Simulation.Combat
     [DisallowMultipleComponent]
     public class DecayAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Seconds the remains stay before they start to sink.")]
+        [Tooltip("Seconds the remains stay before they start to be buried.")]
         [Min(0.01f)]
         public float lifetime = 180f;
 
-        [Tooltip("Seconds they take to sink out of sight; their loop effects fade over the same time.")]
+        [Tooltip("Seconds they take to be buried out of sight; their loop effects fade over the same time.")]
         [Min(0.01f)]
         public float despawnDuration = 6f;
 
-        [Tooltip("Metres they sink: at least their height above the ground.")]
+        [Tooltip("Metres they are buried: at least their height above the ground.")]
         [Min(0.01f)]
         public float despawnDepth = 3f;
 
