@@ -80,6 +80,9 @@ Shader "HyperRTS/ParticlesUnlit"
             #pragma multi_compile_fragment _ _DEPTH_AS_INPUT_ATTACHMENT _DEPTH_AS_INPUT_ATTACHMENT_MSAA
             #pragma multi_compile_fragment _ DEBUG_DISPLAY
             #pragma multi_compile_instancing
+            #pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC
+            // URP's particle forward pass then fogs transparent particles itself.
+            #define _TRANSPARENT_RECEIVE_FOG 1
             #pragma instancing_options procedural:ParticleInstancingSetup
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ProbeVolumeVariants.hlsl"
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"

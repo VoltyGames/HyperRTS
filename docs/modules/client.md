@@ -265,7 +265,7 @@ Entities hidden by fog, and passengers inside a container, stop rendering. `FogO
 fog grid and its colour as shader globals. `FogOfWarFeature`, on the URP renderer with its shader set to
 `Hidden/HyperRTS/FogOfWar`, blends it full screen from the depth buffer before the transparents, so terrain and
 buildings fog where they stand while health bars, markers and the placement ghost stay clear. Water and particles
-apply it themselves through `SceneFog.hlsl`. Map buildings stay visible, but their flags, dials and
+apply it themselves through `SceneFog.hlsl` and `ParticlesFog.hlsl`. Map buildings stay visible, but their flags, dials and
 pips hide under the local fog.
 
 A client remembers enemy buildings where it last saw them. The memory is a visual copy of the building, team
@@ -320,11 +320,18 @@ An `Atmosphere` component sits on the root of a weather's atmosphere prefab, tog
 volume and `Wind`. When enabled it sets the skybox, ambient light, reflection cubemap and wetness, and turns Unity
 fog off. A missing skybox or reflection is an error.
 
-`HeightFog` is a Volume override for fog that thins with height, so weathers blend it through their profiles.
-`HeightFogFeature` must be on the URP renderer with its shader set to `Hidden/HyperRTS/HeightFog`, and the validator
-checks this. Its pass publishes the camera's blended fog as shader globals and draws it in game and scene view
-perspective cameras only, so orthographic captures such as the minimap stay clear. Transparent shaders apply both
-fogs in the full-screen order with `SceneFogAt` and `ApplySceneFog` from `SceneFog.hlsl`, as water and particles do.
+The scene fog is URP's: its `Volumetric Fog` renderer feature draws the profile's `Fog` override (height fog, and
+volumetric fog where the override turns it on) over the opaques after the skybox, before the opaque texture is
+copied. URP compiles it only under the `VOLUMETRIC_FOG` scripting define, so a project using it sets that define;
+the engine itself references none of its types. URP skips orthographic cameras without resetting its fog globals,
+so `OrthographicFogFeature`, after URP's feature on the renderer, clears them there with `ClearAtmosphereFogPass`
+and captures such as the minimap stay clear.
+
+Transparent shaders apply both fogs in the full-screen order with `SceneFogAt` and `ApplySceneFog` from
+`SceneFog.hlsl`, and need `#pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC`. A shader that samples the
+opaque texture takes URP's fog out of it first with `AtmosphereFogAt` and `RemoveAtmosphereFog`, as water does for
+the bottom it refracts, so it fogs once. `HyperRTS/Particles` and `HyperRTS/ParticlesUnlit` let URP's particle pass
+apply its fog (`_TRANSPARENT_RECEIVE_FOG`) and add only the fog of war.
 
 ### Contact shadows
 
@@ -452,7 +459,7 @@ can see:
 | Medium | 70 % | |
 | High | 100 % | Light flashes from 8 shared lights |
 
-Effect materials use the engine's particle shaders so transparent smoke and flames take height fog and fog of war
+Effect materials use the engine's particle shaders so transparent smoke and flames take URP's fog and fog of war
 like the ground beneath them. `HyperRTS/Particles` and `HyperRTS/ParticlesUnlit` are URP's Simple Lit and Unlit
 particles with the same properties and inspector. Additive particles fade to black under fog, the rest toward the
 fog colour. `HyperRTS/ParticlesSixWay` lights smoke from six baked directions.

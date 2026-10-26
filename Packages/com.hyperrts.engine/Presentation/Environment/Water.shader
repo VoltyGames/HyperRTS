@@ -116,6 +116,7 @@ Shader "HyperRTS/Water"
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #pragma multi_compile_fragment _ _TERRAIN_SIMPLE
+            #pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
@@ -207,6 +208,14 @@ Shader "HyperRTS/Water"
                 #endif
             }
 
+            // URP's fog between the camera and the opaque seen through the water at uv.
+            half4 BottomFog(float2 uv)
+            {
+                float rawDepth = SampleSceneDepth(uv);
+                float3 positionWS = ComputeWorldSpacePosition(uv, rawDepth, UNITY_MATRIX_I_VP);
+                return AtmosphereFogAt(uv, positionWS, EyeDepth(rawDepth));
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 float cameraDistance = length(_WorldSpaceCameraPos - input.positionWS);
@@ -230,9 +239,9 @@ Shader "HyperRTS/Water"
                     refracted = screenUV;
                 }
 
-                // The opaque texture already holds the height fog; take it out so the water fogs it once.
-                SceneFog fog = SceneFogAt(input.positionWS);
-                half3 bottom = RemoveHeightFog(SampleSceneColor(refracted), fog.height);
+                // The opaque texture already holds URP's fog to the bottom; take it out so the water fogs it once.
+                SceneFog fog = SceneFogAt(input.positionWS, input.positionCS);
+                half3 bottom = RemoveAtmosphereFog(SampleSceneColor(refracted), BottomFog(refracted));
                 half3 tint = lerp(_ShallowColor.rgb, _DeepColor.rgb, saturate(depth / _DepthRange)) * CloudShade(input.positionWS);
                 half3 body = lerp(tint, bottom * _ShallowColor.rgb * 1.8, exp(-depth / _Clarity));
 
@@ -250,7 +259,7 @@ Shader "HyperRTS/Water"
                     scene = ScreenReflection(input.positionWS, reflect(-view, mirror), input.positionCS.xy);
                 }
 
-                half3 reflection = lerp(sky, RemoveHeightFog(scene.rgb, fog.height), scene.a * _ReflectionStrength);
+                half3 reflection = lerp(sky, RemoveAtmosphereFog(scene.rgb, fog.atmosphere), scene.a * _ReflectionStrength);
                 half3 color = lerp(body, reflection, fresnel);
                 color += Glint(sun, normalWS, view, color, cameraDistance);
 

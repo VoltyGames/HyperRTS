@@ -42,6 +42,7 @@ Shader "HyperRTS/ParticlesSixWay"
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
+            #pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC
 
             // Samples the cascades at the pixel even when opaques use screen-space shadows.
             #define _SURFACE_TYPE_TRANSPARENT 1

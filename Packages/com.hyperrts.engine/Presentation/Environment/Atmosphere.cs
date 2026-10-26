@@ -7,8 +7,8 @@ namespace HyperRTS.Presentation.Environment
 {
     /// <summary>
     /// One weather's sky: skybox, ambient and reflection light, and ground wetness. Sits on the root of an atmosphere
-    /// prefab with its sun, wind and post volume, whose profile carries the <see cref="HeightFog"/>. Unity's built-in
-    /// fog stays off, since height fog replaces it.
+    /// prefab with its sun, wind and post volume, whose profile carries URP's Fog override. Unity's built-in fog stays
+    /// off, since URP's fog replaces it.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu(HyperRTSMenu.Environment + "Atmosphere")]

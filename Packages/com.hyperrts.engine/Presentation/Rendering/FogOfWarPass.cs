@@ -15,7 +15,7 @@ namespace HyperRTS.Presentation.Rendering
             public Material Material;
         }
 
-        // After the height fog and before every transparent, so health bars, markers and the placement ghost stay clear.
+        // After URP's fog and before every transparent, so health bars, markers and the placement ghost stay clear.
         public FogOfWarPass(Material material)
         {
             this.material = material;

@@ -67,9 +67,9 @@ half4 SixWayFrag(SixWayVaryings input) : SV_Target
         + SixWayAdditionalLights(input.positionWS, screenUV, basis, maps)
         + SixWayAmbient(input, basis, maps);
 
-    SceneFog fog = SceneFogAt(input.positionWS);
+    SceneFog fog = SceneFogAt(input.positionWS, input.positionCS);
     half3 smoke = ApplySceneFog(input.color.rgb * light, fog) * alpha;
-    half3 glow = SixWayEmission(emissionMap, input.blendAndEmission.y) * (fade * (1.0h - fog.height.a) * (1.0h - fog.war.a));
+    half3 glow = SixWayEmission(emissionMap, input.blendAndEmission.y) * (fade * (1.0h - fog.atmosphere.a) * (1.0h - fog.war.a));
     return half4(smoke + glow, alpha);
 }
 
