@@ -420,9 +420,24 @@ spacing, random scale, turn and lean, and two LOD distances. Variant meshes face
 Its `height` also shades the field: light falls off below the heads to `_CanopyShade` at the roots, so rows show
 dark gaps between lit tops.
 
-Each camera regrows the plants of its visible tiles every frame, so trampling and camera moves need no cache.
-Trampled plants bend or disappear, and none grow under a building's footprint. Plants shrink away over the last 15 % of the draw distance. It also runs in edit
-mode.
+A camera regrows the plants of its visible tiles when it moves, the quality changes or a trample map is published,
+which regrows them every frame. Trampled plants bend or disappear, and none grow under a building's footprint. Plants
+shrink away over the last 15 % of the draw distance. It also runs in edit mode.
+
+#### Scatter host
+
+Row crops and grass (see [maps](../maps.md)) share one host, built to take more scattered things such as debris:
+
+- `ScatterRenderer<TState>`, the base of `RowCropRenderer` and `GrassRenderer`, holds the `compute` and `terrain`
+  fields, builds and releases the inputs, keeps one state per camera in `CameraStates`, culls tiles through
+  `ScatterTiles` and, in edit mode, rebuilds after `OnValidate` or a map rebuild. A subclass makes its inputs, tiles
+  and camera states, says when its data went stale and grows and draws each camera. Its `Density` and `Distance`
+  stay its own, written by `PresentationQuality`.
+- `ScatterBatch<TJob>`, the base of `RowCropBatch` and `GrassBatch`, holds one camera's slots: a mesh and property
+  block each, the jobs queued for the grow kernel and the `ScatterDraws` indirect draws. `Generate` reserves room,
+  binds the jobs, grows and counts; `Draw` draws each slot with room. A subclass owns its slots' room, buffers,
+  material, culling box and shadows.
+- `Scatter.hlsl` holds the kernels' hashes, noise and slot counting; instances are 48 bytes.
 
 ### Ambient life
 

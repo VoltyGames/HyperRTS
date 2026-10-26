@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
-using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Environment.Grass
@@ -20,7 +18,7 @@ namespace HyperRTS.Presentation.Environment.Grass
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed partial class GrassRenderer : PresentationBehaviour
+    public sealed partial class GrassRenderer : ScatterRenderer<GrassCameraState>
     {
         [AutoStaticsCleanup]
         private static float _density = PresentationQuality.Default.GrassDensity;
@@ -32,24 +30,11 @@ namespace HyperRTS.Presentation.Environment.Grass
         [Tooltip("The baked plants this map grows.")]
         public GrassField field;
 
-        [Tooltip("The Grass compute shader.")]
-        public ComputeShader compute;
-
         [Tooltip("The Hidden/HyperRTS/FoliageGrass shader each plant's material is copied onto.")]
         public Shader shader;
 
-        [Tooltip("The terrain the plants stand on.")]
-        public Terrain terrain;
-
-        private readonly CameraStates<GrassCameraState> _cameras = new();
-        private Func<GrassCameraState> _newState;
         private GrassComputeInputs _kernels;
         private Material[] _materials;
-        private ScatterTiles _tiles;
-        private bool _ready;
-#if UNITY_EDITOR
-        private bool _dirty;
-#endif
 
         /// <summary>Share of plants grown, 0 to 1. Written by <see cref="PresentationQuality.Apply"/>.</summary>
         public static float Density
@@ -80,47 +65,22 @@ namespace HyperRTS.Presentation.Environment.Grass
 
         private static GrassSettings Settings => new(Density, Distance, ShadowDistance);
 
+        private protected override float DrawDistance => Distance;
+
         /// <summary>Plants and draws the camera's last scatter holds, read back from the GPU for profiling.</summary>
         public (int Instances, int Draws) Drawn(Camera camera) =>
-            _cameras.TryGet(camera, out var state) ? state.Batch.Drawn() : (0, 0);
+            Cameras.TryGet(camera, out var state) ? state.Batch.Drawn() : (0, 0);
 
-        private void OnEnable()
+        private protected override void BuildInputs()
         {
-            Build();
-            RenderPipelineManager.beginCameraRendering += Render;
-        }
-
-        protected override void OnDisabled()
-        {
-            RenderPipelineManager.beginCameraRendering -= Render;
-            Release();
-        }
-
-#if UNITY_EDITOR
-        // Rebuilt on the next camera, not here: OnValidate runs mid-import, too early to make GPU buffers.
-        private void OnValidate() => _dirty = true;
-#endif
-
-        private void Build()
-        {
-#if UNITY_EDITOR
-            _dirty = false;
-#endif
-            var problems = Problems();
-            if (problems.Count > 0)
-            {
-                Debug.LogError($"HyperRTS: Grass Renderer can't draw: {string.Join("; ", problems)}.", this);
-                return;
-            }
-
             _kernels = new GrassComputeInputs(compute, field, terrain);
             _materials = field.plants.ConvertAll(Instanced).ToArray();
-            _tiles = new ScatterTiles(field.tiles.Count, t => field.TileRect(field.tiles[t]), field.TallestPlant, terrain);
-            _newState ??= NewState;
-            _ready = true;
         }
 
-        private GrassCameraState NewState() => new(field, _kernels, _materials);
+        private protected override ScatterTiles NewTiles() =>
+            new(field.tiles.Count, t => field.TileRect(field.tiles[t]), field.TallestPlant, terrain);
+
+        private protected override GrassCameraState NewState() => new(field, _kernels, _materials);
 
         private Material Instanced(GrassPlant plant)
         {
@@ -129,10 +89,8 @@ namespace HyperRTS.Presentation.Environment.Grass
             return material;
         }
 
-        private void Release()
+        private protected override void ReleaseInputs()
         {
-            _ready = false;
-            _cameras.Dispose();
             _kernels?.Dispose();
             _kernels = null;
             if (_materials != null)
@@ -142,31 +100,15 @@ namespace HyperRTS.Presentation.Environment.Grass
             }
         }
 
-        private void Render(ScriptableRenderContext context, Camera camera)
+        private protected override void Draw(GrassCameraState state, Camera camera, Vector3 position)
         {
-#if UNITY_EDITOR
-            if (_dirty || (_ready && Stale()))
-            {
-                Release();
-                Build();
-            }
-#endif
-
-            if (!_ready || !CameraStates<GrassCameraState>.Draws(camera, gameObject))
-            {
-                return;
-            }
-
-            var state = _cameras.Get(camera, _newState);
-            var position = camera.transform.position;
             var settings = Settings;
-            _tiles.FindVisible(camera, position, settings.Distance);
-            if (!state.Holds(position, settings, _tiles.Visible))
+            if (!state.Holds(position, settings, Tiles.Visible))
             {
                 Queue(state.Batch, position, settings);
                 _kernels.SetCamera(position, settings);
                 state.Batch.Generate();
-                state.Remember(position, settings, _tiles.Visible);
+                state.Remember(position, settings, Tiles.Visible);
             }
 
             state.Batch.Draw(gameObject.layer, camera);
@@ -174,33 +116,26 @@ namespace HyperRTS.Presentation.Environment.Grass
 
 #if UNITY_EDITOR
         // Catches a map rebuild that reshaped the field or its plants while the scene stayed open.
-        private bool Stale()
+        private protected override bool InputsStale()
         {
-            var lost = field == null || terrain == null || compute == null || shader == null;
-            if (lost || _kernels.Stale || _tiles.Count != field.tiles.Count)
+            if (field == null || shader == null)
             {
                 return true;
             }
 
-            foreach (var state in _cameras.All)
-            {
-                if (state.Batch.Stale())
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return _kernels.Stale || Tiles.Count != field.tiles.Count;
         }
+
+        private protected override bool Stale(GrassCameraState state) => state.Batch.Stale();
 #endif
 
         /// <summary>Hands every visible tile's plants to the batch.</summary>
         private void Queue(GrassBatch batch, Vector3 position, GrassSettings settings)
         {
             batch.Begin();
-            foreach (var t in _tiles.Visible)
+            foreach (var t in Tiles.Visible)
             {
-                var bounds = _tiles[t];
+                var bounds = Tiles[t];
                 var range = ScatterTiles.Distances(bounds, position);
                 var tile = field.tiles[t];
                 var rect = field.TileRect(tile);
@@ -213,9 +148,8 @@ namespace HyperRTS.Presentation.Environment.Grass
             }
         }
 
-        private List<string> Problems()
+        private protected override void AddProblems(List<string> problems)
         {
-            var problems = new List<string>();
             if (field == null)
             {
                 problems.Add($"{nameof(field)} is missing");
@@ -225,22 +159,10 @@ namespace HyperRTS.Presentation.Environment.Grass
                 problems.AddRange(field.Problems());
             }
 
-            if (compute == null)
-            {
-                problems.Add($"{nameof(compute)} is missing");
-            }
-
             if (shader == null)
             {
                 problems.Add($"{nameof(shader)} is missing");
             }
-
-            if (terrain == null)
-            {
-                problems.Add($"{nameof(terrain)} is missing");
-            }
-
-            return problems;
         }
     }
 }
