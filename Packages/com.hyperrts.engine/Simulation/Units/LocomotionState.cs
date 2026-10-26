@@ -9,6 +9,9 @@ namespace HyperRTS.Simulation.Units
         /// <summary>Metres per second along the facing; negative while reversing.</summary>
         public float Speed;
 
+        /// <summary>Signed curvature the wheels steer, in 1/m, positive to the left; 0 for tracks.</summary>
+        public float Steer;
+
         /// <summary>Backing up to a goal close behind rather than turning round.</summary>
         public bool Reverse;
 

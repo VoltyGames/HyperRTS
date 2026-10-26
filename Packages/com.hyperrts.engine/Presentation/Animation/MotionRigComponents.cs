@@ -41,6 +41,12 @@ namespace HyperRTS.Presentation.Animation
         public float3 LastPosition;
         public float3 LastVelocity;
 
+        /// <summary>Forward on XZ last frame, to measure the turn.</summary>
+        public float2 LastHeading;
+
+        /// <summary>Turn per metre rolled in 1/m, positive to the left, which steered wheels follow.</summary>
+        public float Curvature;
+
         /// <summary>Current nose-up pitch and right-side-up roll from the ground or the lean, radians.</summary>
         public float2 Tilt;
 
@@ -69,6 +75,24 @@ namespace HyperRTS.Presentation.Animation
             var leftSide = terrain.Height((position - right * half.y).xz);
             return new float2(math.atan2(front - back, Footprint.x), math.atan2(rightSide - leftSide, Footprint.y));
         }
+
+        /// <summary>
+        /// Measures <see cref="Curvature"/> from the turn since last frame over the metres rolled. Standing keeps it, as
+        /// steered wheels stay turned.
+        /// </summary>
+        public void MeasureCurvature(float2 heading, float rolled)
+        {
+            if (Frames > 0 && math.abs(rolled) > MinRoll)
+            {
+                var turn = math.atan2(LastHeading.x * heading.y - LastHeading.y * heading.x, math.dot(LastHeading, heading));
+                Curvature = turn / rolled;
+            }
+
+            LastHeading = heading;
+        }
+
+        // Below this the turn over the distance is noise.
+        private const float MinRoll = 0.01f;
 
         /// <summary>An aircraft noses down as it speeds up and banks into the turn.</summary>
         public static float2 LeanTilt(float3 acceleration, float3 forward, float3 right)
@@ -103,6 +127,12 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Wheel radius or recoil distance.</summary>
         public float Size;
 
+        /// <summary>Local axis a steering wheel turns about, down so a positive angle steers left.</summary>
+        public float3 SteerAxis;
+
+        /// <summary>Metres a steering wheel sits ahead of the rear axle, which sets how far it turns.</summary>
+        public float RearAxleDistance;
+
         /// <summary>Recoil return or rotor spin-up seconds.</summary>
         public float Time;
 
@@ -112,13 +142,15 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Current angle in radians (turret, elevation, wheel, rotor).</summary>
         public float Angle;
 
-        /// <summary>Recoil distance still pushed back, or rotor speed from 0 to 1.</summary>
+        /// <summary>Recoil distance still pushed back, rotor speed from 0 to 1, or a steering wheel's angle.</summary>
         public float Amount;
 
         public byte LastShots;
         public bool Seen;
 
-        public readonly quaternion Rotation => math.mul(RestRotation, quaternion.AxisAngle(Axis, Angle));
+        public readonly quaternion Rotation => Kind == MotionPartKind.SteeringWheel
+            ? math.mul(RestRotation, math.mul(quaternion.AxisAngle(SteerAxis, Amount), quaternion.AxisAngle(Axis, Angle)))
+            : math.mul(RestRotation, quaternion.AxisAngle(Axis, Angle));
 
         /// <summary>Eases the shortest way toward the simulated <paramref name="yaw"/>, which already turns at the weapon's rate.</summary>
         public void Traverse(float yaw, float deltaTime) =>
@@ -140,6 +172,10 @@ namespace HyperRTS.Presentation.Animation
         public readonly float3 RecoilPosition(quaternion rotation) => RestPosition + math.rotate(rotation, Axis) * Amount;
 
         public void Roll(float distance) => Angle = HeadingByte.Wrap(Angle + distance / Size);
+
+        /// <summary>Eases a steering wheel toward the angle that rolls it round the rear axle's arc.</summary>
+        public void Steer(float curvature, float deltaTime) =>
+            Amount += (math.atan(RearAxleDistance * curvature) - Amount) * Follow(deltaTime);
 
         /// <summary>Spins up toward full speed while running, down otherwise, and turns at that speed.</summary>
         public void Spin(bool running, float deltaTime)
@@ -169,5 +205,6 @@ namespace HyperRTS.Presentation.Animation
         Recoil = 2,
         Wheel = 3,
         Rotor = 4,
+        SteeringWheel = 5,
     }
 }

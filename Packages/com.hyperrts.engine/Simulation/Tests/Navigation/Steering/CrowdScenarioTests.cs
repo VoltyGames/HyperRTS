@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
         {
             var vehicle = _world.SpawnUnit(1, position, speed, agent.Radius);
             agent.Spacing = UnitAuthoring.DefaultSpacing;
-            agent.WallMargin = agent.WallMarginFor(locomotion.TurnRadius);
+            agent.WallMargin = agent.WallMarginFor(agent.Chassis.TurnRadius);
             _world.EntityManager.SetComponentData(vehicle, agent);
             _world.EntityManager.SetComponentData(vehicle, LocalTransform.FromPositionRotation(position,
                 quaternion.RotateY(yaw)));
@@ -150,11 +150,13 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
             // A wall along x = 0 with a 12 m gate at z -6 to 6.
             _world.SpawnObstacle(new float3(0f, 0f, 46f), new float2(2f, 80f));
             _world.SpawnObstacle(new float3(0f, 0f, -46f), new float2(2f, 80f));
-            var tank = new NavAgent { Radius = 1.85f, HullLength = 7.5f };
+            var tank = new NavAgent
+            {
+                Radius = 1.85f, HullLength = 7.5f, Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
+            };
             var handling = new Locomotion
             {
-                Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), Pivots = true,
-                ReverseSpeed = 3f, ReverseDistance = 10f,
+                Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), ReverseSpeed = 3f,
             };
             var units = new List<Entity>();
             for (var i = 0; i < 20; i++)
@@ -195,11 +197,15 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
             _world.SpawnObstacle(new float3(-95f, 0f, 70f), new float2(270f, 120f));
             _world.SpawnObstacle(new float3(67f, 0f, 55f), new float2(14f, 150f));
             _world.SpawnObstacle(new float3(45f, 0f, 90f), new float2(10f, 4f));
-            var truck = new NavAgent { Radius = 1.4f, HullLength = 17f };
+            var truck = new NavAgent
+            {
+                Radius = 1.4f, HullLength = 17f,
+                Chassis = new Chassis { Wheelbase = 6f, RearAxle = 2.5f, TurnRadius = 12f, ReverseRun = 6f },
+            };
             var handling = new Locomotion
             {
-                Acceleration = 3f, Braking = 6f, TurnRate = math.radians(40f), TurnRadius = 12f,
-                ReverseSpeed = 3f, ReverseDistance = 6f,
+                Acceleration = 3f, Braking = 6f, TurnRate = math.radians(40f), SteerRate = math.radians(45f),
+                ReverseSpeed = 3f,
             };
             var units = new List<Entity>();
             for (var i = 0; i < 10; i++)

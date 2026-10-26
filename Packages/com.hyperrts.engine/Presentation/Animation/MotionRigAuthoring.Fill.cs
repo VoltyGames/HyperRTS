@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Units;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Animation
@@ -46,6 +47,7 @@ namespace HyperRTS.Presentation.Animation
             recoils = KeepTuned(recoils, Named("Barrel"), part => new RecoilSlot { part = part });
             wheels = KeepTuned(wheels, parts.Where(part => WheelName.IsMatch(part.name)),
                 part => new WheelSlot { part = part, radius = WheelSlot.MeshRadius(part, transform) });
+            FillSteering();
             var rotorParts = Named("Rotor_Main").Concat(Named("Rotor_Tail")).Concat(parts.Where(part => PropName.IsMatch(part.name)));
             rotors = KeepTuned(rotors, rotorParts, part => new RotorSlot
             {
@@ -62,6 +64,16 @@ namespace HyperRTS.Presentation.Animation
             {
                 var size = PartSlot.MeshBounds(tiltRoot, transform).size;
                 footprint = new Vector2(size.z, size.x);
+            }
+        }
+
+        // The wheels on the Locomotion's steering axles steer; refilling after a chassis change updates them.
+        private void FillSteering()
+        {
+            TryGetComponent<LocomotionAuthoring>(out var locomotion);
+            foreach (var wheel in wheels)
+            {
+                wheel.steers = locomotion != null && locomotion.IsOnSteeringAxle(wheel.part);
             }
         }
 

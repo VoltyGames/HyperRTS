@@ -222,7 +222,7 @@ namespace HyperRTS.Simulation.Units
                     return locomotion.BrakeToStop(ref drive, facing, DeltaTime);
                 }
 
-                var steering = new Steering(crowd, velocity, topSpeed);
+                var steering = new Steering(crowd, agent.Chassis, velocity, topSpeed);
                 steering.AddWalls(access);
                 return steering.Drive(locomotion, ref drive, facing, ref heading, leg, DeltaTime);
             }
@@ -232,10 +232,10 @@ namespace HyperRTS.Simulation.Units
                 in Locomotion locomotion, float speed, float3 goal, ref PathState path,
                 DynamicBuffer<PathWaypoint> waypoints, out PathLeg leg)
             {
-                var reach = locomotion.LookAhead(speed, agent.Radius);
+                var reach = locomotion.LookAhead(agent.Chassis, speed, agent.Radius);
                 path.SkipCorners(Grid, agent, position, math.max(agent.Radius * 0.5f, maxStep), reach, waypoints);
                 leg = PathLeg.Along(position.xz, goal.xz, waypoints, path);
-                return !locomotion.HasArrived(leg, position.xz, facing, agent.Radius);
+                return !locomotion.HasArrived(agent.Chassis, leg, position.xz, facing, agent.Radius);
             }
         }
     }

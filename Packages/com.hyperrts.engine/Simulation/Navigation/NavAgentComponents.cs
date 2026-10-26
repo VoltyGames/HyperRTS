@@ -31,6 +31,9 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public float WallMargin;
 
+        /// <summary>How the hull turns and reverses; default for units without handling.</summary>
+        public Chassis Chassis;
+
         /// <summary>Half the capsule's core segment: zero for round footprints.</summary>
         public readonly float HalfSegment => HalfSegmentFor(Radius, HullLength);
 

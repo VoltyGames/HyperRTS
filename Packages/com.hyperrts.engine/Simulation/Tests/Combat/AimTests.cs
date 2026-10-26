@@ -184,11 +184,14 @@ namespace HyperRTS.Simulation.Tests.Combat
         private Entity SpawnHullGun(float3 position, float radius, float hullLength, float turnRate, float range)
         {
             var gun = _world.SpawnUnit(1, position, radius: radius);
-            _world.EntityManager.SetComponentData(gun, new NavAgent { Radius = radius, HullLength = hullLength });
+            _world.EntityManager.SetComponentData(gun, new NavAgent
+            {
+                Radius = radius, HullLength = hullLength, Chassis = new Chassis { Pivots = true },
+            });
             var writer = new EntityManagerWriter(_world.EntityManager, gun);
             LocomotionAuthoring.Add(ref writer, new Locomotion
             {
-                Acceleration = 3f, Braking = 6f, TurnRate = math.radians(turnRate), Pivots = true,
+                Acceleration = 3f, Braking = 6f, TurnRate = math.radians(turnRate),
             });
             return _world.AddWeapon(gun, Stance.HoldPosition, range: range);
         }

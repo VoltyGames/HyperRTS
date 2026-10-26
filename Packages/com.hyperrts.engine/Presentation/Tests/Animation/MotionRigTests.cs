@@ -13,8 +13,8 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Tests.Animation
 {
-    /// <summary>The motion rig on a hand-made unit: turrets, recoil, wheels, rotors, slope tilt and the body's suspension sway.</summary>
-    public class MotionRigTests
+    /// <summary>The motion rig on a hand-made unit: turrets, recoil, wheels and steering, rotors, slope tilt and the body's suspension sway.</summary>
+    public partial class MotionRigTests
     {
         private const float Step = 0.1f;
         private const float SpringFrame = 1f / 60f;

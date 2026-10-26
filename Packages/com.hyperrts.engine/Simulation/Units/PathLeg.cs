@@ -38,6 +38,20 @@ namespace HyperRTS.Simulation.Units
         public PathLeg Toward(float2 position, float2 velocity) =>
             new(position, position + math.normalizesafe(velocity) * Distance, Next, CornerTurn, Remaining, IsFinal);
 
+        /// <summary>
+        /// The point <paramref name="distance"/> along the path from <paramref name="position"/>, round the corner;
+        /// the goal itself on the final leg.
+        /// </summary>
+        public float2 PointAhead(float2 position, float distance)
+        {
+            if (IsFinal)
+            {
+                return Corner;
+            }
+
+            return Distance >= distance ? position + Direction * distance : Corner + Next * (distance - Distance);
+        }
+
         public bool HasArrived(float radius) => IsFinal && Distance <= NavTolerances.Arrive(radius);
 
         /// <summary>

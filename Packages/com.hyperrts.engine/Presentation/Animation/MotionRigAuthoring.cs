@@ -6,6 +6,7 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Units;
 using Unity.Entities;
 using UnityEngine;
 
@@ -120,6 +121,11 @@ namespace HyperRTS.Presentation.Animation
                 yield return $"Building '{name}' never tilts; clear its tilt root.";
             }
 
+            if (wheels.Any(wheel => wheel.steers) && !HasWheeledLocomotion)
+            {
+                yield return "Steering wheels need a wheeled Locomotion (a turn radius, no pivots).";
+            }
+
             var sprung = !TryGetComponent<FlightAuthoring>(out _);
             if (sprung && (springFrequency <= 0f || springDamping <= 0f))
             {
@@ -136,6 +142,9 @@ namespace HyperRTS.Presentation.Animation
             RecoilRate = recoilRate * Mathf.Deg2Rad,
         };
 
+        private bool HasWheeledLocomotion =>
+            TryGetComponent<LocomotionAuthoring>(out var locomotion) && locomotion.Chassis.IsWheeled;
+
         /// <summary>A part under this rig, never the rig itself: the unit's own transform is the simulation's.</summary>
         public bool IsBelow(Transform part) => part != transform && part.IsChildOf(transform);
 
@@ -150,11 +159,13 @@ namespace HyperRTS.Presentation.Animation
                 }
 
                 var root = authoring.transform;
+                var locomotion = GetComponent<LocomotionAuthoring>();
                 var parts = new List<MotionRigPart>();
                 foreach (var slot in authoring.Slots())
                 {
                     DependsOn(slot.part);
-                    parts.Add(slot.Bake(root, GetEntity(slot.part, TransformUsageFlags.Dynamic)));
+                    var part = slot.Bake(root, GetEntity(slot.part, TransformUsageFlags.Dynamic));
+                    parts.Add(slot is WheelSlot { steers: true } wheel ? wheel.Steering(part, root, locomotion.rearAxle) : part);
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));

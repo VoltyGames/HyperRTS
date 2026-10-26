@@ -94,7 +94,12 @@ namespace HyperRTS.Simulation.Units
                     SceneryCrushLimit = SceneryCrushLimit(authoring),
                 };
                 var locomotion = GetComponent<LocomotionAuthoring>();
-                agent.WallMargin = agent.WallMarginFor(locomotion != null ? locomotion.turnRadius : 0f);
+                if (locomotion != null)
+                {
+                    agent.Chassis = locomotion.Chassis;
+                }
+
+                agent.WallMargin = agent.WallMarginFor(agent.Chassis.TurnRadius);
                 UnitAuthoring.Add(ref writer, authoring.moveSpeed, agent);
             }
 

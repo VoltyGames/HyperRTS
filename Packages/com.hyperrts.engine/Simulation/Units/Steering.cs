@@ -45,6 +45,7 @@ namespace HyperRTS.Simulation.Units
         private readonly float _radius;
         private readonly float2 _velocity;
         private readonly float _topSpeed;
+        private readonly Chassis _chassis;
         private NavAccess _walls;
         private bool _hasWalls;
         private float2 _preferred;
@@ -52,8 +53,9 @@ namespace HyperRTS.Simulation.Units
         private float _wallReach;
         private float2 _leg;
 
-        public Steering(in CrowdVisitor crowd, float2 velocity, float topSpeed)
+        public Steering(in CrowdVisitor crowd, in Chassis chassis, float2 velocity, float topSpeed)
         {
+            _chassis = chassis;
             _neighbours = crowd.Neighbours;
             _position = crowd.Position;
             _axis = crowd.SegmentAxis;
@@ -85,9 +87,9 @@ namespace HyperRTS.Simulation.Units
         {
             var start = drive;
             heading = facing;
-            var step = locomotion.Drive(ref drive, _position, ref heading, leg, _topSpeed, _radius, deltaTime);
+            var step = locomotion.Drive(ref drive, _chassis, _position, ref heading, leg, _topSpeed, _radius, deltaTime);
             // With no one near, a pivot means to stand, not to roll on as it brakes.
-            var standsToTurn = _neighbours.Length == 0 && locomotion.IsPivoting(drive, facing, leg);
+            var standsToTurn = _neighbours.Length == 0 && locomotion.IsPivoting(drive, _chassis, facing, leg);
             _preferred = standsToTurn ? float2.zero : step / deltaTime;
             if (drive.IsManoeuvring)
             {
@@ -103,13 +105,13 @@ namespace HyperRTS.Simulation.Units
             {
                 drive = start;
                 heading = facing;
-                step = locomotion.Steer(ref drive, _position, ref heading, leg, chosen, _topSpeed, _radius, deltaTime);
+                step = locomotion.Steer(ref drive, _chassis, _position, ref heading, leg, chosen, _topSpeed, _radius, deltaTime);
             }
 
             drive.LastChoice = chosen;
             if (IsWedged(chosen, facing))
             {
-                locomotion.BackOff(ref drive);
+                Locomotion.BackOff(_chassis, ref drive);
             }
 
             return step;
@@ -145,12 +147,12 @@ namespace HyperRTS.Simulation.Units
         // waiting. Among neighbours standing still blocks them, so it keeps its cost.
         private readonly float StandingExtra(in Locomotion locomotion, float2 facing)
         {
-            if (!locomotion.Pivots || _neighbours.Length > 0)
+            if (!_chassis.Pivots || _neighbours.Length > 0)
             {
                 return StandingCost;
             }
 
-            var reachable = locomotion.TurnWithin(_topSpeed * 0.5f, ReachTime);
+            var reachable = locomotion.TurnWithin(_chassis, _topSpeed * 0.5f, ReachTime);
             return math.dot(facing, _leg) < math.cos(reachable) ? 0f : StandingCost;
         }
 
@@ -209,7 +211,7 @@ namespace HyperRTS.Simulation.Units
             for (var share = 2; share <= 4; share++)
             {
                 var speed = _topSpeed * share * 0.25f;
-                var spread = locomotion.TurnWithin(speed, ReachTime);
+                var spread = locomotion.TurnWithin(_chassis, speed, ReachTime);
                 for (var i = 0; i < Headings; i++)
                 {
                     var angle = spread * (i * 2f / (Headings - 1) - 1f);

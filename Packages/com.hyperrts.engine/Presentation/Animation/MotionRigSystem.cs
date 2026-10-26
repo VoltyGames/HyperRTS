@@ -12,9 +12,10 @@ namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
     /// Poses each <see cref="MotionRig"/>'s children from the interpolated unit: turrets and barrels follow the
-    /// replicated <see cref="WeaponPose"/>, barrels recoil per shot, wheels roll with the ground covered,
-    /// rotors spin up with flight into the unit's <see cref="RotorSpin"/>, and the body tilts with the ground or leans with
-    /// acceleration. Ground vehicles also sway on their <see cref="Suspension"/>.
+    /// replicated <see cref="WeaponPose"/>, barrels recoil per shot, wheels roll with the ground covered and steering
+    /// wheels turn with the turn per metre, rotors spin up with flight into the unit's <see cref="RotorSpin"/>, and the
+    /// body tilts with the ground or leans with acceleration. Ground vehicles also sway on their
+    /// <see cref="Suspension"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PoseSystemGroup))]
@@ -68,12 +69,13 @@ namespace HyperRTS.Presentation.Animation
                 var moved = rig.Frames > 0 ? place.Position - rig.LastPosition : float3.zero;
                 var velocity = moved / DeltaTime;
                 var acceleration = rig.Frames > 1 ? (velocity - rig.LastVelocity) / DeltaTime : float3.zero;
+                var rolled = math.length(moved.xz) * math.sign(math.dot(moved, forward));
+                rig.MeasureCurvature(forward.xz, rolled);
                 rig.Frames = (byte)math.min(rig.Frames + 1, 2);
                 rig.LastPosition = place.Position;
                 rig.LastVelocity = velocity;
 
                 Tilt(ref rig, place.Position, forward, right, acceleration);
-                var rolled = math.length(moved.xz) * math.sign(math.dot(moved, forward));
                 var running = Flights.HasComponent(entity) && !Docks.HasEnabled(entity);
                 Poses.TryGetBuffer(entity, out var poses);
                 var spin = 0f;
@@ -81,7 +83,7 @@ namespace HyperRTS.Presentation.Animation
                 {
                     var part = parts[i];
                     var transform = Transforms[part.Part];
-                    if (Pose(ref part, ref transform, poses, rolled, running))
+                    if (Pose(ref part, ref transform, poses, rolled, rig.Curvature, running))
                     {
                         rig.Suspension.Recoil(poses[part.Weapon].YawRadians);
                     }
@@ -123,7 +125,7 @@ namespace HyperRTS.Presentation.Animation
 
             /// <summary>True when a recoil part fired this frame.</summary>
             private bool Pose(ref MotionRigPart part, ref LocalTransform transform, DynamicBuffer<WeaponPose> poses,
-                float rolled, bool running)
+                float rolled, float curvature, bool running)
             {
                 // Recoil slides along the barrel's current rotation, which an elevation part may own.
                 if (part.Kind == MotionPartKind.Recoil)
@@ -143,6 +145,10 @@ namespace HyperRTS.Presentation.Animation
                         break;
                     case MotionPartKind.Wheel:
                         part.Roll(rolled);
+                        break;
+                    case MotionPartKind.SteeringWheel:
+                        part.Roll(rolled);
+                        part.Steer(curvature, DeltaTime);
                         break;
                     default:
                         part.Spin(running, DeltaTime);

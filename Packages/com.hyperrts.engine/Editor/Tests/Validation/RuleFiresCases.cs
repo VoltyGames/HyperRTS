@@ -118,6 +118,13 @@ namespace HyperRTS.Editor.Tests.Validation
                 interceptor.needsDeploy = true;
                 return interceptor;
             });
+            yield return Row<LocomotionRule>("has no wheelbase", f =>
+            {
+                var locomotion = f.Add<LocomotionAuthoring>(EntityTemplates.Unit());
+                locomotion.pivots = false;
+                locomotion.turnRadius = 9f;
+                return locomotion;
+            });
             yield return Row<MachinePartRule>("To must be above From", f =>
             {
                 var part = f.Add<MachinePartAuthoring>(new GameObject("Jack"));

@@ -13,8 +13,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
     {
         private static readonly Locomotion TankHandling = new()
         {
-            Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), Pivots = true,
-            ReverseSpeed = 3f, ReverseDistance = 10f,
+            Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), ReverseSpeed = 3f,
         };
 
         [Test]
@@ -68,6 +67,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             var agent = Tank;
             agent.HullLength = 7.5f;
             agent.Spacing = UnitAuthoring.DefaultSpacing;
+            agent.Chassis = new Chassis { Pivots = true, ReverseRun = 10f };
             _world.EntityManager.SetComponentData(tank, agent);
             _world.EntityManager.SetComponentData(tank,
                 LocalTransform.FromPositionRotation(position, quaternion.RotateY(north ? math.PI : 0f)));

@@ -5,37 +5,27 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// How a ground vehicle handles: it speeds up and brakes at set rates, turns at a limited rate and radius,
-    /// pivots if tracked and backs up to goals close behind. Units without it move by <see cref="Instant"/>.
+    /// How a ground vehicle handles: it speeds up and brakes at set rates, steers or turns at a limited rate and backs
+    /// up to goals close behind. Its <see cref="Chassis"/> says how the hull turns. Units without it move by
+    /// <see cref="Instant"/>.
     /// </summary>
-    public struct Locomotion : IComponentData
+    public partial struct Locomotion : IComponentData
     {
         public float Acceleration;
         public float Braking;
 
-        /// <summary>Radians per second.</summary>
+        /// <summary>Radians per second the hull yaws at most: the turn rate of tracks, the grip limit of wheels.</summary>
         public float TurnRate;
 
-        /// <summary>Tightest circle it can drive; 0 turns at any speed.</summary>
-        public float TurnRadius;
-
-        /// <summary>Stops and turns in place when far off its heading, as tracked vehicles do.</summary>
-        public bool Pivots;
+        /// <summary>Radians per second the steered wheels turn.</summary>
+        public float SteerRate;
 
         public float ReverseSpeed;
-
-        /// <summary>Longest path it backs along, only when turning round would clearly take longer.</summary>
-        public float ReverseDistance;
 
         private const float PivotAngle = math.PI / 3f;
         private const float Crawl = 0.5f;
         private const float LookAheadTime = 0.5f;
         private const float Unlimited = 1e4f;
-        private const float OtherWaySeconds = 1.5f;
-
-        // Long enough to back about a hull length off the walls before turning.
-        private const float TurnOutSeconds = 3f;
-        private const float ReverseMargin = 1.3f;
         private const float Instantly = 1e6f;
 
         /// <summary>Handling of units without their own: full speed and any facing at once, never reversing.</summary>
@@ -44,91 +34,87 @@ namespace HyperRTS.Simulation.Units
         /// <summary>Whether it handles as <see cref="Instant"/>: any facing at once.</summary>
         public readonly bool IsInstant => TurnRate >= Instantly;
 
-        /// <summary>Radians the hull can turn within <paramref name="seconds"/> at <paramref name="speed"/>.</summary>
-        public readonly float TurnWithin(float speed, float seconds) => math.min(math.PI, TurnLimit(speed) * seconds);
-
         /// <summary>How far ahead it may cut to a corner in sight: further when fast or wide-turning.</summary>
-        public readonly float LookAhead(float speed, float radius) =>
-            radius * 2f + math.abs(speed) * LookAheadTime + TurnRadius * 0.5f;
+        public readonly float LookAhead(in Chassis chassis, float speed, float radius) =>
+            radius * 2f + math.abs(speed) * LookAheadTime + chassis.TurnRadius * 0.5f;
 
         /// <summary>Whether it stands to turn toward the leg rather than drive on.</summary>
-        public readonly bool IsPivoting(in LocomotionState state, float2 facing, in PathLeg leg) =>
-            state.OtherWay <= 0f && IsPivot(SignedAngle(facing, state.Reverse ? -leg.Direction : leg.Direction));
+        public readonly bool IsPivoting(in LocomotionState state, in Chassis chassis, float2 facing, in PathLeg leg) =>
+            state.OtherWay <= 0f && IsPivot(chassis, SignedAngle(facing, state.Reverse ? -leg.Direction : leg.Direction));
 
-        private readonly bool IsPivot(float error) => Pivots && math.abs(error) > PivotAngle;
+        private static bool IsPivot(in Chassis chassis, float error) => chassis.Pivots && math.abs(error) > PivotAngle;
 
-        /// <summary>Accelerates and turns toward the leg, returning this frame's step along the new facing.</summary>
-        public readonly float2 Drive(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
-            float topSpeed, float radius, float deltaTime) =>
-            Follow(ref state, position, ref facing, leg, topSpeed, topSpeed, radius, deltaTime);
+        /// <summary>Accelerates and turns toward the leg, returning this frame's move of the hull centre.</summary>
+        public readonly float2 Drive(ref LocomotionState state, in Chassis chassis, float2 position, ref float2 facing,
+            in PathLeg leg, float topSpeed, float radius, float deltaTime) =>
+            Follow(ref state, chassis, position, ref facing, leg, topSpeed, topSpeed, radius, deltaTime);
 
         /// <summary>
-        /// Drives toward the steering <paramref name="velocity"/> instead of the leg, no faster than it, turning only
-        /// as the hull can. A vehicle told to go back backs straight up if it can reverse, else brakes on the leg.
+        /// Drives toward the steering <paramref name="velocity"/> instead of the leg, no faster than it: the velocity
+        /// becomes the curvature it steers for. A vehicle told to go back backs straight up if it can reverse, else
+        /// brakes on the leg.
         /// </summary>
-        public readonly float2 Steer(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
-            float2 velocity, float topSpeed, float radius, float deltaTime)
+        public readonly float2 Steer(ref LocomotionState state, in Chassis chassis, float2 position, ref float2 facing,
+            in PathLeg leg, float2 velocity, float topSpeed, float radius, float deltaTime)
         {
             // Told to stand, it keeps turning toward the leg, as a pivot does.
             if (math.lengthsq(velocity) < 1e-6f)
             {
-                return Follow(ref state, position, ref facing, leg, topSpeed, 0f, radius, deltaTime);
+                return Follow(ref state, chassis, position, ref facing, leg, topSpeed, 0f, radius, deltaTime);
             }
 
             var travel = state.Reverse ? -facing : facing;
             if (TurnRate < Instantly && math.dot(velocity, travel) < 0f)
             {
-                return GoBack(ref state, position, ref facing, leg, math.length(velocity), topSpeed, radius, deltaTime);
+                return GoBack(ref state, chassis, position, ref facing, leg, math.length(velocity), topSpeed, radius,
+                    deltaTime);
             }
 
             var steered = leg.Toward(position, velocity);
-            return Follow(ref state, position, ref facing, steered, topSpeed, math.length(velocity), radius, deltaTime);
+            return Follow(ref state, chassis, position, ref facing, steered, topSpeed, math.length(velocity), radius,
+                deltaTime);
         }
 
-        private readonly float2 GoBack(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
-            float speed, float topSpeed, float radius, float deltaTime)
+        private readonly float2 GoBack(ref LocomotionState state, in Chassis chassis, float2 position,
+            ref float2 facing, in PathLeg leg, float speed, float topSpeed, float radius, float deltaTime)
         {
             if (state.Reverse || ReverseSpeed <= 0f)
             {
-                return Follow(ref state, position, ref facing, leg, topSpeed, 0f, radius, deltaTime);
+                return Follow(ref state, chassis, position, ref facing, leg, topSpeed, 0f, radius, deltaTime);
             }
 
             state.Speed = Accelerate(state.Speed, -math.min(speed, ReverseSpeed), deltaTime);
-            return facing * (state.Speed * deltaTime);
+            return Roll(ref state, chassis, position, ref facing, 0f, deltaTime);
         }
 
-        private readonly float2 Follow(ref LocomotionState state, float2 position, ref float2 facing, in PathLeg leg,
-            float topSpeed, float cap, float radius, float deltaTime)
+        private readonly float2 Follow(ref LocomotionState state, in Chassis chassis, float2 position,
+            ref float2 facing, in PathLeg leg, float topSpeed, float cap, float radius, float deltaTime)
         {
-            state.Reverse = PrefersReverse(state.Reverse, facing, leg, topSpeed);
+            state.Reverse = PrefersReverse(chassis, state.Reverse, facing, leg, topSpeed);
             // Keeps reversing a little past the circle's edge, so it doesn't flip gear every frame.
-            state.InThreePointTurn = IsInsideTurn(position, facing, leg.Corner, state.InThreePointTurn ? 1.2f : 1f);
-            var ahead = TurnsIn(leg) ? leg.Next : leg.Direction;
-            var desired = state.Reverse ? -ahead : ahead;
+            state.InThreePointTurn =
+                chassis.IsInsideTurn(position, facing, leg.Corner, state.InThreePointTurn ? 1.2f : 1f);
+            var lookAhead = LookAhead(chassis, state.Speed, radius);
+            var aim = ToTarget(chassis, position, facing, leg, lookAhead);
+            var desired = math.normalizesafe(state.Reverse ? -aim : aim, facing);
             var error = SignedAngle(facing, desired);
-            var gear = state.Reverse == IsOtherWay(ref state, deltaTime) ? 1f : -1f;
+            var gear = state.Reverse == IsOtherWay(chassis, ref state, deltaTime) ? 1f : -1f;
             var top = math.min(gear > 0f ? topSpeed : ReverseSpeed, cap);
             // Pivoting is what a wedge blocks, so tracks back out of one and turn as they go.
-            var backsOut = Pivots && state.OtherWay > 0f;
+            var backsOut = chassis.Pivots && state.OtherWay > 0f;
             // Never past the goal in one frame, which only bites for near-instant braking.
-            var limit = math.min(TargetSpeed(error, leg, top, radius, LookAhead(state.Speed, radius), backsOut),
+            var target = math.min(TargetSpeed(chassis, error, leg, top, radius, lookAhead, backsOut),
                 leg.Remaining / deltaTime);
-            var target = gear * limit;
-            state.Speed = Accelerate(state.Speed, target, deltaTime);
-            facing = Turn(facing, error, TurnLimit(state.Speed) * deltaTime);
-            return facing * (state.Speed * deltaTime);
-        }
-
-        // Wheels turn on an arc, which meets the next leg this far before the corner, so the turn starts there.
-        private readonly bool TurnsIn(in PathLeg leg)
-        {
-            if (leg.IsFinal || Pivots || TurnRadius <= 0f)
+            state.Speed = Accelerate(state.Speed, gear * target, deltaTime);
+            if (chassis.IsWheeled)
             {
-                return false;
+                var wanted = gear * Pursuit(error, math.length(aim));
+                return Roll(ref state, chassis, position, ref facing, wanted, deltaTime);
             }
 
-            var tangent = TurnRadius * math.tan(math.min(leg.CornerTurn, math.PI * 0.8f) * 0.5f);
-            return leg.Distance < tangent;
+            var limit = TurnRate * deltaTime;
+            facing = chassis.Rotate(chassis.Pose(position, facing), math.clamp(error, -limit, limit)).Facing;
+            return facing * (state.Speed * deltaTime);
         }
 
         /// <summary>Turns the standing hull toward <paramref name="direction"/> at its turn rate, as when aiming.</summary>
@@ -158,7 +144,8 @@ namespace HyperRTS.Simulation.Units
             return facing * (state.Speed * deltaTime);
         }
 
-        public readonly bool HasArrived(in PathLeg leg, float2 position, float2 facing, float radius)
+        public readonly bool HasArrived(in Chassis chassis, in PathLeg leg, float2 position, float2 facing,
+            float radius)
         {
             if (leg.HasArrived(radius))
             {
@@ -167,75 +154,11 @@ namespace HyperRTS.Simulation.Units
 
             // A goal under the hull but inside the turning circle would take a three-point turn to reach.
             var underHull = leg.IsFinal && leg.Distance <= radius;
-            return underHull && IsInsideTurn(position, facing, leg.Corner, 1f);
+            return underHull && chassis.IsInsideTurn(position, facing, leg.Corner, 1f);
         }
 
-        /// <summary>Whether no arc it can drive reaches the target, so it must make a three-point turn first.</summary>
-        public readonly bool IsInsideTurn(float2 position, float2 facing, float2 target, float slack)
-        {
-            if (Pivots || TurnRadius <= 0f)
-            {
-                return false;
-            }
-
-            var side = Cross(facing, target - position) >= 0f ? 1f : -1f;
-            var center = position + new float2(-facing.y, facing.x) * (side * TurnRadius);
-            return math.distance(target, center) < TurnRadius * slack;
-        }
-
-        private readonly bool PrefersReverse(bool reversing, float2 facing, in PathLeg leg, float topSpeed)
-        {
-            if (leg.Remaining > ReverseDistance)
-            {
-                return false;
-            }
-
-            var along = math.dot(facing, leg.Direction);
-            if (along >= (reversing ? 0.3f : -0.2f))
-            {
-                return false;
-            }
-
-            var backing = leg.Remaining / ReverseSpeed;
-            var turningRound = TurnSeconds(math.acos(math.max(-1f, along)), topSpeed) + leg.Remaining / topSpeed;
-            return turningRound > backing * ReverseMargin;
-        }
-
-        // Tracks turn at their rate; wheels also need the arc of their turning circle rolled.
-        private readonly float TurnSeconds(float angle, float topSpeed)
-        {
-            var rolling = Pivots ? 0f : TurnRadius / topSpeed;
-            return angle * math.max(1f / TurnRate, rolling);
-        }
-
-        /// <summary>Wheels can't turn standing, so a wheeled hull wedged against a wall backs off it a while.</summary>
-        public readonly void BackOff(ref LocomotionState state)
-        {
-            if (IsWheeled && state.OtherWay <= 0f)
-            {
-                state.OtherWay = OtherWaySeconds;
-            }
-        }
-
-        private readonly bool IsWheeled => !Pivots && TurnRadius > 0f;
-
-        /// <summary>Whether it can back out of a wedge: any vehicle that reverses.</summary>
-        public readonly bool CanTurnOut => !IsInstant && ReverseSpeed > 0f;
-
-        /// <summary>Drives the other way a while, wheels or tracks, to turn out of a wedge the walls hold it in.</summary>
-        public readonly void TurnOut(ref LocomotionState state) => state.OtherWay = TurnOutSeconds;
-
-        // Wheels can't turn standing, so a leg that runs head-on into a wall drives the other way for a while,
-        // backing off to turn or taking a three-point turn's forward leg. A manoeuvre timer, not a stuck test.
-        private readonly bool IsOtherWay(ref LocomotionState state, float deltaTime)
-        {
-            var hit = IsWheeled && state.Blocked && state.OtherWay <= 0f;
-            state.OtherWay = hit ? OtherWaySeconds : math.max(0f, state.OtherWay - deltaTime);
-            return state.InThreePointTurn != state.OtherWay > 0f;
-        }
-
-        private readonly float TargetSpeed(float error, in PathLeg leg, float top, float radius, float lookAhead,
-            bool backsOut)
+        private readonly float TargetSpeed(in Chassis chassis, float error, in PathLeg leg, float top, float radius,
+            float lookAhead, bool backsOut)
         {
             // Backing out of a wedge runs straight off the walls, whatever the path's turns.
             if (backsOut)
@@ -243,7 +166,7 @@ namespace HyperRTS.Simulation.Units
                 return top;
             }
 
-            if (IsPivot(error))
+            if (IsPivot(chassis, error))
             {
                 return 0f;
             }
@@ -251,12 +174,14 @@ namespace HyperRTS.Simulation.Units
             var tolerance = NavTolerances.Arrive(radius);
             var stop = math.max(Crawl, math.sqrt(2f * Braking * math.max(0f, leg.Remaining - tolerance)));
             var beforeCorner = math.max(0f, leg.Distance - lookAhead);
-            var corner = math.sqrt(math.square(CornerSpeed(leg.CornerTurn, lookAhead)) + 2f * Braking * beforeCorner);
-            return math.min(math.min(top, TurnSpeed(leg.Distance, error)), math.min(stop, corner));
+            var cornerSpeed = CornerSpeed(chassis.TurnRadius, leg.CornerTurn, lookAhead);
+            var corner = math.sqrt(math.square(cornerSpeed) + 2f * Braking * beforeCorner);
+            var turn = TurnSpeed(chassis.TurnRadius, leg.Distance, error);
+            return math.min(math.min(top, turn), math.min(stop, corner));
         }
 
         // Fastest it can follow the arc to a point that far off its heading without exceeding its turn rate.
-        private readonly float TurnSpeed(float distance, float error)
+        private readonly float TurnSpeed(float turnRadius, float distance, float error)
         {
             var turn = math.abs(error);
             if (turn < 1e-3f)
@@ -265,14 +190,14 @@ namespace HyperRTS.Simulation.Units
             }
 
             var arc = turn < math.PI * 0.5f ? distance / (2f * math.sin(turn)) : 0f;
-            return TurnRate * math.max(TurnRadius, arc);
+            return TurnRate * math.max(turnRadius, arc);
         }
 
         // Cutting the corner from the look-ahead point is an arc of this radius.
-        private readonly float CornerSpeed(float cornerTurn, float lookAhead)
+        private readonly float CornerSpeed(float turnRadius, float cornerTurn, float lookAhead)
         {
             var half = cornerTurn * 0.5f;
-            return half < 1e-3f ? Unlimited : TurnRate * math.max(TurnRadius, lookAhead / math.tan(half));
+            return half < 1e-3f ? Unlimited : TurnRate * math.max(turnRadius, lookAhead / math.tan(half));
         }
 
         private readonly float Accelerate(float speed, float target, float deltaTime)
@@ -281,10 +206,6 @@ namespace HyperRTS.Simulation.Units
             var rate = (speeding ? Acceleration : Braking) * deltaTime;
             return speed + math.clamp(target - speed, -rate, rate);
         }
-
-        // Wheels turn the hull only as it rolls; tracks turn it standing.
-        private readonly float TurnLimit(float speed) =>
-            Pivots || TurnRadius <= 0f ? TurnRate : math.min(TurnRate, math.abs(speed) / TurnRadius);
 
         private static float2 Turn(float2 facing, float error, float limit)
         {

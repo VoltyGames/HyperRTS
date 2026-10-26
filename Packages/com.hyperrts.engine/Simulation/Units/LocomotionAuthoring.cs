@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -7,15 +8,15 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// Gives a ground vehicle handling: acceleration, braking, turning and reversing. Without it a unit steps
-    /// straight at full speed, as infantry do.
+    /// Gives a ground vehicle handling and its <see cref="Navigation.Chassis"/>: acceleration, braking, steering,
+    /// turning and reversing. Without it a unit steps straight at full speed, as infantry do.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Units + "Locomotion")]
     [Icon(HyperRTSIcons.Units)]
     [HelpURL(HyperRTSDocs.Units)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
-    public class LocomotionAuthoring : AuthoringBehaviour
+    public partial class LocomotionAuthoring : AuthoringBehaviour
     {
         [Tooltip("Speed gained per second, in m/s2.")]
         [Min(0.1f)]
@@ -25,34 +26,56 @@ namespace HyperRTS.Simulation.Units
         [Min(0.1f)]
         public float braking = 6f;
 
-        [Tooltip("Fastest the hull turns, in degrees per second.")]
+        [Tooltip("Fastest the hull yaws, in degrees per second: tracks turn at it, wheels hold it as their grip at speed.")]
         [Min(1f)]
         public float turnRate = 50f;
 
-        [Tooltip("Tightest circle it drives, in metres. 0 turns at any speed. Ignored when it pivots.")]
+        [Tooltip("How fast the steered wheels turn, in degrees per second. Wheels only.")]
+        [Min(1f)]
+        public float steerRate = 45f;
+
+        [Tooltip("Tightest circle the rear axle drives, in metres. 0 turns at any speed. Ignored when it pivots.")]
         [Min(0f)]
         public float turnRadius;
 
         [Tooltip("Stops and turns in place when far off its heading, as tracked vehicles do.")]
         public bool pivots = true;
 
+        [Tooltip("Metres from the steering axles' midpoint to the rear axle. 0 for tracks.")]
+        [Min(0f)]
+        public float wheelbase;
+
+        [Tooltip("Metres the rear axle (the fixed axles' midpoint) sits behind the hull centre. 0 for tracks.")]
+        public float rearAxle;
+
+        [Tooltip("How many axles, from the front, steer; Fill From Wheels measures the rest as the rear axle.")]
+        [Range(1, 2)]
+        public int steeringAxles = 1;
+
         [Tooltip("Top speed in reverse, in m/s.")]
         [Min(0.1f)]
         public float reverseSpeed = 2.5f;
 
-        [Tooltip("Backs up to a goal at most this far behind, in metres, when turning round would clearly take longer.")]
+        [Tooltip("Longest leg it backs along, in metres, when turning round would clearly take longer. 0 never reverses.")]
         [Min(0f)]
-        public float reverseDistance = 10f;
+        public float reverseRun = 10f;
 
         public Locomotion Locomotion => new()
         {
             Acceleration = acceleration,
             Braking = braking,
             TurnRate = math.radians(turnRate),
+            SteerRate = math.radians(steerRate),
+            ReverseSpeed = reverseSpeed,
+        };
+
+        public Chassis Chassis => new()
+        {
+            Wheelbase = wheelbase,
+            RearAxle = rearAxle,
             TurnRadius = turnRadius,
             Pivots = pivots,
-            ReverseSpeed = reverseSpeed,
-            ReverseDistance = reverseDistance,
+            ReverseRun = reverseRun,
         };
 
         public static void Add<TWriter>(ref TWriter writer, Locomotion locomotion)

@@ -103,7 +103,7 @@ namespace HyperRTS.Simulation.Air
                     wasMoving, destination, GivingWay);
                 Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
                 var step = Plan(transform, facing, speed.Value, flight, landed, destination.Value, moving, ref path,
-                    waypoints, locomotion, ref drive, ref heading, crowd, velocity.Value);
+                    waypoints, locomotion, agent.Chassis, ref drive, ref heading, crowd, velocity.Value);
                 heading = locomotion.Aim(heading, facing, !moving.ValueRO, aim, aiming, DeltaTime);
                 Fly(ref transform, from + step + (landed ? float2.zero : crowd.PushWithin(maxStep)), flight, landed);
                 if (moving.ValueRO && crowd.ReachedGroup)
@@ -142,19 +142,19 @@ namespace HyperRTS.Simulation.Air
             /// <summary>This frame's step and facing before the crowd's push.</summary>
             private readonly float2 Plan(in LocalTransform transform, float2 facing, float topSpeed, in Flight flight,
                 bool landed, float3 goal, EnabledRefRW<MoveDestination> moving, ref PathState path,
-                DynamicBuffer<PathWaypoint> waypoints, in Locomotion locomotion, ref LocomotionState drive,
-                ref float2 heading, in CrowdVisitor crowd, float2 velocity)
+                DynamicBuffer<PathWaypoint> waypoints, in Locomotion locomotion, in Chassis chassis,
+                ref LocomotionState drive, ref float2 heading, in CrowdVisitor crowd, float2 velocity)
             {
                 var position = transform.Position.xz;
                 var leg = PathLeg.Along(position, goal.xz, waypoints, path);
-                if (moving.ValueRO && locomotion.HasArrived(leg, position, facing, crowd.Radius))
+                if (moving.ValueRO && locomotion.HasArrived(chassis, leg, position, facing, crowd.Radius))
                 {
                     path.Halt(moving, waypoints);
                 }
 
                 if (moving.ValueRO)
                 {
-                    var steering = new Steering(crowd, velocity, topSpeed);
+                    var steering = new Steering(crowd, chassis, velocity, topSpeed);
                     return steering.Drive(locomotion, ref drive, facing, ref heading, leg, DeltaTime);
                 }
 

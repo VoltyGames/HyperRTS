@@ -2,7 +2,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Units;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -28,7 +27,6 @@ namespace HyperRTS.Simulation.Resources
         private ComponentLookup<Faction> _factionLookup;
         private BufferLookup<StatModifier> _modifierLookup;
         private ComponentLookup<PlayerStats> _statsLookup;
-        private ComponentLookup<Locomotion> _locomotionLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -44,7 +42,6 @@ namespace HyperRTS.Simulation.Resources
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _modifierLookup = state.GetBufferLookup<StatModifier>(true);
             _statsLookup = state.GetComponentLookup<PlayerStats>();
-            _locomotionLookup = state.GetComponentLookup<Locomotion>(true);
             state.RequireForUpdate<NavGrid>();
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<Harvester, ActiveOrder>().Build());
         }
@@ -63,7 +60,6 @@ namespace HyperRTS.Simulation.Resources
             _factionLookup.Update(ref state);
             _modifierLookup.Update(ref state);
             _statsLookup.Update(ref state);
-            _locomotionLookup.Update(ref state);
 
             new GatherJob
             {
@@ -77,7 +73,6 @@ namespace HyperRTS.Simulation.Resources
                 FactionLookup = _factionLookup,
                 ModifierLookup = _modifierLookup,
                 StatsLookup = _statsLookup,
-                LocomotionLookup = _locomotionLookup,
                 Grid = SystemAPI.GetSingleton<NavGrid>(),
             }.Schedule();
         }
@@ -98,7 +93,6 @@ namespace HyperRTS.Simulation.Resources
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public BufferLookup<StatModifier> ModifierLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
-            [ReadOnly] public ComponentLookup<Locomotion> LocomotionLookup;
             [ReadOnly] public NavGrid Grid;
 
             private void Execute(Entity entity, ref Harvester harvester, ref HarvestState harvest,
@@ -241,7 +235,7 @@ namespace HyperRTS.Simulation.Resources
             {
                 var position = transform.Position;
                 var facing = math.normalizesafe(transform.Forward().xz);
-                var turnLength = TurnLength(entity, agent);
+                var turnLength = agent.Chassis.TurnLength(agent.HalfLength);
                 var closest = Closest.None;
                 for (var i = 0; i < DropOffs.Length; i++)
                 {
@@ -265,13 +259,6 @@ namespace HyperRTS.Simulation.Resources
                 }
 
                 return closest.Entity;
-            }
-
-            // Metres a radian of turn costs: the turn radius, or half the hull for one that pivots on its tracks.
-            private readonly float TurnLength(Entity entity, in NavAgent agent)
-            {
-                var handling = LocomotionLookup.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
-                return handling.Pivots ? agent.HalfLength : handling.TurnRadius;
             }
 
             private readonly float DistanceSq(Entity entity, float3 position) =>

@@ -47,14 +47,18 @@ namespace HyperRTS.Simulation.Tests.Economy
         private Entity SpawnLoadedTruck()
         {
             var truck = SpawnHarvester(float3.zero);
-            var agent = new NavAgent { Radius = TruckRadius, HullLength = 7f, Spacing = UnitAuthoring.DefaultSpacing };
+            var agent = new NavAgent
+            {
+                Radius = TruckRadius, HullLength = 7f, Spacing = UnitAuthoring.DefaultSpacing,
+                Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = TurnRadius, ReverseRun = 6f },
+            };
             agent.WallMargin = agent.WallMarginFor(TurnRadius);
             _world.EntityManager.SetComponentData(truck, agent);
             var writer = new EntityManagerWriter(_world.EntityManager, truck);
             LocomotionAuthoring.Add(ref writer, new Locomotion
             {
-                Acceleration = 3f, Braking = 6f, TurnRate = math.radians(35f), TurnRadius = TurnRadius,
-                ReverseSpeed = 3f, ReverseDistance = 6f,
+                Acceleration = 3f, Braking = 6f, TurnRate = math.radians(35f), SteerRate = math.radians(45f),
+                ReverseSpeed = 3f,
             });
             _world.EntityManager.SetComponentData(truck, LocalTransform.FromPositionRotation(float3.zero,
                 quaternion.RotateY(math.PI * 0.5f)));

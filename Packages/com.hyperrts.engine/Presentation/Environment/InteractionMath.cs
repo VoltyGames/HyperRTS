@@ -76,15 +76,29 @@ namespace HyperRTS.Presentation.Environment
         public static void AddVehicle(in TrackMarks marks, float2 position, float2 forward, float advance,
             List<InteractionStamp> trample, List<InteractionStamp> tracks)
         {
-            var center = position - forward * (advance * 0.5f);
-            var halfLength = (marks.Width + math.abs(advance)) * 0.5f;
-            var right = Right(forward);
-            var span = (marks.Gauge + marks.Width) * 0.5f;
-            trample.Add(Stamp(center, forward, new float2(span, math.max(halfLength, span)), new float4(1f, 1f, 1f, 0f)));
+            AddTrample(marks, position, forward, advance, trample);
+            AddRuts(marks, position, forward, advance, tracks);
+        }
 
+        /// <summary>The grass flattened across the vehicle's whole width this frame.</summary>
+        public static void AddTrample(in TrackMarks marks, float2 position, float2 forward, float advance,
+            List<InteractionStamp> trample)
+        {
+            var center = position - forward * (advance * 0.5f);
+            var span = (marks.Gauge + marks.Width) * 0.5f;
+            var halfLength = (marks.Width + math.abs(advance)) * 0.5f;
+            trample.Add(Stamp(center, forward, new float2(span, math.max(halfLength, span)), new float4(1f, 1f, 1f, 0f)));
+        }
+
+        /// <summary>A rut under each side of one axle, or of the tracks, heading along <paramref name="forward"/>.</summary>
+        public static void AddRuts(in TrackMarks marks, float2 axle, float2 forward, float advance,
+            List<InteractionStamp> tracks)
+        {
+            var center = axle - forward * (advance * 0.5f);
+            var halfLength = (marks.Width + math.abs(advance)) * 0.5f;
             var rut = new float4(marks.RutDepth, 0.5f + 0.5f * marks.RutDepth, 0f, 0f);
             var halfSize = new float2(marks.Width * 0.5f, halfLength);
-            var offset = right * (marks.Gauge * 0.5f);
+            var offset = Right(forward) * (marks.Gauge * 0.5f);
             tracks.Add(Stamp(center - offset, forward, halfSize, rut));
             tracks.Add(Stamp(center + offset, forward, halfSize, rut));
         }

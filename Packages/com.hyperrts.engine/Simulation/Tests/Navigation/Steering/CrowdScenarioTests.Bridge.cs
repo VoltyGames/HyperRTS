@@ -26,11 +26,13 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
         {
             _world.SpawnNavArea(float3.zero, new float2(12f, 600f), NavAreaKind.Water);
             _world.SpawnNavArea(float3.zero, new float2(20f, 6f), NavAreaKind.Deck);
-            var tank = new NavAgent { Radius = 1.85f, HullLength = 7.9f };
+            var tank = new NavAgent
+            {
+                Radius = 1.85f, HullLength = 7.9f, Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
+            };
             var handling = new Locomotion
             {
-                Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), Pivots = true,
-                ReverseSpeed = 3f, ReverseDistance = 10f,
+                Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), ReverseSpeed = 3f,
             };
             var units = new List<Entity>();
             for (var i = 0; i < count; i++)
@@ -115,11 +117,13 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
         {
             _world.SpawnNavArea(float3.zero, new float2(12f, 600f), NavAreaKind.Water);
             _world.SpawnNavArea(float3.zero, new float2(20f, 6f), NavAreaKind.Deck);
-            var tank = new NavAgent { Radius = 1.85f, HullLength = 7.9f };
+            var tank = new NavAgent
+            {
+                Radius = 1.85f, HullLength = 7.9f, Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
+            };
             var handling = new Locomotion
             {
-                Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), Pivots = true,
-                ReverseSpeed = 3f, ReverseDistance = 10f,
+                Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), ReverseSpeed = 3f,
             };
             var unit = SpawnVehicle(new float3(-8.6f, 0f, z), yaw, 4.5f, tank, handling);
             var facing = new float2(math.sin(yaw), math.cos(yaw));

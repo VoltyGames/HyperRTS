@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
     /// Vehicle handling: turning radius, pivots, reversing, braking to the goal, no orbiting, and backing out when
     /// wedged. Infantry step at full speed at once.
     /// </summary>
-    public class LocomotionTests
+    public partial class LocomotionTests
     {
         private const float TruckRadius = 1.25f;
         private const float TruckTurnRadius = 9f;
@@ -21,8 +21,20 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
 
         private static readonly Locomotion Tracks = new()
         {
-            Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), Pivots = true,
-            ReverseSpeed = 3f, ReverseDistance = 10f,
+            Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), ReverseSpeed = 3f,
+        };
+
+        private static readonly Chassis TrackedChassis = new() { Pivots = true, ReverseRun = 10f };
+
+        private static readonly Locomotion Wheels = new()
+        {
+            Acceleration = 3f, Braking = 6f, TurnRate = math.radians(40f), SteerRate = math.radians(45f),
+            ReverseSpeed = 3f,
+        };
+
+        private static readonly Chassis TruckChassis = new()
+        {
+            Wheelbase = 4.5f, RearAxle = 1.5f, TurnRadius = TruckTurnRadius, ReverseRun = 6f,
         };
 
         private TestWorld _world;
@@ -37,25 +49,22 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private Entity SpawnVehicle(float3 position, float radius, float hullLength, Locomotion locomotion)
+        private Entity SpawnVehicle(float3 position, float radius, float hullLength, Locomotion locomotion,
+            Chassis chassis)
         {
             var vehicle = _world.SpawnUnit(1, position, speed: 8f, radius: radius);
             _world.EntityManager.SetComponentData(vehicle, new NavAgent
             {
-                Radius = radius, HullLength = hullLength, Spacing = UnitAuthoring.DefaultSpacing,
+                Radius = radius, HullLength = hullLength, Spacing = UnitAuthoring.DefaultSpacing, Chassis = chassis,
             });
             var writer = new EntityManagerWriter(_world.EntityManager, vehicle);
             LocomotionAuthoring.Add(ref writer, locomotion);
             return vehicle;
         }
 
-        private Entity SpawnTruck(float3 position) => SpawnVehicle(position, TruckRadius, 8f, new Locomotion
-        {
-            Acceleration = 3f, Braking = 6f, TurnRate = math.radians(40f), TurnRadius = TruckTurnRadius,
-            ReverseSpeed = 3f, ReverseDistance = 6f,
-        });
+        private Entity SpawnTruck(float3 position) => SpawnVehicle(position, TruckRadius, 8f, Wheels, TruckChassis);
 
-        private Entity SpawnTank(float3 position) => SpawnVehicle(position, TankRadius, 6.9f, Tracks);
+        private Entity SpawnTank(float3 position) => SpawnVehicle(position, TankRadius, 6.9f, Tracks, TrackedChassis);
 
         // Ticks once so the order is under way before callers wait on arrival.
         private void Order(Entity unit, float3 goal)
@@ -86,6 +95,8 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
 
         private static float TurnBetween(float2 a, float2 b) => math.acos(math.clamp(math.dot(a, b), -1f, 1f));
 
+        private float2 RearAxle(Entity unit) => TruckChassis.Pose(_world.GetPosition(unit).xz, Facing(unit)).Position;
+
         [Test]
         public void WheeledTruck_NeverTurnsTighterThanItsRadius()
         {
@@ -96,17 +107,17 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
             for (var t = 0f; t < 30f && !Arrived(truck); t += TestWorld.FrameTime)
             {
                 var facing = Facing(truck);
-                var position = _world.GetPosition(truck).xz;
+                var rear = RearAxle(truck);
                 _world.Tick();
                 var turn = TurnBetween(facing, Facing(truck));
                 if (turn > 1e-4f)
                 {
-                    tightest = math.min(tightest, math.distance(position, _world.GetPosition(truck).xz) / turn);
+                    tightest = math.min(tightest, math.distance(rear, RearAxle(truck)) / turn);
                 }
             }
 
             Assert.IsTrue(Arrived(truck), "arrived");
-            Assert.GreaterOrEqual(tightest, TruckTurnRadius * 0.95f, "arcs no tighter than the turning radius");
+            Assert.GreaterOrEqual(tightest, TruckTurnRadius * 0.95f, "the rear axle arcs no tighter than the turn radius");
         }
 
         [Test]
@@ -253,52 +264,6 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
             Assert.AreEqual(5f * TestWorld.FrameTime, math.distance(before, _world.GetPosition(soldier).xz), 1e-4f);
             Assert.AreEqual(1f, math.dot(Facing(soldier), new float2(1f, 0f)), 1e-4f);
             Assert.IsFalse(_world.EntityManager.HasComponent<LocomotionState>(soldier));
-        }
-
-        [Test]
-        public void InstantLocomotion_StepsAtFullSpeed_ButNeverPastTheGoal()
-        {
-            var instant = Locomotion.Instant;
-            var state = default(LocomotionState);
-            var facing = new float2(1f, 0f);
-            var far = new PathLeg(float2.zero, new float2(10f, 0f), float2.zero, 0f, 10f, true);
-            MathAssert.Near(new float2(0.5f, 0f), instant.Drive(ref state, float2.zero, ref facing, far, 5f, 0.4f, 0.1f));
-
-            var near = new PathLeg(float2.zero, new float2(0.2f, 0f), float2.zero, 0f, 0.2f, true);
-            MathAssert.Near(new float2(0.2f, 0f), instant.Drive(ref state, float2.zero, ref facing, near, 5f, 0.4f, 0.1f));
-        }
-
-        [Test]
-        public void WedgedVehicle_TurnsOutOnce_BeforeGivingUp()
-        {
-            var progress = new MoveProgress { Stalled = MoveProgress.GiveUpSeconds };
-            var drive = new LocomotionState();
-
-            Assert.IsTrue(progress.TryTurnOut(Tracks, ref drive, MoveProgress.WallHold.Wedged), "turns out");
-            Assert.IsTrue(drive.IsManoeuvring, "driving the other way");
-            Assert.AreEqual(0f, progress.Stalled, "with the clock restarted");
-            Assert.IsFalse(progress.TryTurnOut(Tracks, ref drive, MoveProgress.WallHold.Wedged), "once until it gets closer");
-            Assert.IsFalse(new MoveProgress().TryTurnOut(Tracks, ref drive, MoveProgress.WallHold.None), "not wedged");
-            Assert.IsFalse(new MoveProgress().TryTurnOut(Locomotion.Instant, ref drive, MoveProgress.WallHold.Wedged),
-                "no hull to turn");
-        }
-
-        [Test]
-        public void TrackedHull_TurningOut_ReversesInsteadOfPivoting()
-        {
-            var drive = new LocomotionState();
-            Tracks.TurnOut(ref drive);
-            var facing = new float2(0f, 1f);
-            var behind = new PathLeg(float2.zero, new float2(0f, -40f), float2.zero, 0f, 40f, true);
-
-            var step = float2.zero;
-            for (var frame = 0; frame < 30; frame++)
-            {
-                step = Tracks.Drive(ref drive, float2.zero, ref facing, behind, 6f, TankRadius, TestWorld.FrameTime);
-            }
-
-            Assert.Less(drive.Speed, -1f, "backing up");
-            Assert.Less(math.dot(step, new float2(0f, 1f)), 0f, "away from the wall ahead");
         }
 
         [Test]

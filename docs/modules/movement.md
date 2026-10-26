@@ -114,7 +114,8 @@ within reach (`CrowdVisitor`) and the walls' distance field, and picks the cheap
   wall within the wall margin. Parked units never steer. A three-point turn or a back-off skips steering.
 
 Velocities are last frame's (`Velocity`). The chosen velocity goes back to `Locomotion` as the heading and speed to
-drive, so a vehicle turns at its rate and radius rather than sliding sideways. Told to go back, it backs straight up
+drive, which wheels turn into the curvature they steer for, so a vehicle turns as its chassis can rather than
+sliding sideways. A wheeled vehicle's reachable turn grows as its wheels steer over at their steer rate. Told to go back, it backs straight up
 if it can reverse and brakes otherwise. Layers that can't block each other
 ignore each other, aircraft included. The same query feeds the overlap fallback, which pushes neighbours apart
 along the line between their closest points, half each, until the larger of their two spacings lies between them
@@ -163,16 +164,42 @@ unit fits and can reach; one only across water or a wall is left to the pathfind
 Every unit follows its path through `Locomotion`. Without its own, a unit gets `Locomotion.Instant`: full speed and
 any facing at once, never reversing, as infantry do. `LocomotionAuthoring` gives a ground vehicle handling, and its
 `LocomotionState` keeps its speed between frames. `PathState` caches the path's length past the next corner.
-Its facing is its rotation, and it moves only along it, so the crowd's push never turns the hull. A parked unit with an
-enabled `FacingGoal`, as a hull-fixed weapon sets, turns toward it standing at its turn rate, wheeled ones too.
+Its facing is its rotation, and the crowd's push never turns the hull. A parked unit with an enabled `FacingGoal`,
+as a hull-fixed weapon sets, turns toward it standing at its turn rate, wheeled ones too.
+
+`Locomotion` holds the dynamics:
 
 | Field | Does |
 | --- | --- |
 | Acceleration, Braking | Speed gained and shed per second |
-| Turn Rate | Fastest the hull turns, in degrees per second |
-| Turn Radius | Tightest circle it drives. The hull turns only as it rolls, at most speed over radius. 0 turns at any speed |
-| Pivots | Stops and turns in place when more than 60 degrees off its heading, as tracked vehicles do |
-| Reverse Speed, Reverse Distance | Backs up to a goal behind it when the path left is at most this long (about 6 m wheeled, 10 m tracked) and turning round would clearly take longer |
+| Turn Rate | Fastest the hull yaws, in degrees per second: tracks turn at it, wheels hold it as their grip at speed |
+| Steer Rate | How fast the steered wheels turn, in degrees per second |
+| Reverse Speed | Top speed backing up |
+
+`NavAgent.Chassis` says how the hull moves, for locomotion and the path planner alike. `UnitAuthoring` bakes it
+from the `LocomotionAuthoring` beside it:
+
+| Field | Does |
+| --- | --- |
+| Wheelbase | Metres from the steering axles' midpoint to the rear axle; 0 for tracks |
+| Rear Axle | Metres the rear axle (the fixed axles' midpoint) sits behind the hull centre; 0 for tracks |
+| Turn Radius | Tightest circle of the rear axle. 0 turns at any speed |
+| Pivots | Stops and turns in place about the centre when more than 60 degrees off its heading, as tracked vehicles do |
+| Reverse Run | Backs up to a goal behind it when the path left is at most this long (about 6 m wheeled, 10 m tracked) and turning round would clearly take longer; 0 never reverses |
+
+A hull with a turn radius that doesn't pivot is wheeled. Each frame a wheeled vehicle:
+
+- aims its rear axle at the point its look-ahead reaches along the path, round the next corner, and wants the arc
+  through it: curvature `2 sin(angle) / distance` (pure pursuit). A point behind takes full lock.
+- steers `LocomotionState.Steer` (signed curvature in 1/m) toward it, the steer angle `atan(wheelbase x curvature)`
+  changing at most at the steer rate, clamped to the turn radius and to the turn rate over speed.
+- rolls the rear axle along that arc (`Chassis.Advance`) and puts the centre `RearAxle` ahead of it, so the centre
+  drifts slightly inward in a turn and the front axle runs a wider circle than the rear.
+
+Tracks and instant units turn their facing about the centre at the turn rate (`Chassis.Rotate`) and move along it.
+**Fill From Wheels**, on the Locomotion's context menu, measures the wheelbase and rear axle from the model's
+`Wheel_L01`... parts, front to back: the first Steering Axles axles steer and the rest make the rear axle.
+`LocomotionRule` checks a wheeled unit has a wheelbase and both axles inside its hull.
 
 - It cuts corners within its look-ahead (twice its radius, half a second of travel and half its turn radius) once
   the next corner is in sight.
@@ -181,7 +208,7 @@ enabled `FacingGoal`, as a hull-fixed weapon sets, turns toward it standing at i
 - A target inside its turning circle can't be reached on any arc, so it makes a three-point turn: it goes the
   other way, turning toward the target, until the target is clear of the circle. A goal under the hull inside the
   circle counts as reached. So it never orbits.
-- A wheeled vehicle starts a turn where an arc of its turn radius meets the next leg, before the corner.
+- A wheeled vehicle starts a turn as its look-ahead point rounds the corner, before it reaches the corner.
 - Wheels can't turn standing, so a wheeled leg that runs head-on into a wall, or that steering stops short of one,
   drives the other way for 1.5 s (`LocomotionState.OtherWay`): it backs off to turn, or takes a three-point turn's
   forward leg. This is a manoeuvre timer, not a stuck test.

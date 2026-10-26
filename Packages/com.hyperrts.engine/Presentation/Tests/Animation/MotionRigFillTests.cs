@@ -2,12 +2,13 @@ using System.Linq;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests.Animation
 {
-    /// <summary>The motion rig authoring's fill from a model: parts found by name, weapons wired, tuned slots kept.</summary>
+    /// <summary>The motion rig authoring's fill from a model: parts found by name, weapons wired, steering axles, tuned slots kept.</summary>
     public class MotionRigFillTests
     {
         private GameObject _unit;
@@ -201,6 +202,28 @@ namespace HyperRTS.Presentation.Tests.Animation
             Assert.AreEqual(new Vector2(20f, 50f), rig.footprint);
         }
 
+        [Test]
+        public void FillFromWheels_MeasuresTheChassis_AndTheRigSteersOnlyTheFrontAxle()
+        {
+            var hull = Pivot("Hull", Pivot("Model", _unit.transform), new Vector3(2.5f, 2f, 7f));
+            var steered = new[] { Wheel("Wheel_L01", hull, -1f, 2.5f), Wheel("Wheel_R01", hull, 1f, 2.5f) };
+            Wheel("Wheel_L02", hull, -1f, -1f);
+            Wheel("Wheel_R02", hull, 1f, -1f);
+            Wheel("Wheel_L03", hull, -1f, -2.4f);
+            var locomotion = _unit.AddComponent<LocomotionAuthoring>();
+            locomotion.pivots = false;
+            locomotion.turnRadius = 9f;
+            var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+            locomotion.FillFromWheels();
+            rig.FillFromModel();
+
+            Assert.AreEqual(4.2f, locomotion.wheelbase, 1e-4f, "front axle to the rear pair's midpoint");
+            Assert.AreEqual(1.7f, locomotion.rearAxle, 1e-4f, "rear pair's midpoint behind the centre");
+            CollectionAssert.AreEquivalent(steered, rig.wheels.Where(slot => slot.steers).Select(slot => slot.part));
+            CollectionAssert.IsEmpty(rig.Problems());
+        }
+
         // A pivot with a cube mesh child of the given size, or an empty one.
         private static Transform Pivot(string name, Transform parent, Vector3 meshSize = default)
         {
@@ -215,6 +238,13 @@ namespace HyperRTS.Presentation.Tests.Animation
             }
 
             return pivot;
+        }
+
+        private static Transform Wheel(string name, Transform hull, float x, float z)
+        {
+            var wheel = Pivot(name, hull, new Vector3(0.3f, 0.8f, 0.8f));
+            wheel.localPosition = new Vector3(x, 0f, z);
+            return wheel;
         }
     }
 }
