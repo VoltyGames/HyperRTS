@@ -208,10 +208,9 @@ Shader "HyperRTS/Water"
                 #endif
             }
 
-            // URP's fog between the camera and the opaque seen through the water at uv.
-            half4 BottomFog(float2 uv)
+            // URP's fog between the camera and the opaque seen through the water at uv, whose depth buffer reads rawDepth.
+            half4 BottomFog(float2 uv, float rawDepth)
             {
-                float rawDepth = SampleSceneDepth(uv);
                 float3 positionWS = ComputeWorldSpacePosition(uv, rawDepth, UNITY_MATRIX_I_VP);
                 return AtmosphereFogAt(uv, positionWS, EyeDepth(rawDepth));
             }
@@ -229,19 +228,22 @@ Shader "HyperRTS/Water"
 
                 float2 screenUV = input.positionCS.xy / _ScaledScreenParams.xy;
                 float surface = EyeDepth(input.positionCS.z);
-                float depth = max(0.0, EyeDepth(SampleSceneDepth(screenUV)) - surface);
+                float rawDepth = SampleSceneDepth(screenUV);
+                float depth = max(0.0, EyeDepth(rawDepth) - surface);
                 float shoreDistance = ShoreDistance(depth, input.positionWS);
                 float shoreDepth = depth + ShoreLap(input.uv);
 
                 float2 refracted = screenUV + ripple.xy * _Refraction * saturate(depth);
-                if (EyeDepth(SampleSceneDepth(refracted)) < surface)
+                float refractedDepth = SampleSceneDepth(refracted);
+                if (EyeDepth(refractedDepth) < surface)
                 {
                     refracted = screenUV;
+                    refractedDepth = rawDepth;
                 }
 
                 // The opaque texture already holds URP's fog to the bottom; take it out so the water fogs it once.
                 SceneFog fog = SceneFogAt(input.positionWS, input.positionCS);
-                half3 bottom = RemoveAtmosphereFog(SampleSceneColor(refracted), BottomFog(refracted));
+                half3 bottom = RemoveAtmosphereFog(SampleSceneColor(refracted), BottomFog(refracted, refractedDepth));
                 half3 tint = lerp(_ShallowColor.rgb, _DeepColor.rgb, saturate(depth / _DepthRange)) * CloudShade(input.positionWS);
                 half3 body = lerp(tint, bottom * _ShallowColor.rgb * 1.8, exp(-depth / _Clarity));
 
