@@ -102,7 +102,7 @@
 }
 
 .hud-minimap__fog,
-.hud-minimap__blips,
+.hud-minimap__markers,
 .hud-minimap__view {
     position: absolute;
     left: 0;

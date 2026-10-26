@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Combat
         [GhostField(Quantization = 100)] public float Progress;
 
         /// <summary>Anything but packed up holds the unit in place.</summary>
-        public readonly bool Rooted => State != DeployState.Packed;
+        public readonly bool Immobile => State != DeployState.Packed;
 
         public readonly bool Deployed => State == DeployState.Deployed;
 
@@ -68,8 +68,8 @@ namespace HyperRTS.Simulation.Combat
             return !lookup.TryGetComponent(unit, out var deployable) || !deployable.Deployed;
         }
 
-        public static bool IsRooted(in ComponentLookup<Deployable> lookup, Entity unit) =>
-            lookup.TryGetComponent(unit, out var deployable) && deployable.Rooted;
+        public static bool IsImmobile(in ComponentLookup<Deployable> lookup, Entity unit) =>
+            lookup.TryGetComponent(unit, out var deployable) && deployable.Immobile;
     }
 
     /// <summary>Where a <see cref="Deployable"/> unit is between packed up and deployed.</summary>

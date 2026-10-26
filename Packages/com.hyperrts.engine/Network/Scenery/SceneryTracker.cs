@@ -56,7 +56,7 @@ namespace HyperRTS.Network.Scenery
             return true;
         }
 
-        /// <summary>Records a state change. Teams in <paramref name="teams"/> that saw another state get news.</summary>
+        /// <summary>Records a state change. Teams in <paramref name="teams"/> that saw another state get a sighting.</summary>
         public bool Set(ulong id, byte state, byte fall, ushort teams, uint frame)
         {
             if (!_slots.TryGetValue(id, out var slot) || _records[slot].State == state)
@@ -87,7 +87,7 @@ namespace HyperRTS.Network.Scenery
         }
 
         /// <summary>With fog off every team sees everything. Changes made this <paramref name="frame"/> count as witnessed.</summary>
-        public void Reveal(in FogOfWar fog, bool fogOn, uint frame, NativeList<SceneryNews> news)
+        public void Reveal(in FogOfWar fog, bool fogOn, uint frame, NativeList<ScenerySighting> sightings)
         {
             var everything = !fogOn || !fog.IsCreated;
             for (var i = _stale.Length - 1; i >= 0; i--)
@@ -103,7 +103,7 @@ namespace HyperRTS.Network.Scenery
 
                     _known[slot * Teams + team] = record.Change.Code;
                     record.Stale &= (ushort)~(1 << team);
-                    news.Add(new SceneryNews { Team = (byte)team, Witnessed = record.Changed == frame, Change = record.Change });
+                    sightings.Add(new ScenerySighting { Team = (byte)team, Witnessed = record.Changed == frame, Change = record.Change });
                 }
 
                 if (record.Stale == 0)

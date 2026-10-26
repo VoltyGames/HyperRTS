@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Marks zero-health entities <see cref="Dead"/>, spawns their remains and destroys them at the end of the frame.
-    /// <see cref="Cleared"/> ones go quietly: no remains and no Dead, so no cues.
+    /// <see cref="SceneryCleared"/> ones go quietly: no remains and no Dead, so no cues.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Combat
 
         [BurstCompile]
         [WithPresent(typeof(Dead))]
-        [WithNone(typeof(Cleared))]
+        [WithNone(typeof(SceneryCleared))]
         [WithChangeFilter(typeof(Health))]
         private partial struct DeathJob : IJobEntity
         {
@@ -133,7 +133,7 @@ namespace HyperRTS.Simulation.Combat
         }
 
         [BurstCompile]
-        [WithAll(typeof(Cleared))]
+        [WithAll(typeof(SceneryCleared))]
         private partial struct ClearJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter Ecb;

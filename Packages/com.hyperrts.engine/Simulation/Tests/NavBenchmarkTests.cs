@@ -128,7 +128,7 @@ namespace HyperRTS.Simulation.Tests
             }
 
             var sectors = _world.Grid().Sectors;
-            TestContext.WriteLine($"Full field and sector build: {full:F2} ms ({sectors.Classes} classes, " +
+            TestContext.WriteLine($"Full field and sector build: {full:F2} ms ({sectors.ClassCount} classes, " +
                                   $"{sectors.SectorCount} sectors, {sectors.Regions.Length} components)");
             TestContext.WriteLine($"After a building: restamp {restamp:F2} ms, field and sectors {incremental:F2} ms");
             Assert.Less(full, 60.0, $"full build {full:F2} ms, under twice 30 ms");

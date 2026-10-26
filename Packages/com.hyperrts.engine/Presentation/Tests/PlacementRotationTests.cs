@@ -34,7 +34,7 @@ namespace HyperRTS.Presentation.Tests
             rotation.Release();
 
             Assert.AreEqual(PlacementMath.CameraYaw + math.radians(45f), rotation.Yaw(false), 1e-5f);
-            Assert.IsFalse(rotation.Turning);
+            Assert.IsFalse(rotation.IsTurning);
         }
 
         [Test]
@@ -45,7 +45,7 @@ namespace HyperRTS.Presentation.Tests
             rotation.Turn(120f);
             rotation.Turn(140f);
 
-            Assert.IsTrue(rotation.Turning);
+            Assert.IsTrue(rotation.IsTurning);
             Assert.AreEqual(PlacementMath.CameraYaw + math.radians(20f), rotation.Yaw(false), 1e-5f, "0.5° a pixel");
             Assert.AreEqual(PlacementMath.CameraYaw + math.radians(15f), rotation.Yaw(true), 1e-5f);
             rotation.Release();

@@ -116,7 +116,7 @@ namespace HyperRTS.Simulation.Units
                 heading = locomotion.Aim(heading, facing, !moving.ValueRO, aim, aiming, DeltaTime);
                 // A building or wreck that lands on a unit leaves it sunk in walls, parked or not, and it drives out.
                 var depth = capsule.Depth(from, axis);
-                var sunk = depth > NavTolerances.Skin;
+                var sunk = depth > NavTolerances.WallOverlap;
                 var escape = sunk ? capsule.WayOut(from, maxStep) : float2.zero;
                 var wanted = from + crowd.Within(step + escape + crowd.PushWithin(maxStep));
                 Walk(ref transform, capsule, from, wanted, agent, crowd);
@@ -178,7 +178,7 @@ namespace HyperRTS.Simulation.Units
             private static MoveProgress.WallHold Hold(in NavCapsule capsule, float depth, float2 from, float2 to,
                 float2 axis, in CrowdVisitor crowd)
             {
-                if (depth > NavTolerances.Skin)
+                if (depth > NavTolerances.WallOverlap)
                 {
                     return capsule.Depth(to, axis) >= depth ? MoveProgress.WallHold.Sunk : MoveProgress.WallHold.None;
                 }

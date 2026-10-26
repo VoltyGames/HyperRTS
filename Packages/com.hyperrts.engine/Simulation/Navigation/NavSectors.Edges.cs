@@ -37,9 +37,9 @@ namespace HyperRTS.Simulation.Navigation
         {
             var sector = Owners[component];
             var label = component - Firsts[classIndex * SectorCount + sector] + 1;
-            var at = new int2(sector % Sectors.x, sector / Sectors.x);
+            var at = new int2(sector % SectorsPerAxis.x, sector / SectorsPerAxis.x);
             AddAcross(classIndex, sector, East, label, true, sector + 1, into);
-            AddAcross(classIndex, sector, North, label, true, sector + Sectors.x, into);
+            AddAcross(classIndex, sector, North, label, true, sector + SectorsPerAxis.x, into);
             if (at.x > 0)
             {
                 AddAcross(classIndex, sector - 1, East, label, false, sector - 1, into);
@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Navigation
 
             if (at.y > 0)
             {
-                AddAcross(classIndex, sector - Sectors.x, North, label, false, sector - Sectors.x, into);
+                AddAcross(classIndex, sector - SectorsPerAxis.x, North, label, false, sector - SectorsPerAxis.x, into);
             }
         }
 
@@ -77,12 +77,12 @@ namespace HyperRTS.Simulation.Navigation
             using var scope = ConnectMarker.Auto();
             for (var sector = 0; sector < SectorCount; sector++)
             {
-                var at = new int2(sector % Sectors.x, sector / Sectors.x);
-                var east = at.x + 1 < Sectors.x && Dirty[sector + 1];
-                var north = at.y + 1 < Sectors.y && Dirty[sector + Sectors.x];
+                var at = new int2(sector % SectorsPerAxis.x, sector / SectorsPerAxis.x);
+                var east = at.x + 1 < SectorsPerAxis.x && Dirty[sector + 1];
+                var north = at.y + 1 < SectorsPerAxis.y && Dirty[sector + SectorsPerAxis.x];
                 if (Dirty[sector] || east || north)
                 {
-                    for (var classIndex = 0; classIndex < Classes; classIndex++)
+                    for (var classIndex = 0; classIndex < ClassCount; classIndex++)
                     {
                         Border(classIndex, sector, East);
                         Border(classIndex, sector, North);
@@ -102,11 +102,11 @@ namespace HyperRTS.Simulation.Navigation
         private void Border(int classIndex, int sector, int border)
         {
             var key = (classIndex * SectorCount + sector) * 2 + border;
-            var at = new int2(sector % Sectors.x, sector / Sectors.x);
+            var at = new int2(sector % SectorsPerAxis.x, sector / SectorsPerAxis.x);
             var last = NavField.SectorCells - 1;
             var count = 0;
-            var other = border == East ? sector + 1 : sector + Sectors.x;
-            if ((border == East && at.x + 1 < Sectors.x) || (border == North && at.y + 1 < Sectors.y))
+            var other = border == East ? sector + 1 : sector + SectorsPerAxis.x;
+            if ((border == East && at.x + 1 < SectorsPerAxis.x) || (border == North && at.y + 1 < SectorsPerAxis.y))
             {
                 var own = (classIndex * SectorCount + sector) * Area;
                 var far = (classIndex * SectorCount + other) * Area;
@@ -144,7 +144,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             Owners.Clear();
             var next = 0;
-            for (var i = 0; i < Classes * SectorCount; i++)
+            for (var i = 0; i < ClassCount * SectorCount; i++)
             {
                 Firsts[i] = next;
                 next += Counts[i];
@@ -154,7 +154,7 @@ namespace HyperRTS.Simulation.Navigation
                 }
             }
 
-            Firsts[Classes * SectorCount] = next;
+            Firsts[ClassCount * SectorCount] = next;
         }
 
         private void Unite()
@@ -170,7 +170,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 var sector = key / 2 % SectorCount;
                 var classIndex = key / 2 / SectorCount;
-                var other = key % 2 == East ? sector + 1 : sector + Sectors.x;
+                var other = key % 2 == East ? sector + 1 : sector + SectorsPerAxis.x;
                 for (var i = 0; i < EdgeCounts[key]; i++)
                 {
                     var edge = Edges[key * NavField.SectorCells + i];
@@ -216,11 +216,11 @@ namespace HyperRTS.Simulation.Navigation
         public readonly JobHandle Schedule(in NavField field, in MovementClasses classes, JobHandle dependency)
         {
             var work = new NativeList<int2>(Allocator.TempJob);
-            dependency = new CollectJob { Dirty = Dirty, ClassCount = Classes, Work = work }.Schedule(dependency);
+            dependency = new CollectJob { Dirty = Dirty, ClassCount = ClassCount, Work = work }.Schedule(dependency);
             dependency = new RelabelJob
             {
                 Field = field, Classes = classes, Work = work.AsDeferredJobArray(), Labels = Labels, Counts = Counts,
-                Representatives = Representatives, Sectors = Sectors, ClassCount = Classes,
+                Representatives = Representatives, SectorsPerAxis = SectorsPerAxis, ClassCount = ClassCount,
             }.Schedule(work, 4, dependency);
             dependency = new ConnectJob { Graph = this }.Schedule(dependency);
             return work.Dispose(dependency);
@@ -259,7 +259,7 @@ namespace HyperRTS.Simulation.Navigation
             [NativeDisableParallelForRestriction] public NativeArray<byte> Labels;
             [NativeDisableParallelForRestriction] public NativeArray<byte> Counts;
             [NativeDisableParallelForRestriction] public NativeArray<byte> Representatives;
-            public int2 Sectors;
+            public int2 SectorsPerAxis;
             public int ClassCount;
 
             public void Execute(int index)
@@ -268,11 +268,11 @@ namespace HyperRTS.Simulation.Navigation
                 var item = Work[index];
                 var graph = new NavSectors
                 {
-                    Labels = Labels, Counts = Counts, Representatives = Representatives, Sectors = Sectors,
-                    Classes = ClassCount,
+                    Labels = Labels, Counts = Counts, Representatives = Representatives,
+                    SectorsPerAxis = SectorsPerAxis, ClassCount = ClassCount,
                 };
                 var movementClass = Classes.Classes[item.y];
-                graph.Relabel(Field, Classes.KeySlot(item.y), movementClass.Radius, item.y, item.x);
+                graph.Relabel(Field, Classes.FieldSlot(item.y), movementClass.Radius, item.y, item.x);
             }
         }
 

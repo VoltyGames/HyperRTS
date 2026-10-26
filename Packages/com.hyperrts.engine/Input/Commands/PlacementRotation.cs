@@ -25,7 +25,7 @@ namespace HyperRTS.Input.Commands
         private bool _moved;
 
         /// <summary>RotateBuilding is held: the ghost stays pinned while the mouse turns it.</summary>
-        public bool Turning { get; private set; }
+        public bool IsTurning { get; private set; }
 
         /// <summary>Facing the camera, as a new placement starts.</summary>
         public static PlacementRotation Start() => new() { _yaw = PlacementMath.CameraYaw };
@@ -37,7 +37,7 @@ namespace HyperRTS.Input.Commands
 
         public void Press(float pointerX)
         {
-            Turning = true;
+            IsTurning = true;
             _moved = false;
             _pressYaw = _yaw;
             _pressX = pointerX;
@@ -53,7 +53,7 @@ namespace HyperRTS.Input.Commands
 
         public void Release()
         {
-            Turning = false;
+            IsTurning = false;
             if (!_moved)
             {
                 _yaw = _pressYaw + math.radians(TapDegrees);

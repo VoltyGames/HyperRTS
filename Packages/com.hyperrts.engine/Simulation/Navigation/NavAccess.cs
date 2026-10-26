@@ -39,10 +39,10 @@ namespace HyperRTS.Simulation.Navigation
                 throw new InvalidOperationException("Movement class not registered: no NavAgent has it yet.");
             }
 
-            _slot = grid.Classes.KeySlot(ClassIndex);
+            _slot = grid.Classes.FieldSlot(ClassIndex);
         }
 
-        /// <summary>Signed metres from the cell centre to the nearest wall, capped at <see cref="NavField.Cap"/>.</summary>
+        /// <summary>Signed metres from the cell centre to the nearest wall, at most <see cref="NavField.MaxDistance"/>.</summary>
         public float Distance(int2 cell) => Grid.Field.At(_slot, cell);
 
         /// <summary>Signed metres from a point to the nearest wall, blended between cell centres.</summary>
@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>The least field value a cell may read and stay open to the class.</summary>
-        public float OpenDistance => Class.Radius - NavTolerances.Skin;
+        public float OpenDistance => Class.Radius - NavTolerances.WallOverlap;
 
         /// <summary>Closest open cell by ring distance, up to <paramref name="rings"/> rings out.</summary>
         public bool TryFindNearest(int2 cell, int rings, out int2 found) =>

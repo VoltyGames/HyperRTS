@@ -15,19 +15,19 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD
 {
     /// <summary>
-    /// Map overview: the scene's <see cref="MinimapImage"/>, the local fog of war, owner-coloured blips (squares for
+    /// Map overview: the scene's <see cref="MinimapImage"/>, the local fog of war, owner-coloured markers (squares for
     /// structures, dimmed for remembered ones), resource nodes and the camera view; click or drag to move the camera.
     /// </summary>
     public sealed class Minimap : HUDPanel
     {
         private const float MaxViewDistance = 1000f;
-        private const float BlipInterval = 0.1f;
+        private const float MarkerInterval = 0.1f;
 
         /// <summary>Remembered buildings show at this share of their owner's brightness.</summary>
         private const float MemoryShade = 0.5f;
 
-        private readonly LiveQuery _units = Blips(ComponentType.Exclude<NavObstacle>());
-        private readonly LiveQuery _structures = Blips(ComponentType.ReadOnly<NavObstacle>());
+        private readonly LiveQuery _units = Markers(ComponentType.Exclude<NavObstacle>());
+        private readonly LiveQuery _structures = Markers(ComponentType.ReadOnly<NavObstacle>());
 
         private readonly LiveQuery _memories = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<LastSeen>()));
@@ -41,24 +41,24 @@ namespace HyperRTS.Presentation.HUD
 
         private static readonly Color Outline = new(0f, 0f, 0f, 0.7f);
 
-        private readonly List<(Vector2 Point, Color Color, float Radius, bool Square)> _blips = new();
+        private readonly List<(Vector2 Point, Color Color, float Radius, bool Square)> _markers = new();
         private readonly Vector2[] _view = new Vector2[4];
         private readonly VisualElement _canvas;
-        private readonly VisualElement _blipLayer;
+        private readonly VisualElement _markerLayer;
         private readonly VisualElement _viewLayer;
         private readonly MinimapFog _fog;
         private bool _imageSearched;
         private HUDContext _context;
         private MapSettings _map;
         private bool _hasMap;
-        private float _nextBlipTime;
+        private float _nextMarkerTime;
 
         public Minimap(HUDPanelLayouts layouts) : base(layouts.Minimap)
         {
             _canvas = Root.Require<VisualElement>("canvas");
             _fog = new MinimapFog(Root.Require<VisualElement>("fog"));
-            _blipLayer = Root.Require<VisualElement>("blips");
-            _blipLayer.generateVisualContent += PaintBlips;
+            _markerLayer = Root.Require<VisualElement>("markers");
+            _markerLayer.generateVisualContent += PaintMarkers;
             _canvas.RegisterCallback<PointerDownEvent>(OnPointerDown);
             _canvas.RegisterCallback<PointerMoveEvent>(OnPointerMove);
             _canvas.RegisterCallback<PointerUpEvent>(OnPointerUp);
@@ -87,14 +87,14 @@ namespace HyperRTS.Presentation.HUD
 
             _viewLayer.MarkDirtyRepaint();
 
-            // Repainting re-tessellates every blip, so blips refresh at a fixed rate while the view rect stays live.
-            if (Time.unscaledTime < _nextBlipTime)
+            // Repainting re-tessellates every marker, so markers refresh at a fixed rate while the view rect stays live.
+            if (Time.unscaledTime < _nextMarkerTime)
             {
                 return;
             }
 
-            _nextBlipTime = Time.unscaledTime + BlipInterval;
-            _blips.Clear();
+            _nextMarkerTime = Time.unscaledTime + MarkerInterval;
+            _markers.Clear();
             if (_hasMap)
             {
                 GatherNodes(context.EntityManager);
@@ -103,11 +103,11 @@ namespace HyperRTS.Presentation.HUD
                 GatherMemories(view);
             }
 
-            _blipLayer.MarkDirtyRepaint();
+            _markerLayer.MarkDirtyRepaint();
         }
 
-        // Units and structures differ only by NavObstacle, which sets their blip size.
-        private static LiveQuery Blips(ComponentType obstacle) => new(entityManager => entityManager.CreateEntityQuery(
+        // Units and structures differ only by NavObstacle, which sets their marker size.
+        private static LiveQuery Markers(ComponentType obstacle) => new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<EntityInfo>(),
             ComponentType.ReadOnly<Faction>(),
             ComponentType.ReadOnly<LocalToWorld>(),
@@ -138,7 +138,7 @@ namespace HyperRTS.Presentation.HUD
             for (var i = 0; i < nodes.Length; i++)
             {
                 var type = nodes[i].Type.Value;
-                AddBlip(transforms[i].Position.xz, type != null ? type.color : Color.white, 2.4f, true);
+                AddMarker(transforms[i].Position.xz, type != null ? type.color : Color.white, 2.4f, true);
             }
         }
 
@@ -149,7 +149,7 @@ namespace HyperRTS.Presentation.HUD
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < factions.Length; i++)
             {
-                AddBlip(transforms[i].Position.xz, view.GetColor(factions[i].Value), radius, square);
+                AddMarker(transforms[i].Position.xz, view.GetColor(factions[i].Value), radius, square);
             }
         }
 
@@ -160,7 +160,7 @@ namespace HyperRTS.Presentation.HUD
             {
                 var color = view.GetColor(memory.State.Faction);
                 var shaded = new Color(color.r * MemoryShade, color.g * MemoryShade, color.b * MemoryShade, color.a);
-                AddBlip(memory.State.Transform.Position.xz, shaded, 3.2f, true);
+                AddMarker(memory.State.Transform.Position.xz, shaded, 3.2f, true);
             }
         }
 
@@ -182,21 +182,21 @@ namespace HyperRTS.Presentation.HUD
             }
         }
 
-        private void AddBlip(float2 world, Color color, float radius, bool square) =>
-            _blips.Add((MinimapMath.WorldToMinimap(world, _map.Min, _map.Size), color, radius, square));
+        private void AddMarker(float2 world, Color color, float radius, bool square) =>
+            _markers.Add((MinimapMath.WorldToMinimap(world, _map.Min, _map.Size), color, radius, square));
 
-        private void PaintBlips(MeshGenerationContext context)
+        private void PaintMarkers(MeshGenerationContext context)
         {
             if (!_hasMap)
             {
                 return;
             }
 
-            var size = _blipLayer.contentRect.size;
+            var size = _markerLayer.contentRect.size;
             var painter = context.painter2D;
             painter.strokeColor = Outline;
             painter.lineWidth = 1f;
-            foreach (var (point, color, radius, square) in _blips)
+            foreach (var (point, color, radius, square) in _markers)
             {
                 var center = Vector2.Scale(point, size);
                 painter.fillColor = color;

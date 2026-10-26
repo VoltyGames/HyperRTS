@@ -15,5 +15,5 @@ namespace HyperRTS.Simulation.Common
     /// Scenery or remains removed without remains, effects or sounds, such as by a building site.
     /// <c>DeathSystem</c> destroys it the next lifecycle phase.
     /// </summary>
-    public struct Cleared : IComponentData { }
+    public struct SceneryCleared : IComponentData { }
 }

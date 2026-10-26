@@ -11,7 +11,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>
-    /// A building under construction marks <see cref="Cleared"/> the open <see cref="Destructible"/> scenery its
+    /// A building under construction marks <see cref="SceneryCleared"/> the open <see cref="Destructible"/> scenery its
     /// footprint overlaps (trees, fences, pipes crossing the edge) and the scenery remains on it, so they go with no
     /// remains, effects or sounds. A tree goes when its crown reaches over the site. Scenery with its own obstacle
     /// blocks placement instead. Scenery and sites stand still, so only a new site or new scenery is checked again;
@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Buildings
         private ComponentLookup<NavObstacle> _obstacles;
         private ComponentLookup<NavAgent> _agents;
         private ComponentLookup<Health> _health;
-        private ComponentLookup<Cleared> _cleared;
+        private ComponentLookup<SceneryCleared> _cleared;
         private int _siteOrder;
         private int _sceneryOrder;
 
@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Buildings
             _obstacles = state.GetComponentLookup<NavObstacle>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
             _health = state.GetComponentLookup<Health>(true);
-            _cleared = state.GetComponentLookup<Cleared>(true);
+            _cleared = state.GetComponentLookup<SceneryCleared>(true);
         }
 
         [BurstCompile]
@@ -94,7 +94,7 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<NavObstacle> Obstacles;
             [ReadOnly] public ComponentLookup<NavAgent> Agents;
             [ReadOnly] public ComponentLookup<Health> Health;
-            [ReadOnly] public ComponentLookup<Cleared> Cleared;
+            [ReadOnly] public ComponentLookup<SceneryCleared> Cleared;
 
             private void Execute(in NavObstacle obstacle, in LocalTransform transform)
             {
@@ -121,7 +121,7 @@ namespace HyperRTS.Simulation.Buildings
         /// <summary>Remains of map scenery carry its id and no health; solid ones block placement like the scenery.</summary>
         [BurstCompile]
         [WithAll(typeof(SceneryId))]
-        [WithNone(typeof(Health), typeof(NavObstacle), typeof(Cleared))]
+        [WithNone(typeof(Health), typeof(NavObstacle), typeof(SceneryCleared))]
         private partial struct RemainsJob : IJobEntity
         {
             public EntityCommandBuffer Ecb;
@@ -133,7 +133,7 @@ namespace HyperRTS.Simulation.Buildings
                 {
                     if (Reaches(site, transform.Position.xz, EntityRadius.Default))
                     {
-                        Ecb.AddComponent<Cleared>(entity);
+                        Ecb.AddComponent<SceneryCleared>(entity);
                         return;
                     }
                 }
@@ -143,7 +143,7 @@ namespace HyperRTS.Simulation.Buildings
         /// <summary>A tree's trunk may stand clear while its crown hangs over the site, so its crown decides.</summary>
         [BurstCompile]
         [WithAll(typeof(Destructible))]
-        [WithNone(typeof(NavObstacle), typeof(Cleared))]
+        [WithNone(typeof(NavObstacle), typeof(SceneryCleared))]
         private partial struct CrownJob : IJobEntity
         {
             public EntityCommandBuffer Ecb;
@@ -161,7 +161,7 @@ namespace HyperRTS.Simulation.Buildings
                 {
                     if (Reaches(site, transform.Position.xz, topple.Crown * transform.Scale))
                     {
-                        Ecb.AddComponent<Cleared>(entity);
+                        Ecb.AddComponent<SceneryCleared>(entity);
                         return;
                     }
                 }
@@ -175,7 +175,7 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<NavObstacle> Obstacles;
             [ReadOnly] public ComponentLookup<NavAgent> Agents;
             [ReadOnly] public ComponentLookup<Health> Health;
-            [ReadOnly] public ComponentLookup<Cleared> Cleared;
+            [ReadOnly] public ComponentLookup<SceneryCleared> Cleared;
             public NavBox Box;
 
             public void Visit(in SpatialEntry entry)
@@ -189,7 +189,7 @@ namespace HyperRTS.Simulation.Buildings
                 // Scenery dying this frame leaves remains through the death path; the next frame clears them.
                 if (Common.Health.IsAlive(Health, victim) && !Cleared.HasComponent(victim))
                 {
-                    Ecb.AddComponent<Cleared>(victim);
+                    Ecb.AddComponent<SceneryCleared>(victim);
                 }
             }
 

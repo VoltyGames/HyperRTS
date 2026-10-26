@@ -32,8 +32,9 @@ namespace HyperRTS.Simulation.Navigation
         public void OnUpdate(ref SystemState state)
         {
             ref var grid = ref SystemAPI.GetSingletonRW<NavGrid>().ValueRW;
-            var firstNewKey = grid.Field.Keys;
-            // The registry grows on the main thread, so only frames with new or edited agents wait for its readers.
+            // The registry grows on the main thread, so only frames with new or edited agents wait for its readers;
+            // the rest read it in jobs.
+            var firstNewKey = int.MaxValue;
             if (!_agents.IsEmpty)
             {
                 state.CompleteDependency();
@@ -46,7 +47,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 Field = grid.Field,
                 SectorDirty = grid.Sectors.Dirty,
-                KeyCount = grid.Classes.Keys.Length,
+                Keys = grid.Classes.Keys,
                 FirstNewKey = firstNewKey,
                 Work = work,
             }.Schedule(state.Dependency);
@@ -54,7 +55,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 Cells = grid.Cells,
                 Scenery = grid.Scenery,
-                Keys = grid.Classes.Keys.AsArray(),
+                Keys = grid.Classes.Keys.AsDeferredJobArray(),
                 Work = work.AsDeferredJobArray(),
                 Field = grid.Field,
             }.Schedule(work, 1, dependency);
@@ -83,14 +84,14 @@ namespace HyperRTS.Simulation.Navigation
         {
             public NavField Field;
             public NativeArray<bool> SectorDirty;
-            public int KeyCount;
+            [ReadOnly] public NativeList<MovementClass> Keys;
             public int FirstNewKey;
             public NativeList<int2> Work;
 
             public void Execute()
             {
                 var dirty = Field.DirtySectors;
-                for (var slot = 0; slot < KeyCount; slot++)
+                for (var slot = 0; slot < Keys.Length; slot++)
                 {
                     for (var sector = 0; sector < dirty.Length; sector++)
                     {

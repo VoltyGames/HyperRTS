@@ -54,12 +54,12 @@ namespace HyperRTS.Editor.Maps.Ground
         public static float[,,] Paint(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate,
             int resolution)
         {
-            var splat = new float[resolution, resolution, climate.layers.Count];
-            new MapGroundTexturePainter(layout, edges, heights, climate).Paint(splat, resolution);
-            return splat;
+            var textureWeights = new float[resolution, resolution, climate.layers.Count];
+            new MapGroundTexturePainter(layout, edges, heights, climate).Paint(textureWeights, resolution);
+            return textureWeights;
         }
 
-        private void Paint(float[,,] splat, int resolution)
+        private void Paint(float[,,] textureWeights, int resolution)
         {
             var layers = _climate.layers.Count;
             var weights = new float[layers];
@@ -76,7 +76,7 @@ namespace HyperRTS.Editor.Maps.Ground
                     Over(weights, _slope, MapGeometry.Smooth(steepness));
                     for (var l = 0; l < layers; l++)
                     {
-                        splat[z, x, l] = weights[l];
+                        textureWeights[z, x, l] = weights[l];
                     }
                 }
             }

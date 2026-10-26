@@ -183,7 +183,7 @@ namespace HyperRTS.Simulation.Commands
 
         /// <summary>A rooted unit refuses every order but an attack, which it fires from where it stands.</summary>
         private bool Refused(Entity unit, in Order order) =>
-            order.Type != OrderType.Attack && Deployable.IsRooted(_deployables, unit);
+            order.Type != OrderType.Attack && Deployable.IsImmobile(_deployables, unit);
 
         private bool CanEscort(Entity unit, Entity target, in FactionRelations relations)
         {

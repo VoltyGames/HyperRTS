@@ -1,7 +1,7 @@
 namespace HyperRTS.Network.Scenery
 {
     /// <summary>A scenery change one team has just seen, for its clients.</summary>
-    public struct SceneryNews
+    public struct ScenerySighting
     {
         public byte Team;
 

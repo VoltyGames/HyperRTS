@@ -157,7 +157,7 @@ namespace HyperRTS.Simulation.Navigation
             // The corridor the fine search will build round these sectors.
             private readonly int CorridorCells(int first, int count)
             {
-                var corridor = new NavCorridor(_grid.Field.Sectors, Allocator.Temp);
+                var corridor = new NavCorridor(_grid.Field.SectorsPerAxis, Allocator.Temp);
                 for (var i = first; i < first + count; i++)
                 {
                     corridor.AddWithRing(_plan.Sectors[i]);

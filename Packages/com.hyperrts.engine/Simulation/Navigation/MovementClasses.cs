@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Navigation
         public readonly int Find(in MovementClass movementClass) => IndexIn(Classes, movementClass);
 
         /// <summary>The field slot a registered class reads.</summary>
-        public readonly int KeySlot(int classIndex) => IndexIn(Keys, Classes[classIndex].FieldKey);
+        public readonly int FieldSlot(int classIndex) => IndexIn(Keys, Classes[classIndex].FieldKey);
 
         /// <summary>Adds the class (and its field key) when new; throws once <see cref="Capacity"/> is reached.</summary>
         public void Register(in MovementClass movementClass)

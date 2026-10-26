@@ -31,8 +31,8 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Sectors relabelled at the next update, marked from the field's dirty sectors.</summary>
         public NativeArray<bool> Dirty;
 
-        public int2 Sectors;
-        public int Classes;
+        public int2 SectorsPerAxis;
+        public int ClassCount;
 
         public static NavSectors Create(int classes, int2 sectors, Allocator allocator)
         {
@@ -48,8 +48,8 @@ namespace HyperRTS.Simulation.Navigation
                 Firsts = new NativeArray<int>(classes * count + 1, allocator),
                 Owners = new NativeList<int>(allocator),
                 Regions = new NativeList<int>(allocator),
-                Sectors = sectors,
-                Classes = classes,
+                SectorsPerAxis = sectors,
+                ClassCount = classes,
             };
             built.MarkAllDirty();
             return built;
@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Navigation
             Regions.Dispose();
         }
 
-        public readonly int SectorCount => Sectors.x * Sectors.y;
+        public readonly int SectorCount => SectorsPerAxis.x * SectorsPerAxis.y;
 
         public void MarkAllDirty()
         {
@@ -82,11 +82,12 @@ namespace HyperRTS.Simulation.Navigation
         public readonly int SectorOf(int2 cell)
         {
             var sector = cell / NavField.SectorCells;
-            var outside = math.any(cell < 0 | sector >= Sectors);
-            return outside ? -1 : sector.y * Sectors.x + sector.x;
+            var outside = math.any(cell < 0 | sector >= SectorsPerAxis);
+            return outside ? -1 : sector.y * SectorsPerAxis.x + sector.x;
         }
 
-        public readonly int2 Origin(int sector) => new int2(sector % Sectors.x, sector / Sectors.x) * NavField.SectorCells;
+        public readonly int2 Origin(int sector) =>
+            new int2(sector % SectorsPerAxis.x, sector / SectorsPerAxis.x) * NavField.SectorCells;
 
         /// <summary>A cell's index inside its sector.</summary>
         public static int Local(int2 cell)
@@ -212,9 +213,9 @@ namespace HyperRTS.Simulation.Navigation
         public void Build(in NavField field, in MovementClasses classes)
         {
             MarkAllDirty();
-            for (var classIndex = 0; classIndex < Classes; classIndex++)
+            for (var classIndex = 0; classIndex < ClassCount; classIndex++)
             {
-                var slot = classes.KeySlot(classIndex);
+                var slot = classes.FieldSlot(classIndex);
                 var radius = classes.Classes[classIndex].Radius;
                 for (var sector = 0; sector < SectorCount; sector++)
                 {

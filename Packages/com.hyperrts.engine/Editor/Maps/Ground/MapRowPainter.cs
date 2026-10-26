@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Ground
     {
         public static readonly Color NoRows = new(0.5f, 0.5f, 0f, 1f);
 
-        // Bilinear, so a direction reaches half a cell past its region (splat edges bleed) and turns smoothly
+        // Bilinear, so a direction reaches half a cell past its region (texture weights bleed at edges) and turns smoothly
         // between fields; the shader renormalises. No mips, which would average directions to nothing.
         public static Texture2D Write(string path, MapLand land, MapSymmetry symmetry) =>
             EditorTextures.WritePng(path, land.Width, land.Height, TextureFormat.RGBA32, Paint(land, symmetry),

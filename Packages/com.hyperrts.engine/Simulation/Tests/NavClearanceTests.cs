@@ -49,8 +49,8 @@ namespace HyperRTS.Simulation.Tests
             _world.EntityManager.DestroyEntity(obstacle);
             _world.Tick();
 
-            Assert.AreEqual(NavField.Cap, GroundField(0.5f, 0.5f), "reopened once the obstacle is gone");
-            Assert.AreEqual(NavField.Cap, GroundField(-0.5f, -0.5f));
+            Assert.AreEqual(NavField.MaxDistance, GroundField(0.5f, 0.5f), "reopened once the obstacle is gone");
+            Assert.AreEqual(NavField.MaxDistance, GroundField(-0.5f, -0.5f));
         }
 
         [Test]

@@ -98,7 +98,7 @@ namespace HyperRTS.Editor.Tests
             var land = new MapLand(layout.TerrainBounds);
             var field = land.Add(new MapLandRegion(MapLandKind.Field, "A", 5));
             land.ClaimEach(land.Bounds, _ => field);
-            var splat = MapGroundTexturePainter.Paint(layout, new MapEdgeField(layout, land, climate), Flat(layout), climate,
+            var textureWeights = MapGroundTexturePainter.Paint(layout, new MapEdgeField(layout, land, climate), Flat(layout), climate,
                 Resolution);
             var b = climate.LayerIndex("B");
             var covered = 0;
@@ -107,8 +107,8 @@ namespace HyperRTS.Editor.Tests
                 for (var z = -100f; z < 100f; z += 4.7f)
                 {
                     var p = new Vector2(x, z);
-                    var here = Weight(splat, layout, p, b);
-                    Assert.AreEqual(here, Weight(splat, layout, -p, b), 0.05f, $"mix at {p} and its copy");
+                    var here = Weight(textureWeights, layout, p, b);
+                    Assert.AreEqual(here, Weight(textureWeights, layout, -p, b), 0.05f, $"mix at {p} and its copy");
                     covered += here > 0.5f ? 1 : 0;
                 }
             }
@@ -125,7 +125,7 @@ namespace HyperRTS.Editor.Tests
             var heights = Flat(layout);
             var shapes = MapRoadFixture.Shapes(layout, climate);
             var edges = new MapEdgeField(layout, land, climate);
-            var splat = MapGroundTexturePainter.Paint(layout, edges, heights, climate, Resolution);
+            var textureWeights = MapGroundTexturePainter.Paint(layout, edges, heights, climate, Resolution);
             var tint = new MapGroundTint(layout, land, edges, shapes, heights, climate.groundTint);
             var recolouredEdges = new MapEdgeField(layout, recoloured, climate);
             var other = new MapGroundTint(layout, recoloured, recolouredEdges, shapes, heights, climate.groundTint);
@@ -139,10 +139,10 @@ namespace HyperRTS.Editor.Tests
                 {
                     var p = area.min + Vector2.Scale(new Vector2(x + 0.5f, z + 0.5f), texel);
                     var gap = Gap(tint.At(p), other.At(p));
-                    var splatB = splat[z, x, b];
-                    Assert.IsFalse(splatB <= 0f && gap > 1e-6f, $"B's tint reaches {p}, where its texture doesn't");
-                    Assert.IsFalse(splatB > 0.999f && gap < 1e-4f, $"B's texture covers {p} without its tint");
-                    wandered += splatB > 0.5f && p.x < -0.6f ? 1 : 0;
+                    var weightB = textureWeights[z, x, b];
+                    Assert.IsFalse(weightB <= 0f && gap > 1e-6f, $"B's tint reaches {p}, where its texture doesn't");
+                    Assert.IsFalse(weightB > 0.999f && gap < 1e-4f, $"B's texture covers {p} without its tint");
+                    wandered += weightB > 0.5f && p.x < -0.6f ? 1 : 0;
                 }
             }
 
@@ -168,7 +168,7 @@ namespace HyperRTS.Editor.Tests
             var climate = Climate(width, 0.05f);
             var (layout, land) = Halves(2);
             var edges = new MapEdgeField(layout, land, climate);
-            var splat = MapGroundTexturePainter.Paint(layout, edges, Flat(layout), climate, Resolution);
+            var textureWeights = MapGroundTexturePainter.Paint(layout, edges, Flat(layout), climate, Resolution);
             var a = climate.LayerIndex("A");
             var texel = layout.TerrainBounds.width / Resolution;
             var blended = 0;
@@ -177,7 +177,7 @@ namespace HyperRTS.Editor.Tests
             {
                 for (var x = 0; x < Resolution; x++)
                 {
-                    var weight = splat[z, x, a];
+                    var weight = textureWeights[z, x, a];
                     blended += weight > 0.02f && weight < 0.98f ? 1 : 0;
                 }
             }
@@ -240,12 +240,12 @@ namespace HyperRTS.Editor.Tests
             return heights;
         }
 
-        private static float Weight(float[,,] splat, MapLayout layout, Vector2 p, int layer)
+        private static float Weight(float[,,] textureWeights, MapLayout layout, Vector2 p, int layer)
         {
             var area = layout.TerrainBounds;
             var x = Mathf.FloorToInt((p.x - area.xMin) / area.width * Resolution);
             var z = Mathf.FloorToInt((p.y - area.yMin) / area.height * Resolution);
-            return splat[z, x, layer];
+            return textureWeights[z, x, layer];
         }
 
         private static float Gap(Color a, Color b) =>

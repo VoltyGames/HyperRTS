@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Navigation
         private const byte Closed = 2;
 
         // Cuts cross-map expansions about two thirds for paths about 0.1% longer (NavBenchmarkTests).
-        private const float Greed = 1.25f;
+        private const float HeuristicWeight = 1.25f;
 
         private static readonly ProfilerMarker SearchMarker = new("GridAStar.Search");
 
@@ -108,7 +108,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             var first = corridor.Index(start);
             Reach(first, -1, 0f);
-            _open.Push(first, Heuristic(start, goal) * Greed);
+            _open.Push(first, Heuristic(start, goal) * HeuristicWeight);
             expansions = 0;
             while (_open.TryPop(out var current))
             {
@@ -155,7 +155,7 @@ namespace HyperRTS.Simulation.Navigation
                     }
 
                     Reach(index, parent, nextCost);
-                    _open.Push(index, nextCost + Heuristic(next, goal) * Greed);
+                    _open.Push(index, nextCost + Heuristic(next, goal) * HeuristicWeight);
                 }
             }
         }

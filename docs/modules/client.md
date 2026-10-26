@@ -107,7 +107,7 @@ a placement or targeted order.
 holding a [strategic asset](support.md#strategic-assets): the name and `m:ss` to the charge, or `hud.strategic-ready`,
 in the owner's colour. Observers see it too.
 
-The minimap shows the baked map image, local fog, blips and the camera view.
+The minimap shows the baked map image, local fog, unit and structure markers and the camera view.
 
 ### Cursors
 

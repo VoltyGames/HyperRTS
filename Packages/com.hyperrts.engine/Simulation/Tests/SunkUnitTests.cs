@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var agent = _world.Get<NavAgent>(unit);
             var capsule = new NavCapsule(agent.Access(_world.Grid()), float2.zero);
-            return capsule.Depth(_world.GetPosition(unit).xz, float2.zero) > NavTolerances.Skin;
+            return capsule.Depth(_world.GetPosition(unit).xz, float2.zero) > NavTolerances.WallOverlap;
         }
 
         [Test]

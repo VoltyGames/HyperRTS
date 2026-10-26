@@ -53,7 +53,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 }
 
                 var region = edges.Sample(p).Region;
-                var cover = Cover(Sown(land, region), clumps, p) * open;
+                var cover = Cover(IsField(land, region), clumps, p) * open;
                 foreach (var (plant, coverage) in plants[region])
                 {
                     bake.Set(plant, x, z, coverage * cover);
@@ -82,7 +82,7 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         /// <summary>Crops are sown evenly: a field's plants keep their cover instead of clumping like wild grass.</summary>
-        private static bool Sown(MapLand land, int region) => region > 0 && land.Regions[region].Kind == MapLandKind.Field;
+        private static bool IsField(MapLand land, int region) => region > 0 && land.Regions[region].Kind == MapLandKind.Field;
 
         /// <summary>Reeds in stands from just inside the water to a few metres up the bank, only where it's shallow.</summary>
         private static float Reeds(MapShapes shapes, MapClimate climate, MapNoise clumps, Vector2 p, float height,

@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Tests
     /// </summary>
     public partial class CrowdScenarioTests
     {
-        private const float WallSlack = NavTolerances.Skin + 0.05f;
+        private const float WallSlack = NavTolerances.WallOverlap + 0.05f;
 
         private TestWorld _world;
         private float _deepest;

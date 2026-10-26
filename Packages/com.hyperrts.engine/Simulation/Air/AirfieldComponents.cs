@@ -16,14 +16,14 @@ namespace HyperRTS.Simulation.Air
         public Entity Aircraft;
 
         /// <summary>An Any pad takes every aircraft, and an Any aircraft lands on every pad.</summary>
-        public readonly bool Takes(PadKind aircraft) => Kind == PadKind.Any || aircraft == PadKind.Any || Kind == aircraft;
+        public readonly bool Accepts(PadKind aircraft) => Kind == PadKind.Any || aircraft == PadKind.Any || Kind == aircraft;
 
         /// <summary>Index of the first free pad that takes <paramref name="aircraft"/>, or -1.</summary>
         public static int FindFree(DynamicBuffer<LandingPad> pads, PadKind aircraft)
         {
             for (var i = 0; i < pads.Length; i++)
             {
-                if (pads[i].Aircraft == Entity.Null && pads[i].Takes(aircraft))
+                if (pads[i].Aircraft == Entity.Null && pads[i].Accepts(aircraft))
                 {
                     return i;
                 }

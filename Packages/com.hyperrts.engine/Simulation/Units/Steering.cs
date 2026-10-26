@@ -275,7 +275,7 @@ namespace HyperRTS.Simulation.Units
 
         private readonly float DepthAt(float2 center, float2 axis)
         {
-            var open = _radius - NavTolerances.Skin;
+            var open = _radius - NavTolerances.WallOverlap;
             return math.max(0f, open - _walls.Distance(center - axis)) +
                    math.max(0f, open - _walls.Distance(center + axis));
         }

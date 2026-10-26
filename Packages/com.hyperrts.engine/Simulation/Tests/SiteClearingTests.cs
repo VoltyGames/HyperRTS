@@ -140,20 +140,20 @@ namespace HyperRTS.Simulation.Tests
         public void Tracker_TellsTeamsOfAClearing_EvenAfterTheyHeardOfTheDestruction()
         {
             using var tracker = new SceneryTracker(Allocator.Temp);
-            var news = new NativeList<SceneryNews>(Allocator.Temp);
+            var sightings = new NativeList<ScenerySighting>(Allocator.Temp);
             tracker.Register(9, float3.zero);
             tracker.Set(9, SceneryChange.Destroyed, 0, 0b10, 1);
-            tracker.Reveal(default(FogOfWar), false, 1, news);
-            news.Clear();
+            tracker.Reveal(default(FogOfWar), false, 1, sightings);
+            sightings.Clear();
 
             Assert.IsTrue(tracker.Clear(9, 0b10, 2));
             Assert.IsFalse(tracker.Clear(9, 0b10, 3), "a piece is cleared once");
-            tracker.Reveal(default(FogOfWar), false, 2, news);
+            tracker.Reveal(default(FogOfWar), false, 2, sightings);
             var known = new NativeList<SceneryChange>(Allocator.Temp);
             tracker.Known(1, known);
 
-            Assert.AreEqual(1, news.Length);
-            Assert.IsTrue(news[0].Change.Cleared, "the team hears its remains were cleared");
+            Assert.AreEqual(1, sightings.Length);
+            Assert.IsTrue(sightings[0].Change.Cleared, "the team hears its remains were cleared");
             Assert.IsTrue(known[0].Cleared, "a joining client starts from the clearing");
         }
     }

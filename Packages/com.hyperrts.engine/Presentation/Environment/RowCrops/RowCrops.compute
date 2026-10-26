@@ -25,7 +25,7 @@ SamplerState sampler_LinearClamp;
 #define CHANNEL_LEAN 10u
 #define CHANNEL_LEAN_TURN 11u
 #define WANDER_SALT 0x5BD1E995u
-#define PATCH_SALT 0x27D4EB2Fu
+#define GROWTH_SALT 0x27D4EB2Fu
 #define EDGE_REACH 1.5 // metres probed round a plant; a plant this near the field's edge leans the most
 #define EDGE_DITHER 1.5 // metres the field lookup strays, so edges on the 1 m grid look ragged
 #define FADE_SHARE 0.15 // share of the draw distance over which plants shrink away
@@ -59,10 +59,10 @@ RWStructuredBuffer<RowCropInstance> _Card;
 float4 _FieldArea;   // x min, z min, texels per metre in x and z
 float4 _FieldTexels; // field id texels across and deep
 float4 _Camera;      // xyz position, w draw distance
-float4 _Sowing;      // row spacing, plant spacing, jitter, yaw jitter (radians)
+float4 _Planting;      // row spacing, plant spacing, jitter, yaw jitter (radians)
 float4 _Size;        // min scale, max scale, lod0 distance, lod1 distance
 float4 _Variety;     // lean, edge lean (radians), wander metres, 1 / wander length
-float4 _Patch;       // min and max patch scale, 1 / patch size
+float4 _Growth;       // min and max growth scale, 1 / growth variation size
 float4 _Variant;     // variant grown this dispatch, variant count, its first slot
 float _FacesRow;     // 1: plants face along their row; 0: they keep the model's heading (+Z north)
 float _Density;
@@ -135,7 +135,7 @@ void Plant(uint3 id : SV_DispatchThreadID)
     int row = job.first.x + (int)(id.x % (uint)job.count.x);
     int plant = job.first.y + (int)(id.x / (uint)job.count.x);
     RowCropField field = _Fields[job.field];
-    float2 spot = field.origin + field.across * (row * _Sowing.x) + field.along * (plant * _Sowing.y);
+    float2 spot = field.origin + field.across * (row * _Planting.x) + field.along * (plant * _Planting.y);
     if (!Owns(job.tileMin, spot))
     {
         return;
@@ -159,10 +159,10 @@ void Plant(uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    float2 metres = float2(row * _Sowing.x, plant * _Sowing.y);
+    float2 metres = float2(row * _Planting.x, plant * _Planting.y);
     float wander = (Noise(field.seed, WANDER_SALT, metres * _Variety.w) * 2.0 - 1.0) * _Variety.z;
-    float across = (Channel(hash, CHANNEL_ACROSS) * 2.0 - 1.0) * _Sowing.z * _Sowing.x + wander;
-    float along = (Channel(hash, CHANNEL_ALONG) * 2.0 - 1.0) * _Sowing.z * _Sowing.y;
+    float across = (Channel(hash, CHANNEL_ACROSS) * 2.0 - 1.0) * _Planting.z * _Planting.x + wander;
+    float along = (Channel(hash, CHANNEL_ALONG) * 2.0 - 1.0) * _Planting.z * _Planting.y;
     float2 xz = spot + field.across * across + field.along * along;
     if (UnderBuilding(xz))
     {
@@ -182,12 +182,12 @@ void Plant(uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    float turn = (Channel(hash, CHANNEL_YAW) * 2.0 - 1.0) * _Sowing.w;
+    float turn = (Channel(hash, CHANNEL_YAW) * 2.0 - 1.0) * _Planting.w;
     float fade = saturate((_Camera.w - range) / (FADE_SHARE * _Camera.w));
     RowCropInstance grown;
     grown.position = position;
-    float patch = lerp(_Patch.x, _Patch.y, Noise(field.seed, PATCH_SALT, metres * _Patch.z));
-    grown.scale = lerp(_Size.x, _Size.y, Channel(hash, CHANNEL_SCALE)) * patch * fade;
+    float growth = lerp(_Growth.x, _Growth.y, Noise(field.seed, GROWTH_SALT, metres * _Growth.z));
+    grown.scale = lerp(_Size.x, _Size.y, Channel(hash, CHANNEL_SCALE)) * growth * fade;
     float2 forward = _FacesRow > 0.5 ? field.along : float2(0.0, 1.0);
     float2 side = _FacesRow > 0.5 ? field.across : float2(1.0, 0.0);
     grown.facing = forward * cos(turn) + side * sin(turn);

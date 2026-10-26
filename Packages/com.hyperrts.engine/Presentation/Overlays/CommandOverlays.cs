@@ -32,7 +32,7 @@ namespace HyperRTS.Presentation.Overlays
         private readonly LiveQuery _placement = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<PlacementState>()));
 
-        private readonly LiveQuery _grid = new(entityManager =>
+        private readonly LiveQuery _gridQuery = new(entityManager =>
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<NavGrid>()));
 
         private readonly LiveQuery _rallies = new(entityManager => entityManager.CreateEntityQuery(
@@ -94,7 +94,7 @@ namespace HyperRTS.Presentation.Overlays
         /// <summary>The cells are read on the main thread, so the jobs stamping them finish first.</summary>
         private bool TryReadGrid(EntityManager entityManager, out NavGrid grid)
         {
-            var query = _grid.In(entityManager);
+            var query = _gridQuery.In(entityManager);
             query.CompleteDependency();
             return query.TryGetSingleton(out grid);
         }

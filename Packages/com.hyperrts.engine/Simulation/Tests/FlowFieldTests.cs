@@ -78,7 +78,7 @@ namespace HyperRTS.Simulation.Tests
             var query = GridPathfinder.Prepare(access, start, goal);
             var sectors = new NativeList<int>(Allocator.Temp);
             GridPathfinder.FindSectors(access, query, sectors);
-            var corridor = new NavCorridor(grid.Field.Sectors, Allocator.Persistent);
+            var corridor = new NavCorridor(grid.Field.SectorsPerAxis, Allocator.Persistent);
             foreach (var sector in sectors)
             {
                 corridor.AddWithRing(sector);

@@ -288,7 +288,7 @@ namespace HyperRTS.Simulation.Combat
 
             private bool IsMoving(Entity entity) => Moves.HasEnabled(entity);
 
-            private bool Mobile(Entity entity) => Moves.HasComponent(entity) && !Deployable.IsRooted(Deployables, entity);
+            private bool Mobile(Entity entity) => Moves.HasComponent(entity) && !Deployable.IsImmobile(Deployables, entity);
 
             private Order CurrentOrder(Entity entity) => Orders.HasEnabled(entity) ? Orders[entity].Value : default;
         }

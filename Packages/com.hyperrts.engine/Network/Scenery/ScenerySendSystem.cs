@@ -53,9 +53,9 @@ namespace HyperRTS.Network.Scenery
 
             Track(ref state, Teams(ref state));
             SystemAPI.TryGetSingleton(out FogOfWar fog);
-            var news = new NativeList<SceneryNews>(Allocator.Temp);
-            _tracker.Reveal(fog, SystemAPI.GetSingleton<MapSettings>().FogOfWar, _frame, news);
-            Send(ref state, news);
+            var sightings = new NativeList<ScenerySighting>(Allocator.Temp);
+            _tracker.Reveal(fog, SystemAPI.GetSingleton<MapSettings>().FogOfWar, _frame, sightings);
+            Send(ref state, sightings);
         }
 
         /// <summary>Scenery only leaves by dying or being cleared, which <see cref="Track"/> counts.</summary>
@@ -102,7 +102,7 @@ namespace HyperRTS.Network.Scenery
 
             // Cleared remains have no health, so only standing pieces leave the count.
             var standing = SystemAPI.GetComponentLookup<Health>(true);
-            foreach (var (id, entity) in SystemAPI.Query<RefRO<SceneryId>>().WithAll<Cleared, LocalTransform>()
+            foreach (var (id, entity) in SystemAPI.Query<RefRO<SceneryId>>().WithAll<SceneryCleared, LocalTransform>()
                          .WithNone<GhostInstance>().WithEntityAccess())
             {
                 if (_tracker.Clear(id.ValueRO.Value, teams, _frame) && standing.HasComponent(entity))
@@ -125,7 +125,7 @@ namespace HyperRTS.Network.Scenery
             return (ushort)teams;
         }
 
-        private void Send(ref SystemState state, NativeList<SceneryNews> news)
+        private void Send(ref SystemState state, NativeList<ScenerySighting> sightings)
         {
             var relations = SystemAPI.GetSingleton<FactionRelations>();
             var viewers = SystemAPI.GetSingleton<FactionConnections>();
@@ -138,8 +138,8 @@ namespace HyperRTS.Network.Scenery
             {
                 var team = relations.GetTeam(faction);
                 seen.Clear();
-                FillNews(news, team, true, changes, seen);
-                FillNews(news, team, false, changes, seen);
+                FillSightings(sightings, team, true, changes, seen);
+                FillSightings(sightings, team, false, changes, seen);
                 foreach (var connection in viewers.Connections.GetValuesForKey(faction))
                 {
                     if (SystemAPI.HasComponent<ScenerySynced>(connection))
@@ -148,7 +148,7 @@ namespace HyperRTS.Network.Scenery
                         continue;
                     }
 
-                    // A joining client starts from what its team knows, this frame's news included.
+                    // A joining client starts from what its team knows, this frame's sightings included.
                     changes.Clear();
                     known.Clear();
                     _tracker.Known(team, changes);
@@ -159,11 +159,11 @@ namespace HyperRTS.Network.Scenery
             }
         }
 
-        private static void FillNews(NativeList<SceneryNews> news, byte team, bool witnessed,
+        private static void FillSightings(NativeList<ScenerySighting> sightings, byte team, bool witnessed,
             NativeList<SceneryChange> changes, NativeList<SceneryRpc> rpcs)
         {
             changes.Clear();
-            foreach (var item in news)
+            foreach (var item in sightings)
             {
                 if (item.Team == team && item.Witnessed == witnessed)
                 {

@@ -17,7 +17,7 @@ namespace HyperRTS.Presentation.Environment
 
         /// <summary>Seconds a blast's front takes to spread, and the time constant it relaxes over.</summary>
         public const float BlastFront = 0.25f;
-        public const float BlastRelax = 0.35f;
+        public const float BlastDecaySeconds = 0.35f;
         public const float BlastLife = 1.2f;
         public const float BlastPush = 1.4f;
 
@@ -69,7 +69,7 @@ namespace HyperRTS.Presentation.Environment
         {
             Age += deltaTime;
             Radius = Reach * math.sqrt(math.saturate(math.max(Age, 0.02f) / BlastFront));
-            Push = BlastPush * math.exp(-Age / BlastRelax);
+            Push = BlastPush * math.exp(-Age / BlastDecaySeconds);
         }
     }
 }

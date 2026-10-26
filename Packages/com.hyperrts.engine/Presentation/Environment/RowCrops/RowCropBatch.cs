@@ -18,11 +18,11 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
         private static readonly int CapacitiesId = Shader.PropertyToID("_Capacities");
         private static readonly int SlotsId = Shader.PropertyToID("_Slots");
-        private static readonly int SowingId = Shader.PropertyToID("_Sowing");
+        private static readonly int PlantingId = Shader.PropertyToID("_Planting");
         private static readonly int FacesRowId = Shader.PropertyToID("_FacesRow");
         private static readonly int SizeId = Shader.PropertyToID("_Size");
         private static readonly int VarietyId = Shader.PropertyToID("_Variety");
-        private static readonly int PatchId = Shader.PropertyToID("_Patch");
+        private static readonly int GrowthId = Shader.PropertyToID("_Growth");
         private static readonly int VariantId = Shader.PropertyToID("_Variant");
         private static readonly int InstancesId = Shader.PropertyToID("_Instances");
         private static readonly int CanopyHeightId = Shader.PropertyToID("_CanopyHeight");
@@ -127,7 +127,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             _draws.BindGrow(_pending, compute, _kernels.Plant);
             Reserve();
             compute.SetBuffer(_kernels.Plant, CapacitiesId, _capacityBuffer);
-            SetSowing(compute);
+            SetPlanting(compute);
             for (var variant = 0; variant < _variants; variant++)
             {
                 Dispatch(compute, variant);
@@ -177,16 +177,16 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             _capacityBuffer.Release();
         }
 
-        private void SetSowing(ComputeShader compute)
+        private void SetPlanting(ComputeShader compute)
         {
-            compute.SetVector(SowingId, new Vector4(_crop.rowSpacing, _crop.plantSpacing, _crop.jitter,
+            compute.SetVector(PlantingId, new Vector4(_crop.rowSpacing, _crop.plantSpacing, _crop.jitter,
                 _crop.yawJitter * Mathf.Deg2Rad));
             compute.SetFloat(FacesRowId, _crop.facesRow ? 1f : 0f);
             compute.SetVector(SizeId, new Vector4(_crop.scale.x, _crop.scale.y, _crop.lod0Distance, _crop.lod1Distance));
             compute.SetVector(VarietyId, new Vector4(_crop.lean * Mathf.Deg2Rad, _crop.edgeLean * Mathf.Deg2Rad,
                 _crop.wander, 1f / _crop.wanderLength));
             var growth = _crop.growthVariation;
-            compute.SetVector(PatchId, new Vector4(growth.x, growth.y, 1f / _crop.growthVariationSize, 0f));
+            compute.SetVector(GrowthId, new Vector4(growth.x, growth.y, 1f / _crop.growthVariationSize, 0f));
         }
 
         // Grows every slot's buffer to its share of the queued tiles before the kernel writes into it.

@@ -49,7 +49,7 @@ namespace HyperRTS.Editor.Maps.Generation
         /// <summary>Where row crops grow, baked once the land is planned.</summary>
         public MapCropBake Crops { get; private set; }
 
-        public float[,,] Splat { get; private set; }
+        public float[,,] TextureWeights { get; private set; }
         public MapGrassBake Grass { get; private set; }
 
         /// <summary>Props in the backdrop, drawn on the terrain from their scenery models.</summary>
@@ -132,7 +132,7 @@ namespace HyperRTS.Editor.Maps.Generation
             var climate = Project.Climate;
             Level();
             Edges = new MapEdgeField(Layout, Land, climate);
-            Splat = MapGroundTexturePainter.Paint(Layout, Edges, Heights, climate, Layout.GroundTextureResolution);
+            TextureWeights = MapGroundTexturePainter.Paint(Layout, Edges, Heights, climate, Layout.GroundTextureResolution);
             Grass = MapPlantPainter.Paint(Layout, Land, Edges, Shapes, Heights, climate, Placements.Clearance,
                 Layout.GrassResolution);
             SplitTrees(climate);

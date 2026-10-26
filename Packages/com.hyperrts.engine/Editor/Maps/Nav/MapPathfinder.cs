@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.Maps.Nav
                 return null;
             }
 
-            var corridor = NavCorridor.Whole(access.Grid.Field.Sectors, Allocator.Persistent);
+            var corridor = NavCorridor.Whole(access.Grid.Field.SectorsPerAxis, Allocator.Persistent);
             var search = new GridAStar(corridor.Cells, Allocator.Persistent);
             var cells = new NativeList<int2>(256, Allocator.Persistent);
             try

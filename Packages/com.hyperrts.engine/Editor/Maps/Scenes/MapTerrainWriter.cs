@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         public static TerrainData Write(MapGeneration generation)
         {
             var (path, layout, climate) = (generation.Project.Paths.Terrain, generation.Layout, generation.Project.Climate);
-            var (heights, splat, trees) = (generation.Heights, generation.Splat, generation.TerrainTrees);
+            var (heights, textureWeights, trees) = (generation.Heights, generation.TextureWeights, generation.TerrainTrees);
             var data = AssetDatabase.LoadAssetAtPath<TerrainData>(path);
             if (data == null)
             {
@@ -32,8 +32,8 @@ namespace HyperRTS.Editor.Maps.Scenes
             data.size = new Vector3(layout.TerrainBounds.width, terrain.maxHeight, layout.TerrainBounds.height);
             data.SetHeights(0, 0, Normalised(heights, terrain.maxHeight));
             data.terrainLayers = climate.layers.Select(l => l.terrainLayer).ToArray();
-            data.alphamapResolution = splat.GetLength(0);
-            data.SetAlphamaps(0, 0, splat);
+            data.alphamapResolution = textureWeights.GetLength(0);
+            data.SetAlphamaps(0, 0, textureWeights);
             // Grass is the GrassRenderer's: an asset rebuilt in place keeps no terrain details.
             data.detailPrototypes = System.Array.Empty<DetailPrototype>();
             WriteTrees(data, trees, generation.Scenery, climate, layout, generation.Project.Paths);

@@ -9,13 +9,13 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// Ravines (balkas): the steep cut and the grassy rim slope round it, and woods in patches on the floor and lower
+    /// Ravines (balkas): the steep cut and the grassy rim slope round it, and woods in groves on the floor and lower
     /// walls, as much of it as the spec's <c>wooded</c> share says — never filled to the brim.
     /// </summary>
     public sealed class MapRavinePlanner : MapLandStep
     {
         private const float WoodedReach = 0.75f;
-        private const float PatchSize = 28f;
+        private const float GroveSize = 28f;
         private const float ThresholdStep = 2f;
 
         public MapRavinePlanner(MapPlanContext context) : base(context)
@@ -58,35 +58,35 @@ namespace HyperRTS.Editor.Maps.Planning
                 return;
             }
 
-            var patches = Context.Noise(MapNoiseChannel.RavineWoods);
+            var groves = Context.Noise(MapNoiseChannel.RavineWoods);
             foreach (var ravine in Context.Layout.Ravines.Where(r => r.Copy == 0 && r.Authored.wooded > 0f))
             {
-                PlantWood(ravine.Authored, ravine.Index, surface, patches);
+                PlantWood(ravine.Authored, ravine.Index, surface, groves);
             }
         }
 
-        private void PlantWood(MapRavineSpec spec, int index, MapClimateSurface surface, MapNoise patches)
+        private void PlantWood(MapRavineSpec spec, int index, MapClimateSurface surface, MapNoise groves)
         {
             var line = new MapLine(MapGeometry.ToVectors(spec.points), spec.width, spec.width * 0.5f);
             var floor = new MapRavine(line, spec, Context.Shapes.EdgeWander);
             var reach = spec.width * 0.5f * WoodedReach;
             var hectares = line.Length * reach * 2f * spec.wooded / 10000f;
-            var threshold = Threshold(line, patches, reach, spec.wooded);
+            var threshold = Threshold(line, groves, reach, spec.wooded);
             var random = Context.Random(MapRandomChannel.RavineTrees, index);
             Context.Trees.Scatter(surface.trees, hectares, surface.treeSpacing, random,
                 () => OnFloor(line, reach, random), p =>
                 {
                     var inSector = Symmetry.InSector(p);
                     var onFloor = floor.WallDistance(p) < reach;
-                    return inSector && onFloor && patches.Sample(p, PatchSize) > threshold;
+                    return inSector && onFloor && groves.Sample(p, GroveSize) > threshold;
                 });
         }
 
         /// <summary>
-        /// The patch noise level that leaves <paramref name="wooded"/> of this ravine's floor above it: noise averaged
+        /// The grove noise level that leaves <paramref name="wooded"/> of this ravine's floor above it: noise averaged
         /// over the symmetry's copies has a narrow, shifting range, so a fixed cut would wood one balka and bare another.
         /// </summary>
-        private static float Threshold(MapLine line, MapNoise patches, float reach, float wooded)
+        private static float Threshold(MapLine line, MapNoise groves, float reach, float wooded)
         {
             var samples = new List<float>();
             for (var along = 0f; along <= line.Length; along += ThresholdStep)
@@ -95,7 +95,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 var across = MapGeometry.Left(direction);
                 for (var side = -1f; side <= 1f; side += 0.5f)
                 {
-                    samples.Add(patches.Sample(point + across * (reach * side), PatchSize));
+                    samples.Add(groves.Sample(point + across * (reach * side), GroveSize));
                 }
             }
 

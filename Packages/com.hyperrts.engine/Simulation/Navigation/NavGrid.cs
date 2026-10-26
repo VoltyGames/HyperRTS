@@ -59,7 +59,7 @@ namespace HyperRTS.Simulation.Navigation
                 Scenery = new NativeArray<byte>(count, Allocator.Persistent),
                 Classes = MovementClasses.Create(Allocator.Persistent),
                 Field = field,
-                Sectors = NavSectors.Create(0, field.Sectors, Allocator.Persistent),
+                Sectors = NavSectors.Create(0, field.SectorsPerAxis, Allocator.Persistent),
                 DeckHeights = new NativeArray<float>(count, Allocator.Persistent),
                 Changes = NavChanges.Create(count, Allocator.Persistent),
                 Terrain = terrain,
@@ -217,16 +217,16 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public int FitAccess()
         {
-            var built = Field.Keys;
+            var built = Field.SlotCount;
             if (Classes.Keys.Length > built)
             {
                 Field.Grow(Classes.Keys.Length, Allocator.Persistent);
             }
 
-            if (Sectors.Classes != Classes.Classes.Length)
+            if (Sectors.ClassCount != Classes.Classes.Length)
             {
                 Sectors.Dispose();
-                Sectors = NavSectors.Create(Classes.Classes.Length, Field.Sectors, Allocator.Persistent);
+                Sectors = NavSectors.Create(Classes.Classes.Length, Field.SectorsPerAxis, Allocator.Persistent);
             }
 
             return built;

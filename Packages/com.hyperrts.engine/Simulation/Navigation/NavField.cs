@@ -6,12 +6,12 @@ namespace HyperRTS.Simulation.Navigation
     /// <summary>
     /// Signed distance in metres from each cell centre to the nearest wall, per field key (a layer and crush limit,
     /// see <see cref="MovementClass.FieldKey"/>): positive in the open, negative inside walls, about 0 on their edge,
-    /// capped at <see cref="Cap"/>. Off the map reads as wall. Rebuilt per <see cref="SectorCells"/>-square sector
+    /// capped at <see cref="MaxDistance"/>. Off the map reads as wall. Rebuilt per <see cref="SectorCells"/>-square sector
     /// over a window with a halo of the cap, so a sector's values never depend on which others were rebuilt.
     /// </summary>
     public struct NavField
     {
-        public const float Cap = 8f;
+        public const float MaxDistance = 8f;
         public const int SectorCells = 16;
 
         /// <summary>Per field slot, then per cell.</summary>
@@ -25,10 +25,10 @@ namespace HyperRTS.Simulation.Navigation
         public float CellSize;
 
         /// <summary>Sectors along each axis.</summary>
-        public int2 Sectors;
+        public int2 SectorsPerAxis;
 
-        /// <summary>Cells round a sector that can bring a wall within <see cref="Cap"/> of it.</summary>
-        public int Halo;
+        /// <summary>Cells round a sector that can bring a wall within <see cref="MaxDistance"/> of it.</summary>
+        public int ReachCells;
 
         public static NavField Create(int2 size, float2 min, float cellSize, int keys, Allocator allocator)
         {
@@ -40,8 +40,8 @@ namespace HyperRTS.Simulation.Navigation
                 Size = size,
                 Min = min,
                 CellSize = cellSize,
-                Sectors = sectors,
-                Halo = (int)math.ceil(Cap / cellSize + 0.5f),
+                SectorsPerAxis = sectors,
+                ReachCells = (int)math.ceil(MaxDistance / cellSize + 0.5f),
             };
             field.MarkDirty(int2.zero, size - 1);
             return field;
@@ -56,10 +56,10 @@ namespace HyperRTS.Simulation.Navigation
         public readonly int CellCount => Size.x * Size.y;
 
         /// <summary>Field slots allocated; a new key needs <see cref="Grow"/> and a full build.</summary>
-        public readonly int Keys => Distances.Length / CellCount;
+        public readonly int SlotCount => Distances.Length / CellCount;
 
         /// <summary>The window side every rebuild solves.</summary>
-        public readonly int WindowSide => SectorCells + Halo * 2;
+        public readonly int WindowSide => SectorCells + ReachCells * 2;
 
         /// <summary>The value at a cell centre; a closed half cell off the map.</summary>
         public readonly float At(int slot, int2 cell)
@@ -73,7 +73,8 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>Whether a cell centre keeps <paramref name="radius"/> from walls, less the shared skin.</summary>
-        public readonly bool IsOpen(int slot, int2 cell, float radius) => At(slot, cell) >= radius - NavTolerances.Skin;
+        public readonly bool IsOpen(int slot, int2 cell, float radius) =>
+            At(slot, cell) >= radius - NavTolerances.WallOverlap;
 
         /// <summary>Bilinear between the four nearest cell centres.</summary>
         public readonly float Sample(int slot, float2 position)
@@ -105,13 +106,13 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Marks every sector whose window holds a cell of the box, so its values get rebuilt.</summary>
         public void MarkDirty(int2 min, int2 max)
         {
-            var low = math.max((min - Halo) / SectorCells, 0);
-            var high = math.min((max + Halo) / SectorCells, Sectors - 1);
+            var low = math.max((min - ReachCells) / SectorCells, 0);
+            var high = math.min((max + ReachCells) / SectorCells, SectorsPerAxis - 1);
             for (var y = low.y; y <= high.y; y++)
             {
                 for (var x = low.x; x <= high.x; x++)
                 {
-                    DirtySectors[y * Sectors.x + x] = true;
+                    DirtySectors[y * SectorsPerAxis.x + x] = true;
                 }
             }
         }
@@ -146,8 +147,8 @@ namespace HyperRTS.Simulation.Navigation
         public void Rebuild(in NativeArray<byte> cells, in NativeArray<byte> scenery, in MovementClass key, int slot,
             int sector, ref DistanceTransform transform)
         {
-            var first = new int2(sector % Sectors.x, sector / Sectors.x) * SectorCells;
-            var origin = first - Halo;
+            var first = new int2(sector % SectorsPerAxis.x, sector / SectorsPerAxis.x) * SectorCells;
+            var origin = first - ReachCells;
             var side = transform.Side;
             for (var i = 0; i < transform.Closed.Length; i++)
             {
@@ -177,7 +178,7 @@ namespace HyperRTS.Simulation.Navigation
                         continue;
                     }
 
-                    var edge = math.min((math.sqrt(transform.Squared(window)) - 0.5f) * CellSize, Cap);
+                    var edge = math.min((math.sqrt(transform.Squared(window)) - 0.5f) * CellSize, MaxDistance);
                     Distances[slot * CellCount + y * Size.x + x] = open ? edge : -edge;
                 }
             }

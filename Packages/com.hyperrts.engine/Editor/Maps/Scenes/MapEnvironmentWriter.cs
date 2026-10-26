@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Maps.Scenes
                 generation.Shapes, generation.Heights, climate.groundTint);
             var rows = MapRowPainter.Write(paths.RowMap, generation.Land, generation.Layout.Symmetry);
             var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, groundTint, rows);
-            var picture = MapGroundColor.Write(paths.Ground, generation.Splat, climate, groundTint);
+            var picture = MapGroundColor.Write(paths.Ground, generation.TextureWeights, climate, groundTint);
             MapCropWriter.Write(paths.RowCrops, paths.RowCropIds, generation.Crops);
             MapGrassWriter.Write(paths.Grass, paths.GrassCoverage, generation.Grass, climate.plants);
             MapGroundMaterialPainter.Write(paths.GroundMaterials, generation.Land, climate);

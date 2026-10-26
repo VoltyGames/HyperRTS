@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Data
         [NonSerialized]
         public string key;
 
-        [Tooltip("The crop's meshes, materials and sowing.")]
+        [Tooltip("The crop's meshes, materials and planting.")]
         [NonSerialized]
         public RowCrop crop;
 

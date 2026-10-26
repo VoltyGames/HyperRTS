@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
         // Seed salts so wander and patches don't share noise with each other.
         public const uint WanderSalt = 0x5BD1E995u;
-        public const uint PatchSalt = 0x27D4EB2Fu;
+        public const uint GrowthSalt = 0x27D4EB2Fu;
 
         // Slack in lattice units so rounding never loses a spot.
         private const float Slack = 1e-4f;
@@ -89,7 +89,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         /// <summary>The scale multiplier of the stretch of field a plant grows in.</summary>
         public static float GrowthVariation(RowCropField field, int row, int plant, RowCrop crop)
         {
-            var noise = Noise(field.seed, PatchSalt, Metres(row, plant, crop) / crop.growthVariationSize);
+            var noise = Noise(field.seed, GrowthSalt, Metres(row, plant, crop) / crop.growthVariationSize);
             return Mathf.Lerp(crop.growthVariation.x, crop.growthVariation.y, noise);
         }
 

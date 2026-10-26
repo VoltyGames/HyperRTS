@@ -90,7 +90,7 @@ namespace HyperRTS.Input.Commands
                 MoveSingle(ref placement, aimed, ground, shift);
             }
 
-            PauseEdgeScroll(_rotation.Turning);
+            PauseEdgeScroll(_rotation.IsTurning);
             SystemAPI.SetSingleton(placement);
         }
 
@@ -103,12 +103,12 @@ namespace HyperRTS.Input.Commands
             {
                 _rotation.Press(pointerX);
             }
-            else if (_rotation.Turning)
+            else if (_rotation.IsTurning)
             {
                 _rotation.Turn(pointerX);
             }
 
-            if (key.WasReleasedThisFrame() && _rotation.Turning)
+            if (key.WasReleasedThisFrame() && _rotation.IsTurning)
             {
                 _rotation.Release();
             }
@@ -121,7 +121,7 @@ namespace HyperRTS.Input.Commands
             {
                 DragTurn(ref placement, aimed, ground, shift);
             }
-            else if (_rotation.Turning)
+            else if (_rotation.IsTurning)
             {
                 MoveGhost(ref placement, placement.DragStart, shift);
             }

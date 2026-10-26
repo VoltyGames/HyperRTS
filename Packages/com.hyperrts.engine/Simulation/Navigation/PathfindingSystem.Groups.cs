@@ -88,7 +88,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 joined = false;
                 var cost = 0f;
-                var corridor = new NavCorridor(_grid.Field.Sectors, Allocator.Persistent);
+                var corridor = new NavCorridor(_grid.Field.SectorsPerAxis, Allocator.Persistent);
                 var part = new NativeList<int>(joiners.Length, Allocator.Temp);
                 var routes = new NativeList<int>(256, Allocator.Temp);
                 var byComponent = new NativeHashMap<int, int2>(16, Allocator.Temp);
@@ -101,7 +101,7 @@ namespace HyperRTS.Simulation.Navigation
                     {
                         corridor.Truncate(kept);
                         cost += Open(field, corridor, goal, part, first, ref joined);
-                        corridor = new NavCorridor(_grid.Field.Sectors, Allocator.Persistent);
+                        corridor = new NavCorridor(_grid.Field.SectorsPerAxis, Allocator.Persistent);
                         AddWithRings(ref corridor, path);
                         part.Clear();
                     }

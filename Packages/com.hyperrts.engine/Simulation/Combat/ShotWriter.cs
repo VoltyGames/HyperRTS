@@ -94,14 +94,14 @@ namespace HyperRTS.Simulation.Combat
                 return false;
             }
 
-            var shot = NextMuzzle(shooter, ref weapon);
+            var shot = TakeMuzzle(shooter, ref weapon);
             weapon.StartCooldown();
             Fire(shooter, shot, pose, target, faction);
             return true;
         }
 
         /// <summary>The weapon as it fires this shot, from its next muzzle in turn.</summary>
-        private Weapon NextMuzzle(Entity shooter, ref Weapon weapon)
+        private Weapon TakeMuzzle(Entity shooter, ref Weapon weapon)
         {
             var shot = weapon;
             if (weapon.MuzzleCount > 1)

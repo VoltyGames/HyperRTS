@@ -5,7 +5,7 @@ using UnityEngine.Serialization;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
-    /// <summary>A crop sown in rows that <see cref="RowCropRenderer"/> grows on the GPU: its models, materials and sowing.</summary>
+    /// <summary>A crop sown in rows that <see cref="RowCropRenderer"/> grows on the GPU: its models, materials and planting.</summary>
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     public sealed class RowCrop : ScriptableObject
@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         [Tooltip("HyperRTS/RowCrop material of the card.")]
         public Material cardMaterial;
 
-        [Header("Sowing")]
+        [Header("Planting")]
         [Tooltip("Metres between rows.")]
         public float rowSpacing = 0.75f;
 

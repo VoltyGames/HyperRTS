@@ -160,7 +160,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 var area = grid.Changes.Areas[version % NavChanges.History];
                 var changed = math.all(area.xy <= area.zw);
-                if (changed && field.Field.Corridor.Touches(area.xy, area.zw, grid.Field.Halo))
+                if (changed && field.Field.Corridor.Touches(area.xy, area.zw, grid.Field.ReachCells))
                 {
                     return true;
                 }

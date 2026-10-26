@@ -37,8 +37,8 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>The built map: painted ground, blocked cells and the measured attack paths.</summary>
         public static Texture2D Draw(MapGeneration generation, MapNavGrid nav, List<MapPath> paths)
         {
-            var (layout, splat, climate) = (generation.Layout, generation.Splat, generation.Project.Climate);
-            var pixels = Shade(layout, generation.Heights, p => Blocked(nav, p, SplatColor(layout, splat, climate, p)));
+            var (layout, textureWeights, climate) = (generation.Layout, generation.TextureWeights, generation.Project.Climate);
+            var pixels = Shade(layout, generation.Heights, p => Blocked(nav, p, TextureColor(layout, textureWeights, climate, p)));
             for (var i = 0; i < paths.Count; i++)
             {
                 DrawPath(pixels, layout, nav, paths[i], PathColors[i % PathColors.Length]);
@@ -109,16 +109,16 @@ namespace HyperRTS.Editor.Maps.Report
             return image;
         }
 
-        private static Color SplatColor(MapLayout layout, float[,,] splat, MapClimate climate, Vector2 p)
+        private static Color TextureColor(MapLayout layout, float[,,] textureWeights, MapClimate climate, Vector2 p)
         {
-            var resolution = splat.GetLength(0);
+            var resolution = textureWeights.GetLength(0);
             var area = layout.TerrainBounds;
             var sx = Mathf.Clamp((int)((p.x - area.xMin) / area.width * resolution), 0, resolution - 1);
             var sz = Mathf.Clamp((int)((p.y - area.yMin) / area.height * resolution), 0, resolution - 1);
             var color = Color.black;
             for (var l = 0; l < climate.layers.Count; l++)
             {
-                color += climate.layers[l].mapColor * splat[sz, sx, l];
+                color += climate.layers[l].mapColor * textureWeights[sz, sx, l];
             }
 
             return color;

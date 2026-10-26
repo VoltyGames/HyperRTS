@@ -170,7 +170,7 @@ namespace HyperRTS.Simulation.Tests
                 CollectionAssert.AreEqual(built.EdgeCounts.ToArray(), kept.EdgeCounts.ToArray(), $"{when}: edges");
                 CollectionAssert.AreEqual(built.Regions.AsArray().ToArray(), kept.Regions.AsArray().ToArray(),
                     $"{when}: regions");
-                for (var c = 0; c < built.Classes * built.SectorCount; c++)
+                for (var c = 0; c < built.ClassCount * built.SectorCount; c++)
                 {
                     for (var k = 0; k < built.Counts[c]; k++)
                     {

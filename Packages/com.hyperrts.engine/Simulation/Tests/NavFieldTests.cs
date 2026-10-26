@@ -112,7 +112,7 @@ namespace HyperRTS.Simulation.Tests
             var grid = _world.Grid();
             var access = Truck.Access(grid);
 
-            Assert.AreEqual(-NavField.Cap, access.Distance(grid.WorldToCell(float3.zero)), "deep inside, capped");
+            Assert.AreEqual(-NavField.MaxDistance, access.Distance(grid.WorldToCell(float3.zero)), "deep inside, capped");
             Assert.AreEqual(-0.5f, access.Distance(grid.WorldToCell(new float3(9.5f, 0f, 0f))), 1e-4f, "its rim");
             Assert.AreEqual(0.5f, access.Distance(grid.WorldToCell(new float3(10.5f, 0f, 0f))), 1e-4f, "beside it");
             Assert.AreEqual(4.5f, access.Distance(grid.WorldToCell(new float3(14.5f, 0f, 0f))), 1e-4f);

@@ -7,28 +7,28 @@ namespace HyperRTS.Editor.Maps.Texturing
 {
     /// <summary>
     /// Bakes the map's top-down ground colour, the picture foliage blends into at its roots: each texel mixes the
-    /// layers' mean albedo by splat weight ([z, x, layer] over the whole terrain), tinted by the ground tint over
+    /// layers' mean albedo by texture weight ([z, x, layer] over the whole terrain), tinted by the ground tint over
     /// the same area, where RGB 0.5 leaves the ground unchanged (null for no tint).
     /// </summary>
     public static class MapGroundColor
     {
-        /// <summary>Splat texels per side of a ground texel: the splat runs 2.5 to 5 texels per metre.</summary>
+        /// <summary>Texture weight texels per side of a ground texel: the weights run 2.5 to 5 texels per metre.</summary>
         private const int Downsample = 2;
 
         /// <summary>Mean colours are read from a small blit; its mips do the averaging.</summary>
         private const int MeanSize = 64;
 
-        public static Texture2D Write(string path, float[,,] splat, MapClimate climate, Texture2D groundTint)
+        public static Texture2D Write(string path, float[,,] textureWeights, MapClimate climate, Texture2D groundTint)
         {
-            var size = splat.GetLength(0) / Downsample;
-            var albedo = LayerAlbedo(climate, splat.GetLength(2));
+            var size = textureWeights.GetLength(0) / Downsample;
+            var albedo = LayerAlbedo(climate, textureWeights.GetLength(2));
             var tint = Read(groundTint, size);
             var pixels = new Color32[size * size];
             for (var z = 0; z < size; z++)
             {
                 for (var x = 0; x < size; x++)
                 {
-                    var color = Ground(splat, albedo, x, z) * tint[z * size + x] * 2f;
+                    var color = Ground(textureWeights, albedo, x, z) * tint[z * size + x] * 2f;
                     color.a = 1f;
                     pixels[z * size + x] = color.gamma;
                 }
@@ -65,8 +65,8 @@ namespace HyperRTS.Editor.Maps.Texturing
             return albedo;
         }
 
-        /// <summary>The box average of the splat texels under one ground texel, mixed into a colour.</summary>
-        private static Color Ground(float[,,] splat, Color[] albedo, int x, int z)
+        /// <summary>The box average of the texture weight texels under one ground texel, mixed into a colour.</summary>
+        private static Color Ground(float[,,] textureWeights, Color[] albedo, int x, int z)
         {
             var color = Color.clear;
             for (var dz = 0; dz < Downsample; dz++)
@@ -75,7 +75,7 @@ namespace HyperRTS.Editor.Maps.Texturing
                 {
                     for (var layer = 0; layer < albedo.Length; layer++)
                     {
-                        color += albedo[layer] * splat[z * Downsample + dz, x * Downsample + dx, layer];
+                        color += albedo[layer] * textureWeights[z * Downsample + dz, x * Downsample + dx, layer];
                     }
                 }
             }

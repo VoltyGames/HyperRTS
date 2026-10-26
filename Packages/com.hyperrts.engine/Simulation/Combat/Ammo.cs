@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Combat
         public static void Reload(ref int rounds, int max, ref float elapsed, float reloadTime, AmmoRefill refill,
             float deltaTime)
         {
-            if (!Reloads(rounds, max, refill))
+            if (!CanReload(rounds, max, refill))
             {
                 elapsed = 0f;
                 return;
@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Combat
         public static bool IsEmpty(in ComponentLookup<Ammo> lookup, Entity entity) =>
             lookup.TryGetComponent(entity, out var ammo) && ammo.Current <= 0;
 
-        private static bool Reloads(int rounds, int max, AmmoRefill refill)
+        private static bool CanReload(int rounds, int max, AmmoRefill refill)
         {
             if (rounds >= max)
             {

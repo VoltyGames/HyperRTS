@@ -29,13 +29,13 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             var depth = Depth(to, Axis, out var deepest);
-            if (depth <= NavTolerances.Skin)
+            if (depth <= NavTolerances.WallOverlap)
             {
                 return to;
             }
 
             // No skin on top of an overlap, or a hull pressed into a wall frame after frame would ratchet deeper.
-            var allowed = math.max(Depth(from, Axis), NavTolerances.Skin);
+            var allowed = math.max(Depth(from, Axis), NavTolerances.WallOverlap);
             if (depth <= allowed)
             {
                 return to;
@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Navigation
                 return slid;
             }
 
-            var pushed = slid + normal * math.min(depth - allowed + NavTolerances.Skin, math.length(to - from));
+            var pushed = slid + normal * math.min(depth - allowed + NavTolerances.WallOverlap, math.length(to - from));
             return Depth(pushed, Axis) <= allowed ? pushed : from;
         }
 
@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Navigation
         public bool CanTurn(float2 center, float2 axis)
         {
             var depth = Depth(center, axis);
-            return depth <= NavTolerances.Skin || depth <= Depth(center, Axis);
+            return depth <= NavTolerances.WallOverlap || depth <= Depth(center, Axis);
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Navigation
         public bool TryTurnOff(float2 center, float2 axis, float reach, out float2 moved)
         {
             var depth = Depth(center, axis, out var deepest);
-            moved = center + Access.Normal(deepest) * math.min(reach, depth + NavTolerances.Skin);
+            moved = center + Access.Normal(deepest) * math.min(reach, depth + NavTolerances.WallOverlap);
             return CanTurn(moved, axis) && Constrain(center, moved).Equals(moved);
         }
 
@@ -100,7 +100,7 @@ namespace HyperRTS.Simulation.Navigation
                 direction = math.normalizesafe(Access.Grid.CellCenter(open).xz - center);
             }
 
-            return direction * math.min(maxStep, depth + NavTolerances.Skin);
+            return direction * math.min(maxStep, depth + NavTolerances.WallOverlap);
         }
 
         // Past the field's cap, or dead centre, a wall reads flat, so the way out is toward the nearest open cell.
