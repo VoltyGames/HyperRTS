@@ -314,6 +314,12 @@ without effects. It is presentation only: the simulation never reads it.
 
 Water vertex colours shape the flow: alpha thins fords, green streaks rapids foam.
 
+URP keyword lists shared across passes live in `Presentation/Rendering/Keywords/` and are pulled in with
+`#include_with_pragmas`: `ForwardLightingKeywords` (forward passes on the full Lit model), `SimpleLightingKeywords`
+(plant and flag forward passes), `ShadowCasterKeywords` and `DepthNormalsKeywords`. An include holds only lines
+identical in every pass that uses it, so a pass needing a different line keeps its own; material keywords
+(`shader_feature_local`) stay in each shader.
+
 ### Atmosphere
 
 An `Atmosphere` component sits on the root of a weather's atmosphere prefab, together with its sun, post-processing
