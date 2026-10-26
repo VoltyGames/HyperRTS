@@ -4,22 +4,29 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>Destroys the GameObjects a test tracked once it finishes.</summary>
+    /// <summary>Destroys the objects a test tracked once it finishes.</summary>
     public abstract class TemplateFixture
     {
-        private readonly List<GameObject> _created = new();
+        private readonly List<Object> _created = new();
 
         [TearDown]
         public void DestroyTracked()
         {
-            _created.ForEach(Object.DestroyImmediate);
+            foreach (var created in _created)
+            {
+                if (created != null)
+                {
+                    Object.DestroyImmediate(created);
+                }
+            }
+
             _created.Clear();
         }
 
-        protected GameObject Track(GameObject go)
+        protected T Track<T>(T created) where T : Object
         {
-            _created.Add(go);
-            return go;
+            _created.Add(created);
+            return created;
         }
     }
 }
