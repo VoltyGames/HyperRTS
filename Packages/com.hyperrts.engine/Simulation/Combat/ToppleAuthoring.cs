@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.Combat
         [Tooltip("From the trunk's base at the origin to its top in the standing model; its length sets the fall speed.")]
         public Vector3 trunk = Vector3.up;
 
-        [Tooltip("Heading in degrees from +Z toward +X that the crown points in the remains model.")]
+        [Tooltip("Heading in degrees from +Z toward +X that the canopy points in the remains model.")]
         public float lie;
 
         public class Baker : Baker<ToppleAuthoring>
@@ -33,13 +33,13 @@ namespace HyperRTS.Simulation.Combat
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 var trunk = math.normalize((float3)authoring.trunk);
                 DestructibleSetup.AddTopple(ref writer, trunk, authoring.trunk.magnitude, math.radians(authoring.lie),
-                    Crown(authoring.transform));
+                    CanopyRadius(authoring.transform));
             }
 
-            // The widest reach of the standing model's meshes from the stump, so a site clears a crown over it.
-            private float Crown(Transform root)
+            // The widest reach of the standing model's meshes from the stump, so a site clears a canopy over it.
+            private float CanopyRadius(Transform root)
             {
-                var crown = 0f;
+                var canopy = 0f;
                 foreach (var filter in GetComponentsInChildren<MeshFilter>())
                 {
                     var mesh = DependsOn(filter.sharedMesh);
@@ -54,11 +54,11 @@ namespace HyperRTS.Simulation.Combat
                         var sign = new Vector3(corner & 1, (corner >> 1) & 1, (corner >> 2) & 1) * 2f - Vector3.one;
                         var point = bounds.center + Vector3.Scale(bounds.extents, sign);
                         var local = root.InverseTransformPoint(filter.transform.TransformPoint(point));
-                        crown = math.max(crown, math.max(math.abs(local.x), math.abs(local.z)));
+                        canopy = math.max(canopy, math.max(math.abs(local.x), math.abs(local.z)));
                     }
                 }
 
-                return crown;
+                return canopy;
             }
         }
     }

@@ -95,7 +95,7 @@ namespace HyperRTS.Editor.Authoring
             if (new Vector2(centre.x, centre.z).magnitude < MinReach)
             {
                 throw new InvalidOperationException(
-                    $"{remains.name} lies around its origin: put the stump at the origin, the crown away.");
+                    $"{remains.name} lies around its origin: put the stump at the origin, the canopy away.");
             }
 
             return Mathf.Atan2(centre.x, centre.z) * Mathf.Rad2Deg;

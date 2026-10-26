@@ -41,7 +41,7 @@ namespace HyperRTS.Presentation.Animation
         public Transform tiltRoot;
 
         [Tooltip("The same body in another model, such as the damaged stage, which tilts and sways with the tilt root.")]
-        public Transform tiltStage;
+        public Transform tiltFollower;
 
         [Tooltip("Length and width of the ground the body sits on, sampled at the four edges.")]
         public Vector2 footprint = new(6f, 3f);
@@ -59,7 +59,7 @@ namespace HyperRTS.Presentation.Animation
         public float springDamping = 0.45f;
 
         [Tooltip("Ground vehicles: degrees per second a shot rocks the body away from the gun.")]
-        public float recoilKick = 12f;
+        public float recoilRate = 12f;
 
         /// <summary>Primary and extra weapons, then an interceptor: the <c>WeaponPose</c> indices a slot may follow.</summary>
         public int WeaponCount
@@ -110,9 +110,9 @@ namespace HyperRTS.Presentation.Animation
                 yield return $"Tilt root '{tiltRoot.name}' must be a child of '{name}'.";
             }
 
-            if (tiltStage != null && (tiltRoot == null || !IsBelow(tiltStage)))
+            if (tiltFollower != null && (tiltRoot == null || !IsBelow(tiltFollower)))
             {
-                yield return $"Tilt stage '{tiltStage.name}' needs a tilt root and must be a child of '{name}'.";
+                yield return $"Tilt follower '{tiltFollower.name}' needs a tilt root and must be a child of '{name}'.";
             }
 
             if (tiltRoot != null && IsBuilding)
@@ -133,7 +133,7 @@ namespace HyperRTS.Presentation.Animation
             Damping = springDamping,
             PerAcceleration = swayPerAcceleration * Mathf.Deg2Rad,
             MaxSway = maxSway * Mathf.Deg2Rad,
-            Kick = recoilKick * Mathf.Deg2Rad,
+            RecoilRate = recoilRate * Mathf.Deg2Rad,
         };
 
         /// <summary>A part under this rig, never the rig itself: the unit's own transform is the simulation's.</summary>
@@ -174,7 +174,7 @@ namespace HyperRTS.Presentation.Animation
                 return new MotionRig
                 {
                     TiltRoot = GetEntity(tilt, TransformUsageFlags.Dynamic),
-                    TiltStage = authoring.tiltStage != null ? GetEntity(authoring.tiltStage, TransformUsageFlags.Dynamic) : Entity.Null,
+                    TiltFollower = authoring.tiltFollower != null ? GetEntity(authoring.tiltFollower, TransformUsageFlags.Dynamic) : Entity.Null,
                     TiltFrame = Quaternion.Inverse(authoring.transform.rotation) * tilt.parent.rotation,
                     TiltRest = tilt.localRotation,
                     Footprint = authoring.footprint,

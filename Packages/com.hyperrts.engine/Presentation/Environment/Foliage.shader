@@ -21,7 +21,7 @@ Shader "HyperRTS/Foliage"
         _TreeHeight ("Tree Height (object m)", Float) = 10
         _GroundBlend ("Ground Colour At Roots", Range(0, 1)) = 0
         _GroundBlendHeight ("Ground Colour Height (UV)", Range(0.01, 1)) = 0.4
-        _VertexOcclusion ("Crown Occlusion (vertex R)", Range(0, 1)) = 0
+        _VertexOcclusion ("Canopy Occlusion (vertex R)", Range(0, 1)) = 0
         [Enum(Off, 0, Grass, 1, Crop, 2)] _Trample ("Trample (Tree Wind off)", Float) = 1
     }
 

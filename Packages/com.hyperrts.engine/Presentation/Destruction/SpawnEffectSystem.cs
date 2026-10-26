@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
     /// Plays each <see cref="SpawnEffect"/> once, the first frame its entity (a ruin) is drawn. A falling tree plays
-    /// it where its crown lands, as it lands.
+    /// it where its canopy lands, as it lands.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -17,8 +17,8 @@ namespace HyperRTS.Presentation.Destruction
     {
         private EffectPool _pool;
 
-        // The crown's mass sits a little past the middle of the trunk.
-        private const float CrownShare = 0.6f;
+        // The canopy's mass sits a little past the middle of the trunk.
+        private const float CanopyShare = 0.6f;
 
         protected override void OnCreate()
         {
@@ -44,8 +44,8 @@ namespace HyperRTS.Presentation.Destruction
                 if (SystemAPI.HasComponent<ToppleFall>(entity))
                 {
                     var toppleFall = SystemAPI.GetComponent<ToppleFall>(entity);
-                    position += toppleFall.Crown * toppleFall.Height * CrownShare;
-                    rotation = quaternion.LookRotationSafe(toppleFall.Crown, math.up());
+                    position += toppleFall.CanopyDirection * toppleFall.Height * CanopyShare;
+                    rotation = quaternion.LookRotationSafe(toppleFall.CanopyDirection, math.up());
                 }
 
                 _pool.Play(prefab, position, rotation);

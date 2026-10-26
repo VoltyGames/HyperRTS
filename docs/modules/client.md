@@ -218,7 +218,7 @@ from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon
 aim their own weapon: `Turret_01` and `Launcher_01` weapon 0, `Turret_02` and `Launcher_02` weapon 1. It also fills the
 weapons' and the interceptor's turret and barrel pivots. Same-named parts of every model under the rig, such as a
 damaged model beside the intact one, all follow, and parts a Machine moves are left to it. With Damage Stages, the
-other stage's matching body becomes the `tiltStage`, which tilts and sways with the tilt root. A building's body never
+other stage's matching body becomes the `tiltFollower`, which tilts and sways with the tilt root. A building's body never
 tilts, so it gets no tilt root.
 `MotionRigRule` checks every slot names a child of the rig and a weapon the unit has. Traverse and elevation rates and limits are weapon data, so the
 rig only smooths the simulated pose.
@@ -286,7 +286,7 @@ sight. `FallClock` steps the fall at a fixed rate from the `Topple` height, so a
 sapling under 1 s, and a crusher at the stump pushes it faster. The canopy bounces it once and it settles. The
 tipping turns the remains' child models about the stump, recorded at rest in a `FallPart` buffer, and the root
 keeps the simulation's final pose. A felled tree's spawn effect plays
-where the crown lands, as it lands.
+where the canopy lands, as it lands.
 
 `DebrisAuthoring` on a ruin throws a `DebrisSet`'s pieces once when the ruin appears; on a building with breakable
 parts it throws them from each part that breaks. `DebrisSystem` flies them on the client in a pool of 160, bounces
@@ -342,7 +342,7 @@ Tree meshes for Foliage with **Tree Wind** on, and for Bark, carry wind data in 
 | --- | --- |
 | TEXCOORD2.xy, TEXCOORD3.x | Branch pivot |
 | TEXCOORD3.y, TEXCOORD4.xy | Leaf card pivot |
-| COLOR r | Crown ambient occlusion |
+| COLOR r | Canopy ambient occlusion |
 | COLOR g | Branch flex: 0 at the branch pivot and on the trunk, 1 at the tip |
 | COLOR b | Stiffness: 0 limb, 1 twig |
 | COLOR a | Flutter weight, 1 on leaf cards |

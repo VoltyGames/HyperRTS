@@ -207,7 +207,7 @@ namespace HyperRTS.Simulation.Production
             {
                 if (pad >= 0)
                 {
-                    Ecb.SetComponent(unit, PadUserLookup[prefab].At(airfield, pad));
+                    Ecb.SetComponent(unit, PadUserLookup[prefab].ToPad(airfield, pad));
                     Ecb.SetComponentEnabled<Docked>(unit, true);
                 }
             }

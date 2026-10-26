@@ -54,8 +54,8 @@ namespace HyperRTS.Simulation.Tests
 
             var pose = ToppleMath.RemainsPose(standing, 64, lie);
 
-            var crown = math.rotate(pose.Rotation, new float3(math.sin(lie), 0f, math.cos(lie)));
-            MathAssert.Near(new float3(1f, 0f, 0f), crown, PoseTolerance);
+            var canopy = math.rotate(pose.Rotation, new float3(math.sin(lie), 0f, math.cos(lie)));
+            MathAssert.Near(new float3(1f, 0f, 0f), canopy, PoseTolerance);
             MathAssert.Near(standing.Position, pose.Position, PoseTolerance);
             Assert.AreEqual(1.5f, pose.Scale);
         }
@@ -68,13 +68,13 @@ namespace HyperRTS.Simulation.Tests
 
             var toppleFall = ToppleMath.Fell(standing, topple, 200, true, out var pose);
 
-            var crown = new float3(math.sin(topple.Lie), 0f, math.cos(topple.Lie));
+            var canopy = new float3(math.sin(topple.Lie), 0f, math.cos(topple.Lie));
             var upright = ToppleMath.Pose(toppleFall, pose.Rotation, 0f);
-            MathAssert.Near(math.rotate(standing.Rotation, topple.Trunk), math.rotate(upright, crown), PoseTolerance);
+            MathAssert.Near(math.rotate(standing.Rotation, topple.Trunk), math.rotate(upright, canopy), PoseTolerance);
             var down = ToppleMath.Pose(toppleFall, pose.Rotation, 1f);
-            MathAssert.Near(HeadingByte.Direction(200), math.rotate(down, crown), PoseTolerance);
-            MathAssert.Near(math.rotate(pose.Rotation, crown), HeadingByte.Direction(200), PoseTolerance);
-            MathAssert.Near(HeadingByte.Direction(200), toppleFall.Crown, PoseTolerance);
+            MathAssert.Near(HeadingByte.Direction(200), math.rotate(down, canopy), PoseTolerance);
+            MathAssert.Near(math.rotate(pose.Rotation, canopy), HeadingByte.Direction(200), PoseTolerance);
+            MathAssert.Near(HeadingByte.Direction(200), toppleFall.CanopyDirection, PoseTolerance);
             Assert.AreEqual(14f, toppleFall.Height, 1e-4f, "scaled with the tree");
         }
 
@@ -114,12 +114,12 @@ namespace HyperRTS.Simulation.Tests
         {
             var entity = _world.EntityManager.CreateEntity();
             standing = LocalTransform.FromPositionRotation(position, quaternion.RotateY(0.5f));
-            topple = new Topple { Trunk = new float3(0f, 1f, 0f), Height = 12f, Lie = 0f, Crown = 3f };
+            topple = new Topple { Trunk = new float3(0f, 1f, 0f), Height = 12f, Lie = 0f, CanopyRadius = 3f };
             _world.EntityManager.AddComponentData(entity, standing);
             var writer = new EntityManagerWriter(_world.EntityManager, entity);
             DestructibleSetup.AddScenery(ref writer, 50f, 0, remains, float2.zero,
                 SceneryId.At(position, standing.Rotation));
-            DestructibleSetup.AddTopple(ref writer, topple.Trunk, topple.Height, topple.Lie, topple.Crown);
+            DestructibleSetup.AddTopple(ref writer, topple.Trunk, topple.Height, topple.Lie, topple.CanopyRadius);
             return entity;
         }
 

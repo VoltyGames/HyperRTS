@@ -22,7 +22,7 @@ namespace HyperRTS.Presentation.Animation
         public Entity TiltRoot;
 
         /// <summary>The same body in another stage's model, posed like <see cref="TiltRoot"/>, or null.</summary>
-        public Entity TiltStage;
+        public Entity TiltFollower;
 
         /// <summary>Rotation of the tilt root's parent relative to the unit.</summary>
         public quaternion TiltFrame;

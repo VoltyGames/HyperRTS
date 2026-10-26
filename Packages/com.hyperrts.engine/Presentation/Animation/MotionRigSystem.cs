@@ -113,11 +113,11 @@ namespace HyperRTS.Presentation.Animation
                 var transform = Transforms[rig.TiltRoot];
                 transform.Rotation = rig.TiltedRotation();
                 Transforms[rig.TiltRoot] = transform;
-                if (rig.TiltStage != Entity.Null)
+                if (rig.TiltFollower != Entity.Null)
                 {
-                    var stage = Transforms[rig.TiltStage];
+                    var stage = Transforms[rig.TiltFollower];
                     stage.Rotation = transform.Rotation;
-                    Transforms[rig.TiltStage] = stage;
+                    Transforms[rig.TiltFollower] = stage;
                 }
             }
 

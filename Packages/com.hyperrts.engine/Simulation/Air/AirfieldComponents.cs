@@ -45,9 +45,9 @@ namespace HyperRTS.Simulation.Air
         /// <summary>The pads it lands on, kept when it changes or loses its home.</summary>
         public PadKind Kind;
 
-        public readonly HomePad At(Entity airfield, int pad) => new() { Airfield = airfield, Pad = pad, Kind = Kind };
+        public readonly HomePad ToPad(Entity airfield, int pad) => new() { Airfield = airfield, Pad = pad, Kind = Kind };
 
-        public void Lose() => this = new HomePad { Kind = Kind };
+        public void Release() => this = new HomePad { Kind = Kind };
     }
 
     /// <summary>Which aircraft a landing pad takes: helicopters on a helipad, jets in a shelter.</summary>

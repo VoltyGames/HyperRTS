@@ -31,7 +31,7 @@ struct ForwardVaryings
     float3 uv : TEXCOORD0; // xy albedo, z height up the plant (root 0)
     float3 positionWS : TEXCOORD1;
     half3 normalWS : TEXCOORD2;
-    half4 tint : TEXCOORD3; // rgb per-plant shade, a crown occlusion
+    half4 tint : TEXCOORD3; // rgb per-plant shade, a canopy occlusion
     half4 ground : TEXCOORD4; // rgb ground colour over texture mean brightness, a root blend
     #if defined(PLANT_VERTEX_LIGHTS)
         half3 vertexLight : TEXCOORD5;
@@ -87,12 +87,12 @@ void PlantCrossFade(float4 positionCS)
 }
 
 // Wrapped light on the facing side plus light through the leaf toward the eye; the root wraps and passes none.
-half PlantDiffuse(half3 normal, half3 toLight, half3 view, half crown, half root)
+half PlantDiffuse(half3 normal, half3 toLight, half3 view, half canopy, half root)
 {
     half wrapping = 0.5 * (1.0 - root);
     half wrap = saturate((dot(normal, toLight) + wrapping) / (1.0 + wrapping));
-    half through = pow(saturate(dot(-toLight, view)), 4.0) * _Translucency * crown * (1.0 - root);
-    return wrap * crown + through;
+    half through = pow(saturate(dot(-toLight, view)), 4.0) * _Translucency * canopy * (1.0 - root);
+    return wrap * canopy + through;
 }
 
 // Per vertex for ground cover: its blades are small next to a light's reach and its cutout overdraw costs the most.
@@ -180,26 +180,26 @@ half3 PlantAdditionalLights(ForwardVaryings input, half3 normal, half3 view, hal
     return lighting;
 }
 
-// Wrapped sun, translucency and glint, all dimmed by the crown occlusion; the root gets plain up-facing light.
+// Wrapped sun, translucency and glint, all dimmed by the canopy occlusion; the root gets plain up-facing light.
 half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
 {
     half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
     Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
     // Shadow and cookie only: culling attenuation isn't set for indirect draws.
     half3 direct = sun.color * sun.shadowAttenuation;
-    half crown = input.tint.a;
+    half canopy = input.tint.a;
     half3 halfway = normalize(sun.direction + view);
     half glint = pow(saturate(dot(normal, halfway)), exp2(_Smoothness * 10.0 + 1.0)) * _Smoothness;
 
-    half occlusion = crown;
+    half occlusion = canopy;
     #if defined(_SCREEN_SPACE_OCCLUSION)
         occlusion *= GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(input.positionCS)).indirectAmbientOcclusion;
     #endif
 
-    half3 lit = direct * PlantDiffuse(normal, sun.direction, view, crown, root);
+    half3 lit = direct * PlantDiffuse(normal, sun.direction, view, canopy, root);
     lit += PlantAdditionalLights(input, normal, view, root);
     half3 ambient = SurfaceCacheAmbient(input.positionWS, normal, view, input.positionCS.xy) * occlusion;
-    return albedo * (lit + ambient) + glint * crown * direct;
+    return albedo * (lit + ambient) + glint * canopy * direct;
 }
 
 half4 ForwardFrag(ForwardVaryings input, bool front : SV_IsFrontFace) : SV_Target

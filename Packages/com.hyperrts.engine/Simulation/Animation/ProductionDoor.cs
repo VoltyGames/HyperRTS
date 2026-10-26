@@ -77,17 +77,17 @@ namespace HyperRTS.Simulation.Animation
             Elapsed = open ? math.min(Elapsed + deltaTime, MoveSeconds) : Elapsed + deltaTime;
         }
 
-        private readonly float Eased => math.smoothstep(0f, 1f, Openness);
+        private readonly float SmoothOpenness => math.smoothstep(0f, 1f, Openness);
 
-        /// <summary>Eased pose between rest and open.</summary>
+        /// <summary>Smoothed pose between rest and open.</summary>
         public readonly void Pose(ref LocalTransform transform)
         {
-            var eased = Eased;
-            transform.Position = RestPosition + OpenOffset * eased;
-            transform.Rotation = math.mul(RestRotation, math.slerp(quaternion.identity, OpenRotation, eased));
+            var smooth = SmoothOpenness;
+            transform.Position = RestPosition + OpenOffset * smooth;
+            transform.Rotation = math.mul(RestRotation, math.slerp(quaternion.identity, OpenRotation, smooth));
         }
 
-        /// <summary>Eased non-uniform scale between rest and open, about the door's own pivot.</summary>
-        public readonly float4x4 Stretch() => float4x4.Scale(RestScale * math.lerp(1f, OpenScale, Eased));
+        /// <summary>Smoothed non-uniform scale between rest and open, about the door's own pivot.</summary>
+        public readonly float4x4 Stretch() => float4x4.Scale(RestScale * math.lerp(1f, OpenScale, SmoothOpenness));
     }
 }

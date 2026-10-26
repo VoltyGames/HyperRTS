@@ -65,7 +65,7 @@ namespace HyperRTS.Presentation.Destruction
             Started = true,
         };
 
-        /// <summary>Runs the fall on by <paramref name="deltaTime"/>; returns true on the frame the crown first hits.</summary>
+        /// <summary>Runs the fall on by <paramref name="deltaTime"/>; returns true on the frame the canopy first hits.</summary>
         public bool Advance(float height, float deltaTime)
         {
             var wasLanded = Landed;

@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Buildings
                     }
 
                     var surface = grid.Surface(cell);
-                    if (RulesOut(surface))
+                    if (Forbids(surface))
                     {
                         return false;
                     }
@@ -109,8 +109,8 @@ namespace HyperRTS.Simulation.Buildings
             return Surface != PlacementSurface.Shoreline || (land && water);
         }
 
-        /// <summary>Whether one cell under the spot rules it out on its own, whatever the other cells hold.</summary>
-        public bool RulesOut(NavSurface cell)
+        /// <summary>Whether one cell under the spot forbids it on its own, whatever the other cells hold.</summary>
+        public bool Forbids(NavSurface cell)
         {
             switch (Surface)
             {

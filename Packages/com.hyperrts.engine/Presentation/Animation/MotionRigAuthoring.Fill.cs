@@ -57,7 +57,7 @@ namespace HyperRTS.Presentation.Animation
             FillWeaponPivots(raised);
             FillInterceptorPivots(raised);
             tiltRoot = IsBuilding ? null : Named("Hull").FirstOrDefault() ?? ModelRoot();
-            tiltStage = TiltStage();
+            tiltFollower = TiltFollower();
             if (tiltRoot != null)
             {
                 var size = PartSlot.MeshBounds(tiltRoot, transform).size;
@@ -66,7 +66,7 @@ namespace HyperRTS.Presentation.Animation
         }
 
         // Another damage stage's model tilts at the same path below its visual as the tilt root does below its own.
-        private Transform TiltStage()
+        private Transform TiltFollower()
         {
             if (tiltRoot == null || !TryGetComponent<DamageStagesAuthoring>(out var stages))
             {

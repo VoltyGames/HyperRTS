@@ -69,7 +69,7 @@ namespace HyperRTS.Presentation.Tests
             rig.FillFromModel();
 
             Assert.AreEqual(new[] { turret, damagedTurret }, rig.turrets.Select(slot => slot.part).ToArray());
-            Assert.AreEqual((hull, damagedHull), (rig.tiltRoot, rig.tiltStage));
+            Assert.AreEqual((hull, damagedHull), (rig.tiltRoot, rig.tiltFollower));
             CollectionAssert.IsEmpty(rig.Problems());
         }
 

@@ -19,11 +19,11 @@ namespace HyperRTS.Simulation.Combat
         {
             pose = RemainsPose(standing, fall, topple.Lie);
             var trunk = math.rotate(standing.Rotation, topple.Trunk);
-            var crown = HeadingByte.Direction(fall);
+            var canopy = HeadingByte.Direction(fall);
             return new ToppleFall
             {
-                Tilt = Rotations.FromTo(crown, trunk),
-                Crown = crown,
+                Tilt = Rotations.FromTo(canopy, trunk),
+                CanopyDirection = canopy,
                 Height = topple.Height * standing.Scale,
                 Witnessed = witnessed,
             };

@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Air
 
                 if (!Airfields.IsOwn(home.Airfield, faction.Value) || !Airfields.Claim(entity, home))
                 {
-                    home.Lose();
+                    home.Release();
                     docked.ValueRW = false;
                 }
             }
@@ -191,7 +191,7 @@ namespace HyperRTS.Simulation.Air
                 }
 
                 pads.ElementAt(free).Aircraft = aircraft;
-                home = home.At(airfield, free);
+                home = home.ToPad(airfield, free);
             }
         }
     }

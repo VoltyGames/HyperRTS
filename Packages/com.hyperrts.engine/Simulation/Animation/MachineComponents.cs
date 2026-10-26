@@ -61,7 +61,7 @@ namespace HyperRTS.Simulation.Animation
             var step = deltaTime / RampSeconds;
             Ramp = Started ? Ramp + math.clamp(target - Ramp, -step, step) : target;
             Started = true;
-            Time += deltaTime * Eased;
+            Time += deltaTime * Speed;
         }
 
         /// <summary>Takes <paramref name="ramp"/> as the speed outright, to follow a unit's deploy progress.</summary>
@@ -69,11 +69,11 @@ namespace HyperRTS.Simulation.Animation
         {
             Ramp = ramp;
             Started = true;
-            Time += deltaTime * Eased;
+            Time += deltaTime * Speed;
         }
 
         /// <summary><see cref="Ramp"/> eased in and out, which speeds and Raise and Extend parts move by.</summary>
-        public readonly float Eased => math.smoothstep(0f, 1f, Ramp);
+        public readonly float Speed => math.smoothstep(0f, 1f, Ramp);
     }
 
     /// <summary>When a machine runs.</summary>

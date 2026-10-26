@@ -30,7 +30,7 @@ CBUFFER_START(UnityPerMaterial)
     half _TwoSidedLeaves;
 CBUFFER_END
 
-// PlantShading.hlsl: modelled leaves light the side in view; cards and crowns light both sides alike.
+// PlantShading.hlsl: modelled leaves light the side in view; cards and canopies light both sides alike.
 #define PLANT_TWO_SIDED _TwoSidedLeaves
 
 #if defined(_GRASS_INSTANCES)

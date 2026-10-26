@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.Animation
         public float MaxSway;
 
         /// <summary>Radians per second a shot rocks the body away from where the gun points.</summary>
-        public float Kick;
+        public float RecoilRate;
 
         public float2 Sway;
         public float2 Rate;
@@ -48,6 +48,6 @@ namespace HyperRTS.Presentation.Animation
         }
 
         /// <summary>A shot from a gun turned <paramref name="yaw"/> radians right of the nose.</summary>
-        public void Recoil(float yaw) => Rate += Kick * new float2(math.cos(yaw), math.sin(yaw));
+        public void Recoil(float yaw) => Rate += RecoilRate * new float2(math.cos(yaw), math.sin(yaw));
     }
 }

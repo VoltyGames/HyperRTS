@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Buildings
     /// <summary>
     /// A building under construction marks <see cref="SceneryCleared"/> the open <see cref="Destructible"/> scenery its
     /// footprint overlaps (trees, fences, pipes crossing the edge) and the scenery remains on it, so they go with no
-    /// remains, effects or sounds. A tree goes when its crown reaches over the site. Scenery with its own obstacle
+    /// remains, effects or sounds. A tree goes when its canopy reaches over the site. Scenery with its own obstacle
     /// blocks placement instead. Scenery and sites stand still, so only a new site or new scenery is checked again;
     /// remains appear any time and are checked every frame.
     /// </summary>
@@ -73,7 +73,7 @@ namespace HyperRTS.Simulation.Buildings
             new RemainsJob { Ecb = ecb, Sites = sites }.Schedule();
             if (changed)
             {
-                new CrownJob { Ecb = ecb, Sites = sites }.Schedule();
+                new CanopyJob { Ecb = ecb, Sites = sites }.Schedule();
             }
         }
 
@@ -140,11 +140,11 @@ namespace HyperRTS.Simulation.Buildings
             }
         }
 
-        /// <summary>A tree's trunk may stand clear while its crown hangs over the site, so its crown decides.</summary>
+        /// <summary>A tree's trunk may stand clear while its canopy hangs over the site, so its canopy decides.</summary>
         [BurstCompile]
         [WithAll(typeof(Destructible))]
         [WithNone(typeof(NavObstacle), typeof(SceneryCleared))]
-        private partial struct CrownJob : IJobEntity
+        private partial struct CanopyJob : IJobEntity
         {
             public EntityCommandBuffer Ecb;
             [ReadOnly] public NativeList<NavBox> Sites;
@@ -159,7 +159,7 @@ namespace HyperRTS.Simulation.Buildings
 
                 foreach (var site in Sites)
                 {
-                    if (Reaches(site, transform.Position.xz, topple.Crown * transform.Scale))
+                    if (Reaches(site, transform.Position.xz, topple.CanopyRadius * transform.Scale))
                     {
                         Ecb.AddComponent<SceneryCleared>(entity);
                         return;

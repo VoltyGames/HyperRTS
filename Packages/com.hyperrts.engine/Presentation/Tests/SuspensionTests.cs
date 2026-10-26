@@ -98,7 +98,7 @@ namespace HyperRTS.Presentation.Tests
             Damping = 0.45f,
             PerAcceleration = math.radians(0.6f),
             MaxSway = math.radians(3f),
-            Kick = math.radians(12f),
+            RecoilRate = math.radians(12f),
         };
     }
 }

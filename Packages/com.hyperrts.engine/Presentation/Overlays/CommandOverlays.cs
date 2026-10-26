@@ -153,7 +153,7 @@ namespace HyperRTS.Presentation.Overlays
                 for (var x = min.x; x <= max.x && _blockedCount < MaxBlockedCells; x++)
                 {
                     var cell = new int2(x, y);
-                    if (!grid.InBox(box, cell) || !spot.RulesOut(grid.Surface(cell)))
+                    if (!grid.InBox(box, cell) || !spot.Forbids(grid.Surface(cell)))
                     {
                         continue;
                     }

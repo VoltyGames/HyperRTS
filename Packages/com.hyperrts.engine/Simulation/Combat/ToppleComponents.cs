@@ -12,21 +12,21 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Metres from the stump to the top in the standing model, which sets how fast it falls.</summary>
         public float Height;
 
-        /// <summary>Heading in radians from +Z toward +X that the crown points in the remains model.</summary>
+        /// <summary>Heading in radians from +Z toward +X that the canopy points in the remains model.</summary>
         public float Lie;
 
-        /// <summary>Metres from the stump to the crown's widest reach on XZ in the standing model.</summary>
-        public float Crown;
+        /// <summary>Metres from the stump to the canopy's widest reach on XZ in the standing model.</summary>
+        public float CanopyRadius;
     }
 
     /// <summary>Remains of a <see cref="Topple"/> piece that presentation shows falling. Their transform already holds the final pose.</summary>
     public struct ToppleFall : IComponentData
     {
-        /// <summary>Turns the final crown direction up to where the trunk stood.</summary>
+        /// <summary>Turns the final canopy direction up to where the trunk stood.</summary>
         public quaternion Tilt;
 
-        /// <summary>Unit world direction the crown lies toward, where the fall lands.</summary>
-        public float3 Crown;
+        /// <summary>Unit world direction the canopy lies toward, where the fall lands.</summary>
+        public float3 CanopyDirection;
 
         /// <summary>Metres from the stump to the top at the remains' scale.</summary>
         public float Height;

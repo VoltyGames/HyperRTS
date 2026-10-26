@@ -88,7 +88,7 @@ namespace HyperRTS.Simulation.Tests
         }
 
         [Test]
-        public void TreeBesideTheSite_GoesWhenItsCrownReachesOver()
+        public void TreeBesideTheSite_GoesWhenItsCanopyReachesOver()
         {
             var overhanging = SpawnScenery(new float3(0f, 0f, 3f));
             var clear = SpawnScenery(new float3(0f, 0f, -5f));
@@ -102,8 +102,8 @@ namespace HyperRTS.Simulation.Tests
 
             _world.Run(0.5f);
 
-            Assert.IsFalse(Manager.Exists(overhanging), "a trunk 2 m off the edge hangs its crown over the site");
-            Assert.IsTrue(Manager.Exists(clear), "a crown that stops short stands");
+            Assert.IsFalse(Manager.Exists(overhanging), "a trunk 2 m off the edge hangs its canopy over the site");
+            Assert.IsTrue(Manager.Exists(clear), "a canopy that stops short stands");
         }
 
         [Test]
