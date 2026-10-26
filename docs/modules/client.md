@@ -326,6 +326,19 @@ checks this. Its pass publishes the camera's blended fog as shader globals and d
 perspective cameras only, so orthographic captures such as the minimap stay clear. Transparent shaders apply both
 fogs in the full-screen order with `SceneFogAt` and `ApplySceneFog` from `SceneFog.hlsl`, as water and particles do.
 
+### Contact shadows
+
+`ContactShadowsFeature` gives small things (fences, poles, wheels, grass clumps, infantry) short, sharp sun shadows
+where they meet the ground, which a soft cascaded shadow map seen from the match camera loses. It needs URP's Screen
+Space Shadows feature on the same Forward or Forward+ renderer, and its shader set to `Hidden/HyperRTS/ContactShadows`;
+the validator checks all three. Right after URP resolves the sun's shadows into its screen-space texture, the pass
+traces the depth buffer from each pixel toward the sun (`length` 1 m in up to `steps` 12, one every 3 pixels on screen,
+jittered per pixel), counts a hit when the trace passes less than `thickness` behind a surface, and registers a darkened
+copy under the same global. Every opaque shader that reads the sun's screen-space shadow then gets contact shadows
+without changes; transparents keep the cascades. `strength` scales with the sun light's shadow strength, so diffuse
+weathers show none. The feature runs from `lowestQualityLevel` up (1, so the Low level skips it), and only in game and
+scene view perspective cameras.
+
 ### Wind
 
 `Wind` sits on the scene's directional `WindZone` and publishes its strength, gusts and direction to shaders. Its

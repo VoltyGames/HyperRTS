@@ -23,6 +23,7 @@ namespace HyperRTS.Editor.Tests.Validation
         private static readonly Dictionary<Type, string> Skipped = new()
         {
             [typeof(HeightFogRule)] = "Fires only when the project's active URP renderer lacks the feature.",
+            [typeof(ContactShadowsRule)] = "Fires only when the project's active URP renderer lacks the features.",
             [typeof(UnitSilhouetteRule)] = "Fires only on the project's renderer assets and rendering layer names.",
             [typeof(MapSpecRule)] = "Needs a saved map scene in a Generated folder beside a spec asset.",
         };
