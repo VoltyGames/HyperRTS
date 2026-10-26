@@ -175,16 +175,23 @@ namespace HyperRTS.Simulation.Resources
                 ref MoveDestination destination, EnabledRefRW<ActiveOrder> busy, EnabledRefRW<MoveDestination> moving,
                 EnabledRefRW<Arrival> arrived, in LocalTransform transform, in NavAgent agent, byte faction)
             {
+                // Empty-handed goes straight back to work.
+                if (harvester.CargoAmount <= 0)
+                {
+                    harvest.Phase = HarvestPhase.Gathering;
+                    moving.ValueRW = false;
+                    return;
+                }
+
                 if (!IsDropOff(harvest.DropOff, faction))
                 {
                     harvest.DropOff = ChooseDropOff(entity, transform, agent, faction);
                 }
 
+                // With no drop-off, wait until one is built.
                 var dropOff = harvest.DropOff;
-                if (harvester.CargoAmount <= 0 || dropOff == Entity.Null)
+                if (dropOff == Entity.Null)
                 {
-                    // Empty-handed goes straight back to work; with no drop-off, wait until one is built.
-                    harvest.Phase = harvester.CargoAmount <= 0 ? HarvestPhase.Gathering : harvest.Phase;
                     moving.ValueRW = false;
                     return;
                 }
@@ -200,7 +207,6 @@ namespace HyperRTS.Simulation.Resources
                 ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, harvester.CargoType, delivered);
                 harvester.CargoAmount = 0;
                 harvest.Phase = HarvestPhase.Gathering;
-                harvest.DropOff = Entity.Null;
             }
 
             private bool IsHarvestable(Entity node) =>
@@ -245,16 +251,17 @@ namespace HyperRTS.Simulation.Resources
                         continue;
                     }
 
+                    // Scores first so only a drop-off that would win pays for the reachability search.
                     var footprint = Reach.Footprint(candidate);
                     var edge = footprint.EdgePoint(position.xz, agent.Radius);
-                    if (!Grid.IsReachable(agent, position, new float3(edge.x, position.y, edge.y)))
-                    {
-                        continue;
-                    }
-
                     var toEdge = math.normalizesafe(edge - position.xz);
                     var turn = math.acos(math.clamp(math.dot(facing, toEdge), -1f, 1f));
-                    closest.Consider(i, candidate, footprint.Gap(position.xz) + turn * turnLength);
+                    var cost = footprint.Gap(position.xz) + turn * turnLength;
+                    if (closest.IsCloserThanBest(cost, candidate) &&
+                        Grid.IsReachable(agent, position, new float3(edge.x, position.y, edge.y)))
+                    {
+                        closest.Consider(i, candidate, cost);
+                    }
                 }
 
                 return closest.Entity;
