@@ -12,6 +12,7 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 | `TerrainHeightAuthoring` | A baked heightfield. Without one the ground is flat |
 | `NavObstacleAuthoring` | Blocks a box. Buildings block their footprint |
 | `NavAreaAuthoring` | Marks a box as water, blocked, or a bridge deck with water below |
+| `DockAuthoring` | Bays where vehicles load and unload, see [docks](economy.md#docks) |
 
 - Flooded cells become water and steep ones blocked.
 - Obstacles restamp the grid only when their footprints change. A building that just changes archetype, such as
@@ -135,8 +136,13 @@ once its planned part is driven. Later paths wait a frame (`PathStats.DeferredDr
 - `PathState.SkipCorners` never cuts a tight waypoint: it passes once touched or behind the unit, and a gear change
   only on arrival or once overshot. `TryFollowGoal` and the small goal move never move a tight last waypoint; a goal
   that moves searches again.
-- The Paths debug layer draws tight legs in orange, reverse legs dashed, gear changes as dots and each wheeled
-  vehicle's rear axle.
+- **Pose ends.** A move with `MoveDestination.Facing` set, as into a [dock bay](economy.md#docks), ends as a pose:
+  the path's last stretch becomes the forward curve, or a search, to the pose `RunIn` metres before the goal, then
+  the run-in straight, all tight. The run-in shrinks to what lies ahead of the unit, and a route cut short of its goal
+  ends as drawn. `MoveDestination.ExitRun` starts the path with that many metres straight ahead, tight, and routes
+  from its end.
+- The Paths debug layer draws tight legs in orange, reverse legs dashed, gear changes as dots, each wheeled
+  vehicle's rear axle and dock bays.
 
 ## Units
 

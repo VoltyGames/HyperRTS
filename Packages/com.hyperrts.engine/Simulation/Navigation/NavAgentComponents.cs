@@ -70,6 +70,9 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public readonly float HullWallMargin => Radius + 2f + 0.25f * HalfSegment;
 
+        /// <summary>Drives into dock bays: a vehicle the drive planner plans for. Infantry and aircraft walk to the edge.</summary>
+        public readonly bool UsesBays => Layer != NavLayer.Air && DrivePlanner.Applies(this);
+
         /// <summary>The core segment's half on the XZ plane, along the unit's facing.</summary>
         public readonly float2 SegmentAxis(quaternion rotation) => SegmentAxis(rotation, Radius, HullLength);
 
@@ -110,6 +113,15 @@ namespace HyperRTS.Simulation.Navigation
         /// search again at most every <see cref="PathState.ChaseSearchSeconds"/>.
         /// </summary>
         public bool Chase;
+
+        /// <summary>The facing to stop with, zero for any: a set facing makes the end a pose the drive planner plans to.</summary>
+        public float2 Facing;
+
+        /// <summary>Metres driven straight along <see cref="Facing"/> into the end, as into a dock bay.</summary>
+        public float RunIn;
+
+        /// <summary>Metres driven straight ahead before the path proper, as out of a dock bay.</summary>
+        public float ExitRun;
     }
 
     /// <summary>Enabled when locomotion ended the move by itself, with why. Disabled while a move runs.</summary>

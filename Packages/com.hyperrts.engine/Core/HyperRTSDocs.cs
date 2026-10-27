@@ -19,6 +19,7 @@ namespace HyperRTS.Core
         public const string Buildings = Pages + "economy.md#buildings";
         public const string Capture = Pages + "economy.md#capture";
         public const string Combat = Pages + "combat.md#combat";
+        public const string Docks = Pages + "economy.md#docks";
         public const string Effects = Pages + "support.md#effects";
         public const string Fields = Pages + "combat.md#fields";
         public const string Input = Pages + "client.md#input";

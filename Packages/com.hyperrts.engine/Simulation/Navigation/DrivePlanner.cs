@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Navigation
     /// Checks a vehicle can drive a fresh path: its start and each corner, swept along the forward curve its chassis
     /// would drive, or for tracks a turn in place. A stretch that hits a wall, and the start whenever walls held the
     /// unit, is planned by a <see cref="DriveSearch"/> into <see cref="PathWaypoint.Tight"/> waypoints. Easy paths
-    /// run no search.
+    /// run no search. A pose end and a straight exit run, as into and out of a dock bay, are always tight.
     /// </summary>
     internal partial struct DrivePlanner : IDisposable
     {
@@ -29,6 +29,10 @@ namespace HyperRTS.Simulation.Navigation
         private NativeList<PathWaypoint> _output;
         private AxlePose _start;
         private float _height;
+
+        // The facing a pose end stops with, zero for a point end, and the straight run into it.
+        private float2 _endFacing;
+        private float _runIn;
 
         // Path distance the output's waypoints already cover.
         private float _written;
@@ -59,6 +63,8 @@ namespace HyperRTS.Simulation.Navigation
             _output = default;
             _start = default;
             _height = 0f;
+            _endFacing = float2.zero;
+            _runIn = 0f;
             _written = 0f;
             _budget = 0;
             _defers = false;
@@ -105,7 +111,9 @@ namespace HyperRTS.Simulation.Navigation
             _planned = false;
             WaitsForBudget = false;
             PartlyPlanned = false;
-            Trace(request.Start.xz, points);
+            AddExitRun(request);
+            Trace(request.RouteStart.xz, points);
+            SetEnd(request);
             if (_corners.Length < 2)
             {
                 foreach (var point in points)
@@ -122,7 +130,7 @@ namespace HyperRTS.Simulation.Navigation
                 cursor = PlanCorner(corner, cursor);
             }
 
-            AddDrawn(float.PositiveInfinity);
+            PlanEnd();
             return !WaitsForBudget;
         }
 
@@ -169,17 +177,6 @@ namespace HyperRTS.Simulation.Navigation
             var from = math.max(cursor, at - fillet - HullLength);
             var to = math.min(Total, at + fillet + HullLength);
             return CanDrive(from, to) ? to : Search(from, to);
-        }
-
-        private readonly bool CanDrive(float from, float to)
-        {
-            var start = PoseAt(from);
-            if (!_search.TryFit(start, GoalAt(to), out var curve, out var length))
-            {
-                return false;
-            }
-
-            return _search.IsClear(curve, length, math.max(_search.Depth(start, float.PositiveInfinity), SweepSlack));
         }
 
         private readonly bool CanPivot(int corner)
@@ -233,16 +230,7 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             _planned = true;
-
-            // A stretch that doesn't follow on from the last starts at its pose on the path.
-            var joins = from <= _written;
-            AddDrawn(from);
-            if (!joins)
-            {
-                var center = PointAt(from);
-                _output.Add(new PathWaypoint { Position = new float3(center.x, _height, center.y), Tight = true });
-            }
-
+            BeginStretch(from);
             _output.AddRange(_tight.AsArray());
             _written = to;
             return to;

@@ -13,10 +13,11 @@ namespace HyperRTS.Simulation.Resources
 {
     /// <summary>
     /// Runs Gather orders: walk to the node, fill up, deposit at an owned drop-off chosen once per trip by its edge
-    /// distance and the turn needed to face it, repeat.
+    /// distance and the turn needed to face it, repeat. Vehicles work at dock bays where the target has them.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
+    [UpdateAfter(typeof(DockSystem))]
     public partial struct GatherSystem : ISystem
     {
         private EntityQuery _nodes;
@@ -24,6 +25,7 @@ namespace HyperRTS.Simulation.Resources
         private ComponentLookup<ResourceNode> _nodeLookup;
         private BufferLookup<ResourceStock> _stockLookup;
         private TargetReach _reach;
+        private DockBays _bays;
         private ComponentLookup<Faction> _factionLookup;
         private BufferLookup<StatModifier> _modifierLookup;
         private ComponentLookup<PlayerStats> _statsLookup;
@@ -38,6 +40,7 @@ namespace HyperRTS.Simulation.Resources
             _nodeLookup = state.GetComponentLookup<ResourceNode>();
             _stockLookup = state.GetBufferLookup<ResourceStock>();
             _reach = new TargetReach(ref state);
+            _bays = new DockBays(ref state);
             state.RequireForUpdate<MapSettings>();
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _modifierLookup = state.GetBufferLookup<StatModifier>(true);
@@ -57,6 +60,7 @@ namespace HyperRTS.Simulation.Resources
             _nodeLookup.Update(ref state);
             _stockLookup.Update(ref state);
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
+            _bays.Update(ref state);
             _factionLookup.Update(ref state);
             _modifierLookup.Update(ref state);
             _statsLookup.Update(ref state);
@@ -70,6 +74,7 @@ namespace HyperRTS.Simulation.Resources
                 NodeLookup = _nodeLookup,
                 StockLookup = _stockLookup,
                 Reach = _reach,
+                Bays = _bays,
                 FactionLookup = _factionLookup,
                 ModifierLookup = _modifierLookup,
                 StatsLookup = _statsLookup,
@@ -83,6 +88,8 @@ namespace HyperRTS.Simulation.Resources
         [WithPresent(typeof(MoveDestination), typeof(Arrival))]
         private partial struct GatherJob : IJobEntity
         {
+            private const float RetrySeconds = 0.5f;
+
             public float DeltaTime;
             [ReadOnly] public NativeArray<Entity> Nodes;
             [ReadOnly] public NativeArray<Entity> DropOffs;
@@ -90,6 +97,7 @@ namespace HyperRTS.Simulation.Resources
             public ComponentLookup<ResourceNode> NodeLookup;
             public BufferLookup<ResourceStock> StockLookup;
             public TargetReach Reach;
+            public DockBays Bays;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public BufferLookup<StatModifier> ModifierLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
@@ -97,8 +105,8 @@ namespace HyperRTS.Simulation.Resources
 
             private void Execute(Entity entity, ref Harvester harvester, ref HarvestState harvest,
                 ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy, ref MoveDestination destination,
-                EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived, in LocalTransform transform,
-                in NavAgent agent, in Faction faction)
+                EnabledRefRW<MoveDestination> moving, ref Arrival arrival, EnabledRefRW<Arrival> arrived,
+                in LocalTransform transform, in NavAgent agent, in Faction faction)
             {
                 if (!busy.ValueRO || order.Value.Type != OrderType.Gather)
                 {
@@ -107,8 +115,8 @@ namespace HyperRTS.Simulation.Resources
 
                 if (harvest.Phase == HarvestPhase.Returning)
                 {
-                    Return(entity, ref harvester, ref harvest, ref destination, busy, moving, arrived, transform,
-                        agent, faction.Value);
+                    Return(entity, ref harvester, ref harvest, ref destination, busy, moving, arrived, arrival.Reason,
+                        transform, agent, faction.Value);
                     return;
                 }
 
@@ -120,7 +128,8 @@ namespace HyperRTS.Simulation.Resources
 
                 var node = order.Value.Target;
                 var nodePosition = Reach.Position(node);
-                var toNode = Reach.Approach(node, transform, agent, ref destination, moving, arrived);
+                var toNode = Arrive(node, entity, ref harvest, ref destination, moving, arrived, arrival.Reason,
+                    transform, agent);
                 if (!ActiveOrder.StopsShort(toNode, busy, moving))
                 {
                     Gather(ref harvester, ref harvest, node, nodePosition);
@@ -167,7 +176,8 @@ namespace HyperRTS.Simulation.Resources
 
             private void Return(Entity entity, ref Harvester harvester, ref HarvestState harvest,
                 ref MoveDestination destination, EnabledRefRW<ActiveOrder> busy, EnabledRefRW<MoveDestination> moving,
-                EnabledRefRW<Arrival> arrived, in LocalTransform transform, in NavAgent agent, byte faction)
+                EnabledRefRW<Arrival> arrived, ArrivalReason reason, in LocalTransform transform, in NavAgent agent,
+                byte faction)
             {
                 // Empty-handed goes straight back to work.
                 if (harvester.CargoAmount <= 0)
@@ -190,7 +200,7 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
-                var walk = Reach.Approach(dropOff, transform, agent, ref destination, moving, arrived);
+                var walk = Arrive(dropOff, entity, ref harvest, ref destination, moving, arrived, reason, transform, agent);
                 if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;

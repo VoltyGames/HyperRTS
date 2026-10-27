@@ -36,6 +36,17 @@ namespace HyperRTS.Simulation.Resources
 
         /// <summary>Where this trip delivers, chosen once so a turning truck doesn't flip between two.</summary>
         public Entity DropOff;
+
+        /// <summary>The dock whose bay it holds or waits in line for.</summary>
+        public Entity Dock;
+
+        public int Bay;
+
+        /// <summary>Its place in the bay's line, 1 at the front; 0 while it holds the bay.</summary>
+        public int Place;
+
+        /// <summary>Seconds until a vehicle in line tries again for a bay.</summary>
+        public float RetryIn;
     }
 
     /// <summary>Accepts harvested cargo from its owner's harvesters.</summary>

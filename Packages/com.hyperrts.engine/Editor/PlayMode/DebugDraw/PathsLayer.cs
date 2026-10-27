@@ -11,7 +11,8 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
 {
     /// <summary>
     /// Each unit's remaining waypoints, planned manoeuvres in orange with reverse legs dashed and gear changes as
-    /// dots, each vehicle's rear axle, and a dotted line to its attack target.
+    /// dots, each vehicle's rear axle, a dotted line to its attack target, and dock bays: run-in in green, exit in
+    /// yellow and a line to the occupant.
     /// </summary>
     public sealed class PathsLayer : DebugLayer
     {
@@ -26,6 +27,7 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
             DrawPaths(entityManager);
             DrawRearAxles(entityManager);
             DrawAttackTargets(entityManager);
+            DrawBays(entityManager);
         }
 
         private static void DrawPaths(EntityManager entityManager)
@@ -76,6 +78,30 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
                     var facing = math.normalizesafe(transform.Forward().xz);
                     var rear = chassis.Pose(transform.Position.xz, facing).Position;
                     Handles.DrawWireDisc(new Vector3(rear.x, transform.Position.y, rear.y), Vector3.up, AxleSize);
+                }
+            }
+        }
+
+        private static void DrawBays(EntityManager entityManager)
+        {
+            using var query = entityManager.CreateEntityQuery(typeof(DockBay), typeof(LocalTransform));
+            using var entities = query.ToEntityArray(Allocator.Temp);
+            foreach (var entity in entities)
+            {
+                var transform = entityManager.GetComponentData<LocalTransform>(entity);
+                foreach (var bay in entityManager.GetBuffer<DockBay>(entity, true))
+                {
+                    var pose = bay.WorldPose(transform);
+                    var stop = (Vector3)pose.Stop;
+                    Handles.color = Color.green;
+                    Handles.DrawLine(stop - new Vector3(pose.Facing.x, 0f, pose.Facing.y) * pose.RunIn, stop);
+                    Handles.DrawWireDisc(stop, Vector3.up, BayPose.StopReach);
+                    Handles.color = Color.yellow;
+                    Handles.DrawLine(stop, pose.Exit);
+                    if (entityManager.Exists(bay.Occupant) && entityManager.HasComponent<LocalTransform>(bay.Occupant))
+                    {
+                        Handles.DrawDottedLine(stop, entityManager.GetComponentData<LocalTransform>(bay.Occupant).Position, 4f);
+                    }
                 }
             }
         }

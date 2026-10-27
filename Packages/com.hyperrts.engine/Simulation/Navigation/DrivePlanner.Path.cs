@@ -25,11 +25,17 @@ namespace HyperRTS.Simulation.Navigation
         private readonly AxlePose PoseAt(float distance) =>
             distance <= 0f ? _start : Chassis.Pose(PointAt(distance), HeadingAt(distance));
 
-        // The path's end is a point; anywhere else a pose along the path.
-        private readonly DriveGoal GoalAt(float distance) =>
-            distance >= Total - 1e-3f
-                ? DriveGoal.ToPoint(_corners[_corners.Length - 1])
-                : DriveGoal.ToPose(PointAt(distance), HeadingAt(distance));
+        // A pose along the path; at its end the point, or for a pose end where its run-in starts.
+        private readonly DriveGoal GoalAt(float distance)
+        {
+            if (distance < Total - 1e-3f)
+            {
+                return DriveGoal.ToPose(PointAt(distance), HeadingAt(distance));
+            }
+
+            var end = _corners[_corners.Length - 1];
+            return HasPoseEnd ? DriveGoal.ToPose(end - _endFacing * _runIn, _endFacing) : DriveGoal.ToPoint(end);
+        }
 
         private readonly float2 PointAt(float distance)
         {

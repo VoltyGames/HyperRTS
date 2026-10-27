@@ -24,6 +24,28 @@ drop-off is gone, dies, is unfinished or changes owner. Among its owner's finish
 turn radius, or half its hull for a vehicle that pivots. So a truck keeps to the drop-off ahead, and one turning
 round never flips between two.
 
+### Docks
+
+`DockAuthoring` on a drop-off or resource node lists bays where vehicles load and unload. Each bay is a `stop`
+transform (where the vehicle's centre stands, its +Z the facing), an optional `exit` (12 m straight ahead without
+one) and a `runIn`, the metres driven straight before the stop (6 by default). **Fill Bays** in the context menu fills
+the list from `Bay_NN` children and their `Bay_NN_Exit` siblings. Bays are driven through: in along the run-in, out
+straight ahead.
+
+- A harvester with a chassis (`NavAgent.UsesBays`) claims the free bay nearest it through `DockBays`, drives to the
+  stop as a pose goal (`MoveDestination.Facing` and `RunIn`) and works there once within 0.75 m and 15 degrees of it.
+  A drive that gives up short of the stop finishes the order as a stuck walk-up does; one that ends off the pose plans
+  the rest from where it stands.
+- With every bay taken it parks on a bay's run-in line, one hull plus 2 m back per place, facing the bay, and tries
+  again every 0.5 s. Places move up as the line ahead empties, and a newcomer never claims a bay someone waits for.
+- Leaving, its path starts with a straight run to the exit (`MoveDestination.ExitRun`), so it never turns in the bay,
+  and the bay frees once its hull is clear of the stop.
+- A holder holds its bay every frame. `DockSystem` frees bays nobody held since its last run, so a bay frees when its
+  vehicle dies or its order moves on.
+- Infantry and aircraft ignore bays and walk to the footprint's edge.
+- The Paths debug layer and the Scene view draw each bay's stop, run-in in green and exit in yellow, the debug layer
+  with a dotted line to the occupant.
+
 Nodes are finite or regrow. Harvesters move on when a node runs dry. A killed delivery carrier pays nothing. Steady
 income, refills and casualty income scale with the player's `Income` stat.
 

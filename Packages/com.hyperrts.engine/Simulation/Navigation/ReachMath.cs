@@ -3,11 +3,14 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>Walk-up helpers for order behaviours that act on a target entity (gather, build, deposit).</summary>
+    /// <summary>Walk-up helpers for order behaviours that act on a target entity (gather, build, deposit) or its dock bays.</summary>
     public static class ReachMath
     {
         /// <summary>How far a unit's edge may be from the nearest it can get to a footprint.</summary>
         public const float Slack = 1f;
+
+        // A vehicle parked this near its place in line stays put rather than creeping onto it.
+        private const float LineSlack = 1.5f;
 
         /// <summary>
         /// Gap from a unit's core segment to a footprint within which it is at it. Closed cells reach up to a cell past
@@ -52,6 +55,60 @@ namespace HyperRTS.Simulation.Navigation
             MoveTo(ref destination, moving, new float3(edge.x, unit.y, edge.y));
             arrived.ValueRW = false;
             return WalkUp.Walking;
+        }
+
+        /// <summary>
+        /// Drives a vehicle along the bay's run-in until it stands at the stop. A drive that gave up short of the stop
+        /// is stuck; one that ended off the stop's pose plans the rest from where it is.
+        /// </summary>
+        public static WalkUp ApproachBay(ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
+            EnabledRefRW<Arrival> arrived, ArrivalReason reason, in BayPose bay, float2 unit, float2 facing)
+        {
+            if (bay.IsAtStop(unit, facing))
+            {
+                moving.ValueRW = false;
+                arrived.ValueRW = false;
+                return WalkUp.Reached;
+            }
+
+            var isGoalStop = math.distancesq(destination.Value.xz, bay.Stop.xz) < 0.01f;
+            var gaveUp = arrived.ValueRO && !moving.ValueRO && reason == ArrivalReason.Stalled;
+            if (isGoalStop && gaveUp)
+            {
+                return WalkUp.Stuck;
+            }
+
+            MoveToPose(ref destination, moving, bay.Stop, bay.Facing, bay.RunIn);
+            arrived.ValueRW = false;
+            return WalkUp.Walking;
+        }
+
+        /// <summary>Parks a vehicle at its place in the bay's line, facing the bay, and keeps it there.</summary>
+        public static void WaitInLine(ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
+            EnabledRefRW<Arrival> arrived, in BayPose bay, int place, float hullLength, float2 unit)
+        {
+            var spot = bay.WaitSpot(place, hullLength);
+            arrived.ValueRW = false;
+            if (!moving.ValueRO && math.distance(unit, spot.xz) <= LineSlack)
+            {
+                return;
+            }
+
+            MoveToPose(ref destination, moving, spot, bay.Facing, 0f);
+        }
+
+        /// <summary>Points locomotion at a pose goal, rewriting it only when it changed, so pathing isn't restarted.</summary>
+        public static void MoveToPose(ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, float3 goal,
+            float2 facing, float runIn)
+        {
+            var same = math.distancesq(destination.Value.xz, goal.xz) < 0.01f && math.all(destination.Facing == facing);
+            if (moving.ValueRO && same)
+            {
+                return;
+            }
+
+            destination = new MoveDestination { Value = goal, Facing = facing, RunIn = runIn };
+            moving.ValueRW = true;
         }
 
         /// <summary>

@@ -13,6 +13,12 @@ namespace HyperRTS.Simulation.Navigation
         public float2 Facing;
 
         public float3 Goal;
+
+        /// <summary><see cref="MoveDestination.Facing"/>: zero, or the pose the path must end in.</summary>
+        public float2 GoalFacing;
+
+        public float RunIn;
+        public float ExitRun;
         public NavAgent Agent;
 
         /// <summary><see cref="MoveDestination.Group"/>: members of one share a flow field.</summary>
@@ -25,5 +31,8 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Walls held the unit when it asked, so the drive planner plans its way out from the start.</summary>
         public bool Stuck;
+
+        /// <summary>Where the route starts: past the straight exit run, if there is one.</summary>
+        public readonly float3 RouteStart => Start + new float3(Facing.x, 0f, Facing.y) * ExitRun;
     }
 }
