@@ -167,8 +167,8 @@ within reach (`CrowdVisitor`) and the walls' distance field, and picks the cheap
   both keep right.
 - The planned velocity is taken without sampling when it hits nothing, or when no neighbour is in reach and no
   wall within the wall margin. Parked units never steer. A three-point turn or a back-off skips steering, and so
-  does a planned manoeuvre: it waits while a moving neighbour lies in its next 3 m of sweep, and leaves standing ones
-  to the hull room and the push.
+  does a planned manoeuvre: it stands while driving on would run deeper into a neighbour within the 1.5 s horizon
+  than standing would, and one held too long plans again, so two waiting on each other can't deadlock.
 
 Velocities are last frame's (`Velocity`). The chosen velocity goes back to `Locomotion` as the heading and speed to
 drive, which wheels turn into the curvature they steer for, so a vehicle turns as its chassis can rather than
