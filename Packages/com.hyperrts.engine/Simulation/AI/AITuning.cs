@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.AI
 
         [Tooltip("Clear margin (metres) kept around each new building so units don't get boxed in.")]
         [Min(0f)]
-        public float buildingGap = 2f;
+        public float buildingGap = 4f;
 
         [Tooltip("Attack only enemies its team can see, or buildings it has explored, like a human; off knows every enemy position.")]
         public bool limitedByFog;

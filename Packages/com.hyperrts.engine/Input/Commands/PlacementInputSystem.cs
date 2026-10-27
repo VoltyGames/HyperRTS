@@ -27,6 +27,7 @@ namespace HyperRTS.Input.Commands
         private WorldPointer _pointer;
         private PlacementRotation _rotation;
         private SeenEnemies _enemies;
+        private VisibleFootprints _footprints;
 
         // The line last planned into the PlacementSegment buffer, so a still cursor doesn't replan it.
         private PlacementLine _line;
@@ -39,6 +40,7 @@ namespace HyperRTS.Input.Commands
             _pointer = new WorldPointer(ref CheckedStateRef);
             _rotation = PlacementRotation.Start();
             _enemies = new SeenEnemies(ref CheckedStateRef);
+            _footprints = new VisibleFootprints(ref CheckedStateRef);
             RequireForUpdate<PlacementState>();
             RequireForUpdate<ScrollEdge>();
             RequireForUpdate<PointerState>();
@@ -162,7 +164,8 @@ namespace HyperRTS.Input.Commands
             var spot = asked.Snap(map).Grounded(grid);
             placement.Position = spot.Center;
             placement.Yaw = spot.Yaw;
-            placement.Valid = spot.IsValid(map, grid) && !_enemies.Block(spot);
+            var clear = spot.IsValid(map, grid) && _footprints.Fit(spot, map.BuildingGap);
+            placement.Valid = clear && !_enemies.Block(spot);
         }
 
         private void PauseEdgeScroll(bool paused)
@@ -186,10 +189,12 @@ namespace HyperRTS.Input.Commands
             {
                 CompleteDependency();
                 segments.Clear();
+                using var footprints = _footprints.Read();
                 for (var i = 0; i < line.Count; i++)
                 {
                     var spot = line.Segment(i).Grounded(grid);
-                    segments.Add(new PlacementSegment { Spot = spot, Ground = spot.IsValid(map, grid) });
+                    var clear = spot.IsValid(map, grid) && spot.Fits(footprints.AsArray(), map.BuildingGap);
+                    segments.Add(new PlacementSegment { Spot = spot, Ground = clear });
                 }
 
                 _line = line;

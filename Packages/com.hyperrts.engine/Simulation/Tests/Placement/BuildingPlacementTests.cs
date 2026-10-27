@@ -14,7 +14,8 @@ namespace HyperRTS.Simulation.Tests.Placement
 {
     /// <summary>
     /// Placing a building: quarter turns snap edges onto cells, free yaws land on the half-cell lattice, turned
-    /// neighbours sit flush, the yaw survives the wire, and only enemy units on the spot rule it out.
+    /// neighbours sit flush, the building gap refuses narrow lanes, the yaw survives the wire, and only enemy units on
+    /// the spot rule it out.
     /// </summary>
     public class BuildingPlacementTests
     {
@@ -134,6 +135,55 @@ namespace HyperRTS.Simulation.Tests.Placement
             _world.Tick();
 
             Assert.AreEqual(expected, PlayerSites());
+        }
+
+        [TestCase(14f, 10f, 0, TestName = "BuildingGap_FlushAtAQuarterYaw_IsPlaced")]
+        [TestCase(14f, 7f, -1, TestName = "BuildingGap_FlushAtAFreeYaw_IsPlaced")]
+        public void BuildingGap_FlushNeighbours_AreBothPlaced(float x, float z, int turn)
+        {
+            UseBuildingGap(4f);
+            var yaw = turn < 0 ? TiltedYaw : Quarter(turn);
+            var prefab = FactoryPrefab(turn < 0 ? new float2(5f, 5f) : new float2(4f, 4f));
+            Command(prefab, new float3(10f, 0f, 10f), yaw);
+            Command(prefab, new float3(x, 0f, z), yaw);
+            _world.Tick();
+
+            Assert.AreEqual(2, PlayerSites());
+        }
+
+        [TestCase(0.05f, true)]
+        [TestCase(0.5f, false)]
+        [TestCase(2f, false)]
+        [TestCase(3.9f, false)]
+        [TestCase(4f, true)]
+        [TestCase(6f, true)]
+        public void BuildingGap_RefusesOnlyALaneNarrowerThanTheRule(float gap, bool places)
+        {
+            UseBuildingGap(4f);
+            // The new site spans x 8 to 12, so this neighbour's right edge sits gap metres from it.
+            _world.SpawnBuilding(0, new float3(6f - gap, 0f, 10f), new float2(4f, 4f));
+
+            var site = Place(FactoryPrefab(new float2(4f, 4f)), new float3(10f, 0f, 10f), Quarter(0));
+
+            Assert.AreEqual(places, site != Entity.Null);
+        }
+
+        [Test]
+        public void Gap_MeasuresTurnedBoxes_AndIsZeroWhenTheyOverlap()
+        {
+            var square = new NavBox(float3.zero, quaternion.identity, new float2(2f, 2f));
+            var diamond = new NavBox(new float3(4f, 0f, 0f), quaternion.RotateY(math.PI * 0.25f), new float2(2f, 2f));
+
+            Assert.AreEqual(3f - math.SQRT2, square.Gap(diamond), 1e-4f, "the diamond's corner to the square's side");
+            Assert.AreEqual(square.Gap(diamond), diamond.Gap(square), 1e-4f);
+            Assert.AreEqual(0f, square.Gap(new NavBox(new float3(1f, 0f, 0f), quaternion.identity, new float2(2f, 2f))));
+        }
+
+        private void UseBuildingGap(float gap)
+        {
+            var map = _world.Singleton<MapSettings>();
+            map.BuildingGap = gap;
+            _world.EntityManager.SetComponentData(_world.MatchEntity(), map);
         }
 
         private int PlayerSites()

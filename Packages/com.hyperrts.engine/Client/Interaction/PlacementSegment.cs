@@ -10,7 +10,7 @@ namespace HyperRTS.Client.Interaction
         /// <summary>Grounded and yawed along the line, as the server will check it.</summary>
         public BuildingSpot Spot;
 
-        /// <summary>The cells under it allow it, cached until the grid changes.</summary>
+        /// <summary>The cells under it and the gap to seen footprints allow it, cached until the grid changes.</summary>
         public bool Ground;
 
         /// <summary><see cref="Ground"/> with no seen enemy unit on it.</summary>

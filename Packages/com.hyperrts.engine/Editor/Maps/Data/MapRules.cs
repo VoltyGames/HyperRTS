@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>
     /// The thresholds a map is measured against and the match settings it is built with (the built scene's match
-    /// takes its nav cell size and max slope from here). Exactly one <c>*.rules.json</c> per project.
+    /// takes its nav cell size, building gap and max slope from here). Exactly one <c>*.rules.json</c> per project.
     /// </summary>
     [Serializable]
     [MapLibraryItem("rules")]
@@ -18,6 +18,10 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Pathfinding cell size the built match uses (metres).")]
         public float navCellSize = 1f;
+
+        [Tooltip("Least clear gap between buildings that don't touch (metres), so vehicles fit between them.")]
+        [Min(0f)]
+        public float buildingGap;
 
         [Tooltip("Steepest drivable ground (degrees); steeper terrain blocks units.")]
         public float maxSlope = 30f;

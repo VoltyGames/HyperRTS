@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
@@ -17,7 +18,7 @@ namespace HyperRTS.Simulation.Tests.AI
     /// <summary>Skirmish AI economy: harvesting in the map's expansion order, spending across producers, build orders.</summary>
     public class AIEconomyTests
     {
-        private const float BuildingGap = 2f;
+        private const float BuildingGap = 4f;
 
         private TestWorld _world;
         private ResourceType _supplies;
@@ -31,6 +32,9 @@ namespace HyperRTS.Simulation.Tests.AI
             var writer = new EntityManagerWriter(_world.EntityManager, _world.Player(2));
             AIPlayerSetup.Add(ref writer,
                 new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 50, BuildingGap = BuildingGap });
+            var map = _world.Singleton<MapSettings>();
+            map.BuildingGap = BuildingGap;
+            _world.EntityManager.SetComponentData(_world.MatchEntity(), map);
         }
 
         [TearDown]
@@ -142,6 +146,35 @@ namespace HyperRTS.Simulation.Tests.AI
             var offset = math.abs(_world.Get<LocalTransform>(placed[0]).Position.xz);
             Assert.GreaterOrEqual(math.cmax(offset) - 4f, BuildingGap - 1e-3f, "a lane is left next to the HQ");
             Assert.GreaterOrEqual(Owned("Soldier").Count, 1, "then a soldier was trained there");
+        }
+
+        [Test]
+        public void BuildOrder_KeepsLanesOfTheBuildingGapBetweenTheBasesBuildings()
+        {
+            var (barracks, _) = BuildOrderBase();
+            SpawnBuilder(new float3(0f, 0f, -6f), barracks);
+            SetBuildOrder((barracks, 3));
+            _world.AddResources(2, _supplies, 1000);
+
+            _world.Run(12f);
+
+            var buildings = Owned("Barracks");
+            buildings.AddRange(Owned("HQ"));
+            Assert.AreEqual(4, buildings.Count, "three barracks beside the HQ");
+            for (var i = 0; i < buildings.Count; i++)
+            {
+                for (var j = i + 1; j < buildings.Count; j++)
+                {
+                    var gap = Box(buildings[i]).Gap(Box(buildings[j]));
+                    Assert.GreaterOrEqual(gap, BuildingGap - 1e-3f, $"a lane between buildings {i} and {j}");
+                }
+            }
+        }
+
+        private NavBox Box(Entity building)
+        {
+            var transform = _world.Get<LocalTransform>(building);
+            return new NavBox(transform.Position, transform.Rotation, _world.Get<NavObstacle>(building).Size);
         }
 
         [Test]

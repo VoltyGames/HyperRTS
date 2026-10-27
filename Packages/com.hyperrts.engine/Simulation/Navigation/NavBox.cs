@@ -57,6 +57,22 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Gap between the box and the segment from a to b, 0 when they touch.</summary>
         public float Gap(float2 a, float2 b) => NavCapsule.SegmentRectDistance(Local(a), Local(b), -Half, Half);
 
+        /// <summary>Least distance between the two boxes, 0 when they overlap.</summary>
+        public float Gap(in NavBox other)
+        {
+            if (Overlaps(other))
+            {
+                return 0f;
+            }
+
+            // The nearest points lie on one of this box's sides.
+            var a = Corner(-1f, -1f);
+            var b = Corner(1f, -1f);
+            var c = Corner(1f, 1f);
+            var d = Corner(-1f, 1f);
+            return math.min(math.min(other.Gap(a, b), other.Gap(b, c)), math.min(other.Gap(c, d), other.Gap(d, a)));
+        }
+
         /// <summary>The point <paramref name="offset"/> out from the edge nearest <paramref name="point"/>.</summary>
         public float2 EdgePoint(float2 point, float offset)
         {
@@ -78,6 +94,9 @@ namespace HyperRTS.Simulation.Navigation
 
         private bool OverlapsAlong(in NavBox other, float2 offset, float2 axis) =>
             math.abs(math.dot(offset, axis)) < Reach(axis) + other.Reach(axis) - TouchTolerance;
+
+        private float2 Corner(float right, float forward) =>
+            Center + Right * (Half.x * right) + Forward * (Half.y * forward);
 
         private float2 Local(float2 point)
         {

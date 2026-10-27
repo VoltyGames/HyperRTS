@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
+using Unity.Entities;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Match
@@ -49,5 +50,17 @@ namespace HyperRTS.Simulation.Match
 
         [Tooltip("Degrees: the start kit's forward.")]
         public float spawnYaw;
+
+        /// <summary>Adds the starting stockpile to the player's stock.</summary>
+        public void AddStartingResources(DynamicBuffer<ResourceStock> stock)
+        {
+            foreach (var quantity in startingResources)
+            {
+                if (quantity.type != null)
+                {
+                    ResourceMath.Add(stock, quantity.type, quantity.amount);
+                }
+            }
+        }
     }
 }

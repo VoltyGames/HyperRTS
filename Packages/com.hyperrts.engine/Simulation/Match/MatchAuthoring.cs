@@ -4,7 +4,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
-using HyperRTS.Simulation.Resources;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -29,6 +28,10 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("Pathfinding grid cell size. Smaller is more precise but slower.")]
         [Min(0.25f)]
         public float navCellSize = 1f;
+
+        [Tooltip("Least clear gap (metres) between buildings that don't touch, so vehicles fit between them. 0 = no rule.")]
+        [Min(0f)]
+        public float buildingGap;
 
         [Tooltip("Fog-of-war grid cell size.")]
         [Min(0.5f)]
@@ -125,6 +128,7 @@ namespace HyperRTS.Simulation.Match
                     Min = authoring.MapRect.min,
                     Size = authoring.mapSize,
                     NavCellSize = authoring.navCellSize,
+                    BuildingGap = authoring.buildingGap,
                     FogCellSize = authoring.fogCellSize,
                     FogOfWar = authoring.fogOfWar,
                     WaterLevel = authoring.waterLevel,
@@ -230,7 +234,7 @@ namespace HyperRTS.Simulation.Match
                 var stock = PlayerSetup.Add(ref writer, faction, playerName, color, populationCap: 0);
                 writer.Add(new PlayerSpawn { Position = slot.spawnPosition, Yaw = math.radians(slot.spawnYaw) });
                 SetComponent(player, new PlayerSide { Value = slot.side });
-                AddStartingResources(stock, slot);
+                slot.AddStartingResources(stock);
                 var buildOrder = slot.buildOrder != null ? slot.buildOrder : authoring.defaultBuildOrder;
 
                 if (slot.control == PlayerControl.AI)
@@ -281,17 +285,6 @@ namespace HyperRTS.Simulation.Match
                 }
 
                 return steps;
-            }
-
-            private static void AddStartingResources(DynamicBuffer<ResourceStock> stock, PlayerSlot slot)
-            {
-                foreach (var quantity in slot.startingResources)
-                {
-                    if (quantity.type != null)
-                    {
-                        ResourceMath.Add(stock, quantity.type, quantity.amount);
-                    }
-                }
             }
         }
     }

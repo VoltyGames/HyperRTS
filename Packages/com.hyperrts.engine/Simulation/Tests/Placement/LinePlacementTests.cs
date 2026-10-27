@@ -12,7 +12,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests.Placement
 {
-    /// <summary>Dragged lines of wall segments: axes, diagonals, skipped cells, running out mid-line and the builders' queue.</summary>
+    /// <summary>
+    /// Dragged lines of wall segments: axes, diagonals, skipped cells, the building gap, running out mid-line and the
+    /// builders' queue.
+    /// </summary>
     public class LinePlacementTests
     {
         private static readonly float3 Far = new(90f, 0f, 90f);
@@ -113,6 +116,26 @@ namespace HyperRTS.Simulation.Tests.Placement
             var sites = SitePositions();
             Assert.AreEqual(3, sites.Length);
             Assert.AreEqual(8f, sites[1].x, 1e-4f, "the blocked segment is skipped, the line goes on");
+            Assert.AreEqual(700, _world.GetResources(1, _supplies));
+        }
+
+        [Test]
+        public void PlaceLine_TwoMetresFromABuilding_LosesOnlyTheSegmentsInTheGap()
+        {
+            var prefab = WallPrefab();
+            var map = _world.Singleton<MapSettings>();
+            map.BuildingGap = 4f;
+            _world.EntityManager.SetComponentData(_world.MatchEntity(), map);
+            // Segments span z -0.1 to 1.1; the building's near side is 2 m beyond, over x 7 to 9.
+            _world.SpawnBuilding(0, new float3(8f, 0f, 4.1f), new float2(2f, 2f));
+            _world.PlaceLine(Builder(prefab, float3.zero), prefab, new float3(2f, 0f, 0.3f), new float3(16.2f, 0f, 0.3f));
+            _world.Tick();
+
+            var sites = SitePositions();
+            Assert.AreEqual(3, sites.Length, "segments within 4 m of the building, corners included, are skipped");
+            Assert.AreEqual(2f, sites[0].x, 1e-4f);
+            Assert.AreEqual(14f, sites[1].x, 1e-4f);
+            Assert.AreEqual(16f, sites[2].x, 1e-4f, "flush with its neighbour");
             Assert.AreEqual(700, _world.GetResources(1, _supplies));
         }
 

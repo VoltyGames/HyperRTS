@@ -74,6 +74,14 @@ cleared pieces the next frame with no remains, no `Dead` and so no cues. Multipl
 The server also refuses overlap with standing obstacles and sites placed the same
 frame, comparing turned boxes (`NavBox.Overlaps`), so neighbours at any angle may touch.
 
+The building gap rule keeps lanes vehicles can drive. `MapSettings.BuildingGap`, baked from `MatchAuthoring.buildingGap`
+(0 turns it off), is the least clear gap between a spot and any standing obstacle or site that it doesn't touch.
+`NavBox.Gap` measures the least distance between two turned boxes, and `BuildingSpot.LeavesNarrowGap` is true when they
+are more than 0.1 m and less than the gap apart, so flush neighbours still fit at any yaw. `BuildingSpot.Fits` joins it
+with the overlap test. The server's `PlaceBuildingSystem` checks every spot and every line segment. The ghost checks the
+footprints the player sees (`VisibleFootprints`) and turns red; under fog the server's answer wins. The skirmish AI
+pads each spot by `AITuning.buildingGap` (4 m by default) and passes it through the same rule.
+
 `BuildingSpot.Snap` keeps a yaw within 0.5° of a quarter turn exact and lands the turned edges on cell boundaries. At
 any other yaw it centres the spot on the half-cell lattice.
 
@@ -104,9 +112,10 @@ direction to 15°. The ghost draws every segment, valid or not by the same rules
 valid ones for the line's total cost.
 
 The command is `PlaceLine`, sent as a start, an end and a prefab. `PlaceBuildingSystem` rebuilds the same line and
-places each free segment from the start as its own construction site, charged per segment. It skips blocked
-segments and stops at the first one the player can't afford or its `BuildLimit` refuses. The builders get Build
-orders on the sites from the end nearer them, the rest shift-queued. The skirmish AI skips line buildings for now.
+places each free segment from the start as its own construction site, charged per segment. It skips blocked segments,
+and those inside the building gap, and stops at the first one the player can't afford or its `BuildLimit` refuses. The
+builders get Build orders on the sites from the end nearer them, the rest shift-queued. The skirmish AI skips line
+buildings for now.
 
 `ModelVariantsAuthoring` lists variant child models. Presentation shows one, picked by a hash of the position, so a
 wall doesn't repeat one panel and every client shows the same. A variant lists all its children, damage stage

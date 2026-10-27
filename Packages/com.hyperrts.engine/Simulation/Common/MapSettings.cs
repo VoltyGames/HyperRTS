@@ -9,6 +9,10 @@ namespace HyperRTS.Simulation.Common
         public float2 Min;
         public float2 Size;
         public float NavCellSize;
+
+        /// <summary>Least clear gap between buildings that don't touch; 0 turns the rule off.</summary>
+        public float BuildingGap;
+
         public float FogCellSize;
         public bool FogOfWar;
 

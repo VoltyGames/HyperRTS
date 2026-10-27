@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
+using Unity.Collections;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Buildings
@@ -14,6 +15,12 @@ namespace HyperRTS.Simulation.Buildings
 
         // Degrees off a quarter turn that still count as one, so a drag along an axis lands its edges on cells.
         private const float QuarterSnapDegrees = 0.5f;
+
+        // Metres apart that still count as flush, so neighbours placed edge to edge pass the gap rule.
+        private const float FlushTolerance = 0.1f;
+
+        // Metres of float error forgiven at the rule's far end, so a lane of exactly the gap passes.
+        private const float GapTolerance = 1e-3f;
 
         public readonly float3 Center;
 
@@ -125,6 +132,34 @@ namespace HyperRTS.Simulation.Buildings
 
         /// <summary>Touching is allowed, so buildings can sit flush at any angle.</summary>
         public bool Overlaps(in NavBox other) => Box.Overlaps(other);
+
+        /// <summary>Apart from <paramref name="other"/> but closer than <paramref name="gap"/>: too narrow to drive through.</summary>
+        public bool LeavesNarrowGap(in NavBox other, float gap)
+        {
+            var box = Box;
+            var reach = math.length(box.Half) + math.length(other.Half) + gap;
+            if (math.distancesq(box.Center, other.Center) >= reach * reach)
+            {
+                return false;
+            }
+
+            var apart = box.Gap(other);
+            return apart > FlushTolerance && apart < gap - GapTolerance;
+        }
+
+        /// <summary>Clear of every site: overlapping none and leaving no gap narrower than <paramref name="gap"/>.</summary>
+        public bool Fits(NativeArray<NavBox> sites, float gap)
+        {
+            foreach (var site in sites)
+            {
+                if (Overlaps(site) || LeavesNarrowGap(site, gap))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         /// <summary>A unit capsule, its core segment <paramref name="axis"/> either side of its centre, reaches inside.</summary>
         public bool Overlaps(float2 position, float2 axis, float radius) =>

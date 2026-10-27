@@ -67,7 +67,8 @@ namespace HyperRTS.Simulation.Buildings
         {
             // Played back right away so the sites exist before builders read the Build orders below.
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            var sites = StandingSites();
+            // Every standing obstacle's box: the nav grid may lag a frame behind newly placed sites.
+            var sites = NavObstacle.ReadBoxes(_obstacles);
             var assignments = new NativeList<Assignment>(Allocator.Temp);
             // One buyer per player for the frame: each site placed counts against the next request's build limits.
             var buyers = new NativeHashMap<byte, Buyer>(4, Allocator.Temp);
@@ -219,44 +220,20 @@ namespace HyperRTS.Simulation.Buildings
             SystemAPI.HasBuffer<BuildOption>(unit)
             && ProductionRules.HasOption(SystemAPI.GetBuffer<BuildOption>(unit), prefab);
 
-        /// <summary>Every standing obstacle's box: the nav grid may lag a frame behind newly placed sites.</summary>
-        private NativeList<NavBox> StandingSites()
-        {
-            var obstacles = _obstacles.ToComponentDataArray<NavObstacle>(Allocator.Temp);
-            var transforms = _obstacles.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-            var sites = new NativeList<NavBox>(obstacles.Length, Allocator.Temp);
-            for (var i = 0; i < obstacles.Length; i++)
-            {
-                sites.Add(new NavBox(transforms[i].Position, transforms[i].Rotation, obstacles[i].Size));
-            }
-
-            return sites;
-        }
-
-        /// <summary>Valid ground with no site or enemy unit on it; a hidden enemy fails it like any bad spot.</summary>
+        /// <summary>
+        /// Valid ground, clear of every site by the map's building gap, with no enemy unit on it; a hidden enemy fails
+        /// it like any bad spot.
+        /// </summary>
         private bool IsFree(ref SystemState state, in BuildingSpot spot, in MapSettings map, in NavGrid grid,
             byte faction, NativeList<NavBox> sites)
         {
-            if (!spot.IsValid(map, grid) || IsOccupied(spot, sites))
+            if (!spot.IsValid(map, grid) || !spot.Fits(sites.AsArray(), map.BuildingGap))
             {
                 return false;
             }
 
             var relations = SystemAPI.GetSingleton<FactionRelations>();
             return !spot.IsBlockedByEnemies(SystemAPI.GetSingleton<SpatialIndex>(), relations, faction);
-        }
-
-        private static bool IsOccupied(in BuildingSpot spot, NativeList<NavBox> sites)
-        {
-            foreach (var site in sites)
-            {
-                if (spot.Overlaps(site))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }

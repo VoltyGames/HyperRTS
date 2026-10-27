@@ -36,5 +36,19 @@ namespace HyperRTS.Simulation.Navigation
             var hash = xxHash3.Hash64(transform) ^ xxHash3.Hash64(this).yx;
             return ((ulong)hash.x << 32) | hash.y;
         }
+
+        /// <summary>The turned box of every obstacle <paramref name="query"/> matches, which reads LocalTransform too.</summary>
+        public static NativeList<NavBox> ReadBoxes(EntityQuery query)
+        {
+            var obstacles = query.ToComponentDataArray<NavObstacle>(Allocator.Temp);
+            var transforms = query.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+            var boxes = new NativeList<NavBox>(obstacles.Length, Allocator.Temp);
+            for (var i = 0; i < obstacles.Length; i++)
+            {
+                boxes.Add(new NavBox(transforms[i].Position, transforms[i].Rotation, obstacles[i].Size));
+            }
+
+            return boxes;
+        }
     }
 }
