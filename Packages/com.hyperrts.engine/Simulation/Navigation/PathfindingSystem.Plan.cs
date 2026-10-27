@@ -69,6 +69,10 @@ namespace HyperRTS.Simulation.Navigation
             private NativeHashSet<int2> _tried;
             private SectorSearch _search;
 
+            // Abstract paths a split shares per start component: ranges into the routes, by component.
+            private NativeList<int> _routes;
+            private NativeHashMap<int, int2> _byComponent;
+
             public Planner(NativeArray<PathRequest> requests, in NavGrid grid, in GroupFields fields, in PathPlan plan,
                 double now)
             {
@@ -83,6 +87,8 @@ namespace HyperRTS.Simulation.Navigation
                 _members = new NativeParallelMultiHashMap<int2, int>(math.max(1, requests.Length), Allocator.Temp);
                 _tried = new NativeHashSet<int2>(8, Allocator.Temp);
                 _search = new SectorSearch(Allocator.Temp);
+                _routes = new NativeList<int>(256, Allocator.Temp);
+                _byComponent = new NativeHashMap<int, int2>(16, Allocator.Temp);
             }
 
             public void Dispose()
@@ -93,6 +99,8 @@ namespace HyperRTS.Simulation.Navigation
                 _members.Dispose();
                 _tried.Dispose();
                 _search.Dispose();
+                _routes.Dispose();
+                _byComponent.Dispose();
             }
 
             public void Run()
@@ -115,13 +123,12 @@ namespace HyperRTS.Simulation.Navigation
 
             private float Choose(int index)
             {
-                _handled[index] = true;
                 var request = _requests[index];
                 var access = request.Agent.Access(_grid);
                 var query = Query(index, access);
                 if (query.Route != PathRoute.Search)
                 {
-                    Add(index, PathTaskKind.Direct, query);
+                    Add(new PathTask { Request = index, Kind = PathTaskKind.Direct, Field = -1 });
                     return math.distance(query.Origin.xz, query.End.xz) / _grid.CellSize + 1f;
                 }
 
@@ -133,13 +140,13 @@ namespace HyperRTS.Simulation.Navigation
                     if (field >= 0)
                     {
                         _fields.MarkUsed(field, _now);
-                        return AddTrace(index, query, field);
+                        return AddTrace(index, field);
                     }
 
                     if (_tried.Add(key))
                     {
-                        opened = OpenFields(key, access, index, out var joined);
-                        if (joined)
+                        opened = OpenFields(key, access, index);
+                        if (_handled[index])
                         {
                             return opened;
                         }
@@ -147,10 +154,14 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 var first = _plan.Sectors.Length;
-                GridPathfinder.FindSectors(access, query, _plan.Sectors);
+                _search.Find(access, query.From, query.To, _plan.Sectors);
                 var count = _plan.Sectors.Length - first;
                 var cost = CorridorCells(first, count) * SearchCostPerCorridorCell;
-                Add(index, PathTaskKind.Search, query, -1, first, count, cost);
+                Add(new PathTask
+                {
+                    Request = index, Kind = PathTaskKind.Search, Field = -1, FirstSector = first, SectorCount = count,
+                    Cost = cost,
+                });
                 return opened + cost;
             }
 
@@ -158,10 +169,7 @@ namespace HyperRTS.Simulation.Navigation
             private readonly int CorridorCells(int first, int count)
             {
                 var corridor = new NavCorridor(_grid.Field.SectorsPerAxis, Allocator.Temp);
-                for (var i = first; i < first + count; i++)
-                {
-                    corridor.AddWithRing(_plan.Sectors[i]);
-                }
+                corridor.AddWithRings(_plan.Sectors.AsArray().GetSubArray(first, count));
 
                 var cells = corridor.Cells;
                 corridor.Dispose();
@@ -180,19 +188,20 @@ namespace HyperRTS.Simulation.Navigation
                 return _queries[index];
             }
 
-            private float AddTrace(int index, in PathQuery query, int field)
+            private float AddTrace(int index, int field)
             {
-                Add(index, PathTaskKind.Trace, query, field);
+                Add(new PathTask { Request = index, Kind = PathTaskKind.Trace, Field = field });
+                var query = _queries[index];
                 return math.distance(query.Origin.xz, query.End.xz) / _grid.CellSize * TraceCostPerCell;
             }
 
-            private void Add(int index, PathTaskKind kind, in PathQuery query, int field = -1, int firstSector = 0,
-                int sectorCount = 0, float cost = 0f) =>
-                _plan.Tasks.Add(new PathTask
-                {
-                    Request = index, Kind = kind, Query = query, Field = field, FirstSector = firstSector,
-                    SectorCount = sectorCount, Cost = cost,
-                });
+            // Serves the request with its prepared query.
+            private void Add(PathTask task)
+            {
+                _handled[task.Request] = true;
+                task.Query = _queries[task.Request];
+                _plan.Tasks.Add(task);
+            }
         }
     }
 }

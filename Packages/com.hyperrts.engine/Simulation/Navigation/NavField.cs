@@ -147,7 +147,7 @@ namespace HyperRTS.Simulation.Navigation
         public void Rebuild(in NativeArray<byte> cells, in NativeArray<byte> scenery, in MovementClass key, int slot,
             int sector, ref DistanceTransform transform)
         {
-            var first = new int2(sector % SectorsPerAxis.x, sector / SectorsPerAxis.x) * SectorCells;
+            var first = NavSectors.Coordinates(sector, SectorsPerAxis) * SectorCells;
             var origin = first - ReachCells;
             var side = transform.Side;
             for (var i = 0; i < transform.Closed.Length; i++)
@@ -158,16 +158,17 @@ namespace HyperRTS.Simulation.Navigation
                 transform.Closed[i] = outside || key.Blocks((NavSurface)cells[index], scenery[index]);
             }
 
-            var last = math.min(first + SectorCells, Size) - 1;
             transform.Solve(true);
-            Write(slot, first, last, origin, transform, true);
+            Write(slot, first, transform, true);
             transform.Solve(false);
-            Write(slot, first, last, origin, transform, false);
+            Write(slot, first, transform, false);
         }
 
         // From centre distance to edge distance: half a cell less, signed by side, within the cap.
-        private void Write(int slot, int2 first, int2 last, int2 origin, in DistanceTransform transform, bool open)
+        private void Write(int slot, int2 first, in DistanceTransform transform, bool open)
         {
+            var origin = first - ReachCells;
+            var last = math.min(first + SectorCells, Size) - 1;
             for (var y = first.y; y <= last.y; y++)
             {
                 for (var x = first.x; x <= last.x; x++)

@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Navigation
 {
@@ -31,6 +32,23 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Walls held the unit when it asked, so the drive planner plans its way out from the start.</summary>
         public bool Stuck;
+
+        public PathRequest(Entity entity, in LocalTransform transform, in MoveDestination destination,
+            in NavAgent agent, in PathState path)
+        {
+            Entity = entity;
+            Start = transform.Position;
+            Facing = math.normalizesafe(transform.Forward().xz);
+            Goal = destination.Value;
+            GoalFacing = destination.Facing;
+            RunIn = destination.RunIn;
+            ExitRun = destination.ExitRun;
+            Group = destination.Group;
+            Agent = agent;
+            Frame = path.RequestFrame;
+            Cause = path.Cause;
+            Stuck = path.Stuck;
+        }
 
         /// <summary>Where the route starts: past the straight exit run, if there is one.</summary>
         public readonly float3 RouteStart => Start + new float3(Facing.x, 0f, Facing.y) * ExitRun;

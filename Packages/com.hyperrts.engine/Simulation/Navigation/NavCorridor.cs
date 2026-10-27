@@ -42,8 +42,6 @@ namespace HyperRTS.Simulation.Navigation
             return corridor;
         }
 
-        public readonly bool IsCreated => _slots.IsCreated;
-
         public readonly int SectorCount => _sectors.Length;
 
         /// <summary>Cells the records cover.</summary>
@@ -69,7 +67,7 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Adds a sector and the eight round it.</summary>
         public void AddWithRing(int sector)
         {
-            var at = new int2(sector % _sectorCount.x, sector / _sectorCount.x);
+            var at = NavSectors.Coordinates(sector, _sectorCount);
             var low = math.max(at - 1, 0);
             var high = math.min(at + 1, _sectorCount - 1);
             for (var y = low.y; y <= high.y; y++)
@@ -78,6 +76,15 @@ namespace HyperRTS.Simulation.Navigation
                 {
                     Add(y * _sectorCount.x + x);
                 }
+            }
+        }
+
+        /// <summary>Adds each sector and the eight round it.</summary>
+        public void AddWithRings(NativeArray<int> sectors)
+        {
+            foreach (var sector in sectors)
+            {
+                AddWithRing(sector);
             }
         }
 
@@ -117,7 +124,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             var sector = _sectors[index / NavSectors.Area];
             var local = index % NavSectors.Area;
-            var origin = new int2(sector % _sectorCount.x, sector / _sectorCount.x) * NavField.SectorCells;
+            var origin = NavSectors.Coordinates(sector, _sectorCount) * NavField.SectorCells;
             return origin + new int2(local % NavField.SectorCells, local / NavField.SectorCells);
         }
 

@@ -72,7 +72,11 @@ namespace HyperRTS.Simulation.Navigation
                     return;
                 }
 
-                Request(entity, ref path, waypoints, transform, destination, agent, goalMoved);
+                // Corners toward an old, distant goal would lead the wrong way while the search waits.
+                // A chased goal stays near its old one, so the unit keeps closing meanwhile.
+                path.Request(waypoints, Cause(path, goalMoved, destination.Chase), goalMoved && !destination.Chase,
+                    Frame);
+                Requests.AddNoResize(new PathRequest(entity, transform, destination, agent, path));
             }
 
             // Between searches a chase keeps its path, re-aimed by sight where it can be.
@@ -126,40 +130,6 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 return false;
-            }
-
-            private void Request(Entity entity, ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
-                in LocalTransform transform, in MoveDestination destination, in NavAgent agent, bool goalMoved)
-            {
-                if (path.Status != PathStatus.Requested)
-                {
-                    path.Cause = Cause(path, goalMoved, destination.Chase);
-                    // Corners toward an old, distant goal would lead the wrong way while the search waits.
-                    // A chased goal stays near its old one, so the unit keeps closing meanwhile.
-                    if (goalMoved && !destination.Chase)
-                    {
-                        path.ClearWaypoints(waypoints);
-                    }
-
-                    path.Status = PathStatus.Requested;
-                    path.RequestFrame = Frame;
-                }
-
-                Requests.AddNoResize(new PathRequest
-                {
-                    Entity = entity,
-                    Start = transform.Position,
-                    Facing = math.normalizesafe(transform.Forward().xz),
-                    Goal = destination.Value,
-                    GoalFacing = destination.Facing,
-                    RunIn = destination.RunIn,
-                    ExitRun = destination.ExitRun,
-                    Group = destination.Group,
-                    Agent = agent,
-                    Frame = path.RequestFrame,
-                    Cause = path.Cause,
-                    Stuck = path.Stuck,
-                });
             }
 
             // Re-planning for sub-cell nudges (re-clicks, a creeping chase target) isn't worth a search, but the end

@@ -25,11 +25,11 @@ namespace HyperRTS.Editor.Maps.Nav
             }
 
             var corridor = NavCorridor.Whole(access.Grid.Field.SectorsPerAxis, Allocator.Persistent);
-            var search = new GridAStar(corridor.Cells, Allocator.Persistent);
+            var search = new GridAStar(corridor, Allocator.Persistent);
             var cells = new NativeList<int2>(256, Allocator.Persistent);
             try
             {
-                search.Search(access, corridor, start, goal, cells, out var expansions);
+                search.Search(access, start, goal, cells, out var expansions);
                 return Build(access.Grid, cells, expansions);
             }
             finally

@@ -26,11 +26,21 @@ namespace HyperRTS.Simulation.Navigation
         private NativeList<int> _neighbours;
         private OpenSet _open;
 
+        // This search's ends: the start's and goal's components, which stand at their own cells.
+        private int _first;
+        private int _last;
+        private int2 _start;
+        private int2 _goal;
+
         public SectorSearch(Allocator allocator)
         {
             _records = new NativeHashMap<int, Record>(256, allocator);
             _neighbours = new NativeList<int>(32, allocator);
             _open = new OpenSet(64, allocator);
+            _first = -1;
+            _last = -1;
+            _start = default;
+            _goal = default;
         }
 
         public void Dispose()
@@ -49,17 +59,19 @@ namespace HyperRTS.Simulation.Navigation
             using var scope = SearchMarker.Auto();
             var graph = access.Grid.Sectors;
             var classIndex = access.ClassIndex;
-            var first = graph.Component(classIndex, start);
-            var last = graph.Component(classIndex, goal);
-            if (first < 0 || last < 0 || graph.Regions[first] != graph.Regions[last])
+            _first = graph.Component(classIndex, start);
+            _last = graph.Component(classIndex, goal);
+            _start = start;
+            _goal = goal;
+            if (_first < 0 || _last < 0 || graph.Regions[_first] != graph.Regions[_last])
             {
                 throw new InvalidOperationException("Abstract search between cells of different regions.");
             }
 
             _records.Clear();
             _open.Clear();
-            _records[first] = new Record { Parent = -1 };
-            _open.Push(first, GridAStar.Heuristic(start, goal));
+            _records[_first] = new Record { Parent = -1 };
+            _open.Push(_first, GridAStar.Heuristic(start, goal));
             while (_open.TryPop(out var node))
             {
                 var record = _records[node];
@@ -70,27 +82,26 @@ namespace HyperRTS.Simulation.Navigation
 
                 record.Closed = true;
                 _records[node] = record;
-                if (node == last)
+                if (node == _last)
                 {
                     break;
                 }
 
-                Expand(access, node, record.Cost, first, last, start, goal);
+                Expand(graph, classIndex, node, record.Cost);
             }
 
-            Collect(graph, last, sectors);
-            return _records[last].Cost;
+            Collect(graph, _last, sectors);
+            return _records[_last].Cost;
         }
 
-        private void Expand(in NavAccess access, int node, float cost, int first, int last, int2 start, int2 goal)
+        private void Expand(in NavSectors graph, int classIndex, int node, float cost)
         {
-            var graph = access.Grid.Sectors;
-            var at = Position(graph, access.ClassIndex, node, first, last, start, goal);
+            var at = Position(graph, classIndex, node);
             _neighbours.Clear();
-            graph.Neighbours(access.ClassIndex, node, _neighbours);
+            graph.Neighbours(classIndex, node, _neighbours);
             foreach (var next in _neighbours)
             {
-                var to = Position(graph, access.ClassIndex, next, first, last, start, goal);
+                var to = Position(graph, classIndex, next);
                 var nextCost = cost + GridAStar.Octile(at, to);
                 var seen = _records.TryGetValue(next, out var record);
                 if (seen && (record.Closed || record.Cost <= nextCost))
@@ -99,19 +110,18 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 _records[next] = new Record { Parent = node, Cost = nextCost };
-                _open.Push(next, nextCost + GridAStar.Heuristic(to, goal));
+                _open.Push(next, nextCost + GridAStar.Heuristic(to, _goal));
             }
         }
 
-        private static int2 Position(in NavSectors graph, int classIndex, int node, int first, int last, int2 start,
-            int2 goal)
+        private readonly int2 Position(in NavSectors graph, int classIndex, int node)
         {
-            if (node == first)
+            if (node == _first)
             {
-                return start;
+                return _start;
             }
 
-            return node == last ? goal : graph.Representative(classIndex, node);
+            return node == _last ? _goal : graph.Representative(classIndex, node);
         }
 
         // Sectors from the start's to the goal's, each once in a row.

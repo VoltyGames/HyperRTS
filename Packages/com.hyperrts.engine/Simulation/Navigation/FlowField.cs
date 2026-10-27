@@ -29,8 +29,6 @@ namespace HyperRTS.Simulation.Navigation
             _costs.Resize(corridor.Cells);
         }
 
-        public readonly bool IsCreated => _costs.IsCreated;
-
         public void Dispose()
         {
             Corridor.Dispose();

@@ -177,9 +177,23 @@ namespace HyperRTS.Simulation.Navigation
             return access.Region(start) == access.NearestRegion(to);
         }
 
-        /// <summary>The surface the ground alone gives a cell (<see cref="NavGround.Classify"/>).</summary>
-        public readonly NavSurface GroundSurface(int index, bool flood, float maxGradient) =>
-            NavGround.Classify(Terrain, CellCenter(Cell(index)).xz, CellSize, WaterLevel, flood, maxGradient);
+        /// <summary>
+        /// The surface the ground alone gives a cell: water when flooded below the water level, blocked when steeper
+        /// than <paramref name="maxGradient"/> (<see cref="NavGround.MaxGradient"/>), else land.
+        /// </summary>
+        public readonly NavSurface GroundSurface(int index, bool flood, float maxGradient)
+        {
+            var center = CellCenter(Cell(index)).xz;
+            if (flood && Terrain.Height(center) < WaterLevel)
+            {
+                return NavSurface.Water;
+            }
+
+            var half = CellSize * 0.5f;
+            var dx = Terrain.Height(center + new float2(half, 0f)) - Terrain.Height(center - new float2(half, 0f));
+            var dz = Terrain.Height(center + new float2(0f, half)) - Terrain.Height(center - new float2(0f, half));
+            return math.length(new float2(dx, dz)) > maxGradient * CellSize ? NavSurface.Blocked : NavSurface.Land;
+        }
 
         /// <summary>
         /// Lays a nav area over the cells under its box, as obstacles do with <see cref="NavAreaKind.Blocked"/>. Decks

@@ -49,6 +49,28 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>The whole path of a query that needs no search.</summary>
+        /// <summary>
+        /// The searched cells from the origin's to the end's, pulled tight: a corner is kept only where the last kept
+        /// point can't see the point after it.
+        /// </summary>
+        public readonly void AddSmoothed(in NavAccess access, NativeList<int2> cells, NativeList<float3> points)
+        {
+            Begin(points);
+            var anchor = Origin;
+            for (var i = 1; i < cells.Length - 1; i++)
+            {
+                var point = access.Grid.CellCenter(cells[i]);
+                var next = i + 1 == cells.Length - 1 ? End : access.Grid.CellCenter(cells[i + 1]);
+                if (!access.HasLineOfSight(anchor, next))
+                {
+                    points.Add(point);
+                    anchor = point;
+                }
+            }
+
+            points.Add(End);
+        }
+
         public readonly void AddDirect(NativeList<float3> points)
         {
             Begin(points);

@@ -62,8 +62,7 @@ namespace HyperRTS.Simulation.Navigation
 
                 cells.Length = leave + 1;
                 cells.Add(query.To);
-                query.Begin(points);
-                GridPathfinder.Smooth(access, query.Origin, query.End, cells, points);
+                query.AddSmoothed(access, cells, points);
             }
 
             cells.Dispose();
@@ -93,8 +92,6 @@ namespace HyperRTS.Simulation.Navigation
 
         public GroupFields(Allocator allocator) => Fields = new NativeList<GroupField>(16, allocator);
 
-        public readonly bool IsCreated => Fields.IsCreated;
-
         public void Dispose()
         {
             foreach (var field in Fields)
@@ -119,6 +116,12 @@ namespace HyperRTS.Simulation.Navigation
             return -1;
         }
 
+        private void Remove(int index)
+        {
+            Fields[index].Field.Dispose();
+            Fields.RemoveAtSwapBack(index);
+        }
+
         /// <summary>Drops the fields no moving unit has the key of.</summary>
         public void DropUnused(in NativeParallelHashSet<int2> used)
         {
@@ -127,8 +130,7 @@ namespace HyperRTS.Simulation.Navigation
                 var field = Fields[i];
                 if (!used.Contains(field.Key))
                 {
-                    field.Field.Dispose();
-                    Fields.RemoveAtSwapBack(i);
+                    Remove(i);
                 }
             }
         }
@@ -143,8 +145,7 @@ namespace HyperRTS.Simulation.Navigation
                             IsTouched(field, grid);
                 if (stale)
                 {
-                    field.Field.Dispose();
-                    Fields.RemoveAtSwapBack(i);
+                    Remove(i);
                     continue;
                 }
 

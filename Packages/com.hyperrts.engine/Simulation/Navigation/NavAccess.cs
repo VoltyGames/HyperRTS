@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>The same search, keeping only cells in <paramref name="region"/>.</summary>
         public bool TryFindNearest(int2 cell, int rings, int region, out int2 found) =>
-            TryFindNearest(cell, rings, region, float3.zero, AnyClearance, out found);
+            TryFindNearest(cell, rings, new NearestFilter(region, float3.zero, AnyClearance), out found);
 
         /// <summary>
         /// Where a path from <paramref name="start"/> in <paramref name="startCell"/> begins: the cell when open, else
@@ -105,12 +105,13 @@ namespace HyperRTS.Simulation.Navigation
             if (squeeze > 0f)
             {
                 var goalRegion = NearestRegion(goal);
-                if (goalRegion != 0 && TryFindNearest(startCell, rings, goalRegion, start, squeeze, out from))
+                if (goalRegion != 0 &&
+                    TryFindNearest(startCell, rings, new NearestFilter(goalRegion, start, squeeze), out from))
                 {
                     return true;
                 }
 
-                if (TryFindNearest(startCell, rings, AnyRegion, start, squeeze, out from))
+                if (TryFindNearest(startCell, rings, new NearestFilter(AnyRegion, start, squeeze), out from))
                 {
                     return true;
                 }
@@ -127,11 +128,11 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         // Ring search; with a clearance, a cell also needs a straight line to it from the origin that keeps it.
-        private bool TryFindNearest(int2 cell, int rings, int region, float3 origin, float clearance, out int2 found)
+        private bool TryFindNearest(int2 cell, int rings, in NearestFilter filter, out int2 found)
         {
             cell = math.clamp(cell, 0, Grid.Size - 1);
             found = cell;
-            if (IsCandidate(region, cell, origin, clearance))
+            if (IsCandidate(filter, cell))
             {
                 return true;
             }
@@ -141,10 +142,10 @@ namespace HyperRTS.Simulation.Navigation
                 var best = int.MaxValue;
                 for (var i = -r; i <= r; i++)
                 {
-                    Consider(region, cell, new int2(i, -r), origin, clearance, ref best, ref found);
-                    Consider(region, cell, new int2(i, r), origin, clearance, ref best, ref found);
-                    Consider(region, cell, new int2(-r, i), origin, clearance, ref best, ref found);
-                    Consider(region, cell, new int2(r, i), origin, clearance, ref best, ref found);
+                    Consider(filter, cell, new int2(i, -r), ref best, ref found);
+                    Consider(filter, cell, new int2(i, r), ref best, ref found);
+                    Consider(filter, cell, new int2(-r, i), ref best, ref found);
+                    Consider(filter, cell, new int2(r, i), ref best, ref found);
                 }
 
                 if (best != int.MaxValue)
@@ -192,25 +193,41 @@ namespace HyperRTS.Simulation.Navigation
             return clear;
         }
 
-        private void Consider(int region, int2 center, int2 offset, float3 origin, float clearance, ref int best,
-            ref int2 found)
+        private void Consider(in NearestFilter filter, int2 center, int2 offset, ref int best, ref int2 found)
         {
             var distance = offset.x * offset.x + offset.y * offset.y;
-            if (distance < best && IsCandidate(region, center + offset, origin, clearance))
+            if (distance < best && IsCandidate(filter, center + offset))
             {
                 best = distance;
                 found = center + offset;
             }
         }
 
-        private bool IsCandidate(int region, int2 cell, float3 origin, float clearance)
+        private bool IsCandidate(in NearestFilter filter, int2 cell)
         {
-            if (!IsOpenIn(region, cell))
+            if (!IsOpenIn(filter.Region, cell))
             {
                 return false;
             }
 
-            return clearance == AnyClearance || HasLineOfSight(origin, Grid.CellCenter(cell), clearance);
+            return filter.Clearance == AnyClearance ||
+                   HasLineOfSight(filter.Origin, Grid.CellCenter(cell), filter.Clearance);
+        }
+
+        // Which cells a ring search keeps: open ones in the region, and with a clearance only those a straight line
+        // from the origin reaches keeping it.
+        private readonly struct NearestFilter
+        {
+            public readonly int Region;
+            public readonly float3 Origin;
+            public readonly float Clearance;
+
+            public NearestFilter(int region, float3 origin, float clearance)
+            {
+                Region = region;
+                Origin = origin;
+                Clearance = clearance;
+            }
         }
 
         private bool IsOpenIn(int region, int2 cell) => (region == AnyRegion || Region(cell) == region) && IsOpen(cell);

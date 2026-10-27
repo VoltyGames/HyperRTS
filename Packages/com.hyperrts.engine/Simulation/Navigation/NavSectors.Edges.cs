@@ -30,32 +30,36 @@ namespace HyperRTS.Simulation.Navigation
         public NativeList<int> Regions;
 
         public readonly int Global(int classIndex, int sector, int label) =>
-            Firsts[classIndex * SectorCount + sector] + label - 1;
+            Firsts[ClassSector(classIndex, sector)] + label - 1;
+
+        // The sector across a border, east or north.
+        private readonly int Across(int sector, int border) => border == East ? sector + 1 : sector + SectorsPerAxis.x;
 
         /// <summary>Adds the components that share an edge with one, of the same class.</summary>
         public readonly void Neighbours(int classIndex, int component, NativeList<int> into)
         {
             var sector = Owners[component];
-            var label = component - Firsts[classIndex * SectorCount + sector] + 1;
-            var at = new int2(sector % SectorsPerAxis.x, sector / SectorsPerAxis.x);
-            AddAcross(classIndex, sector, East, label, true, sector + 1, into);
-            AddAcross(classIndex, sector, North, label, true, sector + SectorsPerAxis.x, into);
+            var label = component - Firsts[ClassSector(classIndex, sector)] + 1;
+            var at = Coordinates(sector, SectorsPerAxis);
+            AddAcross(classIndex, sector, East, label, true, into);
+            AddAcross(classIndex, sector, North, label, true, into);
             if (at.x > 0)
             {
-                AddAcross(classIndex, sector - 1, East, label, false, sector - 1, into);
+                AddAcross(classIndex, sector - 1, East, label, false, into);
             }
 
             if (at.y > 0)
             {
-                AddAcross(classIndex, sector - SectorsPerAxis.x, North, label, false, sector - SectorsPerAxis.x, into);
+                AddAcross(classIndex, sector - SectorsPerAxis.x, North, label, false, into);
             }
         }
 
-        // Edges of one border whose own (or neighbour) end is the label, adding the far end's component in other.
-        private readonly void AddAcross(int classIndex, int sector, int border, int label, bool own, int other,
+        // Edges of one border whose own (or neighbour) end is the label, adding the far end's component.
+        private readonly void AddAcross(int classIndex, int sector, int border, int label, bool own,
             NativeList<int> into)
         {
-            var key = (classIndex * SectorCount + sector) * 2 + border;
+            var other = own ? Across(sector, border) : sector;
+            var key = ClassSector(classIndex, sector) * 2 + border;
             for (var i = 0; i < EdgeCounts[key]; i++)
             {
                 var edge = Edges[key * NavField.SectorCells + i];
@@ -77,7 +81,7 @@ namespace HyperRTS.Simulation.Navigation
             using var scope = ConnectMarker.Auto();
             for (var sector = 0; sector < SectorCount; sector++)
             {
-                var at = new int2(sector % SectorsPerAxis.x, sector / SectorsPerAxis.x);
+                var at = Coordinates(sector, SectorsPerAxis);
                 var east = at.x + 1 < SectorsPerAxis.x && Dirty[sector + 1];
                 var north = at.y + 1 < SectorsPerAxis.y && Dirty[sector + SectorsPerAxis.x];
                 if (Dirty[sector] || east || north)
@@ -101,15 +105,15 @@ namespace HyperRTS.Simulation.Navigation
         // The distinct label pairs facing each other across one border; at most one per border cell.
         private void Border(int classIndex, int sector, int border)
         {
-            var key = (classIndex * SectorCount + sector) * 2 + border;
-            var at = new int2(sector % SectorsPerAxis.x, sector / SectorsPerAxis.x);
+            var key = ClassSector(classIndex, sector) * 2 + border;
+            var at = Coordinates(sector, SectorsPerAxis);
             var last = NavField.SectorCells - 1;
             var count = 0;
-            var other = border == East ? sector + 1 : sector + SectorsPerAxis.x;
+            var other = Across(sector, border);
             if ((border == East && at.x + 1 < SectorsPerAxis.x) || (border == North && at.y + 1 < SectorsPerAxis.y))
             {
-                var own = (classIndex * SectorCount + sector) * Area;
-                var far = (classIndex * SectorCount + other) * Area;
+                var own = ClassSector(classIndex, sector) * Area;
+                var far = ClassSector(classIndex, other) * Area;
                 for (var i = 0; i < NavField.SectorCells; i++)
                 {
                     var near = border == East ? i * NavField.SectorCells + last : last * NavField.SectorCells + i;
@@ -170,7 +174,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 var sector = key / 2 % SectorCount;
                 var classIndex = key / 2 / SectorCount;
-                var other = key % 2 == East ? sector + 1 : sector + SectorsPerAxis.x;
+                var other = Across(sector, key % 2);
                 for (var i = 0; i < EdgeCounts[key]; i++)
                 {
                     var edge = Edges[key * NavField.SectorCells + i];
@@ -271,8 +275,7 @@ namespace HyperRTS.Simulation.Navigation
                     Labels = Labels, Counts = Counts, Representatives = Representatives,
                     SectorsPerAxis = SectorsPerAxis, ClassCount = ClassCount,
                 };
-                var movementClass = Classes.Classes[item.y];
-                graph.Relabel(Field, Classes.FieldSlot(item.y), movementClass.Radius, item.y, item.x);
+                graph.Relabel(Field, Classes, item.y, item.x);
             }
         }
 

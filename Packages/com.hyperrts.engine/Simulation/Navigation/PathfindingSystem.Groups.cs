@@ -16,15 +16,14 @@ namespace HyperRTS.Simulation.Navigation
         {
             // A field toward the centre of the slots, for the frame's members that start in its region and see their
             // slot from it; fewer than two leave every member to its own search.
-            private float OpenFields(int2 key, in NavAccess access, int first, out bool joined)
+            private float OpenFields(int2 key, in NavAccess access, int first)
             {
-                joined = false;
                 var members = new NativeList<int>(16, Allocator.Temp);
                 var centroid = float2.zero;
                 foreach (var member in _members.GetValuesForKey(key))
                 {
                     var query = Query(member, access);
-                    if ((!_handled[member] || member == first) && query.Route == PathRoute.Search)
+                    if (!_handled[member] && query.Route == PathRoute.Search)
                     {
                         members.Add(member);
                         centroid += query.End.xz;
@@ -38,7 +37,7 @@ namespace HyperRTS.Simulation.Navigation
                     var center = _grid.WorldToCell(centroid / members.Length);
                     if (access.TryFindNearest(center, GridPathfinder.ReachableSearchRadius, region, out var goal))
                     {
-                        cost = Join(key, access, members, region, goal, first, out joined);
+                        cost = Join(key, access, members, region, goal);
                     }
                 }
 
@@ -46,10 +45,8 @@ namespace HyperRTS.Simulation.Navigation
                 return cost;
             }
 
-            private float Join(int2 key, in NavAccess access, NativeList<int> members, int region, int2 goal,
-                int first, out bool joined)
+            private float Join(int2 key, in NavAccess access, NativeList<int> members, int region, int2 goal)
             {
-                joined = false;
                 var anchor = _grid.CellCenter(goal);
                 var joiners = new NativeList<int2>(members.Length, Allocator.Temp);
                 var radius = 0f;
@@ -75,7 +72,7 @@ namespace HyperRTS.Simulation.Navigation
                         Key = key, Anchor = anchor, Radius = radius, WallMargin = access.WallMargin,
                         Version = _grid.Version, LastUsed = _now,
                     };
-                    cost = Split(field, access, joiners, goal, first, out joined);
+                    cost = Split(field, access, joiners, goal);
                 }
 
                 joiners.Dispose();
@@ -83,65 +80,51 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             // Members join the current field until its corridor would pass the cell cap, then start the next.
-            private float Split(GroupField field, in NavAccess access, NativeList<int2> joiners, int2 goal, int first,
-                out bool joined)
+            private float Split(GroupField field, in NavAccess access, NativeList<int2> joiners, int2 goal)
             {
-                joined = false;
                 var cost = 0f;
                 var corridor = new NavCorridor(_grid.Field.SectorsPerAxis, Allocator.Persistent);
                 var part = new NativeList<int>(joiners.Length, Allocator.Temp);
-                var routes = new NativeList<int>(256, Allocator.Temp);
-                var byComponent = new NativeHashMap<int, int2>(16, Allocator.Temp);
+                _routes.Clear();
+                _byComponent.Clear();
                 foreach (var joiner in joiners)
                 {
-                    var path = Route(access, Query(joiner.y, access).From, goal, routes, byComponent);
+                    var path = Route(access, Query(joiner.y, access).From, goal);
                     var kept = corridor.SectorCount;
-                    AddWithRings(ref corridor, path);
+                    corridor.AddWithRings(path);
                     if (part.Length > 0 && corridor.Cells > GroupFields.MaxCells)
                     {
                         corridor.Truncate(kept);
-                        cost += Open(field, corridor, goal, part, first, ref joined);
+                        cost += Open(field, corridor, goal, part);
                         corridor = new NavCorridor(_grid.Field.SectorsPerAxis, Allocator.Persistent);
-                        AddWithRings(ref corridor, path);
+                        corridor.AddWithRings(path);
                         part.Clear();
                     }
 
                     part.Add(joiner.y);
                 }
 
-                cost += Open(field, corridor, goal, part, first, ref joined);
+                cost += Open(field, corridor, goal, part);
                 part.Dispose();
-                routes.Dispose();
-                byComponent.Dispose();
                 return cost;
             }
 
             // Members starting in one component share its abstract path: it begins there, so it covers them all.
-            private NativeArray<int> Route(in NavAccess access, int2 from, int2 goal, NativeList<int> routes,
-                NativeHashMap<int, int2> byComponent)
+            private NativeArray<int> Route(in NavAccess access, int2 from, int2 goal)
             {
                 var component = _grid.Sectors.Component(access.ClassIndex, from);
-                if (!byComponent.TryGetValue(component, out var range))
+                if (!_byComponent.TryGetValue(component, out var range))
                 {
-                    range.x = routes.Length;
-                    _search.Find(access, from, goal, routes);
-                    range.y = routes.Length - range.x;
-                    byComponent[component] = range;
+                    range.x = _routes.Length;
+                    _search.Find(access, from, goal, _routes);
+                    range.y = _routes.Length - range.x;
+                    _byComponent[component] = range;
                 }
 
-                return routes.AsArray().GetSubArray(range.x, range.y);
+                return _routes.AsArray().GetSubArray(range.x, range.y);
             }
 
-            private static void AddWithRings(ref NavCorridor corridor, NativeArray<int> sectors)
-            {
-                foreach (var sector in sectors)
-                {
-                    corridor.AddWithRing(sector);
-                }
-            }
-
-            private float Open(GroupField field, NavCorridor corridor, int2 goal, NativeList<int> part, int first,
-                ref bool joined)
+            private float Open(GroupField field, NavCorridor corridor, int2 goal, NativeList<int> part)
             {
                 field.Field = new FlowField(corridor, goal, Allocator.Persistent);
                 var index = _fields.Fields.Length;
@@ -150,9 +133,7 @@ namespace HyperRTS.Simulation.Navigation
                 float cost = corridor.Cells;
                 foreach (var member in part)
                 {
-                    _handled[member] = true;
-                    joined |= member == first;
-                    cost += AddTrace(member, _queries[member], index);
+                    cost += AddTrace(member, index);
                 }
 
                 return cost;

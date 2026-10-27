@@ -157,6 +157,27 @@ namespace HyperRTS.Simulation.Navigation
             Stuck = stuck;
         }
 
+        /// <summary>
+        /// Asks for a search, unless one is pending: records <paramref name="cause"/> and the frame, and drops the
+        /// corners when <paramref name="dropsCorners"/>.
+        /// </summary>
+        public void Request(DynamicBuffer<PathWaypoint> waypoints, PathCause cause, bool dropsCorners, uint frame)
+        {
+            if (Status == PathStatus.Requested)
+            {
+                return;
+            }
+
+            Cause = cause;
+            if (dropsCorners)
+            {
+                ClearWaypoints(waypoints);
+            }
+
+            Status = PathStatus.Requested;
+            RequestFrame = frame;
+        }
+
         public void ClearWaypoints(DynamicBuffer<PathWaypoint> waypoints)
         {
             waypoints.Clear();

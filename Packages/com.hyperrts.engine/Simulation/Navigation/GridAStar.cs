@@ -29,10 +29,17 @@ namespace HyperRTS.Simulation.Navigation
         private UnsafeList<float> _costs;
         private UnsafeList<byte> _marks;
         private OpenSet _open;
+        private readonly NavCorridor _corridor;
+        private int2 _goal;
+        private int _goalIndex;
 
-        /// <summary>Records for a corridor of <paramref name="cells"/> cells.</summary>
-        public GridAStar(int cells, Allocator allocator)
+        /// <summary>Records for the corridor, which it searches but doesn't own.</summary>
+        public GridAStar(in NavCorridor corridor, Allocator allocator)
         {
+            var cells = corridor.Cells;
+            _corridor = corridor;
+            _goal = default;
+            _goalIndex = -1;
             _parents = new UnsafeList<int>(cells, allocator);
             _parents.Resize(cells);
             _costs = new UnsafeList<float>(cells, allocator);
@@ -46,8 +53,7 @@ namespace HyperRTS.Simulation.Navigation
         /// Fills <paramref name="path"/> with cells from start to goal, both inside the corridor; false, with no path,
         /// when the goal is out of the start's reach there. Never stops early.
         /// </summary>
-        public bool Search(in NavAccess access, in NavCorridor corridor, int2 start, int2 goal, NativeList<int2> path,
-            out int expansions)
+        public bool Search(in NavAccess access, int2 start, int2 goal, NativeList<int2> path, out int expansions)
         {
             using var scope = SearchMarker.Auto();
             for (var i = 0; i < _marks.Length; i++)
@@ -57,11 +63,12 @@ namespace HyperRTS.Simulation.Navigation
 
             _open.Clear();
             path.Clear();
-            var goalIndex = corridor.Index(goal);
-            var reached = Explore(access, corridor, start, goal, goalIndex, out expansions);
+            _goal = goal;
+            _goalIndex = _corridor.Index(goal);
+            var reached = Explore(access, start, out expansions);
             if (reached)
             {
-                Reconstruct(corridor, goalIndex, path);
+                Reconstruct(_goalIndex, path);
             }
 
             return reached;
@@ -103,12 +110,11 @@ namespace HyperRTS.Simulation.Navigation
             _open.Dispose();
         }
 
-        private bool Explore(in NavAccess access, in NavCorridor corridor, int2 start, int2 goal, int goalIndex,
-            out int expansions)
+        private bool Explore(in NavAccess access, int2 start, out int expansions)
         {
-            var first = corridor.Index(start);
+            var first = _corridor.Index(start);
             Reach(first, -1, 0f);
-            _open.Push(first, Heuristic(start, goal) * HeuristicWeight);
+            _open.Push(first, Heuristic(start, _goal) * HeuristicWeight);
             expansions = 0;
             while (_open.TryPop(out var current))
             {
@@ -118,12 +124,12 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 _marks[current] = Closed;
-                if (current == goalIndex)
+                if (current == _goalIndex)
                 {
                     return true;
                 }
 
-                Expand(access, corridor, current, goal);
+                Expand(access, current);
                 expansions++;
             }
 
@@ -131,9 +137,9 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         // Every expanded cell was open when pushed, and the start comes from TryFindNearest.
-        private void Expand(in NavAccess access, in NavCorridor corridor, int parent, int2 goal)
+        private void Expand(in NavAccess access, int parent)
         {
-            var cell = corridor.Cell(parent);
+            var cell = _corridor.Cell(parent);
             var cost = _costs[parent];
             var block = new CellBlock(access, cell);
             for (var dy = -1; dy <= 1; dy++)
@@ -141,7 +147,7 @@ namespace HyperRTS.Simulation.Navigation
                 for (var dx = -1; dx <= 1; dx++)
                 {
                     var offset = new int2(dx, dy);
-                    var index = corridor.Index(parent, cell, offset);
+                    var index = _corridor.Index(parent, cell, offset);
                     if ((dx == 0 && dy == 0) || index < 0 || _marks[index] == Closed || !block.CanStepOut(offset))
                     {
                         continue;
@@ -155,7 +161,7 @@ namespace HyperRTS.Simulation.Navigation
                     }
 
                     Reach(index, parent, nextCost);
-                    _open.Push(index, nextCost + Heuristic(next, goal) * HeuristicWeight);
+                    _open.Push(index, nextCost + Heuristic(next, _goal) * HeuristicWeight);
                 }
             }
         }
@@ -167,11 +173,11 @@ namespace HyperRTS.Simulation.Navigation
             _costs[index] = cost;
         }
 
-        private readonly void Reconstruct(in NavCorridor corridor, int last, NativeList<int2> path)
+        private readonly void Reconstruct(int last, NativeList<int2> path)
         {
             for (var index = last; index >= 0; index = _parents[index])
             {
-                path.Add(corridor.Cell(index));
+                path.Add(_corridor.Cell(index));
             }
 
             for (int i = 0, j = path.Length - 1; i < j; i++, j--)

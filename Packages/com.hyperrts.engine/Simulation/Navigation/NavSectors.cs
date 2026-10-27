@@ -86,8 +86,14 @@ namespace HyperRTS.Simulation.Navigation
             return outside ? -1 : sector.y * SectorsPerAxis.x + sector.x;
         }
 
-        public readonly int2 Origin(int sector) =>
-            new int2(sector % SectorsPerAxis.x, sector / SectorsPerAxis.x) * NavField.SectorCells;
+        public readonly int2 Origin(int sector) => Coordinates(sector, SectorsPerAxis) * NavField.SectorCells;
+
+        /// <summary>A sector's column and row among <paramref name="sectorsPerAxis"/>.</summary>
+        public static int2 Coordinates(int sector, int2 sectorsPerAxis) =>
+            new(sector % sectorsPerAxis.x, sector / sectorsPerAxis.x);
+
+        // Where one class's entry for a sector sits in the per-sector arrays.
+        private readonly int ClassSector(int classIndex, int sector) => classIndex * SectorCount + sector;
 
         /// <summary>A cell's index inside its sector.</summary>
         public static int Local(int2 cell)
@@ -108,7 +114,7 @@ namespace HyperRTS.Simulation.Navigation
                 return -1;
             }
 
-            var label = Labels[(classIndex * SectorCount + sector) * Area + Local(cell)];
+            var label = Labels[(ClassSector(classIndex, sector)) * Area + Local(cell)];
             return label == 0 ? -1 : Global(classIndex, sector, label);
         }
 
@@ -123,17 +129,19 @@ namespace HyperRTS.Simulation.Navigation
         public readonly int2 Representative(int classIndex, int component)
         {
             var sector = Owners[component];
-            var label = component - Firsts[classIndex * SectorCount + sector];
-            return Cell(sector, Representatives[(classIndex * SectorCount + sector) * MaxComponents + label]);
+            var label = component - Firsts[ClassSector(classIndex, sector)];
+            return Cell(sector, Representatives[(ClassSector(classIndex, sector)) * MaxComponents + label]);
         }
 
         /// <summary>
         /// Relabels one class over one sector from the field. Each call writes only that sector's entries of that class,
         /// so calls for different sectors or classes may run at once.
         /// </summary>
-        public void Relabel(in NavField field, int slot, float radius, int classIndex, int sector)
+        public void Relabel(in NavField field, in MovementClasses classes, int classIndex, int sector)
         {
-            var offset = (classIndex * SectorCount + sector) * Area;
+            var slot = classes.FieldSlot(classIndex);
+            var radius = classes.Classes[classIndex].Radius;
+            var offset = (ClassSector(classIndex, sector)) * Area;
             for (var local = 0; local < Area; local++)
             {
                 var cell = Cell(sector, local);
@@ -148,11 +156,11 @@ namespace HyperRTS.Simulation.Navigation
                 {
                     count++;
                     var representative = Flood(offset, local, (byte)count);
-                    Representatives[(classIndex * SectorCount + sector) * MaxComponents + count - 1] = representative;
+                    Representatives[(ClassSector(classIndex, sector)) * MaxComponents + count - 1] = representative;
                 }
             }
 
-            Counts[classIndex * SectorCount + sector] = (byte)count;
+            Counts[ClassSector(classIndex, sector)] = (byte)count;
         }
 
         // Labels one 4-connected component from a seed and returns its cell nearest the centroid.
@@ -215,11 +223,9 @@ namespace HyperRTS.Simulation.Navigation
             MarkAllDirty();
             for (var classIndex = 0; classIndex < ClassCount; classIndex++)
             {
-                var slot = classes.FieldSlot(classIndex);
-                var radius = classes.Classes[classIndex].Radius;
                 for (var sector = 0; sector < SectorCount; sector++)
                 {
-                    Relabel(field, slot, radius, classIndex, sector);
+                    Relabel(field, classes, classIndex, sector);
                 }
             }
 

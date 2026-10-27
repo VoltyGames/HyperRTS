@@ -69,20 +69,15 @@ namespace HyperRTS.Simulation.Navigation
             NativeList<float3> points)
         {
             var corridor = new NavCorridor(access.Grid.Field.SectorsPerAxis, Allocator.Temp);
-            foreach (var sector in sectors)
-            {
-                corridor.AddWithRing(sector);
-            }
-
-            var search = new GridAStar(corridor.Cells, Allocator.Temp);
+            corridor.AddWithRings(sectors);
+            var search = new GridAStar(corridor, Allocator.Temp);
             var cells = new NativeList<int2>(256, Allocator.Temp);
-            if (!search.Search(access, corridor, query.From, query.To, cells, out var expansions))
+            if (!search.Search(access, query.From, query.To, cells, out var expansions))
             {
                 throw new InvalidOperationException("The fine search found no path inside its corridor.");
             }
 
-            query.Begin(points);
-            Smooth(access, query.Origin, query.End, cells, points);
+            query.AddSmoothed(access, cells, points);
             cells.Dispose();
             search.Dispose();
             corridor.Dispose();
@@ -111,28 +106,6 @@ namespace HyperRTS.Simulation.Navigation
             using var sectors = new NativeList<int>(32, Allocator.Temp);
             FindSectors(access, query, sectors);
             return Route(access, query, sectors.AsArray(), points);
-        }
-
-        /// <summary>
-        /// Greedy string pulling over cells from the origin's to the end's: keep a corner only when the last kept
-        /// point can't see the point after it.
-        /// </summary>
-        public static void Smooth(in NavAccess access, float3 origin, float3 end, NativeList<int2> cells,
-            NativeList<float3> points)
-        {
-            var anchor = origin;
-            for (var i = 1; i < cells.Length - 1; i++)
-            {
-                var point = access.Grid.CellCenter(cells[i]);
-                var next = i + 1 == cells.Length - 1 ? end : access.Grid.CellCenter(cells[i + 1]);
-                if (!access.HasLineOfSight(anchor, next))
-                {
-                    points.Add(point);
-                    anchor = point;
-                }
-            }
-
-            points.Add(end);
         }
     }
 }
