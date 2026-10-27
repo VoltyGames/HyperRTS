@@ -38,7 +38,8 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 2. Register its traits once from a system update with `OrderTraitTable.Register`: `EngagesWhileMoving`,
    `AttackMove`, `Formation`, `MovesToPosition` (the move order runs it) or `Loops`. `OrderWriter.Issue` rejects
    a game type with none registered.
-3. In a system, move units with that `ActiveOrder` using `TargetReach.Approach` or `MoveDestination`.
+3. In a system, move units with that `ActiveOrder` using `TargetReach.Approach`, handing it a `MoveControl` built
+   from the job's `MoveDestination` and `Arrival`, or set `MoveDestination` directly.
 4. Disable `ActiveOrder` when the order is done.
 
 ## Mapping a Generals-style design

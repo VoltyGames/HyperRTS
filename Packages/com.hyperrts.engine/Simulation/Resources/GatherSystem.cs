@@ -104,7 +104,7 @@ namespace HyperRTS.Simulation.Resources
             [ReadOnly] public NavGrid Grid;
 
             private void Execute(Entity entity, ref Harvester harvester, ref HarvestState harvest,
-                ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy, ref MoveDestination destination,
+                ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy, RefRW<MoveDestination> destination,
                 EnabledRefRW<MoveDestination> moving, ref Arrival arrival, EnabledRefRW<Arrival> arrived,
                 in LocalTransform transform, in NavAgent agent, in Faction faction)
             {
@@ -113,10 +113,10 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
+                var move = new MoveControl(destination, moving, arrived) { Reason = arrival.Reason };
                 if (harvest.Phase == HarvestPhase.Returning)
                 {
-                    Return(entity, ref harvester, ref harvest, ref destination, busy, moving, arrived, arrival.Reason,
-                        transform, agent, faction.Value);
+                    Return(entity, ref harvester, ref harvest, move, busy, transform, agent, faction.Value);
                     return;
                 }
 
@@ -128,8 +128,7 @@ namespace HyperRTS.Simulation.Resources
 
                 var node = order.Value.Target;
                 var nodePosition = Reach.Position(node);
-                var toNode = Arrive(node, entity, ref harvest, ref destination, moving, arrived, arrival.Reason,
-                    transform, agent);
+                var toNode = Arrive(node, entity, ref harvest, move, transform, agent);
                 if (!ActiveOrder.StopsShort(toNode, busy, moving))
                 {
                     Gather(ref harvester, ref harvest, node, nodePosition);
@@ -174,11 +173,10 @@ namespace HyperRTS.Simulation.Resources
                 }
             }
 
-            private void Return(Entity entity, ref Harvester harvester, ref HarvestState harvest,
-                ref MoveDestination destination, EnabledRefRW<ActiveOrder> busy, EnabledRefRW<MoveDestination> moving,
-                EnabledRefRW<Arrival> arrived, ArrivalReason reason, in LocalTransform transform, in NavAgent agent,
-                byte faction)
+            private void Return(Entity entity, ref Harvester harvester, ref HarvestState harvest, MoveControl move,
+                EnabledRefRW<ActiveOrder> busy, in LocalTransform transform, in NavAgent agent, byte faction)
             {
+                var moving = move.Moving;
                 // Empty-handed goes straight back to work.
                 if (harvester.CargoAmount <= 0)
                 {
@@ -200,7 +198,7 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
-                var walk = Arrive(dropOff, entity, ref harvest, ref destination, moving, arrived, reason, transform, agent);
+                var walk = Arrive(dropOff, entity, ref harvest, move, transform, agent);
                 if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;

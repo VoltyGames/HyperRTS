@@ -85,7 +85,7 @@ namespace HyperRTS.Simulation.Capture
             public Entity Events;
 
             private void Execute(Entity entity, in Capturer capturer, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
-                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
+                RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
                 in LocalTransform transform, in NavAgent agent)
             {
                 if (!busy.ValueRO || order.Value.Type != OrderType.Capture)
@@ -101,7 +101,7 @@ namespace HyperRTS.Simulation.Capture
                     return;
                 }
 
-                var walk = Reach.Approach(target, transform, agent, ref destination, moving, arrived);
+                var walk = Reach.Approach(target, transform, agent, new MoveControl(destination, moving, arrived));
                 if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;

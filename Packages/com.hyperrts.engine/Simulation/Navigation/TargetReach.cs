@@ -40,13 +40,37 @@ namespace HyperRTS.Simulation.Navigation
 
         public LocalTransform Transform(Entity entity) => _transforms[entity];
 
-        /// <summary>Walks the unit toward the target's edge until in reach, then stops it.</summary>
-        public WalkUp Approach(Entity target, in LocalTransform unit, in NavAgent agent, ref MoveDestination destination,
-            EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived)
+        /// <summary>
+        /// Walks the unit toward the target's nearest edge until in reach, then stops it. A walk that locomotion ended
+        /// by itself short of a goal still by the target is stuck.
+        /// </summary>
+        public WalkUp Approach(Entity target, in LocalTransform unit, in NavAgent agent, MoveControl move)
         {
-            var axis = agent.SegmentAxis(unit.Rotation);
-            return ReachMath.Approach(ref destination, moving, arrived, Footprint(target), unit.Position, axis,
-                agent.Radius, _navCellSize);
+            var footprint = Footprint(target);
+            var position = unit.Position;
+            if (ReachMath.InReach(footprint, position.xz, agent.SegmentAxis(unit.Rotation), agent.Radius, _navCellSize))
+            {
+                move.Stop();
+                return WalkUp.Reached;
+            }
+
+            // A goal already by the target stays put, so the path isn't restarted as the nearest edge slides.
+            var goal = move.Destination.ValueRO.Value.xz;
+            var isGoalByTarget = footprint.Gap(goal, goal) <= ReachMath.Reach(agent.Radius, _navCellSize);
+            if (isGoalByTarget && move.Arrived.ValueRO && !move.Moving.ValueRO)
+            {
+                return WalkUp.Stuck;
+            }
+
+            if (isGoalByTarget && move.Moving.ValueRO)
+            {
+                return WalkUp.Walking;
+            }
+
+            var edge = footprint.EdgePoint(position.xz, agent.Radius + ReachMath.Slack * 0.5f);
+            ReachMath.MoveTo(ref move.Destination.ValueRW, move.Moving, new float3(edge.x, position.y, edge.y));
+            move.Arrived.ValueRW = false;
+            return WalkUp.Walking;
         }
 
         /// <summary>

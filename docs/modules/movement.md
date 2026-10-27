@@ -83,7 +83,8 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 - `TargetReach` walks a unit up to a target to build, repair, capture, board or gather. It heads for the point just
   outside the target's footprint edge nearest the unit, and counts it there when the capsule, hull edge to footprint
   edge, is within its slack plus a nav cell, so a long truck arriving nose first stops at the wall. A building's
-  footprint is its `NavObstacle` and a unit's, such as a transport, the box round its `NavAgent` hull.
+  footprint is its `NavObstacle` and a unit's, such as a transport, the box round its `NavAgent` hull. The job hands it a
+  `MoveControl`: the destination, its enabled bit and the `Arrival` bit, written together.
 - The extra cell stays: a footprint closes every cell it overlaps, and a rotated one's closed cells are no box, so
   one cell bounds them without asking the grid.
 - A walk-up whose move locomotion ends by itself short of the target, given up or at the end of a path that can't

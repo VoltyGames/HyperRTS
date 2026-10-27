@@ -11,32 +11,31 @@ namespace HyperRTS.Simulation.Resources
         {
             // A vehicle drives into a bay of the target's dock, waiting in line while every bay is taken, and first
             // finishes leaving the bay it worked at; anything else walks to the edge.
-            private WalkUp Arrive(Entity target, Entity entity, ref HarvestState harvest, ref MoveDestination destination,
-                EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived, ArrivalReason reason,
+            private WalkUp Arrive(Entity target, Entity entity, ref HarvestState harvest, MoveControl move,
                 in LocalTransform transform, in NavAgent agent)
             {
-                if (IsLeaving(target, entity, ref harvest, ref destination, transform, agent))
+                if (IsLeaving(target, entity, ref harvest, ref move.Destination.ValueRW, transform, agent))
                 {
-                    Reach.Approach(target, transform, agent, ref destination, moving, arrived);
-                    destination.ExitRun = Bays.Pose(harvest.Dock, harvest.Bay).ExitRun(transform.Position.xz);
+                    Reach.Approach(target, transform, agent, move);
+                    move.Destination.ValueRW.ExitRun =
+                        Bays.Pose(harvest.Dock, harvest.Bay).ExitRun(transform.Position.xz);
                     return WalkUp.Walking;
                 }
 
                 if (!agent.UsesBays || !Bays.Has(target))
                 {
-                    return Reach.Approach(target, transform, agent, ref destination, moving, arrived);
+                    return Reach.Approach(target, transform, agent, move);
                 }
 
                 if (!HoldsBay(target, entity, ref harvest, transform))
                 {
-                    WaitInLine(target, ref harvest, ref destination, moving, arrived, transform, agent);
+                    WaitInLine(target, ref harvest, move, transform, agent);
                     return WalkUp.Walking;
                 }
 
                 var facing = math.normalizesafe(transform.Forward().xz);
                 var bay = Bays.Pose(target, harvest.Bay);
-                return ReachMath.ApproachBay(ref destination, moving, arrived, reason, bay, transform.Position.xz,
-                    facing);
+                return ReachMath.ApproachBay(move, bay, transform.Position.xz, facing);
             }
 
             // Still driving out of another dock's bay, which frees once the hull is clear of the stop.
@@ -83,8 +82,8 @@ namespace HyperRTS.Simulation.Resources
                     return false;
                 }
 
-                var waitingAt = waits ? harvest.Bay : -1;
-                if (!Bays.TryClaim(dock, entity, transform.Position.xz, waitingAt, harvest.Place, out var bay))
+                var firstInLineAt = waits && harvest.Place == 1 ? harvest.Bay : -1;
+                if (!Bays.TryClaim(dock, entity, transform.Position.xz, firstInLineAt, out var bay))
                 {
                     harvest.RetryIn = RetrySeconds;
                     return false;
@@ -96,16 +95,14 @@ namespace HyperRTS.Simulation.Resources
                 return true;
             }
 
-            private void WaitInLine(Entity dock, ref HarvestState harvest, ref MoveDestination destination,
-                EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived, in LocalTransform transform,
+            private void WaitInLine(Entity dock, ref HarvestState harvest, MoveControl move, in LocalTransform transform,
                 in NavAgent agent)
             {
                 var place = harvest.Dock == dock ? harvest.Place : 0;
                 harvest.Place = Bays.Queue(dock, ref harvest.Bay, place);
                 harvest.Dock = dock;
                 var bay = Bays.Pose(dock, harvest.Bay);
-                ReachMath.WaitInLine(ref destination, moving, arrived, bay, harvest.Place, agent.HalfLength * 2f,
-                    transform.Position.xz);
+                ReachMath.WaitInLine(move, bay, harvest.Place, agent.HalfLength * 2f, transform.Position.xz);
             }
         }
     }

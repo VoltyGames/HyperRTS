@@ -78,7 +78,7 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
 
             private void Execute(in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
-                ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
+                RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
                 in LocalTransform transform, in NavAgent agent, in Faction faction)
             {
                 if (!busy.ValueRO || order.Value.Type != OrderType.Build)
@@ -93,7 +93,7 @@ namespace HyperRTS.Simulation.Buildings
                     return;
                 }
 
-                var walk = Reach.Approach(site, transform, agent, ref destination, moving, arrived);
+                var walk = Reach.Approach(site, transform, agent, new MoveControl(destination, moving, arrived));
                 if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;

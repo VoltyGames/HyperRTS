@@ -81,7 +81,7 @@ namespace HyperRTS.Simulation.Transport
             public BufferLookup<QueuedOrder> QueueLookup;
 
             private void Execute(Entity entity, ref ActiveOrder order,
-                EnabledRefRW<ActiveOrder> busy, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
+                EnabledRefRW<ActiveOrder> busy, RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving,
                 EnabledRefRW<Arrival> arrived, in NavAgent agent)
             {
                 var entering = busy.ValueRO && order.Value.Type == OrderType.Enter;
@@ -97,7 +97,8 @@ namespace HyperRTS.Simulation.Transport
                     return;
                 }
 
-                var walk = Reach.Approach(container, Reach.Transform(entity), agent, ref destination, moving, arrived);
+                var walk = Reach.Approach(container, Reach.Transform(entity), agent,
+                    new MoveControl(destination, moving, arrived));
                 if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;

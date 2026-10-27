@@ -31,8 +31,6 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Places taken so far this frame, rolled into <see cref="Line"/> by <see cref="DockSystem"/>.</summary>
         public uint NextLine;
 
-        public readonly int Waiting => math.countbits(Line);
-
         public readonly bool IsFree => Occupant == Entity.Null;
 
         public readonly BayPose WorldPose(in LocalTransform dock)
@@ -116,9 +114,9 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>
         /// Claims the free bay nearest the unit that nobody waits for ahead of it: one with no line, or the bay it
-        /// is first in line for (<paramref name="place"/> 1 at <paramref name="waitingAt"/>).
+        /// is first in line for (<paramref name="firstInLineAt"/>, -1 for none).
         /// </summary>
-        public bool TryClaim(Entity dock, Entity unit, float2 position, int waitingAt, int place, out int claimed)
+        public bool TryClaim(Entity dock, Entity unit, float2 position, int firstInLineAt, out int claimed)
         {
             var bays = _bays[dock];
             var transform = _transforms[dock];
@@ -126,7 +124,7 @@ namespace HyperRTS.Simulation.Navigation
             for (var i = 0; i < bays.Length; i++)
             {
                 var bay = bays[i];
-                var isFirst = bay.Line == 0 || (i == waitingAt && place == 1);
+                var isFirst = bay.Line == 0 || i == firstInLineAt;
                 if (bay.IsFree && isFirst)
                 {
                     closest.Consider(i, dock, math.distancesq(position, bay.WorldPose(transform).Stop.xz));
