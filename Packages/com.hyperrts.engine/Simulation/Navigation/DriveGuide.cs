@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -132,7 +133,7 @@ namespace HyperRTS.Simulation.Navigation
         // Only a goal in a lane, walls on both sides within reach, has its front closed: in open ground it may turn.
         private void CloseFront(in DriveGoal goal, float hullLength)
         {
-            var side = new float2(-goal.Facing.y, goal.Facing.x);
+            var side = Planar.Left(goal.Facing);
             var middle = goal.Center + goal.Facing * FrontAhead;
             var halfCell = _access.Grid.CellSize * 0.5f;
             var reach = (int)math.ceil(hullLength * FrontHulls / halfCell);

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
@@ -42,7 +43,7 @@ namespace HyperRTS.Simulation.Navigation
         public readonly AxlePose Rotate(in AxlePose pose, float angle)
         {
             math.sincos(angle, out var sin, out var cos);
-            return Pose(Center(pose), math.normalize(Rotate(pose.Facing, sin, cos)));
+            return Pose(Center(pose), math.normalize(Planar.Rotate(pose.Facing, sin, cos)));
         }
 
         /// <summary>
@@ -57,17 +58,10 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             var rear = center - facing * RearAxle;
-            var side = Cross(facing, target - rear) >= 0f ? 1f : -1f;
-            var middle = rear + Left(facing) * (side * TurnRadius);
+            var side = Planar.Cross(facing, target - rear) >= 0f ? 1f : -1f;
+            var middle = rear + Planar.Left(facing) * (side * TurnRadius);
             var reach = math.sqrt(TurnRadius * TurnRadius + RearAxle * RearAxle);
             return math.distance(target, middle) < reach * slack;
         }
-
-        private static float2 Left(float2 facing) => new(-facing.y, facing.x);
-
-        private static float2 Rotate(float2 facing, float sin, float cos) =>
-            new(facing.x * cos - facing.y * sin, facing.x * sin + facing.y * cos);
-
-        private static float Cross(float2 a, float2 b) => a.x * b.y - a.y * b.x;
     }
 }

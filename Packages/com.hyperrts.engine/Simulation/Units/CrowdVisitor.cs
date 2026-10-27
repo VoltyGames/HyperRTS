@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Collections;
 using Unity.Entities;
@@ -258,7 +259,7 @@ namespace HyperRTS.Simulation.Units
         /// <summary>Away from the mover and out of its lane, toward its left head-on, as it keeps right.</summary>
         private readonly float2 StepAside(float2 direction, in SpatialEntry mover)
         {
-            var left = new float2(-mover.Facing.y, mover.Facing.x);
+            var left = Planar.Left(mover.Facing);
             var side = math.dot(Position - mover.Position.xz, left) < 0f ? -left : left;
             return math.normalizesafe(direction + side);
         }

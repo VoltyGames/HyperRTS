@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
@@ -50,7 +51,7 @@ namespace HyperRTS.Simulation.Navigation
             var found = false;
             for (var side = -1f; side <= 1f; side += 2f)
             {
-                var center = from.Position + Left(from.Facing) * (side * radius);
+                var center = from.Position + Planar.Left(from.Facing) * (side * radius);
                 var toPoint = point - center;
                 var distance = math.length(toPoint);
                 if (distance < radius)
@@ -59,7 +60,7 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 var straight = math.sqrt(distance * distance - radius * radius);
-                var heading = Rotate(toPoint / distance, side * math.atan2(radius, straight));
+                var heading = Planar.Rotate(toPoint / distance, side * math.atan2(radius, straight));
                 var candidate = new DriveCurve
                 {
                     Start = from, Radius = radius, FirstTurn = Sweep(from.Facing, heading, side), Straight = straight,
@@ -97,8 +98,8 @@ namespace HyperRTS.Simulation.Navigation
             out DriveCurve curve)
         {
             curve = default;
-            var start = from.Position + Left(from.Facing) * (first * radius);
-            var end = to.Position + Left(to.Facing) * (last * radius);
+            var start = from.Position + Planar.Left(from.Facing) * (first * radius);
+            var end = to.Position + Planar.Left(to.Facing) * (last * radius);
             var between = end - start;
             var distance = math.length(between);
             var heading = to.Facing;
@@ -111,7 +112,7 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 straight = math.sqrt(distance * distance - 4f * radius * radius);
-                heading = Rotate(between / distance, first * math.atan2(radius * 2f, straight));
+                heading = Planar.Rotate(between / distance, first * math.atan2(radius * 2f, straight));
             }
             else if (distance > 1e-4f)
             {
@@ -130,21 +131,13 @@ namespace HyperRTS.Simulation.Navigation
         // Radians turned from one heading to another going one way round; float noise near none reads as none.
         private static float Sweep(float2 from, float2 to, float side)
         {
-            var angle = side * math.atan2(from.x * to.y - from.y * to.x, math.dot(from, to));
+            var angle = side * Planar.SignedAngle(from, to);
             if (angle < 0f)
             {
                 angle += FullTurn;
             }
 
             return side * (angle > FullTurn - 1e-4f ? 0f : angle);
-        }
-
-        private static float2 Left(float2 facing) => new(-facing.y, facing.x);
-
-        private static float2 Rotate(float2 direction, float angle)
-        {
-            math.sincos(angle, out var sin, out var cos);
-            return new float2(direction.x * cos - direction.y * sin, direction.x * sin + direction.y * cos);
         }
     }
 }

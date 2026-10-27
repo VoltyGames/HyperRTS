@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using System;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -189,7 +190,7 @@ namespace HyperRTS.Simulation.Navigation
         // The whole sweep of the pivot, sliding off a wall an end swings into as locomotion does.
         private readonly bool CanTurnInPlace(in AxlePose pose, float2 toward)
         {
-            var turn = math.atan2(pose.Facing.x * toward.y - pose.Facing.y * toward.x, math.dot(pose.Facing, toward));
+            var turn = Planar.SignedAngle(pose.Facing, toward);
             var steps = (int)math.ceil(math.abs(turn) / PivotSample);
             var center = Chassis.Center(pose);
             var axis = pose.Facing * _agent.HalfSegment;

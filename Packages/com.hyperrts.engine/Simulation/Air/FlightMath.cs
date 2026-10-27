@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Air
@@ -20,8 +21,7 @@ namespace HyperRTS.Simulation.Air
         public static float2 Loiter(quaternion rotation, float distance, float radius)
         {
             var forward = math.normalizesafe(math.forward(rotation).xz, new float2(0f, 1f));
-            math.sincos(distance / radius, out var sin, out var cos);
-            return new float2(forward.x * cos - forward.y * sin, forward.x * sin + forward.y * cos);
+            return Planar.Rotate(forward, distance / radius);
         }
     }
 }

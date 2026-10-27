@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
@@ -27,16 +28,16 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             math.sincos(turn, out var sin, out var cos);
-            var left = new float2(-Facing.y, Facing.x);
+            var left = Planar.Left(Facing);
             var moved = (Facing * sin + left * (1f - cos)) / curvature;
-            var facing = new float2(Facing.x * cos - Facing.y * sin, Facing.x * sin + Facing.y * cos);
+            var facing = Planar.Rotate(Facing, sin, cos);
             return new AxlePose(Position + moved, facing);
         }
 
         /// <summary>Where a step ends from this pose, given as where it ends from the origin facing +x.</summary>
         public readonly AxlePose Follow(in AxlePose step)
         {
-            var left = new float2(-Facing.y, Facing.x);
+            var left = Planar.Left(Facing);
             var position = Position + Facing * step.Position.x + left * step.Position.y;
             return new AxlePose(position, Facing * step.Facing.x + left * step.Facing.y);
         }
