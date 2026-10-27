@@ -95,6 +95,8 @@ UIElements, and a headless server never runs `Client/`. See [architecture](docs/
   beside GameObjects: filter with `t:` and a component name.
 - EditMode tests live in `HyperRTS.Simulation.Tests` (end to end through `TestWorld`), `HyperRTS.Presentation.Tests`
   and `HyperRTS.Editor.Tests`.
+- Test behaviour that matters and hard edge cases, not every method or path. Extend an existing test before adding a
+  near-copy, and skip a case another test already covers.
 - A new authoring rule is an `AuthoringRule<T>` in `Editor/Validation/Rules/`. The inspector,
   **HyperRTS ▸ Tools ▸ Validate** and the tests pick it up.
 - In Play, the Scene view's **HyperRTS Debug** overlay and **HyperRTS ▸ Tools ▸ Play** inspect and drive the world.
