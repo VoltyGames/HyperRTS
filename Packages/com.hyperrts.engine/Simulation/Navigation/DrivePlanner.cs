@@ -7,10 +7,8 @@ using Unity.Profiling;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Checks a vehicle can drive a fresh path: its start and each corner, swept along the forward curve its chassis
-    /// would drive, or for tracks a turn in place. A stretch that hits a wall, and the start whenever walls held the
-    /// unit, is planned by a <see cref="DriveSearch"/> into <see cref="PathWaypoint.Tight"/> waypoints. Easy paths
-    /// run no search. A pose end and a straight exit run, as into and out of a dock bay, are always tight.
+    /// Checks a vehicle can drive a fresh path and plans the stretches it can't with a <see cref="DriveSearch"/> into
+    /// <see cref="PathWaypoint.Tight"/> waypoints.
     /// </summary>
     internal partial struct DrivePlanner : IDisposable
     {

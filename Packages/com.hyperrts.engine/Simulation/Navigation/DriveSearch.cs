@@ -7,10 +7,8 @@ using Unity.Profiling;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Hybrid A* over the rear axle's pose for a stretch of path the chassis can't drive as drawn: 1.5 m arcs
-    /// forwards and, within its reverse run, backwards, 3 m arcs in open ground, in a window round the stretch, led by
-    /// a <see cref="DriveGuide"/> and ended early by a clear <see cref="DriveCurve"/>. Its result is the hull centre's
-    /// waypoints every step, each <see cref="PathWaypoint.Tight"/>.
+    /// Hybrid A* over the rear axle's pose, led by a <see cref="DriveGuide"/>, for a stretch of path the chassis can't
+    /// drive as drawn. It gives the hull centre's waypoints, each <see cref="PathWaypoint.Tight"/>.
     /// </summary>
     public partial struct DriveSearch : IDisposable
     {

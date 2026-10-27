@@ -9,12 +9,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Plans <see cref="PathWaypoint"/>s for units whose <see cref="MoveDestination"/> is new or moved by more than a
-    /// cell, or whose path passes near cells the grid changed (<see cref="NavChanges"/>). A chased goal re-aims the
-    /// path's end by sight instead. Each frame takes requests oldest first until their estimated cost (corridor
-    /// cells) spends the budget, then serves them in parallel, each to the end: none returns a partial path.
-    /// Formation members share a <see cref="GroupField"/> and trace it; single moves, chases and walk-ups search a
-    /// corridor. Aircraft (<see cref="NavLayer.Air"/>) fly straight.
+    /// Plans <see cref="PathWaypoint"/>s for units with a new move or a path the grid changed near, a frame's budget at
+    /// a time and each path whole. Formation members trace a shared <see cref="GroupField"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]

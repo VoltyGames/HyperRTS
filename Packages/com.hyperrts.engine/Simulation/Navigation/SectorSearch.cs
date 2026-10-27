@@ -6,10 +6,8 @@ using Unity.Profiling;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Abstract A* over the <see cref="NavSectors"/> graph, from the start's component to the goal's. Nodes stand at
-    /// their representative cells (the start and goal at their own), and each edge costs the octile distance between
-    /// its ends, so the octile heuristic stays consistent. The sectors it crosses, plus a ring, are the corridor the
-    /// fine search keeps to.
+    /// A* over the <see cref="NavSectors"/> graph for the corridor the fine search keeps to. Edges cost the octile
+    /// distance between representative cells, which keeps the octile heuristic consistent.
     /// </summary>
     public struct SectorSearch : IDisposable
     {

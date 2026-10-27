@@ -55,8 +55,8 @@ namespace HyperRTS.Simulation.Units
         }
 
         /// <summary>
-        /// Pursuit that brings the hull centre, not the rear axle, onto the aim, either way: the rear axle's arc whose
-        /// circle through the centre also passes through the aim, so planned centre waypoints are followed exactly.
+        /// Pursuit that brings the hull centre, not the rear axle, onto the aim in either gear, so planned centre
+        /// waypoints are followed exactly.
         /// </summary>
         private readonly float CenterPursuit(float2 aim)
         {

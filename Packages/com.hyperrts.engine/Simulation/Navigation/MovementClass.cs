@@ -5,8 +5,7 @@ namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
     /// Who a unit is to the map: the layer it moves on, the scenery it drives through and its exact radius. Units
-    /// sharing all three share access and regions; the radius only moves the open threshold, so classes sharing a
-    /// layer and crush limit share one <see cref="NavField"/> key.
+    /// sharing all three share access and regions.
     /// </summary>
     public readonly struct MovementClass : IEquatable<MovementClass>
     {
@@ -24,7 +23,10 @@ namespace HyperRTS.Simulation.Navigation
             Radius = radius;
         }
 
-        /// <summary>The field key it reads: the same layer and crush limit at radius 0.</summary>
+        /// <summary>
+        /// The <see cref="NavField"/> key it reads: the same layer and crush limit at radius 0, as the radius only moves
+        /// the open threshold.
+        /// </summary>
         public MovementClass FieldKey => new(Layer, CrushLimit, 0f);
 
         /// <summary>Whether a cell of this surface and scenery rating is a wall to the class.</summary>

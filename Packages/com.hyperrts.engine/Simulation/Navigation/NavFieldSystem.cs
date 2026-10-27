@@ -9,9 +9,9 @@ using Unity.Profiling;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Registers the <see cref="MovementClass"/> of every <see cref="NavAgent"/> prefab and unit, then rebuilds the
-    /// <see cref="NavField"/> for every sector <see cref="NavGridSystem"/> marked dirty, one job per sector and key,
-    /// then relabels those sectors' <see cref="NavSectors"/>. A new key builds whole. Only worlds that move units run it.
+    /// Registers every <see cref="NavAgent"/>'s <see cref="MovementClass"/> and rebuilds the <see cref="NavField"/> and
+    /// <see cref="NavSectors"/> of the sectors <see cref="NavGridSystem"/> marked dirty. Only worlds that move units
+    /// run it.
     /// </summary>
     [UpdateInGroup(typeof(MovementSystemGroup))]
     [UpdateAfter(typeof(NavGridSystem))]

@@ -7,10 +7,8 @@ using Unity.Profiling;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// 8-directional A* over the cells a <see cref="NavAccess"/> finds open inside a <see cref="NavCorridor"/>;
-    /// diagonals may not cut corners, and each step costs its length times <see cref="NavAccess.CellCost"/>, at least 1.
-    /// The octile heuristic is weighted slightly, so paths may run a fraction long for far fewer expansions. Records
-    /// are sized to the corridor, so each search or worker owns one.
+    /// 8-directional A* over the open cells of a <see cref="NavCorridor"/>. Records are sized to the corridor, so each
+    /// search or worker owns one.
     /// </summary>
     public struct GridAStar : IDisposable
     {

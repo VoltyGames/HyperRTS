@@ -3,9 +3,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// An agent's footprint on the grid: a capsule of its radius round its core segment. Keeps moves and turns from
-    /// pushing it deeper into walls, read from the <see cref="NavField"/>; one already overlapping may always move or
-    /// turn without going deeper, so it can never wedge.
+    /// An agent's footprint on the grid: a capsule of its radius round its core segment, kept from moving or turning
+    /// deeper into walls. One already overlapping may still move, so it never wedges.
     /// </summary>
     public readonly struct NavCapsule
     {

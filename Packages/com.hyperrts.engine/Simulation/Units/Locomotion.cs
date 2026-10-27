@@ -4,9 +4,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// How a ground vehicle handles: it speeds up and brakes at set rates, steers or turns at a limited rate and backs
-    /// up to goals close behind. A <see cref="Driver"/> drives with it each frame. Units without it move by
-    /// <see cref="Instant"/>.
+    /// How a ground vehicle speeds up, brakes, turns and reverses, driven each frame by a <see cref="Driver"/>. Units
+    /// without it move by <see cref="Instant"/>.
     /// </summary>
     public struct Locomotion : IComponentData
     {

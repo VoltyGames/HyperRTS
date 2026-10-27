@@ -12,13 +12,7 @@ namespace HyperRTS.Simulation.Units
 {
     /// <summary>
     /// Moves ground and naval units along their <see cref="PathWaypoint"/>s toward an enabled
-    /// <see cref="MoveDestination"/> and, when the move ends by itself, disables it and enables <see cref="Arrival"/>.
-    /// Each frame reads as one pipeline: follow the path, drive and steer round neighbours and walls
-    /// (<see cref="Steering"/>), keep the footprint out of walls (<see cref="NavCapsule.Constrain"/>, wrecks' cells
-    /// included) or drive out of any it is sunk in, then measure progress (<see cref="MoveProgress"/>). While its
-    /// path is pending a unit brakes and turns to its goal. Every unit drives with its <see cref="Locomotion"/>, or
-    /// <see cref="Locomotion.Instant"/> without one, and Y follows its layer's surface on the <see cref="NavGrid"/>
-    /// (ground, deck or water). Aircraft fly in their own system.
+    /// <see cref="MoveDestination"/>, and when the move ends by itself disables it and enables <see cref="Arrival"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]

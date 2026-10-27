@@ -7,9 +7,8 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// Which parked units step aside for a moving unit of their own side: idle ones. A unit with an order, a
-    /// target or Hold Position holds its ground, and flight holds a landed aircraft itself. Read-only, so parallel
-    /// jobs can share it.
+    /// Decides which parked units step aside for a moving unit of their own side. Read-only, so parallel jobs can
+    /// share it.
     /// </summary>
     public struct GivingWay
     {
@@ -31,7 +30,10 @@ namespace HyperRTS.Simulation.Units
             _stances.Update(ref state);
         }
 
-        /// <summary>Whether the parked unit steps aside for a mover of <paramref name="moverFaction"/>.</summary>
+        /// <summary>
+        /// Whether the parked unit steps aside for a mover of <paramref name="moverFaction"/>: only an idle ally does,
+        /// as an order, a target or Hold Position holds its ground. Flight holds a landed aircraft itself.
+        /// </summary>
         public readonly bool Yields(Entity parked, byte parkedFaction, byte moverFaction)
         {
             if (parkedFaction != moverFaction)

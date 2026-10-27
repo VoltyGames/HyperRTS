@@ -4,10 +4,9 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Signed distance in metres from each cell centre to the nearest wall, per field key (a layer and crush limit,
-    /// see <see cref="MovementClass.FieldKey"/>): positive in the open, negative inside walls, about 0 on their edge,
-    /// capped at <see cref="MaxDistance"/>. Off the map reads as wall. Rebuilt per <see cref="SectorCells"/>-square sector
-    /// over a window with a halo of the cap, so a sector's values never depend on which others were rebuilt.
+    /// Signed metres from each cell centre to the nearest wall, positive in the open, per
+    /// <see cref="MovementClass.FieldKey"/>. Each sector rebuilds over a window with a halo, so its values never depend
+    /// on which others were rebuilt.
     /// </summary>
     public struct NavField
     {
@@ -24,7 +23,6 @@ namespace HyperRTS.Simulation.Navigation
         public float2 Min;
         public float CellSize;
 
-        /// <summary>Sectors along each axis.</summary>
         public int2 SectorsPerAxis;
 
         /// <summary>Cells round a sector that can bring a wall within <see cref="MaxDistance"/> of it.</summary>

@@ -3,8 +3,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// The rules cells take their surface by after the ground (<see cref="NavGrid.GroundSurface"/>): the slope limit
-    /// and nav areas. Editor tools measure maps with the same rules.
+    /// The slope limit and nav area rules that set a cell's surface after the ground
+    /// (<see cref="NavGrid.GroundSurface"/>), shared with editor tools that measure maps.
     /// </summary>
     public static class NavGround
     {

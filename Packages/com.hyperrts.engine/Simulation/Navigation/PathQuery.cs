@@ -48,7 +48,6 @@ namespace HyperRTS.Simulation.Navigation
             }
         }
 
-        /// <summary>The whole path of a query that needs no search.</summary>
         /// <summary>
         /// The searched cells from the origin's to the end's, pulled tight: a corner is kept only where the last kept
         /// point can't see the point after it.
@@ -71,6 +70,7 @@ namespace HyperRTS.Simulation.Navigation
             points.Add(End);
         }
 
+        /// <summary>The whole path of a query that needs no search.</summary>
         public readonly void AddDirect(NativeList<float3> points)
         {
             Begin(points);

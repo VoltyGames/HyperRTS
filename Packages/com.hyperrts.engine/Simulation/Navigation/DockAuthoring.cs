@@ -11,8 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Bays where vehicles stop to load or unload at a building or resource node, each driven through: in along its
-    /// run-in, out straight ahead to its exit. Units without a chassis walk to the edge instead.
+    /// Drive-through bays where vehicles stop to load or unload at a building or resource node. Units without a
+    /// chassis walk to the edge instead.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Navigation + "Dock")]
     [Icon(HyperRTSIcons.Navigation)]

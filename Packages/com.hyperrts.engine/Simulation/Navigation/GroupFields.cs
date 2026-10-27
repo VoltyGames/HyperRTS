@@ -71,15 +71,14 @@ namespace HyperRTS.Simulation.Navigation
     }
 
     /// <summary>
-    /// The live <see cref="GroupField"/>s, keyed by (group, class). A field goes once a grid change reaches its
-    /// corridor, within a second of no moving unit having its key, or after <see cref="IdleSeconds"/> unused; members
-    /// asking again then get a new one.
+    /// The live <see cref="GroupField"/>s, keyed by (group, class); members of a dropped field get a new one.
     /// </summary>
     public struct GroupFields : IDisposable
     {
         /// <summary>Most cells one field covers; a larger group splits by start sector into several fields.</summary>
         public const int MaxCells = 60000;
 
+        /// <summary>Seconds unused after which a field is dropped.</summary>
         public const double IdleSeconds = 30.0;
 
         /// <summary>Fewest members a field serves: one alone is cheaper with its own search.</summary>

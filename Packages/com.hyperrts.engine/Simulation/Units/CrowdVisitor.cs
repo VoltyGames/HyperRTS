@@ -7,14 +7,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// One neighbour query per unit for both crowd responses. A mover gathers its nearest neighbours for
-    /// <see cref="Steering"/>, all but idle allies, which the push moves aside. Every unit also sums the overlap push
-    /// behind it: footprints are capsules (circles when the segment is zero) and must stay the larger of the two
-    /// spacings apart, pushed along the line between their closest points, half each, or mostly on the one behind when
-    /// both head one way. A busy or enemy parked unit holds its ground against a mover, which steers round it alone
-    /// and takes the whole push. An idle parked unit of the mover's side shares the push and steps out of the mover's
-    /// lane (<see cref="GivingWay"/>). Units on layers that never share a surface (a ship under a bridge, a tank on
-    /// it) ignore each other.
+    /// One neighbour query per unit, gathering the neighbours <see cref="Steering"/> avoids and summing the push that
+    /// keeps footprints apart.
     /// </summary>
     internal struct CrowdVisitor : ISpatialVisitor
     {

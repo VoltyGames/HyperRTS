@@ -41,8 +41,8 @@ namespace HyperRTS.Simulation.Units
             }
         }
 
-        // Wheels can't turn standing, so a leg that runs head-on into a wall drives the other way for a while,
-        // backing off to turn or taking a three-point turn's forward leg. A manoeuvre timer, not a stuck test.
+        // A leg that runs head-on into a wall drives the other way a while, backing off to turn or taking a
+        // three-point turn's forward leg. A manoeuvre timer, not a stuck test.
         private bool IsOtherWay()
         {
             var hit = Chassis.IsWheeled && State.Blocked && State.OtherWay <= 0f;

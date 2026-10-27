@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
     /// Walks units up to a target entity's footprint for orders that act on it (build, repair, capture, board,
-    /// gather). Read-only, so jobs can share it. How near counts as at it follows the map's nav cell size.
+    /// gather). Read-only, so jobs can share it.
     /// </summary>
     public struct TargetReach
     {

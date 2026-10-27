@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>
         /// Highest <see cref="Common.Destructible.Crush"/> rating of scenery it drives through, such as its crusher size;
-        /// <see cref="NavAccess.AllScenery"/> walks between everything. Scenery rated above it blocks it.
+        /// <see cref="NavAccess.AllScenery"/> walks between everything.
         /// </summary>
         public byte SceneryCrushLimit;
 
@@ -133,7 +133,6 @@ namespace HyperRTS.Simulation.Navigation
     /// <summary>Why a move ended by itself.</summary>
     public enum ArrivalReason : byte
     {
-        /// <summary>At the goal.</summary>
         Reached,
 
         /// <summary>Gave up after making no progress.</summary>

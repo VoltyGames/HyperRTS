@@ -6,8 +6,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Something ground units can't drive through, such as a wreck: a capsule that closes the land
-    /// <see cref="NavGrid"/> cells it covers, so paths go round it. Disabled, it stops blocking.
+    /// A capsule ground units can't drive through, such as a wreck, closing the land <see cref="NavGrid"/> cells it
+    /// covers while enabled.
     /// </summary>
     public struct Blocker : IComponentData, IEnableableComponent
     {

@@ -4,10 +4,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>
-    /// Turns a start and goal into smoothed path points over a <see cref="NavAccess"/>: snap both into the start's
-    /// region, search the sector graph for a corridor, run the fine A* inside it, then pull the path tight.
-    /// </summary>
+    /// <summary>Turns a start and goal into smoothed path points over a <see cref="NavAccess"/>.</summary>
     public static class GridPathfinder
     {
         /// <summary>How far (in cells) to look for open ground around a blocked start or goal.</summary>
@@ -84,7 +81,10 @@ namespace HyperRTS.Simulation.Navigation
             return expansions;
         }
 
-        /// <summary>Every stage in turn; true when the path ends at the goal, not snapped.</summary>
+        /// <summary>
+        /// Snaps both ends, finds a sector corridor, runs the fine A* in it and pulls the path tight; true when the path
+        /// ends at the goal, not snapped.
+        /// </summary>
         public static bool Plan(in NavAccess access, float3 start, float3 goal, NativeList<float3> points,
             out int expansions)
         {

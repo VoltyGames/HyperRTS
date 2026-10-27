@@ -6,9 +6,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// The sectors a search may enter, each given a slot, so search records index by slot x
-    /// <see cref="NavSectors.Area"/> plus the local cell and no search needs arrays the size of the grid. Unsafe
-    /// lists, so a stored flow field can keep one inside a native list.
+    /// The sectors a search may enter, each given a slot, so search records index by slot and local cell instead of
+    /// spanning the grid. Unsafe lists, so a stored flow field can keep one inside a native list.
     /// </summary>
     public struct NavCorridor : IDisposable
     {

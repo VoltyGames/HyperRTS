@@ -3,10 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>
-    /// How a hull moves over the ground: wheels roll the rear axle along arcs no tighter than <see cref="TurnRadius"/>,
-    /// tracks pivot about the centre. Read by the path planner and locomotion alike.
-    /// </summary>
+    /// <summary>How a hull on wheels or tracks turns and reverses, shared by the path planner and locomotion.</summary>
     public struct Chassis
     {
         /// <summary>Metres from the steering axles' midpoint to the rear axle; 0 for tracks.</summary>

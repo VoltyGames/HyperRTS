@@ -10,11 +10,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Builds the <see cref="NavGrid"/> from <see cref="MapSettings"/> and <see cref="TerrainHeight"/>, then re-stamps
-    /// every <see cref="NavArea"/>, <see cref="NavObstacle"/> and enabled <see cref="Blocker"/> when areas or
-    /// footprints change, records where cells changed and marks those field sectors for <see cref="NavFieldSystem"/>.
-    /// Destructible scenery has its own layer, which changes without bumping the version and marks only the sectors
-    /// it changed. None of them are assumed to move.
+    /// Builds the <see cref="NavGrid"/> from <see cref="MapSettings"/> and <see cref="TerrainHeight"/>, and re-stamps it
+    /// when areas, footprints or scenery change, none of which are assumed to move.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]

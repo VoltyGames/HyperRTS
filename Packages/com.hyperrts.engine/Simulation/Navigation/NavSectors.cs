@@ -4,10 +4,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// The sector graph per <see cref="MovementClass"/>: inside each <see cref="NavField"/> sector, the cells the class
-    /// finds open split into 4-connected components, each with a representative cell; components of neighbouring
-    /// sectors that touch across the border share an edge, and union-find over the edges gives region ids. A dirty
-    /// sector relabels alone, then the edges round it and the regions follow.
+    /// The sector graph per <see cref="MovementClass"/>: each sector's open cells split into 4-connected components,
+    /// joined across borders into regions.
     /// </summary>
     public partial struct NavSectors
     {

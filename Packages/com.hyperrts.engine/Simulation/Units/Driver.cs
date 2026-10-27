@@ -6,8 +6,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// One vehicle driving one frame with its <see cref="Locomotion"/>: its hull, where it stands and the motion it
-    /// carries between frames. Driving turns <see cref="Facing"/> and returns the hull centre's move.
+    /// Drives one vehicle for one frame with its <see cref="Locomotion"/>, turning <see cref="Facing"/> and returning
+    /// the hull centre's move.
     /// </summary>
     public partial struct Driver
     {
@@ -56,9 +56,8 @@ namespace HyperRTS.Simulation.Units
         public float2 Drive(in PathLeg leg) => Follow(leg, TopSpeed);
 
         /// <summary>
-        /// Drives toward the steering <paramref name="velocity"/> instead of the leg, no faster than it: the velocity
-        /// becomes the curvature it steers for. A vehicle told to go back backs straight up if it can reverse, else
-        /// brakes on the leg.
+        /// Drives toward the steering <paramref name="velocity"/> instead of the leg, no faster than it. Told to go
+        /// back, it backs straight up if it can reverse, else brakes on the leg.
         /// </summary>
         public float2 Steer(in PathLeg leg, float2 velocity)
         {

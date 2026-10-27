@@ -5,9 +5,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// Exact squared Euclidean distance, in cells, from every cell of a square window to the nearest feature cell, by
-    /// the lower envelope of parabolas (Felzenszwalb and Huttenlocher) along columns, then rows. Holds its scratch, so
-    /// one per worker serves many windows.
+    /// Exact squared distance, in cells, from every cell of a square window to the nearest feature cell (Felzenszwalb
+    /// and Huttenlocher). Holds its scratch, so one per worker serves many windows.
     /// </summary>
     public struct DistanceTransform : IDisposable
     {

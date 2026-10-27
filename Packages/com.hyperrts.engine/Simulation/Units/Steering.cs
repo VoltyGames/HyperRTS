@@ -7,9 +7,8 @@ using Unity.Profiling;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// Sampled local steering for one mover. It scores the velocities its handling can reach within half a second
-    /// against its neighbours' predicted capsules and the walls' distance field over the next 0.3, 0.75 and 1.5 s,
-    /// plus how far each strays from the planned velocity and last frame's choice, and drives the cheapest.
+    /// Picks one mover's velocity from those its handling can reach, scoring each by how deep it would run into
+    /// neighbours and walls and how far it strays from the plan.
     /// </summary>
     internal partial struct Steering
     {

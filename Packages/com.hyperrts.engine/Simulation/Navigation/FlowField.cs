@@ -7,9 +7,8 @@ using Unity.Profiling;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// The cost to reach one goal cell from every cell of a <see cref="NavCorridor"/>, by Dijkstra with the steps and
-    /// costs of <see cref="GridAStar"/>: 8 directions, no corner cutting, dearer near walls. Following it downhill
-    /// gives each start an optimal path with no search of its own.
+    /// The cost to reach one goal cell from every cell of a <see cref="NavCorridor"/>, so each start follows it
+    /// downhill on an optimal path with no search of its own.
     /// </summary>
     public struct FlowField : IDisposable
     {

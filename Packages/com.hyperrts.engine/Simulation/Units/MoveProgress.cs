@@ -5,11 +5,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Units
 {
     /// <summary>
-    /// How a unit's move gets on: progress is the path left shrinking or the hull turning. One check: no progress for
-    /// <see cref="ReplanSeconds"/> plans the whole path again (on a planned manoeuvre only while walls hold it),
-    /// backing off to <see cref="MaxReplanSeconds"/>, and
-    /// after <see cref="GiveUpSeconds"/> near its path's end, or held by walls anywhere, the unit gives up. Farther
-    /// out a jam is traffic that clears. A path still pending isn't measured.
+    /// Whether a unit's move gets anywhere, by the path left shrinking or the hull turning, so a stalled unit replans
+    /// and in the end gives up.
     /// </summary>
     public struct MoveProgress : IComponentData
     {
@@ -55,7 +52,10 @@ namespace HyperRTS.Simulation.Units
             Sunk,
         }
 
-        /// <summary>Measures the path left and asks for a replan when due; true once the unit gives up.</summary>
+        /// <summary>
+        /// Measures the path left and asks for a replan when due, backing off from <see cref="ReplanSeconds"/> to
+        /// <see cref="MaxReplanSeconds"/>; true once stalled <see cref="GiveUpSeconds"/> near the end or held by walls.
+        /// </summary>
         public bool HasGivenUp(float2 position, float2 facing, in NavAgent agent, float3 goal,
             DynamicBuffer<PathWaypoint> waypoints, ref PathState path, WallHold hold, float deltaTime)
         {

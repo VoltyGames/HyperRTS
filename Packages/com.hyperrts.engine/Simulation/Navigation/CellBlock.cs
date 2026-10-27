@@ -3,10 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation
 {
-    /// <summary>
-    /// The field round one cell, read once, so a search tests the steps to and from its eight neighbours by the rules
-    /// of <see cref="GridAStar.CanStep"/> and <see cref="GridAStar.Cost"/> without reading the field again.
-    /// </summary>
+    /// <summary>The field round one cell, read once, so a search tests steps to its eight neighbours from it.</summary>
     public struct CellBlock
     {
         // Row by row from the cell below-left; the centre is 4.

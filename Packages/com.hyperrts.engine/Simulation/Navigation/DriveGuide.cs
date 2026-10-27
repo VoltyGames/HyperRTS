@@ -8,8 +8,7 @@ namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
     /// A <see cref="DriveSearch"/>'s heuristic: the cost from each cell of its window to the goal for a disc the hull's
-    /// width, by Dijkstra with eight steps that never cut a corner. Turning where walls crowd the hull costs extra, and
-    /// a pose goal's front is closed, so it leads in from behind as the hull must arrive.
+    /// width.
     /// </summary>
     internal struct DriveGuide : IDisposable
     {
@@ -118,7 +117,8 @@ namespace HyperRTS.Simulation.Navigation
 
         private readonly bool IsOpen(int2 cell) => _walls.At(cell) >= _access.OpenDistance;
 
-        // Only a goal in a lane, walls on both sides within reach, has its front closed: in open ground it may turn.
+        // Closing a pose goal's front leads the route in from behind, as the hull must arrive; only in a lane, walls on
+        // both sides within reach, as in open ground it may turn.
         private void CloseFront(in DriveGoal goal)
         {
             var side = Planar.Left(goal.Facing);

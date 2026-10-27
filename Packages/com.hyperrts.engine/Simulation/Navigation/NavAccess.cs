@@ -4,9 +4,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation
 {
     /// <summary>
-    /// One movement class's view of the <see cref="NavGrid"/>. A cell is open when its centre keeps the class's radius
-    /// from walls (<see cref="NavField"/>), and A*, the nearest-cell search and line of sight all use that one rule.
-    /// Paths run over cell centres and pay more near walls, up to <see cref="WallMargin"/> away.
+    /// One movement class's view of the <see cref="NavGrid"/>: which cells it may stand on, one rule shared by A*, the
+    /// nearest-cell search and line of sight, and what steps onto them cost.
     /// </summary>
     public readonly struct NavAccess
     {
