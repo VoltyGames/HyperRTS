@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Mathematics;
+using static HyperRTS.Simulation.Tests.TestVehicles;
 
 namespace HyperRTS.Simulation.Tests.Navigation
 {
@@ -21,7 +22,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             Assert.IsTrue(drive.Arrived, "arrived");
             Assert.LessOrEqual(drive.GearChanges, 2, "at most two gear changes");
             Assert.LessOrEqual(drive.Deepest, WallSlack, "never touched a wall");
-            Assert.AreEqual(0, Stats().DriveFailures, "every search found its way");
+            Assert.AreEqual(0, Stats().Drive.Failures, "every search found its way");
         }
 
         [Test]
@@ -39,7 +40,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             Assert.IsTrue(drive.Arrived, "arrived");
             Assert.IsTrue(drive.Reversed, "with a reverse leg");
             Assert.LessOrEqual(drive.Deepest, WallSlack, "never touched a wall");
-            Assert.AreEqual(0, Stats().DriveFailures, "every search found its way");
+            Assert.AreEqual(0, Stats().Drive.Failures, "every search found its way");
         }
 
         [Test]
@@ -91,7 +92,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             _world.Tick(frames: 2);
 
             Assert.AreEqual(PathStatus.Ready, _world.Get<PathState>(truck).Status);
-            Assert.Greater(Stats().DriveFailures, 0, "the search gave up");
+            Assert.Greater(Stats().Drive.Failures, 0, "the search gave up");
             Assert.IsFalse(HasTightWaypoints(truck), "left as drawn");
         }
 

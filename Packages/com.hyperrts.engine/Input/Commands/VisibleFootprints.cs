@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
@@ -24,12 +23,5 @@ namespace HyperRTS.Input.Commands
 
         /// <summary>The seen footprints copied once, so a line of spots is checked against one read.</summary>
         public readonly NativeList<NavBox> Read() => NavObstacle.ReadBoxes(_obstacles);
-
-        /// <summary>Whether <paramref name="spot"/> overlaps no seen footprint and leaves no gap narrower than <paramref name="gap"/>.</summary>
-        public readonly bool Fit(in BuildingSpot spot, float gap)
-        {
-            using var footprints = Read();
-            return spot.Fits(footprints.AsArray(), gap);
-        }
     }
 }

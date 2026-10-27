@@ -164,7 +164,8 @@ namespace HyperRTS.Input.Commands
             var spot = asked.Snap(map).Grounded(grid);
             placement.Position = spot.Center;
             placement.Yaw = spot.Yaw;
-            var clear = spot.IsValid(map, grid) && _footprints.Fit(spot, map.BuildingGap);
+            using var footprints = _footprints.Read();
+            var clear = spot.CanPlace(map, grid, footprints.AsArray());
             placement.Valid = clear && !_enemies.Block(spot);
         }
 
@@ -193,7 +194,7 @@ namespace HyperRTS.Input.Commands
                 for (var i = 0; i < line.Count; i++)
                 {
                     var spot = line.Segment(i).Grounded(grid);
-                    var clear = spot.IsValid(map, grid) && spot.Fits(footprints.AsArray(), map.BuildingGap);
+                    var clear = spot.CanPlace(map, grid, footprints.AsArray());
                     segments.Add(new PlacementSegment { Spot = spot, Ground = clear });
                 }
 

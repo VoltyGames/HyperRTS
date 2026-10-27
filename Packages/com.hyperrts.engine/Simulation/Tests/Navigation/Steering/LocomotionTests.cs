@@ -6,6 +6,7 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using static HyperRTS.Simulation.Tests.TestVehicles;
 
 namespace HyperRTS.Simulation.Tests.Navigation.Steering
 {
@@ -19,18 +20,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
         private const float TruckTurnRadius = 9f;
         private const float TankRadius = 1.85f;
 
-        private static readonly Locomotion Tracks = new()
-        {
-            Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), ReverseSpeed = 3f,
-        };
-
         private static readonly Chassis TrackedChassis = new() { Pivots = true, ReverseRun = 10f };
-
-        private static readonly Locomotion Wheels = new()
-        {
-            Acceleration = 3f, Braking = 6f, TurnRate = math.radians(40f), SteerRate = math.radians(45f),
-            ReverseSpeed = 3f,
-        };
 
         private static readonly Chassis TruckChassis = new()
         {

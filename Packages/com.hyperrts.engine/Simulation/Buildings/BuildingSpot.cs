@@ -130,13 +130,31 @@ namespace HyperRTS.Simulation.Buildings
             }
         }
 
-        /// <summary>Touching is allowed, so buildings can sit flush at any angle.</summary>
-        public bool Overlaps(in NavBox other) => Box.Overlaps(other);
+        /// <summary>Valid ground clear of every site by the map's building gap, as server and ghost check.</summary>
+        public bool CanPlace(in MapSettings map, in NavGrid grid, NativeArray<NavBox> sites) =>
+            IsValid(map, grid) && Fits(sites, map.BuildingGap);
 
-        /// <summary>Apart from <paramref name="other"/> but closer than <paramref name="gap"/>: too narrow to drive through.</summary>
-        public bool LeavesNarrowGap(in NavBox other, float gap)
+        /// <summary>
+        /// Clear of every site: overlapping none, though touching is allowed so buildings sit flush at any angle, and
+        /// leaving no gap narrower than <paramref name="gap"/>.
+        /// </summary>
+        public bool Fits(NativeArray<NavBox> sites, float gap)
         {
             var box = Box;
+            foreach (var site in sites)
+            {
+                if (box.Overlaps(site) || LeavesNarrowGap(box, site, gap))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Apart but closer than the gap: too narrow to drive through.
+        private static bool LeavesNarrowGap(in NavBox box, in NavBox other, float gap)
+        {
             var reach = math.length(box.Half) + math.length(other.Half) + gap;
             if (math.distancesq(box.Center, other.Center) >= reach * reach)
             {
@@ -145,20 +163,6 @@ namespace HyperRTS.Simulation.Buildings
 
             var apart = box.Gap(other);
             return apart > FlushTolerance && apart < gap - GapTolerance;
-        }
-
-        /// <summary>Clear of every site: overlapping none and leaving no gap narrower than <paramref name="gap"/>.</summary>
-        public bool Fits(NativeArray<NavBox> sites, float gap)
-        {
-            foreach (var site in sites)
-            {
-                if (Overlaps(site) || LeavesNarrowGap(site, gap))
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         /// <summary>A unit capsule, its core segment <paramref name="axis"/> either side of its centre, reaches inside.</summary>

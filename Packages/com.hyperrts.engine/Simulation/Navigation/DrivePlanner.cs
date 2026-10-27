@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common;
 using System;
 using Unity.Collections;
+using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Profiling;
 
@@ -19,8 +20,8 @@ namespace HyperRTS.Simulation.Navigation
 
         private static readonly ProfilerMarker PlanMarker = new("DrivePlanner.Plan");
 
-        private readonly NavAgent _agent;
-        private readonly NavAccess _access;
+        private NavAgent _agent;
+        private NavAccess _access;
         private DriveSearch _search;
         private NativeList<float2> _corners;
         private NativeList<float> _distances;
@@ -41,9 +42,7 @@ namespace HyperRTS.Simulation.Navigation
         private bool _defers;
         private bool _planned;
 
-        public int Searches;
-        public int Expansions;
-        public int Failures;
+        public DriveCounts Counts;
 
         /// <summary>The budget ran out before a search this plan needed, so it waits for a later frame.</summary>
         public bool WaitsForBudget;
@@ -51,15 +50,16 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>The budget ran out before a later stretch, left as drawn until the planned part is driven.</summary>
         public bool PartlyPlanned;
 
-        public DrivePlanner(in NavAccess access, in NavAgent agent, Allocator allocator)
+        /// <summary>A planner whose scratch serves one request after another.</summary>
+        public DrivePlanner(Allocator allocator)
         {
-            _agent = agent;
-            _access = access;
-            _search = new DriveSearch(access, agent, DriveSearch.MaxExpansions, allocator);
+            _agent = default;
+            _access = default;
+            _search = new DriveSearch(DriveSearch.MaxExpansions, allocator);
             _corners = new NativeList<float2>(16, allocator);
             _distances = new NativeList<float>(16, allocator);
             _tight = new NativeList<PathWaypoint>(64, allocator);
-            _output = default;
+            _output = new NativeList<PathWaypoint>(64, allocator);
             _start = default;
             _height = 0f;
             _endFacing = float2.zero;
@@ -68,9 +68,7 @@ namespace HyperRTS.Simulation.Navigation
             _budget = 0;
             _defers = false;
             _planned = false;
-            Searches = 0;
-            Expansions = 0;
-            Failures = 0;
+            Counts = default;
             WaitsForBudget = false;
             PartlyPlanned = false;
         }
@@ -81,6 +79,7 @@ namespace HyperRTS.Simulation.Navigation
             _corners.Dispose();
             _distances.Dispose();
             _tight.Dispose();
+            _output.Dispose();
         }
 
         /// <summary>Whether its paths need checking: it has a turn radius or a hull longer than it is wide.</summary>
@@ -93,15 +92,32 @@ namespace HyperRTS.Simulation.Navigation
         private readonly float Total => _distances[_distances.Length - 1];
 
         /// <summary>
-        /// Writes the path's waypoints, with the stretches it had to plan made tight, spending at most
-        /// <paramref name="budget"/> expansions. Past it, a plan that <paramref name="defers"/> stops and is
-        /// <see cref="WaitsForBudget"/>; one that doesn't leaves the rest as drawn. False when deferred.
+        /// Replaces <paramref name="waypoints"/> with the drawn <paramref name="points"/>, the stretches it had to plan
+        /// made tight, spending at most <paramref name="budget"/> expansions. Past it, a plan that
+        /// <paramref name="defers"/> stops, writes nothing and is <see cref="WaitsForBudget"/>; one that doesn't
+        /// leaves the rest as drawn. False when deferred.
         /// </summary>
-        public bool Plan(in PathRequest request, NativeList<float3> points, NativeList<PathWaypoint> waypoints,
-            int budget, bool defers)
+        public bool Plan(in PathRequest request, in NavAccess access, NativeList<float3> points,
+            DynamicBuffer<PathWaypoint> waypoints, int budget, bool defers)
         {
             using var scope = PlanMarker.Auto();
-            _output = waypoints;
+            _agent = request.Agent;
+            _access = access;
+            _search.SetAgent(access, request.Agent);
+            _output.Clear();
+            Counts = default;
+            var done = PlanPath(request, points, budget, defers);
+            if (done)
+            {
+                waypoints.Clear();
+                waypoints.AddRange(_output.AsArray());
+            }
+
+            return done;
+        }
+
+        private bool PlanPath(in PathRequest request, NativeList<float3> points, int budget, bool defers)
+        {
             _height = request.Start.y;
             _start = Chassis.Pose(request.Start.xz, request.Facing);
             _written = 0f;
@@ -238,42 +254,30 @@ namespace HyperRTS.Simulation.Navigation
         {
             WaitsForBudget = cut && _defers;
             PartlyPlanned |= cut && !_defers && _planned;
-            Failures += !cut || (!_defers && !_planned) ? 1 : 0;
+            var leftAsDrawn = !cut || (!_defers && !_planned);
+            if (leftAsDrawn)
+            {
+                Counts.Failures++;
+            }
         }
 
         // Cut when what is left of the budget stopped it short of the usual cap.
         private bool TrySearch(float from, float to, int most, out bool cut)
         {
-            var cap = math.min(most, _budget - Expansions);
+            var cap = math.min(most, _budget - (int)Counts.Expansions);
             cut = cap <= 0;
             if (cut)
             {
                 return false;
             }
 
-            Searches++;
+            Counts.Searches++;
             _tight.Clear();
             _search.Cap = cap;
             var found = _search.Run(PoseAt(from), GoalAt(to), _height, _tight);
-            Expansions += _search.Expansions;
+            Counts.Expansions += _search.Expansions;
             cut = !found && cap < most && _search.Expansions >= cap;
             return found;
-        }
-
-        // The drawn corners after what is written and before the given distance.
-        private void AddDrawn(float before)
-        {
-            for (var corner = 1; corner < _corners.Length; corner++)
-            {
-                var at = _distances[corner];
-                if (at > _written && at < before)
-                {
-                    var point = _corners[corner];
-                    _output.Add(new PathWaypoint { Position = new float3(point.x, _height, point.y) });
-                }
-            }
-
-            _written = math.max(_written, math.min(before, Total));
         }
     }
 }

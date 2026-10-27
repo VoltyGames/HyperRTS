@@ -89,6 +89,7 @@ namespace HyperRTS.Simulation.Navigation
     /// </summary>
     public struct DockBays
     {
+        // One bit a place in a line's mask.
         private const int MostPlaces = 32;
 
         private BufferLookup<DockBay> _bays;
@@ -171,7 +172,7 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             ref var line = ref bays.ElementAt(bay);
-            var lastTaken = 32 - math.lzcnt(line.Line | line.NextLine);
+            var lastTaken = MostPlaces - math.lzcnt(line.Line | line.NextLine);
             var ahead = math.countbits(line.Line & ((1u << (place - 1)) - 1u));
             var next = math.min(place == 0 ? lastTaken + 1 : ahead + 1, MostPlaces);
             line.NextLine |= 1u << (next - 1);

@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Units
                 : math.distance(position, goal.xz);
             var margin = NavTolerances.Arrive(agent.Radius);
             // A planned manoeuvre stands to change gear and steer, so it replans sooner only while walls hold it.
-            var planned = waypoints.Length > 0 && waypoints[0].Tight && hold == WallHold.None &&
+            var planned = PathState.IsPlannedManoeuvre(waypoints) && hold == WallHold.None &&
                           Stalled < MaxReplanSeconds;
             if (Track(remaining, facing, margin, hold == WallHold.Sunk, deltaTime) && !planned)
             {
@@ -83,12 +83,12 @@ namespace HyperRTS.Simulation.Units
         }
 
         /// <summary>
-        /// Before a vehicle held by walls gives up, it drives the other way once (<see cref="Locomotion.TurnOut"/>)
-        /// with the clock restarted; true when it does.
+        /// Before a vehicle held by walls gives up, its driver drives the other way once
+        /// (<see cref="Locomotion.TurnOut"/>) with the clock restarted; true when it does.
         /// </summary>
-        public bool TryTurnOut(in Locomotion locomotion, ref LocomotionState drive, WallHold hold)
+        public bool TryTurnOut(ref Driver driver, WallHold hold)
         {
-            if (hold == WallHold.None || TurnedOut || !locomotion.CanTurnOut)
+            if (hold == WallHold.None || TurnedOut || !driver.Handling.CanTurnOut)
             {
                 return false;
             }
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Units
             TurnedOut = true;
             Stalled = 0f;
             NextReplan = ReplanSeconds;
-            locomotion.TurnOut(ref drive);
+            driver.Handling.TurnOut(ref driver.State);
             return true;
         }
 

@@ -116,7 +116,7 @@ namespace HyperRTS.Simulation.Units
         public PathLeg Manoeuvre(float2 position, DynamicBuffer<PathWaypoint> waypoints, float lookAhead,
             in Chassis chassis)
         {
-            if (waypoints.Length == 0 || !waypoints[0].Tight)
+            if (!PathState.IsPlannedManoeuvre(waypoints))
             {
                 return this;
             }

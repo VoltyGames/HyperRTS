@@ -42,7 +42,7 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 var goal = destination.Value;
-                var goalMoved = math.distancesq(path.Goal.xz, goal.xz) > Grid.CellSize * Grid.CellSize;
+                var goalFar = math.distancesq(path.Goal.xz, goal.xz) > Grid.CellSize * Grid.CellSize;
                 if (path.Status == PathStatus.Ready && path.GridVersion != Grid.Version &&
                     !IsNearChange(path, waypoints, transform.Position, agent))
                 {
@@ -56,15 +56,14 @@ namespace HyperRTS.Simulation.Navigation
                     isCurrent = false;
                 }
 
-                if (isCurrent && !goalMoved)
+                var nudged = isCurrent && !goalFar;
+                if (nudged && FollowSmallGoalMove(ref path, waypoints, goal, agent.Layer))
                 {
-                    if (FollowSmallGoalMove(ref path, waypoints, goal, agent.Layer))
-                    {
-                        return;
-                    }
-
-                    goalMoved = true;
+                    return;
                 }
+
+                // A nudge the path can't follow, onto a planned manoeuvre's end, searches as a moved goal.
+                var goalMoved = goalFar || nudged;
 
                 var isChasing = isCurrent && destination.Chase;
                 if (isChasing && FollowsChase(ref path, waypoints, transform.Position, goal, agent))

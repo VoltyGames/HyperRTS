@@ -76,6 +76,8 @@ namespace HyperRTS.Simulation.Units
         /// <summary>The nearest neighbours a mover steers round.</summary>
         public readonly FixedList512Bytes<AvoidanceNeighbour> Neighbours => _neighbours;
 
+        public readonly bool HasNeighbours => _neighbours.Length > 0;
+
         /// <summary>The overlap push, no longer than one frame's step.</summary>
         public readonly float2 PushWithin(float maxStep)
         {

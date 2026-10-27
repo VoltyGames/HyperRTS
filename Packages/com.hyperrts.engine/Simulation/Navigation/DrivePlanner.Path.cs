@@ -65,5 +65,21 @@ namespace HyperRTS.Simulation.Navigation
         {
             return math.acos(math.clamp(math.dot(LegHeading(corner - 1), LegHeading(corner)), -1f, 1f));
         }
+
+        // The drawn corners after what is written and before the given distance.
+        private void AddDrawn(float before)
+        {
+            for (var corner = 1; corner < _corners.Length; corner++)
+            {
+                var at = _distances[corner];
+                if (at > _written && at < before)
+                {
+                    var point = _corners[corner];
+                    _output.Add(new PathWaypoint { Position = new float3(point.x, _height, point.y) });
+                }
+            }
+
+            _written = math.max(_written, math.min(before, Total));
+        }
     }
 }

@@ -227,9 +227,9 @@ namespace HyperRTS.Simulation.Tests.Navigation
             points.Dispose();
             result.Dispose();
             var after = Stats();
-            var searches = after.DriveSearches - before.DriveSearches;
-            var failures = after.DriveFailures - before.DriveFailures;
-            var expansions = after.DriveExpansions - before.DriveExpansions;
+            var searches = after.Drive.Searches - before.Drive.Searches;
+            var failures = after.Drive.Failures - before.Drive.Failures;
+            var expansions = after.Drive.Expansions - before.Drive.Expansions;
             var summary = $"200 truck moves: {searches / 200.0:F2} drive searches per move, " +
                           $"{expansions / 200} expansions per move, failures {failures}, " +
                           $"pathfinder {served / 200.0:F3} ms per move, {undrivable} undrivable pairs redrawn";

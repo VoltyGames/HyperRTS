@@ -127,10 +127,9 @@ namespace HyperRTS.Simulation.Units
                                   ref path, hold, DeltaTime);
 
                 // A planned manoeuvre stuck in walls replans its way out rather than turning out.
-                var planned = waypoints.Length > 0 && waypoints[0].Tight;
-                if (stalled && remembers && !planned)
+                if (stalled && remembers && !PathState.IsPlannedManoeuvre(waypoints))
                 {
-                    stalled = !progress.TryTurnOut(locomotion, ref driver.State, hold);
+                    stalled = !progress.TryTurnOut(ref driver, hold);
                 }
 
                 if (moving.ValueRO && (crowd.ReachedGroup || stalled))
@@ -188,7 +187,8 @@ namespace HyperRTS.Simulation.Units
                     return capsule.Depth(to, axis) >= depth ? MoveProgress.WallHold.Sunk : MoveProgress.WallHold.None;
                 }
 
-                var wedged = depth > 0f && math.distancesq(to, from) < 4e-6f && crowd.Neighbours.Length == 0;
+                var standing = math.distancesq(to, from) < NavTolerances.StandingStep * NavTolerances.StandingStep;
+                var wedged = depth > 0f && standing && !crowd.HasNeighbours;
                 return wedged ? MoveProgress.WallHold.Wedged : MoveProgress.WallHold.None;
             }
 

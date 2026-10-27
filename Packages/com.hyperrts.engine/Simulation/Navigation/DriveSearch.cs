@@ -25,6 +25,10 @@ namespace HyperRTS.Simulation.Navigation
         private struct Node
         {
             public AxlePose Pose;
+
+            // The pose's cell and heading bin, kept so each pop needn't work it out again.
+            public int Key;
+
             public int Parent;
             public float Cost;
             public float Depth;
@@ -43,9 +47,9 @@ namespace HyperRTS.Simulation.Navigation
             public bool Closed;
         }
 
-        private readonly NavAccess _access;
-        private readonly Chassis _chassis;
-        private readonly float _halfSegment;
+        private NavAccess _access;
+        private Chassis _chassis;
+        private float _halfSegment;
 
         // Unchecked, as they are the inner loop of every search.
         private UnsafeList<Node> _nodes;
@@ -70,24 +74,39 @@ namespace HyperRTS.Simulation.Navigation
         public int Cap;
 
         /// <summary>A search that gives up after <paramref name="cap"/> expansions, <see cref="MaxExpansions"/> in play.</summary>
-        public DriveSearch(in NavAccess access, in NavAgent agent, int cap, Allocator allocator)
+        public DriveSearch(in NavAccess access, in NavAgent agent, int cap, Allocator allocator) : this(cap, allocator)
         {
-            _access = access;
-            _chassis = agent.Chassis;
-            _halfSegment = agent.HalfSegment;
+            SetAgent(access, agent);
+        }
+
+        /// <summary>A search for no agent yet, whose scratch serves each one <see cref="SetAgent"/> gives it.</summary>
+        public DriveSearch(int cap, Allocator allocator)
+        {
+            _access = default;
+            _chassis = default;
+            _halfSegment = 0f;
             Cap = cap;
             _nodes = new UnsafeList<Node>(4096, allocator);
             _moves = new UnsafeList<Move>(24, allocator);
             _open = new OpenSet(4096, allocator);
             _visited = new UnsafeHashMap<int, int>(4096, allocator);
             _walls = new FieldWindow(16384, allocator);
-            _guide = default;
             _goal = default;
             _goalPose = default;
             _window = default;
             _height = 0f;
             Expansions = 0;
-            _guide = new DriveGuide(access, CurveRadius, HullLength, 16384, allocator);
+            _guide = new DriveGuide(16384, allocator);
+        }
+
+        /// <summary>Searches for <paramref name="agent"/> from now on; its moves follow its chassis.</summary>
+        public void SetAgent(in NavAccess access, in NavAgent agent)
+        {
+            _access = access;
+            _chassis = agent.Chassis;
+            _halfSegment = agent.HalfSegment;
+            _moves.Clear();
+            _guide.SetAgent(access, CurveRadius, HullLength);
         }
 
         public void Dispose()
@@ -137,8 +156,10 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             SetWindow(_chassis.Center(start), goal.Center);
-            _nodes.Add(new Node { Pose = start, Parent = -1, Depth = HullDepth(start, float.PositiveInfinity) });
-            _visited[Key(start)] = 0;
+            var key = Key(start);
+            var depth = HullDepth(start, float.PositiveInfinity);
+            _nodes.Add(new Node { Pose = start, Key = key, Parent = -1, Depth = depth });
+            _visited[key] = 0;
             _open.Push(0, Guide(start));
         }
 
@@ -163,7 +184,7 @@ namespace HyperRTS.Simulation.Navigation
             while (_open.TryPop(out var index))
             {
                 ref var node = ref _nodes.ElementAt(index);
-                if (node.Closed || _visited[Key(node.Pose)] != index)
+                if (node.Closed || _visited[node.Key] != index)
                 {
                     continue;
                 }

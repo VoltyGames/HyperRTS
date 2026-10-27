@@ -28,14 +28,8 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public long Estimated;
 
-        /// <summary>Drive searches run for stretches a chassis couldn't drive as drawn.</summary>
-        public int DriveSearches;
-
-        /// <summary>Poses the drive searches expanded.</summary>
-        public long DriveExpansions;
-
-        /// <summary>Drive searches that stopped at the cap or ran out of ways, leaving their stretch as drawn.</summary>
-        public int DriveFailures;
+        /// <summary>The drive searches run for vehicles' paths.</summary>
+        public DriveCounts Drive;
 
         /// <summary>Times a path waited a frame for the drive budget (<see cref="PathfindingSystem.DriveBudget"/>).</summary>
         public int DeferredDrives;

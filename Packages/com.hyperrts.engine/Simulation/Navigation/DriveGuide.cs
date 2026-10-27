@@ -31,18 +31,18 @@ namespace HyperRTS.Simulation.Navigation
         // The Dijkstra queue in buckets half a cell wide: each bucket's first entry, each entry's cell and the next.
         private UnsafeList<int> _buckets;
         private UnsafeList<int2> _entries;
-        private readonly NavAccess _access;
-        private readonly float _turnRadius;
-        private readonly float _hullLength;
+        private NavAccess _access;
+        private float _turnRadius;
+        private float _hullLength;
         private FieldWindow _walls;
         private CellRect _window;
         private float2 _goal;
 
-        public DriveGuide(in NavAccess access, float turnRadius, float hullLength, int capacity, Allocator allocator)
+        public DriveGuide(int capacity, Allocator allocator)
         {
-            _access = access;
-            _turnRadius = turnRadius;
-            _hullLength = hullLength;
+            _access = default;
+            _turnRadius = 0f;
+            _hullLength = 0f;
             _costs = new UnsafeList<float>(capacity, allocator);
             _settled = new UnsafeList<bool>(capacity, allocator);
             _ways = new UnsafeList<float2>(capacity, allocator);
@@ -60,6 +60,16 @@ namespace HyperRTS.Simulation.Navigation
             _ways.Dispose();
             _buckets.Dispose();
             _entries.Dispose();
+        }
+
+        /// <summary>
+        /// Guides a hull <paramref name="hullLength"/> long that turns no tighter than <paramref name="turnRadius"/>.
+        /// </summary>
+        public void SetAgent(in NavAccess access, float turnRadius, float hullLength)
+        {
+            _access = access;
+            _turnRadius = turnRadius;
+            _hullLength = hullLength;
         }
 
         /// <summary>Fills the costs over the window's cells.</summary>

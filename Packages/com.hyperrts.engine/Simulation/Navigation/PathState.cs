@@ -52,7 +52,11 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Whether an <see cref="PartlyPlanned"/> path has driven its planned part.</summary>
         public readonly bool IsRestDue(DynamicBuffer<PathWaypoint> waypoints) =>
-            PartlyPlanned && (waypoints.Length == 0 || !waypoints[0].Tight);
+            PartlyPlanned && !IsPlannedManoeuvre(waypoints);
+
+        /// <summary>Whether the next waypoint is on a planned manoeuvre (<see cref="PathWaypoint.Tight"/>).</summary>
+        public static bool IsPlannedManoeuvre(DynamicBuffer<PathWaypoint> waypoints) =>
+            waypoints.Length > 0 && waypoints[0].Tight;
 
         /// <summary>Path length from the first waypoint to the last.</summary>
         public static float Measure(DynamicBuffer<PathWaypoint> waypoints)

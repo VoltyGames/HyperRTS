@@ -11,6 +11,11 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public const float WallOverlap = 0.01f;
 
+        /// <summary>
+        /// Metres a frame's move must reach to count as moving, so float noise against a wall reads as wedged.
+        /// </summary>
+        public const float StandingStep = 0.002f;
+
         /// <summary>Distance from the final waypoint at which locomotion has arrived.</summary>
         public static float Arrive(float radius) => math.max(0.05f, radius * 0.25f);
     }

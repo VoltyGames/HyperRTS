@@ -178,7 +178,11 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             _visited[key] = _nodes.Length;
-            var next = new Node { Pose = end, Parent = parent, Cost = cost, Depth = depth, Curvature = move.Curvature, Gear = gear };
+            var next = new Node
+            {
+                Pose = end, Key = key, Parent = parent, Cost = cost, Depth = depth, Curvature = move.Curvature,
+                Gear = gear,
+            };
             CountRuns(node, move, ref next);
             _nodes.Add(next);
             _open.Push(_nodes.Length - 1, cost + Greed * Guide(end));

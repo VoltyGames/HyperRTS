@@ -6,6 +6,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using static HyperRTS.Simulation.Tests.TestVehicles;
 
 namespace HyperRTS.Simulation.Tests.Navigation
 {
@@ -23,21 +24,10 @@ namespace HyperRTS.Simulation.Tests.Navigation
             Chassis = new Chassis { Wheelbase = 4.5f, RearAxle = 1.5f, TurnRadius = 9f, ReverseRun = 6f },
         };
 
-        private static readonly Locomotion Wheels = new()
-        {
-            Acceleration = 3f, Braking = 6f, TurnRate = math.radians(40f), SteerRate = math.radians(45f),
-            ReverseSpeed = 3f,
-        };
-
         private static readonly NavAgent Tank = new()
         {
             Radius = 1.85f, HullLength = 6.9f, Spacing = UnitAuthoring.DefaultSpacing,
             Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
-        };
-
-        private static readonly Locomotion Tracks = new()
-        {
-            Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), ReverseSpeed = 3f,
         };
 
         private TestWorld _world;
@@ -200,7 +190,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
 
             Assert.AreEqual(PathStatus.Ready, _world.Get<PathState>(truck).Status);
             Assert.IsFalse(HasTightWaypoints(truck), "drawn as planned");
-            Assert.AreEqual(0, Stats().DriveSearches, "no search");
+            Assert.AreEqual(0, Stats().Drive.Searches, "no search");
         }
     }
 }

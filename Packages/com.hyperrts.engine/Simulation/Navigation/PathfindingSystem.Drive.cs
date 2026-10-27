@@ -32,53 +32,46 @@ namespace HyperRTS.Simulation.Navigation
             public void Execute()
             {
                 var points = new NativeList<float3>(64, Allocator.Temp);
-                var planned = new NativeList<PathWaypoint>(64, Allocator.Temp);
+                var planner = new DrivePlanner(Allocator.Temp);
                 var spent = 0;
                 for (var i = 0; i < Tasks.Length && spent < DriveBudget; i++)
                 {
                     if (Results[i].DrivePending)
                     {
-                        spent += Plan(i, spent, points, planned);
+                        spent += Plan(i, spent, points, ref planner);
                     }
                 }
 
                 points.Dispose();
-                planned.Dispose();
+                planner.Dispose();
             }
 
             // The drawn corners the serve job left in the buffer, planned within what the frame has left.
-            private int Plan(int index, int spent, NativeList<float3> points, NativeList<PathWaypoint> planned)
+            private int Plan(int index, int spent, NativeList<float3> points, ref DrivePlanner planner)
             {
                 var task = Tasks[index];
                 var request = Requests[task.Request];
                 var waypoints = WaypointLookup[request.Entity];
                 points.Clear();
-                planned.Clear();
                 foreach (var waypoint in waypoints)
                 {
                     points.Add(waypoint.Position);
                 }
 
-                var planner = new DrivePlanner(request.Agent.Access(Grid), request.Agent, Allocator.Temp);
-                var done = planner.Plan(request, points, planned, DriveBudget - spent, spent > 0);
+                var access = request.Agent.Access(Grid);
+                var done = planner.Plan(request, access, points, waypoints, DriveBudget - spent, spent > 0);
                 var result = Results[index];
-                result.DriveSearches = planner.Searches;
-                result.DriveExpansions = planner.Expansions;
-                result.DriveFailures = planner.Failures;
+                result.Drive = planner.Counts;
                 result.DrivePending = !done;
                 Results[index] = result;
                 if (done)
                 {
-                    waypoints.Clear();
-                    waypoints.AddRange(planned.AsArray());
                     var state = ReadyState(request, task, Grid, waypoints, Now);
                     state.PartlyPlanned = planner.PartlyPlanned;
                     StateLookup[request.Entity] = state;
                 }
 
-                var expansions = planner.Expansions;
-                planner.Dispose();
-                return expansions;
+                return (int)planner.Counts.Expansions;
             }
         }
 

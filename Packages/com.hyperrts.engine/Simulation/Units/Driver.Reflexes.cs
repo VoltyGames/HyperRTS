@@ -21,15 +21,10 @@ namespace HyperRTS.Simulation.Units
             }
 
             var backing = leg.Remaining / Handling.ReverseSpeed;
-            var turnSeconds = TurnSeconds(math.acos(math.max(-1f, along)));
-            return turnSeconds + leg.Remaining / TopSpeed > backing * ReverseMargin;
-        }
-
-        // Tracks turn at their rate; wheels also need the arc of their turning circle rolled.
-        private readonly float TurnSeconds(float angle)
-        {
+            // Tracks turn at their rate; wheels also need the arc of their turning circle rolled.
             var rolling = Chassis.Pivots ? 0f : Chassis.TurnRadius / TopSpeed;
-            return angle * math.max(1f / Handling.TurnRate, rolling);
+            var turning = math.acos(math.max(-1f, along)) * math.max(1f / Handling.TurnRate, rolling);
+            return turning + leg.Remaining / TopSpeed > backing * ReverseMargin;
         }
 
         /// <summary>Wheels can't turn standing, so a wheeled hull wedged against a wall backs off it a while.</summary>

@@ -132,8 +132,8 @@ once its planned part is driven. Later paths wait a frame (`PathStats.DeferredDr
 - A search stops after 6,000 expansions (`DriveSearch.MaxExpansions`). A stretch that fails tries once more
   reaching twice as far along the path, where the hull may find room to turn, then stays as drawn.
 - The result replaces the stretch with `PathWaypoint`s every 1.5 m, each `Tight`; `Reverse` marks a leg driven
-  backwards, and a gear change is a waypoint where it flips. `PathStats` counts `DriveSearches`, `DriveExpansions` and
-  `DriveFailures`.
+  backwards, and a gear change is a waypoint where it flips. `PathStats.Drive` (`DriveCounts`) counts the drive
+  searches, their expansions and their failures.
 - `PathState.SkipCorners` never cuts a tight waypoint: it passes once touched or behind the unit, and a gear change
   only on arrival or once overshot. `TryFollowGoal` and the small goal move never move a tight last waypoint; a goal
   that moves searches again.

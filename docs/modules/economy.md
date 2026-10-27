@@ -98,11 +98,12 @@ frame, comparing turned boxes (`NavBox.Overlaps`), so neighbours at any angle ma
 
 The building gap rule keeps lanes vehicles can drive. `MapSettings.BuildingGap`, baked from `MatchAuthoring.buildingGap`
 (0 turns it off), is the least clear gap between a spot and any standing obstacle or site that it doesn't touch.
-`NavBox.Gap` measures the least distance between two turned boxes, and `BuildingSpot.LeavesNarrowGap` is true when they
-are more than 0.1 m and less than the gap apart, so flush neighbours still fit at any yaw. `BuildingSpot.Fits` joins it
-with the overlap test. The server's `PlaceBuildingSystem` checks every spot and every line segment. The ghost checks the
-footprints the player sees (`VisibleFootprints`) and turns red; under fog the server's answer wins. The skirmish AI
-pads each spot by `AITuning.buildingGap` (4 m by default) and passes it through the same rule.
+`NavBox.Gap` measures the least distance between two turned boxes. `BuildingSpot.Fits` fails a spot that overlaps a
+footprint or sits more than 0.1 m and less than the gap apart from one, so flush neighbours still fit at any yaw, and
+`BuildingSpot.CanPlace` joins it with `IsValid` for the server and the ghost alike. The server's `PlaceBuildingSystem`
+checks every spot and every line segment. The ghost checks the footprints the player sees (`VisibleFootprints`) and
+turns red; under fog the server's answer wins. The skirmish AI pads each spot by `AITuning.buildingGap` (4 m by
+default) and passes it through the same rule.
 
 `BuildingSpot.Snap` keeps a yaw within 0.5° of a quarter turn exact and lands the turned edges on cell boundaries. At
 any other yaw it centres the spot on the half-cell lattice.

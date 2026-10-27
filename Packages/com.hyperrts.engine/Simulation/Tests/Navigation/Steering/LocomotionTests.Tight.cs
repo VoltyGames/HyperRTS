@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
+using static HyperRTS.Simulation.Tests.TestVehicles;
 
 namespace HyperRTS.Simulation.Tests.Navigation.Steering
 {

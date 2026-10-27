@@ -227,7 +227,7 @@ namespace HyperRTS.Simulation.Buildings
         private bool IsFree(ref SystemState state, in BuildingSpot spot, in MapSettings map, in NavGrid grid,
             byte faction, NativeList<NavBox> sites)
         {
-            if (!spot.IsValid(map, grid) || !spot.Fits(sites.AsArray(), map.BuildingGap))
+            if (!spot.CanPlace(map, grid, sites.AsArray()))
             {
                 return false;
             }

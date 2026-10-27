@@ -72,15 +72,8 @@ namespace HyperRTS.Simulation.Navigation
             private static bool TryDrive(in PathRequest request, in NavAccess access, NativeList<float3> points,
                 DynamicBuffer<PathWaypoint> waypoints)
             {
-                var planner = new DrivePlanner(access, request.Agent, Allocator.Temp);
-                var planned = new NativeList<PathWaypoint>(points.Length + 16, Allocator.Temp);
-                var done = planner.Plan(request, points, planned, 0, true);
-                if (done)
-                {
-                    waypoints.AddRange(planned.AsArray());
-                }
-
-                planned.Dispose();
+                var planner = new DrivePlanner(Allocator.Temp);
+                var done = planner.Plan(request, access, points, waypoints, 0, true);
                 planner.Dispose();
                 return done;
             }
@@ -130,9 +123,7 @@ namespace HyperRTS.Simulation.Navigation
                     stats.Expansions += result.Expansions;
                     stats.Searches += result.Searches;
                     stats.Estimated += (long)task.Cost;
-                    stats.DriveSearches += result.DriveSearches;
-                    stats.DriveExpansions += result.DriveExpansions;
-                    stats.DriveFailures += result.DriveFailures;
+                    stats.Drive.Add(result.Drive);
                     stats.DeferredDrives += result.DrivePending ? 1 : 0;
                     if (task.Kind == PathTaskKind.Search)
                     {

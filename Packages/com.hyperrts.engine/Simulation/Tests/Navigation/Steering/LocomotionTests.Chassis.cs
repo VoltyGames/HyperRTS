@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Mathematics;
+using static HyperRTS.Simulation.Tests.TestVehicles;
 
 namespace HyperRTS.Simulation.Tests.Navigation.Steering
 {
@@ -95,15 +96,15 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
         public void WedgedVehicle_TurnsOutOnce_BeforeGivingUp()
         {
             var progress = new MoveProgress { Stalled = MoveProgress.GiveUpSeconds };
-            var drive = new LocomotionState();
+            var tank = Driving(Tracks, TrackedChassis, TankRadius, 6f, new float2(0f, 1f));
+            var instant = Driving(Locomotion.Instant, default, 0.5f, 6f, new float2(0f, 1f));
 
-            Assert.IsTrue(progress.TryTurnOut(Tracks, ref drive, MoveProgress.WallHold.Wedged), "turns out");
-            Assert.IsTrue(drive.IsManoeuvring, "driving the other way");
+            Assert.IsTrue(progress.TryTurnOut(ref tank, MoveProgress.WallHold.Wedged), "turns out");
+            Assert.IsTrue(tank.State.IsManoeuvring, "driving the other way");
             Assert.AreEqual(0f, progress.Stalled, "with the clock restarted");
-            Assert.IsFalse(progress.TryTurnOut(Tracks, ref drive, MoveProgress.WallHold.Wedged), "once until it gets closer");
-            Assert.IsFalse(new MoveProgress().TryTurnOut(Tracks, ref drive, MoveProgress.WallHold.None), "not wedged");
-            Assert.IsFalse(new MoveProgress().TryTurnOut(Locomotion.Instant, ref drive, MoveProgress.WallHold.Wedged),
-                "no hull to turn");
+            Assert.IsFalse(progress.TryTurnOut(ref tank, MoveProgress.WallHold.Wedged), "once until it gets closer");
+            Assert.IsFalse(new MoveProgress().TryTurnOut(ref tank, MoveProgress.WallHold.None), "not wedged");
+            Assert.IsFalse(new MoveProgress().TryTurnOut(ref instant, MoveProgress.WallHold.Wedged), "no hull to turn");
         }
 
         [Test]

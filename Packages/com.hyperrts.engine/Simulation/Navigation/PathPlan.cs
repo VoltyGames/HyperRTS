@@ -46,9 +46,7 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>1 when a fine search ran.</summary>
         public int Searches;
 
-        public int DriveSearches;
-        public int DriveExpansions;
-        public int DriveFailures;
+        public DriveCounts Drive;
 
         /// <summary>Its path needs a drive search the frame's budget hasn't reached yet.</summary>
         public bool DrivePending;
