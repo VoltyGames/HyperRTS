@@ -55,6 +55,12 @@ namespace HyperRTS.Editor.Maps.Texturing
             EditorUtility.SetDirty(material);
             // Saved now: opening the map's scene unloads an unsaved material and drops every override.
             AssetDatabase.SaveAssetIfDirty(material);
+            if (!material.IsPropertyOverriden(LayerCount))
+            {
+                throw new InvalidOperationException(
+                    $"HyperRTS: terrain material '{path}' lost its overrides while saving, so the ground would render as one flat layer.");
+            }
+
             return material;
         }
 
@@ -88,7 +94,8 @@ namespace HyperRTS.Editor.Maps.Texturing
             }
         }
 
-        /// <summary>Reverts every override first, so the variant holds only what this build sets.</summary>
+        // No RevertAllPropertyOverrides: Write sets every override it owns, and on Unity 7 alpha a revert can land
+        // after those sets and save the variant empty.
         private static Material LoadOrCreate(string path, MapClimate climate)
         {
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -99,7 +106,6 @@ namespace HyperRTS.Editor.Maps.Texturing
             }
 
             material.parent = climate.terrain;
-            material.RevertAllPropertyOverrides();
             return material;
         }
     }
