@@ -71,41 +71,44 @@ namespace HyperRTS.Simulation.Navigation
         /// touch the same corner and a vehicle cuts it. A <see cref="PathWaypoint.Tight"/> one is never cut: it passes
         /// once touched, or once behind the unit where the gear doesn't change.
         /// </summary>
-        public void SkipCorners(in NavGrid grid, in NavAgent agent, float3 position, float touch, float reach,
+        public void SkipCorners(in NavAccess access, float2 position, float touch, float reach,
             DynamicBuffer<PathWaypoint> waypoints)
         {
-            while (waypoints.Length > 1 && CanSkipCorner(grid, agent, position, touch, reach, waypoints))
+            while (waypoints.Length > 1 && CanSkipCorner(access, position, touch, reach, waypoints))
             {
                 PassCorner(waypoints);
             }
         }
 
-        private static bool CanSkipCorner(in NavGrid grid, in NavAgent agent, float3 position, float touch,
-            float reach, DynamicBuffer<PathWaypoint> waypoints)
+        private static bool CanSkipCorner(in NavAccess access, float2 position, float touch, float reach,
+            DynamicBuffer<PathWaypoint> waypoints)
         {
-            var distance = math.distance(position.xz, waypoints[0].Position.xz);
+            var radius = access.Class.Radius;
             if (waypoints[0].Tight)
             {
-                return IsPassed(position.xz, distance, touch, agent.Radius, waypoints[0], waypoints[1]);
+                return IsPassed(position, touch, radius, waypoints[0], waypoints[1]);
             }
 
+            var distance = math.distance(position, waypoints[0].Position.xz);
             if (distance <= touch)
             {
                 return true;
             }
 
-            if (distance > math.max(CornerSkipRange(agent.Radius), reach))
+            if (distance > math.max(CornerSkipRange(radius), reach))
             {
                 return false;
             }
 
-            return agent.Access(grid).HasLineOfSight(position, waypoints[1].Position);
+            // Line of sight reads only XZ.
+            return access.HasLineOfSight(new float3(position.x, 0f, position.y), waypoints[1].Position);
         }
 
         // A gear change is passed on arriving or overshooting it, where the next leg doubles back.
-        private static bool IsPassed(float2 position, float distance, float touch, float radius,
-            in PathWaypoint corner, in PathWaypoint next)
+        private static bool IsPassed(float2 position, float touch, float radius, in PathWaypoint corner,
+            in PathWaypoint next)
         {
+            var distance = math.distance(position, corner.Position.xz);
             var ahead = next.Position.xz - corner.Position.xz;
             var beyond = math.dot(position - corner.Position.xz, ahead);
             if (corner.Reverse != next.Reverse)

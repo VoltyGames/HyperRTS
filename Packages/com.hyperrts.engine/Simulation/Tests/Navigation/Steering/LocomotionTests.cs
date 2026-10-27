@@ -39,6 +39,10 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
 
         private TestWorld _world;
 
+        private static Driver Driving(in Locomotion handling, in Chassis chassis, float radius, float topSpeed,
+            float2 facing, float deltaTime = TestWorld.FrameTime) =>
+            new(handling, new NavAgent { Radius = radius, Chassis = chassis }, topSpeed, deltaTime) { Facing = facing };
+
         [SetUp]
         public void SetUp()
         {

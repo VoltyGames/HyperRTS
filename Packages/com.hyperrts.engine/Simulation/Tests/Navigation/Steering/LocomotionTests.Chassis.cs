@@ -21,21 +21,18 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
         // Drives the truck alone toward a goal behind it on the left, which takes full lock.
         private static Frame[] DriveToFullLock(int frames)
         {
-            var state = default(LocomotionState);
-            var position = float2.zero;
-            var facing = new float2(0f, 1f);
+            var truck = Driving(Wheels, TruckChassis, TruckRadius, Crawling, new float2(0f, 1f));
             var goal = new float2(-20f, -20f);
             var log = new Frame[frames];
             for (var i = 0; i < frames; i++)
             {
-                var leg = new PathLeg(position, goal, float2.zero, 0f, math.distance(position, goal), true);
-                position += Wheels.Drive(ref state, TruckChassis, position, ref facing, leg, Crawling, TruckRadius,
-                    TestWorld.FrameTime);
-                var pose = TruckChassis.Pose(position, facing);
+                var leg = new PathLeg(truck.Position, goal, float2.zero, 0f, math.distance(truck.Position, goal), true);
+                truck.Position += truck.Drive(leg);
+                var pose = TruckChassis.Pose(truck.Position, truck.Facing);
                 log[i] = new Frame
                 {
-                    Rear = pose.Position, Front = TruckChassis.FrontAxle(pose), Facing = facing,
-                    SteerAngle = math.atan(TruckChassis.Wheelbase * state.Steer),
+                    Rear = pose.Position, Front = TruckChassis.FrontAxle(pose), Facing = truck.Facing,
+                    SteerAngle = math.atan(TruckChassis.Wheelbase * truck.State.Steer),
                 };
             }
 
@@ -74,30 +71,24 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
         [Test]
         public void TrackedHull_PivotsAboutItsCentre()
         {
-            var state = default(LocomotionState);
-            var facing = new float2(0f, 1f);
+            var tank = Driving(Tracks, TrackedChassis, TankRadius, 6f, new float2(0f, 1f));
             var behind = new PathLeg(float2.zero, new float2(-5f, -30f), float2.zero, 0f, 30f, true);
 
-            var step = Tracks.Drive(ref state, TrackedChassis, float2.zero, ref facing, behind, 6f, TankRadius,
-                TestWorld.FrameTime);
+            var step = tank.Drive(behind);
 
             MathAssert.Near(float2.zero, step);
-            Assert.Greater(TurnBetween(new float2(0f, 1f), facing), 0f, "turned standing");
+            Assert.Greater(TurnBetween(new float2(0f, 1f), tank.Facing), 0f, "turned standing");
         }
 
         [Test]
         public void InstantLocomotion_StepsAtFullSpeed_ButNeverPastTheGoal()
         {
-            var instant = Locomotion.Instant;
-            var state = default(LocomotionState);
-            var facing = new float2(1f, 0f);
+            var instant = Driving(Locomotion.Instant, default, 0.4f, 5f, new float2(1f, 0f), 0.1f);
             var far = new PathLeg(float2.zero, new float2(10f, 0f), float2.zero, 0f, 10f, true);
-            MathAssert.Near(new float2(0.5f, 0f),
-                instant.Drive(ref state, default, float2.zero, ref facing, far, 5f, 0.4f, 0.1f));
+            MathAssert.Near(new float2(0.5f, 0f), instant.Drive(far));
 
             var near = new PathLeg(float2.zero, new float2(0.2f, 0f), float2.zero, 0f, 0.2f, true);
-            MathAssert.Near(new float2(0.2f, 0f),
-                instant.Drive(ref state, default, float2.zero, ref facing, near, 5f, 0.4f, 0.1f));
+            MathAssert.Near(new float2(0.2f, 0f), instant.Drive(near));
         }
 
         [Test]
@@ -118,19 +109,17 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
         [Test]
         public void TrackedHull_TurningOut_ReversesInsteadOfPivoting()
         {
-            var drive = new LocomotionState();
-            Tracks.TurnOut(ref drive);
-            var facing = new float2(0f, 1f);
+            var tank = Driving(Tracks, TrackedChassis, TankRadius, 6f, new float2(0f, 1f));
+            Tracks.TurnOut(ref tank.State);
             var behind = new PathLeg(float2.zero, new float2(0f, -40f), float2.zero, 0f, 40f, true);
 
             var step = float2.zero;
             for (var frame = 0; frame < 30; frame++)
             {
-                step = Tracks.Drive(ref drive, TrackedChassis, float2.zero, ref facing, behind, 6f, TankRadius,
-                    TestWorld.FrameTime);
+                step = tank.Drive(behind);
             }
 
-            Assert.Less(drive.Speed, -1f, "backing up");
+            Assert.Less(tank.State.Speed, -1f, "backing up");
             Assert.Less(math.dot(step, new float2(0f, 1f)), 0f, "away from the wall ahead");
         }
     }

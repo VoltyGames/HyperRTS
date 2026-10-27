@@ -131,9 +131,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
         private NavAccess RegisteredAccess(NavAgent agent)
         {
             agent.WallMargin = agent.HullWallMargin;
-            _world.AddAgentPrefabs(agent);
-            _world.Tick();
-            return agent.Access(_world.Grid());
+            return _world.Access(agent);
         }
 
         [Test]

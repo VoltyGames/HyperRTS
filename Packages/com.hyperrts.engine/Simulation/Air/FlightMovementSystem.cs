@@ -102,9 +102,13 @@ namespace HyperRTS.Simulation.Air
                 var crowd = new CrowdVisitor(entity, from, facing, agent, faction.Value,
                     wasMoving, destination, GivingWay);
                 Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
-                var step = Plan(transform, facing, speed.Value, flight, landed, destination.Value, moving, ref path,
-                    waypoints, locomotion, agent.Chassis, ref drive, ref heading, crowd, velocity.Value);
-                heading = locomotion.Aim(heading, facing, !moving.ValueRO, aim, aiming, DeltaTime);
+                var driver = new Driver(locomotion, agent, speed.Value, DeltaTime)
+                {
+                    Position = from, Facing = facing, State = drive,
+                };
+                var step = Plan(ref driver, ref heading, transform.Rotation, flight, landed, destination.Value, moving,
+                    ref path, waypoints, crowd, velocity.Value);
+                heading = driver.Aim(heading, !moving.ValueRO, aim, aiming);
                 Fly(ref transform, from + step + (landed ? float2.zero : crowd.PushWithin(maxStep)), flight, landed);
                 if (moving.ValueRO && crowd.ReachedGroup)
                 {
@@ -115,8 +119,8 @@ namespace HyperRTS.Simulation.Air
                 progress.Report(wasMoving, moving.ValueRO, reason, ref arrival, arrived);
                 if (remembers)
                 {
-                    drive.Hit(transform.Position.xz - from, step, false);
-                    States[entity] = drive;
+                    driver.State.Hit(transform.Position.xz - from, step, false);
+                    States[entity] = driver.State;
                 }
 
                 Face(ref transform, heading);
@@ -140,25 +144,25 @@ namespace HyperRTS.Simulation.Air
             }
 
             /// <summary>This frame's step and facing before the crowd's push.</summary>
-            private readonly float2 Plan(in LocalTransform transform, float2 facing, float topSpeed, in Flight flight,
+            private readonly float2 Plan(ref Driver driver, ref float2 heading, quaternion rotation, in Flight flight,
                 bool landed, float3 goal, EnabledRefRW<MoveDestination> moving, ref PathState path,
-                DynamicBuffer<PathWaypoint> waypoints, in Locomotion locomotion, in Chassis chassis,
-                ref LocomotionState drive, ref float2 heading, in CrowdVisitor crowd, float2 velocity)
+                DynamicBuffer<PathWaypoint> waypoints, in CrowdVisitor crowd, float2 velocity)
             {
-                var position = transform.Position.xz;
-                var leg = PathLeg.Along(position, goal.xz, waypoints, path);
-                if (moving.ValueRO && locomotion.HasArrived(chassis, leg, position, facing, crowd.Radius))
+                var leg = PathLeg.Along(driver.Position, goal.xz, waypoints, path);
+                if (moving.ValueRO && driver.HasArrived(leg))
                 {
                     path.Halt(moving, waypoints);
                 }
 
                 if (moving.ValueRO)
                 {
-                    var steering = new Steering(crowd, chassis, velocity, topSpeed);
-                    return steering.Drive(locomotion, ref drive, facing, ref heading, leg, DeltaTime);
+                    var steering = new Steering(crowd, velocity);
+                    var step = steering.Drive(ref driver, leg);
+                    heading = driver.Facing;
+                    return step;
                 }
 
-                return Loiter(transform.Rotation, flight, landed, topSpeed * DeltaTime, ref heading);
+                return Loiter(rotation, flight, landed, driver.TopSpeed * DeltaTime, ref heading);
             }
 
             /// <summary>An idle aircraft that can't hover keeps flying a circle; one that can stays put.</summary>

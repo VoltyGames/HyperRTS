@@ -96,7 +96,6 @@ namespace HyperRTS.Simulation.Units
                 var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
                 // Instant handling needs no memory between frames, so units without it start each from rest.
                 var remembers = States.TryGetComponent(entity, out var drive);
-
                 if (!remembers)
                 {
                     // Without state, last frame's movement stands in for last frame's steering choice.
@@ -110,13 +109,16 @@ namespace HyperRTS.Simulation.Units
                 var axis = facing * agent.HalfSegment;
                 var crowd = new CrowdVisitor(entity, from, facing, agent, faction.Value, wasMoving, destination,
                     GivingWay);
-
                 Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
 
                 var capsule = new NavCapsule(agent.Access(Grid), axis);
-                var step = Plan(transform.Position, facing, speed.Value, agent, destination.Value, moving, ref path,
-                    waypoints, locomotion, ref drive, ref heading, crowd, velocity.Value, capsule.Access);
-                heading = locomotion.Aim(heading, facing, !moving.ValueRO, aim, aiming, DeltaTime);
+                var driver = new Driver(locomotion, agent, speed.Value, DeltaTime)
+                {
+                    Position = from, Facing = facing, State = drive,
+                };
+                var step = Plan(ref driver, ref heading, destination.Value, moving, ref path, waypoints, crowd,
+                    velocity.Value, capsule.Access);
+                heading = driver.Aim(heading, !moving.ValueRO, aim, aiming);
 
                 // A building or wreck that lands on a unit leaves it sunk in walls, parked or not, and it drives out.
                 var depth = capsule.Depth(from, axis);
@@ -134,7 +136,7 @@ namespace HyperRTS.Simulation.Units
                 var planned = waypoints.Length > 0 && waypoints[0].Tight;
                 if (stalled && remembers && !planned)
                 {
-                    stalled = !progress.TryTurnOut(locomotion, ref drive, hold);
+                    stalled = !progress.TryTurnOut(locomotion, ref driver.State, hold);
                 }
 
                 if (moving.ValueRO && (crowd.ReachedGroup || stalled))
@@ -151,8 +153,8 @@ namespace HyperRTS.Simulation.Units
                 progress.Report(wasMoving, moving.ValueRO, reason, ref arrival, arrived);
                 if (remembers)
                 {
-                    drive.Hit(transform.Position.xz - from, step, !transform.Position.xz.Equals(wanted));
-                    States[entity] = drive;
+                    driver.State.Hit(transform.Position.xz - from, step, !transform.Position.xz.Equals(wanted));
+                    States[entity] = driver.State;
                 }
 
                 Face(ref transform, capsule, agent, facing, heading, moving.ValueRO);
@@ -206,46 +208,44 @@ namespace HyperRTS.Simulation.Units
             }
 
             /// <summary>This frame's step and facing before the crowd's push and the walls have their say.</summary>
-            private readonly float2 Plan(float3 position, float2 facing, float topSpeed, in NavAgent agent, float3 goal,
+            private readonly float2 Plan(ref Driver driver, ref float2 heading, float3 goal,
                 EnabledRefRW<MoveDestination> moving, ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
-                in Locomotion locomotion, ref LocomotionState drive, ref float2 heading, in CrowdVisitor crowd,
-                float2 velocity, in NavAccess access)
+                in CrowdVisitor crowd, float2 velocity, in NavAccess access)
             {
-                var maxStep = topSpeed * DeltaTime;
                 var leg = default(PathLeg);
-                if (moving.ValueRO && !Follow(position, facing, agent, maxStep, locomotion, drive.Speed, goal,
-                        ref path, waypoints, out leg))
+                if (moving.ValueRO && !Follow(driver, access, goal, ref path, waypoints, out leg))
                 {
                     path.Halt(moving, waypoints);
                 }
 
                 if (!moving.ValueRO)
                 {
-                    return locomotion.BrakeToStop(ref drive, facing, DeltaTime);
+                    return driver.BrakeToStop();
                 }
 
                 // No corners yet: stop and face the goal rather than drive blind at it.
                 if (path.Status != PathStatus.Ready && waypoints.Length == 0)
                 {
-                    heading = locomotion.TurnToward(facing, math.normalizesafe(goal.xz - position.xz), DeltaTime);
-                    return locomotion.BrakeToStop(ref drive, facing, DeltaTime);
+                    heading = driver.TurnToward(math.normalizesafe(goal.xz - driver.Position));
+                    return driver.BrakeToStop();
                 }
 
-                var steering = new Steering(crowd, agent.Chassis, velocity, topSpeed);
+                var steering = new Steering(crowd, velocity);
                 steering.AddWalls(access);
-                return steering.Drive(locomotion, ref drive, facing, ref heading, leg, DeltaTime);
+                var step = steering.Drive(ref driver, leg);
+                heading = driver.Facing;
+                return step;
             }
 
             /// <summary>Picks the leg to drive; false once the unit has arrived.</summary>
-            private readonly bool Follow(float3 position, float2 facing, in NavAgent agent, float maxStep,
-                in Locomotion locomotion, float speed, float3 goal, ref PathState path,
+            private static bool Follow(in Driver driver, in NavAccess access, float3 goal, ref PathState path,
                 DynamicBuffer<PathWaypoint> waypoints, out PathLeg leg)
             {
-                var reach = locomotion.LookAhead(agent.Chassis, speed, agent.Radius);
-                path.SkipCorners(Grid, agent, position, math.max(agent.Radius * 0.5f, maxStep), reach, waypoints);
-                leg = PathLeg.Along(position.xz, goal.xz, waypoints, path)
-                    .Manoeuvre(position.xz, waypoints, Locomotion.TightLookAhead(speed), agent.Chassis);
-                return !locomotion.HasArrived(agent.Chassis, leg, position.xz, facing, agent.Radius);
+                var touch = math.max(driver.Radius * 0.5f, driver.TopSpeed * driver.DeltaTime);
+                path.SkipCorners(access, driver.Position, touch, driver.LookAhead, waypoints);
+                leg = PathLeg.Along(driver.Position, goal.xz, waypoints, path).Manoeuvre(driver.Position, waypoints,
+                    Locomotion.TightLookAhead(driver.State.Speed), driver.Chassis);
+                return !driver.HasArrived(leg);
             }
         }
     }

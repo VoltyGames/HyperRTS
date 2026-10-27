@@ -221,7 +221,9 @@ unit fits and can reach; one only across water or a wall is left to the pathfind
 
 Every unit follows its path through `Locomotion`. Without its own, a unit gets `Locomotion.Instant`: full speed and
 any facing at once, never reversing, as infantry do. `LocomotionAuthoring` gives a ground vehicle handling, and its
-`LocomotionState` keeps its speed between frames. `PathState` caches the path's length past the next corner.
+`LocomotionState` keeps its speed between frames. Each frame a `Driver` bundles the handling, the chassis, the
+radius, the top speed and the state, and drives the leg: it turns its facing and returns the hull's move.
+`PathState` caches the path's length past the next corner.
 Its facing is its rotation, and the crowd's push never turns the hull. A parked unit with an enabled `FacingGoal`,
 as a hull-fixed weapon sets, turns toward it standing at its turn rate, wheeled ones too.
 

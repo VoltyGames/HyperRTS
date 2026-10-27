@@ -27,20 +27,20 @@ namespace HyperRTS.Simulation.Tests.Navigation
         public void SkipCorners_PassesATightWaypoint_OnlyOnceTouchedOrBehind()
         {
             CreateMatch(200f);
-            var grid = _world.Grid();
+            var access = _world.Access(PlannedTruck);
             var waypoints = TightPath(Tight(0f, 5f), Tight(0f, 10f), Tight(0.5f, 8.5f, true));
             var path = new PathState { LengthPastCorner = PathState.Measure(waypoints) };
 
-            path.SkipCorners(grid, PlannedTruck, float3.zero, 0.6f, 20f, waypoints);
+            path.SkipCorners(access, float2.zero, 0.6f, 20f, waypoints);
             Assert.AreEqual(3, waypoints.Length, "never cut, however far it sees");
 
-            path.SkipCorners(grid, PlannedTruck, new float3(0.3f, 0f, 5.4f), 0.6f, 20f, waypoints);
+            path.SkipCorners(access, new float2(0.3f, 5.4f), 0.6f, 20f, waypoints);
             Assert.AreEqual(2, waypoints.Length, "passed once behind");
 
-            path.SkipCorners(grid, PlannedTruck, new float3(0.2f, 0f, 9.5f), 0.6f, 20f, waypoints);
+            path.SkipCorners(access, new float2(0.2f, 9.5f), 0.6f, 20f, waypoints);
             Assert.AreEqual(2, waypoints.Length, "a gear change isn't passed within the touch");
 
-            path.SkipCorners(grid, PlannedTruck, new float3(0.1f, 0f, 9.8f), 0.6f, 20f, waypoints);
+            path.SkipCorners(access, new float2(0.1f, 9.8f), 0.6f, 20f, waypoints);
             Assert.AreEqual(1, waypoints.Length, "but on arriving");
         }
 

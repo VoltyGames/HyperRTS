@@ -59,6 +59,14 @@ namespace HyperRTS.Simulation.Tests
             return query.GetSingleton<NavGrid>();
         }
 
+        /// <summary>The agent's view of the grid, its movement class registered first.</summary>
+        public static NavAccess Access(this TestWorld world, in NavAgent agent)
+        {
+            world.AddAgentPrefabs(agent);
+            world.Tick();
+            return agent.Access(world.Grid());
+        }
+
         public static float3 GetPosition(this TestWorld world, Entity entity) =>
             world.Get<LocalTransform>(entity).Position;
     }

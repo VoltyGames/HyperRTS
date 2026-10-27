@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -44,8 +45,6 @@ namespace HyperRTS.Simulation.Units
         private readonly float _halfSegment;
         private readonly float _radius;
         private readonly float2 _velocity;
-        private readonly float _topSpeed;
-        private readonly Chassis _chassis;
         private NavAccess _walls;
         private bool _hasWalls;
         private float2 _preferred;
@@ -53,22 +52,24 @@ namespace HyperRTS.Simulation.Units
         private float _wallReach;
         private float2 _leg;
 
-        public Steering(in CrowdVisitor crowd, in Chassis chassis, float2 velocity, float topSpeed)
+        // The driver before this frame's drive, whose handling bounds the candidates.
+        private Driver _start;
+
+        public Steering(in CrowdVisitor crowd, float2 velocity)
         {
-            _chassis = chassis;
             _neighbours = crowd.Neighbours;
             _position = crowd.Position;
             _axis = crowd.SegmentAxis;
             _halfSegment = math.length(crowd.SegmentAxis);
             _radius = crowd.Radius;
             _velocity = velocity;
-            _topSpeed = math.max(topSpeed, 1e-3f);
             _walls = default;
             _hasWalls = false;
             _preferred = float2.zero;
             _last = float2.zero;
             _wallReach = 0f;
             _leg = float2.zero;
+            _start = default;
         }
 
         /// <summary>Also keeps the footprint off the walls of <paramref name="access"/>; aircraft have none.</summary>
@@ -79,43 +80,40 @@ namespace HyperRTS.Simulation.Units
         }
 
         // A reflex manoeuvre runs at a crawl, and steering would break its legs.
-        private float2 DriveSampled(in Locomotion locomotion, ref LocomotionState drive, float2 facing,
-            ref float2 heading, in PathLeg leg, float deltaTime)
+        private float2 DriveSampled(ref Driver driver, in PathLeg leg)
         {
-            var start = drive;
-            heading = facing;
-            var step = locomotion.Drive(ref drive, _chassis, _position, ref heading, leg, _topSpeed, _radius, deltaTime);
+            _start = driver;
+            var step = driver.Drive(leg);
             // With no one near, a pivot means to stand, not to roll on as it brakes.
-            var standsToTurn = _neighbours.Length == 0 && locomotion.IsPivoting(drive, _chassis, facing, leg);
-            _preferred = standsToTurn ? float2.zero : step / deltaTime;
-            if (drive.IsManoeuvring)
+            var standsToTurn = _neighbours.Length == 0 && driver.IsPivoting(_start.Facing, leg);
+            _preferred = standsToTurn ? float2.zero : step / driver.DeltaTime;
+            if (driver.State.IsManoeuvring)
             {
-                drive.LastChoice = _preferred;
+                driver.State.LastChoice = _preferred;
                 return step;
             }
 
-            _last = start.LastChoice;
+            _last = _start.State.LastChoice;
             _wallReach = leg.Distance;
-            _leg = drive.Reverse ? -leg.Direction : leg.Direction;
-            var chosen = Pick(locomotion, start, facing);
+            _leg = driver.State.Reverse ? -leg.Direction : leg.Direction;
+            var chosen = Pick();
             if (math.distancesq(chosen, _preferred) > Unchanged)
             {
-                drive = start;
-                heading = facing;
-                step = locomotion.Steer(ref drive, _chassis, _position, ref heading, leg, chosen, _topSpeed, _radius, deltaTime);
+                driver = _start;
+                step = driver.Steer(leg, chosen);
             }
 
-            drive.LastChoice = chosen;
-            if (IsWedged(chosen, facing))
+            driver.State.LastChoice = chosen;
+            if (IsWedged(chosen))
             {
-                Locomotion.BackOff(_chassis, ref drive);
+                driver.BackOff();
             }
 
             return step;
         }
 
         /// <summary>The cheapest candidate; the planned velocity itself when nothing is in its way.</summary>
-        private readonly float2 Pick(in Locomotion locomotion, in LocomotionState state, float2 facing)
+        private readonly float2 Pick()
         {
             using var scope = PickMarker.Auto();
             var alone = _neighbours.Length == 0 && !IsNearWall();
@@ -127,14 +125,14 @@ namespace HyperRTS.Simulation.Units
 
             var best = new Choice { Velocity = _preferred, Cost = penalty + Straying(_preferred) };
             Try(ref best, _last, 0f);
-            Try(ref best, float2.zero, StandingExtra(locomotion, facing));
-            if (locomotion.IsInstant)
+            Try(ref best, float2.zero, StandingExtra());
+            if (_start.Handling.IsInstant)
             {
-                TryDirections(ref best, facing);
+                TryDirections(ref best);
             }
             else
             {
-                TryReachable(ref best, locomotion, state, facing);
+                TryReachable(ref best);
             }
 
             return best.Velocity;
@@ -142,27 +140,27 @@ namespace HyperRTS.Simulation.Units
 
         // Clear of traffic, tracks reach a leg beyond their reachable headings only by stopping to turn, so that isn't
         // waiting. Among neighbours standing still blocks them, so it keeps its cost.
-        private readonly float StandingExtra(in Locomotion locomotion, float2 facing)
+        private readonly float StandingExtra()
         {
-            if (!_chassis.Pivots || _neighbours.Length > 0)
+            if (!_start.Chassis.Pivots || _neighbours.Length > 0)
             {
                 return StandingCost;
             }
 
-            var reachable = locomotion.TurnWithin(_chassis, _topSpeed * 0.5f, ReachTime);
-            return math.dot(facing, _leg) < math.cos(reachable) ? 0f : StandingCost;
+            var reachable = _start.TurnWithin(_start.TopSpeed * 0.5f, ReachTime);
+            return math.dot(_start.Facing, _leg) < math.cos(reachable) ? 0f : StandingCost;
         }
 
         // Stopped short of a wall it is facing, which only backing off and turning gets it away from.
-        private readonly bool IsWedged(float2 chosen, float2 facing)
+        private readonly bool IsWedged(float2 chosen)
         {
             if (math.lengthsq(chosen) > Unchanged)
             {
                 return false;
             }
 
-            var forward = facing * _topSpeed;
-            var axis = facing * _halfSegment;
+            var forward = _start.Facing * _start.TopSpeed;
+            var axis = _start.Facing * _halfSegment;
             return _hasWalls && WallDepth(forward, axis, Soon, DepthAt(_position, axis)) > 0f;
         }
 
@@ -178,41 +176,41 @@ namespace HyperRTS.Simulation.Units
         }
 
         // Instant handling may take any direction at once, so the ring is turned to start on the planned one.
-        private readonly void TryDirections(ref Choice best, float2 facing)
+        private readonly void TryDirections(ref Choice best)
         {
-            var forward = math.lengthsq(_preferred) > 1e-6f ? math.normalize(_preferred) : facing;
+            var forward = math.lengthsq(_preferred) > 1e-6f ? math.normalize(_preferred) : _start.Facing;
             for (var side = -2; side <= 2; side++)
             {
-                Try(ref best, Rotate(_preferred, side * Nudge), 0f);
+                Try(ref best, Planar.Rotate(_preferred, side * Nudge), 0f);
             }
 
             for (var i = 0; i < Directions; i++)
             {
-                var direction = Rotate(forward, i * (math.PI * 2f / Directions));
+                var direction = Planar.Rotate(forward, i * (math.PI * 2f / Directions));
                 for (var speed = 1; speed <= 3; speed++)
                 {
-                    Try(ref best, direction * (_topSpeed * speed / 3f), 0f);
+                    Try(ref best, direction * (_start.TopSpeed * speed / 3f), 0f);
                 }
             }
         }
 
-        private readonly void TryReachable(ref Choice best, in Locomotion locomotion, in LocomotionState state,
-            float2 facing)
+        private readonly void TryReachable(ref Choice best)
         {
-            if (!state.Reverse && locomotion.ReverseSpeed > 0f)
+            var facing = _start.Facing;
+            if (!_start.State.Reverse && _start.Handling.ReverseSpeed > 0f)
             {
-                Try(ref best, -facing * locomotion.ReverseSpeed, ReverseCost);
+                Try(ref best, -facing * _start.Handling.ReverseSpeed, ReverseCost);
             }
 
-            var travel = state.Reverse ? -facing : facing;
+            var travel = _start.State.Reverse ? -facing : facing;
             for (var share = 2; share <= 4; share++)
             {
-                var speed = _topSpeed * share * 0.25f;
-                var spread = locomotion.TurnWithin(_chassis, speed, ReachTime);
+                var speed = _start.TopSpeed * share * 0.25f;
+                var spread = _start.TurnWithin(speed, ReachTime);
                 for (var i = 0; i < Headings; i++)
                 {
                     var angle = spread * (i * 2f / (Headings - 1) - 1f);
-                    Try(ref best, Rotate(travel, angle) * speed, 0f);
+                    Try(ref best, Planar.Rotate(travel, angle) * speed, 0f);
                 }
             }
         }
@@ -235,10 +233,10 @@ namespace HyperRTS.Simulation.Units
 
         private readonly float Straying(float2 candidate)
         {
-            var left = math.max(0f, Cross(math.normalizesafe(_preferred), candidate));
+            var left = math.max(0f, Planar.Cross(math.normalizesafe(_preferred), candidate));
             var straying = math.distance(candidate, _preferred) + Stickiness * math.distance(candidate, _last) +
                            KeepRight * left;
-            return straying / _topSpeed;
+            return straying / _start.TopSpeed;
         }
 
         /// <summary>Metres of overlap with neighbours and walls, weighted to count sooner hits more.</summary>
@@ -278,14 +276,6 @@ namespace HyperRTS.Simulation.Units
             return math.max(0f, open - _walls.Distance(center - axis)) +
                    math.max(0f, open - _walls.Distance(center + axis));
         }
-
-        private static float2 Rotate(float2 direction, float angle)
-        {
-            math.sincos(angle, out var sin, out var cos);
-            return new float2(direction.x * cos - direction.y * sin, direction.x * sin + direction.y * cos);
-        }
-
-        private static float Cross(float2 a, float2 b) => a.x * b.y - a.y * b.x;
 
         private struct Choice
         {

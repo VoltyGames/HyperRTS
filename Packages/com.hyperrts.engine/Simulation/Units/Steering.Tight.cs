@@ -8,18 +8,13 @@ namespace HyperRTS.Simulation.Units
         /// Drives the leg, steering when the planned velocity would hit something. A planned manoeuvre isn't steered
         /// and doesn't wait: the hull room keeps it off its neighbours, and waiting on them deadlocks a mouth.
         /// </summary>
-        public float2 Drive(in Locomotion locomotion, ref LocomotionState drive, float2 facing, ref float2 heading,
-            in PathLeg leg, float deltaTime) =>
-            leg.Tight
-                ? DriveTight(locomotion, ref drive, facing, ref heading, leg, deltaTime)
-                : DriveSampled(locomotion, ref drive, facing, ref heading, leg, deltaTime);
+        public float2 Drive(ref Driver driver, in PathLeg leg) =>
+            leg.Tight ? DriveTight(ref driver, leg) : DriveSampled(ref driver, leg);
 
-        private readonly float2 DriveTight(in Locomotion locomotion, ref LocomotionState drive, float2 facing,
-            ref float2 heading, in PathLeg leg, float deltaTime)
+        private static float2 DriveTight(ref Driver driver, in PathLeg leg)
         {
-            heading = facing;
-            var step = locomotion.Drive(ref drive, _chassis, _position, ref heading, leg, _topSpeed, _radius, deltaTime);
-            drive.LastChoice = step / deltaTime;
+            var step = driver.Drive(leg);
+            driver.State.LastChoice = step / driver.DeltaTime;
             return step;
         }
     }

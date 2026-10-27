@@ -61,40 +61,36 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
         [Test]
         public void TightLeg_KeepsToItsSpeedCap_AndChangesGearStanding()
         {
-            var grid = _world.Grid();
+            var access = _world.Access(TruckAgent);
             var waypoints = ForwardThenBack();
             var path = new PathState { Status = PathStatus.Ready, LengthPastCorner = PathState.Measure(waypoints) };
-            var state = default(LocomotionState);
-            var position = float2.zero;
-            var facing = new float2(0f, 1f);
+            var truck = Driving(Wheels, TruckChassis, TruckRadius, 8f, new float2(0f, 1f));
             var fastest = 0f;
             var slowest = 0f;
             var arrived = false;
             for (var t = 0f; t < 20f && !arrived; t += TestWorld.FrameTime)
             {
-                var at = new float3(position.x, 0f, position.y);
-                path.SkipCorners(grid, TruckAgent, at, TruckRadius * 0.5f, 10f, waypoints);
-                var leg = PathLeg.Along(position, new float2(0f, 3f), waypoints, path)
-                    .Manoeuvre(position, waypoints, Locomotion.TightLookAhead(state.Speed), TruckChassis);
-                arrived = Wheels.HasArrived(TruckChassis, leg, position, facing, TruckRadius);
+                path.SkipCorners(access, truck.Position, TruckRadius * 0.5f, 10f, waypoints);
+                var leg = PathLeg.Along(truck.Position, new float2(0f, 3f), waypoints, path)
+                    .Manoeuvre(truck.Position, waypoints, Locomotion.TightLookAhead(truck.State.Speed), TruckChassis);
+                arrived = truck.HasArrived(leg);
                 if (arrived)
                 {
                     break;
                 }
 
-                var before = state.Speed;
-                position += Wheels.Drive(ref state, TruckChassis, position, ref facing, leg, 8f, TruckRadius,
-                    TestWorld.FrameTime);
-                Assert.IsFalse(before > 0f && state.Speed < 0f, "stood before reversing");
-                fastest = math.max(fastest, state.Speed);
-                slowest = math.min(slowest, state.Speed);
+                var before = truck.State.Speed;
+                truck.Position += truck.Drive(leg);
+                Assert.IsFalse(before > 0f && truck.State.Speed < 0f, "stood before reversing");
+                fastest = math.max(fastest, truck.State.Speed);
+                slowest = math.min(slowest, truck.State.Speed);
             }
 
             Assert.IsTrue(arrived, "arrived");
             Assert.LessOrEqual(fastest, Locomotion.TightSpeed + 1e-4f, "forwards at no more than the cap");
             Assert.That(slowest, Is.InRange(-Wheels.ReverseSpeed - 1e-4f, -1f), "backwards at up to its reverse speed");
             // A goal under the hull counts as reached.
-            Assert.Less(math.distance(position, new float2(0f, 3f)), TruckRadius + 0.1f, "at the goal");
+            Assert.Less(math.distance(truck.Position, new float2(0f, 3f)), TruckRadius + 0.1f, "at the goal");
         }
     }
 }
