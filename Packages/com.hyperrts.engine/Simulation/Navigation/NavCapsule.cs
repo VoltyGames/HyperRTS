@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Navigation
                 return to;
             }
 
-            var depth = Depth(to, Axis, out var deepest);
+            var depth = Depth(to, Axis, Access.Class.Radius, float.PositiveInfinity, out var deepest);
             if (depth <= NavTolerances.WallOverlap)
             {
                 return to;
@@ -71,7 +71,7 @@ namespace HyperRTS.Simulation.Navigation
         /// </summary>
         public bool TryTurnOff(float2 center, float2 axis, float reach, out float2 moved)
         {
-            var depth = Depth(center, axis, out var deepest);
+            var depth = Depth(center, axis, Access.Class.Radius, float.PositiveInfinity, out var deepest);
             moved = center + Access.Normal(deepest) * math.min(reach, depth + NavTolerances.WallOverlap);
             return CanTurn(moved, axis) && Constrain(center, moved).Equals(moved);
         }
@@ -119,31 +119,59 @@ namespace HyperRTS.Simulation.Navigation
         /// How far the capsule reaches into walls, summed over points half a radius apart along its core, so sliding
         /// a longer stretch onto a wall counts as deeper.
         /// </summary>
-        public float Depth(float2 center, float2 axis) => Depth(center, axis, out _);
+        public float Depth(float2 center, float2 axis) =>
+            Depth(center, axis, Access.Class.Radius, float.PositiveInfinity, out _);
 
-        private static int Points(float2 axis, float radius) =>
+        /// <summary>
+        /// The same for the capsule grown by <paramref name="clearance"/>, as a planner keeps room for error, stopping
+        /// once past <paramref name="limit"/>, as it only asks whether the hull fits.
+        /// </summary>
+        public float Depth(float2 center, float2 axis, float clearance, float limit) =>
+            Depth(center, axis, Access.Class.Radius + clearance, limit, out _);
+
+        internal static int Points(float2 axis, float radius) =>
             1 + (int)math.ceil(math.length(axis) * 2f / math.max(radius * 0.5f, 0.05f));
 
-        private static float2 Point(float2 center, float2 axis, int i, int points) =>
+        internal static float2 Point(float2 center, float2 axis, int i, int points) =>
             points == 1 ? center : center + axis * (i * 2f / (points - 1) - 1f);
 
-        private float Depth(float2 center, float2 axis, out float2 deepest)
+        /// <summary>
+        /// The most the field can change from one point to the next: along the core it changes by at most |x| + |z| per
+        /// metre, so room at one point clears the next few.
+        /// </summary>
+        internal static float Reach(float2 axis, int points) =>
+            points == 1 ? 1f : 2f * math.csum(math.abs(axis)) / (points - 1);
+
+        private float Depth(float2 center, float2 axis, float radius, float limit, out float2 deepest)
         {
-            var radius = Access.Class.Radius;
             var points = Points(axis, radius);
+            var reach = Reach(axis, points);
             var depth = 0f;
             var most = 0f;
             deepest = center;
-            for (var i = 0; i < points; i++)
+            for (var i = 0; i < points;)
             {
                 var point = Point(center, axis, i, points);
-                var sunk = math.max(0f, radius - Access.Distance(point));
-                depth += sunk;
-                if (sunk > most)
+                var room = Access.Distance(point) - radius;
+                if (room >= 0f)
                 {
-                    most = sunk;
+                    i += 1 + (int)math.min(room / reach, points);
+                    continue;
+                }
+
+                depth -= room;
+                if (-room > most)
+                {
+                    most = -room;
                     deepest = point;
                 }
+
+                if (depth > limit)
+                {
+                    return depth;
+                }
+
+                i++;
             }
 
             return depth;

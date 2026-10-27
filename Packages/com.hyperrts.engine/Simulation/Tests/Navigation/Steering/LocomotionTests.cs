@@ -279,14 +279,14 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
             var goal = new float3(-30f, 0f, -20f);
             Order(tank, goal);
 
-            var turnedOut = false;
+            var backedOut = false;
             var ended = _world.RunUntil(() =>
             {
-                turnedOut |= _world.Get<LocomotionState>(tank).IsManoeuvring;
+                backedOut |= IsBackingOnAPlannedLeg(tank);
                 return Arrived(tank);
             }, 40f);
 
-            Assert.IsTrue(turnedOut, "wedged, it backed out");
+            Assert.IsTrue(backedOut, "wedged, it backed out on a planned reverse leg");
             Assert.IsTrue(ended, "the move ended");
             Assert.AreNotEqual(ArrivalReason.Stalled, _world.Get<Arrival>(tank).Reason,
                 "by arriving, not by giving up");

@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Transport;
@@ -96,6 +96,7 @@ namespace HyperRTS.Simulation.Units
                 var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
                 // Instant handling needs no memory between frames, so units without it start each from rest.
                 var remembers = States.TryGetComponent(entity, out var drive);
+
                 if (!remembers)
                 {
                     // Without state, last frame's movement stands in for last frame's steering choice.
@@ -109,25 +110,33 @@ namespace HyperRTS.Simulation.Units
                 var axis = facing * agent.HalfSegment;
                 var crowd = new CrowdVisitor(entity, from, facing, agent, faction.Value, wasMoving, destination,
                     GivingWay);
+
                 Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
+
                 var capsule = new NavCapsule(agent.Access(Grid), axis);
                 var step = Plan(transform.Position, facing, speed.Value, agent, destination.Value, moving, ref path,
                     waypoints, locomotion, ref drive, ref heading, crowd, velocity.Value, capsule.Access);
                 heading = locomotion.Aim(heading, facing, !moving.ValueRO, aim, aiming, DeltaTime);
+
                 // A building or wreck that lands on a unit leaves it sunk in walls, parked or not, and it drives out.
                 var depth = capsule.Depth(from, axis);
                 var sunk = depth > NavTolerances.WallOverlap;
                 var escape = sunk ? capsule.WayOut(from, maxStep) : float2.zero;
                 var wanted = from + crowd.Within(step + escape + crowd.PushWithin(maxStep));
                 Walk(ref transform, capsule, from, wanted, agent, crowd);
+
                 var hold = Hold(capsule, depth, from, transform.Position.xz, axis, crowd);
                 var stalled = moving.ValueRO && !crowd.ReachedGroup &&
                               progress.HasGivenUp(transform.Position.xz, facing, agent, destination.Value, waypoints,
                                   ref path, hold, DeltaTime);
-                if (stalled && remembers)
+
+                // A planned manoeuvre stuck in walls replans its way out rather than turning out.
+                var planned = waypoints.Length > 0 && waypoints[0].Tight;
+                if (stalled && remembers && !planned)
                 {
                     stalled = !progress.TryTurnOut(locomotion, ref drive, hold);
                 }
+
                 if (moving.ValueRO && (crowd.ReachedGroup || stalled))
                 {
                     path.Halt(moving, waypoints);
@@ -183,7 +192,7 @@ namespace HyperRTS.Simulation.Units
                     return capsule.Depth(to, axis) >= depth ? MoveProgress.WallHold.Sunk : MoveProgress.WallHold.None;
                 }
 
-                var wedged = depth > 0f && to.Equals(from) && crowd.Neighbours.Length == 0;
+                var wedged = depth > 0f && math.distancesq(to, from) < 4e-6f && crowd.Neighbours.Length == 0;
                 return wedged ? MoveProgress.WallHold.Wedged : MoveProgress.WallHold.None;
             }
 
@@ -234,7 +243,8 @@ namespace HyperRTS.Simulation.Units
             {
                 var reach = locomotion.LookAhead(agent.Chassis, speed, agent.Radius);
                 path.SkipCorners(Grid, agent, position, math.max(agent.Radius * 0.5f, maxStep), reach, waypoints);
-                leg = PathLeg.Along(position.xz, goal.xz, waypoints, path);
+                leg = PathLeg.Along(position.xz, goal.xz, waypoints, path)
+                    .Manoeuvre(position.xz, waypoints, Locomotion.TightLookAhead(speed), agent.Chassis);
                 return !locomotion.HasArrived(agent.Chassis, leg, position.xz, facing, agent.Radius);
             }
         }

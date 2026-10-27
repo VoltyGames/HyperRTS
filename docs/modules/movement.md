@@ -49,8 +49,8 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   succeeds: the corridor's components connect by 4-connected steps, which A* allows. Its records are sized to the
   corridor, slot x 256 plus the local cell, so searches run in parallel. Each step costs its length times
   1 + 2 x max(0, margin - distance) / margin, where the margin is the agent's `WallMargin`: its radius, 2 m, and a
-  quarter each of its half hull segment and turn radius, set at bake. Paths so keep room off walls where there is
-  room.
+  quarter of its half hull segment, set at bake. Paths so keep room off walls where there is room; turning room
+  is the drive planner's to find.
 - Each frame takes requests oldest first until their estimated expansions spend the budget of 30,000, so it runs
   over by one search at most, then serves them at once, one job each. A search's estimate is half its corridor's
   cells. The rest wait a frame, and their units brake and turn toward the goal. Each search runs to the end, so no
@@ -90,6 +90,54 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   off is walked to again. A new order clears the last one's `Arrival`.
 - `SpatialIndex` answers fast range queries over living entities.
 
+### Drive planner
+
+`DrivePlanner` checks every fresh path of a unit with a turn radius or a hull longer than it is wide, in the same
+serve job, after the route. Easy paths run no search. Paths with a stretch to search go to one serial `DriveJob`,
+which spends at most `PathfindingSystem.DriveBudget` (one capped search, 6,000 expansions) a frame, in task order. The
+frame's first such path plans within it and leaves any stretch past it as drawn (`PathState.PartlyPlanned`), planned
+once its planned part is driven. Later paths wait a frame (`PathStats.DeferredDrives`).
+
+- **Start.** Wheels sweep the forward curve from the unit's pose to the pose `2 x TurnRadius + hull length` along
+  the path. Tracks sweep a turn in place to the first leg, sliding off walls as locomotion does, or that curve. When
+  walls held the unit as it asked for a replan (`PathState.Stuck`, copied to `PathRequest.Stuck`), the start is
+  always searched.
+- **Corners.** Each corner sweeps the forward curve from a fillet length plus a hull before it to as far after. Tracks
+  may pivot on the corner instead.
+- Curves are `DriveCurve`s: the shortest forward turn, straight, turn (Dubins) at a little over the turn radius (85%
+  of full lock, so the follower has room to correct), or one hull length for tracks, with `TryFit` to a pose and
+  `TryFitPoint` to a point. Sweeps sample the hull every 0.5 m and count a stretch blocked once it sinks deeper than
+  0.05 m into walls, grown by 0.25 m of room.
+- **Search.** A blocked stretch runs a `DriveSearch`, Hybrid A* over the rear axle's pose in a window round it (its
+  ends plus two turn radii and a hull, at most 128 m across). It copies the window's wall distances once
+  (`FieldWindow`), so its hull checks read them unchecked. Steps are 1.5 m arcs: wheels at none, half and 85% of
+  full lock either way, tracks straight or on arcs of one hull length, plus 22.5 degree pivots; forwards and, within
+  `ReverseRun`, backwards. A reverse run ends only after a hull length forwards, so a nudge never buys a longer one.
+  Where the hull centre has half a hull and 1 m of room to walls the ground is open: steps are 3 m and forwards only,
+  and poses key on 2 m cells and 15 degree bins, elsewhere on 1 m cells and 5 degree bins. A pose, and the middle of
+  the step to it, may overlap walls only while the overlap shrinks, so a wedged start plans its way out. Steps cost
+  their length times the wall-margin cell cost, twice in reverse, plus two hull lengths per gear change and a little
+  per change of steer.
+- **Guide.** A `DriveGuide` gives each window cell its cost to the goal for a disc the hull's width, by Dijkstra over
+  buckets half a cell wide. A turn where walls crowd the hull (within a turn radius of them) costs its arc up to 16
+  times over, so the guide prefers routes the hull can turn on, and a pose facing off the way its cell's route leaves
+  pays a quarter of that turn. A pose goal in a lane, walls on both sides within two hull lengths, has its front
+  closed, so the guide leads in from behind, as the hull must arrive. Cells it doesn't reach read the straight
+  distance, and a pose goal reads no less than the forward curve to it. The guide is weighted 1.5. Every 10
+  expansions, and every third near the goal, a clear forward curve to the goal ends the search. Goals are a pose
+  within 0.75 m and 10 degrees, or the path's end within the arrival tolerance. A pose goal whose hull centre sits in
+  a wall, as at the end of an attack path into a building, fails at once instead of spending the cap.
+- A search stops after 6,000 expansions (`DriveSearch.MaxExpansions`). A stretch that fails tries once more
+  reaching twice as far along the path, where the hull may find room to turn, then stays as drawn.
+- The result replaces the stretch with `PathWaypoint`s every 1.5 m, each `Tight`; `Reverse` marks a leg driven
+  backwards, and a gear change is a waypoint where it flips. `PathStats` counts `DriveSearches`, `DriveExpansions` and
+  `DriveFailures`.
+- `PathState.SkipCorners` never cuts a tight waypoint: it passes once touched or behind the unit, and a gear change
+  only on arrival or once overshot. `TryFollowGoal` and the small goal move never move a tight last waypoint; a goal
+  that moves searches again.
+- The Paths debug layer draws tight legs in orange, reverse legs dashed, gear changes as dots and each wheeled
+  vehicle's rear axle.
+
 ## Units
 
 `UnitAuthoring` sets speed, radius, hull length, spacing, nav layer, whether it walks through scenery, and
@@ -111,7 +159,9 @@ within reach (`CrowdVisitor`) and the walls' distance field, and picks the cheap
   headings, where stopping to turn is the way on, and swerving left costs a little more than right, so a head-on pair
   both keep right.
 - The planned velocity is taken without sampling when it hits nothing, or when no neighbour is in reach and no
-  wall within the wall margin. Parked units never steer. A three-point turn or a back-off skips steering.
+  wall within the wall margin. Parked units never steer. A three-point turn or a back-off skips steering, and so
+  does a planned manoeuvre: it waits while a moving neighbour lies in its next 3 m of sweep, and leaves standing ones
+  to the hull room and the push.
 
 Velocities are last frame's (`Velocity`). The chosen velocity goes back to `Locomotion` as the heading and speed to
 drive, which wheels turn into the curvature they steer for, so a vehicle turns as its chassis can rather than
@@ -158,6 +208,8 @@ unit fits and can reach; one only across water or a wall is left to the pathfind
   four radii of its path's end, where the goal is taken, or anywhere while it is pinned in walls it can't leave.
   Before giving up there, a vehicle that reverses backs out for 3 s (`MoveProgress.TryTurnOut`), tracks too, and
   tries again only after it gets closer.
+  On a planned manoeuvre, which stands to change gear and steer, it plans again only while walls hold it, and it
+  never turns out. A hull creeping under 2 mm a frame against walls counts as held.
   Farther out a jam is traffic, so a column queued at a bridge keeps its order. A goal it can't reach snaps into its region, so it stops there. A new path is measured
   afresh but the clock runs on, and a pending path isn't measured.
 
@@ -193,7 +245,7 @@ A hull with a turn radius that doesn't pivot is wheeled. Each frame a wheeled ve
   through it: curvature `2 sin(angle) / distance` (pure pursuit). A point behind takes full lock.
 - steers `LocomotionState.Steer` (signed curvature in 1/m) toward it, the steer angle `atan(wheelbase x curvature)`
   changing at most at the steer rate, clamped to the turn radius and to the turn rate over speed.
-- rolls the rear axle along that arc (`Chassis.Advance`) and puts the centre `RearAxle` ahead of it, so the centre
+- rolls the rear axle along that arc (`AxlePose.Advance`) and puts the centre `RearAxle` ahead of it, so the centre
   drifts slightly inward in a turn and the front axle runs a wider circle than the rear.
 
 Tracks and instant units turn their facing about the centre at the turn rate (`Chassis.Rotate`) and move along it.
@@ -215,6 +267,14 @@ Tracks and instant units turn their facing about the centre at the turn rate (`C
 - A moving hull whose turn would swing an end into a wall slides off the wall by the end's sweep, as a track
   pivots off-centre. An overlapping hull never moves or turns deeper into a wall.
 - A wall that stops it head-on takes its speed with it. A glancing slide or the crowd's push costs none.
+
+On a planned manoeuvre (a `Tight` leg, `PathLeg.Tight`) none of the reflexes above run. The vehicle follows the legs
+in their gear: its pursuit aims 2 m ahead standing, up to 6 m at speed (`Locomotion.TightLookAhead`), plus the rear
+axle's offset in reverse, and never past the next gear change (`PathLeg.Aim`). Wheels pick the rear axle's arc whose
+circle through the hull centre also passes the aim, so the planned centre line is followed either way, and hold
+their angle in the last metre before a gear change. It brakes to each gear change as to the goal
+(`PathLeg.ToGearChange`), changes gear standing, creeps until its wheels are within 3 degrees of the angle it wants,
+and keeps to 3 m/s forwards (`Locomotion.TightSpeed`) and its reverse speed backwards.
 
 `BlockerAuthoring` makes remains such as a wreck solid: a capsule of radius and hull length along its forward that
 never moves. It closes the land cells it covers, so paths go round it and `NavCapsule` keeps units out, and nothing

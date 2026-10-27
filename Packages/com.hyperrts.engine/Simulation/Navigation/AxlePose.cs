@@ -13,5 +13,32 @@ namespace HyperRTS.Simulation.Navigation
             Position = position;
             Facing = facing;
         }
+
+        /// <summary>
+        /// Rolls the rear axle <paramref name="length"/> metres (negative in reverse) along the arc of
+        /// <paramref name="curvature"/>, positive to the left.
+        /// </summary>
+        public readonly AxlePose Advance(float curvature, float length)
+        {
+            var turn = curvature * length;
+            if (math.abs(turn) < 1e-5f)
+            {
+                return new AxlePose(Position + Facing * length, Facing);
+            }
+
+            math.sincos(turn, out var sin, out var cos);
+            var left = new float2(-Facing.y, Facing.x);
+            var moved = (Facing * sin + left * (1f - cos)) / curvature;
+            var facing = new float2(Facing.x * cos - Facing.y * sin, Facing.x * sin + Facing.y * cos);
+            return new AxlePose(Position + moved, facing);
+        }
+
+        /// <summary>Where a step ends from this pose, given as where it ends from the origin facing +x.</summary>
+        public readonly AxlePose Follow(in AxlePose step)
+        {
+            var left = new float2(-Facing.y, Facing.x);
+            var position = Position + Facing * step.Position.x + left * step.Position.y;
+            return new AxlePose(position, Facing * step.Facing.x + left * step.Facing.y);
+        }
     }
 }

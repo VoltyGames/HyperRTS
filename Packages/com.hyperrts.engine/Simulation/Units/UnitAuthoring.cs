@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Units
                     agent.Chassis = locomotion.Chassis;
                 }
 
-                agent.WallMargin = agent.WallMarginFor(agent.Chassis.TurnRadius);
+                agent.WallMargin = agent.HullWallMargin;
                 UnitAuthoring.Add(ref writer, authoring.moveSpeed, agent);
             }
 

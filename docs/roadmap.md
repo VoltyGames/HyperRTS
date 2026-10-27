@@ -12,6 +12,10 @@ In progress:
 
 - **Multiplayer** works end to end. 500 units cost a client about 0.3 Mbps at 20 Hz snapshots.
 - **Hardening**: no CI, stress scene or performance budgets yet.
+- **Vehicle driving**: wheeled vehicles turn about the rear axle, and a drive planner (Hybrid A*) plans the
+  stretches of a vehicle path its chassis can't drive as drawn into forward and reverse legs. The wall reflexes
+  (three-point turn, back-off, turn-out) still run off planned legs until the planner replaces them; docks, the
+  building gap rule and trailers follow. See [drive planner](modules/movement.md#drive-planner).
 - **Unit motion**: `MotionRigSystem` turns turrets, elevates barrels, plays recoil, rolls wheels, spins rotors up and down and
   tilts hulls on the client. Tracks don't scroll and suspension doesn't flex yet. See
   [motion rig](modules/client.md#motion-rig).
@@ -26,6 +30,7 @@ In progress:
 | Grid with distance fields and a sector graph, not a navmesh | Buildings, crushable scenery, decks and water restamp cells cheaply |
 | Corridor A* for single moves, a flow field per formation order | One search serves a whole group; chases and one-off moves stay cheap |
 | Sampled steering, not ORCA | Vehicles turn at their rate and radius, and walls count like neighbours |
+| Hybrid A* only where the chassis can't drive the path | Easy paths cost a few sweeps; yards, tight corners and wedges get real manoeuvres |
 | Server-authoritative Netcode, not lockstep | Burst float math is not deterministic across platforms |
 | Replays record state, not commands | The simulation is not deterministic |
 | One damage queue | Armor, splash and kill credit apply to every source |

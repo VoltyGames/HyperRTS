@@ -6,7 +6,8 @@ namespace HyperRTS.Simulation.Units
 {
     /// <summary>
     /// How a unit's move gets on: progress is the path left shrinking or the hull turning. One check: no progress for
-    /// <see cref="ReplanSeconds"/> plans the whole path again, backing off to <see cref="MaxReplanSeconds"/>, and
+    /// <see cref="ReplanSeconds"/> plans the whole path again (on a planned manoeuvre only while walls hold it),
+    /// backing off to <see cref="MaxReplanSeconds"/>, and
     /// after <see cref="GiveUpSeconds"/> near its path's end, or held by walls anywhere, the unit gives up. Farther
     /// out a jam is traffic that clears. A path still pending isn't measured.
     /// </summary>
@@ -67,9 +68,12 @@ namespace HyperRTS.Simulation.Units
                 ? math.distance(position, waypoints[0].Position.xz) + path.LengthPastCorner
                 : math.distance(position, goal.xz);
             var margin = NavTolerances.Arrive(agent.Radius);
-            if (Track(remaining, facing, margin, hold == WallHold.Sunk, deltaTime))
+            // A planned manoeuvre stands to change gear and steer, so it replans sooner only while walls hold it.
+            var planned = waypoints.Length > 0 && waypoints[0].Tight && hold == WallHold.None &&
+                          Stalled < MaxReplanSeconds;
+            if (Track(remaining, facing, margin, hold == WallHold.Sunk, deltaTime) && !planned)
             {
-                path.Replan();
+                path.Replan(hold != WallHold.None);
                 Replanned = true;
             }
 

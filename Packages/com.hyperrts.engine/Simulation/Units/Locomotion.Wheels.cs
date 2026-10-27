@@ -55,7 +55,7 @@ namespace HyperRTS.Simulation.Units
                 state.Steer = SteerToward(chassis, state.Steer, wanted, state.Speed, deltaTime);
             }
 
-            var pose = chassis.Advance(chassis.Pose(position, facing), state.Steer, state.Speed * deltaTime);
+            var pose = chassis.Pose(position, facing).Advance(state.Steer, state.Speed * deltaTime);
             facing = math.normalize(pose.Facing);
             return chassis.Center(pose) - position;
         }

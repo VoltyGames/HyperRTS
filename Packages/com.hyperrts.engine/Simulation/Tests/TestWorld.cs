@@ -247,7 +247,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var unit = CreateGameEntity(faction, position, maxHealth, name, out var writer);
             var agent = new NavAgent { Radius = radius };
-            agent.WallMargin = agent.WallMarginFor(0f);
+            agent.WallMargin = agent.HullWallMargin;
             UnitAuthoring.Add(ref writer, speed, agent);
             return unit;
         }

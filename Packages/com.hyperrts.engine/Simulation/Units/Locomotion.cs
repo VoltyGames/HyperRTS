@@ -90,6 +90,11 @@ namespace HyperRTS.Simulation.Units
         private readonly float2 Follow(ref LocomotionState state, in Chassis chassis, float2 position,
             ref float2 facing, in PathLeg leg, float topSpeed, float cap, float radius, float deltaTime)
         {
+            if (leg.Tight)
+            {
+                return FollowTight(ref state, chassis, position, ref facing, leg, cap, radius, deltaTime);
+            }
+
             state.Reverse = PrefersReverse(chassis, state.Reverse, facing, leg, topSpeed);
             // Keeps reversing a little past the circle's edge, so it doesn't flip gear every frame.
             state.InThreePointTurn =

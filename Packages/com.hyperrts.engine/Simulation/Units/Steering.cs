@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Units
     /// against its neighbours' predicted capsules and the walls' distance field over the next 0.3, 0.75 and 1.5 s,
     /// plus how far each strays from the planned velocity and last frame's choice, and drives the cheapest.
     /// </summary>
-    internal struct Steering
+    internal partial struct Steering
     {
         /// <summary>Longest look-ahead, which also sizes the neighbour query.</summary>
         public const float Horizon = 1.5f;
@@ -78,12 +78,9 @@ namespace HyperRTS.Simulation.Units
             _hasWalls = true;
         }
 
-        /// <summary>
-        /// Drives the leg, steering when the planned velocity would hit something. A manoeuvre runs at a crawl, and
-        /// steering would break its legs.
-        /// </summary>
-        public float2 Drive(in Locomotion locomotion, ref LocomotionState drive, float2 facing, ref float2 heading,
-            in PathLeg leg, float deltaTime)
+        // A reflex manoeuvre runs at a crawl, and steering would break its legs.
+        private float2 DriveSampled(in Locomotion locomotion, ref LocomotionState drive, float2 facing,
+            ref float2 heading, in PathLeg leg, float deltaTime)
         {
             var start = drive;
             heading = facing;

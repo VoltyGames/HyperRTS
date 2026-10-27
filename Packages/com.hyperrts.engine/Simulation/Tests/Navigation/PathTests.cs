@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
     /// Paths round walls, out of dead ends and through narrow gaps by width, keep their wall margin, re-plan when
     /// shoved, and track the length left past each corner.
     /// </summary>
-    public class PathTests
+    public partial class PathTests
     {
         private TestWorld _world;
 

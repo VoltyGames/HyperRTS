@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Tests.Economy
                 Radius = TruckRadius, HullLength = 7f, Spacing = UnitAuthoring.DefaultSpacing,
                 Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = TurnRadius, ReverseRun = 6f },
             };
-            agent.WallMargin = agent.WallMarginFor(TurnRadius);
+            agent.WallMargin = agent.HullWallMargin;
             _world.EntityManager.SetComponentData(truck, agent);
             var writer = new EntityManagerWriter(_world.EntityManager, truck);
             LocomotionAuthoring.Add(ref writer, new Locomotion

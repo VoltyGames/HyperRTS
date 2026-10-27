@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>
         /// Distance from walls inside which its paths cost more, so they keep room to turn and pass (see
-        /// <see cref="WallMarginFor"/>); 0 lets them hug walls.
+        /// <see cref="HullWallMargin"/>); 0 lets them hug walls.
         /// </summary>
         public float WallMargin;
 
@@ -65,10 +65,10 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>
-        /// The wall margin its size and handling need: the radius, 2 m of room, and a quarter each of the hull's half
-        /// segment and the turn radius, so long and wide-turning hulls keep further off.
+        /// The wall margin its size needs: the radius, 2 m of room and a quarter of the hull's half segment, so long
+        /// hulls keep further off. Turning room is the drive planner's to find.
         /// </summary>
-        public readonly float WallMarginFor(float turnRadius) => Radius + 2f + 0.25f * HalfSegment + 0.25f * turnRadius;
+        public readonly float HullWallMargin => Radius + 2f + 0.25f * HalfSegment;
 
         /// <summary>The core segment's half on the XZ plane, along the unit's facing.</summary>
         public readonly float2 SegmentAxis(quaternion rotation) => SegmentAxis(rotation, Radius, HullLength);
@@ -151,5 +151,11 @@ namespace HyperRTS.Simulation.Navigation
     public struct PathWaypoint : IBufferElementData
     {
         public float3 Position;
+
+        /// <summary>The leg to this waypoint is driven backwards; a gear change is a waypoint where it flips.</summary>
+        public bool Reverse;
+
+        /// <summary>Part of a manoeuvre the <see cref="DrivePlanner"/> planned: pass it, don't cut it.</summary>
+        public bool Tight;
     }
 }

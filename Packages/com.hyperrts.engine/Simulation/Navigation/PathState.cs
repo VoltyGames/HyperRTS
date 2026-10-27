@@ -41,6 +41,19 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Path length from the first <see cref="PathWaypoint"/> to the last, kept as corners change.</summary>
         public float LengthPastCorner;
 
+        /// <summary>Walls held the unit when it asked for a replan (<see cref="PathRequest.Stuck"/>).</summary>
+        public bool Stuck;
+
+        /// <summary>
+        /// The drive budget ran out before its later stretches, left as drawn; they are planned once the planned part
+        /// is driven.
+        /// </summary>
+        public bool PartlyPlanned;
+
+        /// <summary>Whether an <see cref="PartlyPlanned"/> path has driven its planned part.</summary>
+        public readonly bool IsRestDue(DynamicBuffer<PathWaypoint> waypoints) =>
+            PartlyPlanned && (waypoints.Length == 0 || !waypoints[0].Tight);
+
         /// <summary>Path length from the first waypoint to the last.</summary>
         public static float Measure(DynamicBuffer<PathWaypoint> waypoints)
         {
@@ -55,7 +68,8 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>
         /// Passes corners within <paramref name="touch"/>, and nearer ones once the next is in sight: a crowd can't all
-        /// touch the same corner and a vehicle cuts it.
+        /// touch the same corner and a vehicle cuts it. A <see cref="PathWaypoint.Tight"/> one is never cut: it passes
+        /// once touched, or once behind the unit where the gear doesn't change.
         /// </summary>
         public void SkipCorners(in NavGrid grid, in NavAgent agent, float3 position, float touch, float reach,
             DynamicBuffer<PathWaypoint> waypoints)
@@ -70,6 +84,11 @@ namespace HyperRTS.Simulation.Navigation
             float reach, DynamicBuffer<PathWaypoint> waypoints)
         {
             var distance = math.distance(position.xz, waypoints[0].Position.xz);
+            if (waypoints[0].Tight)
+            {
+                return IsPassed(position.xz, distance, touch, agent.Radius, waypoints[0], waypoints[1]);
+            }
+
             if (distance <= touch)
             {
                 return true;
@@ -81,6 +100,20 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             return agent.Access(grid).HasLineOfSight(position, waypoints[1].Position);
+        }
+
+        // A gear change is passed on arriving or overshooting it, where the next leg doubles back.
+        private static bool IsPassed(float2 position, float distance, float touch, float radius,
+            in PathWaypoint corner, in PathWaypoint next)
+        {
+            var ahead = next.Position.xz - corner.Position.xz;
+            var beyond = math.dot(position - corner.Position.xz, ahead);
+            if (corner.Reverse != next.Reverse)
+            {
+                return distance <= NavTolerances.Arrive(radius) || beyond < 0f;
+            }
+
+            return distance <= touch || beyond >= 0f;
         }
 
         // Only corners this near are skipped, so a unit keeps to its smoothed path rather than cutting across.
@@ -106,14 +139,19 @@ namespace HyperRTS.Simulation.Navigation
         {
             Status = PathStatus.None;
             Cause = PathCause.Order;
+            Stuck = false;
             ClearWaypoints(waypoints);
         }
 
-        /// <summary>Plans the whole path again, keeping its corners to drive on while the search waits.</summary>
-        public void Replan()
+        /// <summary>
+        /// Plans the whole path again, keeping its corners to drive on while the search waits, and records whether
+        /// walls hold the unit.
+        /// </summary>
+        public void Replan(bool stuck)
         {
             Status = PathStatus.None;
             Cause = PathCause.Replan;
+            Stuck = stuck;
         }
 
         public void ClearWaypoints(DynamicBuffer<PathWaypoint> waypoints)
@@ -124,14 +162,14 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>
         /// Re-aims the path's end at a moved goal in sight of the corner before it, or of the unit on the last leg.
-        /// False when it needs a search: out of sight, or moved over a quarter of the path left, which may have
-        /// opened a shorter way.
+        /// False when it needs a search: out of sight, moved over a quarter of the path left, which may have opened a
+        /// shorter way, or the end of a planned manoeuvre.
         /// </summary>
         public bool TryFollowGoal(in NavAccess access, float3 position, float3 goal,
             DynamicBuffer<PathWaypoint> waypoints)
         {
             var last = waypoints.Length - 1;
-            if (last < 0)
+            if (last < 0 || waypoints[last].Tight)
             {
                 return false;
             }

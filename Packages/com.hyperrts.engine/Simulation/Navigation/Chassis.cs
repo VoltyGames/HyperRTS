@@ -38,24 +38,6 @@ namespace HyperRTS.Simulation.Navigation
 
         public readonly float2 FrontAxle(in AxlePose pose) => pose.Position + pose.Facing * Wheelbase;
 
-        /// <summary>
-        /// Rolls the rear axle <paramref name="length"/> metres (negative in reverse) along the arc of
-        /// <paramref name="curvature"/>, positive to the left.
-        /// </summary>
-        public readonly AxlePose Advance(in AxlePose pose, float curvature, float length)
-        {
-            var turn = curvature * length;
-            if (math.abs(turn) < 1e-5f)
-            {
-                return new AxlePose(pose.Position + pose.Facing * length, pose.Facing);
-            }
-
-            math.sincos(turn, out var sin, out var cos);
-            var left = Left(pose.Facing);
-            var moved = (pose.Facing * sin + left * (1f - cos)) / curvature;
-            return new AxlePose(pose.Position + moved, Rotate(pose.Facing, sin, cos));
-        }
-
         /// <summary>Turns the hull <paramref name="angle"/> radians about its centre, as tracks pivot.</summary>
         public readonly AxlePose Rotate(in AxlePose pose, float angle)
         {

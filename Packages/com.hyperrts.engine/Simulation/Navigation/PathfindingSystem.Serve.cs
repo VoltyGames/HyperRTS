@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Navigation
             [ReadOnly] public NativeArray<int> Sectors;
             [ReadOnly] public NativeArray<GroupField> Fields;
             [ReadOnly] public NavGrid Grid;
-            public NativeArray<int2> Results;
+            public NativeArray<PathResult> Results;
             [NativeDisableParallelForRestriction] public BufferLookup<PathWaypoint> WaypointLookup;
             [NativeDisableParallelForRestriction] public ComponentLookup<PathState> StateLookup;
             public double Now;
@@ -43,26 +43,46 @@ namespace HyperRTS.Simulation.Navigation
             {
                 var task = Tasks[index];
                 var request = Requests[task.Request];
+                var access = request.Agent.Access(Grid);
                 var points = new NativeList<float3>(16, Allocator.Temp);
-                Results[index] = Route(task, request.Agent.Access(Grid), points);
-
+                var route = Route(task, access, points);
+                var result = new PathResult { Expansions = route.x, Searches = route.y };
                 var waypoints = WaypointLookup[request.Entity];
                 waypoints.Clear();
-                foreach (var point in points)
+                var drives = task.Query.Route != PathRoute.Stay && DrivePlanner.Applies(request.Agent);
+                // A path that needs a drive search leaves its drawn corners for the drive job to plan in turn.
+                result.DrivePending = drives && !TryDrive(request, access, points, waypoints);
+                if (!drives || result.DrivePending)
                 {
-                    waypoints.Add(new PathWaypoint { Position = new float3(point.x, request.Start.y, point.z) });
+                    foreach (var point in points)
+                    {
+                        waypoints.Add(new PathWaypoint { Position = new float3(point.x, request.Start.y, point.z) });
+                    }
                 }
 
                 points.Dispose();
-                StateLookup[request.Entity] = new PathState
+                Results[index] = result;
+                if (!result.DrivePending)
                 {
-                    Goal = request.Goal,
-                    GridVersion = Grid.Version,
-                    Status = PathStatus.Ready,
-                    IsShort = !task.Query.Exact,
-                    LengthPastCorner = PathState.Measure(waypoints),
-                    PlanTime = Now,
-                };
+                    StateLookup[request.Entity] = ReadyState(request, task, Grid, waypoints, Now);
+                }
+            }
+
+            // Writes the path when its sweeps need no search, as most do.
+            private static bool TryDrive(in PathRequest request, in NavAccess access, NativeList<float3> points,
+                DynamicBuffer<PathWaypoint> waypoints)
+            {
+                var planner = new DrivePlanner(access, request.Agent, Allocator.Temp);
+                var planned = new NativeList<PathWaypoint>(points.Length + 16, Allocator.Temp);
+                var done = planner.Plan(request, points, planned, 0, true);
+                if (done)
+                {
+                    waypoints.AddRange(planned.AsArray());
+                }
+
+                planned.Dispose();
+                planner.Dispose();
+                return done;
             }
 
             // Cells expanded, and 1 when a fine search ran.
@@ -107,17 +127,21 @@ namespace HyperRTS.Simulation.Navigation
                 {
                     var result = Plan.Results[i];
                     var task = Plan.Tasks[i];
-                    stats.Expansions += result.x;
-                    stats.Searches += result.y;
+                    stats.Expansions += result.Expansions;
+                    stats.Searches += result.Searches;
                     stats.Estimated += (long)task.Cost;
+                    stats.DriveSearches += result.DriveSearches;
+                    stats.DriveExpansions += result.DriveExpansions;
+                    stats.DriveFailures += result.DriveFailures;
+                    stats.DeferredDrives += result.DrivePending ? 1 : 0;
                     if (task.Kind == PathTaskKind.Search)
                     {
                         stats.SearchesByCause[(int)Requests[task.Request].Cause]++;
                     }
                     else if (task.Kind == PathTaskKind.Trace)
                     {
-                        stats.Traces += 1 - result.y;
-                        stats.Retraces += result.y;
+                        stats.Traces += 1 - result.Searches;
+                        stats.Retraces += result.Searches;
                     }
                 }
 

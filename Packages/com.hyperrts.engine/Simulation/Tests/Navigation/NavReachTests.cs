@@ -199,9 +199,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             }
 
             Assert.GreaterOrEqual(_world.GetResources(1, supplies), 20, "two loads delivered");
-            // Turning off the bay the nose brushes the footprint's corner, where the wall field, blended between cell
-            // centres, reads up to about 0.2 m more room than the exact box.
-            Assert.GreaterOrEqual(closest, TruckRadius - 0.25f, $"the hull never entered the footprint ({closest:F2} m)");
+            Assert.GreaterOrEqual(closest, TruckRadius - 0.05f, $"the hull never entered the footprint ({closest:F2} m)");
             Assert.IsFalse(reversed, "the round trips drive forward");
         }
 

@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Steering
         {
             var vehicle = _world.SpawnUnit(1, position, speed, agent.Radius);
             agent.Spacing = UnitAuthoring.DefaultSpacing;
-            agent.WallMargin = agent.WallMarginFor(agent.Chassis.TurnRadius);
+            agent.WallMargin = agent.HullWallMargin;
             _world.EntityManager.SetComponentData(vehicle, agent);
             _world.EntityManager.SetComponentData(vehicle, LocalTransform.FromPositionRotation(position,
                 quaternion.RotateY(yaw)));
