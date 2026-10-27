@@ -3,7 +3,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Common
 {
     /// <summary>Direction math on the XZ plane, angles counter-clockwise from x toward y.</summary>
-    internal static class Planar
+    public static class Planar
     {
         /// <summary>The direction a quarter turn to the left.</summary>
         public static float2 Left(float2 direction) => new(-direction.y, direction.x);

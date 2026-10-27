@@ -84,7 +84,7 @@ namespace HyperRTS.Presentation.Animation
         {
             if (Frames > 0 && math.abs(rolled) > MinRoll)
             {
-                var turn = math.atan2(LastHeading.x * heading.y - LastHeading.y * heading.x, math.dot(LastHeading, heading));
+                var turn = Planar.SignedAngle(LastHeading, heading);
                 Curvature = turn / rolled;
             }
 
