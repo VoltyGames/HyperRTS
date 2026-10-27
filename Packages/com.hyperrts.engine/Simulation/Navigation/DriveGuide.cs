@@ -32,26 +32,26 @@ namespace HyperRTS.Simulation.Navigation
         // The Dijkstra queue in buckets half a cell wide: each bucket's first entry, each entry's cell and the next.
         private UnsafeList<int> _buckets;
         private UnsafeList<int2> _entries;
+        private readonly NavAccess _access;
+        private readonly float _turnRadius;
+        private readonly float _hullLength;
         private FieldWindow _walls;
-        private NavAccess _access;
-        private int2 _first;
-        private int2 _cells;
+        private CellRect _window;
         private float2 _goal;
-        private float _turnRadius;
 
-        public DriveGuide(int capacity, Allocator allocator)
+        public DriveGuide(in NavAccess access, float turnRadius, float hullLength, int capacity, Allocator allocator)
         {
+            _access = access;
+            _turnRadius = turnRadius;
+            _hullLength = hullLength;
             _costs = new UnsafeList<float>(capacity, allocator);
             _settled = new UnsafeList<bool>(capacity, allocator);
             _ways = new UnsafeList<float2>(capacity, allocator);
             _buckets = new UnsafeList<int>(1024, allocator);
             _entries = new UnsafeList<int2>(capacity, allocator);
             _walls = default;
-            _access = default;
-            _first = int2.zero;
-            _cells = int2.zero;
+            _window = default;
             _goal = float2.zero;
-            _turnRadius = 1f;
         }
 
         public void Dispose()
@@ -63,17 +63,13 @@ namespace HyperRTS.Simulation.Navigation
             _entries.Dispose();
         }
 
-        /// <summary>Fills the costs over the cells from <paramref name="first"/>, <paramref name="cells"/> across.</summary>
-        public void Build(in FieldWindow walls, in NavAccess access, int2 first, int2 cells, in DriveGoal goal,
-            float turnRadius, float hullLength)
+        /// <summary>Fills the costs over the window's cells.</summary>
+        public void Build(in FieldWindow walls, in CellRect window, in DriveGoal goal)
         {
             _walls = walls;
-            _access = access;
-            _first = first;
-            _cells = cells;
+            _window = window;
             _goal = goal.Center;
-            _turnRadius = turnRadius;
-            var count = cells.x * cells.y;
+            var count = window.Count;
             _costs.Resize(count);
             _settled.Resize(count);
             _ways.Resize(count);
@@ -82,13 +78,13 @@ namespace HyperRTS.Simulation.Navigation
             for (var i = 0; i < count; i++)
             {
                 _costs[i] = float.PositiveInfinity;
-                _settled[i] = !IsOpen(Cell(i));
+                _settled[i] = !IsOpen(_window.Cell(i));
                 _ways[i] = float2.zero;
             }
 
             if (goal.HasFacing)
             {
-                CloseFront(goal, hullLength);
+                CloseFront(goal);
             }
 
             Seed(goal.Facing);
@@ -102,7 +98,7 @@ namespace HyperRTS.Simulation.Navigation
         public readonly float Cost(float2 point, float2 facing)
         {
             var cell = _access.Grid.WorldToCell(point);
-            var index = Index(cell);
+            var index = _window.Index(cell);
             var cost = index < 0 ? float.PositiveInfinity : _costs[index];
             if (cost == float.PositiveInfinity)
             {
@@ -120,23 +116,15 @@ namespace HyperRTS.Simulation.Navigation
         private static float Turn(float2 from, float2 to) =>
             math.any(to != 0f) ? (1f - math.dot(from, to)) * math.PI * 0.5f : 0f;
 
-        private readonly int2 Cell(int index) => _first + new int2(index % _cells.x, index / _cells.x);
-
-        private readonly int Index(int2 cell)
-        {
-            var local = cell - _first;
-            return math.any(local < 0 | local >= _cells) ? -1 : local.y * _cells.x + local.x;
-        }
-
         private readonly bool IsOpen(int2 cell) => _walls.At(cell) >= _access.OpenDistance;
 
         // Only a goal in a lane, walls on both sides within reach, has its front closed: in open ground it may turn.
-        private void CloseFront(in DriveGoal goal, float hullLength)
+        private void CloseFront(in DriveGoal goal)
         {
             var side = Planar.Left(goal.Facing);
             var middle = goal.Center + goal.Facing * FrontAhead;
             var halfCell = _access.Grid.CellSize * 0.5f;
-            var reach = (int)math.ceil(hullLength * FrontHulls / halfCell);
+            var reach = (int)math.ceil(_hullLength * FrontHulls / halfCell);
             var left = Wall(middle, side, reach, halfCell);
             var right = Wall(middle, -side, reach, halfCell);
             for (var i = -right; i <= left && left <= reach && right <= reach; i++)
@@ -161,7 +149,7 @@ namespace HyperRTS.Simulation.Navigation
 
         private void Close(float2 point)
         {
-            var index = Index(_access.Grid.WorldToCell(point));
+            var index = _window.Index(_access.Grid.WorldToCell(point));
             if (index >= 0)
             {
                 _settled[index] = true;
@@ -176,7 +164,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 for (var dx = -1; dx <= 1; dx++)
                 {
-                    var index = Index(goal + new int2(dx, dy));
+                    var index = _window.Index(goal + new int2(dx, dy));
                     var isGoal = dx == 0 && dy == 0;
                     if (index >= 0 && (isGoal || !_settled[index]))
                     {
@@ -220,7 +208,7 @@ namespace HyperRTS.Simulation.Navigation
         // Settles backwards: a neighbour pays its step onto this cell, and for the turn it makes there.
         private void Relax(int index)
         {
-            var cell = Cell(index);
+            var cell = _window.Cell(index);
             var crowded = Crowding(cell);
             var leaving = _ways[index];
             for (var dy = -1; dy <= 1; dy++)
@@ -228,7 +216,7 @@ namespace HyperRTS.Simulation.Navigation
                 for (var dx = -1; dx <= 1; dx++)
                 {
                     var offset = new int2(dx, dy);
-                    var at = Index(cell + offset);
+                    var at = _window.Index(cell + offset);
                     if (at < 0 || _settled[at] || !CanStep(cell, offset))
                     {
                         continue;

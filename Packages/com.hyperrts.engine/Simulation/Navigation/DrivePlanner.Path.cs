@@ -45,9 +45,10 @@ namespace HyperRTS.Simulation.Navigation
 
         private readonly float2 HeadingAt(float distance)
         {
-            var leg = LegAt(distance);
-            return math.normalize(_corners[leg + 1] - _corners[leg]);
+            return LegHeading(LegAt(distance));
         }
+
+        private readonly float2 LegHeading(int leg) => math.normalize(_corners[leg + 1] - _corners[leg]);
 
         private readonly int LegAt(float distance)
         {
@@ -62,9 +63,7 @@ namespace HyperRTS.Simulation.Navigation
 
         private readonly float TurnAt(int corner)
         {
-            var into = math.normalize(_corners[corner] - _corners[corner - 1]);
-            var outOf = math.normalize(_corners[corner + 1] - _corners[corner]);
-            return math.acos(math.clamp(math.dot(into, outOf), -1f, 1f));
+            return math.acos(math.clamp(math.dot(LegHeading(corner - 1), LegHeading(corner)), -1f, 1f));
         }
     }
 }

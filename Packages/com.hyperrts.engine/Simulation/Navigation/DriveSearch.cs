@@ -48,7 +48,6 @@ namespace HyperRTS.Simulation.Navigation
         private readonly NavAccess _access;
         private readonly Chassis _chassis;
         private readonly float _halfSegment;
-        private readonly float _radius;
 
         // Unchecked, as they are the inner loop of every search.
         private UnsafeList<Node> _nodes;
@@ -61,8 +60,10 @@ namespace HyperRTS.Simulation.Navigation
         private DriveGuide _guide;
         private DriveGoal _goal;
         private AxlePose _goalPose;
-        private int2 _windowFirst;
-        private int2 _windowCells;
+        private CellRect _window;
+
+        // The ground height the run's waypoints sit at.
+        private float _height;
 
         /// <summary>Nodes the last <see cref="Run"/> expanded.</summary>
         public int Expansions;
@@ -76,19 +77,19 @@ namespace HyperRTS.Simulation.Navigation
             _access = access;
             _chassis = agent.Chassis;
             _halfSegment = agent.HalfSegment;
-            _radius = agent.Radius;
             Cap = cap;
             _nodes = new UnsafeList<Node>(4096, allocator);
             _moves = new UnsafeList<Move>(24, allocator);
             _open = new OpenSet(4096, allocator);
             _visited = new UnsafeHashMap<int, int>(4096, allocator);
             _walls = new FieldWindow(16384, allocator);
-            _guide = new DriveGuide(16384, allocator);
+            _guide = default;
             _goal = default;
             _goalPose = default;
-            _windowFirst = int2.zero;
-            _windowCells = int2.zero;
+            _window = default;
+            _height = 0f;
             Expansions = 0;
+            _guide = new DriveGuide(access, CurveRadius, HullLength, 16384, allocator);
         }
 
         public void Dispose()
@@ -114,11 +115,12 @@ namespace HyperRTS.Simulation.Navigation
                 return false;
             }
 
+            _height = height;
             Begin(start, goal);
             var found = Search(out var last, out var curve, out var curveLength);
             if (found)
             {
-                Emit(last, curve, curveLength, height, points);
+                Emit(last, curve, curveLength, points);
             }
 
             return found;
@@ -205,26 +207,25 @@ namespace HyperRTS.Simulation.Navigation
             var center = _chassis.Center(pose);
             if (!_goal.HasFacing)
             {
-                return math.distance(center, _goal.Center) <= NavTolerances.Arrive(_radius);
+                return math.distance(center, _goal.Center) <= NavTolerances.Arrive(_access.Class.Radius);
             }
 
             return math.distance(center, _goal.Center) <= PoseReach && math.dot(pose.Facing, _goal.Facing) >= PoseAngleCos;
         }
 
         // The node chain from the start, then the shortcut, as the hull centre's waypoints.
-        private readonly void Emit(int last, in DriveCurve curve, float curveLength, float height,
-            NativeList<PathWaypoint> points)
+        private readonly void Emit(int last, in DriveCurve curve, float curveLength, NativeList<PathWaypoint> points)
         {
             var first = points.Length;
-            AddChain(last, height, points);
+            AddChain(last, points);
             for (var distance = FineStep; distance < curveLength; distance += FineStep)
             {
-                points.Add(Waypoint(_chassis.Center(curve.Sample(distance)), height, false));
+                points.Add(Waypoint(_chassis.Center(curve.Sample(distance)), false));
             }
 
             if (curveLength > 0f)
             {
-                points.Add(Waypoint(_chassis.Center(curve.Sample(curveLength)), height, false));
+                points.Add(Waypoint(_chassis.Center(curve.Sample(curveLength)), false));
             }
 
             if (_goal.HasFacing)
@@ -235,14 +236,14 @@ namespace HyperRTS.Simulation.Navigation
             // A point goal ends on the point itself, as the drawn path did.
             if (points.Length == first)
             {
-                points.Add(Waypoint(_goal.Center, height, false));
+                points.Add(Waypoint(_goal.Center, false));
             }
 
             ref var end = ref points.ElementAt(points.Length - 1);
             end.Position.xz = _goal.Center;
         }
 
-        private readonly void AddChain(int last, float height, NativeList<PathWaypoint> points)
+        private readonly void AddChain(int last, NativeList<PathWaypoint> points)
         {
             var first = points.Length;
             for (var i = last; _nodes[i].Parent >= 0; i = _nodes[i].Parent)
@@ -252,7 +253,7 @@ namespace HyperRTS.Simulation.Navigation
                 // A pivot turns about the centre, which stays put.
                 if (math.distancesq(center, _chassis.Center(_nodes[node.Parent].Pose)) > 1e-4f)
                 {
-                    points.Add(Waypoint(center, height, node.Gear < 0));
+                    points.Add(Waypoint(center, node.Gear < 0));
                 }
             }
 
@@ -264,7 +265,7 @@ namespace HyperRTS.Simulation.Navigation
             }
         }
 
-        private static PathWaypoint Waypoint(float2 center, float height, bool reverse) =>
-            new() { Position = new float3(center.x, height, center.y), Reverse = reverse, Tight = true };
+        private readonly PathWaypoint Waypoint(float2 center, bool reverse) =>
+            new() { Position = new float3(center.x, _height, center.y), Reverse = reverse, Tight = true };
     }
 }

@@ -12,16 +12,14 @@ namespace HyperRTS.Simulation.Navigation
     internal struct FieldWindow : IDisposable
     {
         private UnsafeList<float> _distances;
-        private int2 _min;
-        private int2 _size;
+        private CellRect _box;
         private float2 _origin;
         private float _cellSize;
 
         public FieldWindow(int capacity, Allocator allocator)
         {
             _distances = new UnsafeList<float>(capacity, allocator);
-            _min = int2.zero;
-            _size = int2.zero;
+            _box = default;
             _origin = float2.zero;
             _cellSize = 1f;
         }
@@ -31,30 +29,21 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Copies the cells from <paramref name="min"/> to <paramref name="max"/>, both included.</summary>
         public void Fill(in NavAccess access, int2 min, int2 max)
         {
-            _min = min;
-            _size = max - min + 1;
+            _box = new CellRect(min, max - min + 1);
             _origin = access.Grid.Field.Min;
             _cellSize = access.Grid.Field.CellSize;
-            _distances.Resize(_size.x * _size.y);
-            for (var y = 0; y < _size.y; y++)
+            _distances.Resize(_box.Count);
+            for (var i = 0; i < _box.Count; i++)
             {
-                for (var x = 0; x < _size.x; x++)
-                {
-                    _distances[y * _size.x + x] = access.Distance(min + new int2(x, y));
-                }
+                _distances[i] = access.Distance(_box.Cell(i));
             }
         }
 
         /// <summary>The value at a cell centre.</summary>
         public readonly float At(int2 cell)
         {
-            var local = cell - _min;
-            if (math.any(local < 0 | local >= _size))
-            {
-                return _cellSize * -0.5f;
-            }
-
-            return _distances[local.y * _size.x + local.x];
+            var index = _box.Index(cell);
+            return index < 0 ? _cellSize * -0.5f : _distances[index];
         }
 
         /// <summary>Bilinear between the four nearest cell centres, as <see cref="NavField.Sample"/>.</summary>

@@ -154,8 +154,7 @@ namespace HyperRTS.Simulation.Navigation
                 return CanDrive(0f, reach);
             }
 
-            var first = math.normalize(_corners[1] - _corners[0]);
-            return CanTurnInPlace(_start, first) || CanDrive(0f, reach);
+            return CanTurnInPlace(_start, LegHeading(0)) || CanDrive(0f, reach);
         }
 
         // Sweeps the curve from a fillet and a hull before the corner to as far after; tracks may pivot on it instead.
@@ -182,9 +181,7 @@ namespace HyperRTS.Simulation.Navigation
 
         private readonly bool CanPivot(int corner)
         {
-            var into = math.normalize(_corners[corner] - _corners[corner - 1]);
-            var outOf = math.normalize(_corners[corner + 1] - _corners[corner]);
-            return CanTurnInPlace(Chassis.Pose(_corners[corner], into), outOf);
+            return CanTurnInPlace(Chassis.Pose(_corners[corner], LegHeading(corner - 1)), LegHeading(corner));
         }
 
         // The whole sweep of the pivot, sliding off a wall an end swings into as locomotion does.

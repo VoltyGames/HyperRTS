@@ -44,12 +44,17 @@ namespace HyperRTS.Simulation.Navigation
         /// Whether the hull, swept along the first <paramref name="length"/> metres of the curve, never sinks into
         /// walls deeper than <paramref name="depth"/> or than it already has since.
         /// </summary>
-        public readonly bool IsClear(in DriveCurve curve, float length, float depth)
+        public readonly bool IsClear(in DriveCurve curve, float length, float depth) =>
+            Sweeps(curve, length, depth, false);
+
+        // Hull depths every half metre, from the search's window or else the field.
+        private readonly bool Sweeps(in DriveCurve curve, float length, float depth, bool inWindow)
         {
             var allowed = math.max(depth, NavTolerances.WallOverlap);
             for (var distance = SweepStep; distance < length + SweepStep; distance += SweepStep)
             {
-                var sunk = Depth(curve.Sample(math.min(distance, length)), allowed);
+                var pose = curve.Sample(math.min(distance, length));
+                var sunk = inWindow ? HullDepth(pose, allowed) : Depth(pose, allowed);
                 if (sunk > allowed)
                 {
                     return false;
@@ -66,7 +71,7 @@ namespace HyperRTS.Simulation.Navigation
 
         private readonly float MostCurvature => _chassis.IsWheeled ? _chassis.MaxCurvature * LockShare : 1f / HullLength;
 
-        private readonly float HullLength => (_radius + _halfSegment) * 2f;
+        private readonly float HullLength => (_access.Class.Radius + _halfSegment) * 2f;
 
         /// <summary>
         /// The forward curve to the goal, ending with the centre on a point goal, so the rear axle stops a rear axle
@@ -90,27 +95,8 @@ namespace HyperRTS.Simulation.Navigation
         private readonly float HullDepth(in AxlePose pose, float limit) =>
             _walls.Depth(_chassis.Center(pose), pose.Facing * _halfSegment, _access.Class.Radius + Clearance, limit);
 
-        private readonly bool TryShortcut(in Node node, out DriveCurve curve, out float length)
-        {
-            if (!TryFit(node.Pose, _goal, out curve, out length))
-            {
-                return false;
-            }
-
-            var allowed = math.max(node.Depth, NavTolerances.WallOverlap);
-            for (var distance = SweepStep; distance < length + SweepStep; distance += SweepStep)
-            {
-                var sunk = HullDepth(curve.Sample(math.min(distance, length)), allowed);
-                if (sunk > allowed)
-                {
-                    return false;
-                }
-
-                allowed = math.max(sunk, NavTolerances.WallOverlap);
-            }
-
-            return true;
-        }
+        private readonly bool TryShortcut(in Node node, out DriveCurve curve, out float length) =>
+            TryFit(node.Pose, _goal, out curve, out length) && Sweeps(curve, length, node.Depth, true);
 
         // Wheels steer at five shares of the lock, tracks at three, both ways; open ground, where a loop always fits,
         // takes longer steps and only forwards.
