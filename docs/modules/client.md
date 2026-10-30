@@ -418,7 +418,9 @@ direction.
 A `RowCrop` asset describes one crop: model variants with full, simple and card meshes, materials, row and plant
 spacing, random scale, turn and lean, and two LOD distances. Variant meshes face +Z with the origin at the root.
 Its `height` also shades the field: light falls off below the heads to `_CanopyShade` at the roots, so rows show
-dark gaps between lit tops.
+dark gaps between lit tops. That canopy term is the crop's ambient occlusion, so `_ScreenOcclusion` (0.2 by
+default) keeps screen-space AO from darkening it again: GTAO reads a dense field of blades as a deep crevice and
+turns shaded wheat into a flat dark patch. Foliage has the same property at 1.
 
 A camera regrows the plants of its visible tiles when it moves, the quality changes or a trample map is published,
 which regrows them every frame. Trampled plants bend or disappear, and none grow under a building's footprint. Plants

@@ -23,6 +23,7 @@ CBUFFER_START(UnityPerMaterial)
     half _GroundBlend;
     half _GroundBlendHeight;
     half _CanopyShade;
+    half _ScreenOcclusion;
 CBUFFER_END
 
 float _CanopyHeight; // RowCrop.height, set per draw

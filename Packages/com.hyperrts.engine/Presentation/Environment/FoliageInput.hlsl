@@ -26,6 +26,7 @@ CBUFFER_START(UnityPerMaterial)
     half _GroundBlend;
     half _GroundBlendHeight;
     half _VertexOcclusion;
+    half _ScreenOcclusion;
     float _Trample; // 0 off, 1 grass (flatten), 2 crop (damage)
     half _TwoSidedLeaves;
 CBUFFER_END
