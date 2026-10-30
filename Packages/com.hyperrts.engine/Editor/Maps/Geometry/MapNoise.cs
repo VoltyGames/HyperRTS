@@ -37,6 +37,14 @@ namespace HyperRTS.Editor.Maps.Geometry
             return Mathf.Clamp(sum / _symmetry.Copies.Count * _gain, -1f, 1f);
         }
 
+        /// <summary>0 outside to 1 inside soft-edged blotches covering about <paramref name="share"/> of the map.</summary>
+        public float Blotches(Vector2 point, float wavelength, float share)
+        {
+            // Measured: map noise sits about 0.2 either side of -0.1, so this threshold leaves roughly the share.
+            var threshold = -0.1f + 0.72f * (0.5f - share);
+            return MapGeometry.Smooth((Sample(point, wavelength) - threshold) / 0.16f + 0.5f);
+        }
+
         /// <summary>
         /// A noise vector up to 1 long that turns with the symmetry (each copy's sample is turned back), so offsets
         /// built from it move mirrored points to mirrored places.

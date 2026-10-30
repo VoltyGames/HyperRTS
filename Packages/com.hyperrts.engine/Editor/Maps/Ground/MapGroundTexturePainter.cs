@@ -128,9 +128,7 @@ namespace HyperRTS.Editor.Maps.Ground
         private float Mix(int layer, MapSurfaceMix mix, Vector2 p)
         {
             var coverage = mix.alongFlow > 0f ? Mathf.Clamp01(mix.coverage + mix.alongFlow * _flow.At(p)) : mix.coverage;
-            // Measured: map noise sits about 0.2 either side of -0.1, so this threshold leaves roughly the coverage.
-            var threshold = -0.1f + 0.72f * (0.5f - coverage);
-            return MapGeometry.Smooth((_mixNoise[layer].Sample(p, mix.size) - threshold) / 0.16f + 0.5f);
+            return _mixNoise[layer].Blotches(p, mix.size, coverage);
         }
 
         private static void Over(float[] weights, int layer, float alpha)

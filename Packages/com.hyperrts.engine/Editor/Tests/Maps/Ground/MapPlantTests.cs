@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Planning;
@@ -70,6 +71,29 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
             {
                 Object.DestroyImmediate(coverage);
             }
+        }
+
+        [TestCase(0.1f)]
+        [TestCase(0.3f)]
+        [TestCase(0.75f)]
+        public void Stands_CoverAboutTheirShare_InEveryCopy(float share)
+        {
+            var layout = MapFixture.Layout(MapFixture.Spec());
+            var noise = new MapNoise(layout.Symmetry, 11, MapNoiseChannel.PlantStands);
+            var (inside, samples) = (0f, 0);
+            for (var x = -140f; x < 140f; x += 1.7f)
+            {
+                for (var z = -140f; z < 140f; z += 1.9f)
+                {
+                    var p = new Vector2(x, z);
+                    var stand = noise.Blotches(p, 12f, share);
+                    Assert.AreEqual(stand, noise.Blotches(-p, 12f, share), 1e-4f, $"stand at {p} and its copy");
+                    inside += stand;
+                    samples++;
+                }
+            }
+
+            Assert.AreEqual(share, inside / samples, 0.08f, "stands cover about their share");
         }
 
         [Test]

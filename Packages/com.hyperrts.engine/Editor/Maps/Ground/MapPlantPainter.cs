@@ -9,14 +9,18 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
-    /// Grass, crops and small plants from the land use: each surface's plants cover the share it asks for, broken
-    /// into clumps by noise at two scales (crops grow evenly); reeds stand in the shallows along the banks. Nothing
-    /// grows on roads, tramlines, deep water or placed objects, and it thins in round them.
+    /// Grass, crops and small plants from the land use: each surface's plants cover the share it asks for, wild ground
+    /// broken into clumps and clearings by noise (crops grow evenly), and weeds gathered in stands of their own; reeds
+    /// stand in the shallows along the banks. Nothing grows on roads, tramlines, deep water or placed objects, and it
+    /// thins in round them.
     /// </summary>
     public static class MapPlantPainter
     {
         private const float ReedDepth = 0.6f;
         private const float ReedReachIntoWater = 1.5f;
+
+        // Share of wild ground in plant clumps; the rest is clearings where the terrain shows.
+        private const float WildClumps = 0.6f;
 
         public const float PropGrassFalloff = 1.5f;
 
@@ -29,6 +33,7 @@ namespace HyperRTS.Editor.Maps.Ground
             var plants = Plants(climate, edges);
             var reed = string.IsNullOrEmpty(climate.reedPlant) ? -1 : climate.PlantIndex(climate.reedPlant);
             var clumps = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.PlantClumps);
+            var stands = StandNoise(layout, climate);
             var cell = area.size / resolution;
             var rowLines = new MapRowLines(layout.Symmetry, edges, cell.x);
             var water = layout.Terrain.waterLevel;
@@ -55,9 +60,10 @@ namespace HyperRTS.Editor.Maps.Ground
 
                 var region = edges.Sample(p).Region;
                 var cover = Cover(IsField(land, region), clumps, p) * open * rowLines.Plants(region, p);
-                foreach (var (plant, coverage) in plants[region])
+                foreach (var (plant, entry) in plants[region])
                 {
-                    bake.Set(plant, x, z, coverage * cover);
+                    var stand = entry.stands >= 1f ? 1f : stands[plant].Blotches(p, entry.standSize, entry.stands);
+                    bake.Set(plant, x, z, entry.coverage * cover * stand);
                 }
             }
 
@@ -71,7 +77,7 @@ namespace HyperRTS.Editor.Maps.Ground
             return float.IsPositiveInfinity(edge) ? 1f : MapGeometry.Smooth(edge / PropGrassFalloff);
         }
 
-        /// <summary>Wild grass clumps at two scales; crops are sown evenly and keep their cover.</summary>
+        /// <summary>Wild clumps at two scales with clearings between; crops are sown evenly and keep their cover.</summary>
         private static float Cover(bool sown, MapNoise clumps, Vector2 p)
         {
             if (sown)
@@ -79,7 +85,19 @@ namespace HyperRTS.Editor.Maps.Ground
                 return 0.92f + 0.08f * clumps.Sample(p, 9f);
             }
 
-            return Mathf.Clamp01(0.55f + 0.45f * clumps.Sample(p, 9f) + 0.3f * clumps.Sample(p, 2.5f));
+            return clumps.Blotches(p, 9f, WildClumps) * Mathf.Clamp01(0.75f + 0.5f * clumps.Sample(p, 2.5f));
+        }
+
+        /// <summary>One noise per climate plant, so each weed's stands lie apart from the others'.</summary>
+        private static MapNoise[] StandNoise(MapLayout layout, MapClimate climate)
+        {
+            var noise = new MapNoise[climate.plants.Count];
+            for (var i = 0; i < noise.Length; i++)
+            {
+                noise[i] = new MapNoise(layout.Symmetry, layout.Spec.seed + 7919 * i, MapNoiseChannel.PlantStands);
+            }
+
+            return noise;
         }
 
         /// <summary>Crops are sown evenly: a field's plants keep their cover instead of clumping like wild grass.</summary>
@@ -98,20 +116,17 @@ namespace HyperRTS.Editor.Maps.Ground
             return MapGeometry.Smooth((clumps.Sample(p + new Vector2(733f, 211f), 14f) + 0.1f) / 0.4f);
         }
 
-        /// <summary>Per region, the plants its surface grows and the share of ground each covers.</summary>
-        private static List<(int, float)>[] Plants(MapClimate climate, MapEdgeField edges)
+        /// <summary>Per region, the plants its surface grows, with each one's climate index.</summary>
+        private static List<(int, MapPlantCoverage)>[] Plants(MapClimate climate, MapEdgeField edges)
         {
-            var plants = new List<(int, float)>[edges.RegionCount];
-            plants[MapLand.Unclaimed] = new List<(int, float)>();
+            var plants = new List<(int, MapPlantCoverage)>[edges.RegionCount];
+            plants[MapLand.Unclaimed] = new List<(int, MapPlantCoverage)>();
             for (var i = 1; i < plants.Length; i++)
             {
-                plants[i] = Plants(climate, edges.Surface(i));
+                plants[i] = edges.Surface(i).plants.ConvertAll(entry => (climate.PlantIndex(entry.plant), entry));
             }
 
             return plants;
         }
-
-        private static List<(int, float)> Plants(MapClimate climate, MapClimateSurface surface) =>
-            surface.plants.ConvertAll(entry => (climate.PlantIndex(entry.plant), entry.coverage));
     }
 }

@@ -30,5 +30,6 @@ namespace HyperRTS.Editor.Maps.Geometry
         FieldMargins = 30,
         Verges = 31,
         WarScars = 32,
+        PlantStands = 33,
     }
 }
