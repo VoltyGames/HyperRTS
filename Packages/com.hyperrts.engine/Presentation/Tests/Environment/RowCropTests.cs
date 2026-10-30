@@ -93,7 +93,7 @@ namespace HyperRTS.Presentation.Tests.Environment
         [Test]
         public void GpuStructs_MatchTheKernelsLayouts()
         {
-            Assert.AreEqual(32, RowCropField.Stride);
+            Assert.AreEqual(48, RowCropField.Stride);
             Assert.AreEqual(28, RowCropJob.Stride);
         }
 
