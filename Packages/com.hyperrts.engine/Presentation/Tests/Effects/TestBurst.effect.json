@@ -1,0 +1,15 @@
+{
+  "layers": [
+    {
+      "name": "Burst",
+      "kind": "glow",
+      "capacity": 64,
+      "bursts": [ { "delay": 0, "count": { "min": 10, "max": 10 } } ],
+      "lifetime": { "min": 10, "max": 10 },
+      "size": { "min": 1, "max": 1 },
+      "color": { "min": { "r": 1, "g": 1, "b": 1, "a": 1 }, "max": { "r": 1, "g": 1, "b": 1, "a": 1 } },
+      "shape": "cone",
+      "texture": "Packages/com.hyperrts.engine/Presentation/Environment/EdgeNoise.png"
+    }
+  ]
+}

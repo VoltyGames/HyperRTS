@@ -560,10 +560,20 @@ No two plays need look the same:
 A rig may also hold `VisualEffect` graphs, played on bursts only. `EffectGraph` sends each its `Burst` event with
 the pose as event attributes: `position`, `direction` (the rig's +Y), `axisZ` (its +Z, random spin included) and a
 uniform `scale` (sent per axis, `scaleX` to `scaleZ`), so bursts on one frame keep their own poses. A graph drops events until it has run once, so bursts in the frame the pool spawned it wait for the next. The graph's exposed float `Density` takes the effect
-detail share. Two include files serve graph authors as Custom HLSL blocks: `GraphBurstPose.hlsl` (Place At Burst,
+detail share. Include files serve graph authors as Custom HLSL blocks, among them `GraphBurstPose.hlsl` (Place At Burst,
 the end of every Initialize, wired to those source attributes; it keeps the origin in `targetPosition` for ground
 planes) and `GraphFogOfWar.hlsl` (fog of war per particle in an output). The rig check reports a graph without an
 asset, one that plays on its own (an Initial Event Name) or one without `Density`.
+
+Graphs are generated from a `<Graph>.effect.json` beside them by `EffectGraphBuilder` (Editor/Effects): a list of
+layers, each one system of a kind (`glow`, `puff`, `sixway`, `ring`, `debris`, `spark`) with plain fields for its
+bursts, start ranges, shape, forces, curves over life and assets by path or GUID. Every layer gets Emit From Shape
+(`GraphEmitShape.hlsl`), Place At Burst, `Density` on its bursts, World-space slots and the fog of war; debris adds
+Bounce On Ground (`GraphGroundBounce.hlsl`) and sparks Stretch Along Velocity (`GraphStretch.hlsl`). All reflection
+into VFX Graph's internal editor model sits in `GraphModel`, so an Editor upgrade breaks that file alone. The builder
+stamps the graph importer's `userData` with a hash of the JSON, line endings ignored; `EffectGraphBuilder.Problem`
+names a graph that is missing or stale. Build from **Assets ▸ HyperRTS ▸ Build Effect Graph** or **Build All Effect
+Graphs**, or the **Effect graphs** generator.
 
 `EffectPool` keeps one instance per prefab and replays it for every event, never instantiating per shot. It reads
 the camera position once a frame, in `EffectPoolSystem`, for every range check. Effects play for cues the client
