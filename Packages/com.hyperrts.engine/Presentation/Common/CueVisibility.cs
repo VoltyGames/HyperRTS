@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Common
 {
@@ -40,5 +41,8 @@ namespace HyperRTS.Presentation.Common
         }
 
         public readonly bool IsSeen(in CueEvent cue) => CueRules.IsSeenLocally(cue, _view, _fogOfWar, _factions);
+
+        /// <summary>Whether the local player sees the ground at <paramref name="position"/>.</summary>
+        public readonly bool IsSeen(float3 position) => CueRules.IsGroundSeenLocally(position, _view, _fogOfWar);
     }
 }

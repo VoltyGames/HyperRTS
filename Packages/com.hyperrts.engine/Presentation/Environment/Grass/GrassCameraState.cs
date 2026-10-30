@@ -8,19 +8,23 @@ namespace HyperRTS.Presentation.Environment.Grass
     public sealed class GrassCameraState : IDisposable
     {
         private readonly ScatterView _view = new();
+        private int _burntCells;
 
         internal GrassCameraState(GrassField field, GrassComputeInputs kernels, Material[] materials) =>
             Batch = new GrassBatch(field, kernels, materials);
 
         internal GrassBatch Batch { get; }
 
-        /// <summary>Whether the batch already holds this view: same spot, settings and visible tiles.</summary>
+        /// <summary>Whether the batch already holds this view: same spot, settings and visible tiles, and no new ash.</summary>
         internal bool Holds(Vector3 position, GrassSettings settings, List<int> tiles) =>
-            _view.Holds(position, settings.Packed, tiles);
+            _burntCells == FieldFireSystem.BurntCells && _view.Holds(position, settings.Packed, tiles);
 
         /// <summary>Records the view the batch was just scattered for.</summary>
-        internal void Remember(Vector3 position, GrassSettings settings, List<int> tiles) =>
+        internal void Remember(Vector3 position, GrassSettings settings, List<int> tiles)
+        {
             _view.Remember(position, settings.Packed, tiles);
+            _burntCells = FieldFireSystem.BurntCells;
+        }
 
         public void Dispose() => Batch.Dispose();
     }

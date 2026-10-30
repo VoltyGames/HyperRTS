@@ -12,6 +12,7 @@ SamplerState sampler_LinearClamp;
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Grass/GrassInstance.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Grass/BuildingFootprints.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/CraterSink.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/BurntPlants.hlsl"
 
 #define CHANNEL_X 0u
 #define CHANNEL_Z 1u
@@ -161,7 +162,7 @@ void Scatter(uint3 id : SV_DispatchThreadID)
 
     float2 dither = (float2(Channel(hash, CHANNEL_DITHER), Channel(hash, CHANNEL_DITHER + 1u)) - 0.5) * COVER_DITHER;
     float painted = Coverage(xz + dither, job.plant);
-    if (Channel(hash, CHANNEL_COVER) >= Clumped(painted, plant, xz) || UnderBuilding(xz))
+    if (Channel(hash, CHANNEL_COVER) >= Clumped(painted, plant, xz) * (1.0 - BurntShare(xz)) || UnderBuilding(xz))
     {
         return;
     }

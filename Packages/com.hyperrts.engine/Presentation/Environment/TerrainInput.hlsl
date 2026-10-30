@@ -48,6 +48,8 @@ CBUFFER_START(UnityPerMaterial)
     half _RemainsRubbleSmoothness;
     float _RemainsAshTile;
     half _RemainsAshSmoothness;
+    half4 _RemainsCharColor;
+    half _RemainsCharStreaks;
     float _RemainsMudTile;
     half _RemainsMudSmoothness;
 CBUFFER_END

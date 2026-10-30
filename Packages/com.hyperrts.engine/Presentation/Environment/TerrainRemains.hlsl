@@ -15,6 +15,15 @@
 #define FUEL_SHEEN 0.08
 #define MUD_DARKENING 0.35
 #define MUD_GLOSS 0.6
+#define CHAR_START 0.6                    // ash from which the ground turns to char: field fires, not craters
+#define CHAR_SMUDGE_SIZE float2(4.0, 9.0) // metres across and along the broad grey ash smudges
+#define CHAR_DETAIL_SIZE float2(1.7, 3.1) // a finer, unaligned scale that breaks the smudges' shapes
+#define CHAR_SMUDGE_EDGE 0.12             // soft edges
+#define CHAR_ASH_STRENGTH 0.75            // the grey never fully covers the char
+#define CHAR_PATCH_SIZE 11.0              // metres over which the char shades lighter or darker
+#define CHAR_FLATTEN 0.85                 // share of the ground's bumps the char smooths away
+#define ASH_GREY half3(0.3, 0.29, 0.28)
+#define CHAR_SMOOTHNESS 0.08
 
 TEXTURE2D(_RemainsRubbleAlbedo);
 TEXTURE2D(_RemainsRubbleNormal);
@@ -54,6 +63,26 @@ void ApplyFuel(inout TerrainSurface surface, TerrainPixel pixel, half cover, hal
     surface.normalTS = normalize(lerp(surface.normalTS, half3(0.0, 0.0, 1.0), cover * 0.8));
 }
 
+half CharNoise(TerrainPixel pixel, float2 size)
+{
+    return SAMPLE_TEXTURE2D_GRAD(_NoiseMap, sampler_LinearRepeat, pixel.xz / size, pixel.dx / size, pixel.dy / size).g;
+}
+
+// Heavy ash is a burnt field: near-black char with a few soft grey ash smudges. Untextured, so no tiling shows.
+void ApplyChar(inout TerrainSurface surface, TerrainPixel pixel, half ash, half cover)
+{
+    // Two scales blended and thresholded smoothly, so the smudges are sparse, soft and never repeat a shape.
+    half smudge = lerp(CharNoise(pixel, CHAR_SMUDGE_SIZE), CharNoise(pixel, CHAR_DETAIL_SIZE), 0.35);
+    half start = 1.0 - _RemainsCharStreaks;
+    half grey = smoothstep(start, start + CHAR_SMUDGE_EDGE, smudge) * CHAR_ASH_STRENGTH;
+    half patch = CharNoise(pixel, CHAR_PATCH_SIZE);
+    half3 burnt = lerp(_RemainsCharColor.rgb * lerp(0.8, 1.2, patch), ASH_GREY, grey);
+    half charred = smoothstep(CHAR_START, 1.0, ash) * cover;
+    surface.albedo = lerp(surface.albedo, burnt, charred);
+    surface.smoothness = lerp(surface.smoothness, CHAR_SMOOTHNESS, charred);
+    surface.normalTS = normalize(lerp(surface.normalTS, half3(0.0, 0.0, 1.0), charred * CHAR_FLATTEN));
+}
+
 // Returns the wet mud's cover, where puddles gather too.
 half ApplyRemains(inout TerrainSurface surface, TerrainPixel pixel)
 {
@@ -91,6 +120,7 @@ half ApplyRemains(inout TerrainSurface surface, TerrainPixel pixel)
         BlendRemains(surface, pixel, cover.g, _RemainsAshTile, _RemainsAshSmoothness,
             TEXTURE2D_ARGS(_RemainsAshAlbedo, sampler_LinearRepeat), TEXTURE2D_ARGS(_RemainsAshNormal, sampler_LinearRepeat),
             TEXTURE2D_ARGS(_RemainsAshMask, sampler_LinearRepeat));
+        ApplyChar(surface, pixel, remains.g, cover.g);
     }
 
     UNITY_BRANCH

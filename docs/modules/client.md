@@ -429,7 +429,9 @@ Shaders read the maps through `Trample.hlsl`. The terrain darkens ruts and flatt
 the crater's slope so the sun lights the bowl, darkens and dampens the bowl's soil, and blackens scorched ground. `TerrainRemains.hlsl` then lays the terrain
 material's tiled rubble, ash and wet mud textures (`_Remains*`) and an untextured dark, glossy fuel slick with a faint
 thin-film sheen over what the remains map covers, with a noisy fringe; ground without remains skips it after one
-sample.
+sample. Ash from 0.6 up turns to untextured char over the ash texture: the terrain material's `_RemainsCharColor`,
+near black and shaded in 11 m patches, with a few soft grey ash smudges a few metres long where two scales of the
+noise map's smooth channel, blended, pass `1 - _RemainsCharStreaks`; the ground's bumps are mostly smoothed away.
 Foliage leans plants along the travel direction, and water reads `SampleWake`. The quality setting picks Full, Low
 at half resolution, or Off, which frees the textures.
 
@@ -445,6 +447,35 @@ full within 0.5 m, none from 2 m up, so aircraft, bridge decks and rooftops stay
 which get the tracks map bound by `CraterTerrain.BindCraters` for each camera, place plants on the undented ground
 first. The simulation's ground never changes, so craters
 are not cover.
+
+### Field fires
+
+Shells that land on dry fields set them alight. A `FieldFireSettings` component in the scene, one per climate (the
+game puts it on the atmosphere prefab), names the rig, the dry terrain layers, the wetness limit, the smallest blast,
+the ignite chance, how long a cell burns, each fire's reach, the clearance round buildings and how many fires play. Without one, or without an active terrain,
+`FieldFireSystem` idles. The fires are client visuals only and harm nothing.
+
+- `FieldFires` is a 1 m grid over the map. A cell is dry where the listed terrain layers hold over half the
+  alphamap's weight and the `GroundMaterials` cell isn't water; roads, water and bare soil stay bare. Ground within
+  the clearance (20 m) of any building's footprint, fogged or not, turns bare too, so bases and pads never burn. It is
+redone whenever a building appears, goes or moves, before that frame's ignitions.
+- An impact the local player sees lights the dry cell it hit when its splash is at least the smallest blast, it hit
+  open ground, `Wetness.Level` is under the limit (0.3) and the impact's seed passes the ignite chance.
+- Every 0.25 s each burning cell may light its eight neighbours, faster downwind (`Wind`) and slowly against it. Each
+  ignition gets a reach from its seed (5 to 15 m); the odds fall off as the cube of the share of it left, so a front
+  dies out by itself and a shell leaves a blotch of tens to a few hundred square metres. A cell burns 20 to 60 s,
+  then stays burnt. Fronts stop at bare and burnt cells, and at most 8,192 cells burn at once.
+- Every random choice hashes the impact's landing spot and source, the cell and its age, so clients that see the same
+  impacts burn closely the same fields. A replay seeking back puts the fires out.
+- Fires burn and spread in fog too, so clients agree, but only ground the local player sees shows them
+  (`CueVisibility.IsSeen(position)`, from `CueRules.IsGroundSeenLocally`), so they never reveal where enemy shells land.
+- Burning cells gather in 8 m squares. Each seen square feeds `BattleHaze.Add` a light smudge (a full square about a
+  fiftieth of a shell's puff each second), and the nearest seen squares stream
+  the rig, up to the cap; a square that falls back into fog drops its stream.
+- A seen cell that burns out stamps a soft 2.6 m disc of full ash into the remains map and of scorch into the tracks
+  map (`InteractionStamps.AddScorch`), nudged up to 0.35 m off the grid, so neighbours overlap into one char. The grass and row crop kernels get the remains map bound by
+  `InteractionSurfaces.BindRemains` and drop plants where ash lies (`BurntPlants.hlsl`), so burnt fields stay bare;
+  a crater's lighter ash only thins them. A still camera's grass regrows when `FieldFireSystem.BurntCells` changes.
 
 ### Building footprints
 

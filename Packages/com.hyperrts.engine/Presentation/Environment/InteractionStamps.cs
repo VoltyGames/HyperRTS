@@ -50,6 +50,15 @@ namespace HyperRTS.Presentation.Environment
                 Center = center, Forward = forward, HalfSize = size * 0.5f, Value = new float4(0f, share, 0f, share),
             });
 
+        /// <summary>A soft, ragged disc scorched to <paramref name="scorch"/>, with no depth and no churn: burnt grass.</summary>
+        public void AddScorch(float2 center, float radius, float scorch) =>
+            Scars.Add(new InteractionStamp
+            {
+                // A bowl as wide as the stamp but with no depth takes the brush's round, soft-edged path.
+                Center = center, Forward = new float2(0f, 1f), HalfSize = new float2(radius),
+                Value = new float4(0f, math.saturate(scorch), 1f, 0f),
+            });
+
         /// <summary>Rubble, ash, fuel and wet mud (0 to 1 each) left in a ragged disc for the rest of the match.</summary>
         public void AddRemains(float2 center, float radius, float4 amounts) =>
             Remains.Add(new InteractionStamp

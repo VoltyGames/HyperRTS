@@ -32,6 +32,13 @@ namespace HyperRTS.Presentation.Environment
         private readonly float2 _min;
         private readonly float2 _size;
 
+        /// <summary>Copies the remains map to a kernel: compute shaders don't see globals. Black while there is none.</summary>
+        public static void BindRemains(ComputeShader compute, int kernel)
+        {
+            var remains = Shader.GetGlobalTexture(RemainsId);
+            compute.SetTexture(kernel, RemainsId, remains != null ? remains : Texture2D.blackTexture);
+        }
+
         public InteractionSurfaces(float2 min, float2 size, InteractionQuality quality)
         {
             if (math.any(size <= 0f))

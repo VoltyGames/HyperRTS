@@ -13,6 +13,7 @@ SamplerState sampler_LinearClamp;
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Scatter.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Grass/BuildingFootprints.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/CraterSink.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/BurntPlants.hlsl"
 
 #define CHANNEL_DENSITY 0u
 #define CHANNEL_ACROSS 1u
@@ -184,7 +185,7 @@ void Plant(uint3 id : SV_DispatchThreadID)
     }
 
     float2 xz = spot + field.across * across + field.along * along;
-    if (UnderBuilding(xz))
+    if (UnderBuilding(xz) || Channel(hash, CHANNEL_DROP) < BurntShare(xz))
     {
         return;
     }
