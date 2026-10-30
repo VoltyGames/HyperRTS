@@ -140,7 +140,7 @@ namespace HyperRTS.Editor.Tests.Maps.Settlements
         {
             var climate = new MapClimate();
             climate.name = "Test";
-            MapFixture.AddSurfaces(climate, "Meadow", "Road", "Verge", "Yard", "Garden", "Orchard");
+            MapFixture.AddSurfaces(climate, "Meadow", "Road", "Verge", "Yard", "Garden", "Orchard", "Path");
 
             climate.groundSurface = "Meadow";
             climate.baseSurface = "Meadow";

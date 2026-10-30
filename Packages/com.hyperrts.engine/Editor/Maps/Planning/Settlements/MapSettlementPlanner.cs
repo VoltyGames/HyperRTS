@@ -89,7 +89,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             }
 
             settlement.Claims.Claim(plot, seed);
-            builder.Build(plot, house);
+            builder.Build(plot, house, seed);
             return null;
         }
     }

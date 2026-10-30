@@ -61,6 +61,13 @@ namespace HyperRTS.Editor.Maps.Data
         [MapKey(typeof(MapClimateSurface))]
         public string backSurface;
 
+        [Tooltip("Surface of the worn paths from the gate to the house and on to the outbuildings; empty for none.")]
+        [MapKey(typeof(MapClimateSurface))]
+        public string pathSurface;
+
+        [Tooltip("Width of a worn path (metres).")]
+        public float pathWidth = 1.2f;
+
         [Tooltip("Share of the depth behind the yard that is vegetable garden; the rest is the back.")]
         [Range(0f, 1f)]
         public float gardenShare = 0.55f;

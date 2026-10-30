@@ -71,6 +71,9 @@ namespace HyperRTS.Editor.Maps.Land
             return true;
         }
 
+        /// <summary>Gives a claimed cell to another region, for land worn into what was laid first (a yard path).</summary>
+        public void Reclaim(int x, int z, int region) => _cells[z * Width + x] = (ushort)region;
+
         public Vector2 Center(int x, int z) => Bounds.min + new Vector2((x + 0.5f) * CellSize, (z + 0.5f) * CellSize);
 
         public bool TryCell(Vector2 point, out int x, out int z)

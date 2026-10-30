@@ -126,7 +126,8 @@ quarter to run along the end, as the plough turns there; a stretch too short to 
 headlands keeps them straight throughout.
 
 **Settlements** fit plots along their streets: house, yard, outbuildings, garden, orchard, fences and street
-furniture. The report says why a plot didn't fit. Street pipes arch over driveways and crossings. A stretched
+furniture. The kit's `pathSurface` wears paths from the gate to the house and round it to the outbuildings and yard
+extras. The report says why a plot didn't fit. Street pipes arch over driveways and crossings. A stretched
 prefab with `StretchPartsAuthoring` keeps its end caps at their own size, and its remains need the component too.
 
 **Access tracks.** Nearby props asking for the same road class share one track, within their

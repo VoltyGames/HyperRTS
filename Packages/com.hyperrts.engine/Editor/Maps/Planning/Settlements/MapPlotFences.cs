@@ -24,34 +24,38 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             _placements = settlement.Context.Placements;
         }
 
-        /// <summary>Fences the plot, its gate across from <paramref name="gateU"/> along the front.</summary>
-        public void Build(MapPlot plot, float gateU)
+        /// <summary>Fences the plot, its gate across from <paramref name="gateU"/> along the front; returns the gate, if any.</summary>
+        public Vector2? Build(MapPlot plot, float gateU)
         {
-            Front(plot, gateU);
+            var gate = Front(plot, gateU);
             Side(plot, -1f);
             Side(plot, 1f);
+            return gate;
         }
 
-        private void Front(MapPlot plot, float gateU)
+        private Vector2? Front(MapPlot plot, float gateU)
         {
             var fence = _entries.FrontFence;
             if (fence == null)
             {
-                return;
+                return null;
             }
 
             var half = plot.Width * 0.5f;
             var centers = MapSections.Centers(fence, plot.Point(-half, 0f), plot.Point(half, 0f));
             var gate = _entries.Gate;
+            Vector2? gatePosition = null;
             if (gate != null && centers.Count > 0)
             {
                 var gap = centers.OrderBy(c => Mathf.Abs(Along(plot, c) - gateU)).First();
                 var clear = (MapSections.Length(gate) + MapSections.Length(fence)) * 0.5f - 0.05f;
                 centers.RemoveAll(c => (c - gap).magnitude < clear);
                 _placements.AddEverywhere(gate, gap, MapSections.YawAlong(gate, plot.Run), 1f, 1f);
+                gatePosition = gap;
             }
 
             MapSections.Place(_placements, fence, centers, plot.Run);
+            return gatePosition;
         }
 
         private void Side(MapPlot plot, float side)

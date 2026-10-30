@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Placement;
 using UnityEngine;
@@ -18,6 +19,8 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         private readonly MapSettlementKit _kit;
         private readonly MapSettlementEntries _entries;
         private readonly MapPlotFences _fences;
+        private readonly MapPlotPaths _paths;
+        private readonly List<Vector2> _spots = new();
         private readonly System.Random _random;
 
         public MapPlotBuilder(MapSettlement settlement, System.Random random)
@@ -27,6 +30,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             _kit = settlement.Kit;
             _entries = settlement.Entries;
             _fences = new MapPlotFences(settlement);
+            _paths = new MapPlotPaths(_context, _kit);
             _random = random;
         }
 
@@ -63,15 +67,17 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             return new MapPlacement(entry, position, plot.FacingYaw + Jitter(entry), 1f) { Scale = scale };
         }
 
-        /// <summary>Places the house and everything else on a plot whose land has been claimed.</summary>
-        public void Build(MapPlot plot, MapPlacement house)
+        /// <summary>Places the house and everything else on a plot whose land has been claimed, and wears its paths.</summary>
+        public void Build(MapPlot plot, MapPlacement house, int seed)
         {
+            _spots.Clear();
             Add(house.Entry, house.Position, house.Yaw, house.Scale);
             Outbuildings(plot);
             Orchard(plot);
             Extras(plot);
             plot.Local(house.Position, out var houseU, out _);
-            _fences.Build(plot, houseU);
+            var gate = _fences.Build(plot, houseU) ?? plot.Point(houseU, 0f);
+            _paths.Wear(plot, house, gate, _spots, seed);
         }
 
         private void Outbuildings(MapPlot plot)
@@ -116,6 +122,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             }
 
             Add(entry, position, plot.FacingYaw + Jitter(entry), scale);
+            _spots.Add(position);
             return true;
         }
 
@@ -195,6 +202,11 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             }
 
             Add(entry, position, plot.FacingYaw + Jitter(entry), scale);
+            if (zone is MapPlotZone.Yard or MapPlotZone.Garden)
+            {
+                _spots.Add(position);
+            }
+
             return true;
         }
 
