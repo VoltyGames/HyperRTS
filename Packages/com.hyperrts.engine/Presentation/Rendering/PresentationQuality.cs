@@ -14,7 +14,8 @@ namespace HyperRTS.Presentation.Rendering
     /// <summary>
     /// Every presentation quality knob the game sets from its graphics options, applied together. The knobs it
     /// writes (<see cref="EffectDetail"/>, <see cref="TerrainDetail"/>, <see cref="InteractionMap"/>,
-    /// <see cref="GrassRenderer"/>, <see cref="RowCropRenderer"/>) are read-only outside the engine.
+    /// <see cref="GrassRenderer"/>, <see cref="RowCropRenderer"/>, <see cref="BattleHazeSystem"/>) are read-only outside
+    /// the engine.
     /// </summary>
     public partial struct PresentationQuality
     {
@@ -45,6 +46,9 @@ namespace HyperRTS.Presentation.Rendering
         /// <summary>Share of the screen resolution the cameras render at, above 0 and at most 1.</summary>
         public float RenderScale;
 
+        /// <summary>Whether the smoke of the fighting thickens the volumetric fog (<see cref="BattleHazeSystem"/>).</summary>
+        public bool BattleHaze;
+
         /// <summary>The full-detail knobs a session starts with, before the game applies its options.</summary>
         public static readonly PresentationQuality Default = new()
         {
@@ -57,6 +61,7 @@ namespace HyperRTS.Presentation.Rendering
             CropDensity = 1f,
             CropDistance = 300f,
             RenderScale = 1f,
+            BattleHaze = true,
         };
 
         /// <summary>The quality last applied.</summary>
@@ -120,6 +125,7 @@ namespace HyperRTS.Presentation.Rendering
             GrassRenderer.ShadowDistance = quality.GrassShadowDistance;
             RowCropRenderer.Density = quality.CropDensity;
             RowCropRenderer.Distance = quality.CropDistance;
+            BattleHazeSystem.Shown = quality.BattleHaze;
         }
     }
 }

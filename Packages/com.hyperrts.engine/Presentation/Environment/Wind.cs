@@ -38,6 +38,10 @@ namespace HyperRTS.Presentation.Environment
         [AutoStaticsCleanup]
         public static Vector3 Downwind { get; private set; }
 
+        /// <summary>The last published wind strength (the WindZone's main); zero before any Wind has run or once off.</summary>
+        [AutoStaticsCleanup]
+        public static float Strength { get; private set; }
+
         private WindZone _zone;
         private Texture2D _gustMap;
         private Vector2 _gustOffset;
@@ -57,6 +61,7 @@ namespace HyperRTS.Presentation.Environment
             _gustOffset = WindGust.Scroll(_gustOffset, new Vector2(downwind.x, downwind.z), _zone.windPulseFrequency, Time.deltaTime);
 
             Downwind = downwind;
+            Strength = _zone.windMain;
             Shader.SetGlobalVector(DirectionId, downwind);
             Shader.SetGlobalFloat(StrengthId, _zone.windMain);
             Shader.SetGlobalVector(GustId, new Vector4(_zone.windPulseMagnitude, _zone.windTurbulence, 1f / gustSize, 0f));
@@ -66,6 +71,7 @@ namespace HyperRTS.Presentation.Environment
 
         protected override void OnDisabled()
         {
+            Strength = 0f;
             Shader.SetGlobalFloat(StrengthId, 0f);
             Shader.SetGlobalFloat(DetailId, (float)WindDetail.None);
             CoreUtils.Destroy(_gustMap);
