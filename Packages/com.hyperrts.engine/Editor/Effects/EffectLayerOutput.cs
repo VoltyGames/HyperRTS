@@ -67,6 +67,13 @@ namespace HyperRTS.Editor.Effects
                     break;
             }
 
+            if (_layer.upright)
+            {
+                var upright = _graph.Block(output, "Orient");
+                _graph.Set(upright, "mode", "FixedAxis");
+                _graph.Slot(upright, "Up", Vector3.up);
+            }
+
             if (_layer.softness > 0f && !_layer.DrawsShaderGraph)
             {
                 _graph.Set(output, "useSoftParticle", true);

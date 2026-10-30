@@ -82,9 +82,23 @@ namespace HyperRTS.Editor.Effects
 
             if (_layer.flipbook.random)
             {
-                Pick(initialize, "texIndex", new FloatRange(0f, _layer.flipbook.Frames - 0.01f));
+                Pick(initialize, "texIndex", _layer.RandomFrames());
             }
 
+            // VFX puts the particle at the pivot, so a card standing on it has its pivot at the bottom.
+            if (_layer.pivot != 0f)
+            {
+                var pivot = _graph.Block(initialize, "SetAttribute");
+                _graph.Set(pivot, "attribute", "pivot");
+                _graph.SlotAt(pivot, 0, new Vector3(0f, -_layer.pivot, 0f));
+            }
+
+            Emit(initialize);
+            _emission.Place(initialize);
+        }
+
+        private void Emit(object initialize)
+        {
             var emit = _graph.Hlsl(initialize, "Emit From Shape", Includes + "GraphEmitShape.hlsl");
             _graph.Slot(emit, "origin", _layer.origin);
             _graph.Slot(emit, "shape", (float)_layer.Shape);
@@ -92,7 +106,6 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(emit, "spread", _layer.spread);
             _graph.Slot(emit, "speed", new Vector2(_layer.speed.min, _layer.speed.max));
             _graph.Slot(emit, "rim", _layer.rim ? 1f : 0f);
-            _emission.Place(initialize);
         }
 
         private void Update(object update)
@@ -131,6 +144,13 @@ namespace HyperRTS.Editor.Effects
                 var drag = _graph.Hlsl(update, "Slow Down", Includes + "GraphDrag.hlsl");
                 _graph.Slot(drag, "drag", _layer.drag);
                 _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 760f)), drag, "deltaTime");
+            }
+
+            if (_layer.drift != Vector3.zero)
+            {
+                var drift = _graph.Hlsl(update, "Drift At Velocity", Includes + "GraphDrift.hlsl");
+                _graph.Slot(drift, "drift", _layer.drift);
+                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 840f)), drift, "deltaTime");
             }
 
             if (_layer.wind != 0f)

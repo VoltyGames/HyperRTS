@@ -11,8 +11,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Tests.Effects
 {
     /// <summary>
-    /// A spec with one layer of every kind, a streamed strip and a child of a source builds a graph the pool can play
-    /// whose shaders compile, and the stamp finds stale graphs.
+    /// A spec with one layer of every kind, a streamed strip and a child of a source with random frames builds a graph
+    /// the pool can play whose shaders compile, and the stamp finds stale graphs.
     /// </summary>
     public class EffectGraphBuilderTests
     {
@@ -80,7 +80,7 @@ namespace HyperRTS.Editor.Tests.Effects
                 var shape = kind switch
                 {
                     "ring" => "",
-                    "glow" => @"""shape"": ""sphere"", ""aspect"": 0.6, ",
+                    "glow" => @"""shape"": ""sphere"", ""aspect"": 0.6, ""upright"": true, ""pivot"": 0.5, ""drift"": { ""x"": 0.3, ""y"": 0.6, ""z"": 0 }, ",
                     _ => @"""shape"": ""cone"", ",
                 };
                 var spawn = kind == "strip" ? @"""rate"": 10, ""ratePerMetre"": 2," : @"""bursts"": [ { ""delay"": 0, ""count"": { ""min"": 2, ""max"": 4 }, ""repeats"": 1, ""interval"": 0.5 } ],";
@@ -97,7 +97,8 @@ namespace HyperRTS.Editor.Tests.Effects
             }
 
             layers.Add($@"{{ ""name"": ""child"", ""kind"": ""puff"", ""capacity"": 8, ""shape"": ""cone"", ""parent"": ""source"", ""rate"": 2,
-                ""lifetime"": {{ ""min"": 1, ""max"": 1 }}, ""size"": {{ ""min"": 1, ""max"": 1 }}, ""texture"": ""{Texture}"" }}");
+                ""lifetime"": {{ ""min"": 1, ""max"": 1 }}, ""size"": {{ ""min"": 1, ""max"": 1 }}, ""texture"": ""{Texture}"",
+                ""flipbook"": {{ ""columns"": 4, ""rows"": 4, ""from"": 0.5, ""to"": 0.75, ""random"": true }} }}");
 
             return $@"{{ ""layers"": [ {string.Join(", ", layers)} ] }}";
         }

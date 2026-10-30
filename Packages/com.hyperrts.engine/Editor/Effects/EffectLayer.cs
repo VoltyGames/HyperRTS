@@ -41,6 +41,7 @@ namespace HyperRTS.Editor.Effects
         public float gravity;
         public float drag;
         public float wind;
+        public Vector3 drift;
 
         public List<CurveKey> sizeOverLife = new();
         public List<ColorKey> colorOverLife = new();
@@ -48,6 +49,8 @@ namespace HyperRTS.Editor.Effects
 
         public string texture;
         public float softness;
+        public bool upright;
+        public float pivot;
         public Flipbook flipbook;
 
         public string negativeTexture;
@@ -107,6 +110,13 @@ namespace HyperRTS.Editor.Effects
         public AnimationCurve HeatCurve() => Curve(heatOverLife);
 
         public AnimationCurve AlphaCurve() => Curve(alphaOverLife);
+
+        /// <summary>The frames a random-frame particle picks from: from and to as shares of the sheet.</summary>
+        public FloatRange RandomFrames()
+        {
+            var first = flipbook.from * flipbook.Frames;
+            return new FloatRange(first, Mathf.Max(first, flipbook.to * flipbook.Frames - 0.01f));
+        }
 
         public Gradient LifeGradient() => Gradient(colorOverLife, alphaOverLife);
 
