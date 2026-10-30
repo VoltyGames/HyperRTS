@@ -4,8 +4,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Effects
 {
     /// <summary>
-    /// Writes one layer as a VFX system: a spawner whose bursts Density thins, World-space particles that start in
-    /// rig space and move to the burst pose, their forces, and the output for the layer's kind.
+    /// Writes one layer as a VFX system: what spawns it, World-space particles that start in rig space and move to
+    /// where the spawn came from, their forces, and the output for the layer's kind.
     /// </summary>
     public sealed class EffectLayerSystem
     {
@@ -15,64 +15,47 @@ namespace HyperRTS.Editor.Effects
         private readonly GraphModel _graph;
         private readonly EffectLayer _layer;
         private readonly float _x;
-        private readonly object _density;
-        private readonly object[] _pose;
+        private readonly EffectLayerEmission _emission;
 
-        public EffectLayerSystem(GraphModel graph, EffectLayer layer, float x, object density, object[] pose)
+        public EffectLayerSystem(GraphModel graph, EffectLayer layer, float x, EffectGraphInputs inputs)
         {
             _graph = graph;
             _layer = layer;
             _x = x;
-            _density = density;
-            _pose = pose;
+            _emission = new EffectLayerEmission(graph, layer, x, inputs);
         }
 
-        public void Write(object burstEvent)
+        /// <summary>Writes the system; a child layer takes its parent's update. Returns this layer's update.</summary>
+        public object Write(object parentUpdate)
         {
-            if (_layer.capacity <= 0 || _layer.bursts.Count == 0)
+            if (_layer.capacity <= 0)
             {
-                throw new InvalidOperationException($"HyperRTS: layer '{_layer.name}' needs a capacity and at least one burst.");
+                throw new InvalidOperationException($"HyperRTS: layer '{_layer.name}' needs a capacity.");
             }
 
-            var spawner = Spawner();
-            _graph.Flow(burstEvent, spawner);
+            if (_layer.Kind == EffectLayerKind.Strip && !_layer.Streams)
+            {
+                throw new InvalidOperationException($"HyperRTS: strip layer '{_layer.name}' needs a rate, since each stream draws one ribbon.");
+            }
+
             var initialize = _graph.Context("VFXBasicInitialize", new Vector2(_x, 100f));
-            _graph.Flow(spawner, initialize);
+            _emission.Start(initialize, parentUpdate);
             _graph.Particles(initialize, (uint)_layer.capacity);
+            if (_layer.Kind == EffectLayerKind.Strip)
+            {
+                _graph.Strip(initialize, (uint)_layer.capacity);
+            }
+
             Initialize(initialize);
             var update = _graph.Context("VFXBasicUpdate", new Vector2(_x, 700f));
             _graph.Flow(initialize, update);
             Update(update);
-            new EffectLayerOutput(_graph, _layer, new Vector2(_x, 1100f)).Write(update);
-        }
-
-        private object Spawner()
-        {
-            var spawner = _graph.Context("VFXBasicSpawner", new Vector2(_x, -200f));
-            _graph.Label(spawner, _layer.name);
-            for (var i = 0; i < _layer.bursts.Count; i++)
+            if (_layer.Kind != EffectLayerKind.Source)
             {
-                var burst = _layer.bursts[i];
-                var block = _graph.Block(spawner, "VFXSpawnerBurst");
-                var times = _graph.Operator("Multiply", new Vector2(_x - 260f, -150f + 90f * i));
-                if (burst.count.IsConstant)
-                {
-                    _graph.SlotAt(times, 0, burst.count.min);
-                }
-                else
-                {
-                    _graph.Set(block, "spawnMode", "Random");
-                    _graph.OperandType(times, 0, typeof(Vector2));
-                    _graph.OperandType(times, 1, typeof(Vector2));
-                    _graph.SlotAt(times, 0, new Vector2(burst.count.min, burst.count.max));
-                }
-
-                _graph.Slot(block, "Delay", burst.delay);
-                _graph.Link(_density, times, "b");
-                _graph.Link(times, block, "Count");
+                new EffectLayerOutput(_graph, _layer, new Vector2(_x, 1100f)).Write(update);
             }
 
-            return spawner;
+            return update;
         }
 
         private void Initialize(object initialize)
@@ -103,12 +86,8 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(emit, "radius", _layer.radius);
             _graph.Slot(emit, "spread", _layer.spread);
             _graph.Slot(emit, "speed", new Vector2(_layer.speed.min, _layer.speed.max));
-            var place = _graph.Hlsl(initialize, "Place At Burst", Includes + "GraphBurstPose.hlsl");
-            var inputs = new[] { "origin", "normal", "forward", "scale" };
-            for (var i = 0; i < inputs.Length; i++)
-            {
-                _graph.Link(_pose[i], place, inputs[i]);
-            }
+            _graph.Slot(emit, "rim", _layer.rim ? 1f : 0f);
+            _emission.Place(initialize);
         }
 
         private void Update(object update)
@@ -123,6 +102,21 @@ namespace HyperRTS.Editor.Effects
             {
                 var drag = _graph.Block(update, "Drag");
                 _graph.Slot(drag, "dragCoefficient", _layer.drag);
+            }
+
+            if (_layer.wind != 0f)
+            {
+                var wind = _graph.Hlsl(update, "Drift With Wind", Includes + "GraphWind.hlsl");
+                _graph.Slot(wind, "share", _layer.wind);
+                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 800f)), wind, "deltaTime");
+            }
+
+            // Children and Shader Graphs read the stored alpha, which an output's curve never writes back.
+            if (_layer.KeepsAlpha && _layer.alphaOverLife.Count > 0)
+            {
+                var alpha = _graph.Block(update, "AttributeFromCurve");
+                _graph.Set(alpha, "attribute", "alpha");
+                _graph.SlotAt(alpha, 0, _layer.AlphaCurve());
             }
 
             if (_layer.Kind == EffectLayerKind.Debris)

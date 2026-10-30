@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.Effects
 {
     /// <summary>
     /// Stream state per entity and entry, kept only while the entity streams every frame: a stream that skipped a
-    /// frame (hidden, out of range, gone) starts afresh instead of drawing a segment across the gap.
+    /// frame (hidden, out of range, gone) stops its graphs and starts afresh instead of drawing a segment across the gap.
     /// </summary>
     public sealed class EffectStreams
     {
@@ -62,6 +62,7 @@ namespace HyperRTS.Presentation.Effects
             foreach (var key in _stale)
             {
                 _states.Remove(key, out var state);
+                state.Stop();
                 _free.Push(state);
             }
         }

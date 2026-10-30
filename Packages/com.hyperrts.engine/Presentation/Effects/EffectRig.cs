@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.Effects
     /// <summary>
     /// Root of an effect rig prefab: child particle systems in world space and VFX Graphs, played by hand from a pool.
     /// Bursts replay the authored bursts at a pose and send each graph its Burst event; streams spread the particle
-    /// systems' authored rates along a path. Author it +Y up, +Z forward.
+    /// systems' authored rates along a path and play their own copies of the stream graphs. Author it +Y up, +Z forward.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Effects + "Effect Rig")]
     [Icon(HyperRTSIcons.Effects)]
@@ -41,6 +41,7 @@ namespace HyperRTS.Presentation.Effects
         private readonly List<DelayedBurst> _delayed = new();
         private EffectEmitter[] _emitters;
         private EffectGraph[] _graphs;
+        private GraphStreamPool _streamGraphs;
         private EffectLight[] _lights;
         private readonly StreamShares _shares = new();
 
@@ -146,10 +147,21 @@ namespace HyperRTS.Presentation.Effects
             }
         }
 
-        /// <summary>Fires due timed bursts, and graph bursts that waited for the graph's first run.</summary>
+        /// <summary>A stream's started copy of the stream graphs; null when the rig has none.</summary>
+        public GraphStream StartGraphs()
+        {
+            Captured();
+            return _streamGraphs.HasStreams ? _streamGraphs.Start() : null;
+        }
+
+        /// <summary>Stops a stream's graphs, whose particles then live out their lives.</summary>
+        public void StopGraphs(GraphStream stream) => _streamGraphs.Stop(stream);
+
+        /// <summary>Fires due timed bursts and graph bursts that waited for the graph's first run, and frees stopped streams.</summary>
         public void Tick(float deltaTime)
         {
             Captured();
+            _streamGraphs.Tick();
             foreach (var graph in _graphs)
             {
                 graph.Tick();
@@ -227,7 +239,9 @@ namespace HyperRTS.Presentation.Effects
             }
 
             _lights = GetComponentsInChildren<EffectLight>(true);
-            _graphs = Array.ConvertAll(GetComponentsInChildren<VisualEffect>(true), effect => new EffectGraph(effect));
+            var effects = GetComponentsInChildren<VisualEffect>(true);
+            _graphs = Array.ConvertAll(effects, effect => new EffectGraph(effect));
+            _streamGraphs = new GraphStreamPool(effects);
             return _emitters = emitters.ToArray();
         }
 

@@ -9,26 +9,15 @@ using UnityEngine;
 namespace HyperRTS.Editor.Effects
 {
     /// <summary>
-    /// Writes a rig's VFX Graph from its <see cref="EffectGraphSpec"/>: the Burst event, the Density property and one
-    /// system per layer, each placed at the burst pose, thinned by Density and shaded by the fog of war. The graph is
-    /// generated output, stamped with its spec so a stale one is found.
+    /// Writes a rig's VFX Graph from its <see cref="EffectGraphSpec"/>: the Burst event, the Density property, the
+    /// stream events and properties when a layer has a rate, and one system per layer, each placed where its spawn
+    /// came from, thinned by Density and shaded by the fog of war. The graph is generated output, stamped with its
+    /// spec so a stale one is found.
     /// </summary>
-    public sealed class EffectGraphBuilder
+    public static class EffectGraphBuilder
     {
         private const string BuildMenu = "Assets/HyperRTS/Build Effect Graph";
         private const string BuildAllMenu = "Assets/HyperRTS/Build All Effect Graphs";
-        private static readonly string[] PoseAttributes = { "position", "direction", "axisZ", "scale" };
-
-        private readonly GraphModel _graph;
-        private readonly object _density;
-        private readonly object[] _pose;
-
-        private EffectGraphBuilder(string graphPath)
-        {
-            _graph = GraphModel.Open(graphPath);
-            _density = _graph.Parameter(EffectGraph.DensityProperty, 1f);
-            _pose = PoseAttributes.Select((attribute, i) => _graph.SourceAttribute(attribute, new Vector2(-600f, 200f + 120f * i))).ToArray();
-        }
 
         /// <summary>Builds the graph beside the spec at <paramref name="jsonPath"/>.</summary>
         public static void Build(string jsonPath)
@@ -40,16 +29,23 @@ namespace HyperRTS.Editor.Effects
         /// <summary>Builds <paramref name="spec"/> into the graph at <paramref name="graphPath"/>, stamped with <paramref name="stamp"/>.</summary>
         public static void Build(EffectGraphSpec spec, string graphPath, string stamp)
         {
-            var builder = new EffectGraphBuilder(graphPath);
-            var burst = builder._graph.Context("VFXBasicEvent", new Vector2(0f, -400f));
-            builder._graph.Set(burst, "eventName", EffectGraph.BurstEvent);
+            var graph = GraphModel.Open(graphPath);
+            var inputs = new EffectGraphInputs(graph, spec.layers.Any(layer => layer.Streams));
+            var updates = new Dictionary<string, object>();
             for (var i = 0; i < spec.layers.Count; i++)
             {
-                new EffectLayerSystem(builder._graph, spec.layers[i], i * 520f, builder._density, builder._pose).Write(burst);
+                var layer = spec.layers[i];
+                var system = new EffectLayerSystem(graph, layer, i * 520f, inputs);
+                updates[layer.name] = system.Write(layer.HasParent ? ParentUpdate(updates, layer) : null);
             }
 
-            builder._graph.Save(stamp);
+            graph.Save(stamp);
         }
+
+        private static object ParentUpdate(Dictionary<string, object> updates, EffectLayer layer) =>
+            updates.TryGetValue(layer.parent, out var update)
+                ? update
+                : throw new InvalidOperationException($"HyperRTS: layer '{layer.name}' names parent '{layer.parent}', which no earlier layer is.");
 
         /// <summary>Builds every effect graph spec in the project, one graph at a time.</summary>
         public static void BuildAll()

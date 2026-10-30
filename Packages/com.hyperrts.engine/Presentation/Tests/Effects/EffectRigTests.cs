@@ -2,7 +2,9 @@ using System;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Simulation.Common;
 using NUnit.Framework;
+using Unity.Entities;
 using UnityEngine;
+using UnityEngine.VFX;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Tests.Effects
@@ -233,6 +235,34 @@ namespace HyperRTS.Presentation.Tests.Effects
 
             Array.Sort(xs);
             Assert.That(xs, Is.EqualTo(new[] { 1f, 2f, 3f, 4f }).Within(1e-3f));
+        }
+
+        [Test]
+        public void StreamGraph_PlaysItsOwnCopy_FedTheSpeedAndTheThinnedDensity()
+        {
+            var template = EffectRigKit.AddGraph(_rig, EffectRigKit.TestStreamGraph);
+            var streams = new EffectStreams();
+            Step(streams, Vector3.zero).Emit(Quaternion.identity, 0.5f, 0.5f);
+
+            var state = Step(streams, new Vector3(4f, 0f, 0f));
+            state.Emit(Quaternion.identity, 0.5f, 0.5f);
+
+            var graphs = _rig.GetComponentsInChildren<VisualEffect>();
+            Assert.AreEqual(2, graphs.Length, "the template and one stream's copy");
+            var copy = graphs[0] == template ? graphs[1] : graphs[0];
+            Assert.AreEqual(8f, copy.GetFloat(GraphStream.SpeedProperty), 1e-4f, "4 m in 0.5 s");
+            Assert.AreEqual(0.5f * EffectDetail.Density, copy.GetFloat(EffectGraph.DensityProperty), 1e-4f);
+            Assert.AreEqual(new Vector3(4f, 0f, 0f), copy.GetVector3(GraphStream.ToProperty));
+            Assert.AreEqual(0f, template.GetFloat(GraphStream.SpeedProperty), "the template only bursts");
+        }
+
+        private StreamState Step(EffectStreams streams, Vector3 position)
+        {
+            streams.BeginFrame();
+            var state = streams.Step(Entity.Null, 0, position);
+            state.Use(_rig);
+            streams.EndFrame();
+            return state;
         }
 
         private void SizedBurst(float startSize)

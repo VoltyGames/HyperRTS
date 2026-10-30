@@ -171,6 +171,27 @@ namespace HyperRTS.Presentation.Tests.Effects
         }
 
         [Test]
+        public void SkippedStream_StopsItsGraphs_WhichTheNextStreamReuses()
+        {
+            EffectRigKit.AddGraph(_dust, EffectRigKit.TestStreamGraph);
+            var streams = new EffectStreams();
+            streams.BeginFrame();
+            var state = streams.Step(Shell, 0, Vector3.zero);
+            state.Use(_dust);
+            state.Emit(Quaternion.identity, 0.1f, 1f);
+            var graphs = state.Graphs;
+            streams.EndFrame();
+            Assert.IsNotNull(graphs);
+
+            streams.BeginFrame();
+            streams.EndFrame();
+            _dust.Tick(0f);
+
+            Assert.IsNull(state.Graphs, "stopped with its stream");
+            Assert.AreSame(graphs, _dust.StartGraphs(), "a set with no live particles serves the next stream");
+        }
+
+        [Test]
         public void StreamKey_IsStablePerEntityAndStream()
         {
             var other = new Entity { Index = 2, Version = 1 };

@@ -8,6 +8,11 @@ namespace HyperRTS.Editor.Effects
     /// </summary>
     public sealed class EffectLayerOutput
     {
+        public const string DistortShader = "Packages/com.hyperrts.engine/Presentation/Effects/EffectDistort.shadergraph";
+
+        // Before the other transparents, which the opaque texture lacks, so smoke and flames are never bent away.
+        private const int DistortQueueOffset = -50;
+
         // Motion maps hold each texel's move to the next frame as plus or minus 1/64 of the sheet (FlipbookMotion.hlsl).
         private const float MotionSheetShare = 1f / 64f;
 
@@ -24,7 +29,7 @@ namespace HyperRTS.Editor.Effects
 
         public void Write(object update)
         {
-            var output = _graph.Context(Context(), _at);
+            var output = _layer.Kind == EffectLayerKind.Distort ? _graph.ShaderGraphOutput(DistortShader, DistortQueueOffset, _at) : _graph.Context(Context(), _at);
             _graph.Flow(update, output);
             switch (_layer.Kind)
             {
@@ -46,15 +51,26 @@ namespace HyperRTS.Editor.Effects
                 case EffectLayerKind.Debris:
                     Debris(output);
                     break;
+                case EffectLayerKind.Strip:
+                    Strip(output);
+                    break;
+                case EffectLayerKind.Distort:
+                    Distort(output);
+                    break;
             }
 
-            if (_layer.softness > 0f)
+            if (_layer.softness > 0f && _layer.Kind != EffectLayerKind.Distort)
             {
                 _graph.Set(output, "useSoftParticle", true);
                 _graph.Slot(output, "softParticleFadeDistance", _layer.softness);
             }
 
             OverLife(output);
+            if (_layer.Kind == EffectLayerKind.Distort)
+            {
+                return;
+            }
+
             var fog = _graph.Hlsl(output, "Fog Of War", EffectLayerSystem.Includes + "GraphFogOfWar.hlsl");
             _graph.Slot(fog, "glow", _layer.Glows ? 1f : 0f);
         }
@@ -63,6 +79,7 @@ namespace HyperRTS.Editor.Effects
         {
             EffectLayerKind.Glow or EffectLayerKind.Spark => "VFXPlanarPrimitiveOutput",
             EffectLayerKind.Debris => "VFXURPLitMeshOutput",
+            EffectLayerKind.Strip => "VFXURPLitQuadStripOutput",
             _ => "VFXURPLitPlanarPrimitiveOutput",
         };
 
@@ -129,6 +146,25 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(output, "smoothness", _layer.smoothness);
         }
 
+        private void Strip(object output)
+        {
+            _graph.Set(output, "blendMode", "Alpha");
+            _graph.Set(output, "useBaseColorMap", "ColorAndAlpha");
+            _graph.Slot(output, "baseColorMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
+        }
+
+        // The Shader Graph reads the stored alpha as its bend and does the fog of war per pixel.
+        private void Distort(object output)
+        {
+            _graph.Slot(output, "NormalMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
+            _graph.Slot(output, "Strength", _layer.distortion);
+            _graph.Slot(output, "Scroll", _layer.scroll);
+            _graph.Slot(output, "SoftFade", _layer.softness);
+            var alpha = _graph.Operator("VFXAttributeParameter", _at + new Vector2(-300f, 200f));
+            _graph.Set(alpha, "attribute", "alpha");
+            _graph.Link(alpha, output, "Weight");
+        }
+
         private void Flipbook(object output)
         {
             if (!_layer.flipbook.IsSet)
@@ -155,9 +191,9 @@ namespace HyperRTS.Editor.Effects
                 Curve(output, "size", _layer.SizeCurve(), "Multiply");
             }
 
-            if (_layer.colorOverLife.Count + _layer.alphaOverLife.Count > 0)
+            if (_layer.colorOverLife.Count > 0 || (_layer.alphaOverLife.Count > 0 && !_layer.KeepsAlpha))
             {
-                Curve(output, "color", _layer.LifeGradient(), "Multiply");
+                Curve(output, "color", _layer.KeepsAlpha ? _layer.ColorGradient() : _layer.LifeGradient(), "Multiply");
             }
 
             if (_layer.flipbook.IsSet && !_layer.flipbook.random)

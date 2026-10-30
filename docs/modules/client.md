@@ -557,7 +557,7 @@ No two plays need look the same:
 - **Burst cycles**: a Shuriken burst's cycle count and interval repeat it, such as ammo cooking off. A burst that
   repeats forever is a broken rig.
 
-A rig may also hold `VisualEffect` graphs, played on bursts only. `EffectGraph` sends each its `Burst` event with
+A rig may also hold `VisualEffect` graphs. `EffectGraph` sends each its `Burst` event with
 the pose as event attributes: `position`, `direction` (the rig's +Y), `axisZ` (its +Z, random spin included) and a
 uniform `scale` (sent per axis, `scaleX` to `scaleZ`), so bursts on one frame keep their own poses. A graph drops events until it has run once, so bursts in the frame the pool spawned it wait for the next. The graph's exposed float `Density` takes the effect
 detail share. Include files serve graph authors as Custom HLSL blocks, among them `GraphBurstPose.hlsl` (Place At Burst,
@@ -565,11 +565,25 @@ the end of every Initialize, wired to those source attributes; it keeps the orig
 planes) and `GraphFogOfWar.hlsl` (fog of war per particle in an output). The rig check reports a graph without an
 asset, one that plays on its own (an Initial Event Name) or one without `Density`.
 
+Loops and trails play graphs too. A graph that exposes `Speed` streams: `GraphStreamPool` on the rig keeps copies of
+its stream graphs, one `GraphStream` per playing stream, held by the `StreamState`. Each frame the stream sets
+`From`, `To`, `Up`, `Forward`, `Scale`, `Speed` (metres a second) and `Density` (strength times effect detail); the
+first frame after the copy has run it sends `Play`. When `EffectStreams` drops a stream, or its variant changes, the
+copy gets `Stop` and returns to the pool once `HasAnySystemAwake` says its particles are gone, so stopping fades
+rather than cuts. Shuriken and graph parts of one rig stream side by side.
+
 Graphs are generated from a `<Graph>.effect.json` beside them by `EffectGraphBuilder` (Editor/Effects): a list of
-layers, each one system of a kind (`glow`, `puff`, `sixway`, `ring`, `debris`, `spark`) with plain fields for its
-bursts, start ranges, shape, forces, curves over life and assets by path or GUID. Every layer gets Emit From Shape
-(`GraphEmitShape.hlsl`), Place At Burst, `Density` on its bursts, World-space slots and the fog of war; debris adds
-Bounce On Ground (`GraphGroundBounce.hlsl`) and sparks Stretch Along Velocity (`GraphStretch.hlsl`). All reflection
+layers, each one system of a kind (`glow`, `puff`, `sixway`, `ring`, `debris`, `spark`, `strip`, `distort`,
+`source`) with plain fields for its bursts or rates, start ranges, shape, forces, wind, curves over life and assets by
+path or GUID. `EffectGraphInputs` holds the events and properties every system reads, and `EffectLayerEmission`
+writes what spawns a layer and where it lands: bursts on `Burst` at Place At Burst, a Constant Spawn Rate between
+`Play` and `Stop` at Place Along Path (`GraphStreamPose.hlsl`), or a GPU event from a parent layer's particles
+(Trigger Event over time) at their position. Every layer gets Emit From Shape (`GraphEmitShape.hlsl`), `Density`,
+World-space slots and the fog of war; debris adds Bounce On Ground (`GraphGroundBounce.hlsl`), sparks Stretch Along
+Velocity (`GraphStretch.hlsl`) and windy layers Drift With Wind (`GraphWind.hlsl`, reading `Wind`'s globals). A
+`distort` layer draws through `HyperRTS/EffectDistort`, a Shader Graph with VFX support whose Custom Function
+(`EffectDistort.hlsl`) refracts the opaque texture like `ParticlesDistort`, weighted by the particle's stored alpha,
+at queue offset -50. All reflection
 into VFX Graph's internal editor model sits in `GraphModel`, so an Editor upgrade breaks that file alone. The builder
 stamps the graph importer's `userData` with a hash of the JSON, line endings ignored; `EffectGraphBuilder.Problem`
 names a graph that is missing or stale. Build from **Assets ▸ HyperRTS ▸ Build Effect Graph** or **Build All Effect

@@ -76,11 +76,11 @@ namespace HyperRTS.Editor.Effects
             return block;
         }
 
-        /// <summary>An exposed float the component can set, such as Density.</summary>
-        public object Parameter(string name, float value)
+        /// <summary>An exposed property the component can set, such as Density, typed by its value.</summary>
+        public object Parameter(string name, object value)
         {
             var parameter = ScriptableObject.CreateInstance(Type("VFXParameter"));
-            Call(parameter, "Init", typeof(float));
+            Call(parameter, "Init", value.GetType());
             Set(parameter, "m_Exposed", true);
             Set(parameter, "m_ExposedName", name);
             parameter.GetType().GetProperty("value", All).SetValue(parameter, value);
@@ -101,7 +101,33 @@ namespace HyperRTS.Editor.Effects
         public void OperandType(object op, int index, Type type) =>
             op.GetType().GetMethod("SetOperandType", All, null, new[] { typeof(int), typeof(Type) }, null).Invoke(op, new object[] { index, type });
 
-        public void Flow(object from, object to) => Call(to, "LinkFrom", from, 0, 0);
+        public void Flow(object from, object to, int input = 0) => Call(to, "LinkFrom", from, 0, input);
+
+        /// <summary>A built-in value such as VfxDeltaTime, named as VFX Graph's BuiltInFlag.</summary>
+        public object BuiltIn(string flag, Vector2 at)
+        {
+            var op = Operator("VFXDynamicBuiltInParameter", at);
+            Set(op, "m_BuiltInParameters", flag);
+            return op;
+        }
+
+        /// <summary>Quads drawn through the VFX-ready Shader Graph at <paramref name="path"/>, its queue moved by <paramref name="queueOffset"/>.</summary>
+        public object ShaderGraphOutput(string path, int queueOffset, Vector2 at)
+        {
+            var shader = Type("VFXShaderGraphHelpers").GetMethod("LoadShaderGraphAssetAtPath", All).Invoke(null, new object[] { path })
+                ?? throw new ArgumentException($"HyperRTS: {path} is no Shader Graph for VFX Graph.");
+            var output = Add("VFXComposedParticleOutput", at);
+            var primitive = Type("VFXPrimitiveType");
+            var quad = Activator.CreateInstance(Type("ParticleTopologyPlanarPrimitive"), All, null, new[] { Enum.Parse(primitive, "Quad") }, null);
+            Set(output, "m_Topology", quad);
+            Set(output, "shaderGraph", shader);
+            // The queue lives in the output's copy of the material settings, which has no setter of its own.
+            var shading = Field(output.GetType(), "m_Shading").GetValue(output);
+            var settings = Field(shading.GetType(), "materialSettings").GetValue(shading);
+            var floats = (IDictionary<string, float>)Field(settings.GetType(), "m_PropertyMap").GetValue(settings);
+            floats["_QueueOffset"] = queueOffset;
+            return output;
+        }
 
         /// <summary>World-space particles with automatic bounds and room for <paramref name="capacity"/>.</summary>
         public void Particles(object initialize, uint capacity)
@@ -113,13 +139,22 @@ namespace HyperRTS.Editor.Effects
             space.SetValue(data, Enum.Parse(space.PropertyType, "World"));
         }
 
+        /// <summary>Turns the system into one ribbon of <paramref name="capacity"/> particles, joined in spawn order.</summary>
+        public void Strip(object initialize, uint capacity)
+        {
+            var data = initialize.GetType().GetMethod("GetData", All, null, System.Type.EmptyTypes, null).Invoke(initialize, null);
+            Set(data, "dataType", "ParticleStrip");
+            Set(data, "stripCapacity", 1u);
+            Set(data, "particlePerStripCount", capacity);
+        }
+
         /// <summary>A model setting; enum settings take their value's name.</summary>
         public void Set(object model, string name, object value)
         {
-            var field = Field(model.GetType(), name);
-            if (field.FieldType.IsEnum && value is string text)
+            if (value is string text)
             {
-                value = Enum.Parse(field.FieldType, text);
+                var field = Field(model.GetType(), name);
+                value = field.FieldType.IsEnum ? Enum.Parse(field.FieldType, text) : text;
             }
 
             model.GetType().GetMethod("SetSettingValue", All, null, new[] { typeof(string), typeof(object) }, null)

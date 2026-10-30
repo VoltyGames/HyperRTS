@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.Tests.Effects
 {
     /// <summary>
     /// Tiny effect rigs built in code: still, shapeless, long-lived particle systems, and graphs playing the test
-    /// graph, which bursts 10 particles times Density.
+    /// graphs: one bursts 10 particles times Density, the other streams 10 a second plus 1 a metre.
     /// </summary>
     public static class EffectRigKit
     {
@@ -43,14 +43,15 @@ namespace HyperRTS.Presentation.Tests.Effects
         }
 
         public const string TestGraph = "Packages/com.hyperrts.engine/Presentation/Tests/Effects/TestBurst.vfx";
+        public const string TestStreamGraph = "Packages/com.hyperrts.engine/Presentation/Tests/Effects/TestStream.vfx";
 
-        public static VisualEffect AddGraph(EffectRig rig)
+        public static VisualEffect AddGraph(EffectRig rig, string path = TestGraph)
         {
             var child = new GameObject("Graph");
             child.transform.SetParent(rig.transform);
             var graph = child.AddComponent<VisualEffect>();
             graph.initialEventName = "";
-            graph.visualEffectAsset = AssetDatabase.LoadAssetAtPath<VisualEffectAsset>(TestGraph);
+            graph.visualEffectAsset = AssetDatabase.LoadAssetAtPath<VisualEffectAsset>(path);
             return graph;
         }
 

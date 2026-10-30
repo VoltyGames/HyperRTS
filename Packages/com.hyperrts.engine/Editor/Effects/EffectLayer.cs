@@ -20,6 +20,10 @@ namespace HyperRTS.Editor.Effects
         public string kind;
         public int capacity;
         public List<EffectBurst> bursts = new();
+        public float rate;
+        public float ratePerMetre;
+        public string parent;
+        public float dropChance;
 
         public FloatRange lifetime;
         public FloatRange size;
@@ -30,10 +34,12 @@ namespace HyperRTS.Editor.Effects
         public Vector3 origin;
         public string shape;
         public float radius;
+        public bool rim;
         public float spread;
         public FloatRange speed;
         public float gravity;
         public float drag;
+        public float wind;
 
         public List<CurveKey> sizeOverLife = new();
         public List<ColorKey> colorOverLife = new();
@@ -59,6 +65,9 @@ namespace HyperRTS.Editor.Effects
         public float length;
         public float lengthPerSpeed;
 
+        public float distortion;
+        public Vector2 scroll;
+
         public EffectLayerKind Kind => Parse<EffectLayerKind>(kind, "kind");
 
         /// <summary>The layer's shape; a ring always flies out along the ground, so it names none.</summary>
@@ -77,13 +86,35 @@ namespace HyperRTS.Editor.Effects
 
         public bool Glows => Kind is EffectLayerKind.Glow or EffectLayerKind.Spark;
 
+        /// <summary>Emits by rate while a stream plays, rather than on the Burst event.</summary>
+        public bool Streams => !HasParent && (rate > 0f || ratePerMetre > 0f);
+
+        /// <summary>Emitted by another layer's particles over their life, rather than by the rig.</summary>
+        public bool HasParent => !string.IsNullOrEmpty(parent);
+
+        /// <summary>Kinds whose alpha must be stored per particle, read by children or a Shader Graph, not only drawn.</summary>
+        public bool KeepsAlpha => Kind is EffectLayerKind.Source or EffectLayerKind.Distort;
+
         public AnimationCurve SizeCurve() => Curve(sizeOverLife);
 
         public AnimationCurve HeatCurve() => Curve(heatOverLife);
 
+        public AnimationCurve AlphaCurve() => Curve(alphaOverLife);
+
         public Gradient LifeGradient() => Gradient(colorOverLife, alphaOverLife);
 
-        public Gradient EmissionGradient() => Gradient(emissionColors, new List<CurveKey>());
+        public Gradient ColorGradient() => Gradient(colorOverLife, new List<CurveKey>());
+
+        /// <summary>
+        /// The emission ramp, each key weighted by its heat: the particle shader glows ramp(heat) times heat, and VFX
+        /// Graph's six-way output samples the gradient alone.
+        /// </summary>
+        public Gradient EmissionGradient()
+        {
+            var gradient = Gradient(emissionColors, new List<CurveKey>());
+            gradient.SetKeys(gradient.colorKeys.Select(k => new GradientColorKey(k.color * k.time, k.time)).ToArray(), gradient.alphaKeys);
+            return gradient;
+        }
 
         /// <summary>The flipbook frame over life, stopping short of the last frame's end so it never wraps.</summary>
         public AnimationCurve FrameCurve()
