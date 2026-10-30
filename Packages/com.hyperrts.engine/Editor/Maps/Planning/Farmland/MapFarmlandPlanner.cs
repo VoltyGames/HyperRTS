@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         private const float MinRun = 15f;
         private const int NoField = -1;
 
-        // A field stretch shorter than this many headland depths along its rows keeps its rows straight.
+        // Shorter stretches, in headland depths, keep straight rows.
         private const float HeadlandBody = 3f;
 
         public MapFarmlandPlanner(MapPlanContext context) : base(context)
@@ -147,10 +147,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             });
         }
 
-        /// <summary>
-        /// Whether the field ends within <paramref name="reach"/> metres along the rows either way, in a stretch of
-        /// field long enough to keep a body of straight rows between its headlands.
-        /// </summary>
+        /// <summary>Whether the field ends within <paramref name="reach"/> along the rows, in a stretch long enough to turn.</summary>
         private bool IsFieldEnd(int[] fields, MapFieldGrid grid, Vector2 sector, int copy, int field, float reach)
         {
             var transform = Symmetry.Copies[copy];
@@ -159,7 +156,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             return Mathf.Min(ahead, behind) < reach && ahead + behind >= HeadlandBody * reach;
         }
 
-        /// <summary>Metres of the field from a sector point along <paramref name="way"/>, up to <paramref name="limit"/>.</summary>
+        /// <summary>Metres of field ahead along <paramref name="way"/>, up to <paramref name="limit"/>.</summary>
         private float Run(int[] fields, MapTransform transform, Vector2 sector, Vector2 way, int field, float limit)
         {
             var step = SampleStep;

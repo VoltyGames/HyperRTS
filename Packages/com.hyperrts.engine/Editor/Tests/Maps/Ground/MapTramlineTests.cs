@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Tests.Maps.Ground
 {
-    /// <summary>Tramlines: row crops leave bare exactly the wheel lines the ground paints, in every symmetry copy.</summary>
+    /// <summary>Row crops leave bare the tramlines the ground paints, in every copy.</summary>
     public class MapTramlineTests : TemplateFixture
     {
         private const float Spacing = 12f;
@@ -73,11 +73,11 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
             };
         }
 
-        /// <summary>Whether the plant's cell belongs to the copy whose lattice is field <paramref name="field"/>.</summary>
+        /// <summary>Whether the plant's cell is sown by <paramref name="field"/>.</summary>
         private static bool Sown(MapCropBake bake, MapLand land, Vector2 position, int field) =>
             land.TryCell(position, out var x, out var z) && bake.Id(x, z) == RowCropFields.FieldId(field);
 
-        /// <summary>The authored field, a 40 m square, at least <paramref name="inset"/> metres inside its edge.</summary>
+        /// <summary>Inside the authored 40 m field by <paramref name="inset"/>.</summary>
         private static bool InField(Vector2 p, float inset) =>
             p.x > 20f + inset && p.x < 60f - inset && p.y > 20f + inset && p.y < 60f - inset;
     }

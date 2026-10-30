@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         [Tooltip("Seeds each plant's jitter, size and turn. Same in every symmetric copy.")]
         public int seed;
 
-        [Tooltip("Wheel lines the crop leaves bare, measured from origin across the rows.")]
+        [Tooltip("Wheel lines the crop leaves bare.")]
         public RowCropTramlines tramlines;
     }
 }

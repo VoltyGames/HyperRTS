@@ -69,7 +69,7 @@ float _FacesRow;     // 1: plants face along their row; 0: they keep the model's
 float _Density;
 uint _Slots;
 
-// RowCropTramlines.Covers: whether a point across metres from the lattice origin lies on a wheel line.
+// RowCropTramlines.Covers.
 bool OnTramline(float4 tramlines, float across)
 {
     if (tramlines.x <= 0.0)

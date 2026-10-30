@@ -10,8 +10,8 @@ namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
     /// Grass, crops and small plants from the land use: each surface's plants cover the share it asks for, broken
-    /// into clumps by noise at two scales (crops grow evenly, but not on tramlines); reeds stand in the shallows along
-    /// the banks. Nothing grows on roads, in deep water or on placed objects, and it thins in round them.
+    /// into clumps by noise at two scales (crops grow evenly); reeds stand in the shallows along the banks. Nothing
+    /// grows on roads, tramlines, deep water or placed objects, and it thins in round them.
     /// </summary>
     public static class MapPlantPainter
     {

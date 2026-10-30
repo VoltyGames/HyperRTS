@@ -10,9 +10,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground
 {
-    /// <summary>
-    /// Bakes where row crops grow. Symmetry copies share the authored lattice, seed and tramlines so both sides match.
-    /// </summary>
+    /// <summary>Bakes where row crops grow. Symmetry copies share the authored lattice and seed so both sides match.</summary>
     public static class MapCropPainter
     {
         private const float WaterClearance = 0.15f;
@@ -51,7 +49,7 @@ namespace HyperRTS.Editor.Maps.Ground
             return bake;
         }
 
-        /// <summary>A copy's lattice: the region's rows and tramlines in the authored sector, moved onto the copy.</summary>
+        /// <summary>A copy's lattice: the region's rows in the authored sector, moved onto the copy.</summary>
         public static RowCropField Lattice(MapLandRegion region, MapTransform copy, RowCrop crop, int cropIndex,
             MapTramlines tramlines)
         {

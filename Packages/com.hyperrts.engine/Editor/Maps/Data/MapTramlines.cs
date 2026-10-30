@@ -6,8 +6,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>
-    /// A sown surface's tramlines: pairs of wheel lines of compacted soil along the rows, every spacing metres across
-    /// them. The terrain paints them, row crops leave them bare and scattered plants thin out on them.
+    /// Paired wheel lines along a sown surface's rows: painted on the terrain and left bare of crops and plants.
     /// </summary>
     [Serializable]
     public sealed class MapTramlines
@@ -29,10 +28,7 @@ namespace HyperRTS.Editor.Maps.Data
 
         public bool Valid => !Any || (width > 0f && gauge + width < spacing && !string.IsNullOrEmpty(layer));
 
-        /// <summary>
-        /// The tramlines of a region with this seed, measured from the line through <paramref name="originAcross"/>
-        /// metres across the rows in the authored sector, so every symmetry copy keeps them where they were.
-        /// </summary>
+        /// <summary>A region's tramlines, measured from <paramref name="originAcross"/> across its rows in the sector.</summary>
         public RowCropTramlines From(int seed, float originAcross)
         {
             if (!Any)

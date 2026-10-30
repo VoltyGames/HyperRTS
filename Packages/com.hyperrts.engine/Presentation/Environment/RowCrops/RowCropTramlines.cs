@@ -4,8 +4,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
     /// <summary>
-    /// A field's tramlines: pairs of unsown wheel lines along its rows, one pair every spacing metres across them,
-    /// which the sprayer drives so the crop is left standing between.
+    /// A field's tramlines: pairs of unsown wheel lines along its rows, one pair every spacing metres.
     /// </summary>
     [Serializable]
     public struct RowCropTramlines
@@ -24,7 +23,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
         public bool Any => spacing > 0f;
 
-        /// <summary>Metres from a point <paramref name="across"/> metres across the rows to the nearest wheel line's centre.</summary>
+        /// <summary>Metres from <paramref name="across"/> to the nearest wheel line's centre.</summary>
         public float Distance(float across)
         {
             var fromLine = Mathf.Repeat(across - offset, spacing);
@@ -32,7 +31,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             return Mathf.Abs(fromCentre - gauge * 0.5f);
         }
 
-        /// <summary>Whether a point <paramref name="across"/> metres across the rows lies on a wheel line.</summary>
+        /// <summary>Whether <paramref name="across"/> lies on a wheel line.</summary>
         public bool Covers(float across) => Any && Distance(across) < halfWidth;
     }
 }

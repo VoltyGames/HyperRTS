@@ -44,7 +44,7 @@ namespace HyperRTS.Editor.Maps.Report
                 var kind = region?.Kind ?? MapLandKind.Open;
                 counts[kind] = counts.TryGetValue(kind, out var count) ? count + 1 : 1;
                 total++;
-                // A field's headlands share its seed, so they count with it.
+                // Headlands share their field's seed.
                 if (kind == MapLandKind.Field)
                 {
                     fields.Add(region.Seed);

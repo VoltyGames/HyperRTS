@@ -5,9 +5,8 @@ using HyperRTS.Editor.Maps.Land;
 namespace HyperRTS.Editor.Maps.Planning.Farmland
 {
     /// <summary>
-    /// The land regions one farmland lays down, made once per field: its crop, its headland (the same crop and seed
-    /// with the rows turned a quarter), and for the pieces of it too small or narrow to farm, a leftover surface
-    /// (fallow, pasture). All are picked from the field's key, so every copy of a field matches.
+    /// The land regions one farmland lays down, made once per field: its crop, its headland and, for pieces too small
+    /// or narrow to farm, a leftover surface. All are picked from the field's key, so every copy matches.
     /// </summary>
     public sealed class MapFieldRegions
     {
@@ -33,7 +32,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
 
         public int Field(int field) => Sown(field).Region;
 
-        /// <summary>The field's ends, where the rows run along the end line.</summary>
+        /// <summary>The field's ends: its crop and seed, rows turned a quarter.</summary>
         public int Headland(int field)
         {
             if (!_headlands.TryGetValue(field, out var region))

@@ -1,6 +1,5 @@
 // Shading shared by HyperRTS/Foliage and HyperRTS/RowCrop. Include after the shader's input file, which declares
-// _BaseMap, the UnityPerMaterial shading properties (_ScreenOcclusion among them) and PLANT_TWO_SIDED; its passes
-// place the vertices.
+// _BaseMap, the UnityPerMaterial shading properties and PLANT_TWO_SIDED; its passes place the vertices.
 // PLANT_VERTEX_LIGHTS lights point and spot lights per vertex instead of per pixel.
 #ifndef HYPERRTS_PLANT_SHADING_INCLUDED
 #define HYPERRTS_PLANT_SHADING_INCLUDED
@@ -192,8 +191,7 @@ half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
     half3 halfway = normalize(sun.direction + view);
     half glint = pow(saturate(dot(normal, halfway)), exp2(_Smoothness * 10.0 + 1.0)) * _Smoothness;
 
-    // Screen AO reads a dense canopy of thin blades as a deep crevice, so materials whose canopy occlusion already
-    // shades them take less of it.
+    // Screen AO reads dense blades as a crevice; canopy occlusion already covers it.
     half occlusion = canopy;
     #if defined(_SCREEN_SPACE_OCCLUSION)
         half screen = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(input.positionCS)).indirectAmbientOcclusion;

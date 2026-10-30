@@ -7,8 +7,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
-    /// How much of a map point the wheel lines of its region's tramlines cover, softened over one texel of the
-    /// picture being painted. Lines are placed in the authored sector, as row crops place theirs.
+    /// How much of a map point its region's tramlines cover, softened over one texel of the painted picture.
     /// </summary>
     public sealed class MapTramlineCover
     {
@@ -40,10 +39,10 @@ namespace HyperRTS.Editor.Maps.Ground
             }
         }
 
-        /// <summary>The terrain layer a region's wheel lines paint, or -1 where it has none.</summary>
+        /// <summary>The layer a region's tramlines paint, or -1.</summary>
         public int Layer(int region) => _layers[region];
 
-        /// <summary>0 off the lines to 1 on them, within <paramref name="region"/>.</summary>
+        /// <summary>0 off the lines to 1 on them.</summary>
         public float Cover(int region, Vector2 point)
         {
             var tramlines = _tramlines[region];
