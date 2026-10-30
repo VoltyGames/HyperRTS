@@ -33,5 +33,6 @@ namespace HyperRTS.Editor.Maps
 
         /// <summary>A land region's own ground tint, indexed by the region's seed.</summary>
         RegionTints = 42,
+        WarScars = 43,
     }
 }

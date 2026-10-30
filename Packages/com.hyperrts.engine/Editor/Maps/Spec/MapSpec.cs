@@ -21,6 +21,9 @@ namespace HyperRTS.Editor.Maps.Spec
 
         /// <summary>The climate weather the scene is built with; a match may pick another the climate offers.</summary>
         public string weather;
+
+        /// <summary>How scarred the land is before the battle, a <see cref="MapWarAge"/> name.</summary>
+        public string warAge = nameof(MapWarAge.None);
         public MapPoint size;
         public string symmetry;
         public int seed;
@@ -41,5 +44,7 @@ namespace HyperRTS.Editor.Maps.Spec
         public List<MapAreaSpec> areas = new();
         public List<MapLineSpec> lines = new();
         public List<MapScatterSpec> scatters = new();
+
+        public MapWarAge WarAge => Enum.Parse<MapWarAge>(warAge);
     }
 }

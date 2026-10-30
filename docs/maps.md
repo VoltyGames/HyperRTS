@@ -114,7 +114,8 @@ The land is a 1 m grid. Each cell is claimed once, by one region with a land kin
 3. Ravines, settlements, spec tree rows and spec areas.
 4. Woods, belts and farmland.
 5. Meadow on everything left, then each surface's own lone trees and props.
-6. Ground decals: each surface's decals per hectare, then one under every prop that names a `groundDecal`.
+6. War scars for the spec's `warAge`, from the climate's war kit.
+7. Ground decals: each surface's decals per hectare, then one under every prop that names a `groundDecal`.
 
 Land steps decide at points in the authored sector and place the result in every copy. That keeps maps exactly
 symmetric. A surface prop that lands in the backdrop is drawn as its `backdropModel`, or left out without one.
@@ -129,6 +130,14 @@ headlands keeps them straight throughout.
 furniture. The kit's `pathSurface` wears paths from the gate to the house and round it to the outbuildings and yard
 extras. The report says why a plot didn't fit. Street pipes arch over driveways and crossings. A stretched
 prefab with `StretchPartsAuthoring` keeps its end caps at their own size, and its remains need the component too.
+
+**War scars.** A spec's `warAge` (`None`, `Skirmished`, `Contested` or `Frontline`) picks a density from the
+climate's `war` kit. `MapWarScarsPlanner` works on fields, margins and meadows without row crops, in the authored
+sector, clear of roads, bases, pads, resources and settlements. It swaps a share of belt and wood-edge trees for the
+kit's shredded species, lays wrecks within `wreckCoverDistance` of belts and woods so the open lanes stay clear,
+lays trench props end to end along belt edges, digs old craters into the heightmap (a soft bowl and low rim, a crater
+decal, a wet decal in the deepest) and burns patches with the kit's `burntLayer`. Painting thins the plants in each
+bowl and grows the kit's `weedPlant` in a ring round it. Empty prop and tree lists skip their step.
 
 **Access tracks.** Nearby props asking for the same road class share one track, within their
 `sharedAccessDistance`.
@@ -266,6 +275,7 @@ links it. An unused link is `{ "path": "", "guid": "" }`.
 | `road` | A road class: width, surface, `impactClass`, verge, rank, levelling, curve radius |
 | `surface` | A ground type: its layer, `impactClass`, and the trees, plants, props and decals on it |
 | `farmland`, `belt`, `woodland` | Kits for fields, tree belts and woods |
+| `war` | Old scars per war age: crater, burn, wreck and trench densities, crater shape and decals, weeds, shredded tree species, trench and wreck props. A climate names one in `warKit` |
 | `settlement` | Plot layout along a street, street poles and pipe |
 | `prop` | One placeable prefab: flattening, tilt, scale, ground pad, access road, ground decal |
 | `climate` | The surfaces, road classes, kits, terrain and water materials and weathers one climate uses |

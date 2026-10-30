@@ -25,6 +25,7 @@ namespace HyperRTS.Editor.Maps.Library
             climate.farmlandKits = All<MapFarmlandKit>(library, refs.farmlandKits, refs.file);
             climate.beltKits = All<MapBeltKit>(library, refs.beltKits, refs.file);
             climate.woodlandKits = All<MapWoodlandKit>(library, refs.woodlandKits, refs.file);
+            climate.war = string.IsNullOrEmpty(climate.warKit) ? null : library.Get<MapWarKit>(climate.warKit, refs.file);
             climate.layers = new List<MapClimateLayer>();
             climate.trees = new List<MapClimateTree>();
             climate.plants = new List<MapClimatePlant>();
@@ -49,6 +50,11 @@ namespace HyperRTS.Editor.Maps.Library
             _climate.surfaces.ForEach(Surface);
             _climate.beltKits.ForEach(BeltKit);
             _climate.woodlandKits.ForEach(WoodlandKit);
+            if (_climate.war != null)
+            {
+                WarKit(_climate.war);
+            }
+
             Plant(_climate.reedPlant, climateFile);
             foreach (var key in _library.Keys<MapSettlementKit>())
             {
@@ -87,6 +93,16 @@ namespace HyperRTS.Editor.Maps.Library
             var file = File<MapWoodlandKit>(kit.key);
             kit.trees.ForEach(tree => Tree(tree.tree, file));
             kit.edgeTrees.ForEach(tree => Tree(tree.tree, file));
+        }
+
+        private void WarKit(MapWarKit kit)
+        {
+            var file = File<MapWarKit>(kit.key);
+            Add(_climate.decals, kit.craterDecal, file);
+            Add(_climate.decals, kit.wetDecal, file);
+            Plant(kit.weedPlant, file);
+            Add(_climate.layers, kit.burntLayer, file);
+            kit.shreddedTrees.ForEach(swap => swap.shredded.ForEach(tree => Tree(tree, file)));
         }
 
         private void Tree(string key, string referrer) => Add(_climate.trees, key, referrer);

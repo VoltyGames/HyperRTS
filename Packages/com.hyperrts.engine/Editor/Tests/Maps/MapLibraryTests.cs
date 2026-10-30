@@ -65,6 +65,26 @@ namespace HyperRTS.Editor.Tests.Maps
         }
 
         [Test]
+        public void AClimatesWarKit_PullsInItsDecalsPlantLayerAndShreddedTrees()
+        {
+            Write("Trees/OakSnapped.tree.json", "{}");
+            Write("Decals/Crater.decal.json", "{}");
+            Write("Library/Old.war.json",
+                "{\"craterDecal\": \"Crater\", \"wetDecal\": \"Crater\", \"weedPlant\": \"Grass\", \"burntLayer\": \"Stubble\", " +
+                "\"shreddedTrees\": [{\"tree\": \"Oak\", \"shredded\": [\"OakSnapped\"]}]}");
+            Write("Library/Scarred.climate.json",
+                "{\"surfaces\": [\"Meadow\"], \"roadClasses\": [\"Lane\"], \"groundSurface\": \"Meadow\", \"warKit\": \"Old\"}");
+
+            var climate = MapLibrary.Load(_root).Climate("Scarred", "test");
+
+            Assert.AreEqual("Old", climate.war.key);
+            CollectionAssert.AreEqual(new[] { "Meadow", "Stubble" }, climate.layers.Select(l => l.key));
+            CollectionAssert.AreEqual(new[] { "Oak", "OakSnapped" }, climate.trees.Select(t => t.key));
+            CollectionAssert.AreEqual(new[] { "Crater" }, climate.decals.Select(d => d.key));
+            Assert.IsNull(MapLibrary.Load(_root).Climate("Steppe", "test").war);
+        }
+
+        [Test]
         public void ThePalette_HoldsEveryProp_AndTheRulesLoad()
         {
             var library = MapLibrary.Load(_root);

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Spec;
@@ -64,6 +65,19 @@ namespace HyperRTS.Editor.Maps.Checks
             Require(rising, "Terrain heights must rise: waterLevel < height < maxHeight.");
             Require(Mathf.IsPowerOfTwo(terrain.resolution - 1), $"Terrain resolution {terrain.resolution} must be 2^n + 1.");
             Weather();
+            WarAge();
+        }
+
+        private void WarAge()
+        {
+            if (Array.IndexOf(Enum.GetNames(typeof(MapWarAge)), _spec.warAge) < 0)
+            {
+                Issues.Error($"The map spec's warAge '{_spec.warAge}' is not one of {string.Join(", ", Enum.GetNames(typeof(MapWarAge)))}.", Feature);
+                return;
+            }
+
+            Require(_spec.WarAge == MapWarAge.None || Climate.war != null,
+                $"warAge '{_spec.warAge}' needs climate '{Climate.name}' to name a warKit.");
         }
 
         private void Weather()

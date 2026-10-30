@@ -29,5 +29,6 @@ namespace HyperRTS.Editor.Maps.Geometry
         WoodEdges = 26,
         FieldMargins = 30,
         Verges = 31,
+        WarScars = 32,
     }
 }

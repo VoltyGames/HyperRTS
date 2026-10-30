@@ -53,6 +53,13 @@ namespace HyperRTS.Editor.Maps.Data
         [NonSerialized]
         public List<MapWoodlandKit> woodlandKits = new();
 
+        [Tooltip("Old scars for maps with a war age; empty for none.")]
+        [MapKey(typeof(MapWarKit))]
+        public string warKit;
+
+        [NonSerialized]
+        public MapWarKit war;
+
         [Header("Ground")]
         [Tooltip("Surface of open ground nothing else claims.")]
         [MapKey(typeof(MapClimateSurface))]

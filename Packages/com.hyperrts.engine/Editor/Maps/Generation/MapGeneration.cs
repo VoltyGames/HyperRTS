@@ -50,6 +50,9 @@ namespace HyperRTS.Editor.Maps.Generation
         /// <summary>Where row crops grow, baked once the land is planned.</summary>
         public MapCropBake Crops { get; private set; }
 
+        /// <summary>Old craters and burnt patches of the map's war age, copies included.</summary>
+        public MapWarScars WarScars { get; private set; }
+
         public float[,,] TextureWeights { get; private set; }
         public MapGrassBake Grass { get; private set; }
 
@@ -118,6 +121,7 @@ namespace HyperRTS.Editor.Maps.Generation
             Decals = context.Decals;
             WetDecals = context.WetDecals;
             Scenery = context.Scenery;
+            WarScars = context.WarScars;
             Crops = MapCropPainter.Paint(this);
             // Wet decals show on top of the dry ones after rain, so the cap holds for both together.
             var maxDecals = Project.Rules.maxDecals;
@@ -149,9 +153,11 @@ namespace HyperRTS.Editor.Maps.Generation
             Level();
             Edges = new MapEdgeField(Layout, Land, climate);
             TextureWeights = MapGroundTexturePainter.Paint(Layout, Edges, Heights, climate, Layout.GroundTextureResolution);
+            WarScars.Burn(TextureWeights, Layout.TerrainBounds, climate);
             Grass = MapPlantPainter.Paint(Layout, Land, Edges, Shapes, Heights, climate, Placements.Clearance,
                 Layout.GrassResolution);
             Grass.ThinByLayers(TextureWeights, climate.layers.ConvertAll(l => l.plants).ToArray());
+            WarScars.Regrow(Grass, climate);
             SplitTrees(climate);
         }
 

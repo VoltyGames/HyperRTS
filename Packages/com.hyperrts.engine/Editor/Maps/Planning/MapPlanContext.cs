@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
     /// What every land pass works with: the layout and shaped ground, the land-use grid it claims, the placements it
-    /// adds props to, the trees it plants and the decals it lays.
+    /// adds props to, the trees it plants, the decals it lays and the old war scars.
     /// </summary>
     public sealed class MapPlanContext
     {
@@ -19,22 +19,28 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             Layout = layout;
             Shapes = shapes;
+            Heights = heights;
             Palette = palette;
             Climate = climate;
             Placements = placements;
             Issues = issues;
             Land = new MapLand(layout.TerrainBounds);
             Trees = new MapTreePlanting(layout.Symmetry, climate, new MapTreeSpacing(shapes, heights, placements.Clearance));
+            WarScars = new MapWarScars(Noise(MapNoiseChannel.WarScars));
         }
 
         public MapLayout Layout { get; }
         public MapShapes Shapes { get; }
+
+        /// <summary>The shaped ground; old craters are dug into it.</summary>
+        public MapHeights Heights { get; }
         public MapPalette Palette { get; }
         public MapClimate Climate { get; }
         public MapPlacements Placements { get; }
         public MapIssues Issues { get; }
         public MapLand Land { get; }
         public MapTreePlanting Trees { get; }
+        public MapWarScars WarScars { get; }
 
         /// <summary>Every ground decal laid so far, in map space (copies included).</summary>
         public List<MapDecal> Decals { get; } = new();

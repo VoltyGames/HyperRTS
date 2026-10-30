@@ -24,6 +24,7 @@ namespace HyperRTS.Editor.Maps.Library
             typeof(MapFarmlandKit),
             typeof(MapBeltKit),
             typeof(MapWoodlandKit),
+            typeof(MapWarKit),
             typeof(MapSettlementKit),
             typeof(MapProp),
             typeof(MapClimate),
