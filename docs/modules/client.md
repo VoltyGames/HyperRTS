@@ -327,13 +327,23 @@ URP keyword lists shared across passes live in `Presentation/Rendering/Keywords/
 `#include_with_pragmas`: `ForwardLightingKeywords` (forward passes on the full Lit model), `SimpleLightingKeywords`
 (plant and flag forward passes), `ShadowCasterKeywords` and `DepthNormalsKeywords`. An include holds only lines
 identical in every pass that uses it, so a pass needing a different line keeps its own; material keywords
-(`shader_feature_local`) stay in each shader.
+(`shader_feature_local`) stay in each shader, apart from `FlipbookMotionKeywords`, which the three particle shaders
+share.
 
 ### Atmosphere
 
 An `Atmosphere` component sits on the root of a weather's atmosphere prefab, together with its sun, post-processing
 volume and `Wind`. When enabled it sets the skybox, ambient light, reflection cubemap and wetness, and turns Unity
 fog off. A missing skybox or reflection is an error.
+
+`CloudShadows` on the sun draws the sun's cookie every frame into a 2048 by 2048 bilinear R8 render texture that wraps around
+the camera over 640 m of ground: the tileable cloud picture, drifting with its wind, times the shadow of each smoke
+column `SmokeShadows` hands it (its foot-to-top segment seen from the sun, widening and thinning as it rises). The
+texture repeats, so each texel takes the copy of the ground nearest the camera and only the far seam, 320 m away,
+moves with it, and its 0.3 m texels match the old picture's detail. Its `smoke` toggle leaves the columns out. The
+shader (`Hidden/HyperRTS/Cloud Cookie`, a Resources shader) draws the clouds as one full-screen triangle, then
+multiplies in each column as a quad over its footprint, four copies so it wraps across the edges. URP's volumetric fog samples the same cookie where
+the profile's `Fog` turns on light cookies, so cloud and smoke shadows cut shafts through the haze.
 
 The scene fog is URP's: its `Volumetric Fog` renderer feature draws the profile's `Fog` override (height fog, and
 volumetric fog where the override turns it on) over the opaques after the skybox, before the opaque texture is
@@ -547,6 +557,14 @@ No two plays need look the same:
 - **Burst cycles**: a Shuriken burst's cycle count and interval repeat it, such as ammo cooking off. A burst that
   repeats forever is a broken rig.
 
+A rig may also hold `VisualEffect` graphs, played on bursts only. `EffectGraph` sends each its `Burst` event with
+the pose as event attributes: `position`, `direction` (the rig's +Y), `axisZ` (its +Z, random spin included) and a
+uniform `scale` (sent per axis, `scaleX` to `scaleZ`), so bursts on one frame keep their own poses. A graph drops events until it has run once, so bursts in the frame the pool spawned it wait for the next. The graph's exposed float `Density` takes the effect
+detail share. Two include files serve graph authors as Custom HLSL blocks: `GraphBurstPose.hlsl` (Place At Burst,
+the end of every Initialize, wired to those source attributes; it keeps the origin in `targetPosition` for ground
+planes) and `GraphFogOfWar.hlsl` (fog of war per particle in an output). The rig check reports a graph without an
+asset, one that plays on its own (an Initial Event Name) or one without `Density`.
+
 `EffectPool` keeps one instance per prefab and replays it for every event, never instantiating per shot. It reads
 the camera position once a frame, in `EffectPoolSystem`, for every range check. Effects play for cues the client
 can see:
@@ -561,13 +579,40 @@ can see:
 | Effect detail | Particles | Extra |
 | --- | --- | --- |
 | Low | 35 % | Loop range halved, no ambient life |
-| Medium | 70 % | |
-| High | 100 % | Light flashes from 8 shared lights |
+| Medium | 70 % | Smoke shadows |
+| High | 100 % | Smoke shadows, light flashes from 8 shared lights, fire lights from 8 more |
+
+Loops take part in the scene's light through two parts on a rig's root, both fed by `LoopEffectSystem` with every
+loop it streams this frame:
+
+- **`LoopLight`**: a flickering point light (colour, range, intensity, height above the socket, flicker depth and
+  speed). On High, `LoopLights` gives its 8 shadowless lights to the nearest such loops each frame, scaled by the
+  loop's strength, with a flicker phase per stream so neighbouring fires don't pulse together. Burning wrecks and
+  buildings carry it on their fire rigs.
+- **`SmokeShadow`**: a smoke column's radius, height, opacity and grow time. The column grows in over the grow time
+  since the entity was first seen, as the billows do, and scales with the loop's strength times the effect density,
+  so it fades with the loop and thins with the smoke. From Medium up, `SmokeShadows` writes the 32 nearest
+  columns as shader globals (`_HyperRTSSmokeStarts`, `_HyperRTSSmokeEnds`, `_HyperRTSSmokeCount`), and
+  `CloudShadows` draws them into the sun's cookie (see [Atmosphere](#atmosphere)).
 
 Effect materials use the engine's particle shaders so transparent smoke and flames take URP's fog and fog of war
 like the ground beneath them. `HyperRTS/Particles` and `HyperRTS/ParticlesUnlit` are URP's Simple Lit and Unlit
 particles with the same properties and inspector. Additive particles fade to black under fog, the rest toward the
 fog colour. `HyperRTS/ParticlesSixWay` lights smoke from six baked directions.
+
+`HyperRTS/ParticlesDistort` draws no colour of its own: it bends URP's opaque texture along a normal map, for
+shockwaves and heat haze. Vertex colour alpha weights the bend, so a fade over lifetime makes it die away, and the
+strength is in metres, so the screen offset shrinks with distance. It fades where it meets the ground (soft fade
+distance) and inside the fog of war, so it never shows what the fog hides. It draws at queue 2950, before other
+transparents, since the opaque texture lacks them and would otherwise erase smoke and flames behind it. It needs
+the camera's opaque and depth textures, and its renderers need the Color vertex stream.
+
+A long-lived layer needs no loop: an invisible burst particle whose Birth sub-emitter emits by rate over time
+keeps emitting where it was born for its whole lifetime, such as smoke over a crater after an impact. All three blend flipbook frames along
+a motion map when a material turns on `_FlipbookMotion` (keyword `_FLIPBOOK_MOTION`) and sets `_MotionMap`: RG
+centred on 0.5 hold each texel's move to the next frame along U and V, scaled so 0 and 1 mean 1/64 of the sheet
+(`FlipbookMotion.hlsl`). The shader pushes the current frame forward and pulls the next back by the blend, so a slow
+flipbook flows instead of stepping. The URP particle shaders need Flipbook Blending on as well.
 
 ### Audio
 

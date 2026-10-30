@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Effects;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.VFX;
 
 namespace HyperRTS.Editor.Tests.Validation
 {
@@ -20,6 +21,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [TestCase("BrokenVariant", "variant 'FX_Test': particle system 'Burst' does not simulate in World space")]
         [TestCase("NestedVariants", "has variants of its own")]
         [TestCase("EndlessBurst", "repeats forever")]
+        [TestCase("GraphWithoutAsset", "VFX graph 'Graph' has no asset")]
         public void BrokenRigReportsOneProblem(string broken, string expected)
         {
             var problems = EffectRig.Problems(Broken(broken));
@@ -47,6 +49,12 @@ namespace HyperRTS.Editor.Tests.Validation
                     var variant = Rig();
                     variant.GetComponent<EffectRig>().variants = new[] { rig };
                     return WithVariant(rig, variant);
+                case "GraphWithoutAsset":
+                    var graphRig = Rig();
+                    var graph = new GameObject("Graph");
+                    graph.transform.SetParent(graphRig.transform);
+                    graph.AddComponent<VisualEffect>();
+                    return graphRig;
                 default:
                     var endless = Rig();
                     var emission = endless.GetComponentInChildren<ParticleSystem>().emission;

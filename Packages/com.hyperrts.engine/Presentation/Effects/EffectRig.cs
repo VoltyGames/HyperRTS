@@ -5,12 +5,14 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.VFX;
 
 namespace HyperRTS.Presentation.Effects
 {
     /// <summary>
-    /// Root of an effect rig prefab: child particle systems in world space, played by hand from a pool. Bursts
-    /// replay the authored bursts at a pose; streams spread the authored rates along a path. Author it +Y up, +Z forward.
+    /// Root of an effect rig prefab: child particle systems in world space and VFX Graphs, played by hand from a pool.
+    /// Bursts replay the authored bursts at a pose and send each graph its Burst event; streams spread the particle
+    /// systems' authored rates along a path. Author it +Y up, +Z forward.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Effects + "Effect Rig")]
     [Icon(HyperRTSIcons.Effects)]
@@ -38,6 +40,7 @@ namespace HyperRTS.Presentation.Effects
 
         private readonly List<DelayedBurst> _delayed = new();
         private EffectEmitter[] _emitters;
+        private EffectGraph[] _graphs;
         private EffectLight[] _lights;
         private readonly StreamShares _shares = new();
 
@@ -76,7 +79,7 @@ namespace HyperRTS.Presentation.Effects
 
         private static float Fraction(uint key, uint salt) => (math.hash(new uint2(key, salt)) >> 8) / 16777216f;
 
-        /// <summary>Fires every authored burst at the pose, the timed ones later, thinned by density.</summary>
+        /// <summary>Fires every authored burst and graph at the pose, the timed bursts later, thinned by density.</summary>
         public void Burst(Vector3 position, Quaternion rotation, float burstScale, float density)
         {
             var emitters = Captured();
@@ -96,6 +99,11 @@ namespace HyperRTS.Presentation.Effects
                         Fire(e, count, emitters[e].BurstTime(b, cycle), position, rotation, burstScale);
                     }
                 }
+            }
+
+            foreach (var graph in _graphs)
+            {
+                graph.Burst(position, rotation, burstScale, density);
             }
 
             Flash();
@@ -138,9 +146,15 @@ namespace HyperRTS.Presentation.Effects
             }
         }
 
-        /// <summary>Fires the queued timed bursts that are due.</summary>
+        /// <summary>Fires due timed bursts, and graph bursts that waited for the graph's first run.</summary>
         public void Tick(float deltaTime)
         {
+            Captured();
+            foreach (var graph in _graphs)
+            {
+                graph.Tick();
+            }
+
             for (var i = _delayed.Count - 1; i >= 0; i--)
             {
                 var burst = _delayed[i];
@@ -213,6 +227,7 @@ namespace HyperRTS.Presentation.Effects
             }
 
             _lights = GetComponentsInChildren<EffectLight>(true);
+            _graphs = Array.ConvertAll(GetComponentsInChildren<VisualEffect>(true), effect => new EffectGraph(effect));
             return _emitters = emitters.ToArray();
         }
 

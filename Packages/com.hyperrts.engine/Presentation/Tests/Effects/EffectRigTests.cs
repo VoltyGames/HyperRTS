@@ -1,12 +1,13 @@
 using System;
 using HyperRTS.Presentation.Effects;
+using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Tests.Effects
 {
-    /// <summary>One effect rig: burst counts and timing, spin, sizes, loop poses and streamed particles.</summary>
+    /// <summary>One effect rig: burst counts and timing, spin, sizes, loop poses, streamed particles and graphs.</summary>
     public class EffectRigTests
     {
         private EffectRig _rig;
@@ -30,6 +31,17 @@ namespace HyperRTS.Presentation.Tests.Effects
             _rig.Burst(Vector3.zero, Quaternion.identity, 1f, density);
 
             Assert.AreEqual(expected, Particles.particleCount);
+        }
+
+        [TestCase(DetailLevel.High)]
+        [TestCase(DetailLevel.Low)]
+        public void Burst_GraphRig_ThinsItsGraphByDensity(DetailLevel level)
+        {
+            var graph = EffectRigKit.AddGraph(_rig);
+
+            _rig.Burst(new Vector3(5f, 0f, 3f), Quaternion.identity, 1f, EffectDetail.DensityAt(level));
+
+            Assert.AreEqual(EffectDetail.DensityAt(level), graph.GetFloat(EffectGraph.DensityProperty));
         }
 
         [Test]

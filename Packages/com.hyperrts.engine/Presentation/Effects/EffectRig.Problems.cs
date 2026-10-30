@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.VFX;
 
 namespace HyperRTS.Presentation.Effects
 {
@@ -45,6 +46,11 @@ namespace HyperRTS.Presentation.Effects
                 problems.Add(prefix + "maxDistance must be above 0");
             }
 
+            foreach (var effect in prefab.GetComponentsInChildren<VisualEffect>(true))
+            {
+                AddGraphProblems(effect, prefix, problems);
+            }
+
             var systems = prefab.GetComponentsInChildren<ParticleSystem>(true);
             var subEmitters = SubEmitters(systems);
             foreach (var system in systems)
@@ -74,6 +80,26 @@ namespace HyperRTS.Presentation.Effects
                         problems.Add($"{prefix}particle system '{system.name}' burst {b} repeats forever");
                     }
                 }
+            }
+        }
+
+        private static void AddGraphProblems(VisualEffect effect, string prefix, List<string> problems)
+        {
+            if (effect.visualEffectAsset == null)
+            {
+                problems.Add($"{prefix}VFX graph '{effect.name}' has no asset");
+                return;
+            }
+
+            // The pool sends Burst itself, so a graph that starts on its own would play once at the origin.
+            if (!string.IsNullOrEmpty(effect.initialEventName))
+            {
+                problems.Add($"{prefix}VFX graph '{effect.name}' plays on its own (clear Initial Event Name)");
+            }
+
+            if (!EffectGraph.HasDensity(effect))
+            {
+                problems.Add($"{prefix}VFX graph '{effect.name}' has no {EffectGraph.DensityProperty} property");
             }
         }
     }

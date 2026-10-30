@@ -1,9 +1,14 @@
 using HyperRTS.Presentation.Effects;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.VFX;
 
 namespace HyperRTS.Presentation.Tests.Effects
 {
-    /// <summary>Tiny effect rigs built in code: still, shapeless, long-lived particle systems.</summary>
+    /// <summary>
+    /// Tiny effect rigs built in code: still, shapeless, long-lived particle systems, and graphs playing the test
+    /// graph, which bursts 10 particles times Density.
+    /// </summary>
     public static class EffectRigKit
     {
         public static EffectRig Rig(string name,
@@ -35,6 +40,18 @@ namespace HyperRTS.Presentation.Tests.Effects
             emission.rateOverTime = 0f;
             emission.rateOverDistance = 0f;
             return system;
+        }
+
+        public const string TestGraph = "Packages/com.hyperrts.engine/Presentation/Tests/Effects/TestBurst.vfx";
+
+        public static VisualEffect AddGraph(EffectRig rig)
+        {
+            var child = new GameObject("Graph");
+            child.transform.SetParent(rig.transform);
+            var graph = child.AddComponent<VisualEffect>();
+            graph.initialEventName = "";
+            graph.visualEffectAsset = AssetDatabase.LoadAssetAtPath<VisualEffectAsset>(TestGraph);
+            return graph;
         }
 
         public static ParticleSystem System(EffectRig rig) => rig.GetComponentInChildren<ParticleSystem>();
