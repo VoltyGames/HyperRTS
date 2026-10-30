@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Presentation.Destruction;
+using HyperRTS.Presentation.Effects;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
@@ -8,24 +9,31 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests.Destruction
 {
-    /// <summary>Client debris: the bounce integrator, the global cap with its reuse of old pieces, the instancing check and the quality gate.</summary>
+    /// <summary>
+    /// Client debris: the bounce integrator, the flying pool's reuse of old pieces, the lasting layer with its cap and
+    /// sinking of the oldest, the instancing check and the quality gate.
+    /// </summary>
     public class DebrisTests
     {
         private const float Frame = 1f / 60f;
 
         private DebrisSet _set;
+        private LastingDebris _lasting;
 
         [SetUp]
         public void SetUp()
         {
             _set = ScriptableObject.CreateInstance<DebrisSet>();
-            _set.meshes = new List<Mesh> { new() };
+            var triangle = new Mesh { vertices = new[] { Vector3.zero, Vector3.right, Vector3.forward }, triangles = new[] { 0, 1, 2 } };
+            _set.meshes = new List<Mesh> { triangle };
             _set.material = new Material(Shader.Find("Hidden/InternalErrorShader")) { enableInstancing = true };
         }
 
         [TearDown]
         public void TearDown()
         {
+            _lasting?.Dispose();
+            _lasting = null;
             Object.DestroyImmediate(_set.meshes[0]);
             Object.DestroyImmediate(_set.material);
             Object.DestroyImmediate(_set);
@@ -42,7 +50,6 @@ namespace HyperRTS.Presentation.Tests.Destruction
                 Spin = new float3(0f, 0f, 6f),
                 Size = new float3(1.2f, 0.1f, 0.15f),
                 HalfHeight = 0.05f,
-                Life = 15f,
             };
             var bounced = false;
             var rising = false;
@@ -62,24 +69,12 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
-        public void Piece_ShrinksAway_AtTheEndOfItsLife()
-        {
-            var piece = new DebrisPiece { Life = 12f, Resting = true };
-
-            piece.Step(11f, 0f);
-            Assert.AreEqual(0.5f, piece.Shrink, 1e-4f);
-            Assert.IsFalse(piece.Gone);
-
-            piece.Step(1f, 0f);
-            Assert.IsTrue(piece.Gone);
-        }
-
-        [Test]
         public void FullField_ReusesItsOldestPieces_AndNeverPassesTheCap()
         {
+            _lasting = new LastingDebris(0);
             var field = new DebrisField();
             field.Throw(_set, float3.zero, float3.zero, 1f, 10, 7u);
-            field.Step(5f, default);
+            field.Step(5f, default, _lasting);
             field.Throw(_set, new float3(20f, 0f, 0f), float3.zero, 1f, DebrisField.Capacity, 9u);
 
             Assert.AreEqual(DebrisField.Capacity, field.Count);
@@ -90,17 +85,50 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
-        public void Pieces_FreeTheirSlots_WhenGone()
+        public void SettledPieces_MoveIntoTheLastingLayer()
         {
+            _lasting = new LastingDebris(EffectDetail.LastingDebrisAt(DetailLevel.High));
             var field = new DebrisField();
             field.Throw(_set, float3.zero, float3.zero, 1f, 6, 3u);
 
-            for (var i = 0; i < 30; i++)
+            for (var i = 0; i < 600; i++)
             {
-                field.Step(1f, default);
+                field.Step(Frame, default, _lasting);
             }
 
-            Assert.AreEqual(0, field.Count);
+            Assert.AreEqual(0, field.Count, "no piece is left flying");
+            Assert.AreEqual(6, _lasting.Standing);
+        }
+
+        [Test]
+        public void FullLastingLayer_SinksItsOldest_ThenReusesItsSlot()
+        {
+            _lasting = new LastingDebris(2);
+            for (var x = 0; x < 3; x++)
+            {
+                _lasting.Add(_set, Settled(x));
+            }
+
+            Assert.AreEqual(2, _lasting.Standing, "the cap holds");
+            Assert.AreEqual(1, _lasting.Sinking);
+            Assert.IsTrue(_lasting.Piece(0).Sinking, "the oldest sinks");
+
+            _lasting.Step(LastingDebris.SinkTime);
+            Assert.AreEqual(0, _lasting.Sinking, "a sunk piece frees its slot");
+
+            _lasting.Add(_set, Settled(3));
+            Assert.AreEqual(3f, _lasting.Piece(0).Position.x, "the sunk piece's slot is reused");
+            Assert.AreEqual(2, _lasting.Standing);
+        }
+
+        [Test]
+        public void SinkingPiece_GoesUnderTheGround_OverTheSinkTime()
+        {
+            var piece = new LastingPiece { Rotation = quaternion.identity, Size = 1f, Depth = 0.4f, Sinking = true };
+
+            Assert.AreEqual(-0.2f, piece.Matrix(LastingDebris.SinkTime / 2f).c3.y, 1e-4f);
+            Assert.IsFalse(piece.Sunk(LastingDebris.SinkTime / 2f));
+            Assert.IsTrue(piece.Sunk(LastingDebris.SinkTime));
         }
 
         [Test]
@@ -128,11 +156,39 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
-        public void LowEffects_ThrowNothing_AndMediumFewer()
+        public void LowEffects_ThrowAndKeepNothing_AndMediumFewer()
         {
             Assert.AreEqual(0, DebrisSystem.PieceCount(8, DetailLevel.Low));
             Assert.Less(DebrisSystem.PieceCount(8, DetailLevel.Medium), 8);
             Assert.AreEqual(8, DebrisSystem.PieceCount(8, DetailLevel.High));
+            Assert.AreEqual(0, EffectDetail.LastingDebrisAt(DetailLevel.Low));
+            Assert.AreEqual(8000, EffectDetail.LastingDebrisAt(DetailLevel.Medium));
+            Assert.AreEqual(20000, EffectDetail.LastingDebrisAt(DetailLevel.High));
         }
+
+        [Test]
+        public void NoLastingLayer_DropsSettledPieces()
+        {
+            _lasting = new LastingDebris(EffectDetail.LastingDebrisAt(DetailLevel.Low));
+            var field = new DebrisField();
+            field.Throw(_set, float3.zero, float3.zero, 1f, 4, 5u);
+
+            for (var i = 0; i < 600; i++)
+            {
+                field.Step(Frame, default, _lasting);
+            }
+
+            Assert.AreEqual(0, field.Count);
+            Assert.AreEqual(0, _lasting.Standing);
+        }
+
+        private static DebrisPiece Settled(float x) => new()
+        {
+            Position = new float3(x, 0.1f, 0f),
+            Rotation = quaternion.identity,
+            Size = 1f,
+            HalfHeight = 0.1f,
+            Resting = true,
+        };
     }
 }

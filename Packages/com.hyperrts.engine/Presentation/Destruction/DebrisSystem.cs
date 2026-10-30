@@ -9,14 +9,21 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Throws each appearing ruin's <see cref="Debris"/> and flies, bounces and draws every piece in its
-    /// <see cref="DebrisField"/>. Medium effects throw fewer pieces and Low none.
+    /// Throws each appearing ruin's <see cref="Debris"/>, flies, bounces and draws every piece in its
+    /// <see cref="DebrisField"/>, and keeps settled pieces in <see cref="LastingDebris"/>. Medium effects throw fewer
+    /// pieces and keep fewer, Low none.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class DebrisSystem : SystemBase
     {
         public DebrisField Field { get; } = new();
+
+        public LastingDebris Lasting { get; private set; }
+
+        protected override void OnCreate() => Lasting = new LastingDebris(EffectDetail.LastingDebrisAt(EffectDetail.Level));
+
+        protected override void OnDestroy() => Lasting.Dispose();
 
         protected override void OnUpdate()
         {
@@ -28,6 +35,8 @@ namespace HyperRTS.Presentation.Destruction
                 Throw(debris.ValueRO, place.ValueRO.Position, float3.zero);
             }
 
+            KeepCapForDetail();
+            Lasting.Step(SystemAPI.Time.DeltaTime);
             if (Field.Count == 0)
             {
                 return;
@@ -35,7 +44,7 @@ namespace HyperRTS.Presentation.Destruction
 
             // No terrain is a flat world at height 0 (TerrainHeight's default).
             SystemAPI.TryGetSingleton(out TerrainHeight terrain);
-            Field.Step(SystemAPI.Time.DeltaTime, terrain);
+            Field.Step(SystemAPI.Time.DeltaTime, terrain, Lasting);
             Field.Draw();
         }
 
@@ -52,5 +61,16 @@ namespace HyperRTS.Presentation.Destruction
 
         public static int PieceCount(int authored, DetailLevel level) =>
             level == DetailLevel.Low ? 0 : (int)math.ceil(authored * EffectDetail.DensityAt(level));
+
+        // A changed effect detail starts the lasting layer over at its new cap.
+        private void KeepCapForDetail()
+        {
+            var cap = EffectDetail.LastingDebrisAt(EffectDetail.Level);
+            if (cap != Lasting.Cap)
+            {
+                Lasting.Dispose();
+                Lasting = new LastingDebris(cap);
+            }
+        }
     }
 }

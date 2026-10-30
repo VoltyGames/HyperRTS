@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Destruction
 {
-    /// <summary>One thrown debris piece: a ballistic flight that bounces off the terrain, lies flat, then shrinks away.</summary>
+    /// <summary>One thrown debris piece: a ballistic flight that bounces off the terrain, then lies flat.</summary>
     public struct DebrisPiece
     {
         /// <summary>Share of the fall speed kept on a bounce, and of the slide and spin.</summary>
@@ -13,9 +13,6 @@ namespace HyperRTS.Presentation.Destruction
 
         /// <summary>Landing slower than this in m/s, the piece stops where it is.</summary>
         public const float RestSpeed = 1f;
-
-        /// <summary>Seconds at the end of its life the piece shrinks over.</summary>
-        public const float FadeTime = 2f;
 
         public float3 Position;
         public float3 Velocity;
@@ -31,18 +28,12 @@ namespace HyperRTS.Presentation.Destruction
         public float HalfHeight;
         public int Mesh;
         public float Age;
-        public float Life;
         public bool Resting;
 
         /// <summary>The matrix it was last drawn with, for motion vectors.</summary>
         public Matrix4x4 Drawn;
 
-        public readonly bool Gone => Age >= Life;
-
-        /// <summary>1 for most of its life, down to 0 as it goes.</summary>
-        public readonly float Shrink => math.saturate((Life - Age) / FadeTime);
-
-        public readonly Matrix4x4 Matrix => Matrix4x4.TRS(Position, Rotation, Size * Shrink);
+        public readonly Matrix4x4 Matrix => Matrix4x4.TRS(Position, Rotation, Size);
 
         /// <summary>Flies on by <paramref name="deltaTime"/> over terrain <paramref name="ground"/> metres high.</summary>
         public void Step(float deltaTime, float ground)

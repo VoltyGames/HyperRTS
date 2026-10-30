@@ -6,8 +6,8 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Every thrown <see cref="DebrisPiece"/> on this client, in a fixed pool: a full pool reuses its oldest piece.
-    /// Pieces from one seed fly the same on every client.
+    /// Every flying <see cref="DebrisPiece"/> on this client, in a fixed pool: a full pool reuses its oldest piece.
+    /// Pieces from one seed fly the same on every client; at rest they move to <see cref="LastingDebris"/>.
     /// </summary>
     public sealed class DebrisField
     {
@@ -43,7 +43,8 @@ namespace HyperRTS.Presentation.Destruction
             }
         }
 
-        public void Step(float deltaTime, in TerrainHeight terrain)
+        /// <summary>Flies every piece on and hands those that come to rest to <paramref name="lasting"/>.</summary>
+        public void Step(float deltaTime, in TerrainHeight terrain, LastingDebris lasting)
         {
             for (var slot = 0; slot < Capacity; slot++)
             {
@@ -53,11 +54,18 @@ namespace HyperRTS.Presentation.Destruction
                 }
 
                 _pieces[slot].Step(deltaTime, terrain.Height(_pieces[slot].Position.xz));
-                if (_pieces[slot].Gone)
+                if (!_pieces[slot].Resting)
                 {
-                    _sets[slot] = null;
-                    Count--;
+                    continue;
                 }
+
+                if (lasting.Cap > 0)
+                {
+                    lasting.Add(_sets[slot], _pieces[slot]);
+                }
+
+                _sets[slot] = null;
+                Count--;
             }
         }
 
@@ -100,7 +108,7 @@ namespace HyperRTS.Presentation.Destruction
 
         private Mesh PieceMesh(int slot) => _sets[slot].meshes[_pieces[slot].Mesh];
 
-        // An empty slot, else the piece that has lain longest.
+        // An empty slot, else the piece that has flown longest.
         private int FreeSlot()
         {
             var oldest = 0;
@@ -133,7 +141,6 @@ namespace HyperRTS.Presentation.Destruction
                 Size = size,
                 HalfHeight = set.meshes[mesh].bounds.extents.y * size.y,
                 Mesh = mesh,
-                Life = random.NextFloat(set.life.x, set.life.y),
             };
         }
     }

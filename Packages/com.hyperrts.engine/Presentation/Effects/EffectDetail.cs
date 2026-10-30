@@ -22,5 +22,13 @@ namespace HyperRTS.Presentation.Effects
             DetailLevel.Medium => 0.7f,
             _ => 1f,
         };
+
+        /// <summary>Settled debris pieces kept for the match at <paramref name="level"/>.</summary>
+        public static int LastingDebrisAt(DetailLevel level) => level switch
+        {
+            DetailLevel.Low => 0,
+            DetailLevel.Medium => 8000,
+            _ => 20000,
+        };
     }
 }

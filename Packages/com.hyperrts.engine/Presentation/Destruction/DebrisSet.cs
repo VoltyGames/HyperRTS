@@ -6,7 +6,7 @@ namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
     /// Pieces a broken prop throws on the client, such as planks, hay clumps, sandbags or rubble: meshes drawn with
-    /// one material, thrown and bounced off the terrain, then shrunk away.
+    /// one material, thrown and bounced off the terrain, then kept where they settle.
     /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Effects + "Debris Set", fileName = "DebrisSet")]
     public class DebrisSet : ScriptableObject
@@ -26,9 +26,6 @@ namespace HyperRTS.Presentation.Destruction
 
         [Tooltip("Launch speed range in m/s, mostly up and out.")]
         public Vector2 speed = new(3f, 6f);
-
-        [Tooltip("Seconds a piece lies before it is gone.")]
-        public Vector2 life = new(10f, 20f);
 
         /// <summary>Why the set can't throw, or null.</summary>
         public string Problem()
