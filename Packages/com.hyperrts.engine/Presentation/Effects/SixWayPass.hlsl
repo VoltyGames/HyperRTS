@@ -1,5 +1,5 @@
-// Vertex and fragment programs of ParticlesSixWay.shader. Needs SixWayInput.hlsl, SixWayLighting.hlsl,
-// SceneFog.hlsl and EyeDepth.hlsl first.
+// Vertex and fragment programs of ParticlesSixWay.shader. Needs SixWayInput.hlsl, FlipbookMotion.hlsl,
+// SixWayLighting.hlsl, SceneFog.hlsl and EyeDepth.hlsl first.
 #ifndef HYPERRTS_SIX_WAY_PASS_INCLUDED
 #define HYPERRTS_SIX_WAY_PASS_INCLUDED
 
@@ -22,10 +22,15 @@ SixWayVaryings SixWayVert(SixWayAttributes input)
 
 SixWayMaps SampleSixWayMaps(float4 frames, half frameBlend, out half opacity, out half emission)
 {
-    half4 positive = lerp(SAMPLE_TEXTURE2D(_PositiveMap, sampler_PositiveMap, frames.xy),
-        SAMPLE_TEXTURE2D(_PositiveMap, sampler_PositiveMap, frames.zw), frameBlend);
-    half4 negative = lerp(SAMPLE_TEXTURE2D(_NegativeMap, sampler_NegativeMap, frames.xy),
-        SAMPLE_TEXTURE2D(_NegativeMap, sampler_NegativeMap, frames.zw), frameBlend);
+    float2 current = frames.xy;
+    float2 next = frames.zw;
+    #if defined(_FLIPBOOK_MOTION)
+        FlipbookMotionWarp(current, next, frameBlend);
+    #endif
+    half4 positive = lerp(SAMPLE_TEXTURE2D(_PositiveMap, sampler_PositiveMap, current),
+        SAMPLE_TEXTURE2D(_PositiveMap, sampler_PositiveMap, next), frameBlend);
+    half4 negative = lerp(SAMPLE_TEXTURE2D(_NegativeMap, sampler_NegativeMap, current),
+        SAMPLE_TEXTURE2D(_NegativeMap, sampler_NegativeMap, next), frameBlend);
     SixWayMaps maps;
     maps.positive = positive.rgb;
     maps.negative = negative.rgb;

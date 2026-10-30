@@ -12,6 +12,8 @@ Shader "HyperRTS/ParticlesSixWay"
         _SoftDistance ("Soft Particle Distance (m)", Float) = 1.5
         _NearFadeStart ("Camera Fade Start (m)", Float) = 1
         _NearFadeEnd ("Camera Fade End (m)", Float) = 4
+        [Toggle(_FLIPBOOK_MOTION)] _FlipbookMotion ("Blend Frames Along Motion", Float) = 0
+        [NoScaleOffset] _MotionMap ("Motion Map (RG move to the next frame)", 2D) = "gray" {}
     }
 
     SubShader
@@ -43,6 +45,7 @@ Shader "HyperRTS/ParticlesSixWay"
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/FlipbookMotionKeywords.hlsl"
 
             // Samples the cascades at the pixel even when opaques use screen-space shadows.
             #define _SURFACE_TYPE_TRANSPARENT 1
@@ -51,6 +54,7 @@ Shader "HyperRTS/ParticlesSixWay"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Effects/SixWayInput.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Effects/FlipbookMotion.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Effects/SixWayLighting.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneFog.hlsl"

@@ -41,6 +41,9 @@ Shader "HyperRTS/ParticlesUnlit"
         [HideInInspector] _CameraFadeParams("__camerafadeparams", Vector) = (0,0,0,0)
         [HideInInspector] _DistortionStrengthScaled("Distortion Strength Scaled", Float) = 0.1
         _QueueOffset("Queue offset", Float) = 0.0
+
+        [Toggle(_FLIPBOOK_MOTION)] _FlipbookMotion("Blend Frames Along Motion", Float) = 0.0
+        [NoScaleOffset] _MotionMap("Motion Map (RG move to the next frame)", 2D) = "gray" {}
     }
 
     SubShader
@@ -71,6 +74,8 @@ Shader "HyperRTS/ParticlesUnlit"
 
             #pragma shader_feature_local _SOFTPARTICLES_ON
             #pragma shader_feature_local _FADING_ON
+            #pragma shader_feature_local _FLIPBOOKBLENDING_ON
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/FlipbookMotionKeywords.hlsl"
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #pragma shader_feature_local_fragment _SURFACE_TYPE_TRANSPARENT
             #pragma shader_feature_local_fragment _ _ALPHAPREMULTIPLY_ON
@@ -90,9 +95,17 @@ Shader "HyperRTS/ParticlesUnlit"
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/Shaders/Particles/ParticlesUnlitInput.hlsl"
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/Shaders/Particles/ParticlesUnlitForwardPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Effects/ParticlesFog.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Effects/FlipbookMotion.hlsl"
 
             half4 ParticlesFogFragment(VaryingsParticle input) : SV_Target
             {
+                #if defined(_FLIPBOOK_MOTION) && defined(_FLIPBOOKBLENDING_ON)
+                    float2 current = input.texcoord;
+                    float2 next = input.texcoord2AndBlend.xy;
+                    FlipbookMotionWarp(current, next, input.texcoord2AndBlend.z);
+                    input.texcoord = current;
+                    input.texcoord2AndBlend.xy = next;
+                #endif
                 return FogParticle(fragParticleUnlit(input), input.positionWS.xyz);
             }
             ENDHLSL
