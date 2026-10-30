@@ -412,8 +412,9 @@ spreads out and relaxes over about a second. Plants lean away from them and tree
 ### Row crops
 
 Fields of crops in rows, placed and drawn on the GPU, so no crop is an object. The map tools add a `RowCropRenderer`
-to each map scene and bake its `RowCropFields`: which field covers each metre, and each field's crop and row
-direction.
+to each map scene and bake its `RowCropFields`: which field covers each metre, and each field's crop, row
+direction and tramlines. A field's `RowCropTramlines` are pairs of wheel lines along its rows where no plant grows;
+the map tools paint the same lines into the terrain.
 
 A `RowCrop` asset describes one crop: model variants with full, simple and card meshes, materials, row and plant
 spacing, random scale, turn and lean, and two LOD distances. Variant meshes face +Z with the origin at the root.

@@ -10,7 +10,9 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground
 {
-    /// <summary>Bakes where row crops grow. Symmetry copies share the authored lattice and seed so both sides match.</summary>
+    /// <summary>
+    /// Bakes where row crops grow. Symmetry copies share the authored lattice, seed and tramlines so both sides match.
+    /// </summary>
     public static class MapCropPainter
     {
         private const float WaterClearance = 0.15f;
@@ -43,14 +45,15 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var bake = new MapCropBake(land.Bounds, land.Width, land.Height);
             var regionCrops = RegionCrops(land, climate, bake);
-            AssignFields(land, symmetry, regionCrops, bake);
+            AssignFields(land, symmetry, climate, regionCrops, bake);
             Clear(land, bake, blocked);
             Tile(bake);
             return bake;
         }
 
-        /// <summary>A copy's lattice: the region's rows in the authored sector, moved onto the copy.</summary>
-        public static RowCropField Lattice(MapLandRegion region, MapTransform copy, RowCrop crop, int cropIndex)
+        /// <summary>A copy's lattice: the region's rows and tramlines in the authored sector, moved onto the copy.</summary>
+        public static RowCropField Lattice(MapLandRegion region, MapTransform copy, RowCrop crop, int cropIndex,
+            MapTramlines tramlines)
         {
             var along = MapGeometry.Forward(region.RowAngle);
             var across = MapGeometry.Right(along);
@@ -65,6 +68,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 across = copy.Apply(across),
                 crop = cropIndex,
                 seed = region.Seed,
+                tramlines = tramlines.From(region.Seed, phaseAcross * crop.rowSpacing),
             };
         }
 
@@ -96,7 +100,8 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         /// <summary>Gives every crop cell the id of its (region, copy) field, adding fields as they are met.</summary>
-        private static void AssignFields(MapLand land, MapSymmetry symmetry, int[] regionCrops, MapCropBake bake)
+        private static void AssignFields(MapLand land, MapSymmetry symmetry, MapClimate climate, int[] regionCrops,
+            MapCropBake bake)
         {
             var fields = new Dictionary<(int Region, int Copy), int>();
             land.ForEach((x, z, center) =>
@@ -118,7 +123,9 @@ namespace HyperRTS.Editor.Maps.Ground
                     }
 
                     fields[(region, copy)] = field = bake.Fields.Count;
-                    bake.Fields.Add(Lattice(land.Regions[region], symmetry.Copies[copy], bake.Crops[crop], crop));
+                    var sown = land.Regions[region];
+                    var tramlines = climate.Surface(sown.Surface).tramlines;
+                    bake.Fields.Add(Lattice(sown, symmetry.Copies[copy], bake.Crops[crop], crop, tramlines));
                 }
 
                 bake.Ids[z * bake.Width + x] = RowCropFields.FieldId(field);

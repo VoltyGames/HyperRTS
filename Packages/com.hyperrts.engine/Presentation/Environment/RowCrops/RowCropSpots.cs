@@ -19,6 +19,9 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         public const uint LeanChannel = 10;
         public const uint LeanTurnChannel = 11;
 
+        /// <summary>Of a field's lattice hash, which picks where its tramlines fall.</summary>
+        public const uint TramlineChannel = 12;
+
         // Seed salts so wander and patches don't share noise with each other.
         public const uint WanderSalt = 0x5BD1E995u;
         public const uint GrowthSalt = 0x27D4EB2Fu;
@@ -64,11 +67,14 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         public static Vector2 Position(RowCropField field, int row, int plant, RowCrop crop)
         {
             var hash = Hash(field.seed, row, plant);
-            var across = (Unit(Channel(hash, AcrossChannel)) * 2f - 1f) * crop.jitter * crop.rowSpacing
-                + Wander(field, row, plant, crop);
             var along = (Unit(Channel(hash, AlongChannel)) * 2f - 1f) * crop.jitter * crop.plantSpacing;
-            return Spot(field, row, plant, crop.rowSpacing, crop.plantSpacing) + field.across * across + field.along * along;
+            return Spot(field, row, plant, crop.rowSpacing, crop.plantSpacing) + field.across * Stray(field, row, plant, crop)
+                + field.along * along;
         }
+
+        /// <summary>Whether a plant would stand on a wheel line of its field's tramlines, so none grows.</summary>
+        public static bool OnTramline(RowCropField field, int row, int plant, RowCrop crop) =>
+            field.tramlines.Covers(row * crop.rowSpacing + Stray(field, row, plant, crop));
 
         /// <summary>The XZ direction a plant faces, turned up to the crop's yaw jitter.</summary>
         public static Vector2 Facing(RowCropField field, int row, int plant, RowCrop crop)
@@ -77,6 +83,13 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             var along = crop.facesRow ? field.along : Vector2.up;
             var across = crop.facesRow ? field.across : Vector2.right;
             return along * Mathf.Cos(turn) + across * Mathf.Sin(turn);
+        }
+
+        /// <summary>Metres a plant stands off its row's line: its jitter plus the row's wander.</summary>
+        private static float Stray(RowCropField field, int row, int plant, RowCrop crop)
+        {
+            var jitter = Unit(Channel(Hash(field.seed, row, plant), AcrossChannel)) * 2f - 1f;
+            return jitter * crop.jitter * crop.rowSpacing + Wander(field, row, plant, crop);
         }
 
         /// <summary>Metres a plant's row strays across its line: slow noise, so neighbouring rows wander together.</summary>

@@ -45,6 +45,8 @@ namespace HyperRTS.Editor.Maps.Ground
 
         public int RegionCount => _surfaces.Length;
 
+        public MapLandRegion Region(int region) => _land.Regions[region];
+
         /// <summary>The border round a map point, looked up through the edge wander.</summary>
         public MapEdgeSample Sample(Vector2 point)
         {

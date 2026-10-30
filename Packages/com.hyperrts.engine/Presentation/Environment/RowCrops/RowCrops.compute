@@ -30,13 +30,14 @@ SamplerState sampler_LinearClamp;
 #define EDGE_DITHER 1.5 // metres the field lookup strays, so edges on the 1 m grid look ragged
 #define FADE_SHARE 0.15 // share of the draw distance over which plants shrink away
 
-struct RowCropField // RowCropField.cs, 32 bytes
+struct RowCropField // RowCropField.cs, 48 bytes
 {
     float2 origin;
     float2 along;
     float2 across;
     int crop;
     int seed;
+    float4 tramlines; // RowCropTramlines: spacing (0 for none), gauge, half width, offset
 };
 
 struct RowCropJob // RowCropJob.cs, 28 bytes
@@ -67,6 +68,19 @@ float4 _Variant;     // variant grown this dispatch, variant count, its first sl
 float _FacesRow;     // 1: plants face along their row; 0: they keep the model's heading (+Z north)
 float _Density;
 uint _Slots;
+
+// RowCropTramlines.Covers: whether a point across metres from the lattice origin lies on a wheel line.
+bool OnTramline(float4 tramlines, float across)
+{
+    if (tramlines.x <= 0.0)
+    {
+        return false;
+    }
+
+    float fromLine = across - tramlines.w - floor((across - tramlines.w) / tramlines.x) * tramlines.x;
+    float fromCentre = min(fromLine, tramlines.x - fromLine);
+    return abs(fromCentre - tramlines.y * 0.5) < tramlines.z;
+}
 
 uint FieldAt(float2 spot)
 {
@@ -163,6 +177,11 @@ void Plant(uint3 id : SV_DispatchThreadID)
     float wander = (Noise(field.seed, WANDER_SALT, metres * _Variety.w) * 2.0 - 1.0) * _Variety.z;
     float across = (Channel(hash, CHANNEL_ACROSS) * 2.0 - 1.0) * _Planting.z * _Planting.x + wander;
     float along = (Channel(hash, CHANNEL_ALONG) * 2.0 - 1.0) * _Planting.z * _Planting.y;
+    if (OnTramline(field.tramlines, row * _Planting.x + across))
+    {
+        return;
+    }
+
     float2 xz = spot + field.across * across + field.along * along;
     if (UnderBuilding(xz))
     {

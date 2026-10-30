@@ -9,7 +9,8 @@ namespace HyperRTS.Editor.Maps.Ground
     /// <summary>
     /// Paints the terrain layers from the land use: each texel blends the two surfaces of its nearest border across
     /// that border's band (<see cref="MapEdgeField"/>; the terrain shader's height blend sharpens them naturally); each
-    /// surface gets its noise-shaped mixes of other layers, and steep ground its slope surface.
+    /// surface gets its noise-shaped mixes of other layers, sown fields their tramlines, and steep ground its slope
+    /// surface.
     /// </summary>
     public sealed class MapGroundTexturePainter
     {
@@ -18,17 +19,20 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly MapClimate _climate;
         private readonly MapNoise[] _mixNoise;
         private readonly MapEdgeField _edges;
+        private readonly MapTramlineCover _tramlines;
         private readonly int[] _regionLayer;
         private readonly MapSurfaceMix[][] _regionMixes;
         private readonly int[][] _regionMixLayers;
         private readonly int _slope;
 
-        private MapGroundTexturePainter(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate)
+        private MapGroundTexturePainter(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate,
+            int resolution)
         {
             _layout = layout;
             _heights = heights;
             _climate = climate;
             _edges = edges;
+            _tramlines = new MapTramlineCover(layout.Symmetry, edges, climate, layout.TerrainBounds.width / resolution);
             _regionLayer = new int[edges.RegionCount];
             _regionMixes = new MapSurfaceMix[edges.RegionCount][];
             _regionMixLayers = new int[edges.RegionCount][];
@@ -55,7 +59,7 @@ namespace HyperRTS.Editor.Maps.Ground
             int resolution)
         {
             var textureWeights = new float[resolution, resolution, climate.layers.Count];
-            new MapGroundTexturePainter(layout, edges, heights, climate).Paint(textureWeights, resolution);
+            new MapGroundTexturePainter(layout, edges, heights, climate, resolution).Paint(textureWeights, resolution);
             return textureWeights;
         }
 
@@ -82,12 +86,18 @@ namespace HyperRTS.Editor.Maps.Ground
             }
         }
 
-        /// <summary>Splits the texel between the two sides of its nearest border.</summary>
+        /// <summary>Splits the texel between the two sides of its nearest border, wheel lines over its own side.</summary>
         private void Surfaces(float[] weights, Vector2 p)
         {
             var edge = _edges.Sample(p);
             var share = edge.OwnShare;
-            Region(weights, edge.Own, share, edge.Point);
+            var wheels = share * _tramlines.Cover(edge.Own, p);
+            if (wheels > 0f)
+            {
+                weights[_tramlines.Layer(edge.Own)] += wheels;
+            }
+
+            Region(weights, edge.Own, share - wheels, edge.Point);
             if (share < 1f)
             {
                 Region(weights, edge.Other, 1f - share, edge.Point);

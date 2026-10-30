@@ -40,6 +40,9 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Noise-shaped mixes of other terrain layers, painted in order over this surface's own.")]
         public List<MapSurfaceMix> mixes = new();
 
+        [Tooltip("Wheel lines along the rows of this surface's fields.")]
+        public MapTramlines tramlines = new();
+
         [Header("Edge")]
         [Tooltip("Width of the band over which this surface blends into its neighbour (metres). Where two surfaces meet, the narrower width wins.")]
         public float edgeWidth;

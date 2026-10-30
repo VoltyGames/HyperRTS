@@ -10,8 +10,8 @@ namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
     /// Grass, crops and small plants from the land use: each surface's plants cover the share it asks for, broken
-    /// into clumps by noise at two scales (crops grow evenly); reeds stand in the shallows along the banks. Nothing grows on roads, in
-    /// deep water or on placed objects, and it thins in round them.
+    /// into clumps by noise at two scales (crops grow evenly, but not on tramlines); reeds stand in the shallows along
+    /// the banks. Nothing grows on roads, in deep water or on placed objects, and it thins in round them.
     /// </summary>
     public static class MapPlantPainter
     {
@@ -30,6 +30,7 @@ namespace HyperRTS.Editor.Maps.Ground
             var reed = string.IsNullOrEmpty(climate.reedPlant) ? -1 : climate.PlantIndex(climate.reedPlant);
             var clumps = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.PlantClumps);
             var cell = area.size / resolution;
+            var tramlines = new MapTramlineCover(layout.Symmetry, edges, climate, cell.x);
             var water = layout.Terrain.waterLevel;
             for (var i = 0; i < resolution * resolution; i++)
             {
@@ -53,7 +54,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 }
 
                 var region = edges.Sample(p).Region;
-                var cover = Cover(IsField(land, region), clumps, p) * open;
+                var cover = Cover(IsField(land, region), clumps, p) * open * (1f - tramlines.Cover(region, p));
                 foreach (var (plant, coverage) in plants[region])
                 {
                     bake.Set(plant, x, z, coverage * cover);
