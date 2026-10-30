@@ -27,6 +27,7 @@ namespace HyperRTS.Editor.Effects
 
         public FloatRange lifetime;
         public FloatRange size;
+        public float aspect;
         public ColorRange color;
         public FloatRange rotation;
         public FloatRange spin;
@@ -61,6 +62,7 @@ namespace HyperRTS.Editor.Effects
         public List<string> meshNames = new();
         public float metallic;
         public float smoothness;
+        public bool ground;
         public float bounce;
         public float friction;
 

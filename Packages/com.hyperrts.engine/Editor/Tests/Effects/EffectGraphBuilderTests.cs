@@ -77,7 +77,12 @@ namespace HyperRTS.Editor.Tests.Effects
             var layers = new List<string>();
             foreach (var kind in Kinds)
             {
-                var shape = kind == "ring" ? "" : @"""shape"": ""cone"", ";
+                var shape = kind switch
+                {
+                    "ring" => "",
+                    "glow" => @"""shape"": ""sphere"", ""aspect"": 0.6, ",
+                    _ => @"""shape"": ""cone"", ",
+                };
                 var spawn = kind == "strip" ? @"""rate"": 10, ""ratePerMetre"": 2," : @"""bursts"": [ { ""delay"": 0, ""count"": { ""min"": 2, ""max"": 4 }, ""repeats"": 1, ""interval"": 0.5 } ],";
                 layers.Add($@"{{ ""name"": ""{kind}"", ""kind"": ""{kind}"", ""capacity"": 8, {shape} {spawn}
                     ""lifetime"": {{ ""min"": 1, ""max"": 2 }}, ""size"": {{ ""min"": 1, ""max"": 1 }},
@@ -87,7 +92,7 @@ namespace HyperRTS.Editor.Tests.Effects
                     ""flipbook"": {{ ""columns"": 2, ""rows"": 2, ""from"": 0, ""to"": 1 }},
                     ""opacity"": 1.2, ""ambient"": 0.8, ""emissionRamp"": ""{Texture}"",
                     ""emissionColor"": {{ ""r"": 4, ""g"": 2, ""b"": 1, ""a"": 1 }}, ""heatOverLife"": [ {{ ""time"": 0, ""value"": 1 }} ],
-                    ""mesh"": ""{Chunk}"", ""bounce"": 0.3, ""gravity"": 1, ""length"": 2,
+                    ""mesh"": ""{Chunk}"", ""ground"": true, ""bounce"": 0.3, ""gravity"": 1, ""length"": 2,
                     ""wind"": 0.5, ""rim"": true, ""distortion"": 0.6, ""scroll"": {{ ""x"": 0, ""y"": 0.1 }} }}");
             }
 

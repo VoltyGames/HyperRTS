@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Effects
         /// <summary>Six-way smoke thrown outward along the ground from a disc.</summary>
         Ring,
 
-        /// <summary>Lit mesh chunks that bounce on the ground plane at the burst.</summary>
+        /// <summary>Lit mesh chunks that fall, bouncing on the ground plane at the burst when the layer has ground.</summary>
         Debris,
 
         /// <summary>Additive quads stretched along their velocity.</summary>

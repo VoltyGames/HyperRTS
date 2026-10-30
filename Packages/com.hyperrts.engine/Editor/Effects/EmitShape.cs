@@ -11,5 +11,8 @@ namespace HyperRTS.Editor.Effects
 
         /// <summary>From a disc of the radius, flying outward along the ground.</summary>
         Ring,
+
+        /// <summary>From inside a ball of the radius, flying straight out from its centre.</summary>
+        Sphere,
     }
 }

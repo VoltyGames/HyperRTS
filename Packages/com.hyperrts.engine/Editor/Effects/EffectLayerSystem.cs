@@ -62,6 +62,11 @@ namespace HyperRTS.Editor.Effects
         {
             Pick(initialize, "lifetime", _layer.lifetime);
             Pick(initialize, "size", _layer.size);
+            if (_layer.aspect > 0f)
+            {
+                Pick(initialize, "scaleY", new FloatRange(_layer.aspect, _layer.aspect));
+            }
+
             PickColor(initialize);
             if (_layer.Kind == EffectLayerKind.Debris)
             {
@@ -92,24 +97,7 @@ namespace HyperRTS.Editor.Effects
 
         private void Update(object update)
         {
-            if (_layer.gravity != 0f)
-            {
-                var gravity = _graph.Block(update, "Gravity");
-                _graph.Slot(gravity, "Force", new Vector3(0f, -Gravity * _layer.gravity, 0f));
-            }
-
-            if (_layer.drag > 0f)
-            {
-                var drag = _graph.Block(update, "Drag");
-                _graph.Slot(drag, "dragCoefficient", _layer.drag);
-            }
-
-            if (_layer.wind != 0f)
-            {
-                var wind = _graph.Hlsl(update, "Drift With Wind", Includes + "GraphWind.hlsl");
-                _graph.Slot(wind, "share", _layer.wind);
-                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 800f)), wind, "deltaTime");
-            }
+            Forces(update);
 
             // Children and Shader Graphs read the stored alpha and frame, which an output's curve never writes back.
             if (_layer.KeepsAlpha && _layer.alphaOverLife.Count > 0)
@@ -122,11 +110,34 @@ namespace HyperRTS.Editor.Effects
                 StoreOverLife(update, "texIndex", _layer.FrameCurve());
             }
 
-            if (_layer.Kind == EffectLayerKind.Debris)
+            if (_layer.ground)
             {
                 var bounce = _graph.Hlsl(update, "Bounce On Ground", Includes + "GraphGroundBounce.hlsl");
                 _graph.Slot(bounce, "bounce", _layer.bounce);
                 _graph.Slot(bounce, "friction", _layer.friction);
+            }
+        }
+
+        private void Forces(object update)
+        {
+            if (_layer.gravity != 0f)
+            {
+                var gravity = _graph.Block(update, "Gravity");
+                _graph.Slot(gravity, "Force", new Vector3(0f, -Gravity * _layer.gravity, 0f));
+            }
+
+            if (_layer.drag > 0f)
+            {
+                var drag = _graph.Hlsl(update, "Slow Down", Includes + "GraphDrag.hlsl");
+                _graph.Slot(drag, "drag", _layer.drag);
+                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 760f)), drag, "deltaTime");
+            }
+
+            if (_layer.wind != 0f)
+            {
+                var wind = _graph.Hlsl(update, "Drift With Wind", Includes + "GraphWind.hlsl");
+                _graph.Slot(wind, "share", _layer.wind);
+                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 800f)), wind, "deltaTime");
             }
         }
 

@@ -1,5 +1,6 @@
 // A VFX Graph Initialize block: where a particle starts and how fast it flies, in rig space before Place At Burst.
-// shape 0 is a cone from a disc, its tilt growing to spread degrees at the rim; 1 a half ball flying out; 2 a ring on the ground.
+// shape 0 is a cone from a disc, its tilt growing to spread degrees at the rim; 1 a half ball flying out; 2 a ring on
+// the ground; 3 a whole ball flying out.
 // rim 1 starts every particle on the disc's edge rather than inside it.
 void EmitFromShape(inout VFXAttributes attributes, in float3 origin, in float shape, in float radius, in float spread, in float2 speed, in float rim)
 {
@@ -13,9 +14,9 @@ void EmitFromShape(inout VFXAttributes attributes, in float3 origin, in float sh
         float tilt = radians(spread) * (radius > 0.0 ? reach : VFXRAND);
         direction = float3(around.x * sin(tilt), cos(tilt), around.y * sin(tilt));
     }
-    else if (shape < 1.5)
+    else if (shape < 1.5 || shape > 2.5)
     {
-        float up = VFXRAND;
+        float up = shape < 1.5 ? VFXRAND : VFXRAND * 2.0 - 1.0;
         float side = sqrt(1.0 - up * up);
         direction = float3(around.x * side, up, around.y * side);
         offset = direction * radius * pow(VFXRAND, 1.0 / 3.0);

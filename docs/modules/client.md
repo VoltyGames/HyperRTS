@@ -579,8 +579,9 @@ path or GUID. `EffectGraphInputs` holds the events and properties every system r
 writes what spawns a layer and where it lands: bursts on `Burst` at Place At Burst, a Constant Spawn Rate between
 `Play` and `Stop` at Place Along Path (`GraphStreamPose.hlsl`), or a GPU event from a parent layer's particles
 (Trigger Event over time) at their position. Every layer gets Emit From Shape (`GraphEmitShape.hlsl`), `Density`,
-World-space slots and the fog of war; debris adds Bounce On Ground (`GraphGroundBounce.hlsl`), sparks Stretch Along
-Velocity (`GraphStretch.hlsl`) and windy layers Drift With Wind (`GraphWind.hlsl`, reading `Wind`'s globals). A
+World-space slots and the fog of war; debris with `ground` adds Bounce On Ground (`GraphGroundBounce.hlsl`), sparks
+Stretch Along Velocity (`GraphStretch.hlsl`), layers with drag Slow Down (`GraphDrag.hlsl`, a constant deceleration
+like Shuriken's Limit Velocity drag) and windy layers Drift With Wind (`GraphWind.hlsl`, reading `Wind`'s globals). A
 `distort` layer draws through `HyperRTS/EffectDistort`, a Shader Graph with VFX support whose Custom Function
 (`EffectDistort.hlsl`) refracts the opaque texture like `ParticlesDistort`, weighted by the particle's stored alpha,
 at queue offset -50. `sixway` and `ring` layers draw through `HyperRTS/EffectSixWay`, a premultiplied Shader Graph
