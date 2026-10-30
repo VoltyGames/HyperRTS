@@ -121,6 +121,15 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             return half4(input.value.x * shape * edge * along, 0.0, 0.0, 0.0);
         }
 
+        // Ragged and soft, so overlapping remains build up unevenly.
+        half4 RemainsFragment(StampVaryings input) : SV_Target
+        {
+            float angle = atan2(input.local.y, input.local.x);
+            float ragged = 1.0 + 0.12 * sin(4.0 * angle + input.phase) + 0.07 * sin(7.0 * angle - 1.7 * input.phase);
+            float cover = 1.0 - smoothstep(0.45, 1.0, length(input.local) * ragged);
+            return half4(input.value * cover);
+        }
+
         float4 FadeVertex(uint vertexID : SV_VertexID) : SV_POSITION
         {
             float2 uv = float2((vertexID << 1) & 2, vertexID & 2);
@@ -191,6 +200,18 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             HLSLPROGRAM
             #pragma vertex StampVertex
             #pragma fragment WakeFragment
+            ENDHLSL
+        }
+
+        // Remains only build up: they last the match.
+        Pass
+        {
+            Name "Remains"
+            BlendOp Max
+            Blend One One
+            HLSLPROGRAM
+            #pragma vertex StampVertex
+            #pragma fragment RemainsFragment
             ENDHLSL
         }
 

@@ -1,13 +1,14 @@
 // HyperRTS/LitTeam vertex animation textures. With _VAT on, each pass's vertex function takes its pose from
 // _VATPositions and _VATNormals at the instance's _VATClip and the global _VATTime. UV1 holds each vertex's texel:
 // u = (column + 0.5) / width, v = row within the frame, so it survives Unity splitting vertices on import.
-// The wrappers then apply the construction reveal (LitTeamBuild.hlsl).
+// The wrappers then apply the construction reveal (LitTeamBuild.hlsl) and sink the object into craters.
 // Include it after the pass file: it wraps whichever pass vertex function that file defined.
 #ifndef HYPERRTS_LIT_TEAM_VAT_INCLUDED
 #define HYPERRTS_LIT_TEAM_VAT_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamInput.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamBuild.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/CraterSink.hlsl"
 
 // Passes whose Attributes lack TEXCOORD1 take it as a separate input.
 #ifdef _VAT
@@ -70,6 +71,7 @@ Varyings LitTeamForwardVertex(Attributes input BUILD_ORDER_INPUT)
 #ifdef _BUILD
     ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
 #endif
+    input.positionOS.xyz = SinkObjectIntoCrater(input.positionOS.xyz);
     return LitPassVertex(input);
 }
 #elif defined(UNIVERSAL_SHADOW_CASTER_PASS_INCLUDED)
@@ -82,6 +84,7 @@ Varyings LitTeamShadowVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 #ifdef _BUILD
     ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
 #endif
+    input.positionOS.xyz = SinkObjectIntoCrater(input.positionOS.xyz);
     return ShadowPassVertex(input);
 }
 #elif defined(UNIVERSAL_DEPTH_ONLY_PASS_INCLUDED)
@@ -98,6 +101,7 @@ Varyings LitTeamDepthOnlyVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INP
 #ifdef _BUILD
     input.position.xyz = BuildPosition(buildOrder, input.position.xyz);
 #endif
+    input.position.xyz = SinkObjectIntoCrater(input.position.xyz);
     return DepthOnlyVertex(input);
 }
 #elif defined(UNIVERSAL_FORWARD_LIT_DEPTH_NORMALS_PASS_INCLUDED)
@@ -110,6 +114,7 @@ Varyings LitTeamDepthNormalsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_
 #ifdef _BUILD
     ApplyBuild(buildOrder, input.positionOS.xyz, input.normal);
 #endif
+    input.positionOS.xyz = SinkObjectIntoCrater(input.positionOS.xyz);
     return DepthNormalsVertex(input);
 }
 #elif defined(UNIVERSAL_OBJECT_MOTION_VECTORS_INCLUDED)
@@ -123,6 +128,7 @@ Varyings LitTeamMotionVectorsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER
 #ifdef _BUILD
     input.position.xyz = BuildPosition(buildOrder, input.position.xyz);
 #endif
+    input.position.xyz = SinkObjectIntoCrater(input.position.xyz);
     return vert(input);
 }
 #endif

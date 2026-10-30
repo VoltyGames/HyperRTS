@@ -37,6 +37,7 @@ SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT B
 #ifdef _BUILD
     ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
 #endif
+    input.positionOS.xyz = SinkObjectIntoCrater(input.positionOS.xyz);
 
     VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
     output.positionCS = vertexInput.positionCS;

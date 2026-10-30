@@ -5,6 +5,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Wind.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/CraterSink.hlsl"
 
 TEXTURE2D(_BaseMap);
 SAMPLER(sampler_BaseMap);
@@ -117,9 +118,10 @@ float3 SwayFoliage(Attributes input, float3 placed, float3 origin, WindFrame fra
 #if defined(_TREE_WIND)
     TreeWindSettings settings = TreeWind(_WindStrength, _WindSpeed, _BranchSway, _CardFlutter, _TreeHeight, _WindScale);
     TreeWindVertex v = TreeWindData(placed, input.uv2, input.uv3, input.uv4, input.color);
-    return TransformObjectToWorld(TreeWindPosition(v, settings, frame));
+    return SinkIntoCrater(TransformObjectToWorld(TreeWindPosition(v, settings, frame)), origin);
 #else
-    return PlantWindPosition(placed, origin, _WindStrength, _WindSpeed, _Flutter, _WindScale, frame);
+    float3 swayed = PlantWindPosition(placed, origin, _WindStrength, _WindSpeed, _Flutter, _WindScale, frame);
+    return SinkIntoCrater(swayed, origin);
 #endif
 }
 

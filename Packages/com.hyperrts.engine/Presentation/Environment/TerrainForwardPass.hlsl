@@ -7,12 +7,13 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainMicro.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainWetness.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainRemains.hlsl"
 
 #define RUT_DEPTH 0.12
 #define RUT_DARKENING 0.4
 #define SOIL_TINT 0.65
 #define FLATTEN_DARKENING 0.06
-#define CRATER_RELIEF 1.6       // exaggerated so the sun shapes the bowl from the RTS camera
+#define CRATER_RELIEF 0.6       // on top of the dented mesh's true slope, so the sun shapes the bowl from the RTS camera
 #define CRATER_FULL_DEPTH 0.5
 #define CRATER_DARKENING 0.3
 #define CRATER_DAMPNESS 0.2
@@ -136,7 +137,8 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
     #endif
     half dampness = ApplyGroundTint(surface, input.uv, input.positionWS.xz);
     half rut = ApplyInteraction(surface, input.positionWS.xz);
-    ApplyWetness(surface, dampness, rut, input.positionWS.xz);
+    half mud = ApplyRemains(surface, pixel);
+    ApplyWetness(surface, dampness, max(rut, mud), input.positionWS.xz);
     InputData inputData = TerrainInputData(input, pixel, surface.normalTS);
     SurfaceData surfaceData = TerrainSurfaceData(surface);
     #ifdef _DBUFFER

@@ -44,6 +44,12 @@ CBUFFER_START(UnityPerMaterial)
     float _TriplanarFull;
     float _ParallaxDepth;
     float _ParallaxEnd;
+    float _RemainsRubbleTile;
+    half _RemainsRubbleSmoothness;
+    float _RemainsAshTile;
+    half _RemainsAshSmoothness;
+    float _RemainsMudTile;
+    half _RemainsMudSmoothness;
 CBUFFER_END
 
 CBUFFER_START(_Terrain)

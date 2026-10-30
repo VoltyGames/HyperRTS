@@ -51,7 +51,7 @@ namespace HyperRTS.Presentation.Environment.Grass
         /// <summary>Whether a map rebuild changed the plants, the coverage or the heightmap bound to the kernel.</summary>
         public bool Stale => _plants.count != Mathf.Max(1, _field.plants.Count) || _coverage != _field.coverage || _heights.Stale;
 
-        /// <summary>Binds one camera's view, the quality knobs, the ground picture and the building mask for its dispatches.</summary>
+        /// <summary>Binds one camera's view, the quality knobs, the ground picture, the building mask and crater depth.</summary>
         public void SetCamera(Vector3 camera, GrassSettings settings)
         {
             Compute.SetVector(CameraId, new Vector4(camera.x, camera.y, camera.z, settings.Distance));
@@ -62,6 +62,7 @@ namespace HyperRTS.Presentation.Environment.Grass
             Compute.SetTexture(Scatter, GroundId, on ? ground : Texture2D.blackTexture);
             Compute.SetVector(GroundAreaId, on ? rect : Vector4.zero);
             BuildingFootprintMask.Bind(Compute, Scatter);
+            CraterTerrain.BindCraters(Compute, Scatter);
         }
 
         public void Dispose() => _plants.Release();

@@ -142,6 +142,22 @@ namespace HyperRTS.Presentation.Tests.Impacts
         }
 
         [Test]
+        public void AshMark_LeavesRemains_OnTheGroundOnly()
+        {
+            _mark.ash = 0.6f;
+            _mark.rubble = 0.1f;
+            Land(new float3(5f, 0f, -2f));
+            Land(new float3(9f, 0f, 0f), ImpactSurface.Water);
+            Run(1.0);
+
+            var remains = _stamps.Stamps.Remains;
+            Assert.AreEqual(1, remains.Count);
+            Assert.AreEqual(new float2(5f, -2f), remains[0].Center);
+            Assert.AreEqual(new float4(0.1f, 0.6f, 0f, 0f), remains[0].Value);
+            Assert.IsEmpty(_stamps.Stamps.Scars);
+        }
+
+        [Test]
         public void MarkWithoutCraterOrScorch_LeavesNoScar()
         {
             Land(float3.zero);
@@ -168,11 +184,17 @@ namespace HyperRTS.Presentation.Tests.Impacts
         }
 
         [Test]
-        public void ScarsGround_OnlyWithACraterOrScorch()
+        public void ScarsGround_OnlyWithACraterScorchOrRemains()
         {
             Assert.IsFalse(_mark.ScarsGround);
 
+            _mark.fuel = 0.3f;
+            Assert.IsTrue(_mark.LeavesRemains);
+            Assert.IsTrue(_mark.ScarsGround);
+
+            _mark.fuel = 0f;
             _mark.scorch = 0.9f;
+            Assert.IsFalse(_mark.LeavesRemains);
             Assert.IsTrue(_mark.ScarsGround);
         }
 

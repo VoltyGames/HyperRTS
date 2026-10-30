@@ -5,6 +5,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Wind.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/CraterSink.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/RowCrops/RowCropInstance.hlsl"
 
 TEXTURE2D(_BaseMap);
@@ -52,7 +53,8 @@ float3 PlaceRowCrop(Attributes input, RowCropInstance plant)
 // Wind.hlsl plant mode, always at full scale.
 float3 SwayRowCrop(float3 placed, RowCropInstance plant, WindFrame frame)
 {
-    return PlantWindPosition(placed, plant.position, _WindStrength, _WindSpeed, _Flutter, 1.0, frame);
+    return SinkIntoCrater(PlantWindPosition(placed, plant.position, _WindStrength, _WindSpeed, _Flutter, 1.0, frame),
+        plant.position);
 }
 
 float3 RowCropPosition(Attributes input, RowCropInstance plant, WindFrame frame)

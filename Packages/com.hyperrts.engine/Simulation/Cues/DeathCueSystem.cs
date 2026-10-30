@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Cues
         // Single-threaded: every death appends to the one cue queue.
         [BurstCompile]
         [WithAll(typeof(Dead))]
-        [WithAny(typeof(EntitySound), typeof(EntityEffect))]
+        [WithAny(typeof(EntitySound), typeof(EntityEffect), typeof(DeathRemains))]
         private partial struct DeathJob : IJobEntity
         {
             public CueWriter Cues;

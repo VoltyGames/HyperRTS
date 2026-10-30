@@ -18,7 +18,7 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>Half the quad's size in metres: x across, y along <see cref="Forward"/>.</summary>
         public float2 HalfSize;
 
-        /// <summary>Trample: (flatten, crop damage, direction weight, round). Tracks: (rut, soil, unused, round).</summary>
+        /// <summary>Trample: (flatten, crop damage, direction weight, round). Tracks: (rut, soil, unused, round). Remains: (rubble, ash, fuel, wet mud).</summary>
         public float4 Value;
     }
 }

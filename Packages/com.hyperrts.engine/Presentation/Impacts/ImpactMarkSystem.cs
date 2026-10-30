@@ -17,7 +17,7 @@ namespace HyperRTS.Presentation.Impacts
     /// <summary>
     /// Lays the frame's impact <see cref="CueEvent"/>s on open ground as their shooter type's <see cref="ImpactMark"/>s:
     /// pooled URP decal projectors at terrain height, along the ground's slope, turned and sized at random, fading
-    /// with age; past a kind's cap the oldest is reused. Craters and scorch also scar the interaction maps. Skips
+    /// with age; past a kind's cap the oldest is reused. Craters, scorch and remains also scar the interaction maps. Skips
     /// impacts the local player can't see. During a replay, marks age on its clock and clear when it seeks back.
     /// </summary>
     // After InteractionStampSystem, which clears the stamps craters join.

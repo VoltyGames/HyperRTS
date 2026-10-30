@@ -39,8 +39,12 @@ namespace HyperRTS.Presentation.Tests.Environment
             var trample = InteractionMath.TrampleTexel(InteractionQuality.Full);
             Assert.AreEqual(2f * tracks, InteractionMath.TracksTexel(InteractionQuality.Low), 1e-6f);
             Assert.AreEqual(2f * trample, InteractionMath.TrampleTexel(InteractionQuality.Low), 1e-6f);
+            Assert.AreEqual(2f * InteractionMath.RemainsTexel(InteractionQuality.Full),
+                InteractionMath.RemainsTexel(InteractionQuality.Low), 1e-6f);
             Assert.Less(tracks, trample, "ruts need finer texels than flattened grass");
             Assert.Throws<ArgumentOutOfRangeException>(() => InteractionMath.TrampleTexel(InteractionQuality.Off));
+            Assert.Throws<ArgumentOutOfRangeException>(() => InteractionMath.RemainsTexel(InteractionQuality.Off),
+                "nothing allocated at Off");
         }
 
         [Test]
@@ -157,6 +161,33 @@ namespace HyperRTS.Presentation.Tests.Environment
         }
 
         [Test]
+        public void AddCrater_RemainsCoverTheScorchReach_AndRemainsAloneLeaveNoScar()
+        {
+            _mark.ash = 0.7f;
+            _mark.rubble = 0.2f;
+            var stamps = new InteractionStamps();
+
+            stamps.AddCrater(new float2(1f, 2f), _mark, 4f);
+
+            Assert.AreEqual(1, stamps.Remains.Count);
+            Assert.AreEqual(new float2(2f * InteractionMath.ScorchReach), stamps.Remains[0].HalfSize);
+            Assert.AreEqual(new float4(0.2f, 0.7f, 0f, 0f), stamps.Remains[0].Value);
+            Assert.IsEmpty(stamps.Scars, "no bowl or scorch, so the soil is not churned");
+            Assert.IsEmpty(stamps.Trample);
+        }
+
+        [Test]
+        public void AddRemains_IsARoundDisc_ClampedToFullCover()
+        {
+            var stamps = new InteractionStamps();
+
+            stamps.AddRemains(new float2(3f, 4f), 2.5f, new float4(0f, 0.5f, 2f, -1f));
+
+            Assert.AreEqual(new float2(2.5f), stamps.Remains[0].HalfSize);
+            Assert.AreEqual(new float4(0f, 0.5f, 1f, 0f), stamps.Remains[0].Value);
+        }
+
+        [Test]
         public void AddFootprintScar_CoversTheFootprint_ScorchedAndChurnedWithoutABowl()
         {
             var stamps = new InteractionStamps();
@@ -190,10 +221,12 @@ namespace HyperRTS.Presentation.Tests.Environment
         {
             var stamps = new InteractionStamps { Reset = true };
             stamps.AddWake(float2.zero, new float2(0f, 1f), 3f, 1f);
+            stamps.AddRemains(float2.zero, 1f, new float4(1f));
 
             stamps.Clear();
 
             Assert.IsEmpty(stamps.Wakes);
+            Assert.IsEmpty(stamps.Remains);
             Assert.IsFalse(stamps.Reset);
         }
 

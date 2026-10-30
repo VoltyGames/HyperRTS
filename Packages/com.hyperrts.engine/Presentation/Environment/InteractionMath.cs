@@ -5,7 +5,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>Sizes, timing and stamp shapes of the interaction maps (trampling, track marks, scars and wakes).</summary>
+    /// <summary>Sizes, timing and stamp shapes of the interaction maps (trampling, track marks, scars, wakes and remains).</summary>
     public static class InteractionMath
     {
         /// <summary>Largest side of either map; bigger maps get coarser texels.</summary>
@@ -51,6 +51,13 @@ namespace HyperRTS.Presentation.Environment
         {
             InteractionQuality.Full => 0.5f,
             InteractionQuality.Low => 1f,
+            _ => throw new ArgumentOutOfRangeException(nameof(quality), quality, "Off has no interaction maps."),
+        };
+
+        public static float RemainsTexel(InteractionQuality quality) => quality switch
+        {
+            InteractionQuality.Full => 0.4f,
+            InteractionQuality.Low => 0.8f,
             _ => throw new ArgumentOutOfRangeException(nameof(quality), quality, "Off has no interaction maps."),
         };
 

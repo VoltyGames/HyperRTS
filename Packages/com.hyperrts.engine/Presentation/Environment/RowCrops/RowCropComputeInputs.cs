@@ -56,7 +56,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         /// <summary>Whether a trample map is published, which changes every frame and so needs regrowing every frame.</summary>
         public static bool Trampled => Shader.GetGlobalVector(InteractionSurfaces.RectId).z > 0f;
 
-        /// <summary>Binds one camera's view, the trample map and the building mask for its dispatches.</summary>
+        /// <summary>Binds one camera's view, the trample map, the building mask and crater depth for its dispatches.</summary>
         public void SetCamera(Vector3 camera, float density, float distance)
         {
             var compute = _kernels.Compute;
@@ -67,6 +67,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             compute.SetTexture(_kernels.Plant, InteractionSurfaces.TrampleId, on ? trample : Texture2D.blackTexture);
             compute.SetVector(InteractionSurfaces.RectId, on ? Shader.GetGlobalVector(InteractionSurfaces.RectId) : Vector4.zero);
             BuildingFootprintMask.Bind(compute, _kernels.Plant);
+            CraterTerrain.BindCraters(compute, _kernels.Plant);
         }
 
         public void Dispose() => _fieldBuffer.Release();

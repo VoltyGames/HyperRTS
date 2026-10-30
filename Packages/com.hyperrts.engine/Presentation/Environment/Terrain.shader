@@ -15,6 +15,7 @@
 //   _RowMap       over the whole terrain, linear, bilinear, no mips: RG the crop rows' direction (x east, y north)
 //                 remapped to 0..1, (0.5, 0.5) off the fields; row layers lay u along it
 //   _MicroMap     TerrainMicroTexture's tileable soil grain, linear: RG normal xy, B occlusion, A albedo variation
+//   _Remains*     rubble, ash and wet mud tiled over what _HyperRTSRemains covers (TerrainRemains.hlsl); fuel is untextured
 // One pass binds every layer, so the terrain needs no add-pass or basemap shaders.
 // TerrainDetail sets _TERRAIN_SIMPLE (one sample per texture), _TERRAIN_NO_FAR (hex, no far sample) or
 // _TERRAIN_NO_PARALLAX (everything but parallax).
@@ -61,6 +62,21 @@ Shader "HyperRTS/Terrain"
         _TriplanarFull ("Triplanar Full (degrees)", Range(0, 90)) = 42
         _ParallaxDepth ("Parallax Depth (m)", Range(0, 0.3)) = 0.1
         _ParallaxEnd ("Parallax End (m)", Float) = 38
+        [NoScaleOffset] _RemainsRubbleAlbedo ("Remains Rubble Albedo", 2D) = "grey" {}
+        [NoScaleOffset][Normal] _RemainsRubbleNormal ("Remains Rubble Normal", 2D) = "bump" {}
+        [NoScaleOffset] _RemainsRubbleMask ("Remains Rubble Mask (G occlusion, A smoothness)", 2D) = "white" {}
+        _RemainsRubbleTile ("Remains Rubble Tile (m)", Float) = 2
+        _RemainsRubbleSmoothness ("Remains Rubble Smoothness (x mask A)", Range(0, 1)) = 0.5
+        [NoScaleOffset] _RemainsAshAlbedo ("Remains Ash Albedo", 2D) = "grey" {}
+        [NoScaleOffset][Normal] _RemainsAshNormal ("Remains Ash Normal", 2D) = "bump" {}
+        [NoScaleOffset] _RemainsAshMask ("Remains Ash Mask (G occlusion, A smoothness)", 2D) = "white" {}
+        _RemainsAshTile ("Remains Ash Tile (m)", Float) = 3
+        _RemainsAshSmoothness ("Remains Ash Smoothness (x mask A)", Range(0, 1)) = 0.3
+        [NoScaleOffset] _RemainsMudAlbedo ("Remains Mud Albedo", 2D) = "grey" {}
+        [NoScaleOffset][Normal] _RemainsMudNormal ("Remains Mud Normal", 2D) = "bump" {}
+        [NoScaleOffset] _RemainsMudMask ("Remains Mud Mask (G occlusion, A smoothness)", 2D) = "white" {}
+        _RemainsMudTile ("Remains Mud Tile (m)", Float) = 3
+        _RemainsMudSmoothness ("Remains Mud Smoothness (x mask A)", Range(0, 1)) = 0.5
         [HideInInspector] _TerrainHolesTexture ("Holes Map (RGB)", 2D) = "white" {}
     }
 

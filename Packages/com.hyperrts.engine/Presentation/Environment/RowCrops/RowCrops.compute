@@ -12,6 +12,7 @@ SamplerState sampler_LinearClamp;
 #include "Packages/com.hyperrts.engine/Presentation/Environment/RowCrops/RowCropInstance.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Scatter.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Grass/BuildingFootprints.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/CraterSink.hlsl"
 
 #define CHANNEL_DENSITY 0u
 #define CHANNEL_ACROSS 1u
@@ -188,7 +189,8 @@ void Plant(uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    float3 position = float3(xz.x, GroundHeight(xz), xz.y);
+    // On the undented ground: the vertex stage sinks plants into craters with everything else.
+    float3 position = float3(xz.x, GroundHeight(xz) + CraterDepth(xz), xz.y);
     float range = length(position - _Camera.xyz);
     if (range >= _Camera.w)
     {

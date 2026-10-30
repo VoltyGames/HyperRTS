@@ -7,6 +7,7 @@
 TEXTURE2D(_HyperRTSTrample);
 TEXTURE2D(_HyperRTSTracks);
 TEXTURE2D(_HyperRTSWake);
+TEXTURE2D(_HyperRTSRemains);   // R rubble, G ash, B fuel, A wet mud
 float4 _HyperRTSInteractionRect; // x min, z min, 1 / width, 1 / depth; zero = no maps
 float4 _HyperRTSTracksTexel;     // texels in x and z, metres per texel in x and z
 float _HyperRTSMaxCraterDepth;   // metres a full tracks alpha means

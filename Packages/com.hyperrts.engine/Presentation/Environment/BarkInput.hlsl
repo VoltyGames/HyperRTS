@@ -13,6 +13,7 @@
 #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/DetailMap.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/SurfaceType.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Wind.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/CraterSink.hlsl"
 
 CBUFFER_START(UnityPerMaterial)
 float4 _BaseMap_ST;
@@ -66,7 +67,7 @@ float3 BarkWindPosition(BarkAttributes input, WindFrame frame)
 {
     TreeWindSettings settings = TreeWind(_WindStrength, _WindSpeed, _BranchSway, 0.0, _TreeHeight, _WindScale);
     TreeWindVertex v = TreeWindData(input.positionOS.xyz, input.uv2, input.uv3, input.uv4, input.color);
-    return TreeWindPosition(v, settings, frame);
+    return SinkObjectIntoCrater(TreeWindPosition(v, settings, frame));
 }
 
 // URP's pass files call this by name.

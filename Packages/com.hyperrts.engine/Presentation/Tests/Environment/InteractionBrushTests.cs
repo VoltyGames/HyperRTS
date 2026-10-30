@@ -88,6 +88,24 @@ namespace HyperRTS.Presentation.Tests.Environment
         }
 
         [Test]
+        public void Remains_KeepTheStrongestStamp_AndNeverFade()
+        {
+            var stamps = new InteractionStamps();
+            stamps.AddRemains(new float2(50f, 120f), 4f, new float4(0.8f, 0f, 0f, 0.3f));
+            stamps.AddRemains(new float2(50f, 120f), 4f, new float4(0.4f, 0f, 0f, 0.9f));
+            Draw(stamps, 0, 0);
+
+            Draw(new InteractionStamps(), InteractionMath.Levels, InteractionMath.Levels, InteractionMath.Levels);
+
+            Assert.AreEqual(0.8f, Sample(_surfaces.Remains, Red)[0], 0.02f, "a weaker stamp lowered the rubble");
+            Assert.AreEqual(0.9f, Sample(_surfaces.Remains, Alpha)[0], 0.02f, "the mud faded or did not build up");
+            Assert.Less(Sample(_surfaces.Remains, Red)[1], 0.01f);
+
+            Draw(new InteractionStamps { Reset = true }, 0, 0);
+            Assert.Less(Sample(_surfaces.Remains, Red)[0], 0.01f, "a replay seek kept the remains");
+        }
+
+        [Test]
         public void Reset_ClearsTheScars()
         {
             var stamps = new InteractionStamps();

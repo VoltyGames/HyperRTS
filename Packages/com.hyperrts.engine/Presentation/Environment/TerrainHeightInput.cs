@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.Environment
     internal readonly struct TerrainHeightInput
     {
         // Unity heightmaps store 32766 as full height in a 16-bit unorm texture.
-        private const float HeightmapFull = 32766f / 65535f;
+        internal const float HeightmapFull = 32766f / 65535f;
 
         private static readonly int HeightId = Shader.PropertyToID("_Height");
         private static readonly int HeightAreaId = Shader.PropertyToID("_HeightArea");
@@ -47,14 +47,14 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>Whether a map rebuild replaced the heightmap bound to the kernel.</summary>
         public bool Stale => _heights != _terrain.terrainData.heightmapTexture;
 
-        private static Vector4 Area(Terrain terrain)
+        internal static Vector4 Area(Terrain terrain)
         {
             var origin = terrain.GetPosition();
             var size = terrain.terrainData.size;
             return InteractionMath.Rect(new float2(origin.x, origin.z), new float2(size.x, size.z));
         }
 
-        private static Vector4 Scale(Terrain terrain)
+        internal static Vector4 Scale(Terrain terrain)
         {
             var data = terrain.terrainData;
             return new Vector4(terrain.GetPosition().y, data.size.y / HeightmapFull, data.heightmapResolution, 0f);

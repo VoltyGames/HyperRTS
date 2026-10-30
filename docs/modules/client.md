@@ -290,9 +290,17 @@ where the canopy lands, as it lands.
 
 `DebrisAuthoring` on a ruin throws a `DebrisSet`'s pieces once when the ruin appears; on a building with breakable
 parts it throws them from each part that breaks. `DebrisSystem` flies them on the client in a pool of 160, bounces
-them off the terrain height, lays them flat and shrinks them away after 10 to 20 s. Medium effects throw 70 % of the
-pieces and Low none. Pieces from one place fly the same on every client. Pieces draw in one instanced call per material and mesh,
-so a set's material needs GPU instancing on, which the set checks at bake.
+them off the terrain height and lays them flat. Medium effects throw 70 % of the pieces and Low none. Pieces from one
+place fly the same on every client. Flying pieces draw in one instanced call per material and mesh, so a set's
+material needs GPU instancing on, which the set checks at bake.
+
+A piece at rest moves to `LastingDebris` and stays for the match. `EffectDetail.LastingDebrisAt` sets the cap: 20,000
+pieces on High, 8,000 on Medium and none on Low. Past the cap the oldest piece sinks into the ground over 5 s and its
+slot is reused; up to 512 sink at once. `LastingDebrisDraws` draws the layer through a `BatchRendererGroup`, one
+indirect draw per mesh and material, from GPU buffers written only when a piece settles, sinks or goes, so pieces at
+rest cost no CPU. It reads the matrices through the material's DOTS instancing path, so debris materials use a
+shader with DOTS instancing, such as `LitTeam`. Changing effect detail starts the layer over at the new cap. Fogged
+pieces draw as flying ones do.
 
 A building with `BreakablePartsAuthoring` lists its parts, each an intact and a broken model. **Find Parts By Name**
 in its context menu fills the list from `<Part>_Intact` children and their `<Part>_Broken` siblings, which it saves
@@ -330,9 +338,27 @@ fog off. A missing skybox or reflection is an error.
 The scene fog is URP's: its `Volumetric Fog` renderer feature draws the profile's `Fog` override (height fog, and
 volumetric fog where the override turns it on) over the opaques after the skybox, before the opaque texture is
 copied. URP compiles it only under the `VOLUMETRIC_FOG` scripting define, so a project using it sets that define;
-the engine itself references none of its types. URP skips orthographic cameras without resetting its fog globals,
+the engine references its types only in `BattleHazeSystem.Fog.cs`, under the same define. URP skips orthographic cameras without resetting its fog globals,
 so `FogOfWarFeature`, after URP's feature on the renderer, clears them there with `ClearAtmosphereFogPass` and
 captures such as the minimap stay clear.
+
+`BattleHazeSystem` thickens the volumetric fog over a fight while `PresentationQuality.BattleHaze` is on. Its
+`BattleHaze` is a 128 by 128 grid over the map's square (the longer side): seen impacts add haze by splash, burning
+wrecks (`Decay` remains with `LoopEffect`s) and damaged buildings (`ShownDamageStage` past intact) add it each
+second, and a ruin's collapse (`SpawnEffect`, not a falling tree) adds a puff. Four times a second it drifts at twice
+the `Wind` strength in m/s downwind, evens 20 % a second out with its neighbours and thins to half every 90 s, up to
+four times the weather's own density. `BattleHaze.Add(position, radius, amount)` is open to any other source, such
+as a field fire. The grid becomes a 128x2x128 R16F `Texture3D` holding one plus the haze, and a global volume above
+the weather's (priority 100) overrides only the `Fog` density mode (Texture), the density texture and its tiling, so
+the rest stays the weather's.
+
+URP samples the density texture at the voxel's world position times the tiling, repeating from world zero, so the
+tiling is 1 / side and the texels roll by the map's minimum in cells (a minimum off the 4 m or so cell grid is out by
+under a cell). The two y layers match, so height comes only from the fog's own falloff. The tiling's floor of 0.001
+caps the haze to maps up to 1000 m across. The volumetric fog fills view depth (eye depth, not ray length) up to its
+cutoff, 100 m on the game's levels, and the height fog alone draws past it, so the haze shows over the near and
+middle ground and fades toward the top of a far-zoomed screen. Each step is one Burst job and a 64 KB texture
+upload, inside a budget of 0.05 ms of CPU; the GPU samples the texture inside the fog's own 1 ms.
 
 Transparent shaders apply both fogs in the full-screen order with `SceneFogAt` and `ApplySceneFog` from
 `SceneFog.hlsl`, and need `#pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC`. A shader that samples the
@@ -378,7 +404,8 @@ Tree meshes for Foliage with **Tree Wind** on, and for Bark, carry wind data in 
 ### Interaction maps
 
 Vehicles leave ruts and flatten grass and crops, shells leave craters and scorch, and units moving through water
-leave wakes. `InteractionMap` on the rig keeps three GPU textures over the map and stamps them each frame. It needs
+leave wakes, and the ground keeps rubble, ash, fuel and wet mud. `InteractionMap` on the rig keeps four GPU textures
+over the map and stamps them each frame. It needs
 the `Hidden/HyperRTS/Interaction Brush` shader.
 
 | Texture | Channels |
@@ -386,17 +413,38 @@ the `Hidden/HyperRTS/Interaction Brush` shader.
 | `_HyperRTSTrample` | RG travel direction, B flattened grass that recovers over 60 s, A crop damage that never recovers |
 | `_HyperRTSTracks` | R rut depth and G churned soil, which fade over 4 minutes. B scorch and A crater depth (up to 2 m), which last the match |
 | `_HyperRTSWake` | R foam, which fades over 5 s |
+| `_HyperRTSRemains` | R rubble, G ash, B fuel, A wet mud, at 0.4 m (0.8 m at Low). They only build up and last the match |
 
 Vehicles with `TrackMarks` stamp while on the ground and visible, as do building footprints. At Full quality each
 walking squad figure leans the plants along its path. Every ground impact
 whose `ImpactMark` has a `craterDepth` or `scorch` stamps a round bowl half the mark's size across, inside a
-slightly wider scorch disc, and flattens the plants over it. Units with a `NavAgent` riding water cells stamp foam
+slightly wider scorch disc, and flattens the plants over it. Its `rubble`, `ash` and `fuel` cover the scorch's
+disc in the remains map. A death cue the local player sees on the ground stamps the type's `DeathRemains` (from
+`DeathRemainsAuthoring`: a radius and the four amounts), such as fuel and wet mud under a vehicle's hull. Other
+sources (collapsing buildings, field fires) call `InteractionStamps.AddRemains` with a centre, a radius and the four
+amounts, after `InteractionStampSystem` has run. Units with a `NavAgent` riding water cells stamp foam
 behind them. A replay seeking back clears the maps, as it clears the decals.
 
 Shaders read the maps through `Trample.hlsl`. The terrain darkens ruts and flattened grass, bends its normal down
-the crater's slope so the sun lights the bowl, darkens and dampens the bowl's soil, and blackens scorched ground.
+the crater's slope so the sun lights the bowl, darkens and dampens the bowl's soil, and blackens scorched ground. `TerrainRemains.hlsl` then lays the terrain
+material's tiled rubble, ash and wet mud textures (`_Remains*`) and an untextured dark, glossy fuel slick with a faint
+thin-film sheen over what the remains map covers, with a noisy fringe; ground without remains skips it after one
+sample.
 Foliage leans plants along the travel direction, and water reads `SampleWake`. The quality setting picks Full, Low
 at half resolution, or Off, which frees the textures.
+
+Craters also dent the drawn ground. In presented worlds `CraterTerrainSystem` redraws the active Unity Terrain's
+heightmap under each new bowl on the GPU, with the `Hidden/HyperRTS/Crater Height` shader from the package's
+`Resources`: the heights copied at the start, less the tracks map's crater depth. It reads the heights back at most
+every 0.5 s, on a frame with no new crater, so Unity refines the terrain mesh there. A replay seek, new or removed
+maps, another terrain and the world's end put the copied heights back, so dented heights never reach the
+TerrainData asset. `CraterSink.hlsl` samples the same depth: the `LitTeam`, `Foliage` (grass included), `Bark` and
+`RowCrop` vertex stages, shadow and depth passes too, lower the whole object by the depth at its origin. The sink
+fades with the origin's height above the undented ground (`_HyperRTSUndentedHeights`, published by `CraterTerrain`):
+full within 0.5 m, none from 2 m up, so aircraft, bridge decks and rooftops stay put. The grass and row crop kernels,
+which get the tracks map bound by `CraterTerrain.BindCraters` for each camera, place plants on the undented ground
+first. The simulation's ground never changes, so craters
+are not cover.
 
 ### Building footprints
 

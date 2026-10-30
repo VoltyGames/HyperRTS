@@ -15,7 +15,8 @@ namespace HyperRTS.Presentation.Environment
         private const int TracksPass = 2;
         private const int ScarsPass = 3;
         private const int WakePass = 4;
-        private const int FadePass = 5;
+        private const int RemainsPass = 5;
+        private const int FadePass = 6;
 
         private static readonly int StampsId = Shader.PropertyToID("_InteractionStamps");
         private static readonly int OffsetId = Shader.PropertyToID("_InteractionStampOffset");
@@ -67,6 +68,8 @@ namespace HyperRTS.Presentation.Environment
             offset += stamps.Tracks.Count;
             DrawStamps(ScarsPass, offset, stamps.Scars.Count);
             offset += stamps.Scars.Count;
+            DrawRemains(surfaces, offset, stamps.Remains.Count);
+            offset += stamps.Remains.Count;
 
             DrawWakes(surfaces, wakeSteps, offset, stamps.Wakes.Count);
             Graphics.ExecuteCommandBuffer(_commands);
@@ -82,7 +85,8 @@ namespace HyperRTS.Presentation.Environment
         // One buffer in Draw's order, so each pass draws a slice of it.
         private void Upload(InteractionStamps stamps)
         {
-            var needed = Mathf.Max(stamps.Trample.Count + stamps.Tracks.Count + stamps.Scars.Count + stamps.Wakes.Count, 1);
+            var needed = Mathf.Max(stamps.Trample.Count + stamps.Tracks.Count + stamps.Scars.Count +
+                stamps.Remains.Count + stamps.Wakes.Count, 1);
             if (_buffer == null || _buffer.count < needed)
             {
                 _buffer?.Release();
@@ -94,6 +98,7 @@ namespace HyperRTS.Presentation.Environment
             Put(stamps.Trample, ref offset);
             Put(stamps.Tracks, ref offset);
             Put(stamps.Scars, ref offset);
+            Put(stamps.Remains, ref offset);
             Put(stamps.Wakes, ref offset);
         }
 
@@ -111,7 +116,21 @@ namespace HyperRTS.Presentation.Environment
             _commands.ClearRenderTarget(false, true, Color.clear);
             _commands.SetRenderTarget(surfaces.Wake);
             _commands.ClearRenderTarget(false, true, Color.clear);
+            _commands.SetRenderTarget(surfaces.Remains);
+            _commands.ClearRenderTarget(false, true, Color.clear);
             _wakeFadedSteps = InteractionMath.Levels;
+        }
+
+        // Remains never fade, so a frame without any leaves their map alone.
+        private void DrawRemains(InteractionSurfaces surfaces, int offset, int count)
+        {
+            if (count == 0)
+            {
+                return;
+            }
+
+            _commands.SetRenderTarget(surfaces.Remains);
+            DrawStamps(RemainsPass, offset, count);
         }
 
         // Calm water skips the wake map once a full fade has emptied it.

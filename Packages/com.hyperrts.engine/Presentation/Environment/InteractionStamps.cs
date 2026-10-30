@@ -12,15 +12,28 @@ namespace HyperRTS.Presentation.Environment
 
         public readonly List<InteractionStamp> Scars = new();
 
+        public readonly List<InteractionStamp> Remains = new();
+
         public readonly List<InteractionStamp> Wakes = new();
 
         /// <summary>Clear every map before drawing: a replay sought back past the scars.</summary>
         public bool Reset;
 
-        /// <summary>Scar value: (depth / max, scorch, bowl radius / stamp radius, churn).</summary>
+        /// <summary>Scar value: (depth / max, scorch, bowl radius / stamp radius, churn). Remains cover the scorch's reach.</summary>
         public void AddCrater(float2 center, ImpactMark mark, float diameter)
         {
             var radius = diameter * 0.5f;
+            if (mark.LeavesRemains)
+            {
+                AddRemains(center, radius * InteractionMath.ScorchReach, new float4(mark.rubble, mark.ash, mark.fuel, 0f));
+            }
+
+            var scarred = mark.craterDepth > 0f || mark.scorch > 0f;
+            if (!scarred)
+            {
+                return;
+            }
+
             var reach = mark.scorch > 0f ? radius * InteractionMath.ScorchReach : radius;
             var disc = new InteractionStamp { Center = center, Forward = new float2(0f, 1f), HalfSize = new float2(reach) };
             disc.Value = new float4(1f, 1f, 0f, 1f);
@@ -35,6 +48,13 @@ namespace HyperRTS.Presentation.Environment
             Scars.Add(new InteractionStamp
             {
                 Center = center, Forward = forward, HalfSize = size * 0.5f, Value = new float4(0f, share, 0f, share),
+            });
+
+        /// <summary>Rubble, ash, fuel and wet mud (0 to 1 each) left in a ragged disc for the rest of the match.</summary>
+        public void AddRemains(float2 center, float radius, float4 amounts) =>
+            Remains.Add(new InteractionStamp
+            {
+                Center = center, Forward = new float2(0f, 1f), HalfSize = new float2(radius), Value = math.saturate(amounts),
             });
 
         public void AddWake(float2 position, float2 direction, float speed, float radius)
@@ -54,6 +74,7 @@ namespace HyperRTS.Presentation.Environment
             Trample.Clear();
             Tracks.Clear();
             Scars.Clear();
+            Remains.Clear();
             Wakes.Clear();
             Reset = false;
         }
