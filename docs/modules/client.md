@@ -358,7 +358,8 @@ scene view perspective cameras.
 `vegetation` setting picks how much plants move: `None`, `Sway`, `Branches` or `Flutter`. Flags fly regardless.
 Every shader pass of Foliage and Bark uses the same wind, so shadows match.
 
-Grass, crops and other details sway about their origin. Trees bend at the trunk, sway their branches and flutter
+Grass, crops and other details sway about their origin, mostly with the gusts rolling downwind and a little in their
+own phase; a row crop's normal tilts with it, so its sheen rolls too. Trees bend at the trunk, sway their branches and flutter
 their leaf cards. Bark and leaves of one tree need the same `_WindStrength`, `_WindSpeed`, `_BranchSway`,
 `_TreeHeight` and `_WindScale`. Set `_WindScale` to 0 for fallen trees.
 

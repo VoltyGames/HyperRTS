@@ -11,7 +11,9 @@ ForwardVaryings ForwardVert(Attributes input)
     float3 world = RowCropPosition(input, plant, WindThisFrame());
     float height = input.positionOS.y * plant.scale;
     half4 tint = half4(PlantTint(plant.shade, plant.shade), CanopyLight(height));
-    return PlantForwardVaryings(world, plant.position, input.uv, height, RowCropNormal(input, plant), tint);
+    half3 normal = PlantWindNormal(RowCropNormal(input, plant), plant.position, _WindStrength, _WindSpeed, 1.0,
+        WindThisFrame());
+    return PlantForwardVaryings(world, plant.position, input.uv, height, normal, tint);
 }
 
 CutoutVaryings CutoutVert(Attributes input)

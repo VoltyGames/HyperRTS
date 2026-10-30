@@ -131,11 +131,11 @@ float3 TrunkGust(float3 p, TreeWindSettings s, float3 origin, WindFrame frame)
     return WindSafeNormalize(bent) * length(p);
 }
 
-// Back-and-forth on top of the push, as large as the turbulence.
+// Back-and-forth on top of the push, half the turbulence, so the rolling gusts do most of the bending.
 float WindSwing(float time, float phase)
 {
     float wave = sin(time + phase) * 0.6 + sin(time * 2.3 + phase + 1.7) * 0.4;
-    return wave * _HyperRTSWindGust.y * _HyperRTSWindStrength;
+    return wave * 0.5 * _HyperRTSWindGust.y * _HyperRTSWindStrength;
 }
 
 float3 CardFlutter(float3 p, TreeWindVertex v, TreeWindSettings s, float push, WindFrame frame, float3 origin)
@@ -196,6 +196,26 @@ float3 TreeWindPosition(TreeWindVertex v, TreeWindSettings s, WindFrame frame)
     return TrunkGust(p, s, origin, frame);
 }
 
+// Metres a plant without wind data leans downwind per metre of height.
+float PlantWindLean(float3 origin, float sway, float speed, float scale, WindFrame frame)
+{
+    float push = WindPush(origin.xz, frame);
+    float swing = WindSwing(frame.time * speed, WindHash(origin) * WIND_TAU);
+    return (push + swing) * sway * scale;
+}
+
+// Tilts a plant's normal with its lean, so a gust's sheen rolls across a field.
+half3 PlantWindNormal(half3 normal, float3 origin, float sway, float speed, float scale, WindFrame frame)
+{
+    if (_HyperRTSWindDetail < 0.5)
+    {
+        return normal;
+    }
+
+    float lean = PlantWindLean(origin, sway, speed, scale, frame);
+    return normalize(normal + (half3)float3(_HyperRTSWindDirection.x, 0.0, _HyperRTSWindDirection.z) * lean);
+}
+
 // Plants without wind data sway about their origin with height.
 float3 PlantWindPosition(float3 world, float3 origin, float sway, float speed, float flutter, float scale, WindFrame frame)
 {
@@ -205,8 +225,7 @@ float3 PlantWindPosition(float3 world, float3 origin, float sway, float speed, f
     {
         float height = max(0.0, world.y - origin.y);
         float push = WindPush(origin.xz, frame) * scale;
-        float swing = WindSwing(frame.time * speed, dot(origin.xz, float2(0.11, 0.07))) * scale;
-        moved.xz += _HyperRTSWindDirection.xz * ((push + swing) * sway * height);
+        moved.xz += _HyperRTSWindDirection.xz * (PlantWindLean(origin, sway, speed, scale, frame) * height);
         UNITY_BRANCH
         if (_HyperRTSWindDetail >= 3.0)
         {
