@@ -7,13 +7,16 @@ using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Effects
 {
     /// <summary>
     /// Streams each drawn, finished entity's <see cref="LoopEffect"/>s at their sockets while in range (half range on Low):
     /// gated by health, and faded out once a timed loop's duration since the entity was first seen runs out or as
-    /// <see cref="Decay"/> remains are buried.
+    /// <see cref="Decay"/> remains are buried. Hands the streamed loops to <see cref="LoopLights"/> and
+    /// <see cref="SmokeShadows"/>.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -22,6 +25,10 @@ namespace HyperRTS.Presentation.Effects
         private readonly EffectStreams _streams = new();
         private readonly Dictionary<Entity, double> _firstSeen = new();
         private readonly List<Entity> _gone = new();
+        private readonly SmokeShadows _smoke = new();
+        private GameObject _lightsRoot;
+        private LoopLights _lights;
+        private Camera _camera;
         private EffectPool _pool;
         private EntityQuery _loops;
         private int _loopsVersion;
@@ -33,7 +40,14 @@ namespace HyperRTS.Presentation.Effects
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
             _loops = GetEntityQuery(ComponentType.ReadOnly<LoopEffect>());
             RequireForUpdate(_loops);
+            _lightsRoot = new GameObject("HyperRTS Loop Lights") { hideFlags = HideFlags.DontSave };
+            _lights = new LoopLights(_lightsRoot.transform);
         }
+
+        protected override void OnDestroy() => CoreUtils.Destroy(_lightsRoot);
+
+        // The last loop is gone, so put out its light and shadow.
+        protected override void OnStopRunning() => ShowLightsAndShadows(0f);
 
         protected override void OnUpdate()
         {
@@ -61,6 +75,7 @@ namespace HyperRTS.Presentation.Effects
             }
 
             _streams.EndFrame();
+            ShowLightsAndShadows((float)now);
             Prune();
         }
 
@@ -76,8 +91,25 @@ namespace HyperRTS.Presentation.Effects
 
             var socket = math.transform(place.Value, loop.Socket);
             var state = _pool.Step(_streams, loop.Rig.Value, entity, index, socket, _reach);
-            state?.Emit(state.Rig.LoopRotation(place.Rotation, state.Key), _deltaTime, strength,
+            if (state == null)
+            {
+                return;
+            }
+
+            state.Emit(state.Rig.LoopRotation(place.Rotation, state.Key), _deltaTime, strength,
                 state.Rig.LoopScale(state.Key));
+            _lights.Offers.Add(state.Rig, socket, strength, state.Key, age);
+            // The shadow follows the smoke actually emitted, which density thins.
+            _smoke.Offers.Add(state.Rig, socket, strength * EffectDetail.Density, state.Key, age);
+        }
+
+        private void ShowLightsAndShadows(float time)
+        {
+            // Without a camera nothing streams, so there are no offers to sort by the eye.
+            _camera = EffectRange.Main(_camera);
+            var eye = _camera != null ? _camera.transform.position : Vector3.zero;
+            _lights.Show(eye, EffectDetail.Level, time);
+            _smoke.Show(eye, EffectDetail.Level);
         }
 
         /// <summary>Forgets when entities that no longer exist were first seen, once loop entities came or went.</summary>
