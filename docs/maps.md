@@ -99,7 +99,8 @@ across the copies, so slots 1 and 2 always face each other.
 
 Every feature except spawns and settlements also takes `shared`. A river crossing has `along` (0 to 1 down the river), `kind`
 (`bridge` or `ford`), `width` and `prop`. Fords thin the water and streak it with foam; the climate's
-`fordShallowsWidth` and `fordRapidsLength` set how far.
+`fordShallowsWidth` and `fordRapidsLength` set how far, and `crossingFoamLength` how far foam lines trail below
+fords and bridges.
 
 ## How a map is built
 

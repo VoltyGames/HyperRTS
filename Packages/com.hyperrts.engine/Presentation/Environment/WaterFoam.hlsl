@@ -49,8 +49,9 @@ float ShoreLap(float2 uv)
     return -(0.5 + 0.5 * sin((_Time.y / _ShoreWavePeriod + uv.y * 0.07) * TWO_PI)) * _ShoreLap * _ShoreFadeDepth;
 }
 
-// Calm-water foam: drifting streaks in patches, denser along the banks. Ground detail Low drops it.
-half CalmFoam(float2 uv, float shoreDistance)
+// Calm-water foam: drifting streaks in the trails below crossings (vertex R), and bands along the banks. Ground
+// detail Low drops it.
+half CalmFoam(float2 uv, float shoreDistance, half trail)
 {
     #if defined(_TERRAIN_SIMPLE)
         return 0.0;
@@ -61,7 +62,7 @@ half CalmFoam(float2 uv, float shoreDistance)
         float2 streakTile = float2(1.0, 5.0) * _FlowFoamScale;
         half streak = FoamSample(float2(uv.x, uv.y - drift), streakTile, dx, dy).x;
         half patches = FoamSample(float2(uv.x + 0.37 * _FlowFoamScale, uv.y - drift * 0.85), streakTile * 6.0, dx, dy).x;
-        half flow = smoothstep(0.22, 0.5, streak) * smoothstep(0.05, 0.35, patches) * _FlowFoamAmount;
+        half flow = smoothstep(0.22, 0.5, streak) * smoothstep(0.05, 0.35, patches) * _FlowFoamAmount * trail;
 
         // The band is at most 1.4 widths wide and the waterline 0.7 m: open water skips the edgeWander fetch.
         half bank = 0.0;

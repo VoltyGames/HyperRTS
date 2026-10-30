@@ -312,7 +312,8 @@ without effects. It is presentation only: the simulation never reads it.
 | `HyperRTS/Bark` | Opaque tree bark with wind. Mask map: R metallic, G AO, A smoothness |
 | `HyperRTS/RowCrop` | GPU-placed field crops. See [row crops](#row-crops) |
 
-Water vertex colours shape the flow: alpha thins fords, green streaks rapids foam.
+Water vertex colours shape the flow: alpha thins fords, green streaks rapids foam, and red trails foam lines
+downstream of fords and bridges. Open water carries no streaks; banks get their own foam band.
 
 URP keyword lists shared across passes live in `Presentation/Rendering/Keywords/` and are pulled in with
 `#include_with_pragmas`: `ForwardLightingKeywords` (forward passes on the full Lit model), `SimpleLightingKeywords`

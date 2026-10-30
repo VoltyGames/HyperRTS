@@ -268,7 +268,7 @@ Shader "HyperRTS/Water"
                 // Calm and wake foam thin out on the last few centimetres so they never paint over the dry bank.
                 half rapids = RapidsFoam(input.uv, input.color.g) * 0.5;
                 half shallowFade = saturate(shoreDepth / (_ShoreFadeDepth * 0.5));
-                half calm = max(CalmFoam(input.uv, shoreDistance), wake.foam) * shallowFade;
+                half calm = max(CalmFoam(input.uv, shoreDistance, input.color.r), wake.foam) * shallowFade;
                 half foam = max(rapids, calm);
                 color = lerp(color, _FoamColor.rgb * (sun.color * sun.shadowAttenuation * 0.6 + 0.4), foam);
                 half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(shoreDepth / _ShoreFadeDepth), foam);

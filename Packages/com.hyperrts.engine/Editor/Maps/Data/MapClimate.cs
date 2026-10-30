@@ -102,6 +102,9 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Metres of fast, foaming water downstream of a ford.")]
         public float fordRapidsLength;
 
+        [Tooltip("Metres of foam lines trailing downstream of a ford or bridge; 0 for none.")]
+        public float crossingFoamLength;
+
         [Tooltip("Surface inside ravines (floor and walls).")]
         [MapKey(typeof(MapClimateSurface))]
         public string ravineSurface;
