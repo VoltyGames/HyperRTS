@@ -9,8 +9,7 @@ namespace HyperRTS.Editor.Maps.Ground
     /// <summary>
     /// Paints the terrain layers from the land use: each texel blends the two surfaces of its nearest border across
     /// that border's band (<see cref="MapEdgeField"/>; the terrain shader's height blend sharpens them naturally); each
-    /// surface gets its noise-shaped mixes of other layers, sown fields their tramlines, and steep ground its slope
-    /// surface.
+    /// surface gets its noise-shaped mixes of other layers and tramlines, and steep ground its slope surface.
     /// </summary>
     public sealed class MapGroundTexturePainter
     {
@@ -20,6 +19,7 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly MapNoise[] _mixNoise;
         private readonly MapEdgeField _edges;
         private readonly MapTramlineCover _tramlines;
+        private readonly MapFlow _flow;
         private readonly int[] _regionLayer;
         private readonly MapSurfaceMix[][] _regionMixes;
         private readonly int[][] _regionMixLayers;
@@ -33,6 +33,7 @@ namespace HyperRTS.Editor.Maps.Ground
             _climate = climate;
             _edges = edges;
             _tramlines = new MapTramlineCover(layout.Symmetry, edges, climate, layout.TerrainBounds.width / resolution);
+            _flow = new MapFlow(layout.Symmetry, heights);
             _regionLayer = new int[edges.RegionCount];
             _regionMixes = new MapSurfaceMix[edges.RegionCount][];
             _regionMixLayers = new int[edges.RegionCount][];
@@ -86,7 +87,7 @@ namespace HyperRTS.Editor.Maps.Ground
             }
         }
 
-        /// <summary>Splits the texel between the two sides of its nearest border, wheel lines over its own side.</summary>
+        /// <summary>Splits the texel between the two sides of its nearest border.</summary>
         private void Surfaces(float[] weights, Vector2 p)
         {
             var edge = _edges.Sample(p);
@@ -123,8 +124,9 @@ namespace HyperRTS.Editor.Maps.Ground
         /// <summary>Noise blotches covering about <see cref="MapSurfaceMix.coverage"/> of the surface.</summary>
         private float Mix(int layer, MapSurfaceMix mix, Vector2 p)
         {
+            var coverage = mix.alongFlow > 0f ? Mathf.Clamp01(mix.coverage + mix.alongFlow * _flow.At(p)) : mix.coverage;
             // Measured: map noise sits about 0.2 either side of -0.1, so this threshold leaves roughly the coverage.
-            var threshold = -0.1f + 0.72f * (0.5f - mix.coverage);
+            var threshold = -0.1f + 0.72f * (0.5f - coverage);
             return MapGeometry.Smooth((_mixNoise[layer].Sample(p, mix.size) - threshold) / 0.16f + 0.5f);
         }
 

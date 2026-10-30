@@ -21,6 +21,9 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Metres across the largest blotches; the noise adds smaller ones down to an eighth of that.")]
         public float size;
 
-        public bool Valid => coverage > 0f && coverage <= 1f && size > 0f;
+        [Tooltip("Share the mix adds on a full drainage line, 0 to 1.")]
+        public float alongFlow;
+
+        public bool Valid => coverage > 0f && coverage <= 1f && size > 0f && alongFlow is >= 0f and <= 1f;
     }
 }

@@ -11,7 +11,8 @@ namespace HyperRTS.Editor.Maps.Ground
     /// The terrain's ground tint at a map point. RGB 0.5 is neutral; A is wetness. Fields and woods each get their own
     /// tint and a slow gradient across them (strengths from the climate's <see cref="MapClimateGroundTint"/>), blended over
     /// the same border band as the ground textures; soil colour at 20 to 150 m vary light, warmth and moisture within them;
-    /// 10 to 90 m noise breaks up everything; hollows read darker and damper, as do river banks and ravine floors.
+    /// 10 to 90 m noise breaks up everything; hollows, river banks, ravine floors and drainage lines read darker and
+    /// damper.
     /// </summary>
     public sealed class MapGroundTint
     {
@@ -28,6 +29,7 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly MapSymmetry _symmetry;
         private readonly MapClimateGroundTint _strength;
         private readonly MapEdgeField _edges;
+        private readonly MapFlow _flow;
         private readonly MapNoise _broad;
         private readonly MapNoise _detail;
         private readonly MapNoise _patches;
@@ -41,6 +43,7 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             (_land, _edges, _shapes, _heights, _symmetry) = (land, edges, shapes, heights, layout.Symmetry);
             _strength = strength;
+            _flow = new MapFlow(layout.Symmetry, heights);
             _broad = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.RegionTint);
             _detail = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.TintDetail);
             _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SoilColour);
@@ -72,9 +75,13 @@ namespace HyperRTS.Editor.Maps.Ground
             light += soilLight;
             warmth += soilWarmth;
             var hollow = Hollow(p);
-            light -= hollow * _strength.hollowDarkening;
+            var flow = _flow.At(p);
+            light -= hollow * _strength.hollowDarkening + flow * _strength.flowDarkening;
             var wet = Mathf.Max(Mathf.Max(Wetness(edge.Region, p), hollow * _strength.hollowWetness), soilWet);
-            return new Color(light + warmth, light, light - warmth, wet);
+            wet = Mathf.Max(wet, flow * _strength.flowWetness);
+            // Keeps the brightness.
+            var green = flow * _strength.flowGreening;
+            return new Color(light + warmth - green, light + 0.4f * green, light - warmth - green, wet);
         }
 
         /// <summary>A region's own light and warmth shift, and the direction and phase of its gradient.</summary>

@@ -172,7 +172,7 @@ namespace HyperRTS.Editor.Maps.Checks
         private void SurfaceMix(MapSurfaceMix mix, string name)
         {
             InClimate(Climate.layers, mix.layer, "mix layer", name);
-            Require(mix.Valid, $"{name}: mix '{mix.layer}' coverage {mix.coverage} must be in 0..1 and size {mix.size} above 0.");
+            Require(mix.Valid, $"{name}: mix '{mix.layer}' coverage {mix.coverage} and alongFlow {mix.alongFlow} must be in 0..1 and size {mix.size} above 0.");
         }
 
         private void RoadClass(MapRoadClass road)
