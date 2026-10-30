@@ -168,7 +168,8 @@ Grass and row crops share one scatter host, described under [row crops](modules/
 | Road ribbons | A mesh just above the ground, drawn by `HyperRTS/Road`, with faded free ends |
 | Weather | A `WeatherSet` holding every climate weather, with the spec's weather active |
 
-**Terrain material.** `HyperRTS/Terrain` blends up to 16 layers by texel height. The climate's `heightBlendDepth`
+**Terrain material.** `HyperRTS/Terrain` blends up to 16 layers by texel height, gathered from the surfaces' own
+layers, mixes and tramlines. A layer's `plants` thins scattered plants where it is painted. The climate's `heightBlendDepth`
 sets how far one layer must stand above another to win; about 0.06 interlocks borders without speckle. Layers are
 hex-tiled and randomly turned by their `antiTiling` to hide repeats. Layers with `followsRows` turn with the row
 map, so furrows follow each field. Grass layers darken less in rain than bare ground.
@@ -214,6 +215,8 @@ The build then measures the map on the nav grid:
   dry. Across the map, stacks within 20 m of each other form one field. Fewer fields than the mode's
   `minRenewableFields` per player is an error.
 - **Decals.** More than the rules' `maxDecals` is a warning.
+- **Props.** The report lists props per hectare of each surface; a surface under its rules `propTargets` is a
+  warning.
 
 `MapHintWriter` turns the grid into bot hints: expansion order, attack lanes and defence points. The skirmish AI
 needs them to play the map. `MapSpecRule` shows a built map's report errors on **HyperRTS ▸ Tools ▸ Validate**.

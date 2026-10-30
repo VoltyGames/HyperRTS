@@ -32,6 +32,9 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>Row crop plants at full density, estimated from sown area and spacing.</summary>
         public long cropPlants;
 
+        /// <summary>Props per hectare of each surface.</summary>
+        public List<MapSurfaceProps> props = new();
+
         public static MapLandFigures Measure(MapGeneration generation)
         {
             var (land, placements) = (generation.Land, generation.Placements.All);
@@ -63,6 +66,7 @@ namespace HyperRTS.Editor.Maps.Report
                 entities = placements.Count(p => p.IsEntity),
                 cropTiles = generation.Crops.Tiles.Count,
                 cropPlants = generation.Crops.Plants,
+                props = MapSurfaceProps.Measure(land, placements, generation.Layout.Bounds),
             };
         }
     }

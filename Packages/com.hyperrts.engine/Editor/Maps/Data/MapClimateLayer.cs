@@ -41,6 +41,10 @@ namespace HyperRTS.Editor.Maps.Data
         [Range(0f, 1f)]
         public float grass;
 
+        [Tooltip("Share of their cover that scattered plants keep where this layer is painted, such as few stalks on burnt ground.")]
+        [Range(0f, 1f)]
+        public float plants = 1f;
+
         string IMapKeyed.Key => key;
 
         void IMapLibraryItem.Load(string key, MapLibraryRefs refs)

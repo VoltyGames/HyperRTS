@@ -32,6 +32,30 @@ namespace HyperRTS.Editor.Maps.Ground
         public void Set(int plant, int x, int z, float coverage) =>
             Layers[plant][z * Resolution + x] = (byte)Mathf.RoundToInt(Mathf.Clamp01(coverage) * 255f);
 
+        /// <summary>
+        /// Scales every plant by the share each terrain layer keeps (<paramref name="keep"/> per layer), weighted by
+        /// the layers painted under it. <paramref name="textureWeights"/> covers the same area.
+        /// </summary>
+        public void ThinByLayers(float[,,] textureWeights, float[] keep)
+        {
+            var size = textureWeights.GetLength(0);
+            for (var i = 0; i < Resolution * Resolution; i++)
+            {
+                var tx = Mathf.Min(size - 1, (i % Resolution) * size / Resolution);
+                var tz = Mathf.Min(size - 1, (i / Resolution) * size / Resolution);
+                var kept = 0f;
+                for (var l = 0; l < keep.Length; l++)
+                {
+                    kept += textureWeights[tz, tx, l] * keep[l];
+                }
+
+                foreach (var layer in Layers)
+                {
+                    layer[i] = (byte)Mathf.RoundToInt(layer[i] * Mathf.Clamp01(kept));
+                }
+            }
+        }
+
         /// <summary>Every <see cref="GrassField.TileSize"/> tile that grows any plant, with each plant's mean coverage there.</summary>
         public (List<GrassTile> Tiles, List<GrassTilePlant> Plants) Tiles()
         {

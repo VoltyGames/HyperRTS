@@ -67,6 +67,8 @@ namespace HyperRTS.Editor.Maps.Library
         {
             var file = File<MapClimateSurface>(surface.key);
             Add(_climate.layers, surface.layer, file);
+            surface.mixes.ForEach(mix => Add(_climate.layers, mix.layer, file));
+            Add(_climate.layers, surface.tramlines.layer, file);
             surface.trees.ForEach(tree => Tree(tree.tree, file));
             surface.plants.ForEach(coverage => Plant(coverage.plant, file));
             Add(_climate.rowCrops, surface.rowCrop, file);

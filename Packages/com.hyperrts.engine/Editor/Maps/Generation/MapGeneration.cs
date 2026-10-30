@@ -8,6 +8,7 @@ using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Planning;
 using HyperRTS.Editor.Maps.Refine;
+using HyperRTS.Editor.Maps.Report;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Generation
@@ -125,6 +126,21 @@ namespace HyperRTS.Editor.Maps.Generation
             {
                 _issues.Warn($"{decals} ground decals (wet ones included) are more than the rules' maxDecals {maxDecals}; lower surface decal densities.");
             }
+
+            WarnBareSurfaces();
+        }
+
+        private void WarnBareSurfaces()
+        {
+            var measured = MapSurfaceProps.Measure(Land, Placements.All, Layout.Bounds);
+            foreach (var target in Project.Rules.propTargets)
+            {
+                var found = measured.Find(m => m.surface == target.surface);
+                if (found != null && found.perHectare < target.perHectare)
+                {
+                    _issues.Warn($"{target.surface} carries {found.perHectare:0.0} props per hectare; the rules want {target.perHectare:0.0}.");
+                }
+            }
         }
 
         private void Paint()
@@ -135,6 +151,7 @@ namespace HyperRTS.Editor.Maps.Generation
             TextureWeights = MapGroundTexturePainter.Paint(Layout, Edges, Heights, climate, Layout.GroundTextureResolution);
             Grass = MapPlantPainter.Paint(Layout, Land, Edges, Shapes, Heights, climate, Placements.Clearance,
                 Layout.GrassResolution);
+            Grass.ThinByLayers(TextureWeights, climate.layers.ConvertAll(l => l.plants).ToArray());
             SplitTrees(climate);
         }
 

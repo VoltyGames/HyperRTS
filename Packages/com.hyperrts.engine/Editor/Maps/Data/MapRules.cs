@@ -40,6 +40,9 @@ namespace HyperRTS.Editor.Maps.Data
         [Min(0)]
         public int maxDecals = 600;
 
+        [Tooltip("Fewest props per hectare per surface before the report warns it looks bare.")]
+        public List<MapPropTarget> propTargets = new();
+
         [Tooltip("Thresholds per mode.")]
         public List<MapModeRules> modes = new();
 
