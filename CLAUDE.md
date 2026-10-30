@@ -3,27 +3,10 @@
 HyperRTS is a reusable RTS engine on Unity DOTS, not a game: prefer generic, data-driven code. The repo is public,
 so no third-party assets go in.
 
-## Environment
-
-- Unity 7000.0.0a12 (CoreCLR editor) with URP 17.7. Input System only, never `UnityEngine.Input`.
-- DOTS packages at 6.7: Entities, Entities Graphics, Collections, Burst, Mathematics. Netcode for Entities
-  is its own package, 7.1, in `Unity.Netcode`.
-
 ## Layout
 
 The engine is the UPM package `Packages/com.hyperrts.engine/` and never depends on `Assets/`. `Assets/Demo/` is the
 sample game.
-
-| Folder | Holds |
-| --- | --- |
-| `Core/` | Contracts (`SystemGroups`, `SimulationWorlds`, `HyperRTSMenu`, `HyperRTSIcons`, `HyperRTSDocs`), in `HyperRTS.Simulation` |
-| `Simulation/` | Headless gameplay, one folder per module, `Common` at the base |
-| `Client/` | Client state shared by input, HUD and overlays, in `HyperRTS.Presentation` |
-| `Presentation/` | Rendering, team colours, overlays, fog, the HUD, audio |
-| `Input/` | Camera, input actions, input to `PlayerCommand` |
-| `Network/` | Sessions, join, command RPCs, replication, relevancy, cues ([networking](docs/networking.md)) |
-| `Editor/` | Tools window, generators, templates, catalog, inspectors, validation, Play tools, Map Editor |
-| `Prefabs/` | The `RTSWorld` rig (camera, HUD), the `MatchState` ghost, HUD UI |
 
 Assemblies layer so the simulation runs headless: `Network` and `Presentation` build on `Simulation`, `Input` on
 `Presentation`, Editor and tests on top. `HyperRTS.Simulation` never references Graphics, InputSystem or
@@ -65,6 +48,7 @@ UIElements, and a headless server never runs `Client/`. See [architecture](docs/
 - Structural changes go through an `EntityCommandBuffer`, from jobs through `EndSimulationEntityCommandBufferSystem`.
   `ecb.CreateEntity` returns the real entity at record time.
 - Systems take time from `SystemAPI.Time`, never `UnityEngine.Time`; UI and MonoBehaviours may.
+- Input System only, never `UnityEngine.Input`.
 - UI is UI Toolkit everywhere, in UXML beside its script (`MapsPage.uxml` beside `MapsPage.cs`). Code only looks
   elements up, wires them and builds rows from templates or Painter2D. No IMGUI; uGUI only where Animation Clips or
   Timeline need it; Scene view `Handles` are the exception. Per-unit markers such as health bars are instanced meshes.
