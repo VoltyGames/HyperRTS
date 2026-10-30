@@ -11,8 +11,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Tests.Effects
 {
     /// <summary>
-    /// A spec with one layer of every kind, a streamed strip and a child of a source with random frames builds a graph
-    /// the pool can play whose shaders compile, and the stamp finds stale graphs.
+    /// A spec with one layer of every kind, every optional field set, a streamed strip and a child of a source with
+    /// random frames builds a graph the pool can play whose shaders compile, and the stamp finds stale graphs.
     /// </summary>
     public class EffectGraphBuilderTests
     {
@@ -81,19 +81,23 @@ namespace HyperRTS.Editor.Tests.Effects
                 {
                     "ring" => "",
                     "glow" => @"""shape"": ""sphere"", ""aspect"": 0.6, ""upright"": true, ""pivot"": 0.5, ""drift"": { ""x"": 0.3, ""y"": 0.6, ""z"": 0 }, ",
+                    "puff" => @"""shape"": ""box"", ""shapeScale"": { ""x"": 1.2, ""y"": 0.15, ""z"": 1.1 }, ",
                     _ => @"""shape"": ""cone"", ",
                 };
+                var loops = kind is "glow" or "sixway" ? @", ""randomStart"": true" : "";
                 var spawn = kind == "strip" ? @"""rate"": 10, ""ratePerMetre"": 2," : @"""bursts"": [ { ""delay"": 0, ""count"": { ""min"": 2, ""max"": 4 }, ""repeats"": 1, ""interval"": 0.5 } ],";
                 layers.Add($@"{{ ""name"": ""{kind}"", ""kind"": ""{kind}"", ""capacity"": 8, {shape} {spawn}
                     ""lifetime"": {{ ""min"": 1, ""max"": 2 }}, ""size"": {{ ""min"": 1, ""max"": 1 }},
                     ""sizeOverLife"": [ {{ ""time"": 0, ""value"": 1 }}, {{ ""time"": 1, ""value"": 2 }} ],
                     ""alphaOverLife"": [ {{ ""time"": 0, ""value"": 1 }}, {{ ""time"": 1, ""value"": 0 }} ],
                     ""texture"": ""{Texture}"", ""negativeTexture"": ""{Texture}"", ""motionTexture"": ""{Texture}"",
-                    ""flipbook"": {{ ""columns"": 2, ""rows"": 2, ""from"": 0, ""to"": 1 }},
+                    ""flipbook"": {{ ""columns"": 2, ""rows"": 2, ""from"": 0, ""to"": 1{loops} }},
                     ""opacity"": 1.2, ""ambient"": 0.8, ""emissionRamp"": ""{Texture}"",
                     ""emissionColor"": {{ ""r"": 4, ""g"": 2, ""b"": 1, ""a"": 1 }}, ""heatOverLife"": [ {{ ""time"": 0, ""value"": 1 }} ],
-                    ""mesh"": ""{Chunk}"", ""ground"": true, ""bounce"": 0.3, ""gravity"": 1, ""length"": 2,
-                    ""wind"": 0.5, ""rim"": true, ""distortion"": 0.6, ""scroll"": {{ ""x"": 0, ""y"": 0.1 }} }}");
+                    ""minHeatOverLife"": [ {{ ""time"": 0, ""value"": 0.5 }} ],
+                    ""mesh"": ""{Chunk}"", ""ground"": true, ""groundHeight"": -1.5, ""bounce"": 0.3, ""gravity"": 1, ""length"": 2,
+                    ""wind"": 0.5, ""drag"": 2, ""dragBySpeed"": true, ""rim"": true, ""axis"": {{ ""x"": 0, ""y"": 0, ""z"": 1 }},
+                    ""noise"": {{ ""strength"": 0.5, ""frequency"": 0.6, ""scroll"": 0.4 }}, ""orbit"": {{ ""min"": 140, ""max"": 200 }}, ""distortion"": 0.6, ""scroll"": {{ ""x"": 0, ""y"": 0.1 }} }}");
             }
 
             layers.Add($@"{{ ""name"": ""child"", ""kind"": ""puff"", ""capacity"": 8, ""shape"": ""cone"", ""parent"": ""source"", ""rate"": 2,

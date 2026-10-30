@@ -1,4 +1,4 @@
-// A VFX Graph Update block: bounces particles off the ground plane through the burst origin (targetPosition).
+// A VFX Graph Update block: bounces particles off the ground plane through targetPosition, set by Place At Burst.
 // bounce keeps that share of the fall speed; friction takes that share of the speed along the ground.
 void BounceOnGround(inout VFXAttributes attributes, in float bounce, in float friction)
 {

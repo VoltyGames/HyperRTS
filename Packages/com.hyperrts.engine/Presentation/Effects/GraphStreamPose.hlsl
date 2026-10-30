@@ -12,5 +12,5 @@ void PlaceAlongPath(inout VFXAttributes attributes, in float3 from, in float3 to
     float3 velocity = attributes.velocity * scale.x;
     attributes.velocity = velocity.x * right + velocity.y * up + velocity.z * ahead;
     attributes.size *= scale.x;
-    attributes.targetPosition = origin;
+    attributes.targetPosition = origin + float3(0.0, attributes.targetPosition.y * scale.x, 0.0);
 }

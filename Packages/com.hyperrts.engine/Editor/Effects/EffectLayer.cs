@@ -37,11 +37,16 @@ namespace HyperRTS.Editor.Effects
         public float radius;
         public bool rim;
         public float spread;
+        public Vector3 axis;
+        public Vector3 shapeScale;
         public FloatRange speed;
         public float gravity;
         public float drag;
+        public bool dragBySpeed;
         public float wind;
         public Vector3 drift;
+        public EffectNoise noise;
+        public FloatRange orbit;
 
         public List<CurveKey> sizeOverLife = new();
         public List<ColorKey> colorOverLife = new();
@@ -60,12 +65,14 @@ namespace HyperRTS.Editor.Effects
         public string emissionRamp;
         public Color emissionColor;
         public List<CurveKey> heatOverLife = new();
+        public List<CurveKey> minHeatOverLife = new();
 
         public string mesh;
         public List<string> meshNames = new();
         public float metallic;
         public float smoothness;
         public bool ground;
+        public float groundHeight;
         public float bounce;
         public float friction;
 
@@ -91,6 +98,12 @@ namespace HyperRTS.Editor.Effects
             }
         }
 
+        /// <summary>Which way the shape faces in rig space, +Y unless set.</summary>
+        public Vector3 ShapeAxis => axis == Vector3.zero ? Vector3.up : axis.normalized;
+
+        /// <summary>The shape's per-axis scale of start offsets, in shape space before it turns onto the axis.</summary>
+        public Vector3 ShapeScale => shapeScale == Vector3.zero ? Vector3.one : shapeScale;
+
         public bool Glows => Kind is EffectLayerKind.Glow or EffectLayerKind.Spark;
 
         /// <summary>Emits by rate while a stream plays, rather than on the Burst event.</summary>
@@ -108,6 +121,8 @@ namespace HyperRTS.Editor.Effects
         public AnimationCurve SizeCurve() => Curve(sizeOverLife);
 
         public AnimationCurve HeatCurve() => Curve(heatOverLife);
+
+        public AnimationCurve MinHeatCurve() => Curve(minHeatOverLife);
 
         public AnimationCurve AlphaCurve() => Curve(alphaOverLife);
 

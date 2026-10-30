@@ -18,7 +18,6 @@ namespace HyperRTS.Editor.Effects
         // Motion maps hold each texel's move to the next frame as plus or minus 1/64 of the sheet (FlipbookMotion.hlsl).
         private const float MotionSheetShare = 1f / 64f;
 
-
         private readonly GraphModel _graph;
         private readonly EffectLayer _layer;
         private readonly Vector2 _at;
@@ -112,9 +111,11 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(output, "mainTexture", _layer.Load<Texture2D>(_layer.texture, "texture"));
         }
 
+        // Unshadowed, as the Shuriken smoke material: a puff at ground level would take the grass's shadows.
         private void Puff(object output)
         {
             _graph.Set(output, "blendMode", "Alpha");
+            _graph.Set(output, "receiveShadows", false);
             _graph.Set(output, "useBaseColorMap", "ColorAndAlpha");
             Flipbook(output);
             _graph.Slot(output, "baseColorMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
@@ -156,17 +157,40 @@ namespace HyperRTS.Editor.Effects
             var color = _layer.emissionColor;
             _graph.Slot(output, "EmissionRamp", _layer.Load<Texture2D>(_layer.emissionRamp, "emissionRamp"));
             _graph.Slot(output, "EmissionColor", new Vector3(color.r, color.g, color.b));
-            var heat = _graph.Operator("SampleCurve", _at + new Vector2(-300f, 200f));
-            _graph.Slot(heat, "curve", _layer.HeatCurve());
-            _graph.Link(_graph.Operator("AgeOverLifetime", _at + new Vector2(-520f, 200f)), heat, "time");
+            var age = _graph.Operator("AgeOverLifetime", _at + new Vector2(-780f, 200f));
+            var heat = HeatAtAge(_layer.HeatCurve(), age, 200f);
+            if (_layer.minHeatOverLife.Count > 0)
+            {
+                // Each particle keeps one pick between the curves, as Shuriken's random between two curves.
+                var pick = _graph.Operator("UnityEditor.VFX.Operator.Lerp", _at + new Vector2(-300f, 200f));
+                _graph.Link(HeatAtAge(_layer.MinHeatCurve(), age, 300f), pick, "x");
+                _graph.Link(heat, pick, "y");
+                _graph.Link(_graph.Operator("UnityEditor.VFX.Operator.Random", _at + new Vector2(-520f, 400f)), pick, "s");
+                heat = pick;
+            }
+
             _graph.Link(heat, output, "Heat");
+        }
+
+        private object HeatAtAge(AnimationCurve curve, object age, float y)
+        {
+            var heat = _graph.Operator("SampleCurve", _at + new Vector2(-520f, y));
+            _graph.Slot(heat, "curve", curve);
+            _graph.Link(age, heat, "time");
+            return heat;
         }
 
         private void Debris(object output)
         {
-            // Chunks draw with their colour alone; a base colour map left empty reads as clear.
+            // Chunks draw with their colour, tinted by the texture when set; a base colour map left empty reads as clear.
+            var textured = !string.IsNullOrEmpty(_layer.texture);
             _graph.Set(output, "blendMode", "Opaque");
-            _graph.Set(output, "useBaseColorMap", "None");
+            _graph.Set(output, "useBaseColorMap", textured ? "Color" : "None");
+            if (textured)
+            {
+                _graph.Slot(output, "baseColorMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
+            }
+
             _graph.Set(output, "castShadows", true);
             var meshes = _layer.Meshes();
             _graph.Set(output, "MeshCount", (uint)meshes.Length);
@@ -241,7 +265,7 @@ namespace HyperRTS.Editor.Effects
                 Curve(output, "color", _layer.LifeGradient(), "Multiply");
             }
 
-            if (_layer.flipbook.IsSet && !_layer.flipbook.random && !_layer.DrawsShaderGraph)
+            if (_layer.flipbook.PlaysOverLife && !_layer.DrawsShaderGraph)
             {
                 Curve(output, "texIndex", _layer.FrameCurve(), "Overwrite");
             }

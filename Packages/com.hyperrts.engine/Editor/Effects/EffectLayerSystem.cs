@@ -80,11 +80,7 @@ namespace HyperRTS.Editor.Effects
                 PickAngle(initialize, "angularVelocity", _layer.spin);
             }
 
-            if (_layer.flipbook.random)
-            {
-                Pick(initialize, "texIndex", _layer.RandomFrames());
-            }
-
+            PickFrame(initialize);
             // VFX puts the particle at the pivot, so a card standing on it has its pivot at the bottom.
             if (_layer.pivot != 0f)
             {
@@ -97,6 +93,25 @@ namespace HyperRTS.Editor.Effects
             _emission.Place(initialize);
         }
 
+        private void PickFrame(object initialize)
+        {
+            var flipbook = _layer.flipbook;
+            if (flipbook.random && flipbook.randomStart)
+            {
+                throw new InvalidOperationException($"HyperRTS: layer '{_layer.name}' flipbook is both random and randomStart; pick one.");
+            }
+
+            if (flipbook.random)
+            {
+                Pick(initialize, "texIndex", _layer.RandomFrames());
+            }
+
+            if (flipbook.randomStart)
+            {
+                Pick(initialize, "texIndex", new FloatRange(0f, flipbook.Frames - 0.01f));
+            }
+        }
+
         private void Emit(object initialize)
         {
             var emit = _graph.Hlsl(initialize, "Emit From Shape", Includes + "GraphEmitShape.hlsl");
@@ -106,11 +121,15 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(emit, "spread", _layer.spread);
             _graph.Slot(emit, "speed", new Vector2(_layer.speed.min, _layer.speed.max));
             _graph.Slot(emit, "rim", _layer.rim ? 1f : 0f);
+            _graph.Slot(emit, "axis", _layer.ShapeAxis);
+            _graph.Slot(emit, "shapeScale", _layer.ShapeScale);
+            _graph.Slot(emit, "ground", _layer.groundHeight);
         }
 
         private void Update(object update)
         {
             Forces(update);
+            Wander(update);
 
             // Children and Shader Graphs read the stored alpha and frame, which an output's curve never writes back.
             if (_layer.KeepsAlpha && _layer.alphaOverLife.Count > 0)
@@ -118,9 +137,17 @@ namespace HyperRTS.Editor.Effects
                 StoreOverLife(update, "alpha", _layer.AlphaCurve());
             }
 
-            if (_layer.DrawsShaderGraph && _layer.flipbook.IsSet && !_layer.flipbook.random)
+            if (_layer.DrawsShaderGraph && _layer.flipbook.PlaysOverLife)
             {
                 StoreOverLife(update, "texIndex", _layer.FrameCurve());
+            }
+
+            if (_layer.flipbook.randomStart)
+            {
+                var loop = _graph.Hlsl(update, "Loop Frames", Includes + "GraphLoopFrames.hlsl");
+                _graph.Slot(loop, "frames", (float)_layer.flipbook.Frames);
+                _graph.Slot(loop, "span", _layer.flipbook.to - _layer.flipbook.from);
+                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 880f)), loop, "deltaTime");
             }
 
             if (_layer.ground)
@@ -143,6 +170,7 @@ namespace HyperRTS.Editor.Effects
             {
                 var drag = _graph.Hlsl(update, "Slow Down", Includes + "GraphDrag.hlsl");
                 _graph.Slot(drag, "drag", _layer.drag);
+                _graph.Slot(drag, "bySpeed", _layer.dragBySpeed ? 1f : 0f);
                 _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 760f)), drag, "deltaTime");
             }
 
@@ -158,6 +186,26 @@ namespace HyperRTS.Editor.Effects
                 var wind = _graph.Hlsl(update, "Drift With Wind", Includes + "GraphWind.hlsl");
                 _graph.Slot(wind, "share", _layer.wind);
                 _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 800f)), wind, "deltaTime");
+            }
+        }
+
+        private void Wander(object update)
+        {
+            if (_layer.noise.IsSet)
+            {
+                var noise = _graph.Hlsl(update, "Stir With Noise", Includes + "GraphNoise.hlsl");
+                _graph.Slot(noise, "strength", _layer.noise.strength);
+                _graph.Slot(noise, "frequency", _layer.noise.frequency);
+                _graph.Slot(noise, "scroll", _layer.noise.scroll);
+                _graph.Link(_graph.BuiltIn("VfxTotalTime", new Vector2(_x - 300f, 920f)), noise, "time");
+                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 960f)), noise, "deltaTime");
+            }
+
+            if (_layer.orbit.min != 0f || _layer.orbit.max != 0f)
+            {
+                var orbit = _graph.Hlsl(update, "Orbit Spawn Point", Includes + "GraphOrbit.hlsl");
+                _graph.Slot(orbit, "rate", new Vector2(_layer.orbit.min, _layer.orbit.max));
+                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 1000f)), orbit, "deltaTime");
             }
         }
 
