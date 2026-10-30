@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using HyperRTS.Presentation.Effects;
 using UnityEditor;
+using UnityEditor.Rendering;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Effects
@@ -72,6 +73,47 @@ namespace HyperRTS.Editor.Effects
             }
 
             return importer.userData == EffectGraphSpec.Stamp(jsonPath) ? null : $"{graphPath} is older than {jsonPath}; rebuild it";
+        }
+
+        /// <summary>
+        /// The compile errors of a built graph's compute shaders and of every output pass's default variant for
+        /// Windows, which VFX Graph otherwise reports only once the graph first draws.
+        /// </summary>
+        public static IEnumerable<string> ShaderErrors(string graphPath)
+        {
+            foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(graphPath))
+            {
+                var messages = asset switch
+                {
+                    ComputeShader compute => ShaderUtil.GetComputeShaderMessages(compute),
+                    Shader shader => PassMessages(shader),
+                    _ => Enumerable.Empty<ShaderMessage>(),
+                };
+                foreach (var message in messages.Where(m => m.severity == ShaderCompilerMessageSeverity.Error))
+                {
+                    yield return $"{asset.name}: {message.message} ({message.file}:{message.line})";
+                }
+            }
+        }
+
+        private static IEnumerable<ShaderMessage> PassMessages(Shader shader)
+        {
+            var data = ShaderUtil.GetShaderData(shader);
+            for (var s = 0; s < data.SerializedSubshaderCount; s++)
+            {
+                var subshader = data.GetSerializedSubshader(s);
+                for (var p = 0; p < subshader.PassCount; p++)
+                {
+                    var pass = subshader.GetPass(p);
+                    foreach (var stage in new[] { ShaderType.Vertex, ShaderType.Fragment }.Where(pass.HasShaderStage))
+                    {
+                        foreach (var message in pass.CompileVariant(stage, Array.Empty<string>(), ShaderCompilerPlatform.D3D, BuildTarget.StandaloneWindows64).Messages)
+                        {
+                            yield return message;
+                        }
+                    }
+                }
+            }
         }
 
         [MenuItem(BuildMenu)]

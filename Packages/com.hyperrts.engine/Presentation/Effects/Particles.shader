@@ -120,12 +120,15 @@ Shader "HyperRTS/Particles"
             #include "Packages/com.hyperrts.engine/Presentation/Effects/ParticlesFog.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Effects/FlipbookMotion.hlsl"
 
+            TEXTURE2D(_MotionMap);
+            SAMPLER(sampler_MotionMap);
+
             half4 ParticlesFogFragment(VaryingsParticle input) : SV_Target
             {
                 #if defined(_FLIPBOOK_MOTION) && defined(_FLIPBOOKBLENDING_ON)
                     float2 current = input.texcoord;
                     float2 next = input.texcoord2AndBlend.xy;
-                    FlipbookMotionWarp(current, next, input.texcoord2AndBlend.z);
+                    FlipbookMotionWarp(TEXTURE2D_ARGS(_MotionMap, sampler_MotionMap), current, next, input.texcoord2AndBlend.z);
                     input.texcoord = current;
                     input.texcoord2AndBlend.xy = next;
                 #endif

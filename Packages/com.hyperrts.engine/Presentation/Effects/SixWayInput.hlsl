@@ -7,6 +7,8 @@ SAMPLER(sampler_PositiveMap);
 TEXTURE2D(_NegativeMap);
 SAMPLER(sampler_NegativeMap);
 TEXTURE2D(_EmissionGradient);
+TEXTURE2D(_MotionMap);
+SAMPLER(sampler_MotionMap);
 
 CBUFFER_START(UnityPerMaterial)
     half _Density;

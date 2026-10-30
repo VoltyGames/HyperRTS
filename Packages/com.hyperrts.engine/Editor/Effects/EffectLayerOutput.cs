@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Effects
@@ -9,12 +10,14 @@ namespace HyperRTS.Editor.Effects
     public sealed class EffectLayerOutput
     {
         public const string DistortShader = "Packages/com.hyperrts.engine/Presentation/Effects/EffectDistort.shadergraph";
+        public const string SixWayShader = "Packages/com.hyperrts.engine/Presentation/Effects/EffectSixWay.shadergraph";
 
         // Before the other transparents, which the opaque texture lacks, so smoke and flames are never bent away.
         private const int DistortQueueOffset = -50;
 
         // Motion maps hold each texel's move to the next frame as plus or minus 1/64 of the sheet (FlipbookMotion.hlsl).
         private const float MotionSheetShare = 1f / 64f;
+
 
         private readonly GraphModel _graph;
         private readonly EffectLayer _layer;
@@ -29,7 +32,12 @@ namespace HyperRTS.Editor.Effects
 
         public void Write(object update)
         {
-            var output = _layer.Kind == EffectLayerKind.Distort ? _graph.ShaderGraphOutput(DistortShader, DistortQueueOffset, _at) : _graph.Context(Context(), _at);
+            if (_layer.DrawsShaderGraph && _layer.colorOverLife.Count > 0)
+            {
+                throw new InvalidOperationException($"HyperRTS: {_layer.kind} layer '{_layer.name}' draws through a Shader Graph, which reads the start colour; it takes no colorOverLife.");
+            }
+
+            var output = Output();
             _graph.Flow(update, output);
             switch (_layer.Kind)
             {
@@ -59,14 +67,14 @@ namespace HyperRTS.Editor.Effects
                     break;
             }
 
-            if (_layer.softness > 0f && _layer.Kind != EffectLayerKind.Distort)
+            if (_layer.softness > 0f && !_layer.DrawsShaderGraph)
             {
                 _graph.Set(output, "useSoftParticle", true);
                 _graph.Slot(output, "softParticleFadeDistance", _layer.softness);
             }
 
             OverLife(output);
-            if (_layer.Kind == EffectLayerKind.Distort)
+            if (_layer.DrawsShaderGraph)
             {
                 return;
             }
@@ -74,6 +82,13 @@ namespace HyperRTS.Editor.Effects
             var fog = _graph.Hlsl(output, "Fog Of War", EffectLayerSystem.Includes + "GraphFogOfWar.hlsl");
             _graph.Slot(fog, "glow", _layer.Glows ? 1f : 0f);
         }
+
+        private object Output() => _layer.Kind switch
+        {
+            EffectLayerKind.Distort => _graph.ShaderGraphOutput(DistortShader, DistortQueueOffset, _at),
+            EffectLayerKind.SixWay or EffectLayerKind.Ring => _graph.ShaderGraphOutput(SixWayShader, 0, _at),
+            _ => _graph.Context(Context(), _at),
+        };
 
         private string Context() => _layer.Kind switch
         {
@@ -98,28 +113,46 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(output, "baseColorMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
         }
 
+        // The Shader Graph lights, fogs and glows as ParticlesSixWay does, from the stored colour, alpha and frame.
         private void SixWay(object output)
         {
-            _graph.Set(output, "materialType", "SixWaySmokeLit");
-            _graph.Set(output, "receiveShadows", true);
-            if (_layer.emission > 0f)
+            if (_layer.opacity <= 0f || _layer.ambient <= 0f)
             {
-                _graph.Set(output, "emissiveMode", "SingleChannel");
-                _graph.Set(output, "useEmissiveChannelScale", true);
+                throw new InvalidOperationException($"HyperRTS: {_layer.kind} layer '{_layer.name}' needs an opacity and an ambient, as its six-way material's Density and Ambient Strength.");
             }
 
-            Flipbook(output);
-            _graph.Slot(output, "positiveAxesLightmap", _layer.Load<Texture2D>(_layer.texture, "texture"));
-            _graph.Slot(output, "negativeAxesLightmap", _layer.Load<Texture2D>(_layer.negativeTexture, "negativeTexture"));
-            if (_layer.emission > 0f)
+            _graph.Slot(output, "PositiveMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
+            _graph.Slot(output, "NegativeMap", _layer.Load<Texture2D>(_layer.negativeTexture, "negativeTexture"));
+            _graph.Slot(output, "MotionMap", _layer.Load<Texture2D>(_layer.motionTexture, "motionTexture"));
+            _graph.Slot(output, "Opacity", _layer.opacity);
+            _graph.Slot(output, "AmbientStrength", _layer.ambient);
+            _graph.Slot(output, "SoftDistance", _layer.softness);
+            if (!string.IsNullOrEmpty(_layer.emissionRamp))
             {
-                _graph.Slot(output, "emissiveGradient", _layer.EmissionGradient());
-                _graph.Slot(output, "emissiveMultiplier", _layer.emission);
-                var heat = _graph.Operator("SampleCurve", _at + new Vector2(-300f, 200f));
-                _graph.Slot(heat, "curve", _layer.HeatCurve());
-                _graph.Link(_graph.Operator("AgeOverLifetime", _at + new Vector2(-520f, 200f)), heat, "time");
-                _graph.Link(heat, output, "emissiveChannelScale");
+                SixWayGlow(output);
             }
+
+            if (_layer.flipbook.IsSet)
+            {
+                _graph.Slot(output, "FlipbookSize", new Vector2(_layer.flipbook.columns, _layer.flipbook.rows));
+                LinkAttribute("texIndex", output, "Frame", 400f);
+            }
+
+            LinkAttribute("color", output, "ParticleColor", 300f);
+            LinkAttribute("alpha", output, "ParticleAlpha", 350f);
+        }
+
+        // The ramp at the emission channel times the heat over life, times the emission colour (M_FX_SixWay_Fire).
+        private void SixWayGlow(object output)
+        {
+            // As the material stores it: HDR emission reaches ParticlesSixWay unconverted, matched in Play.
+            var color = _layer.emissionColor;
+            _graph.Slot(output, "EmissionRamp", _layer.Load<Texture2D>(_layer.emissionRamp, "emissionRamp"));
+            _graph.Slot(output, "EmissionColor", new Vector3(color.r, color.g, color.b));
+            var heat = _graph.Operator("SampleCurve", _at + new Vector2(-300f, 200f));
+            _graph.Slot(heat, "curve", _layer.HeatCurve());
+            _graph.Link(_graph.Operator("AgeOverLifetime", _at + new Vector2(-520f, 200f)), heat, "time");
+            _graph.Link(heat, output, "Heat");
         }
 
         private void Debris(object output)
@@ -160,9 +193,14 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(output, "Strength", _layer.distortion);
             _graph.Slot(output, "Scroll", _layer.scroll);
             _graph.Slot(output, "SoftFade", _layer.softness);
-            var alpha = _graph.Operator("VFXAttributeParameter", _at + new Vector2(-300f, 200f));
-            _graph.Set(alpha, "attribute", "alpha");
-            _graph.Link(alpha, output, "Weight");
+            LinkAttribute("alpha", output, "Weight", 200f);
+        }
+
+        private void LinkAttribute(string attribute, object output, string input, float y)
+        {
+            var read = _graph.Operator("VFXAttributeParameter", _at + new Vector2(-300f, y));
+            _graph.Set(read, "attribute", attribute);
+            _graph.Link(read, output, input);
         }
 
         private void Flipbook(object output)
@@ -193,10 +231,10 @@ namespace HyperRTS.Editor.Effects
 
             if (_layer.colorOverLife.Count > 0 || (_layer.alphaOverLife.Count > 0 && !_layer.KeepsAlpha))
             {
-                Curve(output, "color", _layer.KeepsAlpha ? _layer.ColorGradient() : _layer.LifeGradient(), "Multiply");
+                Curve(output, "color", _layer.LifeGradient(), "Multiply");
             }
 
-            if (_layer.flipbook.IsSet && !_layer.flipbook.random)
+            if (_layer.flipbook.IsSet && !_layer.flipbook.random && !_layer.DrawsShaderGraph)
             {
                 Curve(output, "texIndex", _layer.FrameCurve(), "Overwrite");
             }

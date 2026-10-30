@@ -1,4 +1,5 @@
-// Six-way light map shading from the sun, clustered lights and the ambient probe. Needs URP Lighting.hlsl and SceneLighting.hlsl first.
+// Six-way light map sampling and shading from the sun, clustered lights and the ambient probe, shared by the particle
+// shader and the effect graph output. Needs URP Lighting.hlsl, SceneLighting.hlsl and SceneFog.hlsl first.
 #ifndef HYPERRTS_SIX_WAY_LIGHTING_INCLUDED
 #define HYPERRTS_SIX_WAY_LIGHTING_INCLUDED
 
@@ -9,10 +10,20 @@ struct SixWayMaps
     half3 negative; // lit from -X left, -Y bottom, +Z front
 };
 
-// Rows are the particle basis: X right, Y up, Z toward the camera.
-half3x3 SixWayBasis(SixWayVaryings input)
+// Both maps blended between two flipbook frames; positive alpha is the opacity and negative alpha the emission.
+SixWayMaps SampleSixWayMaps(TEXTURE2D_PARAM(positiveMap, positiveSampler), TEXTURE2D_PARAM(negativeMap, negativeSampler),
+    float2 current, float2 next, half frameBlend, out half opacity, out half emission)
 {
-    return half3x3(input.tangentWS, input.bitangentWS, input.normalWS);
+    half4 positive = lerp(SAMPLE_TEXTURE2D(positiveMap, positiveSampler, current),
+        SAMPLE_TEXTURE2D(positiveMap, positiveSampler, next), frameBlend);
+    half4 negative = lerp(SAMPLE_TEXTURE2D(negativeMap, negativeSampler, current),
+        SAMPLE_TEXTURE2D(negativeMap, negativeSampler, next), frameBlend);
+    SixWayMaps maps;
+    maps.positive = positive.rgb;
+    maps.negative = negative.rgb;
+    opacity = positive.a;
+    emission = negative.a;
+    return maps;
 }
 
 // Response to a unit light from direction, in the particle basis.
@@ -47,7 +58,7 @@ half3 SixWayAdditionalLights(float3 positionWS, float2 screenUV, half3x3 basis, 
     return lighting;
 }
 
-// Sky, ground and the mean horizon from the probe, evaluated per vertex.
+// Sky, ground and the mean horizon from the probe.
 void SixWayAmbientColors(out half3 up, out half3 down, out half3 side)
 {
     up = SampleSH(half3(0.0h, 1.0h, 0.0h));
@@ -57,14 +68,29 @@ void SixWayAmbientColors(out half3 up, out half3 down, out half3 side)
 }
 
 // The maps lit from world up and down take the sky and ground; the other four directions share the horizon colour.
-half3 SixWayAmbient(SixWayVaryings input, half3x3 basis, SixWayMaps maps)
+half3 SixWayAmbient(half3 ambientUp, half3 ambientDown, half3 ambientSide, half3x3 basis, SixWayMaps maps)
 {
     half3 up = mul(basis, half3(0.0h, 1.0h, 0.0h));
     half fromUp = SixWayResponse(up, maps);
     half fromDown = SixWayResponse(-up, maps);
     half total = dot(maps.positive + maps.negative, half3(1.0h, 1.0h, 1.0h));
-    half3 ambient = input.ambientUp * fromUp + input.ambientDown * fromDown + input.ambientSide * (total - fromUp - fromDown);
-    return ambient * _AmbientStrength;
+    return ambientUp * fromUp + ambientDown * fromDown + ambientSide * (total - fromUp - fromDown);
+}
+
+// Hot cores ramp toward the ramp's right end (white-yellow), cooling edges toward its left (red).
+half3 SixWayGlow(TEXTURE2D_PARAM(ramp, rampSampler), half3 color, half emissionMap, half heat)
+{
+    half emission = saturate(emissionMap * heat);
+    return color * SAMPLE_TEXTURE2D_LOD(ramp, rampSampler, float2(emission, 0.5), 0).rgb * emission;
+}
+
+// Premultiplied alpha: the lit smoke is fogged and scaled by its alpha, the glow adds on top and dims in fog.
+half4 SixWayShade(SixWayMaps maps, float3 positionWS, float2 screenUV, half3x3 basis, half3 ambient, half3 tint,
+    half alpha, half3 glow, SceneFog fog)
+{
+    half3 light = SixWayMainLight(positionWS, basis, maps) + SixWayAdditionalLights(positionWS, screenUV, basis, maps) + ambient;
+    half3 smoke = ApplySceneFog(tint * light, fog) * alpha;
+    return half4(smoke + glow * ((1.0h - fog.atmosphere.a) * (1.0h - fog.war.a)), alpha);
 }
 
 #endif

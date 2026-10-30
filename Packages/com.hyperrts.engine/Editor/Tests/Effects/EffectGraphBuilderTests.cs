@@ -11,8 +11,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Tests.Effects
 {
     /// <summary>
-    /// A spec with one layer of every kind, a streamed strip and a child of a source builds a graph the pool can play,
-    /// and the stamp finds stale graphs.
+    /// A spec with one layer of every kind, a streamed strip and a child of a source builds a graph the pool can play
+    /// whose shaders compile, and the stamp finds stale graphs.
     /// </summary>
     public class EffectGraphBuilderTests
     {
@@ -58,6 +58,7 @@ namespace HyperRTS.Editor.Tests.Effects
                 Object.DestroyImmediate(probe.gameObject);
             }
 
+            CollectionAssert.IsEmpty(EffectGraphBuilder.ShaderErrors(Graph));
             Assert.IsNull(EffectGraphBuilder.Problem(Spec));
             File.AppendAllText(Spec, " ");
             StringAssert.Contains("older than", EffectGraphBuilder.Problem(Spec));
@@ -65,7 +66,11 @@ namespace HyperRTS.Editor.Tests.Effects
 
         [TestCase(TestBurst)]
         [TestCase(TestStream)]
-        public void TestGraphs_AreCurrent(string spec) => Assert.IsNull(EffectGraphBuilder.Problem(spec));
+        public void TestGraphs_AreCurrentAndCompile(string spec)
+        {
+            Assert.IsNull(EffectGraphBuilder.Problem(spec));
+            CollectionAssert.IsEmpty(EffectGraphBuilder.ShaderErrors(EffectGraphSpec.GraphPath(spec)));
+        }
 
         private static string AllKinds()
         {
@@ -80,7 +85,8 @@ namespace HyperRTS.Editor.Tests.Effects
                     ""alphaOverLife"": [ {{ ""time"": 0, ""value"": 1 }}, {{ ""time"": 1, ""value"": 0 }} ],
                     ""texture"": ""{Texture}"", ""negativeTexture"": ""{Texture}"", ""motionTexture"": ""{Texture}"",
                     ""flipbook"": {{ ""columns"": 2, ""rows"": 2, ""from"": 0, ""to"": 1 }},
-                    ""emission"": 2, ""heatOverLife"": [ {{ ""time"": 0, ""value"": 1 }} ],
+                    ""opacity"": 1.2, ""ambient"": 0.8, ""emissionRamp"": ""{Texture}"",
+                    ""emissionColor"": {{ ""r"": 4, ""g"": 2, ""b"": 1, ""a"": 1 }}, ""heatOverLife"": [ {{ ""time"": 0, ""value"": 1 }} ],
                     ""mesh"": ""{Chunk}"", ""bounce"": 0.3, ""gravity"": 1, ""length"": 2,
                     ""wind"": 0.5, ""rim"": true, ""distortion"": 0.6, ""scroll"": {{ ""x"": 0, ""y"": 0.1 }} }}");
             }

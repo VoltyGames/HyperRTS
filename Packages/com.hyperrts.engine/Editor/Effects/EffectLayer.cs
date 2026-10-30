@@ -51,8 +51,10 @@ namespace HyperRTS.Editor.Effects
 
         public string negativeTexture;
         public string motionTexture;
-        public float emission;
-        public List<ColorKey> emissionColors = new();
+        public float opacity;
+        public float ambient;
+        public string emissionRamp;
+        public Color emissionColor;
         public List<CurveKey> heatOverLife = new();
 
         public string mesh;
@@ -92,8 +94,11 @@ namespace HyperRTS.Editor.Effects
         /// <summary>Emitted by another layer's particles over their life, rather than by the rig.</summary>
         public bool HasParent => !string.IsNullOrEmpty(parent);
 
+        /// <summary>Kinds drawn through one of the engine's Shader Graphs rather than a built-in VFX output.</summary>
+        public bool DrawsShaderGraph => Kind is EffectLayerKind.Distort or EffectLayerKind.SixWay or EffectLayerKind.Ring;
+
         /// <summary>Kinds whose alpha must be stored per particle, read by children or a Shader Graph, not only drawn.</summary>
-        public bool KeepsAlpha => Kind is EffectLayerKind.Source or EffectLayerKind.Distort;
+        public bool KeepsAlpha => Kind == EffectLayerKind.Source || DrawsShaderGraph;
 
         public AnimationCurve SizeCurve() => Curve(sizeOverLife);
 
@@ -102,19 +107,6 @@ namespace HyperRTS.Editor.Effects
         public AnimationCurve AlphaCurve() => Curve(alphaOverLife);
 
         public Gradient LifeGradient() => Gradient(colorOverLife, alphaOverLife);
-
-        public Gradient ColorGradient() => Gradient(colorOverLife, new List<CurveKey>());
-
-        /// <summary>
-        /// The emission ramp, each key weighted by its heat: the particle shader glows ramp(heat) times heat, and VFX
-        /// Graph's six-way output samples the gradient alone.
-        /// </summary>
-        public Gradient EmissionGradient()
-        {
-            var gradient = Gradient(emissionColors, new List<CurveKey>());
-            gradient.SetKeys(gradient.colorKeys.Select(k => new GradientColorKey(k.color * k.time, k.time)).ToArray(), gradient.alphaKeys);
-            return gradient;
-        }
 
         /// <summary>The flipbook frame over life, stopping short of the last frame's end so it never wraps.</summary>
         public AnimationCurve FrameCurve()

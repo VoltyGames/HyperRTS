@@ -111,12 +111,15 @@ namespace HyperRTS.Editor.Effects
                 _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 800f)), wind, "deltaTime");
             }
 
-            // Children and Shader Graphs read the stored alpha, which an output's curve never writes back.
+            // Children and Shader Graphs read the stored alpha and frame, which an output's curve never writes back.
             if (_layer.KeepsAlpha && _layer.alphaOverLife.Count > 0)
             {
-                var alpha = _graph.Block(update, "AttributeFromCurve");
-                _graph.Set(alpha, "attribute", "alpha");
-                _graph.SlotAt(alpha, 0, _layer.AlphaCurve());
+                StoreOverLife(update, "alpha", _layer.AlphaCurve());
+            }
+
+            if (_layer.DrawsShaderGraph && _layer.flipbook.IsSet && !_layer.flipbook.random)
+            {
+                StoreOverLife(update, "texIndex", _layer.FrameCurve());
             }
 
             if (_layer.Kind == EffectLayerKind.Debris)
@@ -125,6 +128,13 @@ namespace HyperRTS.Editor.Effects
                 _graph.Slot(bounce, "bounce", _layer.bounce);
                 _graph.Slot(bounce, "friction", _layer.friction);
             }
+        }
+
+        private void StoreOverLife(object update, string attribute, AnimationCurve curve)
+        {
+            var block = _graph.Block(update, "AttributeFromCurve");
+            _graph.Set(block, "attribute", attribute);
+            _graph.SlotAt(block, 0, curve);
         }
 
         private void Pick(object context, string attribute, FloatRange range)

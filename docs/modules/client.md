@@ -583,10 +583,15 @@ World-space slots and the fog of war; debris adds Bounce On Ground (`GraphGround
 Velocity (`GraphStretch.hlsl`) and windy layers Drift With Wind (`GraphWind.hlsl`, reading `Wind`'s globals). A
 `distort` layer draws through `HyperRTS/EffectDistort`, a Shader Graph with VFX support whose Custom Function
 (`EffectDistort.hlsl`) refracts the opaque texture like `ParticlesDistort`, weighted by the particle's stored alpha,
-at queue offset -50. All reflection
+at queue offset -50. `sixway` and `ring` layers draw through `HyperRTS/EffectSixWay`, a premultiplied Shader Graph
+whose Custom Function (`EffectSixWay.hlsl`) shades with `SixWayLighting.hlsl`, as `ParticlesSixWay` does: the sun
+with its shadows and cookie, clustered lights, sky, ground and horizon ambient, URP's fog and the fog of war per pixel,
+and the ramp glow, from the particle's stored colour, alpha and flipbook frame, blended along the motion map. The
+Unlit target declares the lighting and fog keywords itself. All reflection
 into VFX Graph's internal editor model sits in `GraphModel`, so an Editor upgrade breaks that file alone. The builder
 stamps the graph importer's `userData` with a hash of the JSON, line endings ignored; `EffectGraphBuilder.Problem`
-names a graph that is missing or stale. Build from **Assets ▸ HyperRTS ▸ Build Effect Graph** or **Build All Effect
+names a graph that is missing or stale, and `EffectGraphBuilder.ShaderErrors` compiles a built graph's compute
+shaders and each output pass's default variant, so tests catch a shader error before the graph first draws. Build from **Assets ▸ HyperRTS ▸ Build Effect Graph** or **Build All Effect
 Graphs**, or the **Effect graphs** generator.
 
 `EffectPool` keeps one instance per prefab and replays it for every event, never instantiating per shot. It reads
