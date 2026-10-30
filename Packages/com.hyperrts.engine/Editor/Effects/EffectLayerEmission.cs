@@ -121,7 +121,7 @@ namespace HyperRTS.Editor.Effects
             return spawner;
         }
 
-        // Effect detail thins a child only through its parent's count, as Shuriken sub-emitters do.
+        // Effect detail thins a child only through its parent's count, so a thinned source keeps its full puffs.
         private object Trigger(object parentUpdate)
         {
             if (_layer.rate > 0f && _layer.ratePerMetre == 0f && _layer.bursts.Count == 0)

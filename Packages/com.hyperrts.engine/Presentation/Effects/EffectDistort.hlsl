@@ -1,5 +1,5 @@
-// The Shader Graph HyperRTS/EffectDistort's one function: bends URP's opaque texture along a normal map, like
-// ParticlesDistort. Weight is the particle's alpha; Strength is in metres, so far particles bend little of the screen.
+// The Shader Graph HyperRTS/EffectDistort's one function: bends URP's opaque texture along a normal map.
+// Weight is the particle's alpha; Strength is in metres, so far particles bend little of the screen.
 #ifndef HYPERRTS_EFFECT_DISTORT
 #define HYPERRTS_EFFECT_DISTORT
 

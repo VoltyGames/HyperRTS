@@ -111,7 +111,7 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(output, "mainTexture", _layer.Load<Texture2D>(_layer.texture, "texture"));
         }
 
-        // Unshadowed, as the Shuriken smoke material: a puff at ground level would take the grass's shadows.
+        // Unshadowed: a puff at ground level would take the grass's shadows.
         private void Puff(object output)
         {
             _graph.Set(output, "blendMode", "Alpha");
@@ -121,7 +121,7 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(output, "baseColorMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
         }
 
-        // The Shader Graph lights, fogs and glows as ParticlesSixWay does, from the stored colour, alpha and frame.
+        // The Shader Graph lights, fogs and glows from the stored colour, alpha and frame.
         private void SixWay(object output)
         {
             if (_layer.opacity <= 0f || _layer.ambient <= 0f)
@@ -153,7 +153,7 @@ namespace HyperRTS.Editor.Effects
         // The ramp at the emission channel times the heat over life, times the emission colour (M_FX_SixWay_Fire).
         private void SixWayGlow(object output)
         {
-            // As the material stores it: HDR emission reaches ParticlesSixWay unconverted, matched in Play.
+            // HDR emission as the colour picker stores it, not turned linear, matched in Play.
             var color = _layer.emissionColor;
             _graph.Slot(output, "EmissionRamp", _layer.Load<Texture2D>(_layer.emissionRamp, "emissionRamp"));
             _graph.Slot(output, "EmissionColor", new Vector3(color.r, color.g, color.b));
@@ -161,7 +161,7 @@ namespace HyperRTS.Editor.Effects
             var heat = HeatAtAge(_layer.HeatCurve(), age, 200f);
             if (_layer.minHeatOverLife.Count > 0)
             {
-                // Each particle keeps one pick between the curves, as Shuriken's random between two curves.
+                // Each particle keeps one pick between the curves, so tongues differ in heat.
                 var pick = _graph.Operator("UnityEditor.VFX.Operator.Lerp", _at + new Vector2(-300f, 200f));
                 _graph.Link(HeatAtAge(_layer.MinHeatCurve(), age, 300f), pick, "x");
                 _graph.Link(heat, pick, "y");

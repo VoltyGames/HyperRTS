@@ -67,7 +67,7 @@ a time. The lowest cue priority goes first, and lines that wait longer than `max
 
 ## Effects
 
-Part of `Cues`. Particle rigs that play on cue slots, much like sounds.
+Part of `Cues`. Effect rigs of VFX graphs that play on cue slots, much like sounds.
 
 | Authoring | Plays |
 | --- | --- |

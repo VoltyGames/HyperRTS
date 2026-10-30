@@ -72,17 +72,18 @@ namespace HyperRTS.Presentation.Tests.Effects
         }
 
         [Test]
-        public void Get_LocalSpaceRig_LogsNamingThePrefabAndReturnsNull()
+        public void Get_GraphWithoutAsset_LogsNamingThePrefabAndReturnsNull()
         {
-            var local = EffectRigKit.Rig("Local Smoke", ParticleSystemSimulationSpace.Local);
+            var empty = EffectRigKit.Rig("Empty Smoke");
+            EffectRigKit.AddGraph(empty).visualEffectAsset = null;
             try
             {
-                LogAssert.Expect(LogType.Error, new Regex("Local Smoke.*World space"));
-                Assert.IsNull(_pool.Get(local.gameObject));
+                LogAssert.Expect(LogType.Error, new Regex("Empty Smoke.*has no asset"));
+                Assert.IsNull(_pool.Get(empty.gameObject));
             }
             finally
             {
-                Object.DestroyImmediate(local.gameObject);
+                Object.DestroyImmediate(empty.gameObject);
             }
         }
 
@@ -118,18 +119,6 @@ namespace HyperRTS.Presentation.Tests.Effects
         }
 
         [Test]
-        public void Tick_FiresQueuedTimedBursts()
-        {
-            EffectRigKit.AddBurst(_dust, 0.2f, 4);
-            var dust = _pool.Get(_dust.gameObject);
-
-            dust.Burst(Vector3.zero, Quaternion.identity, 1f, 1f);
-            _pool.Tick(0.25f);
-
-            Assert.AreEqual(4, EffectRigKit.System(dust).particleCount);
-        }
-
-        [Test]
         public void Density_ThinsByDetailLevel()
         {
             var low = EffectDetail.DensityAt(DetailLevel.Low);
@@ -158,7 +147,7 @@ namespace HyperRTS.Presentation.Tests.Effects
         {
             var streams = new EffectStreams();
             streams.BeginFrame();
-            streams.Step(Shell, 0, Vector3.zero).Carry = 0.7f;
+            streams.Step(Shell, 0, Vector3.zero);
             streams.EndFrame();
             streams.BeginFrame();
             streams.EndFrame();
@@ -167,7 +156,6 @@ namespace HyperRTS.Presentation.Tests.Effects
             var state = streams.Step(Shell, 0, new Vector3(50f, 0f, 0f));
 
             Assert.AreEqual(state.To, state.From, "no segment across the gap");
-            Assert.AreEqual(0f, state.Carry);
         }
 
         [Test]
@@ -185,10 +173,10 @@ namespace HyperRTS.Presentation.Tests.Effects
 
             streams.BeginFrame();
             streams.EndFrame();
-            _dust.Tick(0f);
+            _dust.Tick();
 
             Assert.IsNull(state.Graphs, "stopped with its stream");
-            Assert.AreSame(graphs, _dust.StartGraphs(), "a set with no live particles serves the next stream");
+            Assert.AreSame(graphs, _dust.StartStream(), "a set with no live particles serves the next stream");
         }
 
         [Test]

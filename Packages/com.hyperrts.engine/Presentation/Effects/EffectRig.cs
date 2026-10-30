@@ -1,6 +1,5 @@
 using HyperRTS.Presentation.Common;
 using System;
-using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
@@ -10,9 +9,8 @@ using UnityEngine.VFX;
 namespace HyperRTS.Presentation.Effects
 {
     /// <summary>
-    /// Root of an effect rig prefab: child particle systems in world space and VFX Graphs, played by hand from a pool.
-    /// Bursts replay the authored bursts at a pose and send each graph its Burst event; streams spread the particle
-    /// systems' authored rates along a path and play their own copies of the stream graphs. Author it +Y up, +Z forward.
+    /// Root of an effect rig prefab: child VFX Graphs played by hand from a pool. Bursts send each graph its Burst event
+    /// at a pose; streams play their own copies of the stream graphs along a path. Author it +Y up, +Z forward.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Effects + "Effect Rig")]
     [Icon(HyperRTSIcons.Effects)]
@@ -38,12 +36,9 @@ namespace HyperRTS.Presentation.Effects
         [Tooltip("Alternative rigs, each without variants of its own. Each play picks this rig or one of them.")]
         public GameObject[] variants = Array.Empty<GameObject>();
 
-        private readonly List<DelayedBurst> _delayed = new();
-        private EffectEmitter[] _emitters;
         private EffectGraph[] _graphs;
-        private GraphStreamPool _streamGraphs;
+        private GraphStreamPool _streams;
         private EffectLight[] _lights;
-        private readonly StreamShares _shares = new();
 
         /// <summary>The shared flash lights; none means no flashes.</summary>
         public EffectLights Lights { get; set; }
@@ -51,8 +46,8 @@ namespace HyperRTS.Presentation.Effects
         /// <summary>Set by the pool from <see cref="variants"/>.</summary>
         public EffectRig[] Alternatives { get; set; } = Array.Empty<EffectRig>();
 
-        /// <summary>Reads the authored emission now, so a broken rig fails when the pool first loads it.</summary>
-        public void Prepare() => Captured();
+        /// <summary>Finds the rig's graphs and lights now, as the pool first loads it.</summary>
+        public void Prepare() => Capture();
 
         /// <summary>A random burst scale grown by an impact's splash radius.</summary>
         public float ScaleFor(float splashRadius) =>
@@ -80,28 +75,16 @@ namespace HyperRTS.Presentation.Effects
 
         private static float Fraction(uint key, uint salt) => (math.hash(new uint2(key, salt)) >> 8) / 16777216f;
 
-        /// <summary>Fires every authored burst and graph at the pose, the timed bursts later, thinned by density.</summary>
+        /// <summary>Sends every graph its Burst event at the pose, thinned by density, and flashes the lights.</summary>
         public void Burst(Vector3 position, Quaternion rotation, float burstScale, float density)
         {
-            var emitters = Captured();
+            Capture();
             if (randomSpin)
             {
                 rotation *= Yaw(UnityEngine.Random.value);
             }
 
             Pose(position, rotation, burstScale);
-            for (var e = 0; e < emitters.Length; e++)
-            {
-                for (var b = 0; b < emitters[e].BurstCount; b++)
-                {
-                    for (var cycle = 0; cycle < emitters[e].BurstCycles(b); cycle++)
-                    {
-                        var count = emitters[e].BurstSize(b, density);
-                        Fire(e, count, emitters[e].BurstTime(b, cycle), position, rotation, burstScale);
-                    }
-                }
-            }
-
             foreach (var graph in _graphs)
             {
                 graph.Burst(position, rotation, burstScale, density);
@@ -110,96 +93,30 @@ namespace HyperRTS.Presentation.Effects
             Flash();
         }
 
-        private void Fire(int emitter, int count, float time, Vector3 position, Quaternion rotation, float burstScale)
-        {
-            if (count <= 0)
-            {
-                return;
-            }
-
-            if (time <= 0f)
-            {
-                EmitPosed(_emitters[emitter], count);
-                return;
-            }
-
-            _delayed.Add(new DelayedBurst
-            {
-                Remaining = time, Emitter = emitter, Count = count,
-                Position = position, Rotation = rotation, Scale = burstScale,
-            });
-        }
-
         private static Quaternion Yaw(float fraction) => Quaternion.Euler(0f, fraction * 360f, 0f);
 
-        /// <summary>
-        /// Emits the authored rates for <paramref name="deltaTime"/> and the distance from→to, scaled by strength and
-        /// density, spread evenly along the path. <paramref name="carry"/> keeps the fraction of a particle per stream.
-        /// </summary>
-        public void Stream(Vector3 from, Vector3 to, Quaternion rotation, float deltaTime, float strength,
-            float density, ref float carry, float poseScale = 1f)
-        {
-            var emitters = Captured();
-            var counts = _shares.Split(emitters, deltaTime, Vector3.Distance(from, to), strength * density, ref carry);
-            for (var e = 0; e < emitters.Length; e++)
-            {
-                Spread(emitters[e], counts[e], from, to, rotation, poseScale);
-            }
-        }
-
         /// <summary>A stream's started copy of the stream graphs; null when the rig has none.</summary>
-        public GraphStream StartGraphs()
+        public GraphStream StartStream()
         {
-            Captured();
-            return _streamGraphs.HasStreams ? _streamGraphs.Start() : null;
+            Capture();
+            return _streams.HasStreams ? _streams.Start() : null;
         }
 
         /// <summary>Stops a stream's graphs, whose particles then live out their lives.</summary>
-        public void StopGraphs(GraphStream stream) => _streamGraphs.Stop(stream);
+        public void StopStream(GraphStream stream) => _streams.Stop(stream);
 
-        /// <summary>Fires due timed bursts and graph bursts that waited for the graph's first run, and frees stopped streams.</summary>
-        public void Tick(float deltaTime)
+        /// <summary>Sends graph bursts that waited for the graph's first run, and frees stopped streams.</summary>
+        public void Tick()
         {
-            Captured();
-            _streamGraphs.Tick();
+            Capture();
+            _streams.Tick();
             foreach (var graph in _graphs)
             {
                 graph.Tick();
             }
-
-            for (var i = _delayed.Count - 1; i >= 0; i--)
-            {
-                var burst = _delayed[i];
-                burst.Remaining -= deltaTime;
-                if (burst.Remaining > 0f)
-                {
-                    _delayed[i] = burst;
-                    continue;
-                }
-
-                _delayed.RemoveAt(i);
-                Pose(burst.Position, burst.Rotation, burst.Scale);
-                EmitPosed(_emitters[burst.Emitter], burst.Count);
-            }
         }
 
-        private void Spread(EffectEmitter emitter, int count, Vector3 from, Vector3 to, Quaternion rotation,
-            float poseScale)
-        {
-            for (var i = 1; i <= count; i++)
-            {
-                Pose(Vector3.Lerp(from, to, i / (float)count), rotation, poseScale);
-                EmitPosed(emitter, 1);
-            }
-        }
-
-        // Live particles render at the rig's current scale, so it returns to 1 once the posed ones carry it.
-        private void EmitPosed(EffectEmitter emitter, int count)
-        {
-            emitter.Emit(count, transform.localScale.x);
-            transform.localScale = Vector3.one;
-        }
-
+        // Flash lights are children of the rig, so the pose places them.
         private void Pose(Vector3 position, Quaternion rotation, float poseScale)
         {
             transform.SetPositionAndRotation(position, rotation);
@@ -219,46 +136,17 @@ namespace HyperRTS.Presentation.Effects
             }
         }
 
-        /// <summary>Reads the authored emission on first use.</summary>
-        private EffectEmitter[] Captured()
+        private void Capture()
         {
-            if (_emitters != null)
+            if (_graphs != null)
             {
-                return _emitters;
-            }
-
-            var systems = GetComponentsInChildren<ParticleSystem>(true);
-            var subEmitters = SubEmitters(systems);
-            var emitters = new List<EffectEmitter>();
-            foreach (var system in systems)
-            {
-                if (!subEmitters.Contains(system))
-                {
-                    emitters.Add(new EffectEmitter(system));
-                }
+                return;
             }
 
             _lights = GetComponentsInChildren<EffectLight>(true);
             var effects = GetComponentsInChildren<VisualEffect>(true);
             _graphs = Array.ConvertAll(effects, effect => new EffectGraph(effect));
-            _streamGraphs = new GraphStreamPool(effects);
-            return _emitters = emitters.ToArray();
-        }
-
-        /// <summary>Sub-emitters keep their own emission: their parent triggers them.</summary>
-        private static HashSet<ParticleSystem> SubEmitters(ParticleSystem[] systems)
-        {
-            var found = new HashSet<ParticleSystem>();
-            foreach (var system in systems)
-            {
-                var subs = system.subEmitters;
-                for (var i = 0; subs.enabled && i < subs.subEmittersCount; i++)
-                {
-                    found.Add(subs.GetSubEmitterSystem(i));
-                }
-            }
-
-            return found;
+            _streams = new GraphStreamPool(effects);
         }
     }
 }

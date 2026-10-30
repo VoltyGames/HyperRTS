@@ -50,37 +50,6 @@ namespace HyperRTS.Presentation.Effects
             {
                 AddGraphProblems(effect, prefix, problems);
             }
-
-            var systems = prefab.GetComponentsInChildren<ParticleSystem>(true);
-            var subEmitters = SubEmitters(systems);
-            foreach (var system in systems)
-            {
-                var main = system.main;
-                if (main.simulationSpace != ParticleSystemSimulationSpace.World)
-                {
-                    problems.Add($"{prefix}particle system '{system.name}' does not simulate in World space");
-                }
-
-                if (main.scalingMode != ParticleSystemScalingMode.Hierarchy)
-                {
-                    problems.Add($"{prefix}particle system '{system.name}' does not use Hierarchy scaling");
-                }
-
-                if (subEmitters.Contains(system))
-                {
-                    continue;
-                }
-
-                // Bursts are replayed by hand, so an endless one would never stop.
-                var emission = system.emission;
-                for (var b = 0; b < emission.burstCount; b++)
-                {
-                    if (emission.GetBurst(b).cycleCount < 1)
-                    {
-                        problems.Add($"{prefix}particle system '{system.name}' burst {b} repeats forever");
-                    }
-                }
-            }
         }
 
         private static void AddGraphProblems(VisualEffect effect, string prefix, List<string> problems)

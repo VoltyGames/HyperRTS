@@ -1,5 +1,5 @@
-// A VFX Graph Update block: pushes particles along a smooth field of crossed waves that scrolls over time, as
-// Shuriken's Noise module wanders flames and embers. strength is metres a second, frequency waves a metre.
+// A VFX Graph Update block: pushes particles along a smooth field of crossed waves that scrolls over time, so
+// flames and embers wander. strength is metres a second, frequency waves a metre.
 void StirWithNoise(inout VFXAttributes attributes, in float strength, in float frequency, in float scroll, in float time, in float deltaTime)
 {
     float3 p = attributes.position * frequency + time * scroll;

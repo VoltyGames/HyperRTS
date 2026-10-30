@@ -1,5 +1,5 @@
 // The Shader Graph HyperRTS/EffectSixWay's one function: six-way smoke and fire for effect graphs, lit, fogged and
-// glowing as ParticlesSixWay lights its particles. Frame is the particle's flipbook index, blending into the next.
+// glowing from inside. Frame is the particle's flipbook index, blending into the next.
 #ifndef HYPERRTS_EFFECT_SIX_WAY
 #define HYPERRTS_EFFECT_SIX_WAY
 
@@ -16,7 +16,7 @@
 #define SIX_WAY_NEAR_FADE_START 1.0
 #define SIX_WAY_NEAR_FADE_END 4.0
 
-// One frame of a sheet whose frame 0 is top left, as VFX Graph and Shuriken number them.
+// One frame of a sheet whose frame 0 is top left, as VFX Graph numbers them.
 float2 SixWayFrameUV(float frame, float2 uv, float2 sheet)
 {
     float2 tile = float2(fmod(frame, sheet.x), sheet.y - 1.0 - floor(frame / sheet.x));

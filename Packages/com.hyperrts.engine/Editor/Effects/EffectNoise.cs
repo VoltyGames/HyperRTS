@@ -2,7 +2,7 @@ using System;
 
 namespace HyperRTS.Editor.Effects
 {
-    /// <summary>A smooth wandering push on a layer's particles, as Shuriken's Noise module; zero strength is none.</summary>
+    /// <summary>A smooth wandering push on a layer's particles; zero strength is none.</summary>
     [Serializable]
     public struct EffectNoise
     {

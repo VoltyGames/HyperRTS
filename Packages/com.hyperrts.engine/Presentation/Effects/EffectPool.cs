@@ -92,7 +92,7 @@ namespace HyperRTS.Presentation.Effects
 
             foreach (var rig in _rigs.Values)
             {
-                rig.Tick(deltaTime);
+                rig.Tick();
             }
 
             _lights?.Tick(deltaTime);

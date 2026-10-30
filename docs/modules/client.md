@@ -264,8 +264,8 @@ grass stamps that skip unseen units test `FogHidden` and `Inside` on the root.
 Entities hidden by fog, and passengers inside a container, stop rendering. `FogOfWarRenderer` publishes the local
 fog grid and its colour as shader globals. `FogOfWarFeature`, on the URP renderer with its shader set to
 `Hidden/HyperRTS/FogOfWar`, blends it full screen from the depth buffer before the transparents, so terrain and
-buildings fog where they stand while health bars, markers and the placement ghost stay clear. Water and particles
-apply it themselves through `SceneFog.hlsl` and `ParticlesFog.hlsl`. Map buildings stay visible, but their flags, dials and
+buildings fog where they stand while health bars, markers and the placement ghost stay clear. Water and effect
+graphs apply it themselves through `SceneFog.hlsl` and `GraphFogOfWar.hlsl`. Map buildings stay visible, but their flags, dials and
 pips hide under the local fog.
 
 A client remembers enemy buildings where it last saw them. The memory is a visual copy of the building, team
@@ -327,8 +327,7 @@ URP keyword lists shared across passes live in `Presentation/Rendering/Keywords/
 `#include_with_pragmas`: `ForwardLightingKeywords` (forward passes on the full Lit model), `SimpleLightingKeywords`
 (plant and flag forward passes), `ShadowCasterKeywords` and `DepthNormalsKeywords`. An include holds only lines
 identical in every pass that uses it, so a pass needing a different line keeps its own; material keywords
-(`shader_feature_local`) stay in each shader, apart from `FlipbookMotionKeywords`, which the three particle shaders
-share.
+(`shader_feature_local`) stay in each shader.
 
 ### Atmosphere
 
@@ -373,8 +372,7 @@ upload, inside a budget of 0.05 ms of CPU; the GPU samples the texture inside th
 Transparent shaders apply both fogs in the full-screen order with `SceneFogAt` and `ApplySceneFog` from
 `SceneFog.hlsl`, and need `#pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC`. A shader that samples the
 opaque texture takes URP's fog out of it first with `AtmosphereFogAt` and `RemoveAtmosphereFog`, as water does for
-the bottom it refracts, so it fogs once. `HyperRTS/Particles` and `HyperRTS/ParticlesUnlit` let URP's particle pass
-apply its fog (`_TRANSPARENT_RECEIVE_FOG`) and add only the fog of war.
+the bottom it refracts, so it fogs once.
 
 ### Contact shadows
 
@@ -543,7 +541,7 @@ so clients may differ. A count of zero turns a feature off. Both are skipped at 
 
 ### Effects
 
-An `EffectRig` is a prefab whose root holds world-space child particle systems. Author it +Y up and +Z forward.
+An `EffectRig` is a prefab whose root holds child `VisualEffect` graphs. Author it +Y up and +Z forward.
 Impacts turn +Y to the ground normal. The rig sets a max distance, a scale range, scale per splash radius and ground
 alignment. The validator reports a broken rig, naming the prefab.
 
@@ -554,10 +552,8 @@ No two plays need look the same:
 - **Random spin** turns each burst about the rig's +Y. It is off by default, so muzzles keep their aim. Impacts
   always get a random yaw.
 - **Loops** play at a scale inside the rig's range, and with random spin at a yaw, both stable per entity.
-- **Burst cycles**: a Shuriken burst's cycle count and interval repeat it, such as ammo cooking off. A burst that
-  repeats forever is a broken rig.
 
-A rig may also hold `VisualEffect` graphs. `EffectGraph` sends each its `Burst` event with
+`EffectGraph` sends each graph its `Burst` event with
 the pose as event attributes: `position`, `direction` (the rig's +Y), `axisZ` (its +Z, random spin included) and a
 uniform `scale` (sent per axis, `scaleX` to `scaleZ`), so bursts on one frame keep their own poses. A graph drops events until it has run once, so bursts in the frame the pool spawned it wait for the next. The graph's exposed float `Density` takes the effect
 detail share. Include files serve graph authors as Custom HLSL blocks, among them `GraphBurstPose.hlsl` (Place At Burst,
@@ -570,7 +566,7 @@ its stream graphs, one `GraphStream` per playing stream, held by the `StreamStat
 `From`, `To`, `Up`, `Forward`, `Scale`, `Speed` (metres a second) and `Density` (strength times effect detail); the
 first frame after the copy has run it sends `Play`. When `EffectStreams` drops a stream, or its variant changes, the
 copy gets `Stop` and returns to the pool once `HasAnySystemAwake` says its particles are gone, so stopping fades
-rather than cuts. Shuriken and graph parts of one rig stream side by side.
+rather than cuts.
 
 Graphs are generated from a `<Graph>.effect.json` beside them by `EffectGraphBuilder` (Editor/Effects): a list of
 layers, each one system of a kind (`glow`, `puff`, `sixway`, `ring`, `debris`, `spark`, `strip`, `distort`,
@@ -582,18 +578,23 @@ writes what spawns a layer and where it lands: bursts on `Burst` at Place At Bur
 scales the shape per axis, turns its +Y onto the layer's `axis` and leaves the ground plane's height for Place At
 Burst), `Density`, World-space slots and the fog of war; debris with `ground` adds Bounce On Ground
 (`GraphGroundBounce.hlsl`), sparks Stretch Along Velocity (`GraphStretch.hlsl`), layers with drag Slow Down
-(`GraphDrag.hlsl`, a constant deceleration like Shuriken's Limit Velocity drag, or one growing with the speed squared
+(`GraphDrag.hlsl`, a constant deceleration, or one growing with the speed squared
 for `dragBySpeed`), windy layers Drift With Wind (`GraphWind.hlsl`, reading `Wind`'s globals), `noise` Stir With
 Noise (`GraphNoise.hlsl`, crossed sine waves scrolling over time), `orbit` Orbit Spawn Point (`GraphOrbit.hlsl`, about
 the vertical through each particle's spawn point) and a `randomStart` flipbook Loop Frames (`GraphLoopFrames.hlsl`).
 A glowing six-way layer with `minHeatOverLife` lerps the two heat curves by a constant random per particle. Lit
-puffs receive no shadows, as the Shuriken smoke material, and debris may take a base colour `texture`. A
+puffs receive no shadows, and debris may take a base colour `texture`. A
 `distort` layer draws through `HyperRTS/EffectDistort`, a Shader Graph with VFX support whose Custom Function
-(`EffectDistort.hlsl`) refracts the opaque texture like `ParticlesDistort`, weighted by the particle's stored alpha,
-at queue offset -50. `sixway` and `ring` layers draw through `HyperRTS/EffectSixWay`, a premultiplied Shader Graph
-whose Custom Function (`EffectSixWay.hlsl`) shades with `SixWayLighting.hlsl`, as `ParticlesSixWay` does: the sun
+(`EffectDistort.hlsl`) refracts the opaque texture along a normal map, weighted by the particle's stored alpha,
+at queue offset -50 (before other transparents, since the opaque texture lacks them and would erase smoke and flames
+behind it). The strength is in metres, so the screen offset shrinks with distance, and it fades where it meets the
+ground and inside the fog of war. It needs the camera's opaque and depth textures. `sixway` and `ring` layers draw through `HyperRTS/EffectSixWay`, a premultiplied Shader Graph
+whose Custom Function (`EffectSixWay.hlsl`) shades with `SixWayLighting.hlsl`: the sun
 with its shadows and cookie, clustered lights, sky, ground and horizon ambient, URP's fog and the fog of war per pixel,
-and the ramp glow, from the particle's stored colour, alpha and flipbook frame, blended along the motion map. The
+and the ramp glow, from the particle's stored colour, alpha and flipbook frame, blended along the motion map
+(`FlipbookMotion.hlsl`: RG centred on 0.5 hold each texel's move to the next frame along U and V, scaled so 0 and 1
+mean 1/64 of the sheet; the current frame is pushed forward and the next pulled back by the blend, so a slow flipbook
+flows instead of stepping). The
 Unlit target declares the lighting and fog keywords itself. All reflection
 into VFX Graph's internal editor model sits in `GraphModel`, so an Editor upgrade breaks that file alone. The builder
 stamps the graph importer's `userData` with a hash of the JSON, line endings ignored; `EffectGraphBuilder.Problem`
@@ -630,25 +631,6 @@ loop it streams this frame:
   so it fades with the loop and thins with the smoke. From Medium up, `SmokeShadows` writes the 32 nearest
   columns as shader globals (`_HyperRTSSmokeStarts`, `_HyperRTSSmokeEnds`, `_HyperRTSSmokeCount`), and
   `CloudShadows` draws them into the sun's cookie (see [Atmosphere](#atmosphere)).
-
-Effect materials use the engine's particle shaders so transparent smoke and flames take URP's fog and fog of war
-like the ground beneath them. `HyperRTS/Particles` and `HyperRTS/ParticlesUnlit` are URP's Simple Lit and Unlit
-particles with the same properties and inspector. Additive particles fade to black under fog, the rest toward the
-fog colour. `HyperRTS/ParticlesSixWay` lights smoke from six baked directions.
-
-`HyperRTS/ParticlesDistort` draws no colour of its own: it bends URP's opaque texture along a normal map, for
-shockwaves and heat haze. Vertex colour alpha weights the bend, so a fade over lifetime makes it die away, and the
-strength is in metres, so the screen offset shrinks with distance. It fades where it meets the ground (soft fade
-distance) and inside the fog of war, so it never shows what the fog hides. It draws at queue 2950, before other
-transparents, since the opaque texture lacks them and would otherwise erase smoke and flames behind it. It needs
-the camera's opaque and depth textures, and its renderers need the Color vertex stream.
-
-A long-lived layer needs no loop: an invisible burst particle whose Birth sub-emitter emits by rate over time
-keeps emitting where it was born for its whole lifetime, such as smoke over a crater after an impact. All three blend flipbook frames along
-a motion map when a material turns on `_FlipbookMotion` (keyword `_FLIPBOOK_MOTION`) and sets `_MotionMap`: RG
-centred on 0.5 hold each texel's move to the next frame along U and V, scaled so 0 and 1 mean 1/64 of the sheet
-(`FlipbookMotion.hlsl`). The shader pushes the current frame forward and pulls the next back by the blend, so a slow
-flipbook flows instead of stepping. The URP particle shaders need Flipbook Blending on as well.
 
 ### Audio
 

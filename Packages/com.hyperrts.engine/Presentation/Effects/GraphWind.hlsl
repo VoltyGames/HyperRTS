@@ -1,5 +1,4 @@
-// A VFX Graph Update block: pushes particles downwind with the scene's Wind, as External Forces push Shuriken
-// particles with a WindZone. share scales the push.
+// A VFX Graph Update block: pushes particles downwind with the scene's Wind. share scales the push.
 float3 _HyperRTSWindDirection;
 float _HyperRTSWindStrength;
 

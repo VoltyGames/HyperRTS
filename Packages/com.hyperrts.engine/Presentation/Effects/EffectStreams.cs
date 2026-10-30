@@ -36,11 +36,6 @@ namespace HyperRTS.Presentation.Effects
             }
 
             var fresh = state.Frame != _frame - 1;
-            if (fresh)
-            {
-                state.Carry = 0f;
-            }
-
             state.From = fresh ? position : state.To;
             state.To = position;
             state.Frame = _frame;
