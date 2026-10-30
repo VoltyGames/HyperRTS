@@ -43,6 +43,9 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("A field-end track ending this close to a road's edge (metres) is carried onto the road.")]
         public float trackJoinDistance;
 
+        [Tooltip("Width of the headland at each field end (metres past the margin), where the rows turn to run along the end; 0 for none.")]
+        public float headlandWidth;
+
         [Tooltip("Field fragments smaller than this (m²) become leftover ground.")]
         public float minField = 1500f;
 

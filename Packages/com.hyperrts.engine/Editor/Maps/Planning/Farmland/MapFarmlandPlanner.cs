@@ -4,14 +4,15 @@ using System.Linq;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Symmetry;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning.Farmland
 {
     /// <summary>
     /// Farmland: land nothing else took, split into fields on a grid. Field ends get a shelterbelt with a dirt track
-    /// beside it; each field gets a crop from the kit's mix and a weedy margin, and pieces too small or too narrow to
-    /// farm become the kit's leftover ground. Everything is decided in the authored sector, so every copy of a field
+    /// beside it; each field gets a crop from the kit's mix, a weedy margin and a headland at each end where the rows
+    /// turn, and pieces too small or too narrow to farm become the kit's leftover ground. Everything is decided in the authored sector, so every copy of a field
     /// grows the same crop.
     /// </summary>
     public sealed class MapFarmlandPlanner : MapLandStep
@@ -19,6 +20,9 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         private const float SampleStep = 1f;
         private const float MinRun = 15f;
         private const int NoField = -1;
+
+        // A field stretch shorter than this many headland depths along its rows keeps its rows straight.
+        private const float HeadlandBody = 3f;
 
         public MapFarmlandPlanner(MapPlanContext context) : base(context)
         {
@@ -103,7 +107,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
 
         /// <summary>
         /// Gives every free farmland cell to the field its sector point falls in: cells near a field's edge (or the
-        /// symmetry seam) become its margin, and cells of slivers its leftover ground.
+        /// symmetry seam) become its margin, cells near its ends its headland, and cells of slivers its leftover ground.
         /// </summary>
         private void ClaimFields(MapFarmlandKit kit, MapFieldGrid grid, List<Vector2> polygon, int index, float angle)
         {
@@ -122,7 +126,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
                     return;
                 }
 
-                var sector = Symmetry.ToSector(p, out _);
+                var sector = Symmetry.ToSector(p, out var copy);
                 var width = kit.marginWidth * (1f + 0.45f * noise.Sample(p, 14f));
                 var seam = Symmetry.SeamDistance(sector) < kit.marginWidth;
                 if (edge[i] * MapLand.CellSize < width || seam)
@@ -131,10 +135,44 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
                     return;
                 }
 
-                var sliver = sizes[i] < minCells || reach[i] * MapLand.CellSize < kit.minFieldWidth * 0.5f;
-                Land.Claim(x, z, sliver ? regions.Leftover(field) : regions.Field(field));
+                if (sizes[i] < minCells || reach[i] * MapLand.CellSize < kit.minFieldWidth * 0.5f)
+                {
+                    Land.Claim(x, z, regions.Leftover(field));
+                    return;
+                }
+
+                var headland = kit.headlandWidth > 0f
+                    && IsFieldEnd(fields, grid, sector, copy, field, kit.marginWidth + kit.headlandWidth);
+                Land.Claim(x, z, headland ? regions.Headland(field) : regions.Field(field));
             });
         }
+
+        /// <summary>
+        /// Whether the field ends within <paramref name="reach"/> metres along the rows either way, in a stretch of
+        /// field long enough to keep a body of straight rows between its headlands.
+        /// </summary>
+        private bool IsFieldEnd(int[] fields, MapFieldGrid grid, Vector2 sector, int copy, int field, float reach)
+        {
+            var transform = Symmetry.Copies[copy];
+            var ahead = Run(fields, transform, sector, grid.Forward, field, HeadlandBody * reach);
+            var behind = Run(fields, transform, sector, -grid.Forward, field, HeadlandBody * reach);
+            return Mathf.Min(ahead, behind) < reach && ahead + behind >= HeadlandBody * reach;
+        }
+
+        /// <summary>Metres of the field from a sector point along <paramref name="way"/>, up to <paramref name="limit"/>.</summary>
+        private float Run(int[] fields, MapTransform transform, Vector2 sector, Vector2 way, int field, float limit)
+        {
+            var step = SampleStep;
+            while (step <= limit && InField(fields, transform.Apply(sector + way * step), field))
+            {
+                step += SampleStep;
+            }
+
+            return step;
+        }
+
+        private bool InField(int[] fields, Vector2 point, int field) =>
+            Land.TryCell(point, out var x, out var z) && fields[z * Land.Width + x] == field;
 
         /// <summary>The field key of every free farmland cell, <see cref="NoField"/> elsewhere.</summary>
         private int[] Assign(MapFieldGrid grid, List<Vector2> polygon)

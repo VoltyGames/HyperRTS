@@ -97,6 +97,27 @@ namespace HyperRTS.Editor.Tests.Maps
         }
 
         [Test]
+        public void Farmland_TurnsTheRowsInAHeadlandAtEachFieldEnd()
+        {
+            var context = FarmContext(headlandWidth: 6f);
+            new MapFarmlandPlanner(context).Plan();
+
+            // Rows run north; fields end every 60 m along z and are 40 m wide.
+            foreach (var x in new[] { -60f, -20f, 20f })
+            {
+                var middle = context.Land.At(new Vector2(x, -30f));
+                Assert.AreEqual(0f, middle.RowAngle, $"rows run along the field at ({x}, -30)");
+                foreach (var z in new[] { -54f, -6f })
+                {
+                    var end = context.Land.At(new Vector2(x, z));
+                    Assert.AreEqual(MapLandKind.Field, end.Kind, $"({x}, {z}) is sown");
+                    Assert.AreEqual(middle.Surface, end.Surface, $"the headland at ({x}, {z}) grows the field's crop");
+                    Assert.AreEqual(90f, end.RowAngle, $"rows at ({x}, {z}) run along the field end");
+                }
+            }
+        }
+
+        [Test]
         public void RiverRefiner_KeepsTheEndsAndCrossingsInPlace()
         {
             var river = new MapRiverSpec
@@ -141,14 +162,14 @@ namespace HyperRTS.Editor.Tests.Maps
             }
         }
 
-        private static MapPlanContext FarmContext()
+        private static MapPlanContext FarmContext(float headlandWidth = 0f)
         {
             var spec = MapFixture.Spec();
             spec.farmland.Add(new MapFarmlandSpec { kind = "Farms" });
-            return MapFixture.Context(spec, Climate(), new MapIssues());
+            return MapFixture.Context(spec, Climate(headlandWidth), new MapIssues());
         }
 
-        private static MapClimate Climate()
+        private static MapClimate Climate(float headlandWidth)
         {
             var climate = new MapClimate();
             climate.name = "Test";
@@ -158,6 +179,7 @@ namespace HyperRTS.Editor.Tests.Maps
             climate.farmlandKits.Add(new MapFarmlandKit
             {
                 key = "Farms", fieldSize = new Vector2(60f, 40f), marginSurface = "Margin", minField = 200f,
+                headlandWidth = headlandWidth,
                 crops = new List<MapCropShare> { new() { surface = "Wheat" }, new() { surface = "Sunflower" }, new() { surface = "Plowed" } },
             });
             return climate;

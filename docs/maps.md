@@ -120,7 +120,9 @@ symmetric. A surface prop that lands in the backdrop is drawn as its `backdropMo
 
 **Farmland** splits free land into fields, picks a crop for each by the kit's weights and lays belts and tracks
 along the field ends. A track end within the kit's `trackJoinDistance` of a road joins it. A track that still
-leads nowhere is dropped.
+leads nowhere is dropped. Within the kit's `headlandWidth` of where a field ends along its rows, the rows turn a
+quarter to run along the end, as the plough turns there; a stretch too short to keep straight rows between its
+headlands keeps them straight throughout.
 
 **Settlements** fit plots along their streets: house, yard, outbuildings, garden, orchard, fences and street
 furniture. The report says why a plot didn't fit. Street pipes arch over driveways and crossings. A stretched
