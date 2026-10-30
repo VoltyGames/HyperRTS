@@ -43,6 +43,9 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Wheel lines along the rows of this surface's fields.")]
         public MapTramlines tramlines = new();
 
+        [Tooltip("Lighter stripes a harvest leaves along the rows of this surface's fields.")]
+        public MapSwaths swaths = new();
+
         [Header("Edge")]
         [Tooltip("Width of the band over which this surface blends into its neighbour (metres). Where two surfaces meet, the narrower width wins.")]
         public float edgeWidth;

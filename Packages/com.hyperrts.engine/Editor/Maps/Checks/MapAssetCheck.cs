@@ -158,7 +158,8 @@ namespace HyperRTS.Editor.Maps.Checks
             SurfaceEdge(surface, name);
             surface.mixes.ForEach(mix => SurfaceMix(mix, name));
             Optional(surface.tramlines.layer, key => InClimate(Climate.layers, key, "tramline layer", name));
-            Require(surface.tramlines.Valid, $"{name}: tramlines need a layer, a width above 0 and gauge plus width under spacing.");
+            Require(surface.tramlines.Valid && surface.swaths.Valid,
+                $"{name}: tramlines need a layer, a width above 0 and gauge plus width under spacing; swaths a width from 0 to spacing.");
             Require(MapImpactClass.IsValid(surface.impactClass), MapImpactClass.Problem(name, surface.impactClass));
         }
 

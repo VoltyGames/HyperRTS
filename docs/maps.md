@@ -152,7 +152,7 @@ symmetry, so mirrored borders wander alike.
 | --- | --- |
 | Ground textures | Terrain layer weights. Each surface's `mixes` paint other layers by symmetric noise (`layer`, `coverage` 0 to 1, `size` in metres). Steep ground takes the slope surface |
 | Grass | A coverage slice per plant in `<Map>_GrassCoverage.asset` and a `GrassField` (`<Map>_Grass.asset`) naming the plants and the 16 m tiles that grow any. Clumped by noise; nothing grows on roads or placed objects |
-| Ground tint | 2 texels per metre: light and warmth per field and wood, 20 to 150 m soil colour in light, warmth and moisture, darker hollows, wetness near water. Set by the climate's `groundTint` section |
+| Ground tint | 2 texels per metre: light and warmth per field and wood, 20 to 150 m soil colour in light, warmth and moisture, darker hollows, wetness near water, lighter harvest swaths along the rows of surfaces with `swaths`, where plants also thin. Set by the climate's `groundTint` section |
 | Row map | Each cell's crop row direction, turned with its symmetry copy |
 | Ground materials | A `GroundMaterialMap` asset (`<Map>_GroundMaterials.asset`) holding one `SurfaceMaterial` byte per cell for impacts and wheel debris, baked into the `GroundMaterials` singleton |
 | Ground colour | The ground's colour from above, so foliage blends in at its roots |

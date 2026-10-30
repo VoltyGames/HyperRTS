@@ -18,9 +18,10 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly MapClimate _climate;
         private readonly MapNoise[] _mixNoise;
         private readonly MapEdgeField _edges;
-        private readonly MapTramlineCover _tramlines;
+        private readonly MapRowLines _rowLines;
         private readonly MapFlow _flow;
         private readonly int[] _regionLayer;
+        private readonly int[] _regionTramlineLayer;
         private readonly MapSurfaceMix[][] _regionMixes;
         private readonly int[][] _regionMixLayers;
         private readonly int _slope;
@@ -32,15 +33,17 @@ namespace HyperRTS.Editor.Maps.Ground
             _heights = heights;
             _climate = climate;
             _edges = edges;
-            _tramlines = new MapTramlineCover(layout.Symmetry, edges, climate, layout.TerrainBounds.width / resolution);
+            _rowLines = new MapRowLines(layout.Symmetry, edges, layout.TerrainBounds.width / resolution);
             _flow = new MapFlow(layout.Symmetry, heights);
             _regionLayer = new int[edges.RegionCount];
+            _regionTramlineLayer = new int[edges.RegionCount];
             _regionMixes = new MapSurfaceMix[edges.RegionCount][];
             _regionMixLayers = new int[edges.RegionCount][];
             for (var i = 0; i < _regionLayer.Length; i++)
             {
                 var surface = edges.Surface(i);
                 _regionLayer[i] = climate.LayerIndex(surface.layer);
+                _regionTramlineLayer[i] = surface.tramlines.Any ? climate.LayerIndex(surface.tramlines.layer) : -1;
                 _regionMixes[i] = surface.mixes.ToArray();
                 _regionMixLayers[i] = surface.mixes.Select(mix => climate.LayerIndex(mix.layer)).ToArray();
             }
@@ -92,10 +95,10 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var edge = _edges.Sample(p);
             var share = edge.OwnShare;
-            var wheels = share * _tramlines.Cover(edge.Own, p);
+            var wheels = share * _rowLines.Tramline(edge.Own, p);
             if (wheels > 0f)
             {
-                weights[_tramlines.Layer(edge.Own)] += wheels;
+                weights[_regionTramlineLayer[edge.Own]] += wheels;
             }
 
             Region(weights, edge.Own, share - wheels, edge.Point);

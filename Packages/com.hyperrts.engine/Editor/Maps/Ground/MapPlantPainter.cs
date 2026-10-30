@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Ground
             var reed = string.IsNullOrEmpty(climate.reedPlant) ? -1 : climate.PlantIndex(climate.reedPlant);
             var clumps = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.PlantClumps);
             var cell = area.size / resolution;
-            var tramlines = new MapTramlineCover(layout.Symmetry, edges, climate, cell.x);
+            var rowLines = new MapRowLines(layout.Symmetry, edges, cell.x);
             var water = layout.Terrain.waterLevel;
             for (var i = 0; i < resolution * resolution; i++)
             {
@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 }
 
                 var region = edges.Sample(p).Region;
-                var cover = Cover(IsField(land, region), clumps, p) * open * (1f - tramlines.Cover(region, p));
+                var cover = Cover(IsField(land, region), clumps, p) * open * rowLines.Plants(region, p);
                 foreach (var (plant, coverage) in plants[region])
                 {
                     bake.Set(plant, x, z, coverage * cover);

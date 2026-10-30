@@ -18,6 +18,9 @@ namespace HyperRTS.Editor.Maps.Ground
     {
         private const float WetReach = 7f;
 
+        // The tint map's texel, which swath edges soften over.
+        private const float Texel = 0.5f;
+
         /// <summary>Hollows: height curvature (1/m) measured over the span, from first sign to full damp.</summary>
         private const float HollowSpan = 8f;
         private const float HollowStart = 0.004f;
@@ -37,6 +40,7 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly Vector2[] _tint;
         private readonly Vector2[] _gradient;
         private readonly float[] _phase;
+        private readonly MapRowLines _rowLines;
 
         public MapGroundTint(MapLayout layout, MapLand land, MapEdgeField edges, MapShapes shapes, MapHeights heights,
             MapClimateGroundTint strength)
@@ -44,6 +48,7 @@ namespace HyperRTS.Editor.Maps.Ground
             (_land, _edges, _shapes, _heights, _symmetry) = (land, edges, shapes, heights, layout.Symmetry);
             _strength = strength;
             _flow = new MapFlow(layout.Symmetry, heights);
+            _rowLines = new MapRowLines(layout.Symmetry, edges, Texel);
             _broad = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.RegionTint);
             _detail = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.TintDetail);
             _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SoilColour);
@@ -55,6 +60,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 {
                     RegionTint(i, MapRandom.Stream(layout.Spec.seed, MapRandomChannel.RegionTints, land.Regions[i].Seed));
                 }
+
             }
         }
 
@@ -97,9 +103,10 @@ namespace HyperRTS.Editor.Maps.Ground
         /// <summary>The gradient wave is averaged over the symmetry copies, so every copy of a field ripens alike.</summary>
         private Vector2 Tint(int region, Vector2 p)
         {
+            var swath = new Vector2(_rowLines.Swath(region, p) * _edges.Surface(region).swaths.light, 0f);
             if (_gradient[region] == Vector2.zero)
             {
-                return _tint[region];
+                return _tint[region] + swath;
             }
 
             var wave = 0f;
@@ -109,7 +116,7 @@ namespace HyperRTS.Editor.Maps.Ground
             }
 
             var swing = new Vector2(_strength.gradientLight, _strength.gradientWarmth);
-            return _tint[region] + swing * (wave / _symmetry.Copies.Count);
+            return _tint[region] + swing * (wave / _symmetry.Copies.Count) + swath;
         }
 
         /// <summary>Soil colour: damp soil reads darker and cooler, so moisture and colour vary together.</summary>
