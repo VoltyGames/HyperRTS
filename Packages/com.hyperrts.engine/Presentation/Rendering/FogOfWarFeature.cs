@@ -16,21 +16,21 @@ namespace HyperRTS.Presentation.Rendering
         [Tooltip("The Hidden/HyperRTS/FogOfWar shader.")]
         public Shader shader;
 
-        private Material material;
-        private FogOfWarPass pass;
-        private ClearAtmosphereFogPass clearFog;
+        private Material _material;
+        private FogOfWarPass _pass;
+        private ClearAtmosphereFogPass _clearFog;
 
         public override void Create()
         {
-            clearFog = new ClearAtmosphereFogPass();
+            _clearFog = new ClearAtmosphereFogPass();
             if (shader == null)
             {
                 Debug.LogError($"HyperRTS: {nameof(FogOfWarFeature)} '{name}' has no shader; set it to {ShaderName}.", this);
                 return;
             }
 
-            material = CoreUtils.CreateEngineMaterial(shader);
-            pass = new FogOfWarPass(material);
+            _material = CoreUtils.CreateEngineMaterial(shader);
+            _pass = new FogOfWarPass(_material);
         }
 
         // Orthographic cameras are top-down captures such as the minimap: neither fog draws there.
@@ -39,24 +39,24 @@ namespace HyperRTS.Presentation.Rendering
             var cameraData = renderingData.cameraData;
             if (cameraData.camera.orthographic)
             {
-                renderer.EnqueuePass(clearFog);
+                renderer.EnqueuePass(_clearFog);
                 return;
             }
 
-            if (pass == null || cameraData.cameraType != CameraType.Game || !FogOfWarRenderer.Shown)
+            if (_pass == null || cameraData.cameraType != CameraType.Game || !FogOfWarRenderer.Shown)
             {
                 return;
             }
 
-            renderer.EnqueuePass(pass);
+            renderer.EnqueuePass(_pass);
         }
 
         protected override void Dispose(bool disposing)
         {
-            CoreUtils.Destroy(material);
-            material = null;
-            pass = null;
-            clearFog = null;
+            CoreUtils.Destroy(_material);
+            _material = null;
+            _pass = null;
+            _clearFog = null;
         }
     }
 }

@@ -25,17 +25,11 @@ namespace HyperRTS.Presentation.Rendering
             return root;
         }
 
-        /// <summary>The root and every entity in its linked group.</summary>
+        /// <summary>The root and every part under it.</summary>
         public static NativeList<Entity> Members(EntityManager entityManager, Entity root)
         {
             var members = new NativeList<Entity>(Allocator.Temp);
-            if (!entityManager.HasBuffer<LinkedEntityGroup>(root))
-            {
-                members.Add(root);
-                return members;
-            }
-
-            members.AddRange(entityManager.GetBuffer<LinkedEntityGroup>(root).Reinterpret<Entity>().AsNativeArray());
+            RenderHierarchy.Collect(entityManager, root, members);
             return members;
         }
 

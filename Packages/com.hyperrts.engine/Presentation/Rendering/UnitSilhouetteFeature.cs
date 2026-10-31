@@ -6,9 +6,9 @@ namespace HyperRTS.Presentation.Rendering
     /// <summary>Draws a team-colour silhouette of every unit on the units rendering layer where cover hides it.</summary>
     public sealed class UnitSilhouetteFeature : ScriptableRendererFeature
     {
-        private UnitSilhouettePass pass;
+        private UnitSilhouettePass _pass;
 
-        public override void Create() => pass = new UnitSilhouettePass(UnitRenderingLayer.Mask);
+        public override void Create() => _pass = new UnitSilhouettePass(UnitRenderingLayer.Mask);
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
@@ -17,7 +17,7 @@ namespace HyperRTS.Presentation.Rendering
                 return;
             }
 
-            renderer.EnqueuePass(pass);
+            renderer.EnqueuePass(_pass);
         }
     }
 }

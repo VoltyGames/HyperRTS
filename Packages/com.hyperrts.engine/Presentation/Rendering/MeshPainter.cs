@@ -1,7 +1,6 @@
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Rendering;
-using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Rendering
 {
@@ -11,15 +10,13 @@ namespace HyperRTS.Presentation.Rendering
     /// </summary>
     public struct MeshPainter<T> where T : unmanaged, IComponentData
     {
-        [ReadOnly] private BufferLookup<LinkedEntityGroup> _linked;
-        [ReadOnly] private BufferLookup<Child> _children;
+        private RenderParts _parts;
         [ReadOnly] private ComponentLookup<MaterialMeshInfo> _meshes;
         private ComponentLookup<T> _painted;
 
         public MeshPainter(ref SystemState state)
         {
-            _linked = state.GetBufferLookup<LinkedEntityGroup>(true);
-            _children = state.GetBufferLookup<Child>(true);
+            _parts = new RenderParts(ref state);
             _meshes = state.GetComponentLookup<MaterialMeshInfo>(true);
             _painted = state.GetComponentLookup<T>();
         }
@@ -27,13 +24,12 @@ namespace HyperRTS.Presentation.Rendering
         /// <summary>Call each frame and again after playing back <see cref="Add"/>'s commands.</summary>
         public void Update(ref SystemState state)
         {
-            _linked.Update(ref state);
-            _children.Update(ref state);
+            _parts.Update(ref state);
             _meshes.Update(ref state);
             _painted.Update(ref state);
         }
 
-        public void Collect(Entity root, NativeList<Entity> parts) => RenderHierarchy.Collect(root, _linked, _children, parts);
+        public void Collect(Entity root, NativeList<Entity> parts) => _parts.Collect(root, parts);
 
         public void Add(NativeList<Entity> parts, T value, EntityCommandBuffer commands)
         {

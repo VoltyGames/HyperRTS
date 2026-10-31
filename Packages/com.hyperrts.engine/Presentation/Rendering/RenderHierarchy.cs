@@ -39,5 +39,30 @@ namespace HyperRTS.Presentation.Rendering
                 }
             }
         }
+
+        /// <summary>The same walk through an <see cref="EntityManager"/>, for main-thread code.</summary>
+        public static void Collect(EntityManager entityManager, Entity root, NativeList<Entity> result)
+        {
+            result.Clear();
+            if (entityManager.HasBuffer<LinkedEntityGroup>(root))
+            {
+                result.AddRange(entityManager.GetBuffer<LinkedEntityGroup>(root, true).Reinterpret<Entity>().AsNativeArray());
+                return;
+            }
+
+            result.Add(root);
+            for (var i = 0; i < result.Length; i++)
+            {
+                if (!entityManager.HasBuffer<Child>(result[i]))
+                {
+                    continue;
+                }
+
+                foreach (var kid in entityManager.GetBuffer<Child>(result[i], true))
+                {
+                    result.Add(kid.Value);
+                }
+            }
+        }
     }
 }

@@ -11,7 +11,7 @@ namespace HyperRTS.Presentation.Rendering
         private static readonly ShaderTagId MaskTag = new("HyperRTSUnitMask");
         private static readonly ShaderTagId SilhouetteTag = new("HyperRTSSilhouette");
 
-        private readonly uint renderingLayerMask;
+        private readonly uint _renderingLayerMask;
 
         private sealed class PassData
         {
@@ -23,7 +23,7 @@ namespace HyperRTS.Presentation.Rendering
         // and before the transparents so smoke and effects still cover it.
         public UnitSilhouettePass(uint renderingLayerMask)
         {
-            this.renderingLayerMask = renderingLayerMask;
+            _renderingLayerMask = renderingLayerMask;
             renderPassEvent = RenderPassEvent.AfterRenderingSkybox + 2;
             profilingSampler = new ProfilingSampler("Unit Silhouettes");
         }
@@ -51,7 +51,7 @@ namespace HyperRTS.Presentation.Rendering
             var camera = frameData.Get<UniversalCameraData>();
             var lights = frameData.Get<UniversalLightData>();
             var drawing = RenderingUtils.CreateDrawingSettings(tag, rendering, camera, lights, SortingCriteria.CommonOpaque);
-            var filtering = new FilteringSettings(RenderQueueRange.opaque, renderingLayerMask: renderingLayerMask);
+            var filtering = new FilteringSettings(RenderQueueRange.opaque, renderingLayerMask: _renderingLayerMask);
             return renderGraph.CreateRendererList(new RendererListParams(rendering.cullResults, drawing, filtering));
         }
     }

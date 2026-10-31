@@ -8,7 +8,7 @@ namespace HyperRTS.Presentation.Rendering
     /// <summary>Blends the fog of war over the opaques, from the camera depth texture.</summary>
     public sealed class FogOfWarPass : ScriptableRenderPass
     {
-        private readonly Material material;
+        private readonly Material _material;
 
         private sealed class PassData
         {
@@ -18,7 +18,7 @@ namespace HyperRTS.Presentation.Rendering
         // After URP's fog and before every transparent, so health bars, markers and the placement ghost stay clear.
         public FogOfWarPass(Material material)
         {
-            this.material = material;
+            _material = material;
             renderPassEvent = RenderPassEvent.BeforeRenderingTransparents;
             profilingSampler = new ProfilingSampler("Fog Of War");
             ConfigureInput(ScriptableRenderPassInput.Depth);
@@ -28,7 +28,7 @@ namespace HyperRTS.Presentation.Rendering
         {
             var resources = frameData.Get<UniversalResourceData>();
             using var builder = renderGraph.AddRasterRenderPass<PassData>("Fog Of War", out var data, profilingSampler);
-            data.Material = material;
+            data.Material = _material;
             builder.UseTexture(resources.cameraDepthTexture);
             builder.SetRenderAttachment(resources.activeColorTexture, 0, AccessFlags.ReadWrite);
             builder.SetRenderFunc(static (PassData pass, RasterGraphContext context) =>

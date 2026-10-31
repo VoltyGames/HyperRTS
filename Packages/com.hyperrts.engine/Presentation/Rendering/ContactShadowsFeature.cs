@@ -31,8 +31,8 @@ namespace HyperRTS.Presentation.Rendering
         [Tooltip("Lowest quality level index the shadows run at, so cheaper levels skip them.")]
         public int lowestQualityLevel = 1;
 
-        private Material material;
-        private ContactShadowsPass pass;
+        private Material _material;
+        private ContactShadowsPass _pass;
 
         /// <summary>Why the settings can't trace, or empty when they can.</summary>
         public string SettingsProblem()
@@ -65,8 +65,8 @@ namespace HyperRTS.Presentation.Rendering
                 return;
             }
 
-            material = CoreUtils.CreateEngineMaterial(shader);
-            pass = new ContactShadowsPass(material);
+            _material = CoreUtils.CreateEngineMaterial(shader);
+            _pass = new ContactShadowsPass(_material);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -77,14 +77,14 @@ namespace HyperRTS.Presentation.Rendering
             }
 
             var sun = renderingData.lightData.visibleLights[renderingData.lightData.mainLightIndex];
-            pass.Setup(this, sun);
-            renderer.EnqueuePass(pass);
+            _pass.Setup(this, sun);
+            renderer.EnqueuePass(_pass);
         }
 
         // Mirrors when URP's Screen Space Shadows pass runs, since the trace darkens its texture.
         private bool Traces(ref RenderingData renderingData)
         {
-            if (pass == null || !RunsAt(QualitySettings.GetQualityLevel()))
+            if (_pass == null || !RunsAt(QualitySettings.GetQualityLevel()))
             {
                 return false;
             }
@@ -102,9 +102,9 @@ namespace HyperRTS.Presentation.Rendering
 
         protected override void Dispose(bool disposing)
         {
-            CoreUtils.Destroy(material);
-            material = null;
-            pass = null;
+            CoreUtils.Destroy(_material);
+            _material = null;
+            _pass = null;
         }
     }
 }

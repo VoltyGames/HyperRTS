@@ -12,16 +12,14 @@ namespace HyperRTS.Presentation.Rendering
     /// </summary>
     public struct RenderSwitch
     {
-        [ReadOnly] private BufferLookup<LinkedEntityGroup> _linked;
-        [ReadOnly] private BufferLookup<Child> _children;
+        private RenderParts _parts;
         [ReadOnly] private ComponentLookup<Parent> _parents;
         private ComponentLookup<HiddenBy> _hidden;
         private ComponentLookup<MaterialMeshInfo> _meshes;
 
         public RenderSwitch(ref SystemState state)
         {
-            _linked = state.GetBufferLookup<LinkedEntityGroup>(true);
-            _children = state.GetBufferLookup<Child>(true);
+            _parts = new RenderParts(ref state);
             _parents = state.GetComponentLookup<Parent>(true);
             _hidden = state.GetComponentLookup<HiddenBy>();
             _meshes = state.GetComponentLookup<MaterialMeshInfo>();
@@ -29,8 +27,7 @@ namespace HyperRTS.Presentation.Rendering
 
         public void Update(ref SystemState state)
         {
-            _linked.Update(ref state);
-            _children.Update(ref state);
+            _parts.Update(ref state);
             _parents.Update(ref state);
             _hidden.Update(ref state);
             _meshes.Update(ref state);
@@ -42,7 +39,7 @@ namespace HyperRTS.Presentation.Rendering
         public void SetGroup(Entity root, HideReason reason, bool hide)
         {
             var parts = new NativeList<Entity>(Allocator.Temp);
-            RenderHierarchy.Collect(root, _linked, _children, parts);
+            Collect(root, parts);
             foreach (var part in parts)
             {
                 Set(part, reason, hide);
@@ -50,7 +47,7 @@ namespace HyperRTS.Presentation.Rendering
         }
 
         /// <summary>Fills <paramref name="parts"/> with <paramref name="root"/>'s parts, for several branch switches.</summary>
-        public void Collect(Entity root, NativeList<Entity> parts) => RenderHierarchy.Collect(root, _linked, _children, parts);
+        public void Collect(Entity root, NativeList<Entity> parts) => _parts.Collect(root, parts);
 
         /// <summary>Sets <paramref name="reason"/> on <paramref name="branch"/> and the parts of <paramref name="root"/> under it.</summary>
         // Walks the root's group, since a fresh instance's branch has no Child buffer until the transform systems run.
