@@ -109,7 +109,7 @@ namespace HyperRTS.Presentation.Environment
             var size = (int2)math.ceil(map.Size / FieldFires.CellSize);
             var burn = new float2(settings.burnSeconds.x, settings.burnSeconds.y);
             _fires = new FieldFires(map.Min, size, burn, new float2(settings.reach.x, settings.reach.y));
-            settings.MarkDry(_fires, terrain, SystemAPI.GetSingleton<GroundMaterials>());
+            _fires.MarkDryTerrain(terrain, settings.dryLayers, SystemAPI.GetSingleton<GroundMaterials>());
             _buildingPlaces = 0u;
             _clusters.Clear();
             _clock = Clock();

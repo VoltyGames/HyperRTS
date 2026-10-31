@@ -3,7 +3,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment
 {
     /// <summary>The rolling gust field: tileable noise (white = gust) and its downwind scroll.</summary>
-    public static class WindGust
+    public static class GustField
     {
         /// <summary>Lattice cells across one tile for the coarse and the fine octave.</summary>
         private const int CoarseCells = 4;

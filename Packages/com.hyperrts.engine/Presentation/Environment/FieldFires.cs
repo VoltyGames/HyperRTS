@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Cues;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment
 {
@@ -34,12 +37,15 @@ namespace HyperRTS.Presentation.Environment
         private const uint BurnSalt = 0x9E3779B9u;
         private const uint ReachSalt = 0x85EBCA6Bu;
 
+        // Rows of the alphamap read at once, so a large terrain never copies all its weights in one go.
+        private const int AlphamapRows = 64;
+
         private static readonly int2[] Neighbours =
         {
             new(1, 0), new(-1, 0), new(0, 1), new(0, -1), new(1, 1), new(1, -1), new(-1, 1), new(-1, -1),
         };
 
-        private readonly float2 _min;
+        private readonly GridArea _grid;
         private readonly float2 _burnSeconds;
         private readonly float2 _reach;
         private readonly FieldCell[] _cells;
@@ -56,33 +62,32 @@ namespace HyperRTS.Presentation.Environment
         /// </summary>
         public FieldFires(float2 min, int2 size, float2 burnSeconds, float2 reach)
         {
-            _min = min;
+            _grid = new GridArea(min, CellSize, size);
             _burnSeconds = burnSeconds;
             _reach = reach;
-            Size = size;
             _cells = new FieldCell[size.x * size.y];
         }
 
-        public int2 Size { get; }
+        public int2 Size => _grid.Size;
 
         public int Burning => _flames.Count;
 
         /// <summary>The middle of each cell that burnt out during the last <see cref="Advance"/>.</summary>
         public IReadOnlyList<float2> BurntOut => _burntOut;
 
-        public void MarkDry(int2 cell) => _cells[cell.x + cell.y * Size.x] = FieldCell.Dry;
+        public void MarkDry(int2 cell) => _cells[_grid.Index(cell)] = FieldCell.Dry;
 
         /// <summary>Makes the dry cells within <paramref name="radius"/> of <paramref name="centre"/> bare for good.</summary>
         public void MarkBare(float2 centre, float radius)
         {
-            var low = math.max((int2)math.floor((centre - radius - _min) / CellSize), 0);
-            var high = math.min((int2)math.floor((centre + radius - _min) / CellSize), Size - 1);
+            var low = math.max(_grid.Cell(centre - radius), 0);
+            var high = math.min(_grid.Cell(centre + radius), Size - 1);
             for (var z = low.y; z <= high.y; z++)
             {
                 for (var x = low.x; x <= high.x; x++)
                 {
-                    var index = x + z * Size.x;
-                    var near = math.distancesq(Centre(new int2(x, z)), centre) <= radius * radius;
+                    var index = _grid.Index(new int2(x, z));
+                    var near = math.distancesq(_grid.Centre(new int2(x, z)), centre) <= radius * radius;
                     if (near && _cells[index] == FieldCell.Dry)
                     {
                         _cells[index] = FieldCell.Bare;
@@ -94,22 +99,22 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>The cell under <paramref name="position"/>; bare off the grid.</summary>
         public FieldCell At(float2 position)
         {
-            var cell = (int2)math.floor((position - _min) / CellSize);
-            return Inside(cell) ? _cells[cell.x + cell.y * Size.x] : FieldCell.Bare;
+            var cell = _grid.Cell(position);
+            return _grid.Inside(cell) ? _cells[_grid.Index(cell)] : FieldCell.Bare;
         }
 
-        public float2 Centre(int2 cell) => _min + ((float2)cell + 0.5f) * CellSize;
+        public float2 Centre(int2 cell) => _grid.Centre(cell);
 
         /// <summary>Sets the dry cell under <paramref name="position"/> alight; false on any other cell.</summary>
         public bool TryIgnite(float2 position, uint seed)
         {
-            var cell = (int2)math.floor((position - _min) / CellSize);
-            if (!Inside(cell) || _cells[cell.x + cell.y * Size.x] != FieldCell.Dry)
+            var cell = _grid.Cell(position);
+            if (!_grid.Inside(cell) || _cells[_grid.Index(cell)] != FieldCell.Dry)
             {
                 return false;
             }
 
-            var index = cell.x + cell.y * Size.x;
+            var index = _grid.Index(cell);
             var reach = math.lerp(_reach.x, _reach.y, Fraction(seed, index, ReachSalt)) / CellSize;
             Light(index, seed, cell, reach, _flames);
             return true;
@@ -146,10 +151,10 @@ namespace HyperRTS.Presentation.Environment
             var across = (Size.x + ClusterCells - 1) / ClusterCells;
             foreach (var flame in _flames)
             {
-                var cell = Cell(flame.Cell);
+                var cell = _grid.FromIndex(flame.Cell);
                 var key = cell.x / ClusterCells + cell.y / ClusterCells * across;
                 _clusterSums.TryGetValue(key, out var sum);
-                _clusterSums[key] = sum + new float3(Centre(cell), 1f);
+                _clusterSums[key] = sum + new float3(_grid.Centre(cell), 1f);
             }
 
             foreach (var (key, sum) in _clusterSums)
@@ -157,6 +162,32 @@ namespace HyperRTS.Presentation.Environment
                 clusters.Add(new FieldFireCluster { Key = key, Centre = sum.xy / sum.z, Cells = (int)sum.z });
             }
         }
+
+        /// <summary>Marks dry every cell whose terrain is mostly <paramref name="dryLayers"/> and isn't water.</summary>
+        public void MarkDryTerrain(Terrain terrain, TerrainLayer[] dryLayers, in GroundMaterials ground)
+        {
+            var data = terrain.terrainData;
+            var resolution = data.alphamapResolution;
+            var dry = DryTexels(data, dryLayers);
+            var origin = ((float3)terrain.GetPosition()).xz;
+            var perMetre = resolution / ((float3)data.size).xz;
+            for (var z = 0; z < Size.y; z++)
+            {
+                for (var x = 0; x < Size.x; x++)
+                {
+                    var centre = _grid.Centre(new int2(x, z));
+                    var texel = (int2)math.floor((centre - origin) * perMetre);
+                    var onTerrain = math.all(texel >= 0) && math.all(texel < resolution);
+                    if (onTerrain && dry[texel.x + texel.y * resolution] && ground.At(centre) != SurfaceMaterial.Water)
+                    {
+                        MarkDry(new int2(x, z));
+                    }
+                }
+            }
+        }
+
+        /// <summary>A 32-bit hash as a number from 0 up to but not including 1.</summary>
+        public static float HashFraction(uint hash) => (hash >> 8) * (1f / (1 << 24));
 
         /// <summary>Puts every fire out and makes burnt ground dry again: a replay sought back past the fires.</summary>
         public void Clear()
@@ -172,6 +203,34 @@ namespace HyperRTS.Presentation.Environment
             _flames.Clear();
             _burntOut.Clear();
             _carry = 0f;
+        }
+
+        // Whether each alphamap texel is over half dry layers, row-major from the terrain's south-west corner.
+        private static bool[] DryTexels(TerrainData data, TerrainLayer[] dryLayers)
+        {
+            var resolution = data.alphamapResolution;
+            var burns = Array.ConvertAll(data.terrainLayers, layer => Array.IndexOf(dryLayers, layer) >= 0);
+            var dry = new bool[resolution * resolution];
+            for (var row = 0; row < resolution; row += AlphamapRows)
+            {
+                var rows = Math.Min(AlphamapRows, resolution - row);
+                var weights = data.GetAlphamaps(0, row, resolution, rows);
+                for (var z = 0; z < rows; z++)
+                {
+                    for (var x = 0; x < resolution; x++)
+                    {
+                        var share = 0f;
+                        for (var layer = 0; layer < burns.Length; layer++)
+                        {
+                            share += burns[layer] ? weights[z, x, layer] : 0f;
+                        }
+
+                        dry[x + (row + z) * resolution] = share > 0.5f;
+                    }
+                }
+            }
+
+            return dry;
         }
 
         private void Step(float2 wind)
@@ -196,7 +255,7 @@ namespace HyperRTS.Presentation.Environment
                 }
 
                 _cells[flame.Cell] = FieldCell.Burnt;
-                _burntOut.Add(Centre(Cell(flame.Cell)));
+                _burntOut.Add(_grid.Centre(_grid.FromIndex(flame.Cell)));
                 _flames[i] = _flames[^1];
                 _flames.RemoveAt(_flames.Count - 1);
             }
@@ -208,12 +267,12 @@ namespace HyperRTS.Presentation.Environment
         // Lights some dry neighbours; false once none is left within reach, as cells never turn dry again.
         private bool Spread(in Flame flame)
         {
-            var cell = Cell(flame.Cell);
+            var cell = _grid.FromIndex(flame.Cell);
             var anyDry = false;
             for (var n = 0; n < Neighbours.Length; n++)
             {
                 var next = cell + Neighbours[n];
-                if (!Inside(next) || _cells[next.x + next.y * Size.x] != FieldCell.Dry)
+                if (!_grid.Inside(next) || _cells[_grid.Index(next)] != FieldCell.Dry)
                 {
                     continue;
                 }
@@ -225,7 +284,7 @@ namespace HyperRTS.Presentation.Environment
                 }
 
                 anyDry = true;
-                var index = next.x + next.y * Size.x;
+                var index = _grid.Index(next);
                 var chance = _chances[n] * math.pow(left, ReachFalloff);
                 if (Fraction(flame.Seed, index, flame.Age * 8u + (uint)n) < chance)
                 {
@@ -248,12 +307,8 @@ namespace HyperRTS.Presentation.Environment
             into.Add(new Flame { Cell = index, Seed = seed, Origin = origin, Reach = reach, Left = seconds });
         }
 
-        private bool Inside(int2 cell) => math.all(cell >= 0) && math.all(cell < Size);
-
-        private int2 Cell(int index) => new(index % Size.x, index / Size.x);
-
         private static float Fraction(uint seed, int cell, uint salt) =>
-            (math.hash(new uint3(seed, (uint)cell, salt)) >> 8) * (1f / (1 << 24));
+            HashFraction(math.hash(new uint3(seed, (uint)cell, salt)));
 
         private struct Flame
         {

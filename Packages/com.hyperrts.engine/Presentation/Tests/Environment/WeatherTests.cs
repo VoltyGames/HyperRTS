@@ -97,7 +97,7 @@ namespace HyperRTS.Presentation.Tests.Environment
         public void Gust_Scroll(float x, float y, float windX, float windY, float speed, float seconds, float expectedX,
             float expectedY)
         {
-            var offset = WindGust.Scroll(new Vector2(x, y), new Vector2(windX, windY), speed, seconds);
+            var offset = GustField.Scroll(new Vector2(x, y), new Vector2(windX, windY), speed, seconds);
 
             Assert.AreEqual(expectedX, offset.x, 1e-5f);
             Assert.AreEqual(expectedY, offset.y, 1e-5f);
@@ -109,15 +109,15 @@ namespace HyperRTS.Presentation.Tests.Environment
             for (var step = 0; step <= 10; step++)
             {
                 var t = step / 10f;
-                Assert.AreEqual(WindGust.Noise(0f, t), WindGust.Noise(1f, t), 1e-5f);
-                Assert.AreEqual(WindGust.Noise(t, 0f), WindGust.Noise(t, 1f), 1e-5f);
+                Assert.AreEqual(GustField.Noise(0f, t), GustField.Noise(1f, t), 1e-5f);
+                Assert.AreEqual(GustField.Noise(t, 0f), GustField.Noise(t, 1f), 1e-5f);
             }
         }
 
         [Test]
         public void GustMap_SpansTheFullRange_AndRepeats()
         {
-            var map = WindGust.CreateMap(32);
+            var map = GustField.CreateMap(32);
             try
             {
                 var pixels = map.GetPixelData<byte>(0);

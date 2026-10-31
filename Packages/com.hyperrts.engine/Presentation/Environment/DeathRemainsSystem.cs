@@ -47,8 +47,13 @@ namespace HyperRTS.Presentation.Environment
             _visibility.Begin();
             foreach (var cue in cues)
             {
+                if (cue.Slot != CueSlot.Death)
+                {
+                    continue;
+                }
+
                 var onGround = cue.Position.y - terrain.Height(cue.Position.xz) <= InteractionStampSystem.MaxGroundGap;
-                if (cue.Slot != CueSlot.Death || !onGround || !_visibility.IsSeen(cue))
+                if (!onGround || !_visibility.IsSeen(cue))
                 {
                     continue;
                 }

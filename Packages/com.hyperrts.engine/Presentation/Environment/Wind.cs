@@ -49,7 +49,7 @@ namespace HyperRTS.Presentation.Environment
         private void OnEnable()
         {
             _zone = GetComponent<WindZone>();
-            _gustMap = WindGust.CreateMap(GustMapSize);
+            _gustMap = GustField.CreateMap(GustMapSize);
             Shader.SetGlobalTexture(GustMapId, _gustMap);
         }
 
@@ -58,7 +58,7 @@ namespace HyperRTS.Presentation.Environment
             var forward = transform.forward;
             var downwind = new Vector3(forward.x, 0f, forward.z).normalized;
             var last = _gustOffset;
-            _gustOffset = WindGust.Scroll(_gustOffset, new Vector2(downwind.x, downwind.z), _zone.windPulseFrequency, Time.deltaTime);
+            _gustOffset = GustField.Scroll(_gustOffset, new Vector2(downwind.x, downwind.z), _zone.windPulseFrequency, Time.deltaTime);
 
             Downwind = downwind;
             Strength = _zone.windMain;
@@ -71,10 +71,21 @@ namespace HyperRTS.Presentation.Environment
 
         protected override void OnDisabled()
         {
+            Downwind = Vector3.zero;
             Strength = 0f;
             Shader.SetGlobalFloat(StrengthId, 0f);
+            Shader.SetGlobalTexture(GustMapId, Texture2D.blackTexture);
             Shader.SetGlobalFloat(DetailId, (float)WindDetail.None);
             CoreUtils.Destroy(_gustMap);
+        }
+
+        // Statics and shader globals outlive Play mode in the editor.
+        [OnEnteringPlayMode]
+        private static void Reset()
+        {
+            Downwind = Vector3.zero;
+            Strength = 0f;
+            Shader.SetGlobalFloat(StrengthId, 0f);
         }
     }
 }
