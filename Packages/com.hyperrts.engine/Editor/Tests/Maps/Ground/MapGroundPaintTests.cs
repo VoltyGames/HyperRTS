@@ -10,6 +10,7 @@ using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
+using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using HyperRTS.Presentation.Tests.Environment;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
@@ -163,7 +164,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         public void CropPainter_Tiles_ListEveryCropCellsField()
         {
             var (bake, _, _) = PaintCrops(withRoad: true, (_, _, _) => false);
-            var tiles = new Dictionary<(int, int), RowCropTile>();
+            var tiles = new Dictionary<(int, int), ScatterTile>();
             bake.Tiles.ForEach(tile => tiles[(tile.x, tile.z)] = tile);
             for (var z = 0; z < bake.Height; z++)
             {
@@ -176,7 +177,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
                     }
 
                     Assert.IsTrue(tiles.TryGetValue((x / 16, z / 16), out var tile), $"cell ({x}, {z}) has no tile");
-                    CollectionAssert.Contains(bake.TileFields.GetRange(tile.firstField, tile.fieldCount), id - 1);
+                    CollectionAssert.Contains(bake.TileFields.GetRange(tile.first, tile.count), id - 1);
                 }
             }
         }

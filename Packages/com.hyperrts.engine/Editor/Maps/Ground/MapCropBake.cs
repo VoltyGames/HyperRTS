@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
+using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground
@@ -29,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Ground
 
         public List<RowCropField> Fields { get; } = new();
 
-        public List<RowCropTile> Tiles { get; } = new();
+        public List<ScatterTile> Tiles { get; } = new();
 
         public List<int> TileFields { get; } = new();
 

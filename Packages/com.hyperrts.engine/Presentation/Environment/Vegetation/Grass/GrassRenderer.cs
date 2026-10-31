@@ -50,8 +50,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             _materials = field.plants.ConvertAll(Instanced).ToArray();
         }
 
-        private protected override ScatterTiles NewTiles() =>
-            new(field.tiles.Count, t => field.TileRect(field.tiles[t]), field.TallestPlant, terrain);
+        private protected override ScatterField Field => field;
 
         private protected override GrassCameraState NewState() => new(field, _kernels, _materials);
 
@@ -112,7 +111,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
                 var range = ScatterTiles.Distances(bounds, position);
                 var tile = field.tiles[t];
                 var rect = field.TileRect(tile);
-                for (var i = tile.firstPlant; i < tile.firstPlant + tile.plantCount; i++)
+                for (var i = tile.first; i < tile.first + tile.count; i++)
                 {
                     var grows = field.tilePlants[i];
                     var job = ScatterJob.Square(rect, grows.plant, field.plants[grows.plant].Spacing);

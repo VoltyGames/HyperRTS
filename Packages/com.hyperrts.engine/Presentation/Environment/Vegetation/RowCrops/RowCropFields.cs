@@ -8,7 +8,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
     /// <summary>A map's baked row crops: field-id picture, row lattices, crops and the tiles that hold any.</summary>
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
-    public sealed class RowCropFields : ScriptableObject
+    public sealed class RowCropFields : ScatterField
     {
         /// <summary>Field id 0: no crop here.</summary>
         public const int None = 0;
@@ -16,14 +16,9 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         [Tooltip("Field id per texel, north up: R low byte, G high byte. Point-sampled, linear.")]
         public Texture2D fieldIds;
 
-        [Tooltip("World XZ rectangle the picture and tile grid cover. x and y are its minimum x and z.")]
-        public Rect area;
-
         public List<RowCrop> crops = new();
 
         public List<RowCropField> fields = new();
-
-        public List<RowCropTile> tiles = new();
 
         [Tooltip("Field indices per tile, each tile's run in turn.")]
         public List<int> tileFields = new();
@@ -36,12 +31,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 
         public static int Decode(Color32 texel) => texel.r | (texel.g << 8);
 
-        public Rect TileRect(RowCropTile tile) =>
-            new(area.xMin + tile.x * ScatterTiles.Size, area.yMin + tile.z * ScatterTiles.Size,
-                ScatterTiles.Size, ScatterTiles.Size);
-
         /// <summary>Metres the tallest crop can grow to, the height of every tile's culling box.</summary>
-        public float TallestPlant
+        public override float TallestPlant
         {
             get
             {
@@ -51,18 +42,11 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             }
         }
 
-        /// <summary>Problems that keep the fields from drawing, one per line. Empty when ready.</summary>
-        public IReadOnlyList<string> Problems()
+        private protected override void AddProblems(List<string> problems)
         {
-            var problems = new List<string>();
             if (fieldIds == null)
             {
                 problems.Add($"{nameof(fieldIds)} is missing");
-            }
-
-            if (area.width <= 0f || area.height <= 0f)
-            {
-                problems.Add($"{nameof(area)} {area} has no size");
             }
 
             for (var i = 0; i < crops.Count; i++)
@@ -78,8 +62,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
                     problems.Add($"crop '{crops[i].name}': {problem}");
                 }
             }
-
-            return problems;
         }
     }
 }

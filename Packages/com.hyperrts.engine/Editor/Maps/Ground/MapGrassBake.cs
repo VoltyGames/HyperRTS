@@ -58,12 +58,12 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         /// <summary>Every <see cref="ScatterTiles.Size"/> tile that grows any plant, with each plant's mean coverage there.</summary>
-        public (List<GrassTile> Tiles, List<GrassTilePlant> Plants) Tiles()
+        public (List<ScatterTile> Tiles, List<GrassTilePlant> Plants) Tiles()
         {
             var across = Mathf.CeilToInt(Area.width / ScatterTiles.Size);
             var deep = Mathf.CeilToInt(Area.height / ScatterTiles.Size);
             var (sums, texels) = TileSums(across, deep);
-            var (tiles, plants) = (new List<GrassTile>(), new List<GrassTilePlant>());
+            var (tiles, plants) = (new List<ScatterTile>(), new List<GrassTilePlant>());
             for (var t = 0; t < across * deep; t++)
             {
                 var first = plants.Count;
@@ -77,7 +77,7 @@ namespace HyperRTS.Editor.Maps.Ground
 
                 if (plants.Count > first)
                 {
-                    tiles.Add(new GrassTile { x = t % across, z = t / across, firstPlant = first, plantCount = plants.Count - first });
+                    tiles.Add(new ScatterTile { x = t % across, z = t / across, first = first, count = plants.Count - first });
                 }
             }
 

@@ -39,12 +39,12 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
 
             Assert.AreEqual(2, tiles.Count);
             Assert.AreEqual((1, 0), (tiles[0].x, tiles[0].z));
-            Assert.AreEqual(1, tiles[0].plantCount);
-            Assert.AreEqual(1, plants[tiles[0].firstPlant].plant);
-            Assert.AreEqual(0.5f, plants[tiles[0].firstPlant].coverage, 1e-4f);
+            Assert.AreEqual(1, tiles[0].count);
+            Assert.AreEqual(1, plants[tiles[0].first].plant);
+            Assert.AreEqual(0.5f, plants[tiles[0].first].coverage, 1e-4f);
             Assert.AreEqual((3, 3), (tiles[1].x, tiles[1].z));
-            Assert.AreEqual(0, plants[tiles[1].firstPlant].plant);
-            Assert.AreEqual(1f / (32f * 32f), plants[tiles[1].firstPlant].coverage, 1e-5f);
+            Assert.AreEqual(0, plants[tiles[1].first].plant);
+            Assert.AreEqual(1f / (32f * 32f), plants[tiles[1].first].coverage, 1e-5f);
         }
 
         [Test]

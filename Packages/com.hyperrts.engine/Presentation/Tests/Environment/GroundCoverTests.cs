@@ -63,7 +63,7 @@ namespace HyperRTS.Presentation.Tests.Environment
         [Test]
         public void TileRects_StepFromTheAreasCorner()
         {
-            var rect = _field.TileRect(new GrassTile { x = 2, z = 1 });
+            var rect = _field.TileRect(new ScatterTile { x = 2, z = 1 });
 
             Assert.AreEqual(new Rect(-32f + 2f * ScatterTiles.Size, -32f + ScatterTiles.Size, 16f, 16f), rect);
         }

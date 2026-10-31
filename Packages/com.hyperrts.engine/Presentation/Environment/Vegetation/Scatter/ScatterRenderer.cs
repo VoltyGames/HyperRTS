@@ -52,7 +52,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         /// <summary>Makes the GPU inputs every camera shares, once the references check out.</summary>
         private protected abstract void BuildInputs();
 
-        private protected abstract ScatterTiles NewTiles();
+        private protected abstract ScatterField Field { get; }
 
         private protected abstract TState NewState();
 
@@ -85,7 +85,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             }
 
             BuildInputs();
-            Tiles = NewTiles();
+            Tiles = Field.NewTiles(terrain);
             _newState ??= NewState;
             _ready = true;
         }

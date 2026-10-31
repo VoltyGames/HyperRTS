@@ -176,7 +176,7 @@ namespace HyperRTS.Editor.Maps.Ground
                         continue;
                     }
 
-                    bake.Tiles.Add(new RowCropTile { x = tx, z = tz, firstField = bake.TileFields.Count, fieldCount = found.Count });
+                    bake.Tiles.Add(new ScatterTile { x = tx, z = tz, first = bake.TileFields.Count, count = found.Count });
                     bake.TileFields.AddRange(found);
                 }
             }

@@ -549,9 +549,12 @@ Row crops and grass (see [maps](../maps.md)) share one host, built to take more 
 
 - `ScatterRenderer<TState>`, the base of `RowCropRenderer` and `GrassRenderer`, holds the `compute` and `terrain`
   fields, builds and releases the inputs, keeps one state per camera in `CameraStates`, culls tiles through
-  `ScatterTiles` and, in edit mode, rebuilds after `OnValidate` or a map rebuild. A subclass makes its inputs, tiles
-  and camera states, says when its data went stale and grows and draws each camera. Density and distance come from
+  `ScatterTiles` and, in edit mode, rebuilds after `OnValidate` or a map rebuild. A subclass makes its inputs and camera
+  states, names its `ScatterField`, says when its data went stale and grows and draws each camera. Density and distance come from
   `PresentationQuality.Current`.
+- `ScatterField`, the base of `RowCropFields` and `GrassField`, holds the baked `area` and the `tiles` (`ScatterTile`: column
+  and row from the area's corner, and the `first` and `count` of the tile's run in the field's own per-tile list). It
+  makes the `ScatterTiles` culling boxes and checks the area has a size.
 - `ScatterBatch`, the base of `RowCropBatch` and `GrassBatch`, holds one camera's slots: a mesh and property
   block each, the `ScatterJob`s queued for the grow kernel (one visible tile of one plant or field) and the `ScatterDraws` indirect
   draws. `Generate` reserves room,

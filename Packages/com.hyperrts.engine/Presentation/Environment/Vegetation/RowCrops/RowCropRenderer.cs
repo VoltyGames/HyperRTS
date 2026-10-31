@@ -41,8 +41,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             _inputs = new RowCropComputeInputs(_kernels, fields, terrain);
         }
 
-        private protected override ScatterTiles NewTiles() =>
-            new(fields.tiles.Count, t => fields.TileRect(fields.tiles[t]), fields.TallestPlant, terrain);
+        private protected override ScatterField Field => fields;
 
         private protected override RowCropCameraState NewState() => new(fields, _kernels);
 
@@ -103,7 +102,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
                 var (near, far) = ScatterTiles.Distances(bounds, position);
                 var tile = fields.tiles[t];
                 var rect = fields.TileRect(tile);
-                for (var f = tile.firstField; f < tile.firstField + tile.fieldCount; f++)
+                for (var f = tile.first; f < tile.first + tile.count; f++)
                 {
                     var index = fields.tileFields[f];
                     var field = fields.fields[index];
