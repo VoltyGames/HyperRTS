@@ -19,7 +19,7 @@ namespace HyperRTS.Presentation.Effects
         {
             var effects = entityManager.HasBuffer<EntityEffect>(source)
                 ? entityManager.GetBuffer<EntityEffect>(source, true).AsNativeArray().ToArray()
-                : new EntityEffect[0];
+                : System.Array.Empty<EntityEffect>();
             var impacts = entityManager.HasComponent<EntityImpactEffects>(source)
                 ? entityManager.GetComponentData<EntityImpactEffects>(source).Effects.Value
                 : null;

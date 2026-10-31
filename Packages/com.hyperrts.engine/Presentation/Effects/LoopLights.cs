@@ -9,12 +9,11 @@ namespace HyperRTS.Presentation.Effects
     /// </summary>
     public sealed class LoopLights
     {
-        public const int Capacity = 8;
+        public const int Capacity = LightSlots.Capacity;
 
-        private readonly Light[] _lights = new Light[Capacity];
-        private readonly Transform _root;
+        private readonly LightSlots _slots;
 
-        public LoopLights(Transform root) => _root = root;
+        public LoopLights(Transform root) => _slots = new LightSlots(root, "Loop Light");
 
         /// <summary>The loops offered this frame; cleared by <see cref="Show"/>.</summary>
         public LoopOffers<LoopLight> Offers { get; } = new();
@@ -34,42 +33,20 @@ namespace HyperRTS.Presentation.Effects
                 Light(i, Offers[i], time);
             }
 
-            for (var i = lit; i < Capacity; i++)
-            {
-                if (_lights[i] != null)
-                {
-                    _lights[i].enabled = false;
-                }
-            }
-
+            _slots.DisableFrom(lit);
             Offers.Clear();
         }
 
         private void Light(int slot, LoopOffers<LoopLight>.Offer offer, float time)
         {
             var source = offer.Source;
-            var light = Slot(slot);
+            var light = _slots.Get(slot);
             light.transform.position = offer.Position + Vector3.up * source.height;
             light.color = source.color;
             light.range = source.range;
             // The stream key spreads phases, so neighbouring fires don't pulse together.
             light.intensity = source.IntensityAt(time, offer.Key % 6283u * 0.001f, offer.Strength);
             light.enabled = true;
-        }
-
-        private Light Slot(int slot)
-        {
-            if (_lights[slot] != null)
-            {
-                return _lights[slot];
-            }
-
-            var host = new GameObject($"Loop Light {slot}") { hideFlags = HideFlags.DontSave };
-            host.transform.SetParent(_root);
-            var light = host.AddComponent<Light>();
-            light.type = LightType.Point;
-            light.shadows = LightShadows.None;
-            return _lights[slot] = light;
         }
     }
 }

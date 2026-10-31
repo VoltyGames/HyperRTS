@@ -11,10 +11,13 @@ namespace HyperRTS.Presentation.Effects
     /// </summary>
     public sealed class EffectStreams
     {
+        private readonly EffectPool _pool;
         private readonly Dictionary<(Entity, int), StreamState> _states = new();
         private readonly List<(Entity, int)> _stale = new();
         private readonly Stack<StreamState> _free = new();
         private int _frame;
+
+        public EffectStreams(EffectPool pool) => _pool = pool;
 
         /// <summary>Stable per entity, so its stream keeps one look.</summary>
         public static uint Key(Entity entity, int index) => math.hash(new int3(entity.Index, entity.Version, index));
@@ -22,8 +25,25 @@ namespace HyperRTS.Presentation.Effects
         /// <summary>Starts a frame; call <see cref="EndFrame"/> after the last <see cref="Step"/>.</summary>
         public void BeginFrame() => _frame++;
 
+        /// <summary>
+        /// Moves the entity's stream of the prefab's rig on to this frame's point, with its variant picked; null when
+        /// there is no rig or the point is beyond <paramref name="reach"/> x its range, so the stream starts afresh.
+        /// </summary>
+        public StreamState Step(GameObject prefab, Entity entity, int index, Vector3 position, float reach = 1f)
+        {
+            var rig = _pool.Get(prefab);
+            if (rig == null || !_pool.InRange(rig, position, reach))
+            {
+                return null;
+            }
+
+            var state = Advance(entity, index, position);
+            state.Use(rig);
+            return state;
+        }
+
         /// <summary>The stream's state moved on to this frame's point.</summary>
-        public StreamState Step(Entity entity, int index, Vector3 position)
+        public StreamState Advance(Entity entity, int index, Vector3 position)
         {
             var key = (entity, index);
             if (!_states.TryGetValue(key, out var state))

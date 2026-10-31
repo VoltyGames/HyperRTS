@@ -614,7 +614,8 @@ are written in `JsonFormat`'s layout. See [editor](../editor.md#effect-graphs) f
 a recipe, the recipe inspector, the preview and the capture.
 
 `EffectPool` keeps one instance per prefab and replays it for every event, never instantiating per shot. It reads
-the camera position once a frame, in `EffectPoolSystem`, for every range check. Effects play for cues the client
+the camera position once a frame, in `EffectPoolSystem`, for every range check, and exposes it as `Eye`. Each streaming
+system holds an `EffectStreams` built on the pool, whose `Step` finds the rig, checks its range and moves the stream. Effects play for cues the client
 can see:
 
 - **Bursts**: fire, death, ability and impact cues. Impacts pick a rig by the surface material that was hit.

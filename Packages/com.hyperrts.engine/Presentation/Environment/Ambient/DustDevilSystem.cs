@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
@@ -24,7 +25,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
         private const float Reach = 120f;
 
         private readonly List<DustDevil> _devils = new();
-        private readonly EffectStreams _streams = new();
+        private EffectStreams _streams;
         private EffectPool _pool;
         private Camera _camera;
         private AmbientLife _life;
@@ -35,6 +36,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
+            _streams = new EffectStreams(_pool);
             RequireForUpdate<TerrainHeight>();
             RequireForUpdate<GroundMaterials>();
         }
@@ -54,7 +56,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
                 Begin(life);
             }
 
-            _camera = EffectRange.Main(_camera);
+            _camera = MainCamera.Find(_camera);
             if (_camera == null)
             {
                 return;
@@ -118,7 +120,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
                     continue;
                 }
 
-                var state = _pool.Step(_streams, _life.dustDevilRig, Entity.Null, devil.Id, devil.Position);
+                var state = _streams.Step(_life.dustDevilRig, Entity.Null, devil.Id, devil.Position);
                 state?.Emit(Quaternion.identity, deltaTime, devil.Strength);
             }
 

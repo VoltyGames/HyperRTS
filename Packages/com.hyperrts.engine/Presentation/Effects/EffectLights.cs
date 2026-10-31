@@ -5,19 +5,18 @@ namespace HyperRTS.Presentation.Effects
     /// <summary>Shadowless point lights shared by every rig's flashes; when all are lit the oldest is reused.</summary>
     public sealed class EffectLights
     {
-        public const int Capacity = 8;
+        public const int Capacity = LightSlots.Capacity;
 
-        private readonly Light[] _lights = new Light[Capacity];
+        private readonly LightSlots _slots;
         private readonly EffectLight[] _sources = new EffectLight[Capacity];
         private readonly float[] _ages = new float[Capacity];
-        private readonly Transform _root;
 
-        public EffectLights(Transform root) => _root = root;
+        public EffectLights(Transform root) => _slots = new LightSlots(root, "Flash");
 
         public void Flash(EffectLight source, Vector3 position)
         {
             var slot = Oldest();
-            var light = Light(slot);
+            var light = _slots.Get(slot);
             _sources[slot] = source;
             _ages[slot] = 0f;
             light.transform.position = position;
@@ -42,11 +41,11 @@ namespace HyperRTS.Presentation.Effects
                 if (life >= 1f)
                 {
                     _sources[i] = null;
-                    _lights[i].enabled = false;
+                    _slots.Get(i).enabled = false;
                     continue;
                 }
 
-                _lights[i].intensity = source.intensity * source.falloff.Evaluate(life);
+                _slots.Get(i).intensity = source.intensity * source.falloff.Evaluate(life);
             }
         }
 
@@ -67,21 +66,6 @@ namespace HyperRTS.Presentation.Effects
             }
 
             return oldest;
-        }
-
-        private Light Light(int slot)
-        {
-            if (_lights[slot] != null)
-            {
-                return _lights[slot];
-            }
-
-            var host = new GameObject($"Flash {slot}") { hideFlags = HideFlags.DontSave };
-            host.transform.SetParent(_root);
-            var light = host.AddComponent<Light>();
-            light.type = LightType.Point;
-            light.shadows = LightShadows.None;
-            return _lights[slot] = light;
         }
     }
 }

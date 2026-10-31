@@ -12,12 +12,13 @@ namespace HyperRTS.Presentation.Effects
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class TrailSystem : SystemBase
     {
-        private readonly EffectStreams _streams = new();
+        private EffectStreams _streams;
         private EffectPool _pool;
 
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
+            _streams = new EffectStreams(_pool);
             RequireForUpdate<EffectTrail>();
         }
 
@@ -30,7 +31,7 @@ namespace HyperRTS.Presentation.Effects
                          .WithNone<FogHidden, Inside>().WithEntityAccess())
             {
                 var prefab = trail.ValueRO.Rig.IsValid() ? trail.ValueRO.Rig.Value : null;
-                var state = _pool.Step(_streams, prefab, entity, 0, place.ValueRO.Position);
+                var state = _streams.Step(prefab, entity, 0, place.ValueRO.Position);
                 state?.Emit(EffectPose.Facing(state.To - state.From), deltaTime, 1f);
             }
 

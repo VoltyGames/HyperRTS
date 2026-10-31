@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Unity.Entities;
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
@@ -18,8 +18,12 @@ namespace HyperRTS.Presentation.Effects
         private GameObject _root;
         private EffectLights _lights;
         private Camera _camera;
-        private Vector3 _eye;
-        private bool _hasEye;
+
+        /// <summary>The camera position taken by the last <see cref="Tick"/>; the origin without a camera.</summary>
+        public Vector3 Eye { get; private set; }
+
+        /// <summary>Whether the last <see cref="Tick"/> found a camera.</summary>
+        public bool HasEye { get; private set; }
 
         /// <summary>The prefab's live rig, or null when there is no prefab or it is broken (logged once, naming it).</summary>
         public EffectRig Get(GameObject prefab)
@@ -41,7 +45,7 @@ namespace HyperRTS.Presentation.Effects
             }
 
             rig = Spawn(prefab);
-            rig.Prepare();
+            rig.Capture();
             _rigs[prefab] = rig;
             rig.Alternatives = Array.ConvertAll(rig.variants, Get);
             return rig;
@@ -57,38 +61,20 @@ namespace HyperRTS.Presentation.Effects
             }
         }
 
-        /// <summary>
-        /// Moves the entity's stream of the prefab's rig on to this frame's point, with its variant picked; null when
-        /// there is no rig or the point is beyond <paramref name="reach"/> × its range, so the stream starts afresh.
-        /// </summary>
-        public StreamState Step(EffectStreams streams, GameObject prefab, Entity entity, int index, Vector3 position,
-            float reach = 1f)
-        {
-            var rig = Get(prefab);
-            if (rig == null || !InRange(rig, position, reach))
-            {
-                return null;
-            }
-
-            var state = streams.Step(entity, index, position);
-            state.Use(rig);
-            return state;
-        }
-
         /// <summary>Whether the rig at the position is within <paramref name="reach"/> × its range.</summary>
-        public bool InRange(EffectRig rig, Vector3 position, float reach = 1f) =>
-            _hasEye && EffectRange.InRange(_eye, rig, position, reach);
+        public bool InRange(EffectRig rig, Vector3 position, float reach = 1f)
+        {
+            var limit = rig.maxDistance * reach;
+            return HasEye && (position - Eye).sqrMagnitude <= limit * limit;
+        }
 
         /// <summary>Takes this frame's camera position, fires due timed bursts and fades flashes.</summary>
         public void Tick(float deltaTime)
         {
             // Nothing plays without a camera, since nobody would see it.
-            _camera = EffectRange.Main(_camera);
-            _hasEye = _camera != null;
-            if (_hasEye)
-            {
-                _eye = _camera.transform.position;
-            }
+            _camera = MainCamera.Find(_camera);
+            HasEye = _camera != null;
+            Eye = HasEye ? _camera.transform.position : Vector3.zero;
 
             foreach (var rig in _rigs.Values)
             {

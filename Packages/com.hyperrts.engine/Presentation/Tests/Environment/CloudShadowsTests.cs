@@ -35,6 +35,7 @@ namespace HyperRTS.Presentation.Tests.Environment
             _shadows.enabled = true;
             _smoke = EffectRigKit.Rig("Smoke");
             _smoke.gameObject.AddComponent<SmokeShadow>().opacity = 1f;
+            _smoke.Capture();
         }
 
         [TearDown]
@@ -50,7 +51,7 @@ namespace HyperRTS.Presentation.Tests.Environment
         public void SmokeColumn_ShadesTheCookieUnderIt_FromMediumUp(DetailLevel level, bool shaded)
         {
             var columns = new SmokeShadows();
-            columns.Offers.Add(_smoke, new Vector3(16f, 0f, 8f), 1f, 0u, 100f);
+            columns.Offers.Add(_smoke.SmokeShadow, new Vector3(16f, 0f, 8f), 1f, 0u, 100f);
             columns.Show(Vector3.zero, level);
             _shadows.Draw(0f);
 

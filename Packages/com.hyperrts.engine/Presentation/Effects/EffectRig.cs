@@ -47,11 +47,30 @@ namespace HyperRTS.Presentation.Effects
         /// <summary>Set by the pool from <see cref="variants"/>.</summary>
         public EffectRig[] Alternatives { get; set; } = Array.Empty<EffectRig>();
 
+        /// <summary>The rig's loop light, found when it is first captured; null without one.</summary>
+        public LoopLight LoopLight { get; private set; }
+
+        /// <summary>The rig's smoke shadow, found when it is first captured; null without one.</summary>
+        public SmokeShadow SmokeShadow { get; private set; }
+
         /// <summary>Finds the rig's graphs and lights now, as the pool first loads it.</summary>
-        public void Prepare() => Capture();
+        public void Capture()
+        {
+            if (_graphs != null)
+            {
+                return;
+            }
+
+            _lights = GetComponentsInChildren<EffectLight>(true);
+            LoopLight = GetComponent<LoopLight>();
+            SmokeShadow = GetComponent<SmokeShadow>();
+            var effects = GetComponentsInChildren<VisualEffect>(true);
+            _graphs = Array.ConvertAll(effects, effect => new EffectGraph(effect));
+            _streams = new GraphStreamPool(effects);
+        }
 
         /// <summary>A random burst scale grown by an impact's splash radius.</summary>
-        public float ScaleFor(float splashRadius) =>
+        private float ScaleFor(float splashRadius) =>
             UnityEngine.Random.Range(scale.x, scale.y) + scalePerRadius * splashRadius;
 
         /// <summary>Bursts a random variant at a random scale from its range, grown by an impact's splash radius.</summary>
@@ -135,19 +154,6 @@ namespace HyperRTS.Presentation.Effects
             {
                 Lights.Flash(light, light.transform.position);
             }
-        }
-
-        private void Capture()
-        {
-            if (_graphs != null)
-            {
-                return;
-            }
-
-            _lights = GetComponentsInChildren<EffectLight>(true);
-            var effects = GetComponentsInChildren<VisualEffect>(true);
-            _graphs = Array.ConvertAll(effects, effect => new EffectGraph(effect));
-            _streams = new GraphStreamPool(effects);
         }
     }
 }

@@ -7,6 +7,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Fog/FogOfWar.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/EyeDepth.hlsl"
 #endif
 
 void EffectDistort_float(float2 UV, float3 WorldPosition, UnityTexture2D NormalMap, float Strength, float2 Scroll,
@@ -19,7 +20,7 @@ void EffectDistort_float(float2 UV, float3 WorldPosition, UnityTexture2D NormalM
     float4 screen = ComputeScreenPos(TransformWorldToHClip(WorldPosition));
     float2 screenUV = screen.xy / screen.w;
     float eyeDepth = screen.w;
-    float sceneDepth = LinearEyeDepth(SampleSceneDepth(screenUV), _ZBufferParams);
+    float sceneDepth = EyeDepth(SampleSceneDepth(screenUV));
     float soft = saturate((sceneDepth - eyeDepth) / max(SoftFade, 0.001));
     // Bending the scene inside the fog would show what the fog hides.
     float weight = Weight * soft * (1.0 - FogOfWarAt(WorldPosition).a);

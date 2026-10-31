@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
@@ -16,7 +17,7 @@ namespace HyperRTS.Presentation.Environment
         // Burning cells at which a cluster's fire plays at full strength.
         private const float FullFireCells = 24f;
 
-        private readonly EffectStreams _streams = new();
+        private EffectStreams _streams;
         private Camera _camera;
         private float2 _eye;
         private Comparison<FieldFireCluster> _nearer;
@@ -25,7 +26,7 @@ namespace HyperRTS.Presentation.Environment
         private void Gather()
         {
             _fires.GatherClusters(_clusters);
-            _camera = EffectRange.Main(_camera);
+            _camera = MainCamera.Find(_camera);
             if (_camera == null)
             {
                 return;
@@ -59,7 +60,7 @@ namespace HyperRTS.Presentation.Environment
                     continue;
                 }
 
-                var state = _pool.Step(_streams, _settings.rig, Entity.Null, cluster.Key, position);
+                var state = _streams.Step(_settings.rig, Entity.Null, cluster.Key, position);
                 state?.Emit(state.Rig.LoopRotation(Quaternion.identity, state.Key), deltaTime,
                     math.saturate(cluster.Cells / FullFireCells), state.Rig.LoopScale(state.Key));
             }

@@ -23,13 +23,12 @@ namespace HyperRTS.Presentation.Effects
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class LoopEffectSystem : SystemBase
     {
-        private readonly EffectStreams _streams = new();
+        private EffectStreams _streams;
         private readonly Dictionary<Entity, double> _firstSeen = new();
         private readonly List<Entity> _gone = new();
         private readonly SmokeShadows _smoke = new();
         private GameObject _lightsRoot;
         private LoopLights _lights;
-        private Camera _camera;
         private EffectPool _pool;
         private EntityQuery _loops;
         private int _loopsVersion;
@@ -39,6 +38,7 @@ namespace HyperRTS.Presentation.Effects
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
+            _streams = new EffectStreams(_pool);
             _loops = GetEntityQuery(ComponentType.ReadOnly<LoopEffect>());
             RequireForUpdate(_loops);
             _lightsRoot = new GameObject("HyperRTS Loop Lights") { hideFlags = HideFlags.DontSave };
@@ -91,24 +91,21 @@ namespace HyperRTS.Presentation.Effects
             }
 
             var socket = math.transform(place.Value, loop.Socket);
-            var state = _pool.Step(_streams, loop.Rig.Value, entity, index, socket, _reach);
+            var state = _streams.Step(loop.Rig.Value, entity, index, socket, _reach);
             if (state == null)
             {
                 return;
             }
 
-            state.Emit(state.Rig.LoopRotation(place.Rotation, state.Key), _deltaTime, strength,
-                state.Rig.LoopScale(state.Key));
-            _lights.Offers.Add(state.Rig, socket, strength, state.Key, age);
+            state.EmitLoop(place.Rotation, _deltaTime, strength);
+            _lights.Offers.Add(state.Rig.LoopLight, socket, strength, state.Key, age);
             // The shadow follows the smoke actually emitted, which density thins.
-            _smoke.Offers.Add(state.Rig, socket, strength * EffectDetail.Density, state.Key, age);
+            _smoke.Offers.Add(state.Rig.SmokeShadow, socket, strength * EffectDetail.Density, state.Key, age);
         }
 
         private void ShowLightsAndShadows(float time)
         {
-            // Without a camera nothing streams, so there are no offers to sort by the eye.
-            _camera = EffectRange.Main(_camera);
-            var eye = _camera != null ? _camera.transform.position : Vector3.zero;
+            var eye = _pool.Eye;
             _lights.Show(eye, PresentationQuality.Current.Effects, time);
             _smoke.Show(eye, PresentationQuality.Current.Effects);
         }

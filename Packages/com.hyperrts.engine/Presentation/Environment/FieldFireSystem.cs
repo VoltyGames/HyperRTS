@@ -54,6 +54,7 @@ namespace HyperRTS.Presentation.Environment
         {
             _visibility = new CueVisibility(ref CheckedStateRef);
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
+            _streams = new EffectStreams(_pool);
             _buildings = SystemAPI.QueryBuilder().WithAll<BuildingTag, NavObstacle, LocalToWorld>().Build();
             RequireForUpdate<MapSettings>();
             RequireForUpdate<GroundMaterials>();

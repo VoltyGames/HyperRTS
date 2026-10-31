@@ -132,7 +132,7 @@ namespace HyperRTS.Presentation.Tests.Effects
         [Test]
         public void Stream_FirstFrameHasNoSegment_ThenRunsFromLastFrame()
         {
-            var streams = new EffectStreams();
+            var streams = new EffectStreams(_pool);
 
             var first = Frame(streams, new Vector3(2f, 0f, 0f));
             Assert.AreEqual(first.To, first.From);
@@ -146,15 +146,15 @@ namespace HyperRTS.Presentation.Tests.Effects
         [Test]
         public void Stream_AfterASkippedFrame_StartsAfresh()
         {
-            var streams = new EffectStreams();
+            var streams = new EffectStreams(_pool);
             streams.BeginFrame();
-            streams.Step(Shell, 0, Vector3.zero);
+            streams.Advance(Shell, 0, Vector3.zero);
             streams.EndFrame();
             streams.BeginFrame();
             streams.EndFrame();
 
             streams.BeginFrame();
-            var state = streams.Step(Shell, 0, new Vector3(50f, 0f, 0f));
+            var state = streams.Advance(Shell, 0, new Vector3(50f, 0f, 0f));
 
             Assert.AreEqual(state.To, state.From, "no segment across the gap");
         }
@@ -163,9 +163,9 @@ namespace HyperRTS.Presentation.Tests.Effects
         public void SkippedStream_StopsItsGraphs_WhichTheNextStreamReuses()
         {
             EffectRigKit.AddGraph(_dust, EffectRigKit.TestStreamGraph);
-            var streams = new EffectStreams();
+            var streams = new EffectStreams(_pool);
             streams.BeginFrame();
-            var state = streams.Step(Shell, 0, Vector3.zero);
+            var state = streams.Advance(Shell, 0, Vector3.zero);
             state.Use(_dust);
             state.Emit(Quaternion.identity, 0.1f, 1f);
             var graphs = state.Graphs;
@@ -245,7 +245,7 @@ namespace HyperRTS.Presentation.Tests.Effects
         private static StreamState Frame(EffectStreams streams, Vector3 position)
         {
             streams.BeginFrame();
-            var state = streams.Step(Shell, 0, position);
+            var state = streams.Advance(Shell, 0, position);
             streams.EndFrame();
             return state;
         }

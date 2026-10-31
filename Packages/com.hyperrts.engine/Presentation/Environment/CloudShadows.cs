@@ -85,7 +85,7 @@ namespace HyperRTS.Presentation.Environment
         public void Draw(float time)
         {
             var worldToLight = transform.worldToLocalMatrix;
-            _camera = EffectRange.Main(_camera);
+            _camera = MainCamera.Find(_camera);
             if (_camera != null)
             {
                 _focus = worldToLight.MultiplyPoint3x4(_camera.transform.position);

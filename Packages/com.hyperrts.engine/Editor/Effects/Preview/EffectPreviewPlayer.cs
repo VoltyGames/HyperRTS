@@ -61,7 +61,7 @@ namespace HyperRTS.Editor.Effects.Preview
             }
 
             _rig = _root.GetComponent<EffectRig>();
-            _rig.Prepare();
+            _rig.Capture();
             RefreshGraphs();
             return true;
         }

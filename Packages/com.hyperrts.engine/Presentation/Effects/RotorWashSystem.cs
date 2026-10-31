@@ -19,12 +19,13 @@ namespace HyperRTS.Presentation.Effects
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class RotorWashSystem : SystemBase
     {
-        private readonly EffectStreams _streams = new();
+        private EffectStreams _streams;
         private EffectPool _pool;
 
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
+            _streams = new EffectStreams(_pool);
             RequireForUpdate<RotorWash>();
         }
 
@@ -49,7 +50,7 @@ namespace HyperRTS.Presentation.Effects
                 }
 
                 var material = hasGround ? ground.At(below.xz) : SurfaceMaterial.None;
-                var state = _pool.Step(_streams, wash.ValueRO.Effects.Value.RigFor(material), entity, 0, below);
+                var state = _streams.Step(wash.ValueRO.Effects.Value.RigFor(material), entity, 0, below);
                 state?.Emit(Quaternion.identity, deltaTime, strength);
             }
 

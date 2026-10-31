@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Construction
     [UpdateBefore(typeof(EntitiesGraphicsSystem))]
     public partial class ConstructionSiteSystem : SystemBase
     {
-        private readonly EffectStreams _streams = new();
+        private EffectStreams _streams;
         private EffectPool _pool;
         private RenderSwitch _switch;
         private float _reach;
@@ -30,6 +30,7 @@ namespace HyperRTS.Presentation.Construction
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
+            _streams = new EffectStreams(_pool);
             _switch = new RenderSwitch(ref CheckedStateRef);
             RequireForUpdate(SystemAPI.QueryBuilder().WithPresent<ConstructionWatch>().Build());
         }
@@ -88,7 +89,7 @@ namespace HyperRTS.Presentation.Construction
             for (var i = 0; i < points.Length; i++)
             {
                 var socket = math.transform(place.Value, points[i].Socket);
-                var state = _pool.Step(_streams, site.WorkRig.Value, entity, i, socket, _reach);
+                var state = _streams.Step(site.WorkRig.Value, entity, i, socket, _reach);
                 state?.Emit(state.Rig.LoopRotation(place.Rotation, state.Key), _deltaTime, 1f,
                     state.Rig.LoopScale(state.Key));
             }

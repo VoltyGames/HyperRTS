@@ -41,6 +41,10 @@ namespace HyperRTS.Presentation.Effects
             Graphs?.Move(From, To, rotation, deltaTime, strength * EffectDetail.Density, poseScale);
         }
 
+        /// <summary>Streams a loop's graphs, turned and scaled as the rig's loop poses for <see cref="Key"/>.</summary>
+        public void EmitLoop(Quaternion rotation, float deltaTime, float strength) =>
+            Emit(Rig.LoopRotation(rotation, Key), deltaTime, strength, Rig.LoopScale(Key));
+
         /// <summary>Stops this stream's graphs, which fade out as their particles die.</summary>
         public void Stop()
         {

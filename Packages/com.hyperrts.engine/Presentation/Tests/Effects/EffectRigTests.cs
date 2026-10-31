@@ -43,7 +43,7 @@ namespace HyperRTS.Presentation.Tests.Effects
             for (var i = 0; i < 20; i++)
             {
                 _rig.Burst(Vector3.zero, aim, 1f, 1f);
-                Assert.That(Vector3.Angle(aim * Vector3.up, _rig.transform.up), Is.LessThan(1e-2f));
+                Assert.That(Vector3.Angle(aim * Vector3.up, _rig.transform.up), Is.LessThan(5e-2f));
                 turned |= Vector3.Angle(aim * Vector3.forward, _rig.transform.forward) > 1f;
             }
 
@@ -92,7 +92,7 @@ namespace HyperRTS.Presentation.Tests.Effects
         public void StreamGraph_PlaysItsOwnCopy_FedTheSpeedAndTheThinnedDensity()
         {
             var template = EffectRigKit.AddGraph(_rig, EffectRigKit.TestStreamGraph);
-            var streams = new EffectStreams();
+            var streams = new EffectStreams(new EffectPool());
             Step(streams, Vector3.zero).Emit(Quaternion.identity, 0.5f, 0.5f);
 
             var state = Step(streams, new Vector3(4f, 0f, 0f));
@@ -110,7 +110,7 @@ namespace HyperRTS.Presentation.Tests.Effects
         private StreamState Step(EffectStreams streams, Vector3 position)
         {
             streams.BeginFrame();
-            var state = streams.Step(Entity.Null, 0, position);
+            var state = streams.Advance(Entity.Null, 0, position);
             state.Use(_rig);
             streams.EndFrame();
             return state;

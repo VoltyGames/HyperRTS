@@ -25,7 +25,9 @@ namespace HyperRTS.Presentation.Tests.Effects
             _fire = EffectRigKit.Rig("Fire");
             _fire.gameObject.AddComponent<LoopLight>().height = 2f;
             _fire.gameObject.AddComponent<SmokeShadow>();
+            _fire.Capture();
             _dust = EffectRigKit.Rig("Dust");
+            _dust.Capture();
         }
 
         [TearDown]
@@ -41,8 +43,8 @@ namespace HyperRTS.Presentation.Tests.Effects
         {
             for (var i = 11; i >= 0; i--)
             {
-                _lights.Offers.Add(_fire, new Vector3(i * 10f, 0f, 0f), 1f, (uint)i, 100f);
-                _lights.Offers.Add(_dust, new Vector3(i, 0f, 0f), 1f, (uint)i, 100f);
+                _lights.Offers.Add(_fire.LoopLight, new Vector3(i * 10f, 0f, 0f), 1f, (uint)i, 100f);
+                _lights.Offers.Add(_dust.LoopLight, new Vector3(i, 0f, 0f), 1f, (uint)i, 100f);
             }
 
             _lights.Show(Vector3.zero, DetailLevel.High, 0f);
@@ -59,11 +61,11 @@ namespace HyperRTS.Presentation.Tests.Effects
         [TestCase(DetailLevel.Medium)]
         public void FireLights_StayOutBelowHigh_AndGoOutWithTheFire(DetailLevel level)
         {
-            _lights.Offers.Add(_fire, Vector3.zero, 1f, 0u, 100f);
+            _lights.Offers.Add(_fire.LoopLight, Vector3.zero, 1f, 0u, 100f);
             _lights.Show(Vector3.zero, DetailLevel.High, 0f);
             Assert.AreEqual(1, Lit().Length);
 
-            _lights.Offers.Add(_fire, Vector3.zero, 1f, 0u, 100f);
+            _lights.Offers.Add(_fire.LoopLight, Vector3.zero, 1f, 0u, 100f);
             _lights.Show(Vector3.zero, level, 0f);
             Assert.AreEqual(0, Lit().Length, "below High");
 
@@ -90,8 +92,8 @@ namespace HyperRTS.Presentation.Tests.Effects
             var smoke = new SmokeShadows();
             for (var i = SmokeShadows.Capacity + 7; i >= 0; i--)
             {
-                smoke.Offers.Add(_fire, new Vector3(i * 10f, 0f, 0f), 1f, (uint)i, 100f);
-                smoke.Offers.Add(_dust, Vector3.zero, 1f, (uint)i, 100f);
+                smoke.Offers.Add(_fire.SmokeShadow, new Vector3(i * 10f, 0f, 0f), 1f, (uint)i, 100f);
+                smoke.Offers.Add(_dust.SmokeShadow, Vector3.zero, 1f, (uint)i, 100f);
             }
 
             smoke.Show(Vector3.zero, level);

@@ -17,12 +17,13 @@ namespace HyperRTS.Presentation.Effects
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class MotionDustSystem : SystemBase
     {
-        private readonly EffectStreams _streams = new();
+        private EffectStreams _streams;
         private EffectPool _pool;
 
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
+            _streams = new EffectStreams(_pool);
             RequireForUpdate<MotionDust>();
         }
 
@@ -39,7 +40,7 @@ namespace HyperRTS.Presentation.Effects
                 var speed = dust.ValueRW.DrawnSpeed(place.ValueRO.Position, place.ValueRO.Forward, deltaTime);
                 var socket = math.transform(place.ValueRO.Value, dust.ValueRO.Socket);
                 var material = hasGround ? ground.At(socket.xz) : SurfaceMaterial.None;
-                var state = _pool.Step(_streams, dust.ValueRO.Effects.Value.RigFor(material), entity, 0, socket);
+                var state = _streams.Step(dust.ValueRO.Effects.Value.RigFor(material), entity, 0, socket);
                 if (state == null)
                 {
                     continue;

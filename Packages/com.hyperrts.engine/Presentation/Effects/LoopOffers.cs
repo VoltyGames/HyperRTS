@@ -28,10 +28,10 @@ namespace HyperRTS.Presentation.Effects
 
         public void Clear() => _offers.Clear();
 
-        /// <summary>Takes the loop when its rig carries a <typeparamref name="T"/>.</summary>
-        public void Add(EffectRig rig, Vector3 position, float strength, uint key, float age)
+        /// <summary>Takes the loop when its rig carries the <paramref name="source"/> component (null for none).</summary>
+        public void Add(T source, Vector3 position, float strength, uint key, float age)
         {
-            if (rig.TryGetComponent<T>(out var source))
+            if (source != null)
             {
                 _offers.Add(new Offer { Source = source, Position = position, Strength = strength, Key = key, Age = age });
             }

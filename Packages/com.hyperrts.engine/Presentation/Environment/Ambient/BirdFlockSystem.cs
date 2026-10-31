@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
@@ -59,7 +60,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
                 flock.Step(deltaTime, impacts);
             }
 
-            _camera = EffectRange.Main(_camera);
+            _camera = MainCamera.Find(_camera);
             if (_camera != null)
             {
                 _renderer.Draw(_flocks, life.birdMaterial, life.birdSize, _camera.transform.position);
