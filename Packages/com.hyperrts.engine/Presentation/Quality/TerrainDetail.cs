@@ -1,10 +1,9 @@
-using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HyperRTS.Presentation.Environment
+namespace HyperRTS.Presentation.Quality
 {
     /// <summary>
     /// The terrain shader's detail level, as global keywords. No keyword means Ultra, so edit mode and map view
@@ -25,21 +24,13 @@ namespace HyperRTS.Presentation.Environment
         private static readonly GlobalKeyword NoFar = GlobalKeyword.Create(NoFarKeyword);
         private static readonly GlobalKeyword NoParallax = GlobalKeyword.Create(NoParallaxKeyword);
 
-        [AutoStaticsCleanup]
-        private static GroundLevel _level = PresentationQuality.Default.Ground;
-
-        /// <summary>Written by <see cref="PresentationQuality.Apply"/>.</summary>
-        public static GroundLevel Level
+        /// <summary>Sets the one keyword <paramref name="level"/> needs and clears the others.</summary>
+        internal static void SetKeywords(GroundLevel level)
         {
-            get => _level;
-            internal set
-            {
-                _level = value;
-                var keyword = KeywordFor(value);
-                Shader.SetKeyword(Simple, keyword == SimpleKeyword);
-                Shader.SetKeyword(NoFar, keyword == NoFarKeyword);
-                Shader.SetKeyword(NoParallax, keyword == NoParallaxKeyword);
-            }
+            var keyword = KeywordFor(level);
+            Shader.SetKeyword(Simple, keyword == SimpleKeyword);
+            Shader.SetKeyword(NoFar, keyword == NoFarKeyword);
+            Shader.SetKeyword(NoParallax, keyword == NoParallaxKeyword);
         }
 
         /// <summary>The one keyword a level sets, or null for Ultra, which is the shader's full path.</summary>
@@ -54,6 +45,6 @@ namespace HyperRTS.Presentation.Environment
 
         // Global keywords outlive Play mode in the editor.
         [OnEnteringPlayMode]
-        private static void ResetKeywords() => Level = PresentationQuality.Default.Ground;
+        private static void ResetKeywords() => SetKeywords(PresentationQuality.Default.Ground);
     }
 }

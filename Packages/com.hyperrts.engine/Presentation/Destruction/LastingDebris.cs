@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Common;
 
 namespace HyperRTS.Presentation.Destruction
 {
@@ -20,6 +21,14 @@ namespace HyperRTS.Presentation.Destruction
         private readonly Stack<int> _free;
         private readonly LastingDebrisDraws _draws;
         private float _clock;
+
+        /// <summary>Settled pieces kept for the match at <paramref name="level"/>.</summary>
+        public static int CapAt(DetailLevel level) => level switch
+        {
+            DetailLevel.Low => 0,
+            DetailLevel.Medium => 8000,
+            _ => 20000,
+        };
 
         public LastingDebris(int cap)
         {

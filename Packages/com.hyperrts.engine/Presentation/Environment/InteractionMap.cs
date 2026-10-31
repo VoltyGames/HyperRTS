@@ -1,8 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Quality;
 using Unity.Mathematics;
-using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment
@@ -12,7 +11,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed partial class InteractionMap : PresentationBehaviour
+    public sealed class InteractionMap : PresentationBehaviour
     {
         [SerializeField]
         [Tooltip("The " + InteractionBrush.ShaderName + " shader the maps are drawn with.")]
@@ -23,10 +22,6 @@ namespace HyperRTS.Presentation.Environment
         private float _recoveryCarry;
         private float _fadeCarry;
         private float _wakeCarry;
-
-        /// <summary>Map resolution, or Off. Written by <see cref="Rendering.PresentationQuality.Apply"/>.</summary>
-        [AutoStaticsCleanup]
-        public static InteractionQuality Quality { get; internal set; } = PresentationQuality.Default.Interactions;
 
         protected override void OnAwake() => _brush = new InteractionBrush(brush);
 
@@ -54,7 +49,7 @@ namespace HyperRTS.Presentation.Environment
         {
             stamps = null;
             view = null;
-            if (Quality == InteractionQuality.Off)
+            if (PresentationQuality.Current.Interactions == InteractionQuality.Off)
             {
                 return false;
             }
@@ -71,13 +66,13 @@ namespace HyperRTS.Presentation.Environment
 
         private void Prepare(float2 min, float2 size)
         {
-            if (_surfaces != null && _surfaces.Matches(min, size, Quality))
+            if (_surfaces != null && _surfaces.Matches(min, size, PresentationQuality.Current.Interactions))
             {
                 return;
             }
 
             Release();
-            _surfaces = new InteractionSurfaces(min, size, Quality);
+            _surfaces = new InteractionSurfaces(min, size, PresentationQuality.Current.Interactions);
             _surfaces.Publish();
             _brush.Clear(_surfaces);
         }

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
@@ -85,7 +86,7 @@ namespace HyperRTS.Presentation.Impacts
         private float Clock() =>
             SystemAPI.TryGetSingleton(out ReplayPlayback replay) ? replay.Time : (float)SystemAPI.Time.ElapsedTime;
 
-        private InteractionStamps Scars() => InteractionMap.Quality == InteractionQuality.Off
+        private InteractionStamps Scars() => PresentationQuality.Current.Interactions == InteractionQuality.Off
             ? null
             : (_stampSystem ??= World.GetExistingSystemManaged<InteractionStampSystem>())?.Stamps;
 

@@ -1,4 +1,4 @@
-namespace HyperRTS.Presentation.Environment
+namespace HyperRTS.Presentation.Quality
 {
     /// <summary>Resolution of the interaction maps (trampling, track marks).</summary>
     public enum InteractionQuality

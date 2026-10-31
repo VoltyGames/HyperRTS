@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Presentation.Rendering;
-using Unity.Scripting.LifecycleManagement;
+using HyperRTS.Presentation.Quality;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
@@ -17,38 +15,15 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed partial class RowCropRenderer : ScatterRenderer<RowCropCameraState>
+    public sealed class RowCropRenderer : ScatterRenderer<RowCropCameraState>
     {
-        [AutoStaticsCleanup]
-        private static float _density = PresentationQuality.Default.CropDensity;
-        [AutoStaticsCleanup]
-        private static float _distance = PresentationQuality.Default.CropDistance;
-
         [Tooltip("The baked fields this map grows.")]
         public RowCropFields fields;
 
         private RowCropCompute _kernels;
         private RowCropComputeInputs _inputs;
 
-        /// <summary>Share of plants grown, 0 to 1. Written by <see cref="PresentationQuality.Apply"/>.</summary>
-        public static float Density
-        {
-            get => _density;
-            internal set => _density = value is >= 0f and <= 1f
-                ? value
-                : throw new ArgumentOutOfRangeException(nameof(value), value, "Row crop density must be 0 to 1.");
-        }
-
-        /// <summary>Metres from the camera crops are drawn to; written by <see cref="PresentationQuality"/>.</summary>
-        public static float Distance
-        {
-            get => _distance;
-            internal set => _distance = value > 0f
-                ? value
-                : throw new ArgumentOutOfRangeException(nameof(value), value, "Row crop distance must be above 0.");
-        }
-
-        private protected override float DrawDistance => Distance;
+        private protected override float DrawDistance => PresentationQuality.Current.CropDistance;
 
         private protected override void BuildInputs()
         {
@@ -69,7 +44,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
         private protected override void Draw(RowCropCameraState state, Camera camera, Vector3 position)
         {
-            if (!state.Holds(position, Density, Distance, Tiles.Visible))
+            var quality = PresentationQuality.Current;
+            if (!state.Holds(position, quality.CropDensity, quality.CropDistance, Tiles.Visible))
             {
                 Grow(state, position);
             }
@@ -82,14 +58,15 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
         private void Grow(RowCropCameraState state, Vector3 position)
         {
-            Queue(state.Batches, position);
-            _inputs.SetCamera(position, Density, Distance);
+            var quality = PresentationQuality.Current;
+            Queue(state.Batches, position, quality.CropDistance);
+            _inputs.SetCamera(position, quality.CropDensity, quality.CropDistance);
             foreach (var batch in state.Batches)
             {
                 batch.Generate();
             }
 
-            state.Remember(position, Density, Distance, Tiles.Visible);
+            state.Remember(position, quality.CropDensity, quality.CropDistance, Tiles.Visible);
         }
 
 #if UNITY_EDITOR
@@ -108,7 +85,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 #endif
 
         /// <summary>Hands every visible tile to the batches of the crops growing on it.</summary>
-        private void Queue(List<RowCropBatch> batches, Vector3 position)
+        private void Queue(List<RowCropBatch> batches, Vector3 position, float distance)
         {
             batches.ForEach(batch => batch.Begin());
             foreach (var t in Tiles.Visible)
@@ -123,7 +100,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                     var field = fields.fields[index];
                     var crop = fields.crops[field.crop];
                     var job = new RowCropJob(rect, index, field, crop.rowSpacing, crop.plantSpacing);
-                    batches[field.crop].Add(job, bounds, Distance, near, far);
+                    batches[field.crop].Add(job, bounds, distance, near, far);
                 }
             }
         }

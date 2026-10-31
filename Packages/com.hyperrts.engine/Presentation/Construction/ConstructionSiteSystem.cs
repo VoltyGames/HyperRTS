@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
@@ -39,7 +40,7 @@ namespace HyperRTS.Presentation.Construction
             _switch.Update(ref CheckedStateRef);
             var now = SystemAPI.Time.ElapsedTime;
             _deltaTime = SystemAPI.Time.DeltaTime;
-            _reach = EffectDetail.Level == DetailLevel.Low ? 0.5f : 1f;
+            _reach = PresentationQuality.Current.Effects == DetailLevel.Low ? 0.5f : 1f;
             var progress = SystemAPI.GetComponentLookup<ConstructionProgress>(true);
             var fogged = SystemAPI.GetComponentLookup<FogHidden>(true);
             foreach (var watching in SystemAPI.Query<EnabledRefRW<ConstructionWatch>>().WithAll<ConstructionProgress>()

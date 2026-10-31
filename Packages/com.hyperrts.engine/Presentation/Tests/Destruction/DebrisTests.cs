@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Presentation.Destruction;
-using HyperRTS.Presentation.Effects;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
@@ -87,7 +86,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         [Test]
         public void SettledPieces_MoveIntoTheLastingLayer()
         {
-            _lasting = new LastingDebris(EffectDetail.LastingDebrisAt(DetailLevel.High));
+            _lasting = new LastingDebris(LastingDebris.CapAt(DetailLevel.High));
             var field = new DebrisField();
             field.Throw(_set, float3.zero, float3.zero, 1f, 6, 3u);
 
@@ -161,15 +160,15 @@ namespace HyperRTS.Presentation.Tests.Destruction
             Assert.AreEqual(0, DebrisSystem.PieceCount(8, DetailLevel.Low));
             Assert.Less(DebrisSystem.PieceCount(8, DetailLevel.Medium), 8);
             Assert.AreEqual(8, DebrisSystem.PieceCount(8, DetailLevel.High));
-            Assert.AreEqual(0, EffectDetail.LastingDebrisAt(DetailLevel.Low));
-            Assert.AreEqual(8000, EffectDetail.LastingDebrisAt(DetailLevel.Medium));
-            Assert.AreEqual(20000, EffectDetail.LastingDebrisAt(DetailLevel.High));
+            Assert.AreEqual(0, LastingDebris.CapAt(DetailLevel.Low));
+            Assert.AreEqual(8000, LastingDebris.CapAt(DetailLevel.Medium));
+            Assert.AreEqual(20000, LastingDebris.CapAt(DetailLevel.High));
         }
 
         [Test]
         public void NoLastingLayer_DropsSettledPieces()
         {
-            _lasting = new LastingDebris(EffectDetail.LastingDebrisAt(DetailLevel.Low));
+            _lasting = new LastingDebris(LastingDebris.CapAt(DetailLevel.Low));
             var field = new DebrisField();
             field.Throw(_set, float3.zero, float3.zero, 1f, 4, 5u);
 

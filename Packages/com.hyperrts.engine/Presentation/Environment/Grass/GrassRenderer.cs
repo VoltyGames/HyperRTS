@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Presentation.Rendering;
-using Unity.Scripting.LifecycleManagement;
+using HyperRTS.Presentation.Quality;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -18,15 +17,8 @@ namespace HyperRTS.Presentation.Environment.Grass
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed partial class GrassRenderer : ScatterRenderer<GrassCameraState>
+    public sealed class GrassRenderer : ScatterRenderer<GrassCameraState>
     {
-        [AutoStaticsCleanup]
-        private static float _density = PresentationQuality.Default.GrassDensity;
-        [AutoStaticsCleanup]
-        private static float _distance = PresentationQuality.Default.GrassDistance;
-        [AutoStaticsCleanup]
-        private static float _shadowDistance = PresentationQuality.Default.GrassShadowDistance;
-
         [Tooltip("The baked plants this map grows.")]
         public GrassField field;
 
@@ -36,36 +28,16 @@ namespace HyperRTS.Presentation.Environment.Grass
         private GrassComputeInputs _kernels;
         private Material[] _materials;
 
-        /// <summary>Share of plants grown, 0 to 1. Written by <see cref="PresentationQuality.Apply"/>.</summary>
-        public static float Density
+        private static GrassSettings Settings
         {
-            get => _density;
-            internal set => _density = value is > 0f and <= 1f
-                ? value
-                : throw new ArgumentOutOfRangeException(nameof(value), value, "Grass density must be above 0 and at most 1.");
+            get
+            {
+                var quality = PresentationQuality.Current;
+                return new GrassSettings(quality.GrassDensity, quality.GrassDistance, quality.GrassShadowDistance);
+            }
         }
 
-        /// <summary>Metres from the camera plants are drawn to. Written by <see cref="PresentationQuality.Apply"/>.</summary>
-        public static float Distance
-        {
-            get => _distance;
-            internal set => _distance = value > 0f
-                ? value
-                : throw new ArgumentOutOfRangeException(nameof(value), value, "Grass distance must be above 0.");
-        }
-
-        /// <summary>Metres from the camera plants cast shadows to, 0 for none. Written by <see cref="PresentationQuality.Apply"/>.</summary>
-        public static float ShadowDistance
-        {
-            get => _shadowDistance;
-            internal set => _shadowDistance = value >= 0f
-                ? value
-                : throw new ArgumentOutOfRangeException(nameof(value), value, "Grass shadow distance must not be negative.");
-        }
-
-        private static GrassSettings Settings => new(Density, Distance, ShadowDistance);
-
-        private protected override float DrawDistance => Distance;
+        private protected override float DrawDistance => PresentationQuality.Current.GrassDistance;
 
         /// <summary>Plants and draws the camera's last scatter holds, read back from the GPU for profiling.</summary>
         public (int Instances, int Draws) Drawn(Camera camera) =>

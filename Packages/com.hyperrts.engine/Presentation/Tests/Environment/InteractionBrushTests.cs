@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using Unity.Mathematics;

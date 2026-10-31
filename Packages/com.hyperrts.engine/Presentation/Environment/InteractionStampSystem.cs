@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Animation;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
@@ -46,7 +47,7 @@ namespace HyperRTS.Presentation.Environment
         protected override void OnUpdate()
         {
             Stamps.Clear();
-            if (InteractionMap.Quality == InteractionQuality.Off)
+            if (PresentationQuality.Current.Interactions == InteractionQuality.Off)
             {
                 _grounded.Forget();
                 _afloat.Forget();
@@ -100,7 +101,7 @@ namespace HyperRTS.Presentation.Environment
 
         private void AddFootsteps()
         {
-            if (InteractionMap.Quality != InteractionQuality.Full)
+            if (PresentationQuality.Current.Interactions != InteractionQuality.Full)
             {
                 _walking.Forget();
                 return;

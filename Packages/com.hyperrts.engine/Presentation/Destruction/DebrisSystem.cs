@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Destruction
 
         public LastingDebris Lasting { get; private set; }
 
-        protected override void OnCreate() => Lasting = new LastingDebris(EffectDetail.LastingDebrisAt(EffectDetail.Level));
+        protected override void OnCreate() => Lasting = new LastingDebris(LastingDebris.CapAt(PresentationQuality.Current.Effects));
 
         protected override void OnDestroy() => Lasting.Dispose();
 
@@ -52,7 +52,7 @@ namespace HyperRTS.Presentation.Destruction
         public void Throw(in Debris debris, float3 center, float3 outward)
         {
             var set = debris.Set.Value;
-            var count = PieceCount(set.count, EffectDetail.Level);
+            var count = PieceCount(set.count, PresentationQuality.Current.Effects);
             if (count > 0)
             {
                 Field.Throw(set, center, outward, debris.Radius, count, math.hash(center));
@@ -65,7 +65,7 @@ namespace HyperRTS.Presentation.Destruction
         // A changed effect detail starts the lasting layer over at its new cap.
         private void KeepCapForDetail()
         {
-            var cap = EffectDetail.LastingDebrisAt(EffectDetail.Level);
+            var cap = LastingDebris.CapAt(PresentationQuality.Current.Effects);
             if (cap != Lasting.Cap)
             {
                 Lasting.Dispose();

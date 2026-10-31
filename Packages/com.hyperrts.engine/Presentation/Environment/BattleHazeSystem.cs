@@ -1,14 +1,13 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Destruction;
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Scripting.LifecycleManagement;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -39,10 +38,6 @@ namespace HyperRTS.Presentation.Environment
         private const float CollapseReach = 15f;
         private const float CollapseHaze = 1.5f;
 
-        /// <summary>Whether the haze runs. Written by <see cref="PresentationQuality.Apply"/>.</summary>
-        [AutoStaticsCleanup]
-        public static bool Shown { get; internal set; } = PresentationQuality.Default.BattleHaze;
-
         private CueVisibility _visibility;
         private MapSettings _area;
         private Texture3D _texture;
@@ -63,7 +58,7 @@ namespace HyperRTS.Presentation.Environment
 
         protected override void OnUpdate()
         {
-            if (!Shown)
+            if (!PresentationQuality.Current.BattleHaze)
             {
                 Clear();
                 return;

@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Quality;
 using System;
 using Unity.Mathematics;
 using UnityEngine;

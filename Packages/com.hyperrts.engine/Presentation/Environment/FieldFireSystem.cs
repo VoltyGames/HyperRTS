@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
@@ -160,7 +161,7 @@ namespace HyperRTS.Presentation.Environment
         {
             var burntOut = _fires.BurntOut;
             BurntCells += burntOut.Count;
-            if (InteractionMap.Quality == InteractionQuality.Off || burntOut.Count == 0)
+            if (PresentationQuality.Current.Interactions == InteractionQuality.Off || burntOut.Count == 0)
             {
                 return;
             }

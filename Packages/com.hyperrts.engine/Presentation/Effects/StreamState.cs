@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Quality;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects

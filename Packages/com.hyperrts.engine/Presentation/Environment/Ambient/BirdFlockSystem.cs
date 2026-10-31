@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
@@ -39,7 +40,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
         {
             var life = AmbientLife.Active;
             var off = life == null || life.flocks == 0;
-            if (off || EffectDetail.Level == DetailLevel.Low)
+            if (off || PresentationQuality.Current.Effects == DetailLevel.Low)
             {
                 return;
             }

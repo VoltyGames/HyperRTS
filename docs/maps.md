@@ -237,8 +237,8 @@ stretch. Within 38 m, parallax occlusion marches the most painted layer's height
 the one offset, centred on mid height.
 
 These strengths live on the climate's `terrain` base material. Each map's terrain material is a Material Variant of it
-that `MapTerrainMaterial` writes, overriding only the layer arrays and the map's own textures. `TerrainDetail.Level`
-takes a `GroundLevel` and sets the shader quality:
+that `MapTerrainMaterial` writes, overriding only the layer arrays and the map's own textures. `PresentationQuality.Apply`
+sets the `Ground` level as the shader quality:
 
 | Level | Keyword | Adds | Texture samples per pixel |
 | --- | --- | --- | --- |

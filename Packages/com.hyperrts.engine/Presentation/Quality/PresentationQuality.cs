@@ -1,21 +1,15 @@
 using System.Collections.Generic;
-using HyperRTS.Presentation.Effects;
-using HyperRTS.Presentation.Environment;
-using HyperRTS.Presentation.Environment.Grass;
-using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Simulation.Common;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace HyperRTS.Presentation.Rendering
+namespace HyperRTS.Presentation.Quality
 {
     /// <summary>
-    /// Every presentation quality knob the game sets from its graphics options, applied together. The knobs it
-    /// writes (<see cref="EffectDetail"/>, <see cref="TerrainDetail"/>, <see cref="InteractionMap"/>,
-    /// <see cref="GrassRenderer"/>, <see cref="RowCropRenderer"/>, <see cref="BattleHazeSystem"/>) are read-only outside
-    /// the engine.
+    /// Every presentation quality knob the game sets from its graphics options, applied together. Systems read the
+    /// applied knobs from <see cref="Current"/>.
     /// </summary>
     public partial struct PresentationQuality
     {
@@ -46,7 +40,7 @@ namespace HyperRTS.Presentation.Rendering
         /// <summary>Share of the screen resolution the cameras render at, above 0 and at most 1.</summary>
         public float RenderScale;
 
-        /// <summary>Whether the smoke of the fighting thickens the volumetric fog (<see cref="BattleHazeSystem"/>).</summary>
+        /// <summary>Whether the smoke of the fighting thickens the volumetric fog.</summary>
         public bool BattleHaze;
 
         /// <summary>The full-detail knobs a session starts with, before the game applies its options.</summary>
@@ -72,14 +66,25 @@ namespace HyperRTS.Presentation.Rendering
         [NoAutoStaticsCleanup]
         private static readonly Dictionary<UniversalRenderPipelineAsset, float> AuthoredScales = new();
 
+        private void Check()
+        {
+            Require(GrassDensity is > 0f and <= 1f, nameof(GrassDensity), GrassDensity, "above 0 and at most 1");
+            Require(GrassDistance > 0f, nameof(GrassDistance), GrassDistance, "above 0");
+            Require(GrassShadowDistance >= 0f, nameof(GrassShadowDistance), GrassShadowDistance, "not negative");
+            Require(CropDensity is >= 0f and <= 1f, nameof(CropDensity), CropDensity, "0 to 1");
+            Require(CropDistance > 0f, nameof(CropDistance), CropDistance, "above 0");
+        }
+
         /// <summary>
-        /// Writes every knob and the render scale. Shadows and the rest of the pipeline come from the quality level's
-        /// URP asset, so set the quality level first.
+        /// Throws naming the first bad knob before anything is written, then sets the terrain keywords, the render
+        /// scale and <see cref="Current"/>. Shadows and the rest of the pipeline come from the quality level's URP
+        /// asset, so set the quality level first.
         /// </summary>
         public static void Apply(in PresentationQuality quality)
         {
-            WriteKnobs(quality);
+            quality.Check();
             var pipeline = ActivePipeline();
+            TerrainDetail.SetKeywords(quality.Ground);
             if (AuthoredScales.Count == 0)
             {
                 Application.quitting += RestoreScales;
@@ -115,17 +120,12 @@ namespace HyperRTS.Presentation.Rendering
             return asset;
         }
 
-        private static void WriteKnobs(in PresentationQuality quality)
+        private static void Require(bool valid, string field, float value, string rule)
         {
-            EffectDetail.Level = quality.Effects;
-            TerrainDetail.Level = quality.Ground;
-            InteractionMap.Quality = quality.Interactions;
-            GrassRenderer.Density = quality.GrassDensity;
-            GrassRenderer.Distance = quality.GrassDistance;
-            GrassRenderer.ShadowDistance = quality.GrassShadowDistance;
-            RowCropRenderer.Density = quality.CropDensity;
-            RowCropRenderer.Distance = quality.CropDistance;
-            BattleHazeSystem.Shown = quality.BattleHaze;
+            if (!valid)
+            {
+                throw new System.ArgumentOutOfRangeException(field, value, $"HyperRTS: {field} must be {rule}.");
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
@@ -36,7 +37,7 @@ namespace HyperRTS.Presentation.Environment
         {
             CompleteDependency();
             var cues = SystemAPI.GetSingletonBuffer<CueEvent>(true);
-            if (InteractionMap.Quality == InteractionQuality.Off || cues.IsEmpty)
+            if (PresentationQuality.Current.Interactions == InteractionQuality.Off || cues.IsEmpty)
             {
                 return;
             }

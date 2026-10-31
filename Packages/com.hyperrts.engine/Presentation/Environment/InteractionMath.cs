@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Units;
 using Unity.Mathematics;
 

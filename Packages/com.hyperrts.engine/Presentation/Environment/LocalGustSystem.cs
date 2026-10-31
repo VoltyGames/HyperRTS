@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
@@ -37,7 +38,7 @@ namespace HyperRTS.Presentation.Environment
 
         protected override void OnUpdate()
         {
-            if (InteractionMap.Quality == InteractionQuality.Off)
+            if (PresentationQuality.Current.Interactions == InteractionQuality.Off)
             {
                 _blasts.Clear();
                 Shader.SetGlobalFloat(CountId, 0f);

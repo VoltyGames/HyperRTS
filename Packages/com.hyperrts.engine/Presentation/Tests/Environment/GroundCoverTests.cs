@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.Environment.Grass;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;

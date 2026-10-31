@@ -301,7 +301,7 @@ them off the terrain height and lays them flat. Medium effects throw 70 % of the
 place fly the same on every client. Flying pieces draw in one instanced call per material and mesh, so a set's
 material needs GPU instancing on, which the set checks at bake.
 
-A piece at rest moves to `LastingDebris` and stays for the match. `EffectDetail.LastingDebrisAt` sets the cap: 20,000
+A piece at rest moves to `LastingDebris` and stays for the match. `LastingDebris.CapAt` sets the cap: 20,000
 pieces on High, 8,000 on Medium and none on Low. Past the cap the oldest piece sinks into the ground over 5 s and its
 slot is reused; up to 512 sink at once. `LastingDebrisDraws` draws the layer through a `BatchRendererGroup`, one
 indirect draw per mesh and material, from GPU buffers written only when a piece settles, sinks or goes, so pieces at
@@ -533,8 +533,8 @@ Row crops and grass (see [maps](../maps.md)) share one host, built to take more 
 - `ScatterRenderer<TState>`, the base of `RowCropRenderer` and `GrassRenderer`, holds the `compute` and `terrain`
   fields, builds and releases the inputs, keeps one state per camera in `CameraStates`, culls tiles through
   `ScatterTiles` and, in edit mode, rebuilds after `OnValidate` or a map rebuild. A subclass makes its inputs, tiles
-  and camera states, says when its data went stale and grows and draws each camera. Its `Density` and `Distance`
-  stay its own, written by `PresentationQuality`.
+  and camera states, says when its data went stale and grows and draws each camera. Density and distance come from
+  `PresentationQuality.Current`.
 - `ScatterBatch<TJob>`, the base of `RowCropBatch` and `GrassBatch`, holds one camera's slots: a mesh and property
   block each, the jobs queued for the grow kernel and the `ScatterDraws` indirect draws. `Generate` reserves room,
   binds the jobs, grows and counts; `Draw` draws each slot with room. A subclass owns its slots' room, buffers,
@@ -654,4 +654,6 @@ The game fills one `PresentationQuality` and calls `PresentationQuality.Apply`. 
 interaction maps, grass and row crop density and distance, and render scale. Apply sets them all, and again on each
 scene load. Shadows and the other pipeline features come from the game's quality levels, each with its own URP
 asset, so the game sets the quality level before Apply, which writes render scale onto that level's asset.
-`Current` holds the last settings and resets to full detail on play.
+Apply throws naming the first knob out of range before it writes anything. `Current` holds the last settings and
+resets to full detail on play. Systems read their knobs from `Current`, and nothing else mirrors them. The types live in
+`Presentation/Quality/`, which depends on no other Presentation folder.

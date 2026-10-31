@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
@@ -54,7 +55,7 @@ namespace HyperRTS.Presentation.Effects
             CompleteDependency();
             var now = SystemAPI.Time.ElapsedTime;
             _deltaTime = SystemAPI.Time.DeltaTime;
-            _reach = EffectDetail.Level == DetailLevel.Low ? 0.5f : 1f;
+            _reach = PresentationQuality.Current.Effects == DetailLevel.Low ? 0.5f : 1f;
             var health = SystemAPI.GetComponentLookup<Health>(true);
             var decays = SystemAPI.GetComponentLookup<Decay>(true);
             _streams.BeginFrame();
@@ -108,8 +109,8 @@ namespace HyperRTS.Presentation.Effects
             // Without a camera nothing streams, so there are no offers to sort by the eye.
             _camera = EffectRange.Main(_camera);
             var eye = _camera != null ? _camera.transform.position : Vector3.zero;
-            _lights.Show(eye, EffectDetail.Level, time);
-            _smoke.Show(eye, EffectDetail.Level);
+            _lights.Show(eye, PresentationQuality.Current.Effects, time);
+            _smoke.Show(eye, PresentationQuality.Current.Effects);
         }
 
         /// <summary>Forgets when entities that no longer exist were first seen, once loop entities came or went.</summary>

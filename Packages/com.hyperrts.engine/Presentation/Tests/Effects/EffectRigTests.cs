@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using Unity.Entities;
