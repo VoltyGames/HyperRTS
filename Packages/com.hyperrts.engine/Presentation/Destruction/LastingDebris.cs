@@ -40,8 +40,6 @@ namespace HyperRTS.Presentation.Destruction
         /// <summary>Pieces that lie for good; 0 keeps none.</summary>
         public int Cap { get; }
 
-        public int Capacity => _pieces.Length;
-
         public int Standing => _standing.Count;
 
         public int Sinking => _sinking.Count;

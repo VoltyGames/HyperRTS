@@ -1,3 +1,4 @@
+using System;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
@@ -17,6 +18,8 @@ namespace HyperRTS.Presentation.Environment
 
         private readonly EffectStreams _streams = new();
         private Camera _camera;
+        private float2 _eye;
+        private Comparison<FieldFireCluster> _nearer;
 
         // Nearest the camera first, so the effect cap drops the far fires.
         private void Gather()
@@ -29,9 +32,12 @@ namespace HyperRTS.Presentation.Environment
             }
 
             Vector3 eye = _camera.transform.position;
-            var from = new float2(eye.x, eye.z);
-            _clusters.Sort((a, b) => math.distancesq(a.Centre, from).CompareTo(math.distancesq(b.Centre, from)));
+            _eye = new float2(eye.x, eye.z);
+            _clusters.Sort(_nearer ??= Nearer);
         }
+
+        private int Nearer(FieldFireCluster a, FieldFireCluster b) =>
+            math.distancesq(a.Centre, _eye).CompareTo(math.distancesq(b.Centre, _eye));
 
         // A cluster in fog skips its stream, which then starts afresh once seen again.
         private void Play(float deltaTime, in TerrainHeight terrain)

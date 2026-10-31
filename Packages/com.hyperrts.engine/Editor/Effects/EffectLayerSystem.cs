@@ -147,7 +147,7 @@ namespace HyperRTS.Editor.Effects
                 var loop = _graph.Hlsl(update, "Loop Frames", Includes + "GraphLoopFrames.hlsl");
                 _graph.Slot(loop, "frames", (float)_layer.flipbook.Frames);
                 _graph.Slot(loop, "span", _layer.flipbook.to - _layer.flipbook.from);
-                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 880f)), loop, "deltaTime");
+                LinkDeltaTime(loop, 880f);
             }
 
             if (_layer.ground)
@@ -171,21 +171,21 @@ namespace HyperRTS.Editor.Effects
                 var drag = _graph.Hlsl(update, "Slow Down", Includes + "GraphDrag.hlsl");
                 _graph.Slot(drag, "drag", _layer.drag);
                 _graph.Slot(drag, "bySpeed", _layer.dragBySpeed ? 1f : 0f);
-                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 760f)), drag, "deltaTime");
+                LinkDeltaTime(drag, 760f);
             }
 
             if (_layer.drift != Vector3.zero)
             {
                 var drift = _graph.Hlsl(update, "Drift At Velocity", Includes + "GraphDrift.hlsl");
                 _graph.Slot(drift, "drift", _layer.drift);
-                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 840f)), drift, "deltaTime");
+                LinkDeltaTime(drift, 840f);
             }
 
             if (_layer.wind != 0f)
             {
                 var wind = _graph.Hlsl(update, "Drift With Wind", Includes + "GraphWind.hlsl");
                 _graph.Slot(wind, "share", _layer.wind);
-                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 800f)), wind, "deltaTime");
+                LinkDeltaTime(wind, 800f);
             }
         }
 
@@ -198,16 +198,19 @@ namespace HyperRTS.Editor.Effects
                 _graph.Slot(noise, "frequency", _layer.noise.frequency);
                 _graph.Slot(noise, "scroll", _layer.noise.scroll);
                 _graph.Link(_graph.BuiltIn("VfxTotalTime", new Vector2(_x - 300f, 920f)), noise, "time");
-                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 960f)), noise, "deltaTime");
+                LinkDeltaTime(noise, 960f);
             }
 
             if (_layer.orbit.min != 0f || _layer.orbit.max != 0f)
             {
                 var orbit = _graph.Hlsl(update, "Orbit Spawn Point", Includes + "GraphOrbit.hlsl");
                 _graph.Slot(orbit, "rate", new Vector2(_layer.orbit.min, _layer.orbit.max));
-                _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, 1000f)), orbit, "deltaTime");
+                LinkDeltaTime(orbit, 1000f);
             }
         }
+
+        private void LinkDeltaTime(object block, float y) =>
+            _graph.Link(_graph.BuiltIn("VfxDeltaTime", new Vector2(_x - 300f, y)), block, "deltaTime");
 
         private void StoreOverLife(object update, string attribute, AnimationCurve curve)
         {

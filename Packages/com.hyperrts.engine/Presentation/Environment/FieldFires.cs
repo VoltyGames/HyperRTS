@@ -47,7 +47,7 @@ namespace HyperRTS.Presentation.Environment
         private readonly List<Flame> _flames = new();
         private readonly List<Flame> _lit = new();
         private readonly List<float2> _burntOut = new();
-        private readonly Dictionary<int, float3> _clusters = new();
+        private readonly Dictionary<int, float3> _clusterSums = new();
         private float _carry;
 
         /// <summary>
@@ -142,17 +142,17 @@ namespace HyperRTS.Presentation.Environment
         public void GatherClusters(List<FieldFireCluster> clusters)
         {
             clusters.Clear();
-            _clusters.Clear();
+            _clusterSums.Clear();
             var across = (Size.x + ClusterCells - 1) / ClusterCells;
             foreach (var flame in _flames)
             {
                 var cell = Cell(flame.Cell);
                 var key = cell.x / ClusterCells + cell.y / ClusterCells * across;
-                _clusters.TryGetValue(key, out var sum);
-                _clusters[key] = sum + new float3(Centre(cell), 1f);
+                _clusterSums.TryGetValue(key, out var sum);
+                _clusterSums[key] = sum + new float3(Centre(cell), 1f);
             }
 
-            foreach (var (key, sum) in _clusters)
+            foreach (var (key, sum) in _clusterSums)
             {
                 clusters.Add(new FieldFireCluster { Key = key, Centre = sum.xy / sum.z, Cells = (int)sum.z });
             }
