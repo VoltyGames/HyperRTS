@@ -31,9 +31,7 @@ namespace HyperRTS.Editor.Validation
             {
                 if (rule.AppliesTo(component))
                 {
-                    var start = issues.Count;
-                    rule.Check(component, issues);
-                    issues.StampFrom(start, RuleName(rule));
+                    Guard(rule, () => rule.Check(component, issues), issues);
                 }
             }
 
@@ -76,15 +74,13 @@ namespace HyperRTS.Editor.Validation
 
             foreach (var rule in SceneRules)
             {
-                var start = issues.Count;
-                rule.Check(scenes, issues);
-                issues.StampFrom(start, RuleName(rule));
+                Guard(rule, () => rule.Check(scenes, issues), issues);
             }
 
             return issues;
         }
 
-        // A rule that throws on broken data reports it, so the rest of the pass still runs.
+        // Names the rule on what it reports; one that throws on broken data reports that too, so the rest of the pass still runs.
         private static void Guard(object rule, Action check, ValidationIssues issues)
         {
             var start = issues.Count;

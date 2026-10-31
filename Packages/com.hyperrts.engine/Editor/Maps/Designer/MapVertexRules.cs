@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
@@ -11,8 +10,8 @@ namespace HyperRTS.Editor.Maps.Designer
     /// </summary>
     public static class MapVertexRules
     {
-        public const int MinLinePoints = 2;
-        public const int MinAreaPoints = 3;
+        private const int MinLinePoints = 2;
+        private const int MinAreaPoints = 3;
 
         /// <summary>The fewest points a feature of this geometry keeps; 1 for points and circles.</summary>
         public static int MinPoints(MapFeatureGeometry geometry) => geometry switch
@@ -25,8 +24,8 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>Whether a vertex can go from a line or area of <paramref name="count"/> points.</summary>
         public static bool CanRemove(MapFeatureGeometry geometry, int count)
         {
-            var hasVertices = geometry == MapFeatureGeometry.Polyline || geometry == MapFeatureGeometry.Polygon;
-            return hasVertices && count > MinPoints(geometry);
+            var min = MinPoints(geometry);
+            return min > 1 && count > min;
         }
 
         /// <summary>
@@ -49,17 +48,6 @@ namespace HyperRTS.Editor.Maps.Designer
             }
 
             return best;
-        }
-
-        /// <summary>Where a vertex added on <paramref name="segment"/> goes in the point list.</summary>
-        public static int InsertIndex(int segment)
-        {
-            if (segment < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(segment), segment, "No segment to add a vertex to.");
-            }
-
-            return segment + 1;
         }
     }
 }

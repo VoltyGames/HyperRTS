@@ -141,11 +141,17 @@ namespace HyperRTS.Editor.Maps.Designer
             painter.Stroke();
         }
 
-        private static void Ring(Painter2D painter, Vector2 centre, float radius, Color color, float width)
+        /// <summary>Starts a closed circular path for the caller to fill or stroke.</summary>
+        internal static void Circle(Painter2D painter, Vector2 centre, float radius)
         {
             painter.BeginPath();
             painter.Arc(centre, radius, Angle.Degrees(0f), Angle.Degrees(360f));
             painter.ClosePath();
+        }
+
+        private static void Ring(Painter2D painter, Vector2 centre, float radius, Color color, float width)
+        {
+            Circle(painter, centre, radius);
             painter.fillColor = Fade(color, color.a * FillAlpha);
             painter.Fill();
             painter.strokeColor = color;
@@ -155,9 +161,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private static void Disc(Painter2D painter, Vector2 centre, float radius, Color color)
         {
-            painter.BeginPath();
-            painter.Arc(centre, radius, Angle.Degrees(0f), Angle.Degrees(360f));
-            painter.ClosePath();
+            Circle(painter, centre, radius);
             painter.fillColor = color;
             painter.Fill();
             painter.strokeColor = Fade(Outline, Outline.a * color.a);

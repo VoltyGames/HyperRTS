@@ -47,8 +47,7 @@ namespace HyperRTS.Editor.Maps.Designer
                     continue;
                 }
 
-                painter.BeginPath();
-                painter.Arc(view.ToLocal(point), RingRadius, Angle.Degrees(0f), Angle.Degrees(360f));
+                MapFeaturePainter.Circle(painter, view.ToLocal(point), RingRadius);
                 painter.Stroke();
             }
         }

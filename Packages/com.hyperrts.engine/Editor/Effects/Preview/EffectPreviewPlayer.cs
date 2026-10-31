@@ -26,6 +26,7 @@ namespace HyperRTS.Editor.Effects.Preview
         private GameObject _root;
         private EffectRig _rig;
         private GraphStream _stream;
+        private VisualEffect[] _graphs = Array.Empty<VisualEffect>();
         private float _pathTime;
 
         public EffectPreviewPlayer(Scene scene) => _scene = scene;
@@ -61,6 +62,7 @@ namespace HyperRTS.Editor.Effects.Preview
 
             _rig = _root.GetComponent<EffectRig>();
             _rig.Prepare();
+            RefreshGraphs();
             return true;
         }
 
@@ -78,7 +80,7 @@ namespace HyperRTS.Editor.Effects.Preview
             EndStream();
             if (restart)
             {
-                foreach (var effect in Graphs())
+                foreach (var effect in _graphs)
                 {
                     effect.Reinit();
                 }
@@ -86,6 +88,7 @@ namespace HyperRTS.Editor.Effects.Preview
 
             _rig.Burst(Pivot, Quaternion.identity, Scale, 1f);
             _stream = _rig.StartStream();
+            RefreshGraphs();
             _pathTime = 0f;
             MoveStream(0f);
         }
@@ -98,7 +101,7 @@ namespace HyperRTS.Editor.Effects.Preview
                 return;
             }
 
-            foreach (var effect in Graphs())
+            foreach (var effect in _graphs)
             {
                 effect.pause = Paused;
             }
@@ -113,7 +116,7 @@ namespace HyperRTS.Editor.Effects.Preview
         }
 
         /// <summary>Whether every graph is culled, which keeps it from running until a camera sees it.</summary>
-        public bool AllCulled => Array.TrueForAll(Graphs(), effect => effect.culled);
+        public bool AllCulled => Array.TrueForAll(_graphs, effect => effect.culled);
 
         /// <summary>Advances the paused graphs by <paramref name="seconds"/> at the next editor frame, moving the stream along.</summary>
         public void Simulate(float seconds)
@@ -121,7 +124,7 @@ namespace HyperRTS.Editor.Effects.Preview
             var steps = (uint)Mathf.Max(1, Mathf.RoundToInt(seconds / StepSeconds));
             _pathTime += seconds;
             MoveStream(seconds);
-            foreach (var effect in Graphs())
+            foreach (var effect in _graphs)
             {
                 effect.pause = true;
                 effect.Simulate(StepSeconds, steps);
@@ -131,7 +134,7 @@ namespace HyperRTS.Editor.Effects.Preview
         /// <summary>The recipe behind each graph of the rig, found beside its VFX asset; graphs with none are left out.</summary>
         public IEnumerable<string> Recipes()
         {
-            foreach (var effect in Graphs())
+            foreach (var effect in _graphs)
             {
                 var graph = AssetDatabase.GetAssetPath(effect.visualEffectAsset);
                 if (string.IsNullOrEmpty(graph))
@@ -154,7 +157,7 @@ namespace HyperRTS.Editor.Effects.Preview
         }
 
         // Includes the copies a stream spawned beside the rig's own graphs.
-        private VisualEffect[] Graphs() => HasRig ? _root.GetComponentsInChildren<VisualEffect>(true) : Array.Empty<VisualEffect>();
+        private void RefreshGraphs() => _graphs = _root.GetComponentsInChildren<VisualEffect>(true);
 
         private void Unload()
         {
@@ -166,6 +169,7 @@ namespace HyperRTS.Editor.Effects.Preview
             _root = null;
             _rig = null;
             _stream = null;
+            _graphs = Array.Empty<VisualEffect>();
         }
 
         private void EndStream()

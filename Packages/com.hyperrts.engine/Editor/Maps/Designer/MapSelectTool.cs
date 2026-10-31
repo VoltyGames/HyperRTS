@@ -142,7 +142,7 @@ namespace HyperRTS.Editor.Maps.Designer
             }
 
             StartUndoGroup();
-            _handle = MapVertexRules.InsertIndex(segment);
+            _handle = segment + 1;
             MapFeatureEdits.InsertPoint(Document, feature, _handle, _context.Place(local, false), false);
             BeginDrag(local);
             return true;

@@ -120,8 +120,7 @@ namespace HyperRTS.Editor.Maps.Designer
             painter.fillColor = color;
             foreach (var point in _points)
             {
-                painter.BeginPath();
-                painter.Arc(_context.View.ToLocal(point), VertexRadius, Angle.Degrees(0f), Angle.Degrees(360f));
+                MapFeaturePainter.Circle(painter, _context.View.ToLocal(point), VertexRadius);
                 painter.Fill();
             }
         }

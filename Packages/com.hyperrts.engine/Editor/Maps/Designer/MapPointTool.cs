@@ -50,8 +50,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
             var kind = _toolbox.Kind;
             var world = _context.Place(_cursor.Value, SharedLikeLast(kind));
-            painter.BeginPath();
-            painter.Arc(_context.View.ToLocal(world), MarkerRadius, Angle.Degrees(0f), Angle.Degrees(360f));
+            MapFeaturePainter.Circle(painter, _context.View.ToLocal(world), MarkerRadius);
             painter.strokeColor = kind.Color;
             painter.lineWidth = 1.5f;
             painter.Stroke();
