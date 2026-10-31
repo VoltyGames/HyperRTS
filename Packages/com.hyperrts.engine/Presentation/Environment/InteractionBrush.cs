@@ -10,19 +10,20 @@ namespace HyperRTS.Presentation.Environment
     {
         public const string ShaderName = "Hidden/HyperRTS/Interaction Brush";
 
-        private const int TrampleDirectionPass = 0;
-        private const int TrampleAmountPass = 1;
-        private const int TracksPass = 2;
-        private const int ScarsPass = 3;
-        private const int WakePass = 4;
-        private const int RemainsPass = 5;
-        private const int FadePass = 6;
-
         private static readonly int StampsId = Shader.PropertyToID("_InteractionStamps");
         private static readonly int OffsetId = Shader.PropertyToID("_InteractionStampOffset");
         private static readonly int FadeId = Shader.PropertyToID("_InteractionFade");
 
         private readonly Material _material;
+
+        // Looked up by the shader's pass names, so reordering its passes can't draw the wrong stamps.
+        private readonly int _trampleDirectionPass;
+        private readonly int _trampleAmountPass;
+        private readonly int _tracksPass;
+        private readonly int _scarsPass;
+        private readonly int _wakePass;
+        private readonly int _remainsPass;
+        private readonly int _fadePass;
         private readonly CommandBuffer _commands = new() { name = "HyperRTS Interaction Maps" };
         private GraphicsBuffer _buffer;
         private int _wakeFadedSteps;
@@ -35,6 +36,24 @@ namespace HyperRTS.Presentation.Environment
             }
 
             _material = new Material(shader) { hideFlags = HideFlags.DontSave };
+            _trampleDirectionPass = FindPass("TrampleDirection");
+            _trampleAmountPass = FindPass("TrampleAmount");
+            _tracksPass = FindPass("Tracks");
+            _scarsPass = FindPass("Scars");
+            _wakePass = FindPass("Wake");
+            _remainsPass = FindPass("Remains");
+            _fadePass = FindPass("Fade");
+        }
+
+        private int FindPass(string name)
+        {
+            var pass = _material.FindPass(name);
+            if (pass < 0)
+            {
+                throw new ArgumentException($"HyperRTS: the '{ShaderName}' shader has no '{name}' pass.");
+            }
+
+            return pass;
         }
 
         public void Clear(InteractionSurfaces surfaces)
@@ -57,16 +76,16 @@ namespace HyperRTS.Presentation.Environment
             var offset = 0;
             _commands.SetRenderTarget(surfaces.Trample);
             Fade(new Vector4(0f, 0f, recoverySteps, 0f) / InteractionMath.Levels);
-            DrawStamps(TrampleDirectionPass, offset, stamps.Trample.Count);
-            DrawStamps(TrampleAmountPass, offset, stamps.Trample.Count);
+            DrawStamps(_trampleDirectionPass, offset, stamps.Trample.Count);
+            DrawStamps(_trampleAmountPass, offset, stamps.Trample.Count);
             offset += stamps.Trample.Count;
 
             // Scars (BA) never fade: they last the match.
             _commands.SetRenderTarget(surfaces.Tracks);
             Fade(new Vector4(fadeSteps, fadeSteps, 0f, 0f) / InteractionMath.Levels);
-            DrawStamps(TracksPass, offset, stamps.Tracks.Count);
+            DrawStamps(_tracksPass, offset, stamps.Tracks.Count);
             offset += stamps.Tracks.Count;
-            DrawStamps(ScarsPass, offset, stamps.Scars.Count);
+            DrawStamps(_scarsPass, offset, stamps.Scars.Count);
             offset += stamps.Scars.Count;
             DrawRemains(surfaces, offset, stamps.Remains.Count);
             offset += stamps.Remains.Count;
@@ -130,7 +149,7 @@ namespace HyperRTS.Presentation.Environment
             }
 
             _commands.SetRenderTarget(surfaces.Remains);
-            DrawStamps(RemainsPass, offset, count);
+            DrawStamps(_remainsPass, offset, count);
         }
 
         // Calm water skips the wake map once a full fade has emptied it.
@@ -143,7 +162,7 @@ namespace HyperRTS.Presentation.Environment
 
             _commands.SetRenderTarget(surfaces.Wake);
             Fade(new Vector4(wakeSteps, 0f, 0f, 0f) / InteractionMath.Levels);
-            DrawStamps(WakePass, offset, count);
+            DrawStamps(_wakePass, offset, count);
             _wakeFadedSteps = count > 0 ? 0 : Mathf.Min(_wakeFadedSteps + wakeSteps, InteractionMath.Levels);
         }
 
@@ -155,7 +174,7 @@ namespace HyperRTS.Presentation.Environment
             }
 
             _commands.SetGlobalVector(FadeId, amount);
-            _commands.DrawProcedural(Matrix4x4.identity, _material, FadePass, MeshTopology.Triangles, 3);
+            _commands.DrawProcedural(Matrix4x4.identity, _material, _fadePass, MeshTopology.Triangles, 3);
         }
 
         private void DrawStamps(int pass, int offset, int count)
