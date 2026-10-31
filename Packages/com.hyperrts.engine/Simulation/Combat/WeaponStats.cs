@@ -145,6 +145,7 @@ namespace HyperRTS.Simulation.Combat
                 Damage = damage,
                 Cooldown = cooldown,
                 DamageType = damageType,
+                GarrisonFactor = DamageType.Garrison(damageType),
                 SplashRadius = splashRadius,
                 SplashEdgeFactor = splashEdgeDamage,
                 FriendlyFire = friendlyFire,

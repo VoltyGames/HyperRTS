@@ -13,6 +13,7 @@ namespace HyperRTS.Simulation.Combat
         public float Cooldown;
         public float CooldownRemaining;
         public UnityObjectRef<DamageType> DamageType;
+        public float GarrisonFactor;
         public float SplashRadius;
         public float SplashEdgeFactor;
         public bool FriendlyFire;

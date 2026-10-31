@@ -37,6 +37,7 @@ namespace HyperRTS.Simulation.Abilities
         [GhostField(SendData = false)] public float Damage;
         [GhostField(SendData = false)] public float Radius;
         [GhostField(SendData = false)] public UnityObjectRef<DamageType> DamageType;
+        [GhostField(SendData = false)] public float GarrisonFactor;
         [GhostField(SendData = false)] public bool FriendlyFire;
 
         /// <summary>Status effect prefab applied to an entity target; <c>Entity.Null</c> for none.</summary>

@@ -17,6 +17,7 @@ queue, so armor, splash and kill credit apply to all of them.
 | `AmmoAuthoring` | Rounds per load and how they refill: `Docked`, `Round` or `Magazine` |
 | `DeployableAuthoring` | Deploy and pack-up times for a unit that deploys to fire |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
+| `DamageType` | A damage category that armor scales, and its `garrisonFactor`, the share that reaches a sheltered garrison ([Transport](movement.md#transport)) |
 | `DamageWriter` | Queues a hit. A negative amount heals |
 | `CombatStance` | Aggressive, Defensive, HoldPosition or Passive |
 | `LastAttacker` | Who gets the kill credit |

@@ -95,6 +95,7 @@ namespace HyperRTS.Simulation.Airdrops
                         Radius = authoring.radius,
                         EdgeFactor = authoring.edgeFactor,
                         DamageType = authoring.damageType,
+                        GarrisonFactor = DamageType.Garrison(authoring.damageType),
                         Speed = authoring.speed,
                         ZoneRadius = authoring.zoneRadius,
                         MaxReduction = authoring.maxReduction,

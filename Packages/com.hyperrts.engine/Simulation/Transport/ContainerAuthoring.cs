@@ -29,6 +29,10 @@ namespace HyperRTS.Simulation.Transport
         [Tooltip("Passengers get out when this is destroyed; otherwise they die with it.")]
         public bool passengersSurvive = true;
 
+        [Tooltip("Share of each hit on this the walls stop before it reaches the passengers, at full health; it falls with health. 1 keeps them out of harm.")]
+        [Range(0f, 1f)]
+        public float protection = 1f;
+
         [Tooltip("A neutral building anyone may garrison; it belongs to whoever is inside, and is neutral again when empty.")]
         public bool neutralGarrison;
 
@@ -67,6 +71,11 @@ namespace HyperRTS.Simulation.Transport
                         DependsOn(port);
                         ports.Add(authoring.LocalPort(port));
                     }
+                }
+
+                if (authoring.protection < 1f)
+                {
+                    TransportSetup.AddShelter(ref writer, authoring.protection);
                 }
 
                 if (authoring.neutralGarrison)

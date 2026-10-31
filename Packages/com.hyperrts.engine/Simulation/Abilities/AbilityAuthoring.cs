@@ -115,6 +115,7 @@ namespace HyperRTS.Simulation.Abilities
                     Damage = entry.damage,
                     Radius = entry.radius,
                     DamageType = entry.damageType,
+                    GarrisonFactor = DamageType.Garrison(entry.damageType),
                     FriendlyFire = entry.friendlyFire,
                     StatusEffect = entry.statusEffect != null
                         ? GetEntity(entry.statusEffect, TransformUsageFlags.None)

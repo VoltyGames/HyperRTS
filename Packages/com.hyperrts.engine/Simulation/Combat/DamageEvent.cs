@@ -22,6 +22,10 @@ namespace HyperRTS.Simulation.Combat
         public byte SourceFaction;
         public float Amount;
         public UnityObjectRef<DamageType> Type;
+
+        /// <summary>The <see cref="DamageType.garrisonFactor"/> of <see cref="Type"/>; 0 never reaches a garrison.</summary>
+        public float GarrisonFactor;
+
         public float Radius;
 
         /// <summary>Fraction of <see cref="Amount"/> dealt at the splash edge, 1 = no falloff.</summary>

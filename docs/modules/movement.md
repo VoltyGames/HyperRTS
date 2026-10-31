@@ -313,5 +313,14 @@ passenger that fires from inside shoots from the port facing its target best (ne
 projectile start and the hit origin for directional armor all sit there. Without ports it fires from the centre. The
 `ContainerRule` warns about ports that are empty or outside the container.
 
+A container with `protection` below 1 shelters its passengers rather than shutting them off. Each hit on it also
+reaches them, shared evenly among those inside, as the hit times 1 minus `protection` times its health fraction
+before the hit, times the damage type's `garrisonFactor`. A battered building protects less, and a damage type above
+1 (blast, fire) beats a garrison faster than small arms. The share is a hit of its own in the next frame, so each
+passenger's armor applies, kill credit goes to the shooter, and passengers blown out by the hit that destroys their
+building still take it. Weapons, abilities and strategic strikes carry the factor; field and status damage never
+reach a garrison. Passengers killed inside free their slots. At the default `protection` of 1, as on transports,
+nothing gets through.
+
 A passenger is hidden and takes no orders. A neutral garrison building belongs to whoever is inside and turns
 neutral when empty.

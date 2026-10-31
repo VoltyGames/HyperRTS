@@ -70,6 +70,7 @@ namespace HyperRTS.Simulation.Abilities
                     SourceFaction = faction,
                     Amount = ability.Damage,
                     Type = ability.DamageType,
+                    GarrisonFactor = ability.GarrisonFactor,
                     Radius = ability.Radius,
                     EdgeFactor = 1f,
                     FriendlyFire = ability.FriendlyFire,

@@ -16,6 +16,7 @@ namespace HyperRTS.Simulation.Airdrops
         public float Radius;
         public float EdgeFactor;
         public UnityObjectRef<DamageType> DamageType;
+        public float GarrisonFactor;
         public float Speed;
 
         /// <summary>Radius round the aim point whose enemy structures the bombs seek.</summary>
@@ -37,6 +38,7 @@ namespace HyperRTS.Simulation.Airdrops
             SourceFaction = faction,
             Amount = Damage,
             Type = DamageType,
+            GarrisonFactor = GarrisonFactor,
             Radius = Radius,
             EdgeFactor = EdgeFactor,
             Reach = WeaponTargets.Surface,

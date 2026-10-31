@@ -25,6 +25,8 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<ToppleHeading> _toppleHeadings;
         private ComponentLookup<Faction> _factions;
         private BufferLookup<EntityDamaged> _damaged;
+        private ComponentLookup<Shelter> _shelters;
+        private BufferLookup<ShelterHit> _shelterHits;
 
         public void OnCreate(ref SystemState state)
         {
@@ -39,6 +41,8 @@ namespace HyperRTS.Simulation.Combat
             _toppleHeadings = state.GetComponentLookup<ToppleHeading>();
             _factions = state.GetComponentLookup<Faction>(true);
             _damaged = state.GetBufferLookup<EntityDamaged>();
+            _shelters = state.GetComponentLookup<Shelter>(true);
+            _shelterHits = state.GetBufferLookup<ShelterHit>();
 
             var queue = state.EntityManager.CreateEntity(typeof(DamageQueue), typeof(DamageEvent));
             state.EntityManager.SetName(queue, "DamageQueue");
@@ -61,6 +65,8 @@ namespace HyperRTS.Simulation.Combat
             _toppleHeadings.Update(ref state);
             _factions.Update(ref state);
             _damaged.Update(ref state);
+            _shelters.Update(ref state);
+            _shelterHits.Update(ref state);
 
             new ResolveJob
             {
@@ -77,6 +83,8 @@ namespace HyperRTS.Simulation.Combat
                 FallSources = _toppleHeadings,
                 Factions = _factions,
                 Damaged = _damaged,
+                Shelters = _shelters,
+                ShelterHits = _shelterHits,
                 Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
         }
@@ -98,6 +106,8 @@ namespace HyperRTS.Simulation.Combat
             public ComponentLookup<ToppleHeading> FallSources;
             [ReadOnly] public ComponentLookup<Faction> Factions;
             public BufferLookup<EntityDamaged> Damaged;
+            [ReadOnly] public ComponentLookup<Shelter> Shelters;
+            public BufferLookup<ShelterHit> ShelterHits;
             public Entity Events;
 
             private void Execute(DynamicBuffer<DamageEvent> events)
@@ -169,6 +179,7 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
+                PassToPassengers(target, amount, health, hit, from);
                 amount *= CombatMath.ArmorMultiplier(Armor, target, hit.Type) * FacingMultiplier(target, hit.Origin) *
                           StatMath.DamageTaken(Modifiers, target) * TypedMultiplier(target, hit.Type);
                 health.Current = math.max(0f, health.Current - amount);
@@ -183,6 +194,25 @@ namespace HyperRTS.Simulation.Combat
                 if (Attackers.HasComponent(target) && hit.SourceFaction != 0)
                 {
                     Attackers[target] = new LastAttacker { Source = hit.Source, Faction = hit.SourceFaction };
+                }
+            }
+
+            /// <summary>Passes the share of a hit on a shelter that its walls, at their health before the hit, don't stop.</summary>
+            private void PassToPassengers(Entity target, float amount, in Health health, in DamageEvent hit, float3 from)
+            {
+                if (hit.GarrisonFactor <= 0f || !Shelters.TryGetComponent(target, out var shelter))
+                {
+                    return;
+                }
+
+                var passing = hit;
+                passing.Target = Entity.Null;
+                passing.Origin = from;
+                passing.Amount = shelter.Passing(hit, amount, health.Current / math.max(health.Max, 1e-4f));
+                passing.Radius = 0f;
+                if (passing.Amount > 0f)
+                {
+                    ShelterHits[target].Add(new ShelterHit { Hit = passing });
                 }
             }
 

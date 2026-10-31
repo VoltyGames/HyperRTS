@@ -52,6 +52,7 @@ namespace HyperRTS.Simulation.Combat
             SourceFaction = faction,
             Amount = weapon.Damage,
             Type = weapon.DamageType,
+            GarrisonFactor = weapon.GarrisonFactor,
             Radius = weapon.SplashRadius,
             EdgeFactor = weapon.SplashEdgeFactor,
             FriendlyFire = weapon.FriendlyFire,
