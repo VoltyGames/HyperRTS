@@ -1,4 +1,4 @@
-// One planted row crop, written by RowCrops.compute and drawn by RowCrop.shader: 48 bytes, RowCropBatch.InstanceStride.
+// One planted row crop, written by RowCrops.compute and drawn by RowCrop.shader: 48 bytes, ScatterSlots.InstanceStride.
 #ifndef HYPERRTS_ROW_CROP_INSTANCE_INCLUDED
 #define HYPERRTS_ROW_CROP_INSTANCE_INCLUDED
 

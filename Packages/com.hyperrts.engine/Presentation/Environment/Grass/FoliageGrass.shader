@@ -1,5 +1,5 @@
 // HyperRTS/Foliage drawn from Grass.compute's instances: GrassRenderer copies each plant's Foliage material onto it.
-// Not for ordinary renderers: without _GrassInstances there is nothing to draw.
+// Not for ordinary renderers: without _Instances there is nothing to draw.
 Shader "Hidden/HyperRTS/FoliageGrass"
 {
     Properties

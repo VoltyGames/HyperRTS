@@ -38,9 +38,9 @@ CBUFFER_END
 #if defined(_GRASS_INSTANCES)
     #include "Packages/com.hyperrts.engine/Presentation/Environment/Grass/GrassInstance.hlsl"
 
-    // Set per draw by GrassBatch: plants come from _GrassInstances from _GrassOffset by SV_InstanceID.
-    StructuredBuffer<GrassInstance> _GrassInstances;
-    int _GrassOffset;
+    // Set per draw by GrassBatch: plants come from _Instances from _SlotOffset by SV_InstanceID.
+    StructuredBuffer<GrassInstance> _Instances;
+    int _SlotOffset;
     half4 _GrassHealthy;
     half4 _GrassDry;
 #endif
@@ -77,7 +77,7 @@ struct Attributes
 #if defined(_GRASS_INSTANCES)
 GrassInstance GrassAt(Attributes input)
 {
-    return _GrassInstances[_GrassOffset + input.instanceID];
+    return _Instances[_SlotOffset + input.instanceID];
 }
 
 float2 GrassFacing(GrassInstance grass)

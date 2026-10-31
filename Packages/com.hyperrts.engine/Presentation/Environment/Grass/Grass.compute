@@ -51,14 +51,7 @@ struct GrassPlantGpu // GrassPlantGpu.cs, 36 bytes
     int seed;
 };
 
-struct GrassSlot // GrassBatch's slot table: where a (plant, variant, band) writes and how many it holds
-{
-    uint offset;
-    uint capacity;
-};
-
 StructuredBuffer<GrassPlantGpu> _Plants;
-StructuredBuffer<GrassSlot> _Slots;
 Texture2DArray<float> _Coverage;
 Texture2D<float4> _Ground;
 
@@ -69,7 +62,6 @@ float4 _GroundArea;   // the same for the ground picture; zero without one
 float4 _Camera;       // xyz position, w draw distance
 float4 _Thinning;     // GrassBands: thinning start share, keep at the draw distance, most growth, fade share
 float4 _Shaping;      // x quality density, y shadow distance, z keep edge
-uint _SlotCount;
 
 float Coverage(float2 xz, int layer)
 {
@@ -122,14 +114,13 @@ float Keep(float range)
     return lerp(1.0, _Thinning.y, saturate((range - start) / max(_Camera.w - start, 0.001)));
 }
 
-// Writes at the slot's next index; plants past its capacity are dropped and Count clamps the draw to it.
+// Plants past the slot's capacity are dropped and Count clamps the draw to it.
 void Store(uint slot, GrassInstance grown)
 {
-    GrassSlot target = _Slots[slot];
     uint index;
-    if (Claim(slot, target.capacity, index))
+    if (Claim(slot, index))
     {
-        _Instances[target.offset + index] = grown;
+        _Instances[index] = grown;
     }
 }
 
@@ -196,8 +187,5 @@ void Scatter(uint3 id : SV_DispatchThreadID)
 [numthreads(1, 1, 1)]
 void Count(uint3 id : SV_DispatchThreadID)
 {
-    for (uint slot = 0u; slot < _SlotCount; slot++)
-    {
-        CloseSlot(slot, _Slots[slot].capacity);
-    }
+    CloseSlots();
 }

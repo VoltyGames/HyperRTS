@@ -1,4 +1,4 @@
-// One scattered plant, written by Grass.compute and drawn by Hidden/HyperRTS/FoliageGrass: 48 bytes, GrassBatch.InstanceStride.
+// One scattered plant, written by Grass.compute and drawn by Hidden/HyperRTS/FoliageGrass: 48 bytes, ScatterSlots.InstanceStride.
 #ifndef HYPERRTS_GRASS_INSTANCE_INCLUDED
 #define HYPERRTS_GRASS_INSTANCE_INCLUDED
 

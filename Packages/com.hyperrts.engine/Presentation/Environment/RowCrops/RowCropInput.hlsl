@@ -1,4 +1,4 @@
-// HyperRTS/RowCrop inputs shared by every pass. Plants come from _Instances by SV_InstanceID.
+// HyperRTS/RowCrop inputs shared by every pass. Plants come from _Instances from _SlotOffset by SV_InstanceID.
 #ifndef HYPERRTS_ROW_CROP_INPUT_INCLUDED
 #define HYPERRTS_ROW_CROP_INPUT_INCLUDED
 
@@ -30,6 +30,7 @@ CBUFFER_END
 float _CanopyHeight; // RowCrop.height, set per draw
 
 StructuredBuffer<RowCropInstance> _Instances;
+int _SlotOffset; // set per draw by RowCropBatch
 
 // PlantShading.hlsl: the side in view is lit, bent skyward so a field reads lit from above.
 #define PLANT_TWO_SIDED 1.0

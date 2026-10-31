@@ -6,20 +6,18 @@ namespace HyperRTS.Presentation.Environment
 {
     /// <summary>
     /// One camera's scatter on the GPU: a mesh and property block per slot, the jobs queued for the grow kernel, and
-    /// the indirect draws the count kernel fills. Subclasses own the slots' room, buffers and look.
+    /// the indirect draws the count kernel fills. Subclasses size the slots and own their look.
     /// </summary>
     internal abstract class ScatterBatch : IDisposable
     {
-        // Matches GrassInstance.hlsl and RowCropInstance.hlsl.
-        protected const int InstanceStride = 48;
         private const int ThreadGroup = 64;
 
         private readonly List<ScatterJob> _pending = new();
         private readonly ScatterDraws _draws;
         private int _largestJob;
 
-        /// <summary>Slots drawing <paramref name="meshes"/>, grown by <paramref name="grow"/>.</summary>
-        protected ScatterBatch(ComputeShader compute, int grow, int count, Mesh[] meshes)
+        /// <summary>Slots drawing <paramref name="meshes"/>, grown by <paramref name="grow"/>, with room for at least <paramref name="minInstances"/>.</summary>
+        protected ScatterBatch(ComputeShader compute, int grow, int count, Mesh[] meshes, int minInstances)
         {
             Compute = compute;
             GrowKernel = grow;
@@ -32,6 +30,7 @@ namespace HyperRTS.Presentation.Environment
             }
 
             _draws = new ScatterDraws(meshes);
+            Slots = new ScatterSlots(Blocks, minInstances);
         }
 
         protected ComputeShader Compute { get; }
@@ -43,6 +42,8 @@ namespace HyperRTS.Presentation.Environment
         protected Mesh[] Meshes { get; }
 
         protected MaterialPropertyBlock[] Blocks { get; }
+
+        protected ScatterSlots Slots { get; }
 
         /// <summary>Instances the last run drew and the slots that drew any, read back from the GPU for profiling.</summary>
         public (int Instances, int Draws) Drawn() => _draws.Drawn();
@@ -65,8 +66,10 @@ namespace HyperRTS.Presentation.Environment
             }
 
             _draws.BindGrow(_pending, Compute, GrowKernel);
-            Grow();
-            BindCapacities();
+            Slots.BindGrow(Compute, GrowKernel);
+            BindShaping();
+            DispatchGrow();
+            Slots.BindCount(Compute, CountKernel);
             _draws.BindCount(Compute, CountKernel);
             Compute.Dispatch(CountKernel, 1, 1, 1);
         }
@@ -76,7 +79,7 @@ namespace HyperRTS.Presentation.Environment
         {
             for (var slot = 0; slot < Meshes.Length; slot++)
             {
-                if (!HasRoom(slot))
+                if (!Slots.HasRoom(slot))
                 {
                     continue;
                 }
@@ -93,7 +96,7 @@ namespace HyperRTS.Presentation.Environment
 
         public void Dispose()
         {
-            ReleaseBuffers();
+            Slots.Dispose();
             _draws.Dispose();
         }
 
@@ -105,7 +108,7 @@ namespace HyperRTS.Presentation.Environment
         }
 
         /// <summary>Runs the grow kernel over every queued job, one thread group row per job.</summary>
-        protected void DispatchGrow()
+        private void DispatchGrow()
         {
             var groups = Mathf.Max(1, (_largestJob + ThreadGroup - 1) / ThreadGroup);
             Compute.Dispatch(GrowKernel, groups, 1, _pending.Count);
@@ -114,20 +117,15 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>Clears the room the last view's tiles asked for.</summary>
         protected abstract void ForgetView();
 
-        /// <summary>Gives every slot room for the queued tiles before the grow kernel writes into it.</summary>
+        /// <summary>Fits the slots' capacities to the queued tiles before the grow kernel writes into them.</summary>
         protected abstract void Reserve();
 
-        /// <summary>Binds the slots' buffers and runs the grow kernel.</summary>
-        protected abstract void Grow();
-
-        /// <summary>Binds each slot's capacity and the slot count to the count kernel.</summary>
-        protected abstract void BindCapacities();
-
-        protected abstract bool HasRoom(int slot);
+        /// <summary>Binds what only this batch's kernel inputs hold, such as a crop's planting.</summary>
+        protected virtual void BindShaping()
+        {
+        }
 
         /// <summary>The slot's material, culling box and shadows.</summary>
         protected abstract RenderParams Parameters(int slot);
-
-        protected abstract void ReleaseBuffers();
     }
 }

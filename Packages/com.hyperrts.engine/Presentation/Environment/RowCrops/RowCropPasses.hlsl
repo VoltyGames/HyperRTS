@@ -7,7 +7,7 @@
 
 ForwardVaryings ForwardVert(Attributes input)
 {
-    RowCropInstance plant = _Instances[input.instanceID];
+    RowCropInstance plant = _Instances[_SlotOffset + input.instanceID];
     float3 world = RowCropPosition(input, plant, WindThisFrame());
     float height = input.positionOS.y * plant.scale;
     half4 tint = half4(PlantTint(plant.shade, plant.shade), CanopyLight(height));
@@ -18,14 +18,14 @@ ForwardVaryings ForwardVert(Attributes input)
 
 CutoutVaryings CutoutVert(Attributes input)
 {
-    RowCropInstance plant = _Instances[input.instanceID];
+    RowCropInstance plant = _Instances[_SlotOffset + input.instanceID];
     float4 positionCS = TransformWorldToHClip(RowCropPosition(input, plant, WindThisFrame()));
     return PlantCutoutVaryings(positionCS, input.uv, RowCropNormal(input, plant));
 }
 
 CutoutVaryings ShadowVert(Attributes input)
 {
-    RowCropInstance plant = _Instances[input.instanceID];
+    RowCropInstance plant = _Instances[_SlotOffset + input.instanceID];
     float3 world = RowCropPosition(input, plant, WindThisFrame());
     half3 normal = RowCropNormal(input, plant);
     return PlantCutoutVaryings(ShadowCasterPositionCS(world, normal), input.uv, normal);
@@ -33,7 +33,7 @@ CutoutVaryings ShadowVert(Attributes input)
 
 MotionVaryings MotionVert(Attributes input)
 {
-    RowCropInstance plant = _Instances[input.instanceID];
+    RowCropInstance plant = _Instances[_SlotOffset + input.instanceID];
     float3 placed = PlaceRowCrop(input, plant);
     float3 now = SwayRowCrop(placed, plant, WindThisFrame());
     float3 last = SwayRowCrop(placed, plant, WindLastFrame());

@@ -542,13 +542,17 @@ Row crops and grass (see [maps](../maps.md)) share one host, built to take more 
 - `ScatterBatch`, the base of `RowCropBatch` and `GrassBatch`, holds one camera's slots: a mesh and property
   block each, the `ScatterJob`s queued for the grow kernel (one visible tile of one plant or field) and the `ScatterDraws` indirect
   draws. `Generate` reserves room,
-  binds the jobs, grows and counts; `Draw` draws each slot with room. A subclass owns its slots' room, buffers,
-  material, culling box and shadows.
+  binds the jobs, grows in one dispatch and counts; `Draw` draws each slot with room. A subclass sizes its slots and
+  owns its material, culling box and shadows.
+- `ScatterSlots` is the room: one 48-byte instance buffer per batch, cut end to end into a slot per draw, and a table
+  of each slot's offset and capacity that the grow and count kernels and the draws (`_SlotOffset`) read. Grass slots
+  are (plant, model, band); a crop's are variant times three LOD bands, and each lattice spot picks its variant in the
+  kernel, so a crop grows in one dispatch. A crop sizes every slot to its share of the tiles' worst case.
 - `ScatterInputs` binds what both kernels read: the tile size (`ScatterTiles.Size`), the heightmap, and each camera's
   position with the building mask, crater depth and ash. `ScatterSettings` carries density, distance and shadow
   distance (crops pass 0), and a density of 0 draws nothing for both.
 - `Scatter.hlsl` holds the job struct, hashes, noise and slot counting; `ScatterHash` is the C# twin of the hashes.
-  Instances are 48 bytes.
+  The kernels share its slot table and `Claim` and `CloseSlots`.
 
 ### Ambient life
 

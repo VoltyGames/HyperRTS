@@ -5,18 +5,13 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Grass
 {
     /// <summary>
-    /// One camera's grass on the GPU: the visible tiles, one instance buffer cut into a slot per (plant, model, band)
-    /// that Grass.compute fills, and the indirect draws.
+    /// One camera's grass on the GPU: the visible tiles, a slot per (plant, model, band) that Grass.compute fills, and
+    /// the indirect draws.
     /// </summary>
     internal sealed class GrassBatch : ScatterBatch
     {
         private const int MinInstances = 4096;
 
-        private static readonly int SlotsId = Shader.PropertyToID("_Slots");
-        private static readonly int SlotCountId = Shader.PropertyToID("_SlotCount");
-        private static readonly int InstancesId = Shader.PropertyToID("_Instances");
-        private static readonly int GrassInstancesId = Shader.PropertyToID("_GrassInstances");
-        private static readonly int GrassOffsetId = Shader.PropertyToID("_GrassOffset");
         private static readonly int HealthyId = Shader.PropertyToID("_GrassHealthy");
         private static readonly int DryId = Shader.PropertyToID("_GrassDry");
 
@@ -25,10 +20,8 @@ namespace HyperRTS.Presentation.Environment.Grass
         private readonly int[] _firstSlots;
         private readonly int[] _slotPlants;
         private readonly float[] _expected;
-        private readonly uint[] _table;
+        private readonly uint[] _capacities;
         private readonly Bounds[] _bounds;
-        private readonly GraphicsBuffer _slots;
-        private GraphicsBuffer _instances;
 
         /// <summary>A batch drawing <paramref name="field"/>'s plants with their instanced materials, in plant order.</summary>
         public GrassBatch(GrassField field, GrassComputeInputs kernels, Material[] materials)
@@ -37,7 +30,7 @@ namespace HyperRTS.Presentation.Environment.Grass
         }
 
         private GrassBatch(GrassField field, GrassComputeInputs kernels, Material[] materials, int[] firstSlots)
-            : base(kernels.Compute, kernels.Scatter, kernels.Count, SlotMeshes(field, firstSlots))
+            : base(kernels.Compute, kernels.Scatter, kernels.Count, SlotMeshes(field, firstSlots), MinInstances)
         {
             _field = field;
             _materials = materials;
@@ -45,16 +38,13 @@ namespace HyperRTS.Presentation.Environment.Grass
             var count = Meshes.Length;
             _slotPlants = SlotPlants(field, _firstSlots);
             _expected = new float[count];
-            _table = new uint[count * 2];
+            _capacities = new uint[count];
             _bounds = new Bounds[field.plants.Count * GrassBands.Bands];
-            _slots = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, count), sizeof(uint) * 2);
-            _instances = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MinInstances, InstanceStride);
             for (var slot = 0; slot < count; slot++)
             {
                 var plant = field.plants[_slotPlants[slot]];
                 Blocks[slot].SetColor(HealthyId, plant.healthy);
                 Blocks[slot].SetColor(DryId, plant.dry);
-                Blocks[slot].SetBuffer(GrassInstancesId, _instances);
             }
         }
 
@@ -116,21 +106,6 @@ namespace HyperRTS.Presentation.Environment.Grass
             }
         }
 
-        protected override void Grow()
-        {
-            Compute.SetBuffer(GrowKernel, SlotsId, _slots);
-            Compute.SetBuffer(GrowKernel, InstancesId, _instances);
-            DispatchGrow();
-        }
-
-        protected override void BindCapacities()
-        {
-            Compute.SetBuffer(CountKernel, SlotsId, _slots);
-            Compute.SetInt(SlotCountId, Meshes.Length);
-        }
-
-        protected override bool HasRoom(int slot) => _table[slot * 2 + 1] != 0u;
-
         protected override RenderParams Parameters(int slot)
         {
             var band = slot % GrassBands.Bands;
@@ -142,37 +117,15 @@ namespace HyperRTS.Presentation.Environment.Grass
             };
         }
 
-        protected override void ReleaseBuffers()
-        {
-            _instances.Release();
-            _slots.Release();
-        }
-
-        // Lays the slots out end to end in the one instance buffer, growing it when the view needs more room.
+        // Lays the slots out end to end in the one instance buffer.
         protected override void Reserve()
         {
-            var total = 0u;
             for (var slot = 0; slot < _expected.Length; slot++)
             {
-                var capacity = _expected[slot] > 0f ? (uint)GrassBands.Capacity(_expected[slot]) : 0u;
-                _table[slot * 2] = total;
-                _table[slot * 2 + 1] = capacity;
-                total += capacity;
+                _capacities[slot] = _expected[slot] > 0f ? (uint)GrassBands.Capacity(_expected[slot]) : 0u;
             }
 
-            if (total > _instances.count)
-            {
-                _instances.Release();
-                _instances = new GraphicsBuffer(GraphicsBuffer.Target.Structured, (int)(total + total / 4), InstanceStride);
-                Array.ForEach(Blocks, block => block.SetBuffer(GrassInstancesId, _instances));
-            }
-
-            for (var slot = 0; slot < Blocks.Length; slot++)
-            {
-                Blocks[slot].SetInteger(GrassOffsetId, (int)_table[slot * 2]);
-            }
-
-            _slots.SetData(_table);
+            Slots.Fit(_capacities);
         }
 
         // Slot = the plant's first slot + model * Bands + band, the order of the table, counters and draw commands.

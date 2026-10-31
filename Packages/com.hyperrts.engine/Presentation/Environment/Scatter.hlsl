@@ -1,5 +1,5 @@
-// Jobs, hashes, noise, terrain height and the slot counting shared by RowCrops.compute and Grass.compute. The job
-// matches ScatterJob.cs and the hashes and noise ScatterHash.cs; ScatterDraws.cs binds the jobs, counters and args.
+// Jobs, hashes, noise, terrain height and the slot layout and counting shared by RowCrops.compute and Grass.compute. The job
+// matches ScatterJob.cs and the hashes and noise ScatterHash.cs; ScatterDraws.cs binds the jobs, counters and args and ScatterSlots.cs the slots.
 #ifndef HYPERRTS_SCATTER_INCLUDED
 #define HYPERRTS_SCATTER_INCLUDED
 
@@ -22,7 +22,15 @@ struct ScatterJob // ScatterJob.cs, 28 bytes
     int2 count; // spots from first
 };
 
+struct ScatterSlot // ScatterSlots.cs: where a slot writes in _Instances and how many it holds
+{
+    uint offset;
+    uint capacity;
+};
+
 StructuredBuffer<ScatterJob> _Jobs;
+StructuredBuffer<ScatterSlot> _Slots;
+uint _SlotCount;
 RWStructuredBuffer<uint> _Counters; // plants grown per slot this run
 RWStructuredBuffer<DrawArgs> _Args;
 float _TileSize;
@@ -68,18 +76,24 @@ bool Owns(float2 tileMin, float2 spot)
     return all(spot >= tileMin) && all(spot < tileMax);
 }
 
-// Takes the slot's next index; false once the slot is full, as plants past its capacity are dropped.
-bool Claim(uint slot, uint capacity, out uint index)
+// Takes the slot's next place in _Instances; false once the slot is full, as plants past its capacity are dropped.
+bool Claim(uint slot, out uint index)
 {
-    InterlockedAdd(_Counters[slot], 1u, index);
-    return index < capacity;
+    ScatterSlot target = _Slots[slot];
+    uint taken;
+    InterlockedAdd(_Counters[slot], 1u, taken);
+    index = target.offset + taken;
+    return taken < target.capacity;
 }
 
-// Draws a slot's grown plants up to its capacity, then zeroes its counter for the next run.
-void CloseSlot(uint slot, uint capacity)
+// Draws every slot's grown plants up to its capacity, then zeroes the counters for the next run.
+void CloseSlots()
 {
-    _Args[slot].instanceCount = min(_Counters[slot], capacity);
-    _Counters[slot] = 0u;
+    for (uint slot = 0u; slot < _SlotCount; slot++)
+    {
+        _Args[slot].instanceCount = min(_Counters[slot], _Slots[slot].capacity);
+        _Counters[slot] = 0u;
+    }
 }
 
 #endif
