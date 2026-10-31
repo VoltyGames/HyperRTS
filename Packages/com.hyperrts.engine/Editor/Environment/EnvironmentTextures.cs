@@ -42,7 +42,11 @@ namespace HyperRTS.Editor.Environment
         public override int Order => 20;
 
         public override string Description =>
-            "Cloud shadow cookie, road edge noise, terrain noise and water ripple normals in Presentation/Environment.";
+            "Cloud shadow cookie, road edge noise, terrain noise and water ripple normals.";
+
+        public override string Sources => "Seeds and settings in EnvironmentTextures.cs";
+
+        public override string Outputs => $"{CloudCookiePath}, {EdgeNoisePath}, {TerrainNoisePath}, {WaterRipplesPath}";
 
         public override bool Available => EnginePackage.Writable;
 

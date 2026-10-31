@@ -11,7 +11,11 @@ namespace HyperRTS.Editor.Effects
 
         public override int Order => 30;
 
-        public override string Description => "Each <Graph>.vfx from the <Graph>.effect.json beside it.";
+        public override string Description => "The VFX Graph rigs, compiled from their recipes.";
+
+        public override string Sources => "Every <Graph>.effect.json";
+
+        public override string Outputs => "The <Graph>.vfx beside each recipe";
 
         public override void Run() => EffectGraphBuilder.BuildAll();
     }

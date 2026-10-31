@@ -54,10 +54,21 @@ namespace HyperRTS.Editor.Generators
             Debug.Log($"HyperRTS: ran {all.Count} generators.");
         }
 
+        /// <summary>Runs one generator and records how it ended in the <see cref="GeneratorRunLog"/>.</summary>
         public static void Run(Generator generator)
         {
-            generator.Run();
-            AssetDatabase.SaveAssets();
+            try
+            {
+                generator.Run();
+                AssetDatabase.SaveAssets();
+            }
+            catch (Exception exception)
+            {
+                GeneratorRunLog.Record(generator.Name, exception.Message);
+                throw;
+            }
+
+            GeneratorRunLog.Record(generator.Name, null);
         }
     }
 }

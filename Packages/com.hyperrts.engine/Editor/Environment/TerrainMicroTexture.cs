@@ -27,7 +27,11 @@ namespace HyperRTS.Editor.Environment
 
         public override int Order => 21;
 
-        public override string Description => "Tileable soil grain normal, occlusion and albedo in Presentation/Environment.";
+        public override string Description => "Tileable soil grain normal, occlusion and albedo.";
+
+        public override string Sources => "Seed and settings in TerrainMicroTexture.cs";
+
+        public override string Outputs => Path;
 
         public override bool Available => EnginePackage.Writable;
 

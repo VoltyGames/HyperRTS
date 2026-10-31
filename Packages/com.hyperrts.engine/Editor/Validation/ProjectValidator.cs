@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Validation.Rules;
 using Unity.Scripting.LifecycleManagement;
@@ -30,7 +31,9 @@ namespace HyperRTS.Editor.Validation
             {
                 if (rule.AppliesTo(component))
                 {
+                    var start = issues.Count;
                     rule.Check(component, issues);
+                    issues.StampFrom(start, RuleName(rule));
                 }
             }
 
@@ -73,7 +76,9 @@ namespace HyperRTS.Editor.Validation
 
             foreach (var rule in SceneRules)
             {
+                var start = issues.Count;
                 rule.Check(scenes, issues);
+                issues.StampFrom(start, RuleName(rule));
             }
 
             return issues;
@@ -82,6 +87,7 @@ namespace HyperRTS.Editor.Validation
         // A rule that throws on broken data reports it, so the rest of the pass still runs.
         private static void Guard(object rule, Action check, ValidationIssues issues)
         {
+            var start = issues.Count;
             try
             {
                 check();
@@ -90,6 +96,20 @@ namespace HyperRTS.Editor.Validation
             {
                 issues.Error(null, $"{rule.GetType().Name} could not finish: {e.Message}");
             }
+
+            issues.StampFrom(start, RuleName(rule));
+        }
+
+        // "MissingCostRule" reads as "Missing Cost".
+        private static string RuleName(object rule)
+        {
+            var name = rule.GetType().Name;
+            if (name.EndsWith("Rule"))
+            {
+                name = name[..^4];
+            }
+
+            return Regex.Replace(name, "(?<=[a-z0-9])(?=[A-Z])", " ");
         }
 
         private static void CheckComponents(GameObject root, ValidationIssues issues)

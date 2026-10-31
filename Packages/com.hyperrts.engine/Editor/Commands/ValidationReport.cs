@@ -25,6 +25,7 @@ namespace HyperRTS.Editor.Commands
             return new Issue
             {
                 severity = issue.Severity.ToString(),
+                rule = issue.Rule,
                 message = issue.Message,
                 asset = string.IsNullOrEmpty(asset) ? null : asset,
                 name = issue.Context == null ? null : issue.Context.name,
@@ -36,6 +37,7 @@ namespace HyperRTS.Editor.Commands
         public sealed class Issue
         {
             public string severity;
+            public string rule;
             public string message;
             public string asset;
             public string name;

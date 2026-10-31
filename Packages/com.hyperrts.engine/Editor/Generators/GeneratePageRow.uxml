@@ -3,6 +3,9 @@
     <ui:VisualElement class="hrts-row__grow">
       <ui:Label name="name" class="hrts-generate__name" />
       <ui:Label name="description" class="hrts-generate__description" />
+      <ui:Label name="sources" class="hrts-generate__description" />
+      <ui:Label name="outputs" class="hrts-generate__description" />
+      <ui:Label name="last-run" class="hrts-generate__last-run" />
     </ui:VisualElement>
     <ui:Button name="run" class="hrts-generate__run" text="Run" />
   </ui:VisualElement>

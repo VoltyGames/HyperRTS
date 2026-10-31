@@ -14,8 +14,14 @@ namespace HyperRTS.Editor.Generators
         /// <summary>Run position, lowest first; steps that use another's output come after it.</summary>
         public abstract int Order { get; }
 
-        /// <summary>One line on what the step writes.</summary>
+        /// <summary>One line on what the step makes.</summary>
         public abstract string Description { get; }
+
+        /// <summary>What the step reads: paths, or a short description when they are many.</summary>
+        public abstract string Sources { get; }
+
+        /// <summary>What the step writes: paths, or a short description when they are many. Never edit these by hand.</summary>
+        public abstract string Outputs { get; }
 
         /// <summary>False hides the step, e.g. engine steps that write into a read-only package.</summary>
         public virtual bool Available => true;

@@ -13,14 +13,20 @@ namespace HyperRTS.Editor.Validation
         public readonly string FixLabel;
         public readonly Action Fix;
 
-        public ValidationIssue(MessageType severity, string message, Object context, string fixLabel = null, Action fix = null)
+        /// <summary>The rule that found it, filled in by the validator.</summary>
+        public readonly string Rule;
+
+        public ValidationIssue(MessageType severity, string message, Object context, string fixLabel = null, Action fix = null, string rule = null)
         {
             Severity = severity;
             Message = message;
             Context = context;
             FixLabel = fixLabel;
             Fix = fix;
+            Rule = rule;
         }
+
+        public ValidationIssue FoundBy(string rule) => new(Severity, Message, Context, FixLabel, Fix, rule);
 
         public override string ToString() => $"HyperRTS: {Message} ({(Context != null ? Context.name : "project")})";
     }

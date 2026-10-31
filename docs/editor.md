@@ -20,16 +20,16 @@ follows the [UI rule](../CLAUDE.md#conventions).
 | --- | --- |
 | **Maps** | Lists every map spec with its last build result, and builds them. **New blank scene...** starts a scene |
 | **Catalog** | Every unit and building in one editable stats table, and the tech tree |
-| **Validate** | Setup problems in prefabs and open scenes, with quick fixes |
+| **Validate** | Every rule's issues in prefabs, assets and open scenes, grouped by rule and asset, with quick fixes |
 | **Play** | Cheats, network tools, bot matches and replays. See [Play-mode debugging](#play-mode-debugging) |
-| **Generate** | Every generator, each with **Run**, plus **Run all** |
+| **Generate** | Every generator with what it reads and writes and its last run, each with **Run**, plus **Run all** |
 
 **New blank scene...** asks for map size, player count and an optional starting base. It builds a scene with
 light, ground, the `RTSWorld` rig and a SubScene holding the `Match`. See [scenes from code](#scenes-from-code).
 
 To add a page, subclass `HubPage` in any editor assembly. Set `Title` and `Order`, return the content from
 `Build()` and drop callbacks in `Release()`. Engine pages clone their `<Page>.uxml` layout there with
-`EditorAssets.Layout(typeof(Page)).Instantiate()` and wire its elements by name with `Require<T>(name)`. An optional `Badge` shows short text such as an error count.
+`EditorAssets.Layout(typeof(Page)).Instantiate()` and wire its elements by name with `Require<T>(name)`. An optional `Badge` shows short text such as the Validate page's `3E 12W` (errors and warnings).
 `ToolsWindow.Show<TPage>()` opens the window on a page.
 
 ## Commands
@@ -47,8 +47,8 @@ command both call that method. Long commands run as detached jobs (`unity comman
 | `map_views <map>` | `MapViewCapture.Capture` | The view image paths |
 | `map_keys` | `MapKeyReference.Text` | Every key a spec may name, as Markdown |
 | `effect_build [spec]` | `EffectGraphBuilder.Build` | Each graph built, with its `Problem` and `ShaderErrors` |
-| `generate [name]` | `GeneratorRunner.Run` or `RunAll` | The generators run |
-| `validate` | `ProjectValidator.Run` | Error and warning counts, then each issue's severity, message, asset path and fix label |
+| `generate [name] [--list true]` | `GeneratorRunner.Run` or `RunAll` | Each generator run (or, with `list`, every one) with its sources, outputs and last run |
+| `validate` | `ProjectValidator.Run` | Error and warning counts, then each issue's rule, severity, message, asset path and fix label |
 
 `<map>` is a map name or its spec path, and `[spec]` a graph name or its `.effect.json` path; an unknown one fails,
 naming it. The commands carry the tags `hyperrts/maps`, `hyperrts/effects`, `hyperrts/generate` and
@@ -65,15 +65,19 @@ while it awaits.
 ## Generators
 
 A `Generator` is one step that creates generated assets. Subclass it in the engine or a game and it appears on the
-Generate page. It has a unique `Name`, a `Group` heading, an `Order`, a one-line `Description` and a `Run()`
-method. A step that uses another's output must come after it.
+Generate page. It has a unique `Name`, a `Group` heading, an `Order`, a one-line `Description`, its `Sources` and
+`Outputs` (paths, or a short description when they are many) and a `Run()` method. A step that uses another's output
+must come after it. An import hook that keeps an output current calls its generator through `GeneratorRunner.Run`,
+so an import and a manual run do the same work. Each run's time and result go to `Library/HyperRTS/GeneratorRuns.json`,
+which the page and `generate --list true` show.
 
 **Run all** runs every generator in order and saves assets after each. The `generate` [command](#commands) runs one
 or all of them. In batch mode, call `HyperRTS.Editor.Generators.GeneratorRunner.RunAll` with `-executeMethod`. To
 change generated output, change the generator and run it again.
 
-The engine has two: **Component icons** for the authoring icons, and **Environment textures** for the cloud
-shadow cookie, road edge noise, terrain noise and water ripple normals. They write into the package, so they only show when it is embedded or local.
+The engine has four: **Component icons**, **Environment textures** (the cloud shadow cookie, road edge noise,
+terrain noise and water ripple normals), **Terrain micro detail** and **Effect graphs**. The first three write into
+the package, so they only show when it is embedded or local.
 
 ## Creation menus
 
@@ -128,7 +132,10 @@ owner's colour.
 A component needs its own editor only for extra UI or handles. Subclass `AuthoringEditor` and override
 `BuildHeader`, `BuildFooter` or `Refresh`. For handles, use `GroundHandles.EditBox` or `EditRadius` in
 `OnSceneGUI`; each drag is one undo step. Editor layouts are `.uxml` files beside their scripts, and each one
-except row templates links the shared `Editor/Common/HyperRTSEditor.uss` with a `<Style>` tag. `EditorAssets.Layout(type, part)` finds
+except row templates links the shared `Editor/Common/HyperRTSEditor.uss` with a `<Style>` tag, then its feature's
+own sheet beside it (`MapEditor.uss`, `Issues.uss`, `ToolsWindow.uss`...). Row templates take their styles from the
+layout they are cloned into. The shared sheet holds the layout classes and the colour tokens (`--hrts-border`,
+`--hrts-dim-text`, `--hrts-error`, `--hrts-warning`) the feature sheets use. `EditorAssets.Layout(type, part)` finds
 `<Type><part>.uxml` in the engine package, caches it and throws when it is missing. Rows built from data clone a row
 template such as `MapsPageRow.uxml` with `CloneRoot()`. Toggle visibility with `SetHidden` and `SetInvisible` from
 `HUDElements`, which set the `hrts-hidden` and `hrts-invisible` classes, not inline styles.
@@ -151,6 +158,10 @@ The same rules run in the inspector, on the **Validate** page, in the console on
 `validate` [command](#commands), and in the `ValidationTests.ProjectHasNoValidationErrors` test. Prefab and asset
 rules run only in the full pass, after the component rules. The prefab and asset sets are kept between passes until
 the next import, delete or move. A quick fix is one undo step. Closed SubScenes are not checked.
+
+The Validate page groups the issues by rule, errors first, then by asset. **Selection only** shows just the issues
+on the selected objects, their children and their prefab assets. Its sidebar badge counts errors and warnings, such
+as `3E 12W`.
 
 ## Scenes from code
 

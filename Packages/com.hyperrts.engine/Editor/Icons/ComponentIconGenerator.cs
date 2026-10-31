@@ -39,6 +39,10 @@ namespace HyperRTS.Editor.Icons
 
         public override string Description => "Module icons for the engine's authoring components.";
 
+        public override string Sources => "Module colours in ComponentIconGenerator.cs";
+
+        public override string Outputs => "One PNG per module in Packages/com.hyperrts.engine/Editor/Icons/";
+
         public override bool Available => EnginePackage.Writable;
 
         public override void Run()

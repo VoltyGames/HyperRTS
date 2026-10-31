@@ -14,6 +14,15 @@ namespace HyperRTS.Editor.Validation
         public void Warn(Object context, string message, string fixLabel = null, Action fix = null) =>
             Add(new ValidationIssue(MessageType.Warning, message, context, fixLabel, fix));
 
+        /// <summary>Names the rule behind every issue added since <paramref name="start"/>.</summary>
+        public void StampFrom(int start, string rule)
+        {
+            for (var i = start; i < Count; i++)
+            {
+                this[i] = this[i].FoundBy(rule);
+            }
+        }
+
         public void Info(Object context, string message) =>
             Add(new ValidationIssue(MessageType.Info, message, context));
     }
