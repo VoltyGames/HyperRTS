@@ -101,6 +101,21 @@ namespace HyperRTS.Editor.Maps.Generation
             .Where(IsSpec)
             .ToArray();
 
+        /// <summary>The project's spec for a map name or spec path; throws naming the map and listing the known ones.</summary>
+        public static string Find(string map) => Find(map, All());
+
+        public static string Find(string map, string[] specs)
+        {
+            var normalized = map.Replace('\\', '/');
+            var matches = specs.Where(spec => spec == normalized || MapName(spec) == normalized).ToArray();
+            return matches.Length switch
+            {
+                1 => matches[0],
+                0 => throw new ArgumentException($"HyperRTS: no map spec is named '{map}'. Maps: {string.Join(", ", specs.Select(MapName))}."),
+                _ => throw new ArgumentException($"HyperRTS: {matches.Length} map specs are named '{map}': {string.Join(", ", matches)}. Pass the spec path."),
+            };
+        }
+
         /// <summary>The spec one folder above a map scene's Generated folder, or null when the scene was not built from one.</summary>
         public static string SpecBeside(string scenePath)
         {

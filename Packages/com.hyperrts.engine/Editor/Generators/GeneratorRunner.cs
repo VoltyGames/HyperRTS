@@ -26,6 +26,14 @@ namespace HyperRTS.Editor.Generators
             return all;
         }
 
+        /// <summary>The available generator with this name; throws listing the names when there is none.</summary>
+        public static Generator Find(string name)
+        {
+            var all = All();
+            return all.FirstOrDefault(generator => generator.Name == name)
+                ?? throw new ArgumentException($"HyperRTS: no generator is named '{name}'. Generators: {string.Join(", ", all.Select(generator => generator.Name))}.");
+        }
+
         /// <summary>Runs every generator in order; also the batch-mode entry (-executeMethod).</summary>
         public static void RunAll()
         {

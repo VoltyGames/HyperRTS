@@ -13,6 +13,7 @@
         "Unity.NetCode",
         "Unity.NetCode.Authoring.Hybrid",
         "Unity.Networking.Transport",
+        "Unity.Pipeline.Attributes",
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.Scenes",
         "Unity.Transforms"

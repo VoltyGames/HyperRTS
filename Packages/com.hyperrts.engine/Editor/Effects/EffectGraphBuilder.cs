@@ -62,6 +62,14 @@ namespace HyperRTS.Editor.Effects
             AssetDatabase.FindAssets("effect t:TextAsset").Select(AssetDatabase.GUIDToAssetPath)
                 .Where(path => path.EndsWith(EffectGraphSpec.Extension, StringComparison.Ordinal)).Distinct().OrderBy(path => path);
 
+        /// <summary>The spec for a graph name (<c>FX_Smoke_01</c>) or spec path; throws naming the graph when there is none.</summary>
+        public static string FindSpec(string graph)
+        {
+            var normalized = graph.Replace('\\', '/');
+            return SpecPaths().FirstOrDefault(path => path == normalized || Path.GetFileName(path) == normalized + EffectGraphSpec.Extension)
+                ?? throw new ArgumentException($"HyperRTS: no effect graph spec is named '{graph}'.");
+        }
+
         /// <summary>What is wrong with the graph of the spec at <paramref name="jsonPath"/>, null when it is current.</summary>
         public static string Problem(string jsonPath)
         {

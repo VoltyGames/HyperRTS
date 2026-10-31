@@ -21,6 +21,7 @@
     "com.unity.netcode": "7.1.0",
     "com.unity.inputsystem": "7.0.0",
     "com.unity.nuget.newtonsoft-json": "3.2.2",
+    "com.unity.pipeline": "0.8.0-exp.1",
     "com.unity.render-pipelines.universal": "17.7.0",
     "com.unity.visualeffectgraph": "17.7.0"
   }

@@ -1,19 +1,28 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Report;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Editor.Maps.Tools
 {
-    /// <summary>Builds maps from editor UI: asks to save open scenes first and puts the scenes back afterwards.</summary>
+    /// <summary>
+    /// Builds maps for the Tools window and the commands: saves or keeps the open scenes first and puts the scenes
+    /// back afterwards.
+    /// </summary>
     public static class MapBuildCommands
     {
-        /// <summary>Builds one spec; does nothing if the user cancels saving the open scenes.</summary>
-        public static MapReport Build(string spec)
+        /// <summary>
+        /// Builds one spec. With <paramref name="ask"/> the user may save or cancel; without it, unsaved scenes
+        /// throw, since a build opens its own scene and an agent can't answer a dialog.
+        /// </summary>
+        public static MapReport Build(string spec, bool ask = true)
         {
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            if (!ScenesSaved(ask))
             {
                 return null;
             }
@@ -25,10 +34,10 @@ namespace HyperRTS.Editor.Maps.Tools
         }
 
         /// <summary>Builds every spec in the project with a progress bar.</summary>
-        public static List<MapReport> BuildAll()
+        public static List<MapReport> BuildAll(bool ask = true)
         {
             var results = new List<MapReport>();
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            if (!ScenesSaved(ask))
             {
                 return results;
             }
@@ -50,6 +59,23 @@ namespace HyperRTS.Editor.Maps.Tools
             }
 
             return results;
+        }
+
+        private static bool ScenesSaved(bool ask)
+        {
+            if (ask)
+            {
+                return EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
+            }
+
+            var unsaved = Enumerable.Range(0, SceneManager.sceneCount).Select(SceneManager.GetSceneAt).Where(scene => scene.isDirty).ToList();
+            if (unsaved.Count > 0)
+            {
+                var names = string.Join(", ", unsaved.Select(scene => string.IsNullOrEmpty(scene.path) ? scene.name : scene.path));
+                throw new InvalidOperationException($"HyperRTS: save or discard the changes to {names} first: a map build opens its own scene.");
+            }
+
+            return true;
         }
 
         private static void Reopen(string scene)

@@ -32,15 +32,45 @@ To add a page, subclass `HubPage` in any editor assembly. Set `Title` and `Order
 `EditorAssets.Layout(typeof(Page)).Instantiate()` and wire its elements by name with `Require<T>(name)`. An optional `Badge` shows short text such as an error count.
 `ToolsWindow.Show<TPage>()` opens the window on a page.
 
+## Commands
+
+Each Tools window action an agent needs is also a command of the `com.unity.pipeline` package, run from any shell
+with `unity command <name> [args]` while the Editor is open. A command is a thin `[CliCommand]` wrapper in an
+`Editor/Commands/` folder: the work lives in a method on the type that owns it, and the Tools window button and the
+command both call that method. Long commands run as detached jobs (`unity command --detach`).
+
+| Command | Calls | Returns |
+| --- | --- | --- |
+| `map_preview <map>` | `MapPreview.Run` | Issues, land shares, counts, the preview report and image paths |
+| `map_build <map>` | `MapBuildCommands.Build` | Rush times, paths and issues, the report, image and views paths |
+| `map_build_all` | `MapBuildCommands.BuildAll` | One summary per map |
+| `map_views <map>` | `MapViewCapture.Capture` | The view image paths |
+| `map_keys` | `MapKeyReference.Text` | Every key a spec may name, as Markdown |
+| `effect_build [spec]` | `EffectGraphBuilder.Build` | Each graph built, with its `Problem` and `ShaderErrors` |
+| `generate [name]` | `GeneratorRunner.Run` or `RunAll` | The generators run |
+| `validate` | `ProjectValidator.Run` | Error and warning counts, then each issue's severity, message, asset path and fix label |
+
+`<map>` is a map name or its spec path, and `[spec]` a graph name or its `.effect.json` path; an unknown one fails,
+naming it. The commands carry the tags `hyperrts/maps`, `hyperrts/effects`, `hyperrts/generate` and
+`hyperrts/validate`, so `unity command --tag hyperrts` lists them with their arguments. `map_build` and
+`map_build_all` fail while an open scene has unsaved changes, since a build opens its own scene and a command can't
+answer the save dialog.
+
+To add a command, write a static method in an `Editor/Commands/` class of any editor assembly that references
+`Unity.Pipeline.Attributes`, tag it `[CliCommand("name", "what it does", Tags = new[] { "<area>" })]` and its
+parameters `[CliArg]`. Return a small result (counts, issues, file paths) and name the full report file rather than
+returning it. Throw to fail: the message reaches the caller. An `async Task<T>` method runs off the main thread
+while it awaits.
+
 ## Generators
 
 A `Generator` is one step that creates generated assets. Subclass it in the engine or a game and it appears on the
 Generate page. It has a unique `Name`, a `Group` heading, an `Order`, a one-line `Description` and a `Run()`
 method. A step that uses another's output must come after it.
 
-**Run all** runs every generator in order and saves assets after each. In batch mode, call
-`HyperRTS.Editor.Generators.GeneratorRunner.RunAll` with `-executeMethod`. To change generated output, change the
-generator and run it again.
+**Run all** runs every generator in order and saves assets after each. The `generate` [command](#commands) runs one
+or all of them. In batch mode, call `HyperRTS.Editor.Generators.GeneratorRunner.RunAll` with `-executeMethod`. To
+change generated output, change the generator and run it again.
 
 The engine has two: **Component icons** for the authoring icons, and **Environment textures** for the cloud
 shadow cookie, road edge noise, terrain noise and water ripple normals. They write into the package, so they only show when it is embedded or local.
@@ -115,8 +145,8 @@ Rules are found in every editor assembly, so a game adds its own the same way. W
 authoring type. A rule about components marked by an attribute derives from `AuthoringRule<Component>` and
 overrides `AppliesTo`.
 
-The same rules run in the inspector, on the **Validate** page, in the console on entering Play mode, and in the
-`ValidationTests.ProjectHasNoValidationErrors` test. A quick fix is one undo step. Closed SubScenes are not
+The same rules run in the inspector, on the **Validate** page, in the console on entering Play mode, from the
+`validate` [command](#commands), and in the `ValidationTests.ProjectHasNoValidationErrors` test. A quick fix is one undo step. Closed SubScenes are not
 checked.
 
 ## Scenes from code

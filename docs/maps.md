@@ -16,9 +16,9 @@ the match camera.
 | Stage | How to run it | Writes |
 | --- | --- | --- |
 | Edit | Any text editor. **HyperRTS ▸ Map Editor** shows the result | The spec |
-| Preview | The Map Editor, `MapPreview.Run(spec)` or batch `.Preview` | Layout image, issues and land figures |
-| Build | **Build** in the Map Editor or on **HyperRTS ▸ Tools ▸ Maps**, `MapBuilder.Build(spec)` or batch `.Build` | Scene, SubScene, assets, report, minimap, views |
-| Views | Every build with graphics, or **Recapture views** in the Map Editor | Screenshots in `Logs/MapReports/<Map>/`, and their contrast in the report |
+| Preview | The Map Editor, the `map_preview` [command](editor.md#commands) or batch `.Preview` | Layout image, issues and land figures |
+| Build | **Build** in the Map Editor or on **HyperRTS ▸ Tools ▸ Maps**, `map_build` or batch `.Build` | Scene, SubScene, assets, report, minimap, views |
+| Views | Every build with graphics, **Recapture views** in the Map Editor, or `map_views` | Screenshots in `Logs/MapReports/<Map>/`, and their contrast in the report |
 
 A preview needs no scene. It does not measure rush times or attack paths; only a build does.
 
@@ -308,9 +308,11 @@ load. Run it in a test on your library.
 | --- | --- |
 | `-executeMethod HyperRTS.Editor.Maps.Tools.MapCommandLine.Build -map <spec>` | Builds one map |
 | `...MapCommandLine.Preview -map <spec>` | Previews one map |
+| `map_preview`, `map_build`, `map_build_all`, `map_views`, `map_keys` | The same with the Editor open, as [commands](editor.md#commands) |
 | `MapPreview.Run`, `MapBuilder.Build`, `MapViewCapture.Capture` | The same from editor code |
-| `MapBuildCommands.Build(spec)`, `.BuildAll()` | Builds as the editor does, saving and reopening scenes |
+| `MapBuildCommands.Build(spec)`, `.BuildAll()` | Builds as the editor does, saving and reopening scenes; with `ask: false` unsaved scenes throw instead |
 | `MapKeyReference.Write(path, MapLibrary.Load())` | Writes a Markdown list of every `kind` a spec may name |
+| `MapPaths.Find(map)` | The spec for a map name or spec path, as the commands take it |
 
 Batch runs exit with 0 when the report passes, 1 on report errors, and 2 on a crash or a missing `-map`. Add
 `-nographics` to build without lighting, minimap and views.
