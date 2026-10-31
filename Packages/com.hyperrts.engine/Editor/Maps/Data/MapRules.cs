@@ -1,5 +1,5 @@
-using System;
 using System.Collections.Generic;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using UnityEngine;
 
@@ -7,15 +7,12 @@ namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>
     /// The thresholds a map is measured against and the match settings it is built with (the built scene's match
-    /// takes its nav cell size, building gap and max slope from here). Exactly one <c>*.rules.json</c> per project.
+    /// takes its nav cell size, building gap and max slope from here). Exactly one <c>*.rules.asset</c> per project.
     /// </summary>
-    [Serializable]
     [MapLibraryItem("rules")]
-    public sealed class MapRules : IMapLibraryItem
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Rules", fileName = "New.rules")]
+    public sealed class MapRules : MapLibraryItem
     {
-        [NonSerialized]
-        public string name;
-
         [Tooltip("Pathfinding cell size the built match uses (metres).")]
         public float navCellSize = 1f;
 
@@ -53,8 +50,6 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Closest match camera height (metres), for close-up screenshots.")]
         public float viewCloseHeight = 18f;
 
-        public MapModeRules Mode(string mode) => MapKeys.Get(modes, mode, name, "mode");
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => name = key;
+        public MapModeRules Mode(string mode) => MapKeys.Get(modes, mode, key, "mode");
     }
 }

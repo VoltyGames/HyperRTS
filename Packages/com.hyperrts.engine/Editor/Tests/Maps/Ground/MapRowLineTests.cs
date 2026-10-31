@@ -97,18 +97,19 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         private static MapClimate Climate(RowCrop crop)
         {
             var tramlines = new MapTramlines { spacing = Spacing, width = Width, layer = "Wheels" };
-            return new MapClimate
+            var climate = MapFixture.Item<MapClimate>("Test");
+            climate.groundSurface = "Ground";
+            climate.layers.Add(MapFixture.Item<MapClimateLayer>("Soil"));
+            climate.layers.Add(MapFixture.Item<MapClimateLayer>("Wheels"));
+            climate.surfaces.Add(MapFixture.Item<MapClimateSurface>("Ground", i => i.layer = "Soil"));
+            climate.surfaces.Add(MapFixture.Item<MapClimateSurface>("Sown", i =>
             {
-                name = "Test",
-                groundSurface = "Ground",
-                layers = new List<MapClimateLayer> { new() { key = "Soil" }, new() { key = "Wheels" } },
-                surfaces = new List<MapClimateSurface>
-                {
-                    new() { key = "Ground", layer = "Soil" },
-                    new() { key = "Sown", layer = "Soil", rowCrop = "Crop", tramlines = tramlines },
-                },
-                rowCrops = new List<MapClimateRowCrop> { new() { key = "Crop", crop = crop } },
-            };
+                i.layer = "Soil";
+                i.rowCrop = "Crop";
+                i.tramlines = tramlines;
+            }));
+            climate.rowCrops.Add(MapFixture.Item<MapClimateRowCrop>("Crop", i => i.crop = crop));
+            return climate;
         }
 
         /// <summary>Whether the plant's cell is sown by <paramref name="field"/>.</summary>

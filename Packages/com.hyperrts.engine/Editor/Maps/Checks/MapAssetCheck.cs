@@ -34,7 +34,7 @@ namespace HyperRTS.Editor.Maps.Checks
 
         private void ClimateAssets()
         {
-            var name = $"Climate '{Climate.name}'";
+            var name = $"Climate '{Climate.key}'";
             foreach (var problem in MapTerrainTextures.Problems(Climate))
             {
                 Issues.Error($"{name}: {problem}");
@@ -111,14 +111,17 @@ namespace HyperRTS.Editor.Maps.Checks
                         $"Palette prefab '{entry.prefab.name}' needs a Display Name: generated objects are renamed.");
                 }
 
-                var sceneryEntity = entry.backdropModel != null && entry.backdropModel.GetComponentInChildren<AuthoringBehaviour>(true) != null;
-                Require(!sceneryEntity, $"Prop '{entry.key}': backdrop model '{entry.backdropModel?.name}' must be a plain model, not an entity prefab.");
+                var backdrop = entry.backdropModel;
+                if (backdrop != null && backdrop.GetComponentInChildren<AuthoringBehaviour>(true) != null)
+                {
+                    Require(false, $"Prop '{entry.key}': backdrop model '{backdrop.name}' must be a plain model, not an entity prefab.");
+                }
             }
         }
 
         private void ClimateKeys()
         {
-            var name = $"Climate '{Climate.name}'";
+            var name = $"Climate '{Climate.key}'";
             Surface(Climate.groundSurface, $"{name} ground");
             Surface(Climate.baseSurface, $"{name} base");
             Surface(Climate.slopeSurface, $"{name} slope");

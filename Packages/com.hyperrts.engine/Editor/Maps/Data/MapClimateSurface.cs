@@ -1,4 +1,4 @@
-using System;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,13 +6,10 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A named ground type: its terrain layer and what grows or lies on it.</summary>
-    [Serializable]
     [MapLibraryItem("surface")]
-    public sealed class MapClimateSurface : IMapKeyed, IMapLibraryItem
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Surface", fileName = "New.surface")]
+    public sealed class MapClimateSurface : MapLibraryItem
     {
-        [NonSerialized]
-        public string key;
-
         [Tooltip("Key of the terrain layer this surface paints.")]
         [MapKey(typeof(MapClimateLayer))]
         public string layer;
@@ -52,9 +49,5 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("How far the edge line wanders (metres); larger wander also waves more slowly. The smaller of the two sides wins.")]
         public float edgeWander;
-
-        string IMapKeyed.Key => key;
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;
     }
 }

@@ -253,17 +253,20 @@ needs graphics.
 
 ## Map library
 
-The library holds the game's map content as JSON files, one per item, named `<Key>.<type>.json` anywhere under
-`Assets/`. The key is the file name and is unique per type, so `Stubble` can be a layer, a plant and a surface. A
-missing, duplicate or unreadable file throws, naming the file. So does any field the item doesn't read, at any
-depth, and a file whose `version` is not 1. Formats stay at 1 until the first release: a change migrates every
-file.
+The library holds the game's map content as ScriptableObject assets, one per item, named `<Key>.<type>.asset`
+anywhere under `Assets/`, such as `Stubble.surface.asset`. The key is the asset name before its type suffix and is
+unique per type, so `Stubble` can be a layer, a plant and a surface. **Assets ▸ Create ▸ HyperRTS ▸ Map Library**
+makes each type; rename the new asset to its key.
 
-Each item holds placement data and links to its Unity assets. The assets are ordinary files edited in Unity,
-never generated from the JSON. A link is `{ "path": "Assets/...", "guid": "..." }` and loads by GUID, so moving
-or renaming an asset never breaks it. `MapLibraryRefSync` keeps the pair in step: saving a file fills in the GUIDs
-of the paths it names, so to relink, edit the path, and moving an asset writes its new path into every file that
-links it. An unused link is `{ "path": "", "guid": "" }`.
+Each item holds placement data and links to its Unity assets as ordinary object fields, so Unity tracks moves and
+renames, and the Inspector edits it with asset pickers. A string field that names another item shows a dropdown of
+that type's keys. `MapLibrary.Load` indexes the project's items, and each item a build asks for loads as a copy the
+library owns, so a build fills in derived fields without touching the asset. A misnamed asset or a duplicate key
+throws, naming both assets.
+
+Edit items in the Inspector, or from a script or command through `SerializedObject` (the pipeline's
+`set_serialized_field` or `batch`). Never edit their YAML by hand: Unity drops a field it doesn't know without a
+word.
 
 | Type | Holds |
 | --- | --- |
@@ -287,20 +290,22 @@ slot n uses `sides[(n - 1) % count]` by default.
 
 A climate pulls in the layers, trees, plants and decals its surfaces and kits use, in a fixed order, so indices
 change only when the data does. A climate holds at most 16 layers. Its terrain texture arrays are generated into a
-`Generated` folder beside its file and rebuilt when a source texture or layer changes.
+`Generated` folder beside its asset and rebuilt when a source texture or layer changes.
 
-### Keys and asset fields
+### Keys and checks
 
-A string field that names another item carries `[MapKey(typeof(...))]`. A `MapAssetRef` field carries
-`[MapAsset(typeof(...))]` with the asset type it links. `MapLibraryProblems.Find(root)` lists keys that don't resolve and assets that don't
-load. Run it in a test on your library.
+A string field that names another item carries `[MapKey(typeof(...))]`, which the Inspector draws as a dropdown.
+`MapLibraryRule`, a [validation rule](editor.md#validation), reports a misnamed asset, a duplicate key, an item whose
+load check fails (an empty list entry, or a tree whose destructibles are neither one per prefab nor none), a key
+that names no item and a link to an asset that no longer exists, on the Validate page and from `validate`.
 
 ### Adding an item type
 
-1. Add a class in `Data/` that implements `IMapLibraryItem`, plus `IMapKeyed` if other items name it.
-2. Give it a `[MapLibraryItem("<type>", ...)]` attribute and add it to `MapLibrary`'s type list.
-3. Hook it into builds through `MapClimateAssembly` or `MapLibrary.Palette`.
-4. Check its keys in `MapAssetCheck` and list them in `MapKeyReference`.
+1. Add a class in `Data/` that derives from `MapLibraryItem`, with `[MapLibraryItem("<type>")]` and a
+   `[CreateAssetMenu]` under `HyperRTSMenu.MapLibrary`, and add it to `MapLibrary`'s type list. Override `Load` to
+   fill fields it derives from its data.
+2. Hook it into builds through `MapClimateAssembly` or `MapLibrary.Palette`.
+3. Check its keys in `MapAssetCheck` and list them in `MapKeyReference`.
 
 ## Batch and scripted entry points
 
@@ -319,7 +324,7 @@ Batch runs exit with 0 when the report passes, 1 on report errors, and 2 on a cr
 
 ## What a game supplies
 
-- **A map library**: the item files above and the Unity assets they name.
+- **A map library**: the item assets above and the Unity assets they link.
 - **Specs**, each in its own folder.
 - **An `IMapBuildHook`**, optionally. It runs after every build with the spec, report, minimap and overview, for
   example to list the map in the game's menus.

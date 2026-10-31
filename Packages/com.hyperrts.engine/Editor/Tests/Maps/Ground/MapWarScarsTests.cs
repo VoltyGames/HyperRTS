@@ -87,7 +87,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
             var spec = MapFixture.Spec();
             spec.warAge = warAge;
             var context = MapFixture.Context(spec, Climate(), new MapIssues());
-            context.Palette.entries.Add(new MapProp { key = "Wreck", size = new Vector2(3f, 6f) });
+            context.Palette.entries.Add(MapFixture.Item<MapProp>("Wreck", i => { i.size = new Vector2(3f, 6f); }));
             var asphalt = context.Climate.RoadClass("Asphalt");
             context.Shapes.AddRoad(MapFixture.RoadShape(asphalt, false, new Vector2(-120f, -20f), new Vector2(120f, -20f)));
             context.Shapes.AddRoad(MapFixture.RoadShape(asphalt, false, new Vector2(120f, 20f), new Vector2(-120f, 20f)));
@@ -106,15 +106,18 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         private static MapClimate Climate()
         {
             var climate = MapFixture.Climate();
-            climate.layers.Add(new MapClimateLayer { key = "Burnt" });
-            climate.decals.Add(new MapClimateDecal { key = "Crater" });
-            climate.decals.Add(new MapClimateDecal { key = "Puddle" });
+            climate.layers.Add(MapFixture.Item<MapClimateLayer>("Burnt"));
+            climate.decals.Add(MapFixture.Item<MapClimateDecal>("Crater"));
+            climate.decals.Add(MapFixture.Item<MapClimateDecal>("Puddle"));
             var dense = new MapWarDensity { cratersPerHectare = 10f, burnsPerHectare = 2f, wrecksPerHectare = 2f };
-            climate.war = new MapWarKit
+            climate.war = MapFixture.Item<MapWarKit>("Test", i =>
             {
-                key = "Test", frontline = dense, craterDecal = "Crater", wetDecal = "Puddle", burntLayer = "Burnt",
-                wrecks = { "Wreck" },
-            };
+                i.frontline = dense;
+                i.craterDecal = "Crater";
+                i.wetDecal = "Puddle";
+                i.burntLayer = "Burnt";
+                i.wrecks.AddRange(new[] { "Wreck" });
+            });
             return climate;
         }
     }

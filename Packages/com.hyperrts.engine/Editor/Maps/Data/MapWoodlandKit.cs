@@ -1,4 +1,4 @@
-using System;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,13 +6,10 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A kind of wood: canopy trees, a shrubby edge, clearings and the forest floor.</summary>
-    [Serializable]
     [MapLibraryItem("woodland")]
-    public sealed class MapWoodlandKit : IMapKeyed, IMapLibraryItem
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Woodland Kit", fileName = "New.woodland")]
+    public sealed class MapWoodlandKit : MapLibraryItem
     {
-        [NonSerialized]
-        public string key;
-
         [Tooltip("Forest floor.")]
         [MapKey(typeof(MapClimateSurface))]
         public string surface;
@@ -36,9 +33,5 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Share of the wood left as open glades.")]
         [Range(0f, 0.6f)]
         public float clearings = 0.12f;
-
-        string IMapKeyed.Key => key;
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;
     }
 }

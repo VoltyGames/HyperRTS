@@ -35,10 +35,14 @@ namespace HyperRTS.Editor.Tests.Maps
         {
             var prop = new Vector2(20f, -100f);
             var context = MapFixture.Context(MapFixture.Spec(), MapFixture.Climate(), new MapIssues());
-            var entry = new MapProp
+            var entry = MapFixture.Item<MapProp>("Dump", i =>
             {
-                key = "Dump", size = new Vector2(6f, 6f), pad = "Dirt", padMargin = 3f, padWander = 0f, padRound = round,
-            };
+                i.size = new Vector2(6f, 6f);
+                i.pad = "Dirt";
+                i.padMargin = 3f;
+                i.padWander = 0f;
+                i.padRound = round;
+            });
             context.Placements.All.Add(new MapPlacement(entry, prop, 0f, 1f));
 
             new MapBasePlanner(context).Plan();
@@ -171,17 +175,18 @@ namespace HyperRTS.Editor.Tests.Maps
 
         private static MapClimate Climate(float headlandWidth)
         {
-            var climate = new MapClimate();
-            climate.name = "Test";
+            var climate = MapFixture.Item<MapClimate>("Test");
             MapFixture.AddSurfaces(climate, "Wheat", "Sunflower", "Plowed", "Margin", "Meadow");
 
             climate.groundSurface = "Meadow";
-            climate.farmlandKits.Add(new MapFarmlandKit
+            climate.farmlandKits.Add(MapFixture.Item<MapFarmlandKit>("Farms", i =>
             {
-                key = "Farms", fieldSize = new Vector2(60f, 40f), marginSurface = "Margin", minField = 200f,
-                headlandWidth = headlandWidth,
-                crops = new List<MapCropShare> { new() { surface = "Wheat" }, new() { surface = "Sunflower" }, new() { surface = "Plowed" } },
-            });
+                i.fieldSize = new Vector2(60f, 40f);
+                i.marginSurface = "Margin";
+                i.minField = 200f;
+                i.headlandWidth = headlandWidth;
+                i.crops = new List<MapCropShare> { new() { surface = "Wheat" }, new() { surface = "Sunflower" }, new() { surface = "Plowed" } };
+            }));
             return climate;
         }
     }

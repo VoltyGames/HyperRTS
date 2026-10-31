@@ -1,4 +1,4 @@
-using System;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
@@ -8,18 +8,13 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>One placeable prefab.</summary>
-    [Serializable]
-    [MapLibraryItem("prop", "prefab", "backdropModel")]
-    public sealed class MapProp : IMapKeyed, IMapLibraryItem
+    [MapLibraryItem("prop")]
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Prop", fileName = "New.prop")]
+    public sealed class MapProp : MapLibraryItem
     {
-        [NonSerialized]
-        public string key;
-
-        [NonSerialized]
         public GameObject prefab;
 
         /// <summary>Visual-only model drawn on the terrain where the prop falls in the backdrop; null leaves it out there.</summary>
-        [NonSerialized]
         public GameObject backdropModel;
 
         [Tooltip("Footprint (width across, depth along the prefab's forward) in metres; spacing and levelling use it.")]
@@ -92,14 +87,5 @@ namespace HyperRTS.Editor.Maps.Data
         public bool IsGameplay =>
             prefab.GetComponentInChildren<GameEntityAuthoring>(true) != null
             || prefab.GetComponentInChildren<ResourceNodeAuthoring>(true) != null;
-
-        string IMapKeyed.Key => key;
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs)
-        {
-            this.key = key;
-            prefab = refs.Asset<GameObject>(refs.prefab, "prefab");
-            backdropModel = refs.Asset<GameObject>(refs.backdropModel, "backdropModel");
-        }
     }
 }

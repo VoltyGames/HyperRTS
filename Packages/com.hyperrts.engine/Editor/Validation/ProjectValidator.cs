@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Validation.Rules;
@@ -47,13 +48,13 @@ namespace HyperRTS.Editor.Validation
 
             foreach (var rule in PrefabRules)
             {
-                rule.Check(prefabs, issues);
+                Guard(rule, () => rule.Check(prefabs, issues), issues);
             }
 
             var assets = AssetSet.InProject();
             foreach (var rule in AssetRules)
             {
-                rule.Check(assets, issues);
+                Guard(rule, () => rule.Check(assets, issues), issues);
             }
 
             issues.AddRange(OpenScenes());
@@ -76,6 +77,19 @@ namespace HyperRTS.Editor.Validation
             }
 
             return issues;
+        }
+
+        // A rule that throws on broken data reports it, so the rest of the pass still runs.
+        private static void Guard(object rule, Action check, ValidationIssues issues)
+        {
+            try
+            {
+                check();
+            }
+            catch (Exception e) when (e is InvalidOperationException or ArgumentException or KeyNotFoundException)
+            {
+                issues.Error(null, $"{rule.GetType().Name} could not finish: {e.Message}");
+            }
         }
 
         private static void CheckComponents(GameObject root, ValidationIssues issues)

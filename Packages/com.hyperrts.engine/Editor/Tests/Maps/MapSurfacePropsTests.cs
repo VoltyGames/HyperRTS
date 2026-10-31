@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Tests.Maps
             var meadow = land.Add(new MapLandRegion(MapLandKind.Meadow, "Meadow"));
             land.ClaimWhere(land.Bounds, field, p => p.x < 0f);
             land.ClaimWhere(land.Bounds, meadow, p => p.x >= 0f);
-            var bale = new MapProp { key = "HayBale" };
+            var bale = MapFixture.Item<MapProp>("HayBale");
             var placements = new List<MapPlacement>();
             for (var i = 0; i < 6; i++)
             {

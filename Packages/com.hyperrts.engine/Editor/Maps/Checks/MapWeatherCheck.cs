@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Checks
     {
         public static void Check(MapClimate climate, MapIssues issues)
         {
-            var name = $"Climate '{climate.name}'";
+            var name = $"Climate '{climate.key}'";
             if (climate.weathers.Count == 0)
             {
                 issues.Error($"{name} lists no weathers.");

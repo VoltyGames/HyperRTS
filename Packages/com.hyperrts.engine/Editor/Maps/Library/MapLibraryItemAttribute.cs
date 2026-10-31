@@ -1,25 +1,15 @@
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 
 namespace HyperRTS.Editor.Maps.Library
 {
-    /// <summary>
-    /// Marks a map library item class: its type name (its files are <c>&lt;Key&gt;.&lt;name&gt;.json</c>) and the
-    /// <see cref="MapLibraryRefs"/> fields it reads, in the order editors show and write them ahead of its own fields.
-    /// </summary>
+    /// <summary>Marks a map library item class with its type name: its assets are <c>&lt;Key&gt;.&lt;name&gt;.asset</c>.</summary>
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class MapLibraryItemAttribute : Attribute
     {
-        public MapLibraryItemAttribute(string name, params string[] refs)
-        {
-            Name = name;
-            Refs = refs;
-        }
+        public MapLibraryItemAttribute(string name) => Name = name;
 
         public string Name { get; }
-
-        public IReadOnlyList<string> Refs { get; }
 
         public static MapLibraryItemAttribute Require(Type type) => type.GetCustomAttribute<MapLibraryItemAttribute>()
             ?? throw new ArgumentException($"HyperRTS: {type.Name} is not a map library item class.", nameof(type));

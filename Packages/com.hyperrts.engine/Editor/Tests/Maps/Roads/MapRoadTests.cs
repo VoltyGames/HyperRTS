@@ -165,8 +165,8 @@ namespace HyperRTS.Editor.Tests.Maps.Roads
             spec.props.Add(new MapPropSpec { pos = new MapPoint(x, -40f), kind = "Pumpjack" });
             var climate = MapFixture.Climate();
             var layout = MapFixture.Layout(spec);
-            var palette = new MapPalette { baseRadius = 15f };
-            palette.entries.Add(new MapProp { key = "Pumpjack", size = new Vector2(8f, 16f), pad = "Dirt" });
+            var palette = MapFixture.Item<MapPalette>("Palette", i => { i.baseRadius = 15f; });
+            palette.entries.Add(MapFixture.Item<MapProp>("Pumpjack", i => { i.size = new Vector2(8f, 16f); i.pad = "Dirt"; }));
             var issues = new MapIssues();
 
             MapPropPlacer.Place(layout, new MapShapes(layout, palette, climate), palette, climate, issues);

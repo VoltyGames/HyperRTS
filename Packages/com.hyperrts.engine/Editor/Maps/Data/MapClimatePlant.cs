@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Presentation.Environment.Grass;
 using UnityEngine;
@@ -7,22 +8,20 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A grass or small plant the map's <see cref="GrassRenderer"/> scatters: its models, material and sizes.</summary>
-    [Serializable]
-    [MapLibraryItem("plant", "meshes", "material", "card")]
-    public sealed class MapClimatePlant : IMapKeyed, IMapLibraryItem
+    [MapLibraryItem("plant")]
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Plant", fileName = "New.plant")]
+    public sealed class MapClimatePlant : MapLibraryItem
     {
-        [NonSerialized]
-        public string key;
-
         [Tooltip("The plant's models, each an FBX or mesh asset with one submesh, origin at the root.")]
-        [NonSerialized]
         public List<Mesh> meshes = new();
 
         [Tooltip("HyperRTS/Foliage material the models share.")]
-        [NonSerialized]
         public Material material;
 
-        [Tooltip("A card plant's measured size, which width and height scale. Empty for modelled plants.")]
+        [Tooltip("A card plant's <Key>.card.json, the size measured from its render, which width and height scale. Empty for modelled plants.")]
+        public TextAsset cardFile;
+
+        /// <summary>The size read from <see cref="cardFile"/> once loaded; null for a modelled plant.</summary>
         [NonSerialized]
         public MapPlantCard card;
 
@@ -42,14 +41,9 @@ namespace HyperRTS.Editor.Maps.Data
         [Range(0f, 1f)]
         public float clumping = 0.5f;
 
-        string IMapKeyed.Key => key;
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs)
+        protected internal override void Load()
         {
-            this.key = key;
-            meshes = refs.Assets<Mesh>(refs.meshes, "meshes");
-            material = refs.Asset<Material>(refs.material, "material");
-            var cardFile = refs.Asset<TextAsset>(refs.card, "card");
+            RequireFilled(meshes, "meshes");
             card = cardFile == null ? null : MapPlantCard.Read(cardFile);
         }
 

@@ -163,7 +163,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
             climate.Surface("Dirt").edgeWander = 0f;
             var issues = new MapIssues();
 
-            MapAssetCheck.Check(climate, new MapPalette(), issues);
+            MapAssetCheck.Check(climate, MapFixture.Item<MapPalette>("Palette"), issues);
 
             StringAssert.Contains("surface 'Meadow': edgeWidth 0", issues.ToString());
             StringAssert.Contains("surface 'Dirt': edgeWander 0", issues.ToString());
@@ -242,19 +242,19 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
             return inWood ? wood : MapLand.Unclaimed;
         }
 
-        private MapClimateLayer Layer(bool followsRows) => new()
+        private MapClimateLayer Layer(bool followsRows) => MapFixture.Item<MapClimateLayer>("Layer", i =>
         {
-            terrainLayer = _terrainLayer,
-            followsRows = followsRows,
-            heightBlend = 1.5f,
-            antiTiling = 0.6f,
-            rotation = 90f,
-            grass = 0.4f,
-        };
+            i.terrainLayer = _terrainLayer;
+            i.followsRows = followsRows;
+            i.heightBlend = 1.5f;
+            i.antiTiling = 0.6f;
+            i.rotation = 90f;
+            i.grass = 0.4f;
+        });
 
         private static MapClimate Climate(float width, float wander)
         {
-            var climate = new MapClimate { name = "Test", slopeStart = 30f, slopeFull = 40f };
+            var climate = MapFixture.Item<MapClimate>("Test", i => { i.slopeStart = 30f; i.slopeFull = 40f; });
             MapFixture.AddSurfaces(climate, width, wander, "Meadow", "A", "B");
             climate.groundSurface = climate.slopeSurface = "Meadow";
             climate.groundTint = new MapClimateGroundTint

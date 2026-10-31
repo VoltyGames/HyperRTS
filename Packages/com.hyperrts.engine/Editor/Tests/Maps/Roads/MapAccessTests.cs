@@ -33,11 +33,14 @@ namespace HyperRTS.Editor.Tests.Maps.Roads
             spec.roads.AddRange(roads);
             spec.ravines.AddRange(ravines);
             var context = MapFixture.Context(spec, MapFixture.Climate(), issues);
-            var entry = new MapProp
+            var entry = MapFixture.Item<MapProp>("Shed", i =>
             {
-                key = "Shed", size = new Vector2(6f, 6f), pad = "Dirt", padMargin = 3f, access = access,
-                sharedAccessDistance = 20f,
-            };
+                i.size = new Vector2(6f, 6f);
+                i.pad = "Dirt";
+                i.padMargin = 3f;
+                i.access = access;
+                i.sharedAccessDistance = 20f;
+            });
             context.Placements.All.Add(new MapPlacement(entry, Prop, 0f, 1f));
             return context;
         }
@@ -124,8 +127,8 @@ namespace HyperRTS.Editor.Tests.Maps.Roads
         [Test]
         public void APropWithZeroSharedAccessDistance_KeepsATrackOfItsOwn()
         {
-            var stack = new MapProp { key = "Stack", access = "Dirt", sharedAccessDistance = 20f };
-            var derrick = new MapProp { key = "Derrick", access = "Dirt", sharedAccessDistance = 0f };
+            var stack = MapFixture.Item<MapProp>("Stack", i => { i.access = "Dirt"; i.sharedAccessDistance = 20f; });
+            var derrick = MapFixture.Item<MapProp>("Derrick", i => { i.access = "Dirt"; i.sharedAccessDistance = 0f; });
             var props = new List<MapPlacement>
             {
                 new(stack, Vector2.zero, 0f, 1f), new(derrick, new Vector2(5f, 0f), 0f, 1f),

@@ -1,19 +1,15 @@
-using System;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A terrain texture layer, how the terrain shader lays it on the ground, and the grass that grows wherever it is painted.</summary>
-    [Serializable]
-    [MapLibraryItem("layer", "terrainLayer")]
-    public sealed class MapClimateLayer : IMapKeyed, IMapLibraryItem
+    [MapLibraryItem("layer")]
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Layer", fileName = "New.layer")]
+    public sealed class MapClimateLayer : MapLibraryItem
     {
-        [NonSerialized]
-        public string key;
-
         [Tooltip("Diffuse, normal and mask maps (mask: occlusion G, height B, smoothness A), tile size, normal scale, tint (Diffuse Remap Max) and mask remap.")]
-        [NonSerialized]
         public TerrainLayer terrainLayer;
 
         [Tooltip("Colour of this ground in the report's overview image.")]
@@ -44,13 +40,5 @@ namespace HyperRTS.Editor.Maps.Data
         [Tooltip("Share of their cover that scattered plants keep where this layer is painted, such as few stalks on burnt ground.")]
         [Range(0f, 1f)]
         public float plants = 1f;
-
-        string IMapKeyed.Key => key;
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs)
-        {
-            this.key = key;
-            terrainLayer = refs.Asset<TerrainLayer>(refs.terrainLayer, "terrainLayer");
-        }
     }
 }

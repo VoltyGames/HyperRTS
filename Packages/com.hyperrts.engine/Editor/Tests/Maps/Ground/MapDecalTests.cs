@@ -81,8 +81,8 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         {
             var climate = Climate(10f);
             climate.surfaces.Single(s => s.key == "Muddy").decals.Add(new MapDecalDensity { decal = "Tar", perHectare = 1f });
-            var palette = new MapPalette();
-            palette.entries.Add(new MapProp { key = "Shed", groundDecal = "Oil" });
+            var palette = MapFixture.Item<MapPalette>("Palette");
+            palette.entries.Add(MapFixture.Item<MapProp>("Shed", i => { i.groundDecal = "Oil"; }));
             var issues = new MapIssues();
 
             MapAssetCheck.Check(climate, palette, issues);
@@ -94,8 +94,8 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         [Test]
         public void AGroundDecalWithoutASize_IsAnErrorNamingIt()
         {
-            var palette = new MapPalette();
-            palette.entries.Add(new MapProp { key = "Shed", groundDecal = "Puddle" });
+            var palette = MapFixture.Item<MapPalette>("Palette");
+            palette.entries.Add(MapFixture.Item<MapProp>("Shed", i => { i.groundDecal = "Puddle"; }));
             var issues = new MapIssues();
 
             MapAssetCheck.Check(Climate(10f), palette, issues);
@@ -107,7 +107,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         public void AlongRoadDecals_SitOnTheTrackCentre_TurnedAlongIt_InEveryCopy()
         {
             var climate = Climate(0f);
-            climate.decals.Add(new MapClimateDecal { key = "Ruts", size = new Vector2(3f, 5f), randomRotation = false, alongRoad = true });
+            climate.decals.Add(MapFixture.Item<MapClimateDecal>("Ruts", i => { i.size = new Vector2(3f, 5f); i.randomRotation = false; i.alongRoad = true; }));
             var rutted = MapFixture.Surface("Rutted", "Dirt");
             rutted.decals.Add(new MapDecalDensity { decal = "Ruts", perHectare = 400f });
             climate.surfaces.Add(rutted);
@@ -137,10 +137,10 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         public void ADecalBothAlongRoadAndRandomlyTurned_IsAnErrorNamingIt()
         {
             var climate = Climate(10f);
-            climate.decals.Add(new MapClimateDecal { key = "Ruts", size = new Vector2(3f, 5f), alongRoad = true });
+            climate.decals.Add(MapFixture.Item<MapClimateDecal>("Ruts", i => { i.size = new Vector2(3f, 5f); i.alongRoad = true; }));
             var issues = new MapIssues();
 
-            MapAssetCheck.Check(climate, new MapPalette(), issues);
+            MapAssetCheck.Check(climate, MapFixture.Item<MapPalette>("Palette"), issues);
 
             Assert.IsTrue(issues.Errors.Any(e => e.Contains("Ruts") && e.Contains("alongRoad")), issues.ToString());
         }
@@ -149,8 +149,8 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         private static MapClimate WetClimate()
         {
             var climate = MapFixture.Climate();
-            climate.decals.Add(new MapClimateDecal { key = "Puddle", size = new Vector2(1f, 2f) });
-            climate.decals.Add(new MapClimateDecal { key = "Litter", size = new Vector2(1f, 2f), randomRotation = true });
+            climate.decals.Add(MapFixture.Item<MapClimateDecal>("Puddle", i => { i.size = new Vector2(1f, 2f); }));
+            climate.decals.Add(MapFixture.Item<MapClimateDecal>("Litter", i => { i.size = new Vector2(1f, 2f); i.randomRotation = true; }));
             var muddy = MapFixture.Surface("Muddy", "Meadow");
             muddy.decals.Add(new MapDecalDensity { decal = "Litter", perHectare = 40f });
             muddy.decals.Add(new MapDecalDensity { decal = "Puddle", perHectare = 80f, wet = true });
@@ -162,7 +162,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         private static MapClimate Climate(float perHectare)
         {
             var climate = MapFixture.Climate();
-            climate.decals.Add(new MapClimateDecal { key = "Puddle", size = new Vector2(1f, 2f), randomRotation = true });
+            climate.decals.Add(MapFixture.Item<MapClimateDecal>("Puddle", i => { i.size = new Vector2(1f, 2f); i.randomRotation = true; }));
             var muddy = MapFixture.Surface("Muddy", "Meadow");
             muddy.decals.Add(new MapDecalDensity { decal = "Puddle", perHectare = perHectare });
             climate.surfaces.Add(muddy);

@@ -182,7 +182,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         private static string[] ImpactErrors(MapClimate climate)
         {
             var issues = new MapIssues();
-            MapAssetCheck.Check(climate, new MapPalette(), issues);
+            MapAssetCheck.Check(climate, MapFixture.Item<MapPalette>("Palette"), issues);
             return issues.Errors.Where(e => e.Contains("impactClass")).ToArray();
         }
 
@@ -208,12 +208,10 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         private (MapCropBake Bake, RowCrop Crop, MapLand Land) PaintCrops(bool withRoad, Func<Vector2, float, float, bool> blocked)
         {
             var crop = Track(ScriptableObject.CreateInstance<RowCrop>());
-            var climate = new MapClimate
-            {
-                name = "Test",
-                surfaces = new List<MapClimateSurface> { new() { key = "Sown", rowCrop = "Crop" }, new() { key = "Track" } },
-                rowCrops = new List<MapClimateRowCrop> { new() { key = "Crop", crop = crop } },
-            };
+            var climate = MapFixture.Item<MapClimate>("Test");
+            climate.surfaces.Add(MapFixture.Item<MapClimateSurface>("Sown", i => i.rowCrop = "Crop"));
+            climate.surfaces.Add(MapFixture.Item<MapClimateSurface>("Track"));
+            climate.rowCrops.Add(MapFixture.Item<MapClimateRowCrop>("Crop", i => i.crop = crop));
             var land = new MapLand(new Rect(-32f, -32f, 64f, 64f));
             if (withRoad)
             {

@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Tools
             var text = new StringBuilder();
             text.AppendLine("# Map keys");
             text.AppendLine();
-            text.AppendLine("Generated from the map library whenever an item file changes; don't edit. Every `kind` a spec names must be listed here.");
+            text.AppendLine("Generated from the map library whenever an item changes; don't edit. Every `kind` a spec names must be listed here.");
             foreach (var climate in climates)
             {
                 Climate(text, climate);
@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Maps.Tools
 
         private static void Climate(StringBuilder text, MapClimate climate)
         {
-            text.AppendLine().AppendLine($"## Climate `{climate.name}`").AppendLine();
+            text.AppendLine().AppendLine($"## Climate `{climate.key}`").AppendLine();
             text.AppendLine("| Road class (`roads[].kind`) | Width | Surface | Verge | Rank | Levelled |").AppendLine("| --- | --- | --- | --- | --- | --- |");
             foreach (var road in climate.roadClasses)
             {

@@ -1,4 +1,4 @@
-using System;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,13 +9,10 @@ namespace HyperRTS.Editor.Maps.Data
     /// How a climate farms its land: field sizes on the grid, the crop mix, weedy margins, shelterbelts across the
     /// field ends and the dirt tracks beside them.
     /// </summary>
-    [Serializable]
     [MapLibraryItem("farmland")]
-    public sealed class MapFarmlandKit : IMapKeyed, IMapLibraryItem
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Farmland Kit", fileName = "New.farmland")]
+    public sealed class MapFarmlandKit : MapLibraryItem
     {
-        [NonSerialized]
-        public string key;
-
         [Tooltip("Field length along the rows (x) and width across them (y), in metres.")]
         public Vector2 fieldSize = new(160f, 80f);
 
@@ -54,9 +51,5 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Tooltip("Surfaces for the pieces too small or narrow to farm (fallow, pasture), one picked per field; empty leaves them margin.")]
         public List<MapCropShare> leftovers = new();
-
-        string IMapKeyed.Key => key;
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;
     }
 }

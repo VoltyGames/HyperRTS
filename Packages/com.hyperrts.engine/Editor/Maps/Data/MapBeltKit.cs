@@ -1,4 +1,4 @@
-using System;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,13 +6,10 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A shelterbelt or hedgerow: rows of trees with shrubs in the gaps and on the edges.</summary>
-    [Serializable]
     [MapLibraryItem("belt")]
-    public sealed class MapBeltKit : IMapKeyed, IMapLibraryItem
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Belt Kit", fileName = "New.belt")]
+    public sealed class MapBeltKit : MapLibraryItem
     {
-        [NonSerialized]
-        public string key;
-
         [Tooltip("Full width across the belt, shrub fringe included (metres).")]
         public float width = 8f;
 
@@ -39,9 +36,5 @@ namespace HyperRTS.Editor.Maps.Data
         public float gapEvery = 140f;
 
         public float gapWidth = 9f;
-
-        string IMapKeyed.Key => key;
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;
     }
 }

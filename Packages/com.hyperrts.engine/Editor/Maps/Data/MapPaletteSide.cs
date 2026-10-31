@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Match;
 using UnityEngine;
 
@@ -17,10 +16,6 @@ namespace HyperRTS.Editor.Maps.Data
         public List<MapStartItem> startKit = new();
 
         [Tooltip("AI Build Order asset of the side's bots; empty trains freely.")]
-        [MapAsset(typeof(AIBuildOrder))]
-        public MapAssetRef buildOrder = new();
-
-        [NonSerialized]
-        public AIBuildOrder buildOrderAsset;
+        public AIBuildOrder buildOrder;
     }
 }

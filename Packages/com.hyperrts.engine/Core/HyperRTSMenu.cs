@@ -10,6 +10,7 @@ namespace HyperRTS.Core
         public const string Combat = Root + "Combat/";
         public const string Effects = Root + "Effects/";
         public const string Environment = Root + "Environment/";
+        public const string MapLibrary = Root + "Map Library/";
         public const string Match = Root + "Match/";
         public const string Navigation = Root + "Navigation/";
         public const string Research = Root + "Research/";

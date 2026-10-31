@@ -97,13 +97,16 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         }
 
         [Test]
-        public void PlantFiles_NameTheirModelsAndMaterial_AndBecomeRendererPlants()
+        public void LibraryPlants_BecomeRendererPlants()
         {
-            const string json = "{\"version\": 1, \"meshes\": [], \"material\": {}, \"width\": {\"x\": 0.5, \"y\": 0.7}, " +
-                                "\"height\": {\"x\": 0.2, \"y\": 0.3}, \"density\": 12, \"clumping\": 0.4}";
-
-            var (item, _) = MapLibraryItemFile.Parse(typeof(MapClimatePlant), json, "Grass.plant.json");
-            var plant = ((MapClimatePlant)item).Plant();
+            var item = MapFixture.Item<MapClimatePlant>("Grass", i =>
+            {
+                i.width = new Vector2(0.5f, 0.7f);
+                i.height = new Vector2(0.2f, 0.3f);
+                i.density = 12f;
+                i.clumping = 0.4f;
+            });
+            var plant = item.Plant();
 
             Assert.AreEqual(new Vector2(0.5f, 0.7f), plant.width);
             Assert.AreEqual(new Vector2(0.2f, 0.3f), plant.height);
@@ -114,9 +117,11 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         [Test]
         public void CardPlants_ScaleTheirMeasuredCardSize()
         {
-            const string json = "{\"version\": 1, \"width\": {\"x\": 0.8, \"y\": 1.2}, \"height\": {\"x\": 0.5, \"y\": 1}}";
-            var (item, _) = MapLibraryItemFile.Parse(typeof(MapClimatePlant), json, "Grass.plant.json");
-            var plant = (MapClimatePlant)item;
+            var plant = MapFixture.Item<MapClimatePlant>("Grass", i =>
+            {
+                i.width = new Vector2(0.8f, 1.2f);
+                i.height = new Vector2(0.5f, 1f);
+            });
             var card = new TextAsset("{\"width\": 0.5, \"height\": 0.2}");
             try
             {
@@ -207,11 +212,11 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         }
 
         private static MapClimateTree Species(int variants) =>
-            new() { key = "Oak", prefabs = new List<GameObject>(new GameObject[variants]) };
+            MapFixture.Item<MapClimateTree>("Oak", i => i.prefabs = new List<GameObject>(new GameObject[variants]));
 
         private static MapClimate Climate(MapClimateTree species)
         {
-            var climate = new MapClimate();
+            var climate = MapFixture.Item<MapClimate>("Test");
             climate.trees.Add(species);
             return climate;
         }

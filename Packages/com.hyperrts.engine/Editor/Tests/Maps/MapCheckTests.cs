@@ -68,8 +68,8 @@ namespace HyperRTS.Editor.Tests.Maps
         [TestCase("Dirt", -1f, "sharedAccessDistance", TestName = "ANegativeSharedAccessDistance_IsAnErrorNamingIt")]
         public void ABadAccessEntry_IsAnErrorNamingIt(string access, float distance, string named)
         {
-            var palette = new MapPalette();
-            palette.entries.Add(new MapProp { key = "Shed", access = access, sharedAccessDistance = distance });
+            var palette = MapFixture.Item<MapPalette>("Palette");
+            palette.entries.Add(MapFixture.Item<MapProp>("Shed", i => { i.access = access; i.sharedAccessDistance = distance; }));
 
             var issues = CheckAssets(MapFixture.Climate(), palette);
 
@@ -94,7 +94,7 @@ namespace HyperRTS.Editor.Tests.Maps
             var climate = MapFixture.Climate();
             climate.weathers.Add(new MapClimateWeather { key = "Clear" });
 
-            var issues = CheckAssets(climate, new MapPalette());
+            var issues = CheckAssets(climate, MapFixture.Item<MapPalette>("Palette"));
 
             Assert.IsTrue(issues.Errors.Any(e => e.Contains("weather 'Clear' is listed twice")), issues.ToString());
             Assert.IsTrue(issues.Errors.Any(e => e.Contains("weather 'Clear' has no atmosphere")), issues.ToString());
@@ -104,9 +104,9 @@ namespace HyperRTS.Editor.Tests.Maps
         public void MissingClimateValues_AreErrorsNamingThem()
         {
             var climate = MapFixture.Climate();
-            climate.farmlandKits.Add(new MapFarmlandKit { key = "Farms", marginSurface = "Meadow" });
+            climate.farmlandKits.Add(MapFixture.Item<MapFarmlandKit>("Farms", i => { i.marginSurface = "Meadow"; }));
 
-            var issues = CheckAssets(climate, new MapPalette());
+            var issues = CheckAssets(climate, MapFixture.Item<MapPalette>("Palette"));
 
             foreach (var field in new[] { "fordShallowsWidth", "fordRapidsLength", "trackJoinDistance", "groundTint regionLight" })
             {
@@ -118,12 +118,12 @@ namespace HyperRTS.Editor.Tests.Maps
         public void AWoodlandTreeWithMaxEdgeDistance_IsAnErrorNamingIt()
         {
             var climate = MapFixture.Climate();
-            climate.trees.Add(new MapClimateTree { key = "Oak" });
-            var kit = new MapWoodlandKit { key = "Grove", surface = "Meadow", edgeSurface = "Meadow" };
+            climate.trees.Add(MapFixture.Item<MapClimateTree>("Oak"));
+            var kit = MapFixture.Item<MapWoodlandKit>("Grove", i => { i.surface = "Meadow"; i.edgeSurface = "Meadow"; });
             kit.edgeTrees.Add(new MapTreeDensity { tree = "Oak", maxEdgeDistance = 4f });
             climate.woodlandKits.Add(kit);
 
-            var issues = CheckAssets(climate, new MapPalette());
+            var issues = CheckAssets(climate, MapFixture.Item<MapPalette>("Palette"));
 
             Assert.IsTrue(issues.Errors.Any(e => e.Contains("Grove") && e.Contains("maxEdgeDistance")), issues.ToString());
         }
@@ -133,8 +133,8 @@ namespace HyperRTS.Editor.Tests.Maps
         {
             var climate = MapFixture.Climate();
             climate.surfaces.Single(s => s.key == "Meadow").props.Add(new MapPropDensity { kind = "Milestone" });
-            var palette = new MapPalette();
-            palette.entries.Add(new MapProp { key = "Milestone", besideRoad = true });
+            var palette = MapFixture.Item<MapPalette>("Palette");
+            palette.entries.Add(MapFixture.Item<MapProp>("Milestone", i => { i.besideRoad = true; }));
 
             var issues = CheckAssets(climate, palette);
 
@@ -146,10 +146,10 @@ namespace HyperRTS.Editor.Tests.Maps
         {
             var spec = MapFixture.Spec();
             spec.props.Add(new MapPropSpec { kind = "Milestone" });
-            var rules = new MapRules();
+            var rules = MapFixture.Item<MapRules>("Rules");
             rules.modes.Add(new MapModeRules { mode = spec.mode });
-            var palette = new MapPalette();
-            palette.entries.Add(new MapProp { key = "Milestone", besideRoad = true });
+            var palette = MapFixture.Item<MapPalette>("Palette");
+            palette.entries.Add(MapFixture.Item<MapProp>("Milestone", i => { i.besideRoad = true; }));
             var issues = new MapIssues();
 
             MapSpecCheck.Check(spec, MapFixture.Climate(), palette, rules, issues);
@@ -160,19 +160,18 @@ namespace HyperRTS.Editor.Tests.Maps
         [Test]
         public void PaletteSides_NeedValidUniqueIdsAndKnownKitKeys()
         {
-            var palette = new MapPalette();
+            var palette = MapFixture.Item<MapPalette>("Palette");
             palette.sides.Add(new MapPaletteSide { side = 0 });
             var side = new MapPaletteSide { side = 2 };
             side.startKit.Add(new MapStartItem { key = "Bunker" });
             palette.sides.Add(side);
-            palette.sides.Add(new MapPaletteSide { side = 2, buildOrder = new MapAssetRef { path = "Assets/Missing.asset" } });
+            palette.sides.Add(new MapPaletteSide { side = 2 });
 
             var issues = CheckAssets(MapFixture.Climate(), palette);
 
             Assert.IsTrue(issues.Errors.Any(e => e.Contains("side 0") && e.Contains("1 to 255")), issues.ToString());
             Assert.IsTrue(issues.Errors.Any(e => e.Contains("side 2 is listed twice")), issues.ToString());
             Assert.IsTrue(issues.Errors.Any(e => e.Contains("'Bunker' is not in the palette")), issues.ToString());
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Assets/Missing.asset")), issues.ToString());
         }
 
         [Test]
@@ -182,8 +181,8 @@ namespace HyperRTS.Editor.Tests.Maps
             fence.AddComponent<DestructibleAuthoring>();
             var issues = new MapIssues();
             var context = MapFixture.Context(MapFixture.Spec(), MapFixture.Climate(), issues);
-            context.Placements.Add(new MapPlacement(new MapProp { key = "Stone", prefab = stone }, Vector2.zero, 0f, 1f));
-            context.Placements.Add(new MapPlacement(new MapProp { key = "Fence", prefab = fence }, Vector2.one, 0f, 1f));
+            context.Placements.Add(new MapPlacement(MapFixture.Item<MapProp>("Stone", i => { i.prefab = stone; }), Vector2.zero, 0f, 1f));
+            context.Placements.Add(new MapPlacement(MapFixture.Item<MapProp>("Fence", i => { i.prefab = fence; }), Vector2.one, 0f, 1f));
 
             context.Placements.CheckEntities(issues);
             Object.DestroyImmediate(stone);
@@ -230,12 +229,12 @@ namespace HyperRTS.Editor.Tests.Maps
         /// <summary>The spec check against the road fixture's climate, a 1v1 rules asset and a palette of <paramref name="entries"/>.</summary>
         private static MapIssues CheckSpec(MapSpec spec, params string[] entries)
         {
-            var rules = new MapRules();
+            var rules = MapFixture.Item<MapRules>("Rules");
             rules.modes.Add(new MapModeRules { mode = spec.mode });
-            var palette = new MapPalette();
+            var palette = MapFixture.Item<MapPalette>("Palette");
             foreach (var key in entries)
             {
-                palette.entries.Add(new MapProp { key = key });
+                palette.entries.Add(MapFixture.Item<MapProp>(key));
             }
 
             var issues = new MapIssues();

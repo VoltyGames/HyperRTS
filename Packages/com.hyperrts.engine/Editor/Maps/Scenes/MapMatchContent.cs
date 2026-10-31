@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Scenes
                 yaw = item.yaw,
                 facesCamera = item.facesCamera,
             }).ToList(),
-            buildOrder = side.buildOrderAsset,
+            buildOrder = side.buildOrder,
         }).ToList();
 
         /// <summary>Slot n plays side <c>sides[(n - 1) % count]</c>; <paramref name="ground"/> is the world height at a point.</summary>

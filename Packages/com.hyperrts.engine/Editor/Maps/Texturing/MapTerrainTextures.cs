@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Texturing
 {
     /// <summary>
     /// The texture arrays HyperRTS/Terrain samples for a climate's layers, kept in a Generated folder next to the
-    /// climate's library file and named after it: albedo with the mask's height in alpha, normal maps, and occlusion (R) with smoothness (G). Each is
+    /// climate's library asset and named after it: albedo with the mask's height in alpha, normal maps, and occlusion (R) with smoothness (G). Each is
     /// rebuilt only when its source textures or the layers change.
     /// </summary>
     public static class MapTerrainTextures
@@ -25,17 +25,17 @@ namespace HyperRTS.Editor.Maps.Texturing
             var problem = Problems(climate).FirstOrDefault();
             if (problem != null)
             {
-                throw new ArgumentException($"HyperRTS: climate '{climate.name}': {problem}");
+                throw new ArgumentException($"HyperRTS: climate '{climate.key}': {problem}");
             }
 
             var layers = climate.layers.Select(l => l.terrainLayer).ToList();
             var folder = GeneratedFolder(climate);
-            var albedo = MapTerrainAtlas.Ensure($"{folder}/{climate.name}_TerrainAlbedo.png", layers, SliceSize,
+            var albedo = MapTerrainAtlas.Ensure($"{folder}/{climate.key}_TerrainAlbedo.png", layers, SliceSize,
                 l => new[] { l.diffuseTexture, l.maskMapTexture }, AlbedoCell, normalMap: false, sRGB: true);
-            var normal = MapTerrainAtlas.Ensure($"{folder}/{climate.name}_TerrainNormal.png", layers, SliceSize,
+            var normal = MapTerrainAtlas.Ensure($"{folder}/{climate.key}_TerrainNormal.png", layers, SliceSize,
                 l => new[] { l.normalMapTexture }, l => MapTerrainSource.Read(l.normalMapTexture, SliceSize),
                 normalMap: true, sRGB: false);
-            var mask = MapTerrainAtlas.Ensure($"{folder}/{climate.name}_TerrainMask.png", layers, SliceSize,
+            var mask = MapTerrainAtlas.Ensure($"{folder}/{climate.key}_TerrainMask.png", layers, SliceSize,
                 l => new[] { l.maskMapTexture }, MaskCell, normalMap: false, sRGB: false);
             return (albedo, normal, mask);
         }
@@ -102,7 +102,7 @@ namespace HyperRTS.Editor.Maps.Texturing
         {
             if (string.IsNullOrEmpty(climate.file))
             {
-                throw new ArgumentException($"HyperRTS: climate '{climate.name}' must come from a map library file.");
+                throw new ArgumentException($"HyperRTS: climate '{climate.key}' must come from a map library asset.");
             }
 
             var parent = Path.GetDirectoryName(climate.file)?.Replace('\\', '/');

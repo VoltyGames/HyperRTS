@@ -121,8 +121,8 @@ namespace HyperRTS.Editor.Tests.Maps
         private (MapPalette Palette, GameObject Prefab) Palette()
         {
             var prefab = Track(new GameObject("Headquarters"));
-            var palette = new MapPalette();
-            palette.entries.Add(new MapProp { key = "HQ", prefab = prefab });
+            var palette = MapFixture.Item<MapPalette>("Palette");
+            palette.entries.Add(MapFixture.Item<MapProp>("HQ", i => { i.prefab = prefab; }));
             foreach (var id in new[] { 1, 3 })
             {
                 var side = new MapPaletteSide { side = id };

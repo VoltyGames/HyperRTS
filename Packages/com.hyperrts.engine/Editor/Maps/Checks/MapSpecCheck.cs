@@ -77,14 +77,14 @@ namespace HyperRTS.Editor.Maps.Checks
             }
 
             Require(_spec.WarAge == MapWarAge.None || Climate.war != null,
-                $"warAge '{_spec.warAge}' needs climate '{Climate.name}' to name a warKit.");
+                $"warAge '{_spec.warAge}' needs climate '{Climate.key}' to name a warKit.");
         }
 
         private void Weather()
         {
             if (string.IsNullOrEmpty(_spec.weather))
             {
-                Issues.Error($"The map spec's 'weather' key is missing; name one of climate '{Climate.name}''s weathers.", Feature);
+                Issues.Error($"The map spec's 'weather' key is missing; name one of climate '{Climate.key}''s weathers.", Feature);
                 return;
             }
 

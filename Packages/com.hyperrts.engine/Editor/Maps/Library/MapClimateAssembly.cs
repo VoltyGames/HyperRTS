@@ -5,7 +5,7 @@ using HyperRTS.Editor.Maps.Texturing;
 
 namespace HyperRTS.Editor.Maps.Library
 {
-    /// <summary>Builds a climate from its library file in a fixed walk order, so layer, tree and plant indices only change with the data.</summary>
+    /// <summary>Builds a climate from its library asset in a fixed walk order, so layer, tree and plant indices only change with the data.</summary>
     internal sealed class MapClimateAssembly
     {
         private readonly MapLibrary _library;
@@ -19,30 +19,31 @@ namespace HyperRTS.Editor.Maps.Library
 
         public static MapClimate Assemble(MapLibrary library, string key, string referrer)
         {
-            var climate = library.Get<MapClimate>(key, referrer, out var refs);
-            climate.surfaces = All<MapClimateSurface>(library, refs.surfaces, refs.file);
-            climate.roadClasses = All<MapRoadClass>(library, refs.roadClasses, refs.file);
-            climate.farmlandKits = All<MapFarmlandKit>(library, refs.farmlandKits, refs.file);
-            climate.beltKits = All<MapBeltKit>(library, refs.beltKits, refs.file);
-            climate.woodlandKits = All<MapWoodlandKit>(library, refs.woodlandKits, refs.file);
-            climate.war = string.IsNullOrEmpty(climate.warKit) ? null : library.Get<MapWarKit>(climate.warKit, refs.file);
+            var climate = library.Get<MapClimate>(key, referrer);
+            var file = library.FilePath<MapClimate>(key);
+            climate.surfaces = All<MapClimateSurface>(library, climate.surfaceKeys, file);
+            climate.roadClasses = All<MapRoadClass>(library, climate.roadClassKeys, file);
+            climate.farmlandKits = All<MapFarmlandKit>(library, climate.farmlandKitKeys, file);
+            climate.beltKits = All<MapBeltKit>(library, climate.beltKitKeys, file);
+            climate.woodlandKits = All<MapWoodlandKit>(library, climate.woodlandKitKeys, file);
+            climate.war = string.IsNullOrEmpty(climate.warKit) ? null : library.Get<MapWarKit>(climate.warKit, file);
             climate.layers = new List<MapClimateLayer>();
             climate.trees = new List<MapClimateTree>();
             climate.plants = new List<MapClimatePlant>();
             climate.rowCrops = new List<MapClimateRowCrop>();
             climate.decals = new List<MapClimateDecal>();
-            new MapClimateAssembly(library, climate).Collect(refs.file);
+            new MapClimateAssembly(library, climate).Collect(file);
             if (climate.layers.Count > MapTerrainTextures.MaxLayers)
             {
                 throw new InvalidOperationException(
-                    $"HyperRTS: climate '{refs.file}' uses {climate.layers.Count} terrain layers; the terrain shader blends at most {MapTerrainTextures.MaxLayers}.");
+                    $"HyperRTS: climate '{file}' uses {climate.layers.Count} terrain layers; the terrain shader blends at most {MapTerrainTextures.MaxLayers}.");
             }
 
             return climate;
         }
 
         private static List<T> All<T>(MapLibrary library, List<string> keys, string referrer)
-            where T : class, IMapLibraryItem, new() =>
+            where T : MapLibraryItem =>
             keys.ConvertAll(key => library.Get<T>(key, referrer));
 
         private void Collect(string climateFile)
@@ -109,7 +110,7 @@ namespace HyperRTS.Editor.Maps.Library
 
         private void Plant(string key, string referrer) => Add(_climate.plants, key, referrer);
 
-        private void Add<T>(List<T> items, string key, string referrer) where T : class, IMapLibraryItem, IMapKeyed, new()
+        private void Add<T>(List<T> items, string key, string referrer) where T : MapLibraryItem
         {
             if (string.IsNullOrEmpty(key) || MapKeys.Contains(items, key))
             {

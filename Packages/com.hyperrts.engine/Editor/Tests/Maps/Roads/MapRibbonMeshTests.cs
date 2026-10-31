@@ -19,14 +19,26 @@ namespace HyperRTS.Editor.Tests.Maps.Roads
         private const int Columns = 5;
         private const float RiverZ = -60f;
 
-        [NoAutoStaticsCleanup]
-        private static readonly MapRoadClass Asphalt = new() { key = "Asphalt", width = 6f, rank = 2 };
-        [NoAutoStaticsCleanup]
-        private static readonly MapRoadClass Dirt = new() { key = "Dirt", width = 4f, rank = 0 };
-        [NoAutoStaticsCleanup]
-        private static readonly MapRoadClass Gravel = new() { key = "Gravel", width = 4f, rank = 5 };
-        [NoAutoStaticsCleanup]
-        private static readonly MapRoadClass Lane = new() { key = "Lane", width = 4f, rank = 1 };
+        private MapRoadClass Asphalt;
+        private MapRoadClass Dirt;
+        private MapRoadClass Gravel;
+        private MapRoadClass Lane;
+
+        [SetUp]
+        public void SetUp()
+        {
+            Asphalt = RoadClass("Asphalt", 6f, 2);
+            Dirt = RoadClass("Dirt", 4f, 0);
+            Gravel = RoadClass("Gravel", 4f, 5);
+            Lane = RoadClass("Lane", 4f, 1);
+        }
+
+        private static MapRoadClass RoadClass(string key, float width, int rank) =>
+            MapFixture.Item<MapRoadClass>(key, i =>
+            {
+                i.width = width;
+                i.rank = rank;
+            });
 
         private static MapHeights Flat() => new(129, new Rect(-64f, -64f, 128f, 128f));
 
@@ -38,7 +50,7 @@ namespace HyperRTS.Editor.Tests.Maps.Roads
             return mesh;
         }
 
-        private static MapRoad North() =>
+        private MapRoad North() =>
             MapFixture.RoadShape(Asphalt, false, new Vector2(0f, -30f), new Vector2(0f, 30f));
 
         [Test]
@@ -215,8 +227,8 @@ namespace HyperRTS.Editor.Tests.Maps.Roads
                 crossings = new List<MapCrossingSpec> { new() { along = 0.5f, kind = MapCrossingSpec.Ford } },
             });
             var layout = MapExpander.Expand(spec, new MapIssues());
-            var climate = new MapClimate { fordShallowsWidth = 6f, fordRapidsLength = 10f };
-            var shapes = new MapShapes(layout, new MapPalette(), climate);
+            var climate = MapFixture.Item<MapClimate>("Climate", i => { i.fordShallowsWidth = 6f; i.fordRapidsLength = 10f; });
+            var shapes = new MapShapes(layout, MapFixture.Item<MapPalette>("Palette"), climate);
             Assert.IsNotEmpty(shapes.Crossings);
             return (MapWaterMesh.Build(shapes, climate, layout.WaterHeight, layout.TerrainBounds), shapes);
         }

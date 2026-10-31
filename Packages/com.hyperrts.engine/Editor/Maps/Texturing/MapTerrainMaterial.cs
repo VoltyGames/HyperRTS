@@ -69,13 +69,13 @@ namespace HyperRTS.Editor.Maps.Texturing
             if (climate.terrain.shader.name != ShaderName)
             {
                 throw new ArgumentException(
-                    $"HyperRTS: climate '{climate.name}' terrain material '{climate.terrain.name}' must use {ShaderName}.");
+                    $"HyperRTS: climate '{climate.key}' terrain material '{climate.terrain.name}' must use {ShaderName}.");
             }
 
             if (data.alphamapLayers != climate.layers.Count)
             {
                 throw new ArgumentException(
-                    $"HyperRTS: '{data.name}' paints {data.alphamapLayers} layers but climate '{climate.name}' has {climate.layers.Count}.");
+                    $"HyperRTS: '{data.name}' paints {data.alphamapLayers} layers but climate '{climate.key}' has {climate.layers.Count}.");
             }
 
             RequireLinear(groundTint, "ground tint map");

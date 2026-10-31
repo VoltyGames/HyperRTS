@@ -1,4 +1,4 @@
-using System;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Presentation.Environment.RowCrops;
 using UnityEngine;
@@ -6,23 +6,11 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Data
 {
     /// <summary>A crop grown in 3D rows on the fields of the surfaces that name it.</summary>
-    [Serializable]
-    [MapLibraryItem("crop", "crop")]
-    public sealed class MapClimateRowCrop : IMapKeyed, IMapLibraryItem
+    [MapLibraryItem("crop")]
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Row Crop", fileName = "New.crop")]
+    public sealed class MapClimateRowCrop : MapLibraryItem
     {
-        [NonSerialized]
-        public string key;
-
         [Tooltip("The crop's meshes, materials and planting.")]
-        [NonSerialized]
         public RowCrop crop;
-
-        string IMapKeyed.Key => key;
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs)
-        {
-            this.key = key;
-            crop = refs.Asset<RowCrop>(refs.crop, "crop");
-        }
     }
 }

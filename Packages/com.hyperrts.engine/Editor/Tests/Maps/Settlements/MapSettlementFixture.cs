@@ -109,7 +109,7 @@ namespace HyperRTS.Editor.Tests.Maps.Settlements
 
         private MapPalette MakePalette(Action<MapSettlementKit> edit)
         {
-            var palette = new MapPalette();
+            var palette = MapFixture.Item<MapPalette>("Palette");
             palette.baseRadius = BaseRadius;
             palette.entries.Add(Entry("House", 10f, 8f));
             palette.entries.Add(Entry("Barn", 6f, 5f));
@@ -119,15 +119,29 @@ namespace HyperRTS.Editor.Tests.Maps.Settlements
             palette.entries.Add(Entry("Pipe", 0.5f, 3f));
             palette.entries.Add(Entry("PipeArch", 1f, 2.5f));
             palette.entries.Add(Entry("Well", 1.5f, 1.5f));
-            var kit = new MapSettlementKit
+            var kit = MapFixture.Item<MapSettlementKit>("Village", i =>
             {
-                key = "Village", plot = new Vector2(24f, 36f), plotWidthVariation = 0f, frontGap = 2f, frontYard = 5f,
-                maxOutbuildings = 1, frontFence = "Fence", sideFence = "Fence", gate = "Gate",
-                yardSurface = "Yard", gardenSurface = "Garden", backSurface = "Orchard", gardenShare = 0.5f,
-                orchardTree = "Apple", orchardSpacing = 3f, streetPipe = "Pipe",
-                streetPipeArch = "PipeArch", streetPipeMinSections = 3, streetPipeMaxGap = 6f,
-                streetPole = "Pole", poleSpacing = 30f,
-            };
+                i.plot = new Vector2(24f, 36f);
+                i.plotWidthVariation = 0f;
+                i.frontGap = 2f;
+                i.frontYard = 5f;
+                i.maxOutbuildings = 1;
+                i.frontFence = "Fence";
+                i.sideFence = "Fence";
+                i.gate = "Gate";
+                i.yardSurface = "Yard";
+                i.gardenSurface = "Garden";
+                i.backSurface = "Orchard";
+                i.gardenShare = 0.5f;
+                i.orchardTree = "Apple";
+                i.orchardSpacing = 3f;
+                i.streetPipe = "Pipe";
+                i.streetPipeArch = "PipeArch";
+                i.streetPipeMinSections = 3;
+                i.streetPipeMaxGap = 6f;
+                i.streetPole = "Pole";
+                i.poleSpacing = 30f;
+            });
             kit.houses.Add("House");
             kit.outbuildings.Add("Barn");
             kit.extras.Add(new MapPlotProp { kind = "Well", chance = 1f, zone = MapPlotZone.Yard });
@@ -138,24 +152,31 @@ namespace HyperRTS.Editor.Tests.Maps.Settlements
 
         private MapClimate MakeClimate()
         {
-            var climate = new MapClimate();
-            climate.name = "Test";
+            var climate = MapFixture.Item<MapClimate>("Test");
             MapFixture.AddSurfaces(climate, "Meadow", "Road", "Verge", "Yard", "Garden", "Orchard", "Path");
 
             climate.groundSurface = "Meadow";
             climate.baseSurface = "Meadow";
             climate.shoreSurface = "Meadow";
             climate.floodplainSurface = "Meadow";
-            climate.trees.Add(new MapClimateTree { key = "Apple", prefabs = { Make(new GameObject("Apple")) } });
-            climate.roadClasses.Add(new MapRoadClass
+            climate.trees.Add(MapFixture.Item<MapClimateTree>("Apple", i => i.prefabs.Add(Make(new GameObject("Apple")))));
+            climate.roadClasses.Add(MapFixture.Item<MapRoadClass>("Street", i =>
             {
-                key = "Street", width = 6f, surface = "Road", impactClass = "Soil", vergeWidth = 3f, vergeSurface = "Verge",
-            });
+                i.width = 6f;
+                i.surface = "Road";
+                i.impactClass = "Soil";
+                i.vergeWidth = 3f;
+                i.vergeSurface = "Verge";
+            }));
             return climate;
         }
 
         private MapProp Entry(string key, float width, float depth) =>
-            new() { key = key, prefab = Make(new GameObject(key)), size = new Vector2(width, depth) };
+            MapFixture.Item<MapProp>(key, i =>
+            {
+                i.prefab = Make(new GameObject(key));
+                i.size = new Vector2(width, depth);
+            });
 
         private T Make<T>(T made) where T : Object
         {

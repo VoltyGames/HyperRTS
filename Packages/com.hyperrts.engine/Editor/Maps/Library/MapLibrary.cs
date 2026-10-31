@@ -4,10 +4,15 @@ using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Maps.Data;
 using Unity.Scripting.LifecycleManagement;
+using UnityEditor;
+using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Maps.Library
 {
-    /// <summary>The map library: one <c>&lt;Key&gt;.&lt;type&gt;.json</c> per item anywhere under the root, read on first use.</summary>
+    /// <summary>
+    /// The map library: one <c>&lt;Key&gt;.&lt;type&gt;.asset</c> per item anywhere in the project. Each item loads on
+    /// first use as a copy owned by this library, so a build may fill in its derived fields.
+    /// </summary>
     public sealed class MapLibrary
     {
         /// <summary>Item types in listing order.</summary>
@@ -36,30 +41,43 @@ namespace HyperRTS.Editor.Maps.Library
         private static readonly Dictionary<Type, string> TypeNames =
             Types.ToDictionary(type => type, type => MapLibraryItemAttribute.Require(type).Name);
 
-        private readonly Dictionary<string, SortedDictionary<string, string>> _files = new();
-        private readonly Dictionary<string, (object Item, MapLibraryRefs Refs)> _loaded = new();
+        private readonly Dictionary<Type, SortedDictionary<string, Entry>> _entries = new();
 
-        private MapLibrary(string root)
+        private MapLibrary()
         {
-            Root = root;
-            foreach (var type in TypeNames.Values)
+            foreach (var type in Types)
             {
-                _files[type] = new SortedDictionary<string, string>(StringComparer.Ordinal);
+                _entries[type] = new SortedDictionary<string, Entry>(StringComparer.Ordinal);
             }
         }
 
-        public string Root { get; }
-
-        /// <summary>Indexes every library file under <paramref name="root"/>.</summary>
-        public static MapLibrary Load(string root = "Assets")
+        /// <summary>Indexes every library item asset in the project.</summary>
+        public static MapLibrary Load()
         {
-            var library = new MapLibrary(root);
-            var files = Directory.EnumerateFiles(root, "*.json", SearchOption.AllDirectories)
-                .Select(file => file.Replace('\\', '/'))
-                .OrderBy(file => file, StringComparer.Ordinal);
-            foreach (var file in files)
+            var library = new MapLibrary();
+            foreach (var type in Types)
             {
-                library.Index(file);
+                var paths = AssetDatabase.FindAssets("t:" + type.Name)
+                    .Select(AssetDatabase.GUIDToAssetPath)
+                    .Where(path => AssetDatabase.GetMainAssetTypeAtPath(path) == type)
+                    .Distinct()
+                    .OrderBy(path => path, StringComparer.Ordinal);
+                foreach (var path in paths)
+                {
+                    library.Index(type, path);
+                }
+            }
+
+            return library;
+        }
+
+        /// <summary>A library of items made in memory, keyed by their names, for tests.</summary>
+        public static MapLibrary From(params MapLibraryItem[] items)
+        {
+            var library = new MapLibrary();
+            foreach (var item in items)
+            {
+                library.Add(item.GetType(), MapLibraryItem.ParseKey(item.name), new Entry(null, item));
             }
 
             return library;
@@ -75,13 +93,12 @@ namespace HyperRTS.Editor.Maps.Library
             ? name
             : throw new ArgumentException($"HyperRTS: {type.Name} is not a map library item class.", nameof(type));
 
-        /// <summary>The item type and key a file at <paramref name="file"/> defines, or a null type when it is no library file.</summary>
-        public static (Type Type, string Key) ParseFile(string file)
+        /// <summary>The item type and key an asset at <paramref name="path"/> is named as, or a null type when it is no library item.</summary>
+        public static (Type Type, string Key) ParseFile(string path)
         {
-            var stem = Path.GetFileNameWithoutExtension(file);
+            var stem = Path.GetFileNameWithoutExtension(path);
             var dot = stem.LastIndexOf('.');
-            var isJson = file.EndsWith(".json", StringComparison.Ordinal);
-            if (!isJson || dot < 0)
+            if (!path.EndsWith(".asset", StringComparison.Ordinal) || dot < 0)
             {
                 return (null, null);
             }
@@ -92,34 +109,28 @@ namespace HyperRTS.Editor.Maps.Library
 
         public IReadOnlyList<string> Keys<T>() => Keys(typeof(T));
 
-        public IReadOnlyList<string> Keys(Type type) => _files[TypeName(type)].Keys.ToList();
+        public IReadOnlyList<string> Keys(Type type) => _entries[type].Keys.ToList();
 
-        public bool Contains(Type type, string key) => _files[TypeName(type)].ContainsKey(key ?? string.Empty);
+        public bool Contains(Type type, string key) => _entries[type].ContainsKey(key ?? string.Empty);
 
         public string FilePath<T>(string key) => FilePath(typeof(T), key);
 
+        /// <summary>The item's asset path, or its key for an item made in memory.</summary>
         public string FilePath(Type type, string key) =>
-            _files[TypeName(type)].TryGetValue(key, out var file) ? file : throw Missing(type, key, null);
+            _entries[type].TryGetValue(key, out var entry) ? entry.Path ?? key : throw Missing(type, key, null);
 
-        /// <summary>A missing item names <paramref name="referrer"/>, a file or a spec.</summary>
-        public T Get<T>(string key, string referrer) where T : class, IMapLibraryItem, new() => Get<T>(key, referrer, out _);
+        /// <summary>A missing item names <paramref name="referrer"/>, an asset or a spec.</summary>
+        public T Get<T>(string key, string referrer) where T : MapLibraryItem => (T)Get(typeof(T), key, referrer);
 
-        public T Get<T>(string key, string referrer, out MapLibraryRefs refs) where T : class, IMapLibraryItem, new()
+        public MapLibraryItem Get(Type type, string key, string referrer)
         {
-            if (!_files[TypeName<T>()].TryGetValue(key ?? string.Empty, out var file))
+            if (!_entries[type].TryGetValue(key ?? string.Empty, out var entry))
             {
-                throw Missing<T>(key, referrer);
+                throw Missing(type, key, referrer);
             }
 
-            if (!_loaded.TryGetValue(file, out var loaded))
-            {
-                loaded = MapLibraryItemFile.Read(typeof(T), file);
-                ((T)loaded.Item).Load(key, loaded.Refs);
-                _loaded[file] = loaded;
-            }
-
-            refs = loaded.Refs;
-            return (T)loaded.Item;
+            entry.Copy ??= Copy(entry, key);
+            return entry.Copy;
         }
 
         /// <summary>The climate a spec names, with the layers, trees and plants its surfaces and kits use.</summary>
@@ -136,6 +147,23 @@ namespace HyperRTS.Editor.Maps.Library
 
         public MapRules Rules() => Get<MapRules>(Single<MapRules>(), null);
 
+        /// <summary>The item itself rather than a copy: the asset, or the item made in memory. Edit it only to change the library.</summary>
+        public MapLibraryItem Original(Type type, string key) =>
+            _entries[type].TryGetValue(key, out var entry) ? Original(entry) : throw Missing(type, key, null);
+
+        private static MapLibraryItem Original(Entry entry) => entry.Item ?? AssetDatabase.LoadAssetAtPath<MapLibraryItem>(entry.Path);
+
+        private static MapLibraryItem Copy(Entry entry, string key)
+        {
+            var original = Original(entry);
+            var copy = Object.Instantiate(original);
+            copy.name = original.name;
+            copy.key = key;
+            copy.file = entry.Path;
+            copy.Load();
+            return copy;
+        }
+
         private string Single<T>()
         {
             var keys = Keys<T>();
@@ -143,44 +171,57 @@ namespace HyperRTS.Editor.Maps.Library
             {
                 var found = keys.Count == 0 ? "none" : string.Join(", ", keys.Select(FilePath<T>));
                 throw new InvalidOperationException(
-                    $"HyperRTS: map building needs exactly one *.{TypeName<T>()}.json under '{Root}'; found {found}.");
+                    $"HyperRTS: map building needs exactly one *.{TypeName<T>()}.asset; found {found}.");
             }
 
             return keys[0];
         }
 
-        private void Index(string file)
+        private void Index(Type type, string path)
         {
-            var (type, key) = ParseFile(file);
-            if (type == null)
-            {
-                return;
-            }
-
-            var typeName = TypeName(type);
-            if (key.Length == 0 || key.Contains('.'))
+            var (named, key) = ParseFile(path);
+            if (named != type || key.Length == 0)
             {
                 throw new InvalidOperationException(
-                    $"HyperRTS: map library file '{file}' has no usable key; name it <Key>.{typeName}.json.");
+                    $"HyperRTS: map library asset '{path}' is a {TypeName(type)}; name it <Key>.{TypeName(type)}.asset.");
             }
 
-            var files = _files[typeName];
-            if (files.ContainsKey(key))
-            {
-                throw new InvalidOperationException(
-                    $"HyperRTS: map library files '{files[key]}' and '{file}' both define {typeName} '{key}'.");
-            }
-
-            files.Add(key, file);
+            Add(type, key, new Entry(path, null));
         }
 
-        private Exception Missing<T>(string key, string referrer) => Missing(typeof(T), key, referrer);
+        private void Add(Type type, string key, Entry entry)
+        {
+            var entries = _entries[type];
+            if (entries.TryGetValue(key, out var existing))
+            {
+                throw new InvalidOperationException(
+                    $"HyperRTS: map library assets '{existing.Path ?? key}' and '{entry.Path ?? key}' are both {TypeName(type)} '{key}'.");
+            }
+
+            entries.Add(key, entry);
+        }
 
         private Exception Missing(Type type, string key, string referrer)
         {
             var by = string.IsNullOrEmpty(referrer) ? string.Empty : $"'{referrer}' names it, but ";
             return new KeyNotFoundException(
-                $"HyperRTS: no map library {TypeName(type)} '{key}': {by}there is no {key}.{TypeName(type)}.json under '{Root}'.");
+                $"HyperRTS: no map library {TypeName(type)} '{key}': {by}there is no {key}.{TypeName(type)}.asset.");
+        }
+
+        /// <summary>An indexed item: its asset path (or the item itself when made in memory) and the copy once loaded.</summary>
+        private sealed class Entry
+        {
+            public Entry(string path, MapLibraryItem item)
+            {
+                Path = path;
+                Item = item;
+            }
+
+            public string Path { get; }
+
+            public MapLibraryItem Item { get; }
+
+            public MapLibraryItem Copy { get; set; }
         }
     }
 }

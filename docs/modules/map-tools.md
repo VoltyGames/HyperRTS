@@ -24,9 +24,9 @@ The folders below are in dependency order: a folder uses only those listed befor
 | Folder | Holds |
 | --- | --- |
 | `Spec/` | `MapSpec` and one class per feature. `MapSpecJson` reads and writes it |
-| `Json/` | `MapJsonFormat`, the layout specs and library files are saved in |
+| `Json/` | `MapJsonFormat`, the layout specs and effect recipes are saved in |
 | `Data/` | Library item classes: climate, surfaces, trees, plants, row crops, kits, palette, rules |
-| `Library/` | `MapLibrary`, `MapClimateAssembly`, the `[MapKey]` and `[MapAsset]` attributes, `MapAssetRef` links and `MapLibraryRefSync`, `MapLibraryProblems` |
+| `Library/` | `MapLibrary`, the `MapLibraryItem` base, `MapClimateAssembly`, the `[MapKey]` attribute and its dropdown, `MapLibraryRule` |
 | `Symmetry/` | `MapSymmetry`: the sector's copies and how they number slots |
 | `Generation/` | `MapProject`, `MapPaths` and `MapGeneration` |
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using UnityEngine;
 
@@ -9,13 +10,10 @@ namespace HyperRTS.Editor.Maps.Data
     /// The old scars a climate's land shows for a map's war age: craters, burnt patches, shredded trees, trenches
     /// along belts and wrecks.
     /// </summary>
-    [Serializable]
     [MapLibraryItem("war")]
-    public sealed class MapWarKit : IMapLibraryItem
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "War Kit", fileName = "New.war")]
+    public sealed class MapWarKit : MapLibraryItem
     {
-        [NonSerialized]
-        public string key;
-
         [Header("Ages")]
         public MapWarDensity skirmished = new();
         public MapWarDensity contested = new();
@@ -92,7 +90,5 @@ namespace HyperRTS.Editor.Maps.Data
 
         /// <summary>The shredded stand-ins for a climate tree, or null when it has none.</summary>
         public MapWarTreeSwap Swap(string tree) => shreddedTrees.Find(swap => swap.tree == tree);
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;
     }
 }

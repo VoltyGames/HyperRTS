@@ -1,46 +1,53 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Data
 {
-    /// <summary>A landscape kit named by a spec's <c>climate</c>, read from the library's <c>&lt;Key&gt;.climate.json</c>.</summary>
-    [Serializable]
-    [MapLibraryItem("climate", "surfaces", "roadClasses", "farmlandKits", "beltKits", "woodlandKits", "terrain", "water", "weathers")]
-    public sealed class MapClimate : IMapLibraryItem
+    /// <summary>A landscape kit named by a spec's <c>climate</c>, the library's <c>&lt;Key&gt;.climate.asset</c>. Generated terrain textures go beside it.</summary>
+    [MapLibraryItem("climate")]
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Climate", fileName = "New.climate")]
+    public sealed class MapClimate : MapLibraryItem
     {
-        [NonSerialized]
-        public string name;
+        [Header("Land")]
+        [Tooltip("Named ground types (Meadow, Wheat, ForestFloor) that land use and spec areas paint.")]
+        [MapKey(typeof(MapClimateSurface))]
+        public List<string> surfaceKeys = new();
 
-        /// <summary>The library file it was read from. Generated terrain textures go beside it.</summary>
-        [NonSerialized]
-        public string file;
+        [MapKey(typeof(MapRoadClass))]
+        public List<string> roadClassKeys = new();
 
-        [Tooltip("Terrain layers (up to 16), blended by the HyperRTS terrain shader.")]
+        [MapKey(typeof(MapFarmlandKit))]
+        public List<string> farmlandKitKeys = new();
+
+        [MapKey(typeof(MapBeltKit))]
+        public List<string> beltKitKeys = new();
+
+        [MapKey(typeof(MapWoodlandKit))]
+        public List<string> woodlandKitKeys = new();
+
+        /// <summary>Terrain layers (up to 16) the surfaces and kits use, blended by the HyperRTS terrain shader; filled on assembly.</summary>
         [NonSerialized]
         public List<MapClimateLayer> layers = new();
 
-        [Tooltip("Named ground types (Meadow, Wheat, ForestFloor) that land use and spec areas paint.")]
+        /// <summary>The items of <see cref="surfaceKeys"/>, filled on assembly, as are the lists below.</summary>
         [NonSerialized]
         public List<MapClimateSurface> surfaces = new();
 
         [NonSerialized]
         public List<MapClimateTree> trees = new();
 
-        [Tooltip("Grass and small plants. Surfaces say where they grow.")]
         [NonSerialized]
         public List<MapClimatePlant> plants = new();
 
-        [Tooltip("Crops grown in 3D rows. Surfaces say where they grow.")]
         [NonSerialized]
         public List<MapClimateRowCrop> rowCrops = new();
 
-        [Tooltip("Ground decals. Surfaces and props say where they lie.")]
         [NonSerialized]
         public List<MapClimateDecal> decals = new();
 
-        [Header("Land")]
         [NonSerialized]
         public List<MapRoadClass> roadClasses = new();
 
@@ -122,58 +129,42 @@ namespace HyperRTS.Editor.Maps.Data
 
         [Header("Materials and sky")]
         [Tooltip("HyperRTS/Terrain base material with the climate's detail and wetness values. Map terrain materials are variants of it.")]
-        [NonSerialized]
         public Material terrain;
 
         [Tooltip("Material of river surfaces. The mesh's V coordinate runs downstream in metres.")]
-        [NonSerialized]
         public Material water;
 
         [Tooltip("Weathers a map or match can pick, each an atmosphere prefab (sky, sun, fog, post-processing).")]
-        [NonSerialized]
         public List<MapClimateWeather> weathers = new();
 
         [Header("Distances")]
         public float treeDistance = 600f;
 
-        public MapClimateSurface Surface(string key) => MapKeys.Get(surfaces, key, name, "surface");
+        public MapClimateSurface Surface(string key) => MapKeys.Get(surfaces, key, this.key, "surface");
 
-        public MapRoadClass RoadClass(string key) => MapKeys.Get(roadClasses, key, name, "road class");
+        public MapRoadClass RoadClass(string key) => MapKeys.Get(roadClasses, key, this.key, "road class");
 
-        public MapFarmlandKit FarmlandKit(string key) => MapKeys.Get(farmlandKits, key, name, "farmland kit");
+        public MapFarmlandKit FarmlandKit(string key) => MapKeys.Get(farmlandKits, key, this.key, "farmland kit");
 
-        public MapBeltKit BeltKit(string key) => MapKeys.Get(beltKits, key, name, "belt kit");
+        public MapBeltKit BeltKit(string key) => MapKeys.Get(beltKits, key, this.key, "belt kit");
 
-        public MapWoodlandKit WoodlandKit(string key) => MapKeys.Get(woodlandKits, key, name, "woodland kit");
+        public MapWoodlandKit WoodlandKit(string key) => MapKeys.Get(woodlandKits, key, this.key, "woodland kit");
 
         /// <summary>The terrain layer a surface paints.</summary>
         public int SurfaceLayer(string surface) => LayerIndex(Surface(surface).layer);
 
-        public int LayerIndex(string key) => MapKeys.RequireIndex(layers, key, name, "layer");
+        public int LayerIndex(string key) => MapKeys.RequireIndex(layers, key, this.key, "layer");
 
-        public MapClimateDecal Decal(string key) => MapKeys.Get(decals, key, name, "decal");
+        public MapClimateDecal Decal(string key) => MapKeys.Get(decals, key, this.key, "decal");
 
-        public int TreeIndex(string key) => MapKeys.RequireIndex(trees, key, name, "tree");
+        public int TreeIndex(string key) => MapKeys.RequireIndex(trees, key, this.key, "tree");
 
-        public int PlantIndex(string key) => MapKeys.RequireIndex(plants, key, name, "plant");
+        public int PlantIndex(string key) => MapKeys.RequireIndex(plants, key, this.key, "plant");
 
-        public int RowCropIndex(string key) => MapKeys.RequireIndex(rowCrops, key, name, "row crop");
+        public int RowCropIndex(string key) => MapKeys.RequireIndex(rowCrops, key, this.key, "row crop");
 
         public bool HasTree(string key) => MapKeys.Contains(trees, key);
 
-        public MapClimateWeather Weather(string key) => MapKeys.Get(weathers, key, name, "weather");
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs)
-        {
-            name = key;
-            file = refs.file;
-            terrain = refs.Asset<Material>(refs.terrain, "terrain");
-            water = refs.Asset<Material>(refs.water, "water");
-            weathers = refs.weathers.ConvertAll(weather => new MapClimateWeather
-            {
-                key = weather.key,
-                atmosphere = refs.Asset<GameObject>(weather.atmosphere, $"weathers '{weather.key}' atmosphere"),
-            });
-        }
+        public MapClimateWeather Weather(string key) => MapKeys.Get(weathers, key, this.key, "weather");
     }
 }

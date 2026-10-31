@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         public void Pose_ClampsTheTiltBuriesAndMirrorsAcrossX()
         {
             var heights = Heights(p => 0.4f * Mathf.Abs(p.x) + 0.1f * p.y);
-            var entry = new MapProp { key = "Rock", size = new Vector2(2f, 2f), maxTilt = 10f, buriedDepth = 0.3f };
+            var entry = MapFixture.Item<MapProp>("Rock", i => { i.size = new Vector2(2f, 2f); i.maxTilt = 10f; i.buriedDepth = 0.3f; });
             var left = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(-20f, 5f), 30f, 1f), heights, 0f);
             var right = MapPlacementPose.OnGround(new MapPlacement(entry, new Vector2(20f, 5f), -30f, 1f), heights, 0f);
 
@@ -49,7 +49,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         public void Pose_StaysUprightWithoutMaxTilt()
         {
             var heights = Heights(p => 0.5f * p.x);
-            var entry = new MapProp { key = "House", size = new Vector2(8f, 8f) };
+            var entry = MapFixture.Item<MapProp>("House", i => { i.size = new Vector2(8f, 8f); });
             var pose = MapPlacementPose.OnGround(new MapPlacement(entry, Vector2.zero, 0f, 1f), heights, 0f);
 
             Assert.That(Vector3.Angle(Vector3.up, pose.rotation * Vector3.up), Is.LessThan(0.01f));
@@ -91,7 +91,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         {
             var climate = MapFixture.Climate();
             var shrub = new GameObject("Shrub");
-            climate.trees.Add(new MapClimateTree { key = "Shrub", prefabs = { shrub } });
+            climate.trees.Add(MapFixture.Item<MapClimateTree>("Shrub", i => i.prefabs.Add(shrub)));
             var rough = MapFixture.Surface("Rough", "Meadow");
             rough.treeSpacing = 1.5f;
             rough.trees.Add(new MapTreeDensity { tree = "Shrub", perHectare = 400f, maxEdgeDistance = 4f });
@@ -124,7 +124,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
             var (prefab, model) = (new GameObject("Stone"), new GameObject("StoneModel"));
             var issues = new MapIssues();
             var context = MapFixture.Context(MapFixture.Spec(), climate, issues);
-            context.Palette.entries.Add(new MapProp { key = "Stone", prefab = prefab, backdropModel = model, size = Vector2.one });
+            context.Palette.entries.Add(MapFixture.Item<MapProp>("Stone", i => { i.prefab = prefab; i.backdropModel = model; i.size = Vector2.one; }));
             context.Land.ClaimWhere(context.Land.Bounds, context.Region(MapLandKind.Margin, "Rough"), _ => true);
 
             new MapSurfacePlanter(context).Plan();

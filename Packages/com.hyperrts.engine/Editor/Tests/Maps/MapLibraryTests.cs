@@ -1,60 +1,36 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Editor.Validation;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Tests.Maps
 {
     /// <summary>
-    /// The map library: items keyed by file name, climates pulling in what they use, item files written and read
-    /// back, asset links, and every bad file an error naming it.
+    /// The map library on items made in memory: items keyed by name, climates pulling in what they use, and every
+    /// bad item an error naming it.
     /// </summary>
     public class MapLibraryTests
     {
-        private const string AssetFolder = "Assets/MapLibraryTest";
-        private const string AssetPath = AssetFolder + "/Ground.mat";
-
-        private string _root;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _root = Path.Combine(Path.GetTempPath(), "MapLibraryTests-" + Guid.NewGuid().ToString("N")).Replace('\\', '/');
-            Write("Layers/Meadow.layer.json", "{}");
-            Write("Layers/Stubble.layer.json", "{}");
-            Write("Plants/Grass.plant.json", "{}");
-            Write("Trees/Oak.tree.json", "{\"scale\": {\"x\": 0.9, \"y\": 1.1}}");
-            Write("Library/Meadow.surface.json",
-                "{\"layer\": \"Meadow\", \"trees\": [{\"tree\": \"Oak\", \"perHectare\": 10}], \"plants\": [{\"plant\": \"Grass\", \"coverage\": 0.5}]}");
-            Write("Library/Stubble.surface.json", "{\"layer\": \"Stubble\"}");
-            Write("Library/Lane.road.json", "{\"surface\": \"Meadow\", \"vergeSurface\": \"Meadow\", \"width\": 5}");
-            Write("Library/Steppe.climate.json",
-                "{\"surfaces\": [\"Meadow\", \"Stubble\"], \"roadClasses\": [\"Lane\"], \"groundSurface\": \"Meadow\"}");
-            Write("Library/Shed.prop.json", "{\"size\": {\"x\": 3, \"y\": 2}}");
-            Write("Library/Game.palette.json", "{\"baseRadius\": 12}");
-            Write("Library/Game.rules.json", "{\"vehicleSpeed\": 7}");
-            Write("Library/Notes.json", "{}");
-            Write("Maps/Test.map.json", "{}");
-        }
+        private readonly List<Object> _made = new();
 
         [TearDown]
         public void TearDown()
         {
-            Directory.Delete(_root, true);
-            AssetDatabase.DeleteAsset(AssetFolder);
+            _made.ForEach(Object.DestroyImmediate);
+            _made.Clear();
         }
 
         [Test]
-        public void AClimate_TakesItsKeysFromFileNamesAndPullsInWhatItUses()
+        public void AClimate_PullsInWhatItUses()
         {
-            var climate = MapLibrary.Load(_root).Climate("Steppe", "test");
+            var climate = SteppeLibrary().Climate("Steppe", "test");
 
-            Assert.AreEqual("Steppe", climate.name);
+            Assert.AreEqual("Steppe", climate.key);
             Assert.AreEqual("Meadow", climate.groundSurface);
             CollectionAssert.AreEqual(new[] { "Meadow", "Stubble" }, climate.surfaces.Select(s => s.key));
             CollectionAssert.AreEqual(new[] { "Meadow", "Stubble" }, climate.layers.Select(l => l.key));
@@ -65,29 +41,56 @@ namespace HyperRTS.Editor.Tests.Maps
         }
 
         [Test]
+        public void AnItem_LoadsAsACopy_AndOriginalIsTheItem()
+        {
+            var layer = Make<MapClimateLayer>("Meadow");
+            var library = MapLibrary.From(layer);
+
+            var copy = library.Get<MapClimateLayer>("Meadow", "test");
+
+            Assert.AreNotSame(layer, copy);
+            Assert.AreSame(copy, library.Get<MapClimateLayer>("Meadow", "test"), "a library loads each item once");
+            Assert.AreSame(layer, library.Original(typeof(MapClimateLayer), "Meadow"));
+            Assert.AreEqual("Meadow", copy.key);
+        }
+
+        [Test]
         public void AClimatesWarKit_PullsInItsDecalsPlantLayerAndShreddedTrees()
         {
-            Write("Trees/OakSnapped.tree.json", "{}");
-            Write("Decals/Crater.decal.json", "{}");
-            Write("Library/Old.war.json",
-                "{\"craterDecal\": \"Crater\", \"wetDecal\": \"Crater\", \"weedPlant\": \"Grass\", \"burntLayer\": \"Stubble\", " +
-                "\"shreddedTrees\": [{\"tree\": \"Oak\", \"shredded\": [\"OakSnapped\"]}]}");
-            Write("Library/Scarred.climate.json",
-                "{\"surfaces\": [\"Meadow\"], \"roadClasses\": [\"Lane\"], \"groundSurface\": \"Meadow\", \"warKit\": \"Old\"}");
+            var war = Make<MapWarKit>("Old", w =>
+            {
+                w.craterDecal = "Crater";
+                w.wetDecal = "Crater";
+                w.weedPlant = "Grass";
+                w.burntLayer = "Stubble";
+                w.shreddedTrees.Add(new MapWarTreeSwap { tree = "Oak", shredded = new List<string> { "OakSnapped" } });
+            });
+            var scarred = Make<MapClimate>("Scarred", c =>
+            {
+                c.surfaceKeys.Add("Meadow");
+                c.roadClassKeys.Add("Lane");
+                c.groundSurface = "Meadow";
+                c.warKit = "Old";
+            });
+            var library = SteppeLibrary(war, scarred, Make<MapClimateTree>("OakSnapped"), Make<MapClimateDecal>("Crater"));
 
-            var climate = MapLibrary.Load(_root).Climate("Scarred", "test");
+            var climate = library.Climate("Scarred", "test");
 
             Assert.AreEqual("Old", climate.war.key);
             CollectionAssert.AreEqual(new[] { "Meadow", "Stubble" }, climate.layers.Select(l => l.key));
             CollectionAssert.AreEqual(new[] { "Oak", "OakSnapped" }, climate.trees.Select(t => t.key));
             CollectionAssert.AreEqual(new[] { "Crater" }, climate.decals.Select(d => d.key));
-            Assert.IsNull(MapLibrary.Load(_root).Climate("Steppe", "test").war);
+            Assert.IsNull(library.Climate("Steppe", "test").war);
         }
 
         [Test]
         public void ThePalette_HoldsEveryProp_AndTheRulesLoad()
         {
-            var library = MapLibrary.Load(_root);
+            var library = MapLibrary.From(
+                Make<MapPalette>("Game", p => p.baseRadius = 12f),
+                Make<MapRules>("Game", r => r.vehicleSpeed = 7f),
+                Make<MapProp>("Shed", p => p.size = new Vector2(3f, 2f)));
+
             var palette = library.Palette();
 
             Assert.AreEqual(12f, palette.baseRadius);
@@ -96,204 +99,128 @@ namespace HyperRTS.Editor.Tests.Maps
         }
 
         [Test]
-        public void PaletteSides_ReadTheirKitsAndBuildOrders()
+        public void ADuplicateKey_ThrowsNamingTheKey()
         {
-            Write("Library/Game.palette.json",
-                "{\"sides\": [{\"side\": 3, \"startKit\": [{\"key\": \"Shed\", \"offset\": {\"x\": 2, \"y\": 5}, \"yaw\": 90}], \"buildOrder\": {}}]}");
+            var error = Assert.Throws<InvalidOperationException>(
+                () => MapLibrary.From(Make<MapClimateLayer>("Meadow"), Make<MapClimateLayer>("Meadow")));
 
-            var side = MapLibrary.Load(_root).Palette().sides.Single();
-
-            Assert.AreEqual(3, side.side);
-            Assert.AreEqual("Shed", side.startKit.Single().key);
-            Assert.AreEqual(new Vector2(2f, 5f), side.startKit.Single().offset);
-            Assert.AreEqual(90f, side.startKit.Single().yaw);
-            Assert.IsNull(side.buildOrderAsset, "an empty build order lets the side's bots train freely");
+            StringAssert.Contains("both layer 'Meadow'", error.Message);
         }
 
         [Test]
-        public void AFileWithoutTheVersion_ThrowsNamingIt()
+        public void AMissingKey_ThrowsNamingTheItemThatNamesIt()
         {
-            File.WriteAllText(Path.Combine(_root, "Library/Game.palette.json"), "{\"baseRadius\": 12}");
+            var library = SteppeLibrary(Make<MapClimateSurface>("Stubble", s =>
+            {
+                s.layer = "Stubble";
+                s.trees.Add(new MapTreeDensity { tree = "Pine" });
+            }));
 
-            var error = Assert.Throws<InvalidOperationException>(() => MapLibrary.Load(_root).Palette());
+            var error = Assert.Throws<KeyNotFoundException>(() => library.Climate("Steppe", "test"));
 
-            StringAssert.Contains("has version none, but the library reads version 1", error.Message);
-        }
-
-        [Test]
-        public void AnAssetLinkWrittenAsAPath_ThrowsNamingTheField()
-        {
-            Write("Library/Game.palette.json", "{\"rig\": \"Assets/Rig.prefab\"}");
-
-            var error = Assert.Throws<InvalidOperationException>(() => MapLibrary.Load(_root).Palette());
-
-            StringAssert.Contains("'rig' must be an object", error.Message);
-        }
-
-        [Test]
-        public void ANestedFieldTheItemDoesNotRead_ThrowsNamingItsPath()
-        {
-            Write("Library/Game.palette.json", "{\"sides\": [{\"sied\": 3}]}");
-
-            var error = Assert.Throws<InvalidOperationException>(() => MapLibrary.Load(_root).Palette());
-
-            StringAssert.Contains("'sides[0].sied' is not a palette field", error.Message);
-            StringAssert.Contains("Game.palette.json", error.Message);
-        }
-
-        [Test]
-        public void ADuplicateKey_ThrowsNamingBothFiles()
-        {
-            Write("Elsewhere/Meadow.layer.json", "{}");
-
-            var error = Assert.Throws<InvalidOperationException>(() => MapLibrary.Load(_root));
-
-            StringAssert.Contains($"{_root}/Elsewhere/Meadow.layer.json", error.Message);
-            StringAssert.Contains($"{_root}/Layers/Meadow.layer.json", error.Message);
-        }
-
-        [Test]
-        public void AMissingKey_ThrowsNamingTheFileThatNamesIt()
-        {
-            Write("Library/Stubble.surface.json", "{\"layer\": \"Stubble\", \"trees\": [{\"tree\": \"Pine\"}]}");
-
-            var error = Assert.Throws<KeyNotFoundException>(() => MapLibrary.Load(_root).Climate("Steppe", "test"));
-
-            StringAssert.Contains("Pine.tree.json", error.Message);
-            StringAssert.Contains($"{_root}/Library/Stubble.surface.json", error.Message);
+            StringAssert.Contains("Pine.tree.asset", error.Message);
+            StringAssert.Contains("'Stubble' names it", error.Message);
         }
 
         [Test]
         public void AMissingClimate_ThrowsNamingTheSpec()
         {
-            var error = Assert.Throws<KeyNotFoundException>(() => MapLibrary.Load(_root).Climate("Tundra", "Maps/Test.json"));
+            var error = Assert.Throws<KeyNotFoundException>(() => SteppeLibrary().Climate("Tundra", "Maps/Test.json"));
 
             StringAssert.Contains("Maps/Test.json", error.Message);
-            StringAssert.Contains("Tundra.climate.json", error.Message);
+            StringAssert.Contains("Tundra.climate.asset", error.Message);
         }
 
         [Test]
         public void TwoPalettes_Throw()
         {
-            Write("Library/Other.palette.json", "{}");
+            var library = MapLibrary.From(Make<MapPalette>("Game"), Make<MapPalette>("Other"));
 
-            Assert.Throws<InvalidOperationException>(() => MapLibrary.Load(_root).Palette());
+            Assert.Throws<InvalidOperationException>(() => library.Palette());
         }
 
         [Test]
-        public void NewItems_RoundTripThroughTheirFiles()
+        public void TheRule_NamesAKeyThatNamesNoItem()
         {
-            Directory.CreateDirectory($"{_root}/New");
-            foreach (var type in MapLibrary.ItemTypes)
-            {
-                var file = $"{_root}/New/New.{MapLibrary.TypeName(type)}.json";
-                var (item, refs) = MapLibraryItemFile.Create(type);
-                var json = MapLibraryItemFile.ToJson(type, item, refs);
-                MapLibraryItemFile.Write(file, type, item, refs);
+            var library = MapLibrary.From(Make<MapClimateSurface>("Village", s => s.layer = "Field"));
+            var issues = new ValidationIssues();
 
-                var read = MapLibraryItemFile.Read(type, file);
-                Assert.AreEqual(json, MapLibraryItemFile.ToJson(type, read.Item, read.Refs), type.Name);
-                Assert.IsFalse(json.Contains("\"key\""), $"{type.Name} writes its key.");
-                CollectionAssert.Contains(MapLibrary.Load(_root).Keys(type), "New", type.Name);
-            }
+            MapLibraryRule.Check(library, issues);
+
+            Assert.AreEqual(1, issues.Count, string.Join("\n", issues));
+            StringAssert.Contains("layer names", issues[0].Message);
+            StringAssert.Contains("'Field'", issues[0].Message);
         }
 
         [Test]
-        public void Files_PutTheVersionAndTheTypesRefsFirstIndentedByTwoSpaces()
+        public void TheRule_FindsATreeWithMismatchedDestructibles()
         {
-            var layer = new MapClimateLayer { rotation = 90f };
-            var refs = new MapLibraryRefs
+            var tree = Make<MapClimateTree>("Oak", t =>
             {
-                terrainLayer = new MapAssetRef { path = "Assets/Meadow.terrainlayer", guid = "0123" },
-                prefab = new MapAssetRef { path = "Assets/Unused.prefab" },
+                t.prefabs.AddRange(new[] { new GameObject("A"), new GameObject("B") });
+                t.destructibles.Add(new GameObject("C"));
+            });
+            _made.AddRange(tree.prefabs);
+            _made.AddRange(tree.destructibles);
+            var issues = new ValidationIssues();
+
+            MapLibraryRule.Check(MapLibrary.From(tree), issues);
+
+            Assert.AreEqual(1, issues.Count, string.Join("\n", issues));
+            StringAssert.Contains("1 destructibles for 2 prefabs", issues[0].Message);
+        }
+
+        /// <summary>A small landscape (layers, tree, plant, road, surfaces and the climate Steppe), with <paramref name="extra"/> added or replacing an item of the same type and key.</summary>
+        private MapLibrary SteppeLibrary(params MapLibraryItem[] extra)
+        {
+            var items = new List<MapLibraryItem>
+            {
+                Make<MapClimateLayer>("Meadow"),
+                Make<MapClimateLayer>("Stubble"),
+                Make<MapClimatePlant>("Grass"),
+                Make<MapClimateTree>("Oak", t => t.scale = new Vector2(0.9f, 1.1f)),
+                Make<MapClimateSurface>("Meadow", s =>
+                {
+                    s.layer = "Meadow";
+                    s.trees.Add(new MapTreeDensity { tree = "Oak", perHectare = 10f });
+                    s.plants.Add(new MapPlantCoverage { plant = "Grass", coverage = 0.5f });
+                }),
+                Make<MapClimateSurface>("Stubble", s => s.layer = "Stubble"),
+                Make<MapRoadClass>("Lane", r =>
+                {
+                    r.surface = "Meadow";
+                    r.vergeSurface = "Meadow";
+                    r.width = 5f;
+                }),
+                Make<MapClimate>("Steppe", c =>
+                {
+                    c.surfaceKeys.AddRange(new[] { "Meadow", "Stubble" });
+                    c.roadClassKeys.Add("Lane");
+                    c.groundSurface = "Meadow";
+                }),
             };
+            foreach (var item in extra)
+            {
+                var replaced = items.FindIndex(own => own.GetType() == item.GetType() && own.key == item.key);
+                if (replaced >= 0)
+                {
+                    items[replaced] = item;
+                }
+                else
+                {
+                    items.Add(item);
+                }
+            }
 
-            var json = MapLibraryItemFile.ToJson(typeof(MapClimateLayer), layer, refs);
-
-            const string head = "{\n  \"version\": 1,\n  \"terrainLayer\": {\n    \"path\": \"Assets/Meadow.terrainlayer\",\n"
-                + "    \"guid\": \"0123\"\n  },\n  \"mapColor\": {\n    \"r\":";
-            StringAssert.StartsWith(head, json);
-            StringAssert.Contains("\n  \"rotation\": 90,\n", json);
-            StringAssert.EndsWith("\n}\n", json);
-            Assert.IsFalse(json.Contains("prefab"));
+            return MapLibrary.From(items.ToArray());
         }
 
-        [Test]
-        public void Problems_NameTheFileAndTheMissingKey()
+        private T Make<T>(string key, Action<T> init = null) where T : MapLibraryItem
         {
-            Write("Library/Village.settlement.json", "{\"yardSurface\": \"Field\", \"houses\": [\"House\"]}");
-
-            var problems = MapLibraryProblems.Find(_root);
-
-            Assert.AreEqual(2, problems.Count, string.Join("\n", problems));
-            Assert.IsTrue(problems.All(problem => problem.File.EndsWith("Village.settlement.json", StringComparison.Ordinal)));
-            Assert.IsTrue(problems.Any(problem => problem.Message.Contains("yardSurface") && problem.Message.Contains("'Field'")));
-            Assert.IsTrue(problems.Any(problem => problem.Message.Contains("houses") && problem.Message.Contains("'House'")));
-        }
-
-        [Test]
-        public void Problems_ReportAFileThatDoesNotParse()
-        {
-            Write("Library/Broken.surface.json", "{\"layer\": ");
-
-            var problems = MapLibraryProblems.Find(_root);
-
-            Assert.IsTrue(problems.Any(problem => problem.File.EndsWith("Broken.surface.json", StringComparison.Ordinal)));
-        }
-
-        [Test]
-        public void AnEditedAssetPath_FillsInItsGuid()
-        {
-            CreateAsset();
-            var link = new MapAssetRef { path = AssetPath, guid = "stale" };
-
-            Assert.IsTrue(link.Sync());
-            Assert.AreEqual(AssetDatabase.AssetPathToGUID(AssetPath), link.guid);
-        }
-
-        [Test]
-        public void AMovedAsset_StillLoads_AndSyncWritesItsNewPath()
-        {
-            const string moved = AssetFolder + "/Moved.mat";
-            CreateAsset();
-            var link = MapAssetRef.At(AssetPath);
-            AssetDatabase.MoveAsset(AssetPath, moved);
-
-            Assert.IsNotNull(link.Load(typeof(Material), out _));
-            Assert.IsTrue(link.Sync());
-            Assert.AreEqual(moved, link.path);
-            Assert.IsFalse(link.Sync(), "a synced link is stable");
-        }
-
-        [Test]
-        public void AnAssetLinkWithoutAGuid_DoesNotLoad_AndSaysWhy()
-        {
-            CreateAsset();
-            var link = new MapAssetRef { path = AssetPath };
-
-            Assert.IsNull(link.Load(typeof(Material), out var problem));
-            StringAssert.Contains("has no guid", problem);
-        }
-
-        private static void CreateAsset()
-        {
-            AssetDatabase.CreateFolder("Assets", "MapLibraryTest");
-            AssetDatabase.CreateAsset(new Material(Shader.Find("Hidden/InternalErrorShader")), AssetPath);
-        }
-
-        private void Write(string path, string json)
-        {
-            var file = Path.Combine(_root, path);
-            Directory.CreateDirectory(Path.GetDirectoryName(file));
-            File.WriteAllText(file, MapLibrary.ParseFile(path).Type == null ? json : Versioned(json));
-        }
-
-        /// <summary>Library fixtures carry the version real files do.</summary>
-        private static string Versioned(string json)
-        {
-            var rest = json[1..].TrimStart();
-            var separator = rest.StartsWith('}') ? string.Empty : ", ";
-            return $"{{\"version\": {MapLibraryItemFile.Version}{separator}{rest}";
+            var item = MapFixture.Item<T>(key);
+            init?.Invoke(item);
+            _made.Add(item);
+            return item;
         }
     }
 }

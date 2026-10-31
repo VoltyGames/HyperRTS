@@ -3,7 +3,7 @@ using HyperRTS.Editor.Maps.Data;
 
 namespace HyperRTS.Editor.Maps.Checks
 {
-    /// <summary>Checks the palette's sides: ids 1 to 255 listed once, kit pieces that are entity entries, build orders that load.</summary>
+    /// <summary>Checks the palette's sides: ids 1 to 255 listed once and kit pieces that are entity entries.</summary>
     public sealed class MapSideCheck : MapKeyCheck
     {
         public MapSideCheck(MapClimate climate, MapPalette palette, MapIssues issues) : base(climate, palette, issues)
@@ -19,8 +19,6 @@ namespace HyperRTS.Editor.Maps.Checks
                 Require(side.side >= 1 && side.side <= byte.MaxValue, $"{name}: side ids run from 1 to {byte.MaxValue}.");
                 Require(ids.Add(side.side), $"{name} is listed twice.");
                 side.startKit.ForEach(item => KitItem(item.key, $"{name} start kit"));
-                var missing = !side.buildOrder.IsEmpty && side.buildOrderAsset == null;
-                Require(!missing, $"{name}: build order '{side.buildOrder.path}' is not an AI Build Order asset.");
             }
         }
 

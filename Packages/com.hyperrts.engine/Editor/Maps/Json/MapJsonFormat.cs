@@ -10,7 +10,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Json
 {
     /// <summary>
-    /// The one layout map specs and library files are written in: indented by two spaces, point objects and short
+    /// The one layout map specs and effect recipes are written in: indented by two spaces, point objects and short
     /// scalar arrays on one line, floats in their shortest form, so saves diff cleanly. Parses with Newtonsoft,
     /// keeping member order and strings as strings (no date guessing).
     /// </summary>

@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Planning;
@@ -31,29 +33,59 @@ namespace HyperRTS.Editor.Tests.Maps
             points = new List<MapPoint>(System.Array.ConvertAll(points, p => new MapPoint(p.x, p.y))),
         };
 
+        /// <summary>A library item made in memory, keyed and named <paramref name="key"/> as the library would.</summary>
+        public static T Item<T>(string key) where T : MapLibraryItem
+        {
+            var item = ScriptableObject.CreateInstance<T>();
+            item.key = key;
+            item.name = key;
+            return item;
+        }
+
         /// <summary>Asphalt (8 m, rank 2, 25 m curves) and Dirt (4 m, rank 0, 10 m curves) with their surfaces.</summary>
         public static MapClimate Climate()
         {
-            var climate = new MapClimate();
-            climate.name = "Test";
+            var climate = Item<MapClimate>("Test");
             AddSurfaces(climate, "Asphalt", "Dirt", "Verge", "Meadow");
 
             climate.groundSurface = "Meadow";
             climate.weathers.Add(new MapClimateWeather { key = "Clear" });
-            climate.roadClasses.Add(new MapRoadClass
-            {
-                key = "Asphalt", width = 8f, surface = "Asphalt", impactClass = "Paved", vergeSurface = "Verge", vergeWidth = 2f, rank = 2, cornerRadius = 25f,
-            });
-            climate.roadClasses.Add(new MapRoadClass
-            {
-                key = "Dirt", width = 4f, surface = "Dirt", impactClass = "Soil", vergeSurface = "Verge", vergeWidth = 1f, rank = 0, cornerRadius = 10f,
-            });
+            climate.roadClasses.Add(RoadClass("Asphalt", 8f, 2, 25f, "Paved", 2f));
+            climate.roadClasses.Add(RoadClass("Dirt", 4f, 0, 10f, "Soil", 1f));
             return climate;
         }
 
+        /// <summary>An <see cref="Item{T}(string)"/> with <paramref name="init"/> applied.</summary>
+        public static T Item<T>(string key, Action<T> init) where T : MapLibraryItem
+        {
+            var item = Item<T>(key);
+            init(item);
+            return item;
+        }
+
+        private static MapRoadClass RoadClass(string key, float width, int rank, float cornerRadius, string impactClass, float vergeWidth)
+        {
+            var roadClass = Item<MapRoadClass>(key);
+            roadClass.width = width;
+            roadClass.surface = key;
+            roadClass.impactClass = impactClass;
+            roadClass.vergeSurface = "Verge";
+            roadClass.vergeWidth = vergeWidth;
+            roadClass.rank = rank;
+            roadClass.cornerRadius = cornerRadius;
+            return roadClass;
+        }
+
         /// <summary>A climate surface with every required field set.</summary>
-        public static MapClimateSurface Surface(string key, string layer, float edgeWidth = 1f, float edgeWander = 1f) =>
-            new() { key = key, layer = layer, impactClass = "Grass", edgeWidth = edgeWidth, edgeWander = edgeWander };
+        public static MapClimateSurface Surface(string key, string layer, float edgeWidth = 1f, float edgeWander = 1f)
+        {
+            var surface = Item<MapClimateSurface>(key);
+            surface.layer = layer;
+            surface.impactClass = "Grass";
+            surface.edgeWidth = edgeWidth;
+            surface.edgeWander = edgeWander;
+            return surface;
+        }
 
         /// <summary>One terrain layer and one surface painting it per key.</summary>
         public static void AddSurfaces(MapClimate climate, params string[] keys) => AddSurfaces(climate, 1f, 1f, keys);
@@ -62,7 +94,7 @@ namespace HyperRTS.Editor.Tests.Maps
         {
             foreach (var key in keys)
             {
-                climate.layers.Add(new MapClimateLayer { key = key });
+                climate.layers.Add(Item<MapClimateLayer>(key));
                 climate.surfaces.Add(Surface(key, key, edgeWidth, edgeWander));
             }
         }
@@ -76,12 +108,12 @@ namespace HyperRTS.Editor.Tests.Maps
         }
 
         public static MapShapes Shapes(MapLayout layout, MapClimate climate) =>
-            new(layout, new MapPalette(), climate);
+            new(layout, Item<MapPalette>("Palette"), climate);
 
         public static MapPlanContext Context(MapSpec spec, MapClimate climate, MapIssues issues)
         {
             var layout = Layout(spec);
-            var palette = new MapPalette();
+            var palette = Item<MapPalette>("Palette");
             palette.baseRadius = 15f;
             var shapes = new MapShapes(layout, palette, climate);
             var heights = MapHeightShaper.Shape(layout, shapes);

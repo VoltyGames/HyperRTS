@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.Maps.Checks
         protected void Tree(string key, string source) => InClimate(Climate.trees, key, "tree", source);
 
         protected void InClimate<T>(IReadOnlyList<T> items, string key, string what, string source) where T : IMapKeyed =>
-            Require(MapKeys.Contains(items, key), $"{source}: {what} '{key}' is not in climate '{Climate.name}'.");
+            Require(MapKeys.Contains(items, key), $"{source}: {what} '{key}' is not in climate '{Climate.key}'.");
 
         protected void Entry(string key, string source) =>
             Require(MapKeys.Contains(Palette.entries, key), $"{source}: '{key}' is not in the palette.");

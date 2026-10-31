@@ -1,4 +1,4 @@
-using System;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,13 +10,10 @@ namespace HyperRTS.Editor.Maps.Data
     /// behind it, a vegetable garden, an orchard or meadow at the back, fences between plots, and street furniture.
     /// Building and fence keys are props; surfaces and trees are climate keys.
     /// </summary>
-    [Serializable]
     [MapLibraryItem("settlement")]
-    public sealed class MapSettlementKit : IMapKeyed, IMapLibraryItem
+    [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Settlement Kit", fileName = "New.settlement")]
+    public sealed class MapSettlementKit : MapLibraryItem
     {
-        [NonSerialized]
-        public string key;
-
         [Tooltip("Plot width along the street (x) and depth away from it (y), in metres.")]
         public Vector2 plot = new(26f, 70f);
 
@@ -99,9 +96,5 @@ namespace HyperRTS.Editor.Maps.Data
         public string streetPole;
 
         public float poleSpacing = 35f;
-
-        string IMapKeyed.Key => key;
-
-        void IMapLibraryItem.Load(string key, MapLibraryRefs refs) => this.key = key;
     }
 }
