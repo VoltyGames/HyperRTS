@@ -413,6 +413,8 @@ scene view perspective cameras.
 
 `Wind` sits on the scene's directional `WindZone` and publishes its strength, gusts and direction to shaders. Its
 `vegetation` setting picks how much plants move: `None`, `Sway`, `Branches` or `Flutter`. Flags fly regardless.
+It also keeps a `WindState` singleton (downwind direction and strength) in the presented world for the machine, dust
+devil, battle haze and field fire systems; without a `Wind` there is no singleton and the air is still.
 Every shader pass of Foliage and Bark uses the same wind, so shadows match.
 
 Grass, crops and other details sway about their origin, mostly with the gusts rolling downwind and a little in their
@@ -485,7 +487,8 @@ are not cover.
 Shells that land on dry fields set them alight. A `FieldFireSettings` component in the scene, one per climate (the
 game puts it on the atmosphere prefab), names the rig, the dry terrain layers, the wetness limit, the smallest blast,
 the ignite chance, how long a cell burns, each fire's reach, the clearance round buildings and how many fires play. Without one, or without an active terrain,
-`FieldFireSystem` idles. The fires are client visuals only and harm nothing.
+`FieldFireSystem` idles. The component publishes itself as a `FieldFireSource` singleton, and the system keeps a
+`FieldFireState` singleton counting burnt cells. The fires are client visuals only and harm nothing.
 
 - `FieldFires` is a 1 m grid over the map. A cell is dry where the listed terrain layers hold over half the
   alphamap's weight and the `GroundMaterials` cell isn't water; roads, water and bare soil stay bare. Ground within
@@ -507,7 +510,7 @@ redone whenever a building appears, goes or moves, before that frame's ignitions
 - A seen cell that burns out stamps a soft 2.6 m disc of full ash into the remains map and of scorch into the tracks
   map (`InteractionStamps.AddScorch`), nudged up to 0.35 m off the grid, so neighbours overlap into one char. The grass and row crop kernels get the remains map bound by
   `InteractionSurfaces.BindRemains` and drop plants where ash lies (`BurntPlants.hlsl`), so burnt fields stay bare;
-  a crater's lighter ash only thins them. A still camera's grass and crops regrow when `FieldFireSystem.BurntCells` changes (`ScatterView` tracks it).
+  a crater's lighter ash only thins them. A still camera's grass and crops regrow when `FieldFireState.BurntCells` changes (`ScatterView` tracks it).
 
 ### Building footprints
 

@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Environment.Fire;
 using HyperRTS.Presentation.Environment.Interaction;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;
+using Unity.Entities;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
@@ -22,6 +24,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         private int _footprints;
         private int _burntCells;
         private bool _grown;
+        private World _world;
+        private EntityQuery _burnt;
 
         /// <summary>A view for plants that bend under the trample map when <paramref name="readsTrample"/>, which changes every frame it is published.</summary>
         public ScatterView(bool readsTrample) => _readsTrample = readsTrample;
@@ -34,7 +38,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
                 return false;
             }
 
-            if (_burntCells != FieldFireSystem.BurntCells || (_readsTrample && InteractionSurfaces.Published))
+            if (_burntCells != BurntCells() || (_readsTrample && InteractionSurfaces.Published))
             {
                 return false;
             }
@@ -48,10 +52,28 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             _cell = Cell(position);
             _settings = settings.Packed;
             _footprints = BuildingFootprintMask.Version;
-            _burntCells = FieldFireSystem.BurntCells;
+            _burntCells = BurntCells();
             _tiles.Clear();
             _tiles.AddRange(tiles);
             _grown = true;
+        }
+
+        // No world (edit mode, map captures) has no fires.
+        private int BurntCells()
+        {
+            if (!MatchView.TryGetDefault(out var view))
+            {
+                return 0;
+            }
+
+            var manager = view.EntityManager;
+            if (_world != manager.World)
+            {
+                _world = manager.World;
+                _burnt = manager.CreateEntityQuery(ComponentType.ReadOnly<FieldFireState>());
+            }
+
+            return _burnt.TryGetSingleton(out FieldFireState state) ? state.BurntCells : 0;
         }
 
         private bool SameTiles(List<int> tiles)

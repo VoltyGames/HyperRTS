@@ -77,8 +77,9 @@ namespace HyperRTS.Presentation.Environment.Weather
                 return;
             }
 
-            var downwind = new float2(Wind.Downwind.x, Wind.Downwind.z);
-            Haze.Advance(_clock, downwind * Wind.Strength * DriftPerStrength);
+            // No Wind in the scene means still air.
+            SystemAPI.TryGetSingleton(out WindState wind);
+            Haze.Advance(_clock, wind.Push * DriftPerStrength);
             _clock = 0f;
             _texture.SetPixelData(Haze.Texels, 0);
             _texture.Apply(false);

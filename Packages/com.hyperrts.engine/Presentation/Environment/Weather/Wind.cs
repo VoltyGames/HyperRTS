@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using Unity.Entities;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -34,17 +35,11 @@ namespace HyperRTS.Presentation.Environment.Weather
         [Tooltip("How much trees, grass and crops move in this wind. None keeps them still but for downwash and blasts. Flags still fly.")]
         public WindDetail vegetation = WindDetail.Flutter;
 
-        /// <summary>The last published downwind direction on the ground (xz); zero before any Wind has run.</summary>
-        [AutoStaticsCleanup]
-        public static Vector3 Downwind { get; private set; }
-
-        /// <summary>The last published wind strength (the WindZone's main); zero before any Wind has run or once off.</summary>
-        [AutoStaticsCleanup]
-        public static float Strength { get; private set; }
-
         private WindZone _zone;
         private Texture2D _gustMap;
         private Vector2 _gustOffset;
+        private World _world;
+        private Entity _state;
 
         private void OnEnable()
         {
@@ -60,8 +55,7 @@ namespace HyperRTS.Presentation.Environment.Weather
             var last = _gustOffset;
             _gustOffset = GustField.Scroll(_gustOffset, new Vector2(downwind.x, downwind.z), _zone.windPulseFrequency, Time.deltaTime);
 
-            Downwind = downwind;
-            Strength = _zone.windMain;
+            Publish(new WindState { Downwind = downwind, Strength = _zone.windMain });
             Shader.SetGlobalVector(DirectionId, downwind);
             Shader.SetGlobalFloat(StrengthId, _zone.windMain);
             Shader.SetGlobalVector(GustId, new Vector4(_zone.windPulseMagnitude, _zone.windTurbulence, 1f / gustSize, 0f));
@@ -71,21 +65,45 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         protected override void OnDisabled()
         {
-            Downwind = Vector3.zero;
-            Strength = 0f;
+            Unpublish();
             Shader.SetGlobalFloat(StrengthId, 0f);
             Shader.SetGlobalTexture(GustMapId, Texture2D.blackTexture);
             Shader.SetGlobalFloat(DetailId, (float)WindDetail.None);
             CoreUtils.Destroy(_gustMap);
         }
 
-        // Statics and shader globals outlive Play mode in the editor.
+        // Shader globals outlive Play mode in the editor.
         [OnEnteringPlayMode]
-        private static void Reset()
+        private static void Reset() => Shader.SetGlobalFloat(StrengthId, 0f);
+
+        // Retried every frame: the world may not exist yet, or may be a new one.
+        private void Publish(in WindState wind)
         {
-            Downwind = Vector3.zero;
-            Strength = 0f;
-            Shader.SetGlobalFloat(StrengthId, 0f);
+            if (!MatchView.TryGetDefault(out var view))
+            {
+                return;
+            }
+
+            var manager = view.EntityManager;
+            if (_world != manager.World || !manager.Exists(_state))
+            {
+                _world = manager.World;
+                _state = manager.CreateEntity(typeof(WindState));
+            }
+
+            manager.SetComponentData(_state, wind);
+        }
+
+        // Destroyed rather than zeroed, so readers see still air by the singleton being absent.
+        private void Unpublish()
+        {
+            if (_world is { IsCreated: true } && _world.EntityManager.Exists(_state))
+            {
+                _world.EntityManager.DestroyEntity(_state);
+            }
+
+            _world = null;
+            _state = Entity.Null;
         }
     }
 }

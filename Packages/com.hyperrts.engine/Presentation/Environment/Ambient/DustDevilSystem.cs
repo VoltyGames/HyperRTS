@@ -109,8 +109,9 @@ namespace HyperRTS.Presentation.Environment.Ambient
 
         private void Advance(float deltaTime, in TerrainHeight terrain)
         {
-            Vector3 wind = Wind.Downwind;
-            var downwind = math.normalizesafe(new float2(wind.x, wind.z));
+            // No Wind in the scene means still air.
+            SystemAPI.TryGetSingleton(out WindState wind);
+            var downwind = math.normalizesafe(wind.Downwind.xz);
             _streams.BeginFrame();
             for (var i = _devils.Count - 1; i >= 0; i--)
             {

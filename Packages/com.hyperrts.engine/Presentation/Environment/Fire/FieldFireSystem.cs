@@ -13,7 +13,6 @@ using HyperRTS.Simulation.Replays;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Scripting.LifecycleManagement;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -48,12 +47,9 @@ namespace HyperRTS.Presentation.Environment.Fire
         private uint _buildingPlaces;
         private float _clock;
 
-        /// <summary>Cells burnt out so far, so a still camera's grass regrows once ash covers more ground.</summary>
-        [AutoStaticsCleanup]
-        public static int BurntCells { get; private set; }
-
         protected override void OnCreate()
         {
+            EntityManager.CreateSingleton<FieldFireState>();
             _visibility = new CueVisibility(ref CheckedStateRef);
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
             _streams = new EffectStreams(_pool);
@@ -67,7 +63,7 @@ namespace HyperRTS.Presentation.Environment.Fire
 
         protected override void OnUpdate()
         {
-            var settings = FieldFireSettings.Active;
+            var settings = SystemAPI.TryGetSingleton(out FieldFireSource source) ? source.Settings.Value : null;
             var terrain = Terrain.activeTerrain;
             if (settings == null || terrain == null)
             {
@@ -89,8 +85,9 @@ namespace HyperRTS.Presentation.Environment.Fire
             _clock = now;
             ClearBuildings();
             Ignite();
-            Vector3 downwind = Wind.Downwind;
-            if (_fires.Advance(deltaTime, new float2(downwind.x, downwind.z) * Wind.Strength) > 0)
+            // No Wind in the scene means still air.
+            SystemAPI.TryGetSingleton(out WindState wind);
+            if (_fires.Advance(deltaTime, wind.Push) > 0)
             {
                 StampBurntOut();
                 Gather();
@@ -163,7 +160,7 @@ namespace HyperRTS.Presentation.Environment.Fire
         private void StampBurntOut()
         {
             var burntOut = _fires.BurntOut;
-            BurntCells += burntOut.Count;
+            SystemAPI.GetSingletonRW<FieldFireState>().ValueRW.BurntCells += burntOut.Count;
             if (!InteractionStampSystem.MapsOn || burntOut.Count == 0)
             {
                 return;

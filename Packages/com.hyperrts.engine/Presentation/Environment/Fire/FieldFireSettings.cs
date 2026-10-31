@@ -2,7 +2,7 @@ using System;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Cues;
-using Unity.Scripting.LifecycleManagement;
+using Unity.Entities;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Fire
@@ -15,7 +15,7 @@ namespace HyperRTS.Presentation.Environment.Fire
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed partial class FieldFireSettings : PresentationBehaviour
+    public sealed class FieldFireSettings : PresentationBehaviour
     {
         [Tooltip("Effect rig streamed over each cluster of burning cells: low flame along the ground and smoke.")]
         public GameObject rig;
@@ -49,9 +49,8 @@ namespace HyperRTS.Presentation.Environment.Fire
         [Min(0)]
         public int maxEffects = 16;
 
-        /// <summary>The enabled instance in the loaded scenes, or null.</summary>
-        [AutoStaticsCleanup]
-        public static FieldFireSettings Active { get; private set; }
+        private World _world;
+        private Entity _source;
 
         /// <summary>Throws naming the first field that can't be used.</summary>
         public void Require()
@@ -73,14 +72,34 @@ namespace HyperRTS.Presentation.Environment.Fire
             return blast && dryGround && FieldFires.HashFraction(seed) < igniteChance;
         }
 
-        private void OnEnable() => Active = this;
+        // Retried every frame: the world may not exist yet, or may be a new one.
+        private void Update()
+        {
+            if (!MatchView.TryGetDefault(out var view))
+            {
+                return;
+            }
+
+            var manager = view.EntityManager;
+            if (_world == manager.World && manager.Exists(_source))
+            {
+                return;
+            }
+
+            _world = manager.World;
+            _source = manager.CreateEntity(typeof(FieldFireSource));
+            manager.SetComponentData(_source, new FieldFireSource { Settings = this });
+        }
 
         protected override void OnDisabled()
         {
-            if (Active == this)
+            if (_world is { IsCreated: true } && _world.EntityManager.Exists(_source))
             {
-                Active = null;
+                _world.EntityManager.DestroyEntity(_source);
             }
+
+            _world = null;
+            _source = Entity.Null;
         }
 
         private void Require(bool valid, string field, string problem)

@@ -25,9 +25,11 @@ namespace HyperRTS.Presentation.Animation
         [BurstCompile]
         public void OnCreate(ref SystemState state) => state.RequireForUpdate<MachineClock>();
 
-        // Not Burst: it reads the managed wind.
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            // No Wind in the scene means still air.
+            SystemAPI.TryGetSingleton(out WindState wind);
             state.Dependency = new ClockJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
@@ -41,7 +43,7 @@ namespace HyperRTS.Presentation.Animation
             {
                 Clocks = SystemAPI.GetComponentLookup<MachineClock>(true),
                 Places = SystemAPI.GetComponentLookup<LocalToWorld>(true),
-                Downwind = (float3)Wind.Downwind,
+                Downwind = wind.Downwind,
             }.ScheduleParallel(state.Dependency);
         }
 
