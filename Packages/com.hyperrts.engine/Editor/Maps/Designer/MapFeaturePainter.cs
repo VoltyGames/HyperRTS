@@ -13,6 +13,7 @@ namespace HyperRTS.Editor.Maps.Designer
         private const float LineWidth = 2f;
         private const float SelectedWidth = 3.5f;
         private const float PointRadius = 5f;
+        private const float HandleHalf = 4f;
         private const float GhostAlpha = 0.3f;
         private const float FillAlpha = 0.18f;
 
@@ -71,6 +72,28 @@ namespace HyperRTS.Editor.Maps.Designer
             kind.ReadPoints(spec, selected.Index, World);
             ToLocal(view, World, MapTransform.Identity);
             DrawShape(painter, kind.Geometry, kind.Radius(spec, selected.Index) * view.Scale, Selected, SelectedWidth);
+
+            MapHitTest.Handles(spec, selected, World);
+            ToLocal(view, World, MapTransform.Identity);
+            foreach (var handle in Local)
+            {
+                Square(painter, handle);
+            }
+        }
+
+        private static void Square(Painter2D painter, Vector2 centre)
+        {
+            painter.BeginPath();
+            painter.MoveTo(centre + new Vector2(-HandleHalf, -HandleHalf));
+            painter.LineTo(centre + new Vector2(HandleHalf, -HandleHalf));
+            painter.LineTo(centre + new Vector2(HandleHalf, HandleHalf));
+            painter.LineTo(centre + new Vector2(-HandleHalf, HandleHalf));
+            painter.ClosePath();
+            painter.fillColor = Selected;
+            painter.Fill();
+            painter.strokeColor = Outline;
+            painter.lineWidth = 1f;
+            painter.Stroke();
         }
 
         private static void DrawShape(Painter2D painter, MapFeatureGeometry geometry, float radius, Color color,

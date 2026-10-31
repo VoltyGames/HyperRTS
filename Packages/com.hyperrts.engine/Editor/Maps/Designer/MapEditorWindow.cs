@@ -11,18 +11,22 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// HyperRTS ▸ Map Editor: a read-only view of a map spec on a top-down canvas, with the feature list on the left
-    /// and the selected feature's spec path on the right. Specs are edited as JSON; the view follows the file on disk.
-    /// Double-clicking a <c>.map.json</c> opens it here.
+    /// HyperRTS ▸ Map Editor: a map spec on a top-down canvas, laid out with the canvas tools, with the feature list on
+    /// the left and the selected feature's fields on the right. Every edit saves to the spec file at once, and a file
+    /// written from outside reloads. Double-clicking a <c>.map.json</c> opens it here.
     /// </summary>
     public sealed class MapEditorWindow : EditorWindow
     {
         private const string WindowTitle = "Map Editor";
+        private const double WarningSeconds = 5.0;
 
         [SerializeField] private string _specPath;
 
+        // Kept across script reloads with its undo history; destroyed with the window.
+        [SerializeField] private MapSpecDocument _document;
+
         private readonly MapFeatureSelection _selection = new();
-        private MapSpecDocument _document;
+        private readonly MapToolbox _toolbox = new();
         private MapEditorToolbar _toolbar;
         private Label _hint;
         private VisualElement _body;
@@ -56,6 +60,7 @@ namespace HyperRTS.Editor.Maps.Designer
             EditorAssets.Layout(typeof(MapEditorWindow)).CloneTree(root);
             _toolbar = root.Require<MapEditorToolbar>("toolbar");
             _toolbar.SpecPicked += Load;
+            _toolbar.Tools.Bind(_toolbox);
             _toolbar.GhostsToggled += OnGhostsToggled;
             _toolbar.Strip.PreviewClicked += () => _preview?.Preview();
             _toolbar.Strip.BuildClicked += () => _preview?.Build();
@@ -65,6 +70,7 @@ namespace HyperRTS.Editor.Maps.Designer
             _list.Bind(_selection);
             _canvas = root.Require<MapCanvas>("canvas");
             _canvas.ShowGhosts = _toolbar.Ghosts;
+            _canvas.Warned += message => ShowNotification(new GUIContent(message), WarningSeconds);
             _inspector = root.Require<MapFeatureInspector>("inspector");
             _report = root.Require<MapReportPanel>("report");
             _report.ShowFeature += feature => _preview?.Show(feature);
@@ -90,6 +96,8 @@ namespace HyperRTS.Editor.Maps.Designer
             }
         }
 
+        private void OnDestroy() => DestroyImmediate(_document);
+
         private void Load(string specPath)
         {
             Focus();
@@ -101,6 +109,7 @@ namespace HyperRTS.Editor.Maps.Designer
             if (_document != null)
             {
                 _document.Changed -= OnDocumentChanged;
+                DestroyImmediate(_document);
             }
 
             _document = MapSpecDocument.Open(specPath);
@@ -125,7 +134,7 @@ namespace HyperRTS.Editor.Maps.Designer
                 return;
             }
 
-            _canvas.Bind(_document, _selection);
+            _canvas.Bind(_document, _selection, _toolbox);
             _preview = new MapEditorPreview(_document, _canvas, _selection, _toolbar.Strip, _report);
             _document.Changed -= OnDocumentChanged;
             _document.Changed += OnDocumentChanged;
@@ -154,7 +163,7 @@ namespace HyperRTS.Editor.Maps.Designer
             }
 
             _list.ShowSelection();
-            _inspector.Show(_selection.Current);
+            _inspector.Show(_document, _selection.Current);
             _canvas.Refresh();
         }
 

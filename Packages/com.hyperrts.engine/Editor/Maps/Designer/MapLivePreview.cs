@@ -7,17 +7,20 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// Previews the Map Editor's document; with <see cref="Auto"/> on, also when it opens and whenever its file
-    /// changes on disk. The checks, measuring and drawing run on the main thread, the planning on a worker
-    /// (<see cref="MapPreview.RunAsync"/>).
+    /// Previews the Map Editor's document; with <see cref="Auto"/> on, also when it opens and after every change (an
+    /// edit, undo or reload), at most once a second. The checks, measuring and drawing run on the main thread, the
+    /// planning on a worker (<see cref="MapPreview.RunAsync"/>).
     /// </summary>
     public sealed class MapLivePreview
     {
         private const string AutoPref = "HyperRTS.MapEditor.AutoPreview";
+        private const double AutoInterval = 1.0;
 
         private readonly MapSpecDocument _document;
         private bool _again;
         private bool _disposed;
+        private bool _waiting;
+        private double _started = double.NegativeInfinity;
 
         public MapLivePreview(MapSpecDocument document)
         {
@@ -55,19 +58,37 @@ namespace HyperRTS.Editor.Maps.Designer
         {
             _disposed = true;
             _document.Changed -= OnDocumentChanged;
+            EditorApplication.update -= WaitForTurn;
         }
 
+        // A drag changes the document every frame: the edits gather until a second has passed since the last start.
         private void OnDocumentChanged()
         {
-            if (Auto)
+            if (!Auto || _waiting)
             {
-                Run();
+                return;
             }
+
+            _waiting = true;
+            EditorApplication.update += WaitForTurn;
+        }
+
+        private void WaitForTurn()
+        {
+            if (EditorApplication.timeSinceStartup - _started < AutoInterval)
+            {
+                return;
+            }
+
+            EditorApplication.update -= WaitForTurn;
+            _waiting = false;
+            Run();
         }
 
         private async void Start()
         {
             SetBusy(true);
+            _started = EditorApplication.timeSinceStartup;
             try
             {
                 var project = MapProject.FromSpec(_document.Spec, _document.Path);

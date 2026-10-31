@@ -8,7 +8,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Maps.Designer
 {
-    /// <summary>The Map Editor's toolbar: spec picker, the symmetry ghosts toggle and the preview strip.</summary>
+    /// <summary>The Map Editor's toolbar: spec picker, the tool strip, the symmetry ghosts toggle and the preview strip.</summary>
     [UxmlElement]
     public sealed partial class MapEditorToolbar : Toolbar
     {
@@ -27,6 +27,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
             _ghosts = this.Require<ToolbarToggle>("ghosts");
             _ghosts.RegisterValueChangedCallback(evt => GhostsToggled?.Invoke(evt.newValue));
+            Tools = this.Require<MapToolStrip>("tools");
             Strip = this.Require<MapPreviewStrip>("strip");
         }
 
@@ -35,6 +36,8 @@ namespace HyperRTS.Editor.Maps.Designer
         public event Action<bool> GhostsToggled;
 
         public bool Ghosts => _ghosts.value;
+
+        public MapToolStrip Tools { get; }
 
         public MapPreviewStrip Strip { get; }
 

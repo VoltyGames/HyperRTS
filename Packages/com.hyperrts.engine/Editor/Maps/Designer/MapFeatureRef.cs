@@ -19,6 +19,9 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public bool IsNone => Kind == null;
 
+        /// <summary>The feature's property path on a <see cref="MapSpecDocument"/>.</summary>
+        public string PropertyPath => MapSpecDocument.ElementPath(Kind.Field, Index);
+
         public bool Equals(MapFeatureRef other) => Kind == other.Kind && Index == other.Index;
 
         public override bool Equals(object obj) => obj is MapFeatureRef other && Equals(other);

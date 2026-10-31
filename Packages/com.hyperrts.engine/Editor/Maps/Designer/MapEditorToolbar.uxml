@@ -1,6 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../../Common/HyperRTSEditor.uss" />
   <ui:DropdownField name="picker" class="hrts-map-toolbar__picker" />
+  <HyperRTS.Editor.Maps.Designer.MapToolStrip name="tools" />
   <uie:ToolbarSpacer class="hrts-fill" />
   <uie:ToolbarToggle name="ghosts" text="Ghosts" value="true" />
   <HyperRTS.Editor.Maps.Designer.MapPreviewStrip name="strip" class="hrts-map-toolbar__strip" />

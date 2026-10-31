@@ -16,7 +16,6 @@ namespace HyperRTS.Editor.Maps.Designer
         private const BindingFlags Public = BindingFlags.Public | BindingFlags.Instance;
 
         private readonly FieldInfo _list;
-        private readonly Type _element;
         private readonly FieldInfo _position;
         private readonly FieldInfo _points;
         private readonly FieldInfo _radius;
@@ -30,10 +29,13 @@ namespace HyperRTS.Editor.Maps.Designer
             Label = label;
             Geometry = geometry;
             Color = color;
+            PositionField = positionField;
+            PointsField = pointsField;
+            RadiusField = radiusField;
 
             _list = typeof(MapSpec).GetField(field, Public)
                 ?? throw new ArgumentException($"MapSpec has no feature list '{field}'.");
-            _element = _list.FieldType.GetGenericArguments()[0];
+            ElementType = _list.FieldType.GetGenericArguments()[0];
             _position = Require(positionField, typeof(MapPoint));
             _points = Require(pointsField, typeof(List<MapPoint>));
             _radius = Require(radiusField, typeof(float));
@@ -50,6 +52,20 @@ namespace HyperRTS.Editor.Maps.Designer
         public MapFeatureGeometry Geometry { get; }
 
         public Color Color { get; }
+
+        /// <summary>The class of the list's entries (MapRoadSpec...).</summary>
+        public Type ElementType { get; }
+
+        /// <summary>The MapPoint field of Point and Circle features, or null.</summary>
+        public string PositionField { get; }
+
+        /// <summary>The List&lt;MapPoint&gt; field of Polyline and Polygon features, or null.</summary>
+        public string PointsField { get; }
+
+        /// <summary>The radius field of Circle features, or null.</summary>
+        public string RadiusField { get; }
+
+        public bool HasPoints => _points != null;
 
         public static MapFeatureKind Point(string field, string label, Color color, string position) =>
             new(field, label, MapFeatureGeometry.Point, color, position, null, null);
@@ -94,6 +110,52 @@ namespace HyperRTS.Editor.Maps.Designer
             return string.IsNullOrEmpty(kind) ? $"{index + 1}" : $"{index + 1}  {kind}";
         }
 
+        /// <summary>
+        /// Appends a feature at <paramref name="points"/> and returns its index. It copies the list's last feature
+        /// (kind, width, shared...) or, in an empty list, takes the type's defaults. Lists on the feature other than
+        /// its points (a river's crossings) start empty: they belong to the old feature's geometry.
+        /// </summary>
+        public int Add(MapSpec spec, IReadOnlyList<Vector2> points)
+        {
+            var list = List(spec);
+            var element = list.Count == 0
+                ? Activator.CreateInstance(ElementType)
+                : JsonUtility.FromJson(JsonUtility.ToJson(list[list.Count - 1]), ElementType);
+            ClearLists(element);
+            WritePoints(element, points);
+            list.Add(element);
+            return list.Count - 1;
+        }
+
+        private void WritePoints(object element, IReadOnlyList<Vector2> points)
+        {
+            if (_points == null)
+            {
+                _position.SetValue(element, new MapPoint(points[0].x, points[0].y));
+                return;
+            }
+
+            var list = new List<MapPoint>();
+            foreach (var point in points)
+            {
+                list.Add(new MapPoint(point.x, point.y));
+            }
+
+            _points.SetValue(element, list);
+        }
+
+        private void ClearLists(object element)
+        {
+            foreach (var field in ElementType.GetFields(Public))
+            {
+                var type = field.FieldType;
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+                {
+                    field.SetValue(element, Activator.CreateInstance(type));
+                }
+            }
+        }
+
         private IList List(MapSpec spec) => (IList)_list.GetValue(spec)
             ?? throw new InvalidOperationException($"Spec '{spec.name}' has no '{Field}' list.");
 
@@ -104,10 +166,10 @@ namespace HyperRTS.Editor.Maps.Designer
                 return null;
             }
 
-            var field = _element.GetField(name, Public);
+            var field = ElementType.GetField(name, Public);
             if (field == null || field.FieldType != type)
             {
-                throw new ArgumentException($"{_element.Name} has no {type.Name} field '{name}' for '{Field}'.");
+                throw new ArgumentException($"{ElementType.Name} has no {type.Name} field '{name}' for '{Field}'.");
             }
 
             return field;
@@ -115,7 +177,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private FieldInfo Optional(string name, Type type)
         {
-            var field = _element.GetField(name, Public);
+            var field = ElementType.GetField(name, Public);
             return field != null && field.FieldType == type ? field : null;
         }
     }

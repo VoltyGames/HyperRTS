@@ -7,7 +7,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// Finds the feature under the cursor on the Map Editor canvas: the topmost
+    /// Finds what is under the cursor on the Map Editor canvas: a selected feature's handle, else the topmost
     /// point, line or outline, else the topmost polygon or circle interior.
     /// </summary>
     public static class MapHitTest
@@ -17,6 +17,49 @@ namespace HyperRTS.Editor.Maps.Designer
 
         [NoAutoStaticsCleanup]
         private static readonly List<Vector2> Points = new();
+
+        /// <summary>The handles of a feature in map metres: its points, plus a radius handle east of a circle.</summary>
+        public static void Handles(MapSpec spec, MapFeatureRef feature, List<Vector2> into)
+        {
+            feature.Kind.ReadPoints(spec, feature.Index, into);
+            if (feature.Kind.Geometry == MapFeatureGeometry.Circle)
+            {
+                into.Add(into[0] + new Vector2(feature.Kind.Radius(spec, feature.Index), 0f));
+            }
+        }
+
+        /// <summary>The index of the handle of <paramref name="feature"/> under the cursor, or -1.</summary>
+        public static int HandleAt(MapSpec spec, MapCanvasView view, MapFeatureRef feature, Vector2 local)
+        {
+            Handles(spec, feature, Points);
+            for (var i = Points.Count - 1; i >= 0; i--)
+            {
+                if (Vector2.Distance(view.ToLocal(Points[i]), local) <= PointPixels)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        /// <summary>The segment of a line or area under the cursor, or -1 (always -1 for points and circles).</summary>
+        public static int SegmentAt(MapSpec spec, MapCanvasView view, MapFeatureRef feature, Vector2 local)
+        {
+            if (!feature.Kind.HasPoints)
+            {
+                return -1;
+            }
+
+            feature.Kind.ReadPoints(spec, feature.Index, Points);
+            for (var i = 0; i < Points.Count; i++)
+            {
+                Points[i] = view.ToLocal(Points[i]);
+            }
+
+            var closed = feature.Kind.Geometry == MapFeatureGeometry.Polygon;
+            return MapVertexRules.SegmentAt(Points, closed, local, LinePixels);
+        }
 
         public static MapFeatureRef FeatureAt(MapSpec spec, MapCanvasView view, Vector2 local)
         {

@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../../Common/HyperRTSEditor.uss" />
-  <uie:ToolbarToggle name="auto" text="Auto preview" tooltip="Preview the map when it opens and whenever its spec file changes." />
+  <uie:ToolbarToggle name="auto" text="Auto preview" tooltip="Preview the map when it opens and after every change to its spec, at most once a second." />
   <uie:ToolbarButton name="preview" text="Preview" tooltip="Preview the map as it is now." />
   <ui:Label name="busy" class="hrts-toolbar-label hrts-map-toolbar__busy hrts-invisible" text="Previewing..." />
   <uie:ToolbarButton name="build" text="Build" tooltip="Build the map&apos;s scene and show the report." />

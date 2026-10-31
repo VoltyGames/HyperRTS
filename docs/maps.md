@@ -15,7 +15,7 @@ the match camera.
 
 | Stage | How to run it | Writes |
 | --- | --- | --- |
-| Edit | Any text editor. **HyperRTS ▸ Map Editor** shows the result | The spec |
+| Edit | **HyperRTS ▸ Map Editor** or any text editor | The spec |
 | Preview | The Map Editor, the `map_preview` [command](editor.md#commands) or batch `.Preview` | Layout image, issues and land figures |
 | Build | **Build** in the Map Editor or on **HyperRTS ▸ Tools ▸ Maps**, `map_build` or batch `.Build` | Scene, SubScene, assets, report, minimap, views |
 | Views | Every build with graphics, **Recapture views** in the Map Editor, or `map_views` | Screenshots in `Logs/MapReports/<Map>/`, and their contrast in the report |
@@ -28,21 +28,34 @@ overview. Low figures mean flat, front-lit ground.
 
 ## Map Editor
 
-**HyperRTS ▸ Map Editor** shows one spec on a top-down canvas. It is a viewer: you edit the JSON, and the editor
-reloads the file when Unity imports it, and the canvas when a preview rewrites its image. Open a spec by
-double-clicking a `.map.json` or with **Open** on **HyperRTS ▸ Tools ▸ Maps**. The editing tools were removed
-while the spec format still changes often; the engine tag `map-editor-write-tools` keeps them.
+**HyperRTS ▸ Map Editor** lays out one spec on a top-down canvas. Open a spec by double-clicking a `.map.json` or
+with **Open** on **HyperRTS ▸ Tools ▸ Maps**.
+
+The file stays the source. Every finished edit, undo and redo saves it at once, so there is never unsaved work, and
+a save changes only what was edited: untouched values keep their text and a new feature leaves out its default
+fields, so the file diffs like a hand edit. A file written from outside, by an agent or a text editor, reloads when
+Unity imports it; that reload clears the undo history.
 
 | Part | Shows |
 | --- | --- |
-| Toolbar | Spec picker, **Ghosts** for the symmetry copies, **Auto preview**, **Preview** and **Build** |
+| Toolbar | Spec picker, the tools, **Ghosts** for the symmetry copies, **Auto preview**, **Preview** and **Build** |
 | Feature list | Every feature grouped by kind. Click one to select it |
-| Canvas | The latest preview under a metre grid, with bounds, sector edges, features and ghosts |
-| Selection | Where the selected feature sits in the spec, such as `roads[3]` |
+| Canvas | The latest preview under a metre grid, with bounds, sector edges, features, ghosts and the selection's handles |
+| Inspector | The selected feature's fields, with dropdowns for library keys. A change saves at once |
 | Report panel | Issues, land figures and build metrics, with **Open scene** and **Recapture views** |
 
-On the canvas, middle-drag or Space+drag pans, the wheel zooms and F fits the map. An issue that names a feature
-has a **Show** button that frames it. **Build** saves open scenes, builds, reopens your scene and shows the report.
+| Tool | Key | Does |
+| --- | --- | --- |
+| Select | V | Click selects, drag moves, drag a handle to move a point or a circle's radius. Alt+click on the selected line or area adds a point, Ctrl+click a point removes it, Delete removes the feature |
+| Point | P | Each click adds the kind picked beside the tools (a spawn, prop, hill...) at the cursor |
+| Line | L | Clicks add points; Enter or a double-click finishes (2 or more), Escape drops it |
+| Area | A | The same for areas (3 or more points) |
+
+A new feature copies the last one of its kind, or takes the defaults in an empty list. Each gesture is one undo step.
+Escape returns to Select. On the canvas, middle-drag or Space+drag pans, the wheel zooms and F fits the map. With
+**Auto preview** on, the map previews when it opens and after each change, at most once a second. An issue that names
+a feature has a **Show** button that frames it. **Build** saves open scenes, builds, reopens your scene and shows the
+report.
 
 ### Authoring rules
 
@@ -51,8 +64,9 @@ has a **Show** button that frames it. **Build** saves open scenes, builds, reope
 - **Shared features sit on the axis.** A feature with `"shared": true` is placed once, not copied. Put it on the
   mirror axis, or at the centre for a rotation.
 - **Array order drives the randomness.** Each feature's random stream is seeded by the map seed and its index in
-  its list. Deleting or reordering a feature reshuffles the detail of later features of its kind.
-- **Points sit on a 0.5 m grid.**
+  its list. Deleting or reordering a feature reshuffles the detail of later features of its kind; the editor
+  warns when a deletion does.
+- **Points sit on a 0.5 m grid.** The editor snaps them, and a shared point or circle to the axis or centre.
 - **Team modes need a two-copy symmetry**: `rotate-180`, `mirror-x` or `mirror-z`. `ffa` needs `rotate-3` to
   `rotate-8`, one sector per player.
 
