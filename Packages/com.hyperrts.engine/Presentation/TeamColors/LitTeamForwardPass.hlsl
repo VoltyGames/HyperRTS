@@ -20,11 +20,6 @@ void LitTeamPassFragment(
     // The mask follows the model's own UVs, not the base map's tiling.
     float2 uv0 = (input.uv - _BaseMap_ST.zw) / _BaseMap_ST.xy;
 
-#if defined(REQUIRES_TANGENT_SPACE_VIEW_DIR_INTERPOLATOR)
-    half3 viewDirTS = input.viewDirTS;
-    ApplyPerPixelDisplacement(viewDirTS, input.uv);
-#endif
-
     SurfaceData surfaceData;
     InitializeStandardLitSurfaceData(input.uv, surfaceData);
     surfaceData.albedo = ApplyTeamColor(surfaceData.albedo, uv0, input.positionWS);

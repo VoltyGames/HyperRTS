@@ -6,9 +6,9 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Texturing
 {
     /// <summary>
-    /// Bakes the map's top-down ground colour, the picture foliage blends into at its roots: each texel mixes the
-    /// layers' mean albedo by texture weight ([z, x, layer] over the whole terrain), tinted by the ground tint over
-    /// the same area, where RGB 0.5 leaves the ground unchanged (null for no tint).
+    /// Bakes the map's top-down ground colour, the picture foliage blends into at its roots and the terrain's albedo
+    /// for GI: each texel mixes the layers' mean albedo by texture weight ([z, x, layer] over the whole terrain),
+    /// tinted by the ground tint over the same area, where RGB 0.5 leaves the ground unchanged (null for no tint).
     /// </summary>
     public static class MapGroundColor
     {

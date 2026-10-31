@@ -19,29 +19,31 @@ float CraterDepth(float2 positionXZ)
 {
     float2 uv = RectUV(_HyperRTSInteractionRect, positionXZ);
     bool onMaps = _HyperRTSInteractionRect.z > 0.0 && all(uv == saturate(uv));
+    float depth = 0.0;
     UNITY_BRANCH
-    if (!onMaps)
+    if (onMaps)
     {
-        return 0.0;
+        depth = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0).a * _HyperRTSMaxCraterDepth;
     }
 
-    return SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0).a * _HyperRTSMaxCraterDepth;
+    return depth;
 }
 
 float UndentedGroundHeight(float2 positionXZ)
 {
     float texels = _HyperRTSUndentedScale.z;
     // Unpublished: flat ground at y = 0, as the simulation has without a terrain.
+    float ground = 0.0;
     UNITY_BRANCH
-    if (texels < 1.0)
+    if (texels >= 1.0)
     {
-        return 0.0;
+        float2 uv = (positionXZ - _HyperRTSUndentedArea.xy) * _HyperRTSUndentedArea.zw;
+        uv = uv * ((texels - 1.0) / texels) + 0.5 / texels;
+        float height = _HyperRTSUndentedHeights.SampleLevel(sampler_LinearClamp, uv, 0);
+        ground = _HyperRTSUndentedScale.x + height * _HyperRTSUndentedScale.y;
     }
 
-    float2 uv = (positionXZ - _HyperRTSUndentedArea.xy) * _HyperRTSUndentedArea.zw;
-    uv = uv * ((texels - 1.0) / texels) + 0.5 / texels;
-    float height = _HyperRTSUndentedHeights.SampleLevel(sampler_LinearClamp, uv, 0);
-    return _HyperRTSUndentedScale.x + height * _HyperRTSUndentedScale.y;
+    return ground;
 }
 
 // The whole object drops by the depth at its origin, so it keeps its shape; raised objects drop less or not at all.

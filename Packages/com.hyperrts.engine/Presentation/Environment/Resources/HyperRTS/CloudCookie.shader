@@ -28,19 +28,14 @@ Shader "Hidden/HyperRTS/Cloud Cookie"
             Name "Clouds"
 
             HLSLPROGRAM
-            #pragma vertex FullScreenVertex
+            #pragma vertex Vert
             #pragma fragment CloudsFragment
+            #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
-            float4 FullScreenVertex(uint vertexID : SV_VertexID) : SV_POSITION
-            {
-                float2 uv = float2((vertexID << 1) & 2, vertexID & 2);
-                return float4(uv * 2.0 - 1.0, 0.5, 1.0);
-            }
-
-            float CloudsFragment(float4 positionCS : SV_POSITION) : SV_Target
+            float CloudsFragment(Varyings input) : SV_Target
             {
                 float area = _CloudPlace.w;
-                float2 tile = (positionCS.xy / _CookieFocus.z - 0.5) * area;
+                float2 tile = (input.positionCS.xy / _CookieFocus.z - 0.5) * area;
                 // The repeat of this texel nearest the camera, so the clouds stay seamless where the camera looks.
                 float2 positionLS = tile + area * round((_CookieFocus.xy - tile) / area);
                 float2 cloudUV = (positionLS - _CloudPlace.xy) / _CloudPlace.z + 0.5;

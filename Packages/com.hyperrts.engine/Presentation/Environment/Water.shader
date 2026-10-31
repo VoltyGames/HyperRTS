@@ -112,9 +112,7 @@ Shader "HyperRTS/Water"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
-            #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            #pragma multi_compile_fragment _ _LIGHT_COOKIES
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/MainLightKeywords.hlsl"
             #pragma multi_compile_fragment _ _TERRAIN_SIMPLE
             #pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC
 

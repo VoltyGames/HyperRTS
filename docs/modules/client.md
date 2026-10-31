@@ -154,6 +154,13 @@ texture's red channel allows, on UV0, and inside the `TeamStripAuthoring` height
 `FactionPalette` holds this client's colours. `TeamColorOverride` swaps them, for example for colour-blind players
 or own, ally and enemy colours. The validator flags units and buildings without a team colour material.
 
+LitTeam carries only what materials use: opaque or alpha tested, metallic workflow, normal, metallic gloss, occlusion
+and emission maps, no detail maps, parallax or transparency. Its keywords are `_NORMALMAP`, `_METALLICSPECGLOSSMAP`,
+`_OCCLUSIONMAP`, `_EMISSION`, `_ALPHATEST_ON`, `_BUILD` and `_VAT`. Its inspector, `LitTeamGUI`, shows the
+properties as plain fields and keeps each map's keyword on while the map is set, `_EMISSION` while the emission colour
+isn't black, and the alpha-test queue while alpha clipping is on, as URP's Lit inspector does; the model hooks write
+the same. `Rendering/SurfaceMaps.hlsl` holds the base colour and normal map accessors that LitTeam and Bark share.
+
 Units hidden behind cover still show. `UnitSilhouetteFeature`, a URP renderer feature, draws a team-coloured fill
 and rim where a unit is hidden. Every rendered part of a unit is put on rendering layer 8 at bake time for this.
 Grass and small plants are not cover: `FoliageGrass` marks stencil bit 64 and the silhouette skips those pixels, so a
@@ -324,9 +331,12 @@ Water vertex colours shape the flow: alpha thins fords, green streaks rapids foa
 downstream of fords and bridges. Open water carries no streaks; banks get their own foam band.
 
 URP keyword lists shared across passes live in `Presentation/Rendering/Keywords/` and are pulled in with
-`#include_with_pragmas`: `ForwardLightingKeywords` (forward passes on the full Lit model), `SimpleLightingKeywords`
-(plant and flag forward passes), `ShadowCasterKeywords` and `DepthNormalsKeywords`. An include holds only lines
-identical in every pass that uses it, so a pass needing a different line keeps its own; material keywords
+`#include_with_pragmas`: `LightingKeywords` (main and additional lights, shadows, screen space effects, decals and
+cookies, for Road), `ForwardLightingKeywords` (that plus probes, fog and rendering layers, for the full Lit model),
+`ObjectLightingKeywords` and `LightmapKeywords` (LitTeam and Bark add falloff, box projection, exposure, debug and probe
+volumes, and LitTeam its lightmaps), `MainLightKeywords` (Water), `SimpleLightingKeywords` (that plus screen space
+occlusion, for plant and flag forward passes), `ShadowCasterKeywords` and `DepthNormalsKeywords`. An include holds
+only lines identical in every pass that uses it, so a pass needing a different line keeps its own; material keywords
 (`shader_feature_local`) stay in each shader.
 
 ### Atmosphere

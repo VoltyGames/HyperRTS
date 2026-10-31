@@ -1,46 +1,22 @@
 // HyperRTS/LitTeam surface: URP Lit's InitializeStandardLitSurfaceData (LitInput.hlsl declares it beside Lit's own
-// properties, so it can't be included) and the team tint. Included by LitTeamInput.hlsl after its accessors.
+// properties, so it can't be included) without detail maps, the specular workflow or transparency, and the team
+// tint. Included by LitTeamInput.hlsl after its accessors.
 #ifndef HYPERRTS_LIT_TEAM_SURFACE_INCLUDED
 #define HYPERRTS_LIT_TEAM_SURFACE_INCLUDED
 
 inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfaceData)
 {
     half4 albedoAlpha = SampleBaseMap(uv);
-    outSurfaceData.alpha = AlphaDiscard(UseSmoothnessTextureAlbedoChannelA() ? GetBaseColor().a : albedoAlpha.a * GetBaseColor().a, GetCutoff());
+    outSurfaceData = (SurfaceData)0;
+    outSurfaceData.alpha = AlphaDiscard(albedoAlpha.a * GetBaseColor().a, GetCutoff());
+    outSurfaceData.albedo = albedoAlpha.rgb * GetBaseColor().rgb;
 
     half4 specGloss = SampleMetallicSpecGloss(uv, albedoAlpha.a);
-
-    outSurfaceData.albedo = albedoAlpha.rgb * GetBaseColor().rgb;
-    if (UseAlphaModulate())
-        outSurfaceData.albedo = ApplyAlphaModulate(outSurfaceData.albedo, outSurfaceData.alpha);
-
-    if (IsSpecularSetup())
-    {
-        outSurfaceData.metallic = half(1.0);
-        outSurfaceData.specular = specGloss.rgb;
-    }
-    else
-    {
-        outSurfaceData.metallic = specGloss.r;
-        outSurfaceData.specular = half3(0.0, 0.0, 0.0);
-    }
-
+    outSurfaceData.metallic = specGloss.r;
     outSurfaceData.smoothness = specGloss.a;
     outSurfaceData.normalTS = SampleNormal(uv);
     outSurfaceData.occlusion = SampleOcclusion(uv);
     outSurfaceData.emission = SampleEmission(uv) * _LightsOn;
-
-    half2 clearCoatMaskSmoothness = SampleClearCoat(uv);
-    outSurfaceData.clearCoatMask       = clearCoatMaskSmoothness.r;
-    outSurfaceData.clearCoatSmoothness = clearCoatMaskSmoothness.g;
-
-    if (UseDetailMap())
-    {
-        half detailMask = SampleDetailMask(uv).a;
-        float2 detailUv = uv * GetDetailAlbedoMapST().xy + GetDetailAlbedoMapST().zw;
-        outSurfaceData.albedo = ApplyDetailAlbedo(detailUv, outSurfaceData.albedo, detailMask);
-        outSurfaceData.normalTS = ApplyDetailNormal(detailUv, outSurfaceData.normalTS, detailMask);
-    }
 }
 
 // Half the soft edge of the team strip band, in metres.

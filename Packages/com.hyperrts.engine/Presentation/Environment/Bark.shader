@@ -48,17 +48,8 @@ Shader "HyperRTS/Bark"
             #pragma shader_feature_local_fragment _MASKMAP
 
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ForwardLightingKeywords.hlsl"
-            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX
-            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHTS
-            #pragma multi_compile _ _LIGHT_FALLOFF_QUADRATIC
-            #pragma multi_compile_fragment _ _REFLECTION_PROBE_BOX_PROJECTION
-            #pragma multi_compile_fragment _ _CLUSTER_LIGHT_LOOP
-            #pragma multi_compile _ _EXPOSURE
-            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
-
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ObjectLightingKeywords.hlsl"
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #pragma multi_compile_fragment _ DEBUG_DISPLAY
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ProbeVolumeVariants.hlsl"
 
             #pragma multi_compile_instancing
             #pragma instancing_options renderinglayer

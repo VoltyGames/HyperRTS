@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Texturing
 {
     /// <summary>
     /// Writes a map's HyperRTS/Terrain material for <c>Terrain.materialTemplate</c>: a variant of the climate's base
-    /// material overriding the layer arrays, the per-layer parameters, the terrain's alphamaps and the ground tint and row maps.
+    /// material overriding the layer arrays, the per-layer parameters, the terrain's alphamaps and the ground tint, colour and row maps.
     /// </summary>
     public static class MapTerrainMaterial
     {
@@ -20,6 +20,7 @@ namespace HyperRTS.Editor.Maps.Texturing
         private static readonly int LayerCount = Shader.PropertyToID("_LayerCount");
         private static readonly int HeightBlendDepth = Shader.PropertyToID("_HeightBlendDepth");
         private static readonly int GroundTintMap = Shader.PropertyToID("_GroundTintMap");
+        private static readonly int GroundColorMap = Shader.PropertyToID("_GroundColorMap");
         private static readonly int RowMap = Shader.PropertyToID("_RowMap");
 
         private static readonly int[] Controls =
@@ -31,8 +32,10 @@ namespace HyperRTS.Editor.Maps.Texturing
         /// <summary>
         /// <paramref name="groundTint"/> is linear over the whole terrain: RGB tint (0.5 neutral), A wetness.
         /// <paramref name="rows"/> is linear too: RG the row direction remapped to 0..1, (0.5, 0.5) for none.
+        /// <paramref name="groundColor"/> is the ground from above (<see cref="MapGroundColor"/>), the albedo GI reads.
         /// </summary>
-        public static Material Write(string path, MapClimate climate, TerrainData data, Texture2D groundTint, Texture2D rows)
+        public static Material Write(string path, MapClimate climate, TerrainData data, Texture2D groundTint, Texture2D groundColor,
+            Texture2D rows)
         {
             Require(climate, data, groundTint);
             RequireLinear(rows, "row map");
@@ -51,6 +54,7 @@ namespace HyperRTS.Editor.Maps.Texturing
             }
 
             material.SetTexture(GroundTintMap, groundTint);
+            material.SetTexture(GroundColorMap, groundColor);
             material.SetTexture(RowMap, rows);
             EditorUtility.SetDirty(material);
             // Saved now: opening the map's scene unloads an unsaved material and drops every override.

@@ -12,6 +12,7 @@
 //                 row 4  grass cover 0..1 (sheds rain); 1 for the slope layer, triplanar on steep ground; z, w unused
 //   _Control0..3  the terrain's alphamaps, four layers each, for _LayerCount layers
 //   _GroundTintMap over the whole terrain, linear: RGB tint (0.5 neutral, doubled), A wetness (damp hollows)
+//   _GroundColorMap over the whole terrain, sRGB: the ground's colour from above, the albedo the Meta pass gives GI
 //   _RowMap       over the whole terrain, linear, bilinear, no mips: RG the crop rows' direction (x east, y north)
 //                 remapped to 0..1, (0.5, 0.5) off the fields; row layers lay u along it
 //   _MicroMap     TerrainMicroTexture's tileable soil grain, linear: RG normal xy, B occlusion, A albedo variation
@@ -33,6 +34,7 @@ Shader "HyperRTS/Terrain"
         [NoScaleOffset] _Control2 ("Alphamap 2", 2D) = "black" {}
         [NoScaleOffset] _Control3 ("Alphamap 3", 2D) = "black" {}
         [NoScaleOffset] _GroundTintMap ("Ground Tint (RGB) Wetness (A)", 2D) = "grey" {}
+        [NoScaleOffset] _GroundColorMap ("Ground Colour (GI albedo)", 2D) = "grey" {}
         [NoScaleOffset] _RowMap ("Row Direction (RG)", 2D) = "grey" {}
         [NoScaleOffset] _NoiseMap ("Noise", 2D) = "grey" {}
         [NoScaleOffset] _MicroMap ("Micro Detail", 2D) = "bump" {}
@@ -109,8 +111,6 @@ Shader "HyperRTS/Terrain"
             #pragma vertex TerrainForwardVertex
             #pragma fragment TerrainForwardFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ForwardLightingKeywords.hlsl"
-            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
-            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile_fragment _ _TERRAIN_SIMPLE _TERRAIN_NO_FAR _TERRAIN_NO_PARALLAX
             #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainForwardPass.hlsl"
             ENDHLSL
@@ -173,6 +173,30 @@ Shader "HyperRTS/Terrain"
             #pragma fragment TerrainDepthFragment
             #define SCENESELECTIONPASS
             #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainDepthPasses.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Meta"
+            Tags { "LightMode" = "Meta" }
+
+            Cull Off
+
+            HLSLPROGRAM
+            #pragma vertex MetaPassVertex
+            #pragma fragment MetaPassFragment
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainInput.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+
+            TEXTURE2D(_GroundColorMap);
+            SAMPLER(sampler_GroundColorMap);
+
+            // UV0 spans the whole terrain, as the ground colour picture does.
+            half3 MetaAlbedo(float2 uv0)
+            {
+                return SAMPLE_TEXTURE2D(_GroundColorMap, sampler_GroundColorMap, uv0).rgb;
+            }
             ENDHLSL
         }
 

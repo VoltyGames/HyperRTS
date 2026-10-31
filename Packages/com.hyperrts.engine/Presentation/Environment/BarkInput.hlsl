@@ -32,22 +32,10 @@ float _WindScale;
 UNITY_TEXTURE_STREAMING_DEBUG_VARS;
 CBUFFER_END
 
-TEXTURE2D(_BaseMap);    SAMPLER(sampler_BaseMap);
-TEXTURE2D(_BumpMap);    SAMPLER(sampler_BumpMap);
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/SurfaceMaps.hlsl"
+
 // HDRP mask layout: R metallic, G occlusion, A smoothness.
 TEXTURE2D(_MaskMap);    SAMPLER(sampler_MaskMap);
-UNITY_TEXTURE_STREAMING_DEBUG_VARS_FOR_TEX(_BaseMap);
-
-// URP's Utils headers and pass files declare these.
-half4 GetBaseColor()            { return _BaseColor; }
-half GetCutoff()                { return _Cutoff; }
-half GetBumpScale()             { return _BumpScale; }
-half4 SampleBaseMap(float2 uv)  { return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv); }
-half4 SampleBumpMap(float2 uv)  { return SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uv); }
-
-// Bark has no detail map, so LitDepthNormalsPass's calls behind UseDetailMap() compile away.
-half4 SampleDetailMask(float2 uv);
-float4 GetDetailAlbedoMapST();
 
 // Own vertex struct: URP Lit's Attributes would read TEXCOORD1/2 as lightmap UVs.
 struct BarkAttributes

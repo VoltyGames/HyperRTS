@@ -197,7 +197,9 @@ Grass and row crops share one scatter host, described under [row crops](modules/
 layers, mixes and tramlines. A layer's `plants` thins scattered plants where it is painted. The climate's `heightBlendDepth`
 sets how far one layer must stand above another to win; about 0.06 interlocks borders without speckle. Layers are
 hex-tiled and randomly turned by their `antiTiling` to hide repeats. Layers with `followsRows` turn with the row
-map, so furrows follow each field. Grass layers darken less in rain than bare ground.
+map, so furrows follow each field. Grass layers darken less in rain than bare ground. Its Meta pass gives Surface
+Cache GI the ground's colour from above (`MapGroundColor`, bound as `_GroundColorMap`), the picture plants blend into
+at their roots, so the ground bounces its own soil and field colour.
 
 Near the camera, a tileable soil grain from `TerrainMicroTexture` adds normal, occlusion and albedo detail at a 0.5 m
 tile, fading out from 24 to 42 m. Rough ground takes it fully and low texels take most of its shadow. The layer of the
