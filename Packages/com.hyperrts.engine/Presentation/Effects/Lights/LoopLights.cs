@@ -10,8 +10,6 @@ namespace HyperRTS.Presentation.Effects.Lights
     /// </summary>
     public sealed class LoopLights
     {
-        public const int Capacity = LightSlots.Capacity;
-
         private readonly LightSlots _slots;
 
         public LoopLights(Transform root) => _slots = new LightSlots(root, "Loop Light");
@@ -26,7 +24,7 @@ namespace HyperRTS.Presentation.Effects.Lights
             if (level == DetailLevel.High)
             {
                 Offers.SortFrom(eye);
-                lit = Mathf.Min(Capacity, Offers.Count);
+                lit = Mathf.Min(LightSlots.Capacity, Offers.Count);
             }
 
             for (var i = 0; i < lit; i++)

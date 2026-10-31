@@ -50,47 +50,29 @@ namespace HyperRTS.Presentation.Environment.Interaction
             }
 
             var reach = mark.scorch > 0f ? radius * ScorchReach : radius;
-            var disc = new InteractionStamp { Center = center, Forward = new float2(0f, 1f), HalfSize = new float2(reach) };
-            disc.Value = new float4(1f, 1f, 0f, 1f);
-            Trample.Add(disc);
+            Trample.Add(Disc(center, reach, new float4(1f, 1f, 0f, 1f)));
             var depth = math.saturate(mark.craterDepth / MaxCraterDepth);
-            disc.Value = new float4(depth, math.saturate(mark.scorch), radius / reach, 1f);
-            Scars.Add(disc);
+            Scars.Add(Disc(center, reach, new float4(depth, math.saturate(mark.scorch), radius / reach, 1f)));
         }
 
         /// <summary>A footprint scorched and churned to <paramref name="share"/>: square, with no bowl.</summary>
         public void AddFootprintScar(float2 center, float2 forward, float2 size, float share) =>
-            Scars.Add(new InteractionStamp
-            {
-                Center = center, Forward = forward, HalfSize = size * 0.5f, Value = new float4(0f, share, 0f, share),
-            });
+            Scars.Add(Stamp(center, forward, size * 0.5f, new float4(0f, share, 0f, share)));
 
+        // A bowl as wide as the stamp but with no depth takes the brush's round, soft-edged path.
         /// <summary>A soft, ragged disc scorched to <paramref name="scorch"/>, with no depth and no churn: burnt grass.</summary>
         public void AddScorch(float2 center, float radius, float scorch) =>
-            Scars.Add(new InteractionStamp
-            {
-                // A bowl as wide as the stamp but with no depth takes the brush's round, soft-edged path.
-                Center = center, Forward = new float2(0f, 1f), HalfSize = new float2(radius),
-                Value = new float4(0f, math.saturate(scorch), 1f, 0f),
-            });
+            Scars.Add(Disc(center, radius, new float4(0f, math.saturate(scorch), 1f, 0f)));
 
         /// <summary>Rubble, ash, fuel and wet mud (0 to 1 each) left in a ragged disc for the rest of the match.</summary>
         public void AddRemains(float2 center, float radius, float4 amounts) =>
-            Remains.Add(new InteractionStamp
-            {
-                Center = center, Forward = new float2(0f, 1f), HalfSize = new float2(radius), Value = math.saturate(amounts),
-            });
+            Remains.Add(Disc(center, radius, math.saturate(amounts)));
 
         public void AddWake(float2 position, float2 direction, float speed, float radius)
         {
             var halfLength = radius + speed * WakeReachSeconds * 0.5f;
-            Wakes.Add(new InteractionStamp
-            {
-                Center = position - direction * (halfLength - radius),
-                Forward = direction,
-                HalfSize = new float2(radius * 1.3f, halfLength),
-                Value = new float4(math.saturate(speed / FullWakeSpeed), 0f, 0f, 0f),
-            });
+            Wakes.Add(Stamp(position - direction * (halfLength - radius), direction,
+                new float2(radius * 1.3f, halfLength), new float4(math.saturate(speed / FullWakeSpeed), 0f, 0f, 0f)));
         }
 
         /// <summary>A vehicle's marks this frame, stretched back over <paramref name="advance"/> metres so fast vehicles leave no gaps.</summary>
@@ -143,5 +125,8 @@ namespace HyperRTS.Presentation.Environment.Interaction
 
         private static InteractionStamp Stamp(float2 center, float2 forward, float2 halfSize, float4 value) =>
             new() { Center = center, Forward = forward, HalfSize = halfSize, Value = value };
+
+        private static InteractionStamp Disc(float2 center, float radius, float4 value) =>
+            Stamp(center, new float2(0f, 1f), new float2(radius), value);
     }
 }

@@ -14,7 +14,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
         private readonly List<ScatterJob> _pending = new();
         private readonly ScatterDraws _draws;
-        private int _largestJob;
 
         /// <summary>Slots drawing <paramref name="meshes"/>, grown by <paramref name="grow"/>, with room for at least <paramref name="minInstances"/>.</summary>
         protected ScatterBatch(ComputeShader compute, int grow, int count, Mesh[] meshes, int minInstances)
@@ -52,7 +51,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         public void Begin()
         {
             _pending.Clear();
-            _largestJob = 0;
             ForgetView();
         }
 
@@ -101,16 +99,18 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         }
 
         /// <summary>Queues one job for the grow kernel.</summary>
-        protected void Queue(ScatterJob job)
-        {
-            _pending.Add(job);
-            _largestJob = Mathf.Max(_largestJob, job.Threads);
-        }
+        protected void Queue(ScatterJob job) => _pending.Add(job);
 
         /// <summary>Runs the grow kernel over every queued job, one thread group row per job.</summary>
         private void DispatchGrow()
         {
-            var groups = Mathf.Max(1, (_largestJob + ThreadGroup - 1) / ThreadGroup);
+            var largestJob = 0;
+            foreach (var job in _pending)
+            {
+                largestJob = Mathf.Max(largestJob, job.Threads);
+            }
+
+            var groups = Mathf.Max(1, (largestJob + ThreadGroup - 1) / ThreadGroup);
             Compute.Dispatch(GrowKernel, groups, 1, _pending.Count);
         }
 

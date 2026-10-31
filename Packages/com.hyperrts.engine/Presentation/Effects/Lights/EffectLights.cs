@@ -5,11 +5,9 @@ namespace HyperRTS.Presentation.Effects.Lights
     /// <summary>Shadowless point lights shared by every rig's flashes; when all are lit the oldest is reused.</summary>
     public sealed class EffectLights
     {
-        public const int Capacity = LightSlots.Capacity;
-
         private readonly LightSlots _slots;
-        private readonly EffectLight[] _sources = new EffectLight[Capacity];
-        private readonly float[] _ages = new float[Capacity];
+        private readonly EffectLight[] _sources = new EffectLight[LightSlots.Capacity];
+        private readonly float[] _ages = new float[LightSlots.Capacity];
 
         public EffectLights(Transform root) => _slots = new LightSlots(root, "Flash");
 
@@ -28,7 +26,7 @@ namespace HyperRTS.Presentation.Effects.Lights
 
         public void Tick(float deltaTime)
         {
-            for (var i = 0; i < Capacity; i++)
+            for (var i = 0; i < LightSlots.Capacity; i++)
             {
                 if (_sources[i] == null)
                 {
@@ -52,7 +50,7 @@ namespace HyperRTS.Presentation.Effects.Lights
         private int Oldest()
         {
             var oldest = 0;
-            for (var i = 0; i < Capacity; i++)
+            for (var i = 0; i < LightSlots.Capacity; i++)
             {
                 if (_sources[i] == null)
                 {

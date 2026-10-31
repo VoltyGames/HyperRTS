@@ -28,7 +28,7 @@ namespace HyperRTS.Presentation.Audio
 
         private void LateUpdate()
         {
-            var camera = view != null ? view : Camera.main;
+            var camera = MainCamera.Find(view);
             if (camera == null)
             {
                 return;

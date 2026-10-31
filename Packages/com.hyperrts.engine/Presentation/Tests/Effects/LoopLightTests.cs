@@ -51,7 +51,7 @@ namespace HyperRTS.Presentation.Tests.Effects
             _lights.Show(Vector3.zero, DetailLevel.High, 0f);
 
             var lit = Lit().Select(light => light.transform.position).OrderBy(position => position.x).ToArray();
-            Assert.AreEqual(LoopLights.Capacity, lit.Length);
+            Assert.AreEqual(LightSlots.Capacity, lit.Length);
             for (var i = 0; i < lit.Length; i++)
             {
                 Assert.AreEqual(new Vector3(i * 10f, 2f, 0f), lit[i], "the nearest fires, at the light's height");

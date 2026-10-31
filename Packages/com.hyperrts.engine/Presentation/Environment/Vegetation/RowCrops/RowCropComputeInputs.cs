@@ -39,18 +39,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         /// Whether the field asset's fields no longer fit the uploaded buffer, or a map rebuild replaced the field ids or
         /// the heightmap bound to the kernel.
         /// </summary>
-        public bool Stale
-        {
-            get
-            {
-                if (_fieldBuffer.count != Mathf.Max(1, _fields.fields.Count))
-                {
-                    return true;
-                }
-
-                return _ids != _fields.fieldIds || _scatter.Stale;
-            }
-        }
+        public bool Stale =>
+            _fieldBuffer.count != Mathf.Max(1, _fields.fields.Count) || _ids != _fields.fieldIds || _scatter.Stale;
 
         /// <summary>Binds one camera's view, the quality density and the trample map for its dispatches.</summary>
         public void SetCamera(Vector3 camera, ScatterSettings settings)
